@@ -22,6 +22,11 @@ export const Canvas = () => {
   const [tool, setTool] = useState<"draw" | "room">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
 
+  // Scale factors: 1 meter = 100 pixels
+  const PIXELS_PER_METER = 100;
+  const SMALL_GRID = 0.1 * PIXELS_PER_METER; // 0.1m grid = 10px
+  const LARGE_GRID = 1.0 * PIXELS_PER_METER; // 1.0m grid = 100px
+
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -29,25 +34,53 @@ export const Canvas = () => {
       width: 800,
       height: 600,
       backgroundColor: "#F8F9FA",
+      isDrawingMode: tool === "draw",
     });
 
-    // Add grid
-    const gridSize = 20;
-    for (let i = 0; i < fabricCanvas.width!; i += gridSize) {
+    // Add small grid (0.1m)
+    for (let i = 0; i < fabricCanvas.width!; i += SMALL_GRID) {
+      fabricCanvas.add(
+        new fabric.Line([i, 0, i, fabricCanvas.height!], {
+          stroke: "#EAECEF",
+          selectable: false,
+          strokeWidth: 0.5,
+        })
+      );
+    }
+    for (let i = 0; i < fabricCanvas.height!; i += SMALL_GRID) {
+      fabricCanvas.add(
+        new fabric.Line([0, i, fabricCanvas.width!, i], {
+          stroke: "#EAECEF",
+          selectable: false,
+          strokeWidth: 0.5,
+        })
+      );
+    }
+
+    // Add large grid (1.0m)
+    for (let i = 0; i < fabricCanvas.width!; i += LARGE_GRID) {
       fabricCanvas.add(
         new fabric.Line([i, 0, i, fabricCanvas.height!], {
           stroke: "#DEE2E6",
           selectable: false,
+          strokeWidth: 1,
         })
       );
     }
-    for (let i = 0; i < fabricCanvas.height!; i += gridSize) {
+    for (let i = 0; i < fabricCanvas.height!; i += LARGE_GRID) {
       fabricCanvas.add(
         new fabric.Line([0, i, fabricCanvas.width!, i], {
           stroke: "#DEE2E6",
           selectable: false,
+          strokeWidth: 1,
         })
       );
+    }
+
+    // Configure drawing brush
+    if (fabricCanvas.freeDrawingBrush) {
+      fabricCanvas.freeDrawingBrush.color = "#000000";
+      fabricCanvas.freeDrawingBrush.width = 2;
     }
 
     setCanvas(fabricCanvas);
@@ -57,6 +90,11 @@ export const Canvas = () => {
       fabricCanvas.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    if (!canvas) return;
+    canvas.isDrawingMode = tool === "draw";
+  }, [tool, canvas]);
 
   const handleZoom = (direction: "in" | "out") => {
     if (!canvas) return;
@@ -71,8 +109,9 @@ export const Canvas = () => {
 
   const clearCanvas = () => {
     if (!canvas) return;
-    canvas.clear();
-    canvas.backgroundColor = "#F8F9FA";
+    // Clear only the drawings, not the grid
+    const objects = canvas.getObjects('path');
+    objects.forEach((obj) => canvas.remove(obj));
     canvas.renderAll();
     toast.success("Canvas cleared");
   };
