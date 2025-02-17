@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, fabric } from "fabric";
+import { fabric } from "fabric";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
@@ -18,14 +18,14 @@ import {
 
 export const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [tool, setTool] = useState<"draw" | "room">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const fabricCanvas = new FabricCanvas(canvasRef.current, {
+    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: 800,
       height: 600,
       backgroundColor: "#F8F9FA",
