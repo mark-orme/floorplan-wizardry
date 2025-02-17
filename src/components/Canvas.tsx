@@ -96,26 +96,36 @@ export const Canvas = () => {
             <Button
               variant={tool === "draw" ? "default" : "outline"}
               onClick={() => setTool("draw")}
-              className="w-10 h-10 p-0"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              title="Draw Tool"
             >
-              <Pencil className="w-4 h-4" />
+              <Pencil className="w-4 h-4 transition-colors" />
             </Button>
             <Button
               variant={tool === "room" ? "default" : "outline"}
               onClick={() => setTool("room")}
-              className="w-10 h-10 p-0"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              title="Room Tool"
             >
-              <Square className="w-4 h-4" />
+              <Square className="w-4 h-4 transition-colors" />
             </Button>
           </div>
           
           {/* History Controls */}
           <div className="flex gap-2">
-            <Button variant="outline" className="w-10 h-10 p-0">
-              <Undo className="w-4 h-4" />
+            <Button
+              variant="outline"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Undo"
+            >
+              <Undo className="w-4 h-4 transition-colors" />
             </Button>
-            <Button variant="outline" className="w-10 h-10 p-0">
-              <Redo className="w-4 h-4" />
+            <Button
+              variant="outline"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Redo"
+            >
+              <Redo className="w-4 h-4 transition-colors" />
             </Button>
           </div>
           
@@ -124,16 +134,18 @@ export const Canvas = () => {
             <Button
               variant="outline"
               onClick={() => handleZoom("in")}
-              className="w-10 h-10 p-0"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Zoom In"
             >
-              <ZoomIn className="w-4 h-4" />
+              <ZoomIn className="w-4 h-4 transition-colors" />
             </Button>
             <Button
               variant="outline"
               onClick={() => handleZoom("out")}
-              className="w-10 h-10 p-0"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Zoom Out"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-4 h-4 transition-colors" />
             </Button>
           </div>
           
@@ -142,16 +154,18 @@ export const Canvas = () => {
             <Button
               variant="outline"
               onClick={clearCanvas}
-              className="w-10 h-10 p-0"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-red-50 dark:hover:bg-red-950"
+              title="Clear Canvas"
             >
-              <Trash className="w-4 h-4" />
+              <Trash className="w-4 h-4 text-red-500 transition-colors" />
             </Button>
             <Button
               variant="default"
               onClick={saveCanvas}
-              className="w-10 h-10 p-0"
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              title="Save as PNG"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 transition-colors" />
             </Button>
           </div>
         </div>
