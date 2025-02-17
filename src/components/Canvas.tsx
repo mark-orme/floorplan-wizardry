@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -33,7 +32,7 @@ export const Canvas = () => {
     const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: 800,
       height: 600,
-      backgroundColor: "#F8F9FA",
+      backgroundColor: "#FFFFFF", // Pure white background
       isDrawingMode: tool === "draw",
     });
 
@@ -41,18 +40,20 @@ export const Canvas = () => {
     for (let i = 0; i < fabricCanvas.width!; i += SMALL_GRID) {
       fabricCanvas.add(
         new fabric.Line([i, 0, i, fabricCanvas.height!], {
-          stroke: "#EAECEF",
+          stroke: "#E6F3F8", // Very light blue for fine grid
           selectable: false,
           strokeWidth: 0.5,
+          evented: false,
         })
       );
     }
     for (let i = 0; i < fabricCanvas.height!; i += SMALL_GRID) {
       fabricCanvas.add(
         new fabric.Line([0, i, fabricCanvas.width!, i], {
-          stroke: "#EAECEF",
+          stroke: "#E6F3F8", // Very light blue for fine grid
           selectable: false,
           strokeWidth: 0.5,
+          evented: false,
         })
       );
     }
@@ -61,21 +62,41 @@ export const Canvas = () => {
     for (let i = 0; i < fabricCanvas.width!; i += LARGE_GRID) {
       fabricCanvas.add(
         new fabric.Line([i, 0, i, fabricCanvas.height!], {
-          stroke: "#DEE2E6",
+          stroke: "#C2E2F3", // Light blue for major grid
           selectable: false,
           strokeWidth: 1,
+          evented: false,
         })
       );
     }
     for (let i = 0; i < fabricCanvas.height!; i += LARGE_GRID) {
       fabricCanvas.add(
         new fabric.Line([0, i, fabricCanvas.width!, i], {
-          stroke: "#DEE2E6",
+          stroke: "#C2E2F3", // Light blue for major grid
           selectable: false,
           strokeWidth: 1,
+          evented: false,
         })
       );
     }
+
+    // Add 1m scale marker at bottom right
+    const scaleMarker = new fabric.Group([
+      new fabric.Line([fabricCanvas.width! - LARGE_GRID - 20, fabricCanvas.height! - 20, fabricCanvas.width! - 20, fabricCanvas.height! - 20], {
+        stroke: "#C2E2F3",
+        strokeWidth: 2,
+      }),
+      new fabric.Text("1m", {
+        left: fabricCanvas.width! - LARGE_GRID/2 - 30,
+        top: fabricCanvas.height! - 35,
+        fontSize: 12,
+        fill: "#88B7D3",
+      })
+    ], {
+      selectable: false,
+      evented: false,
+    });
+    fabricCanvas.add(scaleMarker);
 
     // Configure drawing brush
     if (fabricCanvas.freeDrawingBrush) {
