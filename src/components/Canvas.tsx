@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, fabric } from "fabric";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
