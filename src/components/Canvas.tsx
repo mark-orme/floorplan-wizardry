@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -115,7 +116,17 @@ export const Canvas = () => {
   useEffect(() => {
     if (!canvas) return;
     canvas.isDrawingMode = tool === "draw";
+    canvas.renderAll();
   }, [tool, canvas]);
+
+  const handleToolChange = (newTool: "draw" | "room") => {
+    setTool(newTool);
+    if (canvas) {
+      canvas.isDrawingMode = newTool === "draw";
+      canvas.renderAll();
+      toast.success(`${newTool === "draw" ? "Drawing" : "Room"} tool selected`);
+    }
+  };
 
   const handleZoom = (direction: "in" | "out") => {
     if (!canvas) return;
@@ -155,7 +166,7 @@ export const Canvas = () => {
           <div className="flex gap-2">
             <Button
               variant={tool === "draw" ? "default" : "outline"}
-              onClick={() => setTool("draw")}
+              onClick={() => handleToolChange("draw")}
               className="w-10 h-10 p-0 hover:scale-105 transition-transform"
               title="Draw Tool"
             >
@@ -163,7 +174,7 @@ export const Canvas = () => {
             </Button>
             <Button
               variant={tool === "room" ? "default" : "outline"}
-              onClick={() => setTool("room")}
+              onClick={() => handleToolChange("room")}
               className="w-10 h-10 p-0 hover:scale-105 transition-transform"
               title="Room Tool"
             >
