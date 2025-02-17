@@ -230,9 +230,7 @@ export const Canvas = () => {
           </div>
         </div>
 
-        <div className="border rounded-lg overflow-hidden bg-white">
-          <canvas ref={canvasRef} />
-        </div>
+        <canvas ref={canvasRef} />
       </Card>
     </div>
   );
