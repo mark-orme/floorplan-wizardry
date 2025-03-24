@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for creating and managing the canvas grid
  * Provides a visual reference for drawing to scale
@@ -155,22 +154,35 @@ export const createGrid = (
         gridObjects.push(line);
       });
 
-      // Add scale marker (1m)
-      const markers = createScaleMarkers(canvas, canvasWidth, canvasHeight);
-      markers.forEach(marker => {
-        gridBatch.push(marker);
-        gridObjects.push(marker);
-      });
-      
       // Add all grid objects at once
       canvas.add(...gridBatch);
+      
+      // Add scale marker (1m) - add it separately to make it appear on top
+      const markers = createScaleMarkers(canvas, canvasWidth, canvasHeight);
+      markers.forEach(marker => {
+        canvas.add(marker);
+        gridObjects.push(marker);
+      });
       
       // Re-enable rendering and render all at once
       canvas.renderOnAddRemove = true;
       
-      // Send all grid objects to the back
-      gridObjects.forEach(obj => {
+      // Send grid lines to the back, but keep markers on top
+      smallGridLines.concat(largeGridLines).forEach(obj => {
         canvas.sendObjectToBack(obj);
+      });
+      
+      // Keep markers on top of grid but below drawings
+      markers.forEach(marker => {
+        // Bring markers to front but not all the way
+        const objects = canvas.getObjects();
+        const drawingObjects = objects.filter(obj => 
+          obj.type === 'polyline' || obj.type === 'path');
+        
+        if (drawingObjects.length > 0) {
+          // Place markers below the lowest drawing object
+          canvas.moveTo(marker, canvas.getObjects().indexOf(drawingObjects[0]));
+        }
       });
       
       // Store grid objects in the reference for later use

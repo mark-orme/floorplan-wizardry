@@ -86,6 +86,41 @@ export const useCanvasTools = ({
         }
       }
       
+      // Ensure grid elements are in the correct z-order
+      const gridElements = gridLayerRef.current;
+      const allObjects = fabricCanvasRef.current.getObjects();
+      
+      // Find grid markers (scale indicators)
+      const gridMarkers = gridElements.filter(obj => 
+        obj.type === 'line' && obj.strokeWidth === 2 || 
+        obj.type === 'text');
+      
+      // Find grid lines
+      const gridLines = gridElements.filter(obj => 
+        obj.type === 'line' && obj.strokeWidth !== 2);
+      
+      // First send all grid lines to the back
+      gridLines.forEach(line => {
+        fabricCanvasRef.current!.sendObjectToBack(line);
+      });
+      
+      // Then bring markers above grid lines but below drawings
+      const drawingObjects = allObjects.filter(obj => 
+        obj.type === 'polyline' || obj.type === 'path');
+        
+      if (drawingObjects.length > 0) {
+        // Place markers below the lowest drawing object
+        gridMarkers.forEach(marker => {
+          fabricCanvasRef.current!.moveTo(marker, 
+            fabricCanvasRef.current!.getObjects().indexOf(drawingObjects[0]));
+        });
+      } else {
+        // If no drawings, bring markers to front
+        gridMarkers.forEach(marker => {
+          fabricCanvasRef.current!.bringObjectToFront(marker);
+        });
+      }
+      
       fabricCanvasRef.current.renderAll();
       
       // Provide user feedback
@@ -97,7 +132,7 @@ export const useCanvasTools = ({
       };
       toast.success(`${toolNames[newTool]} tool selected`);
     }
-  }, [fabricCanvasRef, setTool, lineThickness, lineColor]);
+  }, [fabricCanvasRef, gridLayerRef, setTool, lineThickness, lineColor]);
 
   /**
    * Zoom the canvas in or out
@@ -122,8 +157,41 @@ export const useCanvasTools = ({
   useEffect(() => {
     if (fabricCanvasRef.current) {
       enablePanning(fabricCanvasRef.current, tool === "hand");
+      
+      // Ensure grid elements are in the correct z-order when tool changes
+      setTimeout(() => {
+        if (fabricCanvasRef.current) {
+          // Ensure all grid elements are in the right order
+          const gridElements = gridLayerRef.current;
+          
+          // Find markers (scale indicators)
+          const gridMarkers = gridElements.filter(obj => 
+            obj.type === 'line' && obj.strokeWidth === 2 || 
+            obj.type === 'text');
+            
+          // Find grid lines
+          const gridLines = gridElements.filter(obj => 
+            obj.type === 'line' && obj.strokeWidth !== 2);
+          
+          // First send all grid lines to the back
+          gridLines.forEach(line => {
+            if (fabricCanvasRef.current?.contains(line)) {
+              fabricCanvasRef.current.sendObjectToBack(line);
+            }
+          });
+          
+          // Then bring markers to the front
+          gridMarkers.forEach(marker => {
+            if (fabricCanvasRef.current?.contains(marker)) {
+              fabricCanvasRef.current.bringObjectToFront(marker);
+            }
+          });
+          
+          fabricCanvasRef.current.renderAll();
+        }
+      }, 100);
     }
-  }, [fabricCanvasRef, tool]);
+  }, [fabricCanvasRef, gridLayerRef, tool]);
 
   return {
     clearDrawings,

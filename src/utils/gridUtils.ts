@@ -65,7 +65,10 @@ export const createScaleMarkers = (
     selectable: false,
     evented: false,
     objectCaching: true,
-    hoverCursor: 'default'
+    hoverCursor: 'default',
+    // Set a high z-index to make sure it appears above grid
+    originX: 'left',
+    originY: 'top'
   });
   
   const markerText = new Text("1m", {
@@ -76,7 +79,10 @@ export const createScaleMarkers = (
     selectable: false,
     evented: false,
     objectCaching: true,
-    hoverCursor: 'default'
+    hoverCursor: 'default',
+    // Set a high z-index to make sure it appears above grid
+    originX: 'left',
+    originY: 'top'
   });
   
   // Store grid dimensions in the marker line for future reference

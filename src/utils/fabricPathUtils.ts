@@ -95,17 +95,25 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
     }
     
     // Always include the last point if we have more than one point and it's not already included
-    if (filteredPoints.length === 1 && points.length > 1) {
-      filteredPoints.push(points[points.length - 1]);
+    const lastOriginalPoint = points[points.length - 1];
+    const lastFilteredPoint = filteredPoints[filteredPoints.length - 1];
+    
+    if (filteredPoints.length > 0 && 
+        (lastOriginalPoint.x !== lastFilteredPoint.x || 
+         lastOriginalPoint.y !== lastFilteredPoint.y)) {
+      filteredPoints.push(lastOriginalPoint);
     }
     
     return filteredPoints;
   }
   
   // Ensure we have at least 2 points for a proper line
-  if (points.length < 2 && points.length > 0) {
+  if (points.length === 1) {
     // Duplicate the single point slightly offset to create a minimal line
-    points.push({ x: points[0].x + 0.1, y: points[0].y + 0.1 });
+    points.push({ 
+      x: points[0].x + 0.1, 
+      y: points[0].y + 0.1 
+    });
   }
   
   return points;
