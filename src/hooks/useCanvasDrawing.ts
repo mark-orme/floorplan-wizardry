@@ -10,10 +10,9 @@ import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { type FloorPlan } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
-import { snapToAngle } from "@/utils/fabricInteraction";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { snapToGrid, metersToPixels, pixelsToMeters } from "@/utils/geometry";
-import { PIXELS_PER_METER, GRID_SIZE } from "@/utils/drawing";
+import { GRID_SIZE } from "@/utils/drawing";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -90,8 +89,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         try {
           const zoom = fabricCanvas.getZoom();
           
-          const snappedStartPoint = snapToGrid(drawingState.startPoint);
-          const snappedCurrentPoint = snapToGrid(drawingState.currentPoint);
+          // First snap both points exactly to the grid
+          const snappedStartPoint = snapToGrid(drawingState.startPoint, GRID_SIZE);
+          const snappedCurrentPoint = snapToGrid(drawingState.currentPoint, GRID_SIZE);
           
           console.log("Unit Handling:");
           console.log("- Current zoom level:", zoom);
@@ -100,29 +100,44 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
           console.log("- End point (meters):", drawingState.currentPoint);
           console.log("- Snapped end (meters):", snappedCurrentPoint);
           
-          // Force snap both points to grid lines before calculating angle
-          const gridSnappedStartPoint = snapToGrid(snappedStartPoint, GRID_SIZE);
+          // Calculate direction vector between snapped points
+          const dx = snappedCurrentPoint.x - snappedStartPoint.x;
+          const dy = snappedCurrentPoint.y - snappedStartPoint.y;
           
-          // Calculate straightened end point based on angle snapping
-          const straightenedEndPoint = snapToAngle(
-            gridSnappedStartPoint,
-            snappedCurrentPoint,
-            8
-          );
+          // Determine final endpoint based on direction
+          let finalEndPoint: Point;
           
-          // Force snap the end point to grid lines after angle calculation
-          const gridSnappedEndPoint = snapToGrid(straightenedEndPoint, GRID_SIZE);
+          if (Math.abs(dx) > Math.abs(dy)) {
+            // Force horizontal line
+            finalEndPoint = {
+              x: snappedCurrentPoint.x,
+              y: snappedStartPoint.y
+            };
+          } else if (Math.abs(dx) < Math.abs(dy)) {
+            // Force vertical line
+            finalEndPoint = {
+              x: snappedStartPoint.x,
+              y: snappedCurrentPoint.y
+            };
+          } else {
+            // Diagonal 45° line - ensure x and y delta match exactly
+            const delta = Math.round(dx / GRID_SIZE) * GRID_SIZE;
+            finalEndPoint = {
+              x: snappedStartPoint.x + delta,
+              y: snappedStartPoint.y + delta * Math.sign(dy)
+            };
+          }
           
-          if (gridSnappedEndPoint && e.path && e.path.path) {
+          if (e.path && e.path.path) {
             console.log("Wall line processing:");
             console.log("- Original end (meters):", drawingState.currentPoint);
-            console.log("- Angle-adjusted (meters):", straightenedEndPoint);
-            console.log("- Final grid-snapped (meters):", gridSnappedEndPoint);
-            console.log("- Final start-snapped (meters):", gridSnappedStartPoint);
+            console.log("- Final grid-aligned end (meters):", finalEndPoint);
+            console.log("- Final grid-aligned start (meters):", snappedStartPoint);
             
             // Convert both grid-aligned points to pixels for display
-            const startPixels = metersToPixels(gridSnappedStartPoint, zoom);
-            const endPixels = metersToPixels(gridSnappedEndPoint, zoom);
+            // No further snapping needed as points are already perfectly aligned
+            const startPixels = metersToPixels(snappedStartPoint, zoom);
+            const endPixels = metersToPixels(finalEndPoint, zoom);
             
             console.log("Pixel conversion for rendering:");
             console.log("- Start pixels:", startPixels);
