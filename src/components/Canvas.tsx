@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -25,20 +26,44 @@ export const Canvas = () => {
   const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(loadFloorPlans());
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   const [currentFloor, setCurrentFloor] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const historyRef = useRef<{past: fabric.Object[][], future: fabric.Object[][]}>({
     past: [],
     future: []
   });
+
+  // Load floor plans from IndexedDB when component mounts
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const plans = await loadFloorPlans();
+        setFloorPlans(plans);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error loading floor plans:", error);
+        toast.error("Failed to load floor plans");
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
 
   // Initialize canvas when component mounts
   useEffect(() => {
     setupCanvas();
     
     // Setup autosave
-    const interval = setInterval(() => {
-      saveFloorPlans(floorPlans);
+    const interval = setInterval(async () => {
+      try {
+        await saveFloorPlans(floorPlans);
+        console.log("Floor plans autosaved");
+      } catch (error) {
+        console.error("Autosave failed:", error);
+      }
     }, 10000); // Autosave every 10 seconds
     
     return () => {
@@ -47,9 +72,24 @@ export const Canvas = () => {
     };
   }, []);
 
+  // When floor plans change, trigger a save
+  useEffect(() => {
+    if (isLoading || floorPlans.length === 0) return;
+    
+    const saveData = async () => {
+      try {
+        await saveFloorPlans(floorPlans);
+      } catch (error) {
+        console.error("Error saving floor plans:", error);
+      }
+    };
+    
+    saveData();
+  }, [floorPlans, isLoading]);
+
   // When floor plan changes, update the canvas
   useEffect(() => {
-    if (!fabricCanvasRef.current) return;
+    if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
     
     // Clear existing drawings but not grid
     clearDrawings();
@@ -60,7 +100,7 @@ export const Canvas = () => {
     // Recalculate GIA
     recalculateGIA();
     
-  }, [currentFloor, floorPlans]);
+  }, [currentFloor, floorPlans, isLoading]);
 
   // Setup canvas and initialize drawing
   const setupCanvas = () => {
@@ -377,10 +417,12 @@ export const Canvas = () => {
     // Reset floor plan and GIA
     setFloorPlans(prev => {
       const newFloorPlans = [...prev];
-      newFloorPlans[currentFloor] = {
-        ...newFloorPlans[currentFloor],
-        strokes: []
-      };
+      if (newFloorPlans[currentFloor]) {
+        newFloorPlans[currentFloor] = {
+          ...newFloorPlans[currentFloor],
+          strokes: []
+        };
+      }
       return newFloorPlans;
     });
     setGia(0);
@@ -392,21 +434,28 @@ export const Canvas = () => {
     if (!fabricCanvasRef.current) return;
     
     try {
-      // Save floorplan data
-      saveFloorPlans(floorPlans);
-      
-      // Save canvas as image with corrected options including multiplier
-      const dataUrl = fabricCanvasRef.current.toDataURL({
-        format: 'png',
-        quality: 1,
-        multiplier: 1 // Required multiplier property
-      });
-      const link = document.createElement("a");
-      link.download = `floorplan-${floorPlans[currentFloor].label}.png`;
-      link.href = dataUrl;
-      link.click();
-      
-      toast.success("Floorplan saved");
+      // Manually trigger a save to IndexedDB
+      saveFloorPlans(floorPlans)
+        .then(() => {
+          toast.success("Floor plans saved to offline storage");
+          
+          // Save canvas as image with corrected options including multiplier
+          const dataUrl = fabricCanvasRef.current!.toDataURL({
+            format: 'png',
+            quality: 1,
+            multiplier: 1 // Required multiplier property
+          });
+          const link = document.createElement("a");
+          link.download = `floorplan-${floorPlans[currentFloor]?.label || 'untitled'}.png`;
+          link.href = dataUrl;
+          link.click();
+          
+          toast.success("Floorplan image exported");
+        })
+        .catch(error => {
+          console.error("Save failed:", error);
+          toast.error("Failed to save floor plans");
+        });
     } catch (e) {
       console.error('Save failed:', e);
       toast.error("Failed to save floorplan");
@@ -452,9 +501,21 @@ export const Canvas = () => {
   const handleSelectFloor = (index: number) => {
     if (index !== currentFloor) {
       setCurrentFloor(index);
-      toast.info(`Switched to ${floorPlans[index].label}`);
+      toast.info(`Switched to ${floorPlans[index]?.label || 'Unknown floor'}`);
     }
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-lg">Loading your floor plans...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-6 max-w-[1200px] mx-auto">

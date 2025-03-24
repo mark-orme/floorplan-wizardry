@@ -1,4 +1,6 @@
 
+import { openDB } from 'idb';
+
 export type Point = { x: number; y: number };
 export type Stroke = Point[];
 export type FloorPlan = { strokes: Stroke[]; label: string; paperSize?: 'A4' | 'A3' | 'infinite' };
@@ -8,6 +10,21 @@ export const GRID_SIZE = 0.1; // 0.1m grid
 export const PIXELS_PER_METER = 100; // 1 meter = 100 pixels
 export const SMALL_GRID = GRID_SIZE * PIXELS_PER_METER; // 0.1m grid = 10px
 export const LARGE_GRID = 1.0 * PIXELS_PER_METER; // 1.0m grid = 100px
+
+// IndexedDB Constants
+const DB_NAME = 'FloorPlanDB';
+const STORE_NAME = 'floorPlans';
+
+/** Initialize IndexedDB */
+export const getDB = async () => {
+  return openDB(DB_NAME, 1, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    },
+  });
+};
 
 /** Snap points to 0.1m grid for accuracy */
 export const snapToGrid = (points: Point[]): Stroke => {
@@ -106,26 +123,61 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
   return points;
 };
 
-/** Load floor plans from localStorage */
-export const loadFloorPlans = (): FloorPlan[] => {
+/** Load floor plans from IndexedDB (with fallback to localStorage for migration) */
+export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
   try {
+    // Try IndexedDB first
+    const db = await getDB();
+    const result = await db.get(STORE_NAME, 'current');
+    
+    if (result?.data) {
+      return result.data;
+    }
+    
+    // Fallback to localStorage for existing user data migration
     const saved = localStorage.getItem('floorPlans');
     if (saved) {
-      return JSON.parse(saved);
+      const parsedData = JSON.parse(saved);
+      // Immediately save to IndexedDB for future use
+      await saveFloorPlans(parsedData);
+      return parsedData;
     }
   } catch (e) {
-    console.error('Failed to load floor plans:', e);
+    console.error('Failed to load floor plans from IndexedDB:', e);
+    
+    // Final fallback to localStorage
+    try {
+      const saved = localStorage.getItem('floorPlans');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (localError) {
+      console.error('Failed to load floor plans from localStorage:', localError);
+    }
   }
   
   // Default floor plan if none exists
   return [{ strokes: [], label: 'Ground Floor', paperSize: 'infinite' }];
 };
 
-/** Save floor plans to localStorage */
-export const saveFloorPlans = (floorPlans: FloorPlan[]): void => {
+/** Save floor plans to IndexedDB (and localStorage as fallback) */
+export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<void> => {
   try {
+    // Save to IndexedDB
+    const db = await getDB();
+    await db.put(STORE_NAME, { id: 'current', data: floorPlans });
+    
+    // Also save to localStorage as fallback/migration path
     localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
   } catch (e) {
-    console.error('Failed to save floor plans:', e);
+    console.error('Failed to save floor plans to IndexedDB:', e);
+    
+    // Fallback to just localStorage
+    try {
+      localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+    } catch (localError) {
+      console.error('Failed to save floor plans to localStorage:', localError);
+    }
   }
 };
+
