@@ -91,33 +91,55 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
   const points: Point[] = [];
   
   try {
-    // Skip the first command which is usually a move
-    for (let i = 1; i < path.length; i++) {
-      if (Array.isArray(path[i])) {
-        if (path[i][0] === 'L') { // Line to
-          points.push({ x: path[i][1], y: path[i][2] });
+    // Extract all path commands
+    path.forEach((cmd, i) => {
+      if (Array.isArray(cmd)) {
+        if (cmd[0] === 'M' || cmd[0] === 'L') { // Move to or Line to
+          points.push({ x: cmd[1], y: cmd[2] });
         }
-        else if (path[i][0] === 'M') { // Move to
-          points.push({ x: path[i][1], y: path[i][2] });
+        else if (cmd[0] === 'Q') { // Quadratic curve
+          // Add the control point and end point
+          points.push({ x: cmd[3], y: cmd[4] }); // End point of curve
+        }
+        else if (cmd[0] === 'C') { // Bezier curve
+          // Add the end point of the curve
+          points.push({ x: cmd[5], y: cmd[6] });
         }
       }
-    }
+    });
     
-    // If no points were extracted, but there's at least one point in the path
-    // (can happen with some fabric.js versions)
-    if (points.length === 0 && path.length > 0) {
+    // If we couldn't extract points properly, at least get first and last
+    if (points.length < 2 && path.length > 1) {
       // Try to get just the first and last points
-      if (path[0][1] !== undefined && path[0][2] !== undefined) {
-        points.push({ x: path[0][1], y: path[0][2] });
+      for (const cmd of path) {
+        if (Array.isArray(cmd) && cmd.length >= 3) {
+          if (cmd[0] === 'M' || cmd[0] === 'L') {
+            points.push({ x: cmd[1], y: cmd[2] });
+            break;
+          }
+        }
       }
       
-      const lastCmd = path[path.length - 1];
-      if (lastCmd[1] !== undefined && lastCmd[2] !== undefined) {
-        points.push({ x: lastCmd[1], y: lastCmd[2] });
+      // Get the last point
+      for (let i = path.length - 1; i >= 0; i--) {
+        const cmd = path[i];
+        if (Array.isArray(cmd) && cmd.length >= 3) {
+          if (cmd[0] === 'L' || cmd[0] === 'C' || cmd[0] === 'Q') {
+            const lastIdx = cmd[0] === 'L' ? 1 : cmd[0] === 'Q' ? 3 : 5;
+            points.push({ x: cmd[lastIdx], y: cmd[lastIdx + 1] });
+            break;
+          }
+        }
       }
     }
   } catch (error) {
     console.error("Error converting fabric path to points:", error);
+  }
+  
+  // Ensure we have at least 2 points for a proper line
+  if (points.length < 2 && points.length > 0) {
+    // Duplicate the single point slightly offset to create a minimal line
+    points.push({ x: points[0].x + 0.01, y: points[0].y + 0.01 });
   }
   
   return points;

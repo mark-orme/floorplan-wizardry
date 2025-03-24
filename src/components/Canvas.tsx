@@ -23,6 +23,7 @@ import {
 export const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const gridLayerRef = useRef<fabric.Object[]>([]);
   const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
@@ -102,6 +103,82 @@ export const Canvas = () => {
     
   }, [currentFloor, floorPlans, isLoading]);
 
+  // Create grid lines and store references to them
+  const createGrid = (canvas: fabric.Canvas) => {
+    const gridObjects: fabric.Object[] = [];
+    
+    // Add small grid (0.1m)
+    for (let i = 0; i < canvas.width!; i += SMALL_GRID) {
+      const smallGridLine = new fabric.Line([i, 0, i, canvas.height!], {
+        stroke: "#E6F3F8", // Very light blue for fine grid
+        selectable: false,
+        strokeWidth: 0.5,
+        evented: false,
+      });
+      canvas.add(smallGridLine);
+      gridObjects.push(smallGridLine);
+    }
+    for (let i = 0; i < canvas.height!; i += SMALL_GRID) {
+      const smallGridLine = new fabric.Line([0, i, canvas.width!, i], {
+        stroke: "#E6F3F8", // Very light blue for fine grid
+        selectable: false,
+        strokeWidth: 0.5,
+        evented: false,
+      });
+      canvas.add(smallGridLine);
+      gridObjects.push(smallGridLine);
+    }
+
+    // Add large grid (1.0m)
+    for (let i = 0; i < canvas.width!; i += LARGE_GRID) {
+      const largeGridLine = new fabric.Line([i, 0, i, canvas.height!], {
+        stroke: "#C2E2F3", // Light blue for major grid
+        selectable: false,
+        strokeWidth: 1,
+        evented: false,
+      });
+      canvas.add(largeGridLine);
+      gridObjects.push(largeGridLine);
+    }
+    for (let i = 0; i < canvas.height!; i += LARGE_GRID) {
+      const largeGridLine = new fabric.Line([0, i, canvas.width!, i], {
+        stroke: "#C2E2F3", // Light blue for major grid
+        selectable: false,
+        strokeWidth: 1,
+        evented: false,
+      });
+      canvas.add(largeGridLine);
+      gridObjects.push(largeGridLine);
+    }
+
+    // Add 1m scale marker at bottom right
+    const scaleMarker = new fabric.Group([
+      new fabric.Line([canvas.width! - LARGE_GRID - 20, canvas.height! - 20, canvas.width! - 20, canvas.height! - 20], {
+        stroke: "#333333",
+        strokeWidth: 2,
+      }),
+      new fabric.Text("1m", {
+        left: canvas.width! - LARGE_GRID/2 - 30,
+        top: canvas.height! - 35,
+        fontSize: 12,
+        fill: "#333333",
+      })
+    ], {
+      selectable: false,
+      evented: false,
+    });
+    canvas.add(scaleMarker);
+    gridObjects.push(scaleMarker);
+    
+    // Send all grid lines to the back
+    gridObjects.forEach(obj => obj.sendToBack());
+    
+    // Store grid references
+    gridLayerRef.current = gridObjects;
+    
+    return gridObjects;
+  };
+
   // Setup canvas and initialize drawing
   const setupCanvas = () => {
     if (!canvasRef.current) return;
@@ -122,67 +199,8 @@ export const Canvas = () => {
     fabricCanvas.freeDrawingBrush.color = "#000000";
     fabricCanvas.freeDrawingBrush.width = 2;
 
-    // Add small grid (0.1m)
-    for (let i = 0; i < fabricCanvas.width!; i += SMALL_GRID) {
-      fabricCanvas.add(
-        new fabric.Line([i, 0, i, fabricCanvas.height!], {
-          stroke: "#E6F3F8", // Very light blue for fine grid
-          selectable: false,
-          strokeWidth: 0.5,
-          evented: false,
-        })
-      );
-    }
-    for (let i = 0; i < fabricCanvas.height!; i += SMALL_GRID) {
-      fabricCanvas.add(
-        new fabric.Line([0, i, fabricCanvas.width!, i], {
-          stroke: "#E6F3F8", // Very light blue for fine grid
-          selectable: false,
-          strokeWidth: 0.5,
-          evented: false,
-        })
-      );
-    }
-
-    // Add large grid (1.0m)
-    for (let i = 0; i < fabricCanvas.width!; i += LARGE_GRID) {
-      fabricCanvas.add(
-        new fabric.Line([i, 0, i, fabricCanvas.height!], {
-          stroke: "#C2E2F3", // Light blue for major grid
-          selectable: false,
-          strokeWidth: 1,
-          evented: false,
-        })
-      );
-    }
-    for (let i = 0; i < fabricCanvas.height!; i += LARGE_GRID) {
-      fabricCanvas.add(
-        new fabric.Line([0, i, fabricCanvas.width!, i], {
-          stroke: "#C2E2F3", // Light blue for major grid
-          selectable: false,
-          strokeWidth: 1,
-          evented: false,
-        })
-      );
-    }
-
-    // Add 1m scale marker at bottom right
-    const scaleMarker = new fabric.Group([
-      new fabric.Line([fabricCanvas.width! - LARGE_GRID - 20, fabricCanvas.height! - 20, fabricCanvas.width! - 20, fabricCanvas.height! - 20], {
-        stroke: "#333333",
-        strokeWidth: 2,
-      }),
-      new fabric.Text("1m", {
-        left: fabricCanvas.width! - LARGE_GRID/2 - 30,
-        top: fabricCanvas.height! - 35,
-        fontSize: 12,
-        fill: "#333333",
-      })
-    ], {
-      selectable: false,
-      evented: false,
-    });
-    fabricCanvas.add(scaleMarker);
+    // Create grid (this now stores references to grid objects)
+    createGrid(fabricCanvas);
 
     // Process drawn paths
     fabricCanvas.on('path:created', (e) => {
@@ -217,6 +235,10 @@ export const Canvas = () => {
         // Remove the original path and add our processed polyline
         fabricCanvas.remove(path);
         fabricCanvas.add(polyline);
+        
+        // Ensure grid stays in the background
+        gridLayerRef.current.forEach(gridObj => gridObj.sendToBack());
+        
         fabricCanvas.renderAll(); // Force a re-render
 
         // Update floor plan data and calculate GIA
@@ -264,6 +286,10 @@ export const Canvas = () => {
     if (!fabricCanvasRef.current) return;
     
     const currentPlan = floorPlans[currentFloor];
+    
+    // Ensure the grid is visible
+    gridLayerRef.current.forEach(gridObj => gridObj.sendToBack());
+    
     currentPlan.strokes.forEach(stroke => {
       const polyline = new fabric.Polyline(
         stroke.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
@@ -298,7 +324,20 @@ export const Canvas = () => {
     const objects = fabricCanvasRef.current.getObjects().filter(obj => 
       obj.type === 'path' || obj.type === 'polyline'
     );
-    objects.forEach((obj) => fabricCanvasRef.current!.remove(obj));
+    
+    // Filter out grid objects from the objects to be removed
+    const gridObjectIds = new Set(gridLayerRef.current.map(obj => obj.id));
+    const drawingsToRemove = objects.filter(obj => !gridObjectIds.has(obj.id));
+    
+    drawingsToRemove.forEach((obj) => fabricCanvasRef.current!.remove(obj));
+    
+    // Ensure grid is still visible
+    gridLayerRef.current.forEach(gridObj => {
+      if (!fabricCanvasRef.current!.contains(gridObj)) {
+        fabricCanvasRef.current!.add(gridObj);
+      }
+      gridObj.sendToBack();
+    });
     
     fabricCanvasRef.current.renderAll();
   };
