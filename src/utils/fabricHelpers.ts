@@ -30,7 +30,11 @@ export const initializeDrawingBrush = (canvas: Canvas) => {
  * @param width Width to set
  * @param height Height to set
  */
-export const setCanvasDimensions = (canvas: Canvas, width: number, height: number) => {
+export const setCanvasDimensions = (
+  canvas: Canvas, 
+  width: number, 
+  height: number
+) => {
   if (!canvas) {
     console.error("Cannot set dimensions: canvas is null");
     return;

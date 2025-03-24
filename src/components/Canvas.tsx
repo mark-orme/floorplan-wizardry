@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   Canvas as FabricCanvas, 
@@ -442,6 +441,7 @@ export const Canvas = () => {
       
       if (fabricCanvasRef.current) {
         console.log("Updating fabric canvas dimensions");
+        // Fix here: Pass a single object with width and height instead of three arguments
         setCanvasDimensions(fabricCanvasRef.current, newWidth, newHeight);
         createGrid(fabricCanvasRef.current);
         fabricCanvasRef.current.renderAll();
