@@ -1,4 +1,3 @@
-
 import React, { memo, useEffect, useState } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
