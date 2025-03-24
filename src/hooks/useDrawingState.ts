@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -8,7 +7,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { adjustPointForPanning } from "@/utils/geometry";
+import { adjustPointForPanning, snapToGrid, snapPointsToGrid } from "@/utils/geometry";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -68,10 +67,15 @@ export const useDrawingState = ({
     const pointer = fabricCanvasRef.current.getPointer(e.e);
     
     // Convert from pixel coordinates to meter coordinates
-    const startPoint = {
+    const rawStartPoint = {
       x: pointer.x / PIXELS_PER_METER,
       y: pointer.y / PIXELS_PER_METER
     };
+    
+    // Snap the start point to the grid immediately for better accuracy
+    const startPoint = tool === 'straightLine' 
+      ? snapPointsToGrid([rawStartPoint], true)[0] // Force snap to exact grid for wall tool
+      : rawStartPoint;
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -98,10 +102,15 @@ export const useDrawingState = ({
     const pointer = fabricCanvasRef.current.getPointer(e.e);
     
     // Convert from pixel coordinates to meter coordinates
-    const currentPoint = {
+    const rawCurrentPoint = {
       x: pointer.x / PIXELS_PER_METER,
       y: pointer.y / PIXELS_PER_METER
     };
+    
+    // Snap the current point to grid immediately for better accuracy
+    const currentPoint = tool === 'straightLine'
+      ? snapPointsToGrid([rawCurrentPoint], true)[0] // Force snap to exact grid for wall tool
+      : rawCurrentPoint;
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -111,6 +120,7 @@ export const useDrawingState = ({
     
     setDrawingState(prev => {
       // Only calculate midpoint if we have both start and current points
+      // Use the grid-snapped points for more accurate midpoint calculation
       const midPoint = prev.startPoint ? 
         calculateMidpoint(prev.startPoint, currentPoint) : null;
       
@@ -130,7 +140,7 @@ export const useDrawingState = ({
     });
     
     animationFrameRef.current = null;
-  }, [fabricCanvasRef, calculateMidpoint]);
+  }, [fabricCanvasRef, calculateMidpoint, tool]);
 
   // Mouse move handler with throttling
   const handleMouseMove = useCallback((e: any) => {
@@ -175,8 +185,12 @@ export const useDrawingState = ({
         const startPoint = e.startPoint;
         const endPoint = e.endPoint;
         
-        // Calculate the midpoint in meter coordinates
-        const midPointMeter = calculateMidpoint(startPoint, endPoint);
+        // Apply grid snapping to the endpoints
+        const snappedStartPoint = snapPointsToGrid([startPoint], true)[0];
+        const snappedEndPoint = snapPointsToGrid([endPoint], true)[0];
+        
+        // Calculate the midpoint in meter coordinates using snapped points
+        const midPointMeter = calculateMidpoint(snappedStartPoint, snappedEndPoint);
         
         // Use client coordinates from the event for positioning if available
         const cursorPosition = e.e ? { 
@@ -184,13 +198,11 @@ export const useDrawingState = ({
           y: e.e.clientY || 0 
         } : { x: 0, y: 0 };
         
-        // Calculate approximate screen position for midpoint
-        // This is a simple approximation - for better accuracy we would need
-        // to convert from canvas coordinates to screen coordinates
+        // Update state with snapped points
         setDrawingState({
           isDrawing: true,
-          startPoint: startPoint,
-          currentPoint: endPoint,
+          startPoint: snappedStartPoint,
+          currentPoint: snappedEndPoint,
           cursorPosition: cursorPosition,
           midPoint: cursorPosition // Use cursor position as fallback
         });

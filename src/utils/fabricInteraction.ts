@@ -1,11 +1,10 @@
-
 /**
  * Fabric.js interaction utilities
  * Handles zooming, panning, and other interactive behaviors
  * @module fabricInteraction
  */
 import { Canvas, Point as FabricPoint, Object as FabricObject } from "fabric";
-import { Point } from "@/utils/drawingTypes";
+import { Point, GRID_SIZE } from "@/utils/drawingTypes";
 import { toFabricPoint, createSimplePoint } from "./fabricPointConverter";
 
 /**
@@ -75,7 +74,7 @@ export const addPinchToZoom = (canvas: Canvas) => {
 export const snapToAngle = (
   startPoint: Point, 
   endPoint: Point, 
-  snapThreshold: number = 15
+  snapThreshold: number = 10 // Reduced threshold for better diagonal precision
 ): Point => {
   // Calculate the angle between the points
   const dx = endPoint.x - startPoint.x;
@@ -120,14 +119,23 @@ export const snapToAngle = (
     const distance = Math.sqrt(dx * dx + dy * dy);
     
     // Calculate the new end point based on the snapped angle
-    return createSimplePoint(
+    const rawEndPoint = createSimplePoint(
       startPoint.x + distance * Math.cos(angleInRadians),
       startPoint.y + distance * Math.sin(angleInRadians)
     );
+    
+    // Now also snap the endpoint to the grid for better alignment
+    return {
+      x: Math.round(rawEndPoint.x / GRID_SIZE) * GRID_SIZE,
+      y: Math.round(rawEndPoint.y / GRID_SIZE) * GRID_SIZE
+    };
   }
   
-  // If no snap is needed, return the original end point
-  return endPoint;
+  // If no angle snap is needed, at least snap the point to the grid
+  return {
+    x: Math.round(endPoint.x / GRID_SIZE) * GRID_SIZE,
+    y: Math.round(endPoint.y / GRID_SIZE) * GRID_SIZE
+  };
 };
 
 /**

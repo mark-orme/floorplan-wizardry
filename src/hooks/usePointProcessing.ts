@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing points during drawing
  * @module usePointProcessing
