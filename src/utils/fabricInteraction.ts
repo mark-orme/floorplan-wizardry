@@ -89,10 +89,30 @@ export const enablePanning = (fabricCanvas: Canvas, isPanningEnabled: boolean = 
     let lastPosX = 0;
     let lastPosY = 0;
     
+    // Track if space key is pressed for spacebar+mouse panning
+    let isSpacePressed = false;
+    
+    // Add event listener for keydown/keyup to track space bar state
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        isSpacePressed = true;
+      }
+    };
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        isSpacePressed = false;
+      }
+    };
+    
+    // Add window-level event listeners for keyboard
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
     fabricCanvas.on('mouse:down', (opt) => {
       const evt = opt.e as MouseEvent;
       // Middle mouse button or spacebar + mouse down for panning
-      if ((evt.button === 1 || (evt.code === 'Space' && evt.button === 0)) || isPanningEnabled) {
+      if ((evt.button === 1 || (isSpacePressed && evt.button === 0)) || isPanningEnabled) {
         isPanning = true;
         lastPosX = evt.clientX;
         lastPosY = evt.clientY;
@@ -120,6 +140,15 @@ export const enablePanning = (fabricCanvas: Canvas, isPanningEnabled: boolean = 
       isPanning = false;
       fabricCanvas.setCursor('default');
     });
+    
+    // Clean up function to remove event listeners
+    const cleanupPanning = () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+    
+    // Store cleanup function on the canvas instance for later use
+    (fabricCanvas as any).__panningCleanup = cleanupPanning;
     
     console.log("Panning enabled on canvas");
   } catch (error) {
