@@ -38,12 +38,16 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
    */
   const processPoints = useCallback((points: Point[]): Point[] => {
     if (points.length < 2) {
-      console.error("Not enough points to process");
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Not enough points to process");
+      }
       return points;
     }
     
-    console.log("Processing points:", points);
-    console.log("Current tool:", tool);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Processing points:", points);
+      console.log("Current tool:", tool);
+    }
     
     // Filter out redundant points that are too close together
     let filteredPoints = filterRedundantPoints(points, 0.05);
@@ -61,11 +65,13 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
       const startPoint = snapToGrid(filteredPoints[0]);
       const endPoint = snapToGrid(filteredPoints[filteredPoints.length - 1]);
       
-      console.log("STRICT WALL SNAP - Unit handling:");
-      console.log("- Original start (meters):", filteredPoints[0]);
-      console.log("- Snapped to grid (meters):", startPoint);
-      console.log("- Original end (meters):", filteredPoints[filteredPoints.length - 1]);
-      console.log("- Snapped to grid (meters):", endPoint);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("STRICT WALL SNAP - Unit handling:");
+        console.log("- Original start (meters):", filteredPoints[0]);
+        console.log("- Snapped to grid (meters):", startPoint);
+        console.log("- Original end (meters):", filteredPoints[filteredPoints.length - 1]);
+        console.log("- Snapped to grid (meters):", endPoint);
+      }
       
       // Create a perfectly straight line with exact grid alignment
       finalPoints = straightenStroke([startPoint, endPoint]);
@@ -74,10 +80,12 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
       // to guarantee perfect alignment
       finalPoints = finalPoints.map(point => snapToGrid(point));
       
-      console.log("Final wall points (after processing):", finalPoints);
-      
-      // Debug visualization of wall endpoints (in meters)
-      console.log(`Final wall from (${finalPoints[0].x}m, ${finalPoints[0].y}m) to (${finalPoints[1].x}m, ${finalPoints[1].y}m)`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Final wall points (after processing):", finalPoints);
+        
+        // Debug visualization of wall endpoints (in meters)
+        console.log(`Final wall from (${finalPoints[0].x}m, ${finalPoints[0].y}m) to (${finalPoints[1].x}m, ${finalPoints[1].y}m)`);
+      }
     } else {
       // Regular snapping for other tools
       finalPoints = snapPointsToGrid(filteredPoints);
@@ -89,13 +97,17 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
       const displayLength = lengthInMeters.toFixed(1);
       toast.success(`Wall length: ${displayLength}m`);
       
-      // Log the exact wall length for debugging
-      console.log(`Wall length: ${lengthInMeters}m (using GRID_SIZE: ${GRID_SIZE}m)`);
+      if (process.env.NODE_ENV === 'development') {
+        // Log the exact wall length for debugging
+        console.log(`Wall length: ${lengthInMeters}m (using GRID_SIZE: ${GRID_SIZE}m)`);
+      }
     }
     
     // Make sure we still have at least 2 points after all processing
     if (finalPoints.length < 2) {
-      console.error("Not enough points after processing");
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Not enough points after processing");
+      }
       return points; // Return original points if processing failed
     }
     
@@ -107,7 +119,7 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
    * Properly accounts for zoom level
    */
   const convertToPixelPoints = useCallback((meterPoints: Point[], zoom: number = 1): Point[] => {
-    return meterPoints.map(p => metersToPixels(p, zoom));
+    return meterPoints.map(point => metersToPixels(point, zoom));
   }, []);
   
   /**
@@ -115,7 +127,7 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
    * Properly accounts for zoom level
    */
   const convertToMeterPoints = useCallback((pixelPoints: Point[], zoom: number = 1): Point[] => {
-    return pixelPoints.map(p => pixelsToMeters(p, zoom));
+    return pixelPoints.map(point => pixelsToMeters(point, zoom));
   }, []);
   
   /**
@@ -129,10 +141,10 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
     
     // Check if first and last points are close enough (within 0.05m)
     const distanceThreshold = 0.05;
-    const dx = Math.abs(lastPoint.x - firstPoint.x);
-    const dy = Math.abs(lastPoint.y - firstPoint.y);
+    const distanceX = Math.abs(lastPoint.x - firstPoint.x);
+    const distanceY = Math.abs(lastPoint.y - firstPoint.y);
     
-    return dx < distanceThreshold && dy < distanceThreshold;
+    return distanceX < distanceThreshold && distanceY < distanceThreshold;
   }, []);
   
   return { 

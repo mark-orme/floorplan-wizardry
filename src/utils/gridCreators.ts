@@ -31,18 +31,25 @@ export const createSmallGrid = (
   canvasWidth: number,
   canvasHeight: number
 ): Line[] => {
-  console.log("Creating small grid lines");
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Creating small grid lines");
+  }
+  
   const smallGridObjects: Line[] = [];
   
   // Safety check for dimensions
   if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
-    console.error("Invalid canvas dimensions for small grid:", canvasWidth, canvasHeight);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Invalid canvas dimensions for small grid:", canvasWidth, canvasHeight);
+    }
     return smallGridObjects;
   }
   
   // Only skip small grid if dimensions are EXTREMELY large
   if (canvasWidth * canvasHeight > 3000000) {
-    console.log("Skipping small grid creation for performance - too many lines would be created");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Skipping small grid creation for performance - too many lines would be created");
+    }
     return smallGridObjects;
   }
   
@@ -51,9 +58,9 @@ export const createSmallGrid = (
   
   // Ensure we have enough grid lines by creating more than needed
   // Start with negative values to ensure grid covers the entire visible area
-  for (let i = -canvasWidth/2; i <= canvasWidth*1.5 && smallGridCount < MAX_SMALL_GRID_LINES; i += smallGridStep) {
+  for (let position = -canvasWidth/2; position <= canvasWidth*1.5 && smallGridCount < MAX_SMALL_GRID_LINES; position += smallGridStep) {
     // Create more visible lines with increased opacity and slightly darker color
-    const smallGridLine = new Line([i, -canvasHeight/2, i, canvasHeight*1.5], {
+    const smallGridLine = new Line([position, -canvasHeight/2, position, canvasHeight*1.5], {
       stroke: "#C0D5E0", // Darker blue for better visibility
       selectable: false,
       evented: false,
@@ -68,8 +75,8 @@ export const createSmallGrid = (
   }
   
   // Create horizontal small grid lines
-  for (let i = -canvasHeight/2; i <= canvasHeight*1.5 && smallGridCount < MAX_SMALL_GRID_LINES*2; i += smallGridStep) {
-    const smallGridLine = new Line([-canvasWidth/2, i, canvasWidth*1.5, i], {
+  for (let position = -canvasHeight/2; position <= canvasHeight*1.5 && smallGridCount < MAX_SMALL_GRID_LINES*2; position += smallGridStep) {
+    const smallGridLine = new Line([-canvasWidth/2, position, canvasWidth*1.5, position], {
       stroke: "#C0D5E0", // Darker blue for better visibility
       selectable: false,
       evented: false,
@@ -83,7 +90,10 @@ export const createSmallGrid = (
     smallGridCount++;
   }
   
-  console.log(`Created ${smallGridObjects.length} small grid lines`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Created ${smallGridObjects.length} small grid lines`);
+  }
+  
   return smallGridObjects;
 };
 
@@ -102,12 +112,17 @@ export const createLargeGrid = (
   canvasWidth: number,
   canvasHeight: number
 ): Line[] => {
-  console.log("Creating large grid lines");
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Creating large grid lines");
+  }
+  
   const largeGridObjects: Line[] = [];
   
   // Safety check for dimensions
   if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
-    console.error("Invalid canvas dimensions for large grid:", canvasWidth, canvasHeight);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Invalid canvas dimensions for large grid:", canvasWidth, canvasHeight);
+    }
     return largeGridObjects;
   }
   
@@ -116,8 +131,8 @@ export const createLargeGrid = (
   
   // Create more large grid lines with extended coverage
   // Start with negative values to ensure grid covers the entire visible area
-  for (let i = -canvasWidth/2; i <= canvasWidth*1.5 && largeGridCount < MAX_LARGE_GRID_LINES; i += largeGridStep) {
-    const largeGridLine = new Line([i, -canvasHeight/2, i, canvasHeight*1.5], {
+  for (let position = -canvasWidth/2; position <= canvasWidth*1.5 && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+    const largeGridLine = new Line([position, -canvasHeight/2, position, canvasHeight*1.5], {
       stroke: "#81B7CC", // Darker blue for better visibility
       selectable: false,
       evented: false,
@@ -132,8 +147,8 @@ export const createLargeGrid = (
   }
   
   // Create horizontal large grid lines
-  for (let i = -canvasHeight/2; i <= canvasHeight*1.5 && largeGridCount < MAX_LARGE_GRID_LINES; i += largeGridStep) {
-    const largeGridLine = new Line([-canvasWidth/2, i, canvasWidth*1.5, i], {
+  for (let position = -canvasHeight/2; position <= canvasHeight*1.5 && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+    const largeGridLine = new Line([-canvasWidth/2, position, canvasWidth*1.5, position], {
       stroke: "#81B7CC", // Darker blue for better visibility
       selectable: false,
       evented: false,
@@ -147,7 +162,9 @@ export const createLargeGrid = (
     largeGridCount++;
   }
   
-  console.log(`Created ${largeGridObjects.length} large grid lines`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Created ${largeGridObjects.length} large grid lines`);
+  }
+  
   return largeGridObjects;
 };
-

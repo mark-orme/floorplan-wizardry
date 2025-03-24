@@ -1,3 +1,4 @@
+
 /**
  * Main Canvas component for floor plan drawing
  * Orchestrates the canvas setup, grid creation, and drawing tools
@@ -51,7 +52,9 @@ export const Canvas = () => {
   // We now default to select tool on initial load
   useEffect(() => {
     if (isFirstMountRef.current && !isLoading && debugInfo.canvasInitialized) {
-      console.log("Using default tool: select");
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Using default tool: select");
+      }
       handleToolChange("select");
       isFirstMountRef.current = false;
     }
@@ -64,7 +67,9 @@ export const Canvas = () => {
       return;
     }
     
-    console.log("Loading initial data");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Loading initial data");
+    }
     loadData();
     appInitializedRef.current = true;
     initialDataLoadedRef.current = true;
@@ -79,11 +84,13 @@ export const Canvas = () => {
   
   // Log tooltip visibility for debugging
   useEffect(() => {
-    console.log("Tooltip visibility check:", {
-      isDrawing: !!drawingState?.isDrawing,
-      tool,
-      isVisible: isTooltipVisible
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Tooltip visibility check:", {
+        isDrawing: !!drawingState?.isDrawing,
+        tool,
+        isVisible: isTooltipVisible
+      });
+    }
   }, [drawingState?.isDrawing, tool, isTooltipVisible]);
 
   return (

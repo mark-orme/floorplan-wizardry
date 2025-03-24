@@ -39,23 +39,31 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
-  console.log("createGrid called with dimensions:", canvasDimensions);
+  if (process.env.NODE_ENV === 'development') {
+    console.log("createGrid called with dimensions:", canvasDimensions);
+  }
   
   // Basic validation
   if (!canvas) {
-    console.error("Canvas is null in createGrid");
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Canvas is null in createGrid");
+    }
     return [];
   }
   
   if (!gridLayerRef) {
-    console.error("gridLayerRef is null in createGrid");
+    if (process.env.NODE_ENV === 'development') {
+      console.error("gridLayerRef is null in createGrid");
+    }
     return [];
   }
 
   // Ensure valid dimensions
   if (!canvasDimensions.width || !canvasDimensions.height || 
       canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
-    console.error("Invalid dimensions in createGrid:", canvasDimensions);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Invalid dimensions in createGrid:", canvasDimensions);
+    }
     return gridLayerRef.current;
   }
   
@@ -64,7 +72,9 @@ export const createGrid = (
   
   // Attempt to acquire a lock for grid creation
   if (!acquireGridCreationLock()) {
-    console.log("Grid creation already in progress (locked), skipping");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Grid creation already in progress (locked), skipping");
+    }
     return gridLayerRef.current;
   }
   
@@ -74,26 +84,33 @@ export const createGrid = (
   // Schedule a safety timeout to reset the flag after 5 seconds
   const safetyTimeoutId = scheduleGridProgressReset(gridManager.safetyTimeout);
   
-  console.log("Starting grid creation with lock ID:", lockId);
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Starting grid creation with lock ID:", lockId);
+  }
   
   try {
     // Get the current timestamp
-    const now = Date.now();
-    gridManager.lastCreationTime = now;
+    const currentTime = Date.now();
+    gridManager.lastCreationTime = currentTime;
     
     // Store the dimensions for future reference
     gridManager.lastDimensions = { ...canvasDimensions };
     
     // Remove existing grid objects if any
     if (gridLayerRef.current.length > 0) {
-      console.log(`Removing ${gridLayerRef.current.length} existing grid objects`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Removing ${gridLayerRef.current.length} existing grid objects`);
+      }
+      
       const existingObjects = [...gridLayerRef.current];
-      existingObjects.forEach(obj => {
-        if (canvas.contains(obj)) {
+      existingObjects.forEach(object => {
+        if (canvas.contains(object)) {
           try {
-            canvas.remove(obj);
-          } catch (err) {
-            console.warn("Error removing existing grid object:", err);
+            canvas.remove(object);
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn("Error removing existing grid object:", error);
+            }
           }
         }
       });
@@ -104,17 +121,25 @@ export const createGrid = (
     const canvasWidth = Math.max(canvas.width || canvasDimensions.width, 200);
     const canvasHeight = Math.max(canvas.height || canvasDimensions.height, 200);
     
-    console.log(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
+    }
     
     // Create all grid components at once
     const result = renderGridComponents(canvas, canvasWidth, canvasHeight);
     
     if (result.gridObjects.length === 0) {
-      console.warn("No grid objects were created - trying hardcoded dimensions");
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("No grid objects were created - trying hardcoded dimensions");
+      }
+      
       // Try with hardcoded dimensions as fallback
       const fallbackResult = renderGridComponents(canvas, 800, 600);
       if (fallbackResult.gridObjects.length > 0) {
-        console.log("Fallback grid creation succeeded");
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Fallback grid creation succeeded");
+        }
+        
         gridLayerRef.current = fallbackResult.gridObjects;
         gridManager.exists = true;
         setDebugInfo(prev => ({...prev, gridCreated: true}));
@@ -137,8 +162,10 @@ export const createGrid = (
       // Set the grid exists flag
       gridManager.exists = true;
       
-      // Detailed grid creation log
-      console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large, ${result.markers.length} markers)`);
+      if (process.env.NODE_ENV === 'development') {
+        // Detailed grid creation log
+        console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large, ${result.markers.length} markers)`);
+      }
       
       // Force a complete render
       canvas.requestRenderAll();
@@ -156,7 +183,10 @@ export const createGrid = (
     }
     
     // If we got here, both attempts failed
-    console.error("Grid creation failed - all attempts returned no objects");
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Grid creation failed - all attempts returned no objects");
+    }
+    
     setHasError(true);
     setErrorMessage("Failed to create grid after multiple attempts");
     
@@ -167,16 +197,19 @@ export const createGrid = (
     releaseGridCreationLock(lockId);
     
     return [];
-  } catch (err) {
+  } catch (error) {
     // Clear the safety timeout
     clearTimeout(safetyTimeoutId);
-    console.error("Error creating grid:", err);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error creating grid:", error);
+    }
     
     // Release the lock in case of error
     releaseGridCreationLock(lockId);
     
     setHasError(true);
-    setErrorMessage(`Error creating grid: ${err instanceof Error ? err.message : String(err)}`);
+    setErrorMessage(`Error creating grid: ${error instanceof Error ? error.message : String(error)}`);
     return [];
   }
 };

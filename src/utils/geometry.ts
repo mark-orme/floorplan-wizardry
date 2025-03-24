@@ -35,9 +35,11 @@ export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
     y: snappedY
   };
 
-  console.log(
-    `SnapToGrid: (${point.x.toFixed(3)}m, ${point.y.toFixed(3)}m) → (${result.x.toFixed(3)}m, ${result.y.toFixed(3)}m) @ grid ${gridSize}m`
-  );
+  if (process.env.NODE_ENV === 'development') {
+    console.log(
+      `SnapToGrid: (${point.x.toFixed(3)}m, ${point.y.toFixed(3)}m) → (${result.x.toFixed(3)}m, ${result.y.toFixed(3)}m) @ grid ${gridSize}m`
+    );
+  }
 
   return result;
 }
@@ -53,7 +55,7 @@ export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
 export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stroke => {
   if (!points || points.length === 0) return [];
   
-  return points.map(p => snapToGrid(p, GRID_SIZE));
+  return points.map(point => snapToGrid(point, GRID_SIZE));
 };
 
 /**
@@ -81,28 +83,28 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   if (!stroke || stroke.length < 2) return stroke;
   
   // Use only start and end points for straightening
-  const [start, end] = [stroke[0], stroke[1]];
+  const [startPoint, endPoint] = [stroke[0], stroke[1]];
   
   // Ensure both points are exactly on grid
   const gridStart = {
-    x: Number(Math.round(start.x / GRID_SIZE) * GRID_SIZE).toFixed(1),
-    y: Number(Math.round(start.y / GRID_SIZE) * GRID_SIZE).toFixed(1)
+    x: Number(Math.round(startPoint.x / GRID_SIZE) * GRID_SIZE).toFixed(1),
+    y: Number(Math.round(startPoint.y / GRID_SIZE) * GRID_SIZE).toFixed(1)
   };
   
   const gridEnd = {
-    x: Number(Math.round(end.x / GRID_SIZE) * GRID_SIZE).toFixed(1),
-    y: Number(Math.round(end.y / GRID_SIZE) * GRID_SIZE).toFixed(1)
+    x: Number(Math.round(endPoint.x / GRID_SIZE) * GRID_SIZE).toFixed(1),
+    y: Number(Math.round(endPoint.y / GRID_SIZE) * GRID_SIZE).toFixed(1)
   };
   
   // Calculate new dx/dy after grid snapping
-  const dx = Number(gridEnd.x) - Number(gridStart.x);
-  const dy = Number(gridEnd.y) - Number(gridStart.y);
-  const absDx = Math.abs(dx);
-  const absDy = Math.abs(dy);
+  const distanceX = Number(gridEnd.x) - Number(gridStart.x);
+  const distanceY = Number(gridEnd.y) - Number(gridStart.y);
+  const absDistanceX = Math.abs(distanceX);
+  const absDistanceY = Math.abs(distanceY);
   
   // Determine if the line should be horizontal, vertical, or diagonal
   // Use stricter comparison for wall precision
-  if (absDx >= absDy * HORIZONTAL_BIAS) { 
+  if (absDistanceX >= absDistanceY * HORIZONTAL_BIAS) { 
     // Horizontal line - keep same Y
     return [
       { 
@@ -114,7 +116,7 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
         y: Number(gridStart.y) 
       }
     ];
-  } else if (absDy >= absDx * VERTICAL_BIAS) { 
+  } else if (absDistanceY >= absDistanceX * VERTICAL_BIAS) { 
     // Vertical line - keep same X
     return [
       { 
@@ -128,9 +130,9 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
     ];
   } else {
     // Diagonal line at 45 degrees
-    const length = Math.max(absDx, absDy);
-    const signX = Math.sign(dx);
-    const signY = Math.sign(dy);
+    const lineLength = Math.max(absDistanceX, absDistanceY);
+    const directionX = Math.sign(distanceX);
+    const directionY = Math.sign(distanceY);
     
     // Force exact 45-degree angle
     return [
@@ -139,8 +141,8 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
         y: Number(gridStart.y) 
       },
       { 
-        x: Number((Number(gridStart.x) + (length * signX)).toFixed(1)), 
-        y: Number((Number(gridStart.y) + (length * signY)).toFixed(1)) 
+        x: Number((Number(gridStart.x) + (lineLength * directionX)).toFixed(1)), 
+        y: Number((Number(gridStart.y) + (lineLength * directionY)).toFixed(1)) 
       }
     ];
   }
@@ -241,11 +243,11 @@ export const filterRedundantPoints = (stroke: Stroke, minDistance: number = CLOS
  * @returns Distance in meters, rounded to 1 decimal place for better usability
  */
 export const calculateDistance = (startPoint: Point, endPoint: Point): number => {
-  const dx = endPoint.x - startPoint.x;
-  const dy = endPoint.y - startPoint.y;
+  const distanceX = endPoint.x - startPoint.x;
+  const distanceY = endPoint.y - startPoint.y;
   
   // Raw distance in meters with full precision
-  const rawDistance = Math.sqrt(dx * dx + dy * dy);
+  const rawDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
   
   // Round to exactly 1 decimal place (0.1m increments) to match grid size
   // This ensures we only show measurements like 1.0m, 1.1m, 1.2m, etc.

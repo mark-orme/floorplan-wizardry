@@ -17,26 +17,26 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
   
   try {
     // Extract all path commands
-    path.forEach((cmd, i) => {
-      if (Array.isArray(cmd)) {
-        if (cmd[0] === 'M' || cmd[0] === 'L') { // Move to or Line to
+    path.forEach((command, index) => {
+      if (Array.isArray(command)) {
+        if (command[0] === 'M' || command[0] === 'L') { // Move to or Line to
           points.push({ 
-            x: cmd[1] / PIXELS_PER_METER, 
-            y: cmd[2] / PIXELS_PER_METER 
+            x: command[1] / PIXELS_PER_METER, 
+            y: command[2] / PIXELS_PER_METER 
           });
         }
-        else if (cmd[0] === 'Q') { // Quadratic curve
+        else if (command[0] === 'Q') { // Quadratic curve
           // Add the control point and end point
           points.push({ 
-            x: cmd[3] / PIXELS_PER_METER, 
-            y: cmd[4] / PIXELS_PER_METER 
+            x: command[3] / PIXELS_PER_METER, 
+            y: command[4] / PIXELS_PER_METER 
           }); // End point of curve
         }
-        else if (cmd[0] === 'C') { // Bezier curve
+        else if (command[0] === 'C') { // Bezier curve
           // Add the end point of the curve
           points.push({ 
-            x: cmd[5] / PIXELS_PER_METER, 
-            y: cmd[6] / PIXELS_PER_METER 
+            x: command[5] / PIXELS_PER_METER, 
+            y: command[6] / PIXELS_PER_METER 
           });
         }
       }
@@ -45,12 +45,12 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
     // If we couldn't extract points properly, at least get first and last
     if (points.length < 2 && path.length > 1) {
       // Try to get just the first and last points
-      for (const cmd of path) {
-        if (Array.isArray(cmd) && cmd.length >= 3) {
-          if (cmd[0] === 'M' || cmd[0] === 'L') {
+      for (const command of path) {
+        if (Array.isArray(command) && command.length >= 3) {
+          if (command[0] === 'M' || command[0] === 'L') {
             points.push({ 
-              x: cmd[1] / PIXELS_PER_METER, 
-              y: cmd[2] / PIXELS_PER_METER 
+              x: command[1] / PIXELS_PER_METER, 
+              y: command[2] / PIXELS_PER_METER 
             });
             break;
           }
@@ -59,13 +59,13 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
       
       // Get the last point
       for (let i = path.length - 1; i >= 0; i--) {
-        const cmd = path[i];
-        if (Array.isArray(cmd) && cmd.length >= 3) {
-          if (cmd[0] === 'L' || cmd[0] === 'C' || cmd[0] === 'Q') {
-            const lastIdx = cmd[0] === 'L' ? 1 : cmd[0] === 'Q' ? 3 : 5;
+        const command = path[i];
+        if (Array.isArray(command) && command.length >= 3) {
+          if (command[0] === 'L' || command[0] === 'C' || command[0] === 'Q') {
+            const lastIndex = command[0] === 'L' ? 1 : command[0] === 'Q' ? 3 : 5;
             points.push({ 
-              x: cmd[lastIdx] / PIXELS_PER_METER, 
-              y: cmd[lastIdx + 1] / PIXELS_PER_METER 
+              x: command[lastIndex] / PIXELS_PER_METER, 
+              y: command[lastIndex + 1] / PIXELS_PER_METER 
             });
             break;
           }
@@ -73,7 +73,9 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
       }
     }
   } catch (error) {
-    console.error("Error converting fabric path to points:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error converting fabric path to points:", error);
+    }
   }
   
   // Filter out points that are too close to each other
@@ -85,11 +87,11 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
       const lastPoint = filteredPoints[filteredPoints.length - 1];
       const currentPoint = points[i];
       
-      const dx = currentPoint.x - lastPoint.x;
-      const dy = currentPoint.y - lastPoint.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      const distanceX = currentPoint.x - lastPoint.x;
+      const distanceY = currentPoint.y - lastPoint.y;
+      const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
       
-      if (distance >= minDistance) {
+      if (pointDistance >= minDistance) {
         filteredPoints.push(currentPoint);
       }
     }
@@ -128,41 +130,41 @@ export const cleanPathData = (pathData: any[]): any[] => {
   if (!pathData || !Array.isArray(pathData) || pathData.length < 2) return pathData;
   
   const result: any[] = [];
-  let prevPoint: Point | null = null;
+  let previousPoint: Point | null = null;
   const minDistance = 5; // Minimum pixel distance
   
   // Process each command
-  for (const cmd of pathData) {
-    if (!Array.isArray(cmd)) continue;
+  for (const command of pathData) {
+    if (!Array.isArray(command)) continue;
     
-    const [command, ...coords] = cmd;
+    const [commandType, ...coordinates] = command;
     
-    if (command === 'M') {
+    if (commandType === 'M') {
       // Always keep the first move command
-      result.push(cmd);
-      prevPoint = { x: coords[0], y: coords[1] };
+      result.push(command);
+      previousPoint = { x: coordinates[0], y: coordinates[1] };
     } 
-    else if (command === 'L') {
-      const currentPoint = { x: coords[0], y: coords[1] };
+    else if (commandType === 'L') {
+      const currentPoint = { x: coordinates[0], y: coordinates[1] };
       
-      if (prevPoint) {
-        const dx = currentPoint.x - prevPoint.x;
-        const dy = currentPoint.y - prevPoint.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+      if (previousPoint) {
+        const distanceX = currentPoint.x - previousPoint.x;
+        const distanceY = currentPoint.y - previousPoint.y;
+        const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
         
         // Only add line commands if they're far enough from the previous point
-        if (distance >= minDistance) {
-          result.push(cmd);
-          prevPoint = currentPoint;
+        if (pointDistance >= minDistance) {
+          result.push(command);
+          previousPoint = currentPoint;
         }
       } else {
-        result.push(cmd);
-        prevPoint = currentPoint;
+        result.push(command);
+        previousPoint = currentPoint;
       }
     }
     else {
       // Keep other commands (like curves) as they are
-      result.push(cmd);
+      result.push(command);
     }
   }
   

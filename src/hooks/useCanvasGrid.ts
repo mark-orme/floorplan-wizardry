@@ -66,15 +66,19 @@ export const useCanvasGrid = ({
    * @returns {FabricObject[]} Array of created grid objects (lines)
    */
   const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
-    console.log("createGridCallback invoked with FORCED CREATION", {
-      canvasDimensions,
-      gridExists: gridLayerRef.current.length > 0,
-      initialized: gridManager.initialized
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log("createGridCallback invoked with FORCED CREATION", {
+        canvasDimensions,
+        gridExists: gridLayerRef.current.length > 0,
+        initialized: gridManager.initialized
+      });
+    }
     
     // Basic validation
     if (!canvas) {
-      console.error("Canvas is null in createGridCallback");
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Canvas is null in createGridCallback");
+      }
       return [];
     }
     
@@ -83,9 +87,13 @@ export const useCanvasGrid = ({
     
     // Increment attempt counter
     attemptCountRef.current++;
-    console.log(`Grid creation attempt #${attemptCountRef.current}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Grid creation attempt #${attemptCountRef.current}`);
+    }
     
-    console.log("Forcing grid creation with dimensions:", canvasDimensions);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Forcing grid creation with dimensions:", canvasDimensions);
+    }
     
     try {
       // Create the grid by direct call to canvasGrid.ts
@@ -99,7 +107,9 @@ export const useCanvasGrid = ({
       );
       
       if (grid && grid.length > 0) {
-        console.log(`Grid created successfully with ${grid.length} objects`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Grid created successfully with ${grid.length} objects`);
+        }
         // Reset attempt counter on success
         attemptCountRef.current = 0;
         // Force a render
@@ -107,13 +117,17 @@ export const useCanvasGrid = ({
         
         return grid;
       } else {
-        console.warn("Grid creation returned no objects");
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Grid creation returned no objects");
+        }
         return [];
       }
-    } catch (err) {
-      console.error("Critical error in createGridCallback:", err);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Critical error in createGridCallback:", error);
+      }
       setHasError(true);
-      setErrorMessage(`Grid creation failed: ${err instanceof Error ? err.message : String(err)}`);
+      setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);
       
       return [];
     }
@@ -121,4 +135,3 @@ export const useCanvasGrid = ({
 
   return createGridCallback;
 };
-

@@ -30,12 +30,17 @@ export const renderGridComponents = (
   canvasWidth: number,
   canvasHeight: number
 ): GridComponentsResult => {
-  console.log(`Rendering grid components for canvas ${canvasWidth}x${canvasHeight}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Rendering grid components for canvas ${canvasWidth}x${canvasHeight}`);
+  }
+  
   const gridObjects: any[] = [];
   
   // Safety check for dimensions
   if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
-    console.error("Invalid canvas dimensions for grid rendering:", canvasWidth, canvasHeight);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Invalid canvas dimensions for grid rendering:", canvasWidth, canvasHeight);
+    }
     return { gridObjects: [], smallGridLines: [], largeGridLines: [], markers: [] };
   }
   
@@ -48,7 +53,10 @@ export const renderGridComponents = (
         
     // Create large grid lines first (so they appear behind small grid lines)
     const largeGridLines = createLargeGrid(canvas, canvasWidth, canvasHeight);
-    console.log(`Created ${largeGridLines.length} large grid lines`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Created ${largeGridLines.length} large grid lines`);
+    }
+    
     largeGridLines.forEach(line => {
       gridBatch.push(line);
       gridObjects.push(line);
@@ -56,50 +64,69 @@ export const renderGridComponents = (
         
     // Create small grid lines
     const smallGridLines = createSmallGrid(canvas, canvasWidth, canvasHeight);
-    console.log(`Created ${smallGridLines.length} small grid lines`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Created ${smallGridLines.length} small grid lines`);
+    }
+    
     smallGridLines.forEach(line => {
       gridBatch.push(line);
       gridObjects.push(line);
     });
 
     // For debugging
-    console.log(`Adding ${gridBatch.length} grid lines to canvas in batch`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Adding ${gridBatch.length} grid lines to canvas in batch`);
+    }
     
     // Add all grid objects at once - using a safer approach with explicit error handling
     if (gridBatch.length > 0) {
       try {
         canvas.add(...gridBatch);
-        console.log(`Successfully added ${gridBatch.length} grid lines to canvas`);
-      } catch (err) {
-        console.error("Error adding grid batch to canvas:", err);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Successfully added ${gridBatch.length} grid lines to canvas`);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error adding grid batch to canvas:", error);
+        }
         
         // Fallback: add one by one
         let successCount = 0;
-        gridBatch.forEach((obj, idx) => {
+        gridBatch.forEach((object, index) => {
           try {
-            canvas.add(obj);
+            canvas.add(object);
             successCount++;
             // Log only occasionally to avoid console spam
-            if (idx % 50 === 0) {
-              console.log(`Added grid line ${idx}/${gridBatch.length}`);
+            if (process.env.NODE_ENV === 'development' && index % 50 === 0) {
+              console.log(`Added grid line ${index}/${gridBatch.length}`);
             }
-          } catch (e) {
-            console.warn("Error adding individual grid line:", e);
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn("Error adding individual grid line:", error);
+            }
           }
         });
-        console.log(`Added ${successCount}/${gridBatch.length} grid lines individually after batch failure`);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Added ${successCount}/${gridBatch.length} grid lines individually after batch failure`);
+        }
       }
     }
     
     // Add scale marker (1m) - add it separately to make it appear on top
     const markers = createScaleMarkers(canvas, canvasWidth, canvasHeight);
-    console.log(`Created ${markers.length} scale markers`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Created ${markers.length} scale markers`);
+    }
+    
     markers.forEach(marker => {
       try {
         canvas.add(marker);
         gridObjects.push(marker);
-      } catch (err) {
-        console.warn("Error adding marker:", err);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Error adding marker:", error);
+        }
       }
     });
     
@@ -109,10 +136,15 @@ export const renderGridComponents = (
     // Force a render
     canvas.requestRenderAll();
     
-    console.log(`Total grid objects created: ${gridObjects.length}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Total grid objects created: ${gridObjects.length}`);
+    }
+    
     return { gridObjects, smallGridLines, largeGridLines, markers };
   } catch (error) {
-    console.error("Critical error in renderGridComponents:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Critical error in renderGridComponents:", error);
+    }
     return { gridObjects: [], smallGridLines: [], largeGridLines: [], markers: [] };
   }
 };
@@ -130,26 +162,32 @@ export const arrangeGridObjects = (
   largeGridLines: any[],
   markers: any[]
 ): void => {
-  console.log("Arranging grid objects in correct z-order");
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Arranging grid objects in correct z-order");
+  }
   
   try {
     // First send large grid lines to the back
-    largeGridLines.forEach(obj => {
+    largeGridLines.forEach(object => {
       try {
         // Use sendObjectToBack instead of sendToBack
-        canvas.sendObjectToBack(obj);
-      } catch (err) {
-        console.warn("Error arranging large grid line:", err);
+        canvas.sendObjectToBack(object);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Error arranging large grid line:", error);
+        }
       }
     });
     
     // Then send small grid lines just above the large ones
-    smallGridLines.forEach(obj => {
+    smallGridLines.forEach(object => {
       try {
         // Use bringObjectForward instead of bringForward
-        canvas.bringObjectForward(obj);
-      } catch (err) {
-        console.warn("Error arranging small grid line:", err);
+        canvas.bringObjectForward(object);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Error arranging small grid line:", error);
+        }
       }
     });
     
@@ -158,15 +196,22 @@ export const arrangeGridObjects = (
       try {
         // Use bringObjectToFront instead of bringToFront
         canvas.bringObjectToFront(marker);
-      } catch (err) {
-        console.warn("Error arranging marker:", err);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("Error arranging marker:", error);
+        }
       }
     });
     
     // Final render
     canvas.requestRenderAll();
-    console.log("Grid objects arranged successfully");
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Grid objects arranged successfully");
+    }
   } catch (error) {
-    console.error("Error in arrangeGridObjects:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error in arrangeGridObjects:", error);
+    }
   }
 };

@@ -52,7 +52,12 @@ export const shouldSkipSmallGrid = (canvasWidth: number, canvasHeight: number): 
   const estimatedLinesY = Math.ceil(canvasHeight / (SMALL_GRID * smallGridSkip));
   const totalEstimatedLines = estimatedLinesX + estimatedLinesY;
   
+  const shouldSkip = totalEstimatedLines > MAX_SMALL_GRID_LINES * 3;
+  
+  if (process.env.NODE_ENV === 'development' && shouldSkip) {
+    console.log(`Skipping small grid creation - estimated ${totalEstimatedLines} lines exceeds threshold of ${MAX_SMALL_GRID_LINES * 3}`);
+  }
+  
   // Allow more lines before skipping - improved density
-  return totalEstimatedLines > MAX_SMALL_GRID_LINES * 3;
+  return shouldSkip;
 };
-
