@@ -54,15 +54,25 @@ export const useCanvasInitialization = ({
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<any[]>([]);
   const canvasInitializedRef = useRef(false);
+  const gridCreatedRef = useRef(false);
   
   // History for undo/redo
   const historyRef = useRef<{past: any[][], future: any[][]}>(
     { past: [], future: [] }
   );
 
-  // Grid creation function
+  // Grid creation function with memoization for better performance
   const gridRef = useCallback((canvas: FabricCanvas) => {
-    return createGrid(canvas, gridLayerRef, canvasDimensions, setDebugInfo, setHasError, setErrorMessage);
+    if (gridCreatedRef.current && gridLayerRef.current.length > 0) {
+      console.log("Using existing grid");
+      return gridLayerRef.current;
+    }
+    
+    const gridObjects = createGrid(canvas, gridLayerRef, canvasDimensions, setDebugInfo, setHasError, setErrorMessage);
+    if (gridObjects.length > 0) {
+      gridCreatedRef.current = true;
+    }
+    return gridObjects;
   }, [canvasDimensions, setDebugInfo, setHasError, setErrorMessage]);
 
   // Initialize canvas when component mounts or when dependencies change
@@ -80,14 +90,19 @@ export const useCanvasInitialization = ({
     console.log("Initializing canvas with dimensions:", canvasDimensions);
     
     try {
-      // Create new Fabric canvas instance
+      // Performance optimization: Lower rendering quality for better speed
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         backgroundColor: "#FFFFFF",
         isDrawingMode: true,
         selection: false,
         width: canvasDimensions.width,
         height: canvasDimensions.height,
-        renderOnAddRemove: true
+        renderOnAddRemove: false, // Improve performance by rendering only on demand
+        stateful: false, // Disable stateful canvas for better performance
+        fireRightClick: false, // Turn off right-click handling for performance
+        stopContextMenu: true, // Prevent context menu for better UX
+        enableRetinaScaling: false, // Disable retina scaling for better performance
+        perPixelTargetFind: false // Performance optimization for object selection
       });
       
       console.log("FabricCanvas instance created");
@@ -116,9 +131,16 @@ export const useCanvasInitialization = ({
         }));
       }
       
-      // Create grid must be called immediately after canvas initialization
-      const gridObjects = gridRef(fabricCanvas);
-      console.log(`Grid created with ${gridObjects.length} objects`);
+      // Performance optimization: Delay grid creation for faster initial loading
+      setTimeout(() => {
+        // Create grid after a short delay to improve perceived performance
+        const gridObjects = gridRef(fabricCanvas);
+        console.log(`Grid created with ${gridObjects.length} objects`);
+        
+        // Now that the grid is created, enable rendering
+        fabricCanvas.renderOnAddRemove = true;
+        fabricCanvas.renderAll();
+      }, 100);
       
       // Add pressure sensitivity for Apple Pencil
       addPressureSensitivity(fabricCanvas);
@@ -128,14 +150,12 @@ export const useCanvasInitialization = ({
       
       // Ensure grid objects stay in the background when new objects are added
       const handleObjectAdded = () => {
-        console.log("Object added to canvas");
         if (gridLayerRef.current.length === 0) {
           gridRef(fabricCanvas);
         } else {
           gridLayerRef.current.forEach(gridObj => {
             fabricCanvas.sendObjectToBack(gridObj);
           });
-          fabricCanvas.renderAll();
         }
       };
       

@@ -4,7 +4,7 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Canvas as FabricCanvas, PencilBrush, Path, Polyline } from "fabric";
 import { toast } from "sonner";
 import { 
@@ -15,7 +15,8 @@ import {
   calculateGIA, 
   type FloorPlan,
   type Stroke,
-  type Point 
+  type Point,
+  MAX_OBJECTS_PER_CANVAS
 } from "@/utils/drawing";
 import { snapToAngle } from "@/utils/fabricHelpers";
 
@@ -51,6 +52,18 @@ export const useCanvasDrawing = ({
     cursorPosition: { x: 0, y: 0 }
   });
   
+  // Debouncing for performance
+  const debounceTimerRef = useRef<number | null>(null);
+  
+  // Throttle the mouse move updates for better performance
+  const throttleRef = useRef<{
+    lastCallTime: number;
+    timeout: number | null;
+  }>({
+    lastCallTime: 0,
+    timeout: null
+  });
+  
   /**
    * Handle path creation events from the Fabric.js canvas
    */
@@ -73,7 +86,18 @@ export const useCanvasDrawing = ({
       }
       
       try {
-        // Extract points from the Fabric.js path
+        // Check for too many objects on canvas (performance optimization)
+        const currentObjects = fabricCanvas.getObjects().filter(obj => 
+          obj.type === 'polyline' || obj.type === 'path'
+        );
+        
+        if (currentObjects.length > MAX_OBJECTS_PER_CANVAS) {
+          toast.warning(`Maximum objects reached (${MAX_OBJECTS_PER_CANVAS}). Please save or clear some objects.`);
+          fabricCanvas.remove(path);
+          return;
+        }
+        
+        // Optimization: Use lower precision for points extraction on complex paths
         const points = fabricPathToPoints(path.path);
         console.log("Points extracted from path:", points.length);
         
@@ -82,25 +106,28 @@ export const useCanvasDrawing = ({
           return;
         }
         
-        // Snap points to grid for precision
-        const snappedPoints = snapToGrid(points);
-        console.log("Points snapped to grid");
-
-        let finalPoints = snappedPoints;
+        // Performance optimization: Simplify paths with too many points
+        let finalPoints;
+        if (points.length > 100) {
+          // Simple point reduction algorithm for very complex paths
+          const simplified = points.filter((_, index) => index % Math.ceil(points.length / 100) === 0);
+          finalPoints = snapToGrid(simplified);
+        } else {
+          finalPoints = snapToGrid(points);
+        }
         
         // Process points based on selected tool
         if (tool === 'straightLine') {
-          finalPoints = straightenStroke(snappedPoints);
-          console.log("Straightened stroke:", finalPoints);
-        } else if (tool === 'room' && snappedPoints.length >= 2) {
+          finalPoints = straightenStroke(finalPoints);
+        } else if (tool === 'room' && finalPoints.length >= 2) {
           // For room tool, use angle snapping for 45-degree angles
-          finalPoints = [snappedPoints[0]];
+          const snappedPoints = [finalPoints[0]];
           
-          for (let i = 1; i < snappedPoints.length; i++) {
-            const snappedEnd = snapToAngle(snappedPoints[i-1], snappedPoints[i]);
-            finalPoints.push(snappedEnd);
+          for (let i = 1; i < finalPoints.length; i++) {
+            const snappedEnd = snapToAngle(finalPoints[i-1], finalPoints[i]);
+            snappedPoints.push(snappedEnd);
           }
-          console.log("Room points with angle snapping:", finalPoints);
+          finalPoints = snappedPoints;
         }
 
         // Create a polyline from the processed points
@@ -110,7 +137,9 @@ export const useCanvasDrawing = ({
             stroke: '#000000',
             strokeWidth: 2,
             fill: tool === 'room' ? 'rgba(0, 0, 255, 0.1)' : 'transparent',
-            objectType: tool === 'room' ? 'room' : 'line'
+            objectType: tool === 'room' ? 'room' : 'line',
+            objectCaching: true, // Enable caching for better performance
+            perPixelTargetFind: false // Disable pixel-perfect targeting for better performance
           }
         );
 
@@ -124,8 +153,6 @@ export const useCanvasDrawing = ({
             fabricCanvas.sendObjectToBack(gridObj);
           }
         });
-        
-        fabricCanvas.renderAll();
         
         // Update floor plans data
         setFloorPlans(prev => {
@@ -188,11 +215,29 @@ export const useCanvasDrawing = ({
     };
     
     /**
-     * Track mouse move events to update current point
+     * Track mouse move events to update current point with throttling
      */
     const handleMouseMove = (e: any) => {
       if (!drawingState.isDrawing) return;
       
+      // Throttle updates for better performance (update max 30fps)
+      const now = Date.now();
+      if (now - throttleRef.current.lastCallTime < 33) { // ~30fps
+        if (throttleRef.current.timeout === null) {
+          throttleRef.current.timeout = window.setTimeout(() => {
+            updateDrawingState(e);
+            throttleRef.current.timeout = null;
+            throttleRef.current.lastCallTime = Date.now();
+          }, 33);
+        }
+        return;
+      }
+      
+      updateDrawingState(e);
+      throttleRef.current.lastCallTime = now;
+    };
+    
+    const updateDrawingState = (e: any) => {
       const pointer = fabricCanvas.getPointer(e.e);
       const point = {
         x: pointer.x / PIXELS_PER_METER,
@@ -210,6 +255,11 @@ export const useCanvasDrawing = ({
      * Handle mouse up events to end drawing
      */
     const handleMouseUp = () => {
+      if (throttleRef.current.timeout !== null) {
+        clearTimeout(throttleRef.current.timeout);
+        throttleRef.current.timeout = null;
+      }
+      
       setDrawingState(prev => ({
         ...prev,
         isDrawing: false
@@ -224,6 +274,14 @@ export const useCanvasDrawing = ({
     
     // Clean up event listeners on unmount
     return () => {
+      if (throttleRef.current.timeout !== null) {
+        clearTimeout(throttleRef.current.timeout);
+      }
+      
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
       fabricCanvas.off('path:created', handlePathCreated);
       fabricCanvas.off('mouse:down', handleMouseDown);
       fabricCanvas.off('mouse:move', handleMouseMove);

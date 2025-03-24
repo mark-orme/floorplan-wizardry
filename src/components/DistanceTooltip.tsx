@@ -1,13 +1,7 @@
 
-import React from "react";
+import React, { memo } from "react";
 import { Point } from "@/utils/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from "@/components/ui/tooltip";
 import { Ruler } from "lucide-react";
 
 interface DistanceTooltipProps {
@@ -19,10 +13,11 @@ interface DistanceTooltipProps {
 
 /**
  * Tooltip component that displays the distance measurement of a line being drawn
+ * Memoized for better performance
  * @param {DistanceTooltipProps} props - Component properties
  * @returns {JSX.Element} Distance tooltip component
  */
-export const DistanceTooltip = ({
+export const DistanceTooltip = memo(({
   startPoint,
   currentPoint,
   isVisible,
@@ -43,6 +38,8 @@ export const DistanceTooltip = ({
       style={{ 
         left: `${position.x + 20}px`, 
         top: `${position.y + 20}px`,
+        transform: `translate3d(0,0,0)`, // Hardware acceleration
+        willChange: "transform", // Hint for browser optimization
         transition: "transform 0.1s ease-out"
       }}
     >
@@ -52,4 +49,7 @@ export const DistanceTooltip = ({
       </div>
     </div>
   );
-};
+});
+
+// Add displayName for better debugging
+DistanceTooltip.displayName = "DistanceTooltip";

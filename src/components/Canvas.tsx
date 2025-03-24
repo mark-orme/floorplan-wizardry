@@ -4,7 +4,7 @@
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
@@ -16,6 +16,13 @@ import { DistanceTooltip } from "./DistanceTooltip";
  * @returns {JSX.Element} Rendered component
  */
 export const Canvas = () => {
+  // Performance monitoring
+  const [loadTimes, setLoadTimes] = useState({
+    startTime: performance.now(),
+    canvasReady: 0,
+    gridCreated: 0
+  });
+  
   const {
     tool,
     gia,
@@ -40,10 +47,38 @@ export const Canvas = () => {
 
   // Load initial data when component mounts
   useEffect(() => {
+    // Record performance timing
+    const startTime = performance.now();
+    setLoadTimes(prev => ({ ...prev, startTime }));
+    
     loadData();
   }, [loadData]);
+  
+  // Track debug info changes for performance metrics
+  useEffect(() => {
+    if (debugInfo.canvasInitialized && loadTimes.canvasReady === 0) {
+      setLoadTimes(prev => ({ 
+        ...prev, 
+        canvasReady: performance.now() - prev.startTime 
+      }));
+      console.log(`Canvas initialized in ${performance.now() - loadTimes.startTime}ms`);
+    }
+    
+    if (debugInfo.gridCreated && loadTimes.gridCreated === 0) {
+      setLoadTimes(prev => ({ 
+        ...prev, 
+        gridCreated: performance.now() - prev.startTime 
+      }));
+      console.log(`Grid created in ${performance.now() - loadTimes.startTime}ms`);
+    }
+  }, [debugInfo, loadTimes]);
 
   const handleRetry = useCallback(() => {
+    setLoadTimes({
+      startTime: performance.now(),
+      canvasReady: 0,
+      gridCreated: 0
+    });
     loadData();
   }, [loadData]);
 
@@ -72,7 +107,7 @@ export const Canvas = () => {
           onAddFloor={handleAddFloor}
         />
         
-        {/* Distance tooltip overlay */}
+        {/* Distance tooltip overlay - Memoized component for better performance */}
         <DistanceTooltip
           startPoint={drawingState?.startPoint}
           currentPoint={drawingState?.currentPoint}

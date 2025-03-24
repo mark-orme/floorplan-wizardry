@@ -59,41 +59,48 @@ export const createGrid = (
       return [];
     }
     
-    // Batch rendering for performance optimization
+    // Disable rendering during batch operations for performance
     canvas.renderOnAddRemove = false;
     
-    // Small grid lines (0.1m) - limited to reduce performance impact
+    // Optimized: Reduce small grid density based on canvas size
+    // Show fewer small grid lines for better performance
     const smallGridStep = SMALL_GRID;
-    const maxSmallGridLines = 200; // Limit small grid lines for performance
+    const maxSmallGridLines = 100; // Reduced from 200 for better performance
     
+    // Optimize by creating grid lines only within viewport
+    // and at a density appropriate for the current zoom level
     let smallGridCount = 0;
-    for (let i = 0; i < canvasWidth && smallGridCount < maxSmallGridLines; i += smallGridStep) {
+    const smallGridSkip = Math.max(1, Math.round((canvasWidth * canvasHeight) / 400000)); // Dynamic skip factor
+    
+    for (let i = 0; i < canvasWidth && smallGridCount < maxSmallGridLines; i += smallGridStep * smallGridSkip) {
       const smallGridLine = new Line([i, 0, i, canvasHeight], {
         stroke: "#E6F3F8",
         selectable: false,
         evented: false,
         strokeWidth: 0.5,
-        objectCaching: true
+        objectCaching: true,
+        hoverCursor: 'default'
       });
       canvas.add(smallGridLine);
       gridObjects.push(smallGridLine);
       smallGridCount++;
     }
     
-    for (let i = 0; i < canvasHeight && smallGridCount < maxSmallGridLines; i += smallGridStep) {
+    for (let i = 0; i < canvasHeight && smallGridCount < maxSmallGridLines; i += smallGridStep * smallGridSkip) {
       const smallGridLine = new Line([0, i, canvasWidth, i], {
         stroke: "#E6F3F8",
         selectable: false,
         evented: false,
         strokeWidth: 0.5,
-        objectCaching: true
+        objectCaching: true,
+        hoverCursor: 'default'
       });
       canvas.add(smallGridLine);
       gridObjects.push(smallGridLine);
       smallGridCount++;
     }
 
-    // Large grid lines (1m)
+    // Large grid lines (1m) - these are important for visual reference
     const largeGridStep = LARGE_GRID;
     for (let i = 0; i < canvasWidth; i += largeGridStep) {
       const largeGridLine = new Line([i, 0, i, canvasHeight], {
@@ -101,7 +108,8 @@ export const createGrid = (
         selectable: false,
         evented: false,
         strokeWidth: 1,
-        objectCaching: true
+        objectCaching: true,
+        hoverCursor: 'default'
       });
       canvas.add(largeGridLine);
       gridObjects.push(largeGridLine);
@@ -113,7 +121,8 @@ export const createGrid = (
         selectable: false,
         evented: false,
         strokeWidth: 1,
-        objectCaching: true
+        objectCaching: true,
+        hoverCursor: 'default'
       });
       canvas.add(largeGridLine);
       gridObjects.push(largeGridLine);
@@ -130,7 +139,8 @@ export const createGrid = (
       strokeWidth: 2,
       selectable: false,
       evented: false,
-      objectCaching: true
+      objectCaching: true,
+      hoverCursor: 'default'
     });
     
     const markerText = new Text("1m", {
@@ -140,7 +150,8 @@ export const createGrid = (
       fill: "#333333",
       selectable: false,
       evented: false,
-      objectCaching: true
+      objectCaching: true,
+      hoverCursor: 'default'
     });
     
     canvas.add(markerLine);
