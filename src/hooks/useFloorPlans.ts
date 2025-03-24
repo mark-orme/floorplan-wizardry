@@ -37,6 +37,8 @@ export const useFloorPlans = ({
   const saveTimeoutRef = useRef<number | null>(null);
   const batchedDrawOpsRef = useRef<Polyline[]>([]);
   const animFrameRef = useRef<number | null>(null);
+  const floorChangeInProgressRef = useRef(false);
+  const lastDrawnFloorRef = useRef<number | null>(null);
 
   // Auto-save floor plans when they change with debounce
   useEffect(() => {
@@ -54,7 +56,7 @@ export const useFloorPlans = ({
       } catch (error) {
         console.error("Error saving floor plans:", error);
       }
-    }, 2000); // Increased from 1000ms to 2000ms
+    }, 2000);
     
     return () => {
       if (saveTimeoutRef.current !== null) {
@@ -63,7 +65,7 @@ export const useFloorPlans = ({
     };
   }, [floorPlans, isLoading]);
 
-  // OPTIMIZATION: Batched drawing function for better performance
+  // OPTIMIZATION: Batched drawing function
   const processBatchedDrawing = useCallback(() => {
     if (!fabricCanvasRef.current || batchedDrawOpsRef.current.length === 0) return;
     
@@ -103,8 +105,16 @@ export const useFloorPlans = ({
       return;
     }
     
+    // Skip redraw if already drawing this floor
+    if (lastDrawnFloorRef.current === currentFloor && 
+        fabricCanvasRef.current.getObjects().length > gridLayerRef.current.length) {
+      return;
+    }
+    
+    // Update the last drawn floor
+    lastDrawnFloorRef.current = currentFloor;
+    
     if (gridLayerRef.current.length === 0) {
-      console.log("No grid found, creating new grid");
       createGrid(fabricCanvasRef.current);
     }
     
@@ -119,15 +129,21 @@ export const useFloorPlans = ({
     
     // OPTIMIZATION: Ensure grid is at the back
     gridLayerRef.current.forEach(gridObj => {
-      fabricCanvasRef.current!.sendObjectToBack(gridObj);
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.sendObjectToBack(gridObj);
+      }
     });
     
     // OPTIMIZATION: Batch polyline creation
     const totalStrokes = currentPlan.strokes.length;
-    console.log(`Drawing ${totalStrokes} strokes for floor plan`);
+    
+    // Only log if we actually have strokes to draw
+    if (totalStrokes > 0) {
+      console.log(`Drawing ${totalStrokes} strokes for floor plan`);
+    }
     
     // OPTIMIZATION: Use chunk processing for large floor plans
-    const CHUNK_SIZE = 50; // Process 50 strokes at a time
+    const CHUNK_SIZE = 20; // Process 20 strokes at a time - reduced for better performance
     
     const processStrokeChunk = (startIdx: number) => {
       const endIdx = Math.min(startIdx + CHUNK_SIZE, totalStrokes);
@@ -142,11 +158,11 @@ export const useFloorPlans = ({
             strokeWidth: 2,
             fill: 'transparent',
             objectType: 'line',
-            objectCaching: true, // OPTIMIZATION: Enable caching
-            strokeUniform: false, // OPTIMIZATION: Disable uniform stroke
-            perPixelTargetFind: false, // OPTIMIZATION: Disable per-pixel target find
-            selectable: false, // OPTIMIZATION: Make non-selectable when just displaying
-            evented: false // OPTIMIZATION: Disable events when just displaying
+            objectCaching: true,
+            strokeUniform: false,
+            perPixelTargetFind: false,
+            selectable: false,
+            evented: false
           }
         );
         
@@ -159,58 +175,77 @@ export const useFloorPlans = ({
           });
         }
         
-        fabricCanvasRef.current!.add(polyline);
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.add(polyline);
+        }
       }
       
       // If there are more chunks to process, schedule next chunk
       if (endIdx < totalStrokes) {
-        setTimeout(() => processStrokeChunk(endIdx), 0);
+        setTimeout(() => processStrokeChunk(endIdx), 10); // Reduced delay for faster processing
       } else {
         // All chunks processed
-        fabricCanvasRef.current!.renderOnAddRemove = true;
-        fabricCanvasRef.current!.requestRenderAll();
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.renderOnAddRemove = true;
+          fabricCanvasRef.current.requestRenderAll();
+        }
+        floorChangeInProgressRef.current = false;
       }
     };
     
     // Start processing the first chunk
-    if (totalStrokes > CHUNK_SIZE) {
-      // For large plans, use chunked processing
-      processStrokeChunk(0);
+    if (totalStrokes > 0) {
+      floorChangeInProgressRef.current = true;
+      if (totalStrokes > CHUNK_SIZE) {
+        // For large plans, use chunked processing
+        processStrokeChunk(0);
+      } else {
+        // For small plans, process all at once
+        processStrokeChunk(0);
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.renderOnAddRemove = true;
+          fabricCanvasRef.current.requestRenderAll();
+        }
+        floorChangeInProgressRef.current = false;
+      }
     } else {
-      // For small plans, process all at once
-      processStrokeChunk(0);
-      fabricCanvasRef.current.renderOnAddRemove = true;
-      fabricCanvasRef.current.requestRenderAll();
+      // No strokes to draw
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.renderOnAddRemove = true;
+        fabricCanvasRef.current.requestRenderAll();
+      }
+      floorChangeInProgressRef.current = false;
     }
   }, [floorPlans, currentFloor, fabricCanvasRef, gridLayerRef, createGrid]);
 
-  // Update canvas when floor changes with optimization
+  // Update canvas when floor changes with debouncing
   useEffect(() => {
     if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
     
-    // OPTIMIZATION: Use requestIdleCallback for floor transitions
+    // Skip if a floor change is already in progress
+    if (floorChangeInProgressRef.current) return;
+    
+    console.log("Floor changed, updating canvas");
+    
+    // Use a more efficient approach for floor changes
     const floorChangeHandler = () => {
-      console.log("Floor changed, updating canvas");
       clearDrawings();
       drawFloorPlan();
       
       // OPTIMIZATION: Delay GIA calculation after drawing is complete
-      setTimeout(recalculateGIA, 100);
+      setTimeout(recalculateGIA, 200);
     };
     
-    // Use requestIdleCallback or setTimeout as fallback
-    if (typeof window.requestIdleCallback === 'function') {
-      requestIdleCallback(floorChangeHandler, { timeout: 200 });
-    } else {
-      setTimeout(floorChangeHandler, 50);
-    }
+    // Execute with a short delay to avoid rapid consecutive calls
+    setTimeout(floorChangeHandler, 50);
+    
   }, [currentFloor, floorPlans, isLoading, fabricCanvasRef, clearDrawings, drawFloorPlan]);
 
   // Calculate Gross Internal Area (GIA) with optimized performance
   const recalculateGIA = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
-    // OPTIMIZATION: Run calculation in next animation frame for better UI responsiveness
+    // Calculate in next animation frame for better UI responsiveness
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => {
         calculateGIANow();
@@ -220,13 +255,15 @@ export const useFloorPlans = ({
     }
     
     function calculateGIANow() {
+      if (!fabricCanvasRef.current) return;
+      
       let totalGIA = 0;
-      const rooms = fabricCanvasRef.current!.getObjects().filter(
+      const rooms = fabricCanvasRef.current.getObjects().filter(
         obj => obj.type === 'polyline' && (obj as any).objectType === 'room'
       );
       
-      // OPTIMIZATION: Limit processing to max 100 rooms for performance
-      const roomsToProcess = rooms.length > 100 ? rooms.slice(0, 100) : rooms;
+      // OPTIMIZATION: Limit processing to max 50 rooms for performance
+      const roomsToProcess = rooms.length > 50 ? rooms.slice(0, 50) : rooms;
       
       roomsToProcess.forEach(room => {
         const polyline = room as Polyline;
@@ -251,15 +288,18 @@ export const useFloorPlans = ({
       { 
         strokes: [], 
         label: `Floor ${prev.length + 1}`,
-        paperSize: "infinite" as PaperSize  // Explicitly cast as PaperSize
+        paperSize: "infinite" as PaperSize
       }
     ]);
     toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);
   }, [floorPlans.length, setFloorPlans]);
 
   const handleSelectFloor = useCallback((index: number) => {
-    toast.info(`Switched to ${floorPlans[index]?.label || 'Unknown floor'}`);
-  }, [floorPlans]);
+    // Prevent spamming toast notifications
+    if (index !== currentFloor) {
+      toast.info(`Switched to ${floorPlans[index]?.label || 'Unknown floor'}`);
+    }
+  }, [floorPlans, currentFloor]);
 
   return {
     drawFloorPlan,

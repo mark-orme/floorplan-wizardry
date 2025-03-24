@@ -3,7 +3,7 @@
  * Custom hook for grid management
  * @module useCanvasGrid
  */
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
 
@@ -32,8 +32,20 @@ export const useCanvasGrid = ({
   setHasError,
   setErrorMessage
 }: UseCanvasGridProps) => {
-  // Create grid callback for other hooks
+  // Track the last grid creation time to prevent rapid consecutive creations
+  const lastGridCreationTimeRef = useRef(0);
+  
+  // Create grid callback for other hooks with throttling
   const createGridCallback = useCallback((canvas: FabricCanvas) => {
+    const now = Date.now();
+    
+    // Prevent grid creation more frequently than every 2 seconds
+    if (now - lastGridCreationTimeRef.current < 2000 && gridLayerRef.current.length > 0) {
+      return gridLayerRef.current;
+    }
+    
+    lastGridCreationTimeRef.current = now;
+    
     return createGrid(
       canvas, 
       gridLayerRef, 

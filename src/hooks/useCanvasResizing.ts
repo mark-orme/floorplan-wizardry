@@ -28,50 +28,58 @@ export const useCanvasResizing = ({
   createGrid
 }: UseCanvasResizingProps) => {
   const resizeTimeoutRef = useRef<number | null>(null);
+  const lastDimensionsRef = useRef<{width: number, height: number}>({width: 0, height: 0});
+  const initialResizeCompleteRef = useRef(false);
 
   const updateCanvasDimensions = useCallback(() => {
     if (!canvasRef.current) {
-      console.error("Canvas ref is null during dimension update");
       return;
     }
     
     const container = document.querySelector('.canvas-container');
-    console.log("Container found:", !!container);
     if (!container) {
-      console.error("Canvas container not found");
       setHasError(true);
       setErrorMessage("Canvas container not found");
       return;
     }
     
     const { width, height } = container.getBoundingClientRect();
-    console.log("Container dimensions:", width, height);
     
     if (width <= 0 || height <= 0) {
-      console.error("Invalid container dimensions:", width, height);
       return;
     }
     
     const newWidth = Math.max(width - 20, 600);
     const newHeight = Math.max(height - 20, 400);
     
+    // Skip update if dimensions haven't changed significantly (within 5px)
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 5 && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < 5) {
+      return;
+    }
+    
+    // Update the reference
+    lastDimensionsRef.current = { width: newWidth, height: newHeight };
+    
+    // Only log on significant changes
     console.log(`Setting canvas dimensions to ${newWidth}x${newHeight}`);
     setDimensions({ width: newWidth, height: newHeight });
     setDebugInfo(prev => ({...prev, dimensionsSet: true}));
     
     if (fabricCanvasRef.current) {
-      console.log("Updating fabric canvas dimensions");
       setCanvasDimensions(fabricCanvasRef.current, { width: newWidth, height: newHeight });
-      createGrid(fabricCanvasRef.current);
+      
+      // Only create grid on first resize or when explicitly needed
+      if (!initialResizeCompleteRef.current) {
+        createGrid(fabricCanvasRef.current);
+        initialResizeCompleteRef.current = true;
+      }
+      
       fabricCanvasRef.current.renderAll();
-    } else {
-      console.log("Fabric canvas ref not available for dimension update");
     }
   }, [canvasRef, fabricCanvasRef, setDimensions, setDebugInfo, setHasError, setErrorMessage, createGrid]);
 
   useEffect(() => {
-    console.log("Setting up resize handler");
-    
     const debouncedResizeHandler = () => {
       if (resizeTimeoutRef.current !== null) {
         window.clearTimeout(resizeTimeoutRef.current);
@@ -85,14 +93,15 @@ export const useCanvasResizing = ({
 
     window.addEventListener('resize', debouncedResizeHandler);
     
-    // Initial update of canvas dimensions
-    setTimeout(updateCanvasDimensions, 100);
+    // Initial update with a delay to ensure DOM is ready
+    const initialTimer = setTimeout(updateCanvasDimensions, 300);
     
     return () => {
       window.removeEventListener('resize', debouncedResizeHandler);
       if (resizeTimeoutRef.current !== null) {
         window.clearTimeout(resizeTimeoutRef.current);
       }
+      clearTimeout(initialTimer);
     };
   }, [updateCanvasDimensions]);
 

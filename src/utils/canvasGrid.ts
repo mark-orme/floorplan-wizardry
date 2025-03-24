@@ -32,6 +32,20 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
+  // Skip grid creation if already created with similar dimensions
+  if (gridLayerRef.current.length > 0) {
+    const existingGridDimensions = gridLayerRef.current.find(obj => obj.gridDimensions)?.gridDimensions;
+    if (existingGridDimensions) {
+      const widthDiff = Math.abs(existingGridDimensions.width - canvasDimensions.width);
+      const heightDiff = Math.abs(existingGridDimensions.height - canvasDimensions.height);
+      
+      // If dimensions are similar (within 10%), just return existing grid
+      if (widthDiff < canvasDimensions.width * 0.1 && heightDiff < canvasDimensions.height * 0.1) {
+        return gridLayerRef.current;
+      }
+    }
+  }
+  
   console.log("Creating grid...");
   
   try {
@@ -68,11 +82,11 @@ export const createGrid = (
     // Further reduce small grid density for larger canvases
     // Dynamically adjust grid density based on canvas size
     const smallGridStep = SMALL_GRID;
-    const maxSmallGridLines = 80; // Reduced for better performance
+    const maxSmallGridLines = 50; // Reduced for better performance
     
     // Use smarter skip calculation based on canvas dimensions
     const canvasArea = canvasWidth * canvasHeight;
-    const smallGridSkip = Math.max(1, Math.floor(Math.sqrt(canvasArea) / 200));
+    const smallGridSkip = Math.max(1, Math.floor(Math.sqrt(canvasArea) / 300));
     
     // OPTIMIZATION: Pre-calculate gridlines count to avoid unnecessary creation
     const estimatedLinesX = Math.ceil(canvasWidth / (smallGridStep * smallGridSkip));
@@ -80,7 +94,7 @@ export const createGrid = (
     const totalEstimatedLines = estimatedLinesX + estimatedLinesY;
     
     // Skip creating small grid entirely if it would create too many lines
-    const skipSmallGrid = totalEstimatedLines > maxSmallGridLines * 3;
+    const skipSmallGrid = totalEstimatedLines > maxSmallGridLines * 2;
     
     let smallGridCount = 0;
     
@@ -121,10 +135,10 @@ export const createGrid = (
     // Large grid lines (1m) - these are important for visual reference
     // OPTIMIZATION: Also limit large grid lines on very large canvases
     const largeGridStep = LARGE_GRID;
-    const maxLargeGridLines = 50; // Safety limit
+    const maxLargeGridLines = 30; // Safety limit
     
     let largeGridCount = 0;
-    const largeGridSkip = Math.max(1, Math.floor(Math.sqrt(canvasArea) / 1000));
+    const largeGridSkip = Math.max(1, Math.floor(Math.sqrt(canvasArea) / 1500));
     
     // Create vertical large grid lines
     for (let i = 0; i < canvasWidth && largeGridCount < maxLargeGridLines; i += largeGridStep * largeGridSkip) {
@@ -187,6 +201,13 @@ export const createGrid = (
     gridObjects.push(markerLine);
     gridObjects.push(markerText);
     
+    // Store dimensions in a metadata object for future comparison
+    const dimensionsMarker = { gridDimensions: { width: canvasWidth, height: canvasHeight } };
+    Object.defineProperty(markerLine, 'gridDimensions', {
+      value: { width: canvasWidth, height: canvasHeight },
+      enumerable: false
+    });
+    
     // OPTIMIZATION: Add all grid objects at once in a batch for better performance
     canvas.add(...gridBatch);
     
@@ -201,11 +222,9 @@ export const createGrid = (
     // Store grid objects in the reference for later use
     gridLayerRef.current = gridObjects;
     
-    // OPTIMIZATION: Throttle final render
-    setTimeout(() => {
-      canvas.requestRenderAll();
-      console.log(`Grid created with ${gridObjects.length} objects (${smallGridCount} small, ${largeGridCount} large)`);
-    }, 0);
+    // One-time render
+    canvas.requestRenderAll();
+    console.log(`Grid created with ${gridObjects.length} objects (${smallGridCount} small, ${largeGridCount} large)`);
     
     setDebugInfo(prev => ({...prev, gridCreated: true}));
     setHasError(false);

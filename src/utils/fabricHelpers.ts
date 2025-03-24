@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for Fabric.js canvas operations
  * @module fabricHelpers
@@ -28,6 +27,9 @@ export const initializeDrawingBrush = (canvas: Canvas) => {
   }
 };
 
+// Keep track of previous dimensions to avoid unnecessary updates
+let prevDimensions = { width: 0, height: 0 };
+
 /**
  * Safely sets canvas dimensions and refreshes the canvas
  * @param {Canvas} canvas - The Fabric canvas instance
@@ -44,9 +46,21 @@ export const setCanvasDimensions = (
   
   try {
     const { width, height } = dimensions;
+    
+    // Skip update if dimensions are the same or within 5px tolerance
+    if (Math.abs(width - prevDimensions.width) < 5 && 
+        Math.abs(height - prevDimensions.height) < 5) {
+      return;
+    }
+    
+    // Store new dimensions
+    prevDimensions = { width, height };
+    
     console.log(`Setting canvas dimensions to ${width}x${height}`);
     canvas.setDimensions({ width, height });
-    canvas.renderAll();
+    
+    // Only render if dimensions have changed significantly
+    canvas.requestRenderAll();
   } catch (error) {
     console.error("Failed to set canvas dimensions:", error);
   }

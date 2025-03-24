@@ -55,6 +55,7 @@ export const useCanvasInitialization = ({
   const gridLayerRef = useRef<any[]>([]);
   const canvasInitializedRef = useRef(false);
   const gridCreatedRef = useRef(false);
+  const initializationInProgressRef = useRef(false);
   
   // History for undo/redo
   const historyRef = useRef<{past: any[][], future: any[][]}>(
@@ -64,7 +65,6 @@ export const useCanvasInitialization = ({
   // Grid creation function with memoization for better performance
   const gridRef = useCallback((canvas: FabricCanvas) => {
     if (gridCreatedRef.current && gridLayerRef.current.length > 0) {
-      console.log("Using existing grid");
       return gridLayerRef.current;
     }
     
@@ -78,15 +78,19 @@ export const useCanvasInitialization = ({
   // Initialize canvas when component mounts or when dependencies change
   useEffect(() => {
     if (!canvasRef.current) {
-      console.log("Canvas ref is null, will retry later");
       return;
     }
     
     if (canvasInitializedRef.current) {
-      console.log("Canvas already initialized, skipping");
       return;
     }
     
+    // Prevent concurrent initializations
+    if (initializationInProgressRef.current) {
+      return;
+    }
+    
+    initializationInProgressRef.current = true;
     console.log("Initializing canvas with dimensions:", canvasDimensions);
     
     try {
@@ -141,16 +145,21 @@ export const useCanvasInitialization = ({
         }));
       }
       
-      // OPTIMIZATION: Lazy load grid for faster initial display
-      requestIdleCallback(() => {
-        // Create grid after canvas is rendered, during browser idle time
+      // Create grid after canvas is rendered, using idle callback
+      const createGridWhenIdle = () => {
         const gridObjects = gridRef(fabricCanvas);
-        console.log(`Grid created with ${gridObjects.length} objects`);
         
         // Now that the grid is created, enable rendering
         fabricCanvas.renderOnAddRemove = true;
         fabricCanvas.requestRenderAll();
-      }, { timeout: 500 });
+      };
+      
+      // Use either requestIdleCallback or setTimeout as fallback
+      if (typeof window.requestIdleCallback === 'function') {
+        requestIdleCallback(createGridWhenIdle, { timeout: 500 });
+      } else {
+        setTimeout(createGridWhenIdle, 200);
+      }
       
       // Add pressure sensitivity for Apple Pencil
       addPressureSensitivity(fabricCanvas);
@@ -158,69 +167,61 @@ export const useCanvasInitialization = ({
       // Add pinch-to-zoom
       addPinchToZoom(fabricCanvas, setZoomLevel);
       
-      // OPTIMIZATION: Use throttled object:added event with requestAnimationFrame
-      const lastObjectAdded = { timestamp: 0 };
-      let objectAddedRAF: number | null = null;
-      
-      const handleObjectAdded = () => {
-        // Throttle to max 30fps for better performance
-        const now = performance.now();
-        if (now - lastObjectAdded.timestamp < 33) {
-          if (objectAddedRAF === null) {
-            objectAddedRAF = requestAnimationFrame(() => {
-              ensureGridInBackground();
-              objectAddedRAF = null;
+      // Optimize object:added event with throttling
+      let objectAddedThrottled = false;
+      const ensureGridInBackground = () => {
+        if (objectAddedThrottled) return;
+        
+        objectAddedThrottled = true;
+        setTimeout(() => {
+          if (gridLayerRef.current.length === 0) {
+            gridRef(fabricCanvas);
+          } else {
+            gridLayerRef.current.forEach(gridObj => {
+              fabricCanvas.sendObjectToBack(gridObj);
             });
           }
-          return;
-        }
-        
-        lastObjectAdded.timestamp = now;
-        ensureGridInBackground();
+          objectAddedThrottled = false;
+        }, 100);
       };
       
-      const ensureGridInBackground = () => {
-        if (gridLayerRef.current.length === 0) {
-          gridRef(fabricCanvas);
-        } else {
-          gridLayerRef.current.forEach(gridObj => {
-            fabricCanvas.sendObjectToBack(gridObj);
-          });
-        }
-      };
-      
-      fabricCanvas.on('object:added', handleObjectAdded);
+      fabricCanvas.on('object:added', ensureGridInBackground);
 
-      // Initialize history with current state
+      // Initialize history with current state only if there are actual objects
       const initialState = fabricCanvas.getObjects().filter(obj => 
         obj.type === 'path' || obj.type === 'polyline'
       );
-      historyRef.current.past.push([...initialState]);
       
-      toast.success("Canvas ready for drawing!");
+      if (initialState.length > 0) {
+        historyRef.current.past.push([...initialState]);
+      }
+      
+      // Only show toast on first initialization
+      if (!toast.message("Canvas ready for drawing!")) {
+        toast.success("Canvas ready for drawing!");
+      }
       
       // OPTIMIZATION: Precompile frequent canvas operations
       fabricCanvas.calcViewportBoundaries();
       
+      // Initialization complete
+      initializationInProgressRef.current = false;
+      
       // Clean up on unmount
       return () => {
-        if (objectAddedRAF !== null) {
-          cancelAnimationFrame(objectAddedRAF);
-        }
-        
-        if (fabricCanvas) {
-          fabricCanvas.off('object:added', handleObjectAdded);
-          disposeCanvas(fabricCanvas);
-          fabricCanvasRef.current = null;
-          canvasInitializedRef.current = false;
-          gridLayerRef.current = [];
-        }
+        fabricCanvas.off('object:added', ensureGridInBackground);
+        disposeCanvas(fabricCanvas);
+        fabricCanvasRef.current = null;
+        canvasInitializedRef.current = false;
+        gridLayerRef.current = [];
+        gridCreatedRef.current = false;
       };
     } catch (err) {
       console.error("Error initializing canvas:", err);
       setHasError(true);
       setErrorMessage(`Failed to initialize canvas: ${err instanceof Error ? err.message : String(err)}`);
       toast.error("Failed to initialize canvas");
+      initializationInProgressRef.current = false;
     }
   }, [canvasDimensions, tool, currentFloor, gridRef, setZoomLevel, setDebugInfo, setHasError, setErrorMessage]);
 

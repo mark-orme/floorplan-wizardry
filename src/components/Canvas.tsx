@@ -4,7 +4,7 @@
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
@@ -46,7 +46,7 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
-  // Load initial data when component mounts
+  // Load initial data only once
   useEffect(() => {
     // Record performance timing
     const startTime = performance.now();
@@ -55,14 +55,13 @@ export const Canvas = () => {
     loadData();
   }, [loadData]);
   
-  // Track debug info changes for performance metrics
+  // Track debug info changes for performance metrics - only update when values change
   useEffect(() => {
     if (debugInfo.canvasInitialized && loadTimes.canvasReady === 0) {
       setLoadTimes(prev => ({ 
         ...prev, 
         canvasReady: performance.now() - prev.startTime 
       }));
-      console.log(`Canvas initialized in ${performance.now() - loadTimes.startTime}ms`);
     }
     
     if (debugInfo.gridCreated && loadTimes.gridCreated === 0) {
@@ -70,9 +69,18 @@ export const Canvas = () => {
         ...prev, 
         gridCreated: performance.now() - prev.startTime 
       }));
-      console.log(`Grid created in ${performance.now() - loadTimes.startTime}ms`);
     }
   }, [debugInfo, loadTimes]);
+
+  // Memoize the tooltip component to prevent unnecessary re-renders
+  const tooltipComponent = useMemo(() => (
+    <DistanceTooltip
+      startPoint={drawingState?.startPoint}
+      currentPoint={drawingState?.currentPoint}
+      isVisible={drawingState?.isDrawing && tool === "straightLine"}
+      position={drawingState?.cursorPosition || { x: 0, y: 0 }}
+    />
+  ), [drawingState, tool]);
 
   return (
     <LoadingErrorWrapper
@@ -99,13 +107,7 @@ export const Canvas = () => {
           onAddFloor={handleAddFloor}
         />
         
-        {/* Distance tooltip overlay - Memoized component for better performance */}
-        <DistanceTooltip
-          startPoint={drawingState?.startPoint}
-          currentPoint={drawingState?.currentPoint}
-          isVisible={drawingState?.isDrawing && tool === "straightLine"}
-          position={drawingState?.cursorPosition || { x: 0, y: 0 }}
-        />
+        {tooltipComponent}
       </div>
     </LoadingErrorWrapper>
   );
