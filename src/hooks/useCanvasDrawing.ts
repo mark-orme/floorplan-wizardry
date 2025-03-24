@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -10,6 +9,7 @@ import { useDrawingState } from "./useDrawingState";
 import { type FloorPlan } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
 import { snapToAngle } from "@/utils/fabricInteraction";
+import { toFabricPoint } from "@/utils/fabricPointConverter";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<any>;

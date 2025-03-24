@@ -6,9 +6,8 @@ import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { toast } from "sonner";
 import { clearCanvasObjects } from "@/utils/fabricHelpers";
-import { enablePanning } from "@/utils/fabric";
+import { enablePanning, enableSelection, disableSelection } from "@/utils/fabricInteraction";
 import { DrawingTool } from "./useCanvasState";
-import { enableSelection, disableSelection } from "@/utils/fabricInteraction";
 
 interface UseCanvasToolsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -76,6 +75,7 @@ export const useCanvasTools = ({
     switch (newTool) {
       case "draw":
       case "straightLine":
+      case "room":
         canvas.isDrawingMode = true;
         break;
       case "select":
@@ -87,20 +87,7 @@ export const useCanvasTools = ({
         canvas.isDrawingMode = isDrawingTool;
         
         // Configure the hand tool for panning when selected
-        enablePanning(fabricCanvasRef.current, newTool === "hand");
-        
-        // Set appropriate brush for drawing tools
-        if (isDrawingTool) {
-          canvas.freeDrawingBrush = new PencilBrush(canvas);
-          canvas.freeDrawingBrush.color = lineColor;
-          canvas.freeDrawingBrush.width = lineThickness;
-          
-          // Adjust the smoothness and precision of the drawing
-          if (canvas.freeDrawingBrush instanceof PencilBrush) {
-            // Slightly lower the decimate parameter for more points (better auto-straightening)
-            canvas.freeDrawingBrush.decimate = 2;
-          }
-        }
+        enablePanning(canvas);
         
         // Ensure grid elements are in the correct z-order
         const gridElements = gridLayerRef.current;
@@ -136,7 +123,8 @@ export const useCanvasTools = ({
           "draw": "Freehand (with auto-straightening)",
           "room": "Room",
           "straightLine": "Wall",
-          "hand": "Hand (Pan)"
+          "hand": "Hand (Pan)",
+          "select": "Select"
         };
         toast.success(`${toolNames[newTool]} tool selected`);
         break;
@@ -169,7 +157,7 @@ export const useCanvasTools = ({
   // Set up panning when hand tool is selected
   useEffect(() => {
     if (fabricCanvasRef.current) {
-      enablePanning(fabricCanvasRef.current, tool === "hand");
+      enablePanning(fabricCanvasRef.current);
       
       // Ensure grid elements are in the correct z-order when tool changes
       setTimeout(() => {

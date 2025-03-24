@@ -1,9 +1,12 @@
+
 /**
  * Fabric.js interaction utilities
  * Handles zooming, panning, and other interactive behaviors
  * @module fabricInteraction
  */
-import { Canvas, Point } from "fabric";
+import { Canvas, Point as FabricPoint } from "fabric";
+import { Point } from "@/utils/drawingTypes";
+import { toFabricPoint, createSimplePoint } from "./fabricPointConverter";
 
 /**
  * Add pinch-to-zoom support for touch devices
@@ -18,7 +21,9 @@ export const addPinchToZoom = (canvas: Canvas) => {
   let startDistance: number = 0;
   let initialZoom: number = 0;
   
-  canvas.on('touch:gesture', (event: any) => {
+  // Using 'as any' to bypass strict typing for custom events
+  // These events are declared in our fabric.d.ts file
+  (canvas as any).on('touch:gesture', (event: any) => {
     if (event.e.touches && event.e.touches.length === 2) {
       // Disable object selection during pinch zoom
       canvas.selection = false;
@@ -44,13 +49,16 @@ export const addPinchToZoom = (canvas: Canvas) => {
         // Limit zoom level
         newZoom = Math.max(0.5, Math.min(newZoom, 2));
         
-        canvas.zoomToPoint({ x: event.e.offsetX, y: event.e.offsetY }, newZoom);
+        // Create a proper Fabric.js Point for zooming
+        const zoomPoint = new FabricPoint(event.e.offsetX, event.e.offsetY);
+        canvas.zoomToPoint(zoomPoint, newZoom);
         canvas.requestRenderAll();
       }
     }
   });
   
-  canvas.on('touch:gesture:end', () => {
+  // Using 'as any' to bypass strict typing for custom events
+  (canvas as any).on('touch:gesture:end', () => {
     canvas.selection = true; // Re-enable selection
   });
 };
@@ -112,10 +120,10 @@ export const snapToAngle = (
     const distance = Math.sqrt(dx * dx + dy * dy);
     
     // Calculate the new end point based on the snapped angle
-    return {
-      x: startPoint.x + distance * Math.cos(angleInRadians),
-      y: startPoint.y + distance * Math.sin(angleInRadians)
-    };
+    return createSimplePoint(
+      startPoint.x + distance * Math.cos(angleInRadians),
+      startPoint.y + distance * Math.sin(angleInRadians)
+    );
   }
   
   // If no snap is needed, return the original end point
@@ -145,7 +153,8 @@ export const enablePanning = (canvas: Canvas) => {
   
   canvas.on('mouse:move', (opt: any) => {
     if (panning && opt.e) {
-      const delta = new Point(opt.e.movementX, opt.e.movementY);
+      // Create a proper Fabric.js Point for panning
+      const delta = new FabricPoint(opt.e.movementX, opt.e.movementY);
       canvas.relativePan(delta);
       canvas.requestRenderAll();
     }
@@ -162,4 +171,46 @@ export const enablePanning = (canvas: Canvas) => {
     canvas.selection = true;
     canvas.defaultCursor = 'default';
   });
+};
+
+/**
+ * Enable selection of objects on the canvas
+ * @param {Canvas} canvas - The fabric canvas instance
+ */
+export const enableSelection = (canvas: Canvas) => {
+  if (!canvas) return;
+  
+  canvas.selection = true;
+  canvas.defaultCursor = 'default';
+  canvas.hoverCursor = 'move';
+  
+  // Make all objects selectable
+  canvas.getObjects().forEach(obj => {
+    if (obj.type !== 'line' && !obj.objectType?.includes('grid')) {
+      obj.selectable = true;
+      obj.hoverCursor = 'move';
+    }
+  });
+  
+  canvas.renderAll();
+};
+
+/**
+ * Disable selection of objects on the canvas
+ * @param {Canvas} canvas - The fabric canvas instance
+ */
+export const disableSelection = (canvas: Canvas) => {
+  if (!canvas) return;
+  
+  canvas.selection = false;
+  canvas.defaultCursor = 'default';
+  canvas.hoverCursor = 'default';
+  
+  // Make all objects non-selectable
+  canvas.getObjects().forEach(obj => {
+    obj.selectable = false;
+    obj.hoverCursor = 'default';
+  });
+  
+  canvas.discardActiveObject().renderAll();
 };

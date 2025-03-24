@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for initializing the canvas
  * Handles canvas creation, brush setup, and grid initialization
@@ -170,8 +169,8 @@ export const useCanvasInitialization = ({
       // Add pressure sensitivity for Apple Pencil
       addPressureSensitivity(fabricCanvas);
       
-      // Add pinch-to-zoom
-      addPinchToZoom(fabricCanvas, setZoomLevel);
+      // Add pinch-to-zoom - fixed signature to match implementation
+      addPinchToZoom(fabricCanvas);
       
       // Optimize object:added event with throttling
       let objectAddedThrottled = false;

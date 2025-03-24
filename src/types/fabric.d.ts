@@ -1,5 +1,5 @@
 
-import { Canvas, Object as FabricObject, Path, Polyline } from 'fabric';
+import { Canvas, Object as FabricObject, Path, Polyline, Point as FabricPoint } from 'fabric';
 
 declare module 'fabric' {
   interface ObjectOptions {
@@ -15,6 +15,10 @@ declare module 'fabric' {
       endPoint: { x: number, y: number };
       e?: MouseEvent | TouchEvent;
     };
+    'touch:gesture': any;
+    'touch:gesture:start': any;
+    'touch:gesture:move': any;
+    'touch:gesture:end': any;
   }
 }
 
