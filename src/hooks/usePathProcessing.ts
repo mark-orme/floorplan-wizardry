@@ -12,7 +12,12 @@ import {
   type Point
 } from "@/utils/drawing";
 import { snapToAngle } from "@/utils/fabric";
-import { snapToGrid, straightenStroke, calculateGIA } from "@/utils/geometry";
+import { 
+  snapToGrid, 
+  straightenStroke, 
+  calculateGIA,
+  filterRedundantPoints 
+} from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
 interface UsePathProcessingProps {
@@ -79,12 +84,21 @@ export const usePathProcessing = ({
       
       if (points.length < 2) {
         console.error("Not enough points to create a path");
+        fabricCanvas.remove(path);
         return;
       }
       
+      // Filter out redundant points that are too close together
+      let filteredPoints = filterRedundantPoints(points, 0.05);
+      
+      // If we have too few points after filtering, use original points
+      if (filteredPoints.length < 2) {
+        filteredPoints = points;
+      }
+      
       // Always apply grid snapping to all points for consistency
-      let finalPoints = snapToGrid(points);
-      console.log("Points snapped to grid");
+      let finalPoints = snapToGrid(filteredPoints);
+      console.log("Points snapped to grid:", finalPoints.length);
       
       // Apply straightening based on tool
       if (tool === 'straightLine') {
@@ -129,13 +143,20 @@ export const usePathProcessing = ({
         console.log("Applied angle snapping to room");
       }
 
+      // Make sure we still have at least 2 points after all processing
+      if (finalPoints.length < 2) {
+        console.error("Not enough points after processing");
+        fabricCanvas.remove(path);
+        return;
+      }
+
       // Convert meter coordinates to pixel coordinates for display
       const pixelPoints = finalPoints.map(p => ({ 
         x: p.x * PIXELS_PER_METER, 
         y: p.y * PIXELS_PER_METER 
       }));
 
-      console.log("Creating polyline with points:", pixelPoints);
+      console.log("Creating polyline with points:", pixelPoints.length);
 
       // Create a polyline from the processed points
       const polylineOptions = {
@@ -150,16 +171,16 @@ export const usePathProcessing = ({
       };
 
       try {
+        // Remove the temporary path before creating the polyline
+        fabricCanvas.remove(path);
+        
         // Create the polyline with pixel points
         const polyline = new Polyline(pixelPoints, polylineOptions);
-        
-        // Remove the temporary path
-        fabricCanvas.remove(path);
         
         // Add the processed polyline to canvas
         fabricCanvas.add(polyline);
         
-        console.log("Polyline added to canvas:", polyline);
+        console.log("Polyline added to canvas successfully");
         
         // Ensure grid stays in the background
         gridLayerRef.current.forEach(gridObj => {
@@ -209,6 +230,15 @@ export const usePathProcessing = ({
     } catch (error) {
       console.error("Error processing drawing:", error);
       toast.error("Failed to process drawing");
+      
+      // Safety cleanup if there was an error
+      if (fabricCanvasRef.current && path) {
+        try {
+          fabricCanvasRef.current.remove(path);
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
     }
   }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor]);
   

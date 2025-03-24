@@ -40,21 +40,23 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   
   // Use only start and end points for straightening
   const [start, end] = [stroke[0], stroke[stroke.length - 1]];
-  const dx = Math.abs(end.x - start.x);
-  const dy = Math.abs(end.y - start.y);
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
   
   // Even more aggressive straightening with clearer threshold for better UX
   const horizontalThreshold = 1.1; // Reduced from 1.2
   const verticalThreshold = 1.1;   // Reduced from 1.2
   
   // Determine if the line is more horizontal or vertical
-  if (dx > dy * horizontalThreshold) { // Horizontal preference
+  if (absDx > absDy * horizontalThreshold) { // Horizontal preference
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
       { x: Number(end.x.toFixed(3)), y: Number(start.y.toFixed(3)) }
     ];
-  } else if (dy > dx * verticalThreshold) { // Vertical preference
+  } else if (absDy > absDx * verticalThreshold) { // Vertical preference
     // Mostly vertical - keep the same X coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
@@ -63,9 +65,9 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   } else {
     // For diagonal lines, use perfect 45-degree angle snapping
     // Force exact 45 degrees for better visual alignment
-    const length = Math.max(dx, dy);
-    const signX = Math.sign(end.x - start.x);
-    const signY = Math.sign(end.y - start.y);
+    const length = Math.max(absDx, absDy);
+    const signX = Math.sign(dx);
+    const signY = Math.sign(dy);
     
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
@@ -112,4 +114,38 @@ export const adjustPointForPanning = (point: Point, canvas: any): Point => {
     x: Number(((point.x - vpt[4]) / vpt[0]).toFixed(3)),
     y: Number(((point.y - vpt[5]) / vpt[3]).toFixed(3))
   };
+};
+
+/**
+ * Filter out redundant or too-close points from a stroke
+ * Helps eliminate those small dots that appear in the drawing
+ * @param {Stroke} stroke - The stroke to filter
+ * @param {number} minDistance - Minimum distance between points (in meters)
+ * @returns {Stroke} Filtered stroke with redundant points removed
+ */
+export const filterRedundantPoints = (stroke: Stroke, minDistance: number = 0.05): Stroke => {
+  if (!stroke || stroke.length <= 2) return stroke;
+  
+  const result: Stroke = [stroke[0]];
+  
+  for (let i = 1; i < stroke.length; i++) {
+    const lastPoint = result[result.length - 1];
+    const currentPoint = stroke[i];
+    
+    const dx = currentPoint.x - lastPoint.x;
+    const dy = currentPoint.y - lastPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Only add the point if it's far enough from the previous one
+    if (distance >= minDistance) {
+      result.push(currentPoint);
+    }
+  }
+  
+  // Always include the last point if we have more than one point
+  if (result.length === 1 && stroke.length > 1) {
+    result.push(stroke[stroke.length - 1]);
+  }
+  
+  return result;
 };
