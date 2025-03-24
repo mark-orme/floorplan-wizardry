@@ -1,3 +1,4 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -9,7 +10,7 @@ import { PIXELS_PER_METER } from './drawing';
  * Snap a single point to the nearest grid intersection
  * Critical utility for ensuring walls start and end exactly on grid lines
  * @param {Point} point - The point to snap
- * @param {number} gridSize - Optional grid size (defaults to 0.1m)
+ * @param {number} gridSize - Optional grid size (defaults to GRID_SIZE constant)
  * @returns {Point} Snapped point with exact grid alignment
  */
 export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
@@ -19,11 +20,15 @@ export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
   const snappedX = Math.round(point.x / gridSize) * gridSize;
   const snappedY = Math.round(point.y / gridSize) * gridSize;
   
-  // Return with exactly 1 decimal place precision to avoid floating point issues
-  return {
+  // Create result with exactly 1 decimal place precision to avoid floating point issues
+  const result = {
     x: Number(snappedX.toFixed(1)),
     y: Number(snappedY.toFixed(1))
   };
+  
+  console.log(`SnapToGrid: (${point.x.toFixed(2)}, ${point.y.toFixed(2)}) → (${result.x.toFixed(2)}, ${result.y.toFixed(2)}) with gridSize: ${gridSize}`);
+  
+  return result;
 }
 
 /** 
@@ -44,6 +49,7 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
  * @returns {Point} Point snapped exactly to the nearest grid line
  */
 export const snapToNearestGridLine = (point: Point): Point => {
+  // Simply use snapToGrid with the standard grid size
   return snapToGrid(point, GRID_SIZE);
 };
 

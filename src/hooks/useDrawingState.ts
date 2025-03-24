@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -102,7 +103,7 @@ export const useDrawingState = ({
     // Get current pointer position in canvas coordinates
     const pointer = fabricCanvasRef.current.getPointer(e.e);
     
-    // Convert from pixel coordinates to meter coordinates
+    // Convert from pixel coordinates to meter coordinates with extra precision
     const rawCurrentPoint = {
       x: pointer.x / PIXELS_PER_METER,
       y: pointer.y / PIXELS_PER_METER
@@ -111,6 +112,8 @@ export const useDrawingState = ({
     // CRITICAL FIX: Snap the point to grid DURING drawing (not just after)
     // This gives visual feedback to the user about where walls will land
     const snappedCurrentPoint = snapToGrid(rawCurrentPoint);
+    
+    console.log("LIVE SNAP: Mouse position", rawCurrentPoint, "snapped to grid:", snappedCurrentPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -131,12 +134,14 @@ export const useDrawingState = ({
         y: absolutePosition.y - ((prev.cursorPosition?.y || 0) - absolutePosition.y) / 2
       };
       
-      return {
+      const updatedState = {
         ...prev,
         currentPoint: snappedCurrentPoint,
         cursorPosition: absolutePosition,
         midPoint: midPointScreen
       };
+      
+      return updatedState;
     });
     
     animationFrameRef.current = null;

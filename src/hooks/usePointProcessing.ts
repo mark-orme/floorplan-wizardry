@@ -52,10 +52,11 @@ export const usePointProcessing = (tool: DrawingTool) => {
       console.log("STRICT WALL SNAP - Original start:", filteredPoints[0], "Snapped to grid:", startPoint);
       console.log("STRICT WALL SNAP - Original end:", filteredPoints[filteredPoints.length - 1], "Snapped to grid:", endPoint);
       
-      // Create a perfectly straight line with exact grid alignment 
+      // Create a perfectly straight line with exact grid alignment
       finalPoints = straightenStroke([startPoint, endPoint]);
       
-      // Final validation: Ensure both points are exactly on grid lines
+      // Final validation: Ensure both points are exactly on grid lines - applying snapToGrid twice
+      // to guarantee perfect alignment
       finalPoints = finalPoints.map(point => snapToGrid(point));
       
       console.log("Final wall points (after processing):", finalPoints);

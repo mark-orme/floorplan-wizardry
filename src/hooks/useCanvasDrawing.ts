@@ -92,8 +92,12 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
         console.log("Applying strict grid alignment to wall line");
         try {
           // CRITICAL FIX: Apply grid snapping to both points BEFORE angle snapping
+          // This ensures both start and end points land perfectly on grid lines
           const snappedStartPoint = snapToGrid(drawingState.startPoint);
           const snappedCurrentPoint = snapToGrid(drawingState.currentPoint);
+          
+          console.log("Start point snapped from", drawingState.startPoint, "to", snappedStartPoint);
+          console.log("End point snapped from", drawingState.currentPoint, "to", snappedCurrentPoint);
           
           // Create perfectly aligned wall line with exact grid positioning
           const straightenedEndPoint = snapToAngle(
