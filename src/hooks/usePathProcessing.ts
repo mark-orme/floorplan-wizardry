@@ -8,15 +8,11 @@ import { Canvas as FabricCanvas, Path, Polyline } from "fabric";
 import { toast } from "sonner";
 import { 
   PIXELS_PER_METER,
-  fabricPathToPoints, 
-  snapToGrid, 
-  straightenStroke,
-  calculateGIA, 
   type FloorPlan,
-  type Point,
-  MAX_OBJECTS_PER_CANVAS
+  type Point
 } from "@/utils/drawing";
 import { snapToAngle } from "@/utils/fabric";
+import { snapToGrid, straightenStroke, calculateGIA } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
 interface UsePathProcessingProps {
@@ -30,6 +26,8 @@ interface UsePathProcessingProps {
   lineThickness?: number;
   lineColor?: string;
 }
+
+const MAX_OBJECTS_PER_CANVAS = 1000;
 
 /**
  * Hook for handling path creation and processing
@@ -75,8 +73,8 @@ export const usePathProcessing = ({
         return;
       }
       
-      // Extract points from path with full precision
-      const points = fabricPathToPoints(path.path);
+      // Extract points from path
+      const points = fabricPathToPoints(path);
       console.log("Points extracted from path:", points.length);
       
       if (points.length < 2) {
@@ -89,47 +87,16 @@ export const usePathProcessing = ({
       console.log("Points snapped to grid");
       
       // Apply straightening based on tool
-      if (tool === 'straightLine' || tool === 'draw') {
-        // Always straighten lines with the wall tool, and optionally for freehand drawing
-        // For freehand drawing, simplify to just start and end points if it's a mostly straight line
-        if (tool === 'draw' && points.length > 5) {
-          // For freehand, only straighten if it looks like a single stroke in mostly one direction
-          const start = finalPoints[0];
-          const end = finalPoints[finalPoints.length - 1];
-          
-          // Calculate overall direction and check if it's mostly linear
-          const dx = Math.abs(end.x - start.x);
-          const dy = Math.abs(end.y - start.y);
-          const length = Math.sqrt(dx * dx + dy * dy);
-          
-          // Check if the path length is similar to the direct distance between endpoints
-          // If so, it's mostly a straight line and should be straightened
-          const totalSegmentLength = calculatePathLength(finalPoints);
-          
-          // If path length is within 30% of direct distance, it's likely meant to be straight
-          if (totalSegmentLength <= length * 1.3) {
-            finalPoints = straightenStroke([start, end]);
-            console.log("Applied straightening to freehand drawing");
-          }
-        } else if (tool === 'straightLine') {
-          // For wall tool, always straighten
-          finalPoints = straightenStroke([finalPoints[0], finalPoints[finalPoints.length - 1]]);
-          console.log("Applied straightening to wall line");
-        }
+      if (tool === 'straightLine') {
+        // For wall tool, always straighten
+        finalPoints = straightenStroke([finalPoints[0], finalPoints[finalPoints.length - 1]]);
+        console.log("Applied straightening to wall line");
         
-        // For better feedback on the wall tool
-        if (finalPoints.length === 2) {
-          // Calculate length of the line in meters
-          const dx = finalPoints[1].x - finalPoints[0].x;
-          const dy = finalPoints[1].y - finalPoints[0].y;
-          const lengthInMeters = Math.sqrt(dx * dx + dy * dy) / PIXELS_PER_METER;
-          
-          if (tool === 'straightLine') {
-            toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
-          } else if (tool === 'draw') {
-            toast.success(`Line length: ${lengthInMeters.toFixed(2)}m`);
-          }
-        }
+        // Calculate and display wall length
+        const dx = finalPoints[1].x - finalPoints[0].x;
+        const dy = finalPoints[1].y - finalPoints[0].y;
+        const lengthInMeters = Math.sqrt(dx * dx + dy * dy);
+        toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
       } else if (tool === 'room') {
         // For room tool, create enclosed shape with angle snapping
         const snappedPoints = [finalPoints[0]];
@@ -175,12 +142,15 @@ export const usePathProcessing = ({
         fill: tool === 'room' ? `${lineColor}20` : 'transparent', // Use semi-transparent fill for rooms
         objectType: tool === 'room' ? 'room' : 'line',
         objectCaching: true,
-        perPixelTargetFind: false
+        perPixelTargetFind: false,
+        selectable: false,
+        hoverCursor: 'default'
       });
 
-      // Replace the temporary path with the processed polyline
+      // Remove the temporary path and add the processed polyline
       fabricCanvas.remove(path);
       fabricCanvas.add(polyline);
+      fabricCanvas.renderAll();
       
       // Ensure grid stays in the background
       gridLayerRef.current.forEach(gridObj => {
@@ -215,21 +185,44 @@ export const usePathProcessing = ({
       historyRef.current.past.push([...currentState]);
       historyRef.current.future = [];
       
+      console.log("Line drawn and added to canvas successfully");
+      
     } catch (error) {
       console.error("Error processing drawing:", error);
       toast.error("Failed to process drawing");
     }
   }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor]);
   
-  // Helper function to calculate the total length of a path
-  const calculatePathLength = (points: Point[]): number => {
-    let totalLength = 0;
-    for (let i = 1; i < points.length; i++) {
-      const dx = points[i].x - points[i-1].x;
-      const dy = points[i].y - points[i-1].y;
-      totalLength += Math.sqrt(dx * dx + dy * dy);
+  // Helper function to extract points from a Fabric.js path
+  const fabricPathToPoints = (path: Path): Point[] => {
+    if (!path.path) return [];
+    
+    const points: Point[] = [];
+    const pathData = path.path;
+    
+    // Extract points from the path data
+    // Each path command is an array where the first element is the command type
+    for (let i = 0; i < pathData.length; i++) {
+      const [command, ...coords] = pathData[i];
+      
+      // For 'M' (move to) and 'L' (line to) commands, add the point
+      if (command === 'M' || command === 'L') {
+        points.push({
+          x: coords[0] / PIXELS_PER_METER, // Convert pixels to meters
+          y: coords[1] / PIXELS_PER_METER
+        });
+      }
+      // For 'Q' (quadratic curve) commands, add the control point and end point
+      else if (command === 'Q') {
+        // The end point of a quadratic curve (coords[2], coords[3])
+        points.push({
+          x: coords[2] / PIXELS_PER_METER,
+          y: coords[3] / PIXELS_PER_METER
+        });
+      }
     }
-    return totalLength;
+    
+    return points;
   };
   
   return { processCreatedPath };

@@ -27,26 +27,22 @@ export const DistanceTooltip = memo(({
     return null;
   }
   
-  // Calculate distance in pixels then convert to meters
+  // Calculate distance in meters
   const dx = currentPoint.x - startPoint.x;
   const dy = currentPoint.y - startPoint.y;
-  const distanceInPixels = Math.sqrt(dx * dx + dy * dy);
-  
-  // We need to use the actual value without PIXELS_PER_METER since the coordinates are already in meters
-  const distanceInMeters = distanceInPixels;
+  const distanceInMeters = Math.sqrt(dx * dx + dy * dy);
   
   return (
     <div 
-      className="absolute pointer-events-none z-50"
+      className="absolute pointer-events-none z-50 bg-black/80 text-white px-3 py-2 rounded-md shadow-lg"
       style={{ 
         left: `${position.x + 20}px`, 
         top: `${position.y + 20}px`,
         transform: `translate3d(0,0,0)`, // Hardware acceleration
-        willChange: "transform", // Hint for browser optimization
-        transition: "transform 0.1s ease-out"
+        willChange: "transform" // Hint for browser optimization
       }}
     >
-      <div className="bg-black/80 text-white px-3 py-2 rounded-md flex items-center gap-2 text-sm shadow-md">
+      <div className="flex items-center gap-2 text-sm">
         <Ruler className="w-4 h-4" />
         <span className="font-medium">{distanceInMeters.toFixed(2)} m</span>
       </div>

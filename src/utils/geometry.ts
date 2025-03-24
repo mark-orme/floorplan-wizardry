@@ -44,13 +44,13 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   
   // More aggressive straightening with clearer threshold for better UX
   // Determine if the line is more horizontal or vertical
-  if (dx > dy * 1.5) { // Horizontal preference
+  if (dx > dy * 1.2) { // Horizontal preference (reduced threshold)
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
       { x: Number(end.x.toFixed(3)), y: Number(start.y.toFixed(3)) }
     ];
-  } else if (dy > dx * 1.5) { // Vertical preference
+  } else if (dy > dx * 1.2) { // Vertical preference (reduced threshold)
     // Mostly vertical - keep the same X coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
