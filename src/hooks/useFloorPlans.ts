@@ -7,7 +7,8 @@ import {
   loadFloorPlans, 
   saveFloorPlans, 
   PIXELS_PER_METER,
-  calculateGIA 
+  calculateGIA,
+  PaperSize
 } from "@/utils/drawing";
 
 interface UseFloorPlansProps {
@@ -152,7 +153,7 @@ export const useFloorPlans = ({
       { 
         strokes: [], 
         label: `Floor ${prev.length + 1}`,
-        paperSize: 'infinite'
+        paperSize: "infinite" as PaperSize  // Explicitly type as PaperSize
       }
     ]);
     toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);

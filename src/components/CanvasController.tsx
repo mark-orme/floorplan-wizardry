@@ -159,11 +159,11 @@ export const CanvasController = () => {
           setFloorPlans(plans);
           console.log("Floor plans loaded:", plans);
         } else {
-          // Create a default floor plan
-          const defaultPlan = [{
+          // Create a default floor plan with a proper paperSize type
+          const defaultPlan: FloorPlan[] = [{
             strokes: [],
             label: "Ground Floor",
-            paperSize: "infinite"
+            paperSize: "infinite"  // Using a valid enum value from FloorPlan type
           }];
           setFloorPlans(defaultPlan);
           console.log("Created default floor plan");

@@ -1,5 +1,5 @@
 
-import { FloorPlan, getDB, STORE_NAME } from './drawingTypes';
+import { FloorPlan, getDB, STORE_NAME, PaperSize } from './drawingTypes';
 
 /** Load floor plans from IndexedDB (with fallback to localStorage for migration) */
 export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
@@ -16,9 +16,14 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     const saved = localStorage.getItem('floorPlans');
     if (saved) {
       const parsedData = JSON.parse(saved);
+      // Validate paperSize values before returning
+      const validData = parsedData.map((plan: any) => ({
+        ...plan,
+        paperSize: validatePaperSize(plan.paperSize)
+      }));
       // Immediately save to IndexedDB for future use
-      await saveFloorPlans(parsedData);
-      return parsedData;
+      await saveFloorPlans(validData);
+      return validData;
     }
   } catch (e) {
     console.error('Failed to load floor plans from IndexedDB:', e);
@@ -27,7 +32,11 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     try {
       const saved = localStorage.getItem('floorPlans');
       if (saved) {
-        return JSON.parse(saved);
+        const parsedData = JSON.parse(saved);
+        return parsedData.map((plan: any) => ({
+          ...plan,
+          paperSize: validatePaperSize(plan.paperSize)
+        }));
       }
     } catch (localError) {
       console.error('Failed to load floor plans from localStorage:', localError);
@@ -35,26 +44,48 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
   }
   
   // Default floor plan if none exists
-  return [{ strokes: [], label: 'Ground Floor', paperSize: 'infinite' }];
+  return [{ strokes: [], label: 'Ground Floor', paperSize: 'infinite' as PaperSize }];
 };
 
 /** Save floor plans to IndexedDB (and localStorage as fallback) */
 export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<void> => {
   try {
+    // Ensure all paperSize values are valid
+    const validatedFloorPlans = floorPlans.map(plan => ({
+      ...plan,
+      paperSize: validatePaperSize(plan.paperSize)
+    }));
+    
     // Save to IndexedDB
     const db = await getDB();
-    await db.put(STORE_NAME, { id: 'current', data: floorPlans });
+    await db.put(STORE_NAME, { id: 'current', data: validatedFloorPlans });
     
     // Also save to localStorage as fallback/migration path
-    localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+    localStorage.setItem('floorPlans', JSON.stringify(validatedFloorPlans));
   } catch (e) {
     console.error('Failed to save floor plans to IndexedDB:', e);
     
     // Fallback to just localStorage
     try {
-      localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+      localStorage.setItem('floorPlans', JSON.stringify(floorPlans.map(plan => ({
+        ...plan,
+        paperSize: validatePaperSize(plan.paperSize)
+      }))));
     } catch (localError) {
       console.error('Failed to save floor plans to localStorage:', localError);
     }
   }
 };
+
+/**
+ * Validate and correct paperSize values to ensure they match the PaperSize type
+ * @param {string | undefined} paperSize - The paper size to validate
+ * @returns {PaperSize} A valid paper size
+ */
+function validatePaperSize(paperSize: string | undefined): PaperSize {
+  if (paperSize === 'A4' || paperSize === 'A3' || paperSize === 'infinite') {
+    return paperSize;
+  }
+  // Default to 'infinite' for invalid values
+  return 'infinite';
+}
