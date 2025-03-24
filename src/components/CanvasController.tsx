@@ -272,6 +272,14 @@ export const CanvasController = () => {
     
   }, [fabricCanvasRef.current, createGrid]);
 
+  // Ensure zoom level is properly passed to DistanceTooltip via drawingState
+  useEffect(() => {
+    if (fabricCanvasRef.current) {
+      // Trigger zoom:changed event when component mounts to ensure correct initial zoom
+      fabricCanvasRef.current.fire('zoom:changed', { zoom: zoomLevel });
+    }
+  }, [fabricCanvasRef, zoomLevel]);
+
   return {
     tool,
     gia,

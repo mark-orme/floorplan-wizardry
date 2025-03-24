@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
@@ -134,20 +135,40 @@ export const useCanvasTools = ({
   }, [fabricCanvasRef, gridLayerRef, setTool, lineThickness, lineColor]);
 
   /**
-   * Zoom the canvas in or out
+   * Zoom the canvas in or out in exact 10% increments
    * @param {string} direction - The zoom direction ("in" or "out")
    */
   const handleZoom = useCallback((direction: "in" | "out") => {
     if (!fabricCanvasRef.current) return;
-    const factor = direction === "in" ? 1.1 : 0.9;
-    const newZoom = zoomLevel * factor;
     
-    if (newZoom >= 0.5 && newZoom <= 3) {
+    // Use exact 10% increments for zooming
+    const zoomStep = 0.1; // 10% step
+    const minZoom = 0.5;  // 50% minimum zoom
+    const maxZoom = 3.0;  // 300% maximum zoom
+    
+    // Calculate the new zoom level in 10% increments
+    let newZoom: number;
+    if (direction === "in") {
+      // Round up to next 10% increment
+      newZoom = Math.min(Math.ceil((zoomLevel + 0.05) * 10) / 10, maxZoom);
+    } else {
+      // Round down to previous 10% increment
+      newZoom = Math.max(Math.floor((zoomLevel - 0.05) * 10) / 10, minZoom);
+    }
+    
+    // Only apply zoom if it's different from current
+    if (newZoom !== zoomLevel) {
       fabricCanvasRef.current.setZoom(newZoom);
       setZoomLevel(newZoom);
-      toast(`Zoom: ${Math.round(newZoom * 100)}%`);
-    } else {
-      toast("Zoom limit reached");
+      
+      // Trigger custom event for zoom change detection
+      fabricCanvasRef.current.fire('zoom:changed', { zoom: newZoom });
+      
+      // Show rounded percentage zoom level
+      toast(`Zoom: ${Math.round(newZoom * 100)}%`, {
+        duration: 1500,
+        id: 'zoom-level'
+      });
     }
   }, [fabricCanvasRef, zoomLevel, setZoomLevel]);
 

@@ -4,7 +4,7 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
@@ -48,6 +48,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     lineColor = "#000000"
   } = props;
   
+  // Track current zoom level for proper tooltip positioning
+  const [currentZoom, setCurrentZoom] = useState<number>(1);
+  
   const { processCreatedPath } = usePathProcessing({
     fabricCanvasRef,
     gridLayerRef,
@@ -70,6 +73,29 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     fabricCanvasRef,
     tool
   });
+  
+  // Update zoom level whenever canvas changes
+  useEffect(() => {
+    const updateZoomLevel = () => {
+      if (fabricCanvasRef.current) {
+        setCurrentZoom(fabricCanvasRef.current.getZoom());
+      }
+    };
+    
+    updateZoomLevel();
+    
+    // Set up listeners for zoom changes
+    const fabricCanvas = fabricCanvasRef.current;
+    if (fabricCanvas) {
+      fabricCanvas.on('zoom:changed', updateZoomLevel);
+    }
+    
+    return () => {
+      if (fabricCanvas) {
+        fabricCanvas.off('zoom:changed', updateZoomLevel);
+      }
+    };
+  }, [fabricCanvasRef]);
   
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
@@ -189,7 +215,13 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     drawingState
   ]);
 
+  // Augment the drawing state with the current zoom level for the tooltip
+  const augmentedDrawingState: DrawingState = {
+    ...drawingState,
+    zoomLevel: currentZoom
+  };
+
   return {
-    drawingState
+    drawingState: augmentedDrawingState
   };
 };

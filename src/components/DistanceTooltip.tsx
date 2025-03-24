@@ -1,5 +1,5 @@
 
-import React, { memo } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
@@ -11,6 +11,7 @@ interface DistanceTooltipProps {
   midPoint?: Point;
   isVisible: boolean;
   position?: Point;
+  zoomLevel?: number;
 }
 
 /**
@@ -24,7 +25,8 @@ export const DistanceTooltip = memo(({
   currentPoint,
   midPoint,
   isVisible,
-  position
+  position,
+  zoomLevel = 1
 }: DistanceTooltipProps): React.ReactElement | null => {
   // Exit early if we don't have the necessary data
   if (!startPoint || !currentPoint || !isVisible) {
@@ -67,16 +69,22 @@ export const DistanceTooltip = memo(({
   }
   
   // Calculate a vertical offset to position tooltip above the line
-  const verticalOffset = -30; // Move tooltip slightly above the line
+  // Scale the offset based on zoom level to ensure visibility at high zoom levels
+  const baseOffset = -30; // Base offset in pixels
+  const scaledOffset = baseOffset / Math.max(0.5, Math.min(zoomLevel, 3)); // Adjust offset inversely with zoom
+  
+  // Background opacity adjusted based on zoom for better visibility
+  const bgOpacity = Math.min(0.9, 0.8 + (zoomLevel / 10));
   
   return (
     <div 
-      className="absolute pointer-events-none z-50 bg-black/80 text-white px-3 py-2 rounded-md shadow-lg"
+      className="absolute pointer-events-none z-50 text-white px-3 py-2 rounded-md shadow-lg"
       style={{ 
         left: `${tooltipPosition.x}px`, 
-        top: `${tooltipPosition.y + verticalOffset}px`,
+        top: `${tooltipPosition.y + scaledOffset}px`,
         transform: `translate(-50%, -100%)`, // Center horizontally and position above the point
         willChange: "transform", // Hint for browser optimization
+        backgroundColor: `rgba(0, 0, 0, ${bgOpacity})`,
         boxShadow: "0 0 0 2px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.3)" // More visible outline
       }}
     >
