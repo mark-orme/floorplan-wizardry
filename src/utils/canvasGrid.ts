@@ -11,7 +11,8 @@ import {
   createGridBatch, 
   handleGridCreationError,
   gridManager,
-  resetGridProgress
+  resetGridProgress,
+  scheduleGridProgressReset
 } from "./gridOperations";
 
 /**
@@ -59,8 +60,23 @@ export const createGrid = (
     return gridLayerRef.current;
   }
 
-  // Force grid creation regardless of existing state - previous code might be skipping grid creation
-  console.log("Proceeding with grid creation regardless of existing state");
+  // CRITICAL FIX: Check if grid already exists and if dimensions are close enough
+  // If grid exists and dimensions haven't changed much, don't recreate
+  const gridExists = gridLayerRef.current.length > 0;
+  
+  if (gridExists && gridManager.exists) {
+    const oldDims = gridManager.lastDimensions;
+    const percentWidthChange = Math.abs((canvasDimensions.width - oldDims.width) / oldDims.width);
+    const percentHeightChange = Math.abs((canvasDimensions.height - oldDims.height) / oldDims.height);
+    
+    // Only recreate if dimensions changed by more than 20%
+    if (percentWidthChange < 0.2 && percentHeightChange < 0.2) {
+      console.log("Grid already exists with similar dimensions, skipping creation");
+      return gridLayerRef.current;
+    } else {
+      console.log("Dimensions changed significantly, recreating grid");
+    }
+  }
   
   // Check if grid creation is in progress and reset if it's been too long
   if (gridManager.inProgress) {
@@ -68,7 +84,7 @@ export const createGrid = (
     
     // If it's been more than 5 seconds since last call, reset the flag
     const now = Date.now();
-    if (now - gridManager.lastCreationTime > 5000) {
+    if (now - gridManager.lastCreationTime > gridManager.safetyTimeout) {
       console.log("Grid creation appears stuck, resetting in-progress flag");
       resetGridProgress();
     } else {
@@ -81,6 +97,10 @@ export const createGrid = (
   if (gridManager.batchTimeoutId) {
     clearTimeout(gridManager.batchTimeoutId);
   }
+  
+  // CRITICAL FIX: Schedule a safety timeout to reset the flag after 5 seconds
+  // This ensures grid creation won't get permanently stuck
+  const safetyTimeoutId = scheduleGridProgressReset(gridManager.safetyTimeout);
   
   gridManager.inProgress = true;
   console.log("Starting grid creation batch process");
@@ -103,9 +123,23 @@ export const createGrid = (
       gridManager
     );
     
-    console.log(`Grid creation complete, returning ${result.length} objects`);
-    return result;
+    // Clear the safety timeout since we completed successfully
+    clearTimeout(safetyTimeoutId);
+    
+    if (result.length > 0) {
+      console.log(`Grid creation complete, returning ${result.length} objects`);
+      // Force a render to ensure grid is visible
+      canvas.requestRenderAll();
+      return result;
+    } else {
+      console.error("Grid creation returned 0 objects - critical failure");
+      // Reset progress flag to allow future attempts
+      resetGridProgress();
+      return gridLayerRef.current;
+    }
   } catch (err) {
+    // Clear the safety timeout
+    clearTimeout(safetyTimeoutId);
     console.error("Error creating grid:", err);
     return handleGridCreationError(
       err, 

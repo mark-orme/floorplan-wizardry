@@ -6,7 +6,7 @@
 import { useCallback, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
-import { gridManager, resetGridProgress } from "@/utils/gridOperations";
+import { gridManager, resetGridProgress, scheduleGridProgressReset } from "@/utils/gridOperations";
 
 interface UseCanvasGridProps {
   gridLayerRef: React.MutableRefObject<any[]>;
@@ -41,6 +41,8 @@ export const useCanvasGrid = ({
   const gridCreationsCountRef = useRef(gridManager.totalCreations);
   const debounceTimerRef = useRef<number | null>(null);
   const safetyTimeoutRef = useRef<number | null>(null);
+  const attemptCountRef = useRef(0);
+  const MAX_ATTEMPTS = 3;
   
   // Debug effect to log grid state changes
   useEffect(() => {
@@ -63,7 +65,7 @@ export const useCanvasGrid = ({
     };
   }, []);
   
-  // Create grid callback with forced creation
+  // Create grid callback with forced creation and retry mechanism
   const createGridCallback = useCallback((canvas: FabricCanvas) => {
     console.log("createGridCallback invoked with FORCED CREATION", {
       canvasDimensions,
@@ -83,12 +85,14 @@ export const useCanvasGrid = ({
       debounceTimerRef.current = null;
     }
     
-    // If grid creation is already in progress, reset it after a safety timeout
-    if (gridCreationInProgressRef.current || gridManager.inProgress) {
-      console.log("Grid creation already in progress, resetting flag to allow new attempt");
-      resetGridProgress();
-      gridCreationInProgressRef.current = false;
-    }
+    // CRITICAL FIX: Reset progress flag immediately before attempting new creation
+    // This ensures we don't get stuck in "already in progress" state
+    resetGridProgress();
+    gridCreationInProgressRef.current = false;
+    
+    // Increment attempt counter
+    attemptCountRef.current++;
+    console.log(`Grid creation attempt #${attemptCountRef.current}`);
     
     // Set flags to indicate a grid creation is in progress
     gridCreationInProgressRef.current = true;
@@ -104,6 +108,14 @@ export const useCanvasGrid = ({
       resetGridProgress();
       gridCreationInProgressRef.current = false;
       safetyTimeoutRef.current = null;
+      
+      // If we haven't exceeded max attempts, try again after delay
+      if (attemptCountRef.current < MAX_ATTEMPTS) {
+        console.log(`Retry attempt #${attemptCountRef.current + 1} scheduled after safety timeout`);
+        setTimeout(() => {
+          createGridCallback(canvas);
+        }, 500);
+      }
     }, gridManager.safetyTimeout);
     
     console.log("Forcing grid creation with dimensions:", canvasDimensions);
@@ -133,17 +145,44 @@ export const useCanvasGrid = ({
       
       if (grid && grid.length > 0) {
         console.log(`Grid created successfully with ${grid.length} objects`);
+        // Reset attempt counter on success
+        attemptCountRef.current = 0;
         // Force a render
         canvas.requestRenderAll();
+        return grid;
       } else {
-        console.warn("Grid creation returned no objects - critical failure");
+        console.warn("Grid creation returned no objects");
+        
+        // Retry logic if we haven't exceeded max attempts
+        if (attemptCountRef.current < MAX_ATTEMPTS) {
+          console.log(`Scheduling retry attempt #${attemptCountRef.current + 1}`);
+          
+          // Use exponential backoff for retries
+          const delay = Math.pow(2, attemptCountRef.current) * 200;
+          
+          setTimeout(() => {
+            resetGridProgress();
+            createGridCallback(canvas);
+          }, delay);
+        }
+        
+        return [];
       }
-      
-      return grid;
     } catch (err) {
       console.error("Critical error in createGridCallback:", err);
       setHasError(true);
       setErrorMessage(`Grid creation failed: ${err instanceof Error ? err.message : String(err)}`);
+      
+      // Retry logic if we haven't exceeded max attempts
+      if (attemptCountRef.current < MAX_ATTEMPTS) {
+        console.log(`Scheduling retry attempt #${attemptCountRef.current + 1} after error`);
+        
+        setTimeout(() => {
+          resetGridProgress();
+          createGridCallback(canvas);
+        }, 500);
+      }
+      
       return [];
     } finally {
       // Reset the flags

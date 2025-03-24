@@ -5,11 +5,11 @@
  * @module gridOperations
  */
 import { Canvas } from "fabric";
-import { gridManager, resetGridProgress } from "./gridManager";
+import { gridManager, resetGridProgress, scheduleGridProgressReset } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
 
 // Re-export gridManager for use in other modules
-export { gridManager, resetGridProgress };
+export { gridManager, resetGridProgress, scheduleGridProgressReset };
 
 /**
  * Check if grid creation should be throttled based on creation limits
@@ -133,9 +133,10 @@ export const createGridBatch = (
       gridLayerRef.current = [];
     }
     
+    // CRITICAL FIX: Apply minimum dimensions to avoid zero-size grid issues
     // Get up-to-date dimensions with safety checks
-    const canvasWidth = Math.max(canvas.getWidth() || canvasDimensions.width, 400);
-    const canvasHeight = Math.max(canvas.getHeight() || canvasDimensions.height, 300);
+    const canvasWidth = Math.max(canvas.width || canvasDimensions.width, 200);
+    const canvasHeight = Math.max(canvas.height || canvasDimensions.height, 200);
     
     console.log(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
     
@@ -151,24 +152,24 @@ export const createGridBatch = (
     );
     
     if (result.gridObjects.length === 0) {
-      console.warn("No grid objects were created - critical failure");
-      // Try again with hardcoded fallback dimensions if needed
-      if (canvasWidth === 0 || canvasHeight === 0) {
-        console.log("Attempting grid creation with fallback dimensions");
-        const fallbackResult = renderGridComponents(canvas, 800, 600);
-        if (fallbackResult.gridObjects.length > 0) {
-          console.log("Fallback grid creation succeeded");
-          arrangeGridObjects(
-            canvas, 
-            fallbackResult.smallGridLines, 
-            fallbackResult.largeGridLines, 
-            fallbackResult.markers
-          );
-          gridLayerRef.current = fallbackResult.gridObjects;
-          gridManager.exists = true;
-          setDebugInfo(prev => ({...prev, gridCreated: true}));
-          return fallbackResult.gridObjects;
-        }
+      console.warn("No grid objects were created - trying fallback dimensions");
+      // Try again with hardcoded fallback dimensions
+      console.log("Attempting grid creation with fallback dimensions (800x600)");
+      const fallbackResult = renderGridComponents(canvas, 800, 600);
+      if (fallbackResult.gridObjects.length > 0) {
+        console.log("Fallback grid creation succeeded");
+        arrangeGridObjects(
+          canvas, 
+          fallbackResult.smallGridLines, 
+          fallbackResult.largeGridLines, 
+          fallbackResult.markers
+        );
+        gridLayerRef.current = fallbackResult.gridObjects;
+        gridManager.exists = true;
+        setDebugInfo(prev => ({...prev, gridCreated: true}));
+        return fallbackResult.gridObjects;
+      } else {
+        console.error("Even fallback grid creation failed - critical issue");
       }
     } else {
       console.log(`Grid objects created: ${result.gridObjects.length}`);
