@@ -170,7 +170,7 @@ export const Canvas = () => {
     gridObjects.push(scaleMarker);
     
     gridObjects.forEach(obj => {
-      canvas.sendToBack(obj);
+      canvas.sendObjectToBack(obj);
     });
     
     gridLayerRef.current = gridObjects;
@@ -207,7 +207,7 @@ export const Canvas = () => {
         createGrid(fabricCanvas);
       } else {
         gridLayerRef.current.forEach(gridObj => {
-          fabricCanvas.sendToBack(gridObj);
+          fabricCanvas.sendObjectToBack(gridObj);
         });
         fabricCanvas.renderAll();
       }
@@ -241,7 +241,7 @@ export const Canvas = () => {
         fabricCanvas.add(polyline);
         
         gridLayerRef.current.forEach(gridObj => {
-          fabricCanvas.sendToBack(gridObj);
+          fabricCanvas.sendObjectToBack(gridObj);
         });
         
         fabricCanvas.renderAll();
@@ -291,7 +291,7 @@ export const Canvas = () => {
     }
     
     gridLayerRef.current.forEach(gridObj => {
-      fabricCanvasRef.current!.sendToBack(gridObj);
+      fabricCanvasRef.current!.sendObjectToBack(gridObj);
     });
     
     currentPlan.strokes.forEach(stroke => {
