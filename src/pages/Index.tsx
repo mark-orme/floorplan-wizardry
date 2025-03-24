@@ -12,7 +12,7 @@ const Index = () => {
           Create accurate floorplans with ease
         </p>
       </header>
-      <main className="min-h-[calc(100vh-120px)]">
+      <main className="min-h-[calc(100vh-120px)] py-6">
         <Canvas />
       </main>
     </div>

@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -114,8 +113,8 @@ export const Canvas = () => {
     }
     
     const gridObjects: fabric.Object[] = [];
-    const canvasWidth = canvas.width || 800;
-    const canvasHeight = canvas.height || 600;
+    const canvasWidth = canvas.getWidth() || 800;
+    const canvasHeight = canvas.getHeight() || 600;
     
     console.log(`Canvas dimensions: ${canvasWidth}x${canvasHeight}`);
     
@@ -213,9 +212,7 @@ export const Canvas = () => {
     fabricCanvasRef.current = fabricCanvas;
 
     // Initialize drawing brush
-    if (!fabricCanvas.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
-    }
+    fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
     fabricCanvas.freeDrawingBrush.color = "#000000";
     fabricCanvas.freeDrawingBrush.width = 2;
 
@@ -586,7 +583,7 @@ export const Canvas = () => {
           gia={gia}
         />
 
-        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden h-[500px]">
           <canvas ref={canvasRef} className="w-full h-full" />
         </div>
       </Card>
