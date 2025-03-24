@@ -251,7 +251,7 @@ export const Canvas = () => {
         selection: false,
         width: canvasDimensions.width,
         height: canvasDimensions.height,
-        renderOnAddRemove: false
+        renderOnAddRemove: true
       });
       
       console.log("FabricCanvas instance created");
@@ -269,9 +269,14 @@ export const Canvas = () => {
         brushInitialized: true
       }));
       
-      createGrid(fabricCanvas);
+      // Create grid must be called immediately after canvas initialization
+      const gridObjects = createGrid(fabricCanvas);
+      console.log(`Grid created with ${gridObjects.length} objects`);
       
+      // Add pressure sensitivity for Apple Pencil
       addPressureSensitivity(fabricCanvas);
+      
+      // Add pinch-to-zoom
       addPinchToZoom(fabricCanvas, setZoomLevel);
       
       const handleObjectAdded = () => {
@@ -313,16 +318,17 @@ export const Canvas = () => {
           
           if (tool === 'straightLine') {
             finalPoints = straightenStroke(snappedPoints);
+            console.log("Straightened stroke:", finalPoints);
           } else if (tool === 'room' && snappedPoints.length >= 2) {
+            // For room tool, use angle snapping for 45-degree angles
             finalPoints = [snappedPoints[0]];
             
             for (let i = 1; i < snappedPoints.length; i++) {
               const snappedEnd = snapToAngle(snappedPoints[i-1], snappedPoints[i]);
               finalPoints.push(snappedEnd);
             }
+            console.log("Room points with angle snapping:", finalPoints);
           }
-          
-          console.log("Final points processed for tool:", tool);
 
           const polyline = new Polyline(
             finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
@@ -393,7 +399,7 @@ export const Canvas = () => {
     } catch (err) {
       console.error("Error initializing canvas:", err);
       setHasError(true);
-      setErrorMessage("Failed to initialize canvas");
+      setErrorMessage(`Failed to initialize canvas: ${err instanceof Error ? err.message : String(err)}`);
       toast.error("Failed to initialize canvas");
     }
   }, [canvasDimensions, tool, currentFloor, createGrid]);
@@ -405,28 +411,39 @@ export const Canvas = () => {
     console.log("Setting up resize handler");
     
     const updateCanvasDimensions = () => {
-      if (!canvasRef.current) return;
+      if (!canvasRef.current) {
+        console.error("Canvas ref is null during dimension update");
+        return;
+      }
       
       const container = document.querySelector('.canvas-container');
       console.log("Container found:", !!container);
-      if (!container) return;
+      if (!container) {
+        console.error("Canvas container not found");
+        setHasError(true);
+        setErrorMessage("Canvas container not found");
+        return;
+      }
       
       const { width, height } = container.getBoundingClientRect();
       console.log("Container dimensions:", width, height);
       
-      if (width <= 0 || height <= 0) return;
+      if (width <= 0 || height <= 0) {
+        console.error("Invalid container dimensions:", width, height);
+        return;
+      }
       
       const newWidth = Math.max(width - 20, 600);
       const newHeight = Math.max(height - 20, 400);
       
+      console.log(`Setting canvas dimensions to ${newWidth}x${newHeight}`);
       setCanvasDimensions({ width: newWidth, height: newHeight });
       setDebugInfo(prev => ({...prev, dimensionsSet: true}));
       
       if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.renderOnAddRemove = false;
-        fabricCanvasRef.current.setDimensions({ width: newWidth, height: newHeight });
+        console.log("Updating fabric canvas dimensions");
+        setCanvasDimensions(fabricCanvasRef.current, newWidth, newHeight);
         createGrid(fabricCanvasRef.current);
-        fabricCanvasRef.current.renderOnAddRemove = true;
         fabricCanvasRef.current.renderAll();
       } else {
         console.log("Fabric canvas ref not available for dimension update");
@@ -446,7 +463,8 @@ export const Canvas = () => {
 
     window.addEventListener('resize', debouncedResizeHandler);
     
-    updateCanvasDimensions();
+    // Initial update of canvas dimensions
+    setTimeout(updateCanvasDimensions, 100);
     
     return () => {
       window.removeEventListener('resize', debouncedResizeHandler);
@@ -500,12 +518,19 @@ export const Canvas = () => {
    * Draw the selected floor plan on the canvas
    */
   const drawFloorPlan = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
+    if (!fabricCanvasRef.current) {
+      console.error("Cannot draw floor plan: fabric canvas is null");
+      return;
+    }
     
     const currentPlan = floorPlans[currentFloor];
-    if (!currentPlan) return;
+    if (!currentPlan) {
+      console.error("Cannot draw floor plan: no plan data for current floor");
+      return;
+    }
     
     if (gridLayerRef.current.length === 0) {
+      console.log("No grid found, creating new grid");
       createGrid(fabricCanvasRef.current);
     }
     
@@ -515,6 +540,7 @@ export const Canvas = () => {
       fabricCanvasRef.current!.sendObjectToBack(gridObj);
     });
     
+    console.log(`Drawing ${currentPlan.strokes.length} strokes for floor plan`);
     currentPlan.strokes.forEach(stroke => {
       const polyline = new Polyline(
         stroke.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
@@ -546,7 +572,10 @@ export const Canvas = () => {
    * Clear all drawings from canvas
    */
   const clearDrawings = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
+    if (!fabricCanvasRef.current) {
+      console.error("Cannot clear drawings: fabric canvas is null");
+      return;
+    }
     
     const gridObjects = [...gridLayerRef.current];
     
@@ -597,6 +626,10 @@ export const Canvas = () => {
   }, [tool]);
 
   // HANDLER FUNCTIONS FOR UI INTERACTIONS
+  /**
+   * Handle tool change from toolbar
+   * @param newTool The drawing tool to switch to
+   */
   const handleToolChange = useCallback((newTool: "draw" | "room" | "straightLine") => {
     setTool(newTool);
     if (fabricCanvasRef.current) {
@@ -609,6 +642,9 @@ export const Canvas = () => {
     }
   }, []);
 
+  /**
+   * Handle undo action
+   */
   const handleUndo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -638,6 +674,9 @@ export const Canvas = () => {
     }
   }, [clearDrawings]);
 
+  /**
+   * Handle redo action
+   */
   const handleRedo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -663,6 +702,10 @@ export const Canvas = () => {
     }
   }, [clearDrawings]);
 
+  /**
+   * Handle zoom actions
+   * @param direction "in" to zoom in, "out" to zoom out
+   */
   const handleZoom = useCallback((direction: "in" | "out") => {
     if (!fabricCanvasRef.current) return;
     const factor = direction === "in" ? 1.1 : 0.9;
@@ -674,6 +717,9 @@ export const Canvas = () => {
     }
   }, [zoomLevel]);
 
+  /**
+   * Clear the entire canvas
+   */
   const clearCanvas = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -697,6 +743,9 @@ export const Canvas = () => {
     toast.success("Canvas cleared");
   }, [clearDrawings, currentFloor]);
 
+  /**
+   * Save canvas contents and export as PNG
+   */
   const saveCanvas = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -753,6 +802,9 @@ export const Canvas = () => {
     setGia(totalGIA);
   }, []);
 
+  /**
+   * Handle adding a new floor
+   */
   const handleAddFloor = useCallback(() => {
     setFloorPlans(prev => [
       ...prev, 
@@ -766,6 +818,10 @@ export const Canvas = () => {
     toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);
   }, [floorPlans.length]);
 
+  /**
+   * Handle selecting a different floor
+   * @param index The floor index to select
+   */
   const handleSelectFloor = useCallback((index: number) => {
     if (index !== currentFloor) {
       setCurrentFloor(index);
@@ -839,15 +895,13 @@ export const Canvas = () => {
           <Card className="p-6 bg-white shadow-md rounded-lg">
             <canvas ref={canvasRef} />
             
-            {/* Debug info display during development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="text-xs mt-2 text-gray-500 grid grid-cols-2 gap-1">
-                <div>Canvas Initialized: {debugInfo.canvasInitialized ? '✅' : '❌'}</div>
-                <div>Grid Created: {debugInfo.gridCreated ? '✅' : '❌'}</div>
-                <div>Dimensions Set: {debugInfo.dimensionsSet ? '✅' : '❌'}</div>
-                <div>Brush Initialized: {debugInfo.brushInitialized ? '✅' : '❌'}</div>
-              </div>
-            )}
+            {/* Debug info display */}
+            <div className="text-xs mt-2 text-gray-500 grid grid-cols-2 gap-1 border-t pt-2">
+              <div>Canvas Initialized: {debugInfo.canvasInitialized ? '✅' : '❌'}</div>
+              <div>Grid Created: {debugInfo.gridCreated ? '✅' : '❌'}</div>
+              <div>Dimensions Set: {debugInfo.dimensionsSet ? '✅' : '❌'}</div>
+              <div>Brush Initialized: {debugInfo.brushInitialized ? '✅' : '❌'}</div>
+            </div>
           </Card>
         </div>
       </div>

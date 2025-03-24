@@ -7,12 +7,16 @@ import { Canvas, PencilBrush, Object as FabricObject } from "fabric";
  * @returns The initialized brush or null if initialization fails
  */
 export const initializeDrawingBrush = (canvas: Canvas) => {
-  if (!canvas) return null;
+  if (!canvas) {
+    console.error("Cannot initialize brush: canvas is null");
+    return null;
+  }
   
   try {
     const brush = new PencilBrush(canvas);
     brush.color = "#000000";
     brush.width = 2;
+    console.log("Drawing brush initialized successfully");
     return brush;
   } catch (error) {
     console.error("Failed to initialize drawing brush:", error);
@@ -27,9 +31,13 @@ export const initializeDrawingBrush = (canvas: Canvas) => {
  * @param height Height to set
  */
 export const setCanvasDimensions = (canvas: Canvas, width: number, height: number) => {
-  if (!canvas) return;
+  if (!canvas) {
+    console.error("Cannot set dimensions: canvas is null");
+    return;
+  }
   
   try {
+    console.log(`Setting canvas dimensions to ${width}x${height}`);
     canvas.setDimensions({ width, height });
     canvas.renderAll();
   } catch (error) {
@@ -42,7 +50,10 @@ export const setCanvasDimensions = (canvas: Canvas, width: number, height: numbe
  * @param canvas The Fabric canvas instance to dispose
  */
 export const disposeCanvas = (canvas: Canvas | null) => {
-  if (!canvas) return;
+  if (!canvas) {
+    console.log("No canvas to dispose");
+    return;
+  }
   
   try {
     // Remove all event listeners
@@ -66,13 +77,20 @@ export const disposeCanvas = (canvas: Canvas | null) => {
  * @param gridObjects Grid objects to preserve
  */
 export const clearCanvasObjects = (canvas: Canvas, gridObjects: any[]) => {
-  if (!canvas) return;
+  if (!canvas) {
+    console.error("Cannot clear canvas: canvas is null");
+    return;
+  }
   
   try {
+    console.log(`Clearing canvas objects while preserving ${gridObjects.length} grid objects`);
+    
     // Get all objects that are not grid
     const objectsToRemove = canvas.getObjects().filter(obj => 
       !gridObjects.includes(obj)
     );
+    
+    console.log(`Found ${objectsToRemove.length} objects to remove`);
     
     // Remove them
     objectsToRemove.forEach(obj => {
@@ -90,7 +108,10 @@ export const clearCanvasObjects = (canvas: Canvas, gridObjects: any[]) => {
  * @param canvas The Fabric canvas instance
  */
 export const addPressureSensitivity = (canvas: Canvas) => {
-  if (!canvas) return;
+  if (!canvas) {
+    console.error("Cannot add pressure sensitivity: canvas is null");
+    return;
+  }
   
   try {
     canvas.on('mouse:down', (e: any) => {
@@ -115,7 +136,10 @@ export const addPressureSensitivity = (canvas: Canvas) => {
  * @param setZoomLevel Function to update zoom level state
  */
 export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => void) => {
-  if (!canvas) return;
+  if (!canvas) {
+    console.error("Cannot add pinch-to-zoom: canvas is null");
+    return;
+  }
   
   let initialDistance = 0;
   let initialZoom = 1;
@@ -132,6 +156,7 @@ export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => v
         
         // Prevent default to avoid page scrolling
         e.e.preventDefault();
+        console.log("Pinch-to-zoom gesture started");
       }
     });
     
