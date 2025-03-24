@@ -18,7 +18,9 @@ import { useCanvasResizing } from "@/hooks/useCanvasResizing";
 import { useFloorPlans } from "@/hooks/useFloorPlans";
 import { useDrawingTools } from "@/hooks/useDrawingTools";
 import { useFloorSelection } from "@/hooks/useFloorSelection";
-import { PaperSize } from "@/utils/drawingTypes";
+import { useLineSettings } from "@/hooks/useLineSettings";
+import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
+import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
 
 /**
  * Controller component that manages all canvas logic and state
@@ -72,6 +74,25 @@ export const CanvasController = () => {
     setErrorMessage
   });
 
+  // Floor plans management
+  const {
+    drawFloorPlan,
+    recalculateGIA,
+    handleAddFloor,
+    handleSelectFloor,
+    loadData
+  } = useFloorPlans({
+    fabricCanvasRef,
+    gridLayerRef,
+    floorPlans,
+    currentFloor,
+    isLoading,
+    setGia,
+    setFloorPlans,
+    clearDrawings: () => {}, // Will be replaced after useDrawingTools is initialized
+    createGrid
+  });
+
   // Drawing tools
   const {
     clearDrawings,
@@ -110,30 +131,45 @@ export const CanvasController = () => {
     setGia
   });
 
-  // Floor plans management
-  const {
-    drawFloorPlan,
-    recalculateGIA,
-    handleAddFloor,
-    handleSelectFloor,
-    loadData
-  } = useFloorPlans({
-    fabricCanvasRef,
-    gridLayerRef,
-    floorPlans,
-    currentFloor,
-    isLoading,
-    setGia,
-    setFloorPlans,
-    clearDrawings,
-    createGrid
-  });
-
   // Floor selection
   const { handleFloorSelect } = useFloorSelection({
     currentFloor,
     setCurrentFloor,
     handleSelectFloor
+  });
+  
+  // Line settings management
+  const { 
+    handleLineThicknessChange, 
+    handleLineColorChange,
+    applyLineSettings
+  } = useLineSettings({
+    fabricCanvasRef,
+    lineThickness,
+    lineColor,
+    setLineThickness,
+    setLineColor
+  });
+  
+  // Error handling and retries
+  const { 
+    handleRetry 
+  } = useCanvasErrorHandling({
+    setHasError,
+    setErrorMessage,
+    resetLoadTimes,
+    loadData
+  });
+  
+  // Floor plan data loading
+  const { 
+    loadFloorPlansData 
+  } = useFloorPlanLoader({
+    setIsLoading,
+    setFloorPlans,
+    setHasError,
+    setErrorMessage,
+    loadData
   });
   
   // Update the recalculateGIA in drawing tools
@@ -152,70 +188,15 @@ export const CanvasController = () => {
     createGrid
   });
 
-  // Handle line thickness changes
-  const handleLineThicknessChange = useCallback((thickness: number) => {
-    setLineThickness(thickness);
-    
-    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
-      fabricCanvasRef.current.freeDrawingBrush.width = thickness;
-      toast.success(`Line thickness set to ${thickness}px`);
-    }
-  }, [fabricCanvasRef, setLineThickness]);
-
-  // Handle line color changes
-  const handleLineColorChange = useCallback((color: string) => {
-    setLineColor(color);
-    
-    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
-      fabricCanvasRef.current.freeDrawingBrush.color = color;
-      toast.success(`Line color updated`);
-    }
-  }, [fabricCanvasRef, setLineColor]);
-
   // Apply line settings when tool changes
   useEffect(() => {
-    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
-      fabricCanvasRef.current.freeDrawingBrush.width = lineThickness;
-      fabricCanvasRef.current.freeDrawingBrush.color = lineColor;
-    }
-  }, [tool, fabricCanvasRef, lineThickness, lineColor]);
+    applyLineSettings();
+  }, [tool, applyLineSettings]);
 
   // Load floor plans data
   useEffect(() => {
-    const loadFloorPlansData = async () => {
-      try {
-        console.log("Loading floor plans...");
-        setIsLoading(true);
-        const plans = await loadData();
-        
-        // If plans exist, load them, otherwise create a default
-        if (plans && plans.length > 0) {
-          setFloorPlans(plans);
-          console.log("Floor plans loaded:", plans);
-        } else {
-          // Create a default floor plan with a properly typed paperSize
-          const defaultPlan = [{
-            strokes: [],
-            label: "Ground Floor",
-            paperSize: "infinite" as PaperSize  // Explicitly cast as PaperSize to fix the type error
-          }];
-          setFloorPlans(defaultPlan);
-          console.log("Created default floor plan");
-        }
-        
-        setIsLoading(false);
-        setHasError(false);
-      } catch (error) {
-        console.error("Error loading floor plans:", error);
-        setHasError(true);
-        setErrorMessage("Failed to load floor plans");
-        toast.error("Failed to load floor plans");
-        setIsLoading(false);
-      }
-    };
-    
     loadFloorPlansData();
-  }, [loadData, setFloorPlans, setHasError, setErrorMessage, setIsLoading]);
+  }, [loadFloorPlansData]);
 
   // Ensure the grid is created on initial load
   useEffect(() => {
@@ -227,12 +208,6 @@ export const CanvasController = () => {
       }
     }
   }, [fabricCanvasRef, debugInfo.gridCreated, createGrid]);
-
-  // Retry handler for loading errors
-  const handleRetry = useCallback(() => {
-    resetLoadTimes();
-    loadData();
-  }, [loadData, resetLoadTimes]);
 
   return {
     tool,
