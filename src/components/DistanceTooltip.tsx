@@ -30,11 +30,11 @@ export const DistanceTooltip = memo(({
     return null;
   }
   
-  // Calculate distance in meters
+  // Calculate distance in meters (now rounded to 1 decimal place)
   const distanceInMeters = calculateDistance(startPoint, currentPoint);
   
   // If the distance is too small, don't show the tooltip
-  if (distanceInMeters < 0.01) {
+  if (distanceInMeters < 0.1) {
     return null;
   }
   
@@ -52,11 +52,9 @@ export const DistanceTooltip = memo(({
     Math.abs(normalizedAngle - angle) < 10
   );
   
-  // Check if the distance is an exact multiple of grid size (0.1m)
-  const isExactMultiple = isExactGridMultiple(distanceInMeters);
-  
-  // Format the distance to always show 2 decimal places for consistency
-  const formattedDistance = distanceInMeters.toFixed(2);
+  // Format the distance to always show 1 decimal place for consistency
+  // This ensures measurements like 1.0m, 1.1m, 1.2m, etc.
+  const formattedDistance = distanceInMeters.toFixed(1);
   
   // Determine position for tooltip - prefer midPoint if available
   const tooltipPosition = midPoint || position;

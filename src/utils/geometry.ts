@@ -1,4 +1,3 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -42,9 +41,8 @@ export const snapToGrid = (points: Point[]): Stroke => {
 export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stroke => {
   if (!points || points.length === 0) return [];
   
-  // Use standard snapping for non-strict mode
-  if (!strict) return snapToGrid(points);
-  
+  // Always use strict snapping for straight lines on iPad/Apple Pencil for better precision
+  // This ensures we can only draw on grid lines, not between them
   return points.map(p => {
     // For strict mode (wall tool), snap exactly to 0.1m grid
     const x = typeof p.x === 'number' ? p.x : 0;
@@ -199,14 +197,15 @@ export const filterRedundantPoints = (stroke: Stroke, minDistance: number = 0.05
  * Calculate exact distance between two points in meters
  * @param startPoint - Starting point 
  * @param endPoint - Ending point
- * @returns Distance in meters, rounded to 2 decimal places for display
+ * @returns Distance in meters, rounded to 1 decimal place for better usability
  */
 export const calculateDistance = (startPoint: Point, endPoint: Point): number => {
   const dx = endPoint.x - startPoint.x;
   const dy = endPoint.y - startPoint.y;
   
-  // Distance in meters with 2 decimal precision
-  return Math.round(Math.sqrt(dx * dx + dy * dy) * 100) / 100;
+  // Distance in meters with 1 decimal precision (0.1m increments)
+  // This ensures we only show distances like 1.0m, 1.1m, 1.2m, etc.
+  return Math.round(Math.sqrt(dx * dx + dy * dy) * 10) / 10;
 };
 
 /**

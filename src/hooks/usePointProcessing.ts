@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing points during drawing
  * @module usePointProcessing
@@ -39,9 +38,9 @@ export const usePointProcessing = (tool: DrawingTool) => {
     }
     
     // Apply grid snapping based on the tool
-    // For wall tool (straightLine), use strict grid snapping
+    // For wall tool (straightLine), always use strict grid snapping
     let finalPoints = tool === 'straightLine' 
-      ? snapPointsToGrid(filteredPoints, true) // Strict grid snapping for walls
+      ? snapPointsToGrid(filteredPoints, true) // Always use strict grid snapping for walls
       : snapToGrid(filteredPoints);           // Regular snapping for other tools
     
     console.log("Points snapped to grid:", finalPoints.length);
@@ -52,13 +51,11 @@ export const usePointProcessing = (tool: DrawingTool) => {
       finalPoints = straightenStroke([finalPoints[0], finalPoints[finalPoints.length - 1]]);
       console.log("Applied straightening to wall line");
       
-      // Calculate and display wall length
+      // Calculate and display wall length - now with 1 decimal place
       if (finalPoints.length >= 2) {
         const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
-        // Ensure we show exact multiples of 0.1m when possible
-        const displayLength = isExactGridMultiple(lengthInMeters) 
-          ? lengthInMeters.toFixed(1) 
-          : lengthInMeters.toFixed(2);
+        // Display with exactly 1 decimal place for consistency
+        const displayLength = lengthInMeters.toFixed(1);
           
         toast.success(`Wall length: ${displayLength}m`);
       }
