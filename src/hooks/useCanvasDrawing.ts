@@ -4,7 +4,7 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { type FloorPlan } from "@/utils/drawing";
@@ -35,7 +35,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     setGia
   } = props;
   
-  // Composition of smaller, focused hooks
+  // Composition of smaller, focused hooks - always initialize hooks first
   const { processCreatedPath } = usePathProcessing({
     fabricCanvasRef,
     gridLayerRef,
@@ -46,6 +46,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     setGia
   });
   
+  // Always initialize this hook, never conditionally
   const {
     drawingState,
     handleMouseDown,
@@ -79,10 +80,12 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     return () => {
       cleanupTimeouts();
       
-      fabricCanvas.off('path:created', handlePathCreated);
-      fabricCanvas.off('mouse:down', handleMouseDown);
-      fabricCanvas.off('mouse:move', handleMouseMove);
-      fabricCanvas.off('mouse:up', handleMouseUp);
+      if (fabricCanvas) {
+        fabricCanvas.off('path:created', handlePathCreated);
+        fabricCanvas.off('mouse:down', handleMouseDown);
+        fabricCanvas.off('mouse:move', handleMouseMove);
+        fabricCanvas.off('mouse:up', handleMouseUp);
+      }
     };
   }, [
     fabricCanvasRef, 

@@ -19,21 +19,21 @@ interface UseDrawingStateProps {
 export const useDrawingState = ({
   fabricCanvasRef
 }: UseDrawingStateProps) => {
-  // Drawing state
-  const [drawingState, setDrawingState] = useState({
-    isDrawing: false,
-    startPoint: null as Point | null,
-    currentPoint: null as Point | null,
-    cursorPosition: { x: 0, y: 0 }
-  });
-  
-  // Throttling for performance
+  // Create all refs first - before any useState calls
   const throttleRef = useRef<{
     lastCallTime: number;
     timeout: number | null;
   }>({
     lastCallTime: 0,
     timeout: null
+  });
+  
+  // Drawing state - make sure this is never conditionally rendered
+  const [drawingState, setDrawingState] = useState({
+    isDrawing: false,
+    startPoint: null as Point | null,
+    currentPoint: null as Point | null,
+    cursorPosition: { x: 0, y: 0 }
   });
 
   /**

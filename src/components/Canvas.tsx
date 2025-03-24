@@ -21,7 +21,7 @@ let initialDataLoaded = false;
  * @returns {JSX.Element} Rendered component
  */
 export const Canvas = () => {
-  // Performance monitoring
+  // Define all hooks at the top level, never conditionally
   const [loadTimes, setLoadTimes] = useState({
     startTime: performance.now(),
     canvasReady: 0,
@@ -50,6 +50,17 @@ export const Canvas = () => {
     drawingState,
     handleRetry
   } = CanvasController();
+
+  // Memoize the tooltip component to prevent unnecessary re-renders
+  // Moved up to ensure consistent hook order
+  const tooltipComponent = useMemo(() => (
+    <DistanceTooltip
+      startPoint={drawingState?.startPoint}
+      currentPoint={drawingState?.currentPoint}
+      isVisible={drawingState?.isDrawing && tool === "straightLine"}
+      position={drawingState?.cursorPosition || { x: 0, y: 0 }}
+    />
+  ), [drawingState, tool]);
 
   // Load initial data only once across all renders
   useEffect(() => {
@@ -84,16 +95,6 @@ export const Canvas = () => {
       }));
     }
   }, [debugInfo, loadTimes]);
-
-  // Memoize the tooltip component to prevent unnecessary re-renders
-  const tooltipComponent = useMemo(() => (
-    <DistanceTooltip
-      startPoint={drawingState?.startPoint}
-      currentPoint={drawingState?.currentPoint}
-      isVisible={drawingState?.isDrawing && tool === "straightLine"}
-      position={drawingState?.cursorPosition || { x: 0, y: 0 }}
-    />
-  ), [drawingState, tool]);
 
   return (
     <LoadingErrorWrapper
