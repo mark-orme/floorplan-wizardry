@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -84,15 +83,15 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     
     updateZoomLevel();
     
-    // Set up listeners for zoom changes
+    // Set up listeners for zoom changes - use a custom event name
     const fabricCanvas = fabricCanvasRef.current;
     if (fabricCanvas) {
-      fabricCanvas.on('zoom:changed', updateZoomLevel);
+      fabricCanvas.on('custom:zoom-changed', updateZoomLevel);
     }
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('zoom:changed', updateZoomLevel);
+        fabricCanvas.off('custom:zoom-changed', updateZoomLevel);
       }
     };
   }, [fabricCanvasRef]);
@@ -215,13 +214,12 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     drawingState
   ]);
 
-  // Augment the drawing state with the current zoom level for the tooltip
-  const augmentedDrawingState: DrawingState = {
-    ...drawingState,
-    zoomLevel: currentZoom
-  };
-
+  // Return drawing state with current zoom level
   return {
-    drawingState: augmentedDrawingState
+    drawingState: {
+      ...drawingState,
+      // Add currentZoom to be used by the DistanceTooltip
+      currentZoom
+    }
   };
 };

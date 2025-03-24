@@ -24,20 +24,18 @@ const VERTICAL_BIAS = 1.2; // Bias factor for favoring vertical lines
 export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
   if (!point) return { x: 0, y: 0 };
 
-  // Force exact grid alignment with no floating point errors
-  // IMPORTANT: All calculations here are in METERS (world units), not pixels
   const snappedX = Math.round(point.x / gridSize) * gridSize;
   const snappedY = Math.round(point.y / gridSize) * gridSize;
-  
-  // Create result with exactly 1 decimal place precision to avoid floating point issues
-  // Since our grid is 0.1m, using 1 decimal place ensures exact grid alignment
+
   const result = {
-    x: Number(snappedX.toFixed(1)),
-    y: Number(snappedY.toFixed(1))
+    x: snappedX,
+    y: snappedY
   };
-  
-  console.log(`SnapToGrid: (${point.x.toFixed(2)}m, ${point.y.toFixed(2)}m) → (${result.x.toFixed(2)}m, ${result.y.toFixed(2)}m) with gridSize: ${gridSize}m`);
-  
+
+  console.log(
+    `SnapToGrid: (${point.x.toFixed(3)}m, ${point.y.toFixed(3)}m) → (${result.x.toFixed(3)}m, ${result.y.toFixed(3)}m) @ grid ${gridSize}m`
+  );
+
   return result;
 }
 

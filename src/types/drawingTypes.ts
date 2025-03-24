@@ -1,4 +1,3 @@
-
 /**
  * Shared type definitions for drawing functionality
  * @module drawingTypes
@@ -14,15 +13,15 @@ export interface Point {
 }
 
 /**
- * Drawing state during interactions
+ * Drawing state for tracking the current drawing operation
  */
 export interface DrawingState {
   isDrawing: boolean;
   startPoint?: Point | null;
   currentPoint?: Point | null;
-  midPoint?: Point | null;
   cursorPosition?: Point | null;
-  lineLength?: number;
+  midPoint?: Point | null;
+  currentZoom?: number; // Add currentZoom property for tooltip
 }
 
 /**

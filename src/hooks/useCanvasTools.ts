@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
@@ -161,8 +160,8 @@ export const useCanvasTools = ({
       fabricCanvasRef.current.setZoom(newZoom);
       setZoomLevel(newZoom);
       
-      // Trigger custom event for zoom change detection
-      fabricCanvasRef.current.fire('zoom:changed', { zoom: newZoom });
+      // Trigger custom event for zoom change detection - use a custom event name
+      fabricCanvasRef.current.fire('custom:zoom-changed', { zoom: newZoom });
       
       // Show rounded percentage zoom level
       toast(`Zoom: ${Math.round(newZoom * 100)}%`, {

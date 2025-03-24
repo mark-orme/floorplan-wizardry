@@ -12,6 +12,7 @@ interface DistanceTooltipProps {
   isVisible: boolean;
   position?: Point;
   zoomLevel?: number;
+  currentZoom?: number; // Add currentZoom as an alternative to zoomLevel
 }
 
 /**
@@ -26,12 +27,16 @@ export const DistanceTooltip = memo(({
   midPoint,
   isVisible,
   position,
-  zoomLevel = 1
+  zoomLevel = 1,
+  currentZoom
 }: DistanceTooltipProps): React.ReactElement | null => {
   // Exit early if we don't have the necessary data
   if (!startPoint || !currentPoint || !isVisible) {
     return null;
   }
+  
+  // Use currentZoom if provided, otherwise fall back to zoomLevel
+  const effectiveZoom = currentZoom || zoomLevel;
   
   // Calculate distance in meters with precision matching grid size (0.1m)
   const distanceInMeters = calculateDistance(startPoint, currentPoint);
@@ -71,10 +76,10 @@ export const DistanceTooltip = memo(({
   // Calculate a vertical offset to position tooltip above the line
   // Scale the offset based on zoom level to ensure visibility at high zoom levels
   const baseOffset = -30; // Base offset in pixels
-  const scaledOffset = baseOffset / Math.max(0.5, Math.min(zoomLevel, 3)); // Adjust offset inversely with zoom
+  const scaledOffset = baseOffset / Math.max(0.5, Math.min(effectiveZoom, 3)); // Adjust offset inversely with zoom
   
   // Background opacity adjusted based on zoom for better visibility
-  const bgOpacity = Math.min(0.9, 0.8 + (zoomLevel / 10));
+  const bgOpacity = Math.min(0.9, 0.8 + (effectiveZoom / 10));
   
   return (
     <div 
