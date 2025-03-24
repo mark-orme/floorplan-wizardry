@@ -25,7 +25,8 @@ const globalGridCreations = {
   count: 0,
   lastDimensions: { width: 0, height: 0 },
   lastCreationTime: 0,
-  inProgress: false
+  inProgress: false,
+  initialized: false
 };
 
 /**
@@ -44,12 +45,23 @@ export const useCanvasGrid = ({
   const lastGridCreationTimeRef = useRef(globalGridCreations.lastCreationTime);
   const gridCreationInProgressRef = useRef(globalGridCreations.inProgress);
   const lastDimensionsRef = useRef(globalGridCreations.lastDimensions);
-  const initialGridCreatedRef = useRef(false);
+  const initialGridCreatedRef = useRef(globalGridCreations.initialized);
   const gridCreationsCountRef = useRef(globalGridCreations.count);
   const debounceTimerRef = useRef<number | null>(null);
   
   // Create grid callback for other hooks with enhanced throttling
   const createGridCallback = useCallback((canvas: FabricCanvas) => {
+    // If grid is already created, simply return the existing grid
+    if (initialGridCreatedRef.current && gridLayerRef.current.length > 0) {
+      // Check if the grid objects are still on the canvas
+      const gridOnCanvas = gridLayerRef.current.some(obj => canvas.contains(obj));
+      
+      // If grid is on canvas, just return it
+      if (gridOnCanvas) {
+        return gridLayerRef.current;
+      }
+    }
+    
     // Prevent grid recreation if one is already in progress
     if (gridCreationInProgressRef.current) {
       return gridLayerRef.current;
@@ -57,13 +69,12 @@ export const useCanvasGrid = ({
     
     // If grid is already created and dimensions haven't changed significantly, return existing grid
     if (initialGridCreatedRef.current && gridLayerRef.current.length > 0) {
-      // Only recreate if there are major dimension changes (>40% difference)
+      // Only recreate if there are major dimension changes (>50% difference)
       const widthRatio = Math.abs(canvasDimensions.width - lastDimensionsRef.current.width) / lastDimensionsRef.current.width;
       const heightRatio = Math.abs(canvasDimensions.height - lastDimensionsRef.current.height) / lastDimensionsRef.current.height;
       
       // More aggressive dimension change threshold
-      if (widthRatio < 0.4 && heightRatio < 0.4) {
-        // Silently return existing grid
+      if (widthRatio < 0.5 && heightRatio < 0.5) {
         return gridLayerRef.current;
       }
     }
@@ -76,64 +87,56 @@ export const useCanvasGrid = ({
     
     const now = Date.now();
     
-    // Strict minimum interval between grid creations (60 seconds)
-    if (now - lastGridCreationTimeRef.current < 60000 && gridLayerRef.current.length > 0) {
+    // Strict minimum interval between grid creations (120 seconds)
+    if (now - lastGridCreationTimeRef.current < 120000 && gridLayerRef.current.length > 0) {
       return gridLayerRef.current;
     }
     
-    // Limit total number of grid creations per session
-    if (gridCreationsCountRef.current > 10 && gridLayerRef.current.length > 0) {
-      // Only allow every 10th request after initial 10
-      if (gridCreationsCountRef.current % 10 !== 0) {
-        return gridLayerRef.current;
-      }
+    // Hard limit on recreations: No more than 3 in total
+    if (gridCreationsCountRef.current >= 3 && gridLayerRef.current.length > 0) {
+      return gridLayerRef.current;
     }
     
     // Set flag to indicate a grid creation is in progress
     gridCreationInProgressRef.current = true;
     globalGridCreations.inProgress = true;
     
-    // Use debounced creation to batch rapid dimension changes
-    debounceTimerRef.current = window.setTimeout(() => {
-      try {
-        // Increment counter
-        gridCreationsCountRef.current += 1;
-        globalGridCreations.count += 1;
-        
-        // Update the last creation time reference
-        lastGridCreationTimeRef.current = now;
-        globalGridCreations.lastCreationTime = now;
-        
-        // Store current dimensions
-        lastDimensionsRef.current = { ...canvasDimensions };
-        globalGridCreations.lastDimensions = { ...canvasDimensions };
-        
-        // Create the grid
-        const grid = createGrid(
-          canvas, 
-          gridLayerRef, 
-          canvasDimensions, 
-          setDebugInfo, 
-          setHasError, 
-          setErrorMessage
-        );
-        
-        // Mark initial grid as created
-        initialGridCreatedRef.current = true;
-        
-        return grid;
-      } catch (err) {
-        console.error("Error in createGridCallback:", err);
-        return gridLayerRef.current;
-      } finally {
-        // Reset the flags
-        gridCreationInProgressRef.current = false;
-        globalGridCreations.inProgress = false;
-        debounceTimerRef.current = null;
-      }
-    }, 300); // Debounce delay
-    
-    return gridLayerRef.current;
+    try {
+      // Increment counter
+      gridCreationsCountRef.current += 1;
+      globalGridCreations.count += 1;
+      
+      // Update the last creation time reference
+      lastGridCreationTimeRef.current = now;
+      globalGridCreations.lastCreationTime = now;
+      
+      // Store current dimensions
+      lastDimensionsRef.current = { ...canvasDimensions };
+      globalGridCreations.lastDimensions = { ...canvasDimensions };
+      
+      // Create the grid
+      const grid = createGrid(
+        canvas, 
+        gridLayerRef, 
+        canvasDimensions, 
+        setDebugInfo, 
+        setHasError, 
+        setErrorMessage
+      );
+      
+      // Mark initial grid as created
+      initialGridCreatedRef.current = true;
+      globalGridCreations.initialized = true;
+      
+      return grid;
+    } catch (err) {
+      console.error("Error in createGridCallback:", err);
+      return gridLayerRef.current;
+    } finally {
+      // Reset the flags
+      gridCreationInProgressRef.current = false;
+      globalGridCreations.inProgress = false;
+    }
   }, [canvasDimensions, gridLayerRef, setDebugInfo, setHasError, setErrorMessage]);
 
   return createGridCallback;

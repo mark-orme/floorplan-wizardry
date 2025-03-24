@@ -9,6 +9,8 @@ import { Canvas } from "fabric";
 let prevDimensions = { width: 0, height: 0 };
 // Track dimension update count to reduce logging
 let dimensionUpdateCount = 0;
+// Track if initial canvas setup is complete
+let initialSetupComplete = false;
 
 /**
  * Safely sets canvas dimensions and refreshes the canvas
@@ -27,9 +29,10 @@ export const setCanvasDimensions = (
   try {
     const { width, height } = dimensions;
     
-    // Skip update if dimensions are the same or within 10px tolerance
-    if (Math.abs(width - prevDimensions.width) < 10 && 
-        Math.abs(height - prevDimensions.height) < 10) {
+    // More aggressive tolerance - skip update for small changes
+    // Increased from 10px to 30px to further reduce updates
+    if (Math.abs(width - prevDimensions.width) < 30 && 
+        Math.abs(height - prevDimensions.height) < 30) {
       return;
     }
     
@@ -39,9 +42,10 @@ export const setCanvasDimensions = (
     // Increment update count
     dimensionUpdateCount++;
     
-    // Only log every 3rd dimension update to reduce console spam
-    if (dimensionUpdateCount % 3 === 0) {
+    // Only log first dimension update and every 10th after that
+    if (!initialSetupComplete || dimensionUpdateCount % 10 === 0) {
       console.log(`Setting canvas dimensions to ${width}x${height}`);
+      initialSetupComplete = true;
     }
     
     canvas.setDimensions({ width, height });
@@ -91,14 +95,20 @@ export const clearCanvasObjects = (canvas: Canvas, gridObjects: any[]) => {
   }
   
   try {
-    console.log(`Clearing canvas objects while preserving ${gridObjects.length} grid objects`);
+    // Reduce log frequency
+    if (gridObjects.length > 0) {
+      console.log(`Clearing canvas objects while preserving ${gridObjects.length} grid objects`);
+    }
     
     // Get all objects that are not grid
     const objectsToRemove = canvas.getObjects().filter(obj => 
       !gridObjects.includes(obj)
     );
     
-    console.log(`Found ${objectsToRemove.length} objects to remove`);
+    // Only log if there's something to remove
+    if (objectsToRemove.length > 0) {
+      console.log(`Found ${objectsToRemove.length} objects to remove`);
+    }
     
     // Remove them
     objectsToRemove.forEach(obj => {

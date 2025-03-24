@@ -18,9 +18,11 @@ let gridInitialized = false;
 // Track grid initialization and resize cycle
 let totalGridCreations = 0;
 // Maximum allowed grid recreations in a session
-const MAX_GRID_RECREATIONS = 5;
+const MAX_GRID_RECREATIONS = 3;
 // Initialize a timeout ID for batch processing
 let gridBatchTimeoutId: number | null = null;
+// Flag to indicate if a grid exists
+let gridExists = false;
 
 /**
  * Create grid lines for the canvas
@@ -47,6 +49,16 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
+  // If grid already exists, don't create a new one
+  if (gridExists && gridLayerRef.current.length > 0) {
+    // Check if grid objects are still on the canvas
+    const gridOnCanvas = gridLayerRef.current.some(obj => canvas.contains(obj));
+    
+    if (gridOnCanvas) {
+      return gridLayerRef.current;
+    }
+  }
+  
   // STRICT ANTI-FLICKER: Prevent multiple concurrent grid creations
   if (gridCreationInProgress) {
     return gridLayerRef.current;
@@ -58,20 +70,24 @@ export const createGrid = (
     const widthChange = Math.abs(lastGridDimensions.width - canvasDimensions.width) / lastGridDimensions.width;
     const heightChange = Math.abs(lastGridDimensions.height - canvasDimensions.height) / lastGridDimensions.height;
     
-    // Only recreate grid if dimensions change by more than 30%
-    if (widthChange < 0.3 && heightChange < 0.3) {
+    // Only recreate grid if dimensions change by more than 40% (increased threshold)
+    if (widthChange < 0.4 && heightChange < 0.4) {
       return gridLayerRef.current;
     }
     
     // Limit total grid recreations to prevent infinite loops
-    if (totalGridCreations > MAX_GRID_RECREATIONS) {
-      return gridLayerRef.current;
+    if (totalGridCreations >= MAX_GRID_RECREATIONS) {
+      // Allow only one recreation per minute after reaching the limit
+      const now = Date.now();
+      if (now - lastGridCreationTime < 60000) {
+        return gridLayerRef.current;
+      }
     }
   }
   
-  // ANTI-FLICKER: Enforce a minimum time between grid refreshes (increased to 30 seconds)
+  // ANTI-FLICKER: Enforce a minimum time between grid refreshes (2 minutes)
   const now = Date.now();
-  if (now - lastGridCreationTime < 30000 && gridLayerRef.current.length > 0) {
+  if (now - lastGridCreationTime < 120000 && gridLayerRef.current.length > 0) {
     return gridLayerRef.current;
   }
   
@@ -88,8 +104,8 @@ export const createGrid = (
       // Tracking metric
       totalGridCreations++;
       
-      // Only log every 3rd grid creation to reduce console spam
-      if (totalGridCreations % 3 === 0) {
+      // Only log first grid creation and every 3rd after that
+      if (totalGridCreations === 1 || totalGridCreations % 3 === 0) {
         console.log(`Creating grid... (${totalGridCreations})`);
       }
       
@@ -117,6 +133,11 @@ export const createGrid = (
         gridCreationInProgress = false;
         gridBatchTimeoutId = null;
         return [];
+      }
+      
+      // Only log significant changes
+      if (totalGridCreations === 1 || totalGridCreations % 3 === 0) {
+        console.log(`Canvas dimensions for grid: ${canvasWidth}x${canvasHeight}`);
       }
       
       // Disable rendering during batch operations for performance
@@ -160,8 +181,11 @@ export const createGrid = (
       // Store grid objects in the reference for later use
       gridLayerRef.current = gridObjects;
       
-      // Only log detailed grid info every 3rd creation to reduce console spam
-      if (totalGridCreations % 3 === 0) {
+      // Set the grid exists flag
+      gridExists = true;
+      
+      // Only log detailed grid info on first creation
+      if (totalGridCreations === 1 || totalGridCreations % 3 === 0) {
         console.log(`Grid created with ${gridObjects.length} objects (${smallGridLines.length} small, ${largeGridLines.length} large)`);
       }
       

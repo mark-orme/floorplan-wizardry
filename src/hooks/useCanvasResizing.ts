@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { setCanvasDimensions } from "@/utils/fabric";
+import { setCanvasDimensions } from "@/utils/fabricCanvas";
 
 interface UseCanvasResizingProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -20,6 +20,12 @@ interface UseCanvasResizingProps {
 
 // Global flag to track if initial resize has been done
 let initialGlobalResizeComplete = false;
+// Global flag to track if a resize is in progress
+let globalResizeInProgress = false;
+// Minimum time between resizes (in milliseconds)
+const MIN_RESIZE_INTERVAL = 2000;
+// Time of last resize
+let lastResizeTime = 0;
 
 export const useCanvasResizing = ({
   canvasRef,
@@ -33,9 +39,10 @@ export const useCanvasResizing = ({
   const resizeTimeoutRef = useRef<number | null>(null);
   const lastDimensionsRef = useRef<{width: number, height: number}>({width: 0, height: 0});
   const initialResizeCompleteRef = useRef(initialGlobalResizeComplete);
-  const resizeInProgressRef = useRef(false);
+  const resizeInProgressRef = useRef(globalResizeInProgress);
   const initialResizeTimerRef = useRef<number | null>(null);
   const resizeCountRef = useRef(0);
+  const lastResizeTimeRef = useRef(lastResizeTime);
 
   const updateCanvasDimensions = useCallback(() => {
     if (!canvasRef.current) {
@@ -47,13 +54,23 @@ export const useCanvasResizing = ({
       return;
     }
     
+    // Apply strict time-based throttling (one resize per 2 seconds maximum)
+    const now = Date.now();
+    if (now - lastResizeTimeRef.current < MIN_RESIZE_INTERVAL) {
+      return;
+    }
+    
     resizeInProgressRef.current = true;
+    globalResizeInProgress = true;
+    lastResizeTimeRef.current = now;
+    lastResizeTime = now;
     
     const container = document.querySelector('.canvas-container');
     if (!container) {
       setHasError(true);
       setErrorMessage("Canvas container not found");
       resizeInProgressRef.current = false;
+      globalResizeInProgress = false;
       return;
     }
     
@@ -61,16 +78,18 @@ export const useCanvasResizing = ({
     
     if (width <= 0 || height <= 0) {
       resizeInProgressRef.current = false;
+      globalResizeInProgress = false;
       return;
     }
     
     const newWidth = Math.max(width - 20, 600);
     const newHeight = Math.max(height - 20, 400);
     
-    // Skip update if dimensions haven't changed significantly (within 50px)
-    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 50 && 
-        Math.abs(newHeight - lastDimensionsRef.current.height) < 50) {
+    // Skip update if dimensions haven't changed significantly (within 80px)
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 80 && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < 80) {
       resizeInProgressRef.current = false;
+      globalResizeInProgress = false;
       return;
     }
     
@@ -80,8 +99,8 @@ export const useCanvasResizing = ({
     // Track resize count
     resizeCountRef.current += 1;
     
-    // Only log every 3rd resize to reduce console spam
-    if (resizeCountRef.current % 3 === 0) {
+    // Only log first resize and every 5th resize to reduce console spam
+    if (resizeCountRef.current === 1 || resizeCountRef.current % 5 === 0) {
       console.log(`Setting canvas dimensions to ${newWidth}x${newHeight}`);
     }
     
@@ -101,7 +120,11 @@ export const useCanvasResizing = ({
       fabricCanvasRef.current.renderAll();
     }
     
-    resizeInProgressRef.current = false;
+    // Wait a short time before allowing another resize
+    setTimeout(() => {
+      resizeInProgressRef.current = false;
+      globalResizeInProgress = false;
+    }, 100);
   }, [canvasRef, fabricCanvasRef, setDimensions, setDebugInfo, setHasError, setErrorMessage, createGrid]);
 
   useEffect(() => {
@@ -110,11 +133,11 @@ export const useCanvasResizing = ({
         window.clearTimeout(resizeTimeoutRef.current);
       }
       
-      // Increase debounce time to 800ms to reduce frequency
+      // Increase debounce time to 1500ms to reduce frequency
       resizeTimeoutRef.current = window.setTimeout(() => {
         updateCanvasDimensions();
         resizeTimeoutRef.current = null;
-      }, 800);
+      }, 1500);
     };
 
     window.addEventListener('resize', debouncedResizeHandler);
@@ -125,7 +148,7 @@ export const useCanvasResizing = ({
       initialResizeTimerRef.current = window.setTimeout(() => {
         updateCanvasDimensions();
         initialResizeTimerRef.current = null;
-      }, 800);
+      }, 1000);
     }
     
     return () => {
