@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -12,7 +11,8 @@ import { DrawingTool } from "./useCanvasState";
 import { snapToAngle } from "@/utils/fabricInteraction";
 import { toFabricPoint } from "@/utils/fabricPointConverter";
 import { type DrawingState } from "@/types/drawingTypes";
-import { snapToGrid } from "@/utils/geometry";
+import { snapToGrid, metersToPixels, pixelsToMeters } from "@/utils/geometry";
+import { PIXELS_PER_METER } from "@/utils/drawing";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -91,13 +91,20 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
       if (tool === "straightLine" && drawingState.startPoint && drawingState.currentPoint) {
         console.log("Applying strict grid alignment to wall line");
         try {
+          // Get current zoom level for proper unit conversion
+          const zoom = fabricCanvas.getZoom();
+          
           // CRITICAL FIX: Apply grid snapping to both points BEFORE angle snapping
           // This ensures both start and end points land perfectly on grid lines
           const snappedStartPoint = snapToGrid(drawingState.startPoint);
           const snappedCurrentPoint = snapToGrid(drawingState.currentPoint);
           
-          console.log("Start point snapped from", drawingState.startPoint, "to", snappedStartPoint);
-          console.log("End point snapped from", drawingState.currentPoint, "to", snappedCurrentPoint);
+          console.log("Unit Handling:");
+          console.log("- Current zoom level:", zoom);
+          console.log("- Start point (meters):", drawingState.startPoint);
+          console.log("- Snapped start (meters):", snappedStartPoint);
+          console.log("- End point (meters):", drawingState.currentPoint);
+          console.log("- Snapped end (meters):", snappedCurrentPoint);
           
           // Create perfectly aligned wall line with exact grid positioning
           const straightenedEndPoint = snapToAngle(
@@ -111,20 +118,23 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
           
           // Replace the end point with the straightened one
           if (gridSnappedEndPoint && e.path && e.path.path) {
-            console.log("Wall line snapped from", drawingState.currentPoint, 
-                        "to angle-adjusted", straightenedEndPoint,
-                        "to final grid-snapped", gridSnappedEndPoint);
+            console.log("Wall line processing:");
+            console.log("- Original end (meters):", drawingState.currentPoint);
+            console.log("- Angle-adjusted (meters):", straightenedEndPoint);
+            console.log("- Final grid-snapped (meters):", gridSnappedEndPoint);
             
             // Convert meters to pixels for the path
-            const startX = snappedStartPoint.x * 100; // Convert to pixels
-            const startY = snappedStartPoint.y * 100;
-            const endX = gridSnappedEndPoint.x * 100;
-            const endY = gridSnappedEndPoint.y * 100;
+            const startPixels = metersToPixels(snappedStartPoint, zoom);
+            const endPixels = metersToPixels(gridSnappedEndPoint, zoom);
+            
+            console.log("Pixel conversion for rendering:");
+            console.log("- Start pixels:", startPixels);
+            console.log("- End pixels:", endPixels);
             
             // Create a perfectly straight line with just two points
             e.path.path = [
-              ["M", startX, startY],
-              ["L", endX, endY]
+              ["M", startPixels.x, startPixels.y],
+              ["L", endPixels.x, endPixels.y]
             ];
             
             // Force redraw

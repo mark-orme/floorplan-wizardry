@@ -1,4 +1,3 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -9,14 +8,15 @@ import { PIXELS_PER_METER } from './drawing';
 /** 
  * Snap a single point to the nearest grid intersection
  * Critical utility for ensuring walls start and end exactly on grid lines
- * @param {Point} point - The point to snap
- * @param {number} gridSize - Optional grid size (defaults to GRID_SIZE constant)
- * @returns {Point} Snapped point with exact grid alignment
+ * @param {Point} point - The point to snap (in meters)
+ * @param {number} gridSize - Optional grid size in meters (defaults to GRID_SIZE constant)
+ * @returns {Point} Snapped point with exact grid alignment (in meters)
  */
 export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
   if (!point) return { x: 0, y: 0 };
 
   // Force exact grid alignment with no floating point errors
+  // IMPORTANT: All calculations here are in METERS (world units), not pixels
   const snappedX = Math.round(point.x / gridSize) * gridSize;
   const snappedY = Math.round(point.y / gridSize) * gridSize;
   
@@ -26,14 +26,14 @@ export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
     y: Number(snappedY.toFixed(1))
   };
   
-  console.log(`SnapToGrid: (${point.x.toFixed(2)}, ${point.y.toFixed(2)}) → (${result.x.toFixed(2)}, ${result.y.toFixed(2)}) with gridSize: ${gridSize}`);
+  console.log(`SnapToGrid: (${point.x.toFixed(2)}m, ${point.y.toFixed(2)}m) → (${result.x.toFixed(2)}m, ${result.y.toFixed(2)}m) with gridSize: ${gridSize}m`);
   
   return result;
 }
 
 /** 
  * Snap points to 0.1m grid with exact alignment for 99.9% accuracy
- * @param {Point[]} points - Array of points to snap to the grid
+ * @param {Point[]} points - Array of points to snap to the grid (in meters)
  * @returns {Stroke} Array of snapped points
  */
 export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stroke => {
@@ -148,19 +148,28 @@ export const calculateGIA = (stroke: Stroke): number => {
 };
 
 /**
- * Adjusts points for panning offset
+ * Adjusts points for panning offset - ensures proper unit conversion
  * Helper for ensuring accurate point calculations when canvas is panned
- * @param {Point} point - The point to adjust
+ * @param {Point} point - The point to adjust (in pixels)
  * @param {Canvas} canvas - The fabric canvas
- * @returns {Point} Adjusted point
+ * @returns {Point} Adjusted point (in meters)
  */
 export const adjustPointForPanning = (point: Point, canvas: any): Point => {
   if (!canvas || !canvas.viewportTransform) return point;
   
   const vpt = canvas.viewportTransform;
+  const zoom = canvas.getZoom();
+  
+  // First apply viewport transform to get correct pixel coordinates
+  const pixelPoint = {
+    x: (point.x - vpt[4]) / vpt[0],
+    y: (point.y - vpt[5]) / vpt[3]
+  };
+  
+  // Then convert from pixels to meters accounting for zoom
   return {
-    x: Number(((point.x - vpt[4]) / vpt[0]).toFixed(3)),
-    y: Number(((point.y - vpt[5]) / vpt[3]).toFixed(3))
+    x: Number((pixelPoint.x / (PIXELS_PER_METER * zoom)).toFixed(3)),
+    y: Number((pixelPoint.y / (PIXELS_PER_METER * zoom)).toFixed(3))
   };
 };
 
@@ -225,7 +234,7 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
 
 /**
  * Checks if a value is an exact multiple of the grid size (0.1m)
- * @param value - The value to check
+ * @param value - The value to check (in meters)
  * @returns Whether the value is an exact multiple of grid size
  */
 export const isExactGridMultiple = (value: number): boolean => {
@@ -237,8 +246,8 @@ export const isExactGridMultiple = (value: number): boolean => {
 /**
  * Force align a point to the exact grid lines
  * Ensures all points land precisely on grid intersections
- * @param point - The point to align
- * @returns Grid-aligned point
+ * @param point - The point to align (in meters)
+ * @returns Grid-aligned point (in meters)
  */
 export const forceGridAlignment = (point: Point): Point => {
   if (!point) return { x: 0, y: 0 };
@@ -251,5 +260,33 @@ export const forceGridAlignment = (point: Point): Point => {
   return {
     x: Number(x.toFixed(3)),
     y: Number(y.toFixed(3))
+  };
+};
+
+/**
+ * Convert pixel coordinates to meter coordinates
+ * Ensures proper handling of zoom level
+ * @param pixelPoint - Point in pixel coordinates
+ * @param zoom - Current zoom level
+ * @returns Point in meter coordinates
+ */
+export const pixelsToMeters = (pixelPoint: Point, zoom: number = 1): Point => {
+  return {
+    x: Number((pixelPoint.x / (PIXELS_PER_METER * zoom)).toFixed(3)),
+    y: Number((pixelPoint.y / (PIXELS_PER_METER * zoom)).toFixed(3))
+  };
+};
+
+/**
+ * Convert meter coordinates to pixel coordinates
+ * Ensures proper handling of zoom level
+ * @param meterPoint - Point in meter coordinates
+ * @param zoom - Current zoom level
+ * @returns Point in pixel coordinates
+ */
+export const metersToPixels = (meterPoint: Point, zoom: number = 1): Point => {
+  return {
+    x: Number((meterPoint.x * PIXELS_PER_METER * zoom).toFixed(0)),
+    y: Number((meterPoint.y * PIXELS_PER_METER * zoom).toFixed(0))
   };
 };

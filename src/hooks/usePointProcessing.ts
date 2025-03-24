@@ -17,7 +17,9 @@ import {
   calculateDistance,
   isExactGridMultiple,
   forceGridAlignment,
-  snapToNearestGridLine
+  snapToNearestGridLine,
+  pixelsToMeters,
+  metersToPixels
 } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
@@ -25,13 +27,16 @@ export const usePointProcessing = (tool: DrawingTool) => {
   
   /**
    * Process and optimize points based on the current drawing tool
-   * IMPROVED: Ensures walls strictly snap to grid lines
+   * IMPROVED: Ensures walls strictly snap to grid lines with proper unit handling
    */
   const processPoints = useCallback((points: Point[]): Point[] => {
     if (points.length < 2) {
       console.error("Not enough points to process");
       return points;
     }
+    
+    console.log("Processing points:", points);
+    console.log("Current tool:", tool);
     
     // Filter out redundant points that are too close together
     let filteredPoints = filterRedundantPoints(points, 0.05);
@@ -49,8 +54,11 @@ export const usePointProcessing = (tool: DrawingTool) => {
       const startPoint = snapToGrid(filteredPoints[0]);
       const endPoint = snapToGrid(filteredPoints[filteredPoints.length - 1]);
       
-      console.log("STRICT WALL SNAP - Original start:", filteredPoints[0], "Snapped to grid:", startPoint);
-      console.log("STRICT WALL SNAP - Original end:", filteredPoints[filteredPoints.length - 1], "Snapped to grid:", endPoint);
+      console.log("STRICT WALL SNAP - Unit handling:");
+      console.log("- Original start (meters):", filteredPoints[0]);
+      console.log("- Snapped to grid (meters):", startPoint);
+      console.log("- Original end (meters):", filteredPoints[filteredPoints.length - 1]);
+      console.log("- Snapped to grid (meters):", endPoint);
       
       // Create a perfectly straight line with exact grid alignment
       finalPoints = straightenStroke([startPoint, endPoint]);
@@ -60,6 +68,9 @@ export const usePointProcessing = (tool: DrawingTool) => {
       finalPoints = finalPoints.map(point => snapToGrid(point));
       
       console.log("Final wall points (after processing):", finalPoints);
+      
+      // Debug visualization of wall endpoints (in meters)
+      console.log(`Final wall from (${finalPoints[0].x}m, ${finalPoints[0].y}m) to (${finalPoints[1].x}m, ${finalPoints[1].y}m)`);
     } else {
       // Regular snapping for other tools
       finalPoints = snapPointsToGrid(filteredPoints);
@@ -83,12 +94,18 @@ export const usePointProcessing = (tool: DrawingTool) => {
   
   /**
    * Convert meter points to pixel points for display
+   * Properly accounts for zoom level
    */
-  const convertToPixelPoints = useCallback((meterPoints: Point[]): Point[] => {
-    return meterPoints.map(p => ({ 
-      x: p.x * PIXELS_PER_METER, 
-      y: p.y * PIXELS_PER_METER 
-    }));
+  const convertToPixelPoints = useCallback((meterPoints: Point[], zoom: number = 1): Point[] => {
+    return meterPoints.map(p => metersToPixels(p, zoom));
+  }, []);
+  
+  /**
+   * Convert pixel points to meter points for processing
+   * Properly accounts for zoom level
+   */
+  const convertToMeterPoints = useCallback((pixelPoints: Point[], zoom: number = 1): Point[] => {
+    return pixelPoints.map(p => pixelsToMeters(p, zoom));
   }, []);
   
   /**
@@ -108,5 +125,10 @@ export const usePointProcessing = (tool: DrawingTool) => {
     return dx < distanceThreshold && dy < distanceThreshold;
   }, []);
   
-  return { processPoints, convertToPixelPoints, isShapeClosed };
+  return { 
+    processPoints, 
+    convertToPixelPoints, 
+    convertToMeterPoints,
+    isShapeClosed 
+  };
 };

@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -8,7 +7,13 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { adjustPointForPanning, snapToGrid, snapPointsToGrid } from "@/utils/geometry";
+import { 
+  adjustPointForPanning, 
+  snapToGrid, 
+  snapPointsToGrid, 
+  pixelsToMeters, 
+  metersToPixels 
+} from "@/utils/geometry";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -55,7 +60,7 @@ export const useDrawingState = ({
     };
   }, []);
 
-  // IMPROVED: Mouse down handler with GUARANTEED grid snapping
+  // IMPROVED: Mouse down handler with GUARANTEED grid snapping and proper unit conversion
   const handleMouseDown = useCallback((e: any) => {
     // Only track for straightLine tool
     if (tool !== 'straightLine') return;
@@ -64,20 +69,25 @@ export const useDrawingState = ({
     
     cleanupTimeouts();
     
-    // Get pointer position in canvas coordinates
+    // Get pointer position in canvas coordinates (pixels)
     const pointer = fabricCanvasRef.current.getPointer(e.e);
+    const zoom = fabricCanvasRef.current.getZoom();
     
-    // Convert from pixel coordinates to meter coordinates
-    const rawStartPoint = {
-      x: pointer.x / PIXELS_PER_METER,
-      y: pointer.y / PIXELS_PER_METER
-    };
+    // Convert from pixel coordinates to meter coordinates (world units)
+    const rawStartPoint = pixelsToMeters({
+      x: pointer.x,
+      y: pointer.y
+    }, zoom);
     
     // CRITICAL FIX: Force EXACT grid snapping at the very start of drawing
     // This ensures the initial click point lands perfectly on a grid line
     const startPoint = snapToGrid(rawStartPoint);
     
-    console.log("GRID SNAP (handleMouseDown): Raw clicked point:", rawStartPoint, "Snapped to grid:", startPoint);
+    console.log("GRID SNAP (handleMouseDown):");
+    console.log("- Raw clicked point (pixels):", pointer.x, pointer.y);
+    console.log("- Converted to meters:", rawStartPoint);
+    console.log("- Snapped to grid (meters):", startPoint);
+    console.log("- Current zoom level:", zoom);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -93,27 +103,33 @@ export const useDrawingState = ({
       midPoint: absolutePosition // Initially same as cursor position
     });
     
-    console.log("Drawing started at precisely snapped grid point:", startPoint);
+    console.log("Drawing started at precisely snapped grid point (meters):", startPoint);
   }, [fabricCanvasRef, tool, cleanupTimeouts]);
 
-  // Throttled update function using requestAnimationFrame with improved snapping
+  // Throttled update function using requestAnimationFrame with improved unit handling
   const updateDrawingState = useCallback((e: any) => {
     if (!fabricCanvasRef.current) return;
     
-    // Get current pointer position in canvas coordinates
+    // Get current pointer position in canvas coordinates (pixels)
     const pointer = fabricCanvasRef.current.getPointer(e.e);
+    const zoom = fabricCanvasRef.current.getZoom();
     
     // Convert from pixel coordinates to meter coordinates with extra precision
-    const rawCurrentPoint = {
-      x: pointer.x / PIXELS_PER_METER,
-      y: pointer.y / PIXELS_PER_METER
-    };
+    // This accounts for canvas zoom level
+    const rawCurrentPoint = pixelsToMeters({
+      x: pointer.x,
+      y: pointer.y
+    }, zoom);
     
     // CRITICAL FIX: Snap the point to grid DURING drawing (not just after)
     // This gives visual feedback to the user about where walls will land
     const snappedCurrentPoint = snapToGrid(rawCurrentPoint);
     
-    console.log("LIVE SNAP: Mouse position", rawCurrentPoint, "snapped to grid:", snappedCurrentPoint);
+    console.log("LIVE SNAP:");
+    console.log("- Mouse position (pixels):", pointer.x, pointer.y);
+    console.log("- Converted to meters:", rawCurrentPoint);
+    console.log("- Snapped to grid (meters):", snappedCurrentPoint);
+    console.log("- Current zoom level:", zoom);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
