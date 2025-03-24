@@ -8,7 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
-import { Ruler2 } from "lucide-react";
+import { Ruler } from "lucide-react";
 
 interface DistanceTooltipProps {
   startPoint: Point | null;
@@ -47,7 +47,7 @@ export const DistanceTooltip = ({
       }}
     >
       <div className="bg-black/80 text-white px-2 py-1 rounded-md flex items-center gap-1 text-sm">
-        <Ruler2 className="w-4 h-4" />
+        <Ruler className="w-4 h-4" />
         <span>{distanceInMeters.toFixed(2)} m</span>
       </div>
     </div>
