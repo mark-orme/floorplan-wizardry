@@ -17,12 +17,13 @@ import {
   MAX_OBJECTS_PER_CANVAS
 } from "@/utils/drawing";
 import { snapToAngle } from "@/utils/fabric";
+import { DrawingTool } from "./useCanvasState";
 
 interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<any[]>;
   historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
-  tool: "draw" | "room" | "straightLine";
+  tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
