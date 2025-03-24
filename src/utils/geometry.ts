@@ -1,3 +1,4 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -52,7 +53,8 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
     const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
     const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
     
-    // Ensure exact decimal representation to prevent floating point errors
+    // For strict validation, ensure the points are EXACTLY on grid lines
+    // with no floating point errors (using fixed precision)
     return {
       x: Number(snappedX.toFixed(3)),
       y: Number(snappedY.toFixed(3))
@@ -242,4 +244,20 @@ export const isExactGridMultiple = (value: number): boolean => {
   // Convert to string to handle floating point precision issues
   const rounded = Number((Math.round(value / GRID_SIZE) * GRID_SIZE).toFixed(3));
   return Math.abs(value - rounded) < 0.001; // Allow tiny rounding error
+};
+
+/**
+ * Force align a point to the exact grid lines
+ * Ensures all points land precisely on grid intersections
+ * @param point - The point to align
+ * @returns Grid-aligned point
+ */
+export const forceGridAlignment = (point: Point): Point => {
+  if (!point) return { x: 0, y: 0 };
+  
+  // Force exact alignment to nearest grid intersection
+  return {
+    x: Number((Math.round(point.x / GRID_SIZE) * GRID_SIZE).toFixed(3)),
+    y: Number((Math.round(point.y / GRID_SIZE) * GRID_SIZE).toFixed(3))
+  };
 };

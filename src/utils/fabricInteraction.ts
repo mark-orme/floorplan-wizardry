@@ -1,4 +1,3 @@
-
 /**
  * Fabric.js interaction utilities
  * Handles zooming, panning, and other interactive behaviors
@@ -7,6 +6,7 @@
 import { Canvas, Point as FabricPoint, Object as FabricObject } from "fabric";
 import { Point, GRID_SIZE } from "@/utils/drawingTypes";
 import { toFabricPoint, createSimplePoint } from "./fabricPointConverter";
+import { forceGridAlignment } from "./geometry";
 
 /**
  * Add pinch-to-zoom support for touch devices
@@ -75,7 +75,7 @@ export const addPinchToZoom = (canvas: Canvas) => {
 export const snapToAngle = (
   startPoint: Point, 
   endPoint: Point, 
-  snapThreshold: number = 8 // Reduced threshold for better precision
+  snapThreshold: number = 5 // Reduced threshold for better precision
 ): Point => {
   // Calculate the angle between the points
   const dx = endPoint.x - startPoint.x;
@@ -83,7 +83,7 @@ export const snapToAngle = (
   
   // No movement or very small movement - return original point
   if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) {
-    return endPoint;
+    return startPoint; // Return start point to avoid zero-length lines
   }
   
   // Calculate the angle in radians and convert to degrees
@@ -92,9 +92,9 @@ export const snapToAngle = (
   // Common angles to snap to (0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°)
   const snapAngles = [0, 45, 90, 135, 180, 225, 270, 315];
   
-  // Find the closest snap angle
+  // Find the closest snap angle with strict enforcement
   let closestAngle = rawAngle;
-  let minDifference = snapThreshold + 1; // Initialize higher than threshold
+  let minDifference = 360; // Initialize higher than any possible difference
   
   snapAngles.forEach(snapAngle => {
     // Calculate the absolute difference between current angle and snap angle
@@ -105,40 +105,55 @@ export const snapToAngle = (
       Math.abs(normalizedRawAngle - (snapAngle + 360))
     );
     
-    if (difference < minDifference && difference < snapThreshold) {
+    if (difference < minDifference) {
       minDifference = difference;
       closestAngle = snapAngle;
     }
   });
   
-  // If we found a close enough angle, snap to it
-  if (minDifference < snapThreshold) {
-    // Convert the angle back to radians
-    const angleInRadians = closestAngle * (Math.PI / 180);
+  // Always snap to closest angle for wall lines
+  // Convert the angle back to radians
+  const angleInRadians = closestAngle * (Math.PI / 180);
+  
+  // Calculate the distance between the points
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Round the distance to nearest grid multiple
+  const roundedDistance = Math.round(distance / GRID_SIZE) * GRID_SIZE;
+  
+  // Calculate the raw end point based on the snapped angle and rounded distance
+  const rawEndPoint = createSimplePoint(
+    startPoint.x + roundedDistance * Math.cos(angleInRadians),
+    startPoint.y + roundedDistance * Math.sin(angleInRadians)
+  );
+  
+  // Force grid alignment for absolute precision
+  const snappedEndPoint = forceGridAlignment(rawEndPoint);
+  
+  // Verify the resulting line is truly horizontal, vertical, or 45 degrees
+  // by recalculating the angle from the new points
+  const finalDx = snappedEndPoint.x - startPoint.x;
+  const finalDy = snappedEndPoint.y - startPoint.y;
+  
+  // If line is very short, default to horizontal or vertical
+  if (Math.abs(finalDx) < 0.05 && Math.abs(finalDy) < 0.05) {
+    // Tiny movement, make it a 0.1m line in the closest cardinal direction
+    const cardinalDirection = Math.round(angleInRadians / (Math.PI/2)) % 4;
+    const directions = [
+      { x: GRID_SIZE, y: 0 },       // East (0)
+      { x: 0, y: GRID_SIZE },       // South (1)
+      { x: -GRID_SIZE, y: 0 },      // West (2)
+      { x: 0, y: -GRID_SIZE }       // North (3)
+    ];
     
-    // Calculate the distance between the points
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate the raw end point based on the snapped angle
-    const rawEndPoint = createSimplePoint(
-      startPoint.x + distance * Math.cos(angleInRadians),
-      startPoint.y + distance * Math.sin(angleInRadians)
-    );
-    
-    // Now also snap the endpoint to the grid for better alignment
-    const snappedEndPoint = {
-      x: Math.round(rawEndPoint.x / GRID_SIZE) * GRID_SIZE,
-      y: Math.round(rawEndPoint.y / GRID_SIZE) * GRID_SIZE
+    const direction = directions[cardinalDirection];
+    return {
+      x: startPoint.x + direction.x,
+      y: startPoint.y + direction.y
     };
-    
-    return snappedEndPoint;
   }
   
-  // If no angle snap is needed, at least snap the point to the grid
-  return {
-    x: Math.round(endPoint.x / GRID_SIZE) * GRID_SIZE,
-    y: Math.round(endPoint.y / GRID_SIZE) * GRID_SIZE
-  };
+  return snappedEndPoint;
 };
 
 /**

@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { adjustPointForPanning, snapToGrid, snapPointsToGrid } from "@/utils/geometry";
+import { adjustPointForPanning, snapToGrid, snapPointsToGrid, forceGridAlignment } from "@/utils/geometry";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -72,10 +72,9 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
-    // Snap the start point to the grid immediately for better accuracy
-    const startPoint = tool === 'straightLine' 
-      ? snapPointsToGrid([rawStartPoint], true)[0] // Force snap to exact grid for wall tool
-      : rawStartPoint;
+    // Force grid alignment for wall start points
+    // This ensures walls always start exactly on grid lines
+    const startPoint = forceGridAlignment(rawStartPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -91,7 +90,7 @@ export const useDrawingState = ({
       midPoint: absolutePosition // Initially same as cursor position
     });
     
-    console.log("Drawing started at:", startPoint, "with tool:", tool);
+    console.log("Drawing started at grid point:", startPoint, "with tool:", tool);
   }, [fabricCanvasRef, tool, cleanupTimeouts]);
 
   // Throttled update function using requestAnimationFrame
@@ -107,10 +106,9 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
-    // Snap the current point to grid immediately for better accuracy
-    const currentPoint = tool === 'straightLine'
-      ? snapPointsToGrid([rawCurrentPoint], true)[0] // Force snap to exact grid for wall tool
-      : rawCurrentPoint;
+    // Force grid alignment for wall points
+    // This ensures walls always travel exactly on grid lines
+    const currentPoint = forceGridAlignment(rawCurrentPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -119,17 +117,18 @@ export const useDrawingState = ({
     };
     
     setDrawingState(prev => {
+      if (!prev.startPoint) return prev;
+      
       // Only calculate midpoint if we have both start and current points
       // Use the grid-snapped points for more accurate midpoint calculation
-      const midPoint = prev.startPoint ? 
-        calculateMidpoint(prev.startPoint, currentPoint) : null;
+      const midPoint = calculateMidpoint(prev.startPoint, currentPoint);
       
       // Convert midpoint from meter to screen coordinates
       // This is an approximation as the exact conversion depends on canvas zoom/pan
-      const midPointScreen = midPoint ? {
+      const midPointScreen = {
         x: absolutePosition.x - ((prev.cursorPosition?.x || 0) - absolutePosition.x) / 2,
         y: absolutePosition.y - ((prev.cursorPosition?.y || 0) - absolutePosition.y) / 2
-      } : null;
+      };
       
       return {
         ...prev,
@@ -140,7 +139,7 @@ export const useDrawingState = ({
     });
     
     animationFrameRef.current = null;
-  }, [fabricCanvasRef, calculateMidpoint, tool]);
+  }, [fabricCanvasRef, calculateMidpoint]);
 
   // Mouse move handler with throttling
   const handleMouseMove = useCallback((e: any) => {
