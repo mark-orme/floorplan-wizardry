@@ -62,36 +62,43 @@ export const createScaleMarkers = (
     return [];
   }
   
-  // Create a more visible marker line in bottom right
-  const markerLine = new Line([
-    canvasWidth - 120, 
-    canvasHeight - 30, 
-    canvasWidth - 20, 
-    canvasHeight - 30
-  ], {
-    stroke: "#333333",
-    strokeWidth: 2,
-    selectable: false,
-    evented: false,
-    objectCaching: true,
-    hoverCursor: 'default'
-  });
-  
-  // Create a text label for the marker
-  const markerText = new Text("1m", {
-    left: canvasWidth - 70,
-    top: canvasHeight - 45,
-    fontSize: 14,
-    fontWeight: 'bold',
-    fill: "#333333",
-    selectable: false,
-    evented: false,
-    objectCaching: true,
-    hoverCursor: 'default'
-  });
-  
-  // Store grid dimensions in the marker line for future reference
-  storeGridDimensions(markerLine, canvasWidth, canvasHeight);
-  
-  return [markerLine, markerText];
+  try {
+    // Create a more visible marker line in bottom right
+    const markerLine = new Line([
+      canvasWidth - 120, 
+      canvasHeight - 30, 
+      canvasWidth - 20, 
+      canvasHeight - 30
+    ], {
+      stroke: "#000000", // Black for maximum contrast
+      strokeWidth: 3, // Thicker line
+      selectable: false,
+      evented: false,
+      objectCaching: true,
+      hoverCursor: 'default'
+    });
+    
+    // Create a text label for the marker with improved visibility
+    const markerText = new Text("1m", {
+      left: canvasWidth - 70,
+      top: canvasHeight - 45,
+      fontSize: 16, // Larger font
+      fontWeight: 'bold',
+      fill: "#000000", // Black text
+      selectable: false,
+      evented: false,
+      objectCaching: true,
+      hoverCursor: 'default',
+      backgroundColor: 'rgba(255,255,255,0.7)' // Semi-transparent white background
+    });
+    
+    // Store grid dimensions in the marker line for future reference
+    storeGridDimensions(markerLine, canvasWidth, canvasHeight);
+    
+    console.log("Scale markers created successfully");
+    return [markerLine, markerText];
+  } catch (error) {
+    console.error("Error creating scale markers:", error);
+    return [];
+  }
 };

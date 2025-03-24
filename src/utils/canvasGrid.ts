@@ -51,18 +51,15 @@ export const createGrid = (
     return [];
   }
 
-  // If grid already exists, don't create a new one
-  if (gridManager.exists && gridLayerRef.current.length > 0) {
-    // Check if grid objects are still on the canvas
-    const gridOnCanvas = gridLayerRef.current.some(obj => canvas.contains(obj));
-    
-    if (gridOnCanvas) {
-      console.log("Grid already exists and is on canvas, skipping creation");
-      return gridLayerRef.current;
-    } else {
-      console.log("Grid exists in reference but not on canvas, will recreate");
-    }
+  // Ensure valid dimensions
+  if (!canvasDimensions.width || !canvasDimensions.height || 
+      canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
+    console.error("Invalid dimensions in createGrid:", canvasDimensions);
+    return gridLayerRef.current;
   }
+
+  // Force grid creation regardless of existing state - previous code might be skipping grid creation
+  console.log("Proceeding with grid creation regardless of existing state");
   
   // Prevent multiple concurrent grid creations
   if (gridManager.inProgress) {
@@ -70,24 +67,7 @@ export const createGrid = (
     return gridLayerRef.current;
   }
   
-  // If grid already exists, don't recreate unless dimensions change significantly
-  if (gridManager.initialized && gridLayerRef.current.length > 0) {
-    if (!hasDimensionsChangedSignificantly(gridManager.lastDimensions, canvasDimensions)) {
-      console.log("Canvas dimensions haven't changed significantly, using existing grid");
-      return gridLayerRef.current;
-    } else {
-      console.log("Canvas dimensions changed significantly, recreating grid");
-    }
-  }
-  
-  // Enforce throttling limits
-  const now = Date.now();
-  if (shouldThrottleGridCreation(now)) {
-    console.log("Grid creation throttled, skipping");
-    return gridLayerRef.current;
-  }
-  
-  // Batch concurrent requests in a single operation
+  // Clear any existing batch timeout
   if (gridManager.batchTimeoutId) {
     clearTimeout(gridManager.batchTimeoutId);
   }
@@ -95,30 +75,32 @@ export const createGrid = (
   gridManager.inProgress = true;
   console.log("Starting grid creation batch process");
   
-  // Use a timeout to batch rapid calls - reduced from 100ms to 50ms for faster response
-  gridManager.batchTimeoutId = window.setTimeout(() => {
-    try {
-      // Create the grid using the extracted batch operation
-      return createGridBatch(
-        canvas,
-        gridLayerRef,
-        canvasDimensions,
-        setDebugInfo,
-        setHasError,
-        setErrorMessage,
-        now,
-        gridManager
-      );
-    } catch (err) {
-      console.error("Error creating grid:", err);
-      return handleGridCreationError(
-        err, 
-        setHasError, 
-        setErrorMessage, 
-        gridManager
-      );
-    }
-  }, 50);
-  
-  return gridLayerRef.current;
+  // Execute immediately without batching for faster response
+  try {
+    // Get the current timestamp
+    const now = Date.now();
+    
+    // Create the grid using the batch operation
+    const result = createGridBatch(
+      canvas,
+      gridLayerRef,
+      canvasDimensions,
+      setDebugInfo,
+      setHasError,
+      setErrorMessage,
+      now,
+      gridManager
+    );
+    
+    console.log(`Grid creation complete, returning ${result.length} objects`);
+    return result;
+  } catch (err) {
+    console.error("Error creating grid:", err);
+    return handleGridCreationError(
+      err, 
+      setHasError, 
+      setErrorMessage, 
+      gridManager
+    );
+  }
 };

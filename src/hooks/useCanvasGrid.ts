@@ -43,7 +43,7 @@ export const useCanvasGrid = ({
   
   // Debug effect to log grid state changes
   useEffect(() => {
-    console.log("Grid state:", {
+    console.log("Grid hook state:", {
       initialized: initialGridCreatedRef.current,
       inProgress: gridCreationInProgressRef.current,
       objectsCount: gridLayerRef.current.length,
@@ -51,9 +51,9 @@ export const useCanvasGrid = ({
     });
   }, [canvasDimensions, gridLayerRef.current.length]);
   
-  // Create grid callback for other hooks with enhanced throttling
+  // Create grid callback with forced creation
   const createGridCallback = useCallback((canvas: FabricCanvas) => {
-    console.log("createGridCallback invoked", {
+    console.log("createGridCallback invoked with FORCED CREATION", {
       canvasDimensions,
       gridExists: gridLayerRef.current.length > 0,
       initialized: initialGridCreatedRef.current
@@ -65,43 +65,17 @@ export const useCanvasGrid = ({
       return [];
     }
     
-    // If grid is already created, simply return the existing grid
-    if (initialGridCreatedRef.current && gridLayerRef.current.length > 0) {
-      // Check if the grid objects are still on the canvas
-      const gridOnCanvas = gridLayerRef.current.some(obj => canvas.contains(obj));
-      
-      // If grid is on canvas, just return it
-      if (gridOnCanvas) {
-        console.log("Grid already exists on canvas in callback, using existing");
-        return gridLayerRef.current;
-      } else {
-        console.log("Grid exists in reference but not on canvas in callback, will recreate");
-      }
-    }
-    
-    // Prevent grid recreation if one is already in progress
-    if (gridCreationInProgressRef.current) {
-      console.log("Grid creation already in progress in callback, skipping");
-      return gridLayerRef.current;
-    }
-    
-    // Force grid creation even if dimensions haven't changed - this is a critical fix
-    if (canvasDimensions.width === 0 || canvasDimensions.height === 0) {
-      console.warn("Invalid dimensions in callback:", canvasDimensions);
-      return gridLayerRef.current;
-    }
-
     // Clear any pending debounced grid creation
     if (debounceTimerRef.current !== null) {
       window.clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
     
-    // Set flag to indicate a grid creation is in progress
+    // Set flags to indicate a grid creation is in progress
     gridCreationInProgressRef.current = true;
     gridManager.inProgress = true;
     
-    console.log("Creating grid in callback with dimensions:", canvasDimensions);
+    console.log("Forcing grid creation with dimensions:", canvasDimensions);
     
     try {
       // Increment counter
@@ -112,7 +86,7 @@ export const useCanvasGrid = ({
       lastDimensionsRef.current = { ...canvasDimensions };
       gridManager.lastDimensions = { ...canvasDimensions };
       
-      // Create the grid
+      // Create the grid with direct call (no batching)
       const grid = createGrid(
         canvas, 
         gridLayerRef, 
@@ -128,17 +102,18 @@ export const useCanvasGrid = ({
       
       if (grid && grid.length > 0) {
         console.log(`Grid created successfully with ${grid.length} objects`);
+        // Force a render
         canvas.requestRenderAll();
       } else {
-        console.warn("Grid creation returned no objects");
+        console.warn("Grid creation returned no objects - critical failure");
       }
       
       return grid;
     } catch (err) {
-      console.error("Error in createGridCallback:", err);
+      console.error("Critical error in createGridCallback:", err);
       setHasError(true);
       setErrorMessage(`Grid creation failed: ${err instanceof Error ? err.message : String(err)}`);
-      return gridLayerRef.current;
+      return [];
     } finally {
       // Reset the flags
       gridCreationInProgressRef.current = false;

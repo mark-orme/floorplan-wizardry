@@ -38,67 +38,82 @@ export const renderGridComponents = (
     return { gridObjects: [], smallGridLines: [], largeGridLines: [], markers: [] };
   }
   
-  // Disable rendering during batch operations for performance
-  canvas.renderOnAddRemove = false;
-      
-  // Batch add grid objects for better performance
-  const gridBatch: any[] = [];
-      
-  // Create small grid lines
-  const smallGridLines = createSmallGrid(canvas, canvasWidth, canvasHeight);
-  console.log(`Created ${smallGridLines.length} small grid lines`);
-  smallGridLines.forEach(line => {
-    gridBatch.push(line);
-    gridObjects.push(line);
-  });
-      
-  // Create large grid lines
-  const largeGridLines = createLargeGrid(canvas, canvasWidth, canvasHeight);
-  console.log(`Created ${largeGridLines.length} large grid lines`);
-  largeGridLines.forEach(line => {
-    gridBatch.push(line);
-    gridObjects.push(line);
-  });
+  try {
+    // Disable rendering during batch operations for performance
+    canvas.renderOnAddRemove = false;
+        
+    // Batch add grid objects for better performance
+    const gridBatch: any[] = [];
+        
+    // Create large grid lines first (so they appear behind small grid lines)
+    const largeGridLines = createLargeGrid(canvas, canvasWidth, canvasHeight);
+    console.log(`Created ${largeGridLines.length} large grid lines`);
+    largeGridLines.forEach(line => {
+      gridBatch.push(line);
+      gridObjects.push(line);
+    });
+        
+    // Create small grid lines
+    const smallGridLines = createSmallGrid(canvas, canvasWidth, canvasHeight);
+    console.log(`Created ${smallGridLines.length} small grid lines`);
+    smallGridLines.forEach(line => {
+      gridBatch.push(line);
+      gridObjects.push(line);
+    });
 
-  // For debugging
-  console.log(`Adding ${gridBatch.length} grid lines to canvas`);
-  
-  // Add all grid objects at once - using a safer approach
-  if (gridBatch.length > 0) {
-    try {
-      canvas.add(...gridBatch);
-    } catch (err) {
-      console.error("Error adding grid batch to canvas:", err);
-      
-      // Fallback: add one by one
-      gridBatch.forEach(obj => {
-        try {
-          canvas.add(obj);
-        } catch (e) {
-          console.warn("Error adding individual grid line:", e);
-        }
-      });
+    // For debugging
+    console.log(`Adding ${gridBatch.length} grid lines to canvas in batch`);
+    
+    // Add all grid objects at once - using a safer approach with explicit error handling
+    if (gridBatch.length > 0) {
+      try {
+        canvas.add(...gridBatch);
+        console.log(`Successfully added ${gridBatch.length} grid lines to canvas`);
+      } catch (err) {
+        console.error("Error adding grid batch to canvas:", err);
+        
+        // Fallback: add one by one
+        let successCount = 0;
+        gridBatch.forEach((obj, idx) => {
+          try {
+            canvas.add(obj);
+            successCount++;
+            // Log only occasionally to avoid console spam
+            if (idx % 50 === 0) {
+              console.log(`Added grid line ${idx}/${gridBatch.length}`);
+            }
+          } catch (e) {
+            console.warn("Error adding individual grid line:", e);
+          }
+        });
+        console.log(`Added ${successCount}/${gridBatch.length} grid lines individually after batch failure`);
+      }
     }
+    
+    // Add scale marker (1m) - add it separately to make it appear on top
+    const markers = createScaleMarkers(canvas, canvasWidth, canvasHeight);
+    console.log(`Created ${markers.length} scale markers`);
+    markers.forEach(marker => {
+      try {
+        canvas.add(marker);
+        gridObjects.push(marker);
+      } catch (err) {
+        console.warn("Error adding marker:", err);
+      }
+    });
+    
+    // Re-enable rendering and render all at once
+    canvas.renderOnAddRemove = true;
+    
+    // Force a render
+    canvas.requestRenderAll();
+    
+    console.log(`Total grid objects created: ${gridObjects.length}`);
+    return { gridObjects, smallGridLines, largeGridLines, markers };
+  } catch (error) {
+    console.error("Critical error in renderGridComponents:", error);
+    return { gridObjects: [], smallGridLines: [], largeGridLines: [], markers: [] };
   }
-  
-  // Add scale marker (1m) - add it separately to make it appear on top
-  const markers = createScaleMarkers(canvas, canvasWidth, canvasHeight);
-  console.log(`Created ${markers.length} scale markers`);
-  markers.forEach(marker => {
-    try {
-      canvas.add(marker);
-      gridObjects.push(marker);
-    } catch (err) {
-      console.warn("Error adding marker:", err);
-    }
-  });
-  
-  // Re-enable rendering and render all at once
-  canvas.renderOnAddRemove = true;
-  canvas.requestRenderAll();
-  
-  console.log(`Total grid objects created: ${gridObjects.length}`);
-  return { gridObjects, smallGridLines, largeGridLines, markers };
 };
 
 /**
@@ -114,26 +129,41 @@ export const arrangeGridObjects = (
   largeGridLines: any[],
   markers: any[]
 ): void => {
-  // Send grid lines to the back, but keep markers on top
-  smallGridLines.concat(largeGridLines).forEach(obj => {
-    try {
-      canvas.sendObjectToBack(obj);
-    } catch (err) {
-      console.warn("Error arranging grid line:", err);
-    }
-  });
+  console.log("Arranging grid objects in correct z-order");
   
-  // Keep markers on top of grid but below drawings
-  markers.forEach(marker => {
-    try {
-      // Simply bring markers to front, drawings will be added later
-      canvas.bringObjectToFront(marker);
-    } catch (err) {
-      console.warn("Error arranging marker:", err);
-    }
-  });
-  
-  // Final render
-  canvas.requestRenderAll();
-  console.log("Grid objects arranged successfully");
+  try {
+    // First send large grid lines to the back
+    largeGridLines.forEach(obj => {
+      try {
+        canvas.sendToBack(obj);
+      } catch (err) {
+        console.warn("Error arranging large grid line:", err);
+      }
+    });
+    
+    // Then send small grid lines just above the large ones
+    smallGridLines.forEach(obj => {
+      try {
+        canvas.bringForward(obj);
+      } catch (err) {
+        console.warn("Error arranging small grid line:", err);
+      }
+    });
+    
+    // Keep markers on top of grid but below drawings
+    markers.forEach(marker => {
+      try {
+        // Simply bring markers to front, drawings will be added later
+        canvas.bringToFront(marker);
+      } catch (err) {
+        console.warn("Error arranging marker:", err);
+      }
+    });
+    
+    // Final render
+    canvas.requestRenderAll();
+    console.log("Grid objects arranged successfully");
+  } catch (error) {
+    console.error("Error in arrangeGridObjects:", error);
+  }
 };

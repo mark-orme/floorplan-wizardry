@@ -50,8 +50,8 @@ export const hasDimensionsChangedSignificantly = (
   const widthChange = Math.abs(oldDimensions.width - newDimensions.width) / oldDimensions.width;
   const heightChange = Math.abs(oldDimensions.height - newDimensions.height) / oldDimensions.height;
   
-  // Only recreate grid if dimensions change by more than 30%
-  return widthChange > 0.3 || heightChange > 0.3;
+  // Only recreate grid if dimensions change by more than 10% (reduced threshold)
+  return widthChange > 0.1 || heightChange > 0.1;
 };
 
 /**
@@ -103,7 +103,7 @@ export const createGridBatch = (
   now: number,
   gridManager: any
 ): any[] => {
-  console.log("Starting grid batch creation");
+  console.log("Executing grid batch creation with critical debugging");
   
   try {
     // Tracking metric
@@ -117,30 +117,27 @@ export const createGridBatch = (
       const existingObjects = [...gridLayerRef.current];
       existingObjects.forEach(obj => {
         if (canvas.contains(obj)) {
-          canvas.remove(obj);
+          try {
+            canvas.remove(obj);
+          } catch (err) {
+            console.warn("Error removing existing grid object:", err);
+          }
         }
       });
       gridLayerRef.current = [];
     }
     
-    // Get up-to-date dimensions
-    const canvasWidth = canvas.getWidth() || canvasDimensions.width;
-    const canvasHeight = canvas.getHeight() || canvasDimensions.height;
+    // Get up-to-date dimensions with safety checks
+    const canvasWidth = Math.max(canvas.getWidth() || canvasDimensions.width, 400);
+    const canvasHeight = Math.max(canvas.getHeight() || canvasDimensions.height, 300);
     
-    console.log(`Canvas dimensions for grid: ${canvasWidth}x${canvasHeight}`);
+    console.log(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
     
     // Store the current dimensions for future comparison
     gridManager.lastDimensions = { width: canvasWidth, height: canvasHeight };
     
-    if (canvasWidth <= 0 || canvasHeight <= 0) {
-      setHasError(true);
-      setErrorMessage("Invalid canvas dimensions");
-      gridManager.inProgress = false;
-      gridManager.batchTimeoutId = null;
-      return [];
-    }
-    
-    // Render all grid components
+    // Render all grid components with explicit error handling
+    console.log("Starting renderGridComponents...");
     const result = renderGridComponents(
       canvas, 
       canvasWidth, 
@@ -148,12 +145,31 @@ export const createGridBatch = (
     );
     
     if (result.gridObjects.length === 0) {
-      console.warn("No grid objects were created");
+      console.warn("No grid objects were created - critical failure");
+      // Try again with hardcoded fallback dimensions if needed
+      if (canvasWidth === 0 || canvasHeight === 0) {
+        console.log("Attempting grid creation with fallback dimensions");
+        const fallbackResult = renderGridComponents(canvas, 800, 600);
+        if (fallbackResult.gridObjects.length > 0) {
+          console.log("Fallback grid creation succeeded");
+          arrangeGridObjects(
+            canvas, 
+            fallbackResult.smallGridLines, 
+            fallbackResult.largeGridLines, 
+            fallbackResult.markers
+          );
+          gridLayerRef.current = fallbackResult.gridObjects;
+          gridManager.exists = true;
+          setDebugInfo(prev => ({...prev, gridCreated: true}));
+          return fallbackResult.gridObjects;
+        }
+      }
     } else {
       console.log(`Grid objects created: ${result.gridObjects.length}`);
     }
     
     // Arrange grid objects in the correct z-order
+    console.log("Arranging grid objects...");
     arrangeGridObjects(canvas, result.smallGridLines, result.largeGridLines, result.markers);
     
     // Store grid objects in the reference for later use
@@ -165,9 +181,10 @@ export const createGridBatch = (
     // Detailed grid creation log
     console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large, ${result.markers.length} markers)`);
     
-    // One-time render
+    // Force a complete render
     canvas.requestRenderAll();
     
+    // Update debug info
     setDebugInfo(prev => ({...prev, gridCreated: true}));
     setHasError(false);
     
@@ -177,7 +194,7 @@ export const createGridBatch = (
     
     return result.gridObjects;
   } catch (error) {
-    console.error("Error in createGridBatch:", error);
+    console.error("Critical error in createGridBatch:", error);
     setHasError(true);
     setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);
     gridManager.inProgress = false;
@@ -186,5 +203,6 @@ export const createGridBatch = (
   } finally {
     gridManager.inProgress = false;
     gridManager.batchTimeoutId = null;
+    console.log("Grid batch creation process complete");
   }
 };
