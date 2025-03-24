@@ -94,15 +94,21 @@ export const Canvas = () => {
   }, [currentFloor, floorPlans, isLoading]);
 
   const createGrid = (canvas: fabric.Canvas) => {
-    gridLayerRef.current.forEach(obj => {
-      canvas.remove(obj);
-    });
+    console.log("Creating grid...");
     
-    gridLayerRef.current = [];
+    if (gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
+        canvas.remove(obj);
+      });
+      gridLayerRef.current = [];
+    }
+    
     const gridObjects: fabric.Object[] = [];
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
     
-    for (let i = 0; i < canvas.width!; i += SMALL_GRID) {
-      const smallGridLine = new fabric.Line([i, 0, i, canvas.height!], {
+    for (let i = 0; i < canvasWidth; i += SMALL_GRID) {
+      const smallGridLine = new fabric.Line([i, 0, i, canvasHeight], {
         stroke: "#E6F3F8",
         selectable: false,
         strokeWidth: 0.5,
@@ -111,8 +117,9 @@ export const Canvas = () => {
       canvas.add(smallGridLine);
       gridObjects.push(smallGridLine);
     }
-    for (let i = 0; i < canvas.height!; i += SMALL_GRID) {
-      const smallGridLine = new fabric.Line([0, i, canvas.width!, i], {
+    
+    for (let i = 0; i < canvasHeight; i += SMALL_GRID) {
+      const smallGridLine = new fabric.Line([0, i, canvasWidth, i], {
         stroke: "#E6F3F8",
         selectable: false,
         strokeWidth: 0.5,
@@ -122,8 +129,8 @@ export const Canvas = () => {
       gridObjects.push(smallGridLine);
     }
 
-    for (let i = 0; i < canvas.width!; i += LARGE_GRID) {
-      const largeGridLine = new fabric.Line([i, 0, i, canvas.height!], {
+    for (let i = 0; i < canvasWidth; i += LARGE_GRID) {
+      const largeGridLine = new fabric.Line([i, 0, i, canvasHeight], {
         stroke: "#C2E2F3",
         selectable: false,
         strokeWidth: 1,
@@ -132,8 +139,9 @@ export const Canvas = () => {
       canvas.add(largeGridLine);
       gridObjects.push(largeGridLine);
     }
-    for (let i = 0; i < canvas.height!; i += LARGE_GRID) {
-      const largeGridLine = new fabric.Line([0, i, canvas.width!, i], {
+    
+    for (let i = 0; i < canvasHeight; i += LARGE_GRID) {
+      const largeGridLine = new fabric.Line([0, i, canvasWidth, i], {
         stroke: "#C2E2F3",
         selectable: false,
         strokeWidth: 1,
@@ -144,13 +152,13 @@ export const Canvas = () => {
     }
 
     const scaleMarker = new fabric.Group([
-      new fabric.Line([canvas.width! - LARGE_GRID - 20, canvas.height! - 20, canvas.width! - 20, canvas.height! - 20], {
+      new fabric.Line([canvasWidth - LARGE_GRID - 20, canvasHeight - 20, canvasWidth - 20, canvasHeight - 20], {
         stroke: "#333333",
         strokeWidth: 2,
       }),
       new fabric.Text("1m", {
-        left: canvas.width! - LARGE_GRID/2 - 30,
-        top: canvas.height! - 35,
+        left: canvasWidth - LARGE_GRID/2 - 30,
+        top: canvasHeight - 35,
         fontSize: 12,
         fill: "#333333",
       })
@@ -162,18 +170,20 @@ export const Canvas = () => {
     gridObjects.push(scaleMarker);
     
     gridObjects.forEach(obj => {
-      canvas.sendObjectToBack(obj);
+      canvas.sendToBack(obj);
     });
     
     gridLayerRef.current = gridObjects;
-    
     canvas.renderAll();
     
+    console.log(`Grid created with ${gridObjects.length} objects`);
     return gridObjects;
   };
 
   const setupCanvas = () => {
     if (!canvasRef.current) return;
+    
+    console.log("Setting up canvas...");
 
     const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: 800,
@@ -192,9 +202,15 @@ export const Canvas = () => {
     createGrid(fabricCanvas);
     
     fabricCanvas.on('object:added', () => {
-      gridLayerRef.current.forEach(gridObj => {
-        fabricCanvas.sendObjectToBack(gridObj);
-      });
+      if (gridLayerRef.current.length === 0) {
+        console.log("Grid missing, recreating...");
+        createGrid(fabricCanvas);
+      } else {
+        gridLayerRef.current.forEach(gridObj => {
+          fabricCanvas.sendToBack(gridObj);
+        });
+        fabricCanvas.renderAll();
+      }
     });
 
     fabricCanvas.on('path:created', (e) => {
@@ -225,7 +241,7 @@ export const Canvas = () => {
         fabricCanvas.add(polyline);
         
         gridLayerRef.current.forEach(gridObj => {
-          fabricCanvas.sendObjectToBack(gridObj);
+          fabricCanvas.sendToBack(gridObj);
         });
         
         fabricCanvas.renderAll();
@@ -275,7 +291,7 @@ export const Canvas = () => {
     }
     
     gridLayerRef.current.forEach(gridObj => {
-      fabricCanvasRef.current!.sendObjectToBack(gridObj);
+      fabricCanvasRef.current!.sendToBack(gridObj);
     });
     
     currentPlan.strokes.forEach(stroke => {
@@ -307,25 +323,19 @@ export const Canvas = () => {
   const clearDrawings = () => {
     if (!fabricCanvasRef.current) return;
     
+    const gridObjects = [...gridLayerRef.current];
+    
     const objects = fabricCanvasRef.current.getObjects().filter(obj => 
-      obj.type === 'path' || obj.type === 'polyline'
+      !gridLayerRef.current.includes(obj)
     );
     
     objects.forEach((obj) => {
-      if (!gridLayerRef.current.includes(obj)) {
-        fabricCanvasRef.current!.remove(obj);
-      }
+      fabricCanvasRef.current!.remove(obj);
     });
     
-    if (gridLayerRef.current.length === 0) {
+    if (gridObjects.length === 0 || !fabricCanvasRef.current.contains(gridObjects[0])) {
+      console.log("Recreating grid during clearDrawings...");
       createGrid(fabricCanvasRef.current);
-    } else {
-      gridLayerRef.current.forEach(gridObj => {
-        if (!fabricCanvasRef.current!.contains(gridObj)) {
-          fabricCanvasRef.current!.add(gridObj);
-        }
-        fabricCanvasRef.current!.sendObjectToBack(gridObj);
-      });
     }
     
     fabricCanvasRef.current.renderAll();
