@@ -42,7 +42,7 @@ export const usePathProcessing = ({
 }: UsePathProcessingProps) => {
   
   // Use the point processing hook
-  const { processPoints, convertToPixelPoints } = usePointProcessing(tool);
+  const { processPoints, convertToPixelPoints, isShapeClosed } = usePointProcessing(tool);
   
   // Use the polyline creation hook
   const { createPolyline } = usePolylineCreation({
@@ -97,16 +97,19 @@ export const usePathProcessing = ({
       // Process the points according to the current tool
       const finalPoints = processPoints(points);
       
+      // Check if the shape is closed (first and last points are very close)
+      const isEnclosed = isShapeClosed(finalPoints);
+      
       // Convert meter coordinates to pixel coordinates for display
       const pixelPoints = convertToPixelPoints(finalPoints);
       
-      console.log("Creating polyline with points:", pixelPoints.length);
+      console.log("Creating polyline with points:", pixelPoints.length, isEnclosed ? "(enclosed shape)" : "");
       
       // Remove the temporary path before creating the polyline
       fabricCanvas.remove(path);
       
-      // Create the polyline from the processed points
-      const success = createPolyline(finalPoints, pixelPoints);
+      // Create the polyline from the processed points, passing the isEnclosed flag
+      const success = createPolyline(finalPoints, pixelPoints, isEnclosed);
       
       if (success) {
         console.log("Line drawn and added to canvas successfully");
@@ -125,7 +128,7 @@ export const usePathProcessing = ({
         }
       }
     }
-  }, [fabricCanvasRef, processPoints, convertToPixelPoints, createPolyline]);
+  }, [fabricCanvasRef, processPoints, convertToPixelPoints, isShapeClosed, createPolyline]);
   
   return { processCreatedPath };
 };

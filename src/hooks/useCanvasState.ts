@@ -10,7 +10,7 @@ import { CanvasDimensions } from "@/types/drawingTypes";
 /**
  * Type for drawing tools including the select tool
  */
-export type DrawingTool = "draw" | "room" | "straightLine" | "hand" | "select";
+export type DrawingTool = "draw" | "straightLine" | "hand" | "select";
 
 /**
  * Canvas state return type

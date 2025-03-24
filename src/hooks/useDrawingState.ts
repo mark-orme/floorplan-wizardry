@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -56,8 +57,8 @@ export const useDrawingState = ({
 
   // Mouse down handler
   const handleMouseDown = useCallback((e: any) => {
-    // Only track for straightLine and room tools
-    if (tool !== 'straightLine' && tool !== 'room') return;
+    // Only track for straightLine tool
+    if (tool !== 'straightLine') return;
     
     if (!fabricCanvasRef.current) return;
     
@@ -134,7 +135,7 @@ export const useDrawingState = ({
   // Mouse move handler with throttling
   const handleMouseMove = useCallback((e: any) => {
     // Only update if drawing and using relevant tools
-    if (!drawingState.isDrawing || (tool !== 'straightLine' && tool !== 'room')) return;
+    if (!drawingState.isDrawing || tool !== 'straightLine') return;
     
     // Throttle updates using requestAnimationFrame for better performance
     if (animationFrameRef.current === null) {
@@ -205,7 +206,7 @@ export const useDrawingState = ({
 
   // Make sure to update drawing state when tool changes
   useEffect(() => {
-    if (tool !== 'straightLine' && tool !== 'room' && tool !== 'select' && drawingState.isDrawing) {
+    if (tool !== 'straightLine' && tool !== 'select' && drawingState.isDrawing) {
       cleanupTimeouts();
       setDrawingState({
         isDrawing: false,

@@ -40,7 +40,6 @@ export const usePointProcessing = (tool: DrawingTool) => {
     
     // Apply grid snapping based on the tool
     // For wall tool (straightLine), use strict grid snapping
-    // For other tools, use standard snapping
     let finalPoints = tool === 'straightLine' 
       ? snapPointsToGrid(filteredPoints, true) // Strict grid snapping for walls
       : snapToGrid(filteredPoints);           // Regular snapping for other tools
@@ -63,40 +62,6 @@ export const usePointProcessing = (tool: DrawingTool) => {
           
         toast.success(`Wall length: ${displayLength}m`);
       }
-    } else if (tool === 'room') {
-      // For room tool, create enclosed shape with straightening between points
-      const snappedPoints = [finalPoints[0]];
-      
-      for (let i = 1; i < finalPoints.length; i++) {
-        const prevPoint = snappedPoints[i-1];
-        const currentPoint = finalPoints[i];
-        
-        // Apply straightening between consecutive points
-        const straightened = straightenStroke([prevPoint, currentPoint]);
-        if (straightened.length > 1) {
-          snappedPoints.push(straightened[1]);
-        }
-      }
-      
-      // For rooms, apply final straightening to close the shape nicely
-      if (snappedPoints.length > 2) {
-        const firstPoint = snappedPoints[0];
-        const lastPoint = snappedPoints[snappedPoints.length - 1];
-        
-        // Apply straightening for the closing segment
-        const closingSegment = straightenStroke([lastPoint, firstPoint]);
-        
-        // Replace last point with properly straightened closing point
-        if (closingSegment.length > 1 && 
-            (Math.abs(closingSegment[1].x - firstPoint.x) < 0.1 && 
-             Math.abs(closingSegment[1].y - firstPoint.y) < 0.1)) {
-          // If very close to first point, use exactly the first point to ensure perfect closing
-          snappedPoints[snappedPoints.length - 1] = {...firstPoint};
-        }
-      }
-      
-      finalPoints = snappedPoints;
-      console.log("Applied straightening to room");
     }
     
     // Make sure we still have at least 2 points after all processing
@@ -118,5 +83,22 @@ export const usePointProcessing = (tool: DrawingTool) => {
     }));
   }, []);
   
-  return { processPoints, convertToPixelPoints };
+  /**
+   * Check if a shape is closed (first and last points are close enough)
+   */
+  const isShapeClosed = useCallback((points: Point[]): boolean => {
+    if (points.length < 3) return false;
+    
+    const firstPoint = points[0];
+    const lastPoint = points[points.length - 1];
+    
+    // Check if first and last points are close enough (within 0.05m)
+    const distanceThreshold = 0.05;
+    const dx = Math.abs(lastPoint.x - firstPoint.x);
+    const dy = Math.abs(lastPoint.y - firstPoint.y);
+    
+    return dx < distanceThreshold && dy < distanceThreshold;
+  }, []);
+  
+  return { processPoints, convertToPixelPoints, isShapeClosed };
 };

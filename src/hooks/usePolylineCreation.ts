@@ -39,7 +39,8 @@ export const usePolylineCreation = ({
    */
   const createPolyline = useCallback((
     finalPoints: Point[],
-    pixelPoints: Point[]
+    pixelPoints: Point[],
+    isEnclosed: boolean = false
   ) => {
     if (!fabricCanvasRef.current) return false;
     const fabricCanvas = fabricCanvasRef.current;
@@ -49,8 +50,8 @@ export const usePolylineCreation = ({
       const polylineOptions = {
         stroke: lineColor,
         strokeWidth: lineThickness,
-        fill: tool === 'room' ? `${lineColor}20` : 'transparent', // Semi-transparent fill for rooms
-        objectType: tool === 'room' ? 'room' : 'line',
+        fill: isEnclosed ? `${lineColor}20` : 'transparent', // Semi-transparent fill for enclosed shapes
+        objectType: isEnclosed ? 'room' : 'line',
         objectCaching: true,
         perPixelTargetFind: false,
         selectable: false,
@@ -84,11 +85,11 @@ export const usePolylineCreation = ({
             strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
           };
           
-          // Calculate and update area for room shapes
-          if (tool === 'room' && finalPoints.length > 2) {
+          // Calculate and update area for enclosed shapes
+          if (isEnclosed && finalPoints.length > 2) {
             const area = calculateGIA(finalPoints);
             setGia(prev => prev + area);
-            toast.success(`Room added: ${area.toFixed(2)} m²`);
+            toast.success(`Room shape enclosed: ${area.toFixed(2)} m²`);
           }
         }
         return newFloorPlans;
