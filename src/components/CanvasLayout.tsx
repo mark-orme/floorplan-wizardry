@@ -7,18 +7,15 @@ import { DrawingToolbar } from "./DrawingToolbar";
 import { FloorPlanList } from "./FloorPlanList";
 import { CanvasContainer } from "./CanvasContainer";
 import { DrawingTool } from "@/hooks/useCanvasState";
+import { DebugInfoState } from "@/types/drawingTypes";
+import { FloorPlan } from "@/utils/drawing";
 
 interface CanvasLayoutProps {
   tool: DrawingTool;
   gia: number;
-  floorPlans: any[];
+  floorPlans: FloorPlan[];
   currentFloor: number;
-  debugInfo: {
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  };
+  debugInfo: DebugInfoState;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   lineThickness: number;
   lineColor: string;
@@ -58,7 +55,7 @@ export const CanvasLayout = ({
   onAddFloor,
   onLineThicknessChange,
   onLineColorChange
-}: CanvasLayoutProps) => {
+}: CanvasLayoutProps): JSX.Element => {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto">
       {/* Drawing tools bar positioned at top */}

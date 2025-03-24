@@ -9,14 +9,14 @@ interface DistanceTooltipProps {
   currentPoint?: Point;
   midPoint?: Point;
   isVisible: boolean;
-  position?: { x: number; y: number };
+  position?: Point;
 }
 
 /**
  * Tooltip component that displays the distance measurement of a line being drawn
  * Memoized for better performance
  * @param {DistanceTooltipProps} props - Component properties
- * @returns {JSX.Element} Distance tooltip component
+ * @returns {JSX.Element | null} Distance tooltip component or null if not visible
  */
 export const DistanceTooltip = memo(({
   startPoint,
@@ -24,7 +24,7 @@ export const DistanceTooltip = memo(({
   midPoint,
   isVisible,
   position
-}: DistanceTooltipProps) => {
+}: DistanceTooltipProps): React.ReactElement | null => {
   // Exit early if we don't have the necessary data
   if (!startPoint || !currentPoint || !isVisible) {
     return null;

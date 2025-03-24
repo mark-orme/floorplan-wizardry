@@ -8,14 +8,10 @@
 import { Card } from "./ui/card";
 import { DebugInfo } from "./DebugInfo";
 import { useRef, useEffect } from "react";
+import { DebugInfoState } from "@/types/drawingTypes";
 
 interface CanvasContainerProps {
-  debugInfo: {
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  };
+  debugInfo: DebugInfoState;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
 
@@ -25,7 +21,7 @@ interface CanvasContainerProps {
  * @param {CanvasContainerProps} props - Component properties
  * @returns {JSX.Element} Rendered component
  */
-export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps) => {
+export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps): JSX.Element => {
   // Create a local ref if one is not provided
   const localCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasReference = canvasRef || localCanvasRef;

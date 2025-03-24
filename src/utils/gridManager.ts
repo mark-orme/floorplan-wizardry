@@ -4,9 +4,10 @@
  * Handles grid creation state, flags, and limits
  * @module gridManager
  */
+import { GridManagerState, CanvasDimensions } from "@/types/drawingTypes";
 
-// Track grid creation state globally
-export const gridManager = {
+// Track grid creation state globally with proper typing
+export const gridManager: GridManagerState = {
   // Creation time tracking
   lastCreationTime: 0,
   inProgress: false,
@@ -27,7 +28,7 @@ export const gridManager = {
   exists: false,
   
   // Batch processing state
-  batchTimeoutId: null as number | null,
+  batchTimeoutId: null,
   
   // Safety timeout (ms) to reset inProgress if creation takes too long
   safetyTimeout: 5000,
@@ -49,7 +50,7 @@ export const gridManager = {
  * Reset the grid creation in-progress flag
  * Used to prevent grid creation from getting stuck
  */
-export const resetGridProgress = () => {
+export const resetGridProgress = (): void => {
   const now = Date.now();
   
   // Check for rapid consecutive resets which might indicate a problem

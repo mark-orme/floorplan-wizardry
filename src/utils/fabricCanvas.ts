@@ -3,24 +3,25 @@
  * Utilities for Fabric.js canvas management
  * @module fabricCanvas
  */
-import { Canvas } from "fabric";
+import { Canvas, Object as FabricObject } from "fabric";
+import { CanvasDimensions } from "@/types/drawingTypes";
 
-// Keep track of previous dimensions to avoid unnecessary updates
-let prevDimensions = { width: 0, height: 0 };
-// Track dimension update count to reduce logging
-let dimensionUpdateCount = 0;
-// Track if initial canvas setup is complete
-let initialSetupComplete = false;
+// Use a module-level object to track state instead of loose variables
+const canvasState = {
+  prevDimensions: { width: 0, height: 0 },
+  dimensionUpdateCount: 0,
+  initialSetupComplete: false
+};
 
 /**
  * Safely sets canvas dimensions and refreshes the canvas
  * @param {Canvas} canvas - The Fabric canvas instance
- * @param {{ width: number, height: number }} dimensions - Object containing width and height to set
+ * @param {CanvasDimensions} dimensions - Object containing width and height to set
  */
 export const setCanvasDimensions = (
   canvas: Canvas, 
-  dimensions: { width: number, height: number }
-) => {
+  dimensions: CanvasDimensions
+): void => {
   if (!canvas) {
     console.error("Cannot set dimensions: canvas is null");
     return;
@@ -31,21 +32,21 @@ export const setCanvasDimensions = (
     
     // More aggressive tolerance - skip update for small changes
     // Increased from 10px to 30px to further reduce updates
-    if (Math.abs(width - prevDimensions.width) < 30 && 
-        Math.abs(height - prevDimensions.height) < 30) {
+    if (Math.abs(width - canvasState.prevDimensions.width) < 30 && 
+        Math.abs(height - canvasState.prevDimensions.height) < 30) {
       return;
     }
     
     // Store new dimensions
-    prevDimensions = { width, height };
+    canvasState.prevDimensions = { width, height };
     
     // Increment update count
-    dimensionUpdateCount++;
+    canvasState.dimensionUpdateCount++;
     
     // Only log first dimension update and every 10th after that
-    if (!initialSetupComplete || dimensionUpdateCount % 10 === 0) {
+    if (!canvasState.initialSetupComplete || canvasState.dimensionUpdateCount % 10 === 0) {
       console.log(`Setting canvas dimensions to ${width}x${height}`);
-      initialSetupComplete = true;
+      canvasState.initialSetupComplete = true;
     }
     
     canvas.setDimensions({ width, height });
@@ -61,7 +62,7 @@ export const setCanvasDimensions = (
  * Properly dispose the canvas instance to prevent memory leaks
  * @param {Canvas|null} canvas - The Fabric canvas instance to dispose
  */
-export const disposeCanvas = (canvas: Canvas | null) => {
+export const disposeCanvas = (canvas: Canvas | null): void => {
   if (!canvas) {
     console.log("No canvas to dispose");
     return;
@@ -111,9 +112,9 @@ export const disposeCanvas = (canvas: Canvas | null) => {
 /**
  * Clear objects from canvas while preserving grid
  * @param {Canvas} canvas - The Fabric canvas instance
- * @param {any[]} gridObjects - Grid objects to preserve
+ * @param {FabricObject[]} gridObjects - Grid objects to preserve
  */
-export const clearCanvasObjects = (canvas: Canvas, gridObjects: any[]) => {
+export const clearCanvasObjects = (canvas: Canvas, gridObjects: FabricObject[]): void => {
   if (!canvas) {
     console.error("Cannot clear canvas: canvas is null");
     return;

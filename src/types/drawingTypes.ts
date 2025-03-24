@@ -20,7 +20,7 @@ export interface DrawingState {
   startPoint?: Point;
   currentPoint?: Point;
   midPoint?: Point;
-  cursorPosition?: { x: number; y: number };
+  cursorPosition?: Point;
   lineLength?: number;
 }
 
@@ -29,10 +29,10 @@ export interface DrawingState {
  */
 export interface GridCreationResult {
   success: boolean;
-  gridObjects: any[];
-  smallGridLines: any[];
-  largeGridLines: any[];
-  markers: any[];
+  gridObjects: Array<fabric.Object>;
+  smallGridLines: Array<fabric.Object>;
+  largeGridLines: Array<fabric.Object>;
+  markers: Array<fabric.Object>;
 }
 
 /**
@@ -42,4 +42,57 @@ export interface CanvasLoadTimes {
   startTime: number;
   canvasReady: number;
   gridCreated: number;
+}
+
+/**
+ * Grid cell structure
+ */
+export interface GridCell {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Canvas dimensions
+ */
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Debug information structure
+ */
+export interface DebugInfoState {
+  canvasInitialized: boolean;
+  gridCreated: boolean;
+  dimensionsSet: boolean;
+  brushInitialized: boolean;
+}
+
+/**
+ * Grid manager configuration and state
+ */
+export interface GridManagerState {
+  lastCreationTime: number;
+  inProgress: boolean;
+  lastDimensions: CanvasDimensions;
+  initialized: boolean;
+  totalCreations: number;
+  maxRecreations: number;
+  minRecreationInterval: number;
+  throttleInterval: number;
+  exists: boolean;
+  batchTimeoutId: number | null;
+  safetyTimeout: number;
+  lastResetTime: number;
+  consecutiveResets: number;
+  maxConsecutiveResets: number;
+  creationLock: {
+    id: number;
+    timestamp: number;
+    isLocked: boolean;
+  }
 }

@@ -4,22 +4,18 @@
  * @module useCanvasGrid
  */
 import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
 import { 
   gridManager, 
   resetGridProgress
 } from "@/utils/gridManager";
+import { CanvasDimensions, DebugInfoState } from "@/types/drawingTypes";
 
 interface UseCanvasGridProps {
-  gridLayerRef: React.MutableRefObject<any[]>;
-  canvasDimensions: { width: number, height: number };
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  canvasDimensions: CanvasDimensions;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
 }
@@ -41,7 +37,7 @@ export const useCanvasGrid = ({
   const MAX_ATTEMPTS = 3;
   
   // Create grid callback with simple direct execution
-  const createGridCallback = useCallback((canvas: FabricCanvas) => {
+  const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
     console.log("createGridCallback invoked with FORCED CREATION", {
       canvasDimensions,
       gridExists: gridLayerRef.current.length > 0,
