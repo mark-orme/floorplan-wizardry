@@ -1,4 +1,3 @@
-
 /**
  * Canvas controller component
  * Centralizes all canvas state and operations
@@ -55,7 +54,7 @@ export const CanvasController = () => {
   
   // Track grid creation attempts
   const gridAttemptCountRef = useRef(0);
-  const maxGridAttempts = 3;
+  const maxGridAttempts = 5; // Increased for better reliability
   const gridCreationSuccessfulRef = useRef(false);
   
   // Grid creation callback
@@ -206,13 +205,13 @@ export const CanvasController = () => {
     loadFloorPlansData();
   }, [loadFloorPlansData]);
 
-  // IMPROVED: Staged grid creation with sequential retries and forced lock reset
+  // IMPROVED: Force grid creation on initial load and after any error
   useEffect(() => {
-    if (!fabricCanvasRef.current || gridCreationSuccessfulRef.current) {
+    if (!fabricCanvasRef.current) {
       return;
     }
     
-    console.log("⭐ FORCE CREATE GRID - Critical priority grid creation");
+    console.log("⭐ FORCE GRID CREATION - Critical priority grid creation for wall snapping");
     
     // Always reset progress first to break any stuck locks
     resetGridProgress();
@@ -227,21 +226,36 @@ export const CanvasController = () => {
       // Force unlock before creation
       resetGridProgress();
       
-      // Wait a moment after reset before attempting
+      // Try immediate grid creation first
+      try {
+        const grid = createGrid(fabricCanvasRef.current);
+        
+        if (grid && grid.length > 0) {
+          console.log(`Grid created successfully with ${grid.length} objects`);
+          fabricCanvasRef.current.requestRenderAll();
+          gridCreationSuccessfulRef.current = true;
+          return true;
+        }
+      } catch (err) {
+        console.error("Error during grid creation attempt:", err);
+      }
+      
+      // If immediate creation failed, try with timeout
       setTimeout(() => {
         if (!fabricCanvasRef.current) return;
         
         try {
+          resetGridProgress();
           const grid = createGrid(fabricCanvasRef.current);
           
           if (grid && grid.length > 0) {
-            console.log(`Grid created with ${grid.length} objects`);
+            console.log(`Grid created with ${grid.length} objects (delayed attempt)`);
             fabricCanvasRef.current.requestRenderAll();
             gridCreationSuccessfulRef.current = true;
             return true;
           }
         } catch (err) {
-          console.error("Error during grid creation attempt:", err);
+          console.error("Error during delayed grid creation attempt:", err);
         }
         
         // If we're here, grid creation failed
@@ -251,7 +265,6 @@ export const CanvasController = () => {
           console.log(`Scheduling next grid attempt in ${delay}ms`);
           
           setTimeout(() => {
-            // Make sure to reset lock before next attempt
             resetGridProgress();
             attemptGridCreation();
           }, delay);

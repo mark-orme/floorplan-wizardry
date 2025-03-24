@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -55,7 +54,7 @@ export const useDrawingState = ({
     };
   }, []);
 
-  // Mouse down handler with improved grid snapping
+  // IMPROVED: Mouse down handler with GUARANTEED grid snapping
   const handleMouseDown = useCallback((e: any) => {
     // Only track for straightLine tool
     if (tool !== 'straightLine') return;
@@ -75,10 +74,9 @@ export const useDrawingState = ({
     
     // CRITICAL FIX: Force EXACT grid line alignment for wall start points
     // Apply strict snapping to ensure start point is precisely on a grid line
-    // This fixes the issue of not starting exactly on grid lines
     const startPoint = snapToNearestGridLine(rawStartPoint);
     
-    console.log("GRID SNAP: Raw clicked point:", rawStartPoint, "Snapped to grid line:", startPoint);
+    console.log("GRID SNAP (handleMouseDown): Raw clicked point:", rawStartPoint, "Snapped to grid line:", startPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -122,8 +120,6 @@ export const useDrawingState = ({
       // CRITICAL FIX: Apply strict grid line snapping to current point
       // This ensures walls always snap precisely to grid lines when moving
       const currentPoint = snapToNearestGridLine(rawCurrentPoint);
-      
-      console.log("GRID SNAP: Raw cursor point:", rawCurrentPoint, "Snapped to grid line:", currentPoint);
       
       // Only calculate midpoint if we have both start and current points
       // Use the grid-snapped points for more accurate midpoint calculation

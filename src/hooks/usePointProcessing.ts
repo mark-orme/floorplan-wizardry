@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing points during drawing
  * @module usePointProcessing
@@ -24,6 +25,7 @@ export const usePointProcessing = (tool: DrawingTool) => {
   
   /**
    * Process and optimize points based on the current drawing tool
+   * IMPROVED: Ensures walls strictly snap to grid lines
    */
   const processPoints = useCallback((points: Point[]): Point[] => {
     if (points.length < 2) {
@@ -39,38 +41,35 @@ export const usePointProcessing = (tool: DrawingTool) => {
       filteredPoints = points;
     }
     
-    // For wall tool, use strict grid alignment for both start and end points
+    // For wall tool, use EXACT grid alignment for both start and end points
     let finalPoints;
     if (tool === 'straightLine') {
-      // IMPROVED: Force all wall points to snap EXACTLY to nearest grid lines
-      // Force exact grid alignment for wall tool - snap both start and end
-      // points precisely to their nearest grid lines
+      // CRITICAL FIX: Force wall endpoints to align EXACTLY to grid lines
+      // This is the key fix for ensuring walls always start and end on grid
       const startPoint = snapToNearestGridLine(filteredPoints[0]);
       const endPoint = snapToNearestGridLine(filteredPoints[filteredPoints.length - 1]);
       
-      console.log("Wall strict snap: Original start:", filteredPoints[0], "Snapped start:", startPoint);
-      console.log("Wall strict snap: Original end:", filteredPoints[filteredPoints.length - 1], "Snapped end:", endPoint);
+      console.log("STRICT WALL SNAP - Original start:", filteredPoints[0], "Snapped to grid:", startPoint);
+      console.log("STRICT WALL SNAP - Original end:", filteredPoints[filteredPoints.length - 1], "Snapped to grid:", endPoint);
       
       // Create a perfectly straight line with exact grid alignment 
       finalPoints = straightenStroke([startPoint, endPoint]);
       
-      // Triple-check both points are exactly on grid lines
+      // Final validation: Ensure both points are exactly on grid lines
       finalPoints = finalPoints.map(point => ({
-        x: Number(Number(point.x).toFixed(1)),
-        y: Number(Number(point.y).toFixed(1))
+        x: parseFloat(Number(point.x).toFixed(1)),
+        y: parseFloat(Number(point.y).toFixed(1))
       }));
       
-      console.log("Final wall points (after all processing):", finalPoints);
+      console.log("Final wall points (after processing):", finalPoints);
     } else {
       // Regular snapping for other tools
       finalPoints = snapToGrid(filteredPoints);
     }
     
-    // Calculate and display exact wall length to exactly 1 decimal place
+    // Calculate and display exact wall length
     if (tool === 'straightLine' && finalPoints.length >= 2) {
       const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
-      
-      // Display with exactly 1 decimal place for consistency
       const displayLength = lengthInMeters.toFixed(1);
       toast.success(`Wall length: ${displayLength}m`);
     }

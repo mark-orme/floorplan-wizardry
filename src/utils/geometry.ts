@@ -26,8 +26,8 @@ export const snapToGrid = (points: Point[]): Stroke => {
     // Ensure we return exactly rounded values with 3 decimal precision
     // to avoid floating point errors
     return {
-      x: Number(snappedX.toFixed(3)), // Enforce exact 0.1m increments
-      y: Number(snappedY.toFixed(3))  // Precision to 0.001m
+      x: Number(snappedX.toFixed(1)), // Enforce exact 0.1m increments
+      y: Number(snappedY.toFixed(1))  // Precision to 0.1m
     };
   });
 };
@@ -55,15 +55,15 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
     // For strict validation, ensure the points are EXACTLY on grid lines
     // with no floating point errors (using fixed precision)
     return {
-      x: Number(snappedX.toFixed(3)),
-      y: Number(snappedY.toFixed(3))
+      x: Number(snappedX.toFixed(1)),
+      y: Number(snappedY.toFixed(1))
     };
   });
 };
 
 /**
- * Enhanced grid snapping - snaps PRECISELY to the nearest horizontal or vertical grid line
- * This ensures walls always start and end on actual grid lines
+ * IMPROVED: Enhanced grid snapping - forces EXACT snap to nearest grid line
+ * Ensures walls always start and end precisely on grid lines with no rounding errors
  * @param {Point} point - The point to snap
  * @returns {Point} Point snapped exactly to the nearest grid line
  */
@@ -74,15 +74,14 @@ export const snapToNearestGridLine = (point: Point): Point => {
   const nearestX = Math.round(point.x / GRID_SIZE) * GRID_SIZE;
   const nearestY = Math.round(point.y / GRID_SIZE) * GRID_SIZE;
   
-  // Force exact 0.1m grid alignment with no rounding errors
-  // Apply additional rounding to ensure exact grid values (fixing floating point issues)
-  const exactX = Number(nearestX.toFixed(1));
-  const exactY = Number(nearestY.toFixed(1));
-  
-  return { x: exactX, y: exactY };
+  // Force precise grid alignment to eliminate any floating point errors
+  return { 
+    x: parseFloat(nearestX.toFixed(1)), 
+    y: parseFloat(nearestY.toFixed(1)) 
+  };
 };
 
-/** 
+/**
  * Auto-straighten strokes - enhanced version that forces perfect horizontal/vertical alignment
  * @param {Stroke} stroke - Array of points representing a stroke
  * @returns {Stroke} Straightened stroke
