@@ -29,14 +29,16 @@ export const createSmallGrid = (
 ): Line[] => {
   const smallGridObjects: Line[] = [];
   
-  // Skip creating small grid entirely if it would create too many lines
-  if (shouldSkipSmallGrid(canvasWidth, canvasHeight)) {
+  // Only skip small grid if dimensions are VERY large
+  // Reduced the threshold to ensure small grid is shown more often
+  if (canvasWidth * canvasHeight > 1500000) {
     console.log("Skipping small grid creation for performance - too many lines would be created");
     return smallGridObjects;
   }
   
   const smallGridStep = SMALL_GRID;
-  const smallGridSkip = calculateSmallGridSkip(canvasWidth, canvasHeight);
+  // Reduce the skip factor to show more small grid lines
+  const smallGridSkip = Math.max(1, Math.floor(calculateSmallGridSkip(canvasWidth, canvasHeight) / 2));
   let smallGridCount = 0;
   
   // Create vertical small grid lines

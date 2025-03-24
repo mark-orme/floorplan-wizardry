@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing drawing history (undo/redo)
  * @module useDrawingHistory
@@ -7,7 +6,7 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
-import { clearCanvasObjects } from "@/utils/fabricHelpers";
+import { clearCanvasObjects } from "@/utils/fabricCanvas";
 
 interface UseDrawingHistoryProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -24,6 +23,7 @@ interface UseDrawingHistoryProps {
  */
 export const useDrawingHistory = ({
   fabricCanvasRef,
+  gridLayerRef,
   historyRef,
   clearDrawings,
   recalculateGIA
@@ -32,12 +32,17 @@ export const useDrawingHistory = ({
    * Undo the last drawing action
    */
   const handleUndo = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
+    if (!fabricCanvasRef.current) {
+      console.error("Cannot undo: fabric canvas is null");
+      return;
+    }
     
     if (historyRef.current.past.length > 1) {
-      fabricCanvasRef.current.renderOnAddRemove = false;
+      const canvas = fabricCanvasRef.current;
+      canvas.renderOnAddRemove = false;
       
-      const currentState = fabricCanvasRef.current.getObjects().filter(obj => 
+      // Capture current state before undo
+      const currentState = canvas.getObjects().filter(obj => 
         obj.type === 'path' || obj.type === 'polyline'
       );
       
@@ -55,32 +60,44 @@ export const useDrawingHistory = ({
       // Get previous state
       const previousState = historyRef.current.past[historyRef.current.past.length - 1];
       
-      // Clear canvas and add previous state objects
-      clearDrawings();
+      // Clear only the drawing objects, keep the grid
+      const pathsAndPolylines = canvas.getObjects().filter(obj => 
+        obj.type === 'path' || obj.type === 'polyline'
+      );
       
-      previousState.forEach(obj => fabricCanvasRef.current!.add(obj));
+      pathsAndPolylines.forEach(obj => canvas.remove(obj));
       
+      // Add previous state objects
+      previousState.forEach(obj => canvas.add(obj));
+      
+      // Update GIA calculation
       recalculateGIA();
       
-      fabricCanvasRef.current.renderOnAddRemove = true;
-      fabricCanvasRef.current.renderAll();
-      toast("Undo successful");
+      canvas.renderOnAddRemove = true;
+      canvas.requestRenderAll();
+      toast.success("Undo successful");
     } else {
-      toast("Nothing to undo");
+      toast.info("Nothing to undo");
     }
-  }, [fabricCanvasRef, historyRef, clearDrawings, recalculateGIA]);
+  }, [fabricCanvasRef, historyRef, recalculateGIA]);
 
   /**
    * Redo a previously undone action
    */
   const handleRedo = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
+    if (!fabricCanvasRef.current) {
+      console.error("Cannot redo: fabric canvas is null");
+      return;
+    }
     
     if (historyRef.current.future.length > 0) {
-      fabricCanvasRef.current.renderOnAddRemove = false;
+      const canvas = fabricCanvasRef.current;
+      canvas.renderOnAddRemove = false;
       
+      // Get next state from future history
       const nextState = historyRef.current.future[0];
       
+      // Remove it from future and add to past
       historyRef.current.future.shift();
       historyRef.current.past.push([...nextState]);
       
@@ -89,19 +106,26 @@ export const useDrawingHistory = ({
         historyRef.current.past = historyRef.current.past.slice(-MAX_HISTORY_STATES);
       }
       
-      clearDrawings();
+      // Clear only the drawing objects, keep the grid
+      const pathsAndPolylines = canvas.getObjects().filter(obj => 
+        obj.type === 'path' || obj.type === 'polyline'
+      );
       
-      nextState.forEach(obj => fabricCanvasRef.current!.add(obj));
+      pathsAndPolylines.forEach(obj => canvas.remove(obj));
       
+      // Add next state objects
+      nextState.forEach(obj => canvas.add(obj));
+      
+      // Update GIA calculation
       recalculateGIA();
       
-      fabricCanvasRef.current.renderOnAddRemove = true;
-      fabricCanvasRef.current.renderAll();
-      toast("Redo successful");
+      canvas.renderOnAddRemove = true;
+      canvas.requestRenderAll();
+      toast.success("Redo successful");
     } else {
-      toast("Nothing to redo");
+      toast.info("Nothing to redo");
     }
-  }, [fabricCanvasRef, historyRef, clearDrawings, recalculateGIA]);
+  }, [fabricCanvasRef, historyRef, recalculateGIA]);
 
   return {
     handleUndo,

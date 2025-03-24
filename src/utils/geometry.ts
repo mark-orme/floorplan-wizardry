@@ -1,9 +1,9 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
  */
-import { Point, Stroke, GRID_SIZE, PIXELS_PER_METER } from './drawingTypes';
+import { Point, Stroke, GRID_SIZE } from './drawingTypes';
+import { PIXELS_PER_METER } from './drawing';
 
 /** 
  * Snap points to 0.1m grid for accuracy 
@@ -18,6 +18,7 @@ export const snapToGrid = (points: Point[]): Stroke => {
     const x = typeof p.x === 'number' ? p.x : 0;
     const y = typeof p.y === 'number' ? p.y : 0;
     
+    // Snap to the 0.1m grid using GRID_SIZE and PIXELS_PER_METER
     return {
       x: Math.round(x / (GRID_SIZE * PIXELS_PER_METER)) * GRID_SIZE,
       y: Math.round(y / (GRID_SIZE * PIXELS_PER_METER)) * GRID_SIZE,
@@ -33,27 +34,35 @@ export const snapToGrid = (points: Point[]): Stroke => {
 export const straightenStroke = (stroke: Stroke): Stroke => {
   if (!stroke || stroke.length < 2) return stroke;
   
-  // If it's mostly horizontal or vertical, straighten it
+  // Use only start and end points for straightening
   const [start, end] = [stroke[0], stroke[stroke.length - 1]];
   const dx = Math.abs(end.x - start.x);
   const dy = Math.abs(end.y - start.y);
   
-  if (dx > dy * 3) {
-    // Mostly horizontal
+  // Determine if the line is more horizontal or vertical
+  if (dx > dy * 1.5) {
+    // Mostly horizontal - keep the same Y coordinate
     return [
       { x: start.x, y: start.y },
       { x: end.x, y: start.y }
     ];
-  } else if (dy > dx * 3) {
-    // Mostly vertical
+  } else if (dy > dx * 1.5) {
+    // Mostly vertical - keep the same X coordinate
     return [
       { x: start.x, y: start.y },
       { x: start.x, y: end.y }
     ];
+  } else {
+    // For diagonal lines, use 45-degree angle snapping
+    const length = Math.max(dx, dy);
+    const signX = Math.sign(end.x - start.x);
+    const signY = Math.sign(end.y - start.y);
+    
+    return [
+      start,
+      { x: start.x + (length * signX), y: start.y + (length * signY) }
+    ];
   }
-  
-  // Just return start and end points for diagonal lines
-  return [start, end];
 };
 
 /** 

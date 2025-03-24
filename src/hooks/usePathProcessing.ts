@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing Fabric.js paths into polylines
  * @module usePathProcessing
@@ -69,7 +70,7 @@ export const usePathProcessing = ({
         return;
       }
       
-      // Optimization: Use lower precision for points extraction on complex paths
+      // Extract points from path with full precision
       const points = fabricPathToPoints(path.path);
       console.log("Points extracted from path:", points.length);
       
@@ -78,19 +79,13 @@ export const usePathProcessing = ({
         return;
       }
       
-      // Performance optimization: Simplify paths with too many points
-      let finalPoints;
-      if (points.length > 100) {
-        // Simple point reduction algorithm for very complex paths
-        const simplified = points.filter((_, index) => index % Math.ceil(points.length / 100) === 0);
-        finalPoints = snapToGrid(simplified);
-      } else {
-        finalPoints = snapToGrid(points);
-      }
+      // Apply grid snapping to all points regardless of path complexity
+      let finalPoints = snapToGrid(points);
       
-      // Process points based on selected tool
+      // Process points based on selected tool (ALWAYS apply straightening for straightLine tool)
       if (tool === 'straightLine') {
         finalPoints = straightenStroke(finalPoints);
+        console.log("Applied straightening to stroke");
       } else if (tool === 'room' && finalPoints.length >= 2) {
         // For room tool, use angle snapping for 45-degree angles
         const snappedPoints = [finalPoints[0]];
@@ -100,6 +95,7 @@ export const usePathProcessing = ({
           snappedPoints.push(snappedEnd);
         }
         finalPoints = snappedPoints;
+        console.log("Applied angle snapping to room");
       }
 
       // Create a polyline from the processed points

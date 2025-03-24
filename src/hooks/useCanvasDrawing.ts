@@ -53,7 +53,10 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     handleMouseMove,
     handleMouseUp,
     cleanupTimeouts
-  } = useDrawingState({ fabricCanvasRef });
+  } = useDrawingState({ 
+    fabricCanvasRef,
+    tool  // Pass tool to useDrawingState to enable proper drawing state tracking
+  });
   
   /**
    * Set up event listeners for canvas drawing
@@ -93,7 +96,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     handleMouseDown, 
     handleMouseMove, 
     handleMouseUp,
-    cleanupTimeouts
+    cleanupTimeouts,
+    tool  // Add tool as dependency to re-attach listeners when tool changes
   ]);
 
   return {
