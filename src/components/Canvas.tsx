@@ -48,13 +48,14 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
-  // We no longer force tool to straightLine on initial load
+  // We now default to select tool on initial load
   useEffect(() => {
     if (isFirstMountRef.current && !isLoading && debugInfo.canvasInitialized) {
-      console.log("Using default tool: none");
+      console.log("Using default tool: select");
+      handleToolChange("select");
       isFirstMountRef.current = false;
     }
-  }, [isLoading, debugInfo.canvasInitialized]);
+  }, [isLoading, debugInfo.canvasInitialized, handleToolChange]);
 
   // Load initial data only once across all renders
   useEffect(() => {

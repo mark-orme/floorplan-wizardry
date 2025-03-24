@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
@@ -56,7 +55,6 @@ export const useCanvasTools = ({
       createGrid(fabricCanvasRef.current);
     }
     
-    // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
     fabricCanvasRef.current.requestRenderAll();
   }, [fabricCanvasRef, gridLayerRef, createGrid]);
   
@@ -71,9 +69,6 @@ export const useCanvasTools = ({
     
     // Disable current tool settings
     canvas.isDrawingMode = false;
-    
-    // Important: Calling disableSelection here 
-    // This was causing an error due to improper method chaining
     disableSelection(canvas);
     
     // Enable new tool settings
@@ -91,59 +86,51 @@ export const useCanvasTools = ({
         break;
       case "select":
         enableSelection(canvas);
+        toast.success("Select tool activated. You can now select and resize walls.");
         break;
       case "hand":
-        // Set drawing mode based on the tool selected
-        const isDrawingTool = newTool !== "hand";
-        canvas.isDrawingMode = isDrawingTool;
-        
-        // Configure the hand tool for panning when selected
         enablePanning(canvas);
-        
-        // Ensure grid elements are in the correct z-order
-        const gridElements = gridLayerRef.current;
-        
-        // Find grid markers (scale indicators)
-        const gridMarkers = gridElements.filter(obj => 
-          obj.type === 'line' && obj.strokeWidth === 2 || 
-          obj.type === 'text');
-        
-        // Find grid lines
-        const gridLines = gridElements.filter(obj => 
-          obj.type === 'line' && obj.strokeWidth !== 2);
-        
-        // First send all grid lines to the back
-        gridLines.forEach(line => {
-          if (fabricCanvasRef.current?.contains(line)) {
-            fabricCanvasRef.current.sendObjectToBack(line);
-          }
-        });
-        
-        // Then bring markers to the front
-        gridMarkers.forEach(marker => {
-          if (fabricCanvasRef.current?.contains(marker)) {
-            fabricCanvasRef.current.bringObjectToFront(marker);
-          }
-        });
-        
-        // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
-        fabricCanvasRef.current.requestRenderAll();
-        
-        // Provide user feedback
-        const toolNames = {
-          "draw": "Freehand (with auto-straightening)",
-          "straightLine": "Wall",
-          "hand": "Hand (Pan)",
-          "select": "Select",
-          "room": "Room"
-        };
-        toast.success(`${toolNames[newTool]} tool selected`);
+        toast.success("Hand (Pan) tool selected");
+        break;
+      case "none":
+        enableSelection(canvas);
+        newTool = "select"; // Override to select
+        toast.success("Select tool activated");
         break;
       default:
-        canvas.isDrawingMode = true;
+        canvas.isDrawingMode = false;
     }
     
     setTool(newTool);
+    
+    // Ensure grid elements are in the correct z-order
+    const gridElements = gridLayerRef.current;
+    
+    // Find grid markers (scale indicators)
+    const gridMarkers = gridElements.filter(obj => 
+      obj.type === 'line' && obj.strokeWidth === 2 || 
+      obj.type === 'text');
+    
+    // Find grid lines
+    const gridLines = gridElements.filter(obj => 
+      obj.type === 'line' && obj.strokeWidth !== 2);
+    
+    // First send all grid lines to the back
+    gridLines.forEach(line => {
+      if (fabricCanvasRef.current?.contains(line)) {
+        fabricCanvasRef.current.sendObjectToBack(line);
+      }
+    });
+    
+    // Then bring markers to the front
+    gridMarkers.forEach(marker => {
+      if (fabricCanvasRef.current?.contains(marker)) {
+        fabricCanvasRef.current.bringObjectToFront(marker);
+      }
+    });
+    
+    // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
+    fabricCanvasRef.current.requestRenderAll();
   }, [fabricCanvasRef, gridLayerRef, setTool, lineThickness, lineColor]);
 
   /**
@@ -155,7 +142,6 @@ export const useCanvasTools = ({
     const factor = direction === "in" ? 1.1 : 0.9;
     const newZoom = zoomLevel * factor;
     
-    // Limit zoom range for usability
     if (newZoom >= 0.5 && newZoom <= 3) {
       fabricCanvasRef.current.setZoom(newZoom);
       setZoomLevel(newZoom);
@@ -168,38 +154,35 @@ export const useCanvasTools = ({
   // Set up panning when hand tool is selected
   useEffect(() => {
     if (fabricCanvasRef.current) {
-      enablePanning(fabricCanvasRef.current);
+      if (tool === "select") {
+        enableSelection(fabricCanvasRef.current);
+      } else if (tool === "hand") {
+        enablePanning(fabricCanvasRef.current);
+      }
       
-      // Ensure grid elements are in the correct z-order when tool changes
       setTimeout(() => {
         if (fabricCanvasRef.current) {
-          // Ensure all grid elements are in the right order
           const gridElements = gridLayerRef.current;
           
-          // Find markers (scale indicators)
           const gridMarkers = gridElements.filter(obj => 
             obj.type === 'line' && obj.strokeWidth === 2 || 
             obj.type === 'text');
             
-          // Find grid lines
           const gridLines = gridElements.filter(obj => 
             obj.type === 'line' && obj.strokeWidth !== 2);
           
-          // First send all grid lines to the back
           gridLines.forEach(line => {
             if (fabricCanvasRef.current?.contains(line)) {
               fabricCanvasRef.current.sendObjectToBack(line);
             }
           });
           
-          // Then bring markers to the front
           gridMarkers.forEach(marker => {
             if (fabricCanvasRef.current?.contains(marker)) {
               fabricCanvasRef.current.bringObjectToFront(marker);
             }
           });
           
-          // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
           fabricCanvasRef.current.requestRenderAll();
         }
       }, 100);

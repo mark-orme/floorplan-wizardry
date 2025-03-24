@@ -1,4 +1,3 @@
-
 import { Button } from "./ui/button";
 import { 
   Pencil,
@@ -63,17 +62,17 @@ export const DrawingToolbar = ({
           <HoverCard>
             <HoverCardTrigger asChild>
               <Button
-                variant={tool === "none" ? "default" : "outline"}
-                onClick={() => onToolChange("none")}
+                variant={tool === "select" ? "default" : "outline"}
+                onClick={() => onToolChange("select")}
                 className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="No Tool Selected"
+                aria-label="Select Tool"
               >
                 <MousePointer className="w-4 h-4 transition-colors" />
               </Button>
             </HoverCardTrigger>
             <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>No Tool Selected</strong>
-              <p>Deselect all tools to view the canvas</p>
+              <strong>Select Tool</strong>
+              <p>Select and resize walls and shapes</p>
             </HoverCardContent>
           </HoverCard>
         

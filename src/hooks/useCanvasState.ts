@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for centralized canvas state management
  * @module useCanvasState
@@ -40,8 +41,8 @@ interface CanvasStateReturn {
  * @returns Canvas state and setters
  */
 export const useCanvasState = (): CanvasStateReturn => {
-  // Default to "none" tool (no tool selected)
-  const [tool, setTool] = useState<DrawingTool>("none");
+  // Default to "select" tool instead of "none"
+  const [tool, setTool] = useState<DrawingTool>("select");
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [gia, setGia] = useState<number>(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
@@ -51,9 +52,9 @@ export const useCanvasState = (): CanvasStateReturn => {
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>("#000000");
   
-  // We no longer force set the tool to straightLine on load
+  // Initial tool is now "select" instead of "none"
   useEffect(() => {
-    console.log("Initial tool set to none");
+    console.log("Initial tool set to select");
   }, []);
 
   return {
