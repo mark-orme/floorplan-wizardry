@@ -1,10 +1,9 @@
-
 /**
  * Main Canvas component for floor plan drawing
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
@@ -59,6 +58,14 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
+  // Force straightLine tool on initial load
+  useEffect(() => {
+    if (isFirstMount && !isLoading && debugInfo.canvasInitialized) {
+      console.log("Setting initial tool to straightLine");
+      handleToolChange("straightLine");
+    }
+  }, [isFirstMount, isLoading, debugInfo.canvasInitialized, handleToolChange]);
+
   // Log drawing state for debugging when relevant changes occur
   useEffect(() => {
     if (drawingState?.isDrawing) {
@@ -110,6 +117,8 @@ export const Canvas = () => {
 
   // Debug tooltip visibility conditions
   const isTooltipVisible = !!drawingState?.isDrawing && (tool === "straightLine" || tool === "room");
+  
+  // Log tooltip visibility for debugging
   useEffect(() => {
     console.log("Tooltip visibility check:", {
       isDrawing: !!drawingState?.isDrawing,

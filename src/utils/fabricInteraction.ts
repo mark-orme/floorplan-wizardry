@@ -9,8 +9,9 @@ import { Point } from "./drawingTypes";
 /**
  * Add pinch-to-zoom gesture support for mobile and trackpad
  * @param {Canvas} fabricCanvas - The Fabric canvas instance
+ * @param {Function} setZoomLevel - Function to update zoom level state
  */
-export const addPinchToZoom = (fabricCanvas: Canvas) => {
+export const addPinchToZoom = (fabricCanvas: Canvas, setZoomLevel?: (zoom: number) => void) => {
   try {
     // Track pinch gesture state
     let scaling = false;
@@ -25,6 +26,11 @@ export const addPinchToZoom = (fabricCanvas: Canvas) => {
       
       // Zoom to point - more natural than zooming to center
       fabricCanvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, newZoom);
+      
+      // Update zoom level state if callback provided
+      if (setZoomLevel) {
+        setZoomLevel(newZoom);
+      }
       
       // Prevent page scrolling
       opt.e.preventDefault();
@@ -48,6 +54,11 @@ export const addPinchToZoom = (fabricCanvas: Canvas) => {
       const newZoom = Math.min(10, Math.max(0.1, startZoom * (e.scale / startDistance)));
       const pointer = fabricCanvas.getPointer(e);
       fabricCanvas.zoomToPoint({ x: pointer.x, y: pointer.y }, newZoom);
+      
+      // Update zoom level state if callback provided
+      if (setZoomLevel) {
+        setZoomLevel(newZoom);
+      }
     });
     
     el.addEventListener('gestureend', (e) => {

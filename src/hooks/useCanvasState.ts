@@ -3,7 +3,7 @@
  * Custom hook for centralized canvas state management
  * @module useCanvasState
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FloorPlan } from "@/utils/drawing";
 
 /**
@@ -26,6 +26,12 @@ export const useCanvasState = () => {
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
   const [lineThickness, setLineThickness] = useState(2);
   const [lineColor, setLineColor] = useState("#000000");
+  
+  // Ensure tool is set to straightLine on initial load
+  useEffect(() => {
+    console.log("Initial tool set to straightLine");
+    setTool("straightLine");
+  }, []);
 
   return {
     // Tool state
