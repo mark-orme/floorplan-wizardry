@@ -4,8 +4,9 @@
  * Provides a visual reference for drawing to scale
  * @module canvasGrid
  */
-import { Canvas, Line, Text } from "fabric";
-import { SMALL_GRID, LARGE_GRID } from "@/utils/drawing";
+import { Canvas } from "fabric";
+import { createSmallGrid, createLargeGrid } from "./gridCreators";
+import { createScaleMarkers } from "./gridUtils";
 
 /**
  * Create grid lines for the canvas
@@ -79,133 +80,25 @@ export const createGrid = (
     // OPTIMIZATION: Batch add grid objects for better performance
     const gridBatch: any[] = [];
     
-    // Further reduce small grid density for larger canvases
-    // Dynamically adjust grid density based on canvas size
-    const smallGridStep = SMALL_GRID;
-    const maxSmallGridLines = 50; // Reduced for better performance
+    // Create small grid lines
+    const smallGridLines = createSmallGrid(canvas, canvasWidth, canvasHeight);
+    smallGridLines.forEach(line => {
+      gridBatch.push(line);
+      gridObjects.push(line);
+    });
     
-    // Use smarter skip calculation based on canvas dimensions
-    const canvasArea = canvasWidth * canvasHeight;
-    const smallGridSkip = Math.max(1, Math.floor(Math.sqrt(canvasArea) / 300));
-    
-    // OPTIMIZATION: Pre-calculate gridlines count to avoid unnecessary creation
-    const estimatedLinesX = Math.ceil(canvasWidth / (smallGridStep * smallGridSkip));
-    const estimatedLinesY = Math.ceil(canvasHeight / (smallGridStep * smallGridSkip));
-    const totalEstimatedLines = estimatedLinesX + estimatedLinesY;
-    
-    // Skip creating small grid entirely if it would create too many lines
-    const skipSmallGrid = totalEstimatedLines > maxSmallGridLines * 2;
-    
-    let smallGridCount = 0;
-    
-    if (!skipSmallGrid) {
-      // Create vertical small grid lines
-      for (let i = 0; i < canvasWidth && smallGridCount < maxSmallGridLines; i += smallGridStep * smallGridSkip) {
-        const smallGridLine = new Line([i, 0, i, canvasHeight], {
-          stroke: "#E6F3F8",
-          selectable: false,
-          evented: false,
-          strokeWidth: 0.5,
-          objectCaching: true,
-          hoverCursor: 'default'
-        });
-        gridBatch.push(smallGridLine);
-        gridObjects.push(smallGridLine);
-        smallGridCount++;
-      }
-      
-      // Create horizontal small grid lines
-      for (let i = 0; i < canvasHeight && smallGridCount < maxSmallGridLines; i += smallGridStep * smallGridSkip) {
-        const smallGridLine = new Line([0, i, canvasWidth, i], {
-          stroke: "#E6F3F8",
-          selectable: false,
-          evented: false,
-          strokeWidth: 0.5,
-          objectCaching: true,
-          hoverCursor: 'default'
-        });
-        gridBatch.push(smallGridLine);
-        gridObjects.push(smallGridLine);
-        smallGridCount++;
-      }
-    } else {
-      console.log("Skipping small grid creation for performance - too many lines would be created");
-    }
-
-    // Large grid lines (1m) - these are important for visual reference
-    // OPTIMIZATION: Also limit large grid lines on very large canvases
-    const largeGridStep = LARGE_GRID;
-    const maxLargeGridLines = 30; // Safety limit
-    
-    let largeGridCount = 0;
-    const largeGridSkip = Math.max(1, Math.floor(Math.sqrt(canvasArea) / 1500));
-    
-    // Create vertical large grid lines
-    for (let i = 0; i < canvasWidth && largeGridCount < maxLargeGridLines; i += largeGridStep * largeGridSkip) {
-      const largeGridLine = new Line([i, 0, i, canvasHeight], {
-        stroke: "#C2E2F3",
-        selectable: false,
-        evented: false,
-        strokeWidth: 1,
-        objectCaching: true,
-        hoverCursor: 'default'
-      });
-      gridBatch.push(largeGridLine);
-      gridObjects.push(largeGridLine);
-      largeGridCount++;
-    }
-    
-    // Create horizontal large grid lines
-    for (let i = 0; i < canvasHeight && largeGridCount < maxLargeGridLines; i += largeGridStep * largeGridSkip) {
-      const largeGridLine = new Line([0, i, canvasWidth, i], {
-        stroke: "#C2E2F3",
-        selectable: false,
-        evented: false,
-        strokeWidth: 1,
-        objectCaching: true,
-        hoverCursor: 'default'
-      });
-      gridBatch.push(largeGridLine);
-      gridObjects.push(largeGridLine);
-      largeGridCount++;
-    }
+    // Create large grid lines
+    const largeGridLines = createLargeGrid(canvas, canvasWidth, canvasHeight);
+    largeGridLines.forEach(line => {
+      gridBatch.push(line);
+      gridObjects.push(line);
+    });
 
     // Add scale marker (1m)
-    const markerLine = new Line([
-      canvasWidth - largeGridStep - 20, 
-      canvasHeight - 20, 
-      canvasWidth - 20, 
-      canvasHeight - 20
-    ], {
-      stroke: "#333333",
-      strokeWidth: 2,
-      selectable: false,
-      evented: false,
-      objectCaching: true,
-      hoverCursor: 'default'
-    });
-    
-    const markerText = new Text("1m", {
-      left: canvasWidth - largeGridStep/2 - 30,
-      top: canvasHeight - 35,
-      fontSize: 12,
-      fill: "#333333",
-      selectable: false,
-      evented: false,
-      objectCaching: true,
-      hoverCursor: 'default'
-    });
-    
-    gridBatch.push(markerLine);
-    gridBatch.push(markerText);
-    gridObjects.push(markerLine);
-    gridObjects.push(markerText);
-    
-    // Store dimensions in a metadata object for future comparison
-    const dimensionsMarker = { gridDimensions: { width: canvasWidth, height: canvasHeight } };
-    Object.defineProperty(markerLine, 'gridDimensions', {
-      value: { width: canvasWidth, height: canvasHeight },
-      enumerable: false
+    const markers = createScaleMarkers(canvas, canvasWidth, canvasHeight);
+    markers.forEach(marker => {
+      gridBatch.push(marker);
+      gridObjects.push(marker);
     });
     
     // OPTIMIZATION: Add all grid objects at once in a batch for better performance
@@ -224,7 +117,7 @@ export const createGrid = (
     
     // One-time render
     canvas.requestRenderAll();
-    console.log(`Grid created with ${gridObjects.length} objects (${smallGridCount} small, ${largeGridCount} large)`);
+    console.log(`Grid created with ${gridObjects.length} objects (${smallGridLines.length} small, ${largeGridLines.length} large)`);
     
     setDebugInfo(prev => ({...prev, gridCreated: true}));
     setHasError(false);
