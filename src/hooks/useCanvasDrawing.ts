@@ -4,21 +4,21 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
+import { Canvas as FabricCanvas, Path as FabricPath } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { type FloorPlan } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
 import { snapToAngle } from "@/utils/fabricInteraction";
-import { toFabricPoint } from "@/utils/fabricPointConverter";
-import { type DrawingState } from "@/types/drawingTypes";
+import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { snapToGrid, metersToPixels, pixelsToMeters } from "@/utils/geometry";
 import { PIXELS_PER_METER, GRID_SIZE } from "@/utils/drawing";
 
 interface UseCanvasDrawingProps {
-  fabricCanvasRef: React.MutableRefObject<any>;
-  gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<FabricPath[]>;
+  historyRef: React.MutableRefObject<{past: FabricPath[][], future: FabricPath[][]}>;
   tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
@@ -27,12 +27,16 @@ interface UseCanvasDrawingProps {
   lineColor?: string;
 }
 
+interface PathCreatedEvent {
+  path: FabricPath;
+}
+
 /**
  * Hook for handling all drawing-related operations on the canvas
  * @param {UseCanvasDrawingProps} props - Hook properties
  * @returns {Object} Drawing state and handlers
  */
-export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
+export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: DrawingState } => {
   const {
     fabricCanvasRef,
     gridLayerRef,
@@ -78,7 +82,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
       fabricCanvas.freeDrawingBrush.color = lineColor;
     }
     
-    const handlePathCreated = (e: { path: any }) => {
+    const handlePathCreated = (e: PathCreatedEvent): void => {
       console.log("Path created event triggered");
       
       if (tool === "straightLine" && drawingState.startPoint && drawingState.currentPoint) {

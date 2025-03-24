@@ -1,10 +1,18 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
  */
 import { Point, Stroke } from './drawingTypes';
 import { PIXELS_PER_METER, GRID_SIZE } from './drawing';
+
+// Measurement constants
+const DISTANCE_PRECISION = 0.1; // Precision for distance measurements (0.1m)
+const CLOSE_POINT_THRESHOLD = 0.05; // Threshold for considering points "close" (5cm)
+const FLOATING_POINT_TOLERANCE = 0.001; // Tolerance for floating point comparisons (1mm)
+
+// Straightening constants
+const HORIZONTAL_BIAS = 1.2; // Bias factor for favoring horizontal lines
+const VERTICAL_BIAS = 1.2; // Bias factor for favoring vertical lines
 
 /** 
  * Snap a single point to the nearest grid intersection
@@ -85,7 +93,7 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   
   // Determine if the line should be horizontal, vertical, or diagonal
   // Use stricter comparison for wall precision
-  if (absDx >= absDy * 1.2) { 
+  if (absDx >= absDy * HORIZONTAL_BIAS) { 
     // Horizontal line - keep same Y
     return [
       { 
@@ -97,7 +105,7 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
         y: Number(gridStart.y) 
       }
     ];
-  } else if (absDy >= absDx * 1.2) { 
+  } else if (absDy >= absDx * VERTICAL_BIAS) { 
     // Vertical line - keep same X
     return [
       { 
@@ -182,7 +190,7 @@ export const adjustPointForPanning = (point: Point, canvas: any): Point => {
  * @param {number} minDistance - Minimum distance between points (in meters)
  * @returns {Stroke} Filtered stroke with redundant points removed
  */
-export const filterRedundantPoints = (stroke: Stroke, minDistance: number = 0.05): Stroke => {
+export const filterRedundantPoints = (stroke: Stroke, minDistance: number = CLOSE_POINT_THRESHOLD): Stroke => {
   if (!stroke || stroke.length <= 2) return stroke;
   
   const result: Stroke = [stroke[0]];
@@ -233,7 +241,7 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
   // Round to exactly 1 decimal place (0.1m increments) to match grid size
   // This ensures we only show measurements like 1.0m, 1.1m, 1.2m, etc.
   // which aligns perfectly with our 0.1m grid
-  return Math.round(rawDistance * 10) / 10;
+  return Math.round(rawDistance / DISTANCE_PRECISION) * DISTANCE_PRECISION;
 };
 
 /**
@@ -244,7 +252,7 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
 export const isExactGridMultiple = (value: number): boolean => {
   // Convert to string to handle floating point precision issues
   const rounded = Number((Math.round(value / GRID_SIZE) * GRID_SIZE).toFixed(3));
-  return Math.abs(value - rounded) < 0.001; // Allow tiny rounding error
+  return Math.abs(value - rounded) < FLOATING_POINT_TOLERANCE; // Allow tiny rounding error
 };
 
 /**

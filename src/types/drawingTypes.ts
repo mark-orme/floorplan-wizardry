@@ -3,7 +3,7 @@
  * Shared type definitions for drawing functionality
  * @module drawingTypes
  */
-import { Object as FabricObject } from "fabric";
+import { Object as FabricObject, Canvas as FabricCanvas } from "fabric";
 
 /**
  * Point coordinates in 2D space
@@ -18,10 +18,10 @@ export interface Point {
  */
 export interface DrawingState {
   isDrawing: boolean;
-  startPoint?: Point;
-  currentPoint?: Point;
-  midPoint?: Point;
-  cursorPosition?: Point;
+  startPoint?: Point | null;
+  currentPoint?: Point | null;
+  midPoint?: Point | null;
+  cursorPosition?: Point | null;
   lineLength?: number;
 }
 
@@ -96,4 +96,39 @@ export interface GridManagerState {
     timestamp: number;
     isLocked: boolean;
   }
+}
+
+/**
+ * Handlers for canvas drawing interactions
+ */
+export interface DrawingHandlers {
+  handleMouseDown: (e: any) => void;
+  handleMouseMove: (e: any) => void;
+  handleMouseUp: () => void;
+  cleanupTimeouts: () => void;
+}
+
+/**
+ * Grid creation callback type
+ */
+export type GridCreationCallback = (canvas: FabricCanvas) => FabricObject[];
+
+/**
+ * Path processing callbacks
+ */
+export interface PathProcessingCallbacks {
+  processPoints: (points: Point[]) => Point[];
+  convertToPixelPoints: (meterPoints: Point[], zoom?: number) => Point[];
+  convertToMeterPoints: (pixelPoints: Point[], zoom?: number) => Point[];
+  isShapeClosed: (points: Point[]) => boolean;
+}
+
+/**
+ * Path processing result
+ */
+export interface ProcessedPath {
+  points: Point[];
+  length?: number;
+  area?: number;
+  isClosed?: boolean;
 }

@@ -10,7 +10,11 @@ import {
   gridManager, 
   resetGridProgress
 } from "@/utils/gridManager";
-import { CanvasDimensions, DebugInfoState } from "@/types/drawingTypes";
+import { 
+  CanvasDimensions, 
+  DebugInfoState, 
+  GridCreationCallback 
+} from "@/types/drawingTypes";
 
 interface UseCanvasGridProps {
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
@@ -31,7 +35,7 @@ export const useCanvasGrid = ({
   setDebugInfo,
   setHasError,
   setErrorMessage
-}: UseCanvasGridProps): ((canvas: FabricCanvas) => FabricObject[]) => {
+}: UseCanvasGridProps): GridCreationCallback => {
   // Track grid creation attempts
   const attemptCountRef = useRef<number>(0);
   const MAX_ATTEMPTS = 3;

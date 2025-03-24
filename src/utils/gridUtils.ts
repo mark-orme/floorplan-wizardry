@@ -3,9 +3,10 @@
  * Utility functions for grid management
  * @module gridUtils
  */
-import { Canvas, Line, Text } from "fabric";
+import { Canvas, Line, Text, Object as FabricObject } from "fabric";
 import { GridDimensions, MAX_SMALL_GRID_LINES, MAX_LARGE_GRID_LINES } from "./gridConstants";
 import { SMALL_GRID, LARGE_GRID } from "./drawing";
+import { CanvasDimensions } from "@/types/drawingTypes";
 
 /**
  * Store grid dimensions in a metadata object for future comparison
@@ -13,7 +14,7 @@ import { SMALL_GRID, LARGE_GRID } from "./drawing";
  * @param width - Canvas width
  * @param height - Canvas height
  */
-export const storeGridDimensions = (obj: any, width: number, height: number): void => {
+export const storeGridDimensions = (obj: FabricObject, width: number, height: number): void => {
   Object.defineProperty(obj, 'gridDimensions', {
     value: { width, height },
     enumerable: false
@@ -53,7 +54,7 @@ export const createScaleMarkers = (
   canvas: Canvas,
   canvasWidth: number,
   canvasHeight: number
-): any[] => {
+): FabricObject[] => {
   console.log("Creating scale markers");
   
   // Safety check for dimensions

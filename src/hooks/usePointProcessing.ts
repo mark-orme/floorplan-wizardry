@@ -23,8 +23,14 @@ import {
   metersToPixels
 } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
+import { PathProcessingCallbacks } from "@/types/drawingTypes";
 
-export const usePointProcessing = (tool: DrawingTool) => {
+/**
+ * Hook for processing points during drawing operations
+ * @param tool - The current drawing tool
+ * @returns Point processing utilities
+ */
+export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks => {
   
   /**
    * Process and optimize points based on the current drawing tool
@@ -48,7 +54,7 @@ export const usePointProcessing = (tool: DrawingTool) => {
     }
     
     // For wall tool, use EXACT grid alignment for both start and end points
-    let finalPoints;
+    let finalPoints: Point[];
     if (tool === 'straightLine') {
       // CRITICAL FIX: Force wall endpoints to align EXACTLY to grid lines
       // This is the key fix for ensuring walls always start and end on grid
