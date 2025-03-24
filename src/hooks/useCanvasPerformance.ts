@@ -4,12 +4,7 @@
  * @module useCanvasPerformance
  */
 import { useState, useRef } from "react";
-
-export interface CanvasLoadTimes {
-  startTime: number;
-  canvasReady: number;
-  gridCreated: number;
-}
+import { type CanvasLoadTimes } from "@/types/drawingTypes";
 
 /**
  * Hook for tracking canvas initialization and performance metrics

@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useCanvasPerformance } from "./useCanvasPerformance";
+import { type CanvasLoadTimes } from "@/types/drawingTypes";
 
 interface DebugInfo {
   canvasInitialized: boolean;

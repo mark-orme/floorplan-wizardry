@@ -34,3 +34,12 @@ export interface GridCreationResult {
   largeGridLines: any[];
   markers: any[];
 }
+
+/**
+ * Canvas performance metrics
+ */
+export interface CanvasLoadTimes {
+  startTime: number;
+  canvasReady: number;
+  gridCreated: number;
+}

@@ -5,8 +5,7 @@
  */
 import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
-import { type DrawingState } from "@/types/drawingTypes";
-import { Point } from "@/utils/drawingTypes";
+import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
 import { adjustPointForPanning } from "@/utils/geometry";
 
