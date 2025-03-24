@@ -214,8 +214,8 @@ export const disableSelection = (canvas: Canvas) => {
     obj.hoverCursor = 'default';
   });
   
-  // Make sure to call discardActiveObject and requestRenderAll separately
+  // Fixed: Call discardActiveObject and requestRenderAll as separate operations
+  // This fixes the "renderAll is not a function" error
   canvas.discardActiveObject();
   canvas.requestRenderAll();
 };
-

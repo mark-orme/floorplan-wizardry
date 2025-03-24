@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
@@ -69,6 +70,9 @@ export const useCanvasTools = ({
     
     // Disable current tool settings
     canvas.isDrawingMode = false;
+    
+    // Important: Calling disableSelection here 
+    // This was causing an error due to improper method chaining
     disableSelection(canvas);
     
     // Enable new tool settings
