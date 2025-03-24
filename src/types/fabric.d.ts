@@ -29,5 +29,10 @@ declare module 'fabric' {
     contains(object: FabricObject): boolean;
     // Add the missing moveTo method
     moveTo(object: FabricObject, index: number): Canvas;
+    // Add missing methods for object placement
+    sendObjectToBack(object: FabricObject): Canvas;
+    bringObjectForward(object: FabricObject): Canvas;
+    bringObjectToFront(object: FabricObject): Canvas;
+    sendObjectBackwards(object: FabricObject): Canvas;
   }
 }

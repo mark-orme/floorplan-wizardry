@@ -6,6 +6,7 @@
 import { Canvas } from "fabric";
 import { createSmallGrid, createLargeGrid } from "./gridCreators";
 import { createScaleMarkers } from "./gridUtils";
+import { canvasMoveTo } from "./fabric";
 
 /**
  * Result of grid components rendering
@@ -135,7 +136,8 @@ export const arrangeGridObjects = (
     // First send large grid lines to the back
     largeGridLines.forEach(obj => {
       try {
-        canvas.sendToBack(obj);
+        // Use sendObjectToBack instead of sendToBack
+        canvas.sendObjectToBack(obj);
       } catch (err) {
         console.warn("Error arranging large grid line:", err);
       }
@@ -144,7 +146,8 @@ export const arrangeGridObjects = (
     // Then send small grid lines just above the large ones
     smallGridLines.forEach(obj => {
       try {
-        canvas.bringForward(obj);
+        // Use bringObjectForward instead of bringForward
+        canvas.bringObjectForward(obj);
       } catch (err) {
         console.warn("Error arranging small grid line:", err);
       }
@@ -153,8 +156,8 @@ export const arrangeGridObjects = (
     // Keep markers on top of grid but below drawings
     markers.forEach(marker => {
       try {
-        // Simply bring markers to front, drawings will be added later
-        canvas.bringToFront(marker);
+        // Use bringObjectToFront instead of bringToFront
+        canvas.bringObjectToFront(marker);
       } catch (err) {
         console.warn("Error arranging marker:", err);
       }
