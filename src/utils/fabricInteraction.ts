@@ -3,7 +3,7 @@
  * Utilities for canvas interaction handling (panning, zooming, etc.)
  * @module fabricInteraction
  */
-import { Canvas } from "fabric";
+import { Canvas, Point as FabricPoint } from "fabric";
 import { Point } from "./drawingTypes";
 
 // Define a simple point interface for internal use
@@ -31,7 +31,7 @@ export const addPinchToZoom = (fabricCanvas: Canvas, setZoomLevel?: (zoom: numbe
       const newZoom = delta > 0 ? Math.max(0.1, zoom * 0.9) : Math.min(10, zoom * 1.1);
       
       // Zoom to point - more natural than zooming to center
-      fabricCanvas.zoomToPoint(new fabric.Point(opt.e.offsetX, opt.e.offsetY), newZoom);
+      fabricCanvas.zoomToPoint(new FabricPoint(opt.e.offsetX, opt.e.offsetY), newZoom);
       
       // Update zoom level state if callback provided
       if (setZoomLevel) {
@@ -59,7 +59,7 @@ export const addPinchToZoom = (fabricCanvas: Canvas, setZoomLevel?: (zoom: numbe
       
       const newZoom = Math.min(10, Math.max(0.1, startZoom * (e.scale / startDistance)));
       const pointer = fabricCanvas.getPointer(e as any);
-      fabricCanvas.zoomToPoint(new fabric.Point(pointer.x, pointer.y), newZoom);
+      fabricCanvas.zoomToPoint(new FabricPoint(pointer.x, pointer.y), newZoom);
       
       // Update zoom level state if callback provided
       if (setZoomLevel) {
@@ -92,7 +92,7 @@ export const enablePanning = (fabricCanvas: Canvas, isPanningEnabled: boolean = 
     fabricCanvas.on('mouse:down', (opt) => {
       const evt = opt.e as MouseEvent;
       // Middle mouse button or spacebar + mouse down for panning
-      if ((evt.button === 1 || (evt.key === ' ' && evt.button === 0)) || isPanningEnabled) {
+      if ((evt.button === 1 || (evt.code === 'Space' && evt.button === 0)) || isPanningEnabled) {
         isPanning = true;
         lastPosX = evt.clientX;
         lastPosY = evt.clientY;
