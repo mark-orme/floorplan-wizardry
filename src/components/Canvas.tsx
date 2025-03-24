@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   Canvas as FabricCanvas, 
@@ -714,5 +715,23 @@ export const Canvas = () => {
           onAdd={handleAddFloor}
         />
         
-        <
-
+        <DrawingToolbar
+          tool={tool}
+          onToolChange={handleToolChange}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onZoom={handleZoom}
+          onClear={clearCanvas}
+          onSave={saveCanvas}
+          gia={gia}
+        />
+      </div>
+      
+      <div className="flex-1 canvas-container">
+        <Card className="p-6 bg-white shadow-md rounded-lg">
+          <canvas ref={canvasRef} />
+        </Card>
+      </div>
+    </div>
+  );
+};
