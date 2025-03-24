@@ -30,7 +30,7 @@ export const snapToGrid = (points: Point[]): Stroke => {
 };
 
 /** 
- * Auto-straighten strokes - improved version that preserves straight lines 
+ * Auto-straighten strokes - enhanced version that aggressively snaps to axis-aligned or 45-degree angles
  * @param {Stroke} stroke - Array of points representing a stroke
  * @returns {Stroke} Straightened stroke
  */
@@ -42,15 +42,15 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const dx = Math.abs(end.x - start.x);
   const dy = Math.abs(end.y - start.y);
   
-  // More aggressive straightening with clearer threshold
+  // More aggressive straightening with clearer threshold for better UX
   // Determine if the line is more horizontal or vertical
-  if (dx > dy * 1.5) { // More horizontal: stronger preference (1.5 instead of 1.2)
+  if (dx > dy * 1.8) { // Even more horizontal preference (1.8 instead of 1.5)
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: start.x, y: start.y },
       { x: end.x, y: start.y }
     ];
-  } else if (dy > dx * 1.5) { // More vertical: stronger preference (1.5 instead of 1.2)
+  } else if (dy > dx * 1.8) { // Even more vertical preference (1.8 instead of 1.5)
     // Mostly vertical - keep the same X coordinate
     return [
       { x: start.x, y: start.y },
@@ -58,6 +58,7 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
     ];
   } else {
     // For diagonal lines, use perfect 45-degree angle snapping
+    // Force exact 45 degrees for better visual alignment
     const length = Math.max(dx, dy);
     const signX = Math.sign(end.x - start.x);
     const signY = Math.sign(end.y - start.y);

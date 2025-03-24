@@ -74,13 +74,19 @@ export const useCanvasTools = ({
         fabricCanvasRef.current.freeDrawingBrush = new PencilBrush(fabricCanvasRef.current);
         fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
         fabricCanvasRef.current.freeDrawingBrush.width = 2;
+        
+        // Adjust the smoothness and precision of the drawing
+        if (fabricCanvasRef.current.freeDrawingBrush instanceof PencilBrush) {
+          // Slightly lower the decimate parameter for more points (better auto-straightening)
+          fabricCanvasRef.current.freeDrawingBrush.decimate = 2;
+        }
       }
       
       fabricCanvasRef.current.renderAll();
       
       // Provide user feedback
       const toolNames = {
-        "draw": "Freehand",
+        "draw": "Freehand (with auto-straightening)",
         "room": "Room",
         "straightLine": "Wall",
         "hand": "Hand (Pan)"

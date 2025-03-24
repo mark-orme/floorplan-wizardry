@@ -85,17 +85,46 @@ export const usePathProcessing = ({
       console.log("Points snapped to grid");
       
       // Apply straightening based on tool
-      if (tool === 'straightLine') {
-        finalPoints = straightenStroke(finalPoints);
-        console.log("Applied straightening to wall line");
+      if (tool === 'straightLine' || tool === 'draw') {
+        // Always straighten lines with the wall tool, and optionally for freehand drawing
+        // For freehand drawing, simplify to just start and end points if it's a mostly straight line
+        if (tool === 'draw' && points.length > 5) {
+          // For freehand, only straighten if it looks like a single stroke in mostly one direction
+          const start = finalPoints[0];
+          const end = finalPoints[finalPoints.length - 1];
+          
+          // Calculate overall direction and check if it's mostly linear
+          const dx = Math.abs(end.x - start.x);
+          const dy = Math.abs(end.y - start.y);
+          const length = Math.sqrt(dx * dx + dy * dy);
+          
+          // Check if the path length is similar to the direct distance between endpoints
+          // If so, it's mostly a straight line and should be straightened
+          const totalSegmentLength = calculatePathLength(finalPoints);
+          
+          // If path length is within 30% of direct distance, it's likely meant to be straight
+          if (totalSegmentLength <= length * 1.3) {
+            finalPoints = straightenStroke([start, end]);
+            console.log("Applied straightening to freehand drawing");
+          }
+        } else {
+          // For wall tool, always straighten
+          finalPoints = straightenStroke(finalPoints);
+          console.log("Applied straightening to wall line");
+        }
         
         // For better feedback on the wall tool
         if (finalPoints.length === 2) {
-          // Calculate length of the wall in meters
+          // Calculate length of the line in meters
           const dx = finalPoints[1].x - finalPoints[0].x;
           const dy = finalPoints[1].y - finalPoints[0].y;
           const lengthInMeters = Math.sqrt(dx * dx + dy * dy);
-          toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
+          
+          if (tool === 'straightLine') {
+            toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
+          } else {
+            toast.success(`Line length: ${lengthInMeters.toFixed(2)}m`);
+          }
         }
       } else if (tool === 'room') {
         // For room tool, create enclosed shape with angle snapping
@@ -187,6 +216,17 @@ export const usePathProcessing = ({
       toast.error("Failed to process drawing");
     }
   }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia]);
+  
+  // Helper function to calculate the total length of a path
+  const calculatePathLength = (points: Point[]): number => {
+    let totalLength = 0;
+    for (let i = 1; i < points.length; i++) {
+      const dx = points[i].x - points[i-1].x;
+      const dy = points[i].y - points[i-1].y;
+      totalLength += Math.sqrt(dx * dx + dy * dy);
+    }
+    return totalLength;
+  };
   
   return { processCreatedPath };
 };
