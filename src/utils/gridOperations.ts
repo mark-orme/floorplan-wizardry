@@ -8,9 +8,6 @@ import { Canvas } from "fabric";
 import { gridManager } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
 
-// Export the gridManager for use in canvasGrid.ts
-export { gridManager };
-
 /**
  * Check if grid creation should be throttled based on creation limits
  * @param now - Current timestamp
