@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
@@ -111,8 +110,19 @@ export const useCanvasTools = ({
       if (drawingObjects.length > 0) {
         // Place markers below the lowest drawing object
         gridMarkers.forEach(marker => {
-          fabricCanvasRef.current!.moveTo(marker, 
-            fabricCanvasRef.current!.getObjects().indexOf(drawingObjects[0]));
+          const canvas = fabricCanvasRef.current!;
+          const targetIndex = canvas.getObjects().indexOf(drawingObjects[0]);
+          // Use Canvas's chainable methods safely
+          if (typeof canvas.moveTo === 'function') {
+            canvas.moveTo(marker, targetIndex);
+          } else {
+            // Fallback if moveTo doesn't exist
+            console.warn("Canvas.moveTo not available, using alternative layer arrangement");
+            canvas.bringObjectToFront(marker);
+            drawingObjects.forEach(drawing => {
+              canvas.bringObjectToFront(drawing);
+            });
+          }
         });
       } else {
         // If no drawings, bring markers to front

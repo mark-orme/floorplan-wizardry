@@ -181,7 +181,18 @@ export const createGrid = (
         
         if (drawingObjects.length > 0) {
           // Place markers below the lowest drawing object
-          canvas.moveTo(marker, canvas.getObjects().indexOf(drawingObjects[0]));
+          const targetIndex = canvas.getObjects().indexOf(drawingObjects[0]);
+          // Use Canvas's chainable methods safely
+          if (typeof canvas.moveTo === 'function') {
+            canvas.moveTo(marker, targetIndex);
+          } else {
+            // Fallback if moveTo doesn't exist
+            console.warn("Canvas.moveTo not available, using alternative layer arrangement");
+            canvas.bringObjectToFront(marker);
+            drawingObjects.forEach(drawing => {
+              canvas.bringObjectToFront(drawing);
+            });
+          }
         }
       });
       
