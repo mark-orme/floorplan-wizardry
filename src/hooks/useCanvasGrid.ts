@@ -6,7 +6,7 @@
 import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
-import { gridManager } from "@/utils/gridManager";
+import { gridManager } from "@/utils/gridOperations";
 
 interface UseCanvasGridProps {
   gridLayerRef: React.MutableRefObject<any[]>;

@@ -5,12 +5,12 @@
  * @module canvasGrid
  */
 import { Canvas } from "fabric";
-import { gridManager } from "./gridManager";
 import { 
   shouldThrottleGridCreation, 
   hasDimensionsChangedSignificantly, 
   createGridBatch, 
-  handleGridCreationError
+  handleGridCreationError,
+  gridManager
 } from "./gridOperations";
 
 /**

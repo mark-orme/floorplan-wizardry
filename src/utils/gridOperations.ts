@@ -1,4 +1,3 @@
-
 /**
  * Grid operations module
  * Handles grid creation batch operations and error handling
@@ -7,6 +6,9 @@
 import { Canvas } from "fabric";
 import { gridManager } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
+
+// Re-export gridManager for use in other modules
+export { gridManager };
 
 /**
  * Check if grid creation should be throttled based on creation limits

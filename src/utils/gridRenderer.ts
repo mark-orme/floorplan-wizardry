@@ -30,6 +30,7 @@ export const renderGridComponents = (
   canvasWidth: number,
   canvasHeight: number
 ): GridComponentsResult => {
+  console.log(`Rendering grid components for canvas ${canvasWidth}x${canvasHeight}`);
   const gridObjects: any[] = [];
   
   // Disable rendering during batch operations for performance
@@ -40,6 +41,7 @@ export const renderGridComponents = (
       
   // Create small grid lines (with extended dimensions for unlimited feel)
   const smallGridLines = createSmallGrid(canvas, canvasWidth, canvasHeight);
+  console.log(`Created ${smallGridLines.length} small grid lines`);
   smallGridLines.forEach(line => {
     gridBatch.push(line);
     gridObjects.push(line);
@@ -47,6 +49,7 @@ export const renderGridComponents = (
       
   // Create large grid lines (with extended dimensions for unlimited feel)
   const largeGridLines = createLargeGrid(canvas, canvasWidth, canvasHeight);
+  console.log(`Created ${largeGridLines.length} large grid lines`);
   largeGridLines.forEach(line => {
     gridBatch.push(line);
     gridObjects.push(line);
@@ -57,6 +60,7 @@ export const renderGridComponents = (
   
   // Add scale marker (1m) - add it separately to make it appear on top
   const markers = createScaleMarkers(canvas, canvasWidth, canvasHeight);
+  console.log(`Created ${markers.length} scale markers`);
   markers.forEach(marker => {
     canvas.add(marker);
     gridObjects.push(marker);
