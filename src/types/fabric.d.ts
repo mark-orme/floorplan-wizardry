@@ -19,6 +19,9 @@ declare module 'fabric' {
     'touch:gesture:start': any;
     'touch:gesture:move': any;
     'touch:gesture:end': any;
+    'custom:zoom-changed': {
+      zoom: number;
+    };
   }
 }
 
