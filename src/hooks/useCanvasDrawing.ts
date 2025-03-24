@@ -87,11 +87,11 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
       // Apply automatic straightening for straightLine tool
       if (tool === "straightLine" && drawingState.startPoint && drawingState.currentPoint) {
         console.log("Applying auto-straightening to line");
-        // Modify the path to create a perfectly straight line
+        // Modify the path to create a perfectly straight or diagonal line
         const straightenedEndPoint = snapToAngle(
           drawingState.startPoint, 
           drawingState.currentPoint,
-          15 // Snap to 0, 90, 45 degrees within 15 degrees
+          10 // Reduced threshold to 10 degrees for better diagonal precision
         );
         
         // Replace the end point with the straightened one
@@ -100,11 +100,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
           
           // Update the path points if possible
           if (e.path && e.path.path) {
-            // This will depend on how your path is structured
-            // This is a simplistic approach - the real implementation will need to 
-            // match your path structure exactly
             try {
-              // Modify the path to be perfectly straight
+              // Modify the path to be perfectly straight or diagonal
               const startX = drawingState.startPoint.x * 100; // Convert to pixels
               const startY = drawingState.startPoint.y * 100;
               const endX = straightenedEndPoint.x * 100;

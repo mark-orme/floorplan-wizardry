@@ -1,4 +1,3 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -60,7 +59,7 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
 };
 
 /** 
- * Auto-straighten strokes - enhanced version that aggressively snaps to axis-aligned or 45-degree angles
+ * Auto-straighten strokes - enhanced version that supports horizontal, vertical and diagonal (45°) angles
  * @param {Stroke} stroke - Array of points representing a stroke
  * @returns {Stroke} Straightened stroke
  */
@@ -74,25 +73,26 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const absDx = Math.abs(dx);
   const absDy = Math.abs(dy);
   
-  // Even more aggressive straightening with clearer threshold for better UX
-  const horizontalThreshold = 1.0; // Reduced from 1.1 for more straightening
-  const verticalThreshold = 1.0;   // Reduced from 1.1 for more straightening
+  // More precise thresholds for better angle detection
+  const horizontalThreshold = 1.0; // If dx is significantly larger than dy
+  const verticalThreshold = 1.0;   // If dy is significantly larger than dx
+  const diagonalThreshold = 0.8;   // If dx and dy are roughly equal (for 45° angles)
   
-  // Determine if the line is more horizontal or vertical
-  if (absDx > absDy * horizontalThreshold) { // Horizontal preference
+  // Determine if the line is horizontal, vertical, or diagonal
+  if (absDx > absDy * horizontalThreshold) { 
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
       { x: Number(end.x.toFixed(3)), y: Number(start.y.toFixed(3)) }
     ];
-  } else if (absDy > absDx * verticalThreshold) { // Vertical preference
+  } else if (absDy > absDx * verticalThreshold) { 
     // Mostly vertical - keep the same X coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
       { x: Number(start.x.toFixed(3)), y: Number(end.y.toFixed(3)) }
     ];
-  } else {
-    // For diagonal lines, use perfect 45-degree angle snapping
+  } else if (absDx / absDy > diagonalThreshold && absDy / absDx > diagonalThreshold) {
+    // Diagonal lines (roughly 45 degrees)
     // Force exact 45 degrees for better visual alignment
     const length = Math.max(absDx, absDy);
     const signX = Math.sign(dx);
@@ -104,6 +104,12 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
         x: Number((start.x + (length * signX)).toFixed(3)), 
         y: Number((start.y + (length * signY)).toFixed(3)) 
       }
+    ];
+  } else {
+    // For other angles, use the original points
+    return [
+      { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
+      { x: Number(end.x.toFixed(3)), y: Number(end.y.toFixed(3)) }
     ];
   }
 };

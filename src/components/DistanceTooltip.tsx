@@ -37,6 +37,16 @@ export const DistanceTooltip = memo(({
   const dy = currentPoint.y - startPoint.y;
   const distanceInMeters = Math.sqrt(dx * dx + dy * dy);
   
+  // Calculate angle for diagonal lines (in degrees)
+  const angleInDegrees = Math.atan2(dy, dx) * (180 / Math.PI);
+  const normalizedAngle = ((angleInDegrees % 360) + 360) % 360;
+  
+  // Determine if this is a diagonal line (roughly 45, 135, 225, or 315 degrees)
+  const diagonalAngles = [45, 135, 225, 315];
+  const isDiagonal = diagonalAngles.some(angle => 
+    Math.abs(normalizedAngle - angle) < 15
+  );
+  
   // Exit if the distance is too small (prevents flickering for tiny movements)
   if (distanceInMeters < 0.01) {
     return null;
@@ -67,6 +77,9 @@ export const DistanceTooltip = memo(({
       <div className="flex items-center gap-2 text-sm whitespace-nowrap">
         <Ruler className="w-4 h-4" />
         <span className="font-medium">{distanceInMeters.toFixed(2)} m</span>
+        {isDiagonal && (
+          <span className="text-xs opacity-80">({Math.round(normalizedAngle)}°)</span>
+        )}
       </div>
     </div>
   );
