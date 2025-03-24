@@ -3,10 +3,11 @@
  * Container component for the canvas element
  * Wraps the canvas element and provides a reference to it
  * Also displays debug information
+ * @module CanvasContainer
  */
 import { Card } from "./ui/card";
 import { DebugInfo } from "./DebugInfo";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 interface CanvasContainerProps {
   debugInfo: {
@@ -28,9 +29,20 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps) 
   const localCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasReference = canvasRef || localCanvasRef;
 
+  // Ensure canvas gets focus when the component renders
+  useEffect(() => {
+    if (canvasReference.current) {
+      canvasReference.current.focus();
+    }
+  }, [canvasReference]);
+
   return (
     <Card className="p-6 bg-white shadow-md rounded-lg">
-      <canvas ref={canvasReference} className="w-full h-full border-0" />
+      <canvas 
+        ref={canvasReference} 
+        className="w-full h-full border-0 focus:outline-none" 
+        tabIndex={0}
+      />
       <DebugInfo debugInfo={debugInfo} />
     </Card>
   );

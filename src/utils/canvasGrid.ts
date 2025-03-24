@@ -37,7 +37,9 @@ export const createGrid = (
     // Remove existing grid objects if any
     if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
-        canvas.remove(obj);
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
       });
       gridLayerRef.current = [];
     }

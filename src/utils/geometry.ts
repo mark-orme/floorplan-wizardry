@@ -1,7 +1,15 @@
 
+/**
+ * Geometry utilities for floor plan drawing
+ * @module geometry
+ */
 import { Point, Stroke, GRID_SIZE, PIXELS_PER_METER } from './drawingTypes';
 
-/** Snap points to 0.1m grid for accuracy */
+/** 
+ * Snap points to 0.1m grid for accuracy 
+ * @param {Point[]} points - Array of points to snap to the grid
+ * @returns {Stroke} Array of snapped points
+ */
 export const snapToGrid = (points: Point[]): Stroke => {
   if (!points || points.length === 0) return [];
   
@@ -17,7 +25,11 @@ export const snapToGrid = (points: Point[]): Stroke => {
   });
 };
 
-/** Auto-straighten strokes - improved version that preserves straight lines */
+/** 
+ * Auto-straighten strokes - improved version that preserves straight lines 
+ * @param {Stroke} stroke - Array of points representing a stroke
+ * @returns {Stroke} Straightened stroke
+ */
 export const straightenStroke = (stroke: Stroke): Stroke => {
   if (!stroke || stroke.length < 2) return stroke;
   
@@ -44,7 +56,12 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   return [start, end];
 };
 
-/** Calculate Gross Internal Area (GIA) in m² */
+/** 
+ * Calculate Gross Internal Area (GIA) in m² 
+ * Uses the shoelace formula for polygon area calculation
+ * @param {Stroke} stroke - Array of points representing a closed shape
+ * @returns {number} Calculated area in square meters
+ */
 export const calculateGIA = (stroke: Stroke): number => {
   if (!stroke || stroke.length < 3) return 0;
   

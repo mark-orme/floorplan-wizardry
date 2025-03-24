@@ -1,7 +1,15 @@
 
+/**
+ * Utilities for working with Fabric.js path objects
+ * @module fabricPathUtils
+ */
 import { Point } from './drawingTypes';
 
-/** Convert fabric.js path points to our Point type */
+/** 
+ * Convert fabric.js path points to our Point type 
+ * @param {any[]} path - Fabric.js path array
+ * @returns {Point[]} Array of points
+ */
 export const fabricPathToPoints = (path: any[]): Point[] => {
   if (!path || !Array.isArray(path)) return [];
   

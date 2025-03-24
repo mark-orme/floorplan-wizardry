@@ -2,8 +2,9 @@
 /**
  * Main Canvas component for floor plan drawing
  * Orchestrates the canvas setup, grid creation, and drawing tools
+ * @module Canvas
  */
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
@@ -34,6 +35,11 @@ export const Canvas = () => {
     clearCanvas,
     saveCanvas
   } = CanvasController();
+
+  // Load initial data when component mounts
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleRetry = useCallback(() => {
     loadData();

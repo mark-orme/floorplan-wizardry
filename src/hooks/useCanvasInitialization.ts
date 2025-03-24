@@ -1,4 +1,9 @@
 
+/**
+ * Custom hook for initializing the canvas
+ * Handles canvas creation, brush setup, and grid initialization
+ * @module useCanvasInitialization
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
@@ -12,6 +17,10 @@ import {
 import { createGrid } from "@/utils/canvasGrid";
 import { FloorPlan } from "@/utils/drawing";
 
+/**
+ * Props for useCanvasInitialization hook
+ * @interface UseCanvasInitializationProps
+ */
 interface UseCanvasInitializationProps {
   canvasDimensions: { width: number, height: number };
   tool: "draw" | "room" | "straightLine";
@@ -27,6 +36,11 @@ interface UseCanvasInitializationProps {
   setErrorMessage: (value: string) => void;
 }
 
+/**
+ * Hook for initializing the canvas and related objects
+ * @param {UseCanvasInitializationProps} props - Hook properties
+ * @returns {Object} Canvas and related refs
+ */
 export const useCanvasInitialization = ({
   canvasDimensions,
   tool,
@@ -46,10 +60,12 @@ export const useCanvasInitialization = ({
     { past: [], future: [] }
   );
 
+  // Grid creation function
   const gridRef = useCallback((canvas: FabricCanvas) => {
     return createGrid(canvas, gridLayerRef, canvasDimensions, setDebugInfo, setHasError, setErrorMessage);
   }, [canvasDimensions, setDebugInfo, setHasError, setErrorMessage]);
 
+  // Initialize canvas when component mounts or when dependencies change
   useEffect(() => {
     if (!canvasRef.current) {
       console.log("Canvas ref is null, will retry later");
@@ -64,6 +80,7 @@ export const useCanvasInitialization = ({
     console.log("Initializing canvas with dimensions:", canvasDimensions);
     
     try {
+      // Create new Fabric canvas instance
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         backgroundColor: "#FFFFFF",
         isDrawingMode: true,
@@ -77,10 +94,14 @@ export const useCanvasInitialization = ({
       fabricCanvasRef.current = fabricCanvas;
       canvasInitializedRef.current = true;
       
-      // Initialize the drawing brush
+      // Initialize the drawing brush with precise settings for drawing
       const pencilBrush = initializeDrawingBrush(fabricCanvas);
       if (pencilBrush) {
         fabricCanvas.freeDrawingBrush = pencilBrush;
+        fabricCanvas.freeDrawingBrush.width = 2;
+        fabricCanvas.freeDrawingBrush.color = "#000000";
+        fabricCanvas.isDrawingMode = true;
+        
         setDebugInfo(prev => ({
           ...prev, 
           canvasInitialized: true,
@@ -105,6 +126,7 @@ export const useCanvasInitialization = ({
       // Add pinch-to-zoom
       addPinchToZoom(fabricCanvas, setZoomLevel);
       
+      // Ensure grid objects stay in the background when new objects are added
       const handleObjectAdded = () => {
         console.log("Object added to canvas");
         if (gridLayerRef.current.length === 0) {
@@ -119,6 +141,7 @@ export const useCanvasInitialization = ({
       
       fabricCanvas.on('object:added', handleObjectAdded);
 
+      // Initialize history with current state
       const initialState = fabricCanvas.getObjects().filter(obj => 
         obj.type === 'path' || obj.type === 'polyline'
       );
@@ -126,6 +149,7 @@ export const useCanvasInitialization = ({
       
       toast.success("Canvas ready for drawing!");
       
+      // Clean up on unmount
       return () => {
         if (fabricCanvas) {
           fabricCanvas.off('object:added', handleObjectAdded);
