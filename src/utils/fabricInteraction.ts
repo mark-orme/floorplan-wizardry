@@ -4,7 +4,7 @@
  * Handles zooming, panning, and other interactive behaviors
  * @module fabricInteraction
  */
-import { Canvas, Point as FabricPoint } from "fabric";
+import { Canvas, Point as FabricPoint, Object as FabricObject } from "fabric";
 import { Point } from "@/utils/drawingTypes";
 import { toFabricPoint, createSimplePoint } from "./fabricPointConverter";
 
@@ -186,13 +186,15 @@ export const enableSelection = (canvas: Canvas) => {
   
   // Make all objects selectable
   canvas.getObjects().forEach(obj => {
-    if (obj.type !== 'line' && !obj.objectType?.includes('grid')) {
+    // Use type assertion to access the custom objectType property
+    const objectType = (obj as any).objectType;
+    if (obj.type !== 'line' && (!objectType || !objectType.includes('grid'))) {
       obj.selectable = true;
       obj.hoverCursor = 'move';
     }
   });
   
-  canvas.renderAll();
+  canvas.requestRenderAll();
 };
 
 /**
@@ -212,5 +214,8 @@ export const disableSelection = (canvas: Canvas) => {
     obj.hoverCursor = 'default';
   });
   
-  canvas.discardActiveObject().renderAll();
+  // Make sure to call requestRenderAll on the canvas, not on a boolean value
+  canvas.discardActiveObject();
+  canvas.requestRenderAll();
 };
+
