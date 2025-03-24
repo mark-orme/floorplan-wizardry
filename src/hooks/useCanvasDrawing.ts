@@ -4,7 +4,7 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Canvas as FabricCanvas, PencilBrush, Path, Polyline } from "fabric";
 import { toast } from "sonner";
 import { 
@@ -14,7 +14,8 @@ import {
   straightenStroke,
   calculateGIA, 
   type FloorPlan,
-  type Stroke 
+  type Stroke,
+  type Point 
 } from "@/utils/drawing";
 import { snapToAngle } from "@/utils/fabricHelpers";
 
@@ -31,6 +32,7 @@ interface UseCanvasDrawingProps {
 /**
  * Hook for handling all drawing-related operations on the canvas
  * @param {UseCanvasDrawingProps} props - Hook properties
+ * @returns {Object} Drawing state and handlers
  */
 export const useCanvasDrawing = ({
   fabricCanvasRef,
@@ -41,6 +43,13 @@ export const useCanvasDrawing = ({
   setFloorPlans,
   setGia
 }: UseCanvasDrawingProps) => {
+  // Track drawing state for measurements
+  const [drawingState, setDrawingState] = useState({
+    isDrawing: false,
+    startPoint: null as Point | null,
+    currentPoint: null as Point | null,
+    cursorPosition: { x: 0, y: 0 }
+  });
   
   /**
    * Handle path creation events from the Fabric.js canvas
@@ -111,7 +120,9 @@ export const useCanvasDrawing = ({
         
         // Ensure grid stays in the background
         gridLayerRef.current.forEach(gridObj => {
-          fabricCanvas.sendObjectToBack(gridObj);
+          if (fabricCanvas.contains(gridObj)) {
+            fabricCanvas.sendObjectToBack(gridObj);
+          }
         });
         
         fabricCanvas.renderAll();
@@ -141,18 +152,86 @@ export const useCanvasDrawing = ({
         );
         historyRef.current.past.push([...currentState]);
         historyRef.current.future = [];
+        
+        // Reset drawing state
+        setDrawingState({
+          isDrawing: false,
+          startPoint: null,
+          currentPoint: null,
+          cursorPosition: { x: 0, y: 0 }
+        });
       } catch (error) {
         console.error("Error processing drawing:", error);
         toast.error("Failed to process drawing");
       }
     };
     
-    // Attach event listener for path creation
-    fabricCanvas.on('path:created', handlePathCreated);
+    /**
+     * Track mouse down events to capture start point
+     */
+    const handleMouseDown = (e: any) => {
+      if (!fabricCanvas.isDrawingMode) return;
+      
+      const pointer = fabricCanvas.getPointer(e.e);
+      const point = {
+        x: pointer.x / PIXELS_PER_METER,
+        y: pointer.y / PIXELS_PER_METER
+      };
+      
+      setDrawingState(prev => ({
+        ...prev,
+        isDrawing: true,
+        startPoint: point,
+        currentPoint: point,
+        cursorPosition: { x: e.e.clientX, y: e.e.clientY }
+      }));
+    };
     
-    // Clean up event listener on unmount
+    /**
+     * Track mouse move events to update current point
+     */
+    const handleMouseMove = (e: any) => {
+      if (!drawingState.isDrawing) return;
+      
+      const pointer = fabricCanvas.getPointer(e.e);
+      const point = {
+        x: pointer.x / PIXELS_PER_METER,
+        y: pointer.y / PIXELS_PER_METER
+      };
+      
+      setDrawingState(prev => ({
+        ...prev,
+        currentPoint: point,
+        cursorPosition: { x: e.e.clientX, y: e.e.clientY }
+      }));
+    };
+    
+    /**
+     * Handle mouse up events to end drawing
+     */
+    const handleMouseUp = () => {
+      setDrawingState(prev => ({
+        ...prev,
+        isDrawing: false
+      }));
+    };
+    
+    // Attach event listeners
+    fabricCanvas.on('path:created', handlePathCreated);
+    fabricCanvas.on('mouse:down', handleMouseDown);
+    fabricCanvas.on('mouse:move', handleMouseMove);
+    fabricCanvas.on('mouse:up', handleMouseUp);
+    
+    // Clean up event listeners on unmount
     return () => {
       fabricCanvas.off('path:created', handlePathCreated);
+      fabricCanvas.off('mouse:down', handleMouseDown);
+      fabricCanvas.off('mouse:move', handleMouseMove);
+      fabricCanvas.off('mouse:up', handleMouseUp);
     };
-  }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia]);
+  }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia, drawingState.isDrawing]);
+
+  return {
+    drawingState
+  };
 };

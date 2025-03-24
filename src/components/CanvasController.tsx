@@ -100,6 +100,17 @@ export const CanvasController = () => {
     recalculateGIA: () => {}  // Will be replaced after useFloorPlans
   });
 
+  // Drawing state tracking for measurement tooltip
+  const { drawingState } = useCanvasDrawing({
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    tool,
+    currentFloor,
+    setFloorPlans,
+    setGia
+  });
+
   // Floor plans management
   const {
     drawFloorPlan,
@@ -123,17 +134,6 @@ export const CanvasController = () => {
   useEffect(() => {
     Object.assign(useDrawingTools, { recalculateGIA });
   }, [recalculateGIA]);
-
-  // Canvas drawing
-  useCanvasDrawing({
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    currentFloor,
-    setFloorPlans,
-    setGia
-  });
 
   // Canvas resizing
   useCanvasResizing({
@@ -220,6 +220,7 @@ export const CanvasController = () => {
     handleRedo,
     handleZoom,
     clearCanvas,
-    saveCanvas
+    saveCanvas,
+    drawingState
   };
 };
