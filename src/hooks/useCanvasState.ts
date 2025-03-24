@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for centralized canvas state management
  * @module useCanvasState
@@ -10,7 +9,7 @@ import { CanvasDimensions } from "@/types/drawingTypes";
 /**
  * Type for drawing tools including the select tool
  */
-export type DrawingTool = "draw" | "straightLine" | "hand" | "select" | "room";
+export type DrawingTool = "draw" | "straightLine" | "hand" | "select" | "room" | "none";
 
 /**
  * Canvas state return type
@@ -41,8 +40,8 @@ interface CanvasStateReturn {
  * @returns Canvas state and setters
  */
 export const useCanvasState = (): CanvasStateReturn => {
-  // Default to straightLine (wall) tool as requested
-  const [tool, setTool] = useState<DrawingTool>("straightLine");
+  // Default to "none" tool (no tool selected)
+  const [tool, setTool] = useState<DrawingTool>("none");
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [gia, setGia] = useState<number>(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
@@ -52,10 +51,9 @@ export const useCanvasState = (): CanvasStateReturn => {
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>("#000000");
   
-  // Ensure tool is set to straightLine on initial load
+  // We no longer force set the tool to straightLine on load
   useEffect(() => {
-    console.log("Initial tool set to straightLine");
-    setTool("straightLine");
+    console.log("Initial tool set to none");
   }, []);
 
   return {

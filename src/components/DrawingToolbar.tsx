@@ -10,7 +10,8 @@ import {
   Undo, 
   Redo,
   Hand,
-  Palette
+  Palette,
+  MousePointer
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
@@ -59,6 +60,23 @@ export const DrawingToolbar = ({
       <div className="flex gap-4 mb-4 flex-wrap">
         {/* Tool Selection with hover cards for explanation */}
         <div className="flex gap-2">
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <Button
+                variant={tool === "none" ? "default" : "outline"}
+                onClick={() => onToolChange("none")}
+                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+                aria-label="No Tool Selected"
+              >
+                <MousePointer className="w-4 h-4 transition-colors" />
+              </Button>
+            </HoverCardTrigger>
+            <HoverCardContent className="p-2 text-sm shadow-md">
+              <strong>No Tool Selected</strong>
+              <p>Deselect all tools to view the canvas</p>
+            </HoverCardContent>
+          </HoverCard>
+        
           <HoverCard>
             <HoverCardTrigger asChild>
               <Button
@@ -257,4 +275,3 @@ export const DrawingToolbar = ({
     </div>
   );
 };
-

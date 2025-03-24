@@ -1,4 +1,3 @@
-
 /**
  * Main Canvas component for floor plan drawing
  * Orchestrates the canvas setup, grid creation, and drawing tools
@@ -49,26 +48,13 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
-  // Force straightLine tool on initial load
+  // We no longer force tool to straightLine on initial load
   useEffect(() => {
     if (isFirstMountRef.current && !isLoading && debugInfo.canvasInitialized) {
-      console.log("Setting initial tool to straightLine");
-      handleToolChange("straightLine");
+      console.log("Using default tool: none");
       isFirstMountRef.current = false;
     }
-  }, [isLoading, debugInfo.canvasInitialized, handleToolChange]);
-
-  // Log drawing state for debugging when relevant changes occur
-  useEffect(() => {
-    if (drawingState?.isDrawing) {
-      console.log("Drawing state updated in Canvas:", {
-        isDrawing: drawingState.isDrawing,
-        startPoint: drawingState.startPoint,
-        currentPoint: drawingState.currentPoint,
-        tool
-      });
-    }
-  }, [drawingState?.isDrawing, drawingState?.startPoint, drawingState?.currentPoint, tool]);
+  }, [isLoading, debugInfo.canvasInitialized]);
 
   // Load initial data only once across all renders
   useEffect(() => {
