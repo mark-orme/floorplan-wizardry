@@ -153,7 +153,7 @@ export const useFloorPlans = ({
       { 
         strokes: [], 
         label: `Floor ${prev.length + 1}`,
-        paperSize: "infinite" as PaperSize  // Explicitly type as PaperSize
+        paperSize: "infinite" as PaperSize  // Explicitly cast as PaperSize
       }
     ]);
     toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);

@@ -18,6 +18,7 @@ import { useCanvasResizing } from "@/hooks/useCanvasResizing";
 import { useFloorPlans } from "@/hooks/useFloorPlans";
 import { useDrawingTools } from "@/hooks/useDrawingTools";
 import { useFloorSelection } from "@/hooks/useFloorSelection";
+import { PaperSize } from "@/utils/drawingTypes";
 
 /**
  * Controller component that manages all canvas logic and state
@@ -160,11 +161,11 @@ export const CanvasController = () => {
           setFloorPlans(plans);
           console.log("Floor plans loaded:", plans);
         } else {
-          // Create a default floor plan with a proper paperSize type
+          // Create a default floor plan with a properly typed paperSize
           const defaultPlan = [{
             strokes: [],
             label: "Ground Floor",
-            paperSize: "infinite"  // Using a valid enum value from FloorPlan type
+            paperSize: "infinite" as PaperSize  // Explicitly cast as PaperSize to fix the type error
           }];
           setFloorPlans(defaultPlan);
           console.log("Created default floor plan");
