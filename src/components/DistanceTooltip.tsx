@@ -33,8 +33,10 @@ export const DistanceTooltip = memo(({
   // Calculate distance in meters
   const distanceInMeters = calculateDistance(startPoint, currentPoint);
   
-  // If the distance is too small, don't show the tooltip
-  if (distanceInMeters < 0.01) {
+  // Don't show tooltip for very small distances or when points are the same
+  // Increased threshold to prevent showing tooltip too early during initial click
+  if (distanceInMeters < 0.05 || 
+      (startPoint.x === currentPoint.x && startPoint.y === currentPoint.y)) {
     return null;
   }
   
