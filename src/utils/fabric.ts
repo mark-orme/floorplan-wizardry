@@ -3,6 +3,7 @@
  * Re-exports all Fabric.js utilities
  * @module fabric
  */
+import { Canvas, Object as FabricObject } from "fabric";
 
 // Export from fabricBrush
 export { initializeDrawingBrush, addPressureSensitivity } from './fabricBrush';
@@ -25,18 +26,18 @@ export {
  * Workaround for missing moveTo in Fabric.js v6+ type definitions
  * This provides a compatibility layer for the functionality
  * 
- * @param canvas The fabric.js canvas instance
- * @param object The object to move
- * @param index The index to move the object to
- * @returns boolean indicating success
+ * @param {Canvas} canvas The fabric.js canvas instance
+ * @param {FabricObject} object The object to move
+ * @param {number} index The index to move the object to
+ * @returns {boolean} indicating success
  */
-export const canvasMoveTo = (canvas: any, object: any, index: number): boolean => {
+export const canvasMoveTo = (canvas: Canvas, object: FabricObject, index: number): boolean => {
   if (!canvas || !object) return false;
   
   try {
     // Try the native moveTo method first (will work if available)
-    if (typeof canvas.moveTo === 'function') {
-      canvas.moveTo(object, index);
+    if (typeof (canvas as any).moveTo === 'function') {
+      (canvas as any).moveTo(object, index);
       return true;
     }
     

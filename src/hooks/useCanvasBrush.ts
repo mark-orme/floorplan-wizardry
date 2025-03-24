@@ -9,30 +9,37 @@ import {
   initializeDrawingBrush, 
   addPressureSensitivity
 } from "@/utils/fabricBrush";
+import { DebugInfoState } from "@/types/drawingTypes";
 
 /**
  * Props for useCanvasBrush hook
  */
 interface UseCanvasBrushProps {
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+}
+
+/**
+ * Result type for useCanvasBrush hook
+ */
+interface UseCanvasBrushResult {
+  setupBrush: (fabricCanvas: FabricCanvas) => boolean;
 }
 
 /**
  * Hook to handle brush initialization and configuration
+ * @param {UseCanvasBrushProps} props - Hook properties
+ * @returns {UseCanvasBrushResult} Brush setup function
  */
 export const useCanvasBrush = ({
   setDebugInfo
-}: UseCanvasBrushProps) => {
+}: UseCanvasBrushProps): UseCanvasBrushResult => {
   
   /**
    * Initialize the drawing brush with precise settings
+   * @param {FabricCanvas} fabricCanvas - The Fabric.js canvas instance
+   * @returns {boolean} Success indicator
    */
-  const setupBrush = useCallback((fabricCanvas: FabricCanvas) => {
+  const setupBrush = useCallback((fabricCanvas: FabricCanvas): boolean => {
     if (!fabricCanvas) return false;
     
     // Initialize the drawing brush with precise settings for drawing

@@ -6,33 +6,47 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
+import { CanvasDimensions } from "@/types/drawingTypes";
 
 /**
  * Props for useCanvasCreation hook
  */
 interface UseCanvasCreationProps {
-  canvasDimensions: { width: number, height: number };
+  canvasDimensions: CanvasDimensions;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
 }
 
 /**
+ * Return type for useCanvasCreation hook
+ */
+interface UseCanvasCreationResult {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvasInitializedRef: React.MutableRefObject<boolean>;
+  initializeCanvas: () => FabricCanvas | null;
+}
+
+/**
  * Hook to handle basic canvas creation and setup
+ * @param {UseCanvasCreationProps} props - Hook properties
+ * @returns {UseCanvasCreationResult} Canvas creation utilities and references
  */
 export const useCanvasCreation = ({
   canvasDimensions,
   setHasError,
   setErrorMessage
-}: UseCanvasCreationProps) => {
+}: UseCanvasCreationProps): UseCanvasCreationResult => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const canvasInitializedRef = useRef(false);
-  const initializationInProgressRef = useRef(false);
+  const canvasInitializedRef = useRef<boolean>(false);
+  const initializationInProgressRef = useRef<boolean>(false);
 
   /**
    * Initialize canvas with performance optimizations
+   * @returns {FabricCanvas | null} Initialized canvas or null if failed
    */
-  const initializeCanvas = useCallback(() => {
+  const initializeCanvas = useCallback((): FabricCanvas | null => {
     if (!canvasRef.current) {
       return null;
     }

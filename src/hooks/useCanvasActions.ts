@@ -4,13 +4,16 @@
  * @module useCanvasActions
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { FloorPlan, saveFloorPlans } from "@/utils/drawing";
 
 interface UseCanvasActionsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  historyRef: React.MutableRefObject<{
+    past: FabricObject[][], 
+    future: FabricObject[][]
+  }>;
   clearDrawings: () => void;
   floorPlans: FloorPlan[];
   currentFloor: number;
@@ -18,10 +21,15 @@ interface UseCanvasActionsProps {
   setGia: React.Dispatch<React.SetStateAction<number>>;
 }
 
+interface UseCanvasActionsResult {
+  clearCanvas: () => void;
+  saveCanvas: () => void;
+}
+
 /**
  * Hook for managing canvas actions like clearing and saving
  * @param {UseCanvasActionsProps} props - Hook properties
- * @returns {Object} Canvas action operations
+ * @returns {UseCanvasActionsResult} Canvas action operations
  */
 export const useCanvasActions = ({
   fabricCanvasRef,
@@ -31,11 +39,11 @@ export const useCanvasActions = ({
   currentFloor,
   setFloorPlans,
   setGia
-}: UseCanvasActionsProps) => {
+}: UseCanvasActionsProps): UseCanvasActionsResult => {
   /**
    * Clear all objects from the canvas
    */
-  const clearCanvas = useCallback(() => {
+  const clearCanvas = useCallback((): void => {
     if (!fabricCanvasRef.current) return;
     
     clearDrawings();
@@ -65,7 +73,7 @@ export const useCanvasActions = ({
   /**
    * Save the current floor plan as an image and to storage
    */
-  const saveCanvas = useCallback(() => {
+  const saveCanvas = useCallback((): void => {
     if (!fabricCanvasRef.current) return;
     
     try {

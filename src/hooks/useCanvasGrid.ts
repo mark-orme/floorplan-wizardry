@@ -31,9 +31,9 @@ export const useCanvasGrid = ({
   setDebugInfo,
   setHasError,
   setErrorMessage
-}: UseCanvasGridProps) => {
+}: UseCanvasGridProps): ((canvas: FabricCanvas) => FabricObject[]) => {
   // Track grid creation attempts
-  const attemptCountRef = useRef(0);
+  const attemptCountRef = useRef<number>(0);
   const MAX_ATTEMPTS = 3;
   
   // Create grid callback with simple direct execution

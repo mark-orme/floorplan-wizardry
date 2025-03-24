@@ -2,30 +2,33 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { setCanvasDimensions } from "@/utils/fabricCanvas";
+import { CanvasDimensions, DebugInfoState } from "@/types/drawingTypes";
 
 interface UseCanvasResizingProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  setCanvasDimensions: React.Dispatch<React.SetStateAction<{ width: number, height: number }>>;
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>;
+  setCanvasDimensions: React.Dispatch<React.SetStateAction<CanvasDimensions>>;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
   createGrid: (canvas: FabricCanvas) => any[];
 }
 
-// Global flag to track if initial resize has been done
-let initialGlobalResizeComplete = false;
-// Global flag to track if a resize is in progress
-let globalResizeInProgress = false;
+interface ResizingState {
+  initialResizeComplete: boolean;
+  resizeInProgress: boolean;
+  lastResizeTime: number;
+}
+
+// Use module-level object instead of loose variables
+const resizingState: ResizingState = {
+  initialResizeComplete: false,
+  resizeInProgress: false,
+  lastResizeTime: 0
+};
+
 // Minimum time between resizes (in milliseconds)
 const MIN_RESIZE_INTERVAL = 2000;
-// Time of last resize
-let lastResizeTime = 0;
 
 export const useCanvasResizing = ({
   canvasRef,
@@ -35,16 +38,16 @@ export const useCanvasResizing = ({
   setHasError,
   setErrorMessage,
   createGrid
-}: UseCanvasResizingProps) => {
+}: UseCanvasResizingProps): { updateCanvasDimensions: () => void } => {
   const resizeTimeoutRef = useRef<number | null>(null);
-  const lastDimensionsRef = useRef<{width: number, height: number}>({width: 0, height: 0});
-  const initialResizeCompleteRef = useRef(initialGlobalResizeComplete);
-  const resizeInProgressRef = useRef(globalResizeInProgress);
+  const lastDimensionsRef = useRef<CanvasDimensions>({width: 0, height: 0});
+  const initialResizeCompleteRef = useRef<boolean>(resizingState.initialResizeComplete);
+  const resizeInProgressRef = useRef<boolean>(resizingState.resizeInProgress);
   const initialResizeTimerRef = useRef<number | null>(null);
-  const resizeCountRef = useRef(0);
-  const lastResizeTimeRef = useRef(lastResizeTime);
+  const resizeCountRef = useRef<number>(0);
+  const lastResizeTimeRef = useRef<number>(resizingState.lastResizeTime);
 
-  const updateCanvasDimensions = useCallback(() => {
+  const updateCanvasDimensions = useCallback((): void => {
     if (!canvasRef.current) {
       return;
     }
@@ -61,16 +64,17 @@ export const useCanvasResizing = ({
     }
     
     resizeInProgressRef.current = true;
-    globalResizeInProgress = true;
+    resizingState.resizeInProgress = true;
     lastResizeTimeRef.current = now;
-    lastResizeTime = now;
+    resizingState.lastResizeTime = now;
     
-    const container = document.querySelector('.canvas-container');
+    // Get container dimensions using ref instead of direct DOM query
+    const container = canvasRef.current.closest('.canvas-container');
     if (!container) {
       setHasError(true);
       setErrorMessage("Canvas container not found");
       resizeInProgressRef.current = false;
-      globalResizeInProgress = false;
+      resizingState.resizeInProgress = false;
       return;
     }
     
@@ -78,7 +82,7 @@ export const useCanvasResizing = ({
     
     if (width <= 0 || height <= 0) {
       resizeInProgressRef.current = false;
-      globalResizeInProgress = false;
+      resizingState.resizeInProgress = false;
       return;
     }
     
@@ -89,7 +93,7 @@ export const useCanvasResizing = ({
     if (Math.abs(newWidth - lastDimensionsRef.current.width) < 80 && 
         Math.abs(newHeight - lastDimensionsRef.current.height) < 80) {
       resizeInProgressRef.current = false;
-      globalResizeInProgress = false;
+      resizingState.resizeInProgress = false;
       return;
     }
     
@@ -114,7 +118,7 @@ export const useCanvasResizing = ({
       if (!initialResizeCompleteRef.current) {
         createGrid(fabricCanvasRef.current);
         initialResizeCompleteRef.current = true;
-        initialGlobalResizeComplete = true;
+        resizingState.initialResizeComplete = true;
       }
       
       fabricCanvasRef.current.renderAll();
@@ -123,7 +127,7 @@ export const useCanvasResizing = ({
     // Wait a short time before allowing another resize
     setTimeout(() => {
       resizeInProgressRef.current = false;
-      globalResizeInProgress = false;
+      resizingState.resizeInProgress = false;
     }, 100);
   }, [canvasRef, fabricCanvasRef, setDimensions, setDebugInfo, setHasError, setErrorMessage, createGrid]);
 
