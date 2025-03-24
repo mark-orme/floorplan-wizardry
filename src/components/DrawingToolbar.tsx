@@ -2,7 +2,6 @@
 import { Button } from "./ui/button";
 import { 
   Pencil,
-  Square, 
   Ruler, 
   Save, 
   Trash, 
@@ -94,23 +93,6 @@ export const DrawingToolbar = ({
             </HoverCardContent>
           </HoverCard>
           
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
-                variant={tool === "room" ? "default" : "outline"}
-                onClick={() => onToolChange("room")}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="Room Tool"
-              >
-                <Square className="w-4 h-4 transition-colors" />
-              </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Room Tool</strong>
-              <p>Create closed rooms with area calculation</p>
-            </HoverCardContent>
-          </HoverCard>
-
           <HoverCard>
             <HoverCardTrigger asChild>
               <Button
@@ -275,3 +257,4 @@ export const DrawingToolbar = ({
     </div>
   );
 };
+
