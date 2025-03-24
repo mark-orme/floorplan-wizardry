@@ -255,9 +255,13 @@ export const isExactGridMultiple = (value: number): boolean => {
 export const forceGridAlignment = (point: Point): Point => {
   if (!point) return { x: 0, y: 0 };
   
-  // Force exact alignment to nearest grid intersection
+  // Force exact alignment to nearest grid intersection with extra precision
+  // Use fixed precision to avoid floating point errors
+  const x = Math.round(point.x / GRID_SIZE) * GRID_SIZE;
+  const y = Math.round(point.y / GRID_SIZE) * GRID_SIZE;
+  
   return {
-    x: Number((Math.round(point.x / GRID_SIZE) * GRID_SIZE).toFixed(3)),
-    y: Number((Math.round(point.y / GRID_SIZE) * GRID_SIZE).toFixed(3))
+    x: Number(x.toFixed(3)),
+    y: Number(y.toFixed(3))
   };
 };

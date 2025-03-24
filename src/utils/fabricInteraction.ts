@@ -1,3 +1,4 @@
+
 /**
  * Fabric.js interaction utilities
  * Handles zooming, panning, and other interactive behaviors
@@ -92,9 +93,9 @@ export const snapToAngle = (
   // Common angles to snap to (0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°)
   const snapAngles = [0, 45, 90, 135, 180, 225, 270, 315];
   
-  // Find the closest snap angle with strict enforcement
+  // Find the closest snap angle
   let closestAngle = rawAngle;
-  let minDifference = 360; // Initialize higher than any possible difference
+  let minDifference = 360;
   
   snapAngles.forEach(snapAngle => {
     // Calculate the absolute difference between current angle and snap angle
@@ -118,38 +119,50 @@ export const snapToAngle = (
   // Calculate the distance between the points
   const distance = Math.sqrt(dx * dx + dy * dy);
   
-  // Round the distance to nearest grid multiple
+  // Round the distance to nearest grid multiple for exact alignment
   const roundedDistance = Math.round(distance / GRID_SIZE) * GRID_SIZE;
   
   // Calculate the raw end point based on the snapped angle and rounded distance
-  const rawEndPoint = createSimplePoint(
-    startPoint.x + roundedDistance * Math.cos(angleInRadians),
-    startPoint.y + roundedDistance * Math.sin(angleInRadians)
-  );
+  const rawEndPoint = {
+    x: startPoint.x + roundedDistance * Math.cos(angleInRadians),
+    y: startPoint.y + roundedDistance * Math.sin(angleInRadians)
+  };
   
   // Force grid alignment for absolute precision
   const snappedEndPoint = forceGridAlignment(rawEndPoint);
   
-  // Verify the resulting line is truly horizontal, vertical, or 45 degrees
-  // by recalculating the angle from the new points
-  const finalDx = snappedEndPoint.x - startPoint.x;
-  const finalDy = snappedEndPoint.y - startPoint.y;
-  
-  // If line is very short, default to horizontal or vertical
-  if (Math.abs(finalDx) < 0.05 && Math.abs(finalDy) < 0.05) {
-    // Tiny movement, make it a 0.1m line in the closest cardinal direction
-    const cardinalDirection = Math.round(angleInRadians / (Math.PI/2)) % 4;
-    const directions = [
-      { x: GRID_SIZE, y: 0 },       // East (0)
-      { x: 0, y: GRID_SIZE },       // South (1)
-      { x: -GRID_SIZE, y: 0 },      // West (2)
-      { x: 0, y: -GRID_SIZE }       // North (3)
-    ];
-    
-    const direction = directions[cardinalDirection];
+  // For perfectly horizontal lines (0° or 180°)
+  if (closestAngle === 0 || closestAngle === 180) {
     return {
-      x: startPoint.x + direction.x,
-      y: startPoint.y + direction.y
+      x: snappedEndPoint.x,
+      y: startPoint.y // Keep exact same Y coordinate
+    };
+  }
+  
+  // For perfectly vertical lines (90° or 270°)
+  if (closestAngle === 90 || closestAngle === 270) {
+    return {
+      x: startPoint.x, // Keep exact same X coordinate
+      y: snappedEndPoint.y
+    };
+  }
+  
+  // For diagonal lines (45°, 135°, 225°, 315°)
+  if ([45, 135, 225, 315].includes(closestAngle)) {
+    // Calculate the exact diagonal distance for perfect 45° angles
+    const diagonalLength = Math.round(Math.min(
+      Math.abs(snappedEndPoint.x - startPoint.x),
+      Math.abs(snappedEndPoint.y - startPoint.y)
+    ) / GRID_SIZE) * GRID_SIZE;
+    
+    // Calculate signs for X and Y direction
+    const signX = Math.sign(snappedEndPoint.x - startPoint.x);
+    const signY = Math.sign(snappedEndPoint.y - startPoint.y);
+    
+    // Create a perfect 45° diagonal point
+    return {
+      x: Number((startPoint.x + diagonalLength * signX).toFixed(3)),
+      y: Number((startPoint.y + diagonalLength * signY).toFixed(3))
     };
   }
   

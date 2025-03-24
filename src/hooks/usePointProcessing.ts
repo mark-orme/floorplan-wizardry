@@ -15,7 +15,8 @@ import {
   straightenStroke,
   filterRedundantPoints,
   calculateDistance,
-  isExactGridMultiple
+  isExactGridMultiple,
+  forceGridAlignment
 } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
@@ -38,40 +39,41 @@ export const usePointProcessing = (tool: DrawingTool) => {
       filteredPoints = points;
     }
     
-    // Always use strict grid snapping for wall tool (straightLine)
-    let finalPoints = tool === 'straightLine' 
-      ? snapPointsToGrid(filteredPoints, true) // Enforce strict grid snapping for walls
-      : snapToGrid(filteredPoints);           // Regular snapping for other tools
-    
-    console.log("Points snapped to grid:", finalPoints.length);
-    
-    // Apply straightening for wall tool
+    // ENHANCED: For wall tool, force exact grid alignment for both start and end points
+    let finalPoints;
     if (tool === 'straightLine') {
-      // For wall tool, always strictly straighten to exact horizontal or vertical
-      const startPoint = finalPoints[0];
-      const endPoint = finalPoints[finalPoints.length - 1];
-      finalPoints = straightenStroke([startPoint, endPoint]);
-      console.log("Applied strict straightening to wall line");
+      // Get just start and end points for walls
+      const startPoint = forceGridAlignment(filteredPoints[0]);
+      const endPoint = forceGridAlignment(filteredPoints[filteredPoints.length - 1]);
       
-      // Calculate and display exact wall length to exactly 1 decimal place
-      if (finalPoints.length >= 2) {
-        const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
-        
-        // Display with exactly 1 decimal place for consistency
-        const displayLength = lengthInMeters.toFixed(1);
-        
-        // Verify the line is exactly on grid points
-        const startOnGrid = isExactGridMultiple(finalPoints[0].x) && isExactGridMultiple(finalPoints[0].y);
-        const endOnGrid = isExactGridMultiple(finalPoints[1].x) && isExactGridMultiple(finalPoints[1].y);
-        
-        if (!startOnGrid || !endOnGrid) {
-          console.warn("Line endpoints not exactly on grid:", finalPoints);
-          // Force snap to nearest grid point
-          finalPoints = snapPointsToGrid(finalPoints, true);
-        }
-        
-        toast.success(`Wall length: ${displayLength}m`);
+      // Create a perfectly straight line with exact grid alignment
+      finalPoints = straightenStroke([startPoint, endPoint]);
+      
+      console.log("Applied strict wall alignment. Original:", [filteredPoints[0], filteredPoints[filteredPoints.length - 1]], "Aligned:", finalPoints);
+      
+      // Verify grid alignment
+      const startIsAligned = isExactGridMultiple(finalPoints[0].x) && isExactGridMultiple(finalPoints[0].y);
+      const endIsAligned = isExactGridMultiple(finalPoints[1].x) && isExactGridMultiple(finalPoints[1].y);
+      
+      if (!startIsAligned || !endIsAligned) {
+        console.warn("Wall endpoints not exactly on grid. Forcing alignment");
+        finalPoints = [
+          forceGridAlignment(finalPoints[0]),
+          forceGridAlignment(finalPoints[1])
+        ];
       }
+    } else {
+      // Regular snapping for other tools
+      finalPoints = snapToGrid(filteredPoints);
+    }
+    
+    // Calculate and display exact wall length to exactly 1 decimal place
+    if (tool === 'straightLine' && finalPoints.length >= 2) {
+      const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
+      
+      // Display with exactly 1 decimal place for consistency
+      const displayLength = lengthInMeters.toFixed(1);
+      toast.success(`Wall length: ${displayLength}m`);
     }
     
     // Make sure we still have at least 2 points after all processing

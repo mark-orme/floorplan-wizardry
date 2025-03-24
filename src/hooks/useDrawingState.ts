@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -54,7 +55,7 @@ export const useDrawingState = ({
     };
   }, []);
 
-  // Mouse down handler
+  // Mouse down handler with improved grid snapping
   const handleMouseDown = useCallback((e: any) => {
     // Only track for straightLine tool
     if (tool !== 'straightLine') return;
@@ -72,9 +73,11 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
-    // Force grid alignment for wall start points
-    // This ensures walls always start exactly on grid lines
+    // IMPROVED: Force grid alignment for wall start points
+    // Apply strict snapping to ensure exact grid alignment
     const startPoint = forceGridAlignment(rawStartPoint);
+    
+    console.log("Raw start point:", rawStartPoint, "Snapped to:", startPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -93,7 +96,7 @@ export const useDrawingState = ({
     console.log("Drawing started at grid point:", startPoint, "with tool:", tool);
   }, [fabricCanvasRef, tool, cleanupTimeouts]);
 
-  // Throttled update function using requestAnimationFrame
+  // Throttled update function using requestAnimationFrame with improved snapping
   const updateDrawingState = useCallback((e: any) => {
     if (!fabricCanvasRef.current) return;
     
@@ -106,10 +109,6 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
-    // Force grid alignment for wall points
-    // This ensures walls always travel exactly on grid lines
-    const currentPoint = forceGridAlignment(rawCurrentPoint);
-    
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
       x: e.e.clientX,
@@ -118,6 +117,12 @@ export const useDrawingState = ({
     
     setDrawingState(prev => {
       if (!prev.startPoint) return prev;
+      
+      // IMPROVED: Apply strict grid alignment to current point
+      // This ensures walls always travel exactly on grid lines
+      const currentPoint = forceGridAlignment(rawCurrentPoint);
+      
+      console.log("Raw current point:", rawCurrentPoint, "Snapped to:", currentPoint);
       
       // Only calculate midpoint if we have both start and current points
       // Use the grid-snapped points for more accurate midpoint calculation
