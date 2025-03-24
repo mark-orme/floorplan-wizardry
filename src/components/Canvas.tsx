@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   Canvas as FabricCanvas, 
@@ -33,7 +32,10 @@ import {
   initializeDrawingBrush,
   setCanvasDimensions,
   disposeCanvas,
-  clearCanvasObjects
+  clearCanvasObjects,
+  addPressureSensitivity,
+  addPinchToZoom,
+  snapToAngle
 } from "@/utils/fabricHelpers";
 
 export const Canvas = () => {
@@ -154,23 +156,31 @@ export const Canvas = () => {
         gridObjects.push(largeGridLine);
       }
 
-      const scaleMarker = new Group([
-        new Line([canvasWidth - largeGridStep - 20, canvasHeight - 20, canvasWidth - 20, canvasHeight - 20], {
-          stroke: "#333333",
-          strokeWidth: 2,
-        }),
-        new Text("1m", {
-          left: canvasWidth - largeGridStep/2 - 30,
-          top: canvasHeight - 35,
-          fontSize: 12,
-          fill: "#333333",
-        })
+      const markerLine = new Line([
+        canvasWidth - largeGridStep - 20, 
+        canvasHeight - 20, 
+        canvasWidth - 20, 
+        canvasHeight - 20
       ], {
+        stroke: "#333333",
+        strokeWidth: 2,
         selectable: false,
         evented: false,
       });
-      canvas.add(scaleMarker);
-      gridObjects.push(scaleMarker);
+      
+      const markerText = new Text("1m", {
+        left: canvasWidth - largeGridStep/2 - 30,
+        top: canvasHeight - 35,
+        fontSize: 12,
+        fill: "#333333",
+        selectable: false,
+        evented: false,
+      });
+      
+      canvas.add(markerLine);
+      canvas.add(markerText);
+      gridObjects.push(markerLine);
+      gridObjects.push(markerText);
       
       gridObjects.forEach(obj => {
         canvas.sendObjectToBack(obj);
@@ -229,6 +239,9 @@ export const Canvas = () => {
       
       createGrid(fabricCanvas);
       
+      addPressureSensitivity(fabricCanvas);
+      addPinchToZoom(fabricCanvas, setZoomLevel);
+      
       const handleObjectAdded = () => {
         console.log("Object added to canvas");
         if (gridLayerRef.current.length === 0) {
@@ -264,9 +277,19 @@ export const Canvas = () => {
           const snappedPoints = snapToGrid(points);
           console.log("Points snapped to grid");
 
-          const finalPoints = tool === 'straightLine' 
-            ? straightenStroke(snappedPoints) 
-            : snappedPoints;
+          let finalPoints = snappedPoints;
+          
+          if (tool === 'straightLine') {
+            finalPoints = straightenStroke(snappedPoints);
+          } else if (tool === 'room' && snappedPoints.length >= 2) {
+            finalPoints = [snappedPoints[0]];
+            
+            for (let i = 1; i < snappedPoints.length; i++) {
+              const snappedEnd = snapToAngle(snappedPoints[i-1], snappedPoints[i]);
+              finalPoints.push(snappedEnd);
+            }
+          }
+          
           console.log("Final points processed for tool:", tool);
 
           const polyline = new Polyline(
