@@ -214,7 +214,7 @@ export const disableSelection = (canvas: Canvas) => {
     obj.hoverCursor = 'default';
   });
   
-  // Make sure to call requestRenderAll on the canvas, not on a boolean value
+  // Make sure to call discardActiveObject and requestRenderAll separately
   canvas.discardActiveObject();
   canvas.requestRenderAll();
 };
