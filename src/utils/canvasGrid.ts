@@ -13,6 +13,8 @@ let lastGridCreationTime = 0;
 let gridCreationInProgress = false;
 // Store the last dimensions that were used to create a grid
 let lastGridDimensions = { width: 0, height: 0 };
+// Track if grid has been created at all
+let gridInitialized = false;
 
 /**
  * Create grid lines for the canvas
@@ -41,27 +43,28 @@ export const createGrid = (
 ) => {
   // ANTI-FLICKER: Prevent multiple concurrent grid creations
   if (gridCreationInProgress) {
-    console.log("Grid creation already in progress, skipping");
+    // Don't log to avoid console spam
     return gridLayerRef.current;
   }
   
-  // ANTI-FLICKER: Enforce a minimum time between grid refreshes (increased to 5 seconds)
-  const now = Date.now();
-  if (now - lastGridCreationTime < 5000 && gridLayerRef.current.length > 0) {
-    console.log("Grid recently created, reusing existing grid");
-    return gridLayerRef.current;
-  }
-  
-  // Check for significant dimension changes (more than 5%)
-  if (gridLayerRef.current.length > 0) {
-    const widthDiff = Math.abs(lastGridDimensions.width - canvasDimensions.width);
-    const heightDiff = Math.abs(lastGridDimensions.height - canvasDimensions.height);
+  // If grid already exists, don't recreate unless dimensions change significantly
+  if (gridInitialized && gridLayerRef.current.length > 0) {
+    // Calculate dimension changes as percentage
+    const widthChange = Math.abs(lastGridDimensions.width - canvasDimensions.width) / lastGridDimensions.width;
+    const heightChange = Math.abs(lastGridDimensions.height - canvasDimensions.height) / lastGridDimensions.height;
     
-    if (widthDiff < lastGridDimensions.width * 0.05 && 
-        heightDiff < lastGridDimensions.height * 0.05) {
-      console.log("Grid dimensions similar, reusing existing grid");
+    // Only recreate grid if dimensions change by more than 20%
+    if (widthChange < 0.2 && heightChange < 0.2) {
+      // Silently reuse existing grid - no log to reduce console spam
       return gridLayerRef.current;
     }
+  }
+  
+  // ANTI-FLICKER: Enforce a minimum time between grid refreshes (increased to 10 seconds)
+  const now = Date.now();
+  if (now - lastGridCreationTime < 10000 && gridLayerRef.current.length > 0) {
+    // Silently reuse existing grid - no log to reduce console spam
+    return gridLayerRef.current;
   }
   
   console.log("Creating grid...");
@@ -147,6 +150,7 @@ export const createGrid = (
     // Update the last creation time
     lastGridCreationTime = now;
     gridCreationInProgress = false;
+    gridInitialized = true;
     
     return gridObjects;
   } catch (err) {

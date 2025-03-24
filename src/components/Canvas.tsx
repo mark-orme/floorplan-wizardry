@@ -14,6 +14,8 @@ import { DistanceTooltip } from "./DistanceTooltip";
 let appInitialized = false;
 // Track whether initial data has been loaded
 let initialDataLoaded = false;
+// Track if the current render is the first mount
+let isFirstMount = true;
 
 /**
  * Main Canvas component for floor plan drawing
@@ -64,8 +66,8 @@ export const Canvas = () => {
 
   // Load initial data only once across all renders
   useEffect(() => {
-    if (appInitialized && initialDataLoaded) {
-      console.log("App already initialized and data loaded, skipping initial data load");
+    // Skip initialization if already done or component is remounting
+    if (!isFirstMount || (appInitialized && initialDataLoaded)) {
       return;
     }
     
@@ -77,6 +79,7 @@ export const Canvas = () => {
     loadData();
     appInitialized = true;
     initialDataLoaded = true;
+    isFirstMount = false; // Mark first mount as complete
   }, [loadData]);
   
   // Track debug info changes for performance metrics - only update when values change

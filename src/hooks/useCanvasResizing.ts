@@ -31,6 +31,7 @@ export const useCanvasResizing = ({
   const lastDimensionsRef = useRef<{width: number, height: number}>({width: 0, height: 0});
   const initialResizeCompleteRef = useRef(false);
   const resizeInProgressRef = useRef(false);
+  const initialResizeTimerRef = useRef<number | null>(null);
 
   const updateCanvasDimensions = useCallback(() => {
     if (!canvasRef.current) {
@@ -62,9 +63,9 @@ export const useCanvasResizing = ({
     const newWidth = Math.max(width - 20, 600);
     const newHeight = Math.max(height - 20, 400);
     
-    // Skip update if dimensions haven't changed significantly (within 10px)
-    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 10 && 
-        Math.abs(newHeight - lastDimensionsRef.current.height) < 10) {
+    // Skip update if dimensions haven't changed significantly (within 30px)
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 30 && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < 30) {
       resizeInProgressRef.current = false;
       return;
     }
@@ -98,23 +99,33 @@ export const useCanvasResizing = ({
         window.clearTimeout(resizeTimeoutRef.current);
       }
       
+      // Increase debounce time to 500ms to reduce frequency
       resizeTimeoutRef.current = window.setTimeout(() => {
         updateCanvasDimensions();
         resizeTimeoutRef.current = null;
-      }, 250);
+      }, 500);
     };
 
     window.addEventListener('resize', debouncedResizeHandler);
     
     // Initial update with a delay to ensure DOM is ready
-    const initialTimer = setTimeout(updateCanvasDimensions, 300);
+    // Only run this once per component lifecycle
+    if (!initialResizeTimerRef.current) {
+      initialResizeTimerRef.current = window.setTimeout(() => {
+        updateCanvasDimensions();
+        initialResizeTimerRef.current = null;
+      }, 500);
+    }
     
     return () => {
       window.removeEventListener('resize', debouncedResizeHandler);
       if (resizeTimeoutRef.current !== null) {
         window.clearTimeout(resizeTimeoutRef.current);
       }
-      clearTimeout(initialTimer);
+      if (initialResizeTimerRef.current !== null) {
+        clearTimeout(initialResizeTimerRef.current);
+        initialResizeTimerRef.current = null;
+      }
     };
   }, [updateCanvasDimensions]);
 
