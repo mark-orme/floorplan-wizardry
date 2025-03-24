@@ -38,31 +38,52 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
+  console.log("createGrid called with dimensions:", canvasDimensions);
+  
+  // Basic validation
+  if (!canvas) {
+    console.error("Canvas is null in createGrid");
+    return [];
+  }
+  
+  if (!gridLayerRef) {
+    console.error("gridLayerRef is null in createGrid");
+    return [];
+  }
+
   // If grid already exists, don't create a new one
   if (gridManager.exists && gridLayerRef.current.length > 0) {
     // Check if grid objects are still on the canvas
     const gridOnCanvas = gridLayerRef.current.some(obj => canvas.contains(obj));
     
     if (gridOnCanvas) {
+      console.log("Grid already exists and is on canvas, skipping creation");
       return gridLayerRef.current;
+    } else {
+      console.log("Grid exists in reference but not on canvas, will recreate");
     }
   }
   
   // Prevent multiple concurrent grid creations
   if (gridManager.inProgress) {
+    console.log("Grid creation already in progress, skipping");
     return gridLayerRef.current;
   }
   
   // If grid already exists, don't recreate unless dimensions change significantly
   if (gridManager.initialized && gridLayerRef.current.length > 0) {
     if (!hasDimensionsChangedSignificantly(gridManager.lastDimensions, canvasDimensions)) {
+      console.log("Canvas dimensions haven't changed significantly, using existing grid");
       return gridLayerRef.current;
+    } else {
+      console.log("Canvas dimensions changed significantly, recreating grid");
     }
   }
   
   // Enforce throttling limits
   const now = Date.now();
   if (shouldThrottleGridCreation(now)) {
+    console.log("Grid creation throttled, skipping");
     return gridLayerRef.current;
   }
   
@@ -72,8 +93,9 @@ export const createGrid = (
   }
   
   gridManager.inProgress = true;
+  console.log("Starting grid creation batch process");
   
-  // Use a timeout to batch rapid calls
+  // Use a timeout to batch rapid calls - reduced from 100ms to 50ms for faster response
   gridManager.batchTimeoutId = window.setTimeout(() => {
     try {
       // Create the grid using the extracted batch operation
@@ -88,6 +110,7 @@ export const createGrid = (
         gridManager
       );
     } catch (err) {
+      console.error("Error creating grid:", err);
       return handleGridCreationError(
         err, 
         setHasError, 
@@ -95,7 +118,7 @@ export const createGrid = (
         gridManager
       );
     }
-  }, 100);
+  }, 50);
   
   return gridLayerRef.current;
 };

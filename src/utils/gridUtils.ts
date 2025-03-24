@@ -54,35 +54,40 @@ export const createScaleMarkers = (
   canvasWidth: number,
   canvasHeight: number
 ): any[] => {
+  console.log("Creating scale markers");
+  
+  // Safety check for dimensions
+  if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
+    console.error("Invalid canvas dimensions for scale markers:", canvasWidth, canvasHeight);
+    return [];
+  }
+  
+  // Create a more visible marker line in bottom right
   const markerLine = new Line([
-    canvasWidth - LARGE_GRID - 20, 
-    canvasHeight - 20, 
+    canvasWidth - 120, 
+    canvasHeight - 30, 
     canvasWidth - 20, 
-    canvasHeight - 20
+    canvasHeight - 30
   ], {
     stroke: "#333333",
     strokeWidth: 2,
     selectable: false,
     evented: false,
     objectCaching: true,
-    hoverCursor: 'default',
-    // Set a high z-index to make sure it appears above grid
-    originX: 'left',
-    originY: 'top'
+    hoverCursor: 'default'
   });
   
+  // Create a text label for the marker
   const markerText = new Text("1m", {
-    left: canvasWidth - LARGE_GRID/2 - 30,
-    top: canvasHeight - 35,
-    fontSize: 12,
+    left: canvasWidth - 70,
+    top: canvasHeight - 45,
+    fontSize: 14,
+    fontWeight: 'bold',
     fill: "#333333",
     selectable: false,
     evented: false,
     objectCaching: true,
-    hoverCursor: 'default',
-    // Set a high z-index to make sure it appears above grid
-    originX: 'left',
-    originY: 'top'
+    hoverCursor: 'default'
   });
   
   // Store grid dimensions in the marker line for future reference
