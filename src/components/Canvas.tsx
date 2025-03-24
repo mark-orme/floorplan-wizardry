@@ -448,7 +448,7 @@ export const Canvas = () => {
       
       if (fabricCanvasRef.current) {
         console.log("Updating fabric canvas dimensions");
-        setCanvasDimensions(fabricCanvasRef.current, newWidth, newHeight);
+        setCanvasDimensions(fabricCanvasRef.current, { width: newWidth, height: newHeight });
         createGrid(fabricCanvasRef.current);
         fabricCanvasRef.current.renderAll();
       } else {

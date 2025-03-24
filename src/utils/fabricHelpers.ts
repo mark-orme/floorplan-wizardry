@@ -1,4 +1,3 @@
-
 import { Canvas, PencilBrush, Object as FabricObject } from "fabric";
 
 /**
@@ -27,13 +26,11 @@ export const initializeDrawingBrush = (canvas: Canvas) => {
 /**
  * Safely sets canvas dimensions and refreshes the canvas
  * @param canvas The Fabric canvas instance
- * @param width Width to set
- * @param height Height to set
+ * @param dimensions Object containing width and height to set
  */
 export const setCanvasDimensions = (
   canvas: Canvas, 
-  width: number,
-  height: number
+  dimensions: { width: number, height: number }
 ) => {
   if (!canvas) {
     console.error("Cannot set dimensions: canvas is null");
@@ -41,6 +38,7 @@ export const setCanvasDimensions = (
   }
   
   try {
+    const { width, height } = dimensions;
     console.log(`Setting canvas dimensions to ${width}x${height}`);
     canvas.setDimensions({ width, height });
     canvas.renderAll();
