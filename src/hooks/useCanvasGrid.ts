@@ -35,6 +35,7 @@ export const useCanvasGrid = ({
   // Track the last grid creation time to prevent rapid consecutive creations
   const lastGridCreationTimeRef = useRef(0);
   const gridCreationInProgressRef = useRef(false);
+  const lastDimensionsRef = useRef({ width: 0, height: 0 });
   
   // Create grid callback for other hooks with throttling
   const createGridCallback = useCallback((canvas: FabricCanvas) => {
@@ -46,10 +47,21 @@ export const useCanvasGrid = ({
       return gridLayerRef.current;
     }
     
-    // Prevent grid creation more frequently than every 3 seconds
-    if (now - lastGridCreationTimeRef.current < 3000 && gridLayerRef.current.length > 0) {
-      console.log("Grid created recently, skipping recreation");
-      return gridLayerRef.current;
+    // Check if grid already exists
+    if (gridLayerRef.current.length > 0) {
+      // Only recreate grid if dimensions changed significantly (more than 5% difference)
+      const widthDiff = Math.abs(canvasDimensions.width - lastDimensionsRef.current.width);
+      const heightDiff = Math.abs(canvasDimensions.height - lastDimensionsRef.current.height);
+      
+      const isSignificantChange = 
+        widthDiff > lastDimensionsRef.current.width * 0.05 || 
+        heightDiff > lastDimensionsRef.current.height * 0.05;
+      
+      // Prevent grid creation more frequently than every 5 seconds (increased from 3)
+      if (now - lastGridCreationTimeRef.current < 5000 && !isSignificantChange) {
+        console.log("Grid created recently and no significant dimension changes, skipping recreation");
+        return gridLayerRef.current;
+      }
     }
     
     // Set flag to indicate a grid creation is in progress
@@ -58,6 +70,8 @@ export const useCanvasGrid = ({
     try {
       // Update the last creation time reference
       lastGridCreationTimeRef.current = now;
+      // Store current dimensions
+      lastDimensionsRef.current = { ...canvasDimensions };
       
       // Create the grid
       const grid = createGrid(

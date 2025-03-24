@@ -12,6 +12,8 @@ import { DistanceTooltip } from "./DistanceTooltip";
 
 // Track application-wide initialization
 let appInitialized = false;
+// Track whether initial data has been loaded
+let initialDataLoaded = false;
 
 /**
  * Main Canvas component for floor plan drawing
@@ -51,8 +53,8 @@ export const Canvas = () => {
 
   // Load initial data only once across all renders
   useEffect(() => {
-    if (appInitialized) {
-      console.log("App already initialized, skipping initial data load");
+    if (appInitialized && initialDataLoaded) {
+      console.log("App already initialized and data loaded, skipping initial data load");
       return;
     }
     
@@ -63,6 +65,7 @@ export const Canvas = () => {
     console.log("Loading initial data");
     loadData();
     appInitialized = true;
+    initialDataLoaded = true;
   }, [loadData]);
   
   // Track debug info changes for performance metrics - only update when values change

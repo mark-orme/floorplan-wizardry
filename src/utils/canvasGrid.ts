@@ -11,6 +11,8 @@ import { createScaleMarkers } from "./gridUtils";
 // Track last grid creation time globally to prevent excessive refreshes
 let lastGridCreationTime = 0;
 let gridCreationInProgress = false;
+// Store the last dimensions that were used to create a grid
+let lastGridDimensions = { width: 0, height: 0 };
 
 /**
  * Create grid lines for the canvas
@@ -43,25 +45,22 @@ export const createGrid = (
     return gridLayerRef.current;
   }
   
-  // ANTI-FLICKER: Enforce a minimum time between grid refreshes (3 seconds)
+  // ANTI-FLICKER: Enforce a minimum time between grid refreshes (increased to 5 seconds)
   const now = Date.now();
-  if (now - lastGridCreationTime < 3000 && gridLayerRef.current.length > 0) {
+  if (now - lastGridCreationTime < 5000 && gridLayerRef.current.length > 0) {
     console.log("Grid recently created, reusing existing grid");
     return gridLayerRef.current;
   }
   
-  // Skip grid creation if already created with similar dimensions
+  // Check for significant dimension changes (more than 5%)
   if (gridLayerRef.current.length > 0) {
-    const existingGridDimensions = gridLayerRef.current.find(obj => obj.gridDimensions)?.gridDimensions;
-    if (existingGridDimensions) {
-      const widthDiff = Math.abs(existingGridDimensions.width - canvasDimensions.width);
-      const heightDiff = Math.abs(existingGridDimensions.height - canvasDimensions.height);
-      
-      // If dimensions are similar (within 5%), just return existing grid
-      if (widthDiff < canvasDimensions.width * 0.05 && heightDiff < canvasDimensions.height * 0.05) {
-        console.log("Grid dimensions similar, reusing existing grid");
-        return gridLayerRef.current;
-      }
+    const widthDiff = Math.abs(lastGridDimensions.width - canvasDimensions.width);
+    const heightDiff = Math.abs(lastGridDimensions.height - canvasDimensions.height);
+    
+    if (widthDiff < lastGridDimensions.width * 0.05 && 
+        heightDiff < lastGridDimensions.height * 0.05) {
+      console.log("Grid dimensions similar, reusing existing grid");
+      return gridLayerRef.current;
     }
   }
   
@@ -83,6 +82,9 @@ export const createGrid = (
     const gridObjects: any[] = [];
     const canvasWidth = canvas.getWidth() || canvasDimensions.width;
     const canvasHeight = canvas.getHeight() || canvasDimensions.height;
+    
+    // Store the current dimensions for future comparison
+    lastGridDimensions = { width: canvasWidth, height: canvasHeight };
     
     console.log(`Canvas dimensions for grid: ${canvasWidth}x${canvasHeight}`);
     
