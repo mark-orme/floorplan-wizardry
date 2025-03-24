@@ -1,10 +1,9 @@
-
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
  * @module useDrawingState
  */
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
 import { Point } from "@/utils/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
@@ -79,7 +78,7 @@ export const useDrawingState = ({
       cursorPosition: absolutePosition
     });
     
-    console.log("Drawing started at:", startPoint);
+    console.log("Drawing started at:", startPoint, "with tool:", tool);
   }, [fabricCanvasRef, tool, cleanupTimeouts]);
 
   // Mouse move handler
@@ -109,12 +108,16 @@ export const useDrawingState = ({
       currentPoint,
       cursorPosition: absolutePosition
     }));
+    
+    console.log("Drawing moved to:", currentPoint, "with tool:", tool);
   }, [drawingState.isDrawing, fabricCanvasRef, tool]);
 
   // Mouse up handler
   const handleMouseUp = useCallback(() => {
-    // Reset drawing state after a small delay to allow for tooltip visibility
+    // Keep the drawing state active for a moment to ensure the tooltip is visible
     cleanupTimeouts();
+    
+    console.log("Drawing ended, keeping state active briefly");
     
     timeoutRef.current = window.setTimeout(() => {
       setDrawingState({
@@ -123,9 +126,23 @@ export const useDrawingState = ({
         currentPoint: null,
         cursorPosition: null
       });
+      console.log("Drawing state reset");
       timeoutRef.current = null;
-    }, 300); // Short delay to keep tooltip visible briefly after drawing ends
+    }, 500); // Longer delay to keep tooltip visible after drawing ends
   }, [cleanupTimeouts]);
+
+  // Make sure to update drawing state when tool changes
+  useEffect(() => {
+    if (tool !== 'straightLine' && tool !== 'room' && drawingState.isDrawing) {
+      cleanupTimeouts();
+      setDrawingState({
+        isDrawing: false,
+        startPoint: null,
+        currentPoint: null,
+        cursorPosition: null
+      });
+    }
+  }, [tool, drawingState.isDrawing, cleanupTimeouts]);
 
   return {
     drawingState,

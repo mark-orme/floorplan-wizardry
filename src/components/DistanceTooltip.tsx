@@ -22,6 +22,9 @@ export const DistanceTooltip = memo(({
   isVisible,
   position
 }: DistanceTooltipProps) => {
+  // Debug the tooltip visibility conditions
+  console.log("Tooltip props:", { isVisible, startPoint, currentPoint, position });
+  
   if (!isVisible || !startPoint || !currentPoint) {
     return null;
   }
@@ -31,8 +34,8 @@ export const DistanceTooltip = memo(({
   const dy = currentPoint.y - startPoint.y;
   const distanceInMeters = Math.sqrt(dx * dx + dy * dy);
   
-  // Only display tooltip if distance is significant (avoid flickering for very small movements)
-  if (distanceInMeters < 0.05) {
+  // Lower threshold to ensure tooltip appears more consistently
+  if (distanceInMeters < 0.01) {
     return null;
   }
   
@@ -43,7 +46,8 @@ export const DistanceTooltip = memo(({
         left: `${position.x + 20}px`, 
         top: `${position.y + 20}px`,
         transform: `translate3d(0,0,0)`, // Hardware acceleration
-        willChange: "transform" // Hint for browser optimization
+        willChange: "transform", // Hint for browser optimization
+        boxShadow: "0 0 0 2px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.3)" // More visible outline
       }}
     >
       <div className="flex items-center gap-2 text-sm whitespace-nowrap">

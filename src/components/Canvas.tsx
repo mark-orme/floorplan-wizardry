@@ -62,23 +62,14 @@ export const Canvas = () => {
   // Log drawing state for debugging when relevant changes occur
   useEffect(() => {
     if (drawingState?.isDrawing) {
-      console.log("Drawing state updated:", 
-        drawingState.isDrawing, 
-        drawingState.startPoint, 
-        drawingState.currentPoint
-      );
+      console.log("Drawing state updated in Canvas:", {
+        isDrawing: drawingState.isDrawing,
+        startPoint: drawingState.startPoint,
+        currentPoint: drawingState.currentPoint,
+        tool
+      });
     }
-  }, [drawingState?.isDrawing, drawingState?.startPoint, drawingState?.currentPoint]);
-
-  // Memoize the tooltip component to prevent unnecessary re-renders
-  const tooltipComponent = useMemo(() => (
-    <DistanceTooltip
-      startPoint={drawingState?.startPoint}
-      currentPoint={drawingState?.currentPoint}
-      isVisible={!!drawingState?.isDrawing && (tool === "straightLine" || tool === "room")}
-      position={drawingState?.cursorPosition || { x: 0, y: 0 }}
-    />
-  ), [drawingState, tool]);
+  }, [drawingState?.isDrawing, drawingState?.startPoint, drawingState?.currentPoint, tool]);
 
   // Load initial data only once across all renders
   useEffect(() => {
@@ -117,6 +108,16 @@ export const Canvas = () => {
     }
   }, [debugInfo, loadTimes]);
 
+  // Debug tooltip visibility conditions
+  const isTooltipVisible = !!drawingState?.isDrawing && (tool === "straightLine" || tool === "room");
+  useEffect(() => {
+    console.log("Tooltip visibility check:", {
+      isDrawing: !!drawingState?.isDrawing,
+      tool,
+      isVisible: isTooltipVisible
+    });
+  }, [drawingState?.isDrawing, tool, isTooltipVisible]);
+
   return (
     <LoadingErrorWrapper
       isLoading={isLoading}
@@ -148,7 +149,12 @@ export const Canvas = () => {
         
         {/* Render tooltip in a fixed position relative to the viewport */}
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
-          {tooltipComponent}
+          <DistanceTooltip
+            startPoint={drawingState?.startPoint}
+            currentPoint={drawingState?.currentPoint}
+            isVisible={!!drawingState?.isDrawing && (tool === "straightLine" || tool === "room")}
+            position={drawingState?.cursorPosition || { x: 0, y: 0 }}
+          />
         </div>
       </div>
     </LoadingErrorWrapper>
