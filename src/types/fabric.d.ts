@@ -7,4 +7,10 @@ declare module 'fabric' {
   }
 }
 
-// Add any additional custom type extensions here if needed
+// Ensure correct typing for various methods and properties
+declare module 'fabric' {
+  // Add any custom extensions to Fabric types if needed
+  interface Canvas {
+    contains(object: FabricObject): boolean;
+  }
+}
