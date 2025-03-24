@@ -5,6 +5,7 @@
  */
 import { useCallback } from "react";
 import { FloorPlan, PaperSize } from "@/utils/drawing";
+import { toast } from "sonner";
 
 interface UseFloorPlanLoaderProps {
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -32,14 +33,17 @@ export const useFloorPlanLoader = ({
    */
   const loadFloorPlansData = useCallback(async () => {
     try {
-      console.log("Loading floor plans...");
+      console.log("Loading floor plans data...");
       setIsLoading(true);
+      setHasError(false); // Reset error state before loading
+      
       const plans = await loadData();
       
       // If plans exist, load them, otherwise create a default
       if (plans && plans.length > 0) {
         setFloorPlans(plans);
-        console.log("Floor plans loaded:", plans);
+        console.log("Floor plans loaded successfully:", plans.length);
+        toast.success("Floor plans loaded successfully");
       } else {
         // Create a default floor plan with a properly typed paperSize
         const defaultPlan = [{
@@ -49,16 +53,17 @@ export const useFloorPlanLoader = ({
         }];
         setFloorPlans(defaultPlan);
         console.log("Created default floor plan");
+        toast.info("No saved floor plans found. Created new default plan.");
       }
       
       setIsLoading(false);
-      setHasError(false);
       return true;
     } catch (error) {
       console.error("Error loading floor plans:", error);
       setHasError(true);
-      setErrorMessage("Failed to load floor plans");
+      setErrorMessage("Failed to load floor plans. Please try again.");
       setIsLoading(false);
+      toast.error("Failed to load floor plans");
       return false;
     }
   }, [loadData, setFloorPlans, setHasError, setErrorMessage, setIsLoading]);

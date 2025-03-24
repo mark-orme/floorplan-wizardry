@@ -41,50 +41,41 @@ interface CanvasStateReturn {
  * @returns Canvas state and setters
  */
 export const useCanvasState = (): CanvasStateReturn => {
-  // Default to "select" tool instead of "none"
+  // Initial tool is "select" by default
   const [tool, setTool] = useState<DrawingTool>("select");
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [gia, setGia] = useState<number>(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   const [currentFloor, setCurrentFloor] = useState<number>(0);
+  // Start with loading true until the data is loaded
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({ width: 800, height: 600 });
+  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({ 
+    width: window.innerWidth > 800 ? 800 : window.innerWidth - 40, 
+    height: 600 
+  });
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>("#000000");
   
-  // Initial tool is now "select" instead of "none"
+  // Log when state is initialized
   useEffect(() => {
-    console.log("Initial tool set to select");
+    console.log("Canvas state initialized with select tool");
   }, []);
 
   return {
-    // Tool state
     tool,
     setTool,
-    
-    // Zoom state
     zoomLevel,
     setZoomLevel,
-    
-    // Measurement state
     gia,
     setGia,
-    
-    // Floor plans state
     floorPlans,
     setFloorPlans,
     currentFloor,
     setCurrentFloor,
-    
-    // Loading state
     isLoading,
     setIsLoading,
-    
-    // Canvas dimensions
     canvasDimensions,
     setCanvasDimensions,
-    
-    // Line settings
     lineThickness,
     setLineThickness,
     lineColor,

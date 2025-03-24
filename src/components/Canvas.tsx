@@ -1,3 +1,4 @@
+
 /**
  * Main Canvas component for floor plan drawing
  * Orchestrates the canvas setup, grid creation, and drawing tools
@@ -15,12 +16,12 @@ import { DistanceTooltip } from "./DistanceTooltip";
  * @returns {JSX.Element} Rendered component
  */
 export const Canvas = () => {
-  // Track initialization with refs instead of module-level variables
+  // Track initialization with refs
   const appInitializedRef = useRef(false);
   const initialDataLoadedRef = useRef(false);
   const isFirstMountRef = useRef(true);
   
-  // Define all hooks at the top level, never conditionally
+  // Get all controller hooks and state
   const {
     tool,
     gia,
@@ -48,43 +49,32 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
-  // We now default to select tool on initial load
+  // Default to select tool on initial load
   useEffect(() => {
     if (isFirstMountRef.current && !isLoading && debugInfo.canvasInitialized) {
-      console.log("Using default tool: select");
+      console.log("Canvas initialized, setting default tool: select");
       handleToolChange("select");
       isFirstMountRef.current = false;
     }
   }, [isLoading, debugInfo.canvasInitialized, handleToolChange]);
 
-  // Load initial data only once across all renders
+  // Load initial data once
   useEffect(() => {
-    // Skip initialization if already done or component is remounting
+    // Skip if already initialized
     if (!isFirstMountRef.current || (appInitializedRef.current && initialDataLoadedRef.current)) {
       return;
     }
     
-    console.log("Loading initial data");
-    loadData();
+    console.log("Loading initial data for canvas");
+    loadData().catch(err => console.error("Error loading initial data:", err));
     appInitializedRef.current = true;
     initialDataLoadedRef.current = true;
   }, [loadData]);
 
-  // Determine tooltip visibility - show when drawing or in select mode with an active selection
+  // Determine tooltip visibility conditions
   const isTooltipVisible = 
-    // Always show during active drawing with straightLine or room tools
     (drawingState?.isDrawing && (tool === "straightLine" || tool === "room")) ||
-    // Also show when in select mode and actively manipulating a line
     (tool === "select" && drawingState?.isDrawing);
-  
-  // Log tooltip visibility for debugging
-  useEffect(() => {
-    console.log("Tooltip visibility check:", {
-      isDrawing: !!drawingState?.isDrawing,
-      tool,
-      isVisible: isTooltipVisible
-    });
-  }, [drawingState?.isDrawing, tool, isTooltipVisible]);
 
   return (
     <LoadingErrorWrapper
@@ -115,7 +105,7 @@ export const Canvas = () => {
           onLineColorChange={handleLineColorChange}
         />
         
-        {/* Render tooltip in a fixed position relative to the viewport */}
+        {/* Tooltip for measurements */}
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
           <DistanceTooltip
             startPoint={drawingState?.startPoint}
