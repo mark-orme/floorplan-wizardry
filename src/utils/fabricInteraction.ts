@@ -1,10 +1,10 @@
-
 /**
  * Utilities for canvas interaction handling (panning, zooming, etc.)
  * @module fabricInteraction
  */
-import { Canvas, Point as FabricPoint } from "fabric";
+import { Canvas, Point as FabricPoint, Object as FabricObject } from "fabric";
 import { Point } from "./drawingTypes";
+import { PIXELS_PER_METER } from "./drawing";
 
 // Define a simple point interface for internal use
 interface SimplePoint {
@@ -206,4 +206,84 @@ export const snapToAngle = (startPoint: Point, endPoint: Point, angleThreshold: 
   
   // If not within threshold, return the original endpoint
   return endPoint;
+};
+
+/**
+ * Enable selection and editing mode on the canvas
+ * @param {Canvas} fabricCanvas - The Fabric canvas instance
+ * @param {Function} onSelect - Callback when object is selected
+ * @param {Function} onModified - Callback when object is modified
+ */
+export const enableSelection = (
+  fabricCanvas: Canvas, 
+  onSelect?: (obj: FabricObject | null) => void,
+  onModified?: (obj: FabricObject) => void
+) => {
+  if (!fabricCanvas) return;
+
+  try {
+    fabricCanvas.selection = true;
+    fabricCanvas.hoverCursor = 'pointer';
+    
+    // Enable object selection
+    fabricCanvas.on('selection:created', (e) => {
+      const obj = e.selected?.[0];
+      if (obj) {
+        obj.setControlsVisibility({
+          mtr: false, // Disable rotation
+          ml: true,   // Enable left control
+          mr: true,   // Enable right control
+          mt: false,  // Disable top control
+          mb: false   // Disable bottom control
+        });
+        onSelect?.(obj);
+      }
+    });
+
+    fabricCanvas.on('selection:cleared', () => {
+      onSelect?.(null);
+    });
+
+    // Track modifications
+    fabricCanvas.on('object:modified', (e) => {
+      const obj = e.target;
+      if (obj) {
+        onModified?.(obj);
+      }
+    });
+
+    // Show line length tooltip during editing
+    fabricCanvas.on('object:scaling', (e) => {
+      const obj = e.target;
+      if (!obj) return;
+
+      const points = obj.points || [];
+      if (points.length >= 2) {
+        const startPoint = { x: points[0].x / PIXELS_PER_METER, y: points[0].y / PIXELS_PER_METER };
+        const endPoint = { x: points[points.length - 1].x / PIXELS_PER_METER, y: points[points.length - 1].y / PIXELS_PER_METER };
+        // The object's event will be handled by useDrawingState to show tooltip
+        fabricCanvas.fire('line:scaling', { startPoint, endPoint });
+      }
+    });
+
+  } catch (error) {
+    console.error("Failed to enable selection:", error);
+  }
+};
+
+/**
+ * Disable selection mode on the canvas
+ * @param {Canvas} fabricCanvas - The Fabric canvas instance
+ */
+export const disableSelection = (fabricCanvas: Canvas) => {
+  if (!fabricCanvas) return;
+  
+  try {
+    fabricCanvas.selection = false;
+    fabricCanvas.discardActiveObject();
+    fabricCanvas.requestRenderAll();
+    fabricCanvas.hoverCursor = 'default';
+  } catch (error) {
+    console.error("Failed to disable selection:", error);
+  }
 };

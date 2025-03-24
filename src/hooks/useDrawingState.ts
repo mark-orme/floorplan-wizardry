@@ -131,6 +131,32 @@ export const useDrawingState = ({
     }, 500); // Longer delay to keep tooltip visible after drawing ends
   }, [cleanupTimeouts]);
 
+  // Add handler for line scaling events
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const handleLineScaling = (e: any) => {
+      if (tool === 'select') {
+        setDrawingState({
+          isDrawing: true,
+          startPoint: e.startPoint,
+          currentPoint: e.endPoint,
+          cursorPosition: { 
+            x: e.e?.clientX || 0, 
+            y: e.e?.clientY || 0 
+          }
+        });
+      }
+    };
+
+    canvas.on('line:scaling', handleLineScaling);
+    
+    return () => {
+      canvas.off('line:scaling', handleLineScaling);
+    };
+  }, [fabricCanvasRef, tool]);
+
   // Make sure to update drawing state when tool changes
   useEffect(() => {
     if (tool !== 'straightLine' && tool !== 'room' && drawingState.isDrawing) {

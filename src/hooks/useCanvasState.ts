@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for centralized canvas state management
  * @module useCanvasState
@@ -7,9 +6,9 @@ import { useState, useEffect } from "react";
 import { FloorPlan } from "@/utils/drawing";
 
 /**
- * Type for drawing tools including the new hand tool
+ * Type for drawing tools including the select tool
  */
-export type DrawingTool = "draw" | "room" | "straightLine" | "hand";
+export type DrawingTool = "draw" | "room" | "straightLine" | "hand" | "select";
 
 /**
  * Hook for managing canvas state

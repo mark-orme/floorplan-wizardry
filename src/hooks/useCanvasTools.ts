@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
@@ -9,6 +8,7 @@ import { toast } from "sonner";
 import { clearCanvasObjects } from "@/utils/fabricHelpers";
 import { enablePanning } from "@/utils/fabric";
 import { DrawingTool } from "./useCanvasState";
+import { enableSelection, disableSelection } from "@/utils/fabricInteraction";
 
 interface UseCanvasToolsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -64,85 +64,87 @@ export const useCanvasTools = ({
    * @param {DrawingTool} newTool - The tool to switch to
    */
   const handleToolChange = useCallback((newTool: DrawingTool) => {
-    setTool(newTool);
-    if (fabricCanvasRef.current) {
-      // Set drawing mode based on the tool selected
-      const isDrawingTool = newTool !== "hand";
-      fabricCanvasRef.current.isDrawingMode = isDrawingTool;
-      
-      // Configure the hand tool for panning when selected
-      enablePanning(fabricCanvasRef.current, newTool === "hand");
-      
-      // Set appropriate brush for drawing tools
-      if (isDrawingTool) {
-        fabricCanvasRef.current.freeDrawingBrush = new PencilBrush(fabricCanvasRef.current);
-        fabricCanvasRef.current.freeDrawingBrush.color = lineColor;
-        fabricCanvasRef.current.freeDrawingBrush.width = lineThickness;
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Disable current tool settings
+    canvas.isDrawingMode = false;
+    disableSelection(canvas);
+    
+    // Enable new tool settings
+    switch (newTool) {
+      case "draw":
+      case "straightLine":
+        canvas.isDrawingMode = true;
+        break;
+      case "select":
+        enableSelection(canvas);
+        break;
+      case "hand":
+        // Set drawing mode based on the tool selected
+        const isDrawingTool = newTool !== "hand";
+        canvas.isDrawingMode = isDrawingTool;
         
-        // Adjust the smoothness and precision of the drawing
-        if (fabricCanvasRef.current.freeDrawingBrush instanceof PencilBrush) {
-          // Slightly lower the decimate parameter for more points (better auto-straightening)
-          fabricCanvasRef.current.freeDrawingBrush.decimate = 2;
+        // Configure the hand tool for panning when selected
+        enablePanning(fabricCanvasRef.current, newTool === "hand");
+        
+        // Set appropriate brush for drawing tools
+        if (isDrawingTool) {
+          canvas.freeDrawingBrush = new PencilBrush(canvas);
+          canvas.freeDrawingBrush.color = lineColor;
+          canvas.freeDrawingBrush.width = lineThickness;
+          
+          // Adjust the smoothness and precision of the drawing
+          if (canvas.freeDrawingBrush instanceof PencilBrush) {
+            // Slightly lower the decimate parameter for more points (better auto-straightening)
+            canvas.freeDrawingBrush.decimate = 2;
+          }
         }
-      }
-      
-      // Ensure grid elements are in the correct z-order
-      const gridElements = gridLayerRef.current;
-      const allObjects = fabricCanvasRef.current.getObjects();
-      
-      // Find grid markers (scale indicators)
-      const gridMarkers = gridElements.filter(obj => 
-        obj.type === 'line' && obj.strokeWidth === 2 || 
-        obj.type === 'text');
-      
-      // Find grid lines
-      const gridLines = gridElements.filter(obj => 
-        obj.type === 'line' && obj.strokeWidth !== 2);
-      
-      // First send all grid lines to the back
-      gridLines.forEach(line => {
-        fabricCanvasRef.current!.sendObjectToBack(line);
-      });
-      
-      // Then bring markers above grid lines but below drawings
-      const drawingObjects = allObjects.filter(obj => 
-        obj.type === 'polyline' || obj.type === 'path');
         
-      if (drawingObjects.length > 0) {
-        // Place markers below the lowest drawing object
-        gridMarkers.forEach(marker => {
-          const canvas = fabricCanvasRef.current!;
-          const targetIndex = canvas.getObjects().indexOf(drawingObjects[0]);
-          // Use Canvas's chainable methods safely
-          if (typeof canvas.moveTo === 'function') {
-            canvas.moveTo(marker, targetIndex);
-          } else {
-            // Fallback if moveTo doesn't exist
-            console.warn("Canvas.moveTo not available, using alternative layer arrangement");
-            canvas.bringObjectToFront(marker);
-            drawingObjects.forEach(drawing => {
-              canvas.bringObjectToFront(drawing);
-            });
+        // Ensure grid elements are in the correct z-order
+        const gridElements = gridLayerRef.current;
+        const allObjects = fabricCanvasRef.current.getObjects();
+        
+        // Find grid markers (scale indicators)
+        const gridMarkers = gridElements.filter(obj => 
+          obj.type === 'line' && obj.strokeWidth === 2 || 
+          obj.type === 'text');
+        
+        // Find grid lines
+        const gridLines = gridElements.filter(obj => 
+          obj.type === 'line' && obj.strokeWidth !== 2);
+        
+        // First send all grid lines to the back
+        gridLines.forEach(line => {
+          if (fabricCanvasRef.current?.contains(line)) {
+            fabricCanvasRef.current.sendObjectToBack(line);
           }
         });
-      } else {
-        // If no drawings, bring markers to front
+        
+        // Then bring markers to the front
         gridMarkers.forEach(marker => {
-          fabricCanvasRef.current!.bringObjectToFront(marker);
+          if (fabricCanvasRef.current?.contains(marker)) {
+            fabricCanvasRef.current.bringObjectToFront(marker);
+          }
         });
-      }
-      
-      fabricCanvasRef.current.renderAll();
-      
-      // Provide user feedback
-      const toolNames = {
-        "draw": "Freehand (with auto-straightening)",
-        "room": "Room",
-        "straightLine": "Wall",
-        "hand": "Hand (Pan)"
-      };
-      toast.success(`${toolNames[newTool]} tool selected`);
+        
+        fabricCanvasRef.current.renderAll();
+        
+        // Provide user feedback
+        const toolNames = {
+          "draw": "Freehand (with auto-straightening)",
+          "room": "Room",
+          "straightLine": "Wall",
+          "hand": "Hand (Pan)"
+        };
+        toast.success(`${toolNames[newTool]} tool selected`);
+        break;
+      default:
+        canvas.isDrawingMode = true;
     }
+    
+    setTool(newTool);
   }, [fabricCanvasRef, gridLayerRef, setTool, lineThickness, lineColor]);
 
   /**
