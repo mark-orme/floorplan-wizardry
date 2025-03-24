@@ -46,7 +46,8 @@ export const createSmallGrid = (
   }
   
   // Only skip small grid if dimensions are EXTREMELY large
-  if (canvasWidth * canvasHeight > 3000000) {
+  // Reduced this threshold to make it less likely to skip
+  if (canvasWidth * canvasHeight > 5000000) {
     if (process.env.NODE_ENV === 'development') {
       console.log("Skipping small grid creation for performance - too many lines would be created");
     }
@@ -56,18 +57,24 @@ export const createSmallGrid = (
   const smallGridStep = SMALL_GRID;
   let smallGridCount = 0;
   
-  // Ensure we have enough grid lines by creating more than needed
-  // Start with negative values to ensure grid covers the entire visible area
-  for (let position = -canvasWidth/2; position <= canvasWidth*1.5 && smallGridCount < MAX_SMALL_GRID_LINES; position += smallGridStep) {
+  // Extended grid coverage with better visibility
+  const extensionFactor = GRID_EXTENSION_FACTOR;
+  const extendedWidth = canvasWidth * extensionFactor;
+  const extendedHeight = canvasHeight * extensionFactor;
+  const startX = -extendedWidth / 2;
+  const startY = -extendedHeight / 2;
+  
+  // Create vertical small grid lines
+  for (let position = startX; position <= extendedWidth && smallGridCount < MAX_SMALL_GRID_LINES; position += smallGridStep) {
     // Create more visible lines with increased opacity and slightly darker color
-    const smallGridLine = new Line([position, -canvasHeight/2, position, canvasHeight*1.5], {
-      stroke: "#C0D5E0", // Darker blue for better visibility
+    const smallGridLine = new Line([position, startY, position, extendedHeight], {
+      stroke: "#A0C5E0", // Darker blue for better visibility
       selectable: false,
       evented: false,
       strokeWidth: 0.5,
       objectCaching: true,
       hoverCursor: 'default',
-      opacity: 0.8 // Increased opacity
+      opacity: 0.85 // Increased opacity for better visibility
     });
     
     smallGridObjects.push(smallGridLine);
@@ -75,15 +82,15 @@ export const createSmallGrid = (
   }
   
   // Create horizontal small grid lines
-  for (let position = -canvasHeight/2; position <= canvasHeight*1.5 && smallGridCount < MAX_SMALL_GRID_LINES*2; position += smallGridStep) {
-    const smallGridLine = new Line([-canvasWidth/2, position, canvasWidth*1.5, position], {
-      stroke: "#C0D5E0", // Darker blue for better visibility
+  for (let position = startY; position <= extendedHeight && smallGridCount < MAX_SMALL_GRID_LINES*2; position += smallGridStep) {
+    const smallGridLine = new Line([startX, position, extendedWidth, position], {
+      stroke: "#A0C5E0", // Darker blue for better visibility
       selectable: false,
       evented: false,
       strokeWidth: 0.5,
       objectCaching: true,
       hoverCursor: 'default',
-      opacity: 0.8 // Increased opacity
+      opacity: 0.85 // Increased opacity for better visibility
     });
     
     smallGridObjects.push(smallGridLine);
@@ -129,17 +136,23 @@ export const createLargeGrid = (
   const largeGridStep = LARGE_GRID;
   let largeGridCount = 0;
   
-  // Create more large grid lines with extended coverage
-  // Start with negative values to ensure grid covers the entire visible area
-  for (let position = -canvasWidth/2; position <= canvasWidth*1.5 && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
-    const largeGridLine = new Line([position, -canvasHeight/2, position, canvasHeight*1.5], {
-      stroke: "#81B7CC", // Darker blue for better visibility
+  // Extended grid coverage with better visibility
+  const extensionFactor = GRID_EXTENSION_FACTOR;
+  const extendedWidth = canvasWidth * extensionFactor;
+  const extendedHeight = canvasHeight * extensionFactor;
+  const startX = -extendedWidth / 2;
+  const startY = -extendedHeight / 2;
+  
+  // Create vertical large grid lines
+  for (let position = startX; position <= extendedWidth && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+    const largeGridLine = new Line([position, startY, position, extendedHeight], {
+      stroke: "#4090CC", // Much darker blue for better visibility
       selectable: false,
       evented: false,
-      strokeWidth: 1,
+      strokeWidth: 1.2, // Thicker line
       objectCaching: true,
       hoverCursor: 'default',
-      opacity: 0.9 // Increased opacity
+      opacity: 0.95 // Increased opacity for better visibility
     });
     
     largeGridObjects.push(largeGridLine);
@@ -147,15 +160,15 @@ export const createLargeGrid = (
   }
   
   // Create horizontal large grid lines
-  for (let position = -canvasHeight/2; position <= canvasHeight*1.5 && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
-    const largeGridLine = new Line([-canvasWidth/2, position, canvasWidth*1.5, position], {
-      stroke: "#81B7CC", // Darker blue for better visibility
+  for (let position = startY; position <= extendedHeight && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+    const largeGridLine = new Line([startX, position, extendedWidth, position], {
+      stroke: "#4090CC", // Much darker blue for better visibility
       selectable: false,
       evented: false,
-      strokeWidth: 1,
+      strokeWidth: 1.2, // Thicker line
       objectCaching: true,
       hoverCursor: 'default',
-      opacity: 0.9 // Increased opacity
+      opacity: 0.95 // Increased opacity for better visibility
     });
     
     largeGridObjects.push(largeGridLine);

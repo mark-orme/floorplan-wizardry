@@ -4,7 +4,7 @@
  * Handles grid creation, caching, and lifecycle management
  * @module useCanvasGrid
  */
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
 import { 
@@ -55,9 +55,19 @@ export const useCanvasGrid = ({
 }: UseCanvasGridProps): GridCreationCallback => {
   // Track grid creation attempts
   const attemptCountRef = useRef<number>(0);
-  const MAX_ATTEMPTS = 5; // Increased from 3 to 5
+  const MAX_ATTEMPTS = 7; // Increased from 5 to 7
   const lastAttemptTimeRef = useRef<number>(0);
-  const MIN_ATTEMPT_INTERVAL = 200; // Minimum time between attempts in ms
+  const MIN_ATTEMPT_INTERVAL = 150; // Reduced from 200 to 150ms
+  
+  // Use the useEffect cleanup to ensure we reset the grid progress
+  useEffect(() => {
+    return () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Cleaning up grid creation - resetting progress flags");
+      }
+      resetGridProgress();
+    };
+  }, []);
   
   /**
    * Create grid lines on the canvas
@@ -84,12 +94,20 @@ export const useCanvasGrid = ({
       return [];
     }
     
-    // Throttle rapid creation attempts
+    // Throttle rapid creation attempts but reduce throttling time
     const now = Date.now();
     if (now - lastAttemptTimeRef.current < MIN_ATTEMPT_INTERVAL) {
       if (process.env.NODE_ENV === 'development') {
         console.log("Throttling grid creation - too many rapid attempts");
       }
+      
+      // Even if throttled, schedule a retry after the throttle interval
+      setTimeout(() => {
+        if (!canvas) return;
+        resetGridProgress();
+        createGridCallback(canvas);
+      }, MIN_ATTEMPT_INTERVAL + 50);
+      
       return gridLayerRef.current;
     }
     
@@ -131,7 +149,7 @@ export const useCanvasGrid = ({
         return grid;
       } else if (attemptCountRef.current < MAX_ATTEMPTS) {
         // Schedule a retry with exponential backoff
-        const delay = Math.min(200 * Math.pow(1.5, attemptCountRef.current), 3000);
+        const delay = Math.min(100 * Math.pow(1.5, attemptCountRef.current), 2000);
         
         if (process.env.NODE_ENV === 'development') {
           console.log(`Scheduling grid creation retry in ${delay}ms`);
@@ -146,6 +164,15 @@ export const useCanvasGrid = ({
         if (process.env.NODE_ENV === 'development') {
           console.warn("Reached maximum grid creation attempts");
         }
+        
+        // Additional fallback: Create basic emergency grid
+        const emergencyGrid = createBasicEmergencyGrid(canvas);
+        if (emergencyGrid.length > 0) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Created emergency basic grid");
+          }
+          return emergencyGrid;
+        }
       }
       
       return gridLayerRef.current;
@@ -156,9 +183,94 @@ export const useCanvasGrid = ({
       setHasError(true);
       setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);
       
+      // Try one more time with a delay before giving up
+      if (attemptCountRef.current < MAX_ATTEMPTS) {
+        setTimeout(() => {
+          resetGridProgress();
+          createGridCallback(canvas);
+        }, 500);
+      }
+      
       return gridLayerRef.current;
     }
   }, [canvasDimensions, gridLayerRef, setDebugInfo, setHasError, setErrorMessage]);
+  
+  /**
+   * Create a very basic emergency grid when all else fails
+   * This is a simplified grid with minimal objects to ensure something is visible
+   * 
+   * @param {FabricCanvas} canvas - The Fabric canvas instance
+   * @returns {FabricObject[]} Simple emergency grid objects
+   */
+  const createBasicEmergencyGrid = (canvas: FabricCanvas): FabricObject[] => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Creating emergency basic grid");
+    }
+    
+    const emergencyGrid: FabricObject[] = [];
+    
+    try {
+      const width = canvas.width || 800;
+      const height = canvas.height || 600;
+      
+      // Create a simple grid with just a few lines
+      for (let x = 0; x <= width; x += 100) {
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: '#CCDDEE',
+          selectable: false,
+          evented: false,
+          strokeWidth: x % 500 === 0 ? 1.5 : 0.5
+        });
+        canvas.add(line);
+        emergencyGrid.push(line);
+      }
+      
+      for (let y = 0; y <= height; y += 100) {
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: '#CCDDEE',
+          selectable: false,
+          evented: false,
+          strokeWidth: y % 500 === 0 ? 1.5 : 0.5
+        });
+        canvas.add(line);
+        emergencyGrid.push(line);
+      }
+      
+      // Add a scale marker
+      const markerLine = new fabric.Line([width - 120, height - 30, width - 20, height - 30], {
+        stroke: "#000000",
+        strokeWidth: 3,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(markerLine);
+      emergencyGrid.push(markerLine);
+      
+      const markerText = new fabric.Text("1m", {
+        left: width - 70,
+        top: height - 45,
+        fontSize: 16,
+        fontWeight: 'bold',
+        fill: "#000000",
+        selectable: false,
+        evented: false
+      });
+      canvas.add(markerText);
+      emergencyGrid.push(markerText);
+      
+      canvas.requestRenderAll();
+      
+      // Update the grid layer ref
+      gridLayerRef.current = emergencyGrid;
+      
+      return emergencyGrid;
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error creating emergency grid:", error);
+      }
+      return [];
+    }
+  };
 
   return createGridCallback;
 };

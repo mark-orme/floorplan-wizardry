@@ -1,11 +1,14 @@
 /**
- * Shared type definitions for drawing functionality
+ * Drawing types module
+ * Defines interfaces and types for canvas drawing and floor plan management
  * @module drawingTypes
  */
-import { Object as FabricObject, Canvas as FabricCanvas } from "fabric";
+
+import { Object as FabricObject } from 'fabric';
 
 /**
- * Point coordinates in 2D space
+ * Represents a point with x and y coordinates
+ * @interface Point
  */
 export interface Point {
   x: number;
@@ -13,49 +16,8 @@ export interface Point {
 }
 
 /**
- * Drawing state for tracking the current drawing operation
- */
-export interface DrawingState {
-  isDrawing: boolean;
-  startPoint?: Point | null;
-  currentPoint?: Point | null;
-  cursorPosition?: Point | null;
-  midPoint?: Point | null;
-  currentZoom?: number; // Add currentZoom property for tooltip
-}
-
-/**
- * Grid creation results
- */
-export interface GridCreationResult {
-  success: boolean;
-  gridObjects: Array<FabricObject>;
-  smallGridLines: Array<FabricObject>;
-  largeGridLines: Array<FabricObject>;
-  markers: Array<FabricObject>;
-}
-
-/**
- * Canvas performance metrics
- */
-export interface CanvasLoadTimes {
-  startTime: number;
-  canvasReady: number;
-  gridCreated: number;
-}
-
-/**
- * Grid cell structure
- */
-export interface GridCell {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * Canvas dimensions
+ * Represents the dimensions of the canvas
+ * @interface CanvasDimensions
  */
 export interface CanvasDimensions {
   width: number;
@@ -63,7 +25,20 @@ export interface CanvasDimensions {
 }
 
 /**
- * Debug information structure
+ * Represents a floor plan with its properties
+ * @interface FloorPlan
+ */
+export interface FloorPlan {
+  id: number;
+  name: string;
+  svgData: string;
+  gia: number;
+  objects?: FabricObject[];
+}
+
+/**
+ * Represents the state of debug information
+ * @interface DebugInfoState
  */
 export interface DebugInfoState {
   canvasInitialized: boolean;
@@ -73,61 +48,69 @@ export interface DebugInfoState {
 }
 
 /**
- * Grid manager configuration and state
+ * Represents the drawing state with start and current points
+ * @interface DrawingState
+ */
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint: Point | null;
+  currentPoint: Point | null;
+  cursorPosition: Point | null;
+  midPoint: Point | null;
+}
+
+/**
+ * Represents the available drawing tools
+ * @type DrawingTool
+ */
+export type DrawingTool = "straightLine" | "room" | "select";
+
+/**
+ * Represents a callback function for grid creation
+ * @type GridCreationCallback
+ */
+export type GridCreationCallback = (canvas: fabric.Canvas) => fabric.Object[];
+
+/**
+ * Grid manager state interface
+ * Tracks grid creation state and configuration
  */
 export interface GridManagerState {
+  // Creation time tracking
   lastCreationTime: number;
   inProgress: boolean;
-  lastDimensions: CanvasDimensions;
+  
+  // Dimensions tracking
+  lastDimensions: { width: number, height: number };
+  
+  // Initialization state
   initialized: boolean;
   totalCreations: number;
+  
+  // Configuration
   maxRecreations: number;
   minRecreationInterval: number;
   throttleInterval: number;
+  
+  // Grid state
   exists: boolean;
+  
+  // Batch processing state
   batchTimeoutId: number | null;
+  
+  // Safety timeout (ms) to reset inProgress if creation takes too long
   safetyTimeout: number;
+  
+  // Flags to prevent race conditions
   lastResetTime: number;
   consecutiveResets: number;
   maxConsecutiveResets: number;
+  resetDelay: number; // Added missing property
+  
+  // Track creation locks with timestamp
   creationLock: {
     id: number;
     timestamp: number;
     isLocked: boolean;
-  }
-}
-
-/**
- * Handlers for canvas drawing interactions
- */
-export interface DrawingHandlers {
-  handleMouseDown: (e: any) => void;
-  handleMouseMove: (e: any) => void;
-  handleMouseUp: () => void;
-  cleanupTimeouts: () => void;
-}
-
-/**
- * Grid creation callback type
- */
-export type GridCreationCallback = (canvas: FabricCanvas) => FabricObject[];
-
-/**
- * Path processing callbacks
- */
-export interface PathProcessingCallbacks {
-  processPoints: (points: Point[]) => Point[];
-  convertToPixelPoints: (meterPoints: Point[], zoom?: number) => Point[];
-  convertToMeterPoints: (pixelPoints: Point[], zoom?: number) => Point[];
-  isShapeClosed: (points: Point[]) => boolean;
-}
-
-/**
- * Path processing result
- */
-export interface ProcessedPath {
-  points: Point[];
-  length?: number;
-  area?: number;
-  isClosed?: boolean;
+  };
 }
