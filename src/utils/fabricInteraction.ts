@@ -1,184 +1,162 @@
 
 /**
- * Utilities for Fabric.js interaction handling (gestures, snapping)
+ * Utilities for canvas interaction handling (panning, zooming, etc.)
  * @module fabricInteraction
  */
 import { Canvas } from "fabric";
+import { Point } from "./drawingTypes";
 
 /**
- * Add pinch-to-zoom gesture support
- * @param {Canvas} canvas - The Fabric canvas instance
- * @param {Function} setZoomLevel - Function to update zoom level state
+ * Add pinch-to-zoom gesture support for mobile and trackpad
+ * @param {Canvas} fabricCanvas - The Fabric canvas instance
  */
-export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => void) => {
-  if (!canvas) {
-    console.error("Cannot add pinch-to-zoom: canvas is null");
-    return;
-  }
-  
-  let initialDistance = 0;
-  let initialZoom = 1;
-  
+export const addPinchToZoom = (fabricCanvas: Canvas) => {
   try {
-    // Using standard mouse/pointer events with custom handling for touch
-    canvas.on('mouse:down', (e: any) => {
-      if (e.e && e.e.touches && e.e.touches.length === 2) {
-        initialDistance = Math.hypot(
-          e.e.touches[0].clientX - e.e.touches[1].clientX,
-          e.e.touches[0].clientY - e.e.touches[1].clientY
-        );
-        initialZoom = canvas.getZoom();
-        
-        // Prevent default to avoid page scrolling
-        e.e.preventDefault();
-        console.log("Pinch-to-zoom gesture started");
-      }
+    // Track pinch gesture state
+    let scaling = false;
+    let startDistance = 0;
+    let startZoom = 1;
+    
+    // Listen for gesture events on the canvas
+    fabricCanvas.on("mouse:wheel", (opt) => {
+      const delta = opt.e.deltaY;
+      const zoom = fabricCanvas.getZoom();
+      const newZoom = delta > 0 ? Math.max(0.1, zoom * 0.9) : Math.min(10, zoom * 1.1);
+      
+      // Zoom to point - more natural than zooming to center
+      fabricCanvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, newZoom);
+      
+      // Prevent page scrolling
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
     });
     
-    // Handle the pinch gesture during movement
-    canvas.on('mouse:move', (e: any) => {
-      if (e.e && e.e.touches && e.e.touches.length === 2 && initialDistance > 0) {
-        const currentDistance = Math.hypot(
-          e.e.touches[0].clientX - e.e.touches[1].clientX,
-          e.e.touches[0].clientY - e.e.touches[1].clientY
-        );
-        
-        const scaleFactor = currentDistance / initialDistance;
-        const newZoom = Math.min(3, Math.max(0.5, initialZoom * scaleFactor));
-        
-        canvas.setZoom(newZoom);
-        setZoomLevel(newZoom);
-        
-        // Prevent default to avoid page zooming
-        e.e.preventDefault();
-      }
+    // Handle gesture events for touch devices
+    // Webkit gesture events for Safari and some other mobile browsers
+    const el = fabricCanvas.upperCanvasEl;
+    el.addEventListener('gesturestart', (e) => {
+      e.preventDefault();
+      scaling = true;
+      startDistance = e.scale;
+      startZoom = fabricCanvas.getZoom();
     });
     
-    // Reset the initial values when touch ends
-    canvas.on('mouse:up', () => {
-      initialDistance = 0;
+    el.addEventListener('gesturechange', (e) => {
+      if (!scaling) return;
+      e.preventDefault();
+      
+      const newZoom = Math.min(10, Math.max(0.1, startZoom * (e.scale / startDistance)));
+      const pointer = fabricCanvas.getPointer(e);
+      fabricCanvas.zoomToPoint({ x: pointer.x, y: pointer.y }, newZoom);
+    });
+    
+    el.addEventListener('gestureend', (e) => {
+      e.preventDefault();
+      scaling = false;
     });
     
     console.log("Pinch-to-zoom gesture support added");
   } catch (error) {
-    console.error("Error adding pinch-to-zoom:", error);
+    console.error("Failed to add pinch-to-zoom:", error);
   }
 };
 
 /**
- * Enable hand tool panning functionality
- * @param {Canvas} canvas - The Fabric canvas instance
- * @param {boolean} isPanningMode - Whether panning mode is active
+ * Enable panning on the canvas
+ * @param {Canvas} fabricCanvas - The Fabric canvas instance
  */
-export const enablePanning = (canvas: Canvas, isPanningMode: boolean) => {
-  if (!canvas) {
-    console.error("Cannot enable panning: canvas is null");
-    return;
-  }
-  
+export const enablePanning = (fabricCanvas: Canvas) => {
   try {
-    // Store the last coordinates to calculate the delta movement
+    let isPanning = false;
     let lastPosX = 0;
     let lastPosY = 0;
-    let isDragging = false;
-
-    // Remove any existing event handlers to prevent duplicates
-    canvas.off('mouse:down');
-    canvas.off('mouse:move');
-    canvas.off('mouse:up');
     
-    // Set the cursor style based on the panning mode
-    canvas.defaultCursor = isPanningMode ? 'grab' : 'default';
-    
-    canvas.on('mouse:down', (opt: any) => {
+    fabricCanvas.on('mouse:down', (opt) => {
       const evt = opt.e;
-      
-      // If in panning mode, handle panning logic
-      if (isPanningMode) {
-        isDragging = true;
-        canvas.selection = false; // Disable object selection while panning
-        lastPosX = evt.clientX || 0;
-        lastPosY = evt.clientY || 0;
-        canvas.defaultCursor = 'grabbing'; // Change cursor to grabbing
-        
-        // For touch devices
-        if (evt.touches && evt.touches[0]) {
-          lastPosX = evt.touches[0].clientX;
-          lastPosY = evt.touches[0].clientY;
-        }
-        
-        evt.preventDefault(); // Prevent browser's default drag behavior
-      }
-      
-      // Enable pointer events for all other tools
-      canvas.selection = !isPanningMode;
-    });
-    
-    canvas.on('mouse:move', (opt: any) => {
-      if (isDragging && isPanningMode) {
-        const evt = opt.e;
-        let currentX = evt.clientX || 0;
-        let currentY = evt.clientY || 0;
-        
-        // For touch devices
-        if (evt.touches && evt.touches[0]) {
-          currentX = evt.touches[0].clientX;
-          currentY = evt.touches[0].clientY;
-        }
-        
-        // Calculate how much the mouse/touch has moved
-        const deltaX = currentX - lastPosX;
-        const deltaY = currentY - lastPosY;
-        
-        // Update the last positions
-        lastPosX = currentX;
-        lastPosY = currentY;
-        
-        // Pan the canvas by applying the delta to the viewportTransform
-        const vpt = canvas.viewportTransform;
-        if (vpt) {
-          vpt[4] += deltaX;
-          vpt[5] += deltaY;
-          canvas.requestRenderAll();
-        }
-        
-        evt.preventDefault();
+      // Middle mouse button or spacebar + mouse down for panning
+      if (evt.button === 1 || (evt.keyCode === 32 && evt.button === 0)) {
+        isPanning = true;
+        lastPosX = evt.clientX;
+        lastPosY = evt.clientY;
+        fabricCanvas.setCursor('grabbing');
       }
     });
     
-    canvas.on('mouse:up', () => {
-      // Reset to default state when mouse/touch is released
-      isDragging = false;
-      canvas.defaultCursor = isPanningMode ? 'grab' : 'default';
-      canvas.selection = !isPanningMode;
+    fabricCanvas.on('mouse:move', (opt) => {
+      if (!isPanning) return;
+      
+      const evt = opt.e;
+      const vpt = fabricCanvas.viewportTransform;
+      if (!vpt) return;
+      
+      vpt[4] += evt.clientX - lastPosX;
+      vpt[5] += evt.clientY - lastPosY;
+      
+      fabricCanvas.requestRenderAll();
+      
+      lastPosX = evt.clientX;
+      lastPosY = evt.clientY;
     });
     
-    console.log(`Panning mode ${isPanningMode ? 'enabled' : 'disabled'}`);
+    fabricCanvas.on('mouse:up', () => {
+      isPanning = false;
+      fabricCanvas.setCursor('default');
+    });
+    
+    console.log("Panning enabled on canvas");
   } catch (error) {
-    console.error("Error setting up panning:", error);
+    console.error("Failed to enable panning:", error);
   }
 };
 
 /**
- * Add angle snapping to improve line straightening
- * @param {{ x: number, y: number }} start - Start point
- * @param {{ x: number, y: number }} end - End point
- * @returns {{ x: number, y: number }} Snapped end point
+ * Snap a line to common angles (0, 45, 90 degrees)
+ * 
+ * @param {Point} startPoint - The starting point of the line
+ * @param {Point} endPoint - The current end point of the line
+ * @param {number} [angleThreshold=15] - The threshold in degrees for snapping
+ * @returns {Point} The snapped endpoint
  */
-export const snapToAngle = (start: { x: number, y: number }, end: { x: number, y: number }) => {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+export const snapToAngle = (startPoint: Point, endPoint: Point, angleThreshold: number = 15): Point => {
+  // Calculate angle of current line
+  const dx = endPoint.x - startPoint.x;
+  const dy = endPoint.y - startPoint.y;
   
-  // Snap to 45° increments (0°, 45°, 90°, 135°, 180°, etc.)
-  const snappedAngle = Math.round(angle / 45) * 45;
-  const length = Math.hypot(dx, dy);
+  // Calculate distance from start to end
+  const distance = Math.sqrt(dx * dx + dy * dy);
   
-  // Convert back to radians for Math.cos/sin
-  const radians = snappedAngle * Math.PI / 180;
+  // Calculate current angle in degrees (0 to 360)
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  if (angle < 0) angle += 360;
   
-  return {
-    x: start.x + length * Math.cos(radians),
-    y: start.y + length * Math.sin(radians)
-  };
+  // Determine the closest snap angle (0, 45, 90, 135, etc.)
+  // 0/180: horizontal, 90/270: vertical, 45/135/225/315: diagonal
+  const snapAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+  
+  // Find the closest snap angle
+  let closestAngle = snapAngles[0];
+  let minDiff = Math.abs(angle - closestAngle);
+  
+  for (let i = 1; i < snapAngles.length; i++) {
+    const diff = Math.abs(angle - snapAngles[i]);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closestAngle = snapAngles[i];
+    }
+  }
+  
+  // Only snap if we're within the threshold
+  if (minDiff <= angleThreshold) {
+    // Convert angle back to radians for calculating the new point
+    const snapAngleRad = closestAngle * (Math.PI / 180);
+    
+    // Calculate snapped endpoint
+    return {
+      x: startPoint.x + distance * Math.cos(snapAngleRad),
+      y: startPoint.y + distance * Math.sin(snapAngleRad)
+    };
+  }
+  
+  // If not within threshold, return the original endpoint
+  return endPoint;
 };
