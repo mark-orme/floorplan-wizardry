@@ -10,7 +10,8 @@ import {
   hasDimensionsChangedSignificantly, 
   createGridBatch, 
   handleGridCreationError,
-  gridManager
+  gridManager,
+  resetGridProgress
 } from "./gridOperations";
 
 /**
@@ -61,10 +62,19 @@ export const createGrid = (
   // Force grid creation regardless of existing state - previous code might be skipping grid creation
   console.log("Proceeding with grid creation regardless of existing state");
   
-  // Prevent multiple concurrent grid creations
+  // Check if grid creation is in progress and reset if it's been too long
   if (gridManager.inProgress) {
-    console.log("Grid creation already in progress, skipping");
-    return gridLayerRef.current;
+    console.log("Grid creation already in progress, checking if stuck...");
+    
+    // If it's been more than 5 seconds since last call, reset the flag
+    const now = Date.now();
+    if (now - gridManager.lastCreationTime > 5000) {
+      console.log("Grid creation appears stuck, resetting in-progress flag");
+      resetGridProgress();
+    } else {
+      console.log("Grid creation in progress, skipping");
+      return gridLayerRef.current;
+    }
   }
   
   // Clear any existing batch timeout
@@ -79,6 +89,7 @@ export const createGrid = (
   try {
     // Get the current timestamp
     const now = Date.now();
+    gridManager.lastCreationTime = now;
     
     // Create the grid using the batch operation
     const result = createGridBatch(

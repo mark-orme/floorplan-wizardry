@@ -5,11 +5,11 @@
  * @module gridOperations
  */
 import { Canvas } from "fabric";
-import { gridManager } from "./gridManager";
+import { gridManager, resetGridProgress } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
 
 // Re-export gridManager for use in other modules
-export { gridManager };
+export { gridManager, resetGridProgress };
 
 /**
  * Check if grid creation should be throttled based on creation limits
@@ -105,6 +105,12 @@ export const createGridBatch = (
 ): any[] => {
   console.log("Executing grid batch creation with critical debugging");
   
+  // Set a safety timeout to reset the inProgress flag in case of error
+  const safetyTimeoutId = setTimeout(() => {
+    console.log("Safety timeout: resetting grid creation in-progress flag");
+    resetGridProgress();
+  }, gridManager.safetyTimeout);
+  
   try {
     // Tracking metric
     gridManager.totalCreations++;
@@ -197,12 +203,17 @@ export const createGridBatch = (
     console.error("Critical error in createGridBatch:", error);
     setHasError(true);
     setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);
-    gridManager.inProgress = false;
-    gridManager.batchTimeoutId = null;
     return [];
   } finally {
+    // Clear the safety timeout
+    clearTimeout(safetyTimeoutId);
+    
+    // Always reset progress flags in finally block
     gridManager.inProgress = false;
-    gridManager.batchTimeoutId = null;
+    if (gridManager.batchTimeoutId) {
+      clearTimeout(gridManager.batchTimeoutId);
+      gridManager.batchTimeoutId = null;
+    }
     console.log("Grid batch creation process complete");
   }
 };

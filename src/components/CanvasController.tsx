@@ -21,6 +21,7 @@ import { useFloorSelection } from "@/hooks/useFloorSelection";
 import { useLineSettings } from "@/hooks/useLineSettings";
 import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
+import { resetGridProgress } from "@/utils/gridOperations";
 
 /**
  * Controller component that manages all canvas logic and state
@@ -51,6 +52,10 @@ export const CanvasController = () => {
 
   // Grid layer reference - initialize with empty array
   const gridLayerRef = useRef<any[]>([]);
+  
+  // Track grid creation attempts
+  const gridAttemptCountRef = useRef(0);
+  const maxGridAttempts = 3;
   
   // Grid creation callback
   const createGrid = useCanvasGrid({
@@ -200,29 +205,65 @@ export const CanvasController = () => {
     loadFloorPlansData();
   }, [loadFloorPlansData]);
 
-  // CRITICAL FIX: Force grid creation on initial load and whenever fabric canvas changes
+  // CRITICAL FIX: Force grid creation on initial load with retry mechanism
   useEffect(() => {
     if (fabricCanvasRef.current) {
       console.log("⭐ FORCE CREATE GRID - Critical priority grid creation");
-      setTimeout(() => {
+      
+      // First, ensure any stuck grid creation is reset
+      resetGridProgress();
+      
+      // Immediate attempt
+      const attemptGridCreation = () => {
         if (fabricCanvasRef.current) {
+          gridAttemptCountRef.current++;
+          console.log(`Grid creation attempt ${gridAttemptCountRef.current}/${maxGridAttempts}`);
+          
           const grid = createGrid(fabricCanvasRef.current);
           if (grid && grid.length > 0) {
             console.log(`Grid created with ${grid.length} objects`);
             fabricCanvasRef.current.requestRenderAll();
+            return true;
           } else {
             console.warn("Grid creation failed - no objects returned");
+            return false;
           }
         }
-      }, 100);
+        return false;
+      };
+      
+      // Try first attempt immediately
+      const success = attemptGridCreation();
+      
+      // Set up staggered retries if first attempt failed
+      if (!success && gridAttemptCountRef.current < maxGridAttempts) {
+        // Use exponential backoff for retries (200ms, 400ms, 800ms)
+        setTimeout(() => {
+          if (!gridLayerRef.current || gridLayerRef.current.length === 0) {
+            resetGridProgress();
+            const retrySuccess = attemptGridCreation();
+            
+            // One more retry with longer delay if still failing
+            if (!retrySuccess && gridAttemptCountRef.current < maxGridAttempts) {
+              setTimeout(() => {
+                if (!gridLayerRef.current || gridLayerRef.current.length === 0) {
+                  resetGridProgress();
+                  attemptGridCreation();
+                }
+              }, 800);
+            }
+          }
+        }, 200);
+      }
     }
   }, [fabricCanvasRef.current, createGrid]);
 
-  // Second attempt at grid creation after a short delay
+  // Second attempt at grid creation after a longer delay
   useEffect(() => {
     const timer = setTimeout(() => {
       if (fabricCanvasRef.current && (!gridLayerRef.current || gridLayerRef.current.length === 0)) {
         console.log("⭐ SECOND ATTEMPT: Force grid creation after delay");
+        resetGridProgress();
         const grid = createGrid(fabricCanvasRef.current);
         if (grid && grid.length > 0) {
           console.log(`Grid created on second attempt with ${grid.length} objects`);
@@ -232,7 +273,7 @@ export const CanvasController = () => {
           setDebugInfo(prev => ({...prev, gridCreated: true}));
         }
       }
-    }, 1000);
+    }, 2000);
     
     return () => clearTimeout(timer);
   }, [fabricCanvasRef.current, createGrid, setDebugInfo]);

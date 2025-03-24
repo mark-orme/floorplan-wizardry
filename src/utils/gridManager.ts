@@ -27,5 +27,17 @@ export const gridManager = {
   exists: false,
   
   // Batch processing state
-  batchTimeoutId: null as number | null
+  batchTimeoutId: null as number | null,
+  
+  // Safety timeout (ms) to reset inProgress if creation takes too long
+  safetyTimeout: 5000
 };
+
+/**
+ * Reset the grid creation in-progress flag
+ * Used to prevent grid creation from getting stuck
+ */
+export const resetGridProgress = () => {
+  gridManager.inProgress = false;
+};
+
