@@ -1,4 +1,3 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -62,6 +61,33 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
   });
 };
 
+/**
+ * Snap a point to the nearest horizontal or vertical grid line
+ * This ensures walls always start and end on actual grid lines
+ * @param {Point} point - The point to snap
+ * @returns {Point} Point snapped to the nearest grid line
+ */
+export const snapToNearestGridLine = (point: Point): Point => {
+  if (!point) return { x: 0, y: 0 };
+  
+  // First snap to grid to get a general alignment
+  const gridPoint = forceGridAlignment(point);
+  
+  // Get distance to nearest horizontal and vertical grid lines
+  // This ensures we place the point exactly on grid lines, not between them
+  const modX = gridPoint.x % GRID_SIZE;
+  const modY = gridPoint.y % GRID_SIZE;
+  
+  // Find the closest grid lines in both directions
+  const nearestX = Math.round(gridPoint.x / GRID_SIZE) * GRID_SIZE;
+  const nearestY = Math.round(gridPoint.y / GRID_SIZE) * GRID_SIZE;
+  
+  return {
+    x: Number(nearestX.toFixed(3)),
+    y: Number(nearestY.toFixed(3))
+  };
+};
+
 /** 
  * Auto-straighten strokes - enhanced version that forces perfect horizontal/vertical alignment
  * @param {Stroke} stroke - Array of points representing a stroke
@@ -78,15 +104,8 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const absDy = Math.abs(dy);
   
   // Force snap both points to grid first
-  const gridStart = {
-    x: Math.round(start.x / GRID_SIZE) * GRID_SIZE,
-    y: Math.round(start.y / GRID_SIZE) * GRID_SIZE
-  };
-  
-  const gridEnd = {
-    x: Math.round(end.x / GRID_SIZE) * GRID_SIZE,
-    y: Math.round(end.y / GRID_SIZE) * GRID_SIZE
-  };
+  const gridStart = snapToNearestGridLine(start);
+  const gridEnd = snapToNearestGridLine(end);
   
   // Calculate new dx/dy after grid snapping
   const newDx = gridEnd.x - gridStart.x;

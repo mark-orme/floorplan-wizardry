@@ -8,7 +8,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { adjustPointForPanning, snapToGrid, snapPointsToGrid, forceGridAlignment } from "@/utils/geometry";
+import { adjustPointForPanning, snapToGrid, snapPointsToGrid, forceGridAlignment, snapToNearestGridLine } from "@/utils/geometry";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -73,11 +73,11 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
-    // IMPROVED: Force grid alignment for wall start points
-    // Apply strict snapping to ensure exact grid alignment
-    const startPoint = forceGridAlignment(rawStartPoint);
+    // IMPROVED: Force EXACT grid line alignment for wall start points
+    // Apply strict snapping to ensure start point is precisely on a grid line
+    const startPoint = snapToNearestGridLine(rawStartPoint);
     
-    console.log("Raw start point:", rawStartPoint, "Snapped to:", startPoint);
+    console.log("Raw start point:", rawStartPoint, "Snapped to grid line:", startPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -93,7 +93,7 @@ export const useDrawingState = ({
       midPoint: absolutePosition // Initially same as cursor position
     });
     
-    console.log("Drawing started at grid point:", startPoint, "with tool:", tool);
+    console.log("Drawing started at grid line point:", startPoint, "with tool:", tool);
   }, [fabricCanvasRef, tool, cleanupTimeouts]);
 
   // Throttled update function using requestAnimationFrame with improved snapping
@@ -118,11 +118,11 @@ export const useDrawingState = ({
     setDrawingState(prev => {
       if (!prev.startPoint) return prev;
       
-      // IMPROVED: Apply strict grid alignment to current point
+      // IMPROVED: Apply strict grid line alignment to current point
       // This ensures walls always travel exactly on grid lines
-      const currentPoint = forceGridAlignment(rawCurrentPoint);
+      const currentPoint = snapToNearestGridLine(rawCurrentPoint);
       
-      console.log("Raw current point:", rawCurrentPoint, "Snapped to:", currentPoint);
+      console.log("Raw current point:", rawCurrentPoint, "Snapped to grid line:", currentPoint);
       
       // Only calculate midpoint if we have both start and current points
       // Use the grid-snapped points for more accurate midpoint calculation

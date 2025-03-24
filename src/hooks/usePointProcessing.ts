@@ -16,7 +16,8 @@ import {
   filterRedundantPoints,
   calculateDistance,
   isExactGridMultiple,
-  forceGridAlignment
+  forceGridAlignment,
+  snapToNearestGridLine
 } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
@@ -43,8 +44,8 @@ export const usePointProcessing = (tool: DrawingTool) => {
     let finalPoints;
     if (tool === 'straightLine') {
       // Get just start and end points for walls
-      const startPoint = forceGridAlignment(filteredPoints[0]);
-      const endPoint = forceGridAlignment(filteredPoints[filteredPoints.length - 1]);
+      const startPoint = snapToNearestGridLine(filteredPoints[0]); // Use enhanced grid line snapping
+      const endPoint = snapToNearestGridLine(filteredPoints[filteredPoints.length - 1]);
       
       // Create a perfectly straight line with exact grid alignment
       finalPoints = straightenStroke([startPoint, endPoint]);
@@ -58,8 +59,8 @@ export const usePointProcessing = (tool: DrawingTool) => {
       if (!startIsAligned || !endIsAligned) {
         console.warn("Wall endpoints not exactly on grid. Forcing alignment");
         finalPoints = [
-          forceGridAlignment(finalPoints[0]),
-          forceGridAlignment(finalPoints[1])
+          snapToNearestGridLine(finalPoints[0]), // Enhanced snapping to nearest grid line
+          snapToNearestGridLine(finalPoints[1])
         ];
       }
     } else {
