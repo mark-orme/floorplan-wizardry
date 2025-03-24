@@ -1,8 +1,10 @@
 
 /**
- * Controller component that manages all canvas logic and state
- * Centralizes all canvas operations and state management
+ * Canvas controller component
+ * Centralizes all canvas state and operations
+ * @module CanvasController
  */
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { createGrid } from "@/utils/canvasGrid";
@@ -17,11 +19,13 @@ import { useDrawingTools } from "@/hooks/useDrawingTools";
 
 /**
  * Controller component that manages all canvas logic and state
+ * Centralizes canvas operations to improve maintainability and security
  * @returns All canvas-related state and handler functions
  */
 export const CanvasController = () => {
   // State for drawing tools and display
-  const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
+  // Default to straightLine (wall) tool as requested
+  const [tool, setTool] = useState<"draw" | "room" | "straightLine">("straightLine");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
@@ -149,10 +153,24 @@ export const CanvasController = () => {
         console.log("Loading floor plans...");
         setIsLoading(true);
         const plans = await loadData();
-        setFloorPlans(plans);
+        
+        // If plans exist, load them, otherwise create a default
+        if (plans && plans.length > 0) {
+          setFloorPlans(plans);
+          console.log("Floor plans loaded:", plans);
+        } else {
+          // Create a default floor plan
+          const defaultPlan = [{
+            strokes: [],
+            label: "Ground Floor",
+            paperSize: "infinite"
+          }];
+          setFloorPlans(defaultPlan);
+          console.log("Created default floor plan");
+        }
+        
         setIsLoading(false);
         setHasError(false);
-        console.log("Floor plans loaded:", plans);
       } catch (error) {
         console.error("Error loading floor plans:", error);
         setHasError(true);
@@ -172,6 +190,17 @@ export const CanvasController = () => {
       handleSelectFloor(index);
     }
   }, [currentFloor, handleSelectFloor]);
+
+  // Ensure the grid is created on initial load
+  useEffect(() => {
+    if (fabricCanvasRef.current && !debugInfo.gridCreated) {
+      console.log("Creating grid during initial load");
+      const grid = gridRef(fabricCanvasRef.current);
+      if (grid && grid.length > 0) {
+        console.log(`Grid created with ${grid.length} objects`);
+      }
+    }
+  }, [fabricCanvasRef, debugInfo.gridCreated, gridRef]);
 
   return {
     tool,

@@ -12,6 +12,7 @@ import {
   Redo 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 interface DrawingToolbarProps {
   tool: "draw" | "room" | "straightLine";
@@ -24,6 +25,11 @@ interface DrawingToolbarProps {
   gia: number;
 }
 
+/**
+ * Drawing toolbar component with labeled tools and tooltips
+ * @param {DrawingToolbarProps} props Component properties
+ * @returns {JSX.Element} Rendered toolbar component
+ */
 export const DrawingToolbar = ({
   tool,
   onToolChange,
@@ -36,72 +42,132 @@ export const DrawingToolbar = ({
 }: DrawingToolbarProps) => {
   return (
     <div className="flex gap-4 mb-4 flex-wrap">
-      {/* Tool Selection */}
+      {/* Tool Selection with hover cards for explanation */}
       <div className="flex gap-2">
-        <Button
-          variant={tool === "draw" ? "default" : "outline"}
-          onClick={() => onToolChange("draw")}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-          title="Freehand Tool"
-        >
-          <Pencil className="w-4 h-4 transition-colors" />
-        </Button>
-        <Button
-          variant={tool === "straightLine" ? "default" : "outline"}
-          onClick={() => onToolChange("straightLine")}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-          title="Straight Line Tool"
-        >
-          <Ruler className="w-4 h-4 transition-colors" />
-        </Button>
-        <Button
-          variant={tool === "room" ? "default" : "outline"}
-          onClick={() => onToolChange("room")}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-          title="Room Tool"
-        >
-          <Square className="w-4 h-4 transition-colors" />
-        </Button>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant={tool === "draw" ? "default" : "outline"}
+              onClick={() => onToolChange("draw")}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              aria-label="Freehand Tool"
+            >
+              <Pencil className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Freehand Tool</strong>
+            <p>Draw freely on the canvas</p>
+          </HoverCardContent>
+        </HoverCard>
+        
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant={tool === "straightLine" ? "default" : "outline"}
+              onClick={() => onToolChange("straightLine")}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              aria-label="Straight Line Tool"
+            >
+              <Ruler className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Wall Tool</strong>
+            <p>Draw straight walls with precise measurements</p>
+          </HoverCardContent>
+        </HoverCard>
+        
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant={tool === "room" ? "default" : "outline"}
+              onClick={() => onToolChange("room")}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              aria-label="Room Tool"
+            >
+              <Square className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Room Tool</strong>
+            <p>Create closed rooms with area calculation</p>
+          </HoverCardContent>
+        </HoverCard>
       </div>
       
       {/* History Controls */}
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          onClick={onUndo}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Undo"
-        >
-          <Undo className="w-4 h-4 transition-colors" />
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onRedo}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Redo"
-        >
-          <Redo className="w-4 h-4 transition-colors" />
-        </Button>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={onUndo}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Undo"
+            >
+              <Undo className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Undo</strong>
+            <p>Reverse the last drawing action</p>
+          </HoverCardContent>
+        </HoverCard>
+        
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={onRedo}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Redo"
+            >
+              <Redo className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Redo</strong>
+            <p>Restore the last undone action</p>
+          </HoverCardContent>
+        </HoverCard>
       </div>
       
       {/* Zoom Controls */}
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          onClick={() => onZoom("in")}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Zoom In"
-        >
-          <ZoomIn className="w-4 h-4 transition-colors" />
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => onZoom("out")}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Zoom Out"
-        >
-          <ZoomOut className="w-4 h-4 transition-colors" />
-        </Button>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={() => onZoom("in")}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Zoom In"
+            >
+              <ZoomIn className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Zoom In</strong>
+            <p>Increase the canvas zoom level</p>
+          </HoverCardContent>
+        </HoverCard>
+        
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={() => onZoom("out")}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Zoom Out</strong>
+            <p>Decrease the canvas zoom level</p>
+          </HoverCardContent>
+        </HoverCard>
       </div>
       
       {/* GIA Display */}
@@ -111,22 +177,39 @@ export const DrawingToolbar = ({
       
       {/* Actions */}
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          onClick={onClear}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-red-50 dark:hover:bg-red-950"
-          title="Clear Canvas"
-        >
-          <Trash className="w-4 h-4 text-red-500 transition-colors" />
-        </Button>
-        <Button
-          variant="default"
-          onClick={onSave}
-          className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-          title="Save as PNG"
-        >
-          <Save className="w-4 h-4 transition-colors" />
-        </Button>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={onClear}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-red-50 dark:hover:bg-red-950"
+              aria-label="Clear Canvas"
+            >
+              <Trash className="w-4 h-4 text-red-500 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Clear Canvas</strong>
+            <p>Remove all drawings from the canvas</p>
+          </HoverCardContent>
+        </HoverCard>
+        
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant="default"
+              onClick={onSave}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              aria-label="Save as PNG"
+            >
+              <Save className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Save</strong>
+            <p>Export the floor plan as PNG and save to storage</p>
+          </HoverCardContent>
+        </HoverCard>
       </div>
     </div>
   );

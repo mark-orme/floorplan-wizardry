@@ -1,6 +1,7 @@
 
 /**
  * Utility functions for creating and managing the canvas grid
+ * Provides a visual reference for drawing to scale
  * @module canvasGrid
  */
 import { Canvas, Line, Text } from "fabric";
@@ -8,7 +9,7 @@ import { SMALL_GRID, LARGE_GRID } from "@/utils/drawing";
 
 /**
  * Create grid lines for the canvas
- * Creates both small (0.1m) and large (1m) grid lines
+ * Creates both small (0.1m) and large (1m) grid lines with consistent performance
  * 
  * @param {Canvas} canvas - The Fabric canvas instance
  * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to store grid objects
@@ -36,7 +37,8 @@ export const createGrid = (
   try {
     // Remove existing grid objects if any
     if (gridLayerRef.current.length > 0) {
-      gridLayerRef.current.forEach(obj => {
+      const existingObjects = [...gridLayerRef.current];
+      existingObjects.forEach(obj => {
         if (canvas.contains(obj)) {
           canvas.remove(obj);
         }
@@ -57,28 +59,38 @@ export const createGrid = (
       return [];
     }
     
-    // Small grid lines (0.1m)
+    // Batch rendering for performance optimization
+    canvas.renderOnAddRemove = false;
+    
+    // Small grid lines (0.1m) - limited to reduce performance impact
     const smallGridStep = SMALL_GRID;
-    for (let i = 0; i < canvasWidth; i += smallGridStep) {
+    const maxSmallGridLines = 200; // Limit small grid lines for performance
+    
+    let smallGridCount = 0;
+    for (let i = 0; i < canvasWidth && smallGridCount < maxSmallGridLines; i += smallGridStep) {
       const smallGridLine = new Line([i, 0, i, canvasHeight], {
         stroke: "#E6F3F8",
         selectable: false,
-        strokeWidth: 0.5,
         evented: false,
+        strokeWidth: 0.5,
+        objectCaching: true
       });
       canvas.add(smallGridLine);
       gridObjects.push(smallGridLine);
+      smallGridCount++;
     }
     
-    for (let i = 0; i < canvasHeight; i += smallGridStep) {
+    for (let i = 0; i < canvasHeight && smallGridCount < maxSmallGridLines; i += smallGridStep) {
       const smallGridLine = new Line([0, i, canvasWidth, i], {
         stroke: "#E6F3F8",
         selectable: false,
-        strokeWidth: 0.5,
         evented: false,
+        strokeWidth: 0.5,
+        objectCaching: true
       });
       canvas.add(smallGridLine);
       gridObjects.push(smallGridLine);
+      smallGridCount++;
     }
 
     // Large grid lines (1m)
@@ -87,8 +99,9 @@ export const createGrid = (
       const largeGridLine = new Line([i, 0, i, canvasHeight], {
         stroke: "#C2E2F3",
         selectable: false,
-        strokeWidth: 1,
         evented: false,
+        strokeWidth: 1,
+        objectCaching: true
       });
       canvas.add(largeGridLine);
       gridObjects.push(largeGridLine);
@@ -98,8 +111,9 @@ export const createGrid = (
       const largeGridLine = new Line([0, i, canvasWidth, i], {
         stroke: "#C2E2F3",
         selectable: false,
-        strokeWidth: 1,
         evented: false,
+        strokeWidth: 1,
+        objectCaching: true
       });
       canvas.add(largeGridLine);
       gridObjects.push(largeGridLine);
@@ -116,6 +130,7 @@ export const createGrid = (
       strokeWidth: 2,
       selectable: false,
       evented: false,
+      objectCaching: true
     });
     
     const markerText = new Text("1m", {
@@ -125,12 +140,16 @@ export const createGrid = (
       fill: "#333333",
       selectable: false,
       evented: false,
+      objectCaching: true
     });
     
     canvas.add(markerLine);
     canvas.add(markerText);
     gridObjects.push(markerLine);
     gridObjects.push(markerText);
+    
+    // Re-enable rendering and render all at once
+    canvas.renderOnAddRemove = true;
     
     // Send all grid objects to the back
     gridObjects.forEach(obj => {
@@ -149,7 +168,7 @@ export const createGrid = (
   } catch (err) {
     console.error("Error creating grid:", err);
     setHasError(true);
-    setErrorMessage("Failed to create grid");
+    setErrorMessage(`Failed to create grid: ${err instanceof Error ? err.message : String(err)}`);
     return [];
   }
 };
