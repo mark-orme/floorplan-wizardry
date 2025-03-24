@@ -18,6 +18,9 @@ interface UseCanvasResizingProps {
   createGrid: (canvas: FabricCanvas) => any[];
 }
 
+// Global flag to track if initial resize has been done
+let initialGlobalResizeComplete = false;
+
 export const useCanvasResizing = ({
   canvasRef,
   fabricCanvasRef,
@@ -29,9 +32,10 @@ export const useCanvasResizing = ({
 }: UseCanvasResizingProps) => {
   const resizeTimeoutRef = useRef<number | null>(null);
   const lastDimensionsRef = useRef<{width: number, height: number}>({width: 0, height: 0});
-  const initialResizeCompleteRef = useRef(false);
+  const initialResizeCompleteRef = useRef(initialGlobalResizeComplete);
   const resizeInProgressRef = useRef(false);
   const initialResizeTimerRef = useRef<number | null>(null);
+  const resizeCountRef = useRef(0);
 
   const updateCanvasDimensions = useCallback(() => {
     if (!canvasRef.current) {
@@ -63,9 +67,9 @@ export const useCanvasResizing = ({
     const newWidth = Math.max(width - 20, 600);
     const newHeight = Math.max(height - 20, 400);
     
-    // Skip update if dimensions haven't changed significantly (within 30px)
-    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 30 && 
-        Math.abs(newHeight - lastDimensionsRef.current.height) < 30) {
+    // Skip update if dimensions haven't changed significantly (within 50px)
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 50 && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < 50) {
       resizeInProgressRef.current = false;
       return;
     }
@@ -73,18 +77,25 @@ export const useCanvasResizing = ({
     // Update the reference
     lastDimensionsRef.current = { width: newWidth, height: newHeight };
     
-    // Only log on significant changes
-    console.log(`Setting canvas dimensions to ${newWidth}x${newHeight}`);
+    // Track resize count
+    resizeCountRef.current += 1;
+    
+    // Only log every 3rd resize to reduce console spam
+    if (resizeCountRef.current % 3 === 0) {
+      console.log(`Setting canvas dimensions to ${newWidth}x${newHeight}`);
+    }
+    
     setDimensions({ width: newWidth, height: newHeight });
     setDebugInfo(prev => ({...prev, dimensionsSet: true}));
     
     if (fabricCanvasRef.current) {
       setCanvasDimensions(fabricCanvasRef.current, { width: newWidth, height: newHeight });
       
-      // Only create grid on first resize or when explicitly needed
+      // Only create grid on first resize
       if (!initialResizeCompleteRef.current) {
         createGrid(fabricCanvasRef.current);
         initialResizeCompleteRef.current = true;
+        initialGlobalResizeComplete = true;
       }
       
       fabricCanvasRef.current.renderAll();
@@ -99,22 +110,22 @@ export const useCanvasResizing = ({
         window.clearTimeout(resizeTimeoutRef.current);
       }
       
-      // Increase debounce time to 500ms to reduce frequency
+      // Increase debounce time to 800ms to reduce frequency
       resizeTimeoutRef.current = window.setTimeout(() => {
         updateCanvasDimensions();
         resizeTimeoutRef.current = null;
-      }, 500);
+      }, 800);
     };
 
     window.addEventListener('resize', debouncedResizeHandler);
     
     // Initial update with a delay to ensure DOM is ready
     // Only run this once per component lifecycle
-    if (!initialResizeTimerRef.current) {
+    if (!initialResizeTimerRef.current && !initialResizeCompleteRef.current) {
       initialResizeTimerRef.current = window.setTimeout(() => {
         updateCanvasDimensions();
         initialResizeTimerRef.current = null;
-      }, 500);
+      }, 800);
     }
     
     return () => {

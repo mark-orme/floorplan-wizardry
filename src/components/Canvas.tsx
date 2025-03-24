@@ -4,7 +4,7 @@
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
@@ -16,6 +16,8 @@ let appInitialized = false;
 let initialDataLoaded = false;
 // Track if the current render is the first mount
 let isFirstMount = true;
+// Track if grid has been created
+let gridCreated = false;
 
 /**
  * Main Canvas component for floor plan drawing
@@ -54,7 +56,6 @@ export const Canvas = () => {
   } = CanvasController();
 
   // Memoize the tooltip component to prevent unnecessary re-renders
-  // Moved up to ensure consistent hook order
   const tooltipComponent = useMemo(() => (
     <DistanceTooltip
       startPoint={drawingState?.startPoint}
@@ -91,11 +92,13 @@ export const Canvas = () => {
       }));
     }
     
-    if (debugInfo.gridCreated && loadTimes.gridCreated === 0) {
+    // Only log first time grid is created
+    if (debugInfo.gridCreated && loadTimes.gridCreated === 0 && !gridCreated) {
       setLoadTimes(prev => ({ 
         ...prev, 
         gridCreated: performance.now() - prev.startTime 
       }));
+      gridCreated = true;
     }
   }, [debugInfo, loadTimes]);
 

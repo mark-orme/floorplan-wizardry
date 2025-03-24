@@ -1,3 +1,4 @@
+
 /**
  * Utilities for Fabric.js canvas management
  * @module fabricCanvas
@@ -6,6 +7,8 @@ import { Canvas } from "fabric";
 
 // Keep track of previous dimensions to avoid unnecessary updates
 let prevDimensions = { width: 0, height: 0 };
+// Track dimension update count to reduce logging
+let dimensionUpdateCount = 0;
 
 /**
  * Safely sets canvas dimensions and refreshes the canvas
@@ -24,16 +27,23 @@ export const setCanvasDimensions = (
   try {
     const { width, height } = dimensions;
     
-    // Skip update if dimensions are the same or within 5px tolerance
-    if (Math.abs(width - prevDimensions.width) < 5 && 
-        Math.abs(height - prevDimensions.height) < 5) {
+    // Skip update if dimensions are the same or within 10px tolerance
+    if (Math.abs(width - prevDimensions.width) < 10 && 
+        Math.abs(height - prevDimensions.height) < 10) {
       return;
     }
     
     // Store new dimensions
     prevDimensions = { width, height };
     
-    console.log(`Setting canvas dimensions to ${width}x${height}`);
+    // Increment update count
+    dimensionUpdateCount++;
+    
+    // Only log every 3rd dimension update to reduce console spam
+    if (dimensionUpdateCount % 3 === 0) {
+      console.log(`Setting canvas dimensions to ${width}x${height}`);
+    }
+    
     canvas.setDimensions({ width, height });
     
     // Only render if dimensions have changed significantly
