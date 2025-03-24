@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -171,7 +170,9 @@ export const Canvas = () => {
     gridObjects.push(scaleMarker);
     
     // Send all grid lines to the back
-    gridObjects.forEach(obj => obj.sendToBack());
+    gridObjects.forEach(obj => {
+      canvas.sendObjectToBack(obj);
+    });
     
     // Store grid references
     gridLayerRef.current = gridObjects;
@@ -237,7 +238,9 @@ export const Canvas = () => {
         fabricCanvas.add(polyline);
         
         // Ensure grid stays in the background
-        gridLayerRef.current.forEach(gridObj => gridObj.sendToBack());
+        gridLayerRef.current.forEach(gridObj => {
+          fabricCanvas.sendObjectToBack(gridObj);
+        });
         
         fabricCanvas.renderAll(); // Force a re-render
 
@@ -288,7 +291,9 @@ export const Canvas = () => {
     const currentPlan = floorPlans[currentFloor];
     
     // Ensure the grid is visible
-    gridLayerRef.current.forEach(gridObj => gridObj.sendToBack());
+    gridLayerRef.current.forEach(gridObj => {
+      fabricCanvasRef.current!.sendObjectToBack(gridObj);
+    });
     
     currentPlan.strokes.forEach(stroke => {
       const polyline = new fabric.Polyline(
@@ -326,8 +331,14 @@ export const Canvas = () => {
     );
     
     // Filter out grid objects from the objects to be removed
-    const gridObjectIds = new Set(gridLayerRef.current.map(obj => obj.id));
-    const drawingsToRemove = objects.filter(obj => !gridObjectIds.has(obj.id));
+    const gridObjectIds = new Set(gridLayerRef.current.map(obj => {
+      // Safe access to id with type assertion
+      return (obj as any).id;
+    }));
+    const drawingsToRemove = objects.filter(obj => {
+      // Safe access to id with type assertion
+      return !(gridObjectIds.has((obj as any).id));
+    });
     
     drawingsToRemove.forEach((obj) => fabricCanvasRef.current!.remove(obj));
     
@@ -336,7 +347,7 @@ export const Canvas = () => {
       if (!fabricCanvasRef.current!.contains(gridObj)) {
         fabricCanvasRef.current!.add(gridObj);
       }
-      gridObj.sendToBack();
+      fabricCanvasRef.current!.sendObjectToBack(gridObj);
     });
     
     fabricCanvasRef.current.renderAll();
