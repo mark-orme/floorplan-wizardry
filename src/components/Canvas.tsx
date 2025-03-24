@@ -1,3 +1,4 @@
+
 /**
  * Main Canvas component for floor plan drawing
  * Orchestrates the canvas setup, grid creation, and drawing tools
@@ -115,8 +116,12 @@ export const Canvas = () => {
     }
   }, [debugInfo, loadTimes]);
 
-  // Debug tooltip visibility conditions
-  const isTooltipVisible = !!drawingState?.isDrawing && (tool === "straightLine" || tool === "room");
+  // Determine tooltip visibility - show when drawing or in select mode with an active selection
+  const isTooltipVisible = 
+    // Always show during active drawing with straightLine or room tools
+    (drawingState?.isDrawing && (tool === "straightLine" || tool === "room")) ||
+    // Also show when in select mode and actively manipulating a line
+    (tool === "select" && drawingState?.isDrawing);
   
   // Log tooltip visibility for debugging
   useEffect(() => {
@@ -161,8 +166,9 @@ export const Canvas = () => {
           <DistanceTooltip
             startPoint={drawingState?.startPoint}
             currentPoint={drawingState?.currentPoint}
-            isVisible={!!drawingState?.isDrawing && (tool === "straightLine" || tool === "room")}
-            position={drawingState?.cursorPosition || { x: 0, y: 0 }}
+            isVisible={isTooltipVisible}
+            position={drawingState?.cursorPosition}
+            midPoint={drawingState?.midPoint}
           />
         </div>
       </div>

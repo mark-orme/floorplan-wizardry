@@ -7,7 +7,8 @@ interface DistanceTooltipProps {
   startPoint: Point | null;
   currentPoint: Point | null;
   isVisible: boolean;
-  position: { x: number; y: number };
+  position: { x: number; y: number } | null;
+  midPoint?: { x: number; y: number } | null; // Added optional midPoint prop
 }
 
 /**
@@ -20,12 +21,14 @@ export const DistanceTooltip = memo(({
   startPoint,
   currentPoint,
   isVisible,
-  position
+  position,
+  midPoint
 }: DistanceTooltipProps) => {
   // Debug the tooltip visibility conditions
-  console.log("Tooltip props:", { isVisible, startPoint, currentPoint, position });
+  console.log("Tooltip props:", { isVisible, startPoint, currentPoint, position, midPoint });
   
-  if (!isVisible || !startPoint || !currentPoint) {
+  // Exit early if we don't have the necessary data
+  if (!startPoint || !currentPoint) {
     return null;
   }
   
@@ -34,18 +37,29 @@ export const DistanceTooltip = memo(({
   const dy = currentPoint.y - startPoint.y;
   const distanceInMeters = Math.sqrt(dx * dx + dy * dy);
   
-  // Lower threshold to ensure tooltip appears more consistently
+  // Exit if the distance is too small (prevents flickering for tiny movements)
   if (distanceInMeters < 0.01) {
     return null;
   }
+  
+  // Determine position for tooltip - prefer midPoint if available
+  const tooltipPosition = midPoint || position;
+  
+  // If we don't have position data, we can't show the tooltip
+  if (!tooltipPosition) {
+    return null;
+  }
+  
+  // Calculate a vertical offset to position tooltip above the line
+  const verticalOffset = -30; // Move tooltip slightly above the line
   
   return (
     <div 
       className="absolute pointer-events-none z-50 bg-black/80 text-white px-3 py-2 rounded-md shadow-lg"
       style={{ 
-        left: `${position.x + 20}px`, 
-        top: `${position.y + 20}px`,
-        transform: `translate3d(0,0,0)`, // Hardware acceleration
+        left: `${tooltipPosition.x}px`, 
+        top: `${tooltipPosition.y + verticalOffset}px`,
+        transform: `translate(-50%, -100%)`, // Center horizontally and position above the point
         willChange: "transform", // Hint for browser optimization
         boxShadow: "0 0 0 2px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.3)" // More visible outline
       }}
