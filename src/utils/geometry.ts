@@ -6,59 +6,35 @@ import { Point, Stroke, GRID_SIZE } from './drawingTypes';
 import { PIXELS_PER_METER } from './drawing';
 
 /** 
+ * Snap a single point to the nearest grid intersection
+ * Critical utility for ensuring walls start and end exactly on grid lines
+ * @param {Point} point - The point to snap
+ * @param {number} gridSize - Optional grid size (defaults to 0.1m)
+ * @returns {Point} Snapped point with exact grid alignment
+ */
+export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
+  if (!point) return { x: 0, y: 0 };
+
+  // Force exact grid alignment with no floating point errors
+  const snappedX = Math.round(point.x / gridSize) * gridSize;
+  const snappedY = Math.round(point.y / gridSize) * gridSize;
+  
+  // Return with exactly 1 decimal place precision to avoid floating point issues
+  return {
+    x: Number(snappedX.toFixed(1)),
+    y: Number(snappedY.toFixed(1))
+  };
+}
+
+/** 
  * Snap points to 0.1m grid with exact alignment for 99.9% accuracy
  * @param {Point[]} points - Array of points to snap to the grid
- * @returns {Stroke} Array of snapped points
- */
-export const snapToGrid = (points: Point[]): Stroke => {
-  if (!points || points.length === 0) return [];
-  
-  return points.map(p => {
-    // Make sure we have valid numbers
-    const x = typeof p.x === 'number' ? p.x : 0;
-    const y = typeof p.y === 'number' ? p.y : 0;
-    
-    // Force snapping to exact 0.1m increments (GRID_SIZE)
-    // This ensures we align perfectly to the grid
-    const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
-    const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
-    
-    // Ensure we return exactly rounded values with 3 decimal precision
-    // to avoid floating point errors
-    return {
-      x: Number(snappedX.toFixed(1)), // Enforce exact 0.1m increments
-      y: Number(snappedY.toFixed(1))  // Precision to 0.1m
-    };
-  });
-};
-
-/**
- * Enhanced grid snapping for wall tool - snaps strictly to grid lines
- * @param {Point[]} points - Array of points to snap to the grid
- * @param {boolean} strict - Whether to enforce strict grid alignment (for walls)
  * @returns {Stroke} Array of snapped points
  */
 export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stroke => {
   if (!points || points.length === 0) return [];
   
-  // For strict mode (wall tool), enforce exact grid alignment
-  // This ensures we can only draw on grid lines, not between them
-  return points.map(p => {
-    // For strict mode (wall tool), snap exactly to 0.1m grid
-    const x = typeof p.x === 'number' ? p.x : 0;
-    const y = typeof p.y === 'number' ? p.y : 0;
-    
-    // Force exact snapping to grid lines - no rounding errors allowed
-    const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
-    const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
-    
-    // For strict validation, ensure the points are EXACTLY on grid lines
-    // with no floating point errors (using fixed precision)
-    return {
-      x: Number(snappedX.toFixed(1)),
-      y: Number(snappedY.toFixed(1))
-    };
-  });
+  return points.map(p => snapToGrid(p, GRID_SIZE));
 };
 
 /**
@@ -68,17 +44,7 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
  * @returns {Point} Point snapped exactly to the nearest grid line
  */
 export const snapToNearestGridLine = (point: Point): Point => {
-  if (!point) return { x: 0, y: 0 };
-  
-  // Calculate distances to nearest grid lines
-  const nearestX = Math.round(point.x / GRID_SIZE) * GRID_SIZE;
-  const nearestY = Math.round(point.y / GRID_SIZE) * GRID_SIZE;
-  
-  // Force precise grid alignment to eliminate any floating point errors
-  return { 
-    x: parseFloat(nearestX.toFixed(1)), 
-    y: parseFloat(nearestY.toFixed(1)) 
-  };
+  return snapToGrid(point, GRID_SIZE);
 };
 
 /**

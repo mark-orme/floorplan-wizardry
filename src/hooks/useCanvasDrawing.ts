@@ -12,6 +12,7 @@ import { DrawingTool } from "./useCanvasState";
 import { snapToAngle } from "@/utils/fabricInteraction";
 import { toFabricPoint } from "@/utils/fabricPointConverter";
 import { type DrawingState } from "@/types/drawingTypes";
+import { snapToGrid } from "@/utils/geometry";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -90,22 +91,31 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
       if (tool === "straightLine" && drawingState.startPoint && drawingState.currentPoint) {
         console.log("Applying strict grid alignment to wall line");
         try {
+          // CRITICAL FIX: Apply grid snapping to both points BEFORE angle snapping
+          const snappedStartPoint = snapToGrid(drawingState.startPoint);
+          const snappedCurrentPoint = snapToGrid(drawingState.currentPoint);
+          
           // Create perfectly aligned wall line with exact grid positioning
           const straightenedEndPoint = snapToAngle(
-            drawingState.startPoint, 
-            drawingState.currentPoint,
+            snappedStartPoint, 
+            snappedCurrentPoint,
             8 // Reduced threshold for better wall precision (8 degrees)
           );
           
+          // CRITICAL FIX: Apply final grid snapping to ensure perfect grid alignment
+          const gridSnappedEndPoint = snapToGrid(straightenedEndPoint);
+          
           // Replace the end point with the straightened one
-          if (straightenedEndPoint && e.path && e.path.path) {
-            console.log("Wall line straightened from", drawingState.currentPoint, "to", straightenedEndPoint);
+          if (gridSnappedEndPoint && e.path && e.path.path) {
+            console.log("Wall line snapped from", drawingState.currentPoint, 
+                        "to angle-adjusted", straightenedEndPoint,
+                        "to final grid-snapped", gridSnappedEndPoint);
             
             // Convert meters to pixels for the path
-            const startX = drawingState.startPoint.x * 100; // Convert to pixels
-            const startY = drawingState.startPoint.y * 100;
-            const endX = straightenedEndPoint.x * 100;
-            const endY = straightenedEndPoint.y * 100;
+            const startX = snappedStartPoint.x * 100; // Convert to pixels
+            const startY = snappedStartPoint.y * 100;
+            const endX = gridSnappedEndPoint.x * 100;
+            const endY = gridSnappedEndPoint.y * 100;
             
             // Create a perfectly straight line with just two points
             e.path.path = [

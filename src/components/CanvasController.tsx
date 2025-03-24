@@ -52,9 +52,9 @@ export const CanvasController = () => {
   // Grid layer reference - initialize with empty array
   const gridLayerRef = useRef<any[]>([]);
   
-  // Track grid creation attempts
+  // Track grid creation attempts with higher priority
   const gridAttemptCountRef = useRef(0);
-  const maxGridAttempts = 5; // Increased for better reliability
+  const maxGridAttempts = 10; // Increased for better reliability
   const gridCreationSuccessfulRef = useRef(false);
   
   // Grid creation callback
@@ -205,14 +205,9 @@ export const CanvasController = () => {
     loadFloorPlansData();
   }, [loadFloorPlansData]);
 
-  // IMPROVED: Force grid creation on initial load and after any error
+  // IMPROVED: Force grid creation on initial load and after any error with higher priority
   useEffect(() => {
-    if (!fabricCanvasRef.current) {
-      return;
-    }
-    
-    console.log("⭐ FORCE GRID CREATION - Critical priority grid creation for wall snapping");
-    
+    console.log("🔴 FORCE GRID CREATION - High priority grid creation for wall snapping");
     // Always reset progress first to break any stuck locks
     resetGridProgress();
     
@@ -240,7 +235,7 @@ export const CanvasController = () => {
         console.error("Error during grid creation attempt:", err);
       }
       
-      // If immediate creation failed, try with timeout
+      // If immediate creation failed, try again with shorter timeout
       setTimeout(() => {
         if (!fabricCanvasRef.current) return;
         
@@ -260,8 +255,8 @@ export const CanvasController = () => {
         
         // If we're here, grid creation failed
         if (gridAttemptCountRef.current < maxGridAttempts) {
-          // Schedule next attempt with exponential backoff
-          const delay = Math.pow(2, gridAttemptCountRef.current) * 300;
+          // Schedule next attempt with shorter exponential backoff
+          const delay = Math.min(Math.pow(1.5, gridAttemptCountRef.current) * 100, 1000);
           console.log(`Scheduling next grid attempt in ${delay}ms`);
           
           setTimeout(() => {
@@ -269,7 +264,7 @@ export const CanvasController = () => {
             attemptGridCreation();
           }, delay);
         }
-      }, 100);
+      }, 50);
     };
     
     // Start the first attempt

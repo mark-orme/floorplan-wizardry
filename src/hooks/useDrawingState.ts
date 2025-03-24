@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { adjustPointForPanning, snapToGrid, snapPointsToGrid, forceGridAlignment, snapToNearestGridLine } from "@/utils/geometry";
+import { adjustPointForPanning, snapToGrid, snapPointsToGrid } from "@/utils/geometry";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -72,11 +72,11 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
-    // CRITICAL FIX: Force EXACT grid line alignment for wall start points
-    // Apply strict snapping to ensure start point is precisely on a grid line
-    const startPoint = snapToNearestGridLine(rawStartPoint);
+    // CRITICAL FIX: Force EXACT grid snapping at the very start of drawing
+    // This ensures the initial click point lands perfectly on a grid line
+    const startPoint = snapToGrid(rawStartPoint);
     
-    console.log("GRID SNAP (handleMouseDown): Raw clicked point:", rawStartPoint, "Snapped to grid line:", startPoint);
+    console.log("GRID SNAP (handleMouseDown): Raw clicked point:", rawStartPoint, "Snapped to grid:", startPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -108,6 +108,10 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
+    // CRITICAL FIX: Snap the point to grid DURING drawing (not just after)
+    // This gives visual feedback to the user about where walls will land
+    const snappedCurrentPoint = snapToGrid(rawCurrentPoint);
+    
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
       x: e.e.clientX,
@@ -117,13 +121,8 @@ export const useDrawingState = ({
     setDrawingState(prev => {
       if (!prev.startPoint) return prev;
       
-      // CRITICAL FIX: Apply strict grid line snapping to current point
-      // This ensures walls always snap precisely to grid lines when moving
-      const currentPoint = snapToNearestGridLine(rawCurrentPoint);
-      
-      // Only calculate midpoint if we have both start and current points
       // Use the grid-snapped points for more accurate midpoint calculation
-      const midPoint = calculateMidpoint(prev.startPoint, currentPoint);
+      const midPoint = calculateMidpoint(prev.startPoint, snappedCurrentPoint);
       
       // Convert midpoint from meter to screen coordinates
       // This is an approximation as the exact conversion depends on canvas zoom/pan
@@ -134,7 +133,7 @@ export const useDrawingState = ({
       
       return {
         ...prev,
-        currentPoint,
+        currentPoint: snappedCurrentPoint,
         cursorPosition: absolutePosition,
         midPoint: midPointScreen
       };
