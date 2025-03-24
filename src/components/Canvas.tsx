@@ -4,7 +4,7 @@
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
@@ -42,7 +42,8 @@ export const Canvas = () => {
     handleZoom,
     clearCanvas,
     saveCanvas,
-    drawingState
+    drawingState,
+    handleRetry
   } = CanvasController();
 
   // Load initial data when component mounts
@@ -72,15 +73,6 @@ export const Canvas = () => {
       console.log(`Grid created in ${performance.now() - loadTimes.startTime}ms`);
     }
   }, [debugInfo, loadTimes]);
-
-  const handleRetry = useCallback(() => {
-    setLoadTimes({
-      startTime: performance.now(),
-      canvasReady: 0,
-      gridCreated: 0
-    });
-    loadData();
-  }, [loadData]);
 
   return (
     <LoadingErrorWrapper

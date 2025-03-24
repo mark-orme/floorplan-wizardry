@@ -5,17 +5,19 @@
  * @module CanvasController
  */
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { createGrid } from "@/utils/canvasGrid";
-import { FloorPlan } from "@/utils/drawing";
 
 // Custom hooks
+import { useCanvasState } from "@/hooks/useCanvasState";
+import { useCanvasDebug } from "@/hooks/useCanvasDebug";
+import { useCanvasGrid } from "@/hooks/useCanvasGrid";
 import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { useCanvasResizing } from "@/hooks/useCanvasResizing";
 import { useFloorPlans } from "@/hooks/useFloorPlans";
 import { useDrawingTools } from "@/hooks/useDrawingTools";
+import { useFloorSelection } from "@/hooks/useFloorSelection";
 
 /**
  * Controller component that manages all canvas logic and state
@@ -23,29 +25,24 @@ import { useDrawingTools } from "@/hooks/useDrawingTools";
  * @returns All canvas-related state and handler functions
  */
 export const CanvasController = () => {
-  // State for drawing tools and display
-  // Default to straightLine (wall) tool as requested
-  const [tool, setTool] = useState<"draw" | "room" | "straightLine">("straightLine");
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [gia, setGia] = useState(0);
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [currentFloor, setCurrentFloor] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  // Canvas state (tools, dimensions, etc.)
+  const {
+    tool, setTool,
+    zoomLevel, setZoomLevel,
+    gia, setGia,
+    floorPlans, setFloorPlans,
+    currentFloor, setCurrentFloor,
+    isLoading, setIsLoading,
+    canvasDimensions, setCanvasDimensions
+  } = useCanvasState();
   
-  // Canvas sizing and initialization tracking
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
-  
-  /**
-   * Debug info for troubleshooting canvas issues
-   */
-  const [debugInfo, setDebugInfo] = useState({
-    canvasInitialized: false,
-    gridCreated: false,
-    dimensionsSet: false,
-    brushInitialized: false
-  });
+  // Debug and error state
+  const {
+    debugInfo, setDebugInfo,
+    hasError, setHasError,
+    errorMessage, setErrorMessage,
+    resetLoadTimes
+  } = useCanvasDebug();
 
   // Initialize canvas and grid
   const { 
@@ -63,17 +60,14 @@ export const CanvasController = () => {
     setErrorMessage
   });
   
-  // Create grid callback for other hooks
-  const gridRef = useCallback((canvas: any) => {
-    return createGrid(
-      canvas, 
-      gridLayerRef, 
-      canvasDimensions, 
-      setDebugInfo, 
-      setHasError, 
-      setErrorMessage
-    );
-  }, [canvasDimensions, gridLayerRef]);
+  // Grid creation callback
+  const createGrid = useCanvasGrid({
+    gridLayerRef,
+    canvasDimensions,
+    setDebugInfo,
+    setHasError,
+    setErrorMessage
+  });
 
   // Drawing tools
   const {
@@ -96,7 +90,7 @@ export const CanvasController = () => {
     currentFloor,
     setFloorPlans,
     setGia,
-    createGrid: gridRef,
+    createGrid,
     recalculateGIA: () => {}  // Will be replaced after useFloorPlans
   });
 
@@ -127,9 +121,16 @@ export const CanvasController = () => {
     setGia,
     setFloorPlans,
     clearDrawings,
-    createGrid: gridRef
+    createGrid
   });
 
+  // Floor selection
+  const { handleFloorSelect } = useFloorSelection({
+    currentFloor,
+    setCurrentFloor,
+    handleSelectFloor
+  });
+  
   // Update the recalculateGIA in drawing tools
   useEffect(() => {
     Object.assign(useDrawingTools, { recalculateGIA });
@@ -143,7 +144,7 @@ export const CanvasController = () => {
     setDebugInfo,
     setHasError,
     setErrorMessage,
-    createGrid: gridRef
+    createGrid
   });
 
   // Load floor plans data
@@ -160,7 +161,7 @@ export const CanvasController = () => {
           console.log("Floor plans loaded:", plans);
         } else {
           // Create a default floor plan with a proper paperSize type
-          const defaultPlan: FloorPlan[] = [{
+          const defaultPlan = [{
             strokes: [],
             label: "Ground Floor",
             paperSize: "infinite"  // Using a valid enum value from FloorPlan type
@@ -181,26 +182,24 @@ export const CanvasController = () => {
     };
     
     loadFloorPlansData();
-  }, [loadData]);
-
-  // Handle selecting a different floor
-  const handleFloorSelect = useCallback((index: number) => {
-    if (index !== currentFloor) {
-      setCurrentFloor(index);
-      handleSelectFloor(index);
-    }
-  }, [currentFloor, handleSelectFloor]);
+  }, [loadData, setFloorPlans, setHasError, setErrorMessage, setIsLoading]);
 
   // Ensure the grid is created on initial load
   useEffect(() => {
     if (fabricCanvasRef.current && !debugInfo.gridCreated) {
       console.log("Creating grid during initial load");
-      const grid = gridRef(fabricCanvasRef.current);
+      const grid = createGrid(fabricCanvasRef.current);
       if (grid && grid.length > 0) {
         console.log(`Grid created with ${grid.length} objects`);
       }
     }
-  }, [fabricCanvasRef, debugInfo.gridCreated, gridRef]);
+  }, [fabricCanvasRef, debugInfo.gridCreated, createGrid]);
+
+  // Retry handler for loading errors
+  const handleRetry = useCallback(() => {
+    resetLoadTimes();
+    loadData();
+  }, [loadData, resetLoadTimes]);
 
   return {
     tool,
@@ -221,6 +220,7 @@ export const CanvasController = () => {
     handleZoom,
     clearCanvas,
     saveCanvas,
-    drawingState
+    drawingState,
+    handleRetry
   };
 };
