@@ -3,6 +3,7 @@ import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
+import { GRID_SIZE } from "@/utils/drawing";
 
 interface DistanceTooltipProps {
   startPoint?: Point;
@@ -30,7 +31,7 @@ export const DistanceTooltip = memo(({
     return null;
   }
   
-  // Calculate distance in meters (now rounded to 1 decimal place)
+  // Calculate distance in meters with precision matching grid size (0.1m)
   const distanceInMeters = calculateDistance(startPoint, currentPoint);
   
   // If the distance is too small, don't show the tooltip
@@ -38,11 +39,12 @@ export const DistanceTooltip = memo(({
     return null;
   }
   
-  // Calculate grid counts (number of small grid cells)
-  const dx = currentPoint.x - startPoint.x;
-  const dy = currentPoint.y - startPoint.y;
+  // Calculate grid units for clearer representation (how many 0.1m grid cells)
+  const gridUnits = Math.round(distanceInMeters / GRID_SIZE);
   
   // Calculate angle for diagonal lines (in degrees)
+  const dx = currentPoint.x - startPoint.x;
+  const dy = currentPoint.y - startPoint.y;
   const angleInDegrees = Math.atan2(dy, dx) * (180 / Math.PI);
   const normalizedAngle = ((angleInDegrees % 360) + 360) % 360;
   
@@ -81,6 +83,9 @@ export const DistanceTooltip = memo(({
       <div className="flex items-center gap-2 text-sm whitespace-nowrap">
         <Ruler className="w-4 h-4" />
         <span className="font-medium">{formattedDistance} m</span>
+        {gridUnits > 0 && (
+          <span className="text-xs opacity-80">({gridUnits} grid units)</span>
+        )}
         {isDiagonal && (
           <span className="text-xs opacity-80">({Math.round(normalizedAngle)}°)</span>
         )}

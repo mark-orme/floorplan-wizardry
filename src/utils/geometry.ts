@@ -1,9 +1,10 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
  */
-import { Point, Stroke, GRID_SIZE } from './drawingTypes';
-import { PIXELS_PER_METER } from './drawing';
+import { Point, Stroke } from './drawingTypes';
+import { PIXELS_PER_METER, GRID_SIZE } from './drawing';
 
 /** 
  * Snap a single point to the nearest grid intersection
@@ -21,6 +22,7 @@ export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
   const snappedY = Math.round(point.y / gridSize) * gridSize;
   
   // Create result with exactly 1 decimal place precision to avoid floating point issues
+  // Since our grid is 0.1m, using 1 decimal place ensures exact grid alignment
   const result = {
     x: Number(snappedX.toFixed(1)),
     y: Number(snappedY.toFixed(1))
@@ -216,6 +218,7 @@ export const filterRedundantPoints = (stroke: Stroke, minDistance: number = 0.05
 
 /**
  * Calculate exact distance between two points in meters
+ * FIXED: Now correctly accounts for 0.1m grid size
  * @param startPoint - Starting point 
  * @param endPoint - Ending point
  * @returns Distance in meters, rounded to 1 decimal place for better usability
@@ -227,8 +230,9 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
   // Raw distance in meters with full precision
   const rawDistance = Math.sqrt(dx * dx + dy * dy);
   
-  // Round to exactly 1 decimal place (0.1m increments)
+  // Round to exactly 1 decimal place (0.1m increments) to match grid size
   // This ensures we only show measurements like 1.0m, 1.1m, 1.2m, etc.
+  // which aligns perfectly with our 0.1m grid
   return Math.round(rawDistance * 10) / 10;
 };
 

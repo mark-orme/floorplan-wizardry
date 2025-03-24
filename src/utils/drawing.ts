@@ -8,7 +8,8 @@
 
 // Grid and drawing constants - ensuring correct scaling
 export const PIXELS_PER_METER = 100; // 100 pixels = 1 meter (exact conversion)
-export const SMALL_GRID = PIXELS_PER_METER / 10; // 0.1m (10px)
+export const GRID_SIZE = 0.1; // Grid size in meters (0.1m = 10cm)
+export const SMALL_GRID = PIXELS_PER_METER * GRID_SIZE; // 0.1m (10px)
 export const LARGE_GRID = PIXELS_PER_METER; // 1m (100px)
 
 // Memory management constants

@@ -7,7 +7,8 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import { 
   type Point,
-  PIXELS_PER_METER
+  PIXELS_PER_METER,
+  GRID_SIZE
 } from "@/utils/drawing";
 import { 
   snapToGrid, 
@@ -81,6 +82,9 @@ export const usePointProcessing = (tool: DrawingTool) => {
       const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
       const displayLength = lengthInMeters.toFixed(1);
       toast.success(`Wall length: ${displayLength}m`);
+      
+      // Log the exact wall length for debugging
+      console.log(`Wall length: ${lengthInMeters}m (using GRID_SIZE: ${GRID_SIZE}m)`);
     }
     
     // Make sure we still have at least 2 points after all processing
