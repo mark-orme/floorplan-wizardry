@@ -1,15 +1,14 @@
-
-import React, { memo } from "react";
-import { Point } from "@/utils/drawingTypes";
+import React from "react";
+import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
 
 interface DistanceTooltipProps {
-  startPoint: Point | null;
-  currentPoint: Point | null;
+  startPoint?: Point;
+  currentPoint?: Point;
+  midPoint?: Point;
   isVisible: boolean;
-  position: { x: number; y: number } | null;
-  midPoint?: { x: number; y: number } | null; // Added optional midPoint prop
+  position?: { x: number; y: number };
 }
 
 /**
@@ -21,9 +20,9 @@ interface DistanceTooltipProps {
 export const DistanceTooltip = memo(({
   startPoint,
   currentPoint,
+  midPoint,
   isVisible,
-  position,
-  midPoint
+  position
 }: DistanceTooltipProps) => {
   // Exit early if we don't have the necessary data
   if (!startPoint || !currentPoint || !isVisible) {

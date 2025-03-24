@@ -4,7 +4,7 @@
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
@@ -20,15 +20,8 @@ export const Canvas = () => {
   const appInitializedRef = useRef(false);
   const initialDataLoadedRef = useRef(false);
   const isFirstMountRef = useRef(true);
-  const gridCreatedRef = useRef(false);
   
   // Define all hooks at the top level, never conditionally
-  const [loadTimes, setLoadTimes] = useState({
-    startTime: performance.now(),
-    canvasReady: 0,
-    gridCreated: 0
-  });
-  
   const {
     tool,
     gia,
@@ -84,34 +77,11 @@ export const Canvas = () => {
       return;
     }
     
-    // Record performance timing
-    const startTime = performance.now();
-    setLoadTimes(prev => ({ ...prev, startTime }));
-    
     console.log("Loading initial data");
     loadData();
     appInitializedRef.current = true;
     initialDataLoadedRef.current = true;
   }, [loadData]);
-  
-  // Track debug info changes for performance metrics - only update when values change
-  useEffect(() => {
-    if (debugInfo.canvasInitialized && loadTimes.canvasReady === 0) {
-      setLoadTimes(prev => ({ 
-        ...prev, 
-        canvasReady: performance.now() - prev.startTime 
-      }));
-    }
-    
-    // Only log first time grid is created
-    if (debugInfo.gridCreated && loadTimes.gridCreated === 0 && !gridCreatedRef.current) {
-      setLoadTimes(prev => ({ 
-        ...prev, 
-        gridCreated: performance.now() - prev.startTime 
-      }));
-      gridCreatedRef.current = true;
-    }
-  }, [debugInfo, loadTimes]);
 
   // Determine tooltip visibility - show when drawing or in select mode with an active selection
   const isTooltipVisible = 

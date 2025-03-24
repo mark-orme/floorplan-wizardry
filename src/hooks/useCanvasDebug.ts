@@ -4,18 +4,13 @@
  * @module useCanvasDebug
  */
 import { useState, useEffect } from "react";
+import { useCanvasPerformance } from "./useCanvasPerformance";
 
 interface DebugInfo {
   canvasInitialized: boolean;
   gridCreated: boolean;
   dimensionsSet: boolean;
   brushInitialized: boolean;
-}
-
-interface LoadTimes {
-  startTime: number;
-  canvasReady: number;
-  gridCreated: number;
 }
 
 /**
@@ -30,40 +25,25 @@ export const useCanvasDebug = () => {
     brushInitialized: false
   });
   
-  const [loadTimes, setLoadTimes] = useState<LoadTimes>({
-    startTime: performance.now(),
-    canvasReady: 0,
-    gridCreated: 0
-  });
-  
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  
+  // Use the dedicated performance hook
+  const { loadTimes, markCanvasReady, markGridCreated, resetPerformanceTimers } = useCanvasPerformance();
 
   // Track debug info changes for performance metrics
   useEffect(() => {
-    if (debugInfo.canvasInitialized && loadTimes.canvasReady === 0) {
-      setLoadTimes(prev => ({
-        ...prev,
-        canvasReady: performance.now() - prev.startTime
-      }));
-      console.log(`Canvas initialized in ${performance.now() - loadTimes.startTime}ms`);
+    if (debugInfo.canvasInitialized) {
+      markCanvasReady();
     }
     
-    if (debugInfo.gridCreated && loadTimes.gridCreated === 0) {
-      setLoadTimes(prev => ({
-        ...prev,
-        gridCreated: performance.now() - prev.startTime
-      }));
-      console.log(`Grid created in ${performance.now() - loadTimes.startTime}ms`);
+    if (debugInfo.gridCreated) {
+      markGridCreated();
     }
-  }, [debugInfo, loadTimes]);
+  }, [debugInfo, markCanvasReady, markGridCreated]);
 
   const resetLoadTimes = () => {
-    setLoadTimes({
-      startTime: performance.now(),
-      canvasReady: 0,
-      gridCreated: 0
-    });
+    resetPerformanceTimers();
   };
 
   return {

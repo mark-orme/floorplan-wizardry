@@ -5,6 +5,7 @@
  */
 import { useState, useCallback, useRef, useEffect } from "react";
 import { DrawingTool } from "./useCanvasState";
+import { type DrawingState } from "@/types/drawingTypes";
 import { Point } from "@/utils/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
 import { adjustPointForPanning } from "@/utils/geometry";
@@ -15,27 +16,17 @@ interface UseDrawingStateProps {
 }
 
 /**
- * Hook for tracking the current drawing state
+ * Hook for managing drawing state during user interactions
  * @param {UseDrawingStateProps} props - Hook properties
- * @returns {Object} Drawing state and handler functions
+ * @returns {Object} Drawing state and handlers
  */
 export const useDrawingState = ({ 
   fabricCanvasRef,
-  tool
+  tool 
 }: UseDrawingStateProps) => {
   // Track current drawing state
-  const [drawingState, setDrawingState] = useState<{
-    isDrawing: boolean;
-    startPoint: Point | null;
-    currentPoint: Point | null;
-    cursorPosition: { x: number; y: number } | null;
-    midPoint: { x: number; y: number } | null; // Added midpoint for tooltip positioning
-  }>({
-    isDrawing: false,
-    startPoint: null,
-    currentPoint: null,
-    cursorPosition: null,
-    midPoint: null
+  const [drawingState, setDrawingState] = useState<DrawingState>({
+    isDrawing: false
   });
   
   // Use ref for timeout cleanup

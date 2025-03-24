@@ -11,6 +11,7 @@ import { type FloorPlan } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
 import { snapToAngle } from "@/utils/fabricInteraction";
 import { toFabricPoint } from "@/utils/fabricPointConverter";
+import { type DrawingState } from "@/types/drawingTypes";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<any>;
