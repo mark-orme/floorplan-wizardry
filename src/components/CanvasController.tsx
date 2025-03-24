@@ -34,7 +34,9 @@ export const CanvasController = () => {
     floorPlans, setFloorPlans,
     currentFloor, setCurrentFloor,
     isLoading, setIsLoading,
-    canvasDimensions, setCanvasDimensions
+    canvasDimensions, setCanvasDimensions,
+    lineThickness, setLineThickness,
+    lineColor, setLineColor
   } = useCanvasState();
   
   // Debug and error state
@@ -148,6 +150,34 @@ export const CanvasController = () => {
     createGrid
   });
 
+  // Handle line thickness changes
+  const handleLineThicknessChange = useCallback((thickness: number) => {
+    setLineThickness(thickness);
+    
+    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
+      fabricCanvasRef.current.freeDrawingBrush.width = thickness;
+      toast.success(`Line thickness set to ${thickness}px`);
+    }
+  }, [fabricCanvasRef, setLineThickness]);
+
+  // Handle line color changes
+  const handleLineColorChange = useCallback((color: string) => {
+    setLineColor(color);
+    
+    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
+      fabricCanvasRef.current.freeDrawingBrush.color = color;
+      toast.success(`Line color updated`);
+    }
+  }, [fabricCanvasRef, setLineColor]);
+
+  // Apply line settings when tool changes
+  useEffect(() => {
+    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
+      fabricCanvasRef.current.freeDrawingBrush.width = lineThickness;
+      fabricCanvasRef.current.freeDrawingBrush.color = lineColor;
+    }
+  }, [tool, fabricCanvasRef, lineThickness, lineColor]);
+
   // Load floor plans data
   useEffect(() => {
     const loadFloorPlansData = async () => {
@@ -212,6 +242,8 @@ export const CanvasController = () => {
     errorMessage,
     debugInfo,
     canvasRef,
+    lineThickness,
+    lineColor,
     loadData,
     handleFloorSelect,
     handleAddFloor,
@@ -221,6 +253,8 @@ export const CanvasController = () => {
     handleZoom,
     clearCanvas,
     saveCanvas,
+    handleLineThicknessChange,
+    handleLineColorChange,
     drawingState,
     handleRetry
   };

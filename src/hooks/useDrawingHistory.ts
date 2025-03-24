@@ -6,7 +6,6 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
-import { clearCanvasObjects } from "@/utils/fabricCanvas";
 
 interface UseDrawingHistoryProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -68,7 +67,9 @@ export const useDrawingHistory = ({
       pathsAndPolylines.forEach(obj => canvas.remove(obj));
       
       // Add previous state objects
-      previousState.forEach(obj => canvas.add(obj));
+      if (previousState && previousState.length) {
+        previousState.forEach(obj => canvas.add(obj));
+      }
       
       // Update GIA calculation
       recalculateGIA();
@@ -114,7 +115,9 @@ export const useDrawingHistory = ({
       pathsAndPolylines.forEach(obj => canvas.remove(obj));
       
       // Add next state objects
-      nextState.forEach(obj => canvas.add(obj));
+      if (nextState && nextState.length) {
+        nextState.forEach(obj => canvas.add(obj));
+      }
       
       // Update GIA calculation
       recalculateGIA();

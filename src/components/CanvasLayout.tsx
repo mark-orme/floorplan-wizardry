@@ -20,6 +20,8 @@ interface CanvasLayoutProps {
     brushInitialized: boolean;
   };
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  lineThickness: number;
+  lineColor: string;
   onToolChange: (tool: DrawingTool) => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -28,6 +30,8 @@ interface CanvasLayoutProps {
   onSave: () => void;
   onFloorSelect: (index: number) => void;
   onAddFloor: () => void;
+  onLineThicknessChange: (thickness: number) => void;
+  onLineColorChange: (color: string) => void;
 }
 
 /**
@@ -42,6 +46,8 @@ export const CanvasLayout = ({
   currentFloor,
   debugInfo,
   canvasRef,
+  lineThickness,
+  lineColor,
   onToolChange,
   onUndo,
   onRedo,
@@ -49,7 +55,9 @@ export const CanvasLayout = ({
   onClear,
   onSave,
   onFloorSelect,
-  onAddFloor
+  onAddFloor,
+  onLineThicknessChange,
+  onLineColorChange
 }: CanvasLayoutProps) => {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto">
@@ -63,6 +71,10 @@ export const CanvasLayout = ({
         onClear={onClear}
         onSave={onSave}
         gia={gia}
+        lineThickness={lineThickness}
+        lineColor={lineColor}
+        onLineThicknessChange={onLineThicknessChange}
+        onLineColorChange={onLineColorChange}
       />
       
       <div className="flex flex-col md:flex-row gap-6">

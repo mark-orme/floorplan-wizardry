@@ -27,6 +27,8 @@ interface UsePathProcessingProps {
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  lineThickness?: number;
+  lineColor?: string;
 }
 
 /**
@@ -41,7 +43,9 @@ export const usePathProcessing = ({
   tool,
   currentFloor,
   setFloorPlans,
-  setGia
+  setGia,
+  lineThickness = 2,
+  lineColor = "#000000"
 }: UsePathProcessingProps) => {
   
   /**
@@ -107,9 +111,9 @@ export const usePathProcessing = ({
             finalPoints = straightenStroke([start, end]);
             console.log("Applied straightening to freehand drawing");
           }
-        } else {
+        } else if (tool === 'straightLine') {
           // For wall tool, always straighten
-          finalPoints = straightenStroke(finalPoints);
+          finalPoints = straightenStroke([finalPoints[0], finalPoints[finalPoints.length - 1]]);
           console.log("Applied straightening to wall line");
         }
         
@@ -118,11 +122,11 @@ export const usePathProcessing = ({
           // Calculate length of the line in meters
           const dx = finalPoints[1].x - finalPoints[0].x;
           const dy = finalPoints[1].y - finalPoints[0].y;
-          const lengthInMeters = Math.sqrt(dx * dx + dy * dy);
+          const lengthInMeters = Math.sqrt(dx * dx + dy * dy) / PIXELS_PER_METER;
           
           if (tool === 'straightLine') {
             toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
-          } else {
+          } else if (tool === 'draw') {
             toast.success(`Line length: ${lengthInMeters.toFixed(2)}m`);
           }
         }
@@ -166,9 +170,9 @@ export const usePathProcessing = ({
 
       // Create a polyline from the processed points
       const polyline = new Polyline(pixelPoints, {
-        stroke: '#000000',
-        strokeWidth: 2,
-        fill: tool === 'room' ? 'rgba(0, 0, 255, 0.1)' : 'transparent',
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        fill: tool === 'room' ? `${lineColor}20` : 'transparent', // Use semi-transparent fill for rooms
         objectType: tool === 'room' ? 'room' : 'line',
         objectCaching: true,
         perPixelTargetFind: false
@@ -215,7 +219,7 @@ export const usePathProcessing = ({
       console.error("Error processing drawing:", error);
       toast.error("Failed to process drawing");
     }
-  }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia]);
+  }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor]);
   
   // Helper function to calculate the total length of a path
   const calculatePathLength = (points: Point[]): number => {

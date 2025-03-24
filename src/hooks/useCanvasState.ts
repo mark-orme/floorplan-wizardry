@@ -24,6 +24,8 @@ export const useCanvasState = () => {
   const [currentFloor, setCurrentFloor] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
+  const [lineThickness, setLineThickness] = useState(2);
+  const [lineColor, setLineColor] = useState("#000000");
 
   return {
     // Tool state
@@ -50,6 +52,12 @@ export const useCanvasState = () => {
     
     // Canvas dimensions
     canvasDimensions,
-    setCanvasDimensions
+    setCanvasDimensions,
+    
+    // Line settings
+    lineThickness,
+    setLineThickness,
+    lineColor,
+    setLineColor
   };
 };

@@ -15,6 +15,8 @@ interface UseCanvasToolsProps {
   gridLayerRef: React.MutableRefObject<any[]>;
   tool: DrawingTool;
   zoomLevel: number;
+  lineThickness: number;
+  lineColor: string;
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   createGrid: (canvas: FabricCanvas) => any[];
@@ -30,6 +32,8 @@ export const useCanvasTools = ({
   gridLayerRef,
   tool,
   zoomLevel,
+  lineThickness,
+  lineColor,
   setTool,
   setZoomLevel,
   createGrid
@@ -72,8 +76,8 @@ export const useCanvasTools = ({
       // Set appropriate brush for drawing tools
       if (isDrawingTool) {
         fabricCanvasRef.current.freeDrawingBrush = new PencilBrush(fabricCanvasRef.current);
-        fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
-        fabricCanvasRef.current.freeDrawingBrush.width = 2;
+        fabricCanvasRef.current.freeDrawingBrush.color = lineColor;
+        fabricCanvasRef.current.freeDrawingBrush.width = lineThickness;
         
         // Adjust the smoothness and precision of the drawing
         if (fabricCanvasRef.current.freeDrawingBrush instanceof PencilBrush) {
@@ -93,7 +97,7 @@ export const useCanvasTools = ({
       };
       toast.success(`${toolNames[newTool]} tool selected`);
     }
-  }, [fabricCanvasRef, setTool]);
+  }, [fabricCanvasRef, setTool, lineThickness, lineColor]);
 
   /**
    * Zoom the canvas in or out

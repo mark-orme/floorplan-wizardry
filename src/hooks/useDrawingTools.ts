@@ -18,6 +18,8 @@ interface UseDrawingToolsProps {
   historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   tool: DrawingTool;
   zoomLevel: number;
+  lineThickness: number;
+  lineColor: string;
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   floorPlans: FloorPlan[];
@@ -41,6 +43,8 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     historyRef,
     tool,
     zoomLevel,
+    lineThickness,
+    lineColor,
     setTool,
     setZoomLevel,
     floorPlans,
@@ -61,6 +65,8 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     gridLayerRef,
     tool,
     zoomLevel,
+    lineThickness,
+    lineColor,
     setTool,
     setZoomLevel,
     createGrid

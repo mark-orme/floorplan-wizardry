@@ -18,6 +18,8 @@ interface UseCanvasDrawingProps {
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  lineThickness?: number;
+  lineColor?: string;
 }
 
 /**
@@ -33,7 +35,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     tool,
     currentFloor,
     setFloorPlans,
-    setGia
+    setGia,
+    lineThickness = 2,
+    lineColor = "#000000"
   } = props;
   
   // Composition of smaller, focused hooks - always initialize hooks first
@@ -44,7 +48,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     tool,
     currentFloor,
     setFloorPlans,
-    setGia
+    setGia,
+    lineThickness,
+    lineColor
   });
   
   // Always initialize this hook, never conditionally
@@ -66,6 +72,12 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     if (!fabricCanvasRef.current) return;
     
     const fabricCanvas = fabricCanvasRef.current;
+    
+    // Update the brush settings whenever they change
+    if (fabricCanvas.freeDrawingBrush) {
+      fabricCanvas.freeDrawingBrush.width = lineThickness;
+      fabricCanvas.freeDrawingBrush.color = lineColor;
+    }
     
     // Handle path creation (called by fabric when a path is completed)
     const handlePathCreated = (e: { path: any }) => {
@@ -101,7 +113,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     handleMouseMove, 
     handleMouseUp,
     cleanupTimeouts,
-    tool  // Add tool as dependency to re-attach listeners when tool changes
+    tool,
+    lineThickness,
+    lineColor
   ]);
 
   return {

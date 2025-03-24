@@ -42,6 +42,8 @@ export const Canvas = () => {
     errorMessage,
     debugInfo,
     canvasRef,
+    lineThickness,
+    lineColor,
     loadData,
     handleFloorSelect,
     handleAddFloor,
@@ -51,6 +53,8 @@ export const Canvas = () => {
     handleZoom,
     clearCanvas,
     saveCanvas,
+    handleLineThicknessChange,
+    handleLineColorChange,
     drawingState,
     handleRetry
   } = CanvasController();
@@ -117,6 +121,8 @@ export const Canvas = () => {
           currentFloor={currentFloor}
           debugInfo={debugInfo}
           canvasRef={canvasRef}
+          lineThickness={lineThickness}
+          lineColor={lineColor}
           onToolChange={handleToolChange}
           onUndo={handleUndo}
           onRedo={handleRedo}
@@ -125,6 +131,8 @@ export const Canvas = () => {
           onSave={saveCanvas}
           onFloorSelect={handleFloorSelect}
           onAddFloor={handleAddFloor}
+          onLineThicknessChange={handleLineThicknessChange}
+          onLineColorChange={handleLineColorChange}
         />
         
         {tooltipComponent}
