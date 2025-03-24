@@ -1,4 +1,3 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
