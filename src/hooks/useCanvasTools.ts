@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools

@@ -6,6 +6,12 @@
 import { Canvas } from "fabric";
 import { Point } from "./drawingTypes";
 
+// Define a simple point interface for internal use
+interface SimplePoint {
+  x: number;
+  y: number;
+}
+
 /**
  * Add pinch-to-zoom gesture support for mobile and trackpad
  * @param {Canvas} fabricCanvas - The Fabric canvas instance
@@ -25,7 +31,7 @@ export const addPinchToZoom = (fabricCanvas: Canvas, setZoomLevel?: (zoom: numbe
       const newZoom = delta > 0 ? Math.max(0.1, zoom * 0.9) : Math.min(10, zoom * 1.1);
       
       // Zoom to point - more natural than zooming to center
-      fabricCanvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, newZoom);
+      fabricCanvas.zoomToPoint(new fabric.Point(opt.e.offsetX, opt.e.offsetY), newZoom);
       
       // Update zoom level state if callback provided
       if (setZoomLevel) {
@@ -40,20 +46,20 @@ export const addPinchToZoom = (fabricCanvas: Canvas, setZoomLevel?: (zoom: numbe
     // Handle gesture events for touch devices
     // Webkit gesture events for Safari and some other mobile browsers
     const el = fabricCanvas.upperCanvasEl;
-    el.addEventListener('gesturestart', (e) => {
+    el.addEventListener('gesturestart', (e: any) => {
       e.preventDefault();
       scaling = true;
       startDistance = e.scale;
       startZoom = fabricCanvas.getZoom();
     });
     
-    el.addEventListener('gesturechange', (e) => {
+    el.addEventListener('gesturechange', (e: any) => {
       if (!scaling) return;
       e.preventDefault();
       
       const newZoom = Math.min(10, Math.max(0.1, startZoom * (e.scale / startDistance)));
-      const pointer = fabricCanvas.getPointer(e);
-      fabricCanvas.zoomToPoint({ x: pointer.x, y: pointer.y }, newZoom);
+      const pointer = fabricCanvas.getPointer(e as any);
+      fabricCanvas.zoomToPoint(new fabric.Point(pointer.x, pointer.y), newZoom);
       
       // Update zoom level state if callback provided
       if (setZoomLevel) {
@@ -61,7 +67,7 @@ export const addPinchToZoom = (fabricCanvas: Canvas, setZoomLevel?: (zoom: numbe
       }
     });
     
-    el.addEventListener('gestureend', (e) => {
+    el.addEventListener('gestureend', (e: any) => {
       e.preventDefault();
       scaling = false;
     });
@@ -75,17 +81,18 @@ export const addPinchToZoom = (fabricCanvas: Canvas, setZoomLevel?: (zoom: numbe
 /**
  * Enable panning on the canvas
  * @param {Canvas} fabricCanvas - The Fabric canvas instance
+ * @param {boolean} isPanningEnabled - Whether panning is enabled
  */
-export const enablePanning = (fabricCanvas: Canvas) => {
+export const enablePanning = (fabricCanvas: Canvas, isPanningEnabled: boolean = false) => {
   try {
     let isPanning = false;
     let lastPosX = 0;
     let lastPosY = 0;
     
     fabricCanvas.on('mouse:down', (opt) => {
-      const evt = opt.e;
+      const evt = opt.e as MouseEvent;
       // Middle mouse button or spacebar + mouse down for panning
-      if (evt.button === 1 || (evt.keyCode === 32 && evt.button === 0)) {
+      if ((evt.button === 1 || (evt.key === ' ' && evt.button === 0)) || isPanningEnabled) {
         isPanning = true;
         lastPosX = evt.clientX;
         lastPosY = evt.clientY;
@@ -96,7 +103,7 @@ export const enablePanning = (fabricCanvas: Canvas) => {
     fabricCanvas.on('mouse:move', (opt) => {
       if (!isPanning) return;
       
-      const evt = opt.e;
+      const evt = opt.e as MouseEvent;
       const vpt = fabricCanvas.viewportTransform;
       if (!vpt) return;
       
