@@ -1,3 +1,4 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -86,4 +87,21 @@ export const calculateGIA = (stroke: Stroke): number => {
   );
   
   return Number(area.toFixed(3)); // Precision to 0.001 m²
+};
+
+/**
+ * Adjusts points for panning offset
+ * Helper for ensuring accurate point calculations when canvas is panned
+ * @param {Point} point - The point to adjust
+ * @param {Canvas} canvas - The fabric canvas
+ * @returns {Point} Adjusted point
+ */
+export const adjustPointForPanning = (point: Point, canvas: any): Point => {
+  if (!canvas || !canvas.viewportTransform) return point;
+  
+  const vpt = canvas.viewportTransform;
+  return {
+    x: (point.x - vpt[4]) / vpt[0],
+    y: (point.y - vpt[5]) / vpt[3]
+  };
 };

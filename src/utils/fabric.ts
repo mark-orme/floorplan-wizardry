@@ -17,5 +17,6 @@ export {
 // Export from fabricInteraction
 export {
   addPinchToZoom,
-  snapToAngle
+  snapToAngle,
+  enablePanning
 } from './fabricInteraction';

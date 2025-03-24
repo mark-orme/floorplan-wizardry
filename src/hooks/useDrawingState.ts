@@ -1,11 +1,13 @@
+
 import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { Point } from "@/utils/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
+import { DrawingTool } from "./useCanvasState";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool?: "draw" | "room" | "straightLine"; // Add tool as an optional prop
+  tool?: DrawingTool; // Updated tool type
 }
 
 interface DrawingState {

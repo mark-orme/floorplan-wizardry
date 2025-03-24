@@ -9,14 +9,16 @@ import {
   ZoomIn, 
   ZoomOut, 
   Undo, 
-  Redo 
+  Redo,
+  Hand
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import { DrawingTool } from "@/hooks/useCanvasState";
 
 interface DrawingToolbarProps {
-  tool: "draw" | "room" | "straightLine";
-  onToolChange: (tool: "draw" | "room" | "straightLine") => void;
+  tool: DrawingTool;
+  onToolChange: (tool: DrawingTool) => void;
   onUndo: () => void;
   onRedo: () => void;
   onZoom: (direction: "in" | "out") => void;
@@ -92,6 +94,23 @@ export const DrawingToolbar = ({
           <HoverCardContent className="p-2 text-sm shadow-md">
             <strong>Room Tool</strong>
             <p>Create closed rooms with area calculation</p>
+          </HoverCardContent>
+        </HoverCard>
+
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button
+              variant={tool === "hand" ? "default" : "outline"}
+              onClick={() => onToolChange("hand")}
+              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
+              aria-label="Hand Tool"
+            >
+              <Hand className="w-4 h-4 transition-colors" />
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-2 text-sm shadow-md">
+            <strong>Hand Tool</strong>
+            <p>Pan and navigate around the canvas</p>
           </HoverCardContent>
         </HoverCard>
       </div>

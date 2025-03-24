@@ -7,12 +7,17 @@ import { useState } from "react";
 import { FloorPlan } from "@/utils/drawing";
 
 /**
+ * Type for drawing tools including the new hand tool
+ */
+export type DrawingTool = "draw" | "room" | "straightLine" | "hand";
+
+/**
  * Hook for managing canvas state
  * @returns Canvas state and setters
  */
 export const useCanvasState = () => {
   // Default to straightLine (wall) tool as requested
-  const [tool, setTool] = useState<"draw" | "room" | "straightLine">("straightLine");
+  const [tool, setTool] = useState<DrawingTool>("straightLine");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);

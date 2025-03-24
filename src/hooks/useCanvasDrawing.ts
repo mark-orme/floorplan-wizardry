@@ -8,12 +8,13 @@ import { useEffect, useMemo } from "react";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { type FloorPlan } from "@/utils/drawing";
+import { DrawingTool } from "./useCanvasState";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<any>;
   gridLayerRef: React.MutableRefObject<any[]>;
   historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
-  tool: "draw" | "room" | "straightLine";
+  tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
@@ -73,13 +74,16 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
       handleMouseUp();
     };
     
-    // Attach event listeners
-    fabricCanvas.on('path:created', handlePathCreated);
-    fabricCanvas.on('mouse:down', handleMouseDown);
-    fabricCanvas.on('mouse:move', handleMouseMove);
-    fabricCanvas.on('mouse:up', handleMouseUp);
+    // Only attach drawing-related event handlers if we're not in hand tool mode
+    if (tool !== "hand") {
+      // Attach event listeners
+      fabricCanvas.on('path:created', handlePathCreated);
+      fabricCanvas.on('mouse:down', handleMouseDown);
+      fabricCanvas.on('mouse:move', handleMouseMove);
+      fabricCanvas.on('mouse:up', handleMouseUp);
+    }
     
-    // Clean up event listeners on unmount
+    // Clean up event listeners on unmount or when tool changes
     return () => {
       cleanupTimeouts();
       

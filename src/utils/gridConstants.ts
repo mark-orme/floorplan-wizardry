@@ -13,10 +13,13 @@ export interface GridDimensions {
 }
 
 // Grid optimization constants - increased for better visual appearance
-export const MAX_SMALL_GRID_LINES = 200; // Increased limit for denser grid
-export const MAX_LARGE_GRID_LINES = 60; // Increased limit for larger grid
+export const MAX_SMALL_GRID_LINES = 300; // Increased limit for denser grid
+export const MAX_LARGE_GRID_LINES = 100; // Increased limit for larger grid
 export const SMALL_GRID_SKIP_THRESHOLD = 200; // Canvas size / this = skip factor (lower means more lines)
 export const LARGE_GRID_SKIP_THRESHOLD = 1000; // Canvas size / this = skip factor (lower means more lines)
+
+// The grid should extend beyond the visible canvas to support panning
+export const GRID_EXTENSION_FACTOR = 3; // Grid extends this many times the canvas size
 
 /**
  * Determines if small grid creation should be skipped based on canvas dimensions

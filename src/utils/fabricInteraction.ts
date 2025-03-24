@@ -66,6 +66,100 @@ export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => v
 };
 
 /**
+ * Enable hand tool panning functionality
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {boolean} isPanningMode - Whether panning mode is active
+ */
+export const enablePanning = (canvas: Canvas, isPanningMode: boolean) => {
+  if (!canvas) {
+    console.error("Cannot enable panning: canvas is null");
+    return;
+  }
+  
+  try {
+    // Store the last coordinates to calculate the delta movement
+    let lastPosX = 0;
+    let lastPosY = 0;
+    let isDragging = false;
+
+    // Remove any existing event handlers to prevent duplicates
+    canvas.off('mouse:down');
+    canvas.off('mouse:move');
+    canvas.off('mouse:up');
+    
+    // Set the cursor style based on the panning mode
+    canvas.defaultCursor = isPanningMode ? 'grab' : 'default';
+    
+    canvas.on('mouse:down', (opt) => {
+      const evt = opt.e;
+      
+      // If in panning mode, handle panning logic
+      if (isPanningMode) {
+        isDragging = true;
+        canvas.selection = false; // Disable object selection while panning
+        lastPosX = evt.clientX;
+        lastPosY = evt.clientY;
+        canvas.defaultCursor = 'grabbing'; // Change cursor to grabbing
+        
+        // For touch devices
+        if (evt.touches && evt.touches[0]) {
+          lastPosX = evt.touches[0].clientX;
+          lastPosY = evt.touches[0].clientY;
+        }
+        
+        evt.preventDefault(); // Prevent browser's default drag behavior
+      }
+      
+      // Enable pointer events for all other tools
+      canvas.selection = !isPanningMode;
+    });
+    
+    canvas.on('mouse:move', (opt) => {
+      if (isDragging && isPanningMode) {
+        const evt = opt.e;
+        let currentX = evt.clientX;
+        let currentY = evt.clientY;
+        
+        // For touch devices
+        if (evt.touches && evt.touches[0]) {
+          currentX = evt.touches[0].clientX;
+          currentY = evt.touches[0].clientY;
+        }
+        
+        // Calculate how much the mouse/touch has moved
+        const deltaX = currentX - lastPosX;
+        const deltaY = currentY - lastPosY;
+        
+        // Update the last positions
+        lastPosX = currentX;
+        lastPosY = currentY;
+        
+        // Pan the canvas by applying the delta to the viewportTransform
+        const vpt = canvas.viewportTransform;
+        if (vpt) {
+          vpt[4] += deltaX;
+          vpt[5] += deltaY;
+          canvas.requestRenderAll();
+        }
+        
+        evt.preventDefault();
+      }
+    });
+    
+    canvas.on('mouse:up', () => {
+      // Reset to default state when mouse/touch is released
+      isDragging = false;
+      canvas.defaultCursor = isPanningMode ? 'grab' : 'default';
+      canvas.selection = !isPanningMode;
+    });
+    
+    console.log(`Panning mode ${isPanningMode ? 'enabled' : 'disabled'}`);
+  } catch (error) {
+    console.error("Error setting up panning:", error);
+  }
+};
+
+/**
  * Add angle snapping to improve line straightening
  * @param {{ x: number, y: number }} start - Start point
  * @param {{ x: number, y: number }} end - End point

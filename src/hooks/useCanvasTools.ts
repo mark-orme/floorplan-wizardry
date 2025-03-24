@@ -3,17 +3,19 @@
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
  */
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { toast } from "sonner";
 import { clearCanvasObjects } from "@/utils/fabricHelpers";
+import { enablePanning } from "@/utils/fabric";
+import { DrawingTool } from "./useCanvasState";
 
 interface UseCanvasToolsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<any[]>;
-  tool: "draw" | "room" | "straightLine";
+  tool: DrawingTool;
   zoomLevel: number;
-  setTool: React.Dispatch<React.SetStateAction<"draw" | "room" | "straightLine">>;
+  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   createGrid: (canvas: FabricCanvas) => any[];
 }
@@ -55,18 +57,24 @@ export const useCanvasTools = ({
   
   /**
    * Change the current drawing tool
-   * @param {string} newTool - The tool to switch to
+   * @param {DrawingTool} newTool - The tool to switch to
    */
-  const handleToolChange = useCallback((newTool: "draw" | "room" | "straightLine") => {
+  const handleToolChange = useCallback((newTool: DrawingTool) => {
     setTool(newTool);
     if (fabricCanvasRef.current) {
-      // Ensure we're in drawing mode
-      fabricCanvasRef.current.isDrawingMode = true;
+      // Set drawing mode based on the tool selected
+      const isDrawingTool = newTool !== "hand";
+      fabricCanvasRef.current.isDrawingMode = isDrawingTool;
       
-      // Set appropriate brush
-      fabricCanvasRef.current.freeDrawingBrush = new PencilBrush(fabricCanvasRef.current);
-      fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
-      fabricCanvasRef.current.freeDrawingBrush.width = 2;
+      // Configure the hand tool for panning when selected
+      enablePanning(fabricCanvasRef.current, newTool === "hand");
+      
+      // Set appropriate brush for drawing tools
+      if (isDrawingTool) {
+        fabricCanvasRef.current.freeDrawingBrush = new PencilBrush(fabricCanvasRef.current);
+        fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
+        fabricCanvasRef.current.freeDrawingBrush.width = 2;
+      }
       
       fabricCanvasRef.current.renderAll();
       
@@ -74,7 +82,8 @@ export const useCanvasTools = ({
       const toolNames = {
         "draw": "Freehand",
         "room": "Room",
-        "straightLine": "Wall"
+        "straightLine": "Wall",
+        "hand": "Hand (Pan)"
       };
       toast.success(`${toolNames[newTool]} tool selected`);
     }
@@ -98,6 +107,13 @@ export const useCanvasTools = ({
       toast("Zoom limit reached");
     }
   }, [fabricCanvasRef, zoomLevel, setZoomLevel]);
+
+  // Set up panning when hand tool is selected
+  useEffect(() => {
+    if (fabricCanvasRef.current) {
+      enablePanning(fabricCanvasRef.current, tool === "hand");
+    }
+  }, [fabricCanvasRef, tool]);
 
   return {
     clearDrawings,

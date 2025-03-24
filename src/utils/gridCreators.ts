@@ -7,7 +7,8 @@ import { Canvas, Line } from "fabric";
 import { 
   MAX_SMALL_GRID_LINES, 
   MAX_LARGE_GRID_LINES,
-  shouldSkipSmallGrid
+  shouldSkipSmallGrid,
+  GRID_EXTENSION_FACTOR
 } from "./gridConstants";
 import { 
   calculateSmallGridSkip, 
@@ -40,9 +41,15 @@ export const createSmallGrid = (
   const smallGridSkip = Math.max(1, Math.floor(calculateSmallGridSkip(canvasWidth, canvasHeight) / 4));
   let smallGridCount = 0;
   
+  // Calculate grid boundaries with extension factor
+  const gridWidth = canvasWidth * GRID_EXTENSION_FACTOR;
+  const gridHeight = canvasHeight * GRID_EXTENSION_FACTOR;
+  const gridStartX = -gridWidth / 2;
+  const gridStartY = -gridHeight / 2;
+  
   // Create vertical small grid lines
-  for (let i = 0; i < canvasWidth * 3 && smallGridCount < MAX_SMALL_GRID_LINES * 2; i += smallGridStep * smallGridSkip) {
-    const smallGridLine = new Line([i, -canvasHeight, i, canvasHeight * 2], {
+  for (let i = gridStartX; i < gridWidth / 2 && smallGridCount < MAX_SMALL_GRID_LINES * 2; i += smallGridStep * smallGridSkip) {
+    const smallGridLine = new Line([i, gridStartY, i, gridHeight / 2], {
       stroke: "#E1EDF2",
       selectable: false,
       evented: false,
@@ -56,8 +63,8 @@ export const createSmallGrid = (
   }
   
   // Create horizontal small grid lines
-  for (let i = 0; i < canvasHeight * 3 && smallGridCount < MAX_SMALL_GRID_LINES * 4; i += smallGridStep * smallGridSkip) {
-    const smallGridLine = new Line([-canvasWidth, i, canvasWidth * 2, i], {
+  for (let i = gridStartY; i < gridHeight / 2 && smallGridCount < MAX_SMALL_GRID_LINES * 4; i += smallGridStep * smallGridSkip) {
+    const smallGridLine = new Line([gridStartX, i, gridWidth / 2, i], {
       stroke: "#E1EDF2",
       selectable: false,
       evented: false,
@@ -91,9 +98,15 @@ export const createLargeGrid = (
   
   let largeGridCount = 0;
   
+  // Calculate grid boundaries with extension factor
+  const gridWidth = canvasWidth * GRID_EXTENSION_FACTOR;
+  const gridHeight = canvasHeight * GRID_EXTENSION_FACTOR;
+  const gridStartX = -gridWidth / 2;
+  const gridStartY = -gridHeight / 2;
+  
   // Create vertical large grid lines with extended length
-  for (let i = 0; i < canvasWidth * 3 && largeGridCount < MAX_LARGE_GRID_LINES * 2; i += largeGridStep * largeGridSkip) {
-    const largeGridLine = new Line([i, -canvasHeight, i, canvasHeight * 2], {
+  for (let i = gridStartX; i < gridWidth / 2 && largeGridCount < MAX_LARGE_GRID_LINES * 2; i += largeGridStep * largeGridSkip) {
+    const largeGridLine = new Line([i, gridStartY, i, gridHeight / 2], {
       stroke: "#B5DBE8",
       selectable: false,
       evented: false,
@@ -107,8 +120,8 @@ export const createLargeGrid = (
   }
   
   // Create horizontal large grid lines with extended width
-  for (let i = 0; i < canvasHeight * 3 && largeGridCount < MAX_LARGE_GRID_LINES * 2; i += largeGridStep * largeGridSkip) {
-    const largeGridLine = new Line([-canvasWidth, i, canvasWidth * 2, i], {
+  for (let i = gridStartY; i < gridHeight / 2 && largeGridCount < MAX_LARGE_GRID_LINES * 2; i += largeGridStep * largeGridSkip) {
+    const largeGridLine = new Line([gridStartX, i, gridWidth / 2, i], {
       stroke: "#B5DBE8",
       selectable: false,
       evented: false,
