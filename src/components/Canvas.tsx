@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, PencilBrush } from "fabric";
+import { Canvas as FabricCanvas, PencilBrush, Circle, Line, Path, Polyline, Object as FabricObject } from "fabric";
 import { Card } from "./ui/card";
 import { toast } from "sonner";
 import { DrawingToolbar } from "./DrawingToolbar";
@@ -23,14 +23,14 @@ import {
 export const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const gridLayerRef = useRef<fabric.Object[]>([]);
+  const gridLayerRef = useRef<FabricObject[]>([]);
   const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   const [currentFloor, setCurrentFloor] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const historyRef = useRef<{past: fabric.Object[][], future: fabric.Object[][]}>({
+  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
     past: [],
     future: []
   });
@@ -71,7 +71,7 @@ export const Canvas = () => {
   }, []);
 
   // Create grid function
-  const createGrid = (canvas: fabric.Canvas) => {
+  const createGrid = (canvas: FabricCanvas) => {
     console.log("Creating grid...");
     
     try {
@@ -83,7 +83,7 @@ export const Canvas = () => {
         gridLayerRef.current = [];
       }
       
-      const gridObjects: fabric.Object[] = [];
+      const gridObjects: FabricObject[] = [];
       const canvasWidth = canvas.getWidth() || canvasDimensions.width;
       const canvasHeight = canvas.getHeight() || canvasDimensions.height;
       
@@ -96,7 +96,7 @@ export const Canvas = () => {
       
       // Create small grid lines
       for (let i = 0; i < canvasWidth; i += SMALL_GRID) {
-        const smallGridLine = new fabric.Line([i, 0, i, canvasHeight], {
+        const smallGridLine = new Line([i, 0, i, canvasHeight], {
           stroke: "#E6F3F8",
           selectable: false,
           strokeWidth: 0.5,
@@ -107,7 +107,7 @@ export const Canvas = () => {
       }
       
       for (let i = 0; i < canvasHeight; i += SMALL_GRID) {
-        const smallGridLine = new fabric.Line([0, i, canvasWidth, i], {
+        const smallGridLine = new Line([0, i, canvasWidth, i], {
           stroke: "#E6F3F8",
           selectable: false,
           strokeWidth: 0.5,
@@ -119,7 +119,7 @@ export const Canvas = () => {
 
       // Create large grid lines
       for (let i = 0; i < canvasWidth; i += LARGE_GRID) {
-        const largeGridLine = new fabric.Line([i, 0, i, canvasHeight], {
+        const largeGridLine = new Line([i, 0, i, canvasHeight], {
           stroke: "#C2E2F3",
           selectable: false,
           strokeWidth: 1,
@@ -130,7 +130,7 @@ export const Canvas = () => {
       }
       
       for (let i = 0; i < canvasHeight; i += LARGE_GRID) {
-        const largeGridLine = new fabric.Line([0, i, canvasWidth, i], {
+        const largeGridLine = new Line([0, i, canvasWidth, i], {
           stroke: "#C2E2F3",
           selectable: false,
           strokeWidth: 1,
@@ -140,13 +140,15 @@ export const Canvas = () => {
         gridObjects.push(largeGridLine);
       }
 
-      // Add scale marker
-      const scaleMarker = new fabric.Group([
-        new fabric.Line([canvasWidth - LARGE_GRID - 20, canvasHeight - 20, canvasWidth - 20, canvasHeight - 20], {
+      // Add scale marker - using GroupFabric from fabric library
+      const { Group, Text } = require("fabric");
+      
+      const scaleMarker = new Group([
+        new Line([canvasWidth - LARGE_GRID - 20, canvasHeight - 20, canvasWidth - 20, canvasHeight - 20], {
           stroke: "#333333",
           strokeWidth: 2,
         }),
-        new fabric.Text("1m", {
+        new Text("1m", {
           left: canvasWidth - LARGE_GRID/2 - 30,
           top: canvasHeight - 35,
           fontSize: 12,
@@ -181,10 +183,11 @@ export const Canvas = () => {
   useEffect(() => {
     // Wait for DOM to fully render, then initialize canvas
     const initCanvas = () => {
-      console.log("DOM content loaded, initializing canvas...");
+      console.log("Canvas initialization effect running");
+      console.log("Canvas ref exists:", !!canvasRef.current);
       
       if (!canvasRef.current) {
-        console.error("Canvas element ref is still not available");
+        console.error("Canvas ref is null, cannot initialize canvas");
         return;
       }
       
@@ -218,7 +221,7 @@ export const Canvas = () => {
           console.log("Set canvas dimensions to:", adjustedWidth, adjustedHeight);
         }
         
-        // Create new fabric canvas instance
+        // Create new fabric canvas instance with specific dimensions
         const fabricCanvas = new FabricCanvas(canvasRef.current, {
           backgroundColor: "#FFFFFF",
           isDrawingMode: true,
@@ -260,9 +263,9 @@ export const Canvas = () => {
         });
 
         // Event handler for when paths are created (strokes drawn)
-        fabricCanvas.on('path:created', (e) => {
+        fabricCanvas.on('path:created', (e: { path: Path }) => {
           console.log("Path created event triggered");
-          const path = e.path as fabric.Path;
+          const path = e.path;
           
           if (!path.path) {
             console.error("Invalid path object:", path);
@@ -281,7 +284,7 @@ export const Canvas = () => {
           console.log("Final points processed for tool:", tool);
 
           try {
-            const polyline = new fabric.Polyline(
+            const polyline = new Polyline(
               finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
               {
                 stroke: '#000000',
@@ -353,14 +356,16 @@ export const Canvas = () => {
 
   // Handle window resize to adjust canvas dimensions
   useEffect(() => {
+    console.log("Setting up resize handler");
     const updateCanvasDimensions = () => {
       if (!canvasRef.current) return;
       
       const container = document.querySelector('.canvas-container');
+      console.log("Container found:", !!container);
       if (!container) return;
       
       const { width, height } = container.getBoundingClientRect();
-      console.log("Window resized, new container dimensions:", width, height);
+      console.log("Container dimensions:", width, height);
       
       if (width <= 0 || height <= 0) return;
       
@@ -376,6 +381,8 @@ export const Canvas = () => {
         fabricCanvasRef.current.setDimensions({ width: newWidth, height: newHeight });
         createGrid(fabricCanvasRef.current);
         fabricCanvasRef.current.renderAll();
+      } else {
+        console.log("Fabric canvas ref not available for dimension update");
       }
     };
 
@@ -439,7 +446,7 @@ export const Canvas = () => {
     
     // Draw all strokes from the current floor plan
     currentPlan.strokes.forEach(stroke => {
-      const polyline = new fabric.Polyline(
+      const polyline = new Polyline(
         stroke.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
         {
           stroke: '#000000',
@@ -655,7 +662,8 @@ export const Canvas = () => {
     );
     
     rooms.forEach(room => {
-      const coords = (room as fabric.Polyline).points || [];
+      const polyline = room as Polyline;
+      const coords = polyline.points || [];
       if (coords.length > 2) {
         const points: Stroke = coords.map(p => ({ 
           x: p.x / PIXELS_PER_METER, 
