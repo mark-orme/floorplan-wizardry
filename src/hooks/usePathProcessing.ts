@@ -79,37 +79,60 @@ export const usePathProcessing = ({
         return;
       }
       
-      // Apply grid snapping to all points regardless of path complexity
+      // Apply grid snapping to all points
       let finalPoints = snapToGrid(points);
       
-      // Process points based on selected tool (ALWAYS apply straightening for straightLine tool)
+      // Apply straightening based on tool
       if (tool === 'straightLine') {
         finalPoints = straightenStroke(finalPoints);
-        console.log("Applied straightening to stroke");
-      } else if (tool === 'room' && finalPoints.length >= 2) {
-        // For room tool, use angle snapping for 45-degree angles
+        console.log("Applied straightening to line");
+      } else if (tool === 'room') {
+        // For room tool, create enclosed shape with angle snapping
         const snappedPoints = [finalPoints[0]];
         
         for (let i = 1; i < finalPoints.length; i++) {
-          const snappedEnd = snapToAngle(finalPoints[i-1], finalPoints[i]);
+          const prevPoint = snappedPoints[i-1];
+          const currentPoint = finalPoints[i];
+          
+          // Use angle snapping between consecutive points
+          const snappedEnd = snapToAngle(prevPoint, currentPoint);
           snappedPoints.push(snappedEnd);
         }
+        
+        // For rooms, apply final straightening to close the shape
+        if (snappedPoints.length > 2) {
+          const firstPoint = snappedPoints[0];
+          const lastPoint = snappedPoints[snappedPoints.length - 1];
+          const closingPoint = snapToAngle(lastPoint, firstPoint);
+          
+          // Replace last point with properly snapped closing point
+          if (snappedPoints.length > 2 && 
+              (Math.abs(closingPoint.x - firstPoint.x) < 0.1 && 
+               Math.abs(closingPoint.y - firstPoint.y) < 0.1)) {
+            // If very close to first point, use exactly the first point to ensure perfect closing
+            snappedPoints[snappedPoints.length - 1] = {...firstPoint};
+          }
+        }
+        
         finalPoints = snappedPoints;
         console.log("Applied angle snapping to room");
       }
 
+      // Convert meter coordinates to pixel coordinates for display
+      const pixelPoints = finalPoints.map(p => ({ 
+        x: p.x * PIXELS_PER_METER, 
+        y: p.y * PIXELS_PER_METER 
+      }));
+
       // Create a polyline from the processed points
-      const polyline = new Polyline(
-        finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
-        {
-          stroke: '#000000',
-          strokeWidth: 2,
-          fill: tool === 'room' ? 'rgba(0, 0, 255, 0.1)' : 'transparent',
-          objectType: tool === 'room' ? 'room' : 'line',
-          objectCaching: true, // Enable caching for better performance
-          perPixelTargetFind: false // Disable pixel-perfect targeting for better performance
-        }
-      );
+      const polyline = new Polyline(pixelPoints, {
+        stroke: '#000000',
+        strokeWidth: 2,
+        fill: tool === 'room' ? 'rgba(0, 0, 255, 0.1)' : 'transparent',
+        objectType: tool === 'room' ? 'room' : 'line',
+        objectCaching: true,
+        perPixelTargetFind: false
+      });
 
       // Replace the temporary path with the processed polyline
       fabricCanvas.remove(path);

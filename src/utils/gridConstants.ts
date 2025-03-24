@@ -12,11 +12,11 @@ export interface GridDimensions {
   height: number;
 }
 
-// Grid optimization constants
-export const MAX_SMALL_GRID_LINES = 50; // Limit for better performance
-export const MAX_LARGE_GRID_LINES = 30; // Safety limit for large grid lines
-export const SMALL_GRID_SKIP_THRESHOLD = 300; // Canvas size / this = skip factor
-export const LARGE_GRID_SKIP_THRESHOLD = 1500; // Canvas size / this = skip factor
+// Grid optimization constants - increased for better visual appearance
+export const MAX_SMALL_GRID_LINES = 200; // Increased limit for denser grid
+export const MAX_LARGE_GRID_LINES = 60; // Increased limit for larger grid
+export const SMALL_GRID_SKIP_THRESHOLD = 200; // Canvas size / this = skip factor (lower means more lines)
+export const LARGE_GRID_SKIP_THRESHOLD = 1000; // Canvas size / this = skip factor (lower means more lines)
 
 /**
  * Determines if small grid creation should be skipped based on canvas dimensions
@@ -32,5 +32,6 @@ export const shouldSkipSmallGrid = (canvasWidth: number, canvasHeight: number): 
   const estimatedLinesY = Math.ceil(canvasHeight / (SMALL_GRID * smallGridSkip));
   const totalEstimatedLines = estimatedLinesX + estimatedLinesY;
   
-  return totalEstimatedLines > MAX_SMALL_GRID_LINES * 2;
+  // Allow more lines before skipping
+  return totalEstimatedLines > MAX_SMALL_GRID_LINES * 3;
 };

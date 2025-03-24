@@ -18,10 +18,13 @@ export const snapToGrid = (points: Point[]): Stroke => {
     const x = typeof p.x === 'number' ? p.x : 0;
     const y = typeof p.y === 'number' ? p.y : 0;
     
-    // Snap to the 0.1m grid using GRID_SIZE and PIXELS_PER_METER
+    // Snap to the 0.1m grid using GRID_SIZE
+    const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
+    const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
+    
     return {
-      x: Math.round(x / (GRID_SIZE * PIXELS_PER_METER)) * GRID_SIZE,
-      y: Math.round(y / (GRID_SIZE * PIXELS_PER_METER)) * GRID_SIZE,
+      x: snappedX,
+      y: snappedY,
     };
   });
 };
@@ -40,13 +43,13 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const dy = Math.abs(end.y - start.y);
   
   // Determine if the line is more horizontal or vertical
-  if (dx > dy * 1.5) {
+  if (dx > dy * 1.2) {
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: start.x, y: start.y },
       { x: end.x, y: start.y }
     ];
-  } else if (dy > dx * 1.5) {
+  } else if (dy > dx * 1.2) {
     // Mostly vertical - keep the same X coordinate
     return [
       { x: start.x, y: start.y },
