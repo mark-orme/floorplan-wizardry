@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -162,45 +161,53 @@ export const Canvas = () => {
         ? straightenStroke(snappedPoints) 
         : snappedPoints;
 
-      // Create a polyline from the processed points
-      const polyline = new fabric.Polyline(
-        finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
-        {
-          stroke: '#000000',
-          strokeWidth: 2,
-          fill: tool === 'room' ? 'rgba(0, 0, 255, 0.1)' : 'transparent',
-          objectType: tool === 'room' ? 'room' : 'line'
-        }
-      );
+      // Only remove the original path AFTER successfully creating the polyline
+      try {
+        // Create a polyline from the processed points
+        const polyline = new fabric.Polyline(
+          finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
+          {
+            stroke: '#000000',
+            strokeWidth: 2,
+            fill: tool === 'room' ? 'rgba(0, 0, 255, 0.1)' : 'transparent',
+            objectType: tool === 'room' ? 'room' : 'line'
+          }
+        );
 
-      // Remove the original path and add our processed polyline
-      fabricCanvas.remove(path);
-      fabricCanvas.add(polyline);
+        // Remove the original path and add our processed polyline
+        fabricCanvas.remove(path);
+        fabricCanvas.add(polyline);
+        fabricCanvas.renderAll(); // Force a re-render
 
-      // Update floor plan data and calculate GIA
-      setFloorPlans(prev => {
-        const newFloorPlans = [...prev];
-        newFloorPlans[currentFloor] = {
-          ...newFloorPlans[currentFloor],
-          strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
-        };
-        
-        // Calculate GIA from closed shapes (rooms)
-        if (tool === 'room' && finalPoints.length > 2) {
-          const area = calculateGIA(finalPoints);
-          setGia(prev => prev + area);
-          toast.success(`Room added: ${area.toFixed(2)} m²`);
-        }
-        
-        return newFloorPlans;
-      });
+        // Update floor plan data and calculate GIA
+        setFloorPlans(prev => {
+          const newFloorPlans = [...prev];
+          newFloorPlans[currentFloor] = {
+            ...newFloorPlans[currentFloor],
+            strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
+          };
+          
+          // Calculate GIA from closed shapes (rooms)
+          if (tool === 'room' && finalPoints.length > 2) {
+            const area = calculateGIA(finalPoints);
+            setGia(prev => prev + area);
+            toast.success(`Room added: ${area.toFixed(2)} m²`);
+          }
+          
+          return newFloorPlans;
+        });
 
-      // Save state for undo/redo
-      const currentState = fabricCanvas.getObjects().filter(obj => 
-        obj.type === 'polyline' || obj.type === 'path'
-      );
-      historyRef.current.past.push([...currentState]);
-      historyRef.current.future = [];
+        // Save state for undo/redo
+        const currentState = fabricCanvas.getObjects().filter(obj => 
+          obj.type === 'polyline' || obj.type === 'path'
+        );
+        historyRef.current.past.push([...currentState]);
+        historyRef.current.future = [];
+      } catch (error) {
+        console.error("Error processing drawing:", error);
+        toast.error("Failed to process drawing");
+        // If there was an error, don't remove the original path
+      }
     });
 
     // Save initial state for history
