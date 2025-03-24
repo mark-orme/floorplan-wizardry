@@ -1,20 +1,16 @@
+
 /**
  * Custom hook for initializing the canvas
  * Handles canvas creation, brush setup, and grid initialization
  * @module useCanvasInitialization
  */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { 
-  initializeDrawingBrush, 
-  setCanvasDimensions, 
-  addPressureSensitivity,
-  addPinchToZoom,
-  disposeCanvas
-} from "@/utils/fabric";
-import { createGrid } from "@/utils/canvasGrid";
-import { FloorPlan } from "@/utils/drawing";
+import { useCanvasCreation } from "./useCanvasCreation";
+import { useCanvasBrush } from "./useCanvasBrush";
+import { useCanvasInteraction } from "./useCanvasInteraction";
+import { useCanvasCleanup } from "./useCanvasCleanup";
+import { useCanvasGrid } from "./useCanvasGrid";
 import { DrawingTool } from "./useCanvasState";
 
 /**
@@ -53,30 +49,37 @@ export const useCanvasInitialization = ({
   setHasError,
   setErrorMessage
 }: UseCanvasInitializationProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const gridLayerRef = useRef<any[]>([]);
-  const canvasInitializedRef = useRef(false);
-  const gridCreatedRef = useRef(false);
-  const initializationInProgressRef = useRef(false);
+  // Use the smaller, focused hooks
+  const { 
+    canvasRef, 
+    fabricCanvasRef, 
+    canvasInitializedRef,
+    initializeCanvas 
+  } = useCanvasCreation({
+    canvasDimensions,
+    setHasError,
+    setErrorMessage
+  });
   
-  // History for undo/redo
-  const historyRef = useRef<{past: any[][], future: any[][]}>(
-    { past: [], future: [] }
-  );
-
-  // Grid creation function with memoization for better performance
-  const gridRef = useCallback((canvas: FabricCanvas) => {
-    if (gridCreatedRef.current && gridLayerRef.current.length > 0) {
-      return gridLayerRef.current;
-    }
-    
-    const gridObjects = createGrid(canvas, gridLayerRef, canvasDimensions, setDebugInfo, setHasError, setErrorMessage);
-    if (gridObjects.length > 0) {
-      gridCreatedRef.current = true;
-    }
-    return gridObjects;
-  }, [canvasDimensions, setDebugInfo, setHasError, setErrorMessage]);
+  const { setupBrush } = useCanvasBrush({
+    setDebugInfo
+  });
+  
+  const { historyRef, setupInteractions } = useCanvasInteraction();
+  
+  const { cleanupCanvas } = useCanvasCleanup();
+  
+  // Grid layer reference
+  const gridLayerRef = useRef<any[]>([]);
+  
+  // Use the grid creation hook
+  const createGrid = useCanvasGrid({
+    gridLayerRef,
+    canvasDimensions,
+    setDebugInfo,
+    setHasError,
+    setErrorMessage
+  });
 
   // Initialize canvas when component mounts or when dependencies change
   useEffect(() => {
@@ -84,159 +87,76 @@ export const useCanvasInitialization = ({
       return;
     }
     
-    if (canvasInitializedRef.current && fabricCanvasRef.current) {
-      console.log("Canvas already initialized, skipping initialization");
+    // Initialize the canvas
+    const fabricCanvas = initializeCanvas();
+    if (!fabricCanvas) {
       return;
     }
     
-    // Prevent concurrent initializations
-    if (initializationInProgressRef.current) {
-      console.log("Canvas initialization already in progress, skipping");
-      return;
+    // Set debug info for canvas initialization
+    setDebugInfo(prev => ({
+      ...prev, 
+      canvasInitialized: true
+    }));
+    
+    // Initialize the brush
+    setupBrush(fabricCanvas);
+    
+    // Create grid after canvas is rendered, using idle callback
+    const createGridWhenIdle = () => {
+      createGrid(fabricCanvas);
+      
+      // Now that the grid is created, enable rendering
+      fabricCanvas.renderOnAddRemove = true;
+      fabricCanvas.requestRenderAll();
+    };
+    
+    // Use either requestIdleCallback or setTimeout as fallback
+    if (typeof window.requestIdleCallback === 'function') {
+      requestIdleCallback(createGridWhenIdle, { timeout: 500 });
+    } else {
+      setTimeout(createGridWhenIdle, 200);
     }
     
-    initializationInProgressRef.current = true;
-    console.log("Initializing canvas with dimensions:", canvasDimensions);
+    // Setup interactions (pinch-to-zoom, etc.)
+    const cleanupInteractions = setupInteractions(fabricCanvas);
     
-    try {
-      // PERFORMANCE OPTIMIZATIONS for Fabric.js initialization
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
-        backgroundColor: "#FFFFFF",
-        isDrawingMode: true,
-        selection: false,
-        width: canvasDimensions.width,
-        height: canvasDimensions.height,
-        renderOnAddRemove: false,
-        stateful: false,
-        fireRightClick: false,
-        stopContextMenu: true,
-        enableRetinaScaling: false,
-        perPixelTargetFind: false,
-        skipOffscreen: true, // OPTIMIZATION: Skip rendering objects outside canvas viewport
-        objectCaching: true, // OPTIMIZATION: Enable object caching for all objects
-        imageSmoothingEnabled: false, // OPTIMIZATION: Disable image smoothing for better performance
-        preserveObjectStacking: false, // OPTIMIZATION: Disable object stacking preservation for performance
-        svgViewportTransformation: false // OPTIMIZATION: Disable SVG viewport transforms
+    // Only show toast on first initialization across ALL renders
+    if (!initialToastShown) {
+      toast.success("Canvas ready for drawing!", {
+        id: "canvas-ready",
+        duration: 2000
       });
-      
-      console.log("FabricCanvas instance created");
-      fabricCanvasRef.current = fabricCanvas;
-      canvasInitializedRef.current = true;
-      
-      // Initialize the drawing brush with precise settings for drawing
-      const pencilBrush = initializeDrawingBrush(fabricCanvas);
-      if (pencilBrush) {
-        fabricCanvas.freeDrawingBrush = pencilBrush;
-        fabricCanvas.freeDrawingBrush.width = 2;
-        fabricCanvas.freeDrawingBrush.color = "#000000";
-        fabricCanvas.isDrawingMode = true;
-        
-        // OPTIMIZATION: Set brush properties for better performance
-        if ('decimate' in pencilBrush) {
-          (pencilBrush as any).decimate = 2; // Reduce number of points for smoother performance
-        }
-        
-        setDebugInfo(prev => ({
-          ...prev, 
-          canvasInitialized: true,
-          brushInitialized: true
-        }));
-      } else {
-        console.error("Failed to initialize drawing brush");
-        setDebugInfo(prev => ({
-          ...prev, 
-          canvasInitialized: true,
-          brushInitialized: false
-        }));
-      }
-      
-      // Create grid after canvas is rendered, using idle callback
-      const createGridWhenIdle = () => {
-        const gridObjects = gridRef(fabricCanvas);
-        
-        // Now that the grid is created, enable rendering
-        fabricCanvas.renderOnAddRemove = true;
-        fabricCanvas.requestRenderAll();
-      };
-      
-      // Use either requestIdleCallback or setTimeout as fallback
-      if (typeof window.requestIdleCallback === 'function') {
-        requestIdleCallback(createGridWhenIdle, { timeout: 500 });
-      } else {
-        setTimeout(createGridWhenIdle, 200);
-      }
-      
-      // Add pressure sensitivity for Apple Pencil
-      addPressureSensitivity(fabricCanvas);
-      
-      // Add pinch-to-zoom - fixed signature to match implementation
-      addPinchToZoom(fabricCanvas);
-      
-      // Optimize object:added event with throttling
-      let objectAddedThrottled = false;
-      const ensureGridInBackground = () => {
-        if (objectAddedThrottled) return;
-        
-        objectAddedThrottled = true;
-        setTimeout(() => {
-          if (gridLayerRef.current.length === 0) {
-            gridRef(fabricCanvas);
-          } else {
-            gridLayerRef.current.forEach(gridObj => {
-              fabricCanvas.sendObjectToBack(gridObj);
-            });
-          }
-          objectAddedThrottled = false;
-        }, 100);
-      };
-      
-      fabricCanvas.on('object:added', ensureGridInBackground);
-
-      // Initialize history with current state only if there are actual objects
-      const initialState = fabricCanvas.getObjects().filter(obj => 
-        obj.type === 'path' || obj.type === 'polyline'
-      );
-      
-      if (initialState.length > 0) {
-        historyRef.current.past.push([...initialState]);
-      }
-      
-      // Only show toast on first initialization across ALL renders
-      if (!initialToastShown) {
-        toast.success("Canvas ready for drawing!", {
-          id: "canvas-ready",
-          duration: 2000
-        });
-        initialToastShown = true;
-      }
-      
-      // OPTIMIZATION: Precompile frequent canvas operations
-      fabricCanvas.calcViewportBoundaries();
-      
-      // Initialization complete
-      initializationInProgressRef.current = false;
-      
-      // Clean up on unmount
-      return () => {
-        fabricCanvas.off('object:added', ensureGridInBackground);
-        
-        // Don't dispose the canvas when switching floors or tools, only on component unmount
-        if (fabricCanvasRef.current === fabricCanvas) {
-          disposeCanvas(fabricCanvas);
-          fabricCanvasRef.current = null;
-          canvasInitializedRef.current = false;
-          gridLayerRef.current = [];
-          gridCreatedRef.current = false;
-        }
-      };
-    } catch (err) {
-      console.error("Error initializing canvas:", err);
-      setHasError(true);
-      setErrorMessage(`Failed to initialize canvas: ${err instanceof Error ? err.message : String(err)}`);
-      toast.error("Failed to initialize canvas");
-      initializationInProgressRef.current = false;
+      initialToastShown = true;
     }
-  }, [canvasDimensions.width, canvasDimensions.height, gridRef, setZoomLevel, setDebugInfo, setHasError, setErrorMessage]);
+    
+    // Clean up on unmount
+    return () => {
+      if (cleanupInteractions) {
+        cleanupInteractions();
+      }
+      
+      // Don't dispose the canvas when switching floors or tools, only on component unmount
+      if (fabricCanvasRef.current === fabricCanvas) {
+        cleanupCanvas(fabricCanvas);
+        fabricCanvasRef.current = null;
+        canvasInitializedRef.current = false;
+        gridLayerRef.current = [];
+      }
+    };
+  }, [
+    canvasDimensions.width, 
+    canvasDimensions.height, 
+    setDebugInfo, 
+    setZoomLevel, 
+    setHasError, 
+    setErrorMessage,
+    initializeCanvas,
+    setupBrush,
+    setupInteractions,
+    cleanupCanvas,
+    createGrid
+  ]);
 
   return {
     canvasRef,
