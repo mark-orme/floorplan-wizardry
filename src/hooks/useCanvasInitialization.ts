@@ -90,19 +90,24 @@ export const useCanvasInitialization = ({
     console.log("Initializing canvas with dimensions:", canvasDimensions);
     
     try {
-      // Performance optimization: Lower rendering quality for better speed
+      // PERFORMANCE OPTIMIZATIONS for Fabric.js initialization
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         backgroundColor: "#FFFFFF",
         isDrawingMode: true,
         selection: false,
         width: canvasDimensions.width,
         height: canvasDimensions.height,
-        renderOnAddRemove: false, // Improve performance by rendering only on demand
-        stateful: false, // Disable stateful canvas for better performance
-        fireRightClick: false, // Turn off right-click handling for performance
-        stopContextMenu: true, // Prevent context menu for better UX
-        enableRetinaScaling: false, // Disable retina scaling for better performance
-        perPixelTargetFind: false // Performance optimization for object selection
+        renderOnAddRemove: false,
+        stateful: false,
+        fireRightClick: false,
+        stopContextMenu: true,
+        enableRetinaScaling: false,
+        perPixelTargetFind: false,
+        skipOffscreen: true, // OPTIMIZATION: Skip rendering objects outside canvas viewport
+        objectCaching: true, // OPTIMIZATION: Enable object caching for all objects
+        imageSmoothingEnabled: false, // OPTIMIZATION: Disable image smoothing for better performance
+        preserveObjectStacking: false, // OPTIMIZATION: Disable object stacking preservation for performance
+        svgViewportTransformation: false // OPTIMIZATION: Disable SVG viewport transforms
       });
       
       console.log("FabricCanvas instance created");
@@ -116,6 +121,11 @@ export const useCanvasInitialization = ({
         fabricCanvas.freeDrawingBrush.width = 2;
         fabricCanvas.freeDrawingBrush.color = "#000000";
         fabricCanvas.isDrawingMode = true;
+        
+        // OPTIMIZATION: Set brush properties for better performance
+        if ('decimate' in pencilBrush) {
+          (pencilBrush as any).decimate = 2; // Reduce number of points for smoother performance
+        }
         
         setDebugInfo(prev => ({
           ...prev, 
@@ -131,16 +141,16 @@ export const useCanvasInitialization = ({
         }));
       }
       
-      // Performance optimization: Delay grid creation for faster initial loading
-      setTimeout(() => {
-        // Create grid after a short delay to improve perceived performance
+      // OPTIMIZATION: Lazy load grid for faster initial display
+      requestIdleCallback(() => {
+        // Create grid after canvas is rendered, during browser idle time
         const gridObjects = gridRef(fabricCanvas);
         console.log(`Grid created with ${gridObjects.length} objects`);
         
         // Now that the grid is created, enable rendering
         fabricCanvas.renderOnAddRemove = true;
-        fabricCanvas.renderAll();
-      }, 100);
+        fabricCanvas.requestRenderAll();
+      }, { timeout: 500 });
       
       // Add pressure sensitivity for Apple Pencil
       addPressureSensitivity(fabricCanvas);
@@ -148,8 +158,28 @@ export const useCanvasInitialization = ({
       // Add pinch-to-zoom
       addPinchToZoom(fabricCanvas, setZoomLevel);
       
-      // Ensure grid objects stay in the background when new objects are added
+      // OPTIMIZATION: Use throttled object:added event with requestAnimationFrame
+      const lastObjectAdded = { timestamp: 0 };
+      let objectAddedRAF: number | null = null;
+      
       const handleObjectAdded = () => {
+        // Throttle to max 30fps for better performance
+        const now = performance.now();
+        if (now - lastObjectAdded.timestamp < 33) {
+          if (objectAddedRAF === null) {
+            objectAddedRAF = requestAnimationFrame(() => {
+              ensureGridInBackground();
+              objectAddedRAF = null;
+            });
+          }
+          return;
+        }
+        
+        lastObjectAdded.timestamp = now;
+        ensureGridInBackground();
+      };
+      
+      const ensureGridInBackground = () => {
         if (gridLayerRef.current.length === 0) {
           gridRef(fabricCanvas);
         } else {
@@ -169,8 +199,15 @@ export const useCanvasInitialization = ({
       
       toast.success("Canvas ready for drawing!");
       
+      // OPTIMIZATION: Precompile frequent canvas operations
+      fabricCanvas.calcViewportBoundaries();
+      
       // Clean up on unmount
       return () => {
+        if (objectAddedRAF !== null) {
+          cancelAnimationFrame(objectAddedRAF);
+        }
+        
         if (fabricCanvas) {
           fabricCanvas.off('object:added', handleObjectAdded);
           disposeCanvas(fabricCanvas);
