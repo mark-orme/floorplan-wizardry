@@ -1,5 +1,5 @@
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { Point } from "@/utils/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
@@ -7,7 +7,7 @@ import { DrawingTool } from "./useCanvasState";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool: DrawingTool; // Updated to use DrawingTool
+  tool: DrawingTool;
 }
 
 interface DrawingState {
@@ -24,8 +24,8 @@ interface DrawingState {
  * @returns {Object} Drawing state and event handlers
  */
 export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps) => {
-  // Only create and update state for tooltips when wall (straightLine) tool is selected
-  const shouldShowTooltip = tool === "straightLine";
+  // Show tooltips for wall tool and room tool
+  const shouldShowTooltip = tool === "straightLine" || tool === "room";
   
   // State to track drawing state
   const [drawingState, setDrawingState] = useState<DrawingState>({
@@ -39,6 +39,18 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
   const startPointRef = useRef<Point | null>(null);
   const isDrawingRef = useRef(false);
   const tooltipTimeoutRef = useRef<number | null>(null);
+  
+  // Reset drawing state when tool changes
+  useEffect(() => {
+    setDrawingState({
+      isDrawing: false,
+      startPoint: null,
+      currentPoint: null,
+      cursorPosition: { x: 0, y: 0 }
+    });
+    isDrawingRef.current = false;
+    startPointRef.current = null;
+  }, [tool]);
   
   // Event handlers for mouse movement and drawing
   const handleMouseDown = useCallback((event: { e: MouseEvent, pointer: { x: number, y: number } }) => {
@@ -59,6 +71,8 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
       currentPoint: startPoint,
       cursorPosition: { x: event.e.clientX, y: event.e.clientY }
     });
+    
+    console.log("Drawing started at:", startPoint);
   }, [shouldShowTooltip]);
   
   const handleMouseMove = useCallback((event: { e: MouseEvent, pointer: { x: number, y: number } }) => {
@@ -97,7 +111,8 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
       }));
       
       tooltipTimeoutRef.current = null;
-    }, 500); // Keep tooltip visible for 500ms after mouse up
+      console.log("Drawing ended");
+    }, 1000); // Keep tooltip visible for 1 second after mouse up
   }, [shouldShowTooltip]);
   
   // Cleanup function for timeouts

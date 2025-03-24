@@ -62,7 +62,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     cleanupTimeouts
   } = useDrawingState({ 
     fabricCanvasRef,
-    tool  // Pass tool to useDrawingState to enable proper drawing state tracking
+    tool
   });
   
   /**
@@ -81,19 +81,17 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
     
     // Handle path creation (called by fabric when a path is completed)
     const handlePathCreated = (e: { path: any }) => {
+      console.log("Path created event triggered");
       processCreatedPath(e.path);
       // Reset drawing state at the end of drawing
       handleMouseUp();
     };
     
-    // Only attach drawing-related event handlers if we're not in hand tool mode
-    if (tool !== "hand") {
-      // Attach event listeners
-      fabricCanvas.on('path:created', handlePathCreated);
-      fabricCanvas.on('mouse:down', handleMouseDown);
-      fabricCanvas.on('mouse:move', handleMouseMove);
-      fabricCanvas.on('mouse:up', handleMouseUp);
-    }
+    // Only attach event handlers if canvas exists
+    fabricCanvas.on('path:created', handlePathCreated);
+    fabricCanvas.on('mouse:down', handleMouseDown);
+    fabricCanvas.on('mouse:move', handleMouseMove);
+    fabricCanvas.on('mouse:up', handleMouseUp);
     
     // Clean up event listeners on unmount or when tool changes
     return () => {

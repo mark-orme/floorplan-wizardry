@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing drawing history (undo/redo)
  * @module useDrawingHistory
@@ -36,7 +37,9 @@ export const useDrawingHistory = ({
       return;
     }
     
+    // Ensure there's something to undo
     if (historyRef.current.past.length > 1) {
+      console.log("Performing undo operation");
       const canvas = fabricCanvasRef.current;
       canvas.renderOnAddRemove = false;
       
@@ -68,7 +71,11 @@ export const useDrawingHistory = ({
       
       // Add previous state objects
       if (previousState && previousState.length) {
-        previousState.forEach(obj => canvas.add(obj));
+        previousState.forEach(obj => {
+          // Make a clone of the object to avoid reference issues
+          const clone = fabric.util.object.clone(obj);
+          canvas.add(clone);
+        });
       }
       
       // Update GIA calculation
@@ -77,7 +84,9 @@ export const useDrawingHistory = ({
       canvas.renderOnAddRemove = true;
       canvas.requestRenderAll();
       toast.success("Undo successful");
+      console.log("Undo completed successfully");
     } else {
+      console.log("Nothing to undo");
       toast.info("Nothing to undo");
     }
   }, [fabricCanvasRef, historyRef, recalculateGIA]);
@@ -92,6 +101,7 @@ export const useDrawingHistory = ({
     }
     
     if (historyRef.current.future.length > 0) {
+      console.log("Performing redo operation");
       const canvas = fabricCanvasRef.current;
       canvas.renderOnAddRemove = false;
       
@@ -116,7 +126,11 @@ export const useDrawingHistory = ({
       
       // Add next state objects
       if (nextState && nextState.length) {
-        nextState.forEach(obj => canvas.add(obj));
+        nextState.forEach(obj => {
+          // Make a clone of the object to avoid reference issues
+          const clone = fabric.util.object.clone(obj);
+          canvas.add(clone);
+        });
       }
       
       // Update GIA calculation
@@ -125,7 +139,9 @@ export const useDrawingHistory = ({
       canvas.renderOnAddRemove = true;
       canvas.requestRenderAll();
       toast.success("Redo successful");
+      console.log("Redo completed successfully");
     } else {
+      console.log("Nothing to redo");
       toast.info("Nothing to redo");
     }
   }, [fabricCanvasRef, historyRef, recalculateGIA]);

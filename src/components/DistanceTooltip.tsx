@@ -31,7 +31,7 @@ export const DistanceTooltip = memo(({
   const dx = currentPoint.x - startPoint.x;
   const dy = currentPoint.y - startPoint.y;
   const distanceInPixels = Math.sqrt(dx * dx + dy * dy);
-  const distanceInMeters = distanceInPixels / PIXELS_PER_METER;
+  const distanceInMeters = distanceInPixels;
   
   return (
     <div 
@@ -44,9 +44,9 @@ export const DistanceTooltip = memo(({
         transition: "transform 0.1s ease-out"
       }}
     >
-      <div className="bg-black/80 text-white px-2 py-1 rounded-md flex items-center gap-1 text-sm shadow-md">
+      <div className="bg-black/80 text-white px-3 py-2 rounded-md flex items-center gap-2 text-sm shadow-md">
         <Ruler className="w-4 h-4" />
-        <span>{distanceInMeters.toFixed(2)} m</span>
+        <span className="font-medium">{distanceInMeters.toFixed(2)} m</span>
       </div>
     </div>
   );

@@ -19,8 +19,8 @@ export const snapToGrid = (points: Point[]): Stroke => {
     const y = typeof p.y === 'number' ? p.y : 0;
     
     // Apply stricter snapping with toFixed(3) for exact 0.1m increments
-    const snappedX = Math.round(x / (GRID_SIZE * PIXELS_PER_METER)) * GRID_SIZE;
-    const snappedY = Math.round(y / (GRID_SIZE * PIXELS_PER_METER)) * GRID_SIZE;
+    const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
+    const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
     
     return {
       x: Number(snappedX.toFixed(3)), // Enforce exact 0.1m increments

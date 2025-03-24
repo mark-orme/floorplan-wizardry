@@ -59,12 +59,23 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
+  // Log drawing state for debugging
+  useEffect(() => {
+    if (drawingState?.isDrawing) {
+      console.log("Drawing state updated:", 
+        drawingState.isDrawing, 
+        drawingState.startPoint, 
+        drawingState.currentPoint
+      );
+    }
+  }, [drawingState]);
+
   // Memoize the tooltip component to prevent unnecessary re-renders
   const tooltipComponent = useMemo(() => (
     <DistanceTooltip
       startPoint={drawingState?.startPoint}
       currentPoint={drawingState?.currentPoint}
-      isVisible={drawingState?.isDrawing && tool === "straightLine"}
+      isVisible={!!drawingState?.isDrawing && (tool === "straightLine" || tool === "room")}
       position={drawingState?.cursorPosition || { x: 0, y: 0 }}
     />
   ), [drawingState, tool]);
@@ -135,6 +146,7 @@ export const Canvas = () => {
           onLineColorChange={handleLineColorChange}
         />
         
+        {/* Always render tooltip component, it will handle visibility internally */}
         {tooltipComponent}
       </div>
     </LoadingErrorWrapper>
