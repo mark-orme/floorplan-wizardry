@@ -3,6 +3,7 @@
  * Shared type definitions for drawing functionality
  * @module drawingTypes
  */
+import { Object as FabricObject } from "fabric";
 
 /**
  * Point coordinates in 2D space
@@ -29,10 +30,10 @@ export interface DrawingState {
  */
 export interface GridCreationResult {
   success: boolean;
-  gridObjects: Array<fabric.Object>;
-  smallGridLines: Array<fabric.Object>;
-  largeGridLines: Array<fabric.Object>;
-  markers: Array<fabric.Object>;
+  gridObjects: Array<FabricObject>;
+  smallGridLines: Array<FabricObject>;
+  largeGridLines: Array<FabricObject>;
+  markers: Array<FabricObject>;
 }
 
 /**
