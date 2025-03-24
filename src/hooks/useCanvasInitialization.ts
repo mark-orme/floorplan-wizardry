@@ -16,6 +16,7 @@ import {
 } from "@/utils/fabric";
 import { createGrid } from "@/utils/canvasGrid";
 import { FloorPlan } from "@/utils/drawing";
+import { DrawingTool } from "./useCanvasState";
 
 /**
  * Props for useCanvasInitialization hook
@@ -23,7 +24,7 @@ import { FloorPlan } from "@/utils/drawing";
  */
 interface UseCanvasInitializationProps {
   canvasDimensions: { width: number, height: number };
-  tool: "draw" | "room" | "straightLine";
+  tool: DrawingTool;
   currentFloor: number;
   setZoomLevel: (zoom: number) => void;
   setDebugInfo: React.Dispatch<React.SetStateAction<{

@@ -22,7 +22,7 @@ export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => v
   try {
     // Using standard mouse/pointer events with custom handling for touch
     canvas.on('mouse:down', (e: any) => {
-      if (e.e.touches && e.e.touches.length === 2) {
+      if (e.e && e.e.touches && e.e.touches.length === 2) {
         initialDistance = Math.hypot(
           e.e.touches[0].clientX - e.e.touches[1].clientX,
           e.e.touches[0].clientY - e.e.touches[1].clientY
@@ -37,7 +37,7 @@ export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => v
     
     // Handle the pinch gesture during movement
     canvas.on('mouse:move', (e: any) => {
-      if (e.e.touches && e.e.touches.length === 2 && initialDistance > 0) {
+      if (e.e && e.e.touches && e.e.touches.length === 2 && initialDistance > 0) {
         const currentDistance = Math.hypot(
           e.e.touches[0].clientX - e.e.touches[1].clientX,
           e.e.touches[0].clientY - e.e.touches[1].clientY
@@ -90,15 +90,15 @@ export const enablePanning = (canvas: Canvas, isPanningMode: boolean) => {
     // Set the cursor style based on the panning mode
     canvas.defaultCursor = isPanningMode ? 'grab' : 'default';
     
-    canvas.on('mouse:down', (opt) => {
+    canvas.on('mouse:down', (opt: any) => {
       const evt = opt.e;
       
       // If in panning mode, handle panning logic
       if (isPanningMode) {
         isDragging = true;
         canvas.selection = false; // Disable object selection while panning
-        lastPosX = evt.clientX;
-        lastPosY = evt.clientY;
+        lastPosX = evt.clientX || 0;
+        lastPosY = evt.clientY || 0;
         canvas.defaultCursor = 'grabbing'; // Change cursor to grabbing
         
         // For touch devices
@@ -114,11 +114,11 @@ export const enablePanning = (canvas: Canvas, isPanningMode: boolean) => {
       canvas.selection = !isPanningMode;
     });
     
-    canvas.on('mouse:move', (opt) => {
+    canvas.on('mouse:move', (opt: any) => {
       if (isDragging && isPanningMode) {
         const evt = opt.e;
-        let currentX = evt.clientX;
-        let currentY = evt.clientY;
+        let currentX = evt.clientX || 0;
+        let currentY = evt.clientY || 0;
         
         // For touch devices
         if (evt.touches && evt.touches[0]) {

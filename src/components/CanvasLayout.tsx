@@ -6,9 +6,10 @@
 import { DrawingToolbar } from "./DrawingToolbar";
 import { FloorPlanList } from "./FloorPlanList";
 import { CanvasContainer } from "./CanvasContainer";
+import { DrawingTool } from "@/hooks/useCanvasState";
 
 interface CanvasLayoutProps {
-  tool: "draw" | "room" | "straightLine";
+  tool: DrawingTool;
   gia: number;
   floorPlans: any[];
   currentFloor: number;
@@ -19,7 +20,7 @@ interface CanvasLayoutProps {
     brushInitialized: boolean;
   };
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  onToolChange: (tool: "draw" | "room" | "straightLine") => void;
+  onToolChange: (tool: DrawingTool) => void;
   onUndo: () => void;
   onRedo: () => void;
   onZoom: (direction: "in" | "out") => void;

@@ -7,7 +7,7 @@ import { DrawingTool } from "./useCanvasState";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool?: DrawingTool; // Updated tool type
+  tool: DrawingTool; // Updated to use DrawingTool
 }
 
 interface DrawingState {

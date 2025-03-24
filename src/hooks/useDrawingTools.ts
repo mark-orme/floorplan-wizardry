@@ -10,14 +10,15 @@ import { FloorPlan } from "@/utils/drawing";
 import { useCanvasTools } from "./useCanvasTools";
 import { useDrawingHistory } from "./useDrawingHistory";
 import { useCanvasActions } from "./useCanvasActions";
+import { DrawingTool } from "./useCanvasState";
 
 interface UseDrawingToolsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<any[]>;
   historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
-  tool: "draw" | "room" | "straightLine";
+  tool: DrawingTool;
   zoomLevel: number;
-  setTool: React.Dispatch<React.SetStateAction<"draw" | "room" | "straightLine">>;
+  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   floorPlans: FloorPlan[];
   currentFloor: number;
