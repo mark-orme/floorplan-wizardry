@@ -6,6 +6,17 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { DrawingState, Point } from '@/types/drawingTypes';
+import { FloorPlan } from '@/utils/drawing';
+
+/**
+ * Debug info structure
+ */
+export interface DebugInfo {
+  canvasInitialized: boolean;
+  gridCreated: boolean;
+  dimensionsSet: boolean;
+  brushInitialized: boolean;
+}
 
 /**
  * Canvas Controller context value interface
@@ -14,12 +25,13 @@ export interface CanvasContextValue {
   // Tool state
   tool: DrawingTool;
   setTool: (tool: DrawingTool) => void;
+  zoomLevel?: number;
   
   // Measurement state
   gia: number;
   
   // Floor plans state
-  floorPlans: any[];
+  floorPlans: FloorPlan[];
   currentFloor: number;
   
   // Drawing state
@@ -31,12 +43,7 @@ export interface CanvasContextValue {
   errorMessage: string;
   
   // Debugging
-  debugInfo: {
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  };
+  debugInfo: DebugInfo;
   
   // References
   canvasRef: React.RefObject<HTMLCanvasElement>;

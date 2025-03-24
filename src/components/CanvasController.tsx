@@ -266,6 +266,8 @@ export const CanvasController = () => {
 
   return {
     tool,
+    setTool,
+    zoomLevel,
     gia,
     floorPlans,
     currentFloor,

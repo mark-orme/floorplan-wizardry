@@ -27,6 +27,8 @@ export const Canvas = () => {
   
   const {
     tool,
+    setTool,
+    zoomLevel,
     gia,
     floorPlans,
     currentFloor,
@@ -102,8 +104,37 @@ export const Canvas = () => {
     });
   }, [drawingState?.isDrawing, tool, isTooltipVisible]);
 
+  // Create a complete context value with all required properties
+  const contextValue = {
+    tool,
+    setTool,
+    zoomLevel,
+    gia,
+    floorPlans,
+    currentFloor,
+    isLoading,
+    hasError,
+    errorMessage,
+    debugInfo,
+    canvasRef,
+    lineThickness,
+    lineColor,
+    drawingState,
+    handleFloorSelect,
+    handleAddFloor,
+    handleToolChange,
+    handleUndo,
+    handleRedo,
+    handleZoom,
+    clearCanvas,
+    saveCanvas,
+    handleLineThicknessChange,
+    handleLineColorChange,
+    handleRetry
+  };
+
   return (
-    <CanvasProvider value={canvasController}>
+    <CanvasProvider value={contextValue}>
       <LoadingErrorWrapper
         isLoading={isLoading}
         hasError={hasError}
