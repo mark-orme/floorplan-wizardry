@@ -448,7 +448,7 @@ export const Canvas = () => {
       
       if (fabricCanvasRef.current) {
         console.log("Updating fabric canvas dimensions");
-        // Fix: Pass dimensions object as a single argument
+        // Fix: Pass dimensions as a single object argument
         setCanvasDimensions(fabricCanvasRef.current, { width: newWidth, height: newHeight });
         createGrid(fabricCanvasRef.current);
         fabricCanvasRef.current.renderAll();
@@ -925,3 +925,4 @@ export const Canvas = () => {
     </div>
   );
 };
+
