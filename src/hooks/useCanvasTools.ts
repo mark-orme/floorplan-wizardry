@@ -80,6 +80,7 @@ export const useCanvasTools = ({
     switch (newTool) {
       case "draw":
       case "straightLine":
+      case "room":
         canvas.isDrawingMode = true;
         
         // Initialize brush with current settings if needed
@@ -133,7 +134,8 @@ export const useCanvasTools = ({
           "draw": "Freehand (with auto-straightening)",
           "straightLine": "Wall",
           "hand": "Hand (Pan)",
-          "select": "Select"
+          "select": "Select",
+          "room": "Room"
         };
         toast.success(`${toolNames[newTool]} tool selected`);
         break;
