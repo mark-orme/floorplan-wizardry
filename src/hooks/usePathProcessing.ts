@@ -199,6 +199,7 @@ export const usePathProcessing = ({
         });
         
         // Force a render to ensure the polyline is displayed
+        // Changed renderAll to requestRenderAll for Fabric.js v6 compatibility
         fabricCanvas.requestRenderAll();
       } catch (err) {
         console.error("Error creating polyline:", err);

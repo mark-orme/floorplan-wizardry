@@ -67,6 +67,7 @@ export const canvasMoveTo = (canvas: any, object: any, index: number): boolean =
     canvas.clear();
     newObjects.forEach(obj => canvas.add(obj));
     
+    // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
     canvas.requestRenderAll();
     return true;
   } catch (error) {

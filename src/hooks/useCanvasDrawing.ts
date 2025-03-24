@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -87,38 +88,35 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
       // Apply automatic straightening for straightLine tool
       if (tool === "straightLine" && drawingState.startPoint && drawingState.currentPoint) {
         console.log("Applying auto-straightening to line");
-        // Modify the path to create a perfectly straight or diagonal line
-        const straightenedEndPoint = snapToAngle(
-          drawingState.startPoint, 
-          drawingState.currentPoint,
-          10 // Reduced threshold to 10 degrees for better diagonal precision
-        );
-        
-        // Replace the end point with the straightened one
-        if (straightenedEndPoint) {
-          console.log("Line straightened from", drawingState.currentPoint, "to", straightenedEndPoint);
+        try {
+          // Modify the path to create a perfectly straight or diagonal line
+          const straightenedEndPoint = snapToAngle(
+            drawingState.startPoint, 
+            drawingState.currentPoint,
+            10 // Reduced threshold to 10 degrees for better diagonal precision
+          );
           
-          // Update the path points if possible
-          if (e.path && e.path.path) {
-            try {
-              // Modify the path to be perfectly straight or diagonal
-              const startX = drawingState.startPoint.x * 100; // Convert to pixels
-              const startY = drawingState.startPoint.y * 100;
-              const endX = straightenedEndPoint.x * 100;
-              const endY = straightenedEndPoint.y * 100;
-              
-              // Create a new path array with just two points for a straight line
-              e.path.path = [
-                ["M", startX, startY],
-                ["L", endX, endY]
-              ];
-              
-              // Force redraw
-              fabricCanvas.renderAll();
-            } catch (err) {
-              console.error("Error straightening line:", err);
-            }
+          // Replace the end point with the straightened one
+          if (straightenedEndPoint && e.path && e.path.path) {
+            console.log("Line straightened from", drawingState.currentPoint, "to", straightenedEndPoint);
+            
+            // Modify the path to be perfectly straight or diagonal
+            const startX = drawingState.startPoint.x * 100; // Convert to pixels
+            const startY = drawingState.startPoint.y * 100;
+            const endX = straightenedEndPoint.x * 100;
+            const endY = straightenedEndPoint.y * 100;
+            
+            // Create a new path array with just two points for a straight line
+            e.path.path = [
+              ["M", startX, startY],
+              ["L", endX, endY]
+            ];
+            
+            // Force redraw - fixed to use requestRenderAll instead of renderAll
+            fabricCanvas.requestRenderAll();
           }
+        } catch (err) {
+          console.error("Error straightening line:", err);
         }
       }
       

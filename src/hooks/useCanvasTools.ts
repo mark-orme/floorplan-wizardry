@@ -56,7 +56,8 @@ export const useCanvasTools = ({
       createGrid(fabricCanvasRef.current);
     }
     
-    fabricCanvasRef.current.renderAll();
+    // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
+    fabricCanvasRef.current.requestRenderAll();
   }, [fabricCanvasRef, gridLayerRef, createGrid]);
   
   /**
@@ -81,6 +82,12 @@ export const useCanvasTools = ({
       case "straightLine":
       case "room":
         canvas.isDrawingMode = true;
+        
+        // Initialize brush with current settings if needed
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.width = lineThickness;
+          canvas.freeDrawingBrush.color = lineColor;
+        }
         break;
       case "select":
         enableSelection(canvas);
@@ -95,7 +102,6 @@ export const useCanvasTools = ({
         
         // Ensure grid elements are in the correct z-order
         const gridElements = gridLayerRef.current;
-        const allObjects = fabricCanvasRef.current.getObjects();
         
         // Find grid markers (scale indicators)
         const gridMarkers = gridElements.filter(obj => 
@@ -120,7 +126,8 @@ export const useCanvasTools = ({
           }
         });
         
-        fabricCanvasRef.current.renderAll();
+        // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
+        fabricCanvasRef.current.requestRenderAll();
         
         // Provide user feedback
         const toolNames = {
@@ -192,7 +199,8 @@ export const useCanvasTools = ({
             }
           });
           
-          fabricCanvasRef.current.renderAll();
+          // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
+          fabricCanvasRef.current.requestRenderAll();
         }
       }, 100);
     }
