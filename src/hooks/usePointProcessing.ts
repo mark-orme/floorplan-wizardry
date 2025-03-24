@@ -7,8 +7,7 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import { 
   type Point,
-  PIXELS_PER_METER,
-  GRID_SIZE
+  PIXELS_PER_METER
 } from "@/utils/drawing";
 import { 
   snapToGrid, 
@@ -39,9 +38,12 @@ export const usePointProcessing = (tool: DrawingTool) => {
       filteredPoints = points;
     }
     
-    // IMPORTANT: Always use strict grid snapping for all tools
-    // This ensures lines always start/end exactly on grid points
-    let finalPoints = snapPointsToGrid(filteredPoints, true);
+    // Apply grid snapping based on the tool
+    // For wall tool (straightLine), use strict grid snapping
+    // For other tools, use standard snapping
+    let finalPoints = tool === 'straightLine' 
+      ? snapPointsToGrid(filteredPoints, true) // Strict grid snapping for walls
+      : snapToGrid(filteredPoints);           // Regular snapping for other tools
     
     console.log("Points snapped to grid:", finalPoints.length);
     

@@ -9,7 +9,6 @@ import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";
-import { CanvasProvider } from "@/context/CanvasContext";
 
 /**
  * Main Canvas component for floor plan drawing
@@ -23,12 +22,8 @@ export const Canvas = () => {
   const isFirstMountRef = useRef(true);
   
   // Define all hooks at the top level, never conditionally
-  const canvasController = CanvasController();
-  
   const {
     tool,
-    setTool,
-    zoomLevel,
     gia,
     floorPlans,
     currentFloor,
@@ -52,7 +47,7 @@ export const Canvas = () => {
     handleLineColorChange,
     drawingState,
     handleRetry
-  } = canvasController;
+  } = CanvasController();
 
   // Force straightLine tool on initial load
   useEffect(() => {
@@ -104,58 +99,46 @@ export const Canvas = () => {
     });
   }, [drawingState?.isDrawing, tool, isTooltipVisible]);
 
-  // Create a complete context value with all required properties
-  const contextValue = {
-    tool,
-    setTool,
-    zoomLevel,
-    gia,
-    floorPlans,
-    currentFloor,
-    isLoading,
-    hasError,
-    errorMessage,
-    debugInfo,
-    canvasRef,
-    lineThickness,
-    lineColor,
-    drawingState,
-    handleFloorSelect,
-    handleAddFloor,
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    clearCanvas,
-    saveCanvas,
-    handleLineThicknessChange,
-    handleLineColorChange,
-    handleRetry
-  };
-
   return (
-    <CanvasProvider value={contextValue}>
-      <LoadingErrorWrapper
-        isLoading={isLoading}
-        hasError={hasError}
-        errorMessage={errorMessage}
-        onRetry={handleRetry}
-      >
-        <div className="relative w-full h-full">
-          <CanvasLayout />
-          
-          {/* Render tooltip in a fixed position relative to the viewport */}
-          <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
-            <DistanceTooltip
-              startPoint={drawingState?.startPoint}
-              currentPoint={drawingState?.currentPoint}
-              isVisible={isTooltipVisible}
-              position={drawingState?.cursorPosition}
-              midPoint={drawingState?.midPoint}
-            />
-          </div>
+    <LoadingErrorWrapper
+      isLoading={isLoading}
+      hasError={hasError}
+      errorMessage={errorMessage}
+      onRetry={handleRetry}
+    >
+      <div className="relative w-full h-full">
+        <CanvasLayout
+          tool={tool}
+          gia={gia}
+          floorPlans={floorPlans}
+          currentFloor={currentFloor}
+          debugInfo={debugInfo}
+          canvasRef={canvasRef}
+          lineThickness={lineThickness}
+          lineColor={lineColor}
+          onToolChange={handleToolChange}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onZoom={handleZoom}
+          onClear={clearCanvas}
+          onSave={saveCanvas}
+          onFloorSelect={handleFloorSelect}
+          onAddFloor={handleAddFloor}
+          onLineThicknessChange={handleLineThicknessChange}
+          onLineColorChange={handleLineColorChange}
+        />
+        
+        {/* Render tooltip in a fixed position relative to the viewport */}
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
+          <DistanceTooltip
+            startPoint={drawingState?.startPoint}
+            currentPoint={drawingState?.currentPoint}
+            isVisible={isTooltipVisible}
+            position={drawingState?.cursorPosition}
+            midPoint={drawingState?.midPoint}
+          />
         </div>
-      </LoadingErrorWrapper>
-    </CanvasProvider>
+      </div>
+    </LoadingErrorWrapper>
   );
 };

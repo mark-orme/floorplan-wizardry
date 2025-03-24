@@ -25,7 +25,7 @@ export const DistanceTooltip = memo(({
   isVisible,
   position
 }: DistanceTooltipProps) => {
-  // Exit early if we don't have the necessary data or drawing hasn't started
+  // Exit early if we don't have the necessary data
   if (!startPoint || !currentPoint || !isVisible) {
     return null;
   }
@@ -33,10 +33,8 @@ export const DistanceTooltip = memo(({
   // Calculate distance in meters
   const distanceInMeters = calculateDistance(startPoint, currentPoint);
   
-  // Don't show tooltip for very small distances or when points are the same
-  // Increased threshold to prevent showing tooltip too early during initial click
-  if (distanceInMeters < 0.05 || 
-      (startPoint.x === currentPoint.x && startPoint.y === currentPoint.y)) {
+  // If the distance is too small, don't show the tooltip
+  if (distanceInMeters < 0.01) {
     return null;
   }
   
