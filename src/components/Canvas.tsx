@@ -343,10 +343,11 @@ export const Canvas = () => {
       // Save floorplan data
       localStorage.setItem('floorplan', JSON.stringify(floorPlan));
       
-      // Save canvas as image
+      // Save canvas as image with corrected options including multiplier
       const dataUrl = fabricCanvasRef.current.toDataURL({
         format: 'png',
-        quality: 1
+        quality: 1,
+        multiplier: 1 // Adding the required multiplier property
       });
       const link = document.createElement("a");
       link.download = "floorplan.png";
