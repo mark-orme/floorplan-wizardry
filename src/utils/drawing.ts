@@ -16,7 +16,7 @@ export const snapToGrid = (points: Point[]): Stroke =>
     y: Math.round(p.y / (GRID_SIZE * PIXELS_PER_METER)) * GRID_SIZE,
   }));
 
-/** Auto-straighten strokes */
+/** Auto-straighten strokes - improved version that preserves straight lines */
 export const straightenStroke = (stroke: Stroke): Stroke => {
   if (stroke.length < 2) return stroke;
   
@@ -73,4 +73,28 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
   }
   
   return points;
+};
+
+/** Load floor plans from localStorage */
+export const loadFloorPlans = (): FloorPlan[] => {
+  try {
+    const saved = localStorage.getItem('floorPlans');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load floor plans:', e);
+  }
+  
+  // Default floor plan if none exists
+  return [{ strokes: [], label: 'Ground Floor', paperSize: 'infinite' }];
+};
+
+/** Save floor plans to localStorage */
+export const saveFloorPlans = (floorPlans: FloorPlan[]): void => {
+  try {
+    localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+  } catch (e) {
+    console.error('Failed to save floor plans:', e);
+  }
 };

@@ -2,20 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
-import { Button } from "./ui/button";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import {
-  ZoomIn,
-  ZoomOut,
-  Pencil,
-  Square,
-  Undo,
-  Redo,
-  Save,
-  Trash,
-  Ruler,
-} from "lucide-react";
+import { DrawingToolbar } from "./DrawingToolbar";
+import { FloorPlanList } from "./FloorPlanList";
 import {
   GRID_SIZE,
   PIXELS_PER_METER,
@@ -25,6 +14,8 @@ import {
   straightenStroke,
   calculateGIA,
   fabricPathToPoints,
+  loadFloorPlans,
+  saveFloorPlans,
   type Stroke,
   type FloorPlan
 } from "@/utils/drawing";
@@ -35,18 +26,45 @@ export const Canvas = () => {
   const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
-  const [floorPlan, setFloorPlan] = useState<FloorPlan>({
-    strokes: [],
-    label: 'Ground Floor',
-    paperSize: 'infinite'
-  });
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(loadFloorPlans());
+  const [currentFloor, setCurrentFloor] = useState(0);
   const historyRef = useRef<{past: fabric.Object[][], future: fabric.Object[][]}>({
     past: [],
     future: []
   });
 
-  // Setup canvas and initialize drawing
+  // Initialize canvas when component mounts
   useEffect(() => {
+    setupCanvas();
+    
+    // Setup autosave
+    const interval = setInterval(() => {
+      saveFloorPlans(floorPlans);
+    }, 10000); // Autosave every 10 seconds
+    
+    return () => {
+      clearInterval(interval);
+      fabricCanvasRef.current?.dispose();
+    };
+  }, []);
+
+  // When floor plan changes, update the canvas
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Clear existing drawings but not grid
+    clearDrawings();
+    
+    // Add strokes from current floor plan
+    drawFloorPlan();
+    
+    // Recalculate GIA
+    recalculateGIA();
+    
+  }, [currentFloor, floorPlans]);
+
+  // Setup canvas and initialize drawing
+  const setupCanvas = () => {
     if (!canvasRef.current) return;
 
     // Create fabric canvas
@@ -160,9 +178,12 @@ export const Canvas = () => {
       fabricCanvas.add(polyline);
 
       // Update floor plan data and calculate GIA
-      setFloorPlan(prev => {
-        const newFloorPlan = {...prev};
-        newFloorPlan.strokes = [...prev.strokes, finalPoints];
+      setFloorPlans(prev => {
+        const newFloorPlans = [...prev];
+        newFloorPlans[currentFloor] = {
+          ...newFloorPlans[currentFloor],
+          strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
+        };
         
         // Calculate GIA from closed shapes (rooms)
         if (tool === 'room' && finalPoints.length > 2) {
@@ -171,7 +192,7 @@ export const Canvas = () => {
           toast.success(`Room added: ${area.toFixed(2)} m²`);
         }
         
-        return newFloorPlan;
+        return newFloorPlans;
       });
 
       // Save state for undo/redo
@@ -188,22 +209,52 @@ export const Canvas = () => {
     );
     historyRef.current.past.push([...initialState]);
 
-    // Setup autosave
-    const interval = setInterval(() => {
-      try {
-        localStorage.setItem('floorplan', JSON.stringify(floorPlan));
-      } catch (e) {
-        console.error('Autosave failed:', e);
-      }
-    }, 10000); // Autosave every 10 seconds
-
     toast.success("Canvas ready for drawing!");
+  };
 
-    return () => {
-      clearInterval(interval);
-      fabricCanvas.dispose();
-    };
-  }, []);
+  // Draw the current floor plan
+  const drawFloorPlan = () => {
+    if (!fabricCanvasRef.current) return;
+    
+    const currentPlan = floorPlans[currentFloor];
+    currentPlan.strokes.forEach(stroke => {
+      const polyline = new fabric.Polyline(
+        stroke.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
+        {
+          stroke: '#000000',
+          strokeWidth: 2,
+          fill: 'transparent', // We'll determine which are rooms by closed shape later
+          objectType: 'line'
+        }
+      );
+      
+      // For closed shapes with 3+ points, treat as rooms
+      if (stroke.length > 2 && 
+          Math.abs(stroke[0].x - stroke[stroke.length-1].x) < 0.01 && 
+          Math.abs(stroke[0].y - stroke[stroke.length-1].y) < 0.01) {
+        polyline.set({
+          fill: 'rgba(0, 0, 255, 0.1)',
+          objectType: 'room'
+        });
+      }
+      
+      fabricCanvasRef.current!.add(polyline);
+    });
+    
+    fabricCanvasRef.current.renderAll();
+  };
+
+  // Clear only the drawings, not the grid
+  const clearDrawings = () => {
+    if (!fabricCanvasRef.current) return;
+    
+    const objects = fabricCanvasRef.current.getObjects().filter(obj => 
+      obj.type === 'path' || obj.type === 'polyline'
+    );
+    objects.forEach((obj) => fabricCanvasRef.current!.remove(obj));
+    
+    fabricCanvasRef.current.renderAll();
+  };
 
   // Update drawing mode when tool changes
   useEffect(() => {
@@ -253,10 +304,7 @@ export const Canvas = () => {
       const previousState = historyRef.current.past[historyRef.current.past.length - 1];
       
       // Clear canvas of paths and polylines
-      const objectsToRemove = fabricCanvasRef.current.getObjects().filter(obj => 
-        obj.type === 'path' || obj.type === 'polyline'
-      );
-      objectsToRemove.forEach(obj => fabricCanvasRef.current!.remove(obj));
+      clearDrawings();
       
       // Restore previous state
       previousState.forEach(obj => fabricCanvasRef.current!.add(obj));
@@ -283,10 +331,7 @@ export const Canvas = () => {
       historyRef.current.past.push([...nextState]);
       
       // Clear canvas of paths and polylines
-      const objectsToRemove = fabricCanvasRef.current.getObjects().filter(obj => 
-        obj.type === 'path' || obj.type === 'polyline'
-      );
-      objectsToRemove.forEach(obj => fabricCanvasRef.current!.remove(obj));
+      clearDrawings();
       
       // Restore next state
       nextState.forEach(obj => fabricCanvasRef.current!.add(obj));
@@ -314,25 +359,25 @@ export const Canvas = () => {
 
   const clearCanvas = () => {
     if (!fabricCanvasRef.current) return;
+    
     // Clear only the drawings, not the grid
-    const objects = fabricCanvasRef.current.getObjects().filter(obj => 
-      obj.type === 'path' || obj.type === 'polyline'
-    );
-    objects.forEach((obj) => fabricCanvasRef.current!.remove(obj));
+    clearDrawings();
     
     // Update history
     historyRef.current.past = [[]];
     historyRef.current.future = [];
     
     // Reset floor plan and GIA
-    setFloorPlan({
-      strokes: [],
-      label: 'Ground Floor',
-      paperSize: 'infinite'
+    setFloorPlans(prev => {
+      const newFloorPlans = [...prev];
+      newFloorPlans[currentFloor] = {
+        ...newFloorPlans[currentFloor],
+        strokes: []
+      };
+      return newFloorPlans;
     });
     setGia(0);
     
-    fabricCanvasRef.current.renderAll();
     toast.success("Canvas cleared");
   };
 
@@ -341,16 +386,16 @@ export const Canvas = () => {
     
     try {
       // Save floorplan data
-      localStorage.setItem('floorplan', JSON.stringify(floorPlan));
+      saveFloorPlans(floorPlans);
       
       // Save canvas as image with corrected options including multiplier
       const dataUrl = fabricCanvasRef.current.toDataURL({
         format: 'png',
         quality: 1,
-        multiplier: 1 // Adding the required multiplier property
+        multiplier: 1 // Required multiplier property
       });
       const link = document.createElement("a");
-      link.download = "floorplan.png";
+      link.download = `floorplan-${floorPlans[currentFloor].label}.png`;
       link.href = dataUrl;
       link.click();
       
@@ -384,103 +429,48 @@ export const Canvas = () => {
     setGia(totalGIA);
   };
 
+  const handleAddFloor = () => {
+    setFloorPlans(prev => [
+      ...prev, 
+      { 
+        strokes: [], 
+        label: `Floor ${prev.length + 1}`,
+        paperSize: 'infinite'
+      }
+    ]);
+    setCurrentFloor(floorPlans.length);
+    toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);
+  };
+
+  const handleSelectFloor = (index: number) => {
+    if (index !== currentFloor) {
+      setCurrentFloor(index);
+      toast.info(`Switched to ${floorPlans[index].label}`);
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto">
-      <Card className="p-6 backdrop-blur-sm bg-white/30 dark:bg-black/30 border border-gray-200 dark:border-gray-800">
-        <div className="flex gap-4 mb-4 flex-wrap">
-          {/* Tool Selection */}
-          <div className="flex gap-2">
-            <Button
-              variant={tool === "draw" ? "default" : "outline"}
-              onClick={() => handleToolChange("draw")}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-              title="Freehand Tool"
-            >
-              <Pencil className="w-4 h-4 transition-colors" />
-            </Button>
-            <Button
-              variant={tool === "straightLine" ? "default" : "outline"}
-              onClick={() => handleToolChange("straightLine")}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-              title="Straight Line Tool"
-            >
-              <Ruler className="w-4 h-4 transition-colors" />
-            </Button>
-            <Button
-              variant={tool === "room" ? "default" : "outline"}
-              onClick={() => handleToolChange("room")}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-              title="Room Tool"
-            >
-              <Square className="w-4 h-4 transition-colors" />
-            </Button>
-          </div>
-          
-          {/* History Controls */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleUndo}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-              title="Undo"
-            >
-              <Undo className="w-4 h-4 transition-colors" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleRedo}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-              title="Redo"
-            >
-              <Redo className="w-4 h-4 transition-colors" />
-            </Button>
-          </div>
-          
-          {/* Zoom Controls */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handleZoom("in")}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-4 h-4 transition-colors" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleZoom("out")}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-4 h-4 transition-colors" />
-            </Button>
-          </div>
-          
-          {/* GIA Display */}
-          <div className="flex items-center ml-auto mr-4 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-md">
-            <span className="text-sm font-medium">GIA: {gia.toFixed(2)} m²</span>
-          </div>
-          
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={clearCanvas}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-red-50 dark:hover:bg-red-950"
-              title="Clear Canvas"
-            >
-              <Trash className="w-4 h-4 text-red-500 transition-colors" />
-            </Button>
-            <Button
-              variant="default"
-              onClick={saveCanvas}
-              className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-              title="Save as PNG"
-            >
-              <Save className="w-4 h-4 transition-colors" />
-            </Button>
-          </div>
-        </div>
+    <div className="flex flex-col md:flex-row gap-6 p-6 max-w-[1200px] mx-auto">
+      <div className="md:w-64">
+        <FloorPlanList 
+          floorPlans={floorPlans}
+          currentFloor={currentFloor}
+          onSelect={handleSelectFloor}
+          onAdd={handleAddFloor}
+        />
+      </div>
+      
+      <Card className="flex-1 p-6 backdrop-blur-sm bg-white/30 dark:bg-black/30 border border-gray-200 dark:border-gray-800">
+        <DrawingToolbar 
+          tool={tool}
+          onToolChange={handleToolChange}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onZoom={handleZoom}
+          onClear={clearCanvas}
+          onSave={saveCanvas}
+          gia={gia}
+        />
 
         <canvas ref={canvasRef} />
       </Card>
