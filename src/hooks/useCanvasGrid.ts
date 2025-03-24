@@ -6,7 +6,13 @@
 import { useCallback, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
-import { gridManager, resetGridProgress, scheduleGridProgressReset } from "@/utils/gridOperations";
+import { 
+  gridManager, 
+  resetGridProgress, 
+  scheduleGridProgressReset,
+  acquireGridCreationLock,
+  releaseGridCreationLock
+} from "@/utils/gridOperations";
 
 interface UseCanvasGridProps {
   gridLayerRef: React.MutableRefObject<any[]>;
@@ -43,6 +49,7 @@ export const useCanvasGrid = ({
   const safetyTimeoutRef = useRef<number | null>(null);
   const attemptCountRef = useRef(0);
   const MAX_ATTEMPTS = 3;
+  const gridLockIdRef = useRef(0);
   
   // Debug effect to log grid state changes
   useEffect(() => {
@@ -85,18 +92,35 @@ export const useCanvasGrid = ({
       debounceTimerRef.current = null;
     }
     
-    // CRITICAL FIX: Reset progress flag immediately before attempting new creation
-    // This ensures we don't get stuck in "already in progress" state
+    // Force reset any stuck grid creation before attempting new one
     resetGridProgress();
-    gridCreationInProgressRef.current = false;
     
     // Increment attempt counter
     attemptCountRef.current++;
     console.log(`Grid creation attempt #${attemptCountRef.current}`);
     
-    // Set flags to indicate a grid creation is in progress
+    // Try to acquire a lock - if can't acquire, just return early
+    if (!acquireGridCreationLock()) {
+      console.log("Grid creation already locked by another process, skipping");
+      
+      // If we can't get the lock but we've tried multiple times, force reset and try again
+      if (attemptCountRef.current > 1) {
+        console.log("Multiple failed lock acquisitions, forcing reset and trying again in 500ms");
+        resetGridProgress();
+        
+        setTimeout(() => {
+          createGridCallback(canvas);
+        }, 500);
+      }
+      
+      return [];
+    }
+    
+    // Store lock ID
+    gridLockIdRef.current = gridManager.creationLock.id;
+    
+    // Update tracking refs
     gridCreationInProgressRef.current = true;
-    gridManager.inProgress = true;
     
     // Set a safety timeout to reset the in-progress flag
     if (safetyTimeoutRef.current) {
@@ -149,9 +173,16 @@ export const useCanvasGrid = ({
         attemptCountRef.current = 0;
         // Force a render
         canvas.requestRenderAll();
+        
+        // Release our lock
+        releaseGridCreationLock(gridLockIdRef.current);
+        
         return grid;
       } else {
         console.warn("Grid creation returned no objects");
+        
+        // Release our lock
+        releaseGridCreationLock(gridLockIdRef.current);
         
         // Retry logic if we haven't exceeded max attempts
         if (attemptCountRef.current < MAX_ATTEMPTS) {
@@ -173,6 +204,9 @@ export const useCanvasGrid = ({
       setHasError(true);
       setErrorMessage(`Grid creation failed: ${err instanceof Error ? err.message : String(err)}`);
       
+      // Release our lock
+      releaseGridCreationLock(gridLockIdRef.current);
+      
       // Retry logic if we haven't exceeded max attempts
       if (attemptCountRef.current < MAX_ATTEMPTS) {
         console.log(`Scheduling retry attempt #${attemptCountRef.current + 1} after error`);
@@ -187,7 +221,6 @@ export const useCanvasGrid = ({
     } finally {
       // Reset the flags
       gridCreationInProgressRef.current = false;
-      gridManager.inProgress = false;
       
       // Clear safety timeout
       if (safetyTimeoutRef.current) {

@@ -1,15 +1,26 @@
-
 /**
  * Grid operations module
  * Handles grid creation batch operations and error handling
  * @module gridOperations
  */
 import { Canvas } from "fabric";
-import { gridManager, resetGridProgress, scheduleGridProgressReset } from "./gridManager";
+import { 
+  gridManager, 
+  resetGridProgress, 
+  scheduleGridProgressReset,
+  acquireGridCreationLock,
+  releaseGridCreationLock
+} from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
 
 // Re-export gridManager for use in other modules
-export { gridManager, resetGridProgress, scheduleGridProgressReset };
+export { 
+  gridManager, 
+  resetGridProgress, 
+  scheduleGridProgressReset,
+  acquireGridCreationLock,
+  releaseGridCreationLock
+};
 
 /**
  * Check if grid creation should be throttled based on creation limits
@@ -133,7 +144,7 @@ export const createGridBatch = (
       gridLayerRef.current = [];
     }
     
-    // CRITICAL FIX: Apply minimum dimensions to avoid zero-size grid issues
+    // Apply minimum dimensions to avoid zero-size grid issues
     // Get up-to-date dimensions with safety checks
     const canvasWidth = Math.max(canvas.width || canvasDimensions.width, 200);
     const canvasHeight = Math.max(canvas.height || canvasDimensions.height, 200);

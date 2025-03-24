@@ -35,7 +35,14 @@ export const gridManager = {
   // Flags to prevent race conditions
   lastResetTime: 0,
   consecutiveResets: 0,
-  maxConsecutiveResets: 3
+  maxConsecutiveResets: 3,
+  
+  // Track creation locks with timestamp
+  creationLock: {
+    id: 0,
+    timestamp: 0,
+    isLocked: false
+  }
 };
 
 /**
@@ -55,6 +62,7 @@ export const resetGridProgress = () => {
       console.warn("Too many consecutive resets detected, adding delay");
       setTimeout(() => {
         gridManager.inProgress = false;
+        gridManager.creationLock.isLocked = false;
         gridManager.consecutiveResets = 0;
       }, 1000);
       return;
@@ -66,7 +74,51 @@ export const resetGridProgress = () => {
   
   gridManager.lastResetTime = now;
   gridManager.inProgress = false;
+  gridManager.creationLock.isLocked = false;
   console.log("Grid creation progress flag reset");
+};
+
+/**
+ * Acquire a lock for grid creation
+ * @returns {boolean} Whether the lock was acquired
+ */
+export const acquireGridCreationLock = (): boolean => {
+  const now = Date.now();
+  
+  // Check if lock is active
+  if (gridManager.creationLock.isLocked) {
+    // If lock has been held for too long, force release it
+    if (now - gridManager.creationLock.timestamp > gridManager.safetyTimeout) {
+      console.warn("Forcing release of stale grid creation lock");
+      gridManager.creationLock.isLocked = false;
+    } else {
+      // Lock is active and not stale
+      return false;
+    }
+  }
+  
+  // Acquire the lock
+  gridManager.creationLock.id++;
+  gridManager.creationLock.timestamp = now;
+  gridManager.creationLock.isLocked = true;
+  gridManager.inProgress = true;
+  
+  return true;
+};
+
+/**
+ * Release the grid creation lock
+ * @param {number} lockId - ID of the lock to release
+ * @returns {boolean} Whether the lock was released
+ */
+export const releaseGridCreationLock = (lockId: number): boolean => {
+  // Only release if the ID matches (prevent releasing someone else's lock)
+  if (gridManager.creationLock.id === lockId) {
+    gridManager.creationLock.isLocked = false;
+    gridManager.inProgress = false;
+    return true;
+  }
+  return false;
 };
 
 /**
@@ -80,4 +132,3 @@ export const scheduleGridProgressReset = (timeoutMs = 5000): number => {
     resetGridProgress();
   }, timeoutMs);
 };
-
