@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -32,6 +33,8 @@ export const useDrawingState = ({
   const timeoutRef = useRef<number | null>(null);
   // Track animation frame for performance
   const animationFrameRef = useRef<number | null>(null);
+  // Track if mouse has moved after initial click
+  const hasMovedRef = useRef<boolean>(false);
   
   // Clear any existing timeouts and animation frames
   const cleanupTimeouts = useCallback(() => {
@@ -62,6 +65,9 @@ export const useDrawingState = ({
     if (!fabricCanvasRef.current) return;
     
     cleanupTimeouts();
+    
+    // Reset the movement tracker
+    hasMovedRef.current = false;
     
     // Get pointer position in canvas coordinates
     const pointer = fabricCanvasRef.current.getPointer(e.e);
@@ -109,6 +115,17 @@ export const useDrawingState = ({
     };
     
     setDrawingState(prev => {
+      if (!prev.startPoint) return prev;
+      
+      // Check if mouse has actually moved significantly from start point
+      const dx = Math.abs(currentPoint.x - prev.startPoint.x);
+      const dy = Math.abs(currentPoint.y - prev.startPoint.y);
+      
+      // If movement is significant, mark as moved
+      if (dx > 0.05 || dy > 0.05) {
+        hasMovedRef.current = true;
+      }
+      
       // Only calculate midpoint if we have both start and current points
       const midPoint = prev.startPoint ? 
         calculateMidpoint(prev.startPoint, currentPoint) : null;
@@ -124,7 +141,9 @@ export const useDrawingState = ({
         ...prev,
         currentPoint,
         cursorPosition: absolutePosition,
-        midPoint: midPointScreen
+        midPoint: midPointScreen,
+        // Only show as drawing if we've actually moved
+        isDrawing: prev.isDrawing && hasMovedRef.current
       };
     });
     
@@ -133,7 +152,7 @@ export const useDrawingState = ({
 
   // Mouse move handler with throttling
   const handleMouseMove = useCallback((e: any) => {
-    // Only update if drawing and using relevant tools
+    // Only update if mouse is down and using relevant tools
     if (!drawingState.isDrawing || (tool !== 'straightLine' && tool !== 'room')) return;
     
     // Throttle updates using requestAnimationFrame for better performance
@@ -160,6 +179,8 @@ export const useDrawingState = ({
       });
       console.log("Drawing state reset");
       timeoutRef.current = null;
+      // Reset movement tracker
+      hasMovedRef.current = false;
     }, 750); // Longer delay to keep tooltip visible after drawing ends
   }, [cleanupTimeouts]);
 
@@ -214,6 +235,8 @@ export const useDrawingState = ({
         cursorPosition: null,
         midPoint: null
       });
+      // Reset movement tracker
+      hasMovedRef.current = false;
     }
   }, [tool, drawingState.isDrawing, cleanupTimeouts]);
 

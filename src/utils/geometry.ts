@@ -46,7 +46,7 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
   if (!strict) return snapToGrid(points);
   
   return points.map(p => {
-    // For strict mode (wall tool), snap exactly to 0.1m grid
+    // For strict mode, snap exactly to 0.1m grid
     const x = typeof p.x === 'number' ? p.x : 0;
     const y = typeof p.y === 'number' ? p.y : 0;
     

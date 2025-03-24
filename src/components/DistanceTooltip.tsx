@@ -25,7 +25,7 @@ export const DistanceTooltip = memo(({
   isVisible,
   position
 }: DistanceTooltipProps) => {
-  // Exit early if we don't have the necessary data
+  // Exit early if we don't have the necessary data or drawing hasn't started
   if (!startPoint || !currentPoint || !isVisible) {
     return null;
   }
