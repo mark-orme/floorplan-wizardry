@@ -257,16 +257,23 @@ export const Canvas = () => {
       fabricCanvasRef.current = fabricCanvas;
       canvasInitializedRef.current = true;
       
-      const pencilBrush = new PencilBrush(fabricCanvas);
-      fabricCanvas.freeDrawingBrush = pencilBrush;
-      fabricCanvas.freeDrawingBrush.color = "#000000";
-      fabricCanvas.freeDrawingBrush.width = 2;
-      
-      setDebugInfo(prev => ({
-        ...prev, 
-        canvasInitialized: true,
-        brushInitialized: true
-      }));
+      // Initialize the drawing brush
+      const pencilBrush = initializeDrawingBrush(fabricCanvas);
+      if (pencilBrush) {
+        fabricCanvas.freeDrawingBrush = pencilBrush;
+        setDebugInfo(prev => ({
+          ...prev, 
+          canvasInitialized: true,
+          brushInitialized: true
+        }));
+      } else {
+        console.error("Failed to initialize drawing brush");
+        setDebugInfo(prev => ({
+          ...prev, 
+          canvasInitialized: true,
+          brushInitialized: false
+        }));
+      }
       
       // Create grid must be called immediately after canvas initialization
       const gridObjects = createGrid(fabricCanvas);
@@ -441,8 +448,8 @@ export const Canvas = () => {
       
       if (fabricCanvasRef.current) {
         console.log("Updating fabric canvas dimensions");
-        // Fix here: Pass a single object with width and height instead of three arguments
-        setCanvasDimensions(fabricCanvasRef.current, newWidth, newHeight);
+        // Fix: Pass dimensions object as a single argument
+        setCanvasDimensions(fabricCanvasRef.current, { width: newWidth, height: newHeight });
         createGrid(fabricCanvasRef.current);
         fabricCanvasRef.current.renderAll();
       } else {
@@ -603,6 +610,11 @@ export const Canvas = () => {
     
     if (fabricCanvasRef.current.freeDrawingBrush) {
       console.log("Drawing brush exists, configuring for tool:", tool);
+      
+      // Ensure brush is properly configured
+      fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
+      fabricCanvasRef.current.freeDrawingBrush.width = 2;
+      
       if (tool === 'straightLine') {
         toast.info("Straight line tool: Strokes will be auto-straightened");
       } else if (tool === 'room') {
@@ -612,11 +624,16 @@ export const Canvas = () => {
       console.error("Drawing brush not initialized when tool changed");
       
       try {
-        const pencilBrush = new PencilBrush(fabricCanvasRef.current);
-        fabricCanvasRef.current.freeDrawingBrush = pencilBrush;
-        fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
-        fabricCanvasRef.current.freeDrawingBrush.width = 2;
-        console.log("Drawing brush reinitialized");
+        // Re-initialize the brush
+        const pencilBrush = initializeDrawingBrush(fabricCanvasRef.current);
+        if (pencilBrush) {
+          fabricCanvasRef.current.freeDrawingBrush = pencilBrush;
+          console.log("Drawing brush reinitialized");
+          setDebugInfo(prev => ({ ...prev, brushInitialized: true }));
+        } else {
+          console.error("Failed to reinitialize brush");
+          toast.error("Drawing tool initialization failed");
+        }
       } catch (brushErr) {
         console.error("Error reinitializing brush:", brushErr);
       }
