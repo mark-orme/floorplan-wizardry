@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing points during drawing
  * @module usePointProcessing
@@ -44,31 +43,24 @@ export const usePointProcessing = (tool: DrawingTool) => {
     let finalPoints;
     if (tool === 'straightLine') {
       // IMPROVED: Force all wall points to snap EXACTLY to nearest grid lines
+      // Force exact grid alignment for wall tool - snap both start and end
+      // points precisely to their nearest grid lines
       const startPoint = snapToNearestGridLine(filteredPoints[0]);
       const endPoint = snapToNearestGridLine(filteredPoints[filteredPoints.length - 1]);
       
-      // Create a perfectly straight line with exact grid alignment
+      console.log("Wall strict snap: Original start:", filteredPoints[0], "Snapped start:", startPoint);
+      console.log("Wall strict snap: Original end:", filteredPoints[filteredPoints.length - 1], "Snapped end:", endPoint);
+      
+      // Create a perfectly straight line with exact grid alignment 
       finalPoints = straightenStroke([startPoint, endPoint]);
       
-      console.log("Applied strict wall alignment. Original:", [filteredPoints[0], filteredPoints[filteredPoints.length - 1]], "Aligned:", finalPoints);
+      // Triple-check both points are exactly on grid lines
+      finalPoints = finalPoints.map(point => ({
+        x: Number(Number(point.x).toFixed(1)),
+        y: Number(Number(point.y).toFixed(1))
+      }));
       
-      // Triple-check grid alignment and force exact alignment if needed
-      const startIsAligned = isExactGridMultiple(finalPoints[0].x) && isExactGridMultiple(finalPoints[0].y);
-      const endIsAligned = isExactGridMultiple(finalPoints[1].x) && isExactGridMultiple(finalPoints[1].y);
-      
-      if (!startIsAligned || !endIsAligned) {
-        console.warn("Wall endpoints not exactly on grid. Forcing alignment");
-        finalPoints = [
-          {
-            x: Math.round(finalPoints[0].x * 10) / 10,
-            y: Math.round(finalPoints[0].y * 10) / 10
-          },
-          {
-            x: Math.round(finalPoints[1].x * 10) / 10,
-            y: Math.round(finalPoints[1].y * 10) / 10
-          }
-        ];
-      }
+      console.log("Final wall points (after all processing):", finalPoints);
     } else {
       // Regular snapping for other tools
       finalPoints = snapToGrid(filteredPoints);

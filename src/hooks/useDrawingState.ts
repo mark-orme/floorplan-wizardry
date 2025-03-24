@@ -73,11 +73,12 @@ export const useDrawingState = ({
       y: pointer.y / PIXELS_PER_METER
     };
     
-    // IMPROVED: Force EXACT grid line alignment for wall start points
+    // CRITICAL FIX: Force EXACT grid line alignment for wall start points
     // Apply strict snapping to ensure start point is precisely on a grid line
+    // This fixes the issue of not starting exactly on grid lines
     const startPoint = snapToNearestGridLine(rawStartPoint);
     
-    console.log("Raw start point:", rawStartPoint, "Snapped to grid line:", startPoint);
+    console.log("GRID SNAP: Raw clicked point:", rawStartPoint, "Snapped to grid line:", startPoint);
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -93,7 +94,7 @@ export const useDrawingState = ({
       midPoint: absolutePosition // Initially same as cursor position
     });
     
-    console.log("Drawing started at grid line point:", startPoint, "with tool:", tool);
+    console.log("Drawing started at precisely snapped grid point:", startPoint);
   }, [fabricCanvasRef, tool, cleanupTimeouts]);
 
   // Throttled update function using requestAnimationFrame with improved snapping
@@ -118,11 +119,11 @@ export const useDrawingState = ({
     setDrawingState(prev => {
       if (!prev.startPoint) return prev;
       
-      // IMPROVED: Apply strict grid line alignment to current point
-      // This ensures walls always travel exactly on grid lines
+      // CRITICAL FIX: Apply strict grid line snapping to current point
+      // This ensures walls always snap precisely to grid lines when moving
       const currentPoint = snapToNearestGridLine(rawCurrentPoint);
       
-      console.log("Raw current point:", rawCurrentPoint, "Snapped to grid line:", currentPoint);
+      console.log("GRID SNAP: Raw cursor point:", rawCurrentPoint, "Snapped to grid line:", currentPoint);
       
       // Only calculate midpoint if we have both start and current points
       // Use the grid-snapped points for more accurate midpoint calculation

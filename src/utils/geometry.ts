@@ -70,16 +70,16 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
 export const snapToNearestGridLine = (point: Point): Point => {
   if (!point) return { x: 0, y: 0 };
   
-  // Force exact 0.1m grid alignment with no rounding errors
-  // This is critical for wall placement accuracy
-  const exactX = Math.round(point.x / GRID_SIZE) * GRID_SIZE;
-  const exactY = Math.round(point.y / GRID_SIZE) * GRID_SIZE;
+  // Calculate distances to nearest grid lines
+  const nearestX = Math.round(point.x / GRID_SIZE) * GRID_SIZE;
+  const nearestY = Math.round(point.y / GRID_SIZE) * GRID_SIZE;
   
-  // Ensure values are exact multiples of 0.1 by using toFixed(1) and converting back to number
-  return {
-    x: Number(exactX.toFixed(1)),
-    y: Number(exactY.toFixed(1))
-  };
+  // Force exact 0.1m grid alignment with no rounding errors
+  // Apply additional rounding to ensure exact grid values (fixing floating point issues)
+  const exactX = Number(nearestX.toFixed(1));
+  const exactY = Number(nearestY.toFixed(1));
+  
+  return { x: exactX, y: exactY };
 };
 
 /** 
