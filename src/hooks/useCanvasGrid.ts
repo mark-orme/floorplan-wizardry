@@ -6,6 +6,7 @@
 import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
+import { gridManager } from "@/utils/gridManager";
 
 interface UseCanvasGridProps {
   gridLayerRef: React.MutableRefObject<any[]>;
@@ -20,15 +21,6 @@ interface UseCanvasGridProps {
   setErrorMessage: (value: string) => void;
 }
 
-// Track grid creation globally to prevent unnecessary recreations
-const globalGridCreations = {
-  count: 0,
-  lastDimensions: { width: 0, height: 0 },
-  lastCreationTime: 0,
-  inProgress: false,
-  initialized: false
-};
-
 /**
  * Hook for managing canvas grid creation and updates
  * @param {UseCanvasGridProps} props - Hook properties
@@ -42,11 +34,11 @@ export const useCanvasGrid = ({
   setErrorMessage
 }: UseCanvasGridProps) => {
   // Track the last grid creation time to prevent rapid consecutive creations
-  const lastGridCreationTimeRef = useRef(globalGridCreations.lastCreationTime);
-  const gridCreationInProgressRef = useRef(globalGridCreations.inProgress);
-  const lastDimensionsRef = useRef(globalGridCreations.lastDimensions);
-  const initialGridCreatedRef = useRef(globalGridCreations.initialized);
-  const gridCreationsCountRef = useRef(globalGridCreations.count);
+  const lastGridCreationTimeRef = useRef(gridManager.lastCreationTime);
+  const gridCreationInProgressRef = useRef(gridManager.inProgress);
+  const lastDimensionsRef = useRef(gridManager.lastDimensions);
+  const initialGridCreatedRef = useRef(gridManager.initialized);
+  const gridCreationsCountRef = useRef(gridManager.totalCreations);
   const debounceTimerRef = useRef<number | null>(null);
   
   // Create grid callback for other hooks with enhanced throttling
@@ -99,20 +91,20 @@ export const useCanvasGrid = ({
     
     // Set flag to indicate a grid creation is in progress
     gridCreationInProgressRef.current = true;
-    globalGridCreations.inProgress = true;
+    gridManager.inProgress = true;
     
     try {
       // Increment counter
       gridCreationsCountRef.current += 1;
-      globalGridCreations.count += 1;
+      gridManager.totalCreations += 1;
       
       // Update the last creation time reference
       lastGridCreationTimeRef.current = now;
-      globalGridCreations.lastCreationTime = now;
+      gridManager.lastCreationTime = now;
       
       // Store current dimensions
       lastDimensionsRef.current = { ...canvasDimensions };
-      globalGridCreations.lastDimensions = { ...canvasDimensions };
+      gridManager.lastDimensions = { ...canvasDimensions };
       
       // Create the grid
       const grid = createGrid(
@@ -126,7 +118,7 @@ export const useCanvasGrid = ({
       
       // Mark initial grid as created
       initialGridCreatedRef.current = true;
-      globalGridCreations.initialized = true;
+      gridManager.initialized = true;
       
       return grid;
     } catch (err) {
@@ -135,7 +127,7 @@ export const useCanvasGrid = ({
     } finally {
       // Reset the flags
       gridCreationInProgressRef.current = false;
-      globalGridCreations.inProgress = false;
+      gridManager.inProgress = false;
     }
   }, [canvasDimensions, gridLayerRef, setDebugInfo, setHasError, setErrorMessage]);
 
