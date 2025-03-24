@@ -59,7 +59,7 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
-  // Log drawing state for debugging
+  // Log drawing state for debugging when relevant changes occur
   useEffect(() => {
     if (drawingState?.isDrawing) {
       console.log("Drawing state updated:", 
@@ -68,7 +68,7 @@ export const Canvas = () => {
         drawingState.currentPoint
       );
     }
-  }, [drawingState]);
+  }, [drawingState?.isDrawing, drawingState?.startPoint, drawingState?.currentPoint]);
 
   // Memoize the tooltip component to prevent unnecessary re-renders
   const tooltipComponent = useMemo(() => (

@@ -11,7 +11,6 @@ import {
   type FloorPlan,
   type Point
 } from "@/utils/drawing";
-import { snapToAngle } from "@/utils/fabric";
 import { 
   snapToGrid, 
   snapPointsToGrid,
@@ -118,35 +117,39 @@ export const usePathProcessing = ({
         const lengthInMeters = Math.sqrt(dx * dx + dy * dy);
         toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
       } else if (tool === 'room') {
-        // For room tool, create enclosed shape with angle snapping
+        // For room tool, create enclosed shape with straightening between points
         const snappedPoints = [finalPoints[0]];
         
         for (let i = 1; i < finalPoints.length; i++) {
           const prevPoint = snappedPoints[i-1];
           const currentPoint = finalPoints[i];
           
-          // Use angle snapping between consecutive points
-          const snappedEnd = snapToAngle(prevPoint, currentPoint);
-          snappedPoints.push(snappedEnd);
+          // Apply straightening between consecutive points
+          const straightened = straightenStroke([prevPoint, currentPoint]);
+          if (straightened.length > 1) {
+            snappedPoints.push(straightened[1]);
+          }
         }
         
         // For rooms, apply final straightening to close the shape nicely
         if (snappedPoints.length > 2) {
           const firstPoint = snappedPoints[0];
           const lastPoint = snappedPoints[snappedPoints.length - 1];
-          const closingPoint = snapToAngle(lastPoint, firstPoint);
           
-          // Replace last point with properly snapped closing point
-          if (snappedPoints.length > 2 && 
-              (Math.abs(closingPoint.x - firstPoint.x) < 0.1 && 
-               Math.abs(closingPoint.y - firstPoint.y) < 0.1)) {
+          // Apply straightening for the closing segment
+          const closingSegment = straightenStroke([lastPoint, firstPoint]);
+          
+          // Replace last point with properly straightened closing point
+          if (closingSegment.length > 1 && 
+              (Math.abs(closingSegment[1].x - firstPoint.x) < 0.1 && 
+               Math.abs(closingSegment[1].y - firstPoint.y) < 0.1)) {
             // If very close to first point, use exactly the first point to ensure perfect closing
             snappedPoints[snappedPoints.length - 1] = {...firstPoint};
           }
         }
         
         finalPoints = snappedPoints;
-        console.log("Applied angle snapping to room");
+        console.log("Applied straightening to room");
       }
 
       // Make sure we still have at least 2 points after all processing

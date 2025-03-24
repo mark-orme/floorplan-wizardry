@@ -1,8 +1,9 @@
+
 import { useCallback, useRef, useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { Point } from "@/utils/drawingTypes";
-import { PIXELS_PER_METER, SMALL_GRID } from "@/utils/drawing";
-import { snapPointsToGrid } from "@/utils/geometry";
+import { PIXELS_PER_METER } from "@/utils/drawing";
+import { snapPointsToGrid, straightenStroke } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
 interface UseDrawingStateProps {
@@ -96,6 +97,14 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
     if (tool === "straightLine") {
       const snapped = snapPointsToGrid([currentPoint], true);
       currentPoint = snapped[0];
+      
+      // Apply straightening in real-time for better visual feedback
+      if (startPointRef.current) {
+        const straightened = straightenStroke([startPointRef.current, currentPoint]);
+        if (straightened.length > 1) {
+          currentPoint = straightened[1];
+        }
+      }
     }
     
     console.log("Drawing in progress:", currentPoint);
