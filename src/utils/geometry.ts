@@ -62,29 +62,23 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
 };
 
 /**
- * Snap a point to the nearest horizontal or vertical grid line
+ * Enhanced grid snapping - snaps PRECISELY to the nearest horizontal or vertical grid line
  * This ensures walls always start and end on actual grid lines
  * @param {Point} point - The point to snap
- * @returns {Point} Point snapped to the nearest grid line
+ * @returns {Point} Point snapped exactly to the nearest grid line
  */
 export const snapToNearestGridLine = (point: Point): Point => {
   if (!point) return { x: 0, y: 0 };
   
-  // First snap to grid to get a general alignment
-  const gridPoint = forceGridAlignment(point);
+  // Force exact 0.1m grid alignment with no rounding errors
+  // This is critical for wall placement accuracy
+  const exactX = Math.round(point.x / GRID_SIZE) * GRID_SIZE;
+  const exactY = Math.round(point.y / GRID_SIZE) * GRID_SIZE;
   
-  // Get distance to nearest horizontal and vertical grid lines
-  // This ensures we place the point exactly on grid lines, not between them
-  const modX = gridPoint.x % GRID_SIZE;
-  const modY = gridPoint.y % GRID_SIZE;
-  
-  // Find the closest grid lines in both directions
-  const nearestX = Math.round(gridPoint.x / GRID_SIZE) * GRID_SIZE;
-  const nearestY = Math.round(gridPoint.y / GRID_SIZE) * GRID_SIZE;
-  
+  // Ensure values are exact multiples of 0.1 by using toFixed(1) and converting back to number
   return {
-    x: Number(nearestX.toFixed(3)),
-    y: Number(nearestY.toFixed(3))
+    x: Number(exactX.toFixed(1)),
+    y: Number(exactY.toFixed(1))
   };
 };
 
@@ -97,68 +91,72 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   if (!stroke || stroke.length < 2) return stroke;
   
   // Use only start and end points for straightening
-  const [start, end] = [stroke[0], stroke[stroke.length - 1]];
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
+  const [start, end] = [stroke[0], stroke[1]];
+  
+  // Ensure both points are exactly on grid
+  const gridStart = {
+    x: Number(Math.round(start.x / GRID_SIZE) * GRID_SIZE).toFixed(1),
+    y: Number(Math.round(start.y / GRID_SIZE) * GRID_SIZE).toFixed(1)
+  };
+  
+  const gridEnd = {
+    x: Number(Math.round(end.x / GRID_SIZE) * GRID_SIZE).toFixed(1),
+    y: Number(Math.round(end.y / GRID_SIZE) * GRID_SIZE).toFixed(1)
+  };
+  
+  // Calculate new dx/dy after grid snapping
+  const dx = Number(gridEnd.x) - Number(gridStart.x);
+  const dy = Number(gridEnd.y) - Number(gridStart.y);
   const absDx = Math.abs(dx);
   const absDy = Math.abs(dy);
   
-  // Force snap both points to grid first
-  const gridStart = snapToNearestGridLine(start);
-  const gridEnd = snapToNearestGridLine(end);
-  
-  // Calculate new dx/dy after grid snapping
-  const newDx = gridEnd.x - gridStart.x;
-  const newDy = gridEnd.y - gridStart.y;
-  const newAbsDx = Math.abs(newDx);
-  const newAbsDy = Math.abs(newDy);
-  
   // Determine if the line should be horizontal, vertical, or diagonal
-  // Use more strict comparison for better accuracy
-  if (newAbsDx > newAbsDy * 1.5) { 
-    // Mostly horizontal - keep the same Y coordinate
+  // Use stricter comparison for wall precision
+  if (absDx >= absDy * 1.2) { 
+    // Horizontal line - keep same Y
     return [
       { 
-        x: Number(gridStart.x.toFixed(3)), 
-        y: Number(gridStart.y.toFixed(3)) 
+        x: Number(gridStart.x), 
+        y: Number(gridStart.y) 
       },
       { 
-        x: Number(gridEnd.x.toFixed(3)), 
-        y: Number(gridStart.y.toFixed(3)) 
+        x: Number(gridEnd.x), 
+        y: Number(gridStart.y) 
       }
     ];
-  } else if (newAbsDy > newAbsDx * 1.5) { 
-    // Mostly vertical - keep the same X coordinate
+  } else if (absDy >= absDx * 1.2) { 
+    // Vertical line - keep same X
     return [
       { 
-        x: Number(gridStart.x.toFixed(3)), 
-        y: Number(gridStart.y.toFixed(3)) 
+        x: Number(gridStart.x), 
+        y: Number(gridStart.y) 
       },
       { 
-        x: Number(gridStart.x.toFixed(3)), 
-        y: Number(gridEnd.y.toFixed(3)) 
+        x: Number(gridStart.x), 
+        y: Number(gridEnd.y) 
       }
     ];
   } else {
-    // For diagonal lines, ensure they're at exactly 45 degrees
-    const length = Math.max(newAbsDx, newAbsDy);
-    const signX = Math.sign(newDx);
-    const signY = Math.sign(newDy);
+    // Diagonal line at 45 degrees
+    const length = Math.max(absDx, absDy);
+    const signX = Math.sign(dx);
+    const signY = Math.sign(dy);
     
+    // Force exact 45-degree angle
     return [
       { 
-        x: Number(gridStart.x.toFixed(3)), 
-        y: Number(gridStart.y.toFixed(3)) 
+        x: Number(gridStart.x), 
+        y: Number(gridStart.y) 
       },
       { 
-        x: Number((gridStart.x + (length * signX)).toFixed(3)), 
-        y: Number((gridStart.y + (length * signY)).toFixed(3)) 
+        x: Number((Number(gridStart.x) + (length * signX)).toFixed(1)), 
+        y: Number((Number(gridStart.y) + (length * signY)).toFixed(1)) 
       }
     ];
   }
 };
 
-/** 
+/**
  * Calculate Gross Internal Area (GIA) in m² with 99.9% accuracy
  * Uses the shoelace formula for polygon area calculation
  * @param {Stroke} stroke - Array of points representing a closed shape

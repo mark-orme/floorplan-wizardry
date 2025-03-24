@@ -40,11 +40,11 @@ export const usePointProcessing = (tool: DrawingTool) => {
       filteredPoints = points;
     }
     
-    // ENHANCED: For wall tool, force exact grid alignment for both start and end points
+    // For wall tool, use strict grid alignment for both start and end points
     let finalPoints;
     if (tool === 'straightLine') {
-      // Get just start and end points for walls
-      const startPoint = snapToNearestGridLine(filteredPoints[0]); // Use enhanced grid line snapping
+      // IMPROVED: Force all wall points to snap EXACTLY to nearest grid lines
+      const startPoint = snapToNearestGridLine(filteredPoints[0]);
       const endPoint = snapToNearestGridLine(filteredPoints[filteredPoints.length - 1]);
       
       // Create a perfectly straight line with exact grid alignment
@@ -52,15 +52,21 @@ export const usePointProcessing = (tool: DrawingTool) => {
       
       console.log("Applied strict wall alignment. Original:", [filteredPoints[0], filteredPoints[filteredPoints.length - 1]], "Aligned:", finalPoints);
       
-      // Verify grid alignment
+      // Triple-check grid alignment and force exact alignment if needed
       const startIsAligned = isExactGridMultiple(finalPoints[0].x) && isExactGridMultiple(finalPoints[0].y);
       const endIsAligned = isExactGridMultiple(finalPoints[1].x) && isExactGridMultiple(finalPoints[1].y);
       
       if (!startIsAligned || !endIsAligned) {
         console.warn("Wall endpoints not exactly on grid. Forcing alignment");
         finalPoints = [
-          snapToNearestGridLine(finalPoints[0]), // Enhanced snapping to nearest grid line
-          snapToNearestGridLine(finalPoints[1])
+          {
+            x: Math.round(finalPoints[0].x * 10) / 10,
+            y: Math.round(finalPoints[0].y * 10) / 10
+          },
+          {
+            x: Math.round(finalPoints[1].x * 10) / 10,
+            y: Math.round(finalPoints[1].y * 10) / 10
+          }
         ];
       }
     } else {
