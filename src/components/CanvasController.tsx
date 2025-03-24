@@ -1,3 +1,4 @@
+
 /**
  * Canvas controller component
  * Centralizes all canvas state and operations
@@ -20,7 +21,7 @@ import { useFloorSelection } from "@/hooks/useFloorSelection";
 import { useLineSettings } from "@/hooks/useLineSettings";
 import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
-import { resetGridProgress } from "@/utils/gridOperations";
+import { resetGridProgress } from "@/utils/gridManager";
 
 /**
  * Controller component that manages all canvas logic and state
@@ -205,7 +206,7 @@ export const CanvasController = () => {
     loadFloorPlansData();
   }, [loadFloorPlansData]);
 
-  // IMPROVED: Staged grid creation attempts with coordination
+  // IMPROVED: Staged grid creation with sequential retries and forced lock reset
   useEffect(() => {
     if (!fabricCanvasRef.current || gridCreationSuccessfulRef.current) {
       return;
@@ -213,53 +214,54 @@ export const CanvasController = () => {
     
     console.log("⭐ FORCE CREATE GRID - Critical priority grid creation");
     
-    // First, ensure any stuck grid creation is reset
+    // Always reset progress first to break any stuck locks
     resetGridProgress();
     
-    // Function to attempt grid creation with validation
+    // Function to attempt grid creation
     const attemptGridCreation = () => {
       if (!fabricCanvasRef.current) return false;
       
       gridAttemptCountRef.current++;
       console.log(`Grid creation attempt ${gridAttemptCountRef.current}/${maxGridAttempts}`);
       
-      resetGridProgress(); // Ensure no locks remain
+      // Force unlock before creation
+      resetGridProgress();
       
-      const grid = createGrid(fabricCanvasRef.current);
-      if (grid && grid.length > 0) {
-        console.log(`Grid created with ${grid.length} objects`);
-        fabricCanvasRef.current.requestRenderAll();
-        gridCreationSuccessfulRef.current = true;
-        return true;
-      } else {
-        console.warn("Grid creation failed - no objects returned");
-        return false;
-      }
-    };
-    
-    // Staggered attempts with increasing delays
-    const scheduleAttempt = (attemptNumber: number, delay: number) => {
+      // Wait a moment after reset before attempting
       setTimeout(() => {
-        // Only attempt if we haven't succeeded yet
-        if (!gridCreationSuccessfulRef.current) {
-          resetGridProgress(); // Ensure any locks are cleared before attempt
-          const success = attemptGridCreation();
+        if (!fabricCanvasRef.current) return;
+        
+        try {
+          const grid = createGrid(fabricCanvasRef.current);
           
-          // If failed and we have attempts left, schedule next attempt
-          if (!success && attemptNumber < maxGridAttempts) {
-            scheduleAttempt(attemptNumber + 1, delay * 2); // Exponential backoff
+          if (grid && grid.length > 0) {
+            console.log(`Grid created with ${grid.length} objects`);
+            fabricCanvasRef.current.requestRenderAll();
+            gridCreationSuccessfulRef.current = true;
+            return true;
           }
+        } catch (err) {
+          console.error("Error during grid creation attempt:", err);
         }
-      }, delay);
+        
+        // If we're here, grid creation failed
+        if (gridAttemptCountRef.current < maxGridAttempts) {
+          // Schedule next attempt with exponential backoff
+          const delay = Math.pow(2, gridAttemptCountRef.current) * 300;
+          console.log(`Scheduling next grid attempt in ${delay}ms`);
+          
+          setTimeout(() => {
+            // Make sure to reset lock before next attempt
+            resetGridProgress();
+            attemptGridCreation();
+          }, delay);
+        }
+      }, 100);
     };
     
-    // First attempt immediately
-    const initialSuccess = attemptGridCreation();
+    // Start the first attempt
+    attemptGridCreation();
     
-    // If first attempt fails, schedule staggered retries with exponential backoff
-    if (!initialSuccess) {
-      scheduleAttempt(2, 500); // Start with 500ms delay
-    }
   }, [fabricCanvasRef.current, createGrid]);
 
   return {
@@ -289,4 +291,3 @@ export const CanvasController = () => {
     handleRetry
   };
 };
-

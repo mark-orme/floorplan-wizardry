@@ -1,3 +1,4 @@
+
 /**
  * Grid operations module
  * Handles grid creation batch operations and error handling
@@ -82,8 +83,10 @@ export const handleGridCreationError = (
   console.error("Error creating grid:", err);
   setHasError(true);
   setErrorMessage(`Failed to create grid: ${err instanceof Error ? err.message : String(err)}`);
-  gridManager.inProgress = false;
-  gridManager.batchTimeoutId = null;
+  
+  // Force reset the grid flags
+  resetGridProgress();
+  
   return [];
 };
 
@@ -114,7 +117,10 @@ export const createGridBatch = (
   now: number,
   gridManager: any
 ): any[] => {
-  console.log("Executing grid batch creation with critical debugging");
+  console.log("Executing grid batch creation");
+  
+  // Get a unique lock ID for this operation
+  const lockId = gridManager.creationLock.id;
   
   // Set a safety timeout to reset the inProgress flag in case of error
   const safetyTimeoutId = setTimeout(() => {
@@ -126,7 +132,7 @@ export const createGridBatch = (
     // Tracking metric
     gridManager.totalCreations++;
     
-    console.log(`Creating grid... (${gridManager.totalCreations})`);
+    console.log(`Creating grid batch... (${gridManager.totalCreations})`);
     
     // Remove existing grid objects if any
     if (gridLayerRef.current.length > 0) {
@@ -220,12 +226,9 @@ export const createGridBatch = (
     // Clear the safety timeout
     clearTimeout(safetyTimeoutId);
     
-    // Always reset progress flags in finally block
-    gridManager.inProgress = false;
-    if (gridManager.batchTimeoutId) {
-      clearTimeout(gridManager.batchTimeoutId);
-      gridManager.batchTimeoutId = null;
-    }
+    // Always release the lock in finally block
+    releaseGridCreationLock(lockId);
+    
     console.log("Grid batch creation process complete");
   }
 };

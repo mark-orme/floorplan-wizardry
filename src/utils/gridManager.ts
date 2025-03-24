@@ -113,7 +113,7 @@ export const acquireGridCreationLock = (): boolean => {
  */
 export const releaseGridCreationLock = (lockId: number): boolean => {
   // Only release if the ID matches (prevent releasing someone else's lock)
-  if (gridManager.creationLock.id === lockId) {
+  if (lockId === 0 || gridManager.creationLock.id === lockId) {
     gridManager.creationLock.isLocked = false;
     gridManager.inProgress = false;
     return true;

@@ -6,16 +6,13 @@
  */
 import { Canvas } from "fabric";
 import { 
-  shouldThrottleGridCreation, 
-  hasDimensionsChangedSignificantly, 
-  createGridBatch, 
-  handleGridCreationError,
   gridManager,
   resetGridProgress,
   scheduleGridProgressReset,
   acquireGridCreationLock,
   releaseGridCreationLock
-} from "./gridOperations";
+} from "./gridManager";
+import { renderGridComponents } from "./gridRenderer";
 
 /**
  * Create grid lines for the canvas
@@ -61,25 +58,11 @@ export const createGrid = (
     console.error("Invalid dimensions in createGrid:", canvasDimensions);
     return gridLayerRef.current;
   }
-
-  // Check if grid already exists and if dimensions are close enough
-  const gridExists = gridLayerRef.current.length > 0;
   
-  if (gridExists && gridManager.exists) {
-    const oldDims = gridManager.lastDimensions;
-    const percentWidthChange = Math.abs((canvasDimensions.width - oldDims.width) / oldDims.width);
-    const percentHeightChange = Math.abs((canvasDimensions.height - oldDims.height) / oldDims.height);
-    
-    // Only recreate if dimensions changed by more than 20%
-    if (percentWidthChange < 0.2 && percentHeightChange < 0.2) {
-      console.log("Grid already exists with similar dimensions, skipping creation");
-      return gridLayerRef.current;
-    } else {
-      console.log("Dimensions changed significantly, recreating grid");
-    }
-  }
+  // CRITICAL: Force reset any existing grid lock before trying to acquire one
+  resetGridProgress();
   
-  // IMPROVED LOCK ACQUISITION - Try to acquire grid creation lock
+  // Attempt to acquire a lock for grid creation
   if (!acquireGridCreationLock()) {
     console.log("Grid creation already in progress (locked), skipping");
     return gridLayerRef.current;
@@ -88,52 +71,102 @@ export const createGrid = (
   // Generate a unique lock ID for this creation attempt
   const lockId = gridManager.creationLock.id;
   
-  // Clear any existing batch timeout
-  if (gridManager.batchTimeoutId) {
-    clearTimeout(gridManager.batchTimeoutId);
-  }
-  
   // Schedule a safety timeout to reset the flag after 5 seconds
   const safetyTimeoutId = scheduleGridProgressReset(gridManager.safetyTimeout);
   
-  console.log("Starting grid creation batch process - acquired lock:", lockId);
+  console.log("Starting grid creation with lock ID:", lockId);
   
-  // Execute immediately without batching for faster response
   try {
     // Get the current timestamp
     const now = Date.now();
     gridManager.lastCreationTime = now;
     
-    // Create the grid using the batch operation
-    const result = createGridBatch(
-      canvas,
-      gridLayerRef,
-      canvasDimensions,
-      setDebugInfo,
-      setHasError,
-      setErrorMessage,
-      now,
-      gridManager
-    );
+    // Store the dimensions for future reference
+    gridManager.lastDimensions = { ...canvasDimensions };
     
-    // Clear the safety timeout since we completed successfully
-    clearTimeout(safetyTimeoutId);
+    // Remove existing grid objects if any
+    if (gridLayerRef.current.length > 0) {
+      console.log(`Removing ${gridLayerRef.current.length} existing grid objects`);
+      const existingObjects = [...gridLayerRef.current];
+      existingObjects.forEach(obj => {
+        if (canvas.contains(obj)) {
+          try {
+            canvas.remove(obj);
+          } catch (err) {
+            console.warn("Error removing existing grid object:", err);
+          }
+        }
+      });
+      gridLayerRef.current = [];
+    }
     
-    if (result.length > 0) {
-      console.log(`Grid creation complete, returning ${result.length} objects`);
-      // Force a render to ensure grid is visible
+    // Apply minimum dimensions to avoid zero-size grid issues
+    const canvasWidth = Math.max(canvas.width || canvasDimensions.width, 200);
+    const canvasHeight = Math.max(canvas.height || canvasDimensions.height, 200);
+    
+    console.log(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
+    
+    // Create all grid components at once
+    const result = renderGridComponents(canvas, canvasWidth, canvasHeight);
+    
+    if (result.gridObjects.length === 0) {
+      console.warn("No grid objects were created - trying hardcoded dimensions");
+      // Try with hardcoded dimensions as fallback
+      const fallbackResult = renderGridComponents(canvas, 800, 600);
+      if (fallbackResult.gridObjects.length > 0) {
+        console.log("Fallback grid creation succeeded");
+        gridLayerRef.current = fallbackResult.gridObjects;
+        gridManager.exists = true;
+        setDebugInfo(prev => ({...prev, gridCreated: true}));
+        
+        // Force a render
+        canvas.requestRenderAll();
+        
+        // Clear the safety timeout
+        clearTimeout(safetyTimeoutId);
+        
+        // Release the lock
+        releaseGridCreationLock(lockId);
+        
+        return fallbackResult.gridObjects;
+      }
+    } else {
+      // Store grid objects in the reference for later use
+      gridLayerRef.current = result.gridObjects;
+      
+      // Set the grid exists flag
+      gridManager.exists = true;
+      
+      // Detailed grid creation log
+      console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large, ${result.markers.length} markers)`);
+      
+      // Force a complete render
       canvas.requestRenderAll();
       
-      // Release the lock we acquired
+      // Update debug info
+      setDebugInfo(prev => ({...prev, gridCreated: true}));
+      
+      // Clear the safety timeout
+      clearTimeout(safetyTimeoutId);
+      
+      // Release the lock
       releaseGridCreationLock(lockId);
       
-      return result;
-    } else {
-      console.error("Grid creation returned 0 objects - critical failure");
-      // Reset progress flag to allow future attempts
-      resetGridProgress();
-      return gridLayerRef.current;
+      return result.gridObjects;
     }
+    
+    // If we got here, both attempts failed
+    console.error("Grid creation failed - all attempts returned no objects");
+    setHasError(true);
+    setErrorMessage("Failed to create grid after multiple attempts");
+    
+    // Clear the safety timeout
+    clearTimeout(safetyTimeoutId);
+    
+    // Release the lock
+    releaseGridCreationLock(lockId);
+    
+    return [];
   } catch (err) {
     // Clear the safety timeout
     clearTimeout(safetyTimeoutId);
@@ -142,11 +175,8 @@ export const createGrid = (
     // Release the lock in case of error
     releaseGridCreationLock(lockId);
     
-    return handleGridCreationError(
-      err, 
-      setHasError, 
-      setErrorMessage, 
-      gridManager
-    );
+    setHasError(true);
+    setErrorMessage(`Error creating grid: ${err instanceof Error ? err.message : String(err)}`);
+    return [];
   }
 };
