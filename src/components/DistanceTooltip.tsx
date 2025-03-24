@@ -1,7 +1,6 @@
 
 import React, { memo } from "react";
 import { Point } from "@/utils/drawingTypes";
-import { PIXELS_PER_METER } from "@/utils/drawing";
 import { Ruler } from "lucide-react";
 
 interface DistanceTooltipProps {
