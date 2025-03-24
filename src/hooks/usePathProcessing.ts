@@ -1,25 +1,16 @@
+
 /**
  * Custom hook for processing Fabric.js paths into polylines
  * @module usePathProcessing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Path, Polyline } from "fabric";
+import { Canvas as FabricCanvas, Path } from "fabric";
 import { toast } from "sonner";
-import { 
-  PIXELS_PER_METER,
-  type FloorPlan,
-  type Point
-} from "@/utils/drawing";
-import { 
-  snapToGrid, 
-  snapPointsToGrid,
-  straightenStroke, 
-  calculateGIA,
-  filterRedundantPoints,
-  calculateDistance,
-  isExactGridMultiple
-} from "@/utils/geometry";
+import { MAX_OBJECTS_PER_CANVAS } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
+import { fabricPathToPoints } from "@/utils/fabricPathUtils";
+import { usePointProcessing } from "./usePointProcessing";
+import { usePolylineCreation } from "./usePolylineCreation";
 
 interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -27,13 +18,11 @@ interface UsePathProcessingProps {
   historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   tool: DrawingTool;
   currentFloor: number;
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  setFloorPlans: React.Dispatch<React.SetStateAction<any[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
   lineThickness?: number;
   lineColor?: string;
 }
-
-const MAX_OBJECTS_PER_CANVAS = 1000;
 
 /**
  * Hook for handling path creation and processing
@@ -51,6 +40,22 @@ export const usePathProcessing = ({
   lineThickness = 2,
   lineColor = "#000000"
 }: UsePathProcessingProps) => {
+  
+  // Use the point processing hook
+  const { processPoints, convertToPixelPoints } = usePointProcessing(tool);
+  
+  // Use the polyline creation hook
+  const { createPolyline } = usePolylineCreation({
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    tool,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    lineThickness,
+    lineColor
+  });
   
   /**
    * Process a newly created path and convert it to appropriate shapes
@@ -80,7 +85,7 @@ export const usePathProcessing = ({
       }
       
       // Extract points from path
-      const points = fabricPathToPoints(path);
+      const points = fabricPathToPoints(path.path);
       console.log("Points extracted from path:", points.length);
       
       if (points.length < 2) {
@@ -89,159 +94,23 @@ export const usePathProcessing = ({
         return;
       }
       
-      // Filter out redundant points that are too close together
-      let filteredPoints = filterRedundantPoints(points, 0.05);
+      // Process the points according to the current tool
+      const finalPoints = processPoints(points);
       
-      // If we have too few points after filtering, use original points
-      if (filteredPoints.length < 2) {
-        filteredPoints = points;
-      }
-      
-      // Apply grid snapping based on the tool
-      // For wall tool (straightLine), use strict grid snapping
-      // For other tools, use standard snapping
-      let finalPoints = tool === 'straightLine' 
-        ? snapPointsToGrid(filteredPoints, true) // Strict grid snapping for walls
-        : snapToGrid(filteredPoints);           // Regular snapping for other tools
-      
-      console.log("Points snapped to grid:", finalPoints.length);
-      
-      // Apply straightening based on tool
-      if (tool === 'straightLine') {
-        // For wall tool, always straighten
-        finalPoints = straightenStroke([finalPoints[0], finalPoints[finalPoints.length - 1]]);
-        console.log("Applied straightening to wall line");
-        
-        // Calculate and display wall length - now using our utility function
-        if (finalPoints.length >= 2) {
-          const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
-          // Ensure we show exact multiples of 0.1m when possible
-          const displayLength = isExactGridMultiple(lengthInMeters) 
-            ? lengthInMeters.toFixed(1) 
-            : lengthInMeters.toFixed(2);
-            
-          toast.success(`Wall length: ${displayLength}m`);
-        }
-      } else if (tool === 'room') {
-        // For room tool, create enclosed shape with straightening between points
-        const snappedPoints = [finalPoints[0]];
-        
-        for (let i = 1; i < finalPoints.length; i++) {
-          const prevPoint = snappedPoints[i-1];
-          const currentPoint = finalPoints[i];
-          
-          // Apply straightening between consecutive points
-          const straightened = straightenStroke([prevPoint, currentPoint]);
-          if (straightened.length > 1) {
-            snappedPoints.push(straightened[1]);
-          }
-        }
-        
-        // For rooms, apply final straightening to close the shape nicely
-        if (snappedPoints.length > 2) {
-          const firstPoint = snappedPoints[0];
-          const lastPoint = snappedPoints[snappedPoints.length - 1];
-          
-          // Apply straightening for the closing segment
-          const closingSegment = straightenStroke([lastPoint, firstPoint]);
-          
-          // Replace last point with properly straightened closing point
-          if (closingSegment.length > 1 && 
-              (Math.abs(closingSegment[1].x - firstPoint.x) < 0.1 && 
-               Math.abs(closingSegment[1].y - firstPoint.y) < 0.1)) {
-            // If very close to first point, use exactly the first point to ensure perfect closing
-            snappedPoints[snappedPoints.length - 1] = {...firstPoint};
-          }
-        }
-        
-        finalPoints = snappedPoints;
-        console.log("Applied straightening to room");
-      }
-
-      // Make sure we still have at least 2 points after all processing
-      if (finalPoints.length < 2) {
-        console.error("Not enough points after processing");
-        fabricCanvas.remove(path);
-        return;
-      }
-
       // Convert meter coordinates to pixel coordinates for display
-      const pixelPoints = finalPoints.map(p => ({ 
-        x: p.x * PIXELS_PER_METER, 
-        y: p.y * PIXELS_PER_METER 
-      }));
-
+      const pixelPoints = convertToPixelPoints(finalPoints);
+      
       console.log("Creating polyline with points:", pixelPoints.length);
-
-      // Create a polyline from the processed points
-      const polylineOptions = {
-        stroke: lineColor,
-        strokeWidth: lineThickness,
-        fill: tool === 'room' ? `${lineColor}20` : 'transparent', // Semi-transparent fill for rooms
-        objectType: tool === 'room' ? 'room' : 'line',
-        objectCaching: true,
-        perPixelTargetFind: false,
-        selectable: false,
-        hoverCursor: 'default'
-      };
-
-      try {
-        // Remove the temporary path before creating the polyline
-        fabricCanvas.remove(path);
-        
-        // Create the polyline with pixel points
-        const polyline = new Polyline(pixelPoints, polylineOptions);
-        
-        // Add the processed polyline to canvas
-        fabricCanvas.add(polyline);
-        
-        console.log("Polyline added to canvas successfully");
-        
-        // Ensure grid stays in the background
-        gridLayerRef.current.forEach(gridObj => {
-          if (fabricCanvas.contains(gridObj)) {
-            fabricCanvas.sendObjectToBack(gridObj);
-          }
-        });
-        
-        // Force a render to ensure the polyline is displayed
-        // Changed renderAll to requestRenderAll for Fabric.js v6 compatibility
-        fabricCanvas.requestRenderAll();
-      } catch (err) {
-        console.error("Error creating polyline:", err);
-        toast.error("Failed to create line");
-        return;
+      
+      // Remove the temporary path before creating the polyline
+      fabricCanvas.remove(path);
+      
+      // Create the polyline from the processed points
+      const success = createPolyline(finalPoints, pixelPoints);
+      
+      if (success) {
+        console.log("Line drawn and added to canvas successfully");
       }
-      
-      // Update floor plans data
-      setFloorPlans(prev => {
-        const newFloorPlans = [...prev];
-        if (newFloorPlans[currentFloor]) {
-          newFloorPlans[currentFloor] = {
-            ...newFloorPlans[currentFloor],
-            strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
-          };
-          
-          // Calculate and update area for room shapes
-          if (tool === 'room' && finalPoints.length > 2) {
-            const area = calculateGIA(finalPoints);
-            setGia(prev => prev + area);
-            toast.success(`Room added: ${area.toFixed(2)} m²`);
-          }
-        }
-        return newFloorPlans;
-      });
-
-      // Update history for undo/redo
-      const currentState = fabricCanvas.getObjects().filter(obj => 
-        obj.type === 'polyline' || obj.type === 'path'
-      );
-      
-      console.log("Adding to history:", currentState.length, "objects");
-      historyRef.current.past.push([...currentState]);
-      historyRef.current.future = [];
-      
-      console.log("Line drawn and added to canvas successfully");
       
     } catch (error) {
       console.error("Error processing drawing:", error);
@@ -256,39 +125,7 @@ export const usePathProcessing = ({
         }
       }
     }
-  }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor]);
-  
-  // Helper function to extract points from a Fabric.js path
-  const fabricPathToPoints = (path: Path): Point[] => {
-    if (!path.path) return [];
-    
-    const points: Point[] = [];
-    const pathData = path.path;
-    
-    // Extract points from the path data
-    // Each path command is an array where the first element is the command type
-    for (let i = 0; i < pathData.length; i++) {
-      const [command, ...coords] = pathData[i];
-      
-      // For 'M' (move to) and 'L' (line to) commands, add the point
-      if (command === 'M' || command === 'L') {
-        points.push({
-          x: Number((coords[0] / PIXELS_PER_METER).toFixed(3)), // Convert pixels to meters with precision
-          y: Number((coords[1] / PIXELS_PER_METER).toFixed(3))
-        });
-      }
-      // For 'Q' (quadratic curve) commands, add the control point and end point
-      else if (command === 'Q') {
-        // The end point of a quadratic curve (coords[2], coords[3])
-        points.push({
-          x: Number((coords[2] / PIXELS_PER_METER).toFixed(3)),
-          y: Number((coords[3] / PIXELS_PER_METER).toFixed(3))
-        });
-      }
-    }
-    
-    return points;
-  };
+  }, [fabricCanvasRef, processPoints, convertToPixelPoints, createPolyline]);
   
   return { processCreatedPath };
 };

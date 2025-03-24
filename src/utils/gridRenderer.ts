@@ -1,3 +1,4 @@
+
 /**
  * Grid rendering utilities
  * Handles rendering and organization of grid objects
@@ -12,13 +13,13 @@ import { createScaleMarkers } from "./gridUtils";
  * @param canvas - The Fabric canvas
  * @param canvasWidth - Width of the canvas
  * @param canvasHeight - Height of the canvas
- * @returns Array of created grid objects
+ * @returns Object containing created grid objects
  */
 export const renderGridComponents = (
   canvas: Canvas,
   canvasWidth: number,
   canvasHeight: number
-): any[] => {
+): { gridObjects: any[], smallGridLines: any[], largeGridLines: any[], markers: any[] } => {
   const gridObjects: any[] = [];
   
   // Disable rendering during batch operations for performance
