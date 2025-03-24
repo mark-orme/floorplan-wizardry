@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   Canvas as FabricCanvas, 
   PencilBrush, 
@@ -28,11 +28,19 @@ import {
   type Stroke,
   type FloorPlan
 } from "@/utils/drawing";
+import {
+  initializeDrawingBrush,
+  setCanvasDimensions,
+  disposeCanvas,
+  clearCanvasObjects
+} from "@/utils/fabricHelpers";
 
 export const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
+  const resizeTimeoutRef = useRef<number | null>(null);
+  
   const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
@@ -46,7 +54,6 @@ export const Canvas = () => {
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
   const canvasInitializedRef = useRef(false);
 
-  // Debug flag to track canvas initialization stages
   const [debugInfo, setDebugInfo] = useState<{
     canvasInitialized: boolean,
     gridCreated: boolean,
@@ -59,32 +66,29 @@ export const Canvas = () => {
     brushInitialized: false
   });
 
-  // Load floorplans when component mounts
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        console.log("Loading floor plans...");
-        setIsLoading(true);
-        const plans = await loadFloorPlans();
-        setFloorPlans(plans);
-        setIsLoading(false);
-        console.log("Floor plans loaded:", plans);
-      } catch (error) {
-        console.error("Error loading floor plans:", error);
-        toast.error("Failed to load floor plans");
-        setIsLoading(false);
-      }
-    };
-    
-    loadData();
+  const loadData = useCallback(async () => {
+    try {
+      console.log("Loading floor plans...");
+      setIsLoading(true);
+      const plans = await loadFloorPlans();
+      setFloorPlans(plans);
+      setIsLoading(false);
+      console.log("Floor plans loaded:", plans);
+    } catch (error) {
+      console.error("Error loading floor plans:", error);
+      toast.error("Failed to load floor plans");
+      setIsLoading(false);
+    }
   }, []);
+  
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  // Create grid function
-  const createGrid = (canvas: FabricCanvas) => {
+  const createGrid = useCallback((canvas: FabricCanvas) => {
     console.log("Creating grid...");
     
     try {
-      // Clear existing grid
       if (gridLayerRef.current.length > 0) {
         gridLayerRef.current.forEach(obj => {
           canvas.remove(obj);
@@ -103,8 +107,8 @@ export const Canvas = () => {
         return [];
       }
       
-      // Create small grid lines
-      for (let i = 0; i < canvasWidth; i += SMALL_GRID) {
+      const smallGridStep = SMALL_GRID;
+      for (let i = 0; i < canvasWidth; i += smallGridStep) {
         const smallGridLine = new Line([i, 0, i, canvasHeight], {
           stroke: "#E6F3F8",
           selectable: false,
@@ -115,7 +119,7 @@ export const Canvas = () => {
         gridObjects.push(smallGridLine);
       }
       
-      for (let i = 0; i < canvasHeight; i += SMALL_GRID) {
+      for (let i = 0; i < canvasHeight; i += smallGridStep) {
         const smallGridLine = new Line([0, i, canvasWidth, i], {
           stroke: "#E6F3F8",
           selectable: false,
@@ -126,8 +130,8 @@ export const Canvas = () => {
         gridObjects.push(smallGridLine);
       }
 
-      // Create large grid lines
-      for (let i = 0; i < canvasWidth; i += LARGE_GRID) {
+      const largeGridStep = LARGE_GRID;
+      for (let i = 0; i < canvasWidth; i += largeGridStep) {
         const largeGridLine = new Line([i, 0, i, canvasHeight], {
           stroke: "#C2E2F3",
           selectable: false,
@@ -138,7 +142,7 @@ export const Canvas = () => {
         gridObjects.push(largeGridLine);
       }
       
-      for (let i = 0; i < canvasHeight; i += LARGE_GRID) {
+      for (let i = 0; i < canvasHeight; i += largeGridStep) {
         const largeGridLine = new Line([0, i, canvasWidth, i], {
           stroke: "#C2E2F3",
           selectable: false,
@@ -149,14 +153,13 @@ export const Canvas = () => {
         gridObjects.push(largeGridLine);
       }
 
-      // Add scale marker - using Group from fabric directly
       const scaleMarker = new Group([
-        new Line([canvasWidth - LARGE_GRID - 20, canvasHeight - 20, canvasWidth - 20, canvasHeight - 20], {
+        new Line([canvasWidth - largeGridStep - 20, canvasHeight - 20, canvasWidth - 20, canvasHeight - 20], {
           stroke: "#333333",
           strokeWidth: 2,
         }),
         new Text("1m", {
-          left: canvasWidth - LARGE_GRID/2 - 30,
+          left: canvasWidth - largeGridStep/2 - 30,
           top: canvasHeight - 35,
           fontSize: 12,
           fill: "#333333",
@@ -168,7 +171,6 @@ export const Canvas = () => {
       canvas.add(scaleMarker);
       gridObjects.push(scaleMarker);
       
-      // Send all grid objects to back
       gridObjects.forEach(obj => {
         canvas.sendObjectToBack(obj);
       });
@@ -184,9 +186,8 @@ export const Canvas = () => {
       console.error("Error creating grid:", err);
       return [];
     }
-  };
+  }, [canvasDimensions]);
 
-  // Setup canvas - this is the critical part we need to fix
   useEffect(() => {
     if (!canvasRef.current) {
       console.log("Canvas ref is null, will retry later");
@@ -201,20 +202,19 @@ export const Canvas = () => {
     console.log("Initializing canvas with dimensions:", canvasDimensions);
     
     try {
-      // Create new fabric canvas instance with specific dimensions
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         backgroundColor: "#FFFFFF",
         isDrawingMode: true,
         selection: false,
         width: canvasDimensions.width,
-        height: canvasDimensions.height
+        height: canvasDimensions.height,
+        renderOnAddRemove: false
       });
       
       console.log("FabricCanvas instance created");
       fabricCanvasRef.current = fabricCanvas;
       canvasInitializedRef.current = true;
       
-      // Initialize drawing brush
       const pencilBrush = new PencilBrush(fabricCanvas);
       fabricCanvas.freeDrawingBrush = pencilBrush;
       fabricCanvas.freeDrawingBrush.color = "#000000";
@@ -226,11 +226,9 @@ export const Canvas = () => {
         brushInitialized: true
       }));
       
-      // Create grid
       createGrid(fabricCanvas);
       
-      // Event handler for when objects are added to the canvas
-      fabricCanvas.on('object:added', () => {
+      const handleObjectAdded = () => {
         console.log("Object added to canvas");
         if (gridLayerRef.current.length === 0) {
           createGrid(fabricCanvas);
@@ -240,10 +238,11 @@ export const Canvas = () => {
           });
           fabricCanvas.renderAll();
         }
-      });
+      };
+      
+      fabricCanvas.on('object:added', handleObjectAdded);
 
-      // Event handler for when paths are created (strokes drawn)
-      fabricCanvas.on('path:created', (e: { path: Path }) => {
+      const handlePathCreated = (e: { path: Path }) => {
         console.log("Path created event triggered");
         const path = e.path;
         
@@ -252,18 +251,23 @@ export const Canvas = () => {
           return;
         }
         
-        const points = fabricPathToPoints(path.path);
-        console.log("Points extracted from path:", points.length);
-        
-        const snappedPoints = snapToGrid(points);
-        console.log("Points snapped to grid");
-
-        const finalPoints = tool === 'straightLine' 
-          ? straightenStroke(snappedPoints) 
-          : snappedPoints;
-        console.log("Final points processed for tool:", tool);
-
         try {
+          const points = fabricPathToPoints(path.path);
+          console.log("Points extracted from path:", points.length);
+          
+          if (points.length < 2) {
+            console.error("Not enough points to create a path");
+            return;
+          }
+          
+          const snappedPoints = snapToGrid(points);
+          console.log("Points snapped to grid");
+
+          const finalPoints = tool === 'straightLine' 
+            ? straightenStroke(snappedPoints) 
+            : snappedPoints;
+          console.log("Final points processed for tool:", tool);
+
           const polyline = new Polyline(
             finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
             {
@@ -309,24 +313,36 @@ export const Canvas = () => {
           console.error("Error processing drawing:", error);
           toast.error("Failed to process drawing");
         }
-      });
+      };
+      
+      fabricCanvas.on('path:created', handlePathCreated);
 
-      // Initialize history
       const initialState = fabricCanvas.getObjects().filter(obj => 
         obj.type === 'path' || obj.type === 'polyline'
       );
       historyRef.current.past.push([...initialState]);
       
       toast.success("Canvas ready for drawing!");
+      
+      return () => {
+        if (fabricCanvas) {
+          fabricCanvas.off('object:added', handleObjectAdded);
+          fabricCanvas.off('path:created', handlePathCreated);
+          disposeCanvas(fabricCanvas);
+          fabricCanvasRef.current = null;
+          canvasInitializedRef.current = false;
+          gridLayerRef.current = [];
+        }
+      };
     } catch (err) {
       console.error("Error initializing canvas:", err);
       toast.error("Failed to initialize canvas");
     }
-  }, [canvasDimensions, tool, currentFloor]);
+  }, [canvasDimensions, tool, currentFloor, createGrid]);
 
-  // Handle window resize to adjust canvas dimensions
   useEffect(() => {
     console.log("Setting up resize handler");
+    
     const updateCanvasDimensions = () => {
       if (!canvasRef.current) return;
       
@@ -339,50 +355,71 @@ export const Canvas = () => {
       
       if (width <= 0 || height <= 0) return;
       
-      // Set new dimensions
       const newWidth = Math.max(width - 20, 600);
       const newHeight = Math.max(height - 20, 400);
       
       setCanvasDimensions({ width: newWidth, height: newHeight });
       setDebugInfo(prev => ({...prev, dimensionsSet: true}));
       
-      // Also update fabric canvas dimensions
       if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.renderOnAddRemove = false;
         fabricCanvasRef.current.setDimensions({ width: newWidth, height: newHeight });
         createGrid(fabricCanvasRef.current);
+        fabricCanvasRef.current.renderOnAddRemove = true;
         fabricCanvasRef.current.renderAll();
       } else {
         console.log("Fabric canvas ref not available for dimension update");
       }
     };
 
-    // Add resize listener
-    window.addEventListener('resize', updateCanvasDimensions);
+    const debouncedResizeHandler = () => {
+      if (resizeTimeoutRef.current !== null) {
+        window.clearTimeout(resizeTimeoutRef.current);
+      }
+      
+      resizeTimeoutRef.current = window.setTimeout(() => {
+        updateCanvasDimensions();
+        resizeTimeoutRef.current = null;
+      }, 250);
+    };
+
+    window.addEventListener('resize', debouncedResizeHandler);
     
-    // Initial update
     updateCanvasDimensions();
     
     return () => {
-      window.removeEventListener('resize', updateCanvasDimensions);
+      window.removeEventListener('resize', debouncedResizeHandler);
+      if (resizeTimeoutRef.current !== null) {
+        window.clearTimeout(resizeTimeoutRef.current);
+      }
     };
-  }, []);
+  }, [createGrid]);
 
-  // Save floorplans when they change
+  const saveTimeoutRef = useRef<number | null>(null);
+  
   useEffect(() => {
     if (isLoading || floorPlans.length === 0) return;
     
-    const saveData = async () => {
+    if (saveTimeoutRef.current !== null) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = window.setTimeout(async () => {
       try {
         await saveFloorPlans(floorPlans);
+        saveTimeoutRef.current = null;
       } catch (error) {
         console.error("Error saving floor plans:", error);
       }
-    };
+    }, 1000);
     
-    saveData();
+    return () => {
+      if (saveTimeoutRef.current !== null) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [floorPlans, isLoading]);
 
-  // Update canvas when floor changes
   useEffect(() => {
     if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
     
@@ -392,20 +429,22 @@ export const Canvas = () => {
     recalculateGIA();
   }, [currentFloor, floorPlans, isLoading]);
 
-  const drawFloorPlan = () => {
+  const drawFloorPlan = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     const currentPlan = floorPlans[currentFloor];
+    if (!currentPlan) return;
     
     if (gridLayerRef.current.length === 0) {
       createGrid(fabricCanvasRef.current);
     }
     
+    fabricCanvasRef.current.renderOnAddRemove = false;
+    
     gridLayerRef.current.forEach(gridObj => {
       fabricCanvasRef.current!.sendObjectToBack(gridObj);
     });
     
-    // Draw all strokes from the current floor plan
     currentPlan.strokes.forEach(stroke => {
       const polyline = new Polyline(
         stroke.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
@@ -429,23 +468,16 @@ export const Canvas = () => {
       fabricCanvasRef.current!.add(polyline);
     });
     
+    fabricCanvasRef.current.renderOnAddRemove = true;
     fabricCanvasRef.current.renderAll();
-  };
+  }, [floorPlans, currentFloor, createGrid]);
 
-  const clearDrawings = () => {
+  const clearDrawings = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
-    // Store grid objects reference
     const gridObjects = [...gridLayerRef.current];
     
-    // Remove all objects except grid
-    const objects = fabricCanvasRef.current.getObjects().filter(obj => 
-      !gridLayerRef.current.includes(obj)
-    );
-    
-    objects.forEach((obj) => {
-      fabricCanvasRef.current!.remove(obj);
-    });
+    clearCanvasObjects(fabricCanvasRef.current, gridObjects);
     
     if (gridObjects.length === 0 || !fabricCanvasRef.current.contains(gridObjects[0])) {
       console.log("Recreating grid during clearDrawings...");
@@ -453,9 +485,8 @@ export const Canvas = () => {
     }
     
     fabricCanvasRef.current.renderAll();
-  };
+  }, [createGrid]);
 
-  // Update drawing mode when tool changes
   useEffect(() => {
     if (!fabricCanvasRef.current) {
       console.error("Fabric canvas ref not available when tool changed");
@@ -475,7 +506,6 @@ export const Canvas = () => {
     } else {
       console.error("Drawing brush not initialized when tool changed");
       
-      // Attempt to reinitialize brush
       try {
         const pencilBrush = new PencilBrush(fabricCanvasRef.current);
         fabricCanvasRef.current.freeDrawingBrush = pencilBrush;
@@ -490,7 +520,7 @@ export const Canvas = () => {
     fabricCanvasRef.current.renderAll();
   }, [tool]);
 
-  const handleToolChange = (newTool: "draw" | "room" | "straightLine") => {
+  const handleToolChange = useCallback((newTool: "draw" | "room" | "straightLine") => {
     setTool(newTool);
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.freeDrawingBrush = new PencilBrush(fabricCanvasRef.current);
@@ -500,12 +530,14 @@ export const Canvas = () => {
       fabricCanvasRef.current.renderAll();
       toast.success(`${newTool === "draw" ? "Drawing" : newTool === "room" ? "Room" : "Straight Line"} tool selected`);
     }
-  };
+  }, []);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     if (historyRef.current.past.length > 1) {
+      fabricCanvasRef.current.renderOnAddRemove = false;
+      
       const currentState = fabricCanvasRef.current.getObjects().filter(obj => 
         obj.type === 'path' || obj.type === 'polyline'
       );
@@ -521,17 +553,20 @@ export const Canvas = () => {
       
       recalculateGIA();
       
+      fabricCanvasRef.current.renderOnAddRemove = true;
       fabricCanvasRef.current.renderAll();
       toast("Undo successful");
     } else {
       toast("Nothing to undo");
     }
-  };
+  }, [clearDrawings]);
 
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     if (historyRef.current.future.length > 0) {
+      fabricCanvasRef.current.renderOnAddRemove = false;
+      
       const nextState = historyRef.current.future[0];
       
       historyRef.current.future.shift();
@@ -543,14 +578,15 @@ export const Canvas = () => {
       
       recalculateGIA();
       
+      fabricCanvasRef.current.renderOnAddRemove = true;
       fabricCanvasRef.current.renderAll();
       toast("Redo successful");
     } else {
       toast("Nothing to redo");
     }
-  };
+  }, [clearDrawings]);
 
-  const handleZoom = (direction: "in" | "out") => {
+  const handleZoom = useCallback((direction: "in" | "out") => {
     if (!fabricCanvasRef.current) return;
     const factor = direction === "in" ? 1.1 : 0.9;
     const newZoom = zoomLevel * factor;
@@ -559,9 +595,9 @@ export const Canvas = () => {
       setZoomLevel(newZoom);
       toast(`Zoom: ${Math.round(newZoom * 100)}%`);
     }
-  };
+  }, [zoomLevel]);
 
-  const clearCanvas = () => {
+  const clearCanvas = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     clearDrawings();
@@ -582,9 +618,9 @@ export const Canvas = () => {
     setGia(0);
     
     toast.success("Canvas cleared");
-  };
+  }, [clearDrawings, currentFloor]);
 
-  const saveCanvas = () => {
+  const saveCanvas = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     try {
@@ -612,9 +648,9 @@ export const Canvas = () => {
       console.error('Save failed:', e);
       toast.error("Failed to save floorplan");
     }
-  };
+  }, [floorPlans, currentFloor]);
 
-  const recalculateGIA = () => {
+  const recalculateGIA = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     let totalGIA = 0;
@@ -635,9 +671,9 @@ export const Canvas = () => {
     });
     
     setGia(totalGIA);
-  };
+  }, []);
 
-  const handleAddFloor = () => {
+  const handleAddFloor = useCallback(() => {
     setFloorPlans(prev => [
       ...prev, 
       { 
@@ -648,14 +684,14 @@ export const Canvas = () => {
     ]);
     setCurrentFloor(floorPlans.length);
     toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);
-  };
+  }, [floorPlans.length]);
 
-  const handleSelectFloor = (index: number) => {
+  const handleSelectFloor = useCallback((index: number) => {
     if (index !== currentFloor) {
       setCurrentFloor(index);
       toast.info(`Switched to ${floorPlans[index]?.label || 'Unknown floor'}`);
     }
-  };
+  }, [currentFloor, floorPlans]);
 
   if (isLoading) {
     return (
@@ -678,38 +714,5 @@ export const Canvas = () => {
           onAdd={handleAddFloor}
         />
         
-        {/* Debug info section */}
-        <div className="mt-4 p-2 border rounded text-xs">
-          <h4 className="font-bold">Debug Info:</h4>
-          <ul>
-            <li>Canvas Init: {debugInfo.canvasInitialized ? '✅' : '❌'}</li>
-            <li>Grid Created: {debugInfo.gridCreated ? '✅' : '❌'}</li>
-            <li>Dimensions Set: {debugInfo.dimensionsSet ? '✅' : '❌'}</li>
-            <li>Brush Init: {debugInfo.brushInitialized ? '✅' : '❌'}</li>
-            <li>Canvas Size: {canvasDimensions.width}x{canvasDimensions.height}</li>
-            <li>Grid Objects: {gridLayerRef.current.length}</li>
-            <li>Ref exists: {canvasRef.current ? '✅' : '❌'}</li>
-            <li>Fabric exists: {fabricCanvasRef.current ? '✅' : '❌'}</li>
-          </ul>
-        </div>
-      </div>
-      
-      <Card className="flex-1 p-6 backdrop-blur-sm bg-white/30 dark:bg-black/30 border border-gray-200 dark:border-gray-800">
-        <DrawingToolbar 
-          tool={tool}
-          onToolChange={handleToolChange}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onZoom={handleZoom}
-          onClear={clearCanvas}
-          onSave={saveCanvas}
-          gia={gia}
-        />
+        <
 
-        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden h-[500px] canvas-container relative mt-4 p-2">
-          <canvas ref={canvasRef} />
-        </div>
-      </Card>
-    </div>
-  );
-};
