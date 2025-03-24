@@ -1,3 +1,4 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -18,11 +19,13 @@ export const snapToGrid = (points: Point[]): Stroke => {
     const x = typeof p.x === 'number' ? p.x : 0;
     const y = typeof p.y === 'number' ? p.y : 0;
     
-    // Round to the nearest GRID_SIZE (0.1m) - more aggressive snapping
+    // Force snapping to exact 0.1m increments (GRID_SIZE)
+    // This ensures we align perfectly to the grid
     const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
     const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
     
-    // Ensure we return exactly rounded values
+    // Ensure we return exactly rounded values with 3 decimal precision
+    // to avoid floating point errors
     return {
       x: Number(snappedX.toFixed(3)), // Enforce exact 0.1m increments
       y: Number(snappedY.toFixed(3))  // Precision to 0.001m
@@ -47,7 +50,7 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
     const x = typeof p.x === 'number' ? p.x : 0;
     const y = typeof p.y === 'number' ? p.y : 0;
     
-    // Force exact snapping to grid lines
+    // Force exact snapping to grid lines - no rounding errors allowed
     const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
     const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
     
@@ -173,14 +176,46 @@ export const filterRedundantPoints = (stroke: Stroke, minDistance: number = 0.05
     
     // Only add the point if it's far enough from the previous one
     if (distance >= minDistance) {
-      result.push(currentPoint);
+      result.push({
+        x: Number(currentPoint.x.toFixed(3)), // Ensure precision
+        y: Number(currentPoint.y.toFixed(3))  // Ensure precision
+      });
     }
   }
   
   // Always include the last point if we have more than one point
   if (result.length === 1 && stroke.length > 1) {
-    result.push(stroke[stroke.length - 1]);
+    const lastPoint = stroke[stroke.length - 1];
+    result.push({
+      x: Number(lastPoint.x.toFixed(3)), // Ensure precision
+      y: Number(lastPoint.y.toFixed(3))  // Ensure precision
+    });
   }
   
   return result;
+};
+
+/**
+ * Calculate exact distance between two points in meters
+ * @param startPoint - Starting point 
+ * @param endPoint - Ending point
+ * @returns Distance in meters, rounded to 2 decimal places for display
+ */
+export const calculateDistance = (startPoint: Point, endPoint: Point): number => {
+  const dx = endPoint.x - startPoint.x;
+  const dy = endPoint.y - startPoint.y;
+  
+  // Distance in meters with 2 decimal precision
+  return Math.round(Math.sqrt(dx * dx + dy * dy) * 100) / 100;
+};
+
+/**
+ * Checks if a value is an exact multiple of the grid size (0.1m)
+ * @param value - The value to check
+ * @returns Whether the value is an exact multiple of grid size
+ */
+export const isExactGridMultiple = (value: number): boolean => {
+  // Convert to string to handle floating point precision issues
+  const rounded = Number((Math.round(value / GRID_SIZE) * GRID_SIZE).toFixed(3));
+  return Math.abs(value - rounded) < 0.001; // Allow small rounding error
 };

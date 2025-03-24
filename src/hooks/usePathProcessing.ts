@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing Fabric.js paths into polylines
  * @module usePathProcessing
@@ -16,7 +15,9 @@ import {
   snapPointsToGrid,
   straightenStroke, 
   calculateGIA,
-  filterRedundantPoints 
+  filterRedundantPoints,
+  calculateDistance,
+  isExactGridMultiple
 } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
@@ -111,11 +112,16 @@ export const usePathProcessing = ({
         finalPoints = straightenStroke([finalPoints[0], finalPoints[finalPoints.length - 1]]);
         console.log("Applied straightening to wall line");
         
-        // Calculate and display wall length
-        const dx = finalPoints[1].x - finalPoints[0].x;
-        const dy = finalPoints[1].y - finalPoints[0].y;
-        const lengthInMeters = Math.sqrt(dx * dx + dy * dy);
-        toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
+        // Calculate and display wall length - now using our utility function
+        if (finalPoints.length >= 2) {
+          const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
+          // Ensure we show exact multiples of 0.1m when possible
+          const displayLength = isExactGridMultiple(lengthInMeters) 
+            ? lengthInMeters.toFixed(1) 
+            : lengthInMeters.toFixed(2);
+            
+          toast.success(`Wall length: ${displayLength}m`);
+        }
       } else if (tool === 'room') {
         // For room tool, create enclosed shape with straightening between points
         const snappedPoints = [finalPoints[0]];
@@ -267,16 +273,16 @@ export const usePathProcessing = ({
       // For 'M' (move to) and 'L' (line to) commands, add the point
       if (command === 'M' || command === 'L') {
         points.push({
-          x: coords[0] / PIXELS_PER_METER, // Convert pixels to meters
-          y: coords[1] / PIXELS_PER_METER
+          x: Number((coords[0] / PIXELS_PER_METER).toFixed(3)), // Convert pixels to meters with precision
+          y: Number((coords[1] / PIXELS_PER_METER).toFixed(3))
         });
       }
       // For 'Q' (quadratic curve) commands, add the control point and end point
       else if (command === 'Q') {
         // The end point of a quadratic curve (coords[2], coords[3])
         points.push({
-          x: coords[2] / PIXELS_PER_METER,
-          y: coords[3] / PIXELS_PER_METER
+          x: Number((coords[2] / PIXELS_PER_METER).toFixed(3)),
+          y: Number((coords[3] / PIXELS_PER_METER).toFixed(3))
         });
       }
     }

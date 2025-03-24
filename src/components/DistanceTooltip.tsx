@@ -2,6 +2,7 @@
 import React, { memo } from "react";
 import { Point } from "@/utils/drawingTypes";
 import { Ruler } from "lucide-react";
+import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
 
 interface DistanceTooltipProps {
   startPoint: Point | null;
@@ -24,18 +25,22 @@ export const DistanceTooltip = memo(({
   position,
   midPoint
 }: DistanceTooltipProps) => {
-  // Debug the tooltip visibility conditions
-  console.log("Tooltip props:", { isVisible, startPoint, currentPoint, position, midPoint });
-  
   // Exit early if we don't have the necessary data
-  if (!startPoint || !currentPoint) {
+  if (!startPoint || !currentPoint || !isVisible) {
     return null;
   }
   
   // Calculate distance in meters
+  const distanceInMeters = calculateDistance(startPoint, currentPoint);
+  
+  // If the distance is too small, don't show the tooltip
+  if (distanceInMeters < 0.01) {
+    return null;
+  }
+  
+  // Calculate grid counts (number of small grid cells)
   const dx = currentPoint.x - startPoint.x;
   const dy = currentPoint.y - startPoint.y;
-  const distanceInMeters = Math.sqrt(dx * dx + dy * dy);
   
   // Calculate angle for diagonal lines (in degrees)
   const angleInDegrees = Math.atan2(dy, dx) * (180 / Math.PI);
@@ -44,13 +49,14 @@ export const DistanceTooltip = memo(({
   // Determine if this is a diagonal line (roughly 45, 135, 225, or 315 degrees)
   const diagonalAngles = [45, 135, 225, 315];
   const isDiagonal = diagonalAngles.some(angle => 
-    Math.abs(normalizedAngle - angle) < 15
+    Math.abs(normalizedAngle - angle) < 10
   );
   
-  // Exit if the distance is too small (prevents flickering for tiny movements)
-  if (distanceInMeters < 0.01) {
-    return null;
-  }
+  // Check if the distance is an exact multiple of grid size (0.1m)
+  const isExactMultiple = isExactGridMultiple(distanceInMeters);
+  
+  // Format the distance to always show 2 decimal places for consistency
+  const formattedDistance = distanceInMeters.toFixed(2);
   
   // Determine position for tooltip - prefer midPoint if available
   const tooltipPosition = midPoint || position;
@@ -76,7 +82,7 @@ export const DistanceTooltip = memo(({
     >
       <div className="flex items-center gap-2 text-sm whitespace-nowrap">
         <Ruler className="w-4 h-4" />
-        <span className="font-medium">{distanceInMeters.toFixed(2)} m</span>
+        <span className="font-medium">{formattedDistance} m</span>
         {isDiagonal && (
           <span className="text-xs opacity-80">({Math.round(normalizedAngle)}°)</span>
         )}
