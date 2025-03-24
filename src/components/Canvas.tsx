@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -33,6 +34,7 @@ export const Canvas = () => {
     past: [],
     future: []
   });
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
 
   // Load floorplans when component mounts
   useEffect(() => {
@@ -77,6 +79,35 @@ export const Canvas = () => {
     };
   }, []);
 
+  // Handle window resize to adjust canvas dimensions
+  useEffect(() => {
+    const updateCanvasDimensions = () => {
+      const container = document.querySelector('.canvas-container');
+      if (container && canvasRef.current) {
+        const { width, height } = container.getBoundingClientRect();
+        setCanvasDimensions({ 
+          width: Math.max(width - 20, 600), 
+          height: Math.max(height - 20, 500) 
+        });
+        
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.setDimensions({ width: width - 20, height: height - 20 });
+          createGrid(fabricCanvasRef.current);
+        }
+      }
+    };
+
+    // Initial update
+    updateCanvasDimensions();
+    
+    // Listen for resize events
+    window.addEventListener('resize', updateCanvasDimensions);
+    
+    return () => {
+      window.removeEventListener('resize', updateCanvasDimensions);
+    };
+  }, []);
+
   // Save floorplans when they change
   useEffect(() => {
     if (isLoading || floorPlans.length === 0) return;
@@ -113,8 +144,8 @@ export const Canvas = () => {
     }
     
     const gridObjects: fabric.Object[] = [];
-    const canvasWidth = canvas.getWidth() || 800;
-    const canvasHeight = canvas.getHeight() || 600;
+    const canvasWidth = canvas.getWidth() || canvasDimensions.width;
+    const canvasHeight = canvas.getHeight() || canvasDimensions.height;
     
     console.log(`Canvas dimensions: ${canvasWidth}x${canvasHeight}`);
     
@@ -200,10 +231,14 @@ export const Canvas = () => {
     
     console.log("Setting up canvas...");
 
+    const container = document.querySelector('.canvas-container');
+    const width = container ? container.getBoundingClientRect().width - 20 : canvasDimensions.width;
+    const height = container ? container.getBoundingClientRect().height - 20 : canvasDimensions.height;
+
     // Create new fabric canvas instance
     const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-      width: 800,
-      height: 600,
+      width: width,
+      height: height,
       backgroundColor: "#FFFFFF",
       isDrawingMode: true,
       selection: false,
@@ -212,12 +247,16 @@ export const Canvas = () => {
     fabricCanvasRef.current = fabricCanvas;
 
     // Initialize drawing brush
-    fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
+    const pencilBrush = new fabric.PencilBrush(fabricCanvas);
+    fabricCanvas.freeDrawingBrush = pencilBrush;
     fabricCanvas.freeDrawingBrush.color = "#000000";
     fabricCanvas.freeDrawingBrush.width = 2;
 
     // Create initial grid
-    createGrid(fabricCanvas);
+    setTimeout(() => {
+      createGrid(fabricCanvas);
+      fabricCanvas.renderAll();
+    }, 100);
     
     // Event handler for when objects are added to the canvas
     fabricCanvas.on('object:added', () => {
@@ -583,7 +622,7 @@ export const Canvas = () => {
           gia={gia}
         />
 
-        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden h-[500px]">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden h-[500px] canvas-container">
           <canvas ref={canvasRef} className="w-full h-full" />
         </div>
       </Card>
