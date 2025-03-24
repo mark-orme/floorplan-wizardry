@@ -10,10 +10,6 @@ declare module 'fabric' {
 // Define our custom events
 declare module 'fabric' {
   interface CanvasEvents {
-    'zoom': {
-      e?: MouseEvent | TouchEvent;
-      zoom: number;
-    };
     'line:scaling': {
       startPoint: { x: number, y: number };
       endPoint: { x: number, y: number };

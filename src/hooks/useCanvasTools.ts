@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing canvas tools and interactions
  * @module useCanvasTools
@@ -146,26 +145,25 @@ export const useCanvasTools = ({
     const minZoom = 0.5;  // 50% minimum zoom
     const maxZoom = 3.0;  // 300% maximum zoom
     
-    // Calculate the new zoom level in exact 10% increments
+    // Calculate the new zoom level in 10% increments
     let newZoom: number;
     if (direction === "in") {
-      // Apply exact 10% increase
-      newZoom = Math.min(Math.round((zoomLevel + 0.1) * 10) / 10, maxZoom);
+      // Round up to next 10% increment
+      newZoom = Math.min(Math.ceil((zoomLevel + 0.05) * 10) / 10, maxZoom);
     } else {
-      // Apply exact 10% decrease
-      newZoom = Math.max(Math.round((zoomLevel - 0.1) * 10) / 10, minZoom);
+      // Round down to previous 10% increment
+      newZoom = Math.max(Math.floor((zoomLevel - 0.05) * 10) / 10, minZoom);
     }
     
     // Only apply zoom if it's different from current
     if (newZoom !== zoomLevel) {
-      console.log(`Zooming from ${zoomLevel} to ${newZoom} (${direction})`);
       fabricCanvasRef.current.setZoom(newZoom);
       setZoomLevel(newZoom);
       
-      // Trigger standard zoom event
-      fabricCanvasRef.current.fire('zoom', { zoom: newZoom });
+      // Trigger custom event for zoom change detection - use a custom event name
+      fabricCanvasRef.current.fire('custom:zoom-changed', { zoom: newZoom });
       
-      // Show exact percentage zoom level
+      // Show rounded percentage zoom level
       toast(`Zoom: ${Math.round(newZoom * 100)}%`, {
         duration: 1500,
         id: 'zoom-level'

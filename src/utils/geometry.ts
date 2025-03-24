@@ -1,4 +1,3 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -25,8 +24,6 @@ const VERTICAL_BIAS = 1.2; // Bias factor for favoring vertical lines
 export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
   if (!point) return { x: 0, y: 0 };
 
-  // Calculate exact grid positions without any rounding or toString conversions
-  // This ensures perfect mathematical precision
   const snappedX = Math.round(point.x / gridSize) * gridSize;
   const snappedY = Math.round(point.y / gridSize) * gridSize;
 
@@ -233,8 +230,6 @@ export const filterRedundantPoints = (stroke: Stroke, minDistance: number = CLOS
  * @returns Distance in meters, rounded to 1 decimal place for better usability
  */
 export const calculateDistance = (startPoint: Point, endPoint: Point): number => {
-  if (!startPoint || !endPoint) return 0;
-  
   const dx = endPoint.x - startPoint.x;
   const dy = endPoint.y - startPoint.y;
   

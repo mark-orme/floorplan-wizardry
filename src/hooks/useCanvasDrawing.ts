@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -74,30 +73,25 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     tool
   });
   
-  // Update zoom level whenever canvas changes or zoom event fires
+  // Update zoom level whenever canvas changes
   useEffect(() => {
     const updateZoomLevel = () => {
       if (fabricCanvasRef.current) {
-        const newZoom = fabricCanvasRef.current.getZoom();
-        setCurrentZoom(newZoom);
-        console.log("Zoom level updated:", newZoom);
+        setCurrentZoom(fabricCanvasRef.current.getZoom());
       }
     };
     
     updateZoomLevel();
     
-    // Set up listeners for zoom changes - use standard Fabric.js event
+    // Set up listeners for zoom changes - use a custom event name
     const fabricCanvas = fabricCanvasRef.current;
     if (fabricCanvas) {
-      // Listen to both standard zoom event and object:modified for scaling
-      fabricCanvas.on('zoom', updateZoomLevel);
-      fabricCanvas.on('object:modified', updateZoomLevel);
+      fabricCanvas.on('custom:zoom-changed', updateZoomLevel);
     }
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('zoom', updateZoomLevel);
-        fabricCanvas.off('object:modified', updateZoomLevel);
+        fabricCanvas.off('custom:zoom-changed', updateZoomLevel);
       }
     };
   }, [fabricCanvasRef]);

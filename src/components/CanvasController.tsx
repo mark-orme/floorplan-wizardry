@@ -1,4 +1,3 @@
-
 /**
  * Canvas controller component
  * Centralizes all canvas state and operations
@@ -276,9 +275,8 @@ export const CanvasController = () => {
   // Ensure zoom level is properly passed to DistanceTooltip via drawingState
   useEffect(() => {
     if (fabricCanvasRef.current) {
-      // Trigger standard zoom event when component mounts to ensure correct initial zoom
-      const currentZoom = fabricCanvasRef.current.getZoom();
-      fabricCanvasRef.current.fire('zoom', { zoom: currentZoom });
+      // Trigger custom zoom changed event when component mounts to ensure correct initial zoom
+      fabricCanvasRef.current.fire('custom:zoom-changed', { zoom: zoomLevel });
     }
   }, [fabricCanvasRef, zoomLevel]);
 

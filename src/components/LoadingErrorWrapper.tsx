@@ -16,7 +16,6 @@ export const LoadingErrorWrapper = ({
   onRetry,
   children
 }: LoadingErrorWrapperProps) => {
-  // Show loading or error screen when needed
   if (isLoading || hasError) {
     return (
       <LoadingError 
@@ -28,6 +27,5 @@ export const LoadingErrorWrapper = ({
     );
   }
 
-  // Render children when no loading or error state
   return <>{children}</>;
 };
