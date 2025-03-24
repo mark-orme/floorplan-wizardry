@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Card } from "./ui/card";
@@ -34,6 +35,7 @@ export const Canvas = () => {
     future: []
   });
 
+  // Load floorplans when component mounts
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -51,13 +53,18 @@ export const Canvas = () => {
     loadData();
   }, []);
 
+  // Initialize canvas and setup auto-save
   useEffect(() => {
-    setupCanvas();
+    if (canvasRef.current) {
+      setupCanvas();
+    }
     
     const interval = setInterval(async () => {
       try {
-        await saveFloorPlans(floorPlans);
-        console.log("Floor plans autosaved");
+        if (floorPlans.length > 0) {
+          await saveFloorPlans(floorPlans);
+          console.log("Floor plans autosaved");
+        }
       } catch (error) {
         console.error("Autosave failed:", error);
       }
@@ -65,10 +72,13 @@ export const Canvas = () => {
     
     return () => {
       clearInterval(interval);
-      fabricCanvasRef.current?.dispose();
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+      }
     };
   }, []);
 
+  // Save floorplans when they change
   useEffect(() => {
     if (isLoading || floorPlans.length === 0) return;
     
@@ -83,19 +93,19 @@ export const Canvas = () => {
     saveData();
   }, [floorPlans, isLoading]);
 
+  // Update canvas when floor changes
   useEffect(() => {
     if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
     
     clearDrawings();
-    
     drawFloorPlan();
-    
     recalculateGIA();
   }, [currentFloor, floorPlans, isLoading]);
 
   const createGrid = (canvas: fabric.Canvas) => {
     console.log("Creating grid...");
     
+    // Clear existing grid
     if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
         canvas.remove(obj);
@@ -104,9 +114,12 @@ export const Canvas = () => {
     }
     
     const gridObjects: fabric.Object[] = [];
-    const canvasWidth = canvas.getWidth();
-    const canvasHeight = canvas.getHeight();
+    const canvasWidth = canvas.width || 800;
+    const canvasHeight = canvas.height || 600;
     
+    console.log(`Canvas dimensions: ${canvasWidth}x${canvasHeight}`);
+    
+    // Create small grid lines
     for (let i = 0; i < canvasWidth; i += SMALL_GRID) {
       const smallGridLine = new fabric.Line([i, 0, i, canvasHeight], {
         stroke: "#E6F3F8",
@@ -129,6 +142,7 @@ export const Canvas = () => {
       gridObjects.push(smallGridLine);
     }
 
+    // Create large grid lines
     for (let i = 0; i < canvasWidth; i += LARGE_GRID) {
       const largeGridLine = new fabric.Line([i, 0, i, canvasHeight], {
         stroke: "#C2E2F3",
@@ -151,6 +165,7 @@ export const Canvas = () => {
       gridObjects.push(largeGridLine);
     }
 
+    // Add scale marker
     const scaleMarker = new fabric.Group([
       new fabric.Line([canvasWidth - LARGE_GRID - 20, canvasHeight - 20, canvasWidth - 20, canvasHeight - 20], {
         stroke: "#333333",
@@ -169,6 +184,7 @@ export const Canvas = () => {
     canvas.add(scaleMarker);
     gridObjects.push(scaleMarker);
     
+    // Send all grid objects to back
     gridObjects.forEach(obj => {
       canvas.sendObjectToBack(obj);
     });
@@ -185,6 +201,7 @@ export const Canvas = () => {
     
     console.log("Setting up canvas...");
 
+    // Create new fabric canvas instance
     const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: 800,
       height: 600,
@@ -195,12 +212,17 @@ export const Canvas = () => {
     
     fabricCanvasRef.current = fabricCanvas;
 
-    fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
+    // Initialize drawing brush
+    if (!fabricCanvas.freeDrawingBrush) {
+      fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
+    }
     fabricCanvas.freeDrawingBrush.color = "#000000";
     fabricCanvas.freeDrawingBrush.width = 2;
 
+    // Create initial grid
     createGrid(fabricCanvas);
     
+    // Event handler for when objects are added to the canvas
     fabricCanvas.on('object:added', () => {
       if (gridLayerRef.current.length === 0) {
         console.log("Grid missing, recreating...");
@@ -213,6 +235,7 @@ export const Canvas = () => {
       }
     });
 
+    // Event handler for when paths are created (strokes drawn)
     fabricCanvas.on('path:created', (e) => {
       const path = e.path as fabric.Path;
       
@@ -248,17 +271,18 @@ export const Canvas = () => {
         
         setFloorPlans(prev => {
           const newFloorPlans = [...prev];
-          newFloorPlans[currentFloor] = {
-            ...newFloorPlans[currentFloor],
-            strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
-          };
-          
-          if (tool === 'room' && finalPoints.length > 2) {
-            const area = calculateGIA(finalPoints);
-            setGia(prev => prev + area);
-            toast.success(`Room added: ${area.toFixed(2)} m²`);
+          if (newFloorPlans[currentFloor]) {
+            newFloorPlans[currentFloor] = {
+              ...newFloorPlans[currentFloor],
+              strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
+            };
+            
+            if (tool === 'room' && finalPoints.length > 2) {
+              const area = calculateGIA(finalPoints);
+              setGia(prev => prev + area);
+              toast.success(`Room added: ${area.toFixed(2)} m²`);
+            }
           }
-          
           return newFloorPlans;
         });
 
@@ -273,6 +297,7 @@ export const Canvas = () => {
       }
     });
 
+    // Initialize history
     const initialState = fabricCanvas.getObjects().filter(obj => 
       obj.type === 'path' || obj.type === 'polyline'
     );
@@ -294,6 +319,7 @@ export const Canvas = () => {
       fabricCanvasRef.current!.sendObjectToBack(gridObj);
     });
     
+    // Draw all strokes from the current floor plan
     currentPlan.strokes.forEach(stroke => {
       const polyline = new fabric.Polyline(
         stroke.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
@@ -323,8 +349,10 @@ export const Canvas = () => {
   const clearDrawings = () => {
     if (!fabricCanvasRef.current) return;
     
+    // Store grid objects reference
     const gridObjects = [...gridLayerRef.current];
     
+    // Remove all objects except grid
     const objects = fabricCanvasRef.current.getObjects().filter(obj => 
       !gridLayerRef.current.includes(obj)
     );
@@ -341,6 +369,7 @@ export const Canvas = () => {
     fabricCanvasRef.current.renderAll();
   };
 
+  // Update drawing mode when tool changes
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -557,7 +586,9 @@ export const Canvas = () => {
           gia={gia}
         />
 
-        <canvas ref={canvasRef} />
+        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
+          <canvas ref={canvasRef} className="w-full h-full" />
+        </div>
       </Card>
     </div>
   );
