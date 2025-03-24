@@ -34,7 +34,6 @@ export const Canvas = () => {
     future: []
   });
 
-  // Load floor plans from IndexedDB when component mounts
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -52,11 +51,9 @@ export const Canvas = () => {
     loadData();
   }, []);
 
-  // Initialize canvas when component mounts
   useEffect(() => {
     setupCanvas();
     
-    // Setup autosave
     const interval = setInterval(async () => {
       try {
         await saveFloorPlans(floorPlans);
@@ -64,7 +61,7 @@ export const Canvas = () => {
       } catch (error) {
         console.error("Autosave failed:", error);
       }
-    }, 10000); // Autosave every 10 seconds
+    }, 10000);
     
     return () => {
       clearInterval(interval);
@@ -72,7 +69,6 @@ export const Canvas = () => {
     };
   }, []);
 
-  // When floor plans change, trigger a save
   useEffect(() => {
     if (isLoading || floorPlans.length === 0) return;
     
@@ -87,29 +83,27 @@ export const Canvas = () => {
     saveData();
   }, [floorPlans, isLoading]);
 
-  // When floor plan changes, update the canvas
   useEffect(() => {
     if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
     
-    // Clear existing drawings but not grid
     clearDrawings();
     
-    // Add strokes from current floor plan
     drawFloorPlan();
     
-    // Recalculate GIA
     recalculateGIA();
-    
   }, [currentFloor, floorPlans, isLoading]);
 
-  // Create grid lines and store references to them
   const createGrid = (canvas: fabric.Canvas) => {
+    gridLayerRef.current.forEach(obj => {
+      canvas.remove(obj);
+    });
+    
+    gridLayerRef.current = [];
     const gridObjects: fabric.Object[] = [];
     
-    // Add small grid (0.1m)
     for (let i = 0; i < canvas.width!; i += SMALL_GRID) {
       const smallGridLine = new fabric.Line([i, 0, i, canvas.height!], {
-        stroke: "#E6F3F8", // Very light blue for fine grid
+        stroke: "#E6F3F8",
         selectable: false,
         strokeWidth: 0.5,
         evented: false,
@@ -119,7 +113,7 @@ export const Canvas = () => {
     }
     for (let i = 0; i < canvas.height!; i += SMALL_GRID) {
       const smallGridLine = new fabric.Line([0, i, canvas.width!, i], {
-        stroke: "#E6F3F8", // Very light blue for fine grid
+        stroke: "#E6F3F8",
         selectable: false,
         strokeWidth: 0.5,
         evented: false,
@@ -128,10 +122,9 @@ export const Canvas = () => {
       gridObjects.push(smallGridLine);
     }
 
-    // Add large grid (1.0m)
     for (let i = 0; i < canvas.width!; i += LARGE_GRID) {
       const largeGridLine = new fabric.Line([i, 0, i, canvas.height!], {
-        stroke: "#C2E2F3", // Light blue for major grid
+        stroke: "#C2E2F3",
         selectable: false,
         strokeWidth: 1,
         evented: false,
@@ -141,7 +134,7 @@ export const Canvas = () => {
     }
     for (let i = 0; i < canvas.height!; i += LARGE_GRID) {
       const largeGridLine = new fabric.Line([0, i, canvas.width!, i], {
-        stroke: "#C2E2F3", // Light blue for major grid
+        stroke: "#C2E2F3",
         selectable: false,
         strokeWidth: 1,
         evented: false,
@@ -150,7 +143,6 @@ export const Canvas = () => {
       gridObjects.push(largeGridLine);
     }
 
-    // Add 1m scale marker at bottom right
     const scaleMarker = new fabric.Group([
       new fabric.Line([canvas.width! - LARGE_GRID - 20, canvas.height! - 20, canvas.width! - 20, canvas.height! - 20], {
         stroke: "#333333",
@@ -169,60 +161,56 @@ export const Canvas = () => {
     canvas.add(scaleMarker);
     gridObjects.push(scaleMarker);
     
-    // Send all grid lines to the back
     gridObjects.forEach(obj => {
       canvas.sendObjectToBack(obj);
     });
     
-    // Store grid references
     gridLayerRef.current = gridObjects;
+    
+    canvas.renderAll();
     
     return gridObjects;
   };
 
-  // Setup canvas and initialize drawing
   const setupCanvas = () => {
     if (!canvasRef.current) return;
 
-    // Create fabric canvas
     const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: 800,
       height: 600,
-      backgroundColor: "#FFFFFF", // Pure white background
-      isDrawingMode: true, // Start in drawing mode
-      selection: false, // Disable selection by default for drawing
+      backgroundColor: "#FFFFFF",
+      isDrawingMode: true,
+      selection: false,
     });
     
     fabricCanvasRef.current = fabricCanvas;
 
-    // Configure drawing brush
     fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
     fabricCanvas.freeDrawingBrush.color = "#000000";
     fabricCanvas.freeDrawingBrush.width = 2;
 
-    // Create grid (this now stores references to grid objects)
     createGrid(fabricCanvas);
+    
+    fabricCanvas.on('object:added', () => {
+      gridLayerRef.current.forEach(gridObj => {
+        fabricCanvas.sendObjectToBack(gridObj);
+      });
+    });
 
-    // Process drawn paths
     fabricCanvas.on('path:created', (e) => {
       const path = e.path as fabric.Path;
       
       if (!path.path) return;
       
-      // Convert the fabric path to our point format
       const points = fabricPathToPoints(path.path);
       
-      // Apply grid snapping
       const snappedPoints = snapToGrid(points);
 
-      // Apply auto-straighten if in straightLine mode
       const finalPoints = tool === 'straightLine' 
         ? straightenStroke(snappedPoints) 
         : snappedPoints;
 
-      // Only remove the original path AFTER successfully creating the polyline
       try {
-        // Create a polyline from the processed points
         const polyline = new fabric.Polyline(
           finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
           {
@@ -233,18 +221,15 @@ export const Canvas = () => {
           }
         );
 
-        // Remove the original path and add our processed polyline
         fabricCanvas.remove(path);
         fabricCanvas.add(polyline);
         
-        // Ensure grid stays in the background
         gridLayerRef.current.forEach(gridObj => {
           fabricCanvas.sendObjectToBack(gridObj);
         });
         
-        fabricCanvas.renderAll(); // Force a re-render
-
-        // Update floor plan data and calculate GIA
+        fabricCanvas.renderAll();
+        
         setFloorPlans(prev => {
           const newFloorPlans = [...prev];
           newFloorPlans[currentFloor] = {
@@ -252,7 +237,6 @@ export const Canvas = () => {
             strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
           };
           
-          // Calculate GIA from closed shapes (rooms)
           if (tool === 'room' && finalPoints.length > 2) {
             const area = calculateGIA(finalPoints);
             setGia(prev => prev + area);
@@ -262,7 +246,6 @@ export const Canvas = () => {
           return newFloorPlans;
         });
 
-        // Save state for undo/redo
         const currentState = fabricCanvas.getObjects().filter(obj => 
           obj.type === 'polyline' || obj.type === 'path'
         );
@@ -271,11 +254,9 @@ export const Canvas = () => {
       } catch (error) {
         console.error("Error processing drawing:", error);
         toast.error("Failed to process drawing");
-        // If there was an error, don't remove the original path
       }
     });
 
-    // Save initial state for history
     const initialState = fabricCanvas.getObjects().filter(obj => 
       obj.type === 'path' || obj.type === 'polyline'
     );
@@ -284,13 +265,15 @@ export const Canvas = () => {
     toast.success("Canvas ready for drawing!");
   };
 
-  // Draw the current floor plan
   const drawFloorPlan = () => {
     if (!fabricCanvasRef.current) return;
     
     const currentPlan = floorPlans[currentFloor];
     
-    // Ensure the grid is visible
+    if (gridLayerRef.current.length === 0) {
+      createGrid(fabricCanvasRef.current);
+    }
+    
     gridLayerRef.current.forEach(gridObj => {
       fabricCanvasRef.current!.sendObjectToBack(gridObj);
     });
@@ -301,12 +284,11 @@ export const Canvas = () => {
         {
           stroke: '#000000',
           strokeWidth: 2,
-          fill: 'transparent', // We'll determine which are rooms by closed shape later
+          fill: 'transparent',
           objectType: 'line'
         }
       );
       
-      // For closed shapes with 3+ points, treat as rooms
       if (stroke.length > 2 && 
           Math.abs(stroke[0].x - stroke[stroke.length-1].x) < 0.01 && 
           Math.abs(stroke[0].y - stroke[stroke.length-1].y) < 0.01) {
@@ -322,7 +304,6 @@ export const Canvas = () => {
     fabricCanvasRef.current.renderAll();
   };
 
-  // Clear only the drawings, not the grid
   const clearDrawings = () => {
     if (!fabricCanvasRef.current) return;
     
@@ -330,37 +311,32 @@ export const Canvas = () => {
       obj.type === 'path' || obj.type === 'polyline'
     );
     
-    // Filter out grid objects from the objects to be removed
-    const gridObjectIds = new Set(gridLayerRef.current.map(obj => {
-      // Safe access to id with type assertion
-      return (obj as any).id;
-    }));
-    const drawingsToRemove = objects.filter(obj => {
-      // Safe access to id with type assertion
-      return !(gridObjectIds.has((obj as any).id));
-    });
-    
-    drawingsToRemove.forEach((obj) => fabricCanvasRef.current!.remove(obj));
-    
-    // Ensure grid is still visible
-    gridLayerRef.current.forEach(gridObj => {
-      if (!fabricCanvasRef.current!.contains(gridObj)) {
-        fabricCanvasRef.current!.add(gridObj);
+    objects.forEach((obj) => {
+      if (!gridLayerRef.current.includes(obj)) {
+        fabricCanvasRef.current!.remove(obj);
       }
-      fabricCanvasRef.current!.sendObjectToBack(gridObj);
     });
+    
+    if (gridLayerRef.current.length === 0) {
+      createGrid(fabricCanvasRef.current);
+    } else {
+      gridLayerRef.current.forEach(gridObj => {
+        if (!fabricCanvasRef.current!.contains(gridObj)) {
+          fabricCanvasRef.current!.add(gridObj);
+        }
+        fabricCanvasRef.current!.sendObjectToBack(gridObj);
+      });
+    }
     
     fabricCanvasRef.current.renderAll();
   };
 
-  // Update drawing mode when tool changes
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
-    fabricCanvasRef.current.isDrawingMode = true; // Always in drawing mode for consistency
+    fabricCanvasRef.current.isDrawingMode = true;
     
     if (fabricCanvasRef.current.freeDrawingBrush) {
-      // Configure brush based on tool
       if (tool === 'straightLine') {
         toast.info("Straight line tool: Strokes will be auto-straightened");
       } else if (tool === 'room') {
@@ -374,7 +350,6 @@ export const Canvas = () => {
   const handleToolChange = (newTool: "draw" | "room" | "straightLine") => {
     setTool(newTool);
     if (fabricCanvasRef.current) {
-      // Configure brush based on the selected tool
       fabricCanvasRef.current.freeDrawingBrush = new fabric.PencilBrush(fabricCanvasRef.current);
       fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
       fabricCanvasRef.current.freeDrawingBrush.width = 2;
@@ -388,25 +363,19 @@ export const Canvas = () => {
     if (!fabricCanvasRef.current) return;
     
     if (historyRef.current.past.length > 1) {
-      // Move current state to future
       const currentState = fabricCanvasRef.current.getObjects().filter(obj => 
         obj.type === 'path' || obj.type === 'polyline'
       );
       historyRef.current.future.unshift([...currentState]);
       
-      // Remove current state from past
       historyRef.current.past.pop();
       
-      // Get previous state
       const previousState = historyRef.current.past[historyRef.current.past.length - 1];
       
-      // Clear canvas of paths and polylines
       clearDrawings();
       
-      // Restore previous state
       previousState.forEach(obj => fabricCanvasRef.current!.add(obj));
       
-      // Recalculate GIA
       recalculateGIA();
       
       fabricCanvasRef.current.renderAll();
@@ -420,20 +389,15 @@ export const Canvas = () => {
     if (!fabricCanvasRef.current) return;
     
     if (historyRef.current.future.length > 0) {
-      // Get next state
       const nextState = historyRef.current.future[0];
       
-      // Move next state from future to past
       historyRef.current.future.shift();
       historyRef.current.past.push([...nextState]);
       
-      // Clear canvas of paths and polylines
       clearDrawings();
       
-      // Restore next state
       nextState.forEach(obj => fabricCanvasRef.current!.add(obj));
       
-      // Recalculate GIA
       recalculateGIA();
       
       fabricCanvasRef.current.renderAll();
@@ -457,14 +421,11 @@ export const Canvas = () => {
   const clearCanvas = () => {
     if (!fabricCanvasRef.current) return;
     
-    // Clear only the drawings, not the grid
     clearDrawings();
     
-    // Update history
     historyRef.current.past = [[]];
     historyRef.current.future = [];
     
-    // Reset floor plan and GIA
     setFloorPlans(prev => {
       const newFloorPlans = [...prev];
       if (newFloorPlans[currentFloor]) {
@@ -484,16 +445,14 @@ export const Canvas = () => {
     if (!fabricCanvasRef.current) return;
     
     try {
-      // Manually trigger a save to IndexedDB
       saveFloorPlans(floorPlans)
         .then(() => {
           toast.success("Floor plans saved to offline storage");
           
-          // Save canvas as image with corrected options including multiplier
           const dataUrl = fabricCanvasRef.current!.toDataURL({
             format: 'png',
             quality: 1,
-            multiplier: 1 // Required multiplier property
+            multiplier: 1
           });
           const link = document.createElement("a");
           link.download = `floorplan-${floorPlans[currentFloor]?.label || 'untitled'}.png`;
@@ -512,7 +471,6 @@ export const Canvas = () => {
     }
   };
 
-  // Recalculate GIA based on current objects
   const recalculateGIA = () => {
     if (!fabricCanvasRef.current) return;
     
@@ -555,7 +513,6 @@ export const Canvas = () => {
     }
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
