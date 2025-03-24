@@ -32,6 +32,11 @@ export const DistanceTooltip = memo(({
   const dy = currentPoint.y - startPoint.y;
   const distanceInMeters = Math.sqrt(dx * dx + dy * dy);
   
+  // Only display tooltip if distance is significant (avoid flickering for very small movements)
+  if (distanceInMeters < 0.05) {
+    return null;
+  }
+  
   return (
     <div 
       className="absolute pointer-events-none z-50 bg-black/80 text-white px-3 py-2 rounded-md shadow-lg"
@@ -42,7 +47,7 @@ export const DistanceTooltip = memo(({
         willChange: "transform" // Hint for browser optimization
       }}
     >
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2 text-sm whitespace-nowrap">
         <Ruler className="w-4 h-4" />
         <span className="font-medium">{distanceInMeters.toFixed(2)} m</span>
       </div>

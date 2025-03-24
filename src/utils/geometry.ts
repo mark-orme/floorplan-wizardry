@@ -18,10 +18,11 @@ export const snapToGrid = (points: Point[]): Stroke => {
     const x = typeof p.x === 'number' ? p.x : 0;
     const y = typeof p.y === 'number' ? p.y : 0;
     
-    // Round to the nearest GRID_SIZE (0.1m)
+    // Round to the nearest GRID_SIZE (0.1m) - more aggressive snapping
     const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
     const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
     
+    // Ensure we return exactly rounded values
     return {
       x: Number(snappedX.toFixed(3)), // Enforce exact 0.1m increments
       y: Number(snappedY.toFixed(3))  // Precision to 0.001m
@@ -42,15 +43,18 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const dx = Math.abs(end.x - start.x);
   const dy = Math.abs(end.y - start.y);
   
-  // More aggressive straightening with clearer threshold for better UX
+  // Even more aggressive straightening with clearer threshold for better UX
+  const horizontalThreshold = 1.1; // Reduced from 1.2
+  const verticalThreshold = 1.1;   // Reduced from 1.2
+  
   // Determine if the line is more horizontal or vertical
-  if (dx > dy * 1.2) { // Horizontal preference (reduced threshold)
+  if (dx > dy * horizontalThreshold) { // Horizontal preference
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
       { x: Number(end.x.toFixed(3)), y: Number(start.y.toFixed(3)) }
     ];
-  } else if (dy > dx * 1.2) { // Vertical preference (reduced threshold)
+  } else if (dy > dx * verticalThreshold) { // Vertical preference
     // Mostly vertical - keep the same X coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },

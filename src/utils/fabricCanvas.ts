@@ -68,14 +68,39 @@ export const disposeCanvas = (canvas: Canvas | null) => {
   }
   
   try {
-    // Remove all event listeners
-    canvas.off();
+    // Safe approach to disposal - prevent issues with Fabric.js internals
+    try {
+      // First, remove all event listeners
+      canvas.off();
+      
+      // Remove all objects one by one to avoid batch operations
+      const objects = [...canvas.getObjects()];
+      objects.forEach(obj => {
+        try {
+          canvas.remove(obj);
+        } catch (err) {
+          // Silently fail for individual object removals
+        }
+      });
+      
+      // Finally dispose the canvas
+      canvas.dispose();
+    } catch (err) {
+      // Even if there's an error in the typical disposal flow, 
+      // we still want to try the direct DOM removal as fallback
+      console.warn("Standard canvas disposal failed, trying alternate approach:", err);
+    }
     
-    // Clear all objects
-    canvas.clear();
-    
-    // Dispose the canvas
-    canvas.dispose();
+    // As a fallback, also try to clear the DOM 
+    const canvasElement = canvas.getElement();
+    if (canvasElement && canvasElement.parentNode) {
+      try {
+        // Remove the canvas from DOM to prevent duplicate canvas initialization
+        canvasElement.parentNode.removeChild(canvasElement);
+      } catch (err) {
+        console.warn("Failed to remove canvas from DOM:", err);
+      }
+    }
     
     console.log("Canvas disposed successfully");
   } catch (error) {
@@ -110,12 +135,16 @@ export const clearCanvasObjects = (canvas: Canvas, gridObjects: any[]) => {
       console.log(`Found ${objectsToRemove.length} objects to remove`);
     }
     
-    // Remove them
+    // Remove them one by one to avoid potential issues with batch operations
     objectsToRemove.forEach(obj => {
-      canvas.remove(obj);
+      try {
+        canvas.remove(obj);
+      } catch (err) {
+        console.warn("Error removing object:", err);
+      }
     });
     
-    canvas.renderAll();
+    canvas.requestRenderAll();
   } catch (error) {
     console.error("Error clearing canvas objects:", error);
   }

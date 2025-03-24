@@ -62,9 +62,14 @@ export const useDrawingHistory = ({
       if (previousState && previousState.length > 0) {
         // Clone and add each object from the previous state
         previousState.forEach(obj => {
+          // Skip objects that don't have clone method or are not valid
           if (obj && typeof obj.clone === 'function') {
-            const clonedObj = obj.clone();
-            fabricCanvas.add(clonedObj);
+            try {
+              const clonedObj = obj.clone();
+              fabricCanvas.add(clonedObj);
+            } catch (err) {
+              console.error("Error cloning object:", err);
+            }
           }
         });
       }
@@ -76,7 +81,7 @@ export const useDrawingHistory = ({
         }
       });
       
-      fabricCanvas.renderAll();
+      fabricCanvas.requestRenderAll();
       recalculateGIA();
       toast.success("Undo successful");
       
@@ -120,9 +125,14 @@ export const useDrawingHistory = ({
       if (futureState && futureState.length > 0) {
         // Clone and add each object from the future state
         futureState.forEach(obj => {
+          // Skip objects that don't have clone method or are not valid
           if (obj && typeof obj.clone === 'function') {
-            const clonedObj = obj.clone();
-            fabricCanvas.add(clonedObj);
+            try {
+              const clonedObj = obj.clone();
+              fabricCanvas.add(clonedObj);
+            } catch (err) {
+              console.error("Error cloning object:", err);
+            }
           }
         });
       }
@@ -134,7 +144,7 @@ export const useDrawingHistory = ({
         }
       });
       
-      fabricCanvas.renderAll();
+      fabricCanvas.requestRenderAll();
       recalculateGIA();
       toast.success("Redo successful");
       

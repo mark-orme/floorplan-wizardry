@@ -135,29 +135,46 @@ export const usePathProcessing = ({
         y: p.y * PIXELS_PER_METER 
       }));
 
+      console.log("Creating polyline with points:", pixelPoints);
+
       // Create a polyline from the processed points
-      const polyline = new Polyline(pixelPoints, {
+      const polylineOptions = {
         stroke: lineColor,
         strokeWidth: lineThickness,
-        fill: tool === 'room' ? `${lineColor}20` : 'transparent', // Use semi-transparent fill for rooms
+        fill: tool === 'room' ? `${lineColor}20` : 'transparent', // Semi-transparent fill for rooms
         objectType: tool === 'room' ? 'room' : 'line',
         objectCaching: true,
         perPixelTargetFind: false,
         selectable: false,
         hoverCursor: 'default'
-      });
+      };
 
-      // Remove the temporary path and add the processed polyline
-      fabricCanvas.remove(path);
-      fabricCanvas.add(polyline);
-      fabricCanvas.renderAll();
-      
-      // Ensure grid stays in the background
-      gridLayerRef.current.forEach(gridObj => {
-        if (fabricCanvas.contains(gridObj)) {
-          fabricCanvas.sendObjectToBack(gridObj);
-        }
-      });
+      try {
+        // Create the polyline with pixel points
+        const polyline = new Polyline(pixelPoints, polylineOptions);
+        
+        // Remove the temporary path
+        fabricCanvas.remove(path);
+        
+        // Add the processed polyline to canvas
+        fabricCanvas.add(polyline);
+        
+        console.log("Polyline added to canvas:", polyline);
+        
+        // Ensure grid stays in the background
+        gridLayerRef.current.forEach(gridObj => {
+          if (fabricCanvas.contains(gridObj)) {
+            fabricCanvas.sendObjectToBack(gridObj);
+          }
+        });
+        
+        // Force a render to ensure the polyline is displayed
+        fabricCanvas.requestRenderAll();
+      } catch (err) {
+        console.error("Error creating polyline:", err);
+        toast.error("Failed to create line");
+        return;
+      }
       
       // Update floor plans data
       setFloorPlans(prev => {
@@ -182,6 +199,8 @@ export const usePathProcessing = ({
       const currentState = fabricCanvas.getObjects().filter(obj => 
         obj.type === 'polyline' || obj.type === 'path'
       );
+      
+      console.log("Adding to history:", currentState.length, "objects");
       historyRef.current.past.push([...currentState]);
       historyRef.current.future = [];
       
