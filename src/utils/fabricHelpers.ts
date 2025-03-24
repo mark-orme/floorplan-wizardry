@@ -4,7 +4,7 @@ import { Canvas, PencilBrush, Object as FabricObject } from "fabric";
 /**
  * Initialize a drawing brush for a Fabric canvas
  * @param canvas The Fabric canvas instance
- * @returns The initialized brush
+ * @returns The initialized brush or null if initialization fails
  */
 export const initializeDrawingBrush = (canvas: Canvas) => {
   if (!canvas) return null;
@@ -93,7 +93,7 @@ export const addPressureSensitivity = (canvas: Canvas) => {
   if (!canvas) return;
   
   try {
-    canvas.on('mouse:down', (e) => {
+    canvas.on('mouse:down', (e: any) => {
       if (e.e instanceof TouchEvent && 'force' in e.e.touches[0]) {
         const force = e.e.touches[0].force || 1;
         if (canvas.freeDrawingBrush) {
@@ -121,19 +121,22 @@ export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => v
   let initialZoom = 1;
   
   try {
-    // Track touch start to calculate initial distance between fingers
-    canvas.on('touch:start', (e) => {
+    // Using standard mouse/pointer events with custom handling for touch
+    canvas.on('mouse:down', (e: any) => {
       if (e.e.touches && e.e.touches.length === 2) {
         initialDistance = Math.hypot(
           e.e.touches[0].clientX - e.e.touches[1].clientX,
           e.e.touches[0].clientY - e.e.touches[1].clientY
         );
         initialZoom = canvas.getZoom();
+        
+        // Prevent default to avoid page scrolling
+        e.e.preventDefault();
       }
     });
     
-    // Handle pinch gesture
-    canvas.on('touch:move', (e) => {
+    // Handle the pinch gesture during movement
+    canvas.on('mouse:move', (e: any) => {
       if (e.e.touches && e.e.touches.length === 2 && initialDistance > 0) {
         const currentDistance = Math.hypot(
           e.e.touches[0].clientX - e.e.touches[1].clientX,
@@ -151,8 +154,8 @@ export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => v
       }
     });
     
-    // Reset initial values when touch ends
-    canvas.on('touch:end', () => {
+    // Reset the initial values when touch ends
+    canvas.on('mouse:up', () => {
       initialDistance = 0;
     });
     

@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   Canvas as FabricCanvas, 
@@ -38,37 +39,49 @@ import {
   snapToAngle
 } from "@/utils/fabricHelpers";
 
+/**
+ * Main Canvas component for floor plan drawing
+ * Handles canvas setup, grid creation, and drawing tools
+ */
 export const Canvas = () => {
+  // Refs for DOM and Fabric canvas instances
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
   const resizeTimeoutRef = useRef<number | null>(null);
   
+  // State for drawing tools and display
   const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gia, setGia] = useState(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   const [currentFloor, setCurrentFloor] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
-    past: [],
-    future: []
-  });
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  
+  // History for undo/redo
+  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>(
+    { past: [], future: [] }
+  );
+  
+  // Canvas sizing and initialization tracking
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
   const canvasInitializedRef = useRef(false);
 
-  const [debugInfo, setDebugInfo] = useState<{
-    canvasInitialized: boolean,
-    gridCreated: boolean,
-    dimensionsSet: boolean,
-    brushInitialized: boolean
-  }>({
+  /**
+   * Debug info for troubleshooting canvas issues
+   */
+  const [debugInfo, setDebugInfo] = useState({
     canvasInitialized: false,
     gridCreated: false,
     dimensionsSet: false,
     brushInitialized: false
   });
 
+  /**
+   * Load floor plans data from storage
+   */
   const loadData = useCallback(async () => {
     try {
       console.log("Loading floor plans...");
@@ -76,9 +89,12 @@ export const Canvas = () => {
       const plans = await loadFloorPlans();
       setFloorPlans(plans);
       setIsLoading(false);
+      setHasError(false);
       console.log("Floor plans loaded:", plans);
     } catch (error) {
       console.error("Error loading floor plans:", error);
+      setHasError(true);
+      setErrorMessage("Failed to load floor plans");
       toast.error("Failed to load floor plans");
       setIsLoading(false);
     }
@@ -88,6 +104,11 @@ export const Canvas = () => {
     loadData();
   }, [loadData]);
 
+  /**
+   * Create grid lines for the canvas
+   * @param canvas The Fabric canvas instance
+   * @returns Array of created grid objects
+   */
   const createGrid = useCallback((canvas: FabricCanvas) => {
     console.log("Creating grid...");
     
@@ -107,9 +128,12 @@ export const Canvas = () => {
       
       if (canvasWidth <= 0 || canvasHeight <= 0) {
         console.error("Invalid canvas dimensions for grid creation");
+        setHasError(true);
+        setErrorMessage("Invalid canvas dimensions");
         return [];
       }
       
+      // Small grid lines (0.1m)
       const smallGridStep = SMALL_GRID;
       for (let i = 0; i < canvasWidth; i += smallGridStep) {
         const smallGridLine = new Line([i, 0, i, canvasHeight], {
@@ -133,6 +157,7 @@ export const Canvas = () => {
         gridObjects.push(smallGridLine);
       }
 
+      // Large grid lines (1m)
       const largeGridStep = LARGE_GRID;
       for (let i = 0; i < canvasWidth; i += largeGridStep) {
         const largeGridLine = new Line([i, 0, i, canvasHeight], {
@@ -156,6 +181,7 @@ export const Canvas = () => {
         gridObjects.push(largeGridLine);
       }
 
+      // Add scale marker (1m)
       const markerLine = new Line([
         canvasWidth - largeGridStep - 20, 
         canvasHeight - 20, 
@@ -190,15 +216,21 @@ export const Canvas = () => {
       canvas.renderAll();
       
       setDebugInfo(prev => ({...prev, gridCreated: true}));
+      setHasError(false);
       
       console.log(`Grid created with ${gridObjects.length} objects`);
       return gridObjects;
     } catch (err) {
       console.error("Error creating grid:", err);
+      setHasError(true);
+      setErrorMessage("Failed to create grid");
       return [];
     }
   }, [canvasDimensions]);
 
+  /**
+   * Initialize the Fabric canvas with configuration and event handlers
+   */
   useEffect(() => {
     if (!canvasRef.current) {
       console.log("Canvas ref is null, will retry later");
@@ -360,10 +392,15 @@ export const Canvas = () => {
       };
     } catch (err) {
       console.error("Error initializing canvas:", err);
+      setHasError(true);
+      setErrorMessage("Failed to initialize canvas");
       toast.error("Failed to initialize canvas");
     }
   }, [canvasDimensions, tool, currentFloor, createGrid]);
 
+  /**
+   * Handle window resize and update canvas dimensions
+   */
   useEffect(() => {
     console.log("Setting up resize handler");
     
@@ -419,6 +456,9 @@ export const Canvas = () => {
     };
   }, [createGrid]);
 
+  /**
+   * Auto-save floor plans when they change
+   */
   const saveTimeoutRef = useRef<number | null>(null);
   
   useEffect(() => {
@@ -444,6 +484,9 @@ export const Canvas = () => {
     };
   }, [floorPlans, isLoading]);
 
+  /**
+   * Update canvas when floor changes
+   */
   useEffect(() => {
     if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
     
@@ -453,6 +496,9 @@ export const Canvas = () => {
     recalculateGIA();
   }, [currentFloor, floorPlans, isLoading]);
 
+  /**
+   * Draw the selected floor plan on the canvas
+   */
   const drawFloorPlan = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -496,6 +542,9 @@ export const Canvas = () => {
     fabricCanvasRef.current.renderAll();
   }, [floorPlans, currentFloor, createGrid]);
 
+  /**
+   * Clear all drawings from canvas
+   */
   const clearDrawings = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -511,6 +560,9 @@ export const Canvas = () => {
     fabricCanvasRef.current.renderAll();
   }, [createGrid]);
 
+  /**
+   * Handle tool change and update brush
+   */
   useEffect(() => {
     if (!fabricCanvasRef.current) {
       console.error("Fabric canvas ref not available when tool changed");
@@ -544,6 +596,7 @@ export const Canvas = () => {
     fabricCanvasRef.current.renderAll();
   }, [tool]);
 
+  // HANDLER FUNCTIONS FOR UI INTERACTIONS
   const handleToolChange = useCallback((newTool: "draw" | "room" | "straightLine") => {
     setTool(newTool);
     if (fabricCanvasRef.current) {
@@ -674,6 +727,9 @@ export const Canvas = () => {
     }
   }, [floorPlans, currentFloor]);
 
+  /**
+   * Recalculate Gross Internal Area (GIA)
+   */
   const recalculateGIA = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -717,6 +773,7 @@ export const Canvas = () => {
     }
   }, [currentFloor, floorPlans]);
 
+  // Loading state display
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -728,32 +785,71 @@ export const Canvas = () => {
     );
   }
 
-  return (
-    <div className="flex flex-col md:flex-row gap-6 p-6 max-w-[1200px] mx-auto">
-      <div className="md:w-64">
-        <FloorPlanList 
-          floorPlans={floorPlans}
-          currentFloor={currentFloor}
-          onSelect={handleSelectFloor}
-          onAdd={handleAddFloor}
-        />
-        
-        <DrawingToolbar
-          tool={tool}
-          onToolChange={handleToolChange}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onZoom={handleZoom}
-          onClear={clearCanvas}
-          onSave={saveCanvas}
-          gia={gia}
-        />
+  // Error state display
+  if (hasError) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="rounded-full h-12 w-12 bg-red-100 text-red-500 flex items-center justify-center mx-auto mb-4">
+            ⚠️
+          </div>
+          <p className="text-lg text-red-600">Error: {errorMessage}</p>
+          <button 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            onClick={() => {
+              setHasError(false);
+              loadData();
+            }}
+          >
+            Try Again
+          </button>
+        </div>
       </div>
+    );
+  }
+
+  // Main canvas display
+  return (
+    <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto">
+      {/* Drawing tools bar positioned at top */}
+      <DrawingToolbar
+        tool={tool}
+        onToolChange={handleToolChange}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onZoom={handleZoom}
+        onClear={clearCanvas}
+        onSave={saveCanvas}
+        gia={gia}
+      />
       
-      <div className="flex-1 canvas-container">
-        <Card className="p-6 bg-white shadow-md rounded-lg">
-          <canvas ref={canvasRef} />
-        </Card>
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Sidebar for floor plans */}
+        <div className="md:w-64">
+          <FloorPlanList 
+            floorPlans={floorPlans}
+            currentFloor={currentFloor}
+            onSelect={handleSelectFloor}
+            onAdd={handleAddFloor}
+          />
+        </div>
+        
+        {/* Canvas container */}
+        <div className="flex-1 canvas-container">
+          <Card className="p-6 bg-white shadow-md rounded-lg">
+            <canvas ref={canvasRef} />
+            
+            {/* Debug info display during development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs mt-2 text-gray-500 grid grid-cols-2 gap-1">
+                <div>Canvas Initialized: {debugInfo.canvasInitialized ? '✅' : '❌'}</div>
+                <div>Grid Created: {debugInfo.gridCreated ? '✅' : '❌'}</div>
+                <div>Dimensions Set: {debugInfo.dimensionsSet ? '✅' : '❌'}</div>
+                <div>Brush Initialized: {debugInfo.brushInitialized ? '✅' : '❌'}</div>
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   );
