@@ -90,6 +90,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
           const zoom = fabricCanvas.getZoom();
           
           // First snap both points exactly to the grid
+          // Make sure to use GRID_SIZE (0.1m) for the snap
           const snappedStartPoint = snapToGrid(drawingState.startPoint, GRID_SIZE);
           const snappedCurrentPoint = snapToGrid(drawingState.currentPoint, GRID_SIZE);
           
