@@ -55,7 +55,9 @@ export const useCanvasGrid = ({
 }: UseCanvasGridProps): GridCreationCallback => {
   // Track grid creation attempts
   const attemptCountRef = useRef<number>(0);
-  const MAX_ATTEMPTS = 3;
+  const MAX_ATTEMPTS = 5; // Increased from 3 to 5
+  const lastAttemptTimeRef = useRef<number>(0);
+  const MIN_ATTEMPT_INTERVAL = 200; // Minimum time between attempts in ms
   
   /**
    * Create grid lines on the canvas
@@ -63,7 +65,7 @@ export const useCanvasGrid = ({
    * Will reset progress and force new grid creation
    * 
    * @param {FabricCanvas} canvas - The Fabric.js canvas instance
-   * @returns {FabricObject[]} Array of created grid objects (lines)
+   * @returns {FabricObject[]} Array of created grid objects
    */
   const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
     if (process.env.NODE_ENV === 'development') {
@@ -81,6 +83,17 @@ export const useCanvasGrid = ({
       }
       return [];
     }
+    
+    // Throttle rapid creation attempts
+    const now = Date.now();
+    if (now - lastAttemptTimeRef.current < MIN_ATTEMPT_INTERVAL) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Throttling grid creation - too many rapid attempts");
+      }
+      return gridLayerRef.current;
+    }
+    
+    lastAttemptTimeRef.current = now;
     
     // Force reset any stuck grid creation before attempting
     resetGridProgress();
@@ -116,12 +129,26 @@ export const useCanvasGrid = ({
         canvas.requestRenderAll();
         
         return grid;
+      } else if (attemptCountRef.current < MAX_ATTEMPTS) {
+        // Schedule a retry with exponential backoff
+        const delay = Math.min(200 * Math.pow(1.5, attemptCountRef.current), 3000);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Scheduling grid creation retry in ${delay}ms`);
+        }
+        
+        setTimeout(() => {
+          if (!canvas) return;
+          resetGridProgress();
+          createGridCallback(canvas);
+        }, delay);
       } else {
         if (process.env.NODE_ENV === 'development') {
-          console.warn("Grid creation returned no objects");
+          console.warn("Reached maximum grid creation attempts");
         }
-        return [];
       }
+      
+      return gridLayerRef.current;
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error("Critical error in createGridCallback:", error);
@@ -129,7 +156,7 @@ export const useCanvasGrid = ({
       setHasError(true);
       setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);
       
-      return [];
+      return gridLayerRef.current;
     }
   }, [canvasDimensions, gridLayerRef, setDebugInfo, setHasError, setErrorMessage]);
 

@@ -22,19 +22,19 @@ export interface GridDimensions {
 
 // Grid optimization constants - calibrated for better visual appearance
 /** Maximum number of small grid lines to render for performance */
-export const MAX_SMALL_GRID_LINES = 300; // Increased limit for denser grid
+export const MAX_SMALL_GRID_LINES = 500; // Increased for better grid density
 
 /** Maximum number of large grid lines to render for performance */
-export const MAX_LARGE_GRID_LINES = 100; // Increased limit for larger grid
+export const MAX_LARGE_GRID_LINES = 150; // Increased for better grid density
 
 /** Threshold for calculating small grid skip factor (lower means more lines) */
-export const SMALL_GRID_SKIP_THRESHOLD = 200; // Canvas size / this = skip factor
+export const SMALL_GRID_SKIP_THRESHOLD = 150; // Lowered to create denser grid
 
 /** Threshold for calculating large grid skip factor (lower means more lines) */
-export const LARGE_GRID_SKIP_THRESHOLD = 1000; // Canvas size / this = skip factor
+export const LARGE_GRID_SKIP_THRESHOLD = 800; // Lowered to create denser grid
 
 /** The grid should extend beyond the visible canvas to support panning */
-export const GRID_EXTENSION_FACTOR = 3; // Grid extends this many times the canvas size
+export const GRID_EXTENSION_FACTOR = 4; // Increased for better pan support
 
 /**
  * Determines if small grid creation should be skipped based on canvas dimensions
@@ -52,12 +52,12 @@ export const shouldSkipSmallGrid = (canvasWidth: number, canvasHeight: number): 
   const estimatedLinesY = Math.ceil(canvasHeight / (SMALL_GRID * smallGridSkip));
   const totalEstimatedLines = estimatedLinesX + estimatedLinesY;
   
-  const shouldSkip = totalEstimatedLines > MAX_SMALL_GRID_LINES * 3;
+  // Increased threshold to allow more grid lines before skipping
+  const shouldSkip = totalEstimatedLines > MAX_SMALL_GRID_LINES * 5;
   
   if (process.env.NODE_ENV === 'development' && shouldSkip) {
-    console.log(`Skipping small grid creation - estimated ${totalEstimatedLines} lines exceeds threshold of ${MAX_SMALL_GRID_LINES * 3}`);
+    console.log(`Skipping small grid creation - estimated ${totalEstimatedLines} lines exceeds threshold of ${MAX_SMALL_GRID_LINES * 5}`);
   }
   
-  // Allow more lines before skipping - improved density
   return shouldSkip;
 };

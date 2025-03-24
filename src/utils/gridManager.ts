@@ -40,7 +40,8 @@ export const gridManager: GridManagerState = {
   // Flags to prevent race conditions
   lastResetTime: 0,
   consecutiveResets: 0,
-  maxConsecutiveResets: 3,
+  maxConsecutiveResets: 5, // Increased to allow more attempts
+  resetDelay: 300, // Milliseconds to delay between resets
   
   // Track creation locks with timestamp
   creationLock: {
@@ -61,16 +62,28 @@ export const resetGridProgress = (): void => {
   // Check for rapid consecutive resets which might indicate a problem
   if (now - gridManager.lastResetTime < 500) {
     gridManager.consecutiveResets++;
-    console.log(`Consecutive grid reset #${gridManager.consecutiveResets}`);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Consecutive grid reset #${gridManager.consecutiveResets}`);
+    }
     
     // If too many rapid resets, we might be in a reset loop
     if (gridManager.consecutiveResets > gridManager.maxConsecutiveResets) {
-      console.warn("Too many consecutive resets detected, adding delay");
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("Too many consecutive resets detected, adding delay");
+      }
+      
+      // Use setTimeout to delay the reset
       setTimeout(() => {
+        // Force reset the locks and flags
         gridManager.inProgress = false;
         gridManager.creationLock.isLocked = false;
         gridManager.consecutiveResets = 0;
-      }, 1000);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Delayed grid reset complete");
+        }
+      }, gridManager.resetDelay);
       return;
     }
   } else {
@@ -81,7 +94,10 @@ export const resetGridProgress = (): void => {
   gridManager.lastResetTime = now;
   gridManager.inProgress = false;
   gridManager.creationLock.isLocked = false;
-  console.log("Grid creation progress flag reset");
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Grid creation progress flag reset");
+  }
 };
 
 /**
@@ -98,7 +114,9 @@ export const acquireGridCreationLock = (): boolean => {
   if (gridManager.creationLock.isLocked) {
     // If lock has been held for too long, force release it
     if (now - gridManager.creationLock.timestamp > gridManager.safetyTimeout) {
-      console.warn("Forcing release of stale grid creation lock");
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("Forcing release of stale grid creation lock");
+      }
       gridManager.creationLock.isLocked = false;
     } else {
       // Lock is active and not stale
@@ -142,8 +160,9 @@ export const releaseGridCreationLock = (lockId: number): boolean => {
  */
 export const scheduleGridProgressReset = (timeoutMs = 5000): number => {
   return window.setTimeout(() => {
-    console.log("Scheduled grid progress reset executed");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Scheduled grid progress reset executed");
+    }
     resetGridProgress();
   }, timeoutMs);
 };
-
