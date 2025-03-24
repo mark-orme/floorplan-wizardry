@@ -4,20 +4,11 @@
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";
-
-// Track application-wide initialization
-let appInitialized = false;
-// Track whether initial data has been loaded
-let initialDataLoaded = false;
-// Track if the current render is the first mount
-let isFirstMount = true;
-// Track if grid has been created
-let gridCreated = false;
 
 /**
  * Main Canvas component for floor plan drawing
@@ -25,6 +16,12 @@ let gridCreated = false;
  * @returns {JSX.Element} Rendered component
  */
 export const Canvas = () => {
+  // Track initialization with refs instead of module-level variables
+  const appInitializedRef = useRef(false);
+  const initialDataLoadedRef = useRef(false);
+  const isFirstMountRef = useRef(true);
+  const gridCreatedRef = useRef(false);
+  
   // Define all hooks at the top level, never conditionally
   const [loadTimes, setLoadTimes] = useState({
     startTime: performance.now(),
@@ -61,11 +58,12 @@ export const Canvas = () => {
 
   // Force straightLine tool on initial load
   useEffect(() => {
-    if (isFirstMount && !isLoading && debugInfo.canvasInitialized) {
+    if (isFirstMountRef.current && !isLoading && debugInfo.canvasInitialized) {
       console.log("Setting initial tool to straightLine");
       handleToolChange("straightLine");
+      isFirstMountRef.current = false;
     }
-  }, [isFirstMount, isLoading, debugInfo.canvasInitialized, handleToolChange]);
+  }, [isLoading, debugInfo.canvasInitialized, handleToolChange]);
 
   // Log drawing state for debugging when relevant changes occur
   useEffect(() => {
@@ -82,7 +80,7 @@ export const Canvas = () => {
   // Load initial data only once across all renders
   useEffect(() => {
     // Skip initialization if already done or component is remounting
-    if (!isFirstMount || (appInitialized && initialDataLoaded)) {
+    if (!isFirstMountRef.current || (appInitializedRef.current && initialDataLoadedRef.current)) {
       return;
     }
     
@@ -92,9 +90,8 @@ export const Canvas = () => {
     
     console.log("Loading initial data");
     loadData();
-    appInitialized = true;
-    initialDataLoaded = true;
-    isFirstMount = false; // Mark first mount as complete
+    appInitializedRef.current = true;
+    initialDataLoadedRef.current = true;
   }, [loadData]);
   
   // Track debug info changes for performance metrics - only update when values change
@@ -107,12 +104,12 @@ export const Canvas = () => {
     }
     
     // Only log first time grid is created
-    if (debugInfo.gridCreated && loadTimes.gridCreated === 0 && !gridCreated) {
+    if (debugInfo.gridCreated && loadTimes.gridCreated === 0 && !gridCreatedRef.current) {
       setLoadTimes(prev => ({ 
         ...prev, 
         gridCreated: performance.now() - prev.startTime 
       }));
-      gridCreated = true;
+      gridCreatedRef.current = true;
     }
   }, [debugInfo, loadTimes]);
 
