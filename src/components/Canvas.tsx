@@ -1,5 +1,6 @@
+
 import { useEffect, useRef, useState } from "react";
-import * as fabric from "fabric";
+import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { Card } from "./ui/card";
 import { toast } from "sonner";
 import { DrawingToolbar } from "./DrawingToolbar";
@@ -21,7 +22,7 @@ import {
 
 export const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<fabric.Object[]>([]);
   const [tool, setTool] = useState<"draw" | "room" | "straightLine">("draw");
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -34,6 +35,7 @@ export const Canvas = () => {
     future: []
   });
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
+  const canvasInitializedRef = useRef(false);
 
   // Debug flag to track canvas initialization stages
   const [debugInfo, setDebugInfo] = useState<{
@@ -68,104 +70,7 @@ export const Canvas = () => {
     loadData();
   }, []);
 
-  // Initialize canvas and setup auto-save
-  useEffect(() => {
-    console.log("Canvas initialization effect running");
-    console.log("Canvas ref exists:", Boolean(canvasRef.current));
-    
-    if (canvasRef.current) {
-      setupCanvas();
-    } else {
-      console.error("Canvas ref is null, cannot initialize canvas");
-    }
-    
-    const interval = setInterval(async () => {
-      try {
-        if (floorPlans.length > 0) {
-          await saveFloorPlans(floorPlans);
-          console.log("Floor plans autosaved");
-        }
-      } catch (error) {
-        console.error("Autosave failed:", error);
-      }
-    }, 10000);
-    
-    return () => {
-      clearInterval(interval);
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-      }
-    };
-  }, []);
-
-  // Handle window resize to adjust canvas dimensions
-  useEffect(() => {
-    console.log("Setting up resize handler");
-    
-    const updateCanvasDimensions = () => {
-      const container = document.querySelector('.canvas-container');
-      console.log("Container found:", Boolean(container));
-      
-      if (container && canvasRef.current) {
-        const { width, height } = container.getBoundingClientRect();
-        console.log("Container dimensions:", width, height);
-        
-        setCanvasDimensions({ 
-          width: Math.max(width - 20, 600), 
-          height: Math.max(height - 20, 500) 
-        });
-        
-        setDebugInfo(prev => ({...prev, dimensionsSet: true}));
-        
-        if (fabricCanvasRef.current) {
-          console.log("Updating fabricCanvas dimensions to:", width - 20, height - 20);
-          fabricCanvasRef.current.setDimensions({ width: width - 20, height: height - 20 });
-          createGrid(fabricCanvasRef.current);
-          fabricCanvasRef.current.renderAll();
-        } else {
-          console.error("Fabric canvas ref not available for dimension update");
-        }
-      } else {
-        console.error("Container or canvas ref not found for dimension update");
-      }
-    };
-
-    // Initial update with delay to ensure DOM is ready
-    setTimeout(updateCanvasDimensions, 500);
-    
-    // Listen for resize events
-    window.addEventListener('resize', updateCanvasDimensions);
-    
-    return () => {
-      window.removeEventListener('resize', updateCanvasDimensions);
-    };
-  }, []);
-
-  // Save floorplans when they change
-  useEffect(() => {
-    if (isLoading || floorPlans.length === 0) return;
-    
-    const saveData = async () => {
-      try {
-        await saveFloorPlans(floorPlans);
-      } catch (error) {
-        console.error("Error saving floor plans:", error);
-      }
-    };
-    
-    saveData();
-  }, [floorPlans, isLoading]);
-
-  // Update canvas when floor changes
-  useEffect(() => {
-    if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
-    
-    console.log("Floor changed, updating canvas");
-    clearDrawings();
-    drawFloorPlan();
-    recalculateGIA();
-  }, [currentFloor, floorPlans, isLoading]);
-
+  // Create grid function
   const createGrid = (canvas: fabric.Canvas) => {
     console.log("Creating grid...");
     
@@ -272,123 +177,90 @@ export const Canvas = () => {
     }
   };
 
-  const setupCanvas = () => {
-    if (!canvasRef.current) {
-      console.error("Canvas ref is null in setupCanvas");
-      return;
-    }
-    
-    console.log("Setting up canvas...");
-    console.log("Canvas element exists:", Boolean(canvasRef.current));
-
-    try {
-      const container = document.querySelector('.canvas-container');
-      console.log("Container found:", Boolean(container));
-      console.log("Container element:", container);
+  // Setup canvas - this is the critical part we need to fix
+  useEffect(() => {
+    // Wait for DOM to fully render, then initialize canvas
+    const initCanvas = () => {
+      console.log("DOM content loaded, initializing canvas...");
       
-      if (!container) {
-        console.error("Canvas container not found");
+      if (!canvasRef.current) {
+        console.error("Canvas element ref is still not available");
         return;
       }
       
-      const { width, height } = container.getBoundingClientRect();
-      console.log("Container dimensions:", width, height);
-      
-      if (width <= 0 || height <= 0) {
-        console.error("Invalid container dimensions:", width, height);
-        
-        // Use fallback dimensions
-        const fallbackWidth = Math.max(canvasDimensions.width, 600);
-        const fallbackHeight = Math.max(canvasDimensions.height, 500);
-        console.log("Using fallback dimensions:", fallbackWidth, fallbackHeight);
-        
-        // Create new fabric canvas instance with fallback dimensions
-        const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-          width: fallbackWidth,
-          height: fallbackHeight,
-          backgroundColor: "#FFFFFF",
-          isDrawingMode: true,
-          selection: false,
-        });
-        
-        fabricCanvasRef.current = fabricCanvas;
-        setDebugInfo(prev => ({...prev, canvasInitialized: true}));
-        
-        // Initialize drawing brush
-        try {
-          const pencilBrush = new fabric.PencilBrush(fabricCanvas);
-          fabricCanvas.freeDrawingBrush = pencilBrush;
-          fabricCanvas.freeDrawingBrush.color = "#000000";
-          fabricCanvas.freeDrawingBrush.width = 2;
-          setDebugInfo(prev => ({...prev, brushInitialized: true}));
-        } catch (brushErr) {
-          console.error("Error initializing brush:", brushErr);
-        }
-        
-        // Create initial grid with delay to ensure canvas is ready
-        setTimeout(() => {
-          createGrid(fabricCanvas);
-          fabricCanvas.renderAll();
-        }, 500);
-      } else {
-        // Create new fabric canvas instance with container dimensions
-        const adjustedWidth = width - 20;
-        const adjustedHeight = height - 20;
-        
-        console.log("Creating canvas with dimensions:", adjustedWidth, adjustedHeight);
-        
-        const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-          width: adjustedWidth,
-          height: adjustedHeight,
-          backgroundColor: "#FFFFFF",
-          isDrawingMode: true,
-          selection: false,
-        });
-        
-        fabricCanvasRef.current = fabricCanvas;
-        setDebugInfo(prev => ({...prev, canvasInitialized: true}));
-        
-        // Initialize drawing brush
-        try {
-          console.log("Initializing drawing brush");
-          const pencilBrush = new fabric.PencilBrush(fabricCanvas);
-          fabricCanvas.freeDrawingBrush = pencilBrush;
-          fabricCanvas.freeDrawingBrush.color = "#000000";
-          fabricCanvas.freeDrawingBrush.width = 2;
-          console.log("Drawing brush initialized:", fabricCanvas.freeDrawingBrush);
-          setDebugInfo(prev => ({...prev, brushInitialized: true}));
-        } catch (brushErr) {
-          console.error("Error initializing brush:", brushErr);
-        }
-        
-        // Create initial grid with delay to ensure canvas is ready
-        setTimeout(() => {
-          console.log("Creating initial grid after timeout");
-          const gridObjects = createGrid(fabricCanvas);
-          console.log(`Initial grid created with ${gridObjects.length} objects`);
-          fabricCanvas.renderAll();
-        }, 500);
+      if (canvasInitializedRef.current) {
+        console.log("Canvas already initialized, skipping");
+        return;
       }
       
-      // Event handler for when objects are added to the canvas
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.on('object:added', () => {
+      console.log("Canvas element found, creating fabric instance");
+      
+      try {
+        // Get container dimensions
+        const container = document.querySelector('.canvas-container');
+        if (!container) {
+          console.error("Canvas container not found for initialization");
+          return;
+        }
+        
+        const { width, height } = container.getBoundingClientRect();
+        console.log("Container dimensions for canvas init:", width, height);
+        
+        if (width <= 0 || height <= 0) {
+          console.error("Invalid container dimensions, using fallback");
+          // Use fallback dimensions if container dimensions are invalid
+          setCanvasDimensions({ width: 800, height: 600 });
+        } else {
+          // Set canvas dimensions based on container
+          const adjustedWidth = Math.max(width - 20, 600);
+          const adjustedHeight = Math.max(height - 20, 400);
+          setCanvasDimensions({ width: adjustedWidth, height: adjustedHeight });
+          console.log("Set canvas dimensions to:", adjustedWidth, adjustedHeight);
+        }
+        
+        // Create new fabric canvas instance
+        const fabricCanvas = new FabricCanvas(canvasRef.current, {
+          backgroundColor: "#FFFFFF",
+          isDrawingMode: true,
+          selection: false,
+          width: canvasDimensions.width,
+          height: canvasDimensions.height
+        });
+        
+        console.log("FabricCanvas instance created:", fabricCanvas);
+        fabricCanvasRef.current = fabricCanvas;
+        canvasInitializedRef.current = true;
+        
+        // Initialize drawing brush
+        const pencilBrush = new PencilBrush(fabricCanvas);
+        fabricCanvas.freeDrawingBrush = pencilBrush;
+        fabricCanvas.freeDrawingBrush.color = "#000000";
+        fabricCanvas.freeDrawingBrush.width = 2;
+        
+        setDebugInfo(prev => ({
+          ...prev, 
+          canvasInitialized: true,
+          brushInitialized: true
+        }));
+        
+        // Create grid
+        createGrid(fabricCanvas);
+        
+        // Event handler for when objects are added to the canvas
+        fabricCanvas.on('object:added', () => {
           console.log("Object added to canvas");
           if (gridLayerRef.current.length === 0) {
-            console.log("Grid missing, recreating...");
-            createGrid(fabricCanvasRef.current!);
+            createGrid(fabricCanvas);
           } else {
             gridLayerRef.current.forEach(gridObj => {
-              fabricCanvasRef.current!.sendObjectToBack(gridObj);
+              fabricCanvas.sendObjectToBack(gridObj);
             });
-            fabricCanvasRef.current!.renderAll();
+            fabricCanvas.renderAll();
           }
         });
-      }
 
-      // Event handler for when paths are created (strokes drawn)
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.on('path:created', (e) => {
+        // Event handler for when paths are created (strokes drawn)
+        fabricCanvas.on('path:created', (e) => {
           console.log("Path created event triggered");
           const path = e.path as fabric.Path;
           
@@ -419,14 +291,14 @@ export const Canvas = () => {
               }
             );
 
-            fabricCanvasRef.current!.remove(path);
-            fabricCanvasRef.current!.add(polyline);
+            fabricCanvas.remove(path);
+            fabricCanvas.add(polyline);
             
             gridLayerRef.current.forEach(gridObj => {
-              fabricCanvasRef.current!.sendObjectToBack(gridObj);
+              fabricCanvas.sendObjectToBack(gridObj);
             });
             
-            fabricCanvasRef.current!.renderAll();
+            fabricCanvas.renderAll();
             
             setFloorPlans(prev => {
               const newFloorPlans = [...prev];
@@ -445,7 +317,7 @@ export const Canvas = () => {
               return newFloorPlans;
             });
 
-            const currentState = fabricCanvasRef.current!.getObjects().filter(obj => 
+            const currentState = fabricCanvas.getObjects().filter(obj => 
               obj.type === 'polyline' || obj.type === 'path'
             );
             historyRef.current.past.push([...currentState]);
@@ -455,21 +327,102 @@ export const Canvas = () => {
             toast.error("Failed to process drawing");
           }
         });
-      }
 
-      // Initialize history
-      if (fabricCanvasRef.current) {
-        const initialState = fabricCanvasRef.current.getObjects().filter(obj => 
+        // Initialize history
+        const initialState = fabricCanvas.getObjects().filter(obj => 
           obj.type === 'path' || obj.type === 'polyline'
         );
         historyRef.current.past.push([...initialState]);
+        
+        toast.success("Canvas ready for drawing!");
+      } catch (err) {
+        console.error("Error initializing canvas:", err);
+        toast.error("Failed to initialize canvas");
       }
+    };
 
-      toast.success("Canvas ready for drawing!");
-    } catch (err) {
-      console.error("Error in setupCanvas:", err);
+    // Try to initialize immediately and also set a timeout as fallback
+    if (document.readyState === 'complete') {
+      initCanvas();
+    } else {
+      // Set a timeout to make sure DOM is fully loaded
+      const timeout = setTimeout(initCanvas, 500);
+      return () => clearTimeout(timeout);
     }
-  };
+  }, [tool, canvasDimensions.width, canvasDimensions.height, currentFloor]);
+
+  // Handle window resize to adjust canvas dimensions
+  useEffect(() => {
+    const updateCanvasDimensions = () => {
+      if (!canvasRef.current) return;
+      
+      const container = document.querySelector('.canvas-container');
+      if (!container) return;
+      
+      const { width, height } = container.getBoundingClientRect();
+      console.log("Window resized, new container dimensions:", width, height);
+      
+      if (width <= 0 || height <= 0) return;
+      
+      // Set new dimensions
+      const newWidth = Math.max(width - 20, 600);
+      const newHeight = Math.max(height - 20, 400);
+      
+      setCanvasDimensions({ width: newWidth, height: newHeight });
+      setDebugInfo(prev => ({...prev, dimensionsSet: true}));
+      
+      // Also update fabric canvas dimensions
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.setDimensions({ width: newWidth, height: newHeight });
+        createGrid(fabricCanvasRef.current);
+        fabricCanvasRef.current.renderAll();
+      }
+    };
+
+    // Add resize listener
+    window.addEventListener('resize', updateCanvasDimensions);
+    
+    // Initial update
+    if (document.readyState === 'complete') {
+      updateCanvasDimensions();
+    } else {
+      // Set a timeout for initial dimensions update
+      const timeout = setTimeout(updateCanvasDimensions, 500);
+      return () => {
+        clearTimeout(timeout);
+        window.removeEventListener('resize', updateCanvasDimensions);
+      };
+    }
+    
+    return () => {
+      window.removeEventListener('resize', updateCanvasDimensions);
+    };
+  }, []);
+
+  // Save floorplans when they change
+  useEffect(() => {
+    if (isLoading || floorPlans.length === 0) return;
+    
+    const saveData = async () => {
+      try {
+        await saveFloorPlans(floorPlans);
+      } catch (error) {
+        console.error("Error saving floor plans:", error);
+      }
+    };
+    
+    saveData();
+  }, [floorPlans, isLoading]);
+
+  // Update canvas when floor changes
+  useEffect(() => {
+    if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
+    
+    console.log("Floor changed, updating canvas");
+    clearDrawings();
+    drawFloorPlan();
+    recalculateGIA();
+  }, [currentFloor, floorPlans, isLoading]);
 
   const drawFloorPlan = () => {
     if (!fabricCanvasRef.current) return;
@@ -556,7 +509,7 @@ export const Canvas = () => {
       
       // Attempt to reinitialize brush
       try {
-        const pencilBrush = new fabric.PencilBrush(fabricCanvasRef.current);
+        const pencilBrush = new PencilBrush(fabricCanvasRef.current);
         fabricCanvasRef.current.freeDrawingBrush = pencilBrush;
         fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
         fabricCanvasRef.current.freeDrawingBrush.width = 2;
@@ -572,7 +525,7 @@ export const Canvas = () => {
   const handleToolChange = (newTool: "draw" | "room" | "straightLine") => {
     setTool(newTool);
     if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.freeDrawingBrush = new fabric.PencilBrush(fabricCanvasRef.current);
+      fabricCanvasRef.current.freeDrawingBrush = new PencilBrush(fabricCanvasRef.current);
       fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
       fabricCanvasRef.current.freeDrawingBrush.width = 2;
       
@@ -735,11 +688,6 @@ export const Canvas = () => {
     }
   };
 
-  // Add debug info display
-  useEffect(() => {
-    console.log("Debug info updated:", debugInfo);
-  }, [debugInfo]);
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -771,6 +719,8 @@ export const Canvas = () => {
             <li>Brush Init: {debugInfo.brushInitialized ? '✅' : '❌'}</li>
             <li>Canvas Size: {canvasDimensions.width}x{canvasDimensions.height}</li>
             <li>Grid Objects: {gridLayerRef.current.length}</li>
+            <li>Ref exists: {canvasRef.current ? '✅' : '❌'}</li>
+            <li>Fabric exists: {fabricCanvasRef.current ? '✅' : '❌'}</li>
           </ul>
         </div>
       </div>
@@ -787,8 +737,8 @@ export const Canvas = () => {
           gia={gia}
         />
 
-        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden h-[500px] canvas-container relative">
-          <canvas ref={canvasRef} className="w-full h-full" />
+        <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden h-[500px] canvas-container relative mt-4 p-2">
+          <canvas ref={canvasRef} />
         </div>
       </Card>
     </div>
