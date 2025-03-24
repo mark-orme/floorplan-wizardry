@@ -6,7 +6,7 @@
  */
 import { Canvas } from "fabric";
 import { gridManager, shouldThrottleGridCreation, hasDimensionsChangedSignificantly } from "./gridManager";
-import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
+import { renderGridComponents, arrangeGridObjects, GridComponentsResult } from "./gridRenderer";
 
 /**
  * Create grid lines for the canvas
@@ -105,24 +105,24 @@ export const createGrid = (
       }
       
       // Render all grid components
-      const { gridObjects, smallGridLines, largeGridLines, markers } = renderGridComponents(
+      const result: GridComponentsResult = renderGridComponents(
         canvas, 
         canvasWidth, 
         canvasHeight
       );
       
       // Arrange grid objects in the correct z-order
-      arrangeGridObjects(canvas, smallGridLines, largeGridLines, markers);
+      arrangeGridObjects(canvas, result.smallGridLines, result.largeGridLines, result.markers);
       
       // Store grid objects in the reference for later use
-      gridLayerRef.current = gridObjects;
+      gridLayerRef.current = result.gridObjects;
       
       // Set the grid exists flag
       gridManager.exists = true;
       
       // Only log detailed grid info on first creation
       if (gridManager.totalCreations === 1 || gridManager.totalCreations % 3 === 0) {
-        console.log(`Grid created with ${gridObjects.length} objects (${smallGridLines.length} small, ${largeGridLines.length} large)`);
+        console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large)`);
       }
       
       // One-time render
@@ -135,7 +135,7 @@ export const createGrid = (
       gridManager.lastCreationTime = now;
       gridManager.initialized = true;
       
-      return gridObjects;
+      return result.gridObjects;
     } catch (err) {
       console.error("Error creating grid:", err);
       setHasError(true);

@@ -9,6 +9,16 @@ import { createSmallGrid, createLargeGrid } from "./gridCreators";
 import { createScaleMarkers } from "./gridUtils";
 
 /**
+ * Result of grid components rendering
+ */
+export interface GridComponentsResult {
+  gridObjects: any[];
+  smallGridLines: any[];
+  largeGridLines: any[];
+  markers: any[];
+}
+
+/**
  * Render all grid components to the canvas
  * @param canvas - The Fabric canvas
  * @param canvasWidth - Width of the canvas
@@ -19,7 +29,7 @@ export const renderGridComponents = (
   canvas: Canvas,
   canvasWidth: number,
   canvasHeight: number
-): { gridObjects: any[], smallGridLines: any[], largeGridLines: any[], markers: any[] } => {
+): GridComponentsResult => {
   const gridObjects: any[] = [];
   
   // Disable rendering during batch operations for performance
