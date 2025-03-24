@@ -1,4 +1,8 @@
 
+/**
+ * Main Canvas component for floor plan drawing
+ * Orchestrates the canvas setup, grid creation, and drawing tools
+ */
 import { useCallback } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
@@ -7,6 +11,7 @@ import { CanvasController } from "./CanvasController";
 /**
  * Main Canvas component for floor plan drawing
  * Handles canvas setup, grid creation, and drawing tools
+ * @returns {JSX.Element} Rendered component
  */
 export const Canvas = () => {
   const {
@@ -18,6 +23,7 @@ export const Canvas = () => {
     hasError,
     errorMessage,
     debugInfo,
+    canvasRef,
     loadData,
     handleFloorSelect,
     handleAddFloor,
@@ -46,6 +52,7 @@ export const Canvas = () => {
         floorPlans={floorPlans}
         currentFloor={currentFloor}
         debugInfo={debugInfo}
+        canvasRef={canvasRef}
         onToolChange={handleToolChange}
         onUndo={handleUndo}
         onRedo={handleRedo}

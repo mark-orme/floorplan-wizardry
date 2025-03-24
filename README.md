@@ -1,69 +1,92 @@
-# Welcome to your Lovable project
 
-## Project info
+# FloorPlan Designer
 
-**URL**: https://lovable.dev/projects/5fd3156d-6e2b-49c7-9a87-b3c12127f790
+A powerful web-based application for creating and editing floor plans with accurate measurements and area calculations.
 
-## How can I edit this code?
+## Project Overview
 
-There are several ways of editing your application.
+This application allows architects, designers, and homeowners to:
 
-**Use Lovable**
+- Create multi-floor building plans
+- Draw rooms and walls with accurate measurements
+- Calculate Gross Internal Area (GIA) automatically
+- Save and export floor plans as images
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/5fd3156d-6e2b-49c7-9a87-b3c12127f790) and start prompting.
+## Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Multiple Drawing Tools**: Freehand drawing, straight lines, and room creation with area calculation
+- **Grid System**: Precise 0.1m and 1.0m grid for accurate measurements
+- **Multi-floor Support**: Create and switch between multiple floor plans
+- **Area Calculation**: Automatic calculation of room and total floor areas
+- **Undo/Redo**: Full history support for all drawing operations
+- **Export**: Save your work as PNG images
+- **Responsive Design**: Works on desktop and tablet devices
+- **Touch & Stylus Support**: Optimized for drawing with stylus devices
 
-**Use your preferred IDE**
+## Technical Implementation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+The application is built using:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **React** with TypeScript for the UI
+- **Fabric.js** for canvas manipulation and drawing tools
+- **Tailwind CSS** with shadcn/ui for responsive design
+- **IndexedDB** for local storage of floor plans
 
-Follow these steps:
+### Architecture
+
+The application follows a component-based architecture with:
+
+- **Canvas Components**: Handle rendering and user interaction
+- **Utility Functions**: Manage geometry calculations and data processing
+- **Custom Hooks**: Separate logic concerns (drawing, resizing, history, etc.)
+
+## Getting Started
+
+To run this project locally:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone <repository-url>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd floorplan-designer
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Usage Guide
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Select a Drawing Tool**:
+   - Freehand: Draw irregular shapes
+   - Straight Line: Create precise straight lines
+   - Room: Draw enclosed spaces with area calculation
 
-**Use GitHub Codespaces**
+2. **Draw on the Canvas**:
+   - Click and drag to draw
+   - For rooms, create a closed shape to calculate area
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. **Manage Floors**:
+   - Add a new floor with the "+" button
+   - Select different floors from the sidebar
 
-## What technologies are used for this project?
+4. **View and Edit**:
+   - Use undo/redo for corrections
+   - Zoom in/out for detailed work
+   - Check the calculated GIA in the toolbar
 
-This project is built with .
+5. **Save Your Work**:
+   - Click the save button to export as PNG
+   - Work is automatically saved to local storage
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## License
 
-## How can I deploy this project?
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Simply open [Lovable](https://lovable.dev/projects/5fd3156d-6e2b-49c7-9a87-b3c12127f790) and click on Share -> Publish.
+## Acknowledgments
 
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- Fabric.js for the powerful canvas manipulation library
+- shadcn/ui for the beautiful UI components

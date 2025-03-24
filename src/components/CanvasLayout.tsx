@@ -1,4 +1,8 @@
 
+/**
+ * Layout component for the canvas and related controls
+ * Organizes the UI elements for the floor plan editor
+ */
 import { DrawingToolbar } from "./DrawingToolbar";
 import { FloorPlanList } from "./FloorPlanList";
 import { CanvasContainer } from "./CanvasContainer";
@@ -14,6 +18,7 @@ interface CanvasLayoutProps {
     dimensionsSet: boolean;
     brushInitialized: boolean;
   };
+  canvasRef: React.RefObject<HTMLCanvasElement>;
   onToolChange: (tool: "draw" | "room" | "straightLine") => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -24,12 +29,18 @@ interface CanvasLayoutProps {
   onAddFloor: () => void;
 }
 
+/**
+ * Main layout for the canvas application
+ * @param {CanvasLayoutProps} props - Component properties 
+ * @returns {JSX.Element} Rendered component
+ */
 export const CanvasLayout = ({
   tool,
   gia,
   floorPlans,
   currentFloor,
   debugInfo,
+  canvasRef,
   onToolChange,
   onUndo,
   onRedo,
@@ -66,7 +77,10 @@ export const CanvasLayout = ({
         
         {/* Canvas container */}
         <div className="flex-1 canvas-container">
-          <CanvasContainer debugInfo={debugInfo} />
+          <CanvasContainer 
+            debugInfo={debugInfo} 
+            canvasRef={canvasRef}
+          />
         </div>
       </div>
     </div>

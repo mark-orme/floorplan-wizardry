@@ -1,9 +1,14 @@
+
+/**
+ * Utility functions for Fabric.js canvas operations
+ * @module fabricHelpers
+ */
 import { Canvas, PencilBrush, Object as FabricObject } from "fabric";
 
 /**
  * Initialize a drawing brush for a Fabric canvas
- * @param canvas The Fabric canvas instance
- * @returns The initialized brush or null if initialization fails
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @returns {PencilBrush|null} The initialized brush or null if initialization fails
  */
 export const initializeDrawingBrush = (canvas: Canvas) => {
   if (!canvas) {
@@ -25,8 +30,8 @@ export const initializeDrawingBrush = (canvas: Canvas) => {
 
 /**
  * Safely sets canvas dimensions and refreshes the canvas
- * @param canvas The Fabric canvas instance
- * @param dimensions Object containing width and height to set
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {{ width: number, height: number }} dimensions - Object containing width and height to set
  */
 export const setCanvasDimensions = (
   canvas: Canvas, 
@@ -49,7 +54,7 @@ export const setCanvasDimensions = (
 
 /**
  * Properly dispose the canvas instance to prevent memory leaks
- * @param canvas The Fabric canvas instance to dispose
+ * @param {Canvas|null} canvas - The Fabric canvas instance to dispose
  */
 export const disposeCanvas = (canvas: Canvas | null) => {
   if (!canvas) {
@@ -75,8 +80,8 @@ export const disposeCanvas = (canvas: Canvas | null) => {
 
 /**
  * Clear objects from canvas while preserving grid
- * @param canvas The Fabric canvas instance
- * @param gridObjects Grid objects to preserve
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {any[]} gridObjects - Grid objects to preserve
  */
 export const clearCanvasObjects = (canvas: Canvas, gridObjects: any[]) => {
   if (!canvas) {
@@ -107,7 +112,7 @@ export const clearCanvasObjects = (canvas: Canvas, gridObjects: any[]) => {
 
 /**
  * Add Pressure sensitivity for Apple Pencil
- * @param canvas The Fabric canvas instance
+ * @param {Canvas} canvas - The Fabric canvas instance
  */
 export const addPressureSensitivity = (canvas: Canvas) => {
   if (!canvas) {
@@ -134,8 +139,8 @@ export const addPressureSensitivity = (canvas: Canvas) => {
 
 /**
  * Add pinch-to-zoom gesture support
- * @param canvas The Fabric canvas instance
- * @param setZoomLevel Function to update zoom level state
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {Function} setZoomLevel - Function to update zoom level state
  */
 export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => void) => {
   if (!canvas) {
@@ -194,9 +199,9 @@ export const addPinchToZoom = (canvas: Canvas, setZoomLevel: (zoom: number) => v
 
 /**
  * Add angle snapping to improve line straightening
- * @param start Start point
- * @param end End point
- * @returns Snapped end point
+ * @param {{ x: number, y: number }} start - Start point
+ * @param {{ x: number, y: number }} end - End point
+ * @returns {{ x: number, y: number }} Snapped end point
  */
 export const snapToAngle = (start: { x: number, y: number }, end: { x: number, y: number }) => {
   const dx = end.x - start.x;

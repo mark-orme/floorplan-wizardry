@@ -1,4 +1,9 @@
 
+/**
+ * Custom hook for handling canvas drawing operations
+ * Manages drawing events, path creation, and shape processing
+ * @module useCanvasDrawing
+ */
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, PencilBrush, Path, Polyline } from "fabric";
 import { toast } from "sonner";
@@ -23,6 +28,10 @@ interface UseCanvasDrawingProps {
   setGia: React.Dispatch<React.SetStateAction<number>>;
 }
 
+/**
+ * Hook for handling all drawing-related operations on the canvas
+ * @param {UseCanvasDrawingProps} props - Hook properties
+ */
 export const useCanvasDrawing = ({
   fabricCanvasRef,
   gridLayerRef,
@@ -33,11 +42,18 @@ export const useCanvasDrawing = ({
   setGia
 }: UseCanvasDrawingProps) => {
   
+  /**
+   * Handle path creation events from the Fabric.js canvas
+   */
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
     const fabricCanvas = fabricCanvasRef.current;
     
+    /**
+     * Process a newly created path and convert it to appropriate shapes
+     * @param {Object} e - Event object containing the path
+     */
     const handlePathCreated = (e: { path: Path }) => {
       console.log("Path created event triggered");
       const path = e.path;
@@ -48,6 +64,7 @@ export const useCanvasDrawing = ({
       }
       
       try {
+        // Extract points from the Fabric.js path
         const points = fabricPathToPoints(path.path);
         console.log("Points extracted from path:", points.length);
         
@@ -56,11 +73,13 @@ export const useCanvasDrawing = ({
           return;
         }
         
+        // Snap points to grid for precision
         const snappedPoints = snapToGrid(points);
         console.log("Points snapped to grid");
 
         let finalPoints = snappedPoints;
         
+        // Process points based on selected tool
         if (tool === 'straightLine') {
           finalPoints = straightenStroke(snappedPoints);
           console.log("Straightened stroke:", finalPoints);
@@ -75,6 +94,7 @@ export const useCanvasDrawing = ({
           console.log("Room points with angle snapping:", finalPoints);
         }
 
+        // Create a polyline from the processed points
         const polyline = new Polyline(
           finalPoints.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
           {
@@ -85,15 +105,18 @@ export const useCanvasDrawing = ({
           }
         );
 
+        // Replace the temporary path with the processed polyline
         fabricCanvas.remove(path);
         fabricCanvas.add(polyline);
         
+        // Ensure grid stays in the background
         gridLayerRef.current.forEach(gridObj => {
           fabricCanvas.sendObjectToBack(gridObj);
         });
         
         fabricCanvas.renderAll();
         
+        // Update floor plans data
         setFloorPlans(prev => {
           const newFloorPlans = [...prev];
           if (newFloorPlans[currentFloor]) {
@@ -102,6 +125,7 @@ export const useCanvasDrawing = ({
               strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
             };
             
+            // Calculate and update area for room shapes
             if (tool === 'room' && finalPoints.length > 2) {
               const area = calculateGIA(finalPoints);
               setGia(prev => prev + area);
@@ -111,6 +135,7 @@ export const useCanvasDrawing = ({
           return newFloorPlans;
         });
 
+        // Update history for undo/redo
         const currentState = fabricCanvas.getObjects().filter(obj => 
           obj.type === 'polyline' || obj.type === 'path'
         );
@@ -122,8 +147,10 @@ export const useCanvasDrawing = ({
       }
     };
     
+    // Attach event listener for path creation
     fabricCanvas.on('path:created', handlePathCreated);
     
+    // Clean up event listener on unmount
     return () => {
       fabricCanvas.off('path:created', handlePathCreated);
     };

@@ -1,9 +1,10 @@
 
-import { useState, useCallback, useEffect } from "react";
+/**
+ * Controller component that manages all canvas logic and state
+ * Centralizes all canvas operations and state management
+ */
+import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { CanvasContainer } from "./CanvasContainer";
-import { DrawingToolbar } from "./DrawingToolbar";
-import { FloorPlanList } from "./FloorPlanList";
 import { createGrid } from "@/utils/canvasGrid";
 import { FloorPlan } from "@/utils/drawing";
 
@@ -16,6 +17,7 @@ import { useDrawingTools } from "@/hooks/useDrawingTools";
 
 /**
  * Controller component that manages all canvas logic and state
+ * @returns All canvas-related state and handler functions
  */
 export const CanvasController = () => {
   // State for drawing tools and display
@@ -30,7 +32,7 @@ export const CanvasController = () => {
   
   // Canvas sizing and initialization tracking
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
-
+  
   /**
    * Debug info for troubleshooting canvas issues
    */
@@ -180,6 +182,7 @@ export const CanvasController = () => {
     hasError,
     errorMessage,
     debugInfo,
+    canvasRef,
     loadData,
     handleFloorSelect,
     handleAddFloor,

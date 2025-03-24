@@ -1,16 +1,22 @@
 
+/**
+ * Utility functions for creating and managing the canvas grid
+ * @module canvasGrid
+ */
 import { Canvas, Line, Text } from "fabric";
 import { SMALL_GRID, LARGE_GRID } from "@/utils/drawing";
 
 /**
  * Create grid lines for the canvas
- * @param canvas The Fabric canvas instance
- * @param gridLayerRef Reference to store grid objects
- * @param canvasDimensions Current canvas dimensions
- * @param setDebugInfo Function to update debug info state
- * @param setHasError Function to set error state
- * @param setErrorMessage Function to set error message
- * @returns Array of created grid objects
+ * Creates both small (0.1m) and large (1m) grid lines
+ * 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to store grid objects
+ * @param {{ width: number, height: number }} canvasDimensions - Current canvas dimensions
+ * @param {Function} setDebugInfo - Function to update debug info state
+ * @param {Function} setHasError - Function to set error state
+ * @param {Function} setErrorMessage - Function to set error message
+ * @returns {any[]} Array of created grid objects
  */
 export const createGrid = (
   canvas: Canvas,
@@ -28,6 +34,7 @@ export const createGrid = (
   console.log("Creating grid...");
   
   try {
+    // Remove existing grid objects if any
     if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
         canvas.remove(obj);
@@ -123,10 +130,12 @@ export const createGrid = (
     gridObjects.push(markerLine);
     gridObjects.push(markerText);
     
+    // Send all grid objects to the back
     gridObjects.forEach(obj => {
       canvas.sendObjectToBack(obj);
     });
     
+    // Store grid objects in the reference for later use
     gridLayerRef.current = gridObjects;
     canvas.renderAll();
     
