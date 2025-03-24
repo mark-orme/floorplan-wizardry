@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { setCanvasDimensions } from "@/utils/fabric";
@@ -29,31 +30,42 @@ export const useCanvasResizing = ({
   const resizeTimeoutRef = useRef<number | null>(null);
   const lastDimensionsRef = useRef<{width: number, height: number}>({width: 0, height: 0});
   const initialResizeCompleteRef = useRef(false);
+  const resizeInProgressRef = useRef(false);
 
   const updateCanvasDimensions = useCallback(() => {
     if (!canvasRef.current) {
       return;
     }
     
+    // Prevent concurrent resize operations
+    if (resizeInProgressRef.current) {
+      return;
+    }
+    
+    resizeInProgressRef.current = true;
+    
     const container = document.querySelector('.canvas-container');
     if (!container) {
       setHasError(true);
       setErrorMessage("Canvas container not found");
+      resizeInProgressRef.current = false;
       return;
     }
     
     const { width, height } = container.getBoundingClientRect();
     
     if (width <= 0 || height <= 0) {
+      resizeInProgressRef.current = false;
       return;
     }
     
     const newWidth = Math.max(width - 20, 600);
     const newHeight = Math.max(height - 20, 400);
     
-    // Skip update if dimensions haven't changed significantly (within 5px)
-    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 5 && 
-        Math.abs(newHeight - lastDimensionsRef.current.height) < 5) {
+    // Skip update if dimensions haven't changed significantly (within 10px)
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 10 && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < 10) {
+      resizeInProgressRef.current = false;
       return;
     }
     
@@ -76,6 +88,8 @@ export const useCanvasResizing = ({
       
       fabricCanvasRef.current.renderAll();
     }
+    
+    resizeInProgressRef.current = false;
   }, [canvasRef, fabricCanvasRef, setDimensions, setDebugInfo, setHasError, setErrorMessage, createGrid]);
 
   useEffect(() => {

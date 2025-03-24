@@ -34,26 +34,50 @@ export const useCanvasGrid = ({
 }: UseCanvasGridProps) => {
   // Track the last grid creation time to prevent rapid consecutive creations
   const lastGridCreationTimeRef = useRef(0);
+  const gridCreationInProgressRef = useRef(false);
   
   // Create grid callback for other hooks with throttling
   const createGridCallback = useCallback((canvas: FabricCanvas) => {
     const now = Date.now();
     
-    // Prevent grid creation more frequently than every 2 seconds
-    if (now - lastGridCreationTimeRef.current < 2000 && gridLayerRef.current.length > 0) {
+    // Prevent grid creation if one is already in progress
+    if (gridCreationInProgressRef.current) {
+      console.log("Grid creation already in progress, skipping duplicate call");
       return gridLayerRef.current;
     }
     
-    lastGridCreationTimeRef.current = now;
+    // Prevent grid creation more frequently than every 3 seconds
+    if (now - lastGridCreationTimeRef.current < 3000 && gridLayerRef.current.length > 0) {
+      console.log("Grid created recently, skipping recreation");
+      return gridLayerRef.current;
+    }
     
-    return createGrid(
-      canvas, 
-      gridLayerRef, 
-      canvasDimensions, 
-      setDebugInfo, 
-      setHasError, 
-      setErrorMessage
-    );
+    // Set flag to indicate a grid creation is in progress
+    gridCreationInProgressRef.current = true;
+    
+    try {
+      // Update the last creation time reference
+      lastGridCreationTimeRef.current = now;
+      
+      // Create the grid
+      const grid = createGrid(
+        canvas, 
+        gridLayerRef, 
+        canvasDimensions, 
+        setDebugInfo, 
+        setHasError, 
+        setErrorMessage
+      );
+      
+      // Reset the flag
+      gridCreationInProgressRef.current = false;
+      
+      return grid;
+    } catch (err) {
+      console.error("Error in createGridCallback:", err);
+      gridCreationInProgressRef.current = false;
+      return gridLayerRef.current;
+    }
   }, [canvasDimensions, gridLayerRef, setDebugInfo, setHasError, setErrorMessage]);
 
   return createGridCallback;

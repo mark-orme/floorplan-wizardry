@@ -36,6 +36,9 @@ interface UseCanvasInitializationProps {
   setErrorMessage: (value: string) => void;
 }
 
+// Global tracker for initial toast shown
+let initialToastShown = false;
+
 /**
  * Hook for initializing the canvas and related objects
  * @param {UseCanvasInitializationProps} props - Hook properties
@@ -81,12 +84,14 @@ export const useCanvasInitialization = ({
       return;
     }
     
-    if (canvasInitializedRef.current) {
+    if (canvasInitializedRef.current && fabricCanvasRef.current) {
+      console.log("Canvas already initialized, skipping initialization");
       return;
     }
     
     // Prevent concurrent initializations
     if (initializationInProgressRef.current) {
+      console.log("Canvas initialization already in progress, skipping");
       return;
     }
     
@@ -196,9 +201,13 @@ export const useCanvasInitialization = ({
         historyRef.current.past.push([...initialState]);
       }
       
-      // Only show toast on first initialization
-      if (!toast.message("Canvas ready for drawing!")) {
-        toast.success("Canvas ready for drawing!");
+      // Only show toast on first initialization across ALL renders
+      if (!initialToastShown) {
+        toast.success("Canvas ready for drawing!", {
+          id: "canvas-ready",
+          duration: 2000
+        });
+        initialToastShown = true;
       }
       
       // OPTIMIZATION: Precompile frequent canvas operations
@@ -210,11 +219,15 @@ export const useCanvasInitialization = ({
       // Clean up on unmount
       return () => {
         fabricCanvas.off('object:added', ensureGridInBackground);
-        disposeCanvas(fabricCanvas);
-        fabricCanvasRef.current = null;
-        canvasInitializedRef.current = false;
-        gridLayerRef.current = [];
-        gridCreatedRef.current = false;
+        
+        // Don't dispose the canvas when switching floors or tools, only on component unmount
+        if (fabricCanvasRef.current === fabricCanvas) {
+          disposeCanvas(fabricCanvas);
+          fabricCanvasRef.current = null;
+          canvasInitializedRef.current = false;
+          gridLayerRef.current = [];
+          gridCreatedRef.current = false;
+        }
       };
     } catch (err) {
       console.error("Error initializing canvas:", err);
@@ -223,7 +236,7 @@ export const useCanvasInitialization = ({
       toast.error("Failed to initialize canvas");
       initializationInProgressRef.current = false;
     }
-  }, [canvasDimensions, tool, currentFloor, gridRef, setZoomLevel, setDebugInfo, setHasError, setErrorMessage]);
+  }, [canvasDimensions.width, canvasDimensions.height, gridRef, setZoomLevel, setDebugInfo, setHasError, setErrorMessage]);
 
   return {
     canvasRef,

@@ -8,6 +8,10 @@ import { Canvas } from "fabric";
 import { createSmallGrid, createLargeGrid } from "./gridCreators";
 import { createScaleMarkers } from "./gridUtils";
 
+// Track last grid creation time globally to prevent excessive refreshes
+let lastGridCreationTime = 0;
+let gridCreationInProgress = false;
+
 /**
  * Create grid lines for the canvas
  * Creates both small (0.1m) and large (1m) grid lines with consistent performance
@@ -33,6 +37,19 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
+  // ANTI-FLICKER: Prevent multiple concurrent grid creations
+  if (gridCreationInProgress) {
+    console.log("Grid creation already in progress, skipping");
+    return gridLayerRef.current;
+  }
+  
+  // ANTI-FLICKER: Enforce a minimum time between grid refreshes (3 seconds)
+  const now = Date.now();
+  if (now - lastGridCreationTime < 3000 && gridLayerRef.current.length > 0) {
+    console.log("Grid recently created, reusing existing grid");
+    return gridLayerRef.current;
+  }
+  
   // Skip grid creation if already created with similar dimensions
   if (gridLayerRef.current.length > 0) {
     const existingGridDimensions = gridLayerRef.current.find(obj => obj.gridDimensions)?.gridDimensions;
@@ -40,14 +57,16 @@ export const createGrid = (
       const widthDiff = Math.abs(existingGridDimensions.width - canvasDimensions.width);
       const heightDiff = Math.abs(existingGridDimensions.height - canvasDimensions.height);
       
-      // If dimensions are similar (within 10%), just return existing grid
-      if (widthDiff < canvasDimensions.width * 0.1 && heightDiff < canvasDimensions.height * 0.1) {
+      // If dimensions are similar (within 5%), just return existing grid
+      if (widthDiff < canvasDimensions.width * 0.05 && heightDiff < canvasDimensions.height * 0.05) {
+        console.log("Grid dimensions similar, reusing existing grid");
         return gridLayerRef.current;
       }
     }
   }
   
   console.log("Creating grid...");
+  gridCreationInProgress = true;
   
   try {
     // Remove existing grid objects if any
@@ -71,6 +90,7 @@ export const createGrid = (
       console.error("Invalid canvas dimensions for grid creation");
       setHasError(true);
       setErrorMessage("Invalid canvas dimensions");
+      gridCreationInProgress = false;
       return [];
     }
     
@@ -122,11 +142,16 @@ export const createGrid = (
     setDebugInfo(prev => ({...prev, gridCreated: true}));
     setHasError(false);
     
+    // Update the last creation time
+    lastGridCreationTime = now;
+    gridCreationInProgress = false;
+    
     return gridObjects;
   } catch (err) {
     console.error("Error creating grid:", err);
     setHasError(true);
     setErrorMessage(`Failed to create grid: ${err instanceof Error ? err.message : String(err)}`);
+    gridCreationInProgress = false;
     return [];
   }
 };

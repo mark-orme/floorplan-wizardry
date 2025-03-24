@@ -10,6 +10,9 @@ import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";
 
+// Track application-wide initialization
+let appInitialized = false;
+
 /**
  * Main Canvas component for floor plan drawing
  * Handles canvas setup, grid creation, and drawing tools
@@ -46,13 +49,20 @@ export const Canvas = () => {
     handleRetry
   } = CanvasController();
 
-  // Load initial data only once
+  // Load initial data only once across all renders
   useEffect(() => {
+    if (appInitialized) {
+      console.log("App already initialized, skipping initial data load");
+      return;
+    }
+    
     // Record performance timing
     const startTime = performance.now();
     setLoadTimes(prev => ({ ...prev, startTime }));
     
+    console.log("Loading initial data");
     loadData();
+    appInitialized = true;
   }, [loadData]);
   
   // Track debug info changes for performance metrics - only update when values change
