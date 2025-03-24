@@ -8,7 +8,7 @@ import { Canvas } from "fabric";
 import { gridManager } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
 
-// Re-export the gridManager for use in canvasGrid.ts
+// Export the gridManager for use in canvasGrid.ts
 export { gridManager };
 
 /**

@@ -5,6 +5,7 @@
  * @module canvasGrid
  */
 import { Canvas } from "fabric";
+import { gridManager } from "./gridManager";
 import { 
   shouldThrottleGridCreation, 
   hasDimensionsChangedSignificantly, 
@@ -37,9 +38,6 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
-  // Import and use gridManager from gridOperations
-  const { gridManager } = require("./gridOperations");
-  
   // If grid already exists, don't create a new one
   if (gridManager.exists && gridLayerRef.current.length > 0) {
     // Check if grid objects are still on the canvas
