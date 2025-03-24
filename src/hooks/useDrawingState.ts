@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { Point } from "@/utils/drawingTypes";
-import { PIXELS_PER_METER } from "@/utils/drawing";
+import { PIXELS_PER_METER, SMALL_GRID } from "@/utils/drawing";
+import { snapPointsToGrid } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 
 interface UseDrawingStateProps {
@@ -57,10 +58,16 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
     
     const { pointer } = event;
     // Convert pixel coordinates to meter coordinates for consistent measurements
-    const startPoint = { 
+    let startPoint = { 
       x: pointer.x / PIXELS_PER_METER, 
       y: pointer.y / PIXELS_PER_METER 
     };
+    
+    // For wall tool, snap to exact grid positions on start
+    if (tool === "straightLine") {
+      const snapped = snapPointsToGrid([startPoint], true);
+      startPoint = snapped[0];
+    }
     
     startPointRef.current = startPoint;
     isDrawingRef.current = true;
@@ -73,17 +80,23 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
       currentPoint: startPoint,
       cursorPosition: { x: event.e.clientX, y: event.e.clientY }
     });
-  }, [shouldShowTooltip]);
+  }, [shouldShowTooltip, tool]);
   
   const handleMouseMove = useCallback((event: { e: MouseEvent, pointer: { x: number, y: number } }) => {
     if (!isDrawingRef.current || !shouldShowTooltip) return;
     
     const { pointer } = event;
     // Convert pixel coordinates to meter coordinates for consistent measurements
-    const currentPoint = { 
+    let currentPoint = { 
       x: pointer.x / PIXELS_PER_METER, 
       y: pointer.y / PIXELS_PER_METER 
     };
+    
+    // For wall tool, snap to exact grid positions while moving
+    if (tool === "straightLine") {
+      const snapped = snapPointsToGrid([currentPoint], true);
+      currentPoint = snapped[0];
+    }
     
     console.log("Drawing in progress:", currentPoint);
     
@@ -92,7 +105,7 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
       currentPoint,
       cursorPosition: { x: event.e.clientX, y: event.e.clientY }
     }));
-  }, [shouldShowTooltip]);
+  }, [shouldShowTooltip, tool]);
   
   const handleMouseUp = useCallback(() => {
     if (!shouldShowTooltip) return;

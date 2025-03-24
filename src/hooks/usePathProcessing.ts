@@ -14,6 +14,7 @@ import {
 import { snapToAngle } from "@/utils/fabric";
 import { 
   snapToGrid, 
+  snapPointsToGrid,
   straightenStroke, 
   calculateGIA,
   filterRedundantPoints 
@@ -96,8 +97,13 @@ export const usePathProcessing = ({
         filteredPoints = points;
       }
       
-      // Always apply grid snapping to all points for consistency
-      let finalPoints = snapToGrid(filteredPoints);
+      // Apply grid snapping based on the tool
+      // For wall tool (straightLine), use strict grid snapping
+      // For other tools, use standard snapping
+      let finalPoints = tool === 'straightLine' 
+        ? snapPointsToGrid(filteredPoints, true) // Strict grid snapping for walls
+        : snapToGrid(filteredPoints);           // Regular snapping for other tools
+      
       console.log("Points snapped to grid:", finalPoints.length);
       
       // Apply straightening based on tool

@@ -1,3 +1,4 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -26,6 +27,34 @@ export const snapToGrid = (points: Point[]): Stroke => {
     return {
       x: Number(snappedX.toFixed(3)), // Enforce exact 0.1m increments
       y: Number(snappedY.toFixed(3))  // Precision to 0.001m
+    };
+  });
+};
+
+/**
+ * Enhanced grid snapping for wall tool - snaps strictly to grid lines
+ * @param {Point[]} points - Array of points to snap to the grid
+ * @param {boolean} strict - Whether to enforce strict grid alignment (for walls)
+ * @returns {Stroke} Array of snapped points
+ */
+export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stroke => {
+  if (!points || points.length === 0) return [];
+  
+  // Use standard snapping for non-strict mode
+  if (!strict) return snapToGrid(points);
+  
+  return points.map(p => {
+    // For strict mode (wall tool), snap exactly to 0.1m grid
+    const x = typeof p.x === 'number' ? p.x : 0;
+    const y = typeof p.y === 'number' ? p.y : 0;
+    
+    // Force exact snapping to grid lines
+    const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
+    const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
+    
+    return {
+      x: Number(snappedX.toFixed(3)),
+      y: Number(snappedY.toFixed(3))
     };
   });
 };
