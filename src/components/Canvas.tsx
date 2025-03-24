@@ -124,7 +124,7 @@ export const Canvas = () => {
       errorMessage={errorMessage}
       onRetry={handleRetry}
     >
-      <div className="relative">
+      <div className="relative w-full h-full">
         <CanvasLayout
           tool={tool}
           gia={gia}
@@ -146,8 +146,10 @@ export const Canvas = () => {
           onLineColorChange={handleLineColorChange}
         />
         
-        {/* Always render tooltip component, it will handle visibility internally */}
-        {tooltipComponent}
+        {/* Always render tooltip in a fixed position relative to the viewport */}
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none">
+          {tooltipComponent}
+        </div>
       </div>
     </LoadingErrorWrapper>
   );

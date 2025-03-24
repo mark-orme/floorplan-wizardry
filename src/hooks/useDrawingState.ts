@@ -1,4 +1,3 @@
-
 import { useCallback, useRef, useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { Point } from "@/utils/drawingTypes";
@@ -57,6 +56,7 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
     if (!shouldShowTooltip) return;
     
     const { pointer } = event;
+    // Convert pixel coordinates to meter coordinates for consistent measurements
     const startPoint = { 
       x: pointer.x / PIXELS_PER_METER, 
       y: pointer.y / PIXELS_PER_METER 
@@ -65,24 +65,27 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
     startPointRef.current = startPoint;
     isDrawingRef.current = true;
     
+    console.log("Drawing started at:", startPoint);
+    
     setDrawingState({
       isDrawing: true,
       startPoint,
       currentPoint: startPoint,
       cursorPosition: { x: event.e.clientX, y: event.e.clientY }
     });
-    
-    console.log("Drawing started at:", startPoint);
   }, [shouldShowTooltip]);
   
   const handleMouseMove = useCallback((event: { e: MouseEvent, pointer: { x: number, y: number } }) => {
     if (!isDrawingRef.current || !shouldShowTooltip) return;
     
     const { pointer } = event;
+    // Convert pixel coordinates to meter coordinates for consistent measurements
     const currentPoint = { 
       x: pointer.x / PIXELS_PER_METER, 
       y: pointer.y / PIXELS_PER_METER 
     };
+    
+    console.log("Drawing in progress:", currentPoint);
     
     setDrawingState(prev => ({
       ...prev,
@@ -94,11 +97,14 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
   const handleMouseUp = useCallback(() => {
     if (!shouldShowTooltip) return;
     
+    console.log("Drawing ended");
+    
     // Use timeout to keep tooltip visible briefly after releasing mouse
     if (tooltipTimeoutRef.current) {
       window.clearTimeout(tooltipTimeoutRef.current);
     }
     
+    // Keep the tooltip visible for a short time after mouse up for better user experience
     tooltipTimeoutRef.current = window.setTimeout(() => {
       isDrawingRef.current = false;
       startPointRef.current = null;
@@ -111,7 +117,6 @@ export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps)
       }));
       
       tooltipTimeoutRef.current = null;
-      console.log("Drawing ended");
     }, 1000); // Keep tooltip visible for 1 second after mouse up
   }, [shouldShowTooltip]);
   

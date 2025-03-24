@@ -31,6 +31,8 @@ export const DistanceTooltip = memo(({
   const dx = currentPoint.x - startPoint.x;
   const dy = currentPoint.y - startPoint.y;
   const distanceInPixels = Math.sqrt(dx * dx + dy * dy);
+  
+  // We need to use the actual value without PIXELS_PER_METER since the coordinates are already in meters
   const distanceInMeters = distanceInPixels;
   
   return (

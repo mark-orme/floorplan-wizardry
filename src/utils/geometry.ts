@@ -18,13 +18,13 @@ export const snapToGrid = (points: Point[]): Stroke => {
     const x = typeof p.x === 'number' ? p.x : 0;
     const y = typeof p.y === 'number' ? p.y : 0;
     
-    // Apply stricter snapping with toFixed(3) for exact 0.1m increments
+    // Round to the nearest GRID_SIZE (0.1m)
     const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
     const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
     
     return {
       x: Number(snappedX.toFixed(3)), // Enforce exact 0.1m increments
-      y: Number(snappedY.toFixed(3)), // Precision to 0.001m
+      y: Number(snappedY.toFixed(3))  // Precision to 0.001m
     };
   });
 };
@@ -44,13 +44,13 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   
   // More aggressive straightening with clearer threshold for better UX
   // Determine if the line is more horizontal or vertical
-  if (dx > dy * 1.8) { // Even more horizontal preference (1.8 instead of 1.5)
+  if (dx > dy * 1.5) { // Horizontal preference
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
       { x: Number(end.x.toFixed(3)), y: Number(start.y.toFixed(3)) }
     ];
-  } else if (dy > dx * 1.8) { // Even more vertical preference (1.8 instead of 1.5)
+  } else if (dy > dx * 1.5) { // Vertical preference
     // Mostly vertical - keep the same X coordinate
     return [
       { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
