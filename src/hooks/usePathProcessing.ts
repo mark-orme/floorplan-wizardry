@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing Fabric.js paths into polylines
  * @module usePathProcessing
@@ -16,7 +15,7 @@ import {
   type Point,
   MAX_OBJECTS_PER_CANVAS
 } from "@/utils/drawing";
-import { snapToAngle } from "@/utils/fabricHelpers";
+import { snapToAngle } from "@/utils/fabric";
 
 interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;

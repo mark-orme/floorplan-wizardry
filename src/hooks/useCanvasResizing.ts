@@ -1,7 +1,6 @@
-
 import { useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { setCanvasDimensions } from "@/utils/fabricHelpers";
+import { setCanvasDimensions } from "@/utils/fabric";
 
 interface UseCanvasResizingProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;

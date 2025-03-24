@@ -13,7 +13,7 @@ import {
   addPressureSensitivity,
   addPinchToZoom,
   disposeCanvas
-} from "@/utils/fabricHelpers";
+} from "@/utils/fabric";
 import { createGrid } from "@/utils/canvasGrid";
 import { FloorPlan } from "@/utils/drawing";
 
