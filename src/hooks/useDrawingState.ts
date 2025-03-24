@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -138,14 +139,17 @@ export const useDrawingState = ({
 
     const handleLineScaling = (e: any) => {
       if (tool === 'select') {
+        // Use client coordinates from the event for positioning if available
+        const cursorPosition = e.e ? { 
+          x: e.e.clientX || 0, 
+          y: e.e.clientY || 0 
+        } : { x: 0, y: 0 };
+        
         setDrawingState({
           isDrawing: true,
           startPoint: e.startPoint,
           currentPoint: e.endPoint,
-          cursorPosition: { 
-            x: e.e?.clientX || 0, 
-            y: e.e?.clientY || 0 
-          }
+          cursorPosition
         });
       }
     };
@@ -159,7 +163,7 @@ export const useDrawingState = ({
 
   // Make sure to update drawing state when tool changes
   useEffect(() => {
-    if (tool !== 'straightLine' && tool !== 'room' && drawingState.isDrawing) {
+    if (tool !== 'straightLine' && tool !== 'room' && tool !== 'select' && drawingState.isDrawing) {
       cleanupTimeouts();
       setDrawingState({
         isDrawing: false,

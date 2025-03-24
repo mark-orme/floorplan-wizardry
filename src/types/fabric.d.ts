@@ -7,6 +7,17 @@ declare module 'fabric' {
   }
 }
 
+// Define our custom events
+declare module 'fabric' {
+  interface CanvasEvents {
+    'line:scaling': {
+      startPoint: { x: number, y: number };
+      endPoint: { x: number, y: number };
+      e?: MouseEvent | TouchEvent;
+    };
+  }
+}
+
 // Ensure correct typing for various methods and properties
 declare module 'fabric' {
   // Add any custom extensions to Fabric types if needed

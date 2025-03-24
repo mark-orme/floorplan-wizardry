@@ -1,3 +1,4 @@
+
 /**
  * Utilities for canvas interaction handling (panning, zooming, etc.)
  * @module fabricInteraction
@@ -208,6 +209,11 @@ export const snapToAngle = (startPoint: Point, endPoint: Point, angleThreshold: 
   return endPoint;
 };
 
+// Interface for polyline-like objects with points property
+interface PolylineObject extends FabricObject {
+  points?: Array<{x: number, y: number}>;
+}
+
 /**
  * Enable selection and editing mode on the canvas
  * @param {Canvas} fabricCanvas - The Fabric canvas instance
@@ -254,15 +260,22 @@ export const enableSelection = (
 
     // Show line length tooltip during editing
     fabricCanvas.on('object:scaling', (e) => {
-      const obj = e.target;
+      const obj = e.target as PolylineObject;
       if (!obj) return;
 
+      // Safe check for points property and ensure it's an array with at least 2 points
       const points = obj.points || [];
       if (points.length >= 2) {
         const startPoint = { x: points[0].x / PIXELS_PER_METER, y: points[0].y / PIXELS_PER_METER };
         const endPoint = { x: points[points.length - 1].x / PIXELS_PER_METER, y: points[points.length - 1].y / PIXELS_PER_METER };
-        // The object's event will be handled by useDrawingState to show tooltip
-        fabricCanvas.fire('line:scaling', { startPoint, endPoint });
+        
+        // Fire a custom event with event data
+        // Use as any to bypass TypeScript's event name checking
+        (fabricCanvas as any).fire('line:scaling', { 
+          startPoint, 
+          endPoint,
+          e: e.e // Pass the original event for positioning
+        });
       }
     });
 
