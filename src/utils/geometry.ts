@@ -1,4 +1,3 @@
-
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -43,21 +42,22 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const dx = Math.abs(end.x - start.x);
   const dy = Math.abs(end.y - start.y);
   
+  // More aggressive straightening with clearer threshold
   // Determine if the line is more horizontal or vertical
-  if (dx > dy * 1.2) {
+  if (dx > dy * 1.5) { // More horizontal: stronger preference (1.5 instead of 1.2)
     // Mostly horizontal - keep the same Y coordinate
     return [
       { x: start.x, y: start.y },
       { x: end.x, y: start.y }
     ];
-  } else if (dy > dx * 1.2) {
+  } else if (dy > dx * 1.5) { // More vertical: stronger preference (1.5 instead of 1.2)
     // Mostly vertical - keep the same X coordinate
     return [
       { x: start.x, y: start.y },
       { x: start.x, y: end.y }
     ];
   } else {
-    // For diagonal lines, use 45-degree angle snapping
+    // For diagonal lines, use perfect 45-degree angle snapping
     const length = Math.max(dx, dy);
     const signX = Math.sign(end.x - start.x);
     const signY = Math.sign(end.y - start.y);

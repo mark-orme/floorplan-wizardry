@@ -80,13 +80,23 @@ export const usePathProcessing = ({
         return;
       }
       
-      // Apply grid snapping to all points
+      // Always apply grid snapping to all points for consistency
       let finalPoints = snapToGrid(points);
+      console.log("Points snapped to grid");
       
       // Apply straightening based on tool
       if (tool === 'straightLine') {
         finalPoints = straightenStroke(finalPoints);
-        console.log("Applied straightening to line");
+        console.log("Applied straightening to wall line");
+        
+        // For better feedback on the wall tool
+        if (finalPoints.length === 2) {
+          // Calculate length of the wall in meters
+          const dx = finalPoints[1].x - finalPoints[0].x;
+          const dy = finalPoints[1].y - finalPoints[0].y;
+          const lengthInMeters = Math.sqrt(dx * dx + dy * dy);
+          toast.success(`Wall length: ${lengthInMeters.toFixed(2)}m`);
+        }
       } else if (tool === 'room') {
         // For room tool, create enclosed shape with angle snapping
         const snappedPoints = [finalPoints[0]];
@@ -100,7 +110,7 @@ export const usePathProcessing = ({
           snappedPoints.push(snappedEnd);
         }
         
-        // For rooms, apply final straightening to close the shape
+        // For rooms, apply final straightening to close the shape nicely
         if (snappedPoints.length > 2) {
           const firstPoint = snappedPoints[0];
           const lastPoint = snappedPoints[snappedPoints.length - 1];
