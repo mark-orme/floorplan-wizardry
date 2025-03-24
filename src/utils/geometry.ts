@@ -1,5 +1,6 @@
 /**
  * Geometry utilities for floor plan drawing
+ * Provides coordinate transformation, snapping, and measurement functions
  * @module geometry
  */
 import { Point, Stroke } from './drawingTypes';
@@ -17,6 +18,8 @@ const VERTICAL_BIAS = 1.2; // Bias factor for favoring vertical lines
 /** 
  * Snap a single point to the nearest grid intersection
  * Critical utility for ensuring walls start and end exactly on grid lines
+ * Performs mathematical rounding to ensure precise alignment with grid
+ * 
  * @param {Point} point - The point to snap (in meters)
  * @param {number} gridSize - Optional grid size in meters (defaults to GRID_SIZE constant)
  * @returns {Point} Snapped point with exact grid alignment (in meters)
@@ -40,8 +43,11 @@ export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
 }
 
 /** 
- * Snap points to 0.1m grid with exact alignment for 99.9% accuracy
+ * Snap an array of points to the grid for consistent alignment
+ * Used to ensure all points in a stroke align to the grid
+ * 
  * @param {Point[]} points - Array of points to snap to the grid (in meters)
+ * @param {boolean} strict - Whether to use strict snapping (forces exact alignment)
  * @returns {Stroke} Array of snapped points
  */
 export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stroke => {
@@ -51,10 +57,12 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
 };
 
 /**
- * IMPROVED: Enhanced grid snapping - forces EXACT snap to nearest grid line
+ * Enhanced grid snapping - forces EXACT snap to nearest grid line
  * Ensures walls always start and end precisely on grid lines with no rounding errors
- * @param {Point} point - The point to snap
- * @returns {Point} Point snapped exactly to the nearest grid line
+ * Critical for maintaining clean wall connections and precise measurements
+ * 
+ * @param {Point} point - The point to snap (in meters)
+ * @returns {Point} Point snapped exactly to the nearest grid line (in meters)
  */
 export const snapToNearestGridLine = (point: Point): Point => {
   // Simply use snapToGrid with the standard grid size
@@ -63,8 +71,11 @@ export const snapToNearestGridLine = (point: Point): Point => {
 
 /**
  * Auto-straighten strokes - enhanced version that forces perfect horizontal/vertical alignment
- * @param {Stroke} stroke - Array of points representing a stroke
- * @returns {Stroke} Straightened stroke
+ * Makes walls perfectly straight by analyzing the start and end points
+ * Applies bias factors to favor horizontal/vertical lines when appropriate
+ * 
+ * @param {Stroke} stroke - Array of points representing a stroke (in meters)
+ * @returns {Stroke} Straightened stroke with perfect alignment (in meters)
  */
 export const straightenStroke = (stroke: Stroke): Stroke => {
   if (!stroke || stroke.length < 2) return stroke;
@@ -244,6 +255,8 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
 
 /**
  * Checks if a value is an exact multiple of the grid size (0.1m)
+ * Used to verify that points are precisely aligned to grid
+ * 
  * @param value - The value to check (in meters)
  * @returns Whether the value is an exact multiple of grid size
  */
@@ -256,6 +269,8 @@ export const isExactGridMultiple = (value: number): boolean => {
 /**
  * Force align a point to the exact grid lines
  * Ensures all points land precisely on grid intersections
+ * Applies extra precision to avoid floating point errors
+ * 
  * @param point - The point to align (in meters)
  * @returns Grid-aligned point (in meters)
  */
@@ -275,7 +290,8 @@ export const forceGridAlignment = (point: Point): Point => {
 
 /**
  * Convert pixel coordinates to meter coordinates
- * Ensures proper handling of zoom level
+ * Critical for ensuring proper handling of zoom level in unit conversions
+ * 
  * @param pixelPoint - Point in pixel coordinates
  * @param zoom - Current zoom level
  * @returns Point in meter coordinates
@@ -289,7 +305,8 @@ export const pixelsToMeters = (pixelPoint: Point, zoom: number = 1): Point => {
 
 /**
  * Convert meter coordinates to pixel coordinates
- * Ensures proper handling of zoom level
+ * Critical for ensuring proper handling of zoom level in unit conversions
+ * 
  * @param meterPoint - Point in meter coordinates
  * @param zoom - Current zoom level
  * @returns Point in pixel coordinates

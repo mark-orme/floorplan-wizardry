@@ -1,6 +1,7 @@
 
 /**
  * Utility functions for grid management
+ * Provides helper functions for grid creation, scaling, and positioning
  * @module gridUtils
  */
 import { Canvas, Line, Text, Object as FabricObject } from "fabric";
@@ -10,9 +11,11 @@ import { CanvasDimensions } from "@/types/drawingTypes";
 
 /**
  * Store grid dimensions in a metadata object for future comparison
+ * This helps determine when grid needs to be recreated due to dimension changes
+ * 
  * @param obj - The object to store dimensions in
- * @param width - Canvas width
- * @param height - Canvas height
+ * @param width - Canvas width in pixels
+ * @param height - Canvas height in pixels
  */
 export const storeGridDimensions = (obj: FabricObject, width: number, height: number): void => {
   Object.defineProperty(obj, 'gridDimensions', {
@@ -23,9 +26,11 @@ export const storeGridDimensions = (obj: FabricObject, width: number, height: nu
 
 /**
  * Calculate small grid density based on canvas dimensions
- * @param canvasWidth - Canvas width
- * @param canvasHeight - Canvas height
- * @returns Skip factor for small grid lines
+ * Determines how many lines to skip for optimal performance and visual density
+ * 
+ * @param canvasWidth - Canvas width in pixels
+ * @param canvasHeight - Canvas height in pixels
+ * @returns Skip factor for small grid lines (1 = draw all lines, 2 = draw every other line, etc.)
  */
 export const calculateSmallGridSkip = (canvasWidth: number, canvasHeight: number): number => {
   const canvasArea = canvasWidth * canvasHeight;
@@ -34,9 +39,11 @@ export const calculateSmallGridSkip = (canvasWidth: number, canvasHeight: number
 
 /**
  * Calculate large grid density based on canvas dimensions
- * @param canvasWidth - Canvas width
- * @param canvasHeight - Canvas height
- * @returns Skip factor for large grid lines
+ * Determines how many lines to skip for optimal performance and visual density
+ * 
+ * @param canvasWidth - Canvas width in pixels
+ * @param canvasHeight - Canvas height in pixels
+ * @returns Skip factor for large grid lines (1 = draw all lines, 2 = draw every other line, etc.)
  */
 export const calculateLargeGridSkip = (canvasWidth: number, canvasHeight: number): number => {
   const canvasArea = canvasWidth * canvasHeight;
@@ -45,10 +52,12 @@ export const calculateLargeGridSkip = (canvasWidth: number, canvasHeight: number
 
 /**
  * Creates scale markers (1m indicator) for the grid
+ * Adds visual indicators to help users understand the scale of the drawing
+ * 
  * @param canvas - The Fabric canvas instance
- * @param canvasWidth - Canvas width
- * @param canvasHeight - Canvas height
- * @returns The created marker objects
+ * @param canvasWidth - Canvas width in pixels
+ * @param canvasHeight - Canvas height in pixels
+ * @returns The created marker objects (line and text)
  */
 export const createScaleMarkers = (
   canvas: Canvas,
@@ -103,3 +112,4 @@ export const createScaleMarkers = (
     return [];
   }
 };
+

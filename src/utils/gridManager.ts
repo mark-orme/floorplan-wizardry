@@ -1,12 +1,16 @@
 
 /**
  * Grid manager module for grid creation and lifecycle
- * Handles grid creation state, flags, and limits
+ * Handles grid creation state, flags, and limits to prevent simultaneous updates
+ * Provides lock mechanisms to avoid race conditions during grid creation
  * @module gridManager
  */
 import { GridManagerState, CanvasDimensions } from "@/types/drawingTypes";
 
-// Track grid creation state globally with proper typing
+/**
+ * Track grid creation state globally with proper typing
+ * Contains configuration, locks, and state tracking for grid creation
+ */
 export const gridManager: GridManagerState = {
   // Creation time tracking
   lastCreationTime: 0,
@@ -48,7 +52,8 @@ export const gridManager: GridManagerState = {
 
 /**
  * Reset the grid creation in-progress flag
- * Used to prevent grid creation from getting stuck
+ * Used to prevent grid creation from getting stuck in a locked state
+ * Provides safety mechanism for recovering from stalled grid creation
  */
 export const resetGridProgress = (): void => {
   const now = Date.now();
@@ -81,7 +86,10 @@ export const resetGridProgress = (): void => {
 
 /**
  * Acquire a lock for grid creation
- * @returns {boolean} Whether the lock was acquired
+ * Prevents multiple simultaneous grid creation attempts
+ * Includes safety timeout for stale locks
+ * 
+ * @returns {boolean} Whether the lock was acquired successfully
  */
 export const acquireGridCreationLock = (): boolean => {
   const now = Date.now();
@@ -109,8 +117,11 @@ export const acquireGridCreationLock = (): boolean => {
 
 /**
  * Release the grid creation lock
+ * Allows other operations to acquire the lock after this one completes
+ * Validates lock ID to prevent releasing someone else's lock
+ * 
  * @param {number} lockId - ID of the lock to release
- * @returns {boolean} Whether the lock was released
+ * @returns {boolean} Whether the lock was released successfully
  */
 export const releaseGridCreationLock = (lockId: number): boolean => {
   // Only release if the ID matches (prevent releasing someone else's lock)
@@ -124,8 +135,10 @@ export const releaseGridCreationLock = (lockId: number): boolean => {
 
 /**
  * Force grid progress reset after a safety timeout
+ * Ensures grid creation doesn't get permanently stuck
+ * 
  * @param {number} timeoutMs - Timeout in milliseconds
- * @returns {number} Timeout ID
+ * @returns {number} Timeout ID for cancellation if needed
  */
 export const scheduleGridProgressReset = (timeoutMs = 5000): number => {
   return window.setTimeout(() => {
@@ -133,3 +146,4 @@ export const scheduleGridProgressReset = (timeoutMs = 5000): number => {
     resetGridProgress();
   }, timeoutMs);
 };
+

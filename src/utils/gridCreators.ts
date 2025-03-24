@@ -18,9 +18,12 @@ import { SMALL_GRID, LARGE_GRID } from "./drawing";
 
 /**
  * Creates small grid lines
+ * Creates a network of thin grid lines at SMALL_GRID intervals (typically 0.1m)
+ * These lines provide precise alignment guides for drawing
+ * 
  * @param canvas - The Fabric canvas instance
- * @param canvasWidth - Canvas width
- * @param canvasHeight - Canvas height 
+ * @param canvasWidth - Canvas width in pixels
+ * @param canvasHeight - Canvas height in pixels
  * @returns Array of created small grid lines
  */
 export const createSmallGrid = (
@@ -86,9 +89,12 @@ export const createSmallGrid = (
 
 /**
  * Creates large grid lines
+ * Creates a network of thicker grid lines at LARGE_GRID intervals (typically 1m)
+ * These lines provide major alignment guides and improve distance perception
+ * 
  * @param canvas - The Fabric canvas instance
- * @param canvasWidth - Canvas width
- * @param canvasHeight - Canvas height
+ * @param canvasWidth - Canvas width in pixels
+ * @param canvasHeight - Canvas height in pixels
  * @returns Array of created large grid lines
  */
 export const createLargeGrid = (
@@ -144,3 +150,4 @@ export const createLargeGrid = (
   console.log(`Created ${largeGridObjects.length} large grid lines`);
   return largeGridObjects;
 };
+
