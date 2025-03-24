@@ -90,17 +90,18 @@ export const DistanceTooltip = memo(({
         transform: `translate(-50%, -100%)`, // Center horizontally and position above the point
         willChange: "transform", // Hint for browser optimization
         backgroundColor: `rgba(0, 0, 0, ${bgOpacity})`,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.3)" // More visible outline
+        boxShadow: "0 0 0 2px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.3)", // More visible outline
+        fontSize: `${Math.max(12, Math.min(16, 14 / Math.sqrt(effectiveZoom)))}px` // Adjust font size based on zoom
       }}
     >
-      <div className="flex items-center gap-2 text-sm whitespace-nowrap">
+      <div className="flex items-center gap-2 whitespace-nowrap">
         <Ruler className="w-4 h-4" />
         <span className="font-medium">{formattedDistance} m</span>
         {gridUnits > 0 && (
-          <span className="text-xs opacity-80">({gridUnits} grid units)</span>
+          <span className="opacity-80">({gridUnits} grid units)</span>
         )}
         {isDiagonal && (
-          <span className="text-xs opacity-80">({Math.round(normalizedAngle)}°)</span>
+          <span className="opacity-80">({Math.round(normalizedAngle)}°)</span>
         )}
       </div>
     </div>
