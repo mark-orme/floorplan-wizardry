@@ -5,8 +5,12 @@
  * @module canvasGrid
  */
 import { Canvas } from "fabric";
-import { gridManager, shouldThrottleGridCreation, hasDimensionsChangedSignificantly } from "./gridManager";
-import { renderGridComponents, arrangeGridObjects, GridComponentsResult } from "./gridRenderer";
+import { 
+  shouldThrottleGridCreation, 
+  hasDimensionsChangedSignificantly, 
+  createGridBatch, 
+  handleGridCreationError
+} from "./gridOperations";
 
 /**
  * Create grid lines for the canvas
@@ -33,6 +37,9 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
+  // Import and use gridManager from gridOperations
+  const { gridManager } = require("./gridOperations");
+  
   // If grid already exists, don't create a new one
   if (gridManager.exists && gridLayerRef.current.length > 0) {
     // Check if grid objects are still on the canvas
@@ -71,79 +78,24 @@ export const createGrid = (
   // Use a timeout to batch rapid calls
   gridManager.batchTimeoutId = window.setTimeout(() => {
     try {
-      // Tracking metric
-      gridManager.totalCreations++;
-      
-      // Only log first grid creation and every 3rd after that
-      if (gridManager.totalCreations === 1 || gridManager.totalCreations % 3 === 0) {
-        console.log(`Creating grid... (${gridManager.totalCreations})`);
-      }
-      
-      // Remove existing grid objects if any
-      if (gridLayerRef.current.length > 0) {
-        const existingObjects = [...gridLayerRef.current];
-        existingObjects.forEach(obj => {
-          if (canvas.contains(obj)) {
-            canvas.remove(obj);
-          }
-        });
-        gridLayerRef.current = [];
-      }
-      
-      const canvasWidth = canvas.getWidth() || canvasDimensions.width;
-      const canvasHeight = canvas.getHeight() || canvasDimensions.height;
-      
-      // Store the current dimensions for future comparison
-      gridManager.lastDimensions = { width: canvasWidth, height: canvasHeight };
-      
-      if (canvasWidth <= 0 || canvasHeight <= 0) {
-        setHasError(true);
-        setErrorMessage("Invalid canvas dimensions");
-        gridManager.inProgress = false;
-        gridManager.batchTimeoutId = null;
-        return [];
-      }
-      
-      // Render all grid components
-      const result: GridComponentsResult = renderGridComponents(
-        canvas, 
-        canvasWidth, 
-        canvasHeight
+      // Create the grid using the extracted batch operation
+      return createGridBatch(
+        canvas,
+        gridLayerRef,
+        canvasDimensions,
+        setDebugInfo,
+        setHasError,
+        setErrorMessage,
+        now,
+        gridManager
       );
-      
-      // Arrange grid objects in the correct z-order
-      arrangeGridObjects(canvas, result.smallGridLines, result.largeGridLines, result.markers);
-      
-      // Store grid objects in the reference for later use
-      gridLayerRef.current = result.gridObjects;
-      
-      // Set the grid exists flag
-      gridManager.exists = true;
-      
-      // Only log detailed grid info on first creation
-      if (gridManager.totalCreations === 1 || gridManager.totalCreations % 3 === 0) {
-        console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large)`);
-      }
-      
-      // One-time render
-      canvas.requestRenderAll();
-      
-      setDebugInfo(prev => ({...prev, gridCreated: true}));
-      setHasError(false);
-      
-      // Update the last creation time
-      gridManager.lastCreationTime = now;
-      gridManager.initialized = true;
-      
-      return result.gridObjects;
     } catch (err) {
-      console.error("Error creating grid:", err);
-      setHasError(true);
-      setErrorMessage(`Failed to create grid: ${err instanceof Error ? err.message : String(err)}`);
-      return [];
-    } finally {
-      gridManager.inProgress = false;
-      gridManager.batchTimeoutId = null;
+      return handleGridCreationError(
+        err, 
+        setHasError, 
+        setErrorMessage, 
+        gridManager
+      );
     }
   }, 100);
   
