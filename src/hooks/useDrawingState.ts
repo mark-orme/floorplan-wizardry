@@ -1,155 +1,132 @@
 
-import { useCallback, useRef, useState, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+/**
+ * Custom hook for tracking drawing state
+ * Manages mouse events and drawing coordinate tracking
+ * @module useDrawingState
+ */
+import { useState, useCallback, useRef } from "react";
+import { DrawingTool } from "./useCanvasState";
 import { Point } from "@/utils/drawingTypes";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { snapPointsToGrid, straightenStroke } from "@/utils/geometry";
-import { DrawingTool } from "./useCanvasState";
+import { adjustPointForPanning } from "@/utils/geometry";
 
 interface UseDrawingStateProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<any>;
   tool: DrawingTool;
 }
 
-interface DrawingState {
-  isDrawing: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  cursorPosition: { x: number; y: number };
-}
-
 /**
- * Hook for tracking drawing state and cursor movement on canvas
- * Provides drawing coordinates and cursor position for tooltips
+ * Hook for tracking the current drawing state
  * @param {UseDrawingStateProps} props - Hook properties
- * @returns {Object} Drawing state and event handlers
+ * @returns {Object} Drawing state and handler functions
  */
-export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps) => {
-  // Show tooltips for wall tool and room tool
-  const shouldShowTooltip = tool === "straightLine" || tool === "room";
-  
-  // State to track drawing state
-  const [drawingState, setDrawingState] = useState<DrawingState>({
+export const useDrawingState = ({ 
+  fabricCanvasRef,
+  tool
+}: UseDrawingStateProps) => {
+  // Track current drawing state
+  const [drawingState, setDrawingState] = useState<{
+    isDrawing: boolean;
+    startPoint: Point | null;
+    currentPoint: Point | null;
+    cursorPosition: { x: number; y: number } | null;
+  }>({
     isDrawing: false,
     startPoint: null,
     currentPoint: null,
-    cursorPosition: { x: 0, y: 0 }
+    cursorPosition: null
   });
   
-  // Use refs to prevent memory leaks and ensure access to latest values
-  const startPointRef = useRef<Point | null>(null);
-  const isDrawingRef = useRef(false);
-  const tooltipTimeoutRef = useRef<number | null>(null);
+  // Use ref for timeout cleanup
+  const timeoutRef = useRef<number | null>(null);
   
-  // Reset drawing state when tool changes
-  useEffect(() => {
-    setDrawingState({
-      isDrawing: false,
-      startPoint: null,
-      currentPoint: null,
-      cursorPosition: { x: 0, y: 0 }
-    });
-    isDrawingRef.current = false;
-    startPointRef.current = null;
-  }, [tool]);
-  
-  // Event handlers for mouse movement and drawing
-  const handleMouseDown = useCallback((event: { e: MouseEvent, pointer: { x: number, y: number } }) => {
-    if (!shouldShowTooltip) return;
+  // Clear any existing timeouts
+  const cleanupTimeouts = useCallback(() => {
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  // Mouse down handler
+  const handleMouseDown = useCallback((e: any) => {
+    // Only track for straightLine and room tools
+    if (tool !== 'straightLine' && tool !== 'room') return;
     
-    const { pointer } = event;
-    // Convert pixel coordinates to meter coordinates for consistent measurements
-    let startPoint = { 
-      x: pointer.x / PIXELS_PER_METER, 
-      y: pointer.y / PIXELS_PER_METER 
+    if (!fabricCanvasRef.current) return;
+    
+    cleanupTimeouts();
+    
+    // Get pointer position in canvas coordinates
+    const pointer = fabricCanvasRef.current.getPointer(e.e);
+    
+    // Convert from pixel coordinates to meter coordinates
+    const startPoint = {
+      x: pointer.x / PIXELS_PER_METER,
+      y: pointer.y / PIXELS_PER_METER
     };
     
-    // For wall tool, snap to exact grid positions on start
-    if (tool === "straightLine") {
-      const snapped = snapPointsToGrid([startPoint], true);
-      startPoint = snapped[0];
-    }
-    
-    startPointRef.current = startPoint;
-    isDrawingRef.current = true;
-    
-    console.log("Drawing started at:", startPoint);
+    // Get cursor position in screen coordinates for tooltip positioning
+    const absolutePosition = {
+      x: e.e.clientX,
+      y: e.e.clientY
+    };
     
     setDrawingState({
       isDrawing: true,
       startPoint,
-      currentPoint: startPoint,
-      cursorPosition: { x: event.e.clientX, y: event.e.clientY }
+      currentPoint: startPoint, // Initialize current as same as start
+      cursorPosition: absolutePosition
     });
-  }, [shouldShowTooltip, tool]);
-  
-  const handleMouseMove = useCallback((event: { e: MouseEvent, pointer: { x: number, y: number } }) => {
-    if (!isDrawingRef.current || !shouldShowTooltip) return;
     
-    const { pointer } = event;
-    // Convert pixel coordinates to meter coordinates for consistent measurements
-    let currentPoint = { 
-      x: pointer.x / PIXELS_PER_METER, 
-      y: pointer.y / PIXELS_PER_METER 
+    console.log("Drawing started at:", startPoint);
+  }, [fabricCanvasRef, tool, cleanupTimeouts]);
+
+  // Mouse move handler
+  const handleMouseMove = useCallback((e: any) => {
+    // Only update if drawing and using relevant tools
+    if (!drawingState.isDrawing || (tool !== 'straightLine' && tool !== 'room')) return;
+    
+    if (!fabricCanvasRef.current) return;
+    
+    // Get current pointer position in canvas coordinates
+    const pointer = fabricCanvasRef.current.getPointer(e.e);
+    
+    // Convert from pixel coordinates to meter coordinates
+    const currentPoint = {
+      x: pointer.x / PIXELS_PER_METER,
+      y: pointer.y / PIXELS_PER_METER
     };
     
-    // For wall tool, snap to exact grid positions while moving
-    if (tool === "straightLine") {
-      const snapped = snapPointsToGrid([currentPoint], true);
-      currentPoint = snapped[0];
-      
-      // Apply straightening in real-time for better visual feedback
-      if (startPointRef.current) {
-        const straightened = straightenStroke([startPointRef.current, currentPoint]);
-        if (straightened.length > 1) {
-          currentPoint = straightened[1];
-        }
-      }
-    }
-    
-    console.log("Drawing in progress:", currentPoint);
+    // Get cursor position in screen coordinates for tooltip positioning
+    const absolutePosition = {
+      x: e.e.clientX,
+      y: e.e.clientY
+    };
     
     setDrawingState(prev => ({
       ...prev,
       currentPoint,
-      cursorPosition: { x: event.e.clientX, y: event.e.clientY }
+      cursorPosition: absolutePosition
     }));
-  }, [shouldShowTooltip, tool]);
-  
+  }, [drawingState.isDrawing, fabricCanvasRef, tool]);
+
+  // Mouse up handler
   const handleMouseUp = useCallback(() => {
-    if (!shouldShowTooltip) return;
+    // Reset drawing state after a small delay to allow for tooltip visibility
+    cleanupTimeouts();
     
-    console.log("Drawing ended");
-    
-    // Use timeout to keep tooltip visible briefly after releasing mouse
-    if (tooltipTimeoutRef.current) {
-      window.clearTimeout(tooltipTimeoutRef.current);
-    }
-    
-    // Keep the tooltip visible for a short time after mouse up for better user experience
-    tooltipTimeoutRef.current = window.setTimeout(() => {
-      isDrawingRef.current = false;
-      startPointRef.current = null;
-      
-      setDrawingState(prev => ({
-        ...prev,
+    timeoutRef.current = window.setTimeout(() => {
+      setDrawingState({
         isDrawing: false,
         startPoint: null,
-        currentPoint: null
-      }));
-      
-      tooltipTimeoutRef.current = null;
-    }, 1000); // Keep tooltip visible for 1 second after mouse up
-  }, [shouldShowTooltip]);
-  
-  // Cleanup function for timeouts
-  const cleanupTimeouts = useCallback(() => {
-    if (tooltipTimeoutRef.current) {
-      window.clearTimeout(tooltipTimeoutRef.current);
-      tooltipTimeoutRef.current = null;
-    }
-  }, []);
-  
+        currentPoint: null,
+        cursorPosition: null
+      });
+      timeoutRef.current = null;
+    }, 300); // Short delay to keep tooltip visible briefly after drawing ends
+  }, [cleanupTimeouts]);
+
   return {
     drawingState,
     handleMouseDown,

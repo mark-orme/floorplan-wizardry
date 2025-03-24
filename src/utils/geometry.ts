@@ -1,3 +1,4 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * @module geometry
@@ -74,8 +75,8 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const absDy = Math.abs(dy);
   
   // Even more aggressive straightening with clearer threshold for better UX
-  const horizontalThreshold = 1.1; // Reduced from 1.2
-  const verticalThreshold = 1.1;   // Reduced from 1.2
+  const horizontalThreshold = 1.0; // Reduced from 1.1 for more straightening
+  const verticalThreshold = 1.0;   // Reduced from 1.1 for more straightening
   
   // Determine if the line is more horizontal or vertical
   if (absDx > absDy * horizontalThreshold) { // Horizontal preference

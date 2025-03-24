@@ -6,10 +6,10 @@
  * @module drawing
  */
 
-// Grid and drawing constants
-export const PIXELS_PER_METER = 100; // 100 pixels = 1 meter
-export const SMALL_GRID = PIXELS_PER_METER / 10; // 0.1m
-export const LARGE_GRID = PIXELS_PER_METER; // 1m
+// Grid and drawing constants - ensuring correct scaling
+export const PIXELS_PER_METER = 100; // 100 pixels = 1 meter (exact conversion)
+export const SMALL_GRID = PIXELS_PER_METER / 10; // 0.1m (10px)
+export const LARGE_GRID = PIXELS_PER_METER; // 1m (100px)
 
 // Memory management constants
 export const MAX_HISTORY_STATES = 50; // Maximum undo/redo history states

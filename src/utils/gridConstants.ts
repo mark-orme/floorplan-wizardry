@@ -12,7 +12,7 @@ export interface GridDimensions {
   height: number;
 }
 
-// Grid optimization constants - increased for better visual appearance
+// Grid optimization constants - calibrated for better visual appearance
 export const MAX_SMALL_GRID_LINES = 300; // Increased limit for denser grid
 export const MAX_LARGE_GRID_LINES = 100; // Increased limit for larger grid
 export const SMALL_GRID_SKIP_THRESHOLD = 200; // Canvas size / this = skip factor (lower means more lines)
@@ -35,6 +35,6 @@ export const shouldSkipSmallGrid = (canvasWidth: number, canvasHeight: number): 
   const estimatedLinesY = Math.ceil(canvasHeight / (SMALL_GRID * smallGridSkip));
   const totalEstimatedLines = estimatedLinesX + estimatedLinesY;
   
-  // Allow more lines before skipping
+  // Allow more lines before skipping - improved density
   return totalEstimatedLines > MAX_SMALL_GRID_LINES * 3;
 };
