@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -12,7 +13,7 @@ import { snapToAngle } from "@/utils/fabricInteraction";
 import { toFabricPoint } from "@/utils/fabricPointConverter";
 import { type DrawingState } from "@/types/drawingTypes";
 import { snapToGrid, metersToPixels, pixelsToMeters } from "@/utils/geometry";
-import { PIXELS_PER_METER } from "@/utils/drawing";
+import { PIXELS_PER_METER, GRID_SIZE } from "@/utils/drawing";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -95,27 +96,35 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
           console.log("- End point (meters):", drawingState.currentPoint);
           console.log("- Snapped end (meters):", snappedCurrentPoint);
           
+          // Force snap both points to grid lines before calculating angle
+          const gridSnappedStartPoint = snapToGrid(snappedStartPoint, GRID_SIZE);
+          
+          // Calculate straightened end point based on angle snapping
           const straightenedEndPoint = snapToAngle(
-            snappedStartPoint, 
+            gridSnappedStartPoint,
             snappedCurrentPoint,
             8
           );
           
-          const gridSnappedEndPoint = snapToGrid(straightenedEndPoint);
+          // Force snap the end point to grid lines after angle calculation
+          const gridSnappedEndPoint = snapToGrid(straightenedEndPoint, GRID_SIZE);
           
           if (gridSnappedEndPoint && e.path && e.path.path) {
             console.log("Wall line processing:");
             console.log("- Original end (meters):", drawingState.currentPoint);
             console.log("- Angle-adjusted (meters):", straightenedEndPoint);
             console.log("- Final grid-snapped (meters):", gridSnappedEndPoint);
+            console.log("- Final start-snapped (meters):", gridSnappedStartPoint);
             
-            const startPixels = metersToPixels(snappedStartPoint, zoom);
+            // Convert both grid-aligned points to pixels for display
+            const startPixels = metersToPixels(gridSnappedStartPoint, zoom);
             const endPixels = metersToPixels(gridSnappedEndPoint, zoom);
             
             console.log("Pixel conversion for rendering:");
             console.log("- Start pixels:", startPixels);
             console.log("- End pixels:", endPixels);
             
+            // Create a perfectly aligned wall line with just two points
             e.path.path = [
               ["M", startPixels.x, startPixels.y],
               ["L", endPixels.x, endPixels.y]
