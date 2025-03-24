@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
