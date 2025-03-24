@@ -88,36 +88,36 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
       
       // Apply automatic straightening for straightLine tool
       if (tool === "straightLine" && drawingState.startPoint && drawingState.currentPoint) {
-        console.log("Applying auto-straightening to line");
+        console.log("Applying strict grid alignment to wall line");
         try {
-          // Modify the path to create a perfectly straight or diagonal line
+          // Create perfectly aligned wall line with exact grid positioning
           const straightenedEndPoint = snapToAngle(
             drawingState.startPoint, 
             drawingState.currentPoint,
-            10 // Reduced threshold to 10 degrees for better diagonal precision
+            8 // Reduced threshold for better wall precision (8 degrees)
           );
           
           // Replace the end point with the straightened one
           if (straightenedEndPoint && e.path && e.path.path) {
-            console.log("Line straightened from", drawingState.currentPoint, "to", straightenedEndPoint);
+            console.log("Wall line straightened from", drawingState.currentPoint, "to", straightenedEndPoint);
             
-            // Modify the path to be perfectly straight or diagonal
+            // Convert meters to pixels for the path
             const startX = drawingState.startPoint.x * 100; // Convert to pixels
             const startY = drawingState.startPoint.y * 100;
             const endX = straightenedEndPoint.x * 100;
             const endY = straightenedEndPoint.y * 100;
             
-            // Create a new path array with just two points for a straight line
+            // Create a perfectly straight line with just two points
             e.path.path = [
               ["M", startX, startY],
               ["L", endX, endY]
             ];
             
-            // Force redraw - fixed to use requestRenderAll instead of renderAll
+            // Force redraw
             fabricCanvas.requestRenderAll();
           }
         } catch (err) {
-          console.error("Error straightening line:", err);
+          console.error("Error straightening wall line:", err);
         }
       }
       

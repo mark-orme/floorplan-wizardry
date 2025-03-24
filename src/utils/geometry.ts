@@ -41,7 +41,7 @@ export const snapToGrid = (points: Point[]): Stroke => {
 export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stroke => {
   if (!points || points.length === 0) return [];
   
-  // Always use strict snapping for straight lines on iPad/Apple Pencil for better precision
+  // For strict mode (wall tool), enforce exact grid alignment
   // This ensures we can only draw on grid lines, not between them
   return points.map(p => {
     // For strict mode (wall tool), snap exactly to 0.1m grid
@@ -52,6 +52,7 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
     const snappedX = Math.round(x / GRID_SIZE) * GRID_SIZE;
     const snappedY = Math.round(y / GRID_SIZE) * GRID_SIZE;
     
+    // Ensure exact decimal representation to prevent floating point errors
     return {
       x: Number(snappedX.toFixed(3)),
       y: Number(snappedY.toFixed(3))
@@ -60,7 +61,7 @@ export const snapPointsToGrid = (points: Point[], strict: boolean = false): Stro
 };
 
 /** 
- * Auto-straighten strokes - enhanced version that supports horizontal, vertical and diagonal (45°) angles
+ * Auto-straighten strokes - enhanced version that forces perfect horizontal/vertical alignment
  * @param {Stroke} stroke - Array of points representing a stroke
  * @returns {Stroke} Straightened stroke
  */
@@ -74,43 +75,64 @@ export const straightenStroke = (stroke: Stroke): Stroke => {
   const absDx = Math.abs(dx);
   const absDy = Math.abs(dy);
   
-  // More precise thresholds for better angle detection
-  const horizontalThreshold = 1.0; // If dx is significantly larger than dy
-  const verticalThreshold = 1.0;   // If dy is significantly larger than dx
-  const diagonalThreshold = 0.8;   // If dx and dy are roughly equal (for 45° angles)
+  // Force snap both points to grid first
+  const gridStart = {
+    x: Math.round(start.x / GRID_SIZE) * GRID_SIZE,
+    y: Math.round(start.y / GRID_SIZE) * GRID_SIZE
+  };
   
-  // Determine if the line is horizontal, vertical, or diagonal
-  if (absDx > absDy * horizontalThreshold) { 
+  const gridEnd = {
+    x: Math.round(end.x / GRID_SIZE) * GRID_SIZE,
+    y: Math.round(end.y / GRID_SIZE) * GRID_SIZE
+  };
+  
+  // Calculate new dx/dy after grid snapping
+  const newDx = gridEnd.x - gridStart.x;
+  const newDy = gridEnd.y - gridStart.y;
+  const newAbsDx = Math.abs(newDx);
+  const newAbsDy = Math.abs(newDy);
+  
+  // Determine if the line should be horizontal, vertical, or diagonal
+  // Use more strict comparison for better accuracy
+  if (newAbsDx > newAbsDy * 1.5) { 
     // Mostly horizontal - keep the same Y coordinate
     return [
-      { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
-      { x: Number(end.x.toFixed(3)), y: Number(start.y.toFixed(3)) }
+      { 
+        x: Number(gridStart.x.toFixed(3)), 
+        y: Number(gridStart.y.toFixed(3)) 
+      },
+      { 
+        x: Number(gridEnd.x.toFixed(3)), 
+        y: Number(gridStart.y.toFixed(3)) 
+      }
     ];
-  } else if (absDy > absDx * verticalThreshold) { 
+  } else if (newAbsDy > newAbsDx * 1.5) { 
     // Mostly vertical - keep the same X coordinate
     return [
-      { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
-      { x: Number(start.x.toFixed(3)), y: Number(end.y.toFixed(3)) }
-    ];
-  } else if (absDx / absDy > diagonalThreshold && absDy / absDx > diagonalThreshold) {
-    // Diagonal lines (roughly 45 degrees)
-    // Force exact 45 degrees for better visual alignment
-    const length = Math.max(absDx, absDy);
-    const signX = Math.sign(dx);
-    const signY = Math.sign(dy);
-    
-    return [
-      { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
       { 
-        x: Number((start.x + (length * signX)).toFixed(3)), 
-        y: Number((start.y + (length * signY)).toFixed(3)) 
+        x: Number(gridStart.x.toFixed(3)), 
+        y: Number(gridStart.y.toFixed(3)) 
+      },
+      { 
+        x: Number(gridStart.x.toFixed(3)), 
+        y: Number(gridEnd.y.toFixed(3)) 
       }
     ];
   } else {
-    // For other angles, use the original points
+    // For diagonal lines, ensure they're at exactly 45 degrees
+    const length = Math.max(newAbsDx, newAbsDy);
+    const signX = Math.sign(newDx);
+    const signY = Math.sign(newDy);
+    
     return [
-      { x: Number(start.x.toFixed(3)), y: Number(start.y.toFixed(3)) },
-      { x: Number(end.x.toFixed(3)), y: Number(end.y.toFixed(3)) }
+      { 
+        x: Number(gridStart.x.toFixed(3)), 
+        y: Number(gridStart.y.toFixed(3)) 
+      },
+      { 
+        x: Number((gridStart.x + (length * signX)).toFixed(3)), 
+        y: Number((gridStart.y + (length * signY)).toFixed(3)) 
+      }
     ];
   }
 };
@@ -203,9 +225,12 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
   const dx = endPoint.x - startPoint.x;
   const dy = endPoint.y - startPoint.y;
   
-  // Distance in meters with 1 decimal precision (0.1m increments)
-  // This ensures we only show distances like 1.0m, 1.1m, 1.2m, etc.
-  return Math.round(Math.sqrt(dx * dx + dy * dy) * 10) / 10;
+  // Raw distance in meters with full precision
+  const rawDistance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Round to exactly 1 decimal place (0.1m increments)
+  // This ensures we only show measurements like 1.0m, 1.1m, 1.2m, etc.
+  return Math.round(rawDistance * 10) / 10;
 };
 
 /**
@@ -216,5 +241,5 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
 export const isExactGridMultiple = (value: number): boolean => {
   // Convert to string to handle floating point precision issues
   const rounded = Number((Math.round(value / GRID_SIZE) * GRID_SIZE).toFixed(3));
-  return Math.abs(value - rounded) < 0.001; // Allow small rounding error
+  return Math.abs(value - rounded) < 0.001; // Allow tiny rounding error
 };

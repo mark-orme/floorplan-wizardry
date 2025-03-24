@@ -1,3 +1,4 @@
+
 /**
  * Fabric.js interaction utilities
  * Handles zooming, panning, and other interactive behaviors
@@ -64,7 +65,7 @@ export const addPinchToZoom = (canvas: Canvas) => {
 
 /**
  * Snap a line to common angles (0°, 45°, 90°)
- * Improves drawing precision for straight and diagonal lines
+ * Improved version with strict grid enforcement for walls
  * 
  * @param {Point} startPoint - The starting point of the line
  * @param {Point} endPoint - The current end point of the line
@@ -74,7 +75,7 @@ export const addPinchToZoom = (canvas: Canvas) => {
 export const snapToAngle = (
   startPoint: Point, 
   endPoint: Point, 
-  snapThreshold: number = 10 // Reduced threshold for better diagonal precision
+  snapThreshold: number = 8 // Reduced threshold for better precision
 ): Point => {
   // Calculate the angle between the points
   const dx = endPoint.x - startPoint.x;
@@ -118,17 +119,19 @@ export const snapToAngle = (
     // Calculate the distance between the points
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Calculate the new end point based on the snapped angle
+    // Calculate the raw end point based on the snapped angle
     const rawEndPoint = createSimplePoint(
       startPoint.x + distance * Math.cos(angleInRadians),
       startPoint.y + distance * Math.sin(angleInRadians)
     );
     
     // Now also snap the endpoint to the grid for better alignment
-    return {
+    const snappedEndPoint = {
       x: Math.round(rawEndPoint.x / GRID_SIZE) * GRID_SIZE,
       y: Math.round(rawEndPoint.y / GRID_SIZE) * GRID_SIZE
     };
+    
+    return snappedEndPoint;
   }
   
   // If no angle snap is needed, at least snap the point to the grid

@@ -38,26 +38,38 @@ export const usePointProcessing = (tool: DrawingTool) => {
       filteredPoints = points;
     }
     
-    // Apply grid snapping based on the tool
-    // For wall tool (straightLine), always use strict grid snapping
+    // Always use strict grid snapping for wall tool (straightLine)
     let finalPoints = tool === 'straightLine' 
-      ? snapPointsToGrid(filteredPoints, true) // Always use strict grid snapping for walls
+      ? snapPointsToGrid(filteredPoints, true) // Enforce strict grid snapping for walls
       : snapToGrid(filteredPoints);           // Regular snapping for other tools
     
     console.log("Points snapped to grid:", finalPoints.length);
     
-    // Apply straightening based on tool
+    // Apply straightening for wall tool
     if (tool === 'straightLine') {
-      // For wall tool, always straighten
-      finalPoints = straightenStroke([finalPoints[0], finalPoints[finalPoints.length - 1]]);
-      console.log("Applied straightening to wall line");
+      // For wall tool, always strictly straighten to exact horizontal or vertical
+      const startPoint = finalPoints[0];
+      const endPoint = finalPoints[finalPoints.length - 1];
+      finalPoints = straightenStroke([startPoint, endPoint]);
+      console.log("Applied strict straightening to wall line");
       
-      // Calculate and display wall length - now with 1 decimal place
+      // Calculate and display exact wall length to exactly 1 decimal place
       if (finalPoints.length >= 2) {
         const lengthInMeters = calculateDistance(finalPoints[0], finalPoints[1]);
+        
         // Display with exactly 1 decimal place for consistency
         const displayLength = lengthInMeters.toFixed(1);
-          
+        
+        // Verify the line is exactly on grid points
+        const startOnGrid = isExactGridMultiple(finalPoints[0].x) && isExactGridMultiple(finalPoints[0].y);
+        const endOnGrid = isExactGridMultiple(finalPoints[1].x) && isExactGridMultiple(finalPoints[1].y);
+        
+        if (!startOnGrid || !endOnGrid) {
+          console.warn("Line endpoints not exactly on grid:", finalPoints);
+          // Force snap to nearest grid point
+          finalPoints = snapPointsToGrid(finalPoints, true);
+        }
+        
         toast.success(`Wall length: ${displayLength}m`);
       }
     }
