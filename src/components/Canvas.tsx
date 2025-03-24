@@ -448,7 +448,7 @@ export const Canvas = () => {
       
       if (fabricCanvasRef.current) {
         console.log("Updating fabric canvas dimensions");
-        setCanvasDimensions(fabricCanvasRef.current, { width: newWidth, height: newHeight });
+        setCanvasDimensions(fabricCanvasRef.current, newWidth, newHeight);
         createGrid(fabricCanvasRef.current);
         fabricCanvasRef.current.renderAll();
       } else {
@@ -605,37 +605,35 @@ export const Canvas = () => {
     }
     
     console.log("Tool changed to:", tool);
-    fabricCanvasRef.current.isDrawingMode = true;
     
-    if (fabricCanvasRef.current.freeDrawingBrush) {
-      console.log("Drawing brush exists, configuring for tool:", tool);
+    // Ensure drawing mode is properly set
+    fabricCanvasRef.current.isDrawingMode = true;
+    console.log("Drawing mode set to:", fabricCanvasRef.current.isDrawingMode);
+    
+    try {
+      // Ensure the brush is properly initialized
+      if (!fabricCanvasRef.current.freeDrawingBrush) {
+        console.log("No drawing brush found, initializing new one");
+        const pencilBrush = new PencilBrush(fabricCanvasRef.current);
+        fabricCanvasRef.current.freeDrawingBrush = pencilBrush;
+      }
       
-      // Ensure brush is properly configured
+      // Configure the brush
       fabricCanvasRef.current.freeDrawingBrush.color = "#000000";
       fabricCanvasRef.current.freeDrawingBrush.width = 2;
+      console.log("Drawing brush configured:", {
+        color: fabricCanvasRef.current.freeDrawingBrush.color,
+        width: fabricCanvasRef.current.freeDrawingBrush.width
+      });
       
       if (tool === 'straightLine') {
         toast.info("Straight line tool: Strokes will be auto-straightened");
       } else if (tool === 'room') {
         toast.info("Room tool: Draw closed shapes to calculate area");
       }
-    } else {
-      console.error("Drawing brush not initialized when tool changed");
-      
-      try {
-        // Re-initialize the brush
-        const pencilBrush = initializeDrawingBrush(fabricCanvasRef.current);
-        if (pencilBrush) {
-          fabricCanvasRef.current.freeDrawingBrush = pencilBrush;
-          console.log("Drawing brush reinitialized");
-          setDebugInfo(prev => ({ ...prev, brushInitialized: true }));
-        } else {
-          console.error("Failed to reinitialize brush");
-          toast.error("Drawing tool initialization failed");
-        }
-      } catch (brushErr) {
-        console.error("Error reinitializing brush:", brushErr);
-      }
+    } catch (brushErr) {
+      console.error("Error configuring brush:", brushErr);
+      toast.error("Failed to configure drawing tools");
     }
     
     fabricCanvasRef.current.renderAll();
