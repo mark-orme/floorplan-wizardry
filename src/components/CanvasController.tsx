@@ -87,6 +87,8 @@ export const CanvasController = () => {
     historyRef,
     tool,
     zoomLevel,
+    lineThickness,
+    lineColor,
     setTool,
     setZoomLevel,
     floorPlans,
