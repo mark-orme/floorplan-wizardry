@@ -4,7 +4,7 @@
  * @module useGridManagement
  */
 import { useRef, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Line } from "fabric"; // Added Line import
 import { resetGridProgress } from "@/utils/gridManager";
 
 interface UseGridManagementProps {

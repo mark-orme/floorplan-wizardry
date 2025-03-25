@@ -14,7 +14,7 @@ import { GRID_SIZE, PIXELS_PER_METER } from '@/utils/drawing';
 vi.mock('fabric', () => {
   const FabricMock = {
     Canvas: vi.fn().mockImplementation(() => ({
-      on: vi.fn(),
+      on: vi.fn().mockReturnValue({}), // Return empty object for chaining
       off: vi.fn(),
       add: vi.fn(),
       remove: vi.fn(),
@@ -81,21 +81,38 @@ describe('Grid drawing with mouse and stylus', () => {
   });
   
   it('handles mouse input correctly', () => {
+    // Setup mock for on method
+    const mockHandler = vi.fn();
+    canvas.on = vi.fn().mockImplementation((event, handler) => {
+      if (event === 'mouse:down') {
+        mockHandler.mockImplementation(handler);
+      }
+      return {};
+    });
+    
     addPressureSensitivity(canvas);
     
     // Simulate mouse down event
     const mouseEvent = new MouseEvent('mousedown');
     const fabricEvent = { e: mouseEvent };
     
-    // Execute the handler directly (get the first call's 2nd argument which is the handler function)
-    const mouseDownHandler = vi.spyOn(canvas, 'on').mock.calls[0][1];
-    mouseDownHandler(fabricEvent);
+    // Call the handler directly
+    mockHandler(fabricEvent);
     
     // Mouse event should use default pressure (width shouldn't change)
     expect(canvas.freeDrawingBrush.width).toBe(2);
   });
   
   it('handles stylus pressure correctly', () => {
+    // Setup mock for on method
+    const mockHandler = vi.fn();
+    canvas.on = vi.fn().mockImplementation((event, handler) => {
+      if (event === 'mouse:down') {
+        mockHandler.mockImplementation(handler);
+      }
+      return {};
+    });
+    
     addPressureSensitivity(canvas);
     
     // Create a mock TouchEvent with pressure
@@ -105,9 +122,8 @@ describe('Grid drawing with mouse and stylus', () => {
     
     const fabricEvent = { e: touchEvent };
     
-    // Get and execute the mouse:down handler
-    const mouseDownHandler = vi.spyOn(canvas, 'on').mock.calls[0][1];
-    mouseDownHandler(fabricEvent);
+    // Call the handler directly
+    mockHandler(fabricEvent);
     
     // Width should be scaled by pressure (2 * 0.5 = 1)
     expect(canvas.freeDrawingBrush.width).toBe(1);

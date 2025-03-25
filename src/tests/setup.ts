@@ -28,10 +28,11 @@ beforeAll(() => {
   // Mock requestIdleCallback
   if (!global.requestIdleCallback) {
     global.requestIdleCallback = (callback) => {
+      // Use setTimeout but return a number instead of the Timeout object
       return setTimeout(() => callback({
         didTimeout: false,
         timeRemaining: () => 50
-      }), 0);
+      }), 0) as unknown as number;
     };
   }
   
