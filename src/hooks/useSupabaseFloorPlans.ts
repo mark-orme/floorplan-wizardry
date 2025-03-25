@@ -7,7 +7,7 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 
@@ -18,6 +18,7 @@ import logger from "@/utils/logger";
 export const useSupabaseFloorPlans = () => {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const isConfigured = isSupabaseConfigured();
 
   /**
    * Save floor plans to Supabase
@@ -25,6 +26,12 @@ export const useSupabaseFloorPlans = () => {
    * @returns Promise resolving to success status
    */
   const saveToSupabase = useCallback(async (floorPlans: FloorPlan[]): Promise<boolean> => {
+    // Skip if Supabase is not configured
+    if (!isConfigured) {
+      logger.info('Not saving to Supabase: Missing configuration');
+      return false;
+    }
+    
     // Skip if user is not logged in
     if (!user) {
       logger.info('Not saving to Supabase: User not logged in');
@@ -36,11 +43,15 @@ export const useSupabaseFloorPlans = () => {
       logger.info('Saving floor plans to Supabase');
 
       // Check for existing floor plans in Supabase
-      const { data: existingPlans } = await supabase
+      const { data: existingPlans, error: queryError } = await supabase
         .from('floor_plans')
         .select('id')
         .eq('user_id', user.id)
         .single();
+        
+      if (queryError && queryError.code !== 'PGRST116') {
+        throw queryError;
+      }
 
       const saveData = {
         user_id: user.id,
@@ -78,13 +89,19 @@ export const useSupabaseFloorPlans = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [user]);
+  }, [user, isConfigured]);
 
   /**
    * Load floor plans from Supabase
    * @returns Promise resolving to loaded floor plans or null if not found
    */
   const loadFromSupabase = useCallback(async (): Promise<FloorPlan[] | null> => {
+    // Skip if Supabase is not configured
+    if (!isConfigured) {
+      logger.info('Not loading from Supabase: Missing configuration');
+      return null;
+    }
+    
     // Skip if user is not logged in
     if (!user) {
       logger.info('Not loading from Supabase: User not logged in');
@@ -120,12 +137,12 @@ export const useSupabaseFloorPlans = () => {
       toast.error('Failed to load floor plans from cloud');
       return null;
     }
-  }, [user]);
+  }, [user, isConfigured]);
 
   return {
     saveToSupabase,
     loadFromSupabase,
     isSaving,
-    isLoggedIn: !!user
+    isLoggedIn: !!user && isConfigured
   };
 };
