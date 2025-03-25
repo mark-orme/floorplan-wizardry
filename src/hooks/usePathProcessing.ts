@@ -113,6 +113,7 @@ export const usePathProcessing = ({
       
       if (success) {
         console.log("Line drawn and added to canvas successfully");
+        // History is now handled in useCanvasDrawing to avoid duplicating entries
       }
       
     } catch (error) {

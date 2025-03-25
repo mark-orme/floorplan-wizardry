@@ -46,17 +46,34 @@ export const useDrawingHistory = ({
     try {
       // Get the current state before making changes (for redo)
       const currentState = fabricCanvas.getObjects().filter(obj => 
-        obj.type === 'polyline' || obj.type === 'path'
+        (obj.type === 'polyline' || obj.type === 'path') &&
+        !gridLayerRef.current.includes(obj)
       );
       
-      // Add current state to future
-      future.unshift([...currentState]);
+      // Only add to future if we have something to store
+      if (currentState.length > 0) {
+        future.unshift([...currentState]);
+      }
       
       // Remove the last state from past
       const previousState = past.pop();
       
-      // Clear all objects except grid
-      clearDrawings();
+      // Store grid objects to preserve them
+      const gridObjects = [...gridLayerRef.current];
+      
+      // Remove only non-grid objects
+      const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
+        !gridLayerRef.current.includes(obj)
+      );
+      
+      // Remove non-grid objects
+      objectsToRemove.forEach(obj => {
+        try {
+          fabricCanvas.remove(obj);
+        } catch (err) {
+          console.warn("Error removing object during undo:", err);
+        }
+      });
       
       // If we have a previous state, restore it
       if (previousState && previousState.length > 0) {
@@ -109,17 +126,31 @@ export const useDrawingHistory = ({
     try {
       // Get the current state before making changes (for undo)
       const currentState = fabricCanvas.getObjects().filter(obj => 
-        obj.type === 'polyline' || obj.type === 'path'
+        (obj.type === 'polyline' || obj.type === 'path') &&
+        !gridLayerRef.current.includes(obj)
       );
       
-      // Add current state to past
-      past.push([...currentState]);
+      // Only add to past if we have something to store
+      if (currentState.length > 0) {
+        past.push([...currentState]);
+      }
       
       // Get the most recent future state
       const futureState = future.shift();
       
-      // Clear all objects except grid
-      clearDrawings();
+      // Remove only non-grid objects
+      const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
+        !gridLayerRef.current.includes(obj)
+      );
+      
+      // Remove non-grid objects
+      objectsToRemove.forEach(obj => {
+        try {
+          fabricCanvas.remove(obj);
+        } catch (err) {
+          console.warn("Error removing object during redo:", err);
+        }
+      });
       
       // If we have a future state, restore it
       if (futureState && futureState.length > 0) {

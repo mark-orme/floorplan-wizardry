@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -182,6 +183,19 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         }
       }
       
+      // Add current state to history before adding the new path
+      if (fabricCanvas) {
+        const currentDrawings = fabricCanvas.getObjects().filter(obj => 
+          (obj.type === 'polyline' || obj.type === 'path') &&
+          !gridLayerRef.current.includes(obj)
+        );
+        
+        if (currentDrawings.length > 0) {
+          historyRef.current.past.push([...currentDrawings]);
+          historyRef.current.future = []; // Clear redo stack when new drawing is made
+        }
+      }
+      
       processCreatedPath(e.path);
       handleMouseUp();
     };
@@ -211,7 +225,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     tool,
     lineThickness,
     lineColor,
-    drawingState
+    drawingState,
+    gridLayerRef,
+    historyRef
   ]);
 
   // Return drawing state with current zoom level

@@ -95,22 +95,14 @@ export const usePolylineCreation = ({
         return newFloorPlans;
       });
 
-      // Update history for undo/redo
-      const currentState = fabricCanvas.getObjects().filter(obj => 
-        obj.type === 'polyline' || obj.type === 'path'
-      );
-      
-      console.log("Adding to history:", currentState.length, "objects");
-      historyRef.current.past.push([...currentState]);
-      historyRef.current.future = [];
-      
+      // History is now managed in useCanvasDrawing
       return true;
     } catch (err) {
       console.error("Error creating polyline:", err);
       toast.error("Failed to create line");
       return false;
     }
-  }, [fabricCanvasRef, gridLayerRef, historyRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor]);
+  }, [fabricCanvasRef, gridLayerRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor]);
 
   return { createPolyline };
 };
