@@ -101,7 +101,7 @@ export const useCanvasHistory = ({
   }, [historyRef, fabricCanvasRef, gridLayerRef, recalculateGIA]);
 
   /**
-   * Redo the last undone drawing action
+   * Redo the last undone drawing action - only adds back the last removed item
    */
   const handleRedo = useCallback(() => {
     if (!canRedo(historyRef)) {
@@ -109,12 +109,13 @@ export const useCanvasHistory = ({
       return;
     }
     
-    logger.info("Performing redo operation");
+    logger.info("Performing redo operation - restoring last removed object");
     
-    // Get future state (single removed object)
-    const futureState = historyRef.current.future.shift() || [];
+    // Get future state (contains the single object that was removed)
+    const futureState = historyRef.current.future.shift();
     
-    if (futureState.length > 0) {
+    if (futureState && futureState.length > 0) {
+      // Get the single object to restore
       const objectToAdd = futureState[0];
       logger.info(`Restoring object of type ${objectToAdd.type}`);
       
@@ -124,6 +125,9 @@ export const useCanvasHistory = ({
       if (addedObject) {
         // Get current state after addition
         const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
+        
+        // Update history with current state
+        historyRef.current.past.push([...currentState]);
         
         // Update last captured state
         lastCapturedStateRef.current = [...currentState];
