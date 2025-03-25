@@ -1,3 +1,4 @@
+
 /**
  * Grid manager module for grid creation and lifecycle
  * Handles grid creation state, flags, and limits to prevent simultaneous updates
@@ -5,6 +6,7 @@
  * @module gridManager
  */
 import { GridManagerState, CanvasDimensions } from "@/types/drawingTypes";
+import { toast } from "sonner";
 
 /**
  * Track grid creation state globally with proper typing
@@ -39,8 +41,8 @@ export const gridManager: GridManagerState = {
   // Flags to prevent race conditions
   lastResetTime: 0,
   consecutiveResets: 0,
-  maxConsecutiveResets: 5, // Increased to allow more attempts
-  resetDelay: 500, // Increased from 300 to 500ms to give more breathing room between resets
+  maxConsecutiveResets: 5, // Maximum consecutive resets allowed
+  resetDelay: 1000,        // Increased from 500ms to 1000ms to give more breathing room
   
   // Track creation locks with timestamp
   creationLock: {
@@ -59,17 +61,28 @@ export const resetGridProgress = (): void => {
   const now = Date.now();
   
   // Check for rapid consecutive resets which might indicate a problem
-  if (now - gridManager.lastResetTime < 500) {
+  if (now - gridManager.lastResetTime < 1000) { // Increased threshold from 500ms to 1000ms
     gridManager.consecutiveResets++;
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Consecutive grid reset #${gridManager.consecutiveResets}`);
+      // Only log every few resets to avoid flooding console
+      if (gridManager.consecutiveResets % 3 === 0) {
+        console.log(`Consecutive grid reset #${gridManager.consecutiveResets}`);
+      }
     }
     
     // If too many rapid resets, we might be in a reset loop
     if (gridManager.consecutiveResets > gridManager.maxConsecutiveResets) {
       if (process.env.NODE_ENV === 'development') {
         console.warn("Too many consecutive resets detected, adding delay");
+      }
+      
+      // Show a toast to inform the user that there's an issue
+      if (gridManager.consecutiveResets === gridManager.maxConsecutiveResets + 1) {
+        toast.warning("Drawing grid is taking longer than expected. Please wait...", {
+          id: "grid-delay",
+          duration: 5000
+        });
       }
       
       // Force a release of locks IMMEDIATELY to break potential loops
@@ -84,13 +97,13 @@ export const resetGridProgress = (): void => {
         if (process.env.NODE_ENV === 'development') {
           console.log("Reset counter cleared after delay");
         }
-      }, gridManager.resetDelay * 2); // Double the delay for resetting the counter
+      }, gridManager.resetDelay * 3); // Triple the delay for resetting the counter to be extra safe
       
       return;
     }
   } else {
     // Reset the counter if enough time has passed
-    if (now - gridManager.lastResetTime > 1000) {
+    if (now - gridManager.lastResetTime > 2000) { // Increased from 1000ms to 2000ms
       gridManager.consecutiveResets = 0;
     }
   }
@@ -99,7 +112,8 @@ export const resetGridProgress = (): void => {
   gridManager.inProgress = false;
   gridManager.creationLock.isLocked = false;
   
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' && gridManager.consecutiveResets === 0) {
+    // Only log resets when we're starting fresh, not in a loop
     console.log("Grid creation progress flag reset");
   }
 };
@@ -117,7 +131,10 @@ export const acquireGridCreationLock = (): boolean => {
   // If we've had too many resets recently, throttle new lock acquisitions
   if (gridManager.consecutiveResets > gridManager.maxConsecutiveResets - 1) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn("Throttling lock acquisition due to recent reset activity");
+      // Only log once per threshold crossing
+      if (gridManager.consecutiveResets === gridManager.maxConsecutiveResets) {
+        console.warn("Throttling lock acquisition due to recent reset activity");
+      }
     }
     return false;
   }

@@ -1,69 +1,92 @@
 
 /**
- * Grid attempt tracking utilities
- * Tracks grid creation attempts and provides state management
+ * Grid attempt tracker module
+ * Tracks and manages grid creation attempts
  * @module gridAttemptTracker
  */
 
 /**
- * Track grid creation attempt status
+ * Grid attempt tracking state
  */
-export interface GridAttemptStatus {
-  /** Count of creation attempts */
+export interface GridAttemptTracker {
   count: number;
-  /** Maximum number of attempts to try */
   maxAttempts: number;
-  /** Flag to track if initial grid creation was attempted */
   initialAttempted: boolean;
-  /** Flag to track if grid creation was successful */
-  creationSuccessful: boolean;
+  successful: boolean;
+  lastAttemptTime: number;
 }
 
 /**
  * Create a new grid attempt tracker
- * @returns {GridAttemptStatus} Initial grid attempt status
+ * @returns {GridAttemptTracker} New tracker instance
  */
-export const createGridAttemptTracker = (): GridAttemptStatus => ({
+export const createGridAttemptTracker = (): GridAttemptTracker => ({
   count: 0,
   maxAttempts: 12,
   initialAttempted: false,
-  creationSuccessful: false
+  successful: false,
+  lastAttemptTime: 0
 });
 
 /**
- * Increment attempt count and check if max attempts reached
- * @param {GridAttemptStatus} status - Current grid attempt status
- * @returns {GridAttemptStatus} Updated status
+ * Mark the initial grid creation as attempted
+ * @param {GridAttemptTracker} tracker - The current tracker
+ * @returns {GridAttemptTracker} Updated tracker
  */
-export const incrementAttemptCount = (status: GridAttemptStatus): GridAttemptStatus => ({
-  ...status,
-  count: status.count + 1
-});
-
-/**
- * Mark grid creation as successful
- * @param {GridAttemptStatus} status - Current grid attempt status
- * @returns {GridAttemptStatus} Updated status
- */
-export const markCreationSuccessful = (status: GridAttemptStatus): GridAttemptStatus => ({
-  ...status,
-  creationSuccessful: true
-});
-
-/**
- * Mark initial grid attempt as complete
- * @param {GridAttemptStatus} status - Current grid attempt status
- * @returns {GridAttemptStatus} Updated status
- */
-export const markInitialAttempted = (status: GridAttemptStatus): GridAttemptStatus => ({
-  ...status,
+export const markInitialAttempted = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+  ...tracker,
   initialAttempted: true
 });
 
 /**
- * Check if maximum attempts have been reached
- * @param {GridAttemptStatus} status - Current grid attempt status
- * @returns {boolean} True if max attempts reached
+ * Increment the attempt count
+ * @param {GridAttemptTracker} tracker - The current tracker
+ * @returns {GridAttemptTracker} Updated tracker
  */
-export const isMaxAttemptsReached = (status: GridAttemptStatus): boolean => 
-  status.count >= status.maxAttempts;
+export const incrementAttemptCount = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+  ...tracker,
+  count: tracker.count + 1,
+  lastAttemptTime: Date.now()
+});
+
+/**
+ * Mark creation as successful
+ * @param {GridAttemptTracker} tracker - The current tracker
+ * @returns {GridAttemptTracker} Updated tracker
+ */
+export const markCreationSuccessful = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+  ...tracker,
+  successful: true
+});
+
+/**
+ * Check if maximum attempts reached
+ * @param {GridAttemptTracker} tracker - The current tracker
+ * @returns {boolean} Whether max attempts reached
+ */
+export const isMaxAttemptsReached = (tracker: GridAttemptTracker): boolean => 
+  tracker.count >= tracker.maxAttempts;
+
+/**
+ * Reset attempt counter while maintaining other state
+ * @param {GridAttemptTracker} tracker - The current tracker
+ * @returns {GridAttemptTracker} Updated tracker
+ */
+export const resetAttemptCount = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+  ...tracker,
+  count: 0
+});
+
+/**
+ * Check if attempts should be throttled
+ * @param {GridAttemptTracker} tracker - The current tracker
+ * @param {number} minInterval - Minimum milliseconds between attempts
+ * @returns {boolean} Whether to throttle attempts
+ */
+export const shouldThrottleAttempts = (
+  tracker: GridAttemptTracker, 
+  minInterval: number = 1000
+): boolean => {
+  const now = Date.now();
+  return now - tracker.lastAttemptTime < minInterval;
+};

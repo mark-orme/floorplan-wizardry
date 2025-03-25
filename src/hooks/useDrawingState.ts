@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
@@ -42,6 +43,8 @@ export const useDrawingState = ({
   const timeoutRef = useRef<number | null>(null);
   // Track animation frame for performance
   const animationFrameRef = useRef<number | null>(null);
+  // Use a ref to track the last logged position to reduce excessive logging
+  const lastLoggedPositionRef = useRef<{x: number, y: number} | null>(null);
   
   // Clear any existing timeouts and animation frames
   const cleanupTimeouts = useCallback(() => {
@@ -133,11 +136,23 @@ export const useDrawingState = ({
     // This gives visual feedback to the user about where walls will land
     const snappedCurrentPoint = snapToGrid(rawCurrentPoint);
     
-    console.log("LIVE SNAP:");
-    console.log("- Mouse position (pixels):", pointer.x, pointer.y);
-    console.log("- Converted to meters:", rawCurrentPoint);
-    console.log("- Snapped to grid (meters):", snappedCurrentPoint);
-    console.log("- Current zoom level:", zoom);
+    // Only log if the position has changed significantly (reduce logging)
+    const shouldLog = process.env.NODE_ENV === 'development' && (
+      !lastLoggedPositionRef.current ||
+      Math.abs(lastLoggedPositionRef.current.x - pointer.x) > 20 ||
+      Math.abs(lastLoggedPositionRef.current.y - pointer.y) > 20
+    );
+    
+    if (shouldLog) {
+      console.log("LIVE SNAP:");
+      console.log("- Mouse position (pixels):", pointer.x, pointer.y);
+      console.log("- Converted to meters:", rawCurrentPoint);
+      console.log("- Snapped to grid (meters):", snappedCurrentPoint);
+      console.log("- Current zoom level:", zoom);
+      
+      // Update last logged position
+      lastLoggedPositionRef.current = { x: pointer.x, y: pointer.y };
+    }
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {

@@ -14,9 +14,9 @@ import { toast } from "sonner";
  */
 export const DEFAULT_RETRY_CONFIG = {
   maxAttempts: 3,
-  initialDelay: 200,  // Increased from 100 to 200ms
+  initialDelay: 400,  // Increased from 200 to 400ms
   backoffFactor: 2,
-  minAttemptInterval: 500  // Minimum time between attempts
+  minAttemptInterval: 800  // Increased from 500ms to 800ms
 };
 
 /**
@@ -36,10 +36,18 @@ export const scheduleGridRetry = (
 ): number => {
   const attempt = attemptCountRef.current;
   
+  // Only allow up to maxAttempts retries
+  if (attempt >= config.maxAttempts) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("Max grid creation attempts reached, using emergency grid");
+    }
+    return 0;
+  }
+  
   // Calculate delay with exponential backoff
   const delay = Math.min(
     config.initialDelay * Math.pow(config.backoffFactor, attempt - 1),
-    2000 // Cap at 2 seconds max
+    3000 // Cap at 3 seconds max (increased from 2 seconds)
   );
   
   if (process.env.NODE_ENV === 'development') {
@@ -81,6 +89,12 @@ export const handleMaxAttemptsReached = (
     console.warn("Max grid creation attempts reached, using emergency grid");
   }
   
+  // First notify the user that we're using a simplified grid
+  toast.warning("Using simplified drawing grid due to creation difficulties.", {
+    id: "emergency-grid",
+    duration: 4000
+  });
+  
   try {
     // Create an emergency grid as last resort
     const emergencyGrid = createBasicEmergencyGrid(canvas, gridLayerRef);
@@ -88,21 +102,15 @@ export const handleMaxAttemptsReached = (
     if (emergencyGrid.length > 0) {
       // Emergency grid created successfully
       setDebugInfo(prev => ({...prev, gridCreated: true}));
-      
-      // Show a warning to the user but don't set error state
-      toast.warning("Using simplified grid due to creation difficulties.", {
-        id: "emergency-grid",
-        duration: 3000
-      });
-      
       return emergencyGrid;
     } else {
       // Even emergency grid failed
       setHasError(true);
       setErrorMessage("Failed to create grid after multiple attempts.");
-      toast.error("Unable to create drawing grid. Please try refreshing the page.", {
+      
+      toast.error("Unable to create drawing grid. Please refresh the page.", {
         id: "grid-error",
-        duration: 5000
+        duration: 7000
       });
       return [];
     }

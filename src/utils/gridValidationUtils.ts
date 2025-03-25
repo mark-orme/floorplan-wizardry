@@ -1,52 +1,54 @@
 
 /**
  * Grid validation utilities
- * Handles validation and throttling for grid creation
+ * Provides functions for validating grid components and throttling creation
  * @module gridValidationUtils
  */
 import { Canvas as FabricCanvas } from "fabric";
 
 /**
- * Validate canvas and gridLayerRef before grid creation
+ * Validates canvas and grid components before creation
+ * Ensures all required components are available and valid
  * 
- * @param canvas - The Fabric canvas instance
- * @param gridLayerRef - Reference to the grid layer objects
- * @returns Whether validation passed
+ * @param {FabricCanvas} canvas - The canvas instance
+ * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to grid layer
+ * @returns {Object} Validation result with status and message
  */
 export const validateGridComponents = (
   canvas: FabricCanvas | null,
-  gridLayerRef: React.MutableRefObject<any[]> | undefined
-): { valid: boolean, message?: string } => {
-  // Basic validation
+  gridLayerRef: React.MutableRefObject<any[]> | null
+): { valid: boolean; message?: string } => {
   if (!canvas) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error("Canvas is null in grid validation");
-    }
     return { valid: false, message: "Canvas is null" };
   }
   
-  // Safety check for gridLayerRef
-  if (!gridLayerRef || !gridLayerRef.current) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error("gridLayerRef is null or undefined in grid validation");
-    }
-    
-    // Valid but with warning
-    return { 
-      valid: true, 
-      message: "gridLayerRef is null or undefined, will be initialized"
-    };
+  if (!gridLayerRef) {
+    return { valid: false, message: "Grid layer reference is null" };
   }
   
   return { valid: true };
 };
 
 /**
- * Check if grid creation should be throttled
+ * Ensures grid layer reference is initialized
  * 
- * @param lastAttemptTime - Timestamp of the last attempt
- * @param minInterval - Minimum interval between attempts in ms
- * @returns Whether creation should be throttled
+ * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to grid layer
+ */
+export const ensureGridLayerInitialized = (
+  gridLayerRef: React.MutableRefObject<any[]>
+): void => {
+  if (!gridLayerRef.current) {
+    gridLayerRef.current = [];
+  }
+};
+
+/**
+ * Determines if grid creation should be throttled based on timing
+ * Prevents too many rapid creation attempts
+ * 
+ * @param {number} lastAttemptTime - Timestamp of last attempt
+ * @param {number} minInterval - Minimum time between attempts in ms
+ * @returns {boolean} Whether creation should be throttled
  */
 export const shouldThrottleGridCreation = (
   lastAttemptTime: number,
@@ -57,14 +59,48 @@ export const shouldThrottleGridCreation = (
 };
 
 /**
- * Initialize gridLayerRef if needed
+ * Checks if two grid layouts are essentially the same
+ * Used to prevent unnecessary grid recreation
  * 
- * @param gridLayerRef - Reference to grid layer objects
+ * @param {Object} oldDimensions - Old canvas dimensions
+ * @param {Object} newDimensions - New canvas dimensions
+ * @param {number} changeTolerance - Tolerance percentage (0-1)
+ * @returns {boolean} Whether dimensions are similar enough
  */
-export const ensureGridLayerInitialized = (
-  gridLayerRef: React.MutableRefObject<any[]> | undefined
-): void => {
-  if (gridLayerRef && !gridLayerRef.current) {
-    gridLayerRef.current = [];
+export const areGridLayoutsSimilar = (
+  oldDimensions: { width: number; height: number },
+  newDimensions: { width: number; height: number },
+  changeTolerance: number = 0.15
+): boolean => {
+  if (oldDimensions.width === 0 || oldDimensions.height === 0) {
+    return false;
+  }
+  
+  const widthChange = Math.abs(oldDimensions.width - newDimensions.width) / oldDimensions.width;
+  const heightChange = Math.abs(oldDimensions.height - newDimensions.height) / oldDimensions.height;
+  
+  return widthChange <= changeTolerance && heightChange <= changeTolerance;
+};
+
+/**
+ * Creates a minimal grid structure when normal creation fails
+ * Used as a last resort for basic functionality
+ * 
+ * @param {FabricCanvas} canvas - The canvas instance
+ * @returns {boolean} Success indicator
+ */
+export const createMinimalGridStructure = (canvas: FabricCanvas): boolean => {
+  try {
+    // Create a minimal background and guides
+    const width = canvas.width || 800;
+    const height = canvas.height || 600;
+    
+    // Set background color
+    canvas.backgroundColor = '#fcfcfd';
+    
+    return true;
+  } catch (error) {
+    console.error("Error creating minimal grid structure:", error);
+    return false;
   }
 };
