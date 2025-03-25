@@ -1,0 +1,97 @@
+
+/**
+ * Hook for creating and managing grid objects on canvas
+ * Handles the core grid creation functionality
+ * @module useGridCreation
+ */
+import { useCallback } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { createGrid } from "@/utils/canvasGrid";
+import { resetGridProgress } from "@/utils/gridManager";
+import { 
+  CanvasDimensions, 
+  DebugInfoState
+} from "@/types/drawingTypes";
+
+interface UseGridCreationProps {
+  /** Reference to the grid layer objects */
+  gridLayerRef: React.MutableRefObject<any[]>;
+  
+  /** Current canvas dimensions */
+  canvasDimensions: CanvasDimensions;
+  
+  /** Setter for debug information state */
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  
+  /** Setter for error state */
+  setHasError: (value: boolean) => void;
+  
+  /** Setter for error message */
+  setErrorMessage: (value: string) => void;
+}
+
+/**
+ * Hook for grid creation operations
+ * @param props - Hook properties
+ * @returns Memoized grid creation function
+ */
+export const useGridCreation = ({
+  gridLayerRef,
+  canvasDimensions,
+  setDebugInfo,
+  setHasError,
+  setErrorMessage
+}: UseGridCreationProps) => {
+  
+  /**
+   * Create grid lines on the canvas
+   * @param canvas - The Fabric.js canvas instance
+   * @returns Array of created grid objects
+   */
+  const createGridCallback = useCallback((canvas: FabricCanvas): any[] => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("createGridCallback invoked with FORCED CREATION", {
+        canvasDimensions,
+        gridExists: gridLayerRef?.current?.length > 0,
+        initialized: (canvas as any).initialized
+      });
+    }
+    
+    // Force reset any stuck grid creation before attempting
+    resetGridProgress();
+    
+    try {
+      // Create the grid by direct call to canvasGrid.ts
+      const grid = createGrid(
+        canvas, 
+        gridLayerRef, 
+        canvasDimensions, 
+        setDebugInfo, 
+        setHasError, 
+        setErrorMessage
+      );
+      
+      if (grid && grid.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Grid created successfully with ${grid.length} objects`);
+        }
+        
+        // Force a render
+        canvas.requestRenderAll();
+      }
+      
+      return grid || gridLayerRef.current;
+      
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Critical error in createGridCallback:", error);
+      }
+      setHasError(true);
+      setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      
+      return gridLayerRef.current;
+    }
+  }, [canvasDimensions, gridLayerRef, setDebugInfo, setHasError, setErrorMessage]);
+
+  return createGridCallback;
+};
