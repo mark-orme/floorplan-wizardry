@@ -1,3 +1,4 @@
+
 /**
  * Grid operation utilities
  * @module gridOperations
