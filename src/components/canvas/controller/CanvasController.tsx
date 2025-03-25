@@ -4,7 +4,7 @@
  * Centralizes all canvas state and operations
  * @module CanvasController
  */
-import { useEffect } from "react";
+import { ReactNode, createContext, useContext, useEffect } from "react";
 
 // Import all the refactored hooks
 import { useCanvasControllerState } from "./useCanvasControllerState";
@@ -17,12 +17,20 @@ import { useCanvasControllerErrorHandling } from "./useCanvasControllerErrorHand
 import { useCanvasControllerDrawingState } from "./useCanvasControllerDrawingState";
 import { useCanvasControllerLoader } from "./useCanvasControllerLoader";
 
-/**
- * Controller component that manages all canvas logic and state
- * Centralizes canvas operations to improve maintainability and security
- * @returns All canvas-related state and handler functions
- */
-export const CanvasController = () => {
+// Create a context to hold all canvas controller values
+const CanvasControllerContext = createContext<ReturnType<typeof useCanvasControllerHooks> | null>(null);
+
+// Custom hook to access the canvas controller context
+export const useCanvasController = () => {
+  const context = useContext(CanvasControllerContext);
+  if (!context) {
+    throw new Error("useCanvasController must be used within a CanvasControllerProvider");
+  }
+  return context;
+};
+
+// Hook that combines all the canvas controller hooks
+const useCanvasControllerHooks = () => {
   // 1. Initialize state
   const {
     tool, setTool,
@@ -216,4 +224,22 @@ export const CanvasController = () => {
     // Error handling
     handleRetry
   };
+};
+
+// Actual React component that provides canvas controller context
+interface CanvasControllerProviderProps {
+  children: ReactNode;
+}
+
+/**
+ * Provider component that wraps children with canvas controller context
+ */
+export const CanvasControllerProvider = ({ children }: CanvasControllerProviderProps) => {
+  const controllerValues = useCanvasControllerHooks();
+  
+  return (
+    <CanvasControllerContext.Provider value={controllerValues}>
+      {children}
+    </CanvasControllerContext.Provider>
+  );
 };
