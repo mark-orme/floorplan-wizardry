@@ -9,12 +9,22 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@/lib/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
+
+// Test users for quick access
+const testUsers = [
+  { email: 'photographer@nichecom.co.uk', password: 'password1', role: UserRole.PHOTOGRAPHER, label: 'Photographer Test User' },
+  { email: 'processing@nichecom.co.uk', password: 'password1', role: UserRole.PROCESSING_MANAGER, label: 'Processing Manager Test User' },
+  { email: 'manager@nichecom.co.uk', password: 'password1', role: UserRole.MANAGER, label: 'Manager Test User' },
+];
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>(UserRole.PHOTOGRAPHER);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -46,16 +56,49 @@ const Auth = () => {
     }
   };
 
+  const selectTestUser = (testUser: typeof testUsers[0]) => {
+    setEmail(testUser.email);
+    setPassword(testUser.password);
+    setRole(testUser.role);
+    
+    // Switch to the appropriate tab based on whether this is for sign-in or sign-up
+    if (activeTab === 'signup') {
+      setActiveTab('login');
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="w-full max-w-md">
-        <Tabs defaultValue="login">
+        <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
           <CardHeader>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            <CardDescription className="mt-4">
+            <div className="flex justify-between items-center mb-2">
+              <TabsList className="grid w-3/4 grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Test Users <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  {testUsers.map((user, index) => (
+                    <DropdownMenuItem 
+                      key={index} 
+                      onClick={() => selectTestUser(user)}
+                      className="flex flex-col items-start"
+                    >
+                      <span className="font-medium">{user.label}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <CardDescription>
               Access the property floor plan system
             </CardDescription>
           </CardHeader>
