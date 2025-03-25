@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserRole } from '@/lib/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -34,8 +34,17 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [isCreatingTestUsers, setIsCreatingTestUsers] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      console.log('User already logged in, redirecting to properties page');
+      navigate('/properties');
+    }
+  }, [user, navigate]);
 
   // Create test users on component mount
   useEffect(() => {
@@ -142,7 +151,7 @@ const Auth = () => {
     
     try {
       await signIn(email, password);
-      navigate('/properties');
+      console.log('Sign in successful, waiting for auth state update...');
     } catch (error) {
       console.error('Authentication error:', error);
     } finally {
@@ -156,7 +165,7 @@ const Auth = () => {
     
     try {
       await signUp(email, password, role);
-      navigate('/properties');
+      console.log('Sign up successful, waiting for auth state update...');
     } catch (error) {
       console.error('Authentication error:', error);
     } finally {

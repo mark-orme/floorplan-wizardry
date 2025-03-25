@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return;
     try {
       const role = await getUserRole(userId);
+      console.log('Fetched user role:', role);
       setUserRole(role);
     } catch (error: any) {
       console.error('Error fetching user role:', error);
@@ -58,22 +59,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Run the Supabase table setup
     setupSupabaseTables();
     
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initializeAuth = async () => {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user?.id) {
-        fetchUserRole(session.user.id);
+        await fetchUserRole(session.user.id);
       }
+      
       setLoading(false);
-    });
+    };
+    
+    initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
+        console.log('Auth state changed:', _event, session ? 'session exists' : 'no session');
         setSession(session);
         setUser(session?.user ?? null);
+        
         if (session?.user?.id) {
-          fetchUserRole(session.user.id);
+          await fetchUserRole(session.user.id);
+        } else {
+          setUserRole(null);
         }
+        
         setLoading(false);
       }
     );
@@ -85,8 +97,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      
+      // Fetch user role after successful sign in
+      if (data.user) {
+        await fetchUserRole(data.user.id);
+      }
+      
       toast.success('Signed in successfully!');
     } catch (error: any) {
       toast.error(error.message || 'Error signing in');
@@ -109,6 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           
         if (profileError) throw profileError;
+        
+        // Set the user role immediately after signup
+        setUserRole(role);
       }
       
       toast.success('Sign up successful! Check your email for confirmation.');
