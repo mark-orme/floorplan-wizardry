@@ -28,7 +28,7 @@ const RoleGuard = ({
 
   // Check if user has required role
   if (!userRole || !allowedRoles.includes(userRole)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return <>{children}</>;
