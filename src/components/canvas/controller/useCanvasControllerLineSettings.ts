@@ -28,11 +28,24 @@ interface UseCanvasControllerLineSettingsProps {
 }
 
 /**
+ * Result interface for useCanvasControllerLineSettings hook
+ * @interface UseCanvasControllerLineSettingsResult
+ */
+interface UseCanvasControllerLineSettingsResult {
+  /** Handle line thickness change */
+  handleLineThicknessChange: (value: number) => void;
+  /** Handle line color change */
+  handleLineColorChange: (value: string) => void;
+}
+
+/**
  * Hook that manages line settings in the canvas controller
  * @param {UseCanvasControllerLineSettingsProps} props - Hook properties
- * @returns Line settings functions and handlers
+ * @returns {UseCanvasControllerLineSettingsResult} Line settings functions and handlers
  */
-export const useCanvasControllerLineSettings = (props: UseCanvasControllerLineSettingsProps) => {
+export const useCanvasControllerLineSettings = (
+  props: UseCanvasControllerLineSettingsProps
+): UseCanvasControllerLineSettingsResult => {
   const {
     fabricCanvasRef,
     lineThickness,

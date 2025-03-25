@@ -18,14 +18,27 @@ interface UseFloorPlanBatchProcessingProps {
 }
 
 /**
+ * Result of the useFloorPlanBatchProcessing hook
+ * @interface UseFloorPlanBatchProcessingResult
+ */
+interface UseFloorPlanBatchProcessingResult {
+  /** Reference to batched drawing operations */
+  batchedDrawOpsRef: React.MutableRefObject<Polyline[]>;
+  /** Reference to animation frame ID */
+  animFrameRef: React.MutableRefObject<number | null>;
+  /** Process all batched drawing operations */
+  processBatchedDrawing: () => void;
+}
+
+/**
  * Hook that handles batch processing of floor plan rendering operations
  * @param {UseFloorPlanBatchProcessingProps} props - Hook properties
- * @returns Batch processing utilities and state
+ * @returns {UseFloorPlanBatchProcessingResult} Batch processing utilities and state
  */
 export const useFloorPlanBatchProcessing = ({
   fabricCanvasRef,
   gridLayerRef
-}: UseFloorPlanBatchProcessingProps) => {
+}: UseFloorPlanBatchProcessingProps): UseFloorPlanBatchProcessingResult => {
   // Refs to manage batched operations
   const batchedDrawOpsRef = useRef<Polyline[]>([]);
   const animFrameRef = useRef<number | null>(null);

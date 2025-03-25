@@ -4,7 +4,7 @@
  * @module useCanvasControllerDependencies
  */
 import { useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasDependencies } from "@/hooks/useCanvasDependencies";
 import { DebugInfoState } from "@/types/drawingTypes";
 
@@ -32,11 +32,22 @@ interface UseCanvasControllerDependenciesProps {
 }
 
 /**
+ * Hook result interface for useCanvasControllerDependencies
+ * @interface UseCanvasControllerDependenciesResult
+ */
+interface UseCanvasControllerDependenciesResult {
+  /** Reference to grid layer objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Function to create grid */
+  createGrid: () => FabricObject[];
+}
+
+/**
  * Hook that initializes canvas dependencies like grid, stylus detection, etc.
  * Manages integration of various canvas-related hooks and utilities
  * 
  * @param {UseCanvasControllerDependenciesProps} props - Hook properties
- * @returns {Object} Grid reference and creation function
+ * @returns {UseCanvasControllerDependenciesResult} Grid reference and creation function
  */
 export const useCanvasControllerDependencies = ({
   fabricCanvasRef,
@@ -47,7 +58,7 @@ export const useCanvasControllerDependencies = ({
   setHasError,
   setErrorMessage,
   zoomLevel
-}: UseCanvasControllerDependenciesProps) => {
+}: UseCanvasControllerDependenciesProps): UseCanvasControllerDependenciesResult => {
   // Initialize canvas dependencies (grid, stylus, zoom sync)
   const { gridLayerRef, createGrid } = useCanvasDependencies({
     fabricCanvasRef,

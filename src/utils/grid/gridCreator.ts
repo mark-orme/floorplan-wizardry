@@ -4,35 +4,31 @@
  * Core functionality for creating grid on canvas
  * @module gridCreator
  */
-import { Canvas } from "fabric";
-import { gridManager, resetGridProgress, acquireGridCreationLock, releaseGridCreationLock } from "../gridManager";
+import { Canvas, Object as FabricObject } from "fabric";
+import { gridManager, acquireGridCreationLock, releaseGridCreationLock } from "../gridManager";
 import { validateCanvasForGrid } from "./gridValidation";
-import { renderGridComponents } from "../gridRenderer";
+import { renderGridComponents, GridRenderResult } from "../gridRenderer";
 import { arrangeGridObjects } from "../gridRenderer";
 import { handleGridCreationError, scheduleGridRetry } from "./gridErrorHandling";
 import logger from "../logger";
+import { DebugInfoState } from "@/types/drawingTypes";
 
 /**
  * Create grid layer on the canvas with safety mechanisms
  * Creates the actual grid after validation passes
  * 
  * @param {Canvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to store grid objects
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
  * @param {Object} canvasDimensions - Current canvas dimensions
  * @param {Function} setDebugInfo - Function to update debug info state
- * @returns {any[]} Created grid objects
+ * @returns {FabricObject[]} Created grid objects
  */
 export const createGridLayer = (
   canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<any[]>,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
   canvasDimensions: { width: number, height: number },
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>
-): any[] => {
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>
+): FabricObject[] => {
   if (process.env.NODE_ENV === 'development') {
     logger.debug("Creating grid layer with dimensions:", canvasDimensions);
   }
@@ -118,20 +114,15 @@ export const createGridLayer = (
  * Uses hardcoded dimensions as a last resort
  * 
  * @param {Canvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to store grid objects
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
  * @param {Function} setDebugInfo - Function to update debug info state
- * @returns {any[]} Created fallback grid objects
+ * @returns {FabricObject[]} Created fallback grid objects
  */
 export const createFallbackGrid = (
   canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<any[]>,
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>
-): any[] => {
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>
+): FabricObject[] => {
   const fallbackResult = renderGridComponents(canvas, 800, 600);
   
   if (fallbackResult.gridObjects.length > 0) {
