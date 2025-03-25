@@ -108,9 +108,10 @@ export const useDrawingHistory = ({
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Save current state to future for redo
+      // Save current state to future for redo, but only if there are objects to save
       if (currentNonGridObjects.length > 0) {
-        future.unshift(serializeObjects(currentNonGridObjects));
+        const serializedState = serializeObjects(currentNonGridObjects);
+        future.unshift(serializedState);
       }
       
       // Get the previous state
@@ -181,9 +182,10 @@ export const useDrawingHistory = ({
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Save current state to past
+      // Save current state to past, but only if there are objects to save
       if (currentNonGridObjects.length > 0) {
-        past.push(serializeObjects(currentNonGridObjects));
+        const serializedState = serializeObjects(currentNonGridObjects);
+        past.push(serializedState);
       }
       
       // Get the most recent future state
