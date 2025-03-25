@@ -1,3 +1,4 @@
+
 import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
@@ -64,10 +65,9 @@ export const DistanceTooltip = memo(({
   // Determine position for tooltip - prefer midPoint if available
   const tooltipPosition = midPoint || position || displayEndPoint;
   
-  // Position the tooltip much closer to the line
-  // Use a very small offset to keep it just slightly above the line
-  const baseOffset = -8; // Significantly reduced from -20 to position much closer
-  const scaledOffset = baseOffset / Math.max(0.5, Math.min(effectiveZoom, 3));
+  // Position the tooltip directly on the line
+  // No vertical offset - place it exactly on the line
+  const baseOffset = 0; // No offset from the line
   
   // Convert meter position to pixel position for display
   const pixelX = tooltipPosition.x * PIXELS_PER_METER;
@@ -75,23 +75,25 @@ export const DistanceTooltip = memo(({
   
   return (
     <div 
-      className="absolute pointer-events-none z-50 text-white px-2 py-0.5 rounded-md shadow-lg text-xs"
+      className="absolute pointer-events-none z-50 text-white px-1.5 py-0.5 rounded-sm shadow-lg text-xs inline-flex items-center"
       style={{ 
         left: `${pixelX}px`, 
-        top: `${pixelY + scaledOffset}px`,
+        top: `${pixelY + baseOffset}px`,
         transform: `translate(-50%, -50%)`, // Center both horizontally and vertically
         willChange: "transform", 
-        backgroundColor: `rgba(0, 0, 0, 0.75)`,
-        boxShadow: "0 0 0 1px rgba(255,255,255,0.15), 0 1px 2px rgba(0,0,0,0.2)",
-        maxWidth: "120px", // Keep tooltip compact
-        border: "1px solid rgba(255,255,255,0.1)" // Subtle border for better visibility
+        backgroundColor: `rgba(0, 0, 0, 0.85)`,
+        boxShadow: "0 0 0 1px rgba(255,255,255,0.2)",
+        outline: "1px solid rgba(0,0,0,0.8)",
+        maxWidth: "100px", // Keep tooltip very compact
+        borderRadius: "3px",
+        lineHeight: 1
       }}
     >
       <div className="flex items-center gap-1 whitespace-nowrap">
-        <Ruler className="w-3 h-3 flex-shrink-0" />
-        <span className="font-medium">{formattedDistance} m</span>
+        <Ruler className="w-2.5 h-2.5 flex-shrink-0" />
+        <span className="font-semibold">{formattedDistance}m</span>
         {gridUnits > 0 && (
-          <span className="opacity-70 ml-0.5">({gridUnits})</span>
+          <span className="opacity-80 text-[0.65rem]">({gridUnits})</span>
         )}
       </div>
     </div>
@@ -100,4 +102,3 @@ export const DistanceTooltip = memo(({
 
 // Add displayName for better debugging
 DistanceTooltip.displayName = "DistanceTooltip";
-
