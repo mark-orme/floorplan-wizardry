@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { ArrowLeft, Grid } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
 
 const PropertyFormSchema = z.object({
   order_id: z.string().min(1, 'Order ID is required'),
@@ -25,15 +26,23 @@ type PropertyFormValues = z.infer<typeof PropertyFormSchema>;
 const PropertyForm = () => {
   const { createProperty } = usePropertyManagement();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, loading: authLoading } = useAuth();
 
-  // Redirect if user is not authenticated
-  if (!user) {
-    toast.error('You must be logged in to create a property');
-    navigate('/auth', { state: { returnTo: '/properties/new' } });
-    return null;
-  }
+  useEffect(() => {
+    // Check authentication after auth loading is complete
+    if (!authLoading) {
+      if (!user) {
+        toast.error('You must be logged in to create a property');
+        navigate('/auth', { state: { returnTo: '/properties/new' } });
+      } else {
+        setIsLoading(false);
+      }
+    }
+  }, [user, authLoading, navigate]);
 
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(PropertyFormSchema),
@@ -46,6 +55,12 @@ const PropertyForm = () => {
   });
 
   const onSubmit = async (values: PropertyFormValues) => {
+    if (!user) {
+      toast.error('You must be logged in to create a property');
+      navigate('/auth', { state: { returnTo: '/properties/new' } });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const newProperty = await createProperty(
@@ -60,13 +75,20 @@ const PropertyForm = () => {
         navigate(`/properties/${newProperty.id}`);
       } else {
         toast.error('Failed to create property');
+        setHasError(true);
       }
     } catch (error) {
       console.error('Error creating property:', error);
       toast.error('Failed to create property');
+      setHasError(true);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleRetry = () => {
+    setHasError(false);
+    form.reset();
   };
 
   return (
@@ -82,88 +104,95 @@ const PropertyForm = () => {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Property</CardTitle>
-          <CardDescription>
-            Enter the property details to create a new floor plan
-          </CardDescription>
-        </CardHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="order_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Order ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. ORD-12345" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <LoadingErrorWrapper
+        isLoading={isLoading || authLoading}
+        hasError={hasError}
+        errorMessage="Error creating property. Please try again."
+        onRetry={handleRetry}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Create New Property</CardTitle>
+            <CardDescription>
+              Enter the property details to create a new floor plan
+            </CardDescription>
+          </CardHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="order_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Order ID</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. ORD-12345" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Property Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 123 Main St, City" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Property Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 123 Main St, City" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="client_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. John Smith" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="client_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. John Smith" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="branch_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Branch Name (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Downtown Office" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-            
-            <CardFooter className="flex justify-between">
-              <Button 
-                variant="outline" 
-                type="button"
-                onClick={() => navigate('/properties')}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Property'}
-              </Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </Card>
+                <FormField
+                  control={form.control}
+                  name="branch_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Branch Name (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Downtown Office" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  type="button"
+                  onClick={() => navigate('/properties')}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Property'}
+                </Button>
+              </CardFooter>
+            </form>
+          </Form>
+        </Card>
+      </LoadingErrorWrapper>
     </div>
   );
 };

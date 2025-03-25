@@ -1,3 +1,4 @@
+
 import { Canvas } from "@/components/Canvas";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -7,7 +8,7 @@ import { subscribeSyncChannel } from "@/utils/syncService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useFloorPlanStorage } from "@/hooks/useFloorPlanStorage";
-import { Cloud, CloudOff, ArrowLeft, Grid, Home } from "lucide-react";
+import { Cloud, CloudOff, ArrowLeft, Grid, Home, PlusCircle } from "lucide-react";
 
 /**
  * Main Index page component
@@ -16,7 +17,7 @@ import { Cloud, CloudOff, ArrowLeft, Grid, Home } from "lucide-react";
 const Index = () => {
   const [lastEvent, setLastEvent] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
 
@@ -98,6 +99,17 @@ const Index = () => {
     navigate('/properties');
   };
 
+  const handleAddNewProperty = () => {
+    if (!user) {
+      toast.info('Please sign in to create a new property');
+      navigate('/auth', { state: { returnTo: '/properties/new' } });
+      return;
+    }
+    
+    // Direct navigation to property creation form
+    navigate('/properties/new');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="py-6 px-6 border-b bg-white/50 dark:bg-black/50 backdrop-blur-sm flex justify-between items-center">
@@ -160,6 +172,15 @@ const Index = () => {
           >
             <Home className="mr-2 h-4 w-4" />
             Properties
+          </Button>
+          
+          <Button 
+            onClick={handleAddNewProperty}
+            variant="default"
+            className="mr-2"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Property
           </Button>
           
           <Button 
