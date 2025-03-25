@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
@@ -5,10 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, Database } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { insertTestData } from '@/utils/supabaseSetup';
 
 const Properties = () => {
   const { properties, isLoading, listProperties } = usePropertyManagement();
@@ -23,6 +25,12 @@ const Properties = () => {
 
   const handleRowClick = (id: string) => {
     navigate(`/properties/${id}`);
+  };
+
+  const handleAddTestData = async () => {
+    await insertTestData();
+    // Refresh the list after adding test data
+    listProperties();
   };
 
   const getStatusBadge = (status: PropertyStatus) => {
@@ -71,12 +79,19 @@ const Properties = () => {
           </p>
         </div>
 
-        {(userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
-          <Button onClick={() => navigate('/properties/new')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Property
+        <div className="flex space-x-3">
+          {(userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
+            <Button onClick={() => navigate('/properties/new')}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Property
+            </Button>
+          )}
+          
+          <Button onClick={handleAddTestData} variant="outline">
+            <Database className="mr-2 h-4 w-4" />
+            Add Test Data
           </Button>
-        )}
+        </div>
       </div>
 
       <div className="mb-6">
