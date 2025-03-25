@@ -11,17 +11,23 @@ import { CanvasController } from "./CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
+import logger from "@/utils/logger";
+
+interface CanvasProps {
+  readonly?: boolean;
+  'data-readonly'?: boolean;
+}
 
 /**
  * Main Canvas component for floor plan drawing
  * Handles canvas setup, grid creation, and drawing tools
  * @returns {JSX.Element} Rendered component
  */
-export const Canvas = () => {
+export const Canvas = (props: CanvasProps) => {
   // Track initialization with refs instead of module-level variables
-  const appInitializedRef = useRef(false);
-  const initialDataLoadedRef = useRef(false);
-  const isFirstMountRef = useRef(true);
+  const appInitializedRef = useRef<boolean>(false);
+  const initialDataLoadedRef = useRef<boolean>(false);
+  const isFirstMountRef = useRef<boolean>(true);
   
   // Define all hooks at the top level, never conditionally
   const {
@@ -61,9 +67,7 @@ export const Canvas = () => {
   // We now default to select tool on initial load
   useEffect(() => {
     if (isFirstMountRef.current && !isLoading && debugInfo.canvasInitialized) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Using default tool: select");
-      }
+      logger.info("Using default tool: select");
       handleToolChange("select");
       isFirstMountRef.current = false;
     }
@@ -76,9 +80,7 @@ export const Canvas = () => {
       return;
     }
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Loading initial data");
-    }
+    logger.info("Loading initial canvas data");
     loadData();
     appInitializedRef.current = true;
     initialDataLoadedRef.current = true;

@@ -10,14 +10,19 @@ import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { useCanvasHistory } from "./useCanvasHistory";
 import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
-import { type FloorPlan } from "@/types/drawingTypes";
+import { type FloorPlan } from "@/types/floorPlanTypes";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState } from "@/types/drawingTypes";
+
+interface HistoryRef {
+  past: FabricObject[][];
+  future: FabricObject[][];
+}
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  historyRef: React.MutableRefObject<HistoryRef>;
   tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
@@ -26,12 +31,16 @@ interface UseCanvasDrawingProps {
   lineColor?: string;
 }
 
+interface UseCanvasDrawingResult {
+  drawingState: DrawingState;
+}
+
 /**
  * Hook for handling all drawing-related operations on the canvas
  * @param {UseCanvasDrawingProps} props - Hook properties
- * @returns {Object} Drawing state and handlers
+ * @returns {UseCanvasDrawingResult} Drawing state and handlers
  */
-export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: DrawingState } => {
+export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawingResult => {
   const {
     fabricCanvasRef,
     gridLayerRef,
@@ -53,8 +62,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     gridLayerRef,
     historyRef,
     recalculateGIA: () => {
-      // This could be expanded if needed
-      console.log("Recalculating GIA after history operation");
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Recalculating GIA after history operation");
+      }
     }
   });
   

@@ -10,16 +10,16 @@ import { CLOSE_POINT_THRESHOLD } from './constants';
 /**
  * Calculate Gross Internal Area (GIA) in m² with 99.9% accuracy
  * Uses the shoelace formula for polygon area calculation
- * @param {Point[]} stroke - Array of points representing a closed shape
+ * @param {Point[]} polygonPoints - Array of points representing a closed shape
  * @returns {number} Calculated area in square meters
  */
-export const calculateGIA = (stroke: Point[]): number => {
-  if (!stroke || stroke.length < 3) return 0;
+export const calculateGIA = (polygonPoints: Point[]): number => {
+  if (!polygonPoints || polygonPoints.length < 3) return 0;
   
   // Shoelace formula for polygon area
   const area = Math.abs(
-    stroke.reduce((accumulatedArea, currentPoint, index) => {
-      const nextPoint = stroke[(index + 1) % stroke.length];
+    polygonPoints.reduce((accumulatedArea, currentPoint, index) => {
+      const nextPoint = polygonPoints[(index + 1) % polygonPoints.length];
       return accumulatedArea + (currentPoint.x * nextPoint.y - nextPoint.x * currentPoint.y);
     }, 0) / 2
   );
@@ -28,28 +28,28 @@ export const calculateGIA = (stroke: Point[]): number => {
 };
 
 /**
- * Filter out redundant or too-close points from a stroke
+ * Filter out redundant or too-close points from a polygon path
  * Helps eliminate those small dots that appear in the drawing
- * @param {Point[]} stroke - The stroke to filter
+ * @param {Point[]} pointsArray - The points array to filter
  * @param {number} minDistance - Minimum distance between points (in meters)
- * @returns {Point[]} Filtered stroke with redundant points removed
+ * @returns {Point[]} Filtered points with redundant points removed
  */
-export const filterRedundantPoints = (stroke: Point[], minDistance: number = CLOSE_POINT_THRESHOLD): Point[] => {
-  if (!stroke || stroke.length <= 2) return stroke;
+export const filterRedundantPoints = (pointsArray: Point[], minDistance: number = CLOSE_POINT_THRESHOLD): Point[] => {
+  if (!pointsArray || pointsArray.length <= 2) return pointsArray;
   
-  const result: Point[] = [stroke[0]];
+  const filteredPoints: Point[] = [pointsArray[0]];
   
-  for (let i = 1; i < stroke.length; i++) {
-    const lastPoint = result[result.length - 1];
-    const currentPoint = stroke[i];
+  for (let i = 1; i < pointsArray.length; i++) {
+    const lastPoint = filteredPoints[filteredPoints.length - 1];
+    const currentPoint = pointsArray[i];
     
-    const deltaX = currentPoint.x - lastPoint.x;
-    const deltaY = currentPoint.y - lastPoint.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const distanceX = currentPoint.x - lastPoint.x;
+    const distanceY = currentPoint.y - lastPoint.y;
+    const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
     
     // Only add the point if it's far enough from the previous one
-    if (distance >= minDistance) {
-      result.push({
+    if (pointDistance >= minDistance) {
+      filteredPoints.push({
         x: Number(currentPoint.x.toFixed(3)), // Ensure precision
         y: Number(currentPoint.y.toFixed(3))  // Ensure precision
       });
@@ -57,13 +57,13 @@ export const filterRedundantPoints = (stroke: Point[], minDistance: number = CLO
   }
   
   // Always include the last point if we have more than one point
-  if (result.length === 1 && stroke.length > 1) {
-    const lastPoint = stroke[stroke.length - 1];
-    result.push({
+  if (filteredPoints.length === 1 && pointsArray.length > 1) {
+    const lastPoint = pointsArray[pointsArray.length - 1];
+    filteredPoints.push({
       x: Number(lastPoint.x.toFixed(3)), // Ensure precision
       y: Number(lastPoint.y.toFixed(3))  // Ensure precision
     });
   }
   
-  return result;
+  return filteredPoints;
 };
