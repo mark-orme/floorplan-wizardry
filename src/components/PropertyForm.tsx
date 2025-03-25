@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
@@ -30,10 +29,26 @@ const PropertyForm = () => {
   const [hasError, setHasError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  
+  const [authContextError, setAuthContextError] = useState(false);
+  let authData = { user: null, loading: true };
+  
+  try {
+    authData = useAuth();
+  } catch (error) {
+    console.error('Auth context error in PropertyForm:', error);
+    setAuthContextError(true);
+  }
+  
+  const { user, loading: authLoading } = authData;
 
   useEffect(() => {
-    // Check authentication after auth loading is complete
+    if (authContextError) {
+      toast.error('Authentication error. Please try again.');
+      navigate('/properties');
+      return;
+    }
+    
     if (!authLoading) {
       if (!user) {
         toast.error('You must be logged in to create a property');
@@ -42,7 +57,7 @@ const PropertyForm = () => {
         setIsLoading(false);
       }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, authContextError]);
 
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(PropertyFormSchema),

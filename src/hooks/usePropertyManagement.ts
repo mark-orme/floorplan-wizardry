@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Property, PropertyListItem, PropertyStatus } from '@/types/propertyTypes';
@@ -7,12 +6,22 @@ import { toast } from 'sonner';
 import { FloorPlan } from '@/types/floorPlanTypes';
 
 export const usePropertyManagement = () => {
-  const { user, userRole } = useAuth();
+  const [authContextError, setAuthContextError] = useState(false);
+  let authData = { user: null, userRole: null };
+  
+  try {
+    authData = useAuth();
+  } catch (error) {
+    console.error('Auth context error in usePropertyManagement:', error);
+    setAuthContextError(true);
+  }
+  
+  const { user, userRole } = authData;
+  
   const [isLoading, setIsLoading] = useState(false);
   const [properties, setProperties] = useState<PropertyListItem[]>([]);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
 
-  // Create a new property
   const createProperty = useCallback(async (
     orderID: string,
     address: string,
@@ -20,6 +29,11 @@ export const usePropertyManagement = () => {
     branchName: string = '',
     floorPlans: FloorPlan[] = []
   ): Promise<Property | null> => {
+    if (authContextError) {
+      toast.error('Authentication error. Please refresh the page and try again.');
+      return null;
+    }
+    
     if (!user) {
       toast.error('You must be logged in to create a property');
       return null;
@@ -57,10 +71,14 @@ export const usePropertyManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, authContextError]);
 
-  // List properties based on user role
   const listProperties = useCallback(async (): Promise<PropertyListItem[]> => {
+    if (authContextError) {
+      console.error("Auth context error, cannot list properties");
+      return [];
+    }
+    
     if (!user || !userRole) {
       console.log("No user or user role found, returning empty properties array");
       setProperties([]);
@@ -102,10 +120,14 @@ export const usePropertyManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, userRole]);
+  }, [user, userRole, authContextError]);
 
-  // Get a property by ID
   const getProperty = useCallback(async (id: string): Promise<Property | null> => {
+    if (authContextError) {
+      console.error("Auth context error, cannot get property");
+      return null;
+    }
+    
     if (!user) {
       console.warn("No user found when fetching property");
       return null;
@@ -137,13 +159,17 @@ export const usePropertyManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, authContextError]);
 
-  // Update a property
   const updateProperty = useCallback(async (
     id: string,
     updates: Partial<Property>
   ): Promise<Property | null> => {
+    if (authContextError) {
+      toast.error('Authentication error. Please refresh the page and try again.');
+      return null;
+    }
+    
     if (!user) return null;
 
     setIsLoading(true);
@@ -171,13 +197,17 @@ export const usePropertyManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, authContextError]);
 
-  // Update property status
   const updatePropertyStatus = useCallback(async (
     id: string,
     status: PropertyStatus
   ): Promise<boolean> => {
+    if (authContextError) {
+      toast.error('Authentication error. Please refresh the page and try again.');
+      return false;
+    }
+    
     if (!user) return false;
 
     try {
@@ -198,13 +228,17 @@ export const usePropertyManagement = () => {
       console.error('Error updating property status:', error);
       return false;
     }
-  }, [user]);
+  }, [user, authContextError]);
 
-  // Save floor plans for a property
   const saveFloorPlans = useCallback(async (
     propertyId: string,
     floorPlans: FloorPlan[]
   ): Promise<boolean> => {
+    if (authContextError) {
+      toast.error('Authentication error. Please refresh the page and try again.');
+      return false;
+    }
+    
     if (!user) return false;
 
     try {
@@ -225,7 +259,7 @@ export const usePropertyManagement = () => {
       console.error('Error saving floor plans:', error);
       return false;
     }
-  }, [user]);
+  }, [user, authContextError]);
 
   return {
     properties,
