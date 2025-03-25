@@ -1,4 +1,3 @@
-
 /**
  * Type definitions for drawing functionality
  * @module drawingTypes
@@ -105,16 +104,46 @@ export type GridCreationCallback = (canvas: any) => any[];
 /**
  * Grid creation state type
  * @typedef {Object} GridCreationState
- * @property {boolean} inProgress - Whether grid creation is in progress
- * @property {number} startTime - Start time of grid creation
- * @property {number} attempts - Number of attempts
- * @property {boolean} complete - Whether grid creation is complete
+ * @property {boolean} creationInProgress - Whether grid creation is in progress
+ * @property {number} consecutiveResets - Number of consecutive reset attempts
+ * @property {number} maxConsecutiveResets - Maximum allowed consecutive resets before throttling
+ * @property {number} lastAttemptTime - Last timestamp of grid creation attempt
+ * @property {number} lastCreationTime - Last timestamp of grid creation completion
+ * @property {boolean} exists - Whether the grid currently exists
+ * @property {number} safetyTimeout - Safety timeout period in milliseconds
+ * @property {number} throttleInterval - Throttle interval in milliseconds
+ * @property {number} minRecreationInterval - Minimum recreation interval in milliseconds
+ * @property {number} maxRecreations - Maximum number of allowed recreations
+ * @property {number} totalCreations - Total number of creation attempts
+ * @property {CanvasDimensions} lastDimensions - Last dimensions used for grid creation
+ * @property {Object} creationLock - Creation lock information
+ * @property {number} creationLock.id - Lock ID
+ * @property {number} creationLock.timestamp - Lock timestamp
+ * @property {boolean} creationLock.isLocked - Whether the lock is active
  */
 export interface GridCreationState {
-  inProgress: boolean;
-  startTime: number;
-  attempts: number;
-  complete: boolean;
+  creationInProgress: boolean;
+  consecutiveResets: number;
+  maxConsecutiveResets: number;
+  lastAttemptTime: number;
+  lastCreationTime: number;
+  exists: boolean;
+  safetyTimeout: number | null;
+  throttleInterval: number;
+  minRecreationInterval: number;
+  maxRecreations: number;
+  totalCreations: number;
+  lastDimensions: CanvasDimensions | null;
+  creationLock: {
+    id: number;
+    timestamp: number;
+    isLocked: boolean;
+  };
+  // Keep the properties from the previous definition for backward compatibility
+  inProgress?: boolean;
+  startTime?: number;
+  attempts?: number;
+  complete?: boolean;
 }
 
 /**
