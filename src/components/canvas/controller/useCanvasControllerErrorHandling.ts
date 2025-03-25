@@ -9,7 +9,7 @@ interface UseCanvasControllerErrorHandlingProps {
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
   resetLoadTimes: () => void;
-  loadData: () => void;
+  loadData: () => Promise<any>;
 }
 
 /**

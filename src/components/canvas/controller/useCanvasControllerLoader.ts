@@ -12,7 +12,7 @@ interface UseCanvasControllerLoaderProps {
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
-  loadData: () => void;
+  loadData: () => Promise<any>;
 }
 
 /**
