@@ -40,18 +40,20 @@ export const usePolylineCreation = ({
   const createPolyline = useCallback((
     finalPoints: Point[],
     pixelPoints: Point[],
-    isEnclosed: boolean = false
+    isEnclosed: boolean = false,
+    overrideColor?: string
   ) => {
     if (!fabricCanvasRef.current) return false;
     const fabricCanvas = fabricCanvasRef.current;
     
     try {
       // CRITICAL FIX: Ensure the color is always preserved
-      const effectiveLineColor = lineColor || "#000000";
+      // Use override color if provided (from path.stroke), otherwise use the current lineColor
+      const effectiveLineColor = overrideColor || lineColor || "#000000";
       
       // Create a polyline from the processed points
       const polylineOptions = {
-        stroke: effectiveLineColor, // Use the current line color
+        stroke: effectiveLineColor, // Use the effective line color
         strokeWidth: lineThickness,
         fill: isEnclosed ? `${effectiveLineColor}20` : 'transparent', // Semi-transparent fill for enclosed shapes
         objectType: isEnclosed ? 'room' : 'line',
@@ -67,7 +69,7 @@ export const usePolylineCreation = ({
       // Add the processed polyline to canvas
       fabricCanvas.add(polyline);
       
-      console.log("Polyline added to canvas successfully");
+      console.log("Polyline added to canvas successfully with color:", effectiveLineColor);
       
       // Ensure grid stays in the background
       gridLayerRef.current.forEach(gridObj => {

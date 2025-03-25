@@ -95,7 +95,9 @@ export const usePathProcessing = ({
       }
       
       // CRITICAL FIX: Get the path's current color before processing
+      // This captures the color set by the brush or any custom color
       const pathColor = path.stroke || lineColor;
+      console.log("Detected path color:", pathColor);
       
       // Process the points according to the current tool
       const finalPoints = processPoints(points);
@@ -112,11 +114,11 @@ export const usePathProcessing = ({
       fabricCanvas.remove(path);
       
       // Create the polyline from the processed points, passing the isEnclosed flag
-      // Use the original path's color for consistency
-      const success = createPolyline(finalPoints, pixelPoints, isEnclosed);
+      // Pass the original path's color to maintain color consistency 
+      const success = createPolyline(finalPoints, pixelPoints, isEnclosed, pathColor);
       
       if (success) {
-        console.log("Line drawn and added to canvas successfully");
+        console.log(`Line drawn and added to canvas successfully with color: ${pathColor}`);
         // History is now handled in useCanvasDrawing to avoid duplicating entries
       }
       

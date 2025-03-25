@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -193,7 +192,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
             ];
             
             // CRITICAL FIX: Preserve the original color from the drawing brush
+            // This ensures the straightened wall retains the selected color
             if (lineColor) {
+              console.log(`Setting wall line color to: ${lineColor}`);
               e.path.set('stroke', lineColor);
             }
             
