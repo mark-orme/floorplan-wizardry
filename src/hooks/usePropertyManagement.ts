@@ -62,11 +62,13 @@ export const usePropertyManagement = () => {
   // List properties based on user role
   const listProperties = useCallback(async (): Promise<PropertyListItem[]> => {
     if (!user || !userRole) {
+      console.log("No user or user role found, returning empty properties array");
       setProperties([]);
       return [];
     }
 
     setIsLoading(true);
+    console.log("Fetching properties for user:", user.id, "with role:", userRole);
 
     try {
       let query = supabase
@@ -85,8 +87,12 @@ export const usePropertyManagement = () => {
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error when loading properties:", error);
+        throw error;
+      }
 
+      console.log("Fetched properties:", data?.length || 0);
       setProperties(data as PropertyListItem[]);
       return data as PropertyListItem[];
     } catch (error: any) {
@@ -100,9 +106,13 @@ export const usePropertyManagement = () => {
 
   // Get a property by ID
   const getProperty = useCallback(async (id: string): Promise<Property | null> => {
-    if (!user) return null;
+    if (!user) {
+      console.warn("No user found when fetching property");
+      return null;
+    }
 
     setIsLoading(true);
+    console.log("Fetching property with ID:", id);
 
     try {
       const { data, error } = await supabase
@@ -111,12 +121,18 @@ export const usePropertyManagement = () => {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error when fetching property:", error);
+        toast.error(error.message || 'Error loading property');
+        throw error;
+      }
 
+      console.log("Property fetched successfully:", data?.id);
       setCurrentProperty(data as Property);
       return data as Property;
     } catch (error: any) {
       console.error('Error fetching property:', error);
+      toast.error(error.message || 'Error loading property');
       return null;
     } finally {
       setIsLoading(false);
