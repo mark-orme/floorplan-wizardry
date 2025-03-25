@@ -4,14 +4,14 @@
  * @module useDrawingHistory
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
 
 interface UseDrawingHistoryProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   clearDrawings: () => void;
   recalculateGIA: () => void;
 }
@@ -29,6 +29,66 @@ export const useDrawingHistory = ({
   recalculateGIA
 }: UseDrawingHistoryProps) => {
   /**
+   * Check if an object is a grid object
+   * @param {FabricObject} obj - The object to check
+   * @returns {boolean} True if the object is part of the grid
+   */
+  const isGridObject = useCallback((obj: FabricObject) => {
+    return gridLayerRef.current.some(gridObj => gridObj === obj);
+  }, [gridLayerRef]);
+
+  /**
+   * Serialize objects for history storage
+   * Instead of storing references or using clone(), store serialized data
+   * @param {FabricObject[]} objects - Objects to serialize
+   * @returns {any[]} Serialized object data
+   */
+  const serializeObjects = useCallback((objects: FabricObject[]): any[] => {
+    return objects.map(obj => {
+      if (!obj || typeof obj.toObject !== 'function') return null;
+      try {
+        // Use Fabric's built-in serialization
+        return obj.toObject();
+      } catch (err) {
+        console.warn("Error serializing object:", err);
+        return null;
+      }
+    }).filter(Boolean);
+  }, []);
+
+  /**
+   * Deserialize objects from history storage
+   * @param {any[]} serializedData - Serialized object data
+   * @returns {FabricObject[]} Reconstructed fabric objects
+   */
+  const deserializeObjects = useCallback((serializedData: any[]): FabricObject[] => {
+    if (!fabricCanvasRef.current) return [];
+    const canvas = fabricCanvasRef.current;
+    
+    return serializedData.map(data => {
+      if (!data) return null;
+      try {
+        // Use the appropriate Fabric constructor based on type
+        if (data.type === 'polyline') {
+          return new fabric.Polyline(data.points, data);
+        } else if (data.type === 'path') {
+          return new fabric.Path(data.path, data);
+        } else {
+          // Default case for other object types
+          return fabric.util.enlivenObjects([data], {
+            reviver: function(obj) {
+              return obj;
+            }
+          })[0];
+        }
+      } catch (err) {
+        console.warn("Error deserializing object:", err);
+        return null;
+      }
+    }).filter(Boolean) as FabricObject[];
+  }, [fabricCanvasRef]);
+
+  /**
    * Undo the last drawing action
    */
   const handleUndo = useCallback(() => {
@@ -45,25 +105,22 @@ export const useDrawingHistory = ({
     
     try {
       // Get the current state before making changes (for redo)
-      const currentState = fabricCanvas.getObjects().filter(obj => 
-        (obj.type === 'polyline' || obj.type === 'path') &&
-        !gridLayerRef.current.includes(obj)
+      const currentObjects = fabricCanvas.getObjects().filter(obj => 
+        (obj.type === 'polyline' || obj.type === 'path') && !isGridObject(obj)
       );
       
       // Only add to future if we have something to store
-      if (currentState.length > 0) {
-        future.unshift([...currentState]);
+      if (currentObjects.length > 0) {
+        // Store serialized data rather than object references
+        future.unshift(serializeObjects(currentObjects));
       }
       
       // Remove the last state from past
       const previousState = past.pop();
       
-      // Store grid objects to preserve them
-      const gridObjects = [...gridLayerRef.current];
-      
       // Remove only non-grid objects
       const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
-        !gridLayerRef.current.includes(obj)
+        !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
       // Remove non-grid objects
@@ -77,15 +134,14 @@ export const useDrawingHistory = ({
       
       // If we have a previous state, restore it
       if (previousState && previousState.length > 0) {
-        // Clone and add each object from the previous state
-        previousState.forEach(obj => {
-          // Skip objects that don't have clone method or are not valid
-          if (obj && typeof obj.clone === 'function') {
+        // Deserialize and add the objects from the previous state
+        const objectsToAdd = deserializeObjects(previousState);
+        objectsToAdd.forEach(obj => {
+          if (obj) {
             try {
-              const clonedObj = obj.clone();
-              fabricCanvas.add(clonedObj);
+              fabricCanvas.add(obj);
             } catch (err) {
-              console.error("Error cloning object:", err);
+              console.error("Error adding object from history:", err);
             }
           }
         });
@@ -106,7 +162,7 @@ export const useDrawingHistory = ({
       console.error("Error during undo:", error);
       toast.error("Failed to undo");
     }
-  }, [fabricCanvasRef, historyRef, clearDrawings, gridLayerRef, recalculateGIA]);
+  }, [fabricCanvasRef, historyRef, isGridObject, serializeObjects, deserializeObjects, gridLayerRef, recalculateGIA]);
   
   /**
    * Redo the last undone drawing action
@@ -125,14 +181,14 @@ export const useDrawingHistory = ({
     
     try {
       // Get the current state before making changes (for undo)
-      const currentState = fabricCanvas.getObjects().filter(obj => 
-        (obj.type === 'polyline' || obj.type === 'path') &&
-        !gridLayerRef.current.includes(obj)
+      const currentObjects = fabricCanvas.getObjects().filter(obj => 
+        (obj.type === 'polyline' || obj.type === 'path') && !isGridObject(obj)
       );
       
       // Only add to past if we have something to store
-      if (currentState.length > 0) {
-        past.push([...currentState]);
+      if (currentObjects.length > 0) {
+        // Store serialized data rather than object references
+        past.push(serializeObjects(currentObjects));
       }
       
       // Get the most recent future state
@@ -140,7 +196,7 @@ export const useDrawingHistory = ({
       
       // Remove only non-grid objects
       const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
-        !gridLayerRef.current.includes(obj)
+        !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
       // Remove non-grid objects
@@ -154,15 +210,14 @@ export const useDrawingHistory = ({
       
       // If we have a future state, restore it
       if (futureState && futureState.length > 0) {
-        // Clone and add each object from the future state
-        futureState.forEach(obj => {
-          // Skip objects that don't have clone method or are not valid
-          if (obj && typeof obj.clone === 'function') {
+        // Deserialize and add the objects from the future state
+        const objectsToAdd = deserializeObjects(futureState);
+        objectsToAdd.forEach(obj => {
+          if (obj) {
             try {
-              const clonedObj = obj.clone();
-              fabricCanvas.add(clonedObj);
+              fabricCanvas.add(obj);
             } catch (err) {
-              console.error("Error cloning object:", err);
+              console.error("Error adding object from history:", err);
             }
           }
         });
@@ -191,7 +246,7 @@ export const useDrawingHistory = ({
     if (future.length > MAX_HISTORY_STATES) {
       future.splice(MAX_HISTORY_STATES, future.length - MAX_HISTORY_STATES);
     }
-  }, [fabricCanvasRef, historyRef, clearDrawings, gridLayerRef, recalculateGIA]);
+  }, [fabricCanvasRef, historyRef, isGridObject, serializeObjects, deserializeObjects, gridLayerRef, recalculateGIA]);
   
   return {
     handleUndo,

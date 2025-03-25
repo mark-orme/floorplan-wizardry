@@ -15,7 +15,7 @@ import { GRID_SIZE } from "@/utils/drawing";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<FabricPath[]>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
   historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   tool: DrawingTool;
   currentFloor: number;
@@ -184,15 +184,25 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
       
       // Add current state to history before adding the new path
       if (fabricCanvas) {
-        // FIX: Cast objects to the correct type for history storage
-        // Only store polylines and paths, not grid objects
+        // Get current non-grid objects for history (polylines and paths only)
+        const isGridObject = (obj: FabricObject) => 
+          gridLayerRef.current.some(gridObj => gridObj === obj);
+        
         const currentDrawings = fabricCanvas.getObjects().filter(obj => 
           (obj.type === 'polyline' || obj.type === 'path') &&
-          !gridLayerRef.current.includes(obj as FabricPath)
+          !isGridObject(obj)
         ) as FabricObject[];
         
         if (currentDrawings.length > 0) {
-          historyRef.current.past.push([...currentDrawings]);
+          // Store objects in a way we can serialize and restore them
+          const serializedDrawings = currentDrawings.map(obj => {
+            if (obj && typeof obj.toObject === 'function') {
+              return obj.toObject();
+            }
+            return null;
+          }).filter(Boolean);
+          
+          historyRef.current.past.push(serializedDrawings as any);
           historyRef.current.future = []; // Clear redo stack when new drawing is made
         }
       }

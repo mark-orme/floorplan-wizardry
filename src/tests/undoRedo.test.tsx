@@ -8,13 +8,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Canvas } from "fabric";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
 
-// Mock canvas and history ref
-const mockHistoryRef = {
-  past: [],
-  future: []
-};
-
-// Mock fabric canvas
+// Mock fabric namespace
 vi.mock('fabric', () => {
   const FabricMock = {
     Canvas: vi.fn().mockImplementation(() => ({
@@ -39,8 +33,19 @@ vi.mock('fabric', () => {
       type: 'polyline',
       points,
       ...options,
-      clone: () => ({ type: 'polyline', points, ...options })
-    }))
+      toObject: () => ({ type: 'polyline', points, ...options })
+    })),
+    Path: vi.fn().mockImplementation((path, options) => ({
+      type: 'path',
+      path,
+      ...options,
+      toObject: () => ({ type: 'path', path, ...options })
+    })),
+    util: {
+      enlivenObjects: vi.fn().mockImplementation(([obj], options) => {
+        return [options.reviver(obj)];
+      })
+    }
   };
   
   return FabricMock;
@@ -60,17 +65,23 @@ describe('Undo/Redo functionality', () => {
     canvas = new Canvas('test-canvas');
     gridLayerRef = { current: [{ id: 'grid1' }, { id: 'grid2' }] };
     canvasRef = { current: canvas };
-    mockHistoryRef.past = [
-      [{ type: 'polyline', id: 'old_drawing' }]
-    ];
-    mockHistoryRef.future = [];
     mockClearDrawings = vi.fn();
     mockRecalculateGIA = vi.fn();
     
+    // Set up mock history
+    const mockHistory = {
+      past: [
+        [
+          { type: 'polyline', id: 'old_drawing', toObject: () => ({ type: 'polyline', id: 'old_drawing' }) }
+        ]
+      ],
+      future: []
+    };
+    
     // Mock filter to separate grid and drawing objects
     canvas.getObjects = vi.fn().mockImplementation(() => [
-      { type: 'polyline', id: 'drawing1', clone: () => ({ type: 'polyline', id: 'drawing1' }) },
-      { type: 'polyline', id: 'drawing2', clone: () => ({ type: 'polyline', id: 'drawing2' }) },
+      { type: 'polyline', id: 'drawing1', toObject: () => ({ type: 'polyline', id: 'drawing1' }) },
+      { type: 'polyline', id: 'drawing2', toObject: () => ({ type: 'polyline', id: 'drawing2' }) },
       { id: 'grid1' },
       { id: 'grid2' }
     ]);
@@ -81,11 +92,21 @@ describe('Undo/Redo functionality', () => {
   });
   
   it('handles undo correctly by preserving grid', () => {
+    // Setup mock history reference
+    const mockHistoryRef = {
+      current: {
+        past: [
+          [{ type: 'polyline', id: 'old_drawing', toObject: () => ({ type: 'polyline', id: 'old_drawing' }) }]
+        ],
+        future: []
+      }
+    };
+    
     // Setup the hook
     const { handleUndo } = useDrawingHistory({
       fabricCanvasRef: canvasRef,
       gridLayerRef,
-      historyRef: { current: mockHistoryRef },
+      historyRef: mockHistoryRef,
       clearDrawings: mockClearDrawings,
       recalculateGIA: mockRecalculateGIA
     });
@@ -100,23 +121,30 @@ describe('Undo/Redo functionality', () => {
     expect(canvas.getObjects).toHaveBeenCalled();
     
     // Check that future state was updated
-    expect(mockHistoryRef.future.length).toBe(1);
+    expect(mockHistoryRef.current.future.length).toBe(1);
     
     // Check that GIA was recalculated
     expect(mockRecalculateGIA).toHaveBeenCalled();
   });
   
   it('handles redo correctly by preserving grid', () => {
-    // Setup future state
-    mockHistoryRef.future = [
-      [{ type: 'polyline', id: 'future_drawing', clone: () => ({ type: 'polyline', id: 'future_drawing' }) }]
-    ];
+    // Setup mock history reference with future state
+    const mockHistoryRef = {
+      current: {
+        past: [],
+        future: [
+          [
+            { type: 'polyline', id: 'future_drawing', toObject: () => ({ type: 'polyline', id: 'future_drawing' }) }
+          ]
+        ]
+      }
+    };
     
     // Setup the hook
     const { handleRedo } = useDrawingHistory({
       fabricCanvasRef: canvasRef,
       gridLayerRef,
-      historyRef: { current: mockHistoryRef },
+      historyRef: mockHistoryRef,
       clearDrawings: mockClearDrawings,
       recalculateGIA: mockRecalculateGIA
     });
@@ -131,7 +159,7 @@ describe('Undo/Redo functionality', () => {
     expect(canvas.add).toHaveBeenCalled();
     
     // Check that past state was updated
-    expect(mockHistoryRef.past.length).toBe(2);
+    expect(mockHistoryRef.current.past.length).toBe(1);
     
     // Check that GIA was recalculated
     expect(mockRecalculateGIA).toHaveBeenCalled();
@@ -139,14 +167,18 @@ describe('Undo/Redo functionality', () => {
   
   it('handles empty history states correctly', () => {
     // Empty past
-    mockHistoryRef.past = [];
-    mockHistoryRef.future = [];
+    const mockHistoryRef = {
+      current: {
+        past: [],
+        future: []
+      }
+    };
     
     // Setup the hook
     const { handleUndo, handleRedo } = useDrawingHistory({
       fabricCanvasRef: canvasRef,
       gridLayerRef,
-      historyRef: { current: mockHistoryRef },
+      historyRef: mockHistoryRef,
       clearDrawings: mockClearDrawings,
       recalculateGIA: mockRecalculateGIA
     });
@@ -162,14 +194,26 @@ describe('Undo/Redo functionality', () => {
   
   it('limits history size to MAX_HISTORY_STATES', () => {
     // Fill past with many states
-    mockHistoryRef.past = Array(MAX_HISTORY_STATES + 10).fill([{ type: 'polyline' }]);
-    mockHistoryRef.future = Array(MAX_HISTORY_STATES + 10).fill([{ type: 'polyline' }]);
+    const mockPast = Array(MAX_HISTORY_STATES + 10).fill([
+      { type: 'polyline', toObject: () => ({ type: 'polyline' }) }
+    ]);
     
-    // Setup future state
+    const mockFuture = Array(MAX_HISTORY_STATES + 10).fill([
+      { type: 'polyline', toObject: () => ({ type: 'polyline' }) }
+    ]);
+    
+    const mockHistoryRef = {
+      current: {
+        past: mockPast,
+        future: mockFuture
+      }
+    };
+    
+    // Setup the hook
     const { handleRedo } = useDrawingHistory({
       fabricCanvasRef: canvasRef,
       gridLayerRef,
-      historyRef: { current: mockHistoryRef },
+      historyRef: mockHistoryRef,
       clearDrawings: mockClearDrawings,
       recalculateGIA: mockRecalculateGIA
     });
@@ -178,7 +222,7 @@ describe('Undo/Redo functionality', () => {
     handleRedo();
     
     // Check that past and future are trimmed to MAX_HISTORY_STATES
-    expect(mockHistoryRef.past.length).toBeLessThanOrEqual(MAX_HISTORY_STATES + 1); // +1 because we add to past in redo
-    expect(mockHistoryRef.future.length).toBeLessThanOrEqual(MAX_HISTORY_STATES);
+    expect(mockHistoryRef.current.past.length).toBeLessThanOrEqual(MAX_HISTORY_STATES + 1); // +1 because we add to past in redo
+    expect(mockHistoryRef.current.future.length).toBeLessThanOrEqual(MAX_HISTORY_STATES);
   });
 });
