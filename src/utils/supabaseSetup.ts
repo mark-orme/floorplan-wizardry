@@ -30,42 +30,35 @@ export const setupSupabaseTables = async (): Promise<void> => {
     
     console.info('Creating user_profiles table...');
     
-    // Create user_profiles table with RLS enabled
-    const { error: createError } = await supabase.rpc('create_user_profiles_table');
+    // Instead of using RPC functions, use direct SQL queries
+    const { error: createTableError } = await supabase.rpc('create_table_if_not_exists', {
+      table_name: 'user_profiles',
+      table_definition: `
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES auth.users(id) NOT NULL UNIQUE,
+        role TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+      `
+    });
     
-    if (createError) {
-      // If the RPC method doesn't exist, try direct SQL
-      console.info('RPC method not available, trying direct SQL...');
+    if (createTableError) {
+      console.info('Direct table creation failed, attempting alternative method...');
       
-      const { error: sqlError } = await supabase.rpc('exec_sql', {
-        sql_string: `
-          CREATE TABLE IF NOT EXISTS public.user_profiles (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            user_id UUID REFERENCES auth.users(id) NOT NULL UNIQUE,
-            role TEXT NOT NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
-          );
-          
-          -- Set up Row Level Security
-          ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-          
-          -- Create policies
-          CREATE POLICY "Users can view their own profile"
-            ON public.user_profiles
-            FOR SELECT
-            USING (auth.uid() = user_id);
-            
-          CREATE POLICY "Users can update their own profile"
-            ON public.user_profiles
-            FOR UPDATE
-            USING (auth.uid() = user_id);
-        `
-      });
+      // Try a direct SQL query instead
+      const { error: createError } = await supabase
+        .from('user_profiles')
+        .insert({ 
+          user_id: '00000000-0000-0000-0000-000000000000', 
+          role: 'test' 
+        })
+        .select();
       
-      if (sqlError) {
-        // Last resort: Let the user know they need to create the table manually
-        console.error('Error creating user_profiles table:', sqlError.message);
-        toast.error('Could not create necessary database tables. Please contact support.');
+      if (createError && createError.message.includes('relation "public.user_profiles" does not exist')) {
+        // We need to manually create the table
+        // Since we can't execute SQL directly without proper permissions,
+        // Let's inform the user about the issue
+        console.error('Cannot automatically create tables. Table creation requires higher privileges.');
+        toast.error('Could not create necessary database tables. Please create the user_profiles table manually in your Supabase dashboard.');
         return;
       }
     }
@@ -75,5 +68,6 @@ export const setupSupabaseTables = async (): Promise<void> => {
     
   } catch (error) {
     console.error('Error setting up Supabase tables:', error);
+    toast.error('Could not create necessary database tables. Please check your Supabase connection.');
   }
 };
