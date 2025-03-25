@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Canvas } from "fabric";
+import { Canvas, Object as FabricObject } from "fabric";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
 
 // Mock fabric namespace
@@ -92,7 +92,7 @@ describe('Undo/Redo functionality', () => {
   });
   
   it('handles undo correctly by preserving grid', () => {
-    // Setup mock history reference
+    // Setup mock history reference with a type assertion to satisfy TypeScript
     const mockHistoryRef = {
       current: {
         past: [
@@ -100,7 +100,10 @@ describe('Undo/Redo functionality', () => {
         ],
         future: []
       }
-    };
+    } as unknown as React.MutableRefObject<{
+      past: any[][];
+      future: any[][];
+    }>;
     
     // Setup the hook
     const { handleUndo } = useDrawingHistory({
@@ -128,7 +131,7 @@ describe('Undo/Redo functionality', () => {
   });
   
   it('handles redo correctly by preserving grid', () => {
-    // Setup mock history reference with future state
+    // Setup mock history reference with future state and a type assertion
     const mockHistoryRef = {
       current: {
         past: [],
@@ -138,7 +141,10 @@ describe('Undo/Redo functionality', () => {
           ]
         ]
       }
-    };
+    } as unknown as React.MutableRefObject<{
+      past: any[][];
+      future: any[][];
+    }>;
     
     // Setup the hook
     const { handleRedo } = useDrawingHistory({
@@ -172,7 +178,10 @@ describe('Undo/Redo functionality', () => {
         past: [],
         future: []
       }
-    };
+    } as unknown as React.MutableRefObject<{
+      past: any[][];
+      future: any[][];
+    }>;
     
     // Setup the hook
     const { handleUndo, handleRedo } = useDrawingHistory({
@@ -207,7 +216,10 @@ describe('Undo/Redo functionality', () => {
         past: mockPast,
         future: mockFuture
       }
-    };
+    } as unknown as React.MutableRefObject<{
+      past: any[][];
+      future: any[][];
+    }>;
     
     // Setup the hook
     const { handleRedo } = useDrawingHistory({

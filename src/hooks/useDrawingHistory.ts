@@ -4,14 +4,14 @@
  * @module useDrawingHistory
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Polyline, Path } from "fabric";
 import { toast } from "sonner";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
 
 interface UseDrawingHistoryProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   clearDrawings: () => void;
   recalculateGIA: () => void;
 }
@@ -63,16 +63,15 @@ export const useDrawingHistory = ({
    */
   const deserializeObjects = useCallback((serializedData: any[]): FabricObject[] => {
     if (!fabricCanvasRef.current) return [];
-    const canvas = fabricCanvasRef.current;
     
     return serializedData.map(data => {
       if (!data) return null;
       try {
         // Use the appropriate Fabric constructor based on type
         if (data.type === 'polyline') {
-          return new fabric.Polyline(data.points, data);
+          return new Polyline(data.points, data);
         } else if (data.type === 'path') {
-          return new fabric.Path(data.path, data);
+          return new Path(data.path, data);
         } else {
           // Default case for other object types
           return fabric.util.enlivenObjects([data], {
