@@ -5,6 +5,13 @@
  */
 
 /**
+ * Grid spacing in meters (0.1m = 10cm)
+ * This is the primary grid spacing constant used throughout the application
+ * @constant
+ */
+export const GRID_SPACING = 0.1;
+
+/**
  * Precision for distance measurements (0.1m)
  * @constant
  */

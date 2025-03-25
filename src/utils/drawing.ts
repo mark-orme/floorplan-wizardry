@@ -6,11 +6,13 @@
  * @module drawing
  */
 
+import { GRID_SPACING } from './geometry/constants';
+
 /**
  * Unit conversion constants
  */
 export const PIXELS_PER_METER = 100; // 100 pixels = 1 meter (exact conversion)
-export const GRID_SIZE = 0.1; // Grid size in meters (0.1m = 10cm)
+export const GRID_SIZE = GRID_SPACING; // Grid size in meters (0.1m = 10cm)
 
 /**
  * Grid display constants 
