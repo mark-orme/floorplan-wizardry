@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas event registration and cleanup
  * @module useCanvasEventHandlers
@@ -7,22 +8,54 @@ import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } fr
 import { DrawingTool } from "./useCanvasState";
 import logger from "@/utils/logger";
 
+/**
+ * Props for the useCanvasEventHandlers hook
+ * @interface UseCanvasEventHandlersProps
+ */
 interface UseCanvasEventHandlersProps {
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current active drawing tool */
   tool: DrawingTool;
+  /** Current line color */
   lineColor: string;
+  /** Current line thickness */
   lineThickness: number;
+  /** Function to save current state before making changes */
   saveCurrentState: () => void;
+  /** Function to handle undo operation */
   handleUndo: () => void;
+  /** Function to handle redo operation */
   handleRedo: () => void;
+  /** Function to handle mouse down event */
   handleMouseDown: (e: any) => void;
+  /** Function to handle mouse move event */
   handleMouseMove: (e: any) => void;
+  /** Function to handle mouse up event */
   handleMouseUp: () => void;
+  /** Function to process created path */
   processCreatedPath: (path: FabricPath) => void;
+  /** Function to clean up timeouts */
   cleanupTimeouts: () => void;
+  /** Function to delete selected objects */
   deleteSelectedObjects: () => void;
 }
 
+/**
+ * Return type for useCanvasEventHandlers hook
+ * @interface UseCanvasEventHandlersResult
+ */
+interface UseCanvasEventHandlersResult {
+  /** Register zoom change tracking */
+  registerZoomTracking: () => (() => void) | undefined;
+}
+
+/**
+ * Hook that handles canvas event registration and cleanup
+ * Manages all event listeners for the canvas
+ * @param {UseCanvasEventHandlersProps} props - Hook properties
+ * @returns {UseCanvasEventHandlersResult} Event handling utilities
+ */
 export const useCanvasEventHandlers = ({
   fabricCanvasRef,
   tool,
@@ -37,7 +70,7 @@ export const useCanvasEventHandlers = ({
   processCreatedPath,
   cleanupTimeouts,
   deleteSelectedObjects
-}: UseCanvasEventHandlersProps) => {
+}: UseCanvasEventHandlersProps): UseCanvasEventHandlersResult => {
   
   // Set up all event handlers
   useEffect(() => {
@@ -50,6 +83,10 @@ export const useCanvasEventHandlers = ({
       fabricCanvas.freeDrawingBrush.color = lineColor;
     }
     
+    /**
+     * Handle path created event
+     * @param {Object} e - Event object containing the created path
+     */
     const handlePathCreated = (e: {path: FabricPath}): void => {
       logger.info("Path created event triggered");
       
@@ -62,19 +99,28 @@ export const useCanvasEventHandlers = ({
       handleMouseUp();
     };
     
+    /**
+     * Handle object modified event
+     */
     const handleObjectModified = () => {
       // Save state when objects are modified
       logger.info("Object modified, saving state");
       saveCurrentState();
     };
     
+    /**
+     * Handle object removed event
+     */
     const handleObjectRemoved = () => {
       // Save state when objects are removed
       logger.info("Object removed, saving state");
       saveCurrentState();
     };
     
-    // Add keyboard event listener for delete key
+    /**
+     * Handle keyboard event for delete key
+     * @param {KeyboardEvent} e - Keyboard event
+     */
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         // Only delete if in select mode
@@ -84,19 +130,25 @@ export const useCanvasEventHandlers = ({
       }
     };
     
-    // Add double-click handler to enter edit mode for walls
-    const handleDoubleClick = (e: any) => {
-      if (tool === 'select' && e.target && (e.target.type === 'polyline' || (e.target as any).objectType === 'line')) {
-        // Mark the object as being edited
-        (e.target as any).isEditing = true;
-        
-        // Save current state before editing
-        saveCurrentState();
-        
-        // Allow for the wall to be redrawn
-        fabricCanvas.discardActiveObject();
-        fabricCanvas.setActiveObject(e.target);
-        fabricCanvas.requestRenderAll();
+    /**
+     * Handle double-click to enter edit mode for walls
+     * @param {Object} e - Double click event object
+     */
+    const handleDoubleClick = (e: { target: FabricObject | null }) => {
+      if (tool === 'select' && e.target) {
+        const target = e.target as FabricObject & { objectType?: string; isEditing?: boolean; type?: string };
+        if (target.type === 'polyline' || target.objectType === 'line') {
+          // Mark the object as being edited
+          target.isEditing = true;
+          
+          // Save current state before editing
+          saveCurrentState();
+          
+          // Allow for the wall to be redrawn
+          fabricCanvas.discardActiveObject();
+          fabricCanvas.setActiveObject(e.target);
+          fabricCanvas.requestRenderAll();
+        }
       }
     };
     
@@ -156,7 +208,11 @@ export const useCanvasEventHandlers = ({
     deleteSelectedObjects
   ]);
 
-  // Register zoom change tracking
+  /**
+   * Register zoom change tracking
+   * Sets up event listeners for zoom changes
+   * @returns {Function} Cleanup function
+   */
   const registerZoomTracking = useCallback(() => {
     const updateZoomLevel = () => {
       if (fabricCanvasRef.current) {
@@ -173,6 +229,8 @@ export const useCanvasEventHandlers = ({
         fabricCanvas.off('zoom:changed' as any, updateZoomLevel);
       };
     }
+    
+    return undefined;
   }, [fabricCanvasRef]);
 
   return {

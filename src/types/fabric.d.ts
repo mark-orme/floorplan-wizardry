@@ -46,4 +46,22 @@ declare module 'fabric' {
     /** Whether to use pixel-perfect target finding */
     perPixelTargetFind?: boolean;
   }
+  
+  /**
+   * Extended Canvas interface with custom methods for history operations 
+   * @interface Canvas
+   */
+  interface Canvas {
+    /** Handle undo operation */
+    handleUndo?: () => void;
+    
+    /** Handle redo operation */
+    handleRedo?: () => void;
+    
+    /** Save current state before making changes */
+    saveCurrentState?: () => void;
+    
+    /** Delete selected objects */
+    deleteSelectedObjects?: () => void;
+  }
 }

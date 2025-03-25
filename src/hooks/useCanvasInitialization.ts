@@ -5,12 +5,14 @@
  * @module useCanvasInitialization
  */
 import { useEffect, useRef, useState, useCallback } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { useCanvasCreation } from "./useCanvasCreation";
 import { useCanvasBrush } from "./useCanvasBrush";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import { useCanvasGrid } from "./useCanvasGrid";
 import { DrawingTool } from "./useCanvasState";
+import { DebugInfoState } from "@/types/drawingTypes";
 
 /**
  * Props for useCanvasInitialization hook
@@ -21,14 +23,23 @@ interface UseCanvasInitializationProps {
   tool: DrawingTool;
   currentFloor: number;
   setZoomLevel: (zoom: number) => void;
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
+}
+
+/**
+ * Return type for useCanvasInitialization hook
+ * @interface UseCanvasInitializationResult
+ */
+interface UseCanvasInitializationResult {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  historyRef: React.MutableRefObject<{
+    past: FabricObject[][];
+    future: FabricObject[][];
+  }>;
 }
 
 // Global tracker for initial toast shown
@@ -37,7 +48,7 @@ let initialToastShown = false;
 /**
  * Hook for initializing the canvas and related objects
  * @param {UseCanvasInitializationProps} props - Hook properties
- * @returns {Object} Canvas and related refs
+ * @returns {UseCanvasInitializationResult} Canvas and related refs
  */
 export const useCanvasInitialization = ({
   canvasDimensions,
@@ -47,7 +58,7 @@ export const useCanvasInitialization = ({
   setDebugInfo,
   setHasError,
   setErrorMessage
-}: UseCanvasInitializationProps) => {
+}: UseCanvasInitializationProps): UseCanvasInitializationResult => {
   // Track initialization state
   const [isInitialized, setIsInitialized] = useState(false);
   const initTimeoutRef = useRef<number | null>(null);
@@ -69,13 +80,17 @@ export const useCanvasInitialization = ({
   });
   
   // Create a history reference manually here
-  const historyRef = useRef<{past: any[][], future: any[][]}>({
+  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
     past: [],
     future: []
   });
   
-  // Define a simple setupInteractions function
-  const setupInteractions = useCallback((canvas: any) => {
+  /**
+   * Define a simple setupInteractions function
+   * @param {FabricCanvas} canvas - The Fabric canvas instance
+   * @returns {Function} Cleanup function
+   */
+  const setupInteractions = useCallback((canvas: FabricCanvas) => {
     // Basic interactions setup
     return () => {
       // Cleanup function
@@ -85,7 +100,7 @@ export const useCanvasInitialization = ({
   const { cleanupCanvas } = useCanvasCleanup();
   
   // Grid layer reference
-  const gridLayerRef = useRef<any[]>([]);
+  const gridLayerRef = useRef<FabricObject[]>([]);
   
   // Use the grid creation hook
   const createGrid = useCanvasGrid({
@@ -96,7 +111,10 @@ export const useCanvasInitialization = ({
     setErrorMessage
   });
 
-  // Helper function to perform initialization that can be retried
+  /**
+   * Helper function to perform initialization that can be retried
+   * @returns {boolean} Whether initialization was successful
+   */
   const performInitialization = useCallback(() => {
     console.log("Attempting canvas initialization with dimensions:", canvasDimensions);
     
