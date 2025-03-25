@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for canvas actions (clear, save)
  * @module useCanvasActions
@@ -47,9 +48,10 @@ export const useCanvasActions = ({
   const clearCanvas = useCallback((): void => {
     if (!fabricCanvasRef.current) return;
     
-    // Save current state before clearing
+    // Save current state before clearing (IMPORTANT)
     if (saveCurrentState) {
       saveCurrentState();
+      console.log("Saved state before clearing canvas");
     }
     
     clearDrawings();

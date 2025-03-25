@@ -26,7 +26,10 @@ const serializeObject = (obj: FabricObject): any => {
   try {
     const serialized = obj.toObject();
     // Add additional properties that might be needed for proper reconstruction
-    serialized.id = obj.id || null;
+    // Use type-safe property accessor instead of direct assignment
+    if ('id' in obj) {
+      serialized.id = (obj as any).id || null;
+    }
     return serialized;
   } catch (err) {
     console.error("Error serializing object:", err);
@@ -106,6 +109,10 @@ export const pushToHistory = (
     }
     
     console.log(`History updated: ${historyRef.current.past.length} states in past, ${historyRef.current.future.length} in future`);
+    // Debug output for development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Current history:', historyRef.current);
+    }
   } else {
     console.log("State unchanged, not adding to history");
   }
@@ -135,4 +142,3 @@ export const showHistoryToast = (operation: 'undo' | 'redo', success: boolean): 
     toast.info(`Nothing to ${operation}`);
   }
 };
-

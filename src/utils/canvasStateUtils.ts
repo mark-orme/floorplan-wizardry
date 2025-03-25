@@ -18,7 +18,7 @@ export const applyCanvasState = (
   console.log(`Applying state with ${state.length} objects`);
   if (!fabricCanvas) return;
   
-  // Remove existing non-grid objects
+  // STEP 1: First remove all existing non-grid objects (complete clearing)
   const existingObjects = fabricCanvas.getObjects().filter(obj => 
     !isGridObject(obj, gridLayerRef) && (obj.type === 'polyline' || obj.type === 'path')
   );
@@ -32,7 +32,7 @@ export const applyCanvasState = (
     }
   });
   
-  // Create and add new objects from state
+  // STEP 2: Create and add new objects from state (restoration)
   if (state.length > 0) {
     console.log(`Restoring ${state.length} objects`);
     state.forEach(objData => {
@@ -60,17 +60,16 @@ export const applyCanvasState = (
     });
   }
   
-  // Ensure grid remains in background
+  // STEP 3: Ensure grid remains in background
   gridLayerRef.current.forEach(gridObj => {
     if (fabricCanvas.contains(gridObj)) {
       fabricCanvas.sendObjectToBack(gridObj);
     }
   });
   
-  // Always do a full render to ensure changes are visible
+  // STEP 4: Always do a full render to ensure changes are visible
   fabricCanvas.requestRenderAll();
   
-  // Recalculate area after state change
+  // STEP 5: Recalculate area after state change
   recalculateGIA();
 };
-

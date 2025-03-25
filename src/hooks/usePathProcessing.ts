@@ -96,7 +96,8 @@ export const usePathProcessing = ({
       
       // CRITICAL FIX: Get the path's current color before processing
       // This captures the color set by the brush or any custom color
-      const pathColor = path.stroke || lineColor;
+      // Convert potentially complex stroke types to a simple string
+      const pathColor = typeof path.stroke === 'string' ? path.stroke : lineColor;
       console.log("Detected path color:", pathColor);
       
       // Process the points according to the current tool
