@@ -1,8 +1,8 @@
-
 import { createRoot } from 'react-dom/client'
 import * as Sentry from "@sentry/react";
 import App from './App.tsx'
 import './index.css'
+import { getPusher } from './utils/pusher.ts'
 
 // Initialize Sentry for error tracking and monitoring
 Sentry.init({
@@ -23,6 +23,9 @@ Sentry.init({
   replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%
   replaysOnErrorSampleRate: 1.0 // 100% when sampling sessions where errors occur
 });
+
+// Initialize Pusher
+getPusher();
 
 // Create the root and render the application
 createRoot(document.getElementById("root")!).render(
