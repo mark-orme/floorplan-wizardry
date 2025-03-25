@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, Database } from 'lucide-react';
+import { PlusCircle, Search } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,11 @@ const Properties = () => {
 
   const handleRowClick = (id: string) => {
     navigate(`/properties/${id}`);
+  };
+
+  const handleAddProperty = async () => {
+    // Normal behavior - navigate to property form
+    navigate('/properties/new');
   };
 
   const handleAddTestData = async () => {
@@ -81,16 +86,18 @@ const Properties = () => {
 
         <div className="flex space-x-3">
           {(userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
-            <Button onClick={() => navigate('/properties/new')}>
+            <Button onClick={handleAddProperty}>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Property
             </Button>
           )}
           
-          <Button onClick={handleAddTestData} variant="outline">
-            <Database className="mr-2 h-4 w-4" />
-            Add Test Data
-          </Button>
+          {/* Add Test Data button (now contextual based on environment) */}
+          {!properties.length && (userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
+            <Button onClick={handleAddTestData} variant="outline">
+              Add Test Data
+            </Button>
+          )}
         </div>
       </div>
 
@@ -118,14 +125,21 @@ const Properties = () => {
               : 'No properties found. Create your first property!'}
           </p>
           {!searchTerm && (userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => navigate('/properties/new')}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Property
-            </Button>
+            <div className="mt-4 flex justify-center gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleAddProperty}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Property
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={handleAddTestData}
+              >
+                Add Test Data
+              </Button>
+            </div>
           )}
         </div>
       ) : (
