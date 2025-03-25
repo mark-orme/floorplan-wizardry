@@ -5,7 +5,7 @@
  * @module fabric-extensions
  */
 
-import { Canvas, CanvasEvents, Object as FabricObject } from 'fabric';
+import { Canvas, CanvasEvents, Object as FabricObject, IObjectOptions } from 'fabric';
 
 declare module 'fabric' {
   /**
@@ -35,7 +35,7 @@ declare module 'fabric' {
    */
   interface Object {
     /** Type of object for specialized handling */
-    objectType?: 'line' | 'room' | 'grid' | string;
+    objectType?: 'line' | 'room' | 'grid' | 'wall' | 'measurement' | 'furniture' | 'text' | string;
     
     /** Whether the object is currently being edited */
     isEditing?: boolean;
@@ -45,6 +45,15 @@ declare module 'fabric' {
     
     /** Whether to use pixel-perfect target finding */
     perPixelTargetFind?: boolean;
+    
+    /** Length of a line in meters (for measurements) */
+    lengthInMeters?: number;
+    
+    /** Original points before transformation */
+    originalPoints?: { x: number; y: number }[];
+    
+    /** Associated measurement object */
+    measurementLabel?: FabricObject;
   }
   
   /**
@@ -63,5 +72,13 @@ declare module 'fabric' {
     
     /** Delete selected objects */
     deleteSelectedObjects?: () => void;
+    
+    /** Custom rendering options */
+    renderingOptions?: {
+      /** Whether to enable fast rendering for large canvases */
+      fastRender?: boolean;
+      /** Whether to skip offscreen objects during rendering */
+      skipOffscreen?: boolean;
+    };
   }
 }

@@ -12,19 +12,26 @@ import { useCanvasBrush } from "./useCanvasBrush";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import { useCanvasGrid } from "./useCanvasGrid";
 import { DrawingTool } from "./useCanvasState";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState, CanvasDimensions } from "@/types/drawingTypes";
 
 /**
  * Props for useCanvasInitialization hook
  * @interface UseCanvasInitializationProps
  */
 interface UseCanvasInitializationProps {
-  canvasDimensions: { width: number, height: number };
+  /** Canvas dimensions for width and height */
+  canvasDimensions: CanvasDimensions;
+  /** Current active drawing tool */
   tool: DrawingTool;
+  /** Current floor index */
   currentFloor: number;
+  /** Function to set the current zoom level */
   setZoomLevel: (zoom: number) => void;
+  /** Function to update debug information */
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  /** Function to set error state */
   setHasError: (value: boolean) => void;
+  /** Function to set error message */
   setErrorMessage: (value: string) => void;
 }
 
@@ -33,9 +40,13 @@ interface UseCanvasInitializationProps {
  * @interface UseCanvasInitializationResult
  */
 interface UseCanvasInitializationResult {
+  /** Reference to the HTML canvas element */
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  /** Reference to the Fabric.js canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Reference to history state for undo/redo */
   historyRef: React.MutableRefObject<{
     past: FabricObject[][];
     future: FabricObject[][];
@@ -90,7 +101,7 @@ export const useCanvasInitialization = ({
    * @param {FabricCanvas} canvas - The Fabric canvas instance
    * @returns {Function} Cleanup function
    */
-  const setupInteractions = useCallback((canvas: FabricCanvas) => {
+  const setupInteractions = useCallback((canvas: FabricCanvas): (() => void) => {
     // Basic interactions setup
     return () => {
       // Cleanup function
@@ -115,7 +126,7 @@ export const useCanvasInitialization = ({
    * Helper function to perform initialization that can be retried
    * @returns {boolean} Whether initialization was successful
    */
-  const performInitialization = useCallback(() => {
+  const performInitialization = useCallback((): boolean => {
     console.log("Attempting canvas initialization with dimensions:", canvasDimensions);
     
     if (!canvasRef.current) {

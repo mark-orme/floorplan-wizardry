@@ -4,7 +4,7 @@
  * @module useCanvasEventHandlers
  */
 import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, IEvent } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import logger from "@/utils/logger";
 
@@ -28,9 +28,9 @@ interface UseCanvasEventHandlersProps {
   /** Function to handle redo operation */
   handleRedo: () => void;
   /** Function to handle mouse down event */
-  handleMouseDown: (e: any) => void;
+  handleMouseDown: (e: IEvent<MouseEvent>) => void;
   /** Function to handle mouse move event */
-  handleMouseMove: (e: any) => void;
+  handleMouseMove: (e: IEvent<MouseEvent>) => void;
   /** Function to handle mouse up event */
   handleMouseUp: () => void;
   /** Function to process created path */
@@ -48,6 +48,29 @@ interface UseCanvasEventHandlersProps {
 interface UseCanvasEventHandlersResult {
   /** Register zoom change tracking */
   registerZoomTracking: () => (() => void) | undefined;
+}
+
+/**
+ * Type for Canvas Events with target object
+ */
+interface TargetEvent extends IEvent<MouseEvent> {
+  target: FabricObject | null;
+}
+
+/**
+ * Type for Path Created Event
+ */
+interface PathCreatedEvent {
+  path: FabricPath;
+}
+
+/**
+ * Extended FabricObject with editing properties
+ */
+interface EditableFabricObject extends FabricObject {
+  objectType?: string;
+  isEditing?: boolean;
+  type?: string;
 }
 
 /**
@@ -85,9 +108,9 @@ export const useCanvasEventHandlers = ({
     
     /**
      * Handle path created event
-     * @param {Object} e - Event object containing the created path
+     * @param {PathCreatedEvent} e - Event object containing the created path
      */
-    const handlePathCreated = (e: {path: FabricPath}): void => {
+    const handlePathCreated = (e: PathCreatedEvent): void => {
       logger.info("Path created event triggered");
       
       // IMPORTANT: Save current state BEFORE making any changes
@@ -102,7 +125,7 @@ export const useCanvasEventHandlers = ({
     /**
      * Handle object modified event
      */
-    const handleObjectModified = () => {
+    const handleObjectModified = (): void => {
       // Save state when objects are modified
       logger.info("Object modified, saving state");
       saveCurrentState();
@@ -111,7 +134,7 @@ export const useCanvasEventHandlers = ({
     /**
      * Handle object removed event
      */
-    const handleObjectRemoved = () => {
+    const handleObjectRemoved = (): void => {
       // Save state when objects are removed
       logger.info("Object removed, saving state");
       saveCurrentState();
@@ -121,7 +144,7 @@ export const useCanvasEventHandlers = ({
      * Handle keyboard event for delete key
      * @param {KeyboardEvent} e - Keyboard event
      */
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         // Only delete if in select mode
         if (tool === 'select') {
@@ -132,11 +155,11 @@ export const useCanvasEventHandlers = ({
     
     /**
      * Handle double-click to enter edit mode for walls
-     * @param {Object} e - Double click event object
+     * @param {TargetEvent} e - Double click event object
      */
-    const handleDoubleClick = (e: { target: FabricObject | null }) => {
+    const handleDoubleClick = (e: TargetEvent): void => {
       if (tool === 'select' && e.target) {
-        const target = e.target as FabricObject & { objectType?: string; isEditing?: boolean; type?: string };
+        const target = e.target as EditableFabricObject;
         if (target.type === 'polyline' || target.objectType === 'line') {
           // Mark the object as being edited
           target.isEditing = true;
@@ -152,13 +175,13 @@ export const useCanvasEventHandlers = ({
       }
     };
     
-    fabricCanvas.on('path:created', handlePathCreated);
+    fabricCanvas.on('path:created', handlePathCreated as any);
     fabricCanvas.on('mouse:down', handleMouseDown);
     fabricCanvas.on('mouse:move', handleMouseMove);
     fabricCanvas.on('mouse:up', handleMouseUp);
     fabricCanvas.on('object:modified', handleObjectModified);
     fabricCanvas.on('object:removed', handleObjectRemoved);
-    fabricCanvas.on('mouse:dblclick', handleDoubleClick);
+    fabricCanvas.on('mouse:dblclick', handleDoubleClick as any);
     
     // Add keyboard event listeners
     window.addEventListener('keydown', handleKeyDown);
@@ -174,13 +197,13 @@ export const useCanvasEventHandlers = ({
       cleanupTimeouts();
       
       if (fabricCanvas) {
-        fabricCanvas.off('path:created', handlePathCreated);
+        fabricCanvas.off('path:created', handlePathCreated as any);
         fabricCanvas.off('mouse:down', handleMouseDown);
         fabricCanvas.off('mouse:move', handleMouseMove);
         fabricCanvas.off('mouse:up', handleMouseUp);
         fabricCanvas.off('object:modified', handleObjectModified);
         fabricCanvas.off('object:removed', handleObjectRemoved);
-        fabricCanvas.off('mouse:dblclick', handleDoubleClick);
+        fabricCanvas.off('mouse:dblclick', handleDoubleClick as any);
         
         // Clean up custom handlers
         delete (fabricCanvas as any).handleUndo;
@@ -213,8 +236,8 @@ export const useCanvasEventHandlers = ({
    * Sets up event listeners for zoom changes
    * @returns {Function} Cleanup function
    */
-  const registerZoomTracking = useCallback(() => {
-    const updateZoomLevel = () => {
+  const registerZoomTracking = useCallback((): (() => void) | undefined => {
+    const updateZoomLevel = (): void => {
       if (fabricCanvasRef.current) {
         const zoom = fabricCanvasRef.current.getZoom();
         fabricCanvasRef.current.fire('custom:zoom-changed', { zoom });

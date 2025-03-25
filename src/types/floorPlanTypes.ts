@@ -8,25 +8,51 @@ import { Point, CanvasDimensions } from './drawingTypes';
 
 /**
  * Paper size options for floor plans
+ * @typedef {('A4'|'A3'|'infinite')} PaperSize
  */
 export type PaperSize = 'A4' | 'A3' | 'infinite';
 
 /**
+ * Canvas object data that can be serialized and stored
+ * @typedef {Object} SerializedCanvasObject
+ */
+export type SerializedCanvasObject = Record<string, any>;
+
+/**
  * Unified FloorPlan interface that satisfies both type systems
+ * @interface FloorPlan
  */
 export interface FloorPlan {
-  // Required by utils/drawingTypes.ts
-  strokes: Point[][];
+  /** Unique identifier for the floor plan */
+  id: string;
+  
+  /** Name of the floor plan */
+  name: string;
+  
+  /** Display label for the floor plan */
   label: string;
+  
+  /** Gross internal area in square meters */
+  gia: number;
+  
+  /** Array of strokes (each a sequence of points) */
+  strokes: Point[][];
+  
+  /** Paper size for printing */
   paperSize?: PaperSize;
   
-  // Required by types/drawingTypes.ts
-  id: string;
-  name: string;
-  gia: number;
+  /** SVG data representation */
   svgData?: string;
+  
+  /** Serialized canvas data */
   canvas?: string;
+  
+  /** Timestamp when the floor plan was created or last modified */
   timestamp?: number;
+  
+  /** Canvas dimensions */
   dimensions?: CanvasDimensions;
-  objects?: any[];
+  
+  /** Serialized canvas objects */
+  objects?: SerializedCanvasObject[];
 }

@@ -2,7 +2,7 @@
  * Type definitions for drawing functionality
  * @module drawingTypes
  */
-import { openDB } from 'idb';
+import { openDB, DBSchema } from 'idb';
 import type { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
@@ -58,10 +58,6 @@ export interface CanvasDimensions {
 /**
  * Debug info state type
  * @typedef {Object} DebugInfoState
- * @property {boolean} canvasInitialized - Whether the canvas is initialized
- * @property {boolean} gridCreated - Whether the grid is created
- * @property {boolean} dimensionsSet - Whether dimensions are set
- * @property {boolean} brushInitialized - Whether the brush is initialized
  */
 export interface DebugInfoState {
   canvasInitialized: boolean;
@@ -79,7 +75,7 @@ export interface DebugInfoState {
   canvasHeight?: number;
   devicePixelRatio?: number;
   gridVisible?: boolean;
-  performanceStats?: Record<string, any>;
+  performanceStats?: Record<string, number>;
 }
 
 /**
@@ -93,22 +89,6 @@ export type GridCreationCallback = (canvas: FabricCanvas) => FabricObject[];
 /**
  * Grid creation state type
  * @typedef {Object} GridCreationState
- * @property {boolean} creationInProgress - Whether grid creation is in progress
- * @property {number} consecutiveResets - Number of consecutive reset attempts
- * @property {number} maxConsecutiveResets - Maximum allowed consecutive resets before throttling
- * @property {number} lastAttemptTime - Last timestamp of grid creation attempt
- * @property {number} lastCreationTime - Last timestamp of grid creation completion
- * @property {boolean} exists - Whether the grid currently exists
- * @property {number} safetyTimeout - Safety timeout period in milliseconds
- * @property {number} throttleInterval - Throttle interval in milliseconds
- * @property {number} minRecreationInterval - Minimum recreation interval in milliseconds
- * @property {number} maxRecreations - Maximum number of allowed recreations
- * @property {number} totalCreations - Total number of creation attempts
- * @property {CanvasDimensions} lastDimensions - Last dimensions used for grid creation
- * @property {Object} creationLock - Creation lock information
- * @property {number} creationLock.id - Lock ID
- * @property {number} creationLock.timestamp - Lock timestamp
- * @property {boolean} creationLock.isLocked - Whether the lock is active
  */
 export interface GridCreationState {
   creationInProgress: boolean;
@@ -138,14 +118,6 @@ export interface GridCreationState {
 /**
  * Canvas load times type
  * @typedef {Object} CanvasLoadTimes
- * @property {number} startTime - Start time of canvas loading
- * @property {number} canvasInitStart - Start time of canvas initialization
- * @property {number} canvasInitEnd - End time of canvas initialization
- * @property {number} gridCreationStart - Start time of grid creation
- * @property {number} gridCreationEnd - End time of grid creation
- * @property {number} totalLoadTime - Total load time
- * @property {boolean} canvasReady - Whether canvas is ready
- * @property {boolean} gridCreated - Whether grid is created
  */
 export interface CanvasLoadTimes {
   startTime: number;
@@ -156,6 +128,16 @@ export interface CanvasLoadTimes {
   totalLoadTime: number;
   canvasReady: boolean;
   gridCreated: boolean;
+}
+
+/**
+ * Database schema for IndexedDB
+ */
+export interface FloorPlanDBSchema extends DBSchema {
+  floorPlans: {
+    key: string;
+    value: FloorPlan;
+  };
 }
 
 // Scale factors
@@ -201,7 +183,7 @@ export const STORE_NAME = 'floorPlans';
  * @returns {Promise<IDBDatabase>} Initialized database
  */
 export const getDB = async () => {
-  return openDB(DB_NAME, 1, {
+  return openDB<FloorPlanDBSchema>(DB_NAME, 1, {
     upgrade(db) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
