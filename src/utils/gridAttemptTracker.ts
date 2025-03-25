@@ -9,10 +9,19 @@
  * Grid attempt tracking state
  */
 export interface GridAttemptTracker {
+  /** Current attempt count */
   count: number;
+  
+  /** Maximum allowed attempts */
   maxAttempts: number;
+  
+  /** Whether initial attempt has been made */
   initialAttempted: boolean;
+  
+  /** Whether creation was successful */
   successful: boolean;
+  
+  /** Timestamp of last attempt */
   lastAttemptTime: number;
 }
 

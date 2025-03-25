@@ -1,207 +1,89 @@
 
 /**
- * Grid manager module for grid creation and lifecycle
- * Handles grid creation state, flags, and limits to prevent simultaneous updates
- * Provides lock mechanisms to avoid race conditions during grid creation
+ * Grid manager utility
+ * Provides centralized management of grid creation state
  * @module gridManager
  */
-import { GridManagerState, CanvasDimensions } from "@/types/drawingTypes";
-import { toast } from "sonner";
 
 /**
- * Track grid creation state globally with proper typing
- * Contains configuration, locks, and state tracking for grid creation
+ * Grid creation progress tracking
  */
-export const gridManager: GridManagerState = {
-  // Creation time tracking
-  lastCreationTime: 0,
-  inProgress: false,
+export const gridManager = {
+  /** Whether grid creation is currently in progress */
+  creationInProgress: false,
   
-  // Dimensions tracking
-  lastDimensions: { width: 0, height: 0 },
-  
-  // Initialization state
-  initialized: false,
-  totalCreations: 0,
-  
-  // Configuration
-  maxRecreations: 3,
-  minRecreationInterval: 60000, // 1 minute
-  throttleInterval: 120000,     // 2 minutes
-  
-  // Grid state
-  exists: false,
-  
-  // Batch processing state
-  batchTimeoutId: null,
-  
-  // Safety timeout (ms) to reset inProgress if creation takes too long
-  safetyTimeout: 5000,
-  
-  // Flags to prevent race conditions
-  lastResetTime: 0,
+  /** Number of consecutive reset attempts */
   consecutiveResets: 0,
-  maxConsecutiveResets: 5, // Maximum consecutive resets allowed
-  resetDelay: 1000,        // Increased from 500ms to 1000ms to give more breathing room
   
-  // Track creation locks with timestamp
-  creationLock: {
-    id: 0,
-    timestamp: 0,
-    isLocked: false
-  }
+  /** Maximum allowed consecutive resets before throttling */
+  maxConsecutiveResets: 5,
+  
+  /** Last timestamp of grid creation attempt */
+  lastAttemptTime: 0
 };
 
 /**
- * Reset the grid creation in-progress flag
- * Used to prevent grid creation from getting stuck in a locked state
- * Provides safety mechanism for recovering from stalled grid creation
- */
-export const resetGridProgress = (): void => {
-  const now = Date.now();
-  
-  // Check for rapid consecutive resets which might indicate a problem
-  if (now - gridManager.lastResetTime < 1000) { // Increased threshold from 500ms to 1000ms
-    gridManager.consecutiveResets++;
-    
-    if (process.env.NODE_ENV === 'development') {
-      // Only log every few resets to avoid flooding console
-      if (gridManager.consecutiveResets % 3 === 0) {
-        console.log(`Consecutive grid reset #${gridManager.consecutiveResets}`);
-      }
-    }
-    
-    // If too many rapid resets, we might be in a reset loop
-    if (gridManager.consecutiveResets > gridManager.maxConsecutiveResets) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn("Too many consecutive resets detected, adding delay");
-      }
-      
-      // Show a toast to inform the user that there's an issue
-      if (gridManager.consecutiveResets === gridManager.maxConsecutiveResets + 1) {
-        toast.warning("Drawing grid is taking longer than expected. Please wait...", {
-          id: "grid-delay",
-          duration: 5000
-        });
-      }
-      
-      // Force a release of locks IMMEDIATELY to break potential loops
-      gridManager.inProgress = false;
-      gridManager.creationLock.isLocked = false;
-      
-      // Use setTimeout to delay the next reset attempt
-      setTimeout(() => {
-        gridManager.consecutiveResets = 0;
-        gridManager.lastResetTime = Date.now();
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Reset counter cleared after delay");
-        }
-      }, gridManager.resetDelay * 3); // Triple the delay for resetting the counter to be extra safe
-      
-      return;
-    }
-  } else {
-    // Reset the counter if enough time has passed
-    if (now - gridManager.lastResetTime > 2000) { // Increased from 1000ms to 2000ms
-      gridManager.consecutiveResets = 0;
-    }
-  }
-  
-  gridManager.lastResetTime = now;
-  gridManager.inProgress = false;
-  gridManager.creationLock.isLocked = false;
-  
-  if (process.env.NODE_ENV === 'development' && gridManager.consecutiveResets === 0) {
-    // Only log resets when we're starting fresh, not in a loop
-    console.log("Grid creation progress flag reset");
-  }
-};
-
-/**
- * Acquire a lock for grid creation
- * Prevents multiple simultaneous grid creation attempts
- * Includes safety timeout for stale locks
+ * Start a grid creation process
+ * Prevents concurrent grid creations
  * 
- * @returns {boolean} Whether the lock was acquired successfully
+ * @returns {boolean} Whether the creation was allowed to start
  */
-export const acquireGridCreationLock = (): boolean => {
-  const now = Date.now();
-  
-  // If we've had too many resets recently, throttle new lock acquisitions
-  if (gridManager.consecutiveResets > gridManager.maxConsecutiveResets - 1) {
-    if (process.env.NODE_ENV === 'development') {
-      // Only log once per threshold crossing
-      if (gridManager.consecutiveResets === gridManager.maxConsecutiveResets) {
-        console.warn("Throttling lock acquisition due to recent reset activity");
-      }
-    }
+export const startGridCreation = (): boolean => {
+  if (gridManager.creationInProgress) {
     return false;
   }
   
-  // Check if lock is active
-  if (gridManager.creationLock.isLocked) {
-    // If lock has been held for too long, force release it
-    if (now - gridManager.creationLock.timestamp > gridManager.safetyTimeout) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn("Forcing release of stale grid creation lock");
-      }
-      gridManager.creationLock.isLocked = false;
-    } else {
-      // Lock is active and not stale
-      return false;
-    }
-  }
-  
-  // Acquire the lock
-  gridManager.creationLock.id++;
-  gridManager.creationLock.timestamp = now;
-  gridManager.creationLock.isLocked = true;
-  gridManager.inProgress = true;
+  gridManager.creationInProgress = true;
+  gridManager.lastAttemptTime = Date.now();
   
   return true;
 };
 
 /**
- * Release the grid creation lock
- * Allows other operations to acquire the lock after this one completes
- * Validates lock ID to prevent releasing someone else's lock
- * 
- * @param {number} lockId - ID of the lock to release
- * @returns {boolean} Whether the lock was released successfully
+ * Complete a grid creation process
+ * Updates tracking state after successful creation
  */
-export const releaseGridCreationLock = (lockId: number): boolean => {
-  // Only release if the ID matches (prevent releasing someone else's lock)
-  if (lockId === 0 || gridManager.creationLock.id === lockId) {
-    gridManager.creationLock.isLocked = false;
-    gridManager.inProgress = false;
-    return true;
-  }
-  return false;
+export const completeGridCreation = (): void => {
+  gridManager.creationInProgress = false;
+  gridManager.consecutiveResets = 0;
 };
 
 /**
- * Force grid progress reset after a safety timeout
- * Ensures grid creation doesn't get permanently stuck
- * 
- * @param {number} timeoutMs - Timeout in milliseconds
- * @returns {number} Timeout ID for cancellation if needed
+ * Reset grid creation progress
+ * Typically used when grid creation fails or needs to be retried
  */
-export const scheduleGridProgressReset = (timeoutMs = 5000): number => {
-  return window.setTimeout(() => {
+export const resetGridProgress = (): void => {
+  if (gridManager.creationInProgress) {
+    gridManager.consecutiveResets += 1;
+    
     if (process.env.NODE_ENV === 'development') {
-      console.log("Scheduled grid progress reset executed");
+      console.log(`Grid creation progress reset, consecutive resets: ${gridManager.consecutiveResets}`);
     }
-    resetGridProgress();
-  }, timeoutMs);
+  }
+  
+  gridManager.creationInProgress = false;
 };
 
 /**
- * Throttle grid creation requests
- * Prevents too many rapid creation attempts
+ * Check if grid creation is currently allowed
+ * Based on throttling and concurrency limits
  * 
- * @returns {boolean} Whether grid creation should be throttled
+ * @returns {boolean} Whether grid creation is allowed
  */
-export const shouldThrottleCreation = (): boolean => {
-  return gridManager.consecutiveResets >= gridManager.maxConsecutiveResets - 1;
+export const canCreateGrid = (): boolean => {
+  // Prevent creating if already in progress
+  if (gridManager.creationInProgress) {
+    return false;
+  }
+  
+  // Check if we need to throttle due to too many resets
+  if (gridManager.consecutiveResets >= gridManager.maxConsecutiveResets) {
+    // Only allow after a cooldown period (5 seconds)
+    const now = Date.now();
+    if (now - gridManager.lastAttemptTime < 5000) {
+      return false;
+    }
+  }
+  
+  return true;
 };

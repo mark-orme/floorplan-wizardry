@@ -13,9 +13,16 @@ import { toast } from "sonner";
  * Default configuration for grid creation retries
  */
 export const DEFAULT_RETRY_CONFIG = {
+  /** Maximum number of retry attempts */
   maxAttempts: 3,
+  
+  /** Initial delay between retries in milliseconds */
   initialDelay: 400,  // Increased from 200 to 400ms
+  
+  /** Factor by which delay increases with each retry */
   backoffFactor: 2,
+  
+  /** Minimum interval between attempts in milliseconds */
   minAttemptInterval: 800  // Increased from 500ms to 800ms
 };
 

@@ -9,10 +9,19 @@
  * Log level enum
  */
 export enum LogLevel {
+  /** Debug level logs (most verbose) */
   DEBUG = 0,
+  
+  /** Information level logs */
   INFO = 1,
+  
+  /** Warning level logs */
   WARN = 2,
+  
+  /** Error level logs */
   ERROR = 3,
+  
+  /** No logging */
   NONE = 4
 }
 
