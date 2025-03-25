@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { UserRole } from '@/lib/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 // Test users for quick access
 const testUsers = [
@@ -25,8 +27,68 @@ const Auth = () => {
   const [role, setRole] = useState<UserRole>(UserRole.PHOTOGRAPHER);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [isCreatingTestUsers, setIsCreatingTestUsers] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+
+  // Check and create test users if they don't exist
+  useEffect(() => {
+    const createTestUsers = async () => {
+      try {
+        setIsCreatingTestUsers(true);
+        let createdUsers = 0;
+        
+        for (const testUser of testUsers) {
+          // Check if user exists
+          const { data } = await supabase.auth.signInWithPassword({
+            email: testUser.email,
+            password: testUser.password,
+          });
+          
+          // If user doesn't exist (sign in failed), create it
+          if (!data.user) {
+            // Create user
+            const { error, data: userData } = await supabase.auth.signUp({
+              email: testUser.email,
+              password: testUser.password,
+            });
+            
+            if (error) throw error;
+            
+            // Create user profile with role
+            if (userData.user) {
+              const { error: profileError } = await supabase
+                .from('user_profiles')
+                .insert({
+                  user_id: userData.user.id,
+                  role: testUser.role,
+                  created_at: new Date().toISOString()
+                });
+                
+              if (profileError) throw profileError;
+              createdUsers++;
+            }
+          }
+        }
+        
+        // Sign out after creating test users
+        await supabase.auth.signOut();
+        
+        if (createdUsers > 0) {
+          toast.success(`${createdUsers} test user(s) created successfully!`);
+        } else {
+          toast.info('All test users already exist.');
+        }
+      } catch (error: any) {
+        console.error('Error creating test users:', error);
+        toast.error(error.message || 'Error creating test users');
+      } finally {
+        setIsCreatingTestUsers(false);
+      }
+    };
+    
+    createTestUsers();
+  }, []);
 
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -80,7 +142,7 @@ const Auth = () => {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled={isCreatingTestUsers}>
                     Test Users <ChevronDown className="ml-1 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -101,6 +163,11 @@ const Auth = () => {
             <CardDescription>
               Access the property floor plan system
             </CardDescription>
+            {isCreatingTestUsers && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                Setting up test users...
+              </div>
+            )}
           </CardHeader>
 
           <CardContent>
