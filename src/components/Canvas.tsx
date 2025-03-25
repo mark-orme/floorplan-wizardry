@@ -89,7 +89,7 @@ export const Canvas = () => {
     // Always show during active drawing with straightLine or room tools
     (drawingState?.isDrawing && (tool === "straightLine" || tool === "room")) ||
     // Show when hovering with these tools even if not actively drawing
-    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "room") && drawingState?.cursorPosition) ||
+    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "room") && drawingState?.cursorPosition != null) ||
     // Also show when in select mode and actively manipulating a line
     (tool === "select" && drawingState?.isDrawing);
   
