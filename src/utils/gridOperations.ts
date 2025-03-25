@@ -1,45 +1,36 @@
-
 /**
- * Grid operations module
- * Handles grid creation batch operations and error handling
+ * Grid operations utility functions
  * @module gridOperations
  */
-import { Canvas } from "fabric";
+import { Canvas, Object as FabricObject } from 'fabric';
+import { CanvasDimensions, GridCreationState } from '@/types/drawingTypes';
 import { 
-  gridManager, 
-  resetGridProgress, 
   scheduleGridProgressReset,
   acquireGridCreationLock,
-  releaseGridCreationLock,
-  shouldThrottleCreation
-} from "./gridManager";
-import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
-import { CanvasDimensions } from "@/types/drawingTypes";
+  releaseGridCreationLock
+} from './gridManager';
+import { logger } from './logger';
 
-// Re-export gridManager for use in other modules
-export { 
-  gridManager, 
-  resetGridProgress, 
-  scheduleGridProgressReset,
-  acquireGridCreationLock,
-  releaseGridCreationLock,
-  shouldThrottleCreation
-};
+// Constants for grid operation performance
+const GRID_CREATION_THROTTLE = 1000; // Min time between grid creations in ms
 
 /**
- * Check if grid creation should be throttled based on creation limits
- * @param now - Current timestamp
- * @returns Whether creation should be throttled
+ * Check if grid recreation should be throttled
+ * @param {GridCreationState} gridState - Current grid state
+ * @returns {boolean} Whether creation should be throttled
  */
-export const shouldThrottleGridCreation = (now: number): boolean => {
-  // If within throttle interval and grid exists, throttle creation
-  if (now - gridManager.lastCreationTime < gridManager.throttleInterval && gridManager.exists) {
+export const shouldThrottleGridCreation = (gridState: GridCreationState): boolean => {
+  const now = Date.now();
+  
+  // Check if recently created
+  if (gridState.exists && 
+      now - gridState.lastCreationTime < gridState.throttleInterval) {
     return true;
   }
   
-  // If we've hit the max recreations, only allow one per minute
-  if (gridManager.totalCreations >= gridManager.maxRecreations && 
-      (now - gridManager.lastCreationTime < gridManager.minRecreationInterval)) {
+  // Check total recreations limit
+  if (gridState.totalCreations >= gridState.maxRecreations &&
+      now - gridState.lastCreationTime < gridState.minRecreationInterval) {
     return true;
   }
   
@@ -47,186 +38,124 @@ export const shouldThrottleGridCreation = (now: number): boolean => {
 };
 
 /**
- * Check if dimensions have changed significantly enough to recreate grid
- * @param oldDimensions - Previous canvas dimensions
- * @param newDimensions - Current canvas dimensions
- * @returns Whether dimensions changed enough to recreate grid
+ * Calculate hash for canvas dimensions to detect changes
+ * @param {CanvasDimensions} dimensions - Canvas dimensions
+ * @returns {string} Hash string for the dimensions
+ */
+export const calculateDimensionsHash = (dimensions: CanvasDimensions): string => {
+  return `${dimensions.width}x${dimensions.height}`;
+};
+
+/**
+ * Check if dimensions have changed significantly
+ * @param {CanvasDimensions | null} prevDimensions - Previous dimensions
+ * @param {CanvasDimensions} currDimensions - Current dimensions
+ * @param {number} threshold - Change threshold in pixels
+ * @returns {boolean} Whether dimensions changed significantly
  */
 export const hasDimensionsChangedSignificantly = (
-  oldDimensions: CanvasDimensions,
-  newDimensions: CanvasDimensions
+  prevDimensions: CanvasDimensions | null,
+  currDimensions: CanvasDimensions,
+  threshold: number = 20
 ): boolean => {
-  // For first creation, always proceed
-  if (oldDimensions.width === 0 || oldDimensions.height === 0) {
-    return true;
+  if (!prevDimensions) return true;
+  
+  const widthDiff = Math.abs(prevDimensions.width - currDimensions.width);
+  const heightDiff = Math.abs(prevDimensions.height - currDimensions.height);
+  
+  return widthDiff > threshold || heightDiff > threshold;
+};
+
+/**
+ * Clear all grid objects from the canvas
+ * @param {Canvas} canvas - Fabric canvas instance
+ * @param {string} objectTypePrefix - Grid object type prefix
+ * @returns {number} Number of removed objects
+ */
+export const clearGridObjects = (
+  canvas: Canvas,
+  objectTypePrefix: string = 'grid'
+): number => {
+  if (!canvas) {
+    logger.warn('Cannot clear grid: canvas is null');
+    return 0;
   }
   
-  // Calculate dimension changes as percentage
-  const widthChange = Math.abs(oldDimensions.width - newDimensions.width) / oldDimensions.width;
-  const heightChange = Math.abs(oldDimensions.height - newDimensions.height) / oldDimensions.height;
+  // Get all grid objects
+  const gridObjects = canvas.getObjects().filter((obj) => {
+    const fabricObj = obj as FabricObject;
+    return fabricObj.objectType && fabricObj.objectType.startsWith(objectTypePrefix);
+  });
   
-  // Only recreate grid if dimensions change by more than 10% (reduced threshold)
-  return widthChange > 0.1 || heightChange > 0.1;
+  // Remove each grid object
+  let count = 0;
+  gridObjects.forEach(obj => {
+    canvas.remove(obj);
+    count++;
+  });
+  
+  if (count > 0) {
+    canvas.requestRenderAll();
+    logger.info(`Removed ${count} grid objects`);
+  }
+  
+  return count;
 };
 
 /**
- * Handle errors during grid creation
- * @param err - Error object
- * @param setHasError - Function to set error state
- * @param setErrorMessage - Function to set error message
- * @returns Empty array for grid objects
+ * Send grid objects to the back of the canvas
+ * @param {Canvas} canvas - Fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Grid objects to send to back
+ * @returns {boolean} Whether operation was successful
  */
-export const handleGridCreationError = (
-  err: unknown,
-  setHasError: (value: boolean) => void,
-  setErrorMessage: (value: string) => void
-): unknown[] => {
-  console.error("Error creating grid:", err);
-  setHasError(true);
-  setErrorMessage(`Failed to create grid: ${err instanceof Error ? err.message : String(err)}`);
-  
-  // Force reset the grid flags
-  resetGridProgress();
-  
-  return [];
-};
-
-/**
- * Create grid in a batched operation
- * @param canvas - The Fabric canvas instance
- * @param gridLayerRef - Reference to store grid objects
- * @param canvasDimensions - Current canvas dimensions
- * @param setDebugInfo - Function to update debug info state
- * @param setHasError - Function to set error state
- * @param setErrorMessage - Function to set error message
- * @param now - Current timestamp
- * @returns Array of created grid objects
- */
-export const createGridBatch = (
+export const arrangeGridObjects = (
   canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<unknown[]>,
-  canvasDimensions: CanvasDimensions,
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>,
-  setHasError: (value: boolean) => void,
-  setErrorMessage: (value: string) => void,
-  now: number
-): unknown[] => {
-  console.log("Executing grid batch creation");
-  
-  // Get a unique lock ID for this operation
-  const lockId = gridManager.creationLock.id;
-  
-  // Set a safety timeout to reset the inProgress flag in case of error
-  const safetyTimeoutId = setTimeout(() => {
-    console.log("Safety timeout: resetting grid creation in-progress flag");
-    resetGridProgress();
-  }, gridManager.safetyTimeout);
+  gridObjects: FabricObject[]
+): boolean => {
+  if (!canvas || !gridObjects.length) return false;
   
   try {
-    // Tracking metric
-    gridManager.totalCreations++;
+    // First, send all grid objects to the back
+    gridObjects.forEach(obj => {
+      if (typeof canvas.sendObjectToBack === 'function') {
+        canvas.sendObjectToBack(obj);
+      }
+    });
     
-    console.log(`Creating grid batch... (${gridManager.totalCreations})`);
-    
-    // Remove existing grid objects if any
-    if (gridLayerRef.current.length > 0) {
-      console.log(`Removing ${gridLayerRef.current.length} existing grid objects`);
-      const existingObjects = [...gridLayerRef.current];
-      existingObjects.forEach(obj => {
-        if (canvas.contains(obj)) {
-          try {
-            canvas.remove(obj);
-          } catch (err) {
-            console.warn("Error removing existing grid object:", err);
-          }
-        }
-      });
-      gridLayerRef.current = [];
-    }
-    
-    // Apply minimum dimensions to avoid zero-size grid issues
-    // Get up-to-date dimensions with safety checks
-    const canvasWidth = Math.max(canvas.width || canvasDimensions.width, 200);
-    const canvasHeight = Math.max(canvas.height || canvasDimensions.height, 200);
-    
-    console.log(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
-    
-    // Store the current dimensions for future comparison
-    gridManager.lastDimensions = { width: canvasWidth, height: canvasHeight };
-    
-    // Render all grid components with explicit error handling
-    console.log("Starting renderGridComponents...");
-    const result = renderGridComponents(
-      canvas, 
-      canvasWidth, 
-      canvasHeight
+    // Ensure proper stacking order
+    const smallGridObjects = gridObjects.filter(obj => 
+      obj.objectType && obj.objectType === 'grid-small'
     );
     
-    if (result.gridObjects.length === 0) {
-      console.warn("No grid objects were created - trying fallback dimensions");
-      // Try again with hardcoded fallback dimensions
-      console.log("Attempting grid creation with fallback dimensions (800x600)");
-      const fallbackResult = renderGridComponents(canvas, 800, 600);
-      if (fallbackResult.gridObjects.length > 0) {
-        console.log("Fallback grid creation succeeded");
-        arrangeGridObjects(
-          canvas, 
-          fallbackResult.smallGridLines, 
-          fallbackResult.largeGridLines, 
-          fallbackResult.markers
-        );
-        gridLayerRef.current = fallbackResult.gridObjects;
-        gridManager.exists = true;
-        setDebugInfo(prev => ({...prev, gridCreated: true}));
-        return fallbackResult.gridObjects;
-      } else {
-        console.error("Even fallback grid creation failed - critical issue");
+    const largeGridObjects = gridObjects.filter(obj => 
+      obj.objectType && obj.objectType === 'grid-large'
+    );
+    
+    const markerObjects = gridObjects.filter(obj => 
+      obj.objectType && obj.objectType === 'grid-marker'
+    );
+    
+    // Stack in proper order: small grid at back, then large grid, then markers
+    smallGridObjects.forEach(obj => canvas.sendObjectToBack(obj));
+    
+    largeGridObjects.forEach(obj => {
+      // Move up from the bottom but still below non-grid objects
+      if (smallGridObjects.length) {
+        canvas.bringObjectForward(obj);
       }
-    } else {
-      console.log(`Grid objects created: ${result.gridObjects.length}`);
-    }
+    });
     
-    // Arrange grid objects in the correct z-order
-    console.log("Arranging grid objects...");
-    arrangeGridObjects(canvas, result.smallGridLines, result.largeGridLines, result.markers);
+    markerObjects.forEach(obj => {
+      // Move up from the bottom but still below non-grid objects
+      if (smallGridObjects.length || largeGridObjects.length) {
+        canvas.bringObjectForward(obj);
+      }
+    });
     
-    // Store grid objects in the reference for later use
-    gridLayerRef.current = result.gridObjects;
-    
-    // Set the grid exists flag
-    gridManager.exists = true;
-    
-    // Detailed grid creation log
-    console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large, ${result.markers.length} markers)`);
-    
-    // Force a complete render
     canvas.requestRenderAll();
-    
-    // Update debug info
-    setDebugInfo(prev => ({...prev, gridCreated: true}));
-    setHasError(false);
-    
-    // Update the last creation time
-    gridManager.lastCreationTime = now;
-    
-    return result.gridObjects;
+    return true;
   } catch (error) {
-    console.error("Critical error in createGridBatch:", error);
-    setHasError(true);
-    setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);
-    return [];
-  } finally {
-    // Clear the safety timeout
-    clearTimeout(safetyTimeoutId);
-    
-    // Always release the lock in finally block
-    releaseGridCreationLock(lockId);
-    
-    console.log("Grid batch creation process complete");
+    logger.error('Error arranging grid objects', error);
+    return false;
   }
 };

@@ -27,6 +27,12 @@ declare module 'fabric' {
       zoom: number;
     };
   }
+  
+  // Add missing browserTracingIntegration and replayIntegration for Sentry
+  interface Sentry {
+    browserTracingIntegration(): any;
+    replayIntegration(): any;
+  }
 }
 
 // Ensure correct typing for various methods and properties
@@ -42,4 +48,6 @@ declare module 'fabric' {
     bringObjectToFront(object: FabricObject): Canvas;
     sendObjectBackwards(object: FabricObject): Canvas;
   }
+  
+  type FabricCanvas = Canvas;
 }

@@ -8,15 +8,25 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { addPinchToZoom } from "@/utils/fabricInteraction";
 
 /**
+ * History state interface for undo/redo functionality
+ * @interface HistoryState
+ */
+interface HistoryState {
+  past: FabricObject[][];
+  future: FabricObject[][];
+}
+
+/**
  * Hook to handle canvas interaction features like zooming and panning
+ * @returns {Object} Functions and refs for canvas interaction
  */
 export const useCanvasInteraction = () => {
-  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>(
-    { past: [], future: [] }
-  );
+  const historyRef = useRef<HistoryState>({ past: [], future: [] });
 
   /**
    * Setup interaction handlers for the canvas
+   * @param {FabricCanvas} fabricCanvas - The fabric canvas instance
+   * @returns {Function|undefined} Cleanup function
    */
   const setupInteractions = useCallback((fabricCanvas: FabricCanvas) => {
     if (!fabricCanvas) return;

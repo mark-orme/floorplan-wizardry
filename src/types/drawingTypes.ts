@@ -1,15 +1,8 @@
 
-/**
- * Drawing types module
- * Defines interfaces and types for canvas drawing and floor plan management
- * @module drawingTypes
- */
-
-import { Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
 /**
- * Represents a point with x and y coordinates
- * @interface Point
+ * Basic 2D point interface
  */
 export interface Point {
   x: number;
@@ -17,8 +10,7 @@ export interface Point {
 }
 
 /**
- * Represents the dimensions of the canvas
- * @interface CanvasDimensions
+ * Canvas dimensions interface
  */
 export interface CanvasDimensions {
   width: number;
@@ -26,115 +18,48 @@ export interface CanvasDimensions {
 }
 
 /**
- * Represents a floor plan with its properties
- * @interface FloorPlan
+ * Grid size constant
+ */
+export const GRID_SIZE = 20;
+
+/**
+ * Floor plan interface compatible with both utils/drawingTypes.ts and types/drawingTypes.ts
  */
 export interface FloorPlan {
-  id: number;
+  id: string;
   name: string;
-  svgData: string;
+  svgData?: string;
   gia: number;
-  objects?: FabricObject[];
-  strokes?: Point[][];
+  canvas?: string;
+  timestamp?: number;
+  dimensions?: CanvasDimensions;
+  objects?: any[];
+  // Add any other properties that might be needed
 }
 
 /**
- * Represents the state of debug information
- * @interface DebugInfoState
+ * Grid creation state interface
  */
-export interface DebugInfoState {
-  canvasInitialized: boolean;
-  gridCreated: boolean;
-  dimensionsSet: boolean;
-  brushInitialized: boolean;
-}
-
-/**
- * Interface for canvas load time tracking
- * @interface CanvasLoadTimes
- */
-export interface CanvasLoadTimes {
-  startTime: number;
-  canvasReady: number;
-  gridCreated: number;
-}
-
-/**
- * Represents the drawing state with start and current points
- * @interface DrawingState
- */
-export interface DrawingState {
-  isDrawing: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  cursorPosition: Point | null;
-  midPoint: Point | null;
-  currentZoom?: number;
-}
-
-/**
- * Represents the available drawing tools
- * @type DrawingTool
- */
-export type DrawingTool = "straightLine" | "room" | "select" | "hand";
-
-/**
- * Represents a callback function for grid creation
- * @type GridCreationCallback
- */
-export type GridCreationCallback = (canvas: FabricCanvas) => FabricObject[];
-
-/**
- * Interface for path processing callbacks
- * @interface PathProcessingCallbacks
- */
-export interface PathProcessingCallbacks {
-  processPoints: (points: Point[]) => Point[];
-  convertToPixelPoints: (meterPoints: Point[], zoom?: number) => Point[];
-  convertToMeterPoints: (pixelPoints: Point[], zoom?: number) => Point[];
-  isShapeClosed: (points: Point[]) => boolean;
-}
-
-/**
- * Grid manager state interface
- * Tracks grid creation state and configuration
- */
-export interface GridManagerState {
-  // Creation time tracking
-  lastCreationTime: number;
+export interface GridCreationState {
   creationInProgress: boolean;
-  
-  // Dimensions tracking
-  lastDimensions: CanvasDimensions;
-  
-  // Initialization state
-  initialized?: boolean;
+  consecutiveResets: number;
+  maxConsecutiveResets: number;
+  lastAttemptTime: number;
+  creationLock: boolean;
+  safetyTimeout: number | null;
+  lastCreationTime: number;
+  lastDimensions: CanvasDimensions | null;
+  exists: boolean;
+  throttleInterval: number;
   totalCreations: number;
-  
-  // Configuration
   maxRecreations: number;
   minRecreationInterval: number;
-  throttleInterval: number;
-  maxConsecutiveResets: number;
-  
-  // Grid state
-  exists: boolean;
-  
-  // Batch processing state
-  batchTimeoutId?: number | null;
-  
-  // Safety timeout (ms) to reset inProgress if creation takes too long
-  safetyTimeout: number;
-  
-  // Flags to prevent race conditions
-  lastAttemptTime: number;
-  consecutiveResets: number;
-  resetDelay?: number;
-  
-  // Track creation locks with timestamp
-  creationLock: {
-    id: number;
-    timestamp: number;
-    isLocked: boolean;
-  };
 }
+
+/**
+ * Type definition for FabricCanvas to match Canvas from fabric
+ */
+export type FabricCanvas = Canvas;
+
+// Re-export the GRID_SIZE to ensure it's available
+export { GRID_SIZE as GRID_CELL_SIZE };
