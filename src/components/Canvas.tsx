@@ -34,6 +34,7 @@ export const Canvas = (props: CanvasProps) => {
   const [initialized, setInitialized] = useState(false);
   const [controllerLoaded, setControllerLoaded] = useState(false);
   const [errorState, setErrorState] = useState({ hasError: false, message: "" });
+  const [tool, setToolState] = useState("select"); // Default tool state for safety
   
   // Initialize controller only once using useEffect to ensure consistent hook order
   useEffect(() => {
@@ -42,6 +43,10 @@ export const Canvas = (props: CanvasProps) => {
         controllerRef.current = CanvasController();
         setInitialized(true);
         setControllerLoaded(true);
+        // Set initial tool state after controller is loaded
+        if (controllerRef.current && controllerRef.current.tool) {
+          setToolState(controllerRef.current.tool);
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error("Error initializing canvas controller:", error);
@@ -49,6 +54,20 @@ export const Canvas = (props: CanvasProps) => {
       }
     }
   }, []);
+  
+  // Update tool state when controller tool changes
+  useEffect(() => {
+    if (controllerRef.current && controllerRef.current.tool) {
+      setToolState(controllerRef.current.tool);
+    }
+  }, [controllerLoaded]);
+  
+  // Measurement guide modal state - using custom hook with safe default
+  const { 
+    showMeasurementGuide, 
+    setShowMeasurementGuide,
+    handleCloseMeasurementGuide
+  } = useMeasurementGuide(tool as any); // Safe cast with default value
   
   // Bail out early if controller isn't ready yet or if there's an error
   if (errorState.hasError) {
@@ -69,7 +88,6 @@ export const Canvas = (props: CanvasProps) => {
   
   // Extract controller properties - only after controller is guaranteed to exist
   const {
-    tool,
     gia,
     floorPlans,
     currentFloor,
@@ -95,21 +113,14 @@ export const Canvas = (props: CanvasProps) => {
     handleRetry
   } = controllerRef.current;
   
-  // Measurement guide modal state - using custom hook
-  const { 
-    showMeasurementGuide, 
-    setShowMeasurementGuide,
-    handleCloseMeasurementGuide
-  } = useMeasurementGuide(tool);
-
   // We now default to select tool on initial load
   useEffect(() => {
-    if (isFirstMountRef.current && !isLoading && debugInfo.canvasInitialized) {
+    if (isFirstMountRef.current && !isLoading && debugInfo?.canvasInitialized) {
       logger.info("Using default tool: select");
       handleToolChange("select");
       isFirstMountRef.current = false;
     }
-  }, [isLoading, debugInfo.canvasInitialized, handleToolChange]);
+  }, [isLoading, debugInfo?.canvasInitialized, handleToolChange]);
 
   // Load initial data only once across all renders
   useEffect(() => {

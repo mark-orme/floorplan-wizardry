@@ -19,16 +19,17 @@ export const usePusher = ({
   events, 
   enableSubscription = true 
 }: UsePusherOptions) => {
-  // All state and ref declarations at the top level
+  // All state declarations first
   const [channel, setChannel] = useState<Channel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   
-  // Use refs to avoid dependency issues with events and preserve values across renders
+  // Then all refs
   const eventsRef = useRef(events);
   const channelNameRef = useRef(channelName);
   const enableSubscriptionRef = useRef(enableSubscription);
+  const isMountedRef = useRef(true);
   
-  // Update refs when props change - in a separate effect
+  // Update refs when props change
   useEffect(() => {
     eventsRef.current = events;
     channelNameRef.current = channelName;
@@ -41,7 +42,6 @@ export const usePusher = ({
     if (!enableSubscriptionRef.current) return;
     
     let newChannel: Channel | null = null;
-    let isMounted = true;
     
     const setupChannel = () => {
       try {
@@ -55,13 +55,13 @@ export const usePusher = ({
           }
         });
         
-        if (isMounted) {
+        if (isMountedRef.current) {
           setChannel(newChannel);
           setIsConnected(true);
         }
       } catch (error) {
         logger.error('Error setting up Pusher subscription:', error);
-        if (isMounted) {
+        if (isMountedRef.current) {
           setIsConnected(false);
         }
       }
@@ -71,7 +71,7 @@ export const usePusher = ({
     
     // Cleanup on unmount or channel change
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
       
       if (newChannel) {
         logger.info(`Cleaning up Pusher subscription to ${channelNameRef.current}`);
@@ -84,8 +84,11 @@ export const usePusher = ({
         });
         
         unsubscribeFromChannel(channelNameRef.current);
-        setChannel(null);
-        setIsConnected(false);
+        
+        if (isMountedRef.current) {
+          setChannel(null);
+          setIsConnected(false);
+        }
       }
     };
   }, []); // Empty dependency array - we use refs inside

@@ -26,11 +26,13 @@ export const useMeasurementGuide = (tool: DrawingTool) => {
       return;
     }
     
-    // Guard against undefined tool with default value
-    const currentTool = tool || "select";
+    // Safety check for tool being defined
+    if (!tool) {
+      return;
+    }
     
     // Only show guide when using line tools and user hasn't dismissed it before
-    if ((currentTool === "straightLine" || currentTool === "room") && 
+    if ((tool === "straightLine" || tool === "room") && 
         !localStorage.getItem("hideDrawingGuide")) {
       setShowMeasurementGuide(true);
     }
