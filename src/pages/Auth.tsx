@@ -21,6 +21,13 @@ const testUsers = [
   { email: 'manager@nichecom.co.uk', password: 'password1', role: UserRole.MANAGER, label: 'Manager Test User' },
 ];
 
+// Define the User type to fix TypeScript error
+interface SupabaseUser {
+  id: string;
+  email?: string;
+  // Add other properties that might be needed
+}
+
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,7 +77,10 @@ const Auth = () => {
             
             // Check if user exists but is not confirmed
             const { data: userData } = await supabase.auth.admin.listUsers();
-            const existingUser = userData?.users?.find(u => u.email === testUser.email);
+            
+            // Fix the TypeScript error by explicitly typing the users array
+            const users = userData?.users as SupabaseUser[] | undefined;
+            const existingUser = users?.find(u => u.email === testUser.email);
             
             if (existingUser) {
               // User exists but not confirmed - delete and recreate
