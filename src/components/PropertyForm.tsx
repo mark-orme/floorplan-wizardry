@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -54,88 +53,90 @@ const PropertyForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Create New Property</CardTitle>
-        <CardDescription>
-          Enter the property details to create a new floor plan
-        </CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="order_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Order ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. ORD-12345" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <div className="container mx-auto py-8 px-4 max-w-md">
+      <Card>
+        <CardHeader>
+          <CardTitle>Create New Property</CardTitle>
+          <CardDescription>
+            Enter the property details to create a new floor plan
+          </CardDescription>
+        </CardHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="order_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Order ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. ORD-12345" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Property Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 123 Main St, City" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 123 Main St, City" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="client_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Client Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. John Smith" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="client_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. John Smith" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="branch_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Branch Name (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Downtown Office" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          
-          <CardFooter className="flex justify-between">
-            <Button 
-              variant="outline" 
-              type="button"
-              onClick={() => navigate('/properties')}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Property'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+              <FormField
+                control={form.control}
+                name="branch_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Branch Name (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Downtown Office" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            
+            <CardFooter className="flex justify-between">
+              <Button 
+                variant="outline" 
+                type="button"
+                onClick={() => navigate('/properties')}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Property'}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+    </div>
   );
 };
 

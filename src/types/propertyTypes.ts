@@ -31,6 +31,7 @@ export interface PropertyListItem {
   status: PropertyStatus;
   created_at: string;
   updated_at: string;
+  created_by?: string;
 }
 
 export const canEditProperty = (

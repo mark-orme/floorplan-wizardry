@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +10,6 @@ import { PlusCircle, Search } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
 
 const Properties = () => {
   const { properties, isLoading, listProperties } = usePropertyManagement();
@@ -19,6 +18,7 @@ const Properties = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Load properties when component mounts
     listProperties();
   }, [listProperties]);
 
