@@ -46,7 +46,7 @@ const Auth = () => {
               password: testUser.password,
             });
             
-            if (signInData.user) {
+            if (signInData?.user) {
               // User exists and can sign in - make sure they have a profile
               const { data: profileData } = await supabase
                 .from('user_profiles')
@@ -70,7 +70,7 @@ const Auth = () => {
             
             // Check if user exists but is not confirmed
             const { data: userData } = await supabase.auth.admin.listUsers();
-            const existingUser = userData?.users.find(u => u.email === testUser.email);
+            const existingUser = userData?.users?.find(u => u.email === testUser.email);
             
             if (existingUser) {
               // User exists but not confirmed - delete and recreate
@@ -99,7 +99,7 @@ const Auth = () => {
               throw error;
             }
             
-            if (newUserData.user) {
+            if (newUserData?.user) {
               // Create user profile
               const { error: profileError } = await supabase
                 .from('user_profiles')
@@ -119,7 +119,7 @@ const Auth = () => {
             }
           } catch (userError: any) {
             console.error(`Error processing ${testUser.email}:`, userError);
-            toast.error(`Error with ${testUser.email}: ${userError.message}`);
+            toast.error(`Error with ${testUser.email}: ${userError.message || JSON.stringify(userError)}`);
           }
         }
         
