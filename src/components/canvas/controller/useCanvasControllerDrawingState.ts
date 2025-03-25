@@ -4,6 +4,7 @@
  * @module useCanvasControllerDrawingState
  */
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
+import { useMemo } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { FloorPlan } from "@/types/floorPlanTypes";
@@ -37,8 +38,8 @@ export const useCanvasControllerDrawingState = (props: UseCanvasControllerDrawin
     lineColor
   } = props;
 
-  // Drawing state tracking for measurement tooltip
-  const { drawingState } = useCanvasDrawing({
+  // Use memoized props to prevent re-renders
+  const memoizedProps = useMemo(() => ({
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
@@ -48,7 +49,20 @@ export const useCanvasControllerDrawingState = (props: UseCanvasControllerDrawin
     setGia,
     lineThickness,
     lineColor
-  });
+  }), [
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    tool,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    lineThickness,
+    lineColor
+  ]);
+
+  // Drawing state tracking for measurement tooltip
+  const { drawingState } = useCanvasDrawing(memoizedProps);
 
   return {
     drawingState

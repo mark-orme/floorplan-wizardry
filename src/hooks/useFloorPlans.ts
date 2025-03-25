@@ -4,7 +4,7 @@
  * Combines specialized floor plan hooks for various functionalities
  * @module useFloorPlans
  */
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 
 // Import the unified FloorPlan type from the centralized location
@@ -41,13 +41,16 @@ export const useFloorPlans = ({
 }: UseFloorPlansProps) => {
   const floorChangeInProgressRef = useRef(false);
   
-  // Initialize floor plan drawing functionality
-  const { drawFloorPlan } = useFloorPlanDrawing({
+  // Memoize hook dependencies to prevent circular dependencies
+  const hookDeps = useMemo(() => ({
     fabricCanvasRef,
     gridLayerRef,
     createGrid,
     floorChangeInProgressRef
-  });
+  }), [fabricCanvasRef, gridLayerRef, createGrid]);
+  
+  // Initialize floor plan drawing functionality
+  const { drawFloorPlan } = useFloorPlanDrawing(hookDeps);
   
   // Initialize GIA calculation
   const { recalculateGIA } = useFloorPlanGIA({
@@ -63,7 +66,7 @@ export const useFloorPlans = ({
   });
   
   // Initialize floor plan storage - Get the loadData function that returns a promise
-  const { loadData } = useFloorPlanStorage();
+  const { loadData, saveData, lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
 
   // Update canvas when floor changes with debouncing
   useEffect(() => {
@@ -93,6 +96,10 @@ export const useFloorPlans = ({
     recalculateGIA,
     handleAddFloor,
     handleSelectFloor,
-    loadData
+    loadData,
+    saveData,
+    lastSaved,
+    isLoggedIn,
+    isSaving
   };
 };

@@ -29,7 +29,15 @@ export const Canvas = (props: CanvasProps) => {
   const initialDataLoadedRef = useRef<boolean>(false);
   const isFirstMountRef = useRef<boolean>(true);
   
-  // Define all hooks at the top level, never conditionally
+  // We need to use a stable controller reference
+  const controllerRef = useRef<ReturnType<typeof CanvasController> | null>(null);
+  
+  // Initialize controller only once
+  if (!controllerRef.current) {
+    controllerRef.current = CanvasController();
+  }
+  
+  // Extract controller properties
   const {
     tool,
     gia,
@@ -55,7 +63,7 @@ export const Canvas = (props: CanvasProps) => {
     handleLineColorChange,
     drawingState,
     handleRetry
-  } = CanvasController();
+  } = controllerRef.current;
   
   // Measurement guide modal state
   const { 
