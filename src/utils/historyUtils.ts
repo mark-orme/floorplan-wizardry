@@ -1,0 +1,91 @@
+
+/**
+ * Utilities for managing drawing history states
+ * @module historyUtils
+ */
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { MAX_HISTORY_STATES } from "@/utils/drawing";
+import { toast } from "sonner";
+
+/**
+ * Check if an object is a grid object
+ */
+export const isGridObject = (
+  obj: FabricObject, 
+  gridLayerRef: React.MutableRefObject<any[]>
+): boolean => {
+  return gridLayerRef.current.some(gridObj => gridObj === obj);
+};
+
+/**
+ * Capture current canvas state (excluding grid)
+ */
+export const captureCurrentState = (
+  fabricCanvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<any[]>
+): any[] => {
+  console.log("Capturing current canvas state");
+  if (!fabricCanvas) return [];
+  
+  // Get current non-grid objects 
+  const currentObjects = fabricCanvas.getObjects().filter(obj => 
+    !isGridObject(obj, gridLayerRef) && (obj.type === 'polyline' || obj.type === 'path')
+  );
+  
+  console.log(`Found ${currentObjects.length} objects to capture`);
+  
+  // Serialize current objects
+  return currentObjects.map(obj => {
+    if (obj && typeof obj.toObject === 'function') {
+      const serialized = obj.toObject();
+      return serialized;
+    }
+    return null;
+  }).filter(Boolean);
+};
+
+/**
+ * Push a new state to history
+ */
+export const pushToHistory = (
+  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>,
+  state: any[]
+): void => {
+  if (!historyRef.current) return;
+  
+  // Add state to past and clear future
+  historyRef.current.past.push(state);
+  historyRef.current.future = [];
+  
+  // Limit history size
+  if (historyRef.current.past.length > MAX_HISTORY_STATES) {
+    historyRef.current.past.splice(0, historyRef.current.past.length - MAX_HISTORY_STATES);
+  }
+  
+  console.log(`History updated: ${historyRef.current.past.length} states in past, ${historyRef.current.future.length} in future`);
+};
+
+/**
+ * Check if history has undo states available
+ */
+export const canUndo = (historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>): boolean => {
+  return historyRef.current.past.length > 1;
+};
+
+/**
+ * Check if history has redo states available
+ */
+export const canRedo = (historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>): boolean => {
+  return historyRef.current.future.length > 0;
+};
+
+/**
+ * Show toast notification for undo/redo operations
+ */
+export const showHistoryToast = (operation: 'undo' | 'redo', success: boolean): void => {
+  if (success) {
+    toast.success(`${operation === 'undo' ? 'Undo' : 'Redo'} successful`);
+  } else {
+    toast.info(`Nothing to ${operation}`);
+  }
+};

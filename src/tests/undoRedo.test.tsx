@@ -1,4 +1,3 @@
-
 /**
  * Undo/Redo functionality tests
  * @module undoRedo.test
@@ -7,6 +6,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Canvas, Object as FabricObject } from "fabric";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
+import { captureCurrentState, isGridObject } from "@/utils/historyUtils";
+import { applyCanvasState } from "@/utils/canvasStateUtils";
 
 // Mock fabric namespace
 vi.mock('fabric', () => {
