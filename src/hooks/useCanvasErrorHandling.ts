@@ -6,6 +6,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { captureError } from "@/utils/sentryUtils";
+import { useGridSafety } from "./grid/useGridSafety";
 
 /**
  * Props for the useCanvasErrorHandling hook
@@ -44,14 +45,18 @@ export const useCanvasErrorHandling = ({
   resetLoadTimes,
   loadData
 }: UseCanvasErrorHandlingProps): UseCanvasErrorHandlingResult => {
+  // Use the grid safety hook for consistent error handling
+  const { safeGridOperation } = useGridSafety();
   
   /**
    * Handle retry after an error occurs
    */
   const handleRetry = useCallback(() => {
-    resetLoadTimes();
-    loadData();
-  }, [loadData, resetLoadTimes]);
+    safeGridOperation(() => {
+      resetLoadTimes();
+      loadData();
+    }, 'retry-operation', undefined);
+  }, [loadData, resetLoadTimes, safeGridOperation]);
 
   /**
    * Handle specific errors
@@ -78,4 +83,3 @@ export const useCanvasErrorHandling = ({
     handleError
   };
 };
-

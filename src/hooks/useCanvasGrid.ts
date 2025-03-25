@@ -7,18 +7,15 @@
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { resetGridProgress } from "@/utils/gridManager";
-import { validateGridComponents, ensureGridLayerInitialized } from "@/utils/gridValidationUtils";
-import { 
-  CanvasDimensions, 
-  DebugInfoState, 
-  GridCreationCallback 
-} from "@/types/drawingTypes";
+import { CanvasDimensions, DebugInfoState, GridCreationCallback } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 
 // Import refactored grid hooks
 import { useGridCreation } from "./grid/useGridCreation";
 import { useGridRetry } from "./grid/useGridRetry";
 import { useGridThrottling } from "./grid/useGridThrottling";
+import { useGridValidation } from "./grid/useGridValidation";
+import { useGridSafety } from "./grid/useGridSafety";
 
 /**
  * Properties required by the useCanvasGrid hook
@@ -56,6 +53,15 @@ export const useCanvasGrid = ({
   setHasError,
   setErrorMessage
 }: UseCanvasGridProps): GridCreationCallback => {
+  // Use grid validation hook
+  const { 
+    validateGridComponents, 
+    ensureGridLayerInitialized 
+  } = useGridValidation({ setDebugInfo });
+  
+  // Use grid safety hook
+  const { safeGridOperation } = useGridSafety();
+  
   // Use the base grid creation hook
   const createBaseGrid = useGridCreation({
     gridLayerRef,
@@ -109,29 +115,33 @@ export const useCanvasGrid = ({
   const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
     logger.debug("createGridCallback invoked with dimensions:", canvasDimensions);
     
-    // Validate components before proceeding
-    const validation = validateGridComponents(canvas, gridLayerRef);
-    if (!validation.valid) {
-      return [];
-    }
-    
-    // Ensure gridLayerRef is initialized
-    ensureGridLayerInitialized(gridLayerRef);
-    
-    // Check if we should throttle
-    if (shouldThrottleCreation()) {
-      return handleThrottledCreation(canvas, createGridWithRetry);
-    }
-    
-    // If not throttled, proceed with normal creation with retry logic
-    return createGridWithRetry(canvas);
+    return safeGridOperation(() => {
+      // Validate components before proceeding
+      if (!validateGridComponents(canvas, gridLayerRef)) {
+        return gridLayerRef.current;
+      }
+      
+      // Ensure gridLayerRef is initialized
+      ensureGridLayerInitialized(gridLayerRef);
+      
+      // Check if we should throttle
+      if (shouldThrottleCreation()) {
+        return handleThrottledCreation(canvas, createGridWithRetry);
+      }
+      
+      // If not throttled, proceed with normal creation with retry logic
+      return createGridWithRetry(canvas);
+    }, 'create-grid', gridLayerRef.current);
     
   }, [
     canvasDimensions, 
     gridLayerRef, 
+    validateGridComponents,
+    ensureGridLayerInitialized,
     shouldThrottleCreation, 
     handleThrottledCreation, 
-    createGridWithRetry
+    createGridWithRetry,
+    safeGridOperation
   ]);
 
   return createGridCallback;
