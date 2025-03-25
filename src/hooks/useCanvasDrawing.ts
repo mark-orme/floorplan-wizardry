@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -16,7 +17,7 @@ import { GRID_SIZE } from "@/utils/drawing";
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
@@ -191,10 +192,10 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         const currentDrawings = fabricCanvas.getObjects().filter(obj => 
           (obj.type === 'polyline' || obj.type === 'path') &&
           !isGridObject(obj)
-        ) as FabricObject[];
+        );
         
         if (currentDrawings.length > 0) {
-          // Store objects in a way we can serialize and restore them
+          // Store current state in history
           const serializedDrawings = currentDrawings.map(obj => {
             if (obj && typeof obj.toObject === 'function') {
               return obj.toObject();
@@ -202,7 +203,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
             return null;
           }).filter(Boolean);
           
-          historyRef.current.past.push(serializedDrawings as any);
+          historyRef.current.past.push(serializedDrawings as any[]);
           historyRef.current.future = []; // Clear redo stack when new drawing is made
         }
       }

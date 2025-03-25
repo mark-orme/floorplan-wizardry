@@ -104,25 +104,23 @@ export const useDrawingHistory = ({
     
     try {
       // Get the current state before making changes (for redo)
-      const currentObjects = fabricCanvas.getObjects().filter(obj => 
-        (obj.type === 'polyline' || obj.type === 'path') && !isGridObject(obj)
+      const currentNonGridObjects = fabricCanvas.getObjects().filter(obj => 
+        !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Only add to future if we have something to store
-      if (currentObjects.length > 0) {
-        // Store serialized data rather than object references
-        future.unshift(serializeObjects(currentObjects));
+      // Save current state to future for redo
+      if (currentNonGridObjects.length > 0) {
+        future.unshift(serializeObjects(currentNonGridObjects));
       }
       
-      // Remove the last state from past
+      // Get the previous state
       const previousState = past.pop();
       
-      // Remove only non-grid objects
+      // Remove all non-grid objects
       const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Remove non-grid objects
       objectsToRemove.forEach(obj => {
         try {
           fabricCanvas.remove(obj);
@@ -131,9 +129,8 @@ export const useDrawingHistory = ({
         }
       });
       
-      // If we have a previous state, restore it
+      // Add the objects from the previous state
       if (previousState && previousState.length > 0) {
-        // Deserialize and add the objects from the previous state
         const objectsToAdd = deserializeObjects(previousState);
         objectsToAdd.forEach(obj => {
           if (obj) {
@@ -179,26 +176,24 @@ export const useDrawingHistory = ({
     const fabricCanvas = fabricCanvasRef.current;
     
     try {
-      // Get the current state before making changes (for undo)
-      const currentObjects = fabricCanvas.getObjects().filter(obj => 
-        (obj.type === 'polyline' || obj.type === 'path') && !isGridObject(obj)
+      // Get the current state before making changes (for undo if needed)
+      const currentNonGridObjects = fabricCanvas.getObjects().filter(obj => 
+        !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Only add to past if we have something to store
-      if (currentObjects.length > 0) {
-        // Store serialized data rather than object references
-        past.push(serializeObjects(currentObjects));
+      // Save current state to past
+      if (currentNonGridObjects.length > 0) {
+        past.push(serializeObjects(currentNonGridObjects));
       }
       
       // Get the most recent future state
       const futureState = future.shift();
       
-      // Remove only non-grid objects
+      // Remove all non-grid objects
       const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Remove non-grid objects
       objectsToRemove.forEach(obj => {
         try {
           fabricCanvas.remove(obj);
@@ -207,16 +202,15 @@ export const useDrawingHistory = ({
         }
       });
       
-      // If we have a future state, restore it
+      // Add the objects from the future state
       if (futureState && futureState.length > 0) {
-        // Deserialize and add the objects from the future state
         const objectsToAdd = deserializeObjects(futureState);
         objectsToAdd.forEach(obj => {
           if (obj) {
             try {
               fabricCanvas.add(obj);
             } catch (err) {
-              console.error("Error adding object from history:", err);
+              console.error("Error adding object from future history:", err);
             }
           }
         });
