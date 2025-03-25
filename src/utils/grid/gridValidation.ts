@@ -6,6 +6,7 @@
  */
 import { Canvas } from "fabric";
 import { gridManager, shouldThrottleCreation } from "../gridManager";
+import logger from "../logger";
 
 /**
  * Validates the canvas and dimensions for grid creation
@@ -24,14 +25,14 @@ export const validateCanvasForGrid = (
   // Basic validation
   if (!canvas) {
     if (process.env.NODE_ENV === 'development') {
-      console.error("Canvas is null in grid validation");
+      logger.error("Canvas is null in grid validation");
     }
     return false;
   }
   
   if (!gridLayerRef) {
     if (process.env.NODE_ENV === 'development') {
-      console.error("gridLayerRef is null in grid validation");
+      logger.error("gridLayerRef is null in grid validation");
     }
     return false;
   }
@@ -40,7 +41,7 @@ export const validateCanvasForGrid = (
   if (!canvasDimensions.width || !canvasDimensions.height || 
       canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
     if (process.env.NODE_ENV === 'development') {
-      console.error("Invalid dimensions in grid validation:", canvasDimensions);
+      logger.error("Invalid dimensions in grid validation:", canvasDimensions);
     }
     return false;
   }
@@ -48,7 +49,7 @@ export const validateCanvasForGrid = (
   // Check if we should throttle
   if (shouldThrottleCreation()) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn("Throttling grid creation due to too many recent attempts");
+      logger.warn("Throttling grid creation due to too many recent attempts");
     }
     return false;
   }
@@ -66,7 +67,7 @@ export const canProceedWithGridCreation = (): boolean => {
   // Check if creation is already in progress
   if (gridManager.creationInProgress) {
     if (process.env.NODE_ENV === 'development') {
-      console.log("Grid creation already in progress, cannot proceed");
+      logger.log("Grid creation already in progress, cannot proceed");
     }
     return false;
   }
@@ -74,7 +75,7 @@ export const canProceedWithGridCreation = (): boolean => {
   // Check if we need to throttle
   if (shouldThrottleCreation()) {
     if (process.env.NODE_ENV === 'development') {
-      console.log("Grid creation throttled, cannot proceed");
+      logger.log("Grid creation throttled, cannot proceed");
     }
     return false;
   }

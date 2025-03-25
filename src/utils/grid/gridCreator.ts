@@ -10,6 +10,7 @@ import { validateCanvasForGrid } from "./gridValidation";
 import { renderGridComponents } from "../gridRenderer";
 import { arrangeGridObjects } from "../gridRenderer";
 import { handleGridCreationError, scheduleGridRetry } from "./gridErrorHandling";
+import logger from "../logger";
 
 /**
  * Create grid layer on the canvas with safety mechanisms
@@ -33,7 +34,7 @@ export const createGridLayer = (
   }>>
 ): any[] => {
   if (process.env.NODE_ENV === 'development') {
-    console.log("Creating grid layer with dimensions:", canvasDimensions);
+    logger.debug("Creating grid layer with dimensions:", canvasDimensions);
   }
   
   // Store the dimensions for future reference
@@ -42,7 +43,7 @@ export const createGridLayer = (
   // Remove existing grid objects if any
   if (gridLayerRef.current.length > 0) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Removing ${gridLayerRef.current.length} existing grid objects`);
+      logger.debug(`Removing ${gridLayerRef.current.length} existing grid objects`);
     }
     
     const existingObjects = [...gridLayerRef.current];
@@ -52,7 +53,7 @@ export const createGridLayer = (
           canvas.remove(object);
         } catch (error) {
           if (process.env.NODE_ENV === 'development') {
-            console.warn("Error removing existing grid object:", error);
+            logger.warn("Error removing existing grid object:", error);
           }
         }
       }
@@ -65,7 +66,7 @@ export const createGridLayer = (
   const canvasHeight = Math.max(canvas.height || canvasDimensions.height, 200);
   
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
+    logger.debug(`Canvas dimensions for grid creation: ${canvasWidth}x${canvasHeight}`);
   }
   
   // Create all grid components at once
@@ -74,7 +75,7 @@ export const createGridLayer = (
   // Proper error handling and fallback logic
   if (!result.gridObjects.length) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn("No grid objects were created - trying hardcoded dimensions");
+      logger.warn("No grid objects were created - trying hardcoded dimensions");
     }
     
     // Try with hardcoded dimensions as fallback
@@ -100,7 +101,7 @@ export const createGridLayer = (
   
   if (process.env.NODE_ENV === 'development') {
     // Detailed grid creation log
-    console.log(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large, ${result.markers.length} markers)`);
+    logger.debug(`Grid created with ${result.gridObjects.length} objects (${result.smallGridLines.length} small, ${result.largeGridLines.length} large, ${result.markers.length} markers)`);
   }
   
   // Force a complete render
@@ -135,7 +136,7 @@ export const createFallbackGrid = (
   
   if (fallbackResult.gridObjects.length > 0) {
     if (process.env.NODE_ENV === 'development') {
-      console.log("Fallback grid creation succeeded");
+      logger.debug("Fallback grid creation succeeded");
     }
     
     // Arrange grid objects properly

@@ -4,7 +4,8 @@
  * Provides functions for validating grid components and throttling creation
  * @module gridValidationUtils
  */
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import logger from "./logger";
 
 /**
  * Validates canvas and grid components before creation
@@ -16,7 +17,7 @@ import { Canvas as FabricCanvas } from "fabric";
  */
 export const validateGridComponents = (
   canvas: FabricCanvas | null,
-  gridLayerRef: React.MutableRefObject<any[]> | null
+  gridLayerRef: React.MutableRefObject<FabricObject[]> | null
 ): { valid: boolean; message?: string } => {
   if (!canvas) {
     return { valid: false, message: "Canvas is null" };
@@ -35,7 +36,7 @@ export const validateGridComponents = (
  * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to grid layer
  */
 export const ensureGridLayerInitialized = (
-  gridLayerRef: React.MutableRefObject<any[]>
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): void => {
   if (!gridLayerRef.current) {
     gridLayerRef.current = [];
@@ -100,7 +101,7 @@ export const createMinimalGridStructure = (canvas: FabricCanvas): boolean => {
     
     return true;
   } catch (error) {
-    console.error("Error creating minimal grid structure:", error);
+    logger.error("Error creating minimal grid structure:", error);
     return false;
   }
 };

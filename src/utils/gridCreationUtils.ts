@@ -6,6 +6,7 @@
  */
 import { Canvas as FabricCanvas, Line } from "fabric";
 import { resetGridProgress } from "./gridManager";
+import logger from "./logger";
 
 // Constants for grid configuration
 const GRID_LINE_COLORS = {
@@ -43,7 +44,7 @@ export const createBasicEmergencyGrid = (
   gridLayerRef: React.MutableRefObject<any[]>
 ): any[] => {
   if (process.env.NODE_ENV === 'development') {
-    console.log("Creating basic emergency grid");
+    logger.debug("Creating basic emergency grid");
   }
   
   try {
@@ -81,13 +82,13 @@ export const createBasicEmergencyGrid = (
     fabricCanvas.requestRenderAll();
     
     if (process.env.NODE_ENV === 'development') {
-      console.log("Created basic emergency grid");
+      logger.debug("Created basic emergency grid");
     }
     
     return gridLayerRef.current;
   } catch (err) {
     if (process.env.NODE_ENV === 'development') {
-      console.error("Even emergency grid creation failed:", err);
+      logger.error("Even emergency grid creation failed:", err);
     }
     return [];
   }
@@ -114,7 +115,7 @@ export const retryWithBackoff = (
   );
   
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Scheduling next grid attempt ${attemptCount + 1}/${maxAttempts} in ${delayMs}ms`);
+    logger.debug(`Scheduling next grid attempt ${attemptCount + 1}/${maxAttempts} in ${delayMs}ms`);
   }
   
   setTimeout(() => {

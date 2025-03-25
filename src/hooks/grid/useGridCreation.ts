@@ -47,8 +47,8 @@ interface UseGridCreationResult {
  * Hook for grid creation operations
  * Manages the creation of grid lines and objects on the canvas
  * 
- * @param props - Hook properties
- * @returns Memoized grid creation function
+ * @param {UseGridCreationProps} props - Hook properties
+ * @returns {UseGridCreationResult} Memoized grid creation function
  */
 export const useGridCreation = ({
   gridLayerRef,
@@ -60,8 +60,8 @@ export const useGridCreation = ({
   
   /**
    * Create grid lines on the canvas
-   * @param canvas - The Fabric.js canvas instance
-   * @returns Array of created grid objects
+   * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+   * @returns {FabricObject[]} Array of created grid objects
    */
   const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
     if (process.env.NODE_ENV === 'development') {

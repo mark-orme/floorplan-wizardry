@@ -5,6 +5,7 @@
  * @module gridSafety
  */
 import { gridManager, resetGridProgress, acquireGridCreationLock, releaseGridCreationLock } from "../gridManager";
+import logger from "../logger";
 
 /**
  * Setup safety reset timeout for grid creation
@@ -19,7 +20,7 @@ export const setupGridSafetyTimeout = (
   // Schedule a safety timeout to reset the flag after specified duration
   return window.setTimeout(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log("Grid safety timeout triggered - resetting creation state");
+      logger.log("Grid safety timeout triggered - resetting creation state");
     }
     resetGridProgress();
   }, timeoutDuration);
@@ -38,7 +39,7 @@ export const acquireGridLockWithSafety = (): { lockId: number, safetyTimeoutId: 
   // Attempt to acquire a lock for grid creation
   if (!acquireGridCreationLock()) {
     if (process.env.NODE_ENV === 'development') {
-      console.log("Grid creation already in progress (locked), skipping");
+      logger.log("Grid creation already in progress (locked), skipping");
     }
     return null;
   }
@@ -50,7 +51,7 @@ export const acquireGridLockWithSafety = (): { lockId: number, safetyTimeoutId: 
   const safetyTimeoutId = setupGridSafetyTimeout(gridManager.safetyTimeout);
   
   if (process.env.NODE_ENV === 'development') {
-    console.log("Starting grid creation with lock ID:", lockId);
+    logger.log("Starting grid creation with lock ID:", lockId);
   }
   
   return { lockId, safetyTimeoutId };
@@ -76,6 +77,6 @@ export const cleanupGridResources = (
   releaseGridCreationLock(lockId);
   
   if (process.env.NODE_ENV === 'development') {
-    console.log("Grid resources cleaned up, lock released:", lockId);
+    logger.log("Grid resources cleaned up, lock released:", lockId);
   }
 };

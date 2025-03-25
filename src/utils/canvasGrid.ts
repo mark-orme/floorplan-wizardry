@@ -10,6 +10,8 @@ import { validateCanvasForGrid } from "./grid/gridValidation";
 import { createGridLayer, createFallbackGrid } from "./grid/gridCreator";
 import { handleGridCreationError } from "./grid/gridErrorHandling";
 import { acquireGridLockWithSafety, cleanupGridResources } from "./grid/gridSafety";
+import logger from "./logger";
+import { DebugInfoState } from "@/types/drawingTypes";
 
 /**
  * Create grid lines for the canvas
@@ -27,17 +29,12 @@ export const createGrid = (
   canvas: Canvas,
   gridLayerRef: React.MutableRefObject<any[]>,
   canvasDimensions: { width: number, height: number },
-  setDebugInfo: React.Dispatch<React.SetStateAction<{
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  }>>,
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>,
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ) => {
   if (process.env.NODE_ENV === 'development') {
-    console.log("createGrid called with dimensions:", canvasDimensions);
+    logger.debug("createGrid called with dimensions:", canvasDimensions);
   }
   
   // Validate inputs first
@@ -48,7 +45,7 @@ export const createGrid = (
   // Check if we should throttle
   if (shouldThrottleCreation()) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn("Throttling grid creation due to too many recent attempts");
+      logger.warn("Throttling grid creation due to too many recent attempts");
     }
     
     // Return current grid without creating a new one
@@ -66,9 +63,6 @@ export const createGrid = (
     const { lockId, safetyTimeoutId } = lockInfo;
     
     try {
-      // Get the current timestamp
-      const currentTime = Date.now();
-      
       // Create the grid layer
       createGridLayer(canvas, gridLayerRef, canvasDimensions, setDebugInfo);
       
@@ -81,7 +75,11 @@ export const createGrid = (
       return gridLayerRef.current;
     } catch (error) {
       // Handle errors
-      handleGridCreationError(error, setHasError, setErrorMessage);
+      if (error instanceof Error) {
+        handleGridCreationError(error, setHasError, setErrorMessage);
+      } else {
+        handleGridCreationError(new Error('Unknown error during grid creation'), setHasError, setErrorMessage);
+      }
       
       // Clean up resources
       cleanupGridResources(lockId, safetyTimeoutId);

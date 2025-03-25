@@ -7,6 +7,7 @@
 import { Canvas } from "fabric";
 import { toast } from "sonner";
 import { gridManager } from "../gridManager";
+import logger from "../logger";
 
 /**
  * Handle grid creation errors
@@ -28,7 +29,7 @@ export const handleGridCreationError = (
   }
   
   if (process.env.NODE_ENV === 'development') {
-    console.error("Error creating grid:", error);
+    logger.error("Error creating grid:", error);
   }
   
   setHasError(true);
@@ -56,7 +57,7 @@ export const scheduleGridRetry = (
   delay: number = 1000
 ): number => {
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Scheduling grid retry in ${delay}ms`);
+    logger.log(`Scheduling grid retry in ${delay}ms`);
   }
   
   return window.setTimeout(() => {
@@ -66,7 +67,7 @@ export const scheduleGridRetry = (
       createGridCallback(canvas);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error("Error in grid retry:", error);
+        logger.error("Error in grid retry:", error);
       }
     }
   }, delay);
