@@ -62,12 +62,12 @@ export const DistanceTooltip = memo(({
   // This ensures measurements like 1.0m, 1.1m, 1.2m, etc.
   const formattedDistance = distanceInMeters.toFixed(1);
   
-  // Determine position for tooltip - prefer midPoint if available
-  const tooltipPosition = midPoint || position || displayEndPoint;
-  
-  // Position the tooltip directly on the line
-  // No vertical offset - place it exactly on the line
-  const baseOffset = 0; // No offset from the line
+  // Always use the true midpoint between start and current points for more accurate positioning
+  // This ensures the tooltip sits exactly on the midpoint of the line
+  const tooltipPosition = {
+    x: (displayStartPoint.x + displayEndPoint.x) / 2,
+    y: (displayStartPoint.y + displayEndPoint.y) / 2
+  };
   
   // Convert meter position to pixel position for display
   const pixelX = tooltipPosition.x * PIXELS_PER_METER;
@@ -75,17 +75,14 @@ export const DistanceTooltip = memo(({
   
   return (
     <div 
-      className="absolute pointer-events-none z-50 text-white px-1.5 py-0.5 rounded-sm shadow-lg text-xs inline-flex items-center"
+      className="absolute pointer-events-none z-50 bg-black/90 text-white px-1.5 py-0.5 rounded-sm shadow-md text-xs inline-flex items-center"
       style={{ 
         left: `${pixelX}px`, 
-        top: `${pixelY + baseOffset}px`,
-        transform: `translate(-50%, -50%)`, // Center both horizontally and vertically
+        top: `${pixelY}px`,
+        transform: `translate(-50%, -50%)`, // Center precisely on the point
         willChange: "transform", 
-        backgroundColor: `rgba(0, 0, 0, 0.85)`,
-        boxShadow: "0 0 0 1px rgba(255,255,255,0.2)",
-        outline: "1px solid rgba(0,0,0,0.8)",
-        maxWidth: "100px", // Keep tooltip very compact
-        borderRadius: "3px",
+        outline: "1px solid rgba(255,255,255,0.3)",
+        maxWidth: "100px",
         lineHeight: 1
       }}
     >
