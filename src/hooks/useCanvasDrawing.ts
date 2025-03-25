@@ -183,19 +183,21 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         }
       }
       
-      // Get current non-grid objects before adding the new path
+      // Capture current state BEFORE adding new drawing
       if (fabricCanvas) {
+        // Define grid object check
         const isGridObject = (obj: FabricObject) => 
           gridLayerRef.current.some(gridObj => gridObj === obj);
         
-        // Store current state in history BEFORE adding the new path
+        // Get current non-grid objects 
         const currentDrawings = fabricCanvas.getObjects().filter(obj => 
           (obj.type === 'polyline' || obj.type === 'path') &&
           !isGridObject(obj)
         );
         
-        if (historyRef.current && historyRef.current.past) {
-          // Serialize current objects before adding to history
+        // Save current state to history BEFORE adding the new object
+        if (historyRef.current) {
+          // Serialize current objects 
           const serializedDrawings = currentDrawings.map(obj => {
             if (obj && typeof obj.toObject === 'function') {
               return obj.toObject();
@@ -203,11 +205,11 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
             return null;
           }).filter(Boolean);
           
-          // Save current state before adding new path
+          // Add to history and clear redo stack
           historyRef.current.past.push(serializedDrawings);
-          historyRef.current.future = []; // Clear redo stack when new drawing is made
+          historyRef.current.future = [];
           
-          console.log("History updated: past states =", historyRef.current.past.length);
+          console.log("History updated: past state added with", serializedDrawings.length, "objects. Total states:", historyRef.current.past.length);
         }
       }
       

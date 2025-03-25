@@ -103,36 +103,44 @@ export const useDrawingHistory = ({
     const fabricCanvas = fabricCanvasRef.current;
     
     try {
+      console.log("Undo operation - history state:", { 
+        pastStates: past.length, 
+        futureStates: future.length 
+      });
+      
       // Get the current state before making changes (for redo)
       const currentNonGridObjects = fabricCanvas.getObjects().filter(obj => 
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Save current state to future for redo, but only if there are objects to save
-      if (currentNonGridObjects.length > 0) {
-        const serializedState = serializeObjects(currentNonGridObjects);
-        future.unshift(serializedState);
-      }
+      // Save current state to future for redo
+      const serializedCurrentState = serializeObjects(currentNonGridObjects);
+      future.unshift(serializedCurrentState);
       
-      // Get the previous state
+      // Get the previous state (pop removes the last element)
       const previousState = past.pop();
+      console.log("Restoring previous state with", previousState ? previousState.length : 0, "objects");
       
-      // Remove all non-grid objects
+      // Remove all non-grid objects to start with a clean canvas
       const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      objectsToRemove.forEach(obj => {
-        try {
-          fabricCanvas.remove(obj);
-        } catch (err) {
-          console.warn("Error removing object during undo:", err);
-        }
-      });
+      if (objectsToRemove.length > 0) {
+        console.log("Removing", objectsToRemove.length, "current drawing objects");
+        objectsToRemove.forEach(obj => {
+          try {
+            fabricCanvas.remove(obj);
+          } catch (err) {
+            console.warn("Error removing object during undo:", err);
+          }
+        });
+      }
       
       // Add the objects from the previous state
       if (previousState && previousState.length > 0) {
         const objectsToAdd = deserializeObjects(previousState);
+        console.log("Adding", objectsToAdd.length, "objects from previous state");
         objectsToAdd.forEach(obj => {
           if (obj) {
             try {
@@ -156,7 +164,7 @@ export const useDrawingHistory = ({
       toast.success("Undo successful");
       
     } catch (error) {
-      console.error("Error during undo:", error);
+      console.error("Error during undo operation:", error);
       toast.error("Failed to undo");
     }
   }, [fabricCanvasRef, historyRef, isGridObject, serializeObjects, deserializeObjects, gridLayerRef, recalculateGIA]);
@@ -177,36 +185,44 @@ export const useDrawingHistory = ({
     const fabricCanvas = fabricCanvasRef.current;
     
     try {
+      console.log("Redo operation - history state:", { 
+        pastStates: past.length, 
+        futureStates: future.length 
+      });
+      
       // Get the current state before making changes (for undo if needed)
       const currentNonGridObjects = fabricCanvas.getObjects().filter(obj => 
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      // Save current state to past, but only if there are objects to save
-      if (currentNonGridObjects.length > 0) {
-        const serializedState = serializeObjects(currentNonGridObjects);
-        past.push(serializedState);
-      }
+      // Save current state to past
+      const serializedCurrentState = serializeObjects(currentNonGridObjects);
+      past.push(serializedCurrentState);
       
-      // Get the most recent future state
+      // Get the most recent future state (shift removes the first element)
       const futureState = future.shift();
+      console.log("Restoring future state with", futureState ? futureState.length : 0, "objects");
       
-      // Remove all non-grid objects
+      // Remove all non-grid objects to start with a clean canvas
       const objectsToRemove = fabricCanvas.getObjects().filter(obj => 
         !isGridObject(obj) && (obj.type === 'polyline' || obj.type === 'path')
       );
       
-      objectsToRemove.forEach(obj => {
-        try {
-          fabricCanvas.remove(obj);
-        } catch (err) {
-          console.warn("Error removing object during redo:", err);
-        }
-      });
+      if (objectsToRemove.length > 0) {
+        console.log("Removing", objectsToRemove.length, "current drawing objects");
+        objectsToRemove.forEach(obj => {
+          try {
+            fabricCanvas.remove(obj);
+          } catch (err) {
+            console.warn("Error removing object during redo:", err);
+          }
+        });
+      }
       
       // Add the objects from the future state
       if (futureState && futureState.length > 0) {
         const objectsToAdd = deserializeObjects(futureState);
+        console.log("Adding", objectsToAdd.length, "objects from future state");
         objectsToAdd.forEach(obj => {
           if (obj) {
             try {
@@ -230,7 +246,7 @@ export const useDrawingHistory = ({
       toast.success("Redo successful");
       
     } catch (error) {
-      console.error("Error during redo:", error);
+      console.error("Error during redo operation:", error);
       toast.error("Failed to redo");
     }
     
