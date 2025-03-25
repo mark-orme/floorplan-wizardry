@@ -8,6 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useDrawingTools } from "@/hooks/useDrawingTools";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { FloorPlan } from "@/types/floorPlanTypes";
+import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 
 interface UseCanvasControllerToolsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -48,14 +49,13 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     createGrid
   } = props;
 
-  // Drawing tools with the recalculateGIA function
-  const recalculateGIA = useCallback(() => {
-    // Placeholder implementation
-    console.log("Recalculating GIA after tool operation");
-    // Actual implementation would go here
-  }, []);
+  // Initialize GIA calculation hook
+  const { recalculateGIA } = useFloorPlanGIA({
+    fabricCanvasRef,
+    setGia
+  });
 
-  // Now extract tools including saveCurrentState
+  // Drawing tools with the GIA calculation function
   const {
     clearDrawings,
     handleToolChange,
@@ -82,6 +82,31 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     createGrid,
     recalculateGIA
   });
+
+  // Add canvas event listeners to trigger GIA calculation when objects change
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Calculate GIA on object modifications, additions or removals
+    const handleObjectChange = () => {
+      recalculateGIA();
+    };
+    
+    canvas.on('object:added', handleObjectChange);
+    canvas.on('object:removed', handleObjectChange);
+    canvas.on('object:modified', handleObjectChange);
+    
+    // Initial calculation
+    recalculateGIA();
+    
+    return () => {
+      canvas.off('object:added', handleObjectChange);
+      canvas.off('object:removed', handleObjectChange);
+      canvas.off('object:modified', handleObjectChange);
+    };
+  }, [fabricCanvasRef, recalculateGIA]);
 
   return {
     clearDrawings,

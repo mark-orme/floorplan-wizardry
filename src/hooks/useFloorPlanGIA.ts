@@ -49,15 +49,26 @@ export const useFloorPlanGIA = ({
       roomsToProcess.forEach(room => {
         const polyline = room as Polyline;
         const coords = polyline.points || [];
+        
         if (coords.length > 2) {
+          // Convert coordinates from pixels to meters
           const points = coords.map(p => ({ 
             x: p.x / PIXELS_PER_METER, 
             y: p.y / PIXELS_PER_METER 
           })) as Point[];
-          totalGIA += calculateGIA(points);
+          
+          // Calculate GIA for this room
+          const roomGIA = calculateGIA(points);
+          totalGIA += roomGIA;
+          
+          // For debugging
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Room calculated: ${roomGIA.toFixed(2)}m² (total: ${totalGIA.toFixed(2)}m²)`);
+          }
         }
       });
       
+      // Update the GIA state with the calculated total
       setGia(totalGIA);
     }
   }, [fabricCanvasRef, setGia]);

@@ -35,6 +35,7 @@ export const useMeasurementGuide = (tool: DrawingTool | undefined) => {
     // Only show guide when using line tools and user hasn't dismissed it before
     if ((tool === "straightLine" || tool === "room") && 
         !localStorage.getItem("hideDrawingGuide")) {
+      // Show the guide more prominently
       setShowMeasurementGuide(true);
     }
   }, [tool]); // Only depend on tool changes

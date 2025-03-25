@@ -19,9 +19,9 @@ export const LineSettings = ({
   onColorChange
 }: LineSettingsProps) => {
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800 p-2 rounded border">
       <div className="flex flex-col gap-1">
-        <Label htmlFor="thickness" className="text-xs">Thickness</Label>
+        <Label htmlFor="thickness" className="text-xs font-medium">Thickness: {thickness}px</Label>
         <Slider
           id="thickness"
           min={1}
@@ -29,12 +29,12 @@ export const LineSettings = ({
           step={1}
           value={[thickness]}
           onValueChange={(values) => onThicknessChange(values[0])}
-          className="w-24"
+          className="w-28"
         />
       </div>
       
       <div className="flex flex-col gap-1">
-        <Label htmlFor="color" className="text-xs">Color</Label>
+        <Label htmlFor="color" className="text-xs font-medium">Color</Label>
         <input
           id="color"
           type="color"

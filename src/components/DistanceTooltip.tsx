@@ -64,7 +64,7 @@ export const DistanceTooltip = memo(({
   
   // Calculate the exact midpoint of the line for tooltip placement
   // This is crucial for placing the tooltip directly on the line
-  const tooltipPosition = {
+  const tooltipPosition = midPoint || {
     x: (displayStartPoint.x + displayEndPoint.x) / 2,
     y: (displayStartPoint.y + displayEndPoint.y) / 2
   };
@@ -76,25 +76,25 @@ export const DistanceTooltip = memo(({
   
   return (
     <div 
-      className="absolute pointer-events-none z-50 bg-black text-white px-1.5 py-0.5 rounded-sm shadow-md text-xs inline-flex items-center"
+      className="absolute pointer-events-none z-50 bg-black text-white px-2 py-1 rounded-md shadow-md text-xs inline-flex items-center"
       style={{ 
         left: `${pixelX}px`, 
         top: `${pixelY}px`,
-        transform: `translate(-50%, -50%)`, // Center precisely on the line
+        transform: `translate(-50%, -50%) scale(${effectiveZoom > 0 ? 1/effectiveZoom : 1})`, // Scale inversely with zoom
         willChange: "transform", 
-        outline: "1px solid rgba(255,255,255,0.4)",
-        maxWidth: "100px",
-        lineHeight: 1,
+        outline: "2px solid rgba(255,255,255,0.6)",
+        maxWidth: "120px",
+        lineHeight: 1.2,
         // Ensure high contrast for visibility
         backgroundColor: "rgba(0, 0, 0, 0.9)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.2)"
+        boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.3)"
       }}
     >
-      <div className="flex items-center gap-1 whitespace-nowrap">
-        <Ruler className="w-2.5 h-2.5 flex-shrink-0" />
+      <div className="flex items-center gap-2 whitespace-nowrap">
+        <Ruler className="w-3 h-3 flex-shrink-0" />
         <span className="font-semibold">{formattedDistance}m</span>
         {gridUnits > 0 && (
-          <span className="opacity-80 text-[0.65rem]">({gridUnits})</span>
+          <span className="opacity-90 text-[0.7rem]">({gridUnits})</span>
         )}
       </div>
     </div>

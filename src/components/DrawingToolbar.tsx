@@ -269,9 +269,9 @@ export const DrawingToolbar = ({
           onColorChange={onLineColorChange}
         />
         
-        <div className="border px-2 py-1 rounded text-xs bg-gray-50 dark:bg-gray-900 flex items-center gap-1">
-          <PanelRight className="h-3 w-3" />
-          <span>GIA: <strong>{formatGIA(gia)}</strong> m²</span>
+        <div className="border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 px-3 py-2 rounded-md text-sm flex items-center gap-2 shadow-sm">
+          <PanelRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <span className="text-blue-700 dark:text-blue-300">GIA: <strong className="text-blue-900 dark:text-blue-200 text-base">{formatGIA(gia)}</strong> m²</span>
         </div>
       </div>
     </div>
