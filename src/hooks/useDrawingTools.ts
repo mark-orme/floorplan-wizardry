@@ -72,20 +72,6 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     createGrid
   });
   
-  // Canvas actions (clear, save)
-  const {
-    clearCanvas,
-    saveCanvas
-  } = useCanvasActions({
-    fabricCanvasRef,
-    historyRef,
-    clearDrawings,
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia
-  });
-  
   /**
    * Handle undo operation - uses the canvas's attached undo function
    * This accesses the improved history management from useCanvasHistory
@@ -114,6 +100,34 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     }
   }, [fabricCanvasRef]);
   
+  /**
+   * Save current state before changes
+   * This accesses the saveCurrentState function from useCanvasHistory
+   */
+  const saveCurrentState = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Access the saveCurrentState function from the canvas object
+    if ((fabricCanvasRef.current as any).saveCurrentState) {
+      (fabricCanvasRef.current as any).saveCurrentState();
+    }
+  }, [fabricCanvasRef]);
+  
+  // Canvas actions (clear, save)
+  const {
+    clearCanvas,
+    saveCanvas
+  } = useCanvasActions({
+    fabricCanvasRef,
+    historyRef,
+    clearDrawings,
+    floorPlans,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    saveCurrentState
+  });
+  
   return {
     clearDrawings,
     handleToolChange,
@@ -121,6 +135,7 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     handleRedo,
     handleZoom,
     clearCanvas,
-    saveCanvas
+    saveCanvas,
+    saveCurrentState
   };
 };

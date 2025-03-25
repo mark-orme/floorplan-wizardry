@@ -18,6 +18,23 @@ export const isGridObject = (
 };
 
 /**
+ * Serialize a Fabric object to a simple object
+ */
+const serializeObject = (obj: FabricObject): any => {
+  if (!obj || typeof obj.toObject !== 'function') return null;
+  
+  try {
+    const serialized = obj.toObject();
+    // Add additional properties that might be needed for proper reconstruction
+    serialized.id = obj.id || null;
+    return serialized;
+  } catch (err) {
+    console.error("Error serializing object:", err);
+    return null;
+  }
+};
+
+/**
  * Capture current canvas state (excluding grid)
  */
 export const captureCurrentState = (
@@ -34,14 +51,34 @@ export const captureCurrentState = (
   
   console.log(`Found ${currentObjects.length} objects to capture`);
   
-  // Serialize current objects
-  return currentObjects.map(obj => {
-    if (obj && typeof obj.toObject === 'function') {
-      const serialized = obj.toObject();
-      return serialized;
-    }
-    return null;
-  }).filter(Boolean);
+  // Serialize current objects with more reliable method
+  return currentObjects.map(serializeObject).filter(Boolean);
+};
+
+/**
+ * Compare two canvas states to check if they're different
+ * @returns true if states are different
+ */
+export const areStatesDifferent = (stateA: any[], stateB: any[]): boolean => {
+  // Quick length check
+  if (!stateA || !stateB || stateA.length !== stateB.length) {
+    return true;
+  }
+  
+  // If both are empty, they're the same
+  if (stateA.length === 0 && stateB.length === 0) {
+    return false;
+  }
+  
+  // More detailed comparison could be implemented if needed
+  // For now, a simple stringified comparison is used
+  try {
+    return JSON.stringify(stateA) !== JSON.stringify(stateB);
+  } catch (e) {
+    console.warn("Error comparing states:", e);
+    // If comparison fails, assume they're different to be safe
+    return true;
+  }
 };
 
 /**
@@ -53,16 +90,25 @@ export const pushToHistory = (
 ): void => {
   if (!historyRef.current) return;
   
-  // Add state to past and clear future
-  historyRef.current.past.push(state);
-  historyRef.current.future = [];
-  
-  // Limit history size
-  if (historyRef.current.past.length > MAX_HISTORY_STATES) {
-    historyRef.current.past.splice(0, historyRef.current.past.length - MAX_HISTORY_STATES);
+  // Only add state if it's different from the most recent one
+  const lastState = historyRef.current.past.length > 0 
+    ? historyRef.current.past[historyRef.current.past.length - 1] 
+    : null;
+    
+  if (!lastState || areStatesDifferent(lastState, state)) {
+    // Add state to past and clear future
+    historyRef.current.past.push(state);
+    historyRef.current.future = [];
+    
+    // Limit history size
+    if (historyRef.current.past.length > MAX_HISTORY_STATES) {
+      historyRef.current.past.splice(0, historyRef.current.past.length - MAX_HISTORY_STATES);
+    }
+    
+    console.log(`History updated: ${historyRef.current.past.length} states in past, ${historyRef.current.future.length} in future`);
+  } else {
+    console.log("State unchanged, not adding to history");
   }
-  
-  console.log(`History updated: ${historyRef.current.past.length} states in past, ${historyRef.current.future.length} in future`);
 };
 
 /**
@@ -89,3 +135,4 @@ export const showHistoryToast = (operation: 'undo' | 'redo', success: boolean): 
     toast.info(`Nothing to ${operation}`);
   }
 };
+

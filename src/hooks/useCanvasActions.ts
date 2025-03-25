@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for canvas actions (clear, save)
  * @module useCanvasActions
@@ -19,6 +18,7 @@ interface UseCanvasActionsProps {
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  saveCurrentState?: () => void;
 }
 
 interface UseCanvasActionsResult {
@@ -38,7 +38,8 @@ export const useCanvasActions = ({
   floorPlans,
   currentFloor,
   setFloorPlans,
-  setGia
+  setGia,
+  saveCurrentState
 }: UseCanvasActionsProps): UseCanvasActionsResult => {
   /**
    * Clear all objects from the canvas
@@ -46,10 +47,16 @@ export const useCanvasActions = ({
   const clearCanvas = useCallback((): void => {
     if (!fabricCanvasRef.current) return;
     
+    // Save current state before clearing
+    if (saveCurrentState) {
+      saveCurrentState();
+    }
+    
     clearDrawings();
     
-    // Reset history
-    historyRef.current.past = [[]];
+    // Reset history but keep the cleared state
+    const emptyState: any[] = [];
+    historyRef.current.past = [emptyState];
     historyRef.current.future = [];
     
     // Update floor plans state
@@ -68,7 +75,7 @@ export const useCanvasActions = ({
     setGia(0);
     
     toast.success("Canvas cleared");
-  }, [fabricCanvasRef, clearDrawings, historyRef, currentFloor, setFloorPlans, setGia]);
+  }, [fabricCanvasRef, clearDrawings, historyRef, currentFloor, setFloorPlans, setGia, saveCurrentState]);
 
   /**
    * Save the current floor plan as an image and to storage

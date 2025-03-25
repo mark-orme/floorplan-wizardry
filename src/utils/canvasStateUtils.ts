@@ -67,6 +67,10 @@ export const applyCanvasState = (
     }
   });
   
+  // Always do a full render to ensure changes are visible
   fabricCanvas.requestRenderAll();
+  
+  // Recalculate area after state change
   recalculateGIA();
 };
+

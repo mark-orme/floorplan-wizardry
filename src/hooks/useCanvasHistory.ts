@@ -3,9 +3,9 @@
  * Enhanced hook for managing drawing history (undo/redo)
  * With improved state serialization and restoration
  */
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { captureCurrentState, pushToHistory, canUndo, canRedo, showHistoryToast } from "@/utils/historyUtils";
+import { captureCurrentState, pushToHistory, canUndo, canRedo, showHistoryToast, areStatesDifferent } from "@/utils/historyUtils";
 import { applyCanvasState } from "@/utils/canvasStateUtils";
 
 interface UseCanvasHistoryProps {
@@ -24,15 +24,29 @@ export const useCanvasHistory = ({
   historyRef,
   recalculateGIA
 }: UseCanvasHistoryProps) => {
+  // Track the last captured state to prevent duplicate history entries
+  const lastCapturedStateRef = useRef<any[]>([]);
 
   /**
    * Add current state to history before making changes
+   * Only saves if the state is different from the last one
    */
   const saveCurrentState = useCallback(() => {
     const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
-    if (currentState.length > 0 || (historyRef.current.past.length === 0)) {
+    
+    // Check if state is different from the last saved one
+    const shouldSave = 
+      currentState.length > 0 || 
+      historyRef.current.past.length === 0 ||
+      areStatesDifferent(lastCapturedStateRef.current, currentState);
+    
+    if (shouldSave) {
       pushToHistory(historyRef, currentState);
+      // Update the last captured state
+      lastCapturedStateRef.current = [...currentState];
       console.log(`Saved state with ${currentState.length} objects to history`);
+    } else {
+      console.log('State unchanged, skipping history update');
     }
   }, [fabricCanvasRef, gridLayerRef, historyRef]);
 
@@ -49,8 +63,13 @@ export const useCanvasHistory = ({
     
     // Get current state for redo
     const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
-    historyRef.current.future.unshift(currentState);
-    console.log(`Saved current state with ${currentState.length} objects for potential redo`);
+    
+    // Only add to future if different from last past state (prevents no-op redo)
+    if (historyRef.current.past.length > 0 && 
+        areStatesDifferent(historyRef.current.past[historyRef.current.past.length - 1], currentState)) {
+      historyRef.current.future.unshift(currentState);
+      console.log(`Saved current state with ${currentState.length} objects for potential redo`);
+    }
     
     // Remove current state from past
     historyRef.current.past.pop();
@@ -61,6 +80,10 @@ export const useCanvasHistory = ({
     
     // Apply previous state
     applyCanvasState(fabricCanvasRef.current, previousState, gridLayerRef, recalculateGIA);
+    
+    // Update last captured state to match what's now on canvas
+    lastCapturedStateRef.current = [...previousState];
+    
     showHistoryToast('undo', true);
   }, [historyRef, fabricCanvasRef, gridLayerRef, recalculateGIA]);
 
@@ -81,10 +104,19 @@ export const useCanvasHistory = ({
     
     // Save current state to past
     const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
-    historyRef.current.past.push(currentState);
+    
+    // Only add to past if different from current last past state
+    if (historyRef.current.past.length === 0 || 
+        areStatesDifferent(historyRef.current.past[historyRef.current.past.length - 1], currentState)) {
+      historyRef.current.past.push(currentState);
+    }
     
     // Apply future state
     applyCanvasState(fabricCanvasRef.current, futureState, gridLayerRef, recalculateGIA);
+    
+    // Update last captured state to match what's now on canvas
+    lastCapturedStateRef.current = [...futureState];
+    
     showHistoryToast('redo', true);
   }, [historyRef, fabricCanvasRef, gridLayerRef, recalculateGIA]);
 
@@ -94,3 +126,4 @@ export const useCanvasHistory = ({
     handleRedo
   };
 };
+

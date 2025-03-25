@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -209,15 +210,28 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
       handleMouseUp();
     };
     
+    const handleObjectModified = () => {
+      // Save state when objects are modified
+      saveCurrentState();
+    };
+    
+    const handleObjectRemoved = () => {
+      // Save state when objects are removed
+      saveCurrentState();
+    };
+    
     fabricCanvas.on('path:created', handlePathCreated);
     fabricCanvas.on('mouse:down', handleMouseDown);
     fabricCanvas.on('mouse:move', handleMouseMove);
     fabricCanvas.on('mouse:up', handleMouseUp);
+    fabricCanvas.on('object:modified', handleObjectModified);
+    fabricCanvas.on('object:removed', handleObjectRemoved);
     
     // Expose undo/redo handlers to the global canvas object for debugging
     // This helps with external access from CanvasController
     (fabricCanvas as any).handleUndo = handleUndo;
     (fabricCanvas as any).handleRedo = handleRedo;
+    (fabricCanvas as any).saveCurrentState = saveCurrentState;
     
     return () => {
       cleanupTimeouts();
@@ -227,10 +241,13 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         fabricCanvas.off('mouse:down', handleMouseDown);
         fabricCanvas.off('mouse:move', handleMouseMove);
         fabricCanvas.off('mouse:up', handleMouseUp);
+        fabricCanvas.off('object:modified', handleObjectModified);
+        fabricCanvas.off('object:removed', handleObjectRemoved);
         
         // Clean up custom handlers
         delete (fabricCanvas as any).handleUndo;
         delete (fabricCanvas as any).handleRedo;
+        delete (fabricCanvas as any).saveCurrentState;
       }
     };
   }, [
