@@ -19,48 +19,62 @@ export const usePusher = ({
   events, 
   enableSubscription = true 
 }: UsePusherOptions) => {
-  // All state declarations at the top level
+  // All state and ref declarations at the top level
   const [channel, setChannel] = useState<Channel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   
   // Use refs to avoid dependency issues with events and preserve values across renders
   const eventsRef = useRef(events);
   const channelNameRef = useRef(channelName);
+  const enableSubscriptionRef = useRef(enableSubscription);
   
   // Update refs when props change - in a separate effect
   useEffect(() => {
     eventsRef.current = events;
     channelNameRef.current = channelName;
-  }, [events, channelName]);
+    enableSubscriptionRef.current = enableSubscription;
+  }, [events, channelName, enableSubscription]);
 
   // Subscribe to channel - in a dedicated effect with minimal dependencies
   useEffect(() => {
-    if (!enableSubscription) return;
+    // Skip if subscription is disabled
+    if (!enableSubscriptionRef.current) return;
     
     let newChannel: Channel | null = null;
+    let isMounted = true;
     
-    try {
-      logger.info(`Setting up Pusher subscription to ${channelName}`);
-      newChannel = subscribeToChannel(channelName);
-      
-      // Bind events
-      Object.entries(eventsRef.current).forEach(([eventName, callback]) => {
-        if (newChannel) {
-          newChannel.bind(eventName, callback);
+    const setupChannel = () => {
+      try {
+        logger.info(`Setting up Pusher subscription to ${channelNameRef.current}`);
+        newChannel = subscribeToChannel(channelNameRef.current);
+        
+        // Bind events
+        Object.entries(eventsRef.current).forEach(([eventName, callback]) => {
+          if (newChannel) {
+            newChannel.bind(eventName, callback);
+          }
+        });
+        
+        if (isMounted) {
+          setChannel(newChannel);
+          setIsConnected(true);
         }
-      });
-      
-      setChannel(newChannel);
-      setIsConnected(true);
-    } catch (error) {
-      logger.error('Error setting up Pusher subscription:', error);
-      setIsConnected(false);
-    }
+      } catch (error) {
+        logger.error('Error setting up Pusher subscription:', error);
+        if (isMounted) {
+          setIsConnected(false);
+        }
+      }
+    };
+    
+    setupChannel();
     
     // Cleanup on unmount or channel change
     return () => {
+      isMounted = false;
+      
       if (newChannel) {
-        logger.info(`Cleaning up Pusher subscription to ${channelName}`);
+        logger.info(`Cleaning up Pusher subscription to ${channelNameRef.current}`);
         
         // Unbind events
         Object.keys(eventsRef.current).forEach((eventName) => {
@@ -69,12 +83,12 @@ export const usePusher = ({
           }
         });
         
-        unsubscribeFromChannel(channelName);
+        unsubscribeFromChannel(channelNameRef.current);
         setChannel(null);
         setIsConnected(false);
       }
     };
-  }, [channelName, enableSubscription]); // Only depend on these props
+  }, []); // Empty dependency array - we use refs inside
 
   // Function to manually trigger events for testing - use callback for stable reference
   const triggerEvent = useCallback((eventName: string, data: any) => {

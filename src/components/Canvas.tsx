@@ -24,17 +24,18 @@ interface CanvasProps {
  * @returns {JSX.Element} Rendered component
  */
 export const Canvas = (props: CanvasProps) => {
-  // Track initialization with refs instead of module-level variables
+  // Track initialization with refs instead of module-level variables - ALL refs must be declared first
   const appInitializedRef = useRef<boolean>(false);
   const initialDataLoadedRef = useRef<boolean>(false);
   const isFirstMountRef = useRef<boolean>(true);
   const controllerRef = useRef<ReturnType<typeof CanvasController> | null>(null);
   
-  // IMPORTANT: All useState calls must be declared unconditionally at the top level
+  // IMPORTANT: All useState calls must be declared unconditionally at the top level after all refs
   const [initialized, setInitialized] = useState(false);
   const [controllerLoaded, setControllerLoaded] = useState(false);
+  const [errorState, setErrorState] = useState({ hasError: false, message: "" });
   
-  // Initialize controller only once but using useEffect to ensure consistent hook order
+  // Initialize controller only once using useEffect to ensure consistent hook order
   useEffect(() => {
     if (!controllerRef.current) {
       try {
@@ -42,12 +43,22 @@ export const Canvas = (props: CanvasProps) => {
         setInitialized(true);
         setControllerLoaded(true);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error("Error initializing canvas controller:", error);
+        setErrorState({ hasError: true, message: errorMessage });
       }
     }
   }, []);
   
-  // Bail out early if controller isn't ready yet
+  // Bail out early if controller isn't ready yet or if there's an error
+  if (errorState.hasError) {
+    return <LoadingErrorWrapper isLoading={false} hasError={true} errorMessage={errorState.message} onRetry={() => window.location.reload()}>
+      <div className="w-full h-full flex items-center justify-center">
+        <p>Error initializing canvas: {errorState.message}</p>
+      </div>
+    </LoadingErrorWrapper>;
+  }
+  
   if (!controllerRef.current || !controllerLoaded) {
     return <LoadingErrorWrapper isLoading={true} hasError={false} errorMessage="" onRetry={() => {}}>
       <div className="w-full h-full flex items-center justify-center">
