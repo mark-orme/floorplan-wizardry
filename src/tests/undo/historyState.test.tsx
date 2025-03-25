@@ -35,15 +35,15 @@ describe('History State Management', () => {
   
   it('limits history size to MAX_HISTORY_STATES', () => {
     // Fill past with many states
-    const mockPast = Array(MAX_HISTORY_STATES + 10).fill([
+    const mockPastStates = Array(MAX_HISTORY_STATES + 10).fill([
       { type: 'polyline', toObject: () => ({ type: 'polyline' }) }
     ]);
     
-    const mockFuture = Array(MAX_HISTORY_STATES + 10).fill([
+    const mockFutureStates = Array(MAX_HISTORY_STATES + 10).fill([
       { type: 'polyline', toObject: () => ({ type: 'polyline' }) }
     ]);
     
-    const mockHistoryRef = createMockHistoryRef(mockPast, mockFuture) as unknown as React.MutableRefObject<{
+    const mockHistoryRef = createMockHistoryRef(mockPastStates, mockFutureStates) as unknown as React.MutableRefObject<{
       past: any[][];
       future: any[][];
     }>;

@@ -29,27 +29,27 @@ export const createBasicEmergencyGrid = (
       gridLayerRef.current = [];
     }
     
-    const width = fabricCanvas.width || 800;
-    const height = fabricCanvas.height || 600;
+    const canvasWidth = fabricCanvas.width || 800;
+    const canvasHeight = fabricCanvas.height || 600;
     
     // Create very basic grid lines directly
-    for (let x = 0; x <= width; x += 100) {
-      const line = new Line([x, 0, x, height], {
+    for (let xPosition = 0; xPosition <= canvasWidth; xPosition += 100) {
+      const line = new Line([xPosition, 0, xPosition, canvasHeight], {
         stroke: '#CCDDEE',
         selectable: false,
         evented: false,
-        strokeWidth: x % 500 === 0 ? 1.5 : 0.5
+        strokeWidth: xPosition % 500 === 0 ? 1.5 : 0.5
       });
       fabricCanvas.add(line);
       gridLayerRef.current.push(line);
     }
     
-    for (let y = 0; y <= height; y += 100) {
-      const line = new Line([0, y, width, y], {
+    for (let yPosition = 0; yPosition <= canvasHeight; yPosition += 100) {
+      const line = new Line([0, yPosition, canvasWidth, yPosition], {
         stroke: '#CCDDEE',
         selectable: false,
         evented: false,
-        strokeWidth: y % 500 === 0 ? 1.5 : 0.5
+        strokeWidth: yPosition % 500 === 0 ? 1.5 : 0.5
       });
       fabricCanvas.add(line);
       gridLayerRef.current.push(line);
@@ -85,14 +85,14 @@ export const retryWithBackoff = (
   if (attemptCount >= maxAttempts) return;
   
   // Calculate delay with exponential backoff, but capped at 800ms
-  const delay = Math.min(Math.pow(1.3, attemptCount) * 100, 800);
+  const delayMs = Math.min(Math.pow(1.3, attemptCount) * 100, 800);
   
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Scheduling next grid attempt ${attemptCount + 1}/${maxAttempts} in ${delay}ms`);
+    console.log(`Scheduling next grid attempt ${attemptCount + 1}/${maxAttempts} in ${delayMs}ms`);
   }
   
   setTimeout(() => {
     resetGridProgress();
     attemptFunction();
-  }, delay);
+  }, delayMs);
 };

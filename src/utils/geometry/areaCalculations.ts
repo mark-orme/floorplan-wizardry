@@ -18,9 +18,9 @@ export const calculateGIA = (stroke: Point[]): number => {
   
   // Shoelace formula for polygon area
   const area = Math.abs(
-    stroke.reduce((sum, point, index) => {
+    stroke.reduce((accumulatedArea, currentPoint, index) => {
       const nextPoint = stroke[(index + 1) % stroke.length];
-      return sum + (point.x * nextPoint.y - nextPoint.x * point.y);
+      return accumulatedArea + (currentPoint.x * nextPoint.y - nextPoint.x * currentPoint.y);
     }, 0) / 2
   );
   
@@ -43,9 +43,9 @@ export const filterRedundantPoints = (stroke: Point[], minDistance: number = CLO
     const lastPoint = result[result.length - 1];
     const currentPoint = stroke[i];
     
-    const dx = currentPoint.x - lastPoint.x;
-    const dy = currentPoint.y - lastPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const deltaX = currentPoint.x - lastPoint.x;
+    const deltaY = currentPoint.y - lastPoint.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
     // Only add the point if it's far enough from the previous one
     if (distance >= minDistance) {

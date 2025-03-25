@@ -33,16 +33,16 @@ export const useFloorPlanChunkProcessing = ({
     // OPTIMIZATION: Use chunk processing for large floor plans
     const CHUNK_SIZE = 20; // Process 20 strokes at a time - reduced for better performance
     
-    const processStrokeChunk = (startIdx: number) => {
+    const processStrokeChunk = (startIndex: number) => {
       if (!fabricCanvasRef.current) return;
       
-      const endIdx = Math.min(startIdx + CHUNK_SIZE, totalStrokes);
+      const endIndex = Math.min(startIndex + CHUNK_SIZE, totalStrokes);
       
-      for (let i = startIdx; i < endIdx; i++) {
+      for (let i = startIndex; i < endIndex; i++) {
         const stroke = strokes[i];
         
         const polyline = new Polyline(
-          stroke.map(p => ({ x: p.x * PIXELS_PER_METER, y: p.y * PIXELS_PER_METER })),
+          stroke.map(point => ({ x: point.x * PIXELS_PER_METER, y: point.y * PIXELS_PER_METER })),
           {
             stroke: '#000000',
             strokeWidth: 2,
@@ -71,8 +71,8 @@ export const useFloorPlanChunkProcessing = ({
       }
       
       // If there are more chunks to process, schedule next chunk
-      if (endIdx < totalStrokes) {
-        setTimeout(() => processStrokeChunk(endIdx), 10); // Reduced delay for faster processing
+      if (endIndex < totalStrokes) {
+        setTimeout(() => processStrokeChunk(endIndex), 10); // Reduced delay for faster processing
       } else {
         // All chunks processed
         if (fabricCanvasRef.current) {
