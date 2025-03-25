@@ -135,10 +135,10 @@ export const useCanvasEventHandlers = ({
     
     const fabricCanvas = fabricCanvasRef.current;
     if (fabricCanvas) {
-      fabricCanvas.on('zoom:changed', updateZoomLevel);
+      fabricCanvas.on('zoom:changed' as any, updateZoomLevel);
       
       return () => {
-        fabricCanvas.off('zoom:changed', updateZoomLevel);
+        fabricCanvas.off('zoom:changed' as any, updateZoomLevel);
       };
     }
   }, [fabricCanvasRef]);

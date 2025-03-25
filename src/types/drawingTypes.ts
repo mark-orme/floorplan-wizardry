@@ -85,6 +85,11 @@ export interface DebugInfoState {
   devicePixelRatio: number;
   gridVisible: boolean;
   performanceStats: Record<string, number>;
+  // Add the missing properties
+  canvasInitialized: boolean;
+  gridCreated: boolean;
+  dimensionsSet: boolean;
+  brushInitialized: boolean;
 }
 
 /**
@@ -96,12 +101,17 @@ export interface CanvasLoadTimes {
   gridCreationStart: number;
   gridCreationEnd: number;
   totalLoadTime: number;
+  // Add missing properties
+  startTime: number;
+  canvasReady: boolean;
+  gridCreated: boolean;
 }
 
 /**
  * Grid creation callback type
+ * Updated to match actual usage pattern in the codebase
  */
-export type GridCreationCallback = (success: boolean) => void;
+export type GridCreationCallback = (canvas: Canvas) => any[];
 
 /**
  * Type definition for FabricCanvas to match Canvas from fabric
