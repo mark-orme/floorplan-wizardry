@@ -7,8 +7,8 @@
  */
 import { Card } from "./ui/card";
 import { DebugInfo } from "./DebugInfo";
-import { useRef, useEffect } from "react";
 import { DebugInfoState } from "@/types/drawingTypes";
+import { useDomRef } from "@/hooks/useDomRef";
 
 interface CanvasContainerProps {
   debugInfo: DebugInfoState;
@@ -22,24 +22,9 @@ interface CanvasContainerProps {
  * @returns {JSX.Element} Rendered component
  */
 export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps): JSX.Element => {
-  // Create a local ref if one is not provided
-  const localCanvasRef = useRef<HTMLCanvasElement>(null);
+  // Create a local ref that auto-focuses if one is not provided
+  const localCanvasRef = useDomRef<HTMLCanvasElement>(true);
   const canvasReference = canvasRef || localCanvasRef;
-
-  // Ensure canvas gets focus when the component renders
-  useEffect(() => {
-    if (canvasReference.current) {
-      // Set tabIndex to make the canvas focusable
-      canvasReference.current.tabIndex = 0;
-      
-      // Focus the canvas after a short delay to ensure it's rendered
-      const focusTimer = setTimeout(() => {
-        canvasReference.current?.focus();
-      }, 100);
-      
-      return () => clearTimeout(focusTimer);
-    }
-  }, [canvasReference]);
 
   return (
     <Card className="p-6 bg-white shadow-md rounded-lg">

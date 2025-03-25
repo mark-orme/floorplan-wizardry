@@ -1,8 +1,10 @@
+
 import { createRoot } from 'react-dom/client'
 import * as Sentry from "@sentry/react";
 import App from './App.tsx'
 import './index.css'
 import { getPusher } from './utils/pusher.ts'
+import { createRootElement } from './utils/domUtils.ts'
 
 // Initialize Sentry for error tracking and monitoring
 Sentry.init({
@@ -27,8 +29,9 @@ Sentry.init({
 // Initialize Pusher
 getPusher();
 
-// Create the root and render the application
-createRoot(document.getElementById("root")!).render(
+// Create the root and render the application using our utility
+const rootElement = createRootElement("root");
+createRoot(rootElement).render(
   <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
     <App />
   </Sentry.ErrorBoundary>
