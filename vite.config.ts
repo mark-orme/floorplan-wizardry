@@ -10,6 +10,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      // This setting enables HMR to work correctly with Lovable's preview environment
+      clientPort: 443,
+      // Ensure WebSocket connections use HTTPS when in production
+      protocol: 'wss'
+    }
   },
   plugins: [
     react(),
