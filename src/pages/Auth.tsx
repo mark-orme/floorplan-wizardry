@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,7 @@ const Auth = () => {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
-  // Check and create test users if they don't exist
+  // Create test users on component mount
   useEffect(() => {
     const createTestUsers = async () => {
       try {
@@ -47,7 +46,7 @@ const Auth = () => {
         
         for (const testUser of testUsers) {
           try {
-            // First try to sign in - if successful, the user exists and is confirmed
+            // First check if user already exists by trying to sign in
             const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
               email: testUser.email,
               password: testUser.password,
@@ -70,44 +69,33 @@ const Auth = () => {
                     role: testUser.role,
                     created_at: new Date().toISOString()
                   });
+                console.log(`Added profile for existing user: ${testUser.email}`);
               }
               
               continue; // User exists and is confirmed, move to next test user
             }
             
-            // Check if user exists but is not confirmed
+            // User doesn't exist or credentials are wrong - check if the email exists
             const { data: userData } = await supabase.auth.admin.listUsers();
-            
-            // Fix the TypeScript error by explicitly typing the users array
             const users = userData?.users as SupabaseUser[] | undefined;
             const existingUser = users?.find(u => u.email === testUser.email);
             
             if (existingUser) {
-              // User exists but not confirmed - delete and recreate
+              // Email exists but wrong password or other issue - delete the user
+              console.log(`Deleting existing user with email: ${testUser.email}`);
               await supabase.auth.admin.deleteUser(existingUser.id);
             }
             
-            // Create user with auto-confirm
-            const { data: newUserData, error } = await supabase.auth.signUp({
+            // Create new user
+            console.log(`Creating new user: ${testUser.email}`);
+            const { data: newUserData, error } = await supabase.auth.admin.createUser({
               email: testUser.email,
               password: testUser.password,
-              options: {
-                emailRedirectTo: window.location.origin,
-                data: {
-                  role: testUser.role
-                }
-              }
+              email_confirm: true, // This ensures the email is confirmed
+              user_metadata: { role: testUser.role }
             });
             
-            if (error) {
-              if (error.message.includes('already registered')) {
-                // Email exists but can't sign in - likely needs confirmation
-                // Since we can't confirm directly from the client, we'll just notify the user
-                toast.warning(`${testUser.email} already exists but may need confirmation. Please confirm your email or use the Supabase dashboard to confirm manually.`);
-                continue;
-              }
-              throw error;
-            }
+            if (error) throw error;
             
             if (newUserData?.user) {
               // Create user profile
@@ -121,11 +109,7 @@ const Auth = () => {
                 
               if (profileError) throw profileError;
               createdUsers++;
-              
-              // Use Supabase's auto-confirmation by setting user as confirmed
-              // Note: This requires admin access which isn't available from client side
-              // We inform the user that they need to manually confirm in Supabase dashboard
-              toast.info(`${testUser.email} created. Please use the Supabase dashboard to confirm this email.`);
+              console.log(`User created successfully: ${testUser.email}`);
             }
           } catch (userError: any) {
             console.error(`Error processing ${testUser.email}:`, userError);
@@ -137,10 +121,9 @@ const Auth = () => {
         await supabase.auth.signOut();
         
         if (createdUsers > 0) {
-          toast.success(`${createdUsers} test user(s) created successfully!`);
-          toast.info("⚠️ Important: You need to confirm these emails using the Supabase dashboard.");
+          toast.success(`${createdUsers} test users created or updated successfully!`);
         } else if (createdUsers === 0 && !toast.error) {
-          toast.info('All test users already exist.');
+          toast.info('All test users already exist and are configured correctly.');
         }
       } catch (error: any) {
         console.error('Error creating test users:', error);
@@ -231,9 +214,6 @@ const Auth = () => {
                 Setting up test users...
               </div>
             )}
-            <div className="mt-2 text-xs text-amber-500">
-              Note: Test user emails must be confirmed in Supabase dashboard before login
-            </div>
           </CardHeader>
 
           <CardContent>
