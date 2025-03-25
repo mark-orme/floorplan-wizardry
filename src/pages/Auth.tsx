@@ -7,21 +7,38 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
+import { UserRole } from '@/lib/supabase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<UserRole>(UserRole.PHOTOGRAPHER);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (event: React.FormEvent, authFunction: typeof signIn | typeof signUp) => {
+  const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     
     try {
-      await authFunction(email, password);
-      navigate('/');
+      await signIn(email, password);
+      navigate('/properties');
+    } catch (error) {
+      console.error('Authentication error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      await signUp(email, password, role);
+      navigate('/properties');
     } catch (error) {
       console.error('Authentication error:', error);
     } finally {
@@ -39,13 +56,13 @@ const Auth = () => {
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
             <CardDescription className="mt-4">
-              Access your floor plans across all your devices
+              Access the property floor plan system
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             <TabsContent value="login">
-              <form onSubmit={(e) => handleSubmit(e, signIn)}>
+              <form onSubmit={handleSignIn}>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -76,7 +93,7 @@ const Auth = () => {
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={(e) => handleSubmit(e, signUp)}>
+              <form onSubmit={handleSignUp}>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -99,6 +116,27 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select 
+                      value={role} 
+                      onValueChange={(value) => setRole(value as UserRole)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={UserRole.PHOTOGRAPHER}>Photographer</SelectItem>
+                        <SelectItem value={UserRole.PROCESSING_MANAGER}>Processing Manager</SelectItem>
+                        <SelectItem value={UserRole.MANAGER}>Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {role === UserRole.PHOTOGRAPHER && 'Create properties and floor plans'}
+                      {role === UserRole.PROCESSING_MANAGER && 'Review and process floor plans'}
+                      {role === UserRole.MANAGER && 'Full access to all properties and settings'}
+                    </p>
+                  </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Creating account...' : 'Create Account'}
                   </Button>
@@ -109,7 +147,7 @@ const Auth = () => {
 
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-500">
-              Secure access to synchronize your floor plans
+              Property floor plan management system
             </p>
           </CardFooter>
         </Tabs>
