@@ -21,9 +21,9 @@ export interface FloorPlan {
   paperSize?: PaperSize;
   
   // Required by types/drawingTypes.ts
-  id: string; // Changed from optional to required to match drawingTypes
-  name: string; // Changed from optional to required to match drawingTypes
-  gia: number; // Changed from optional to required to match drawingTypes
+  id: string;
+  name: string;
+  gia: number;
   svgData?: string;
   canvas?: string;
   timestamp?: number;

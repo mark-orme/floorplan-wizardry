@@ -5,7 +5,7 @@
  * @module useFloorPlanLoader
  */
 import { useCallback } from "react";
-import { FloorPlan, PaperSize } from "@/utils/drawing";
+import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
 
 /**
  * Interface for useFloorPlanLoader hook props
@@ -63,10 +63,16 @@ export const useFloorPlanLoader = ({
         setFloorPlans(plans);
         console.log("Floor plans loaded:", plans);
       } else {
-        // Create a default floor plan with a properly typed paperSize
-        const defaultPlan = [{
+        // Create a default floor plan with all required properties
+        const defaultId = `floor-${Date.now()}`;
+        const defaultName = "Ground Floor";
+        
+        const defaultPlan: FloorPlan[] = [{
+          id: defaultId,
+          name: defaultName,
+          gia: 0,
           strokes: [],
-          label: "Ground Floor",
+          label: defaultName,
           paperSize: "infinite" as PaperSize
         }];
         setFloorPlans(defaultPlan);
@@ -89,4 +95,3 @@ export const useFloorPlanLoader = ({
     loadFloorPlansData
   };
 };
-
