@@ -1,10 +1,10 @@
-
 /**
  * Custom hook for managing line settings
  * @module useLineSettings
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { trackLineThickness } from "@/utils/fabricBrush";
 
 interface UseLineSettingsProps {
   fabricCanvasRef: React.MutableRefObject<any>;
@@ -36,6 +36,10 @@ export const useLineSettings = ({
     
     if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
       fabricCanvasRef.current.freeDrawingBrush.width = thickness;
+      
+      // Track baseline thickness for stylus pressure references
+      trackLineThickness(fabricCanvasRef.current, thickness);
+      
       toast.success(`Line thickness set to ${thickness}px`);
     }
   }, [fabricCanvasRef, setLineThickness]);
@@ -60,12 +64,22 @@ export const useLineSettings = ({
     if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
       fabricCanvasRef.current.freeDrawingBrush.width = lineThickness;
       fabricCanvasRef.current.freeDrawingBrush.color = lineColor;
+      
+      // Track baseline thickness when applying settings
+      trackLineThickness(fabricCanvasRef.current, lineThickness);
     }
   }, [fabricCanvasRef, lineThickness, lineColor]);
 
   return {
     handleLineThicknessChange,
-    handleLineColorChange,
+    handleLineColorChange: useCallback((color: string) => {
+      setLineColor(color);
+      
+      if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
+        fabricCanvasRef.current.freeDrawingBrush.color = color;
+        toast.success(`Line color updated`);
+      }
+    }, [fabricCanvasRef, setLineColor]),
     applyLineSettings
   };
 };
