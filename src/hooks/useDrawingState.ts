@@ -1,41 +1,28 @@
+
 /**
- * Custom hook for tracking drawing state
- * Manages mouse events and drawing coordinate tracking
+ * Custom hook for managing drawing state
  * @module useDrawingState
  */
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingTool } from "./useCanvasState";
-import { type DrawingState, type Point } from "@/types/drawingTypes";
-import { calculateMidpoint } from "@/utils/geometry";
-import { snapToGrid, snapPointsToGrid, pixelsToMeters } from "@/utils/geometry";
+import { DrawingState, Point } from "@/types/drawingTypes";
+import { calculateMidpoint } from "@/utils/geometry/midpointCalculation";
+import { PIXELS_PER_METER } from "@/utils/drawing";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool: DrawingTool;
 }
 
-interface MouseEvent {
-  e: MouseEvent | TouchEvent;
-  pointer?: Point;
-}
-
-interface LineScalingEvent {
-  startPoint: Point;
-  endPoint: Point;
-  e?: MouseEvent | TouchEvent;
-}
-
 /**
- * Hook for managing drawing state during user interactions
- * @param {UseDrawingStateProps} props - Hook properties
- * @returns {Object} Drawing state and handlers
+ * Hook for tracking drawing state during user interactions
  */
 export const useDrawingState = ({ 
   fabricCanvasRef,
   tool 
 }: UseDrawingStateProps) => {
-  // Track current drawing state
+  // Drawing state management
   const [drawingState, setDrawingState] = useState<DrawingState>({
     isDrawing: false,
     startPoint: null,
@@ -44,245 +31,88 @@ export const useDrawingState = ({
     midPoint: null
   });
   
-  // Use ref for timeout cleanup
-  const timeoutRef = useRef<number | null>(null);
-  // Track animation frame for performance
-  const animationFrameRef = useRef<number | null>(null);
-  // Use a ref to track the last logged position to reduce excessive logging
-  const lastLoggedPositionRef = useRef<Point | null>(null);
+  // Timeout ref for cleaning up
+  const mouseStateTimeoutRef = useRef<number | null>(null);
   
-  // Clear any existing timeouts and animation frames
-  const cleanupTimeouts = useCallback(() => {
-    if (timeoutRef.current !== null) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    
-    if (animationFrameRef.current !== null) {
-      window.cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-  }, []);
-
-  // Calculate midpoint between two points
-  const calculateMidpoint = useCallback((start: Point, end: Point) => {
-    return {
-      x: start.x + (end.x - start.x) / 2,
-      y: start.y + (end.y - start.y) / 2
-    };
-  }, []);
-
-  // IMPROVED: Mouse down handler with GUARANTEED grid snapping and proper unit conversion
+  // Handle mouse down event
   const handleMouseDown = useCallback((e: any) => {
-    // Only track for straightLine tool
-    if (tool !== 'straightLine') return;
+    if (tool !== "straightLine" && tool !== "room") return;
     
-    if (!fabricCanvasRef.current) return;
-    
-    cleanupTimeouts();
-    
-    // Get pointer position in canvas coordinates (pixels)
-    const pointer = fabricCanvasRef.current.getPointer(e.e);
-    const zoom = fabricCanvasRef.current.getZoom();
-    
-    // Convert from pixel coordinates to meter coordinates (world units)
-    const rawStartPoint = pixelsToMeters({
-      x: pointer.x,
-      y: pointer.y
-    }, zoom);
-    
-    // CRITICAL FIX: Force EXACT grid snapping at the very start of drawing
-    // This ensures the initial click point lands perfectly on a grid line
-    const startPoint = snapToGrid(rawStartPoint);
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log("GRID SNAP (handleMouseDown):");
-      console.log("- Raw clicked point (pixels):", pointer.x, pointer.y);
-      console.log("- Converted to meters:", rawStartPoint);
-      console.log("- Snapped to grid (meters):", startPoint);
-      console.log("- Current zoom level:", zoom);
+    // Clear any existing timeout
+    if (mouseStateTimeoutRef.current) {
+      clearTimeout(mouseStateTimeoutRef.current);
+      mouseStateTimeoutRef.current = null;
     }
     
-    // Get cursor position in screen coordinates for tooltip positioning
-    const absolutePosition = {
-      x: e.e.clientX,
-      y: e.e.clientY
+    const point = e.absolutePointer || e.pointer;
+    if (!point) return;
+    
+    // Convert canvas coordinates to meters
+    const worldPoint = {
+      x: point.x / PIXELS_PER_METER,
+      y: point.y / PIXELS_PER_METER
     };
     
-    setDrawingState({
+    setDrawingState(prev => ({
+      ...prev,
       isDrawing: true,
-      startPoint,
-      currentPoint: startPoint, // Initialize current as same as start
-      cursorPosition: absolutePosition,
-      midPoint: absolutePosition // Initially same as cursor position
-    });
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Drawing started at precisely snapped grid point (meters):", startPoint);
-    }
-  }, [fabricCanvasRef, tool, cleanupTimeouts]);
-
-  // Throttled update function using requestAnimationFrame with improved unit handling
-  const updateDrawingState = useCallback((e: any) => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Get current pointer position in canvas coordinates (pixels)
-    const pointer = fabricCanvasRef.current.getPointer(e.e);
-    const zoom = fabricCanvasRef.current.getZoom();
-    
-    // Convert from pixel coordinates to meter coordinates with extra precision
-    // This accounts for canvas zoom level
-    const rawCurrentPoint = pixelsToMeters({
-      x: pointer.x,
-      y: pointer.y
-    }, zoom);
-    
-    // CRITICAL FIX: Snap the point to grid DURING drawing (not just after)
-    // This gives visual feedback to the user about where walls will land
-    const snappedCurrentPoint = snapToGrid(rawCurrentPoint);
-    
-    // Only log if the position has changed significantly (reduce logging)
-    const shouldLog = process.env.NODE_ENV === 'development' && (
-      !lastLoggedPositionRef.current ||
-      Math.abs(lastLoggedPositionRef.current.x - pointer.x) > 20 ||
-      Math.abs(lastLoggedPositionRef.current.y - pointer.y) > 20
-    );
-    
-    if (shouldLog) {
-      console.log("LIVE SNAP:");
-      console.log("- Mouse position (pixels):", pointer.x, pointer.y);
-      console.log("- Converted to meters:", rawCurrentPoint);
-      console.log("- Snapped to grid (meters):", snappedCurrentPoint);
-      console.log("- Current zoom level:", zoom);
-      
-      // Update last logged position
-      lastLoggedPositionRef.current = { x: pointer.x, y: pointer.y };
-    }
-    
-    // Get cursor position in screen coordinates for tooltip positioning
-    const absolutePosition = {
-      x: e.e.clientX,
-      y: e.e.clientY
-    };
-    
-    setDrawingState(prev => {
-      if (!prev.startPoint) return prev;
-      
-      // Use the grid-snapped points for more accurate midpoint calculation
-      const midPoint = calculateMidpoint(prev.startPoint, snappedCurrentPoint);
-      
-      // Convert midpoint from meter to screen coordinates
-      // This is an approximation as the exact conversion depends on canvas zoom/pan
-      const midPointScreen = {
-        x: absolutePosition.x - ((prev.cursorPosition?.x || 0) - absolutePosition.x) / 2,
-        y: absolutePosition.y - ((prev.cursorPosition?.y || 0) - absolutePosition.y) / 2
-      };
-      
-      const updatedState = {
-        ...prev,
-        currentPoint: snappedCurrentPoint,
-        cursorPosition: absolutePosition,
-        midPoint: midPointScreen
-      };
-      
-      return updatedState;
-    });
-    
-    animationFrameRef.current = null;
-  }, [fabricCanvasRef, calculateMidpoint]);
-
-  // Mouse move handler with throttling
+      startPoint: worldPoint,
+      currentPoint: worldPoint
+    }));
+  }, [tool]);
+  
+  // Handle mouse move event
   const handleMouseMove = useCallback((e: any) => {
-    // Only update if drawing and using relevant tools
-    if (!drawingState.isDrawing || tool !== 'straightLine') return;
+    const point = e.absolutePointer || e.pointer;
+    if (!point) return;
     
-    // Throttle updates using requestAnimationFrame for better performance
-    if (animationFrameRef.current === null) {
-      animationFrameRef.current = requestAnimationFrame(() => updateDrawingState(e));
-    }
-  }, [drawingState.isDrawing, tool, updateDrawingState]);
-
-  // Mouse up handler
+    // Convert canvas coordinates to meters
+    const worldPoint = {
+      x: point.x / PIXELS_PER_METER,
+      y: point.y / PIXELS_PER_METER
+    };
+    
+    // Always update cursor position for tooltips
+    setDrawingState(prev => {
+      // Calculate midpoint if we're drawing and have a start point
+      let midPoint: Point | null = null;
+      if (prev.isDrawing && prev.startPoint) {
+        midPoint = calculateMidpoint(prev.startPoint, worldPoint);
+      }
+      
+      return {
+        ...prev,
+        currentPoint: prev.isDrawing ? worldPoint : null,
+        cursorPosition: worldPoint,
+        midPoint
+      };
+    });
+  }, []);
+  
+  // Handle mouse up event
   const handleMouseUp = useCallback(() => {
-    // Keep the drawing state active for a moment to ensure the tooltip is visible
-    cleanupTimeouts();
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Drawing ended, keeping state active briefly");
-    }
-    
-    // Keep tooltip visible longer (750ms instead of 500ms)
-    timeoutRef.current = window.setTimeout(() => {
-      setDrawingState({
+    // Set a timeout to delay clearing the state
+    // This allows any UI elements like tooltips to display for a moment
+    mouseStateTimeoutRef.current = window.setTimeout(() => {
+      setDrawingState(prev => ({
+        ...prev,
         isDrawing: false,
         startPoint: null,
         currentPoint: null,
-        cursorPosition: null,
         midPoint: null
-      });
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Drawing state reset");
-      }
-      timeoutRef.current = null;
-    }, 750); // Longer delay to keep tooltip visible after drawing ends
-  }, [cleanupTimeouts]);
-
-  // Add handler for line scaling events
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    const handleLineScaling = (e: any) => {
-      if (tool === 'select') {
-        // Extract points for calculating midpoint 
-        const startPoint = e.startPoint;
-        const endPoint = e.endPoint;
-        
-        // Apply grid snapping to the endpoints
-        const snappedStartPoint = snapPointsToGrid([startPoint], true)[0];
-        const snappedEndPoint = snapPointsToGrid([endPoint], true)[0];
-        
-        // Calculate the midpoint in meter coordinates using snapped points
-        const midPointMeter = calculateMidpoint(snappedStartPoint, snappedEndPoint);
-        
-        // Use client coordinates from the event for positioning if available
-        const cursorPosition = e.e ? { 
-          x: e.e.clientX || 0, 
-          y: e.e.clientY || 0 
-        } : { x: 0, y: 0 };
-        
-        // Update state with snapped points
-        setDrawingState({
-          isDrawing: true,
-          startPoint: snappedStartPoint,
-          currentPoint: snappedEndPoint,
-          cursorPosition: cursorPosition,
-          midPoint: cursorPosition // Use cursor position as fallback
-        });
-      }
-    };
-
-    canvas.on('line:scaling', handleLineScaling);
-    
-    return () => {
-      canvas.off('line:scaling', handleLineScaling);
-    };
-  }, [fabricCanvasRef, tool, calculateMidpoint]);
-
-  // Make sure to update drawing state when tool changes
-  useEffect(() => {
-    if (tool !== 'straightLine' && tool !== 'select' && drawingState.isDrawing) {
-      cleanupTimeouts();
-      setDrawingState({
-        isDrawing: false,
-        startPoint: null,
-        currentPoint: null,
-        cursorPosition: null,
-        midPoint: null
-      });
+      }));
+      mouseStateTimeoutRef.current = null;
+    }, 500);
+  }, []);
+  
+  // Cleanup timeouts on unmount
+  const cleanupTimeouts = useCallback(() => {
+    if (mouseStateTimeoutRef.current) {
+      clearTimeout(mouseStateTimeoutRef.current);
+      mouseStateTimeoutRef.current = null;
     }
-  }, [tool, drawingState.isDrawing, cleanupTimeouts]);
-
+  }, []);
+  
   return {
     drawingState,
     handleMouseDown,

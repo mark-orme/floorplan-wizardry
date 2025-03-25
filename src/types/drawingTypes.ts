@@ -34,8 +34,10 @@ export interface FloorPlan {
   timestamp?: number;
   dimensions?: CanvasDimensions;
   objects?: any[];
-  strokes?: Point[][];
+  strokes: Point[][];
   // Add any other properties that might be needed
+  label?: string;
+  paperSize?: string;
 }
 
 /**

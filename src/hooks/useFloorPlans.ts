@@ -9,10 +9,10 @@ import { Canvas as FabricCanvas } from "fabric";
 import { 
   FloorPlan, 
   PaperSize
-} from "@/utils/drawing";
+} from "@/types/drawingTypes";
 
 // Import specialized floor plan hooks
-import { useFloorPlanDrawing } from "./useFloorPlanDrawing";
+import { useFloorPlanDrawing } from "./floor-plan";
 import { useFloorPlanGIA } from "./useFloorPlanGIA";
 import { useFloorPlanManagement } from "./useFloorPlanManagement";
 import { useFloorPlanStorage } from "./useFloorPlanStorage";
