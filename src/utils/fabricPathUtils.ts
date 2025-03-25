@@ -5,6 +5,7 @@
  */
 import { Point } from './drawingTypes';
 import { PIXELS_PER_METER } from './drawing';
+import logger from './logger';
 
 /**
  * Minimum distance between points to consider them separate (in meters)
@@ -81,7 +82,7 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
     }
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error("Error converting fabric path to points:", error);
+      logger.error("Error converting fabric path to points:", error);
     }
   }
   

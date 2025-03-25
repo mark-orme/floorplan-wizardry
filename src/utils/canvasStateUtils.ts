@@ -5,6 +5,7 @@
  */
 import { Canvas as FabricCanvas, Polyline, Path, Object as FabricObject } from "fabric";
 import { isGridObject } from "./historyUtils";
+import logger from "./logger";
 
 /**
  * Apply a state from history to the canvas
@@ -22,7 +23,7 @@ export const applyCanvasState = (
   gridLayerRef: React.MutableRefObject<FabricObject[]>,
   recalculateGIA: () => void
 ): void => {
-  console.log(`Applying state with ${state.length} objects`);
+  logger.info(`Applying state with ${state.length} objects`);
   if (!fabricCanvas) return;
   
   // STEP 1: First remove all existing non-grid objects (complete clearing)
@@ -30,18 +31,18 @@ export const applyCanvasState = (
     !isGridObject(obj, gridLayerRef) && (obj.type === 'polyline' || obj.type === 'path')
   );
   
-  console.log(`Removing ${existingObjects.length} existing objects`);
+  logger.info(`Removing ${existingObjects.length} existing objects`);
   existingObjects.forEach(obj => {
     try {
       fabricCanvas.remove(obj);
     } catch (err) {
-      console.warn("Error removing object:", err);
+      logger.warn("Error removing object:", err);
     }
   });
   
   // STEP 2: Create and add new objects from state (restoration)
   if (state.length > 0) {
-    console.log(`Restoring ${state.length} objects`);
+    logger.info(`Restoring ${state.length} objects`);
     state.forEach(objData => {
       try {
         let obj: FabricObject | null = null;
@@ -62,7 +63,7 @@ export const applyCanvasState = (
           fabricCanvas.add(obj);
         }
       } catch (err) {
-        console.error("Error adding object from history:", err);
+        logger.error("Error adding object from history:", err);
       }
     });
   }

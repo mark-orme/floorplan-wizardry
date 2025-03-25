@@ -8,6 +8,7 @@ import { Canvas, Line, Text, Object as FabricObject } from "fabric";
 import { GridDimensions, MAX_SMALL_GRID_LINES, MAX_LARGE_GRID_LINES } from "./gridConstants";
 import { SMALL_GRID, LARGE_GRID } from "./drawing";
 import { CanvasDimensions } from "@/types/drawingTypes";
+import logger from "./logger";
 
 /**
  * Store grid dimensions in a metadata object for future comparison
@@ -64,11 +65,11 @@ export const createScaleMarkers = (
   canvasWidth: number,
   canvasHeight: number
 ): FabricObject[] => {
-  console.log("Creating scale markers");
+  logger.info("Creating scale markers");
   
   // Safety check for dimensions
   if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
-    console.error("Invalid canvas dimensions for scale markers:", canvasWidth, canvasHeight);
+    logger.error("Invalid canvas dimensions for scale markers:", canvasWidth, canvasHeight);
     return [];
   }
   
@@ -105,10 +106,10 @@ export const createScaleMarkers = (
     // Store grid dimensions in the marker line for future reference
     storeGridDimensions(markerLine, canvasWidth, canvasHeight);
     
-    console.log("Scale markers created successfully");
+    logger.info("Scale markers created successfully");
     return [markerLine, markerText];
   } catch (error) {
-    console.error("Error creating scale markers:", error);
+    logger.error("Error creating scale markers:", error);
     return [];
   }
 };
