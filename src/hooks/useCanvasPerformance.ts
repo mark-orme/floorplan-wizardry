@@ -13,8 +13,13 @@ import { type CanvasLoadTimes } from "@/types/drawingTypes";
 export const useCanvasPerformance = () => {
   const [loadTimes, setLoadTimes] = useState<CanvasLoadTimes>({
     startTime: performance.now(),
-    canvasReady: 0,
-    gridCreated: 0
+    canvasInitStart: 0,
+    canvasInitEnd: 0,
+    gridCreationStart: 0,
+    gridCreationEnd: 0,
+    totalLoadTime: 0,
+    canvasReady: false,
+    gridCreated: false
   });
   
   // Track if grid creation has been marked already
@@ -24,12 +29,15 @@ export const useCanvasPerformance = () => {
    * Mark the canvas as ready and record the time
    */
   const markCanvasReady = () => {
-    if (loadTimes.canvasReady === 0) {
+    if (!loadTimes.canvasReady) {
+      const timeElapsed = performance.now() - loadTimes.startTime;
       setLoadTimes(prev => ({ 
         ...prev, 
-        canvasReady: performance.now() - prev.startTime 
+        canvasReady: true,
+        canvasInitEnd: timeElapsed,
+        totalLoadTime: timeElapsed
       }));
-      console.log(`Canvas initialized in ${performance.now() - loadTimes.startTime}ms`);
+      console.log(`Canvas initialized in ${timeElapsed}ms`);
     }
   };
 
@@ -37,13 +45,16 @@ export const useCanvasPerformance = () => {
    * Mark the grid as created and record the time
    */
   const markGridCreated = () => {
-    if (!gridCreatedRef.current && loadTimes.gridCreated === 0) {
+    if (!gridCreatedRef.current && !loadTimes.gridCreated) {
+      const timeElapsed = performance.now() - loadTimes.startTime;
       setLoadTimes(prev => ({ 
         ...prev, 
-        gridCreated: performance.now() - prev.startTime 
+        gridCreated: true,
+        gridCreationEnd: timeElapsed,
+        totalLoadTime: timeElapsed
       }));
       gridCreatedRef.current = true;
-      console.log(`Grid created in ${performance.now() - loadTimes.startTime}ms`);
+      console.log(`Grid created in ${timeElapsed}ms`);
     }
   };
 
@@ -54,8 +65,13 @@ export const useCanvasPerformance = () => {
     gridCreatedRef.current = false;
     setLoadTimes({
       startTime: performance.now(),
-      canvasReady: 0,
-      gridCreated: 0
+      canvasInitStart: 0,
+      canvasInitEnd: 0,
+      gridCreationStart: 0,
+      gridCreationEnd: 0,
+      totalLoadTime: 0,
+      canvasReady: false,
+      gridCreated: false
     });
   };
 

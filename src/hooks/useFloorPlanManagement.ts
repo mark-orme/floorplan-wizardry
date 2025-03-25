@@ -5,7 +5,7 @@
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { FloorPlan, PaperSize } from "@/utils/drawingTypes";
+import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
 
 interface UseFloorPlanManagementProps {
   floorPlans: FloorPlan[];
@@ -30,7 +30,10 @@ export const useFloorPlanManagement = ({
       { 
         strokes: [], 
         label: `Floor ${prev.length + 1}`,
-        paperSize: "infinite" as PaperSize
+        paperSize: "infinite" as PaperSize,
+        id: `floor-${Date.now()}`,
+        name: `Floor ${prev.length + 1}`,
+        gia: 0
       }
     ]);
     toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);

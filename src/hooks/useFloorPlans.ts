@@ -6,10 +6,9 @@
  */
 import { useCallback, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { 
-  FloorPlan, 
-  PaperSize
-} from "@/types/drawingTypes";
+
+// Import the unified FloorPlan type
+import { FloorPlan } from "@/types/floorPlanTypes";
 
 // Import specialized floor plan hooks
 import { useFloorPlanDrawing } from "./floor-plan";

@@ -8,6 +8,9 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Line } from "fabric";
 
+// Update import to use unified FloorPlan type
+import { FloorPlan } from "@/types/floorPlanTypes";
+
 // Custom hooks
 import { useCanvasState } from "@/hooks/useCanvasState";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";

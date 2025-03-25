@@ -4,6 +4,10 @@
  * @module drawingTypes
  */
 import { openDB } from 'idb';
+import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
+
+// Re-export these types for backward compatibility
+export { FloorPlan, PaperSize };
 
 /**
  * Represents a 2D point in the drawing
@@ -18,25 +22,6 @@ export type Point = { x: number; y: number };
  * @typedef {Array<Point>} Stroke
  */
 export type Stroke = Point[];
-
-/**
- * Valid paper sizes for floor plans
- * @typedef {('A4' | 'A3' | 'infinite')} PaperSize
- */
-export type PaperSize = 'A4' | 'A3' | 'infinite';
-
-/**
- * Represents a floor plan with multiple strokes
- * @typedef {Object} FloorPlan
- * @property {Array<Stroke>} strokes - Collection of strokes that make up the floor plan
- * @property {string} label - Label for the floor plan
- * @property {PaperSize} [paperSize] - Paper size for the floor plan
- */
-export type FloorPlan = { 
-  strokes: Stroke[]; 
-  label: string; 
-  paperSize?: PaperSize;
-};
 
 // Scale factors
 /**
