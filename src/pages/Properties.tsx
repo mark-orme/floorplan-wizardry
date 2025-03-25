@@ -33,7 +33,7 @@ const Properties = () => {
       case PropertyStatus.PENDING_REVIEW:
         return <Badge variant="secondary">In Review</Badge>;
       case PropertyStatus.COMPLETED:
-        return <Badge variant="success">Completed</Badge>;
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }

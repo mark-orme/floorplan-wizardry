@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
@@ -29,11 +28,9 @@ const PropertyDetail = () => {
   }, [id, getProperty]);
 
   useEffect(() => {
-    // Load floor plans from the property when it's loaded
     if (currentProperty?.floor_plans && currentProperty.floor_plans.length > 0) {
       setFloorPlans(currentProperty.floor_plans);
     } else {
-      // Load default floor plans if none exist
       loadData();
     }
   }, [currentProperty, setFloorPlans, loadData]);
@@ -73,7 +70,7 @@ const PropertyDetail = () => {
       case PropertyStatus.PENDING_REVIEW:
         return <Badge variant="secondary">In Review</Badge>;
       case PropertyStatus.COMPLETED:
-        return <Badge variant="success">Completed</Badge>;
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -208,7 +205,7 @@ const PropertyDetail = () => {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="h-[700px] w-full">
-                <Canvas readOnly={!canEdit} />
+                <Canvas data-readonly={!canEdit} />
               </div>
             </CardContent>
             <CardFooter>
