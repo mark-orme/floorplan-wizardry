@@ -48,7 +48,14 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     createGrid
   } = props;
 
-  // Drawing tools
+  // Drawing tools with the recalculateGIA function
+  const recalculateGIA = useCallback(() => {
+    // Placeholder implementation
+    console.log("Recalculating GIA after tool operation");
+    // Actual implementation would go here
+  }, []);
+
+  // Now extract tools including saveCurrentState
   const {
     clearDrawings,
     handleToolChange,
@@ -57,7 +64,7 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     handleZoom,
     clearCanvas,
     saveCanvas,
-    saveCurrentState  // Make sure this is exposed
+    saveCurrentState
   } = useDrawingTools({
     fabricCanvasRef,
     gridLayerRef,
@@ -73,7 +80,7 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     setFloorPlans,
     setGia,
     createGrid,
-    recalculateGIA: () => {} // Will be replaced dynamically
+    recalculateGIA
   });
 
   return {
@@ -84,6 +91,6 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     handleZoom,
     clearCanvas,
     saveCanvas,
-    saveCurrentState  // Make sure to return this
+    saveCurrentState
   };
 };

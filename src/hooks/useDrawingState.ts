@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing drawing state on the canvas
  * @module useDrawingState
@@ -5,7 +6,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingTool } from "./useCanvasState";
-import { DrawingState } from "@/types/drawingTypes";
+import { DrawingState, Point } from "@/types/drawingTypes";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -25,11 +26,13 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
   const timeoutRef = useRef<number | null>(null);
   const throttleRef = useRef<number | null>(null);
   
-  // Initialize drawing state with selectionActive property
+  // Initialize drawing state with all required properties
   const [drawingState, setDrawingState] = useState<DrawingState>({
     isDrawing: false,
     startPoint: null,
     currentPoint: null,
+    cursorPosition: null,
+    midPoint: null,
     selectionActive: false
   });
   
@@ -57,11 +60,13 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e.e);
     
-    // Start drawing, set the starting point
+    // Start drawing, set the starting point with all required properties
     setDrawingState({
       isDrawing: true,
       startPoint: pointer,
       currentPoint: pointer,
+      cursorPosition: pointer,
+      midPoint: null,
       selectionActive: false
     });
   }, [fabricCanvasRef]);
@@ -85,15 +90,23 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
         const canvas = fabricCanvasRef.current;
         const pointer = canvas.getPointer(e.e);
         
-        // Update the current point
+        // Calculate midpoint between start and current points
+        const midPoint = drawingState.startPoint ? {
+          x: (drawingState.startPoint.x + pointer.x) / 2,
+          y: (drawingState.startPoint.y + pointer.y) / 2
+        } : null;
+        
+        // Update the current point with all required properties
         setDrawingState(prevState => ({
           ...prevState,
           currentPoint: pointer,
+          cursorPosition: pointer,
+          midPoint: midPoint,
           selectionActive: false
         }));
       }
     });
-  }, [fabricCanvasRef, drawingState.isDrawing]);
+  }, [fabricCanvasRef, drawingState.isDrawing, drawingState.startPoint]);
   
   /**
    * Handle mouse up event on the canvas
@@ -108,12 +121,13 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
         isDrawing: false,
         startPoint: null,
         currentPoint: null,
+        cursorPosition: null,
+        midPoint: null,
         selectionActive: false
       }));
     }, 50);
   }, [fabricCanvasRef]);
   
-  // Make sure to include selectionActive when updating state
   return {
     drawingState,
     handleMouseDown,

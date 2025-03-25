@@ -1,41 +1,47 @@
-
 /**
- * Utility functions for formatting display values
+ * Utility functions for displaying formatted values
  */
 
 /**
- * Format a GIA (Gross Internal Area) value with 2 decimal places
- * @param gia - The GIA value to format
- * @returns Formatted GIA string with 2 decimal places
+ * Format GIA (Gross Internal Area) value with appropriate units
+ * @param {number} gia - GIA value in square meters
+ * @returns {string} Formatted GIA string (e.g., "125.5" or "0")
  */
 export const formatGIA = (gia: number): string => {
-  return gia.toFixed(2);
+  if (!gia || isNaN(gia)) return "0";
+  
+  // Round to 1 decimal place
+  return gia.toFixed(1).replace(/\.0$/, '');
 };
 
 /**
- * Format a measurement with appropriate units
- * @param value - The measurement value in meters
- * @param precision - Number of decimal places (default: 2)
- * @returns Formatted measurement string with units
+ * Format a measurement value with appropriate units
+ * @param {number} value - Measurement value in meters
+ * @param {boolean} compact - Whether to use compact format
+ * @returns {string} Formatted measurement string (e.g., "2.5m" or "250cm")
  */
-export const formatMeasurement = (value: number, precision: number = 2): string => {
-  return `${value.toFixed(precision)}m`;
-};
-
-/**
- * Format a distance for display in the UI
- * @param distance - The distance in meters
- * @returns Formatted distance string
- */
-export const formatDistance = (distance: number): string => {
-  if (distance < 0.01) {
-    // Show in mm for very small distances
-    return `${Math.round(distance * 1000)}mm`;
-  } else if (distance < 1) {
-    // Show in cm for small distances
-    return `${Math.round(distance * 100)}cm`;
-  } else {
-    // Show in meters with 2 decimal places for larger distances
-    return `${distance.toFixed(2)}m`;
+export const formatMeasurement = (value: number, compact = false): string => {
+  if (!value || isNaN(value)) return "0";
+  
+  // For values less than 1 meter, show in centimeters
+  if (value < 1) {
+    const cm = Math.round(value * 100);
+    return compact ? `${cm}cm` : `${cm} cm`;
   }
+  
+  // Otherwise show in meters with 2 decimal places
+  return compact 
+    ? `${value.toFixed(2).replace(/\.00$/, '')}m` 
+    : `${value.toFixed(2).replace(/\.00$/, '')} m`;
+};
+
+/**
+ * Format a decimal number to a specified precision
+ * @param {number} value - The number to format
+ * @param {number} precision - Number of decimal places
+ * @returns {string} Formatted number as string
+ */
+export const formatDecimal = (value: number, precision = 2): string => {
+  if (!value || isNaN(value)) return "0";
+  return value.toFixed(precision).replace(/\.0+$/, '');
 };
