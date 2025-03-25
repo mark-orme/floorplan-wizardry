@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for drawing tools functionality
  * Orchestrates tool behavior, history, and canvas operations
@@ -71,18 +72,6 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     createGrid
   });
   
-  // History management (undo/redo)
-  const {
-    handleUndo,
-    handleRedo
-  } = useDrawingHistory({
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    clearDrawings,
-    recalculateGIA
-  });
-  
   // Canvas actions (clear, save)
   const {
     clearCanvas,
@@ -98,26 +87,28 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
   });
   
   /**
-   * Handle undo operation
+   * Handle undo operation - uses the canvas's attached undo function
+   * This accesses the improved history management from useCanvasHistory
    */
   const handleUndo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     // Access the undo function from the canvas object
-    // The function is attached in useCanvasDrawing
+    // The function is attached in useCanvasDrawing from useCanvasHistory
     if ((fabricCanvasRef.current as any).handleUndo) {
       (fabricCanvasRef.current as any).handleUndo();
     }
   }, [fabricCanvasRef]);
   
   /**
-   * Handle redo operation
+   * Handle redo operation - uses the canvas's attached redo function
+   * This accesses the improved history management from useCanvasHistory
    */
   const handleRedo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
     // Access the redo function from the canvas object
-    // The function is attached in useCanvasDrawing
+    // The function is attached in useCanvasDrawing from useCanvasHistory
     if ((fabricCanvasRef.current as any).handleRedo) {
       (fabricCanvasRef.current as any).handleRedo();
     }
