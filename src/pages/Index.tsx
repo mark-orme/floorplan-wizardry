@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { usePusher } from "@/hooks/usePusher";
 import { toast } from "sonner";
+import { subscribeSyncChannel } from "@/utils/syncService";
 
 /**
  * Main Index page component
@@ -11,8 +12,9 @@ import { toast } from "sonner";
  */
 const Index = () => {
   const [lastEvent, setLastEvent] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
 
-  // Set up Pusher connection to a test channel
+  // Set up Pusher connection to the main channel
   const { isConnected, triggerEvent } = usePusher({
     channelName: 'floorplan-updates',
     events: {
@@ -22,6 +24,28 @@ const Index = () => {
       }
     }
   });
+
+  // Set up sync channel connection
+  useEffect(() => {
+    const syncChannel = subscribeSyncChannel();
+    
+    const handleSubscriptionSuccess = () => {
+      setSyncStatus('connected');
+      toast.success('Floor plan sync connected');
+    };
+    
+    const handleDisconnection = () => {
+      setSyncStatus('disconnected');
+    };
+    
+    syncChannel.bind('pusher:subscription_succeeded', handleSubscriptionSuccess);
+    syncChannel.bind('pusher:subscription_error', handleDisconnection);
+    
+    return () => {
+      syncChannel.unbind('pusher:subscription_succeeded', handleSubscriptionSuccess);
+      syncChannel.unbind('pusher:subscription_error', handleDisconnection);
+    };
+  }, []);
 
   // Test Pusher connection
   const testPusherConnection = () => {
@@ -48,6 +72,16 @@ const Index = () => {
             <span className={`h-2 w-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {isConnected ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
+          
+          <div className="flex items-center mr-4">
+            <span className={`h-2 w-2 rounded-full mr-2 ${
+              syncStatus === 'connected' ? 'bg-green-500' : 
+              syncStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+            }`}></span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Sync: {syncStatus}
             </span>
           </div>
           
