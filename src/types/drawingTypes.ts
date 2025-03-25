@@ -44,6 +44,102 @@ export interface DrawingState {
  */
 export type Stroke = Point[];
 
+/**
+ * Canvas dimensions type
+ * @typedef {Object} CanvasDimensions
+ * @property {number} width - Canvas width
+ * @property {number} height - Canvas height
+ */
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Debug info state type
+ * @typedef {Object} DebugInfoState
+ * @property {boolean} canvasInitialized - Whether the canvas is initialized
+ * @property {boolean} gridCreated - Whether the grid is created
+ * @property {boolean} dimensionsSet - Whether dimensions are set
+ * @property {boolean} brushInitialized - Whether the brush is initialized
+ * @property {number} gridCreationAttempts - Number of grid creation attempts
+ * @property {number} gridCreationFailures - Number of grid creation failures
+ * @property {number} lastGridCreationTime - Timestamp of last grid creation
+ * @property {Error | null} lastError - Last error encountered
+ * @property {number} lastErrorTime - Timestamp of last error
+ * @property {number} canvasObjects - Number of objects on canvas
+ * @property {number} gridObjects - Number of grid objects
+ * @property {number} canvasWidth - Current canvas width
+ * @property {number} canvasHeight - Current canvas height
+ * @property {number} devicePixelRatio - Device pixel ratio
+ * @property {boolean} gridVisible - Whether grid is visible
+ * @property {Record<string, any>} performanceStats - Performance statistics
+ */
+export interface DebugInfoState {
+  canvasInitialized: boolean;
+  gridCreated: boolean;
+  dimensionsSet: boolean;
+  brushInitialized: boolean;
+  gridCreationAttempts: number;
+  gridCreationFailures: number;
+  lastGridCreationTime: number;
+  lastError: Error | null;
+  lastErrorTime: number;
+  canvasObjects: number;
+  gridObjects: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  devicePixelRatio: number;
+  gridVisible: boolean;
+  performanceStats: Record<string, any>;
+}
+
+/**
+ * Grid creation callback type
+ * @typedef {Function} GridCreationCallback
+ * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @returns {any[]} - Array of created grid objects
+ */
+export type GridCreationCallback = (canvas: any) => any[];
+
+/**
+ * Grid creation state type
+ * @typedef {Object} GridCreationState
+ * @property {boolean} inProgress - Whether grid creation is in progress
+ * @property {number} startTime - Start time of grid creation
+ * @property {number} attempts - Number of attempts
+ * @property {boolean} complete - Whether grid creation is complete
+ */
+export interface GridCreationState {
+  inProgress: boolean;
+  startTime: number;
+  attempts: number;
+  complete: boolean;
+}
+
+/**
+ * Canvas load times type
+ * @typedef {Object} CanvasLoadTimes
+ * @property {number} startTime - Start time of canvas loading
+ * @property {number} canvasInitStart - Start time of canvas initialization
+ * @property {number} canvasInitEnd - End time of canvas initialization
+ * @property {number} gridCreationStart - Start time of grid creation
+ * @property {number} gridCreationEnd - End time of grid creation
+ * @property {number} totalLoadTime - Total load time
+ * @property {boolean} canvasReady - Whether canvas is ready
+ * @property {boolean} gridCreated - Whether grid is created
+ */
+export interface CanvasLoadTimes {
+  startTime: number;
+  canvasInitStart: number;
+  canvasInitEnd: number;
+  gridCreationStart: number;
+  gridCreationEnd: number;
+  totalLoadTime: number;
+  canvasReady: boolean;
+  gridCreated: boolean;
+}
+
 // Scale factors
 /**
  * Size of the small grid in meters
