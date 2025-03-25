@@ -41,6 +41,8 @@ export const useCanvasCreation = ({
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const canvasInitializedRef = useRef<boolean>(false);
   const initializationInProgressRef = useRef<boolean>(false);
+  const retryAttemptsRef = useRef<number>(0);
+  const maxRetryAttempts = 3;
 
   /**
    * Initialize canvas with performance optimizations
@@ -48,6 +50,23 @@ export const useCanvasCreation = ({
    */
   const initializeCanvas = useCallback((): FabricCanvas | null => {
     if (!canvasRef.current) {
+      console.warn("Canvas reference is not available yet");
+      
+      // Retry initialization after a delay if we haven't exceeded max attempts
+      if (retryAttemptsRef.current < maxRetryAttempts) {
+        retryAttemptsRef.current++;
+        console.log(`Retrying canvas initialization (attempt ${retryAttemptsRef.current}/${maxRetryAttempts})`);
+        
+        setTimeout(() => {
+          initializeCanvas();
+        }, 500 * retryAttemptsRef.current); // Exponential backoff
+      } else {
+        console.error("Max retry attempts reached. Could not initialize canvas.");
+        setHasError(true);
+        setErrorMessage("Could not initialize canvas after multiple attempts. Please refresh the page.");
+        toast.error("Failed to initialize canvas. Please refresh the page.");
+      }
+      
       return null;
     }
     
@@ -63,13 +82,15 @@ export const useCanvasCreation = ({
     initializationInProgressRef.current = true;
     
     try {
+      console.log("Creating new Fabric canvas instance");
+      
       // PERFORMANCE OPTIMIZATIONS for Fabric.js initialization
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         backgroundColor: "#FFFFFF",
         isDrawingMode: true,
         selection: false,
-        width: canvasDimensions.width,
-        height: canvasDimensions.height,
+        width: canvasDimensions.width || 800, // Fallback dimensions if not specified
+        height: canvasDimensions.height || 600, // Fallback dimensions if not specified
         renderOnAddRemove: false,
         stateful: false,
         fireRightClick: false,
@@ -83,9 +104,12 @@ export const useCanvasCreation = ({
         svgViewportTransformation: false // OPTIMIZATION: Disable SVG viewport transforms
       });
       
-      console.log("FabricCanvas instance created");
+      console.log("FabricCanvas instance created successfully");
       fabricCanvasRef.current = fabricCanvas;
       canvasInitializedRef.current = true;
+      
+      // Reset retry attempts on success
+      retryAttemptsRef.current = 0;
       
       // OPTIMIZATION: Precompile frequent canvas operations
       fabricCanvas.calcViewportBoundaries();

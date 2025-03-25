@@ -12,6 +12,7 @@ import { DistanceTooltip } from "./DistanceTooltip";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import logger from "@/utils/logger";
+import { toast } from "sonner";
 
 interface CanvasProps {
   readonly?: boolean;
@@ -51,6 +52,7 @@ const CanvasInner = (props: CanvasProps) => {
 
   // Track initialization with refs 
   const isFirstMountRef = useRef<boolean>(true);
+  const initTimeoutRef = useRef<number | null>(null);
   
   // Measurement guide modal state - using custom hook with safe default
   const { 
@@ -59,25 +61,45 @@ const CanvasInner = (props: CanvasProps) => {
     handleCloseMeasurementGuide
   } = useMeasurementGuide(tool); 
   
-  // We now default to select tool on initial load
+  // Ensure canvas initialization happens properly
   useEffect(() => {
-    if (isFirstMountRef.current && !isLoading && debugInfo?.canvasInitialized) {
-      logger.info("Using default tool: select");
-      handleToolChange("select");
-      isFirstMountRef.current = false;
-    }
-  }, [isLoading, debugInfo?.canvasInitialized, handleToolChange]);
-
-  // Load initial data only once across all renders
-  useEffect(() => {
-    // Skip initialization if component is remounting
-    if (!isFirstMountRef.current) {
-      return;
+    // Clear any existing timeout
+    if (initTimeoutRef.current !== null) {
+      window.clearTimeout(initTimeoutRef.current);
     }
     
-    logger.info("Loading initial canvas data");
-    loadData();
-  }, [loadData]);
+    // Initialize after a short delay to ensure DOM is ready
+    initTimeoutRef.current = window.setTimeout(() => {
+      if (isFirstMountRef.current) {
+        logger.info("Loading initial canvas data");
+        loadData()
+          .then(() => {
+            // We default to select tool on initial load
+            logger.info("Using default tool: select");
+            handleToolChange("select");
+            
+            // Show a toast to indicate successful initialization
+            toast.success("Canvas ready!", {
+              id: "canvas-ready",
+              duration: 3000
+            });
+          })
+          .catch(error => {
+            logger.error("Error initializing canvas:", error);
+          })
+          .finally(() => {
+            isFirstMountRef.current = false;
+          });
+      }
+    }, 800); // Slightly longer delay to ensure DOM is fully ready
+    
+    // Cleanup function
+    return () => {
+      if (initTimeoutRef.current !== null) {
+        window.clearTimeout(initTimeoutRef.current);
+      }
+    };
+  }, [loadData, handleToolChange]);
 
   // Determine tooltip visibility - show when drawing or in select mode with an active selection
   const isTooltipVisible = 
