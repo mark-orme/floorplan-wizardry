@@ -42,7 +42,8 @@ const Properties = () => {
         user,
         userRole,
         loading,
-        hasAccess: hasAccess || false
+        // Fix: Call the hasAccess function with an array of roles to get a boolean
+        hasAccess: typeof hasAccess === 'function' ? hasAccess([UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER, UserRole.MANAGER]) : false
       });
     } catch (error) {
       console.error("Error accessing auth context:", error);
