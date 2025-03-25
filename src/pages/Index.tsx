@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { usePusher } from "@/hooks/usePusher";
 import { toast } from "sonner";
 import { subscribeSyncChannel } from "@/utils/syncService";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Main Index page component
@@ -13,6 +15,8 @@ import { subscribeSyncChannel } from "@/utils/syncService";
 const Index = () => {
   const [lastEvent, setLastEvent] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   // Set up Pusher connection to the main channel
   const { isConnected, triggerEvent } = usePusher({
@@ -55,6 +59,14 @@ const Index = () => {
     });
   };
 
+  const handleAuthAction = () => {
+    if (user) {
+      signOut();
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="py-6 px-6 border-b bg-white/50 dark:bg-black/50 backdrop-blur-sm flex justify-between items-center">
@@ -67,7 +79,16 @@ const Index = () => {
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {user && (
+            <div className="mr-4 flex items-center">
+              <span className="h-2 w-2 rounded-full mr-2 bg-blue-500"></span>
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                Cloud: {user.email?.split('@')[0] || 'User'}
+              </span>
+            </div>
+          )}
+        
           <div className="flex items-center mr-4">
             <span className={`h-2 w-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
             <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -87,9 +108,18 @@ const Index = () => {
           
           <Button 
             onClick={testPusherConnection}
+            variant="outline"
             className="mr-2"
           >
             Test Pusher
+          </Button>
+          
+          <Button 
+            onClick={handleAuthAction}
+            variant={user ? "outline" : "default"}
+            className="mr-2"
+          >
+            {user ? 'Sign Out' : 'Sign In'}
           </Button>
           
           <Button 

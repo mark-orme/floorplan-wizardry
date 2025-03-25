@@ -9,10 +9,12 @@ import { Channel } from 'pusher-js';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { loadFloorPlans, saveFloorPlans } from '@/utils/floorPlanStorage';
 import { subscribeSyncChannel, broadcastFloorPlanUpdate, isUpdateFromThisDevice } from '@/utils/syncService';
+import { useSupabaseFloorPlans } from './useSupabaseFloorPlans';
 import logger from '@/utils/logger';
 
 /**
  * Hook for managing floor plans with real-time sync across devices
+ * and Supabase cloud storage
  * @returns Synchronized floor plans state and operations
  */
 export const useSyncedFloorPlans = () => {
@@ -22,6 +24,10 @@ export const useSyncedFloorPlans = () => {
   const lastSyncTimeRef = useRef<number>(0);
   const isSavingRef = useRef<boolean>(false);
   const saveTimeoutRef = useRef<number | null>(null);
+  const supabaseSaveTimeoutRef = useRef<number | null>(null);
+
+  // Initialize Supabase floor plans
+  const { saveToSupabase, loadFromSupabase, isLoggedIn } = useSupabaseFloorPlans();
 
   // Initialize sync channel
   useEffect(() => {
@@ -64,6 +70,11 @@ export const useSyncedFloorPlans = () => {
         isSavingRef.current = false;
       });
 
+      // Also save to Supabase if logged in
+      if (isLoggedIn) {
+        saveToSupabase(data.floorPlans);
+      }
+
       toast.info('Floor plans synchronized from another device');
     };
 
@@ -73,14 +84,38 @@ export const useSyncedFloorPlans = () => {
     return () => {
       syncChannel.unbind(`client-update-floorplan`, handleFloorPlanUpdate);
     };
-  }, [syncChannel]);
+  }, [syncChannel, saveToSupabase, isLoggedIn]);
 
   // Load initial data
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await loadFloorPlans();
+      
+      // First try to load from Supabase if logged in
+      let data: FloorPlan[] | null = null;
+      
+      if (isLoggedIn) {
+        data = await loadFromSupabase();
+        if (data) {
+          logger.info('Loaded floor plans from Supabase');
+          setFloorPlans(data);
+          // Also save to local storage for offline access
+          await saveFloorPlans(data);
+          setIsLoading(false);
+          return data;
+        }
+      }
+      
+      // If not logged in or no Supabase data, fall back to local storage
+      logger.info('Falling back to local storage for floor plans');
+      data = await loadFloorPlans();
       setFloorPlans(data);
+      
+      // If logged in and we loaded from local storage, save to Supabase
+      if (isLoggedIn && data && data.length > 0) {
+        await saveToSupabase(data);
+      }
+      
       return data;
     } catch (error) {
       logger.error('Error loading floor plans:', error);
@@ -89,21 +124,18 @@ export const useSyncedFloorPlans = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  // Load data on mount
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  }, [isLoggedIn, loadFromSupabase]);
 
   // Auto-save with debounce and sync across devices
   const saveFloorPlansWithSync = useCallback((newFloorPlans: FloorPlan[]) => {
     setFloorPlans(newFloorPlans);
 
+    // Clear any existing save timeout
     if (saveTimeoutRef.current !== null) {
       window.clearTimeout(saveTimeoutRef.current);
     }
 
+    // Set a new save timeout (local storage + Pusher)
     saveTimeoutRef.current = window.setTimeout(async () => {
       if (isSavingRef.current) {
         return; // Skip if already saving (from a sync event)
@@ -113,15 +145,36 @@ export const useSyncedFloorPlans = () => {
         await saveFloorPlans(newFloorPlans);
         broadcastFloorPlanUpdate(newFloorPlans);
         lastSyncTimeRef.current = Date.now();
-        logger.info('Floor plans saved and synced');
+        logger.info('Floor plans saved locally and synced via Pusher');
       } catch (error) {
-        logger.error('Error saving floor plans:', error);
-        toast.error('Failed to save floor plans');
+        logger.error('Error saving floor plans locally:', error);
+        toast.error('Failed to save floor plans locally');
       } finally {
         saveTimeoutRef.current = null;
       }
     }, 2000);
-  }, []);
+
+    // Clear any existing Supabase save timeout
+    if (supabaseSaveTimeoutRef.current !== null) {
+      window.clearTimeout(supabaseSaveTimeoutRef.current);
+    }
+
+    // Also save to Supabase with a longer debounce if logged in
+    if (isLoggedIn) {
+      supabaseSaveTimeoutRef.current = window.setTimeout(async () => {
+        try {
+          const success = await saveToSupabase(newFloorPlans);
+          if (success) {
+            logger.info('Floor plans saved to Supabase');
+          }
+        } catch (error) {
+          logger.error('Error saving floor plans to Supabase:', error);
+        } finally {
+          supabaseSaveTimeoutRef.current = null;
+        }
+      }, 5000); // Longer debounce for Supabase to reduce API calls
+    }
+  }, [saveToSupabase, isLoggedIn]);
 
   return {
     floorPlans,
