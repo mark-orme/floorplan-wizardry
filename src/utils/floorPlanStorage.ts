@@ -10,22 +10,15 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     const result = await db.get(STORE_NAME, 'current');
     
     if (result?.data) {
-      return result.data;
+      return ensureRequiredFields(result.data);
     }
     
     // Fallback to localStorage for existing user data migration
     const saved = localStorage.getItem('floorPlans');
     if (saved) {
       const parsedData = JSON.parse(saved);
-      // Validate paperSize values before returning
-      const validData = parsedData.map((plan: any) => ({
-        ...plan,
-        paperSize: validatePaperSize(plan.paperSize),
-        // Ensure required fields from both type systems
-        id: plan.id || `floor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: plan.name || plan.label || 'Unnamed Floor',
-        gia: plan.gia || 0
-      }));
+      // Validate and ensure all required fields are present
+      const validData = ensureRequiredFields(parsedData);
       // Immediately save to IndexedDB for future use
       await saveFloorPlans(validData);
       return validData;
@@ -38,13 +31,7 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
       const saved = localStorage.getItem('floorPlans');
       if (saved) {
         const parsedData = JSON.parse(saved);
-        return parsedData.map((plan: any) => ({
-          ...plan,
-          paperSize: validatePaperSize(plan.paperSize),
-          id: plan.id || `floor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: plan.name || plan.label || 'Unnamed Floor',
-          gia: plan.gia || 0
-        }));
+        return ensureRequiredFields(parsedData);
       }
     } catch (localError) {
       console.error('Failed to load floor plans from localStorage:', localError);
@@ -55,7 +42,7 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
   return [{
     strokes: [], 
     label: 'Ground Floor', 
-    paperSize: 'infinite',
+    paperSize: 'infinite' as PaperSize,
     id: `floor-${Date.now()}`, 
     name: 'Ground Floor',
     gia: 0
@@ -65,15 +52,8 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
 /** Save floor plans to IndexedDB (and localStorage as fallback) */
 export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<void> => {
   try {
-    // Ensure all paperSize values are valid
-    const validatedFloorPlans = floorPlans.map(plan => ({
-      ...plan,
-      paperSize: validatePaperSize(plan.paperSize),
-      // Ensure required fields from both type systems
-      id: plan.id || `floor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: plan.name || plan.label || 'Unnamed Floor',
-      gia: plan.gia || 0
-    }));
+    // Ensure all required fields and valid paperSize values
+    const validatedFloorPlans = ensureRequiredFields(floorPlans);
     
     // Save to IndexedDB
     const db = await getDB();
@@ -86,18 +66,30 @@ export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<void> => 
     
     // Fallback to just localStorage
     try {
-      localStorage.setItem('floorPlans', JSON.stringify(floorPlans.map(plan => ({
-        ...plan,
-        paperSize: validatePaperSize(plan.paperSize),
-        id: plan.id || `floor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: plan.name || plan.label || 'Unnamed Floor',
-        gia: plan.gia || 0
-      }))));
+      localStorage.setItem('floorPlans', JSON.stringify(ensureRequiredFields(floorPlans)));
     } catch (localError) {
       console.error('Failed to save floor plans to localStorage:', localError);
     }
   }
 };
+
+/**
+ * Helper function to ensure all required fields are present in FloorPlan objects
+ * @param {any[]} floorPlans - Array of floor plans to validate
+ * @returns {FloorPlan[]} Validated floor plans with all required fields
+ */
+function ensureRequiredFields(floorPlans: any[]): FloorPlan[] {
+  return floorPlans.map(plan => ({
+    ...plan,
+    paperSize: validatePaperSize(plan.paperSize),
+    // Ensure required fields from both type systems
+    id: plan.id || `floor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    name: plan.name || plan.label || 'Unnamed Floor',
+    gia: typeof plan.gia === 'number' ? plan.gia : 0,
+    label: plan.label || plan.name || 'Unnamed Floor',
+    strokes: Array.isArray(plan.strokes) ? plan.strokes : []
+  }));
+}
 
 /**
  * Validate and correct paperSize values to ensure they match the PaperSize type

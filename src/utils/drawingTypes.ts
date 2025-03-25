@@ -4,10 +4,10 @@
  * @module drawingTypes
  */
 import { openDB } from 'idb';
-import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
+import type { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
 
 // Re-export these types for backward compatibility
-export { FloorPlan, PaperSize };
+export type { FloorPlan, PaperSize };
 
 /**
  * Represents a 2D point in the drawing

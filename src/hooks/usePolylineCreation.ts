@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { PIXELS_PER_METER, type Point } from "@/utils/drawing";
 import { calculateGIA } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
+import { FloorPlan } from "@/types/floorPlanTypes";
 
 interface UsePolylineCreationProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -16,7 +17,7 @@ interface UsePolylineCreationProps {
   historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   tool: DrawingTool;
   currentFloor: number;
-  setFloorPlans: React.Dispatch<React.SetStateAction<any[]>>;
+  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
   lineThickness?: number;
   lineColor?: string;

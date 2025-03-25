@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 
-// Import the unified FloorPlan type
+// Import the unified FloorPlan type from the centralized location
 import { FloorPlan } from "@/types/floorPlanTypes";
 
 // Import specialized floor plan hooks

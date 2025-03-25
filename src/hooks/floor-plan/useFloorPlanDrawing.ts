@@ -6,7 +6,7 @@
  */
 import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { FloorPlan } from "@/types/drawingTypes";
+import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanBatchProcessing } from "./useFloorPlanBatchProcessing";
 import { useFloorPlanChunkProcessing } from "./useFloorPlanChunkProcessing";
 
