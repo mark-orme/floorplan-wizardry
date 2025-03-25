@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
@@ -6,11 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, LogIn } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { insertTestData } from '@/utils/supabaseSetup';
+import { toast } from 'sonner';
 
 const Properties = () => {
   const { properties, isLoading, listProperties } = usePropertyManagement();
@@ -28,11 +28,24 @@ const Properties = () => {
   };
 
   const handleAddProperty = async () => {
+    // If user is not logged in, redirect to auth page
+    if (!user) {
+      toast.info('Please sign in to create a new property');
+      navigate('/auth');
+      return;
+    }
+    
     // Normal behavior - navigate to property form
     navigate('/properties/new');
   };
 
   const handleAddTestData = async () => {
+    if (!user) {
+      toast.info('Please sign in to add test data');
+      navigate('/auth');
+      return;
+    }
+    
     await insertTestData();
     // Refresh the list after adding test data
     listProperties();
@@ -65,12 +78,8 @@ const Properties = () => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const shouldShowCreateButton = userRole === UserRole.PHOTOGRAPHER || 
-                               userRole === UserRole.MANAGER || 
-                               hasAccess([UserRole.PHOTOGRAPHER, UserRole.MANAGER]);
-
   console.log('Current user role:', userRole);
-  console.log('Should show create button:', shouldShowCreateButton);
+  console.log('Current user:', user ? 'Logged in' : 'Not logged in');
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -78,22 +87,31 @@ const Properties = () => {
         <div>
           <h1 className="text-2xl font-bold">Properties</h1>
           <p className="text-muted-foreground">
-            {userRole === UserRole.PHOTOGRAPHER && 'Manage your properties'}
-            {userRole === UserRole.PROCESSING_MANAGER && 'Properties waiting for review'}
-            {userRole === UserRole.MANAGER && 'All properties in the system'}
+            {!user && 'Sign in to manage properties'}
+            {user && userRole === UserRole.PHOTOGRAPHER && 'Manage your properties'}
+            {user && userRole === UserRole.PROCESSING_MANAGER && 'Properties waiting for review'}
+            {user && userRole === UserRole.MANAGER && 'All properties in the system'}
           </p>
         </div>
 
         <div className="flex space-x-3">
-          {(userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
-            <Button onClick={handleAddProperty}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Property
-            </Button>
-          )}
+          {/* Always show the New Property button, but with different styling based on auth state */}
+          <Button onClick={handleAddProperty}>
+            {!user ? (
+              <>
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign in to Create
+              </>
+            ) : (
+              <>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Property
+              </>
+            )}
+          </Button>
           
           {/* Add Test Data button (now contextual based on environment) */}
-          {!properties.length && (userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
+          {!properties.length && (
             <Button onClick={handleAddTestData} variant="outline">
               Add Test Data
             </Button>
@@ -124,14 +142,23 @@ const Properties = () => {
               ? 'No properties match your search' 
               : 'No properties found. Create your first property!'}
           </p>
-          {!searchTerm && (userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
+          {!searchTerm && (
             <div className="mt-4 flex justify-center gap-3">
               <Button 
                 variant="outline" 
                 onClick={handleAddProperty}
               >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Property
+                {!user ? (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign in to Create
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Create Property
+                  </>
+                )}
               </Button>
               <Button 
                 variant="secondary" 
