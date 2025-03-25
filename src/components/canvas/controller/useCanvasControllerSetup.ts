@@ -3,7 +3,7 @@
  * Hook for canvas initialization and setup
  * @module useCanvasControllerSetup
  */
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
 import { DebugInfoState } from "@/types/drawingTypes";
@@ -34,10 +34,6 @@ export const useCanvasControllerSetup = ({
   setHasError,
   setErrorMessage
 }: UseCanvasControllerSetupProps) => {
-  // Track initialization attempts
-  const [initAttempts, setInitAttempts] = useState(0);
-  const maxInitAttempts = 3;
-  
   // Initialize canvas and grid with improved error handling
   const { 
     canvasRef, 
@@ -53,27 +49,12 @@ export const useCanvasControllerSetup = ({
     setErrorMessage
   });
   
-  // Add a check to verify that canvas references are valid with automatic retry
+  // Add a check to verify that canvas references are valid
   useEffect(() => {
-    let timeoutId: number | null = null;
-    
-    const checkCanvasSetup = () => {
+    const timeoutId = window.setTimeout(() => {
       // Verify canvas element exists in the DOM
       if (!canvasRef.current) {
         logger.warn("Canvas element not found in DOM");
-        
-        if (initAttempts < maxInitAttempts) {
-          // Retry after delay
-          timeoutId = window.setTimeout(() => {
-            setInitAttempts(prev => prev + 1);
-            logger.info(`Retrying canvas setup (attempt ${initAttempts + 1}/${maxInitAttempts})...`);
-          }, 1000);
-        } else {
-          // Show error after max attempts
-          setHasError(true);
-          setErrorMessage("Canvas element could not be found. Please refresh the page.");
-          toast.error("Canvas initialization failed. Please refresh the page.");
-        }
       } else {
         logger.info("Canvas element found in DOM");
       }
@@ -81,15 +62,6 @@ export const useCanvasControllerSetup = ({
       // Verify fabric canvas is properly initialized
       if (!fabricCanvasRef.current) {
         logger.warn("Fabric canvas not initialized");
-        
-        if (initAttempts < maxInitAttempts) {
-          // We'll let the retry from canvasRef.current handle this
-        } else if (canvasRef.current) {
-          // If canvas element exists but fabric canvas failed to initialize
-          setHasError(true);
-          setErrorMessage("Canvas failed to initialize. Please refresh the page.");
-          toast.error("Canvas initialization failed. Please refresh the page.");
-        }
       } else {
         logger.info("Canvas setup complete with dimensions:", canvasDimensions);
         setDebugInfo(prev => ({
@@ -97,18 +69,13 @@ export const useCanvasControllerSetup = ({
           dimensionsSet: true
         }));
       }
-    };
-    
-    // Run this check after a short delay to allow time for the DOM to be ready
-    timeoutId = window.setTimeout(checkCanvasSetup, 500);
+    }, 500);
     
     // Cleanup function
     return () => {
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
+      window.clearTimeout(timeoutId);
     };
-  }, [canvasRef, fabricCanvasRef, initAttempts, maxInitAttempts, canvasDimensions, setDebugInfo, setHasError, setErrorMessage]);
+  }, [canvasRef, fabricCanvasRef, canvasDimensions, setDebugInfo]);
 
   return {
     canvasRef,

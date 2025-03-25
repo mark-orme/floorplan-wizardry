@@ -28,7 +28,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
   const canvasReference = canvasRef || localCanvasRef;
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Ensure the canvas has proper dimensions after rendering
+  // Force initialization after render to ensure canvas has dimensions
   useEffect(() => {
     if (canvasReference.current && containerRef.current) {
       // Get container dimensions
@@ -36,16 +36,22 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
       
       // Set canvas dimensions explicitly based on container
       if (containerRect.width > 0 && containerRect.height > 0) {
+        canvasReference.current.width = containerRect.width;
+        canvasReference.current.height = Math.max(containerRect.height, 500);
+        
+        // Also set style dimensions to match
         canvasReference.current.style.width = `${containerRect.width}px`;
         canvasReference.current.style.height = `${Math.max(containerRect.height, 500)}px`;
         
         // Force a reflow to ensure dimensions are applied
         canvasReference.current.getBoundingClientRect();
         
-        console.log("Canvas sized to container dimensions:", 
+        console.log("Canvas sized to dimensions:", 
           containerRect.width, "x", Math.max(containerRect.height, 500));
       } else {
         // Fallback sizes if container dimensions are not available
+        canvasReference.current.width = 800;
+        canvasReference.current.height = 600;
         canvasReference.current.style.width = "800px";
         canvasReference.current.style.height = "600px";
         console.log("Using fallback canvas dimensions: 800x600");
