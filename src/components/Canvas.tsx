@@ -37,9 +37,13 @@ export const Canvas = (props: CanvasProps) => {
   // Initialize controller only once but using useEffect to ensure consistent hook order
   useEffect(() => {
     if (!controllerRef.current) {
-      controllerRef.current = CanvasController();
-      setInitialized(true);
-      setControllerLoaded(true);
+      try {
+        controllerRef.current = CanvasController();
+        setInitialized(true);
+        setControllerLoaded(true);
+      } catch (error) {
+        logger.error("Error initializing canvas controller:", error);
+      }
     }
   }, []);
   

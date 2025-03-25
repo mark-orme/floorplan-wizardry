@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DrawingTool } from "./useCanvasState";
 
 /**
@@ -8,6 +8,14 @@ import { DrawingTool } from "./useCanvasState";
 export const useMeasurementGuide = (tool: DrawingTool) => {
   // Always declare state at the top level
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
+  
+  // Save user preference - defined at the top level
+  const handleCloseMeasurementGuide = useCallback((dontShowAgain: boolean) => {
+    setShowMeasurementGuide(false);
+    if (dontShowAgain) {
+      localStorage.setItem("hideDrawingGuide", "true");
+    }
+  }, []);
   
   // Show the guide automatically when switching to line tools
   useEffect(() => {
@@ -21,14 +29,6 @@ export const useMeasurementGuide = (tool: DrawingTool) => {
     }
   }, [tool]); // Only depend on tool changes
   
-  // Save user preference - defined at the top level
-  const handleCloseMeasurementGuide = (dontShowAgain: boolean) => {
-    setShowMeasurementGuide(false);
-    if (dontShowAgain) {
-      localStorage.setItem("hideDrawingGuide", "true");
-    }
-  };
-
   // Return values that remain consistent between renders
   return {
     showMeasurementGuide,
