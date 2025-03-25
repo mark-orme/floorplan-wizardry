@@ -1,9 +1,8 @@
 
 /**
- * @deprecated Use the specific modules in utils/geometry/ instead
  * Geometry utilities for floor plan drawing
  * Provides coordinate transformation, snapping, and measurement functions
- * Re-exports all geometry utilities for backward compatibility
+ * Re-exports all geometry utilities from the modular structure
  * @module geometry
  */
 
