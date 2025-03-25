@@ -7,7 +7,7 @@
 import { useEffect, useRef } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
-import { CanvasController } from "./CanvasController";
+import { CanvasController } from "./canvas/controller/CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
