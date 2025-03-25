@@ -1,4 +1,3 @@
-
 /**
  * Fabric.js interaction utilities
  * Handles zooming, panning, and other interactive behaviors
@@ -227,9 +226,20 @@ export const enableSelection = (canvas: Canvas) => {
   canvas.getObjects().forEach(obj => {
     // Use type assertion to access the custom objectType property
     const objectType = (obj as any).objectType;
-    if (obj.type !== 'line' && (!objectType || !objectType.includes('grid'))) {
+    
+    // Make non-grid objects selectable
+    if (!objectType || !objectType.includes('grid')) {
       obj.selectable = true;
+      obj.evented = true;
       obj.hoverCursor = 'move';
+      
+      // Special handling for lines and walls
+      if (obj.type === 'line' || obj.type === 'polyline' || objectType === 'line') {
+        obj.hoverCursor = 'pointer';
+        // Increase hit area to make selection easier
+        obj.perPixelTargetFind = false;
+        (obj as any).targetFindTolerance = 10;
+      }
     }
   });
   
@@ -250,6 +260,7 @@ export const disableSelection = (canvas: Canvas) => {
   // Make all objects non-selectable
   canvas.getObjects().forEach(obj => {
     obj.selectable = false;
+    obj.evented = (obj as any).objectType?.includes('grid') ? false : true; // Keep grid non-interactive
     obj.hoverCursor = 'default';
   });
   

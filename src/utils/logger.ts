@@ -17,6 +17,11 @@ const LOG_LEVEL: Record<string, number> = {
 // Get current log level from environment or default to 'info' in development and 'error' in production
 const CURRENT_LOG_LEVEL = process.env.NODE_ENV === 'production' ? LOG_LEVEL.error : LOG_LEVEL.info;
 
+// Helper to format a timestamp
+const formattedTimestamp = (): string => {
+  return new Date().toISOString();
+};
+
 /**
  * Logger utility with consistent formatting and level-based filtering
  */
@@ -28,7 +33,7 @@ const logger = {
    */
   info(message: string, ...args: any[]): void {
     if (LOG_LEVEL.info >= CURRENT_LOG_LEVEL) {
-      console.info(`[INFO] ${message}`, ...args);
+      console.info(`${formattedTimestamp()} info: ${message}`, ...args);
     }
   },
 
@@ -39,7 +44,7 @@ const logger = {
    */
   warn(message: string, ...args: any[]): void {
     if (LOG_LEVEL.warn >= CURRENT_LOG_LEVEL) {
-      console.warn(`[WARN] ${message}`, ...args);
+      console.warn(`${formattedTimestamp()} warn: ${message}`, ...args);
     }
   },
 
@@ -50,7 +55,7 @@ const logger = {
    */
   error(message: string, ...args: any[]): void {
     if (LOG_LEVEL.error >= CURRENT_LOG_LEVEL) {
-      console.error(`[ERROR] ${message}`, ...args);
+      console.error(`${formattedTimestamp()} error: ${message}`, ...args);
     }
   },
 
@@ -61,7 +66,7 @@ const logger = {
    */
   debug(message: string, ...args: any[]): void {
     if (LOG_LEVEL.debug >= CURRENT_LOG_LEVEL) {
-      console.debug(`[DEBUG] ${message}`, ...args);
+      console.debug(`${formattedTimestamp()} debug: ${message}`, ...args);
     }
   }
 };
