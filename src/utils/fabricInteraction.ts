@@ -1,6 +1,7 @@
+
 /**
  * Fabric.js interaction utilities
- * Handles zooming, panning, and other interactive behaviors
+ * Handles zooming, panning, and other interactive behaviors for canvas elements
  * @module fabricInteraction
  */
 import { Canvas, Point as FabricPoint, Object as FabricObject } from "fabric";
@@ -10,6 +11,7 @@ import { forceGridAlignment } from "./geometry";
 
 /**
  * Add pinch-to-zoom support for touch devices
+ * Enables multi-touch gestures for zooming the canvas in and out
  * @param {Canvas} canvas - The fabric canvas instance
  */
 export const addPinchToZoom = (canvas: Canvas) => {
@@ -21,9 +23,14 @@ export const addPinchToZoom = (canvas: Canvas) => {
   let startDistance: number = 0;
   let initialZoom: number = 0;
   
-  // Using 'as any' to bypass strict typing for custom events
-  // These events are declared in our fabric.d.ts file
-  (canvas as any).on('touch:gesture', (event: any) => {
+  // Cast to access custom touch events
+  interface ExtendedCanvas extends Canvas {
+    on(eventName: string, handler: (event: any) => void): this;
+  }
+  
+  const extendedCanvas = canvas as ExtendedCanvas;
+  
+  extendedCanvas.on('touch:gesture', (event: any) => {
     if (event.e.touches && event.e.touches.length === 2) {
       // Disable object selection during pinch zoom
       canvas.selection = false;
@@ -57,8 +64,7 @@ export const addPinchToZoom = (canvas: Canvas) => {
     }
   });
   
-  // Using 'as any' to bypass strict typing for custom events
-  (canvas as any).on('touch:gesture:end', () => {
+  extendedCanvas.on('touch:gesture:end', () => {
     canvas.selection = true; // Re-enable selection
   });
 };
@@ -170,6 +176,7 @@ export const snapToAngle = (
 
 /**
  * Enable panning on the canvas
+ * Allows dragging the canvas view with the right mouse button
  * @param {Canvas} canvas - The fabric canvas instance
  */
 export const enablePanning = (canvas: Canvas) => {
@@ -213,6 +220,7 @@ export const enablePanning = (canvas: Canvas) => {
 
 /**
  * Enable selection of objects on the canvas
+ * Makes objects selectable and interactive
  * @param {Canvas} canvas - The fabric canvas instance
  */
 export const enableSelection = (canvas: Canvas) => {
@@ -224,8 +232,14 @@ export const enableSelection = (canvas: Canvas) => {
   
   // Make all objects selectable
   canvas.getObjects().forEach(obj => {
-    // Use type assertion to access the custom objectType property
-    const objectType = (obj as any).objectType;
+    // Access the custom objectType property
+    const fabricObj = obj as FabricObject & { 
+      objectType?: string;
+      targetFindTolerance?: number;
+      perPixelTargetFind?: boolean;
+    };
+    
+    const objectType = fabricObj.objectType;
     
     // Make non-grid objects selectable
     if (!objectType || !objectType.includes('grid')) {
@@ -237,8 +251,8 @@ export const enableSelection = (canvas: Canvas) => {
       if (obj.type === 'line' || obj.type === 'polyline' || objectType === 'line') {
         obj.hoverCursor = 'pointer';
         // Increase hit area to make selection easier
-        obj.perPixelTargetFind = false;
-        (obj as any).targetFindTolerance = 10;
+        fabricObj.perPixelTargetFind = false;
+        fabricObj.targetFindTolerance = 10;
       }
     }
   });
@@ -248,6 +262,7 @@ export const enableSelection = (canvas: Canvas) => {
 
 /**
  * Disable selection of objects on the canvas
+ * Makes objects non-selectable for drawing operations
  * @param {Canvas} canvas - The fabric canvas instance
  */
 export const disableSelection = (canvas: Canvas) => {
@@ -259,8 +274,10 @@ export const disableSelection = (canvas: Canvas) => {
   
   // Make all objects non-selectable
   canvas.getObjects().forEach(obj => {
+    const fabricObj = obj as FabricObject & { objectType?: string };
+    
     obj.selectable = false;
-    obj.evented = (obj as any).objectType?.includes('grid') ? false : true; // Keep grid non-interactive
+    obj.evented = fabricObj.objectType?.includes('grid') ? false : true; // Keep grid non-interactive
     obj.hoverCursor = 'default';
   });
   

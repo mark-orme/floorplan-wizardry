@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for handling canvas interaction options
+ * Provides selection, deletion, and interaction modes for canvas objects
  * @module useCanvasInteraction
  */
 import { useCallback, useEffect } from "react";
@@ -10,20 +11,42 @@ import { DrawingTool } from "./useCanvasState";
 import { enableSelection, disableSelection } from "@/utils/fabricInteraction";
 import logger from "@/utils/logger";
 
+/**
+ * Props for the useCanvasInteraction hook
+ * @interface UseCanvasInteractionProps
+ */
 interface UseCanvasInteractionProps {
+  /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current active drawing tool */
   tool: DrawingTool;
+  /** Function to save current canvas state before making changes */
   saveCurrentState: () => void;
 }
 
 /**
- * Hook that provides canvas interaction options
+ * Return type for the useCanvasInteraction hook
+ * @interface UseCanvasInteractionResult
+ */
+interface UseCanvasInteractionResult {
+  /** Deletes all currently selected objects on the canvas */
+  deleteSelectedObjects: () => void;
+  /** Enables point-based selection mode (vs lasso selection) */
+  enablePointSelection: () => void;
+  /** Sets up appropriate selection mode based on current tool */
+  setupSelectionMode: () => void;
+}
+
+/**
+ * Hook that provides canvas interaction options and object selection capabilities
+ * @param {UseCanvasInteractionProps} props - Hook properties
+ * @returns {UseCanvasInteractionResult} Canvas interaction functions
  */
 export const useCanvasInteraction = ({
   fabricCanvasRef,
   tool,
   saveCurrentState
-}: UseCanvasInteractionProps) => {
+}: UseCanvasInteractionProps): UseCanvasInteractionResult => {
   
   /**
    * Delete the currently selected object(s) on the canvas
@@ -45,7 +68,8 @@ export const useCanvasInteraction = ({
     // Remove all selected objects
     activeObjects.forEach(obj => {
       // Skip grid elements
-      if ((obj as any).objectType && (obj as any).objectType.includes('grid')) {
+      const objectType = (obj as FabricObject & { objectType?: string }).objectType;
+      if (objectType && objectType.includes('grid')) {
         return;
       }
       canvas.remove(obj);
@@ -60,6 +84,7 @@ export const useCanvasInteraction = ({
   
   /**
    * Enable point-based selection mode (instead of lasso)
+   * Makes objects individually selectable with better hit detection
    */
   const enablePointSelection = useCallback(() => {
     if (!fabricCanvasRef.current) return;
@@ -74,21 +99,28 @@ export const useCanvasInteraction = ({
     // Make objects selectable
     canvas.getObjects().forEach(obj => {
       // Skip grid elements
-      const objectType = (obj as any).objectType;
+      const objectType = (obj as FabricObject & { objectType?: string }).objectType;
       if (!objectType || !objectType.includes('grid')) {
         obj.selectable = true;
         obj.hoverCursor = 'pointer';
         
         // Ensure lines and polylines are selectable
-        if (obj.type === 'polyline' || obj.type === 'line' || (obj as any).objectType === 'line') {
+        const isLineType = obj.type === 'polyline' || obj.type === 'line' || objectType === 'line';
+        if (isLineType) {
           obj.selectable = true;
           obj.evented = true;
           obj.hoverCursor = 'pointer';
           
           // Increase hit box for easier selection
-          obj.strokeWidth = Math.max((obj as any).strokeWidth || 2, 2);
-          obj.perPixelTargetFind = false;
-          (obj as any).targetFindTolerance = 10;
+          const fabricObj = obj as FabricObject & { 
+            strokeWidth?: number;
+            perPixelTargetFind?: boolean;
+            targetFindTolerance?: number;
+          };
+          
+          fabricObj.strokeWidth = Math.max(fabricObj.strokeWidth || 2, 2);
+          fabricObj.perPixelTargetFind = false;
+          fabricObj.targetFindTolerance = 10;
         }
       }
     });
@@ -99,6 +131,7 @@ export const useCanvasInteraction = ({
   
   /**
    * Setup selection mode based on current tool
+   * Enables or disables object selection based on the active tool
    */
   const setupSelectionMode = useCallback(() => {
     if (!fabricCanvasRef.current) return;
