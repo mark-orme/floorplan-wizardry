@@ -27,9 +27,13 @@ import { DrawingTool } from "./useCanvasState";
 /**
  * Hook for processing points during drawing operations
  * @param tool - The current drawing tool
+ * @param lineColor - The current line color
  * @returns Point processing utilities
  */
-export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks => {
+export const usePointProcessing = (
+  tool: DrawingTool,
+  lineColor: string = "#000000"
+): PathProcessingCallbacks => {
   
   /**
    * Process and optimize points based on the current drawing tool
@@ -146,10 +150,18 @@ export const usePointProcessing = (tool: DrawingTool): PathProcessingCallbacks =
     return distanceX < distanceThreshold && distanceY < distanceThreshold;
   }, []);
   
+  /**
+   * Gets the current line color for drawing
+   */
+  const getCurrentLineColor = useCallback((): string => {
+    return lineColor;
+  }, [lineColor]);
+  
   return { 
     processPoints, 
     convertToPixelPoints, 
     convertToMeterPoints,
-    isShapeClosed 
+    isShapeClosed,
+    getCurrentLineColor
   };
 };

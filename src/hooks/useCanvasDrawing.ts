@@ -192,6 +192,11 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
               ["L", endPixels.x, endPixels.y]
             ];
             
+            // CRITICAL FIX: Preserve the original color from the drawing brush
+            if (lineColor) {
+              e.path.set('stroke', lineColor);
+            }
+            
             fabricCanvas.requestRenderAll();
           }
         } catch (err) {

@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing Fabric.js paths into polylines
  * @module usePathProcessing
@@ -40,8 +41,8 @@ export const usePathProcessing = ({
   lineColor = "#000000"
 }: UsePathProcessingProps) => {
   
-  // Use the point processing hook
-  const { processPoints, convertToPixelPoints, isShapeClosed } = usePointProcessing(tool);
+  // Use the point processing hook, passing the line color
+  const { processPoints, convertToPixelPoints, isShapeClosed } = usePointProcessing(tool, lineColor);
   
   // Use the polyline creation hook
   const { createPolyline } = usePolylineCreation({
@@ -93,6 +94,9 @@ export const usePathProcessing = ({
         return;
       }
       
+      // CRITICAL FIX: Get the path's current color before processing
+      const pathColor = path.stroke || lineColor;
+      
       // Process the points according to the current tool
       const finalPoints = processPoints(points);
       
@@ -108,6 +112,7 @@ export const usePathProcessing = ({
       fabricCanvas.remove(path);
       
       // Create the polyline from the processed points, passing the isEnclosed flag
+      // Use the original path's color for consistency
       const success = createPolyline(finalPoints, pixelPoints, isEnclosed);
       
       if (success) {
@@ -128,7 +133,7 @@ export const usePathProcessing = ({
         }
       }
     }
-  }, [fabricCanvasRef, processPoints, convertToPixelPoints, isShapeClosed, createPolyline]);
+  }, [fabricCanvasRef, processPoints, convertToPixelPoints, isShapeClosed, createPolyline, lineColor]);
   
   return { processCreatedPath };
 };

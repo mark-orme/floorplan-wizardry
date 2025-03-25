@@ -46,11 +46,14 @@ export const usePolylineCreation = ({
     const fabricCanvas = fabricCanvasRef.current;
     
     try {
+      // CRITICAL FIX: Ensure the color is always preserved
+      const effectiveLineColor = lineColor || "#000000";
+      
       // Create a polyline from the processed points
       const polylineOptions = {
-        stroke: lineColor,
+        stroke: effectiveLineColor, // Use the current line color
         strokeWidth: lineThickness,
-        fill: isEnclosed ? `${lineColor}20` : 'transparent', // Semi-transparent fill for enclosed shapes
+        fill: isEnclosed ? `${effectiveLineColor}20` : 'transparent', // Semi-transparent fill for enclosed shapes
         objectType: isEnclosed ? 'room' : 'line',
         objectCaching: true,
         perPixelTargetFind: false,
