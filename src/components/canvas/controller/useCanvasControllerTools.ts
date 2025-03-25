@@ -56,7 +56,8 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     handleRedo,
     handleZoom,
     clearCanvas,
-    saveCanvas
+    saveCanvas,
+    saveCurrentState  // Make sure this is exposed
   } = useDrawingTools({
     fabricCanvasRef,
     gridLayerRef,
@@ -82,6 +83,7 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     handleRedo,
     handleZoom,
     clearCanvas,
-    saveCanvas
+    saveCanvas,
+    saveCurrentState  // Make sure to return this
   };
 };

@@ -19,6 +19,7 @@ interface UseCanvasControllerDrawingStateProps {
   setGia: React.Dispatch<React.SetStateAction<number>>;
   lineThickness: number;
   lineColor: string;
+  deleteSelectedObjects?: () => void;
 }
 
 /**
@@ -33,7 +34,8 @@ export const useCanvasControllerDrawingState = ({
   setFloorPlans,
   setGia,
   lineThickness,
-  lineColor
+  lineColor,
+  deleteSelectedObjects
 }: UseCanvasControllerDrawingStateProps) => {
   // Use the drawing hook to get drawing state
   const { drawingState } = useCanvasDrawing({
@@ -45,7 +47,8 @@ export const useCanvasControllerDrawingState = ({
     setFloorPlans,
     setGia,
     lineThickness,
-    lineColor
+    lineColor,
+    deleteSelectedObjects
   });
   
   // Enhanced drawing state visualization for select tool

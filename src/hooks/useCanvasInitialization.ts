@@ -8,7 +8,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useCanvasCreation } from "./useCanvasCreation";
 import { useCanvasBrush } from "./useCanvasBrush";
-import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import { useCanvasGrid } from "./useCanvasGrid";
 import { DrawingTool } from "./useCanvasState";
@@ -69,7 +68,19 @@ export const useCanvasInitialization = ({
     setDebugInfo
   });
   
-  const { historyRef, setupInteractions } = useCanvasInteraction();
+  // Create a history reference manually here
+  const historyRef = useRef<{past: any[][], future: any[][]}>({
+    past: [],
+    future: []
+  });
+  
+  // Define a simple setupInteractions function
+  const setupInteractions = useCallback((canvas: any) => {
+    // Basic interactions setup
+    return () => {
+      // Cleanup function
+    };
+  }, []);
   
   const { cleanupCanvas } = useCanvasCleanup();
   

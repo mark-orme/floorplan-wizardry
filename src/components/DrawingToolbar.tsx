@@ -1,14 +1,16 @@
-
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { LineSettings } from "./LineSettings";
 import { 
-  MousePointerSquareDashed, Pencil, StraightenIcon, Grid2X2, 
+  MousePointerSquareDashed, Pencil, Grid2X2, 
   Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser
 } from "lucide-react";
-import { formatGIA } from "@/utils/display";
+
+const formatGIA = (gia: number): string => {
+  return gia.toFixed(2);
+};
 
 interface DrawingToolbarProps {
   tool: DrawingTool;
@@ -107,7 +109,7 @@ export const DrawingToolbar = ({
                 size="sm"
                 onClick={() => onToolChange("straightLine")}
               >
-                <StraightenIcon className="h-4 w-4" />
+                <div className="h-4 w-4 border-b-2 border-current transform rotate-45" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -205,7 +207,6 @@ export const DrawingToolbar = ({
           </Tooltip>
         </TooltipProvider>
         
-        {/* Action Buttons */}
         <Separator orientation="vertical" className="h-8" />
         
         <TooltipProvider>
@@ -264,10 +265,10 @@ export const DrawingToolbar = ({
       
       <div className="flex flex-wrap items-center space-x-2">
         <LineSettings 
-          lineThickness={lineThickness}
-          lineColor={lineColor}
-          onLineThicknessChange={onLineThicknessChange}
-          onLineColorChange={onLineColorChange}
+          thickness={lineThickness}
+          color={lineColor}
+          onThicknessChange={onLineThicknessChange}
+          onColorChange={onLineColorChange}
         />
         
         <div className="border px-2 py-1 rounded text-xs bg-gray-50 dark:bg-gray-900 flex items-center gap-1">

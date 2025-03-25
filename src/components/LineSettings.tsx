@@ -1,101 +1,69 @@
 
-import React from "react";
-import { Slider } from "./ui/slider";
 import { Label } from "./ui/label";
-import { Palette } from "lucide-react";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import { Slider } from "./ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Button } from "./ui/button";
+import { Paintbrush } from "lucide-react";
 
-interface LineSettingsProps {
+export interface LineSettingsProps {
   thickness: number;
   color: string;
-  onThicknessChange: (value: number) => void;
+  onThicknessChange: (thickness: number) => void;
   onColorChange: (color: string) => void;
 }
-
-const COLOR_OPTIONS = [
-  { name: "Black", value: "#000000" },
-  { name: "Red", value: "#FF0000" },
-  { name: "Blue", value: "#0000FF" },
-  { name: "Green", value: "#008000" },
-  { name: "Orange", value: "#FFA500" },
-  { name: "Purple", value: "#800080" },
-  { name: "Brown", value: "#A52A2A" },
-  { name: "Gray", value: "#808080" },
-];
 
 export const LineSettings = ({
   thickness,
   color,
   onThicknessChange,
-  onColorChange,
+  onColorChange
 }: LineSettingsProps) => {
-  const handleThicknessChange = (value: number[]) => {
-    onThicknessChange(value[0]);
-  };
+  const colors = [
+    "#000000", // Black
+    "#FF0000", // Red
+    "#0000FF", // Blue
+    "#008000", // Green
+    "#800080", // Purple
+    "#FFA500", // Orange
+    "#A52A2A", // Brown
+  ];
 
   return (
-    <div className="flex flex-col gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-      <div>
-        <Label htmlFor="line-thickness" className="text-sm font-medium mb-2 block">
-          Line Thickness: {thickness}px
-        </Label>
+    <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2">
+        <Label htmlFor="thickness" className="text-xs">Line width:</Label>
         <Slider
-          id="line-thickness"
+          id="thickness"
           min={1}
-          max={10}
+          max={5}
           step={1}
           value={[thickness]}
-          onValueChange={handleThicknessChange}
-          className="w-full"
+          onValueChange={(values) => onThicknessChange(values[0])}
+          className="w-24"
         />
+        <span className="text-xs font-mono">{thickness}px</span>
       </div>
-      
-      <div>
-        <Label className="text-sm font-medium mb-2 block">Line Color</Label>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {COLOR_OPTIONS.map((colorOption) => (
-            <HoverCard key={colorOption.value}>
-              <HoverCardTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onColorChange(colorOption.value)}
-                  className={`w-6 h-6 rounded-full ${
-                    color === colorOption.value ? "ring-2 ring-offset-2 ring-primary" : ""
-                  }`}
-                  style={{ backgroundColor: colorOption.value }}
-                  aria-label={`${colorOption.name} color`}
-                />
-              </HoverCardTrigger>
-              <HoverCardContent className="p-2 text-sm shadow-md">
-                {colorOption.name}
-              </HoverCardContent>
-            </HoverCard>
-          ))}
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <button
-                type="button"
-                className="w-6 h-6 rounded-full flex items-center justify-center bg-white border border-gray-300"
-                aria-label="Custom color"
-              >
-                <Palette className="w-4 h-4" />
-              </button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <label>
-                Custom Color
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => onColorChange(e.target.value)}
-                  className="block mt-1 w-full cursor-pointer"
-                />
-              </label>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
-      </div>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="w-8 h-8 p-0">
+            <span className="sr-only">Pick a color</span>
+            <Paintbrush className="h-4 w-4" style={{ color }} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2">
+          <div className="flex gap-1">
+            {colors.map((c) => (
+              <div
+                key={c}
+                className="w-6 h-6 rounded-full cursor-pointer border border-gray-200 hover:scale-110 transition-transform"
+                style={{ backgroundColor: c }}
+                onClick={() => onColorChange(c)}
+              />
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };

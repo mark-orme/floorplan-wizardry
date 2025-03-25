@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -29,6 +28,7 @@ interface UseCanvasDrawingProps {
   setGia: React.Dispatch<React.SetStateAction<number>>;
   lineThickness?: number;
   lineColor?: string;
+  deleteSelectedObjects?: () => void;
 }
 
 interface UseCanvasDrawingResult {
@@ -50,7 +50,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     setFloorPlans,
     setGia,
     lineThickness = 2,
-    lineColor = "#000000"
+    lineColor = "#000000",
+    deleteSelectedObjects = () => {}
   } = props;
   
   // Track current zoom level for proper tooltip positioning
@@ -104,7 +105,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     handleMouseMove,
     handleMouseUp,
     processCreatedPath,
-    cleanupTimeouts
+    cleanupTimeouts,
+    deleteSelectedObjects
   });
   
   // Update zoom level whenever canvas changes - with stabilized dependencies

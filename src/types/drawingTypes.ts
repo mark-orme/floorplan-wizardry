@@ -69,6 +69,7 @@ export interface DrawingState {
   cursorPosition: Point | null;
   midPoint: Point | null;
   currentZoom?: number;
+  selectionActive: boolean; // Added this missing property
 }
 
 /**

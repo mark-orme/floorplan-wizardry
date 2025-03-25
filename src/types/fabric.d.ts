@@ -26,6 +26,10 @@ declare module 'fabric' {
     'custom:zoom-changed': {
       zoom: number;
     };
+    'measurement:show': {
+      target: FabricObject;
+    };
+    'measurement:hide': {};
   }
   
   // Add missing browserTracingIntegration and replayIntegration for Sentry

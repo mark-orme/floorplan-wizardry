@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas event registration and cleanup
  * @module useCanvasEventHandlers

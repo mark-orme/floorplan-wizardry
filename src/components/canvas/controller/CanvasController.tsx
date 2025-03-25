@@ -189,7 +189,8 @@ const useCanvasControllerHooks = () => {
     setFloorPlans,
     setGia,
     lineThickness,
-    lineColor
+    lineColor,
+    deleteSelectedObjects
   });
   
   // 10. Initialize floor plan loader
