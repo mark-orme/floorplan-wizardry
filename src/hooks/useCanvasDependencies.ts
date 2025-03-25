@@ -3,7 +3,7 @@
  * Custom hook for integrating canvas dependency hooks
  * @module useCanvasDependencies
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useCanvasGrid } from "./useCanvasGrid";
 import { useGridManagement } from "./useGridManagement";
 import { useStylusDetection } from "./useStylusDetection";
@@ -45,9 +45,12 @@ export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
     zoomLevel
   } = props;
   
+  // Initialize gridLayerRef first before passing it to other hooks
+  const gridLayerRef = useRef<any[]>([]);
+  
   // Create grid management
   const createGrid = useCanvasGrid({
-    gridLayerRef: {} as React.MutableRefObject<any[]>, // This will be replaced with the actual ref
+    gridLayerRef,
     canvasDimensions,
     setDebugInfo,
     setHasError,
@@ -55,7 +58,7 @@ export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
   });
   
   // Initialize grid management
-  const { gridLayerRef } = useGridManagement({
+  const { gridLayerRef: managedGridLayerRef } = useGridManagement({
     fabricCanvasRef,
     canvasDimensions,
     debugInfo,
@@ -74,10 +77,12 @@ export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
     zoomLevel
   });
   
-  // Update createGrid to use the actual gridLayerRef
+  // Sync the gridLayerRef with managedGridLayerRef
   useEffect(() => {
-    (createGrid as any).gridLayerRef = gridLayerRef;
-  }, [createGrid, gridLayerRef]);
+    if (managedGridLayerRef.current && managedGridLayerRef.current.length > 0) {
+      gridLayerRef.current = managedGridLayerRef.current;
+    }
+  }, [managedGridLayerRef.current]);
   
   return {
     gridLayerRef,

@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for grid management
  * Handles grid creation, caching, and lifecycle management
@@ -80,7 +81,7 @@ export const useCanvasGrid = ({
     if (process.env.NODE_ENV === 'development') {
       console.log("createGridCallback invoked with FORCED CREATION", {
         canvasDimensions,
-        gridExists: gridLayerRef.current.length > 0,
+        gridExists: gridLayerRef?.current?.length > 0,
         initialized: gridManager.initialized
       });
     }
@@ -89,6 +90,18 @@ export const useCanvasGrid = ({
     if (!canvas) {
       if (process.env.NODE_ENV === 'development') {
         console.error("Canvas is null in createGridCallback");
+      }
+      return [];
+    }
+    
+    // Safety check for gridLayerRef
+    if (!gridLayerRef || !gridLayerRef.current) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error("gridLayerRef is null or undefined in createGridCallback");
+      }
+      // Initialize if missing
+      if (gridLayerRef && !gridLayerRef.current) {
+        gridLayerRef.current = [];
       }
       return [];
     }
@@ -260,7 +273,12 @@ export const useCanvasGrid = ({
       canvas.requestRenderAll();
       
       // Update the grid layer ref
-      gridLayerRef.current = emergencyGrid;
+      if (gridLayerRef && !gridLayerRef.current) {
+        gridLayerRef.current = [];
+      }
+      if (gridLayerRef && gridLayerRef.current) {
+        gridLayerRef.current = emergencyGrid;
+      }
       
       return emergencyGrid;
     } catch (error) {

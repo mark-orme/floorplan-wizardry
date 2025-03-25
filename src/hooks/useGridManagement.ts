@@ -81,6 +81,10 @@ export const useGridManagement = ({
       
       // Try immediate grid creation first
       try {
+        if (!gridLayerRef.current) {
+          gridLayerRef.current = [];
+        }
+        
         const grid = createGrid(fabricCanvasRef.current);
         
         if (grid && grid.length > 0) {
@@ -103,6 +107,10 @@ export const useGridManagement = ({
         
         try {
           resetGridProgress();
+          if (!gridLayerRef.current) {
+            gridLayerRef.current = [];
+          }
+          
           const grid = createGrid(fabricCanvasRef.current);
           
           if (grid && grid.length > 0) {
@@ -144,6 +152,10 @@ export const useGridManagement = ({
               // Create very basic grid lines directly
               const width = fabricCanvasRef.current.width || 800;
               const height = fabricCanvasRef.current.height || 600;
+              
+              if (!gridLayerRef.current) {
+                gridLayerRef.current = [];
+              }
               
               for (let x = 0; x <= width; x += 100) {
                 const line = new Line([x, 0, x, height], {
