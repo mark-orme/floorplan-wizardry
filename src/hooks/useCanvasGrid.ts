@@ -7,7 +7,7 @@
 import { useCallback, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
-import { resetGridProgress } from "@/utils/gridManager";
+import { resetGridProgress, gridManager } from "@/utils/gridManager";
 import { 
   CanvasDimensions, 
   DebugInfoState, 
@@ -23,6 +23,7 @@ import {
   shouldThrottleGridCreation,
   ensureGridLayerInitialized
 } from "@/utils/gridValidationUtils";
+import { toast } from "sonner";
 
 /**
  * Properties required by the useCanvasGrid hook
@@ -63,6 +64,7 @@ export const useCanvasGrid = ({
   // Track grid creation attempts
   const attemptCountRef = useRef<number>(0);
   const lastAttemptTimeRef = useRef<number>(0);
+  const creationTimeoutRef = useRef<number | null>(null);
   
   // Use the useEffect cleanup to ensure we reset the grid progress
   useEffect(() => {
@@ -70,6 +72,13 @@ export const useCanvasGrid = ({
       if (process.env.NODE_ENV === 'development') {
         console.log("Cleaning up grid creation - resetting progress flags");
       }
+      
+      // Clear any pending timeouts
+      if (creationTimeoutRef.current !== null) {
+        clearTimeout(creationTimeoutRef.current);
+        creationTimeoutRef.current = null;
+      }
+      
       resetGridProgress();
     };
   }, []);
@@ -91,6 +100,36 @@ export const useCanvasGrid = ({
       });
     }
     
+    // If we've hit too many consecutive resets, delay grid creation
+    if (gridManager.consecutiveResets > gridManager.maxConsecutiveResets) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("Delaying grid creation due to too many resets");
+      }
+      
+      // Clear any existing timeout
+      if (creationTimeoutRef.current !== null) {
+        clearTimeout(creationTimeoutRef.current);
+      }
+      
+      // Schedule delayed creation
+      creationTimeoutRef.current = window.setTimeout(() => {
+        if (!canvas) return;
+        
+        // Only try again if reset counter has been reduced
+        if (gridManager.consecutiveResets < gridManager.maxConsecutiveResets) {
+          resetGridProgress();
+          createGridCallback(canvas);
+        } else {
+          toast.error("Grid creation is temporarily paused. Please wait a moment.", {
+            id: "grid-throttled",
+            duration: 3000
+          });
+        }
+      }, 2000); // Give a longer timeout to allow things to settle
+      
+      return gridLayerRef.current;
+    }
+    
     // Validate components before proceeding
     const validation = validateGridComponents(canvas, gridLayerRef);
     if (!validation.valid) {
@@ -106,12 +145,17 @@ export const useCanvasGrid = ({
         console.log("Throttling grid creation - too many rapid attempts");
       }
       
+      // Clear any existing timeout
+      if (creationTimeoutRef.current !== null) {
+        clearTimeout(creationTimeoutRef.current);
+      }
+      
       // Even if throttled, schedule a retry after the throttle interval
-      setTimeout(() => {
+      creationTimeoutRef.current = window.setTimeout(() => {
         if (!canvas) return;
         resetGridProgress();
         createGridCallback(canvas);
-      }, DEFAULT_RETRY_CONFIG.minAttemptInterval + 50);
+      }, DEFAULT_RETRY_CONFIG.minAttemptInterval + 200); // Increased from 50ms to 200ms
       
       return gridLayerRef.current;
     }
@@ -151,7 +195,8 @@ export const useCanvasGrid = ({
         return grid;
       } else if (attemptCountRef.current < DEFAULT_RETRY_CONFIG.maxAttempts) {
         // Schedule a retry with exponential backoff
-        scheduleGridRetry(canvas, attemptCountRef, createGridCallback, DEFAULT_RETRY_CONFIG);
+        const timeoutId = scheduleGridRetry(canvas, attemptCountRef, createGridCallback, DEFAULT_RETRY_CONFIG);
+        creationTimeoutRef.current = timeoutId;
       } else {
         // Handle max attempts reached with emergency grid
         return handleMaxAttemptsReached(
@@ -173,10 +218,15 @@ export const useCanvasGrid = ({
       
       // Try one more time with a delay before giving up
       if (attemptCountRef.current < DEFAULT_RETRY_CONFIG.maxAttempts) {
-        setTimeout(() => {
+        // Clear any existing timeout
+        if (creationTimeoutRef.current !== null) {
+          clearTimeout(creationTimeoutRef.current);
+        }
+        
+        creationTimeoutRef.current = window.setTimeout(() => {
           resetGridProgress();
           createGridCallback(canvas);
-        }, 500);
+        }, 800); // Increased from 500ms to 800ms
       }
       
       return gridLayerRef.current;

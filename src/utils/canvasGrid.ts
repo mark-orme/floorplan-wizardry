@@ -10,9 +10,11 @@ import {
   resetGridProgress,
   scheduleGridProgressReset,
   acquireGridCreationLock,
-  releaseGridCreationLock
+  releaseGridCreationLock,
+  shouldThrottleCreation
 } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
+import { toast } from "sonner";
 
 /**
  * Create grid lines for the canvas
@@ -64,6 +66,16 @@ export const createGrid = (
     if (process.env.NODE_ENV === 'development') {
       console.error("Invalid dimensions in createGrid:", canvasDimensions);
     }
+    return gridLayerRef.current;
+  }
+  
+  // Check if we should throttle
+  if (shouldThrottleCreation()) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("Throttling grid creation due to too many recent attempts");
+    }
+    
+    // Return current grid without creating a new one
     return gridLayerRef.current;
   }
   
@@ -162,6 +174,9 @@ export const createGrid = (
           // Clear the safety timeout
           clearTimeout(safetyTimeoutId);
           
+          // Reset consecutive resets counter on success
+          gridManager.consecutiveResets = 0;
+          
           // Release the lock
           releaseGridCreationLock(lockId);
           
@@ -172,6 +187,12 @@ export const createGrid = (
           }
           setHasError(true);
           setErrorMessage("Failed to create grid after multiple attempts");
+          
+          // Notify user of the issue
+          toast.error("Grid creation failed. Please try refreshing the page.", {
+            id: "grid-error",
+            duration: 5000
+          });
           
           // Clear the safety timeout
           clearTimeout(safetyTimeoutId);
@@ -195,6 +216,9 @@ export const createGrid = (
         
         // Set the grid exists flag
         gridManager.exists = true;
+        
+        // Reset consecutive resets counter on success
+        gridManager.consecutiveResets = 0;
         
         if (process.env.NODE_ENV === 'development') {
           // Detailed grid creation log
@@ -230,7 +254,7 @@ export const createGrid = (
       setErrorMessage(`Error creating grid: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
-  }, 50); // Small delay to avoid rapid creation attempts
+  }, 100); // Increased delay from 50ms to 100ms to reduce rapid creation attempts
   
   // Return current grid until the async creation completes
   return gridLayerRef.current;
