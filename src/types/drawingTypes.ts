@@ -49,6 +49,16 @@ export interface DebugInfoState {
 }
 
 /**
+ * Interface for canvas load time tracking
+ * @interface CanvasLoadTimes
+ */
+export interface CanvasLoadTimes {
+  startTime: number;
+  canvasReady: number;
+  gridCreated: number;
+}
+
+/**
  * Represents the drawing state with start and current points
  * @interface DrawingState
  */
@@ -72,16 +82,6 @@ export type DrawingTool = "straightLine" | "room" | "select";
  * @type GridCreationCallback
  */
 export type GridCreationCallback = (canvas: any) => any[];
-
-/**
- * Interface for canvas load time tracking
- * @interface CanvasLoadTimes
- */
-export interface CanvasLoadTimes {
-  startTime: number;
-  canvasReady: number;
-  gridCreated: number;
-}
 
 /**
  * Interface for path processing callbacks
