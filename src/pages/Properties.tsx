@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
@@ -13,7 +12,7 @@ import { Input } from '@/components/ui/input';
 
 const Properties = () => {
   const { properties, isLoading, listProperties } = usePropertyManagement();
-  const { userRole, hasAccess } = useAuth();
+  const { userRole, hasAccess, user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
@@ -53,6 +52,10 @@ const Properties = () => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const shouldShowCreateButton = userRole === UserRole.PHOTOGRAPHER || 
+                               userRole === UserRole.MANAGER || 
+                               hasAccess([UserRole.PHOTOGRAPHER, UserRole.MANAGER]);
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="flex justify-between items-center mb-6">
@@ -65,7 +68,7 @@ const Properties = () => {
           </p>
         </div>
 
-        {hasAccess([UserRole.PHOTOGRAPHER, UserRole.MANAGER]) && (
+        {shouldShowCreateButton && (
           <Button onClick={() => navigate('/properties/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New Property
@@ -96,7 +99,7 @@ const Properties = () => {
               ? 'No properties match your search' 
               : 'No properties found. Create your first property!'}
           </p>
-          {!searchTerm && hasAccess([UserRole.PHOTOGRAPHER, UserRole.MANAGER]) && (
+          {!searchTerm && shouldShowCreateButton && (
             <Button 
               variant="outline" 
               className="mt-4"
