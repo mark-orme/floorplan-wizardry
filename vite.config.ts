@@ -14,7 +14,10 @@ export default defineConfig(({ mode }) => ({
       // This setting enables HMR to work correctly with Lovable's preview environment
       clientPort: 443,
       // Ensure WebSocket connections use HTTPS when in production
-      protocol: 'wss'
+      protocol: 'wss',
+      // Add timeout and reconnect options for better stability
+      timeout: 10000,
+      overlay: true
     }
   },
   plugins: [
@@ -40,4 +43,11 @@ export default defineConfig(({ mode }) => ({
     // Enable source maps in production for Sentry
     sourcemap: true,
   },
+  preview: {
+    // Ensure preview server also has proper HMR configuration
+    hmr: {
+      clientPort: 443,
+      protocol: 'wss'
+    }
+  }
 }));
