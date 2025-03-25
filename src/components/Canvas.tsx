@@ -88,6 +88,8 @@ export const Canvas = () => {
   const isTooltipVisible = 
     // Always show during active drawing with straightLine or room tools
     (drawingState?.isDrawing && (tool === "straightLine" || tool === "room")) ||
+    // Show when hovering with these tools even if not actively drawing
+    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "room") && drawingState?.cursorPosition) ||
     // Also show when in select mode and actively manipulating a line
     (tool === "select" && drawingState?.isDrawing);
   
@@ -97,10 +99,11 @@ export const Canvas = () => {
       console.log("Tooltip visibility check:", {
         isDrawing: !!drawingState?.isDrawing,
         tool,
-        isVisible: isTooltipVisible
+        isVisible: isTooltipVisible,
+        cursorPosition: !!drawingState?.cursorPosition
       });
     }
-  }, [drawingState?.isDrawing, tool, isTooltipVisible]);
+  }, [drawingState?.isDrawing, drawingState?.cursorPosition, tool, isTooltipVisible]);
 
   return (
     <LoadingErrorWrapper
@@ -140,6 +143,7 @@ export const Canvas = () => {
             isVisible={isTooltipVisible}
             position={drawingState?.cursorPosition}
             midPoint={drawingState?.midPoint}
+            currentZoom={drawingState?.currentZoom}
           />
         </div>
         

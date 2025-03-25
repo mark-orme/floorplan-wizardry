@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing drawing state
  * @module useDrawingState
@@ -72,19 +71,20 @@ export const useDrawingState = ({
       y: point.y / PIXELS_PER_METER
     };
     
-    // Always update cursor position for tooltips
+    // Update cursor position for tooltips regardless of whether we're drawing
     setDrawingState(prev => {
       // Calculate midpoint if we're drawing and have a start point
       let midPoint: Point | null = null;
-      if (prev.isDrawing && prev.startPoint) {
+      if (prev.startPoint) {
+        // Calculate midpoint between start and current point for tooltip positioning
         midPoint = calculateMidpoint(prev.startPoint, worldPoint);
       }
       
       return {
         ...prev,
         currentPoint: prev.isDrawing ? worldPoint : null,
-        cursorPosition: worldPoint,
-        midPoint
+        cursorPosition: worldPoint, // Always update cursor position regardless of drawing state
+        midPoint: midPoint
       };
     });
   }, []);
@@ -100,6 +100,7 @@ export const useDrawingState = ({
         startPoint: null,
         currentPoint: null,
         midPoint: null
+        // Keeping cursorPosition so we can still show hover measurements
       }));
       mouseStateTimeoutRef.current = null;
     }, 500);
