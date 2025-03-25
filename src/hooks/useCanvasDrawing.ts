@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
+import { useCanvasHistory } from "./useCanvasHistory"; // Import the new hook
 import { type FloorPlan } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
@@ -50,6 +51,17 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
   
   // Track current zoom level for proper tooltip positioning
   const [currentZoom, setCurrentZoom] = useState<number>(1);
+  
+  // Use the improved history management hook
+  const { saveCurrentState, handleUndo, handleRedo } = useCanvasHistory({
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    recalculateGIA: () => {
+      // This could be expanded if needed
+      console.log("Recalculating GIA after history operation");
+    }
+  });
   
   const { processCreatedPath } = usePathProcessing({
     fabricCanvasRef,
@@ -97,30 +109,6 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     };
   }, [fabricCanvasRef]);
   
-  // Capture current canvas state (excluding grid)
-  const captureCurrentState = () => {
-    if (!fabricCanvasRef.current) return [];
-    const fabricCanvas = fabricCanvasRef.current;
-    
-    // Define grid object check
-    const isGridObject = (obj: FabricObject) => 
-      gridLayerRef.current.some(gridObj => gridObj === obj);
-    
-    // Get current non-grid objects 
-    const currentDrawings = fabricCanvas.getObjects().filter(obj => 
-      (obj.type === 'polyline' || obj.type === 'path') &&
-      !isGridObject(obj)
-    );
-    
-    // Serialize current objects
-    return currentDrawings.map(obj => {
-      if (obj && typeof obj.toObject === 'function') {
-        return obj.toObject();
-      }
-      return null;
-    }).filter(Boolean);
-  };
-  
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -133,6 +121,10 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     
     const handlePathCreated = (e: PathCreatedEvent): void => {
       console.log("Path created event triggered");
+      
+      // IMPORTANT: Save current state BEFORE making any changes
+      // This ensures we can properly undo to previous state
+      saveCurrentState();
       
       if (tool === "straightLine" && drawingState.startPoint && drawingState.currentPoint) {
         console.log("Applying strict grid alignment to wall line");
@@ -207,23 +199,6 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         }
       }
       
-      // Capture current state BEFORE adding new drawing - important for proper undo/redo
-      if (fabricCanvas) {
-        // Capture and save the current state to history before processing the new path
-        const serializedDrawings = captureCurrentState();
-        
-        if (historyRef.current) {
-          // Add to history and clear redo stack - only if we have objects or this is first drawing
-          if (serializedDrawings.length > 0 || historyRef.current.past.length === 0) {
-            historyRef.current.past.push(serializedDrawings);
-            historyRef.current.future = [];
-            
-            console.log("History updated: past state added with", serializedDrawings.length, 
-              "objects. Total states:", historyRef.current.past.length);
-          }
-        }
-      }
-      
       processCreatedPath(e.path);
       handleMouseUp();
     };
@@ -233,6 +208,11 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     fabricCanvas.on('mouse:move', handleMouseMove);
     fabricCanvas.on('mouse:up', handleMouseUp);
     
+    // Expose undo/redo handlers to the global canvas object for debugging
+    // This helps with external access from CanvasController
+    (fabricCanvas as any).handleUndo = handleUndo;
+    (fabricCanvas as any).handleRedo = handleRedo;
+    
     return () => {
       cleanupTimeouts();
       
@@ -241,6 +221,10 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         fabricCanvas.off('mouse:down', handleMouseDown);
         fabricCanvas.off('mouse:move', handleMouseMove);
         fabricCanvas.off('mouse:up', handleMouseUp);
+        
+        // Clean up custom handlers
+        delete (fabricCanvas as any).handleUndo;
+        delete (fabricCanvas as any).handleRedo;
       }
     };
   }, [
@@ -255,7 +239,10 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     lineColor,
     drawingState,
     gridLayerRef,
-    historyRef
+    historyRef,
+    saveCurrentState,
+    handleUndo,
+    handleRedo
   ]);
 
   // Return drawing state with current zoom level

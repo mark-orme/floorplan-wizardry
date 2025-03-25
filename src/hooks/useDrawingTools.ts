@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for drawing tools functionality
  * Orchestrates tool behavior, history, and canvas operations
@@ -97,6 +96,32 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     setFloorPlans,
     setGia
   });
+  
+  /**
+   * Handle undo operation
+   */
+  const handleUndo = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Access the undo function from the canvas object
+    // The function is attached in useCanvasDrawing
+    if ((fabricCanvasRef.current as any).handleUndo) {
+      (fabricCanvasRef.current as any).handleUndo();
+    }
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Handle redo operation
+   */
+  const handleRedo = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Access the redo function from the canvas object
+    // The function is attached in useCanvasDrawing
+    if ((fabricCanvasRef.current as any).handleRedo) {
+      (fabricCanvasRef.current as any).handleRedo();
+    }
+  }, [fabricCanvasRef]);
   
   return {
     clearDrawings,
