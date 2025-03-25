@@ -36,8 +36,24 @@ export const usePusher = ({
     enableSubscriptionRef.current = enableSubscription;
   }, [events, channelName, enableSubscription]);
 
+  // Function to manually trigger events for testing - use callback for stable reference
+  const triggerEvent = useCallback((eventName: string, data: any) => {
+    logger.info(`Manually triggering event ${eventName} on channel ${channelNameRef.current}:`, data);
+    if (channel) {
+      // In a real app, you'd typically send this to your server to trigger
+      // This is just for local testing/debugging
+      const callback = eventsRef.current[eventName];
+      if (callback) {
+        callback(data);
+      }
+    }
+  }, [channel]); // Only depend on channel
+  
   // Subscribe to channel - in a dedicated effect with minimal dependencies
   useEffect(() => {
+    // Set isMounted to true at the beginning of the effect
+    isMountedRef.current = true;
+    
     // Skip if subscription is disabled
     if (!enableSubscriptionRef.current) return;
     
@@ -85,26 +101,11 @@ export const usePusher = ({
         
         unsubscribeFromChannel(channelNameRef.current);
         
-        if (isMountedRef.current) {
-          setChannel(null);
-          setIsConnected(false);
-        }
+        setChannel(null);
+        setIsConnected(false);
       }
     };
   }, []); // Empty dependency array - we use refs inside
-
-  // Function to manually trigger events for testing - use callback for stable reference
-  const triggerEvent = useCallback((eventName: string, data: any) => {
-    logger.info(`Manually triggering event ${eventName} on channel ${channelNameRef.current}:`, data);
-    if (channel) {
-      // In a real app, you'd typically send this to your server to trigger
-      // This is just for local testing/debugging
-      const callback = eventsRef.current[eventName];
-      if (callback) {
-        callback(data);
-      }
-    }
-  }, [channel]); // Only depend on channel
 
   return {
     channel,

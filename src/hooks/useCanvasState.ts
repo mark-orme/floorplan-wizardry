@@ -52,7 +52,7 @@ export const useCanvasState = (): CanvasStateReturn => {
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>("#000000");
   
-  // Initial tool is now "select" instead of "none"
+  // Initial log only once during component lifecycle
   useEffect(() => {
     console.log("Initial tool set to select");
   }, []);

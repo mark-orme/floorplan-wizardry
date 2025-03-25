@@ -34,7 +34,7 @@ export const Canvas = (props: CanvasProps) => {
   const [initialized, setInitialized] = useState(false);
   const [controllerLoaded, setControllerLoaded] = useState(false);
   const [errorState, setErrorState] = useState({ hasError: false, message: "" });
-  const [tool, setToolState] = useState("select"); // Default tool state for safety
+  const [tool, setToolState] = useState<string>("select"); // Default tool state for safety
   
   // Initialize controller only once using useEffect to ensure consistent hook order
   useEffect(() => {

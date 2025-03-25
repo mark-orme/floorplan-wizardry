@@ -5,7 +5,7 @@ import { DrawingTool } from "./useCanvasState";
 /**
  * Hook to manage the measurement guide visibility
  */
-export const useMeasurementGuide = (tool: DrawingTool) => {
+export const useMeasurementGuide = (tool: DrawingTool | undefined) => {
   // Always declare all state and refs at the top level
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
   const initialRenderRef = useRef(true);
@@ -28,6 +28,7 @@ export const useMeasurementGuide = (tool: DrawingTool) => {
     
     // Safety check for tool being defined
     if (!tool) {
+      console.log("Tool is undefined in useMeasurementGuide");
       return;
     }
     
