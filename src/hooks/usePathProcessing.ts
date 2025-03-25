@@ -1,10 +1,9 @@
-
 /**
  * Custom hook for processing Fabric.js paths into polylines
  * @module usePathProcessing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Path } from "fabric";
+import { Canvas as FabricCanvas, Path, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { MAX_OBJECTS_PER_CANVAS } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
@@ -15,7 +14,7 @@ import { usePolylineCreation } from "./usePolylineCreation";
 interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<any[]>>;

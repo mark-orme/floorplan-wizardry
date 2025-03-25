@@ -4,7 +4,7 @@
  * @module usePolylineCreation
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline } from "fabric";
+import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { PIXELS_PER_METER, type Point } from "@/utils/drawing";
 import { calculateGIA } from "@/utils/geometry";
@@ -13,7 +13,7 @@ import { DrawingTool } from "./useCanvasState";
 interface UsePolylineCreationProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<any[]>>;

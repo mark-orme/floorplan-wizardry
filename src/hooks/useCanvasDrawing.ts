@@ -1,11 +1,10 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
 import { useEffect, useState } from "react";
-import { Canvas as FabricCanvas, Path as FabricPath } from "fabric";
+import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { type FloorPlan } from "@/utils/drawing";
@@ -17,7 +16,7 @@ import { GRID_SIZE } from "@/utils/drawing";
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<FabricPath[]>;
-  historyRef: React.MutableRefObject<{past: FabricPath[][], future: FabricPath[][]}>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
@@ -185,10 +184,12 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
       
       // Add current state to history before adding the new path
       if (fabricCanvas) {
+        // FIX: Cast objects to the correct type for history storage
+        // Only store polylines and paths, not grid objects
         const currentDrawings = fabricCanvas.getObjects().filter(obj => 
           (obj.type === 'polyline' || obj.type === 'path') &&
-          !gridLayerRef.current.includes(obj)
-        );
+          !gridLayerRef.current.includes(obj as FabricPath)
+        ) as FabricObject[];
         
         if (currentDrawings.length > 0) {
           historyRef.current.past.push([...currentDrawings]);
