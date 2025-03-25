@@ -12,7 +12,7 @@ import { applyCanvasState } from "@/utils/canvasStateUtils";
 interface UseCanvasHistoryProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   recalculateGIA: () => void;
 }
 
@@ -26,7 +26,7 @@ export const useCanvasHistory = ({
   recalculateGIA
 }: UseCanvasHistoryProps) => {
   // Track the last captured state to prevent duplicate history entries
-  const lastCapturedStateRef = useRef<FabricObject[]>([]);
+  const lastCapturedStateRef = useRef<any[]>([]);
 
   /**
    * Add current state to history before making changes
@@ -65,15 +65,15 @@ export const useCanvasHistory = ({
     // Get current state for redo
     const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
     
-    // Only add to future if different from last past state (prevents no-op redo)
-    if (historyRef.current.past.length > 0 && 
-        areStatesDifferent(historyRef.current.past[historyRef.current.past.length - 1], currentState)) {
+    // Add to future if different from last past state
+    const lastPastState = historyRef.current.past[historyRef.current.past.length - 1];
+    if (areStatesDifferent(lastPastState, currentState)) {
       historyRef.current.future.unshift(currentState);
       console.log(`Saved current state with ${currentState.length} objects for potential redo`);
     }
     
     // Remove current state from past
-    historyRef.current.past.pop();
+    const prevState = historyRef.current.past.pop();
     
     // Get previous state
     const previousState = historyRef.current.past[historyRef.current.past.length - 1] || [];
@@ -105,12 +105,7 @@ export const useCanvasHistory = ({
     
     // Save current state to past
     const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
-    
-    // Only add to past if different from current last past state
-    if (historyRef.current.past.length === 0 || 
-        areStatesDifferent(historyRef.current.past[historyRef.current.past.length - 1], currentState)) {
-      historyRef.current.past.push(currentState);
-    }
+    historyRef.current.past.push(currentState);
     
     // Apply future state
     applyCanvasState(fabricCanvasRef.current, futureState, gridLayerRef, recalculateGIA);

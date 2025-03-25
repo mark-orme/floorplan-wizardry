@@ -12,14 +12,14 @@ import logger from "./logger";
  * Replaces current drawing objects with the ones stored in the given state
  * 
  * @param {FabricCanvas | null} fabricCanvas - The Fabric.js canvas instance
- * @param {FabricObject[]} state - Array of fabric objects representing the state to apply
+ * @param {any[]} state - Array of serialized objects representing the state to apply
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @param {() => void} recalculateGIA - Function to recalculate Gross Internal Area after state change
  * @returns {void}
  */
 export const applyCanvasState = (
   fabricCanvas: FabricCanvas | null,
-  state: FabricObject[],
+  state: any[],
   gridLayerRef: React.MutableRefObject<FabricObject[]>,
   recalculateGIA: () => void
 ): void => {
@@ -48,13 +48,13 @@ export const applyCanvasState = (
         let obj: FabricObject | null = null;
         
         if (objData.type === 'polyline') {
-          obj = new Polyline((objData as Polyline).points, {
-            ...(objData as Polyline),
+          obj = new Polyline(objData.points || [], {
+            ...objData,
             selectable: false
           });
         } else if (objData.type === 'path') {
-          obj = new Path((objData as Path).path, {
-            ...(objData as Path),
+          obj = new Path(objData.path || '', {
+            ...objData,
             selectable: false
           });
         }

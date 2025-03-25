@@ -74,13 +74,11 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
   
   /**
    * Handle undo operation - uses the canvas's attached undo function
-   * This accesses the improved history management from useCanvasHistory
    */
   const handleUndo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
-    // Access the undo function from the canvas object
-    // The function is attached in useCanvasDrawing from useCanvasHistory
+    // Access the undo function from the canvas object (attached in useCanvasEventHandlers)
     if ((fabricCanvasRef.current as any).handleUndo) {
       (fabricCanvasRef.current as any).handleUndo();
     }
@@ -88,13 +86,11 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
   
   /**
    * Handle redo operation - uses the canvas's attached redo function
-   * This accesses the improved history management from useCanvasHistory
    */
   const handleRedo = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
-    // Access the redo function from the canvas object
-    // The function is attached in useCanvasDrawing from useCanvasHistory
+    // Access the redo function from the canvas object (attached in useCanvasEventHandlers)
     if ((fabricCanvasRef.current as any).handleRedo) {
       (fabricCanvasRef.current as any).handleRedo();
     }
@@ -102,7 +98,6 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
   
   /**
    * Save current state before changes
-   * This accesses the saveCurrentState function from useCanvasHistory
    */
   const saveCurrentState = useCallback(() => {
     if (!fabricCanvasRef.current) return;

@@ -26,7 +26,6 @@ const serializeObject = (obj: FabricObject): any => {
   try {
     const serialized = obj.toObject();
     // Add additional properties that might be needed for proper reconstruction
-    // Use type-safe property accessor instead of direct assignment
     if ('id' in obj) {
       serialized.id = (obj as any).id || null;
     }
@@ -73,8 +72,7 @@ export const areStatesDifferent = (stateA: any[], stateB: any[]): boolean => {
     return false;
   }
   
-  // More detailed comparison could be implemented if needed
-  // For now, a simple stringified comparison is used
+  // Simple JSON comparison - could be improved for performance
   try {
     return JSON.stringify(stateA) !== JSON.stringify(stateB);
   } catch (e) {
@@ -105,14 +103,10 @@ export const pushToHistory = (
     
     // Limit history size
     if (historyRef.current.past.length > MAX_HISTORY_STATES) {
-      historyRef.current.past.splice(0, historyRef.current.past.length - MAX_HISTORY_STATES);
+      historyRef.current.past.shift();
     }
     
     console.log(`History updated: ${historyRef.current.past.length} states in past, ${historyRef.current.future.length} in future`);
-    // Debug output for development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Current history:', historyRef.current);
-    }
   } else {
     console.log("State unchanged, not adding to history");
   }
