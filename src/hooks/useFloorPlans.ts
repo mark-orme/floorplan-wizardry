@@ -62,7 +62,7 @@ export const useFloorPlans = ({
     setFloorPlans
   });
   
-  // Initialize floor plan storage - Fix: don't pass arguments since useFloorPlanStorage() doesn't take any
+  // Initialize floor plan storage - Get the loadData function that returns a promise
   const { loadData } = useFloorPlanStorage();
 
   // Update canvas when floor changes with debouncing

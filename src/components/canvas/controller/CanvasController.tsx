@@ -120,7 +120,12 @@ export const CanvasController = () => {
   useEffect(() => {
     // This is a workaround for the circular dependency
     if (typeof recalculateGIA === 'function') {
-      Object.assign(useCanvasControllerTools, { recalculateGIA });
+      // Using a global object to pass the function reference
+      // This avoids direct mutation of the hook
+      (window as any).__canvasHelpers = {
+        ...(window as any).__canvasHelpers,
+        recalculateGIA
+      };
     }
   }, [recalculateGIA]);
 

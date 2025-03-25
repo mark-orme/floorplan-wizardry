@@ -144,10 +144,10 @@ export const handleZoom = (
     // Trigger custom event for zoom change detection - use a custom event name
     fabricCanvas.fire('custom:zoom-changed', { zoom: newZoom });
     
-    // Show rounded percentage zoom level
-    toast(`Zoom: ${Math.round(newZoom * 100)}%`, {
-      duration: 1500,
-      id: 'zoom-level'
+    // Add toast message for zoom changes
+    toast.success(`Zoom: ${Math.round(newZoom * 100)}%`, {
+      id: "zoom-level",
+      duration: 800
     });
   }
 };
