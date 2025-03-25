@@ -10,26 +10,27 @@ import { PIXELS_PER_METER } from "@/utils/drawing";
 
 /**
  * Interface defining the return value of usePointProcessing hook
+ * @interface UsePointProcessingResult
  */
 interface UsePointProcessingResult {
   /**
    * Process points based on the current drawing tool
-   * @param points - The points to process
-   * @returns Processed points
+   * @param {Point[]} points - The points to process
+   * @returns {Point[]} Processed points
    */
   processPoints: (points: Point[]) => Point[];
   
   /**
    * Convert meter coordinates to pixel coordinates
-   * @param points - Points in meter coordinates
-   * @returns Points in pixel coordinates
+   * @param {Point[]} points - Points in meter coordinates
+   * @returns {Point[]} Points in pixel coordinates
    */
   convertToPixelPoints: (points: Point[]) => Point[];
   
   /**
    * Check if a shape is closed (first and last points are close)
-   * @param points - The points to check
-   * @returns True if the shape is closed
+   * @param {Point[]} points - The points to check
+   * @returns {boolean} True if the shape is closed
    */
   isShapeClosed: (points: Point[]) => boolean;
 }

@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for canvas actions (clear, save)
  * @module useCanvasActions
@@ -10,6 +11,7 @@ import logger from "@/utils/logger";
 
 /**
  * Props for the useCanvasActions hook
+ * @interface UseCanvasActionsProps
  */
 interface UseCanvasActionsProps {
   /** Reference to the Fabric.js canvas instance */
@@ -42,6 +44,7 @@ interface UseCanvasActionsProps {
 
 /**
  * Return value of the useCanvasActions hook
+ * @interface UseCanvasActionsResult
  */
 interface UseCanvasActionsResult {
   /** Function to clear the canvas */

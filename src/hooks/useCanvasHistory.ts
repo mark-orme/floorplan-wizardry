@@ -2,6 +2,7 @@
 /**
  * Enhanced hook for managing drawing history (undo/redo)
  * With improved state serialization and restoration
+ * @module useCanvasHistory
  */
 import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
@@ -10,26 +11,54 @@ import { captureCurrentState, pushToHistory, canUndo, canRedo, showHistoryToast,
 import { applyCanvasState, removeLastDrawnObject, addObjectToCanvas } from "@/utils/canvasStateUtils";
 import logger from "@/utils/logger";
 
+/**
+ * Props for the useCanvasHistory hook
+ * @interface UseCanvasHistoryProps
+ */
 interface UseCanvasHistoryProps {
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  /** Reference to history state */
+  historyRef: React.MutableRefObject<{
+    past: FabricObject[][]; 
+    future: FabricObject[][]
+  }>;
+  /** Function to recalculate GIA after history operations */
   recalculateGIA: () => void;
 }
 
 /**
+ * Return type for the useCanvasHistory hook
+ * @interface UseCanvasHistoryResult
+ */
+interface UseCanvasHistoryResult {
+  /** Save current canvas state before making changes */
+  saveCurrentState: () => void;
+  /** Undo the last drawing action */
+  handleUndo: () => void;
+  /** Redo the last undone drawing action */
+  handleRedo: () => void;
+}
+
+/**
  * Enhanced hook for managing undo/redo functionality
+ * Provides methods to track, save, and restore canvas states
+ * 
+ * @param {UseCanvasHistoryProps} props - Hook properties
+ * @returns {UseCanvasHistoryResult} History management functions
  */
 export const useCanvasHistory = ({
   fabricCanvasRef,
   gridLayerRef,
   historyRef,
   recalculateGIA
-}: UseCanvasHistoryProps) => {
+}: UseCanvasHistoryProps): UseCanvasHistoryResult => {
   // Track the last captured state to prevent duplicate history entries
-  const lastCapturedStateRef = useRef<any[]>([]);
+  const lastCapturedStateRef = useRef<FabricObject[]>([]);
   // Store the last removed object for redo
-  const lastRemovedObjectRef = useRef<any | null>(null);
+  const lastRemovedObjectRef = useRef<FabricObject | null>(null);
 
   /**
    * Add current state to history before making changes

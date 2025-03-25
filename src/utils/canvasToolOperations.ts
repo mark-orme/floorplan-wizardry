@@ -4,7 +4,7 @@
  * Provides functions for handling specific tool operations
  * @module canvasToolOperations
  */
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { clearCanvasObjects } from "@/utils/fabricHelpers";
 import { enablePanning, enableSelection, disableSelection } from "@/utils/fabricInteraction";
@@ -13,17 +13,30 @@ import { arrangeGridElements } from "./canvasLayerOrdering";
 import logger from "@/utils/logger";
 
 /**
+ * Object with objectType property for tool operations
+ * @interface ToolOperationObject
+ */
+interface ToolOperationObject extends FabricObject {
+  /** Type identifier for specialized handling */
+  objectType?: string;
+  /** Whether the object is selectable */
+  selectable?: boolean;
+  /** Cursor to show when hovering over the object */
+  hoverCursor?: string;
+}
+
+/**
  * Clear all drawings from the canvas while preserving the grid
  * 
  * @param {FabricCanvas | null} fabricCanvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to grid objects
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @param {Function} createGrid - Function to recreate grid if needed
  * @returns {void}
  */
 export const clearDrawings = (
   fabricCanvas: FabricCanvas | null,
-  gridLayerRef: React.MutableRefObject<any[]>,
-  createGrid: (canvas: FabricCanvas) => any[]
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
+  createGrid: (canvas: FabricCanvas) => FabricObject[]
 ): void => {
   if (!fabricCanvas) {
     logger.error("Cannot clear drawings: fabric canvas is null");
@@ -48,7 +61,7 @@ export const clearDrawings = (
  * 
  * @param {DrawingTool} newTool - The tool to switch to
  * @param {FabricCanvas | null} fabricCanvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to grid objects
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @param {number} lineThickness - Current line thickness setting
  * @param {string} lineColor - Current line color setting
  * @param {React.Dispatch<React.SetStateAction<DrawingTool>>} setTool - State setter for tool
@@ -57,12 +70,15 @@ export const clearDrawings = (
 export const handleToolChange = (
   newTool: DrawingTool,
   fabricCanvas: FabricCanvas | null,
-  gridLayerRef: React.MutableRefObject<any[]>,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
   lineThickness: number,
   lineColor: string,
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>
 ): void => {
-  if (!fabricCanvas) return;
+  if (!fabricCanvas) {
+    logger.error("Cannot change tool: fabric canvas is null");
+    return;
+  }
   
   // Disable current tool settings
   fabricCanvas.isDrawingMode = false;
@@ -90,10 +106,10 @@ export const handleToolChange = (
       // Make objects selectable
       fabricCanvas.getObjects().forEach(obj => {
         // Skip grid elements
-        const objectType = (obj as any).objectType;
-        if (!objectType || !objectType.includes('grid')) {
-          obj.selectable = true;
-          obj.hoverCursor = 'pointer';
+        const typedObj = obj as ToolOperationObject;
+        if (!typedObj.objectType || !typedObj.objectType.includes('grid')) {
+          typedObj.selectable = true;
+          typedObj.hoverCursor = 'pointer';
         }
       });
       
@@ -110,8 +126,10 @@ export const handleToolChange = (
       break;
     default:
       fabricCanvas.isDrawingMode = false;
+      logger.warn(`Unknown tool selected: ${newTool}`);
   }
   
+  logger.info(`Tool changed to: ${newTool}`);
   setTool(newTool);
   
   // Use the imported arrangeGridElements function
@@ -133,7 +151,10 @@ export const handleZoom = (
   currentZoomLevel: number,
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>
 ): void => {
-  if (!fabricCanvas) return;
+  if (!fabricCanvas) {
+    logger.error("Cannot zoom: fabric canvas is null");
+    return;
+  }
   
   // Define zoom constants
   const ZOOM_STEP = 0.1;  // 10% step
@@ -152,6 +173,7 @@ export const handleZoom = (
   
   // Only apply zoom if it's different from current
   if (newZoom !== currentZoomLevel) {
+    logger.info(`Zooming ${direction} from ${currentZoomLevel} to ${newZoom}`);
     fabricCanvas.setZoom(newZoom);
     setZoomLevel(newZoom);
     
@@ -163,5 +185,7 @@ export const handleZoom = (
       id: "zoom-level",
       duration: 800
     });
+  } else {
+    logger.debug(`Zoom already at ${direction === "in" ? "maximum" : "minimum"} level: ${newZoom}`);
   }
 };
