@@ -20,7 +20,7 @@ const Properties = () => {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Safely get auth state with error handling
+  // Initialize state
   const [authState, setAuthState] = useState({ 
     user: null, 
     userRole: null,
@@ -28,13 +28,12 @@ const Properties = () => {
     hasAccess: false
   });
   
-  // Safely initialize property management
   const [propertyState, setPropertyState] = useState({
     properties: [],
     isLoading: true
   });
   
-  // Get auth context with error handling
+  // Get auth context safely
   useEffect(() => {
     try {
       const { user, userRole, loading, hasAccess } = useAuth();
@@ -42,8 +41,9 @@ const Properties = () => {
         user,
         userRole,
         loading,
-        // Fix: Call the hasAccess function with an array of roles to get a boolean
-        hasAccess: typeof hasAccess === 'function' ? hasAccess([UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER, UserRole.MANAGER]) : false
+        hasAccess: typeof hasAccess === 'function' 
+          ? hasAccess([UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER, UserRole.MANAGER]) 
+          : false
       });
     } catch (error) {
       console.error("Error accessing auth context:", error);
@@ -52,29 +52,28 @@ const Properties = () => {
     }
   }, []);
   
-  // Get property management with error handling
+  // Get property management safely
   useEffect(() => {
-    try {
-      const { properties, isLoading, listProperties } = usePropertyManagement();
-      setPropertyState({
-        properties: properties || [],
-        isLoading: isLoading || false
-      });
-      
-      // Load properties if user is available
-      if (authState.user && !hasError) {
-        listProperties().catch(error => {
-          console.error("Error fetching properties:", error);
-          setHasError(true);
-          setErrorMessage("Failed to load properties");
+    const loadProperties = async () => {
+      try {
+        const { properties, isLoading, listProperties } = usePropertyManagement();
+        setPropertyState({
+          properties: properties || [],
+          isLoading: isLoading || false
         });
+        
+        if (authState.user && !hasError && typeof listProperties === 'function') {
+          await listProperties();
+        }
+      } catch (error) {
+        console.error("Error accessing property management:", error);
+        setHasError(true);
+        setErrorMessage("Property service unavailable");
       }
-    } catch (error) {
-      console.error("Error accessing property management:", error);
-      setHasError(true);
-      setErrorMessage("Property service unavailable");
-    }
-  }, [authState.user]);
+    };
+    
+    loadProperties();
+  }, [authState.user, hasError]);
 
   const handleRowClick = (id: string) => {
     navigate(`/properties/${id}`);

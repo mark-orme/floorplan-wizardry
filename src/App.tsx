@@ -53,56 +53,13 @@ const App = () => (
               {/* Auth route - accessible to all */}
               <Route path="/auth" element={<Auth />} />
               
-              {/* Properties routes */}
-              <Route 
-                path="/properties" 
-                element={
-                  <ErrorBoundary FallbackComponent={ErrorFallback}>
-                    <RoleGuard 
-                      allowedRoles={[UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER, UserRole.MANAGER]}
-                      fallbackElement={<Properties />} // Show properties to all, but with limited functionality
-                    >
-                      <Properties />
-                    </RoleGuard>
-                  </ErrorBoundary>
-                } 
-              />
-              <Route 
-                path="/properties/new" 
-                element={
-                  <ErrorBoundary FallbackComponent={ErrorFallback}>
-                    <RoleGuard 
-                      allowedRoles={[UserRole.PHOTOGRAPHER, UserRole.MANAGER]}
-                      redirectTo="/properties"
-                    >
-                      <PropertyForm />
-                    </RoleGuard>
-                  </ErrorBoundary>
-                } 
-              />
-              <Route 
-                path="/properties/:id" 
-                element={
-                  <ErrorBoundary FallbackComponent={ErrorFallback}>
-                    <RoleGuard 
-                      allowedRoles={[UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER, UserRole.MANAGER]}
-                      redirectTo="/properties"
-                    >
-                      <PropertyDetail />
-                    </RoleGuard>
-                  </ErrorBoundary>
-                } 
-              />
+              {/* Properties routes - Simplified to ensure proper loading */}
+              <Route path="/properties" element={<Properties />} />
+              <Route path="/properties/new" element={<PropertyForm />} />
+              <Route path="/properties/:id" element={<PropertyDetail />} />
               
-              {/* Floor plan editor - accessible to all authenticated users */}
-              <Route 
-                path="/floorplans" 
-                element={
-                  <ErrorBoundary FallbackComponent={ErrorFallback}>
-                    <Index />
-                  </ErrorBoundary>
-                } 
-              />
+              {/* Floor plan editor - accessible to all */}
+              <Route path="/floorplans" element={<Index />} />
               
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
