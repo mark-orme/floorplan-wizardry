@@ -56,6 +56,9 @@ const Properties = () => {
                                userRole === UserRole.MANAGER || 
                                hasAccess([UserRole.PHOTOGRAPHER, UserRole.MANAGER]);
 
+  console.log('Current user role:', userRole);
+  console.log('Should show create button:', shouldShowCreateButton);
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="flex justify-between items-center mb-6">
@@ -68,7 +71,7 @@ const Properties = () => {
           </p>
         </div>
 
-        {shouldShowCreateButton && (
+        {(userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
           <Button onClick={() => navigate('/properties/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New Property
@@ -99,7 +102,7 @@ const Properties = () => {
               ? 'No properties match your search' 
               : 'No properties found. Create your first property!'}
           </p>
-          {!searchTerm && shouldShowCreateButton && (
+          {!searchTerm && (userRole === UserRole.PHOTOGRAPHER || userRole === UserRole.MANAGER) && (
             <Button 
               variant="outline" 
               className="mt-4"

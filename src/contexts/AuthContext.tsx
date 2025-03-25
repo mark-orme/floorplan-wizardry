@@ -26,8 +26,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch user role from profile
   const fetchUserRole = async (userId: string) => {
     if (!userId) return;
-    const role = await getUserRole(userId);
-    setUserRole(role);
+    try {
+      const role = await getUserRole(userId);
+      setUserRole(role);
+    } catch (error: any) {
+      console.error('Error fetching user role:', error);
+      
+      // TEMPORARY FIX: If the user_profiles table doesn't exist yet,
+      // we'll set a default role based on the email domain
+      // This is just for development purposes
+      if (error.message && error.message.includes("relation \"public.user_profiles\" does not exist")) {
+        // Create a temporary user profile in memory based on email
+        if (user?.email) {
+          if (user.email.includes('photographer')) {
+            setUserRole(UserRole.PHOTOGRAPHER);
+            console.info(`Added profile for existing user: ${user.email}`);
+          } else if (user.email.includes('processing')) {
+            setUserRole(UserRole.PROCESSING_MANAGER);
+            console.info(`Added profile for existing user: ${user.email}`);
+          } else if (user.email.includes('manager')) {
+            setUserRole(UserRole.MANAGER);
+            console.info(`Added profile for existing user: ${user.email}`);
+          } else {
+            // Default fallback
+            setUserRole(UserRole.PHOTOGRAPHER);
+          }
+        }
+      }
+    }
   };
 
   useEffect(() => {
