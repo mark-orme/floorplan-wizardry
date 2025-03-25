@@ -62,11 +62,8 @@ export const useFloorPlans = ({
     setFloorPlans
   });
   
-  // Initialize floor plan storage
-  const { loadData } = useFloorPlanStorage({
-    floorPlans,
-    isLoading
-  });
+  // Initialize floor plan storage - Fix: don't pass arguments since useFloorPlanStorage() doesn't take any
+  const { loadData } = useFloorPlanStorage();
 
   // Update canvas when floor changes with debouncing
   useEffect(() => {
