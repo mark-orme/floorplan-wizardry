@@ -4,7 +4,7 @@
  * @module useDrawingHistory
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Polyline, Path } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Polyline, Path, util as FabricUtil } from "fabric";
 import { toast } from "sonner";
 import { MAX_HISTORY_STATES } from "@/utils/drawing";
 
@@ -74,7 +74,7 @@ export const useDrawingHistory = ({
           return new Path(data.path, data);
         } else {
           // Default case for other object types
-          return fabric.util.enlivenObjects([data], {
+          return FabricUtil.enlivenObjects([data], {
             reviver: function(obj) {
               return obj;
             }
