@@ -1,22 +1,14 @@
+
 import { Button } from "./ui/button";
-import { 
-  Pencil,
-  Ruler, 
-  Save, 
-  Trash, 
-  ZoomIn, 
-  ZoomOut, 
-  Undo, 
-  Redo,
-  Hand,
-  Palette,
-  MousePointer
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import { Separator } from "./ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { LineSettings } from "./LineSettings";
-import { useState } from "react";
+import { 
+  MousePointerSquareDashed, Pencil, StraightenIcon, Grid2X2, 
+  Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser
+} from "lucide-react";
+import { formatGIA } from "@/utils/display";
 
 interface DrawingToolbarProps {
   tool: DrawingTool;
@@ -26,6 +18,7 @@ interface DrawingToolbarProps {
   onZoom: (direction: "in" | "out") => void;
   onClear: () => void;
   onSave: () => void;
+  onDelete?: () => void;
   gia: number;
   lineThickness: number;
   lineColor: string;
@@ -34,9 +27,8 @@ interface DrawingToolbarProps {
 }
 
 /**
- * Drawing toolbar component with labeled tools and tooltips
- * @param {DrawingToolbarProps} props Component properties
- * @returns {JSX.Element} Rendered toolbar component
+ * Drawing toolbar component for floor plan editor
+ * @returns {JSX.Element} Rendered component
  */
 export const DrawingToolbar = ({
   tool,
@@ -46,231 +38,243 @@ export const DrawingToolbar = ({
   onZoom,
   onClear,
   onSave,
+  onDelete,
   gia,
   lineThickness,
   lineColor,
   onLineThicknessChange,
   onLineColorChange
-}: DrawingToolbarProps) => {
-  const [showLineSettings, setShowLineSettings] = useState(false);
-
+}: DrawingToolbarProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-4 mb-4">
-      <div className="flex gap-4 mb-4 flex-wrap">
-        {/* Tool Selection with hover cards for explanation */}
-        <div className="flex gap-2">
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
-                variant={tool === "select" ? "default" : "outline"}
+    <div className="flex flex-col space-y-2">
+      <div className="flex flex-wrap gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === "select" ? "default" : "outline"} 
+                size="sm"
                 onClick={() => onToolChange("select")}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="Select Tool"
               >
-                <MousePointer className="w-4 h-4 transition-colors" />
+                <MousePointerSquareDashed className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Select Tool</strong>
-              <p>Select and resize walls and shapes</p>
-            </HoverCardContent>
-          </HoverCard>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Select (Click to select objects, Delete key to remove)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
-                variant={tool === "draw" ? "default" : "outline"}
-                onClick={() => onToolChange("draw")}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="Freehand Tool"
-              >
-                <Pencil className="w-4 h-4 transition-colors" />
-              </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Freehand Tool</strong>
-              <p>Draw freely on the canvas</p>
-            </HoverCardContent>
-          </HoverCard>
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
-                variant={tool === "straightLine" ? "default" : "outline"}
-                onClick={() => onToolChange("straightLine")}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="Straight Line Tool"
-              >
-                <Ruler className="w-4 h-4 transition-colors" />
-              </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Wall Tool</strong>
-              <p>Draw straight walls with precise measurements</p>
-            </HoverCardContent>
-          </HoverCard>
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
-                variant={tool === "hand" ? "default" : "outline"}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === "hand" ? "default" : "outline"} 
+                size="sm"
                 onClick={() => onToolChange("hand")}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="Hand Tool"
               >
-                <Hand className="w-4 h-4 transition-colors" />
+                <Hand className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Hand Tool</strong>
-              <p>Pan and navigate around the canvas</p>
-            </HoverCardContent>
-          </HoverCard>
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
-                variant={showLineSettings ? "default" : "outline"}
-                onClick={() => setShowLineSettings(!showLineSettings)}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="Line Settings"
-              >
-                <Palette className="w-4 h-4 transition-colors" />
-              </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Line Settings</strong>
-              <p>Change line thickness and color</p>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Hand (Pan)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-        {/* History Controls */}
-        <div className="flex gap-2">
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === "draw" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => onToolChange("draw")}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Freehand Draw</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === "straightLine" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => onToolChange("straightLine")}
+              >
+                <StraightenIcon className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Draw Wall (Straight Line)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === "room" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => onToolChange("room")}
+              >
+                <Grid2X2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Draw Room (Enclosed Shape)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator orientation="vertical" className="h-8" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
                 variant="outline"
+                size="sm"
                 onClick={onUndo}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Undo"
               >
-                <Undo className="w-4 h-4 transition-colors" />
+                <Undo2 className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Undo</strong>
-              <p>Reverse the last drawing action</p>
-            </HoverCardContent>
-          </HoverCard>
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Undo</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
                 variant="outline"
+                size="sm"
                 onClick={onRedo}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Redo"
               >
-                <Redo className="w-4 h-4 transition-colors" />
+                <Redo2 className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Redo</strong>
-              <p>Restore the last undone action</p>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Redo</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-        {/* Zoom Controls */}
-        <div className="flex gap-2">
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
+        <Separator orientation="vertical" className="h-8" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
                 variant="outline"
+                size="sm"
                 onClick={() => onZoom("in")}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Zoom In"
               >
-                <ZoomIn className="w-4 h-4 transition-colors" />
+                <ZoomIn className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Zoom In</strong>
-              <p>Increase the canvas zoom level</p>
-            </HoverCardContent>
-          </HoverCard>
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Zoom In</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
                 variant="outline"
+                size="sm"
                 onClick={() => onZoom("out")}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Zoom Out"
               >
-                <ZoomOut className="w-4 h-4 transition-colors" />
+                <ZoomOut className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Zoom Out</strong>
-              <p>Decrease the canvas zoom level</p>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Zoom Out</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-        {/* GIA Display */}
-        <div className="flex items-center ml-auto mr-4 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-md">
-          <span className="text-sm font-medium">GIA: {gia.toFixed(2)} m²</span>
-        </div>
+        {/* Action Buttons */}
+        <Separator orientation="vertical" className="h-8" />
         
-        {/* Actions */}
-        <div className="flex gap-2">
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
                 variant="outline"
+                size="sm"
                 onClick={onClear}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform hover:bg-red-50 dark:hover:bg-red-950"
-                aria-label="Clear Canvas"
               >
-                <Trash className="w-4 h-4 text-red-500 transition-colors" />
+                <Trash className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Clear Canvas</strong>
-              <p>Remove all drawings from the canvas</p>
-            </HoverCardContent>
-          </HoverCard>
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button
-                variant="default"
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Clear All</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        {tool === "select" && onDelete && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={onDelete}
+                >
+                  <Eraser className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete Selected (or press Delete key)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline"
+                size="sm"
                 onClick={onSave}
-                className="w-10 h-10 p-0 hover:scale-105 transition-transform"
-                aria-label="Save as PNG"
               >
-                <Save className="w-4 h-4 transition-colors" />
+                <Save className="h-4 w-4" />
               </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-2 text-sm shadow-md">
-              <strong>Save</strong>
-              <p>Export the floor plan as PNG and save to storage</p>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Save Floor Plan</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
-      {/* Line Settings Panel */}
-      {showLineSettings && (
-        <LineSettings
-          thickness={lineThickness}
-          color={lineColor}
-          onThicknessChange={onLineThicknessChange}
-          onColorChange={onLineColorChange}
+      <div className="flex flex-wrap items-center space-x-2">
+        <LineSettings 
+          lineThickness={lineThickness}
+          lineColor={lineColor}
+          onLineThicknessChange={onLineThicknessChange}
+          onLineColorChange={onLineColorChange}
         />
-      )}
+        
+        <div className="border px-2 py-1 rounded text-xs bg-gray-50 dark:bg-gray-900 flex items-center gap-1">
+          <PanelRight className="h-3 w-3" />
+          <span>GIA: <strong>{formatGIA(gia)}</strong> m²</span>
+        </div>
+      </div>
     </div>
   );
 };

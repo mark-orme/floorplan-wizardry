@@ -27,6 +27,7 @@ interface CanvasLayoutProps {
   onZoom: (direction: "in" | "out") => void;
   onClear: () => void;
   onSave: () => void;
+  onDelete?: () => void;
   onFloorSelect: (index: number) => void;
   onAddFloor: () => void;
   onLineThicknessChange: (thickness: number) => void;
@@ -54,6 +55,7 @@ export const CanvasLayout = ({
   onZoom,
   onClear,
   onSave,
+  onDelete,
   onFloorSelect,
   onAddFloor,
   onLineThicknessChange,
@@ -72,6 +74,7 @@ export const CanvasLayout = ({
           onZoom={onZoom}
           onClear={onClear}
           onSave={onSave}
+          onDelete={onDelete}
           gia={gia}
           lineThickness={lineThickness}
           lineColor={lineColor}

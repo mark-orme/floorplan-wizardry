@@ -16,6 +16,7 @@ import { useCanvasControllerLineSettings } from "./useCanvasControllerLineSettin
 import { useCanvasControllerErrorHandling } from "./useCanvasControllerErrorHandling";
 import { useCanvasControllerDrawingState } from "./useCanvasControllerDrawingState";
 import { useCanvasControllerLoader } from "./useCanvasControllerLoader";
+import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
 
 // Create a context to hold all canvas controller values
 const CanvasControllerContext = createContext<ReturnType<typeof useCanvasControllerHooks> | null>(null);
@@ -106,7 +107,8 @@ const useCanvasControllerHooks = () => {
     handleRedo,
     handleZoom,
     clearCanvas,
-    saveCanvas
+    saveCanvas,
+    saveCurrentState
   } = useCanvasControllerTools({
     fabricCanvasRef,
     gridLayerRef,
@@ -123,6 +125,21 @@ const useCanvasControllerHooks = () => {
     setGia,
     createGrid
   });
+  
+  // Initialize canvas interaction tools for delete functionality
+  const {
+    deleteSelectedObjects,
+    setupSelectionMode
+  } = useCanvasInteraction({
+    fabricCanvasRef,
+    tool,
+    saveCurrentState
+  });
+
+  // Run selection mode setup when tool changes
+  useEffect(() => {
+    setupSelectionMode();
+  }, [tool, setupSelectionMode]);
 
   // 6. Update the recalculateGIA in drawing tools
   useEffect(() => {
@@ -213,6 +230,9 @@ const useCanvasControllerHooks = () => {
     handleZoom,
     clearCanvas,
     saveCanvas,
+    
+    // Selection tools
+    deleteSelectedObjects,
     
     // Line settings
     handleLineThicknessChange,

@@ -21,6 +21,7 @@ interface UseCanvasEventHandlersProps {
   handleMouseUp: () => void;
   processCreatedPath: (path: FabricPath) => void;
   cleanupTimeouts: () => void;
+  deleteSelectedObjects: () => void;
 }
 
 export const useCanvasEventHandlers = ({
@@ -35,7 +36,8 @@ export const useCanvasEventHandlers = ({
   handleMouseMove,
   handleMouseUp,
   processCreatedPath,
-  cleanupTimeouts
+  cleanupTimeouts,
+  deleteSelectedObjects
 }: UseCanvasEventHandlersProps) => {
   
   // Set up all event handlers
@@ -73,18 +75,49 @@ export const useCanvasEventHandlers = ({
       saveCurrentState();
     };
     
+    // Add keyboard event listener for delete key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Only delete if in select mode
+        if (tool === 'select') {
+          deleteSelectedObjects();
+        }
+      }
+    };
+    
+    // Add double-click handler to enter edit mode for walls
+    const handleDoubleClick = (e: any) => {
+      if (tool === 'select' && e.target && (e.target.type === 'polyline' || (e.target as any).objectType === 'line')) {
+        // Mark the object as being edited
+        (e.target as any).isEditing = true;
+        
+        // Save current state before editing
+        saveCurrentState();
+        
+        // Allow for the wall to be redrawn
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.setActiveObject(e.target);
+        fabricCanvas.requestRenderAll();
+      }
+    };
+    
     fabricCanvas.on('path:created', handlePathCreated);
     fabricCanvas.on('mouse:down', handleMouseDown);
     fabricCanvas.on('mouse:move', handleMouseMove);
     fabricCanvas.on('mouse:up', handleMouseUp);
     fabricCanvas.on('object:modified', handleObjectModified);
     fabricCanvas.on('object:removed', handleObjectRemoved);
+    fabricCanvas.on('mouse:dblclick', handleDoubleClick);
+    
+    // Add keyboard event listeners
+    window.addEventListener('keydown', handleKeyDown);
     
     // Expose undo/redo handlers to the global canvas object for debugging
     // This helps with external access from CanvasController
     (fabricCanvas as any).handleUndo = handleUndo;
     (fabricCanvas as any).handleRedo = handleRedo;
     (fabricCanvas as any).saveCurrentState = saveCurrentState;
+    (fabricCanvas as any).deleteSelectedObjects = deleteSelectedObjects;
     
     return () => {
       cleanupTimeouts();
@@ -96,12 +129,17 @@ export const useCanvasEventHandlers = ({
         fabricCanvas.off('mouse:up', handleMouseUp);
         fabricCanvas.off('object:modified', handleObjectModified);
         fabricCanvas.off('object:removed', handleObjectRemoved);
+        fabricCanvas.off('mouse:dblclick', handleDoubleClick);
         
         // Clean up custom handlers
         delete (fabricCanvas as any).handleUndo;
         delete (fabricCanvas as any).handleRedo;
         delete (fabricCanvas as any).saveCurrentState;
+        delete (fabricCanvas as any).deleteSelectedObjects;
       }
+      
+      // Remove keyboard event listeners
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [
     fabricCanvasRef, 
@@ -115,7 +153,8 @@ export const useCanvasEventHandlers = ({
     lineColor,
     saveCurrentState,
     handleUndo,
-    handleRedo
+    handleRedo,
+    deleteSelectedObjects
   ]);
 
   // Register zoom change tracking

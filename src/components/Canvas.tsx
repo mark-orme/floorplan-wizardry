@@ -44,6 +44,7 @@ const CanvasInner = (props: CanvasProps) => {
     handleZoom,
     clearCanvas,
     saveCanvas,
+    deleteSelectedObjects,
     handleLineThicknessChange,
     handleLineColorChange,
     drawingState,
@@ -108,7 +109,9 @@ const CanvasInner = (props: CanvasProps) => {
     // Show when hovering with these tools even if not actively drawing
     (!drawingState?.isDrawing && (tool === "straightLine" || tool === "room") && drawingState?.cursorPosition != null) ||
     // Also show when in select mode and actively manipulating a line
-    (tool === "select" && drawingState?.isDrawing);
+    (tool === "select" && drawingState?.isDrawing) ||
+    // Show when selecting a wall
+    (tool === "select" && drawingState?.selectionActive);
 
   return (
     <LoadingErrorWrapper
@@ -133,6 +136,7 @@ const CanvasInner = (props: CanvasProps) => {
           onZoom={handleZoom}
           onClear={clearCanvas}
           onSave={saveCanvas}
+          onDelete={deleteSelectedObjects}
           onFloorSelect={handleFloorSelect}
           onAddFloor={handleAddFloor}
           onLineThicknessChange={handleLineThicknessChange}

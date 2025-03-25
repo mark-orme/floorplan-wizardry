@@ -82,8 +82,22 @@ export const handleToolChange = (
       }
       break;
     case "select":
-      enableSelection(fabricCanvas);
-      toast.success("Select tool activated. You can now select and resize walls.");
+      // Use point selection instead of lasso
+      fabricCanvas.selection = false; // Disable drag-to-select (lasso)
+      fabricCanvas.defaultCursor = 'default';
+      fabricCanvas.hoverCursor = 'pointer';
+      
+      // Make objects selectable
+      fabricCanvas.getObjects().forEach(obj => {
+        // Skip grid elements
+        const objectType = (obj as any).objectType;
+        if (!objectType || !objectType.includes('grid')) {
+          obj.selectable = true;
+          obj.hoverCursor = 'pointer';
+        }
+      });
+      
+      toast.success("Select tool activated. Click to select walls. Press Delete key to remove selected items.");
       break;
     case "hand":
       enablePanning(fabricCanvas);

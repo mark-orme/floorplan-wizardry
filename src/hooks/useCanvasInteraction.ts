@@ -1,69 +1,104 @@
 
 /**
- * Custom hook for canvas interaction features
+ * Custom hook for handling canvas interaction options
  * @module useCanvasInteraction
  */
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { addPinchToZoom } from "@/utils/fabricInteraction";
+import { toast } from "sonner";
+import { DrawingTool } from "./useCanvasState";
+import { enableSelection, disableSelection } from "@/utils/fabricInteraction";
 
-/**
- * History state interface for undo/redo functionality
- * @interface HistoryState
- */
-interface HistoryState {
-  past: FabricObject[][];
-  future: FabricObject[][];
+interface UseCanvasInteractionProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  tool: DrawingTool;
+  saveCurrentState: () => void;
 }
 
 /**
- * Hook to handle canvas interaction features like zooming and panning
- * @returns {Object} Functions and refs for canvas interaction
+ * Hook that provides canvas interaction options
  */
-export const useCanvasInteraction = () => {
-  const historyRef = useRef<HistoryState>({ past: [], future: [] });
-
+export const useCanvasInteraction = ({
+  fabricCanvasRef,
+  tool,
+  saveCurrentState
+}: UseCanvasInteractionProps) => {
+  
   /**
-   * Setup interaction handlers for the canvas
-   * @param {FabricCanvas} fabricCanvas - The fabric canvas instance
-   * @returns {Function|undefined} Cleanup function
+   * Delete the currently selected object(s) on the canvas
    */
-  const setupInteractions = useCallback((fabricCanvas: FabricCanvas) => {
-    if (!fabricCanvas) return;
+  const deleteSelectedObjects = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
     
-    // Add pinch-to-zoom - fixed signature to match implementation
-    addPinchToZoom(fabricCanvas);
+    const canvas = fabricCanvasRef.current;
+    const activeObjects = canvas.getActiveObjects();
     
-    // Initialize history with current state only if there are actual objects
-    const initialState = fabricCanvas.getObjects().filter(obj => 
-      obj.type === 'path' || obj.type === 'polyline'
-    );
-    
-    if (initialState.length > 0) {
-      historyRef.current.past.push([...initialState]);
+    if (activeObjects.length === 0) {
+      toast.info("No objects selected. Select an object to delete.");
+      return;
     }
     
-    // Optimize object:added event with throttling
-    let objectAddedThrottled = false;
-    const ensureGridInBackground = () => {
-      if (objectAddedThrottled) return;
-      
-      objectAddedThrottled = true;
-      setTimeout(() => {
-        objectAddedThrottled = false;
-      }, 100);
-    };
+    // Save current state before deletion for proper undo
+    saveCurrentState();
     
-    fabricCanvas.on('object:added', ensureGridInBackground);
+    // Remove all selected objects
+    activeObjects.forEach(obj => {
+      // Skip grid elements
+      if ((obj as any).objectType && (obj as any).objectType.includes('grid')) {
+        return;
+      }
+      canvas.remove(obj);
+    });
     
-    // Return cleanup function
-    return () => {
-      fabricCanvas.off('object:added', ensureGridInBackground);
-    };
-  }, []);
-
+    // Clear selection and render
+    canvas.discardActiveObject();
+    canvas.requestRenderAll();
+    
+    toast.success(`Deleted ${activeObjects.length} object(s)`);
+  }, [fabricCanvasRef, saveCurrentState]);
+  
+  /**
+   * Enable point-based selection mode (instead of lasso)
+   */
+  const enablePointSelection = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Enable selection but disable group selection (lasso)
+    canvas.selection = false; // Disable drag-to-select (lasso)
+    canvas.defaultCursor = 'default';
+    canvas.hoverCursor = 'pointer';
+    
+    // Make objects selectable
+    canvas.getObjects().forEach(obj => {
+      // Skip grid elements
+      const objectType = (obj as any).objectType;
+      if (!objectType || !objectType.includes('grid')) {
+        obj.selectable = true;
+        obj.hoverCursor = 'pointer';
+      }
+    });
+    
+    canvas.requestRenderAll();
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Setup selection mode based on current tool
+   */
+  const setupSelectionMode = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    if (tool === "select") {
+      enablePointSelection();
+    } else {
+      disableSelection(fabricCanvasRef.current);
+    }
+  }, [fabricCanvasRef, tool, enablePointSelection]);
+  
   return {
-    historyRef,
-    setupInteractions
+    deleteSelectedObjects,
+    enablePointSelection,
+    setupSelectionMode
   };
 };
