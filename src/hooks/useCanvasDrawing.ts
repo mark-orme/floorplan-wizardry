@@ -97,6 +97,30 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
     };
   }, [fabricCanvasRef]);
   
+  // Capture current canvas state (excluding grid)
+  const captureCurrentState = () => {
+    if (!fabricCanvasRef.current) return [];
+    const fabricCanvas = fabricCanvasRef.current;
+    
+    // Define grid object check
+    const isGridObject = (obj: FabricObject) => 
+      gridLayerRef.current.some(gridObj => gridObj === obj);
+    
+    // Get current non-grid objects 
+    const currentDrawings = fabricCanvas.getObjects().filter(obj => 
+      (obj.type === 'polyline' || obj.type === 'path') &&
+      !isGridObject(obj)
+    );
+    
+    // Serialize current objects
+    return currentDrawings.map(obj => {
+      if (obj && typeof obj.toObject === 'function') {
+        return obj.toObject();
+      }
+      return null;
+    }).filter(Boolean);
+  };
+  
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -183,33 +207,20 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
         }
       }
       
-      // Capture current state BEFORE adding new drawing
+      // Capture current state BEFORE adding new drawing - important for proper undo/redo
       if (fabricCanvas) {
-        // Define grid object check
-        const isGridObject = (obj: FabricObject) => 
-          gridLayerRef.current.some(gridObj => gridObj === obj);
+        // Capture and save the current state to history before processing the new path
+        const serializedDrawings = captureCurrentState();
         
-        // Get current non-grid objects 
-        const currentDrawings = fabricCanvas.getObjects().filter(obj => 
-          (obj.type === 'polyline' || obj.type === 'path') &&
-          !isGridObject(obj)
-        );
-        
-        // Save current state to history BEFORE adding the new object
         if (historyRef.current) {
-          // Serialize current objects 
-          const serializedDrawings = currentDrawings.map(obj => {
-            if (obj && typeof obj.toObject === 'function') {
-              return obj.toObject();
-            }
-            return null;
-          }).filter(Boolean);
-          
-          // Add to history and clear redo stack
-          historyRef.current.past.push(serializedDrawings);
-          historyRef.current.future = [];
-          
-          console.log("History updated: past state added with", serializedDrawings.length, "objects. Total states:", historyRef.current.past.length);
+          // Add to history and clear redo stack - only if we have objects or this is first drawing
+          if (serializedDrawings.length > 0 || historyRef.current.past.length === 0) {
+            historyRef.current.past.push(serializedDrawings);
+            historyRef.current.future = [];
+            
+            console.log("History updated: past state added with", serializedDrawings.length, 
+              "objects. Total states:", historyRef.current.past.length);
+          }
         }
       }
       

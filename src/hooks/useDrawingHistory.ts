@@ -39,7 +39,6 @@ export const useDrawingHistory = ({
 
   /**
    * Serialize objects for history storage
-   * Instead of storing references or using clone(), store serialized data
    * @param {FabricObject[]} objects - Objects to serialize
    * @returns {any[]} Serialized object data
    */
@@ -48,7 +47,8 @@ export const useDrawingHistory = ({
       if (!obj || typeof obj.toObject !== 'function') return null;
       try {
         // Use Fabric's built-in serialization
-        return obj.toObject();
+        const serialized = obj.toObject();
+        return serialized;
       } catch (err) {
         console.warn("Error serializing object:", err);
         return null;
@@ -69,9 +69,17 @@ export const useDrawingHistory = ({
       try {
         // Use the appropriate Fabric constructor based on type
         if (data.type === 'polyline') {
-          return new Polyline(data.points, data);
+          return new Polyline(data.points, {
+            ...data,
+            objectCaching: true,
+            selectable: false
+          });
         } else if (data.type === 'path') {
-          return new Path(data.path, data);
+          return new Path(data.path, {
+            ...data,
+            objectCaching: true,
+            selectable: false
+          });
         } else {
           // Default case for other object types
           return FabricUtil.enlivenObjects([data], {
@@ -116,6 +124,7 @@ export const useDrawingHistory = ({
       // Save current state to future for redo
       const serializedCurrentState = serializeObjects(currentNonGridObjects);
       future.unshift(serializedCurrentState);
+      console.log("Saved current state for redo with", serializedCurrentState.length, "objects");
       
       // Get the previous state (pop removes the last element)
       const previousState = past.pop();
@@ -141,6 +150,7 @@ export const useDrawingHistory = ({
       if (previousState && previousState.length > 0) {
         const objectsToAdd = deserializeObjects(previousState);
         console.log("Adding", objectsToAdd.length, "objects from previous state");
+        
         objectsToAdd.forEach(obj => {
           if (obj) {
             try {
@@ -198,6 +208,7 @@ export const useDrawingHistory = ({
       // Save current state to past
       const serializedCurrentState = serializeObjects(currentNonGridObjects);
       past.push(serializedCurrentState);
+      console.log("Saved current state to past history with", serializedCurrentState.length, "objects");
       
       // Get the most recent future state (shift removes the first element)
       const futureState = future.shift();
@@ -223,6 +234,7 @@ export const useDrawingHistory = ({
       if (futureState && futureState.length > 0) {
         const objectsToAdd = deserializeObjects(futureState);
         console.log("Adding", objectsToAdd.length, "objects from future state");
+        
         objectsToAdd.forEach(obj => {
           if (obj) {
             try {
