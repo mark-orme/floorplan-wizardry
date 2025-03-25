@@ -1,8 +1,8 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, UserRole, getUserRole } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { setupSupabaseTables } from '@/utils/supabaseSetup';
 
 type AuthContextType = {
   session: Session | null;
@@ -23,7 +23,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user role from profile
   const fetchUserRole = async (userId: string) => {
     if (!userId) return;
     try {
@@ -32,11 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error('Error fetching user role:', error);
       
-      // TEMPORARY FIX: If the user_profiles table doesn't exist yet,
-      // we'll set a default role based on the email domain
-      // This is just for development purposes
       if (error.message && error.message.includes("relation \"public.user_profiles\" does not exist")) {
-        // Create a temporary user profile in memory based on email
         if (user?.email) {
           if (user.email.includes('photographer')) {
             setUserRole(UserRole.PHOTOGRAPHER);
@@ -48,7 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUserRole(UserRole.MANAGER);
             console.info(`Added profile for existing user: ${user.email}`);
           } else {
-            // Default fallback
             setUserRole(UserRole.PHOTOGRAPHER);
           }
         }
@@ -57,7 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session
+    setupSupabaseTables();
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -67,7 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -97,11 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, role: UserRole = UserRole.PHOTOGRAPHER) => {
     try {
-      // Create user in auth
       const { error, data } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       
-      // Create user profile with role
       if (data.user) {
         const { error: profileError } = await supabase
           .from('user_profiles')
