@@ -1,4 +1,8 @@
 
+/**
+ * Grid drawing tests with mouse and stylus input
+ * @module gridDrawing.test
+ */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Canvas } from "fabric";
@@ -32,6 +36,11 @@ vi.mock('fabric', () => {
       color: "#000000",
       width: 2,
       decimate: 2
+    })),
+    Line: vi.fn().mockImplementation((points, options) => ({
+      type: 'line',
+      points,
+      ...options
     }))
   };
   
