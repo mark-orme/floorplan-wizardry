@@ -1,4 +1,3 @@
-
 /**
  * Grid operation utilities
  * @module gridOperations
@@ -7,25 +6,25 @@ import { Canvas as FabricCanvas, Line } from "fabric";
 import { GridCreationState } from "@/types/drawingTypes";
 import logger from "./logger";
 
-// Since canScheduleGridCreation, getCurrentGridState, and updateGridState are missing, let's implement them
-
-/**
- * Current grid state
- */
+// Current grid state
 const gridState: GridCreationState = {
   creationInProgress: false,
   consecutiveResets: 0,
   maxConsecutiveResets: 5,
   lastAttemptTime: 0,
-  creationLock: false,
-  safetyTimeout: null,
   lastCreationTime: 0,
-  lastDimensions: null,
   exists: false,
-  throttleInterval: 1000, // 1 second throttle
+  safetyTimeout: null,
+  throttleInterval: 1000,
   totalCreations: 0,
   maxRecreations: 20,
-  minRecreationInterval: 5000 // 5 seconds
+  minRecreationInterval: 5000,
+  lastDimensions: null,
+  creationLock: {
+    id: 0,
+    timestamp: 0,
+    isLocked: false
+  }
 };
 
 /**
@@ -109,7 +108,6 @@ export const tryCreateGrid = (
 ): any[] => {
   const state = getCurrentGridState();
   
-  // Check if grid creation is allowed based on current state
   if (!canScheduleGridCreation(state)) {
     console.warn("Grid creation is throttled or locked.");
     return [];
@@ -121,14 +119,14 @@ export const tryCreateGrid = (
     return [];
   }
   
-  // Update grid state to reflect the attempt
-  updateGridState({
-    creationInProgress: true,
-    lastAttemptTime: Date.now(),
-    consecutiveResets: state.consecutiveResets + 1
-  });
-  
   try {
+    // Update grid state to reflect the attempt
+    updateGridState({
+      creationInProgress: true,
+      lastAttemptTime: Date.now(),
+      consecutiveResets: state.consecutiveResets + 1
+    });
+    
     // Create grid lines
     const gridLines = createGridLines(canvas, width, height);
     
@@ -144,27 +142,24 @@ export const tryCreateGrid = (
     // Reset grid progress after successful creation
     scheduleGridProgressReset("success");
     
-    // Update debug info
+    // Update debug info and execute callback
     setDebugInfo((prevDebugInfo: any) => ({
       ...prevDebugInfo,
       gridCreationAttempts: prevDebugInfo.gridCreationAttempts + 1,
       lastGridCreationTime: Date.now()
     }));
     
-    // Execute callback
     gridCreationCallback(true);
     
     return gridLines;
   } catch (error: any) {
     console.error("Grid creation failed:", error);
     
-    // Update grid state on failure
     updateGridState({
       creationInProgress: false,
       consecutiveResets: state.consecutiveResets + 1
     });
     
-    // Set error message and state
     setErrorMessage(`Grid creation failed: ${error.message}`);
     setHasError(true);
     
@@ -176,7 +171,6 @@ export const tryCreateGrid = (
       lastErrorTime: Date.now()
     }));
     
-    // Execute callback
     gridCreationCallback(false);
     
     return [];
@@ -187,18 +181,40 @@ export const tryCreateGrid = (
 };
 
 /**
- * Implement missing functions
+ * Acquire grid creation lock
  */
 export const acquireGridCreationLock = (id: string): boolean => {
-  if (gridState.creationLock) return false;
-  gridState.creationLock = true;
+  const state = getCurrentGridState();
+  if (state.creationLock.isLocked) return false;
+  
+  updateGridState({
+    creationLock: {
+      id: Date.now(),
+      timestamp: Date.now(),
+      isLocked: true
+    }
+  });
   return true;
 };
 
+/**
+ * Release grid creation lock
+ */
 export const releaseGridCreationLock = (id: string): void => {
-  gridState.creationLock = false;
+  updateGridState({
+    creationLock: {
+      id: 0,
+      timestamp: 0,
+      isLocked: false
+    }
+  });
 };
 
+/**
+ * Schedule grid progress reset
+ * @param {string} reason - Reason for reset
+ * @returns {number} Timeout ID
+ */
 export const scheduleGridProgressReset = (reason: string): number => {
   const timeoutId = window.setTimeout(() => {
     gridState.creationInProgress = false;
