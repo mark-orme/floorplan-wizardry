@@ -7,6 +7,8 @@ import { useCallback } from "react";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
 import { PIXELS_PER_METER } from "@/utils/drawing";
+import { CLOSE_POINT_THRESHOLD } from "@/utils/geometry/constants";
+import logger from "@/utils/logger";
 
 /**
  * Interface defining the return value of usePointProcessing hook
@@ -52,6 +54,7 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
    * @returns {Point[]} The processed points
    */
   const processPoints = useCallback((points: Point[]): Point[] => {
+    logger.debug(`Processing ${points.length} points with tool: ${tool}`);
     switch (tool) {
       case "draw":
       case "straightLine":
@@ -90,13 +93,18 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
 
     const firstPoint = points[0];
     const lastPoint = points[points.length - 1];
-    const distanceThreshold = 0.1; // 10cm threshold
+    
+    // Use the constant from geometry/constants.ts instead of a magic number
+    const distanceThreshold = CLOSE_POINT_THRESHOLD;
 
     const dx = lastPoint.x - firstPoint.x;
     const dy = lastPoint.y - firstPoint.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-
-    return distance <= distanceThreshold;
+    
+    const isClosed = distance <= distanceThreshold;
+    logger.debug(`Shape closed check: distance=${distance.toFixed(3)}m, threshold=${distanceThreshold}m, result=${isClosed}`);
+    
+    return isClosed;
   }, []);
 
   return { processPoints, convertToPixelPoints, isShapeClosed };

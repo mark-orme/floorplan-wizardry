@@ -42,7 +42,7 @@ interface UsePathProcessingProps {
 }
 
 /**
- * Type definition for a Fabric path with enhanced properties
+ * Enhanced Fabric Path with additional properties
  * @interface EnhancedPath
  * @extends Path
  */
@@ -133,9 +133,7 @@ export const usePathProcessing = ({
         return;
       }
       
-      // CRITICAL FIX: Get the path's current color before processing
-      // This captures the color set by the brush or any custom color
-      // Convert potentially complex stroke types to a simple string
+      // Get the path's current color before processing
       const pathColor = typeof enhancedPath.stroke === 'string' ? enhancedPath.stroke : lineColor;
       logger.info("Detected path color:", pathColor);
       
@@ -165,7 +163,6 @@ export const usePathProcessing = ({
       
       if (success) {
         logger.info(`Line drawn and added to canvas successfully with color: ${pathColor}`);
-        // History is now handled in useCanvasDrawing to avoid duplicating entries
       }
       
     } catch (error) {

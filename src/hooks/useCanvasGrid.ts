@@ -5,7 +5,7 @@
  * @module useCanvasGrid
  */
 import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { resetGridProgress } from "@/utils/gridManager";
 import { validateGridComponents, ensureGridLayerInitialized } from "@/utils/gridValidationUtils";
 import { 
@@ -13,6 +13,7 @@ import {
   DebugInfoState, 
   GridCreationCallback 
 } from "@/types/drawingTypes";
+import logger from "@/utils/logger";
 
 // Import refactored grid hooks
 import { useGridCreation } from "./grid/useGridCreation";
@@ -25,7 +26,7 @@ import { useGridThrottling } from "./grid/useGridThrottling";
  */
 interface UseCanvasGridProps {
   /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<any[]>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
   
   /** Current canvas dimensions */
   canvasDimensions: CanvasDimensions;
@@ -88,9 +89,7 @@ export const useCanvasGrid = ({
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Cleaning up grid creation - resetting progress flags");
-      }
+      logger.debug("Cleaning up grid creation - resetting progress flags");
       
       // Clean up any pending operations
       cleanupThrottling();
@@ -105,12 +104,10 @@ export const useCanvasGrid = ({
    * This is the main public API of this hook
    * 
    * @param {FabricCanvas} canvas - The Fabric.js canvas instance
-   * @returns {any[]} Array of created grid objects
+   * @returns {FabricObject[]} Array of created grid objects
    */
-  const createGridCallback = useCallback((canvas: FabricCanvas): any[] => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("createGridCallback invoked with dimensions:", canvasDimensions);
-    }
+  const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
+    logger.debug("createGridCallback invoked with dimensions:", canvasDimensions);
     
     // Validate components before proceeding
     const validation = validateGridComponents(canvas, gridLayerRef);

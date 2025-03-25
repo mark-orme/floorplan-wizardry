@@ -4,29 +4,36 @@
  * @module useCanvasBrush
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { 
   initializeDrawingBrush, 
   addPressureSensitivity
 } from "@/utils/fabricBrush";
 import { DebugInfoState } from "@/types/drawingTypes";
+import logger from "@/utils/logger";
 
 /**
  * Props for useCanvasBrush hook
+ * @interface UseCanvasBrushProps
  */
 interface UseCanvasBrushProps {
+  /** Function to update debug info state */
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
 }
 
 /**
  * Result type for useCanvasBrush hook
+ * @interface UseCanvasBrushResult
  */
 interface UseCanvasBrushResult {
+  /** Initialize brush on the canvas */
   setupBrush: (fabricCanvas: FabricCanvas) => boolean;
 }
 
 /**
  * Hook to handle brush initialization and configuration
+ * Manages drawing brush settings and pressure sensitivity
+ * 
  * @param {UseCanvasBrushProps} props - Hook properties
  * @returns {UseCanvasBrushResult} Brush setup function
  */
@@ -43,7 +50,7 @@ export const useCanvasBrush = ({
     if (!fabricCanvas) return false;
     
     // Initialize the drawing brush with precise settings for drawing
-    const pencilBrush = initializeDrawingBrush(fabricCanvas);
+    const pencilBrush = initializeDrawingBrush(fabricCanvas) as PencilBrush;
     if (pencilBrush) {
       fabricCanvas.freeDrawingBrush = pencilBrush;
       fabricCanvas.freeDrawingBrush.width = 2;
@@ -52,7 +59,7 @@ export const useCanvasBrush = ({
       
       // OPTIMIZATION: Set brush properties for better performance
       if ('decimate' in pencilBrush) {
-        (pencilBrush as any).decimate = 2; // Reduce number of points for smoother performance
+        (pencilBrush as unknown as { decimate: number }).decimate = 2; // Reduce number of points for smoother performance
       }
       
       setDebugInfo(prev => ({
@@ -63,9 +70,10 @@ export const useCanvasBrush = ({
       // Add pressure sensitivity for Apple Pencil
       addPressureSensitivity(fabricCanvas);
       
+      logger.debug("Drawing brush initialized successfully");
       return true;
     } else {
-      console.error("Failed to initialize drawing brush");
+      logger.error("Failed to initialize drawing brush");
       setDebugInfo(prev => ({
         ...prev, 
         brushInitialized: false

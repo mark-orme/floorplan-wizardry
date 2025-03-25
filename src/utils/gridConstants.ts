@@ -36,6 +36,21 @@ export const LARGE_GRID_SKIP_THRESHOLD = 600; // Lowered to create denser grid
 /** The grid should extend beyond the visible canvas to support panning */
 export const GRID_EXTENSION_FACTOR = 5; // Increased for better pan support
 
+/** Maximum time to wait for grid creation before timing out (ms) */
+export const GRID_CREATION_TIMEOUT = 5000;
+
+/** Minimum delay between grid recreation attempts (ms) */
+export const MIN_GRID_RECREATION_DELAY = 1000;
+
+/** Maximum retries for grid creation before giving up */
+export const MAX_GRID_CREATION_RETRIES = 3;
+
+/** Initial delay for grid creation retry (ms) */
+export const INITIAL_GRID_RETRY_DELAY = 100;
+
+/** Maximum delay for grid creation retry (ms) */
+export const MAX_GRID_RETRY_DELAY = 1000;
+
 /**
  * Determines if small grid creation should be skipped based on canvas dimensions
  * Prevents creating too many grid lines which would impact performance
@@ -61,8 +76,8 @@ export const shouldSkipSmallGrid = (canvasWidth: number, canvasHeight: number): 
   // Increased threshold to allow more grid lines before skipping
   const shouldSkip = totalEstimatedLines > MAX_SMALL_GRID_LINES * 10;
   
-  if (process.env.NODE_ENV === 'development' && shouldSkip) {
-    console.log(`Skipping small grid creation - estimated ${totalEstimatedLines} lines exceeds threshold of ${MAX_SMALL_GRID_LINES * 10}`);
+  if (process.env.NODE_ENV === 'development') {
+    logger.debug(`Evaluating small grid creation - estimated ${totalEstimatedLines} lines, threshold ${MAX_SMALL_GRID_LINES * 10}, will ${shouldSkip ? 'skip' : 'create'}`);
   }
   
   return shouldSkip;

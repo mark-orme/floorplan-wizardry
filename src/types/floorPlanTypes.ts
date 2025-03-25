@@ -16,7 +16,7 @@ export type PaperSize = 'A4' | 'A3' | 'infinite';
  * Canvas object data that can be serialized and stored
  * @typedef {Object} SerializedCanvasObject
  */
-export type SerializedCanvasObject = Record<string, any>;
+export type SerializedCanvasObject = Record<string, unknown>;
 
 /**
  * Unified FloorPlan interface that satisfies both type systems
@@ -55,4 +55,41 @@ export interface FloorPlan {
   
   /** Serialized canvas objects */
   objects?: SerializedCanvasObject[];
+}
+
+/**
+ * Floor plan template options for creating new floor plans
+ * @interface FloorPlanTemplate
+ */
+export interface FloorPlanTemplate {
+  /** Template identifier */
+  id: string;
+  
+  /** Template name */
+  name: string;
+  
+  /** Default paper size */
+  paperSize: PaperSize;
+  
+  /** Default canvas dimensions */
+  dimensions: CanvasDimensions;
+}
+
+/**
+ * Floor plan storage model for database operations
+ * @interface FloorPlanStorageModel
+ * @extends FloorPlan
+ */
+export interface FloorPlanStorageModel extends FloorPlan {
+  /** Property ID this floor plan belongs to */
+  propertyId?: string;
+  
+  /** User ID who created this floor plan */
+  userId?: string;
+  
+  /** Flag indicating if this floor plan is synchronized to cloud */
+  synced?: boolean;
+  
+  /** Version number for concurrency control */
+  version?: number;
 }

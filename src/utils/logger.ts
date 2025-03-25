@@ -27,7 +27,7 @@ const LOG_LEVEL: Record<LogLevel, number> = {
  * Get current log level from environment or default to 'info' in development and 'error' in production
  * @type {number}
  */
-const CURRENT_LOG_LEVEL = process.env.NODE_ENV === 'production' ? LOG_LEVEL.error : LOG_LEVEL.info;
+const CURRENT_LOG_LEVEL = process.env.NODE_ENV === 'production' ? LOG_LEVEL.error : LOG_LEVEL.debug;
 
 /**
  * Helper to format a timestamp for log messages
@@ -92,7 +92,7 @@ const logger: Logger = {
    * @param {any[]} args - Additional arguments to log
    */
   debug(message: string, ...args: any[]): void {
-    if (LOG_LEVEL.debug >= CURRENT_LOG_LEVEL) {
+    if (LOG_LEVEL.debug >= CURRENT_LOG_LEVEL && process.env.NODE_ENV === 'development') {
       console.debug(`${formattedTimestamp()} debug: ${message}`, ...args);
     }
   }

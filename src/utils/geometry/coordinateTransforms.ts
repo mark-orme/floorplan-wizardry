@@ -4,21 +4,44 @@
  * Functions for converting between coordinate systems
  * @module coordinateTransforms
  */
+import { Canvas as FabricCanvas } from "fabric";
 import { Point } from '@/types/drawingTypes';
 import { PIXELS_PER_METER } from '../drawing';
+import logger from '../logger';
+
+/**
+ * Viewport transform type for Fabric.js canvas
+ * @typedef {number[]} ViewportTransform
+ */
+type ViewportTransform = [number, number, number, number, number, number];
+
+/**
+ * Canvas with viewport transform property
+ * @interface CanvasWithViewport
+ * @extends FabricCanvas
+ */
+interface CanvasWithViewport extends FabricCanvas {
+  viewportTransform: ViewportTransform;
+  getZoom: () => number;
+}
 
 /**
  * Adjusts points for panning offset - ensures proper unit conversion
  * Helper for ensuring accurate point calculations when canvas is panned
+ * 
  * @param {Point} point - The point to adjust (in pixels)
- * @param {Canvas} canvas - The fabric canvas
+ * @param {FabricCanvas} canvas - The fabric canvas
  * @returns {Point} Adjusted point (in meters)
  */
-export const adjustPointForPanning = (point: Point, canvas: any): Point => {
-  if (!canvas || !canvas.viewportTransform) return point;
+export const adjustPointForPanning = (point: Point, canvas: FabricCanvas): Point => {
+  if (!canvas || !(canvas as CanvasWithViewport).viewportTransform) {
+    logger.warn("Cannot adjust point for panning: invalid canvas or missing viewportTransform");
+    return point;
+  }
   
-  const viewportTransform = canvas.viewportTransform;
-  const zoom = canvas.getZoom();
+  const canvasWithViewport = canvas as CanvasWithViewport;
+  const viewportTransform = canvasWithViewport.viewportTransform;
+  const zoom = canvasWithViewport.getZoom();
   
   // First apply viewport transform to get correct pixel coordinates
   const pixelPoint = {
@@ -27,10 +50,17 @@ export const adjustPointForPanning = (point: Point, canvas: any): Point => {
   };
   
   // Then convert from pixels to meters accounting for zoom
-  return {
+  const result = {
     x: Number((pixelPoint.x / (PIXELS_PER_METER * zoom)).toFixed(3)),
     y: Number((pixelPoint.y / (PIXELS_PER_METER * zoom)).toFixed(3))
   };
+  
+  logger.debug(
+    `Point adjustment: (${point.x.toFixed(1)}, ${point.y.toFixed(1)}) px → ` +
+    `(${result.x.toFixed(3)}, ${result.y.toFixed(3)}) m @ zoom ${zoom.toFixed(2)}`
+  );
+  
+  return result;
 };
 
 /**
@@ -60,5 +90,30 @@ export const metersToPixels = (meterPoint: Point, zoom: number = 1): Point => {
   return {
     x: Number((meterPoint.x * PIXELS_PER_METER * zoom).toFixed(0)),
     y: Number((meterPoint.y * PIXELS_PER_METER * zoom).toFixed(0))
+  };
+};
+
+/**
+ * Converts a point from screen coordinates to canvas coordinates
+ * Takes into account panning and zooming
+ * 
+ * @param screenPoint - Point in screen coordinates (e.g., from mouse event)
+ * @param canvas - The Fabric.js canvas
+ * @returns Point in canvas coordinates
+ */
+export const screenToCanvasCoordinates = (screenPoint: Point, canvas: FabricCanvas): Point => {
+  if (!canvas || !(canvas as CanvasWithViewport).viewportTransform) {
+    logger.warn("Cannot convert screen to canvas coordinates: invalid canvas");
+    return screenPoint;
+  }
+  
+  const canvasElement = canvas.getElement() as HTMLCanvasElement;
+  const rect = canvasElement.getBoundingClientRect();
+  const canvasWithViewport = canvas as CanvasWithViewport;
+  const zoom = canvasWithViewport.getZoom();
+  
+  return {
+    x: (screenPoint.x - rect.left) / zoom,
+    y: (screenPoint.y - rect.top) / zoom
   };
 };

@@ -26,3 +26,72 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs))
 }
+
+/**
+ * Formats a number as a currency string
+ * 
+ * @param {number} value - The number to format
+ * @param {string} [currency="USD"] - The currency code
+ * @param {string} [locale="en-US"] - The locale to use for formatting
+ * @returns {string} Formatted currency string
+ * 
+ * @example
+ * // Returns "$1,234.56"
+ * formatCurrency(1234.56)
+ * 
+ * @example
+ * // Returns "£1,234.56"
+ * formatCurrency(1234.56, "GBP", "en-GB")
+ */
+export function formatCurrency(
+  value: number,
+  currency: string = "USD",
+  locale: string = "en-US"
+): string {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+  }).format(value);
+}
+
+/**
+ * Formats a date to a human-readable string
+ * 
+ * @param {Date | string | number} date - The date to format
+ * @param {string} [locale="en-US"] - The locale to use for formatting
+ * @returns {string} Formatted date string
+ * 
+ * @example
+ * // Returns "Jan 1, 2023"
+ * formatDate(new Date(2023, 0, 1))
+ */
+export function formatDate(
+  date: Date | string | number,
+  locale: string = "en-US"
+): string {
+  const dateObj = typeof date === "string" || typeof date === "number" 
+    ? new Date(date) 
+    : date;
+  
+  return dateObj.toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+/**
+ * Truncates a string to a maximum length and adds an ellipsis if truncated
+ * 
+ * @param {string} str - The string to truncate
+ * @param {number} [maxLength=50] - Maximum length before truncation
+ * @returns {string} Truncated string
+ * 
+ * @example
+ * // Returns "This is a..."
+ * truncateString("This is a long string", 10)
+ */
+export function truncateString(str: string, maxLength: number = 50): string {
+  if (str.length <= maxLength) return str;
+  return `${str.slice(0, maxLength)}...`;
+}

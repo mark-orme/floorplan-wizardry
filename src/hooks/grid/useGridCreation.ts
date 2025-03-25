@@ -5,17 +5,22 @@
  * @module useGridCreation
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
 import { resetGridProgress } from "@/utils/gridManager";
 import { 
   CanvasDimensions, 
   DebugInfoState
 } from "@/types/drawingTypes";
+import logger from "@/utils/logger";
 
+/**
+ * Props for the useGridCreation hook
+ * @interface UseGridCreationProps
+ */
 interface UseGridCreationProps {
   /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<any[]>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
   
   /** Current canvas dimensions */
   canvasDimensions: CanvasDimensions;
@@ -31,7 +36,17 @@ interface UseGridCreationProps {
 }
 
 /**
+ * Result type for the useGridCreation hook
+ * @interface UseGridCreationResult
+ */
+interface UseGridCreationResult {
+  (canvas: FabricCanvas): FabricObject[];
+}
+
+/**
  * Hook for grid creation operations
+ * Manages the creation of grid lines and objects on the canvas
+ * 
  * @param props - Hook properties
  * @returns Memoized grid creation function
  */
@@ -41,16 +56,16 @@ export const useGridCreation = ({
   setDebugInfo,
   setHasError,
   setErrorMessage
-}: UseGridCreationProps) => {
+}: UseGridCreationProps): UseGridCreationResult => {
   
   /**
    * Create grid lines on the canvas
    * @param canvas - The Fabric.js canvas instance
    * @returns Array of created grid objects
    */
-  const createGridCallback = useCallback((canvas: FabricCanvas): any[] => {
+  const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
     if (process.env.NODE_ENV === 'development') {
-      console.log("createGridCallback invoked with FORCED CREATION", {
+      logger.debug("createGridCallback invoked with FORCED CREATION", {
         canvasDimensions,
         gridExists: gridLayerRef?.current?.length > 0,
         initialized: (canvas as any).initialized
@@ -73,7 +88,7 @@ export const useGridCreation = ({
       
       if (grid && grid.length > 0) {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`Grid created successfully with ${grid.length} objects`);
+          logger.debug(`Grid created successfully with ${grid.length} objects`);
         }
         
         // Force a render
@@ -84,7 +99,7 @@ export const useGridCreation = ({
       
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error("Critical error in createGridCallback:", error);
+        logger.error("Critical error in createGridCallback:", error);
       }
       setHasError(true);
       setErrorMessage(`Grid creation failed: ${error instanceof Error ? error.message : String(error)}`);

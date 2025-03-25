@@ -40,3 +40,15 @@ export const HORIZONTAL_BIAS = 1.2;
  * @constant
  */
 export const VERTICAL_BIAS = 1.2;
+
+/**
+ * Area measurement precision (3 decimal places - mm²)
+ * @constant
+ */
+export const AREA_PRECISION = 3;
+
+/**
+ * Maximum angle deviation for lines to be considered straight (degrees)
+ * @constant
+ */
+export const MAX_ANGLE_DEVIATION = 5;

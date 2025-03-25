@@ -11,6 +11,15 @@ import { CanvasDimensions } from "@/types/drawingTypes";
 import logger from "./logger";
 
 /**
+ * Grid dimensions metadata type for storing in fabric objects
+ * @interface GridDimensionsMeta
+ */
+interface GridDimensionsMeta {
+  width: number;
+  height: number;
+}
+
+/**
  * Store grid dimensions in a metadata object for future comparison
  * This helps determine when grid needs to be recreated due to dimension changes
  * 
@@ -20,7 +29,7 @@ import logger from "./logger";
  */
 export const storeGridDimensions = (obj: FabricObject, width: number, height: number): void => {
   Object.defineProperty(obj, 'gridDimensions', {
-    value: { width, height },
+    value: { width, height } as GridDimensionsMeta,
     enumerable: false
   });
 };
