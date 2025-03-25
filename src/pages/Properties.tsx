@@ -65,7 +65,7 @@ const Properties = () => {
           </p>
         </div>
 
-        {hasAccess([UserRole.PHOTOGRAPHER]) && (
+        {hasAccess([UserRole.PHOTOGRAPHER, UserRole.MANAGER]) && (
           <Button onClick={() => navigate('/properties/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New Property
@@ -96,7 +96,7 @@ const Properties = () => {
               ? 'No properties match your search' 
               : 'No properties found. Create your first property!'}
           </p>
-          {!searchTerm && hasAccess([UserRole.PHOTOGRAPHER]) && (
+          {!searchTerm && hasAccess([UserRole.PHOTOGRAPHER, UserRole.MANAGER]) && (
             <Button 
               variant="outline" 
               className="mt-4"

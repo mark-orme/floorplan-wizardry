@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 
 const PropertyFormSchema = z.object({
   order_id: z.string().min(1, 'Order ID is required'),
@@ -45,8 +46,12 @@ const PropertyForm = () => {
       );
 
       if (newProperty) {
+        toast.success('Property created successfully');
         navigate(`/properties/${newProperty.id}`);
       }
+    } catch (error) {
+      console.error('Error creating property:', error);
+      toast.error('Failed to create property');
     } finally {
       setIsSubmitting(false);
     }
