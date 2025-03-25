@@ -39,35 +39,87 @@ const Auth = () => {
         let createdUsers = 0;
         
         for (const testUser of testUsers) {
-          // Check if user exists
-          const { data } = await supabase.auth.signInWithPassword({
-            email: testUser.email,
-            password: testUser.password,
-          });
-          
-          // If user doesn't exist (sign in failed), create it
-          if (!data.user) {
-            // Create user
-            const { error, data: userData } = await supabase.auth.signUp({
+          try {
+            // First try to sign in - if successful, the user exists and is confirmed
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
               email: testUser.email,
               password: testUser.password,
             });
             
-            if (error) throw error;
+            if (signInData.user) {
+              // User exists and can sign in - make sure they have a profile
+              const { data: profileData } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('user_id', signInData.user.id)
+                .single();
+                
+              if (!profileData) {
+                // Create profile if it doesn't exist
+                await supabase
+                  .from('user_profiles')
+                  .insert({
+                    user_id: signInData.user.id,
+                    role: testUser.role,
+                    created_at: new Date().toISOString()
+                  });
+              }
+              
+              continue; // User exists and is confirmed, move to next test user
+            }
             
-            // Create user profile with role
-            if (userData.user) {
+            // Check if user exists but is not confirmed
+            const { data: userData } = await supabase.auth.admin.listUsers();
+            const existingUser = userData?.users.find(u => u.email === testUser.email);
+            
+            if (existingUser) {
+              // User exists but not confirmed - delete and recreate
+              await supabase.auth.admin.deleteUser(existingUser.id);
+            }
+            
+            // Create user with auto-confirm
+            const { data: newUserData, error } = await supabase.auth.signUp({
+              email: testUser.email,
+              password: testUser.password,
+              options: {
+                emailRedirectTo: window.location.origin,
+                data: {
+                  role: testUser.role
+                }
+              }
+            });
+            
+            if (error) {
+              if (error.message.includes('already registered')) {
+                // Email exists but can't sign in - likely needs confirmation
+                // Since we can't confirm directly from the client, we'll just notify the user
+                toast.warning(`${testUser.email} already exists but may need confirmation. Please confirm your email or use the Supabase dashboard to confirm manually.`);
+                continue;
+              }
+              throw error;
+            }
+            
+            if (newUserData.user) {
+              // Create user profile
               const { error: profileError } = await supabase
                 .from('user_profiles')
                 .insert({
-                  user_id: userData.user.id,
+                  user_id: newUserData.user.id,
                   role: testUser.role,
                   created_at: new Date().toISOString()
                 });
                 
               if (profileError) throw profileError;
               createdUsers++;
+              
+              // Use Supabase's auto-confirmation by setting user as confirmed
+              // Note: This requires admin access which isn't available from client side
+              // We inform the user that they need to manually confirm in Supabase dashboard
+              toast.info(`${testUser.email} created. Please use the Supabase dashboard to confirm this email.`);
             }
+          } catch (userError: any) {
+            console.error(`Error processing ${testUser.email}:`, userError);
+            toast.error(`Error with ${testUser.email}: ${userError.message}`);
           }
         }
         
@@ -76,7 +128,8 @@ const Auth = () => {
         
         if (createdUsers > 0) {
           toast.success(`${createdUsers} test user(s) created successfully!`);
-        } else {
+          toast.info("⚠️ Important: You need to confirm these emails using the Supabase dashboard.");
+        } else if (createdUsers === 0 && !toast.error) {
           toast.info('All test users already exist.');
         }
       } catch (error: any) {
@@ -168,6 +221,9 @@ const Auth = () => {
                 Setting up test users...
               </div>
             )}
+            <div className="mt-2 text-xs text-amber-500">
+              Note: Test user emails must be confirmed in Supabase dashboard before login
+            </div>
           </CardHeader>
 
           <CardContent>

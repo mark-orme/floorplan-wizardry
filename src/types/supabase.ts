@@ -36,6 +36,24 @@ export interface Database {
           data?: Json;
         };
       };
+      user_profiles: {
+        Row: {
+          id?: string;
+          user_id: string;
+          role: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          role: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          role?: string;
+          created_at?: string;
+        };
+      };
       users: {
         Row: {
           id: string;
