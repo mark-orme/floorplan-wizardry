@@ -1,12 +1,11 @@
-
 /**
- * Hook for managing drawing state
+ * Custom hook for managing drawing state on the canvas
  * @module useDrawingState
  */
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { DrawingState, Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
+import { DrawingState } from "@/types/drawingTypes";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -14,154 +13,107 @@ interface UseDrawingStateProps {
 }
 
 /**
- * Hook for managing and tracking drawing state
+ * Manages the drawing state of the canvas, including drawing status,
+ * start and current points, and handling mouse events.
+ * @param {UseDrawingStateProps} props - Hook properties
+ * @returns {Object} Drawing state and event handlers
  */
-export const useDrawingState = ({ fabricCanvasRef, tool }: UseDrawingStateProps) => {
-  // Drawing state with enhanced properties for select mode  
+export const useDrawingState = (props: UseDrawingStateProps) => {
+  const { fabricCanvasRef, tool } = props;
+  
+  // Timeout references for debouncing mouse events
+  const timeoutRef = useRef<number | null>(null);
+  const throttleRef = useRef<number | null>(null);
+  
+  // Initialize drawing state with selectionActive property
   const [drawingState, setDrawingState] = useState<DrawingState>({
     isDrawing: false,
-    currentPoint: null,
     startPoint: null,
-    cursorPosition: null,
-    midPoint: null,
-    currentZoom: 1,
-    selectionActive: false // New property to track active selection
+    currentPoint: null,
+    selectionActive: false
   });
-
-  // Store timeouts for cleanup
-  const timeoutRefs = useRef<number[]>([]);
-
-  // Clean up any pending timeouts
+  
+  /**
+   * Clear any pending timeouts to prevent unexpected behavior
+   */
   const cleanupTimeouts = useCallback(() => {
-    timeoutRefs.current.forEach(timeout => window.clearTimeout(timeout));
-    timeoutRefs.current = [];
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (throttleRef.current !== null) {
+      window.cancelAnimationFrame(throttleRef.current);
+      throttleRef.current = null;
+    }
   }, []);
-
-  // Set drawing state
+  
+  /**
+   * Handle mouse down event on the canvas
+   * @param {Event} e - Mouse event
+   */
   const handleMouseDown = useCallback((e: any) => {
     if (!fabricCanvasRef.current) return;
-    if (tool !== "straightLine" && tool !== "room" && tool !== "select") return;
     
-    if (e.target && tool === "select") {
-      // Handle selection of a wall or room
-      if (e.target.type === 'polyline' || (e.target as any).objectType === 'line' || (e.target as any).objectType === 'room') {
-        setDrawingState(prev => ({
-          ...prev,
-          selectionActive: true,
-          currentPoint: {
-            x: e.absolutePointer.x,
-            y: e.absolutePointer.y
-          },
-          startPoint: {
-            x: e.absolutePointer.x,
-            y: e.absolutePointer.y
-          }
-        }));
-      }
-      return;
-    }
+    const canvas = fabricCanvasRef.current;
+    const pointer = canvas.getPointer(e.e);
     
-    // Only handle drawing tools beyond this point
-    if (tool !== "straightLine" && tool !== "room") return;
-    
-    const pointer = e.absolutePointer;
-    
-    setDrawingState(prev => ({
-      ...prev,
+    // Start drawing, set the starting point
+    setDrawingState({
       isDrawing: true,
-      currentPoint: {
-        x: pointer.x,
-        y: pointer.y
-      },
-      startPoint: {
-        x: pointer.x,
-        y: pointer.y
-      },
-      cursorPosition: {
-        x: e.e.clientX,
-        y: e.e.clientY
-      }
-    }));
-  }, [fabricCanvasRef, tool]);
-
-  // Update drawing state during move
+      startPoint: pointer,
+      currentPoint: pointer,
+      selectionActive: false
+    });
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Handle mouse move event on the canvas
+   * @param {Event} e - Mouse event
+   */
   const handleMouseMove = useCallback((e: any) => {
     if (!fabricCanvasRef.current) return;
     
-    const pointer = e.absolutePointer;
-    const cursorPosition = { x: e.e.clientX, y: e.e.clientY };
-    
-    // Handle selection dragging
-    if (tool === "select" && drawingState.selectionActive) {
-      setDrawingState(prev => ({
-        ...prev,
-        currentPoint: {
-          x: pointer.x,
-          y: pointer.y
-        },
-        cursorPosition
-      }));
+    // Throttle the drawing to improve performance
+    if (throttleRef.current) {
       return;
     }
     
-    // Update cursor position for hover tooltips even when not drawing
-    if (!drawingState.isDrawing && (tool === "straightLine" || tool === "room")) {
-      setDrawingState(prev => ({
-        ...prev,
-        currentPoint: {
-          x: pointer.x,
-          y: pointer.y
-        },
-        cursorPosition
-      }));
-      return;
-    }
-    
-    // Only proceed with active drawing beyond this point
-    if (!drawingState.isDrawing) return;
-    if (tool !== "straightLine" && tool !== "room") return;
-    
-    // Calculate midpoint for measurement display
-    let midPoint: Point | null = null;
-    if (drawingState.startPoint) {
-      midPoint = {
-        x: (drawingState.startPoint.x + pointer.x) / 2,
-        y: (drawingState.startPoint.y + pointer.y) / 2
-      };
-    }
-    
-    setDrawingState(prev => ({
-      ...prev,
-      currentPoint: {
-        x: pointer.x,
-        y: pointer.y
-      },
-      cursorPosition,
-      midPoint
-    }));
-  }, [fabricCanvasRef, tool, drawingState.isDrawing, drawingState.startPoint, drawingState.selectionActive]);
-
-  // End drawing state
+    throttleRef.current = window.requestAnimationFrame(() => {
+      throttleRef.current = null;
+      
+      if (drawingState.isDrawing) {
+        const canvas = fabricCanvasRef.current;
+        const pointer = canvas.getPointer(e.e);
+        
+        // Update the current point
+        setDrawingState(prevState => ({
+          ...prevState,
+          currentPoint: pointer,
+          selectionActive: false
+        }));
+      }
+    });
+  }, [fabricCanvasRef, drawingState.isDrawing]);
+  
+  /**
+   * Handle mouse up event on the canvas
+   */
   const handleMouseUp = useCallback(() => {
-    setDrawingState(prev => ({
-      ...prev,
-      isDrawing: false,
-      selectionActive: false
-    }));
+    if (!fabricCanvasRef.current) return;
     
-    // Clear points after a short delay to ensure they're available for path processing
-    const timeout = window.setTimeout(() => {
-      setDrawingState(prev => ({
-        ...prev,
+    // Clear drawing state after a short delay
+    timeoutRef.current = window.setTimeout(() => {
+      setDrawingState(prevState => ({
+        ...prevState,
+        isDrawing: false,
         startPoint: null,
         currentPoint: null,
-        midPoint: null
+        selectionActive: false
       }));
-    }, 300);
-    
-    timeoutRefs.current.push(timeout);
-  }, []);
-
+    }, 50);
+  }, [fabricCanvasRef]);
+  
+  // Make sure to include selectionActive when updating state
   return {
     drawingState,
     handleMouseDown,

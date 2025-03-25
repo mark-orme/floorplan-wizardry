@@ -5,12 +5,9 @@ import { DrawingTool } from "@/hooks/useCanvasState";
 import { LineSettings } from "./LineSettings";
 import { 
   MousePointerSquareDashed, Pencil, Grid2X2, 
-  Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser
+  Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser 
 } from "lucide-react";
-
-const formatGIA = (gia: number): string => {
-  return gia.toFixed(2);
-};
+import { formatGIA } from "@/utils/display";
 
 interface DrawingToolbarProps {
   tool: DrawingTool;
