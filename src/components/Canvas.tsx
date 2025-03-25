@@ -28,20 +28,28 @@ export const Canvas = (props: CanvasProps) => {
   const appInitializedRef = useRef<boolean>(false);
   const initialDataLoadedRef = useRef<boolean>(false);
   const isFirstMountRef = useRef<boolean>(true);
-  
-  // We need to use a stable controller reference
   const controllerRef = useRef<ReturnType<typeof CanvasController> | null>(null);
   
-  // Initialize component state hooks BEFORE any conditional state or effects
+  // IMPORTANT: All useState calls must be declared unconditionally at the top level
   const [initialized, setInitialized] = useState(false);
+  const [controllerLoaded, setControllerLoaded] = useState(false);
   
-  // Initialize controller only once
-  if (!controllerRef.current) {
-    controllerRef.current = CanvasController();
-    // Set initialized flag after controller is created
-    if (!initialized) {
+  // Initialize controller only once but using useEffect to ensure consistent hook order
+  useEffect(() => {
+    if (!controllerRef.current) {
+      controllerRef.current = CanvasController();
       setInitialized(true);
+      setControllerLoaded(true);
     }
+  }, []);
+  
+  // Bail out early if controller isn't ready yet
+  if (!controllerRef.current || !controllerLoaded) {
+    return <LoadingErrorWrapper isLoading={true} hasError={false} errorMessage="" onRetry={() => {}}>
+      <div className="w-full h-full flex items-center justify-center">
+        <p>Initializing canvas...</p>
+      </div>
+    </LoadingErrorWrapper>;
   }
   
   // Extract controller properties - only after controller is guaranteed to exist
@@ -72,7 +80,7 @@ export const Canvas = (props: CanvasProps) => {
     handleRetry
   } = controllerRef.current;
   
-  // Measurement guide modal state - must be AFTER all required hooks
+  // Measurement guide modal state - using custom hook
   const { 
     showMeasurementGuide, 
     setShowMeasurementGuide,
