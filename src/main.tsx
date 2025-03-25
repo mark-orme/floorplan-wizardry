@@ -11,6 +11,10 @@ Sentry.init({
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration()
   ],
+  // Enable automatic release tracking and source maps
+  release: import.meta.env.VITE_SENTRY_RELEASE || "development",
+  dist: import.meta.env.VITE_SENTRY_DIST,
+  environment: import.meta.env.MODE,
   // Tracing
   tracesSampleRate: 1.0, // Capture 100% of the transactions
   // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
