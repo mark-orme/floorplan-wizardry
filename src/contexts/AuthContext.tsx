@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, UserRole, getUserRole } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
@@ -32,16 +33,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching user role:', error);
       
       if (error.message && error.message.includes("relation \"public.user_profiles\" does not exist")) {
+        console.warn("The user_profiles table doesn't exist. Check the console for SQL to create it.");
+        
+        // Try to determine a role based on email for testing purposes
         if (user?.email) {
           if (user.email.includes('photographer')) {
             setUserRole(UserRole.PHOTOGRAPHER);
-            console.info(`Added profile for existing user: ${user.email}`);
+            console.info(`Added temporary profile for user: ${user.email}`);
           } else if (user.email.includes('processing')) {
             setUserRole(UserRole.PROCESSING_MANAGER);
-            console.info(`Added profile for existing user: ${user.email}`);
+            console.info(`Added temporary profile for user: ${user.email}`);
           } else if (user.email.includes('manager')) {
             setUserRole(UserRole.MANAGER);
-            console.info(`Added profile for existing user: ${user.email}`);
+            console.info(`Added temporary profile for user: ${user.email}`);
           } else {
             setUserRole(UserRole.PHOTOGRAPHER);
           }
@@ -51,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Run the Supabase table setup
     setupSupabaseTables();
     
     supabase.auth.getSession().then(({ data: { session } }) => {
