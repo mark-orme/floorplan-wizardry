@@ -34,6 +34,6 @@ export const DEFAULT_LINE_COLOR = "#000000"; // Default line color (black)
  * Re-export everything from the specialized files
  */
 export * from './drawingTypes';
-export * from './geometry';
+export * from './geometry'; // This now re-exports from all geometry modules
 export * from './fabricPathUtils';
 export * from './floorPlanStorage';
