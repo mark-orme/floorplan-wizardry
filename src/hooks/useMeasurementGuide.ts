@@ -10,11 +10,12 @@ export const useMeasurementGuide = (tool: DrawingTool) => {
   
   // Show the guide automatically when switching to line tools
   useEffect(() => {
-    if ((tool === "straightLine" || tool === "room") && 
+    // Only run this effect if tool is defined
+    if (tool && (tool === "straightLine" || tool === "room") && 
         !localStorage.getItem("hideDrawingGuide")) {
       setShowMeasurementGuide(true);
     }
-  }, [tool]);
+  }, [tool]); // Ensure tool is the only dependency
   
   // Save user preference
   const handleCloseMeasurementGuide = (dontShowAgain: boolean) => {

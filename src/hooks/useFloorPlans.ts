@@ -68,8 +68,9 @@ export const useFloorPlans = ({
   // Initialize floor plan storage - Get the loadData function that returns a promise
   const { loadData, saveData, lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
 
-  // Update canvas when floor changes with debouncing
+  // Update canvas when floor changes with debouncing - use stable version of dependencies
   useEffect(() => {
+    // Skip if no canvas, if loading, or if no floorplans
     if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
     
     // Skip if a floor change is already in progress
@@ -89,10 +90,21 @@ export const useFloorPlans = ({
     // Execute with a short delay to avoid rapid consecutive calls
     setTimeout(floorChangeHandler, 50);
     
-  }, [currentFloor, floorPlans, isLoading, fabricCanvasRef, clearDrawings, drawFloorPlan, recalculateGIA]);
+  }, [
+    currentFloor, 
+    floorPlans.length, // Only depend on the length of floorPlans to reduce rerenders
+    isLoading,
+    fabricCanvasRef,
+    clearDrawings,
+    drawFloorPlan,
+    recalculateGIA
+  ]);
 
   return {
-    drawFloorPlan: useCallback((floorIndex = currentFloor) => drawFloorPlan(floorIndex, floorPlans), [currentFloor, floorPlans, drawFloorPlan]),
+    drawFloorPlan: useCallback((floorIndex = currentFloor) => 
+      drawFloorPlan(floorIndex, floorPlans), 
+      [currentFloor, floorPlans, drawFloorPlan]
+    ),
     recalculateGIA,
     handleAddFloor,
     handleSelectFloor,

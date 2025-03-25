@@ -65,7 +65,7 @@ export const Canvas = (props: CanvasProps) => {
     handleRetry
   } = controllerRef.current;
   
-  // Measurement guide modal state
+  // Measurement guide modal state - must be after other hooks
   const { 
     showMeasurementGuide, 
     setShowMeasurementGuide,

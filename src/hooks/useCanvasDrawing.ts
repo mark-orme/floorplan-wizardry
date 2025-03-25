@@ -4,7 +4,7 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
@@ -55,13 +55,6 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
   
   // Track current zoom level for proper tooltip positioning
   const [currentZoom, setCurrentZoom] = useState<number>(1);
-  
-  // Memoize dependencies with useRef to prevent circular dependencies
-  const propsRef = useRef(props);
-  // Update ref when props change
-  useEffect(() => {
-    propsRef.current = props;
-  }, [props]);
   
   // Use the improved history management hook
   const { saveCurrentState, handleUndo, handleRedo } = useCanvasHistory({
@@ -144,7 +137,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
         fabricCanvas.off('viewport:transform' as any, updateZoomLevel);
       }
     };
-  }, [fabricCanvasRef]); // Simplified dependency array
+  }, [fabricCanvasRef]); // Keep this simple to avoid dependency issues
   
   // Return drawing state with current zoom level
   return {
