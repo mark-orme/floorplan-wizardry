@@ -139,6 +139,7 @@ export const addObjectToCanvas = (
   objectData: any
 ): FabricObject | null => {
   if (!fabricCanvas || !objectData || !objectData.type) {
+    logger.warn("Invalid canvas or object data for restoration");
     return null;
   }
   
@@ -146,22 +147,49 @@ export const addObjectToCanvas = (
     let obj: FabricObject | null = null;
     
     if (objectData.type === 'polyline') {
-      obj = new Polyline(objectData.points || [], {
+      // Ensure points array is valid
+      if (!Array.isArray(objectData.points) || objectData.points.length < 2) {
+        logger.warn("Invalid points array for polyline:", objectData.points);
+        return null;
+      }
+      
+      // Create the polyline with all properties from the original object
+      obj = new Polyline(objectData.points, {
         ...objectData,
-        selectable: false
+        selectable: false,
+        stroke: objectData.stroke || '#000000',
+        strokeWidth: objectData.strokeWidth || 2
       });
     } else if (objectData.type === 'path') {
-      obj = new Path(objectData.path || '', {
+      // Ensure path data is valid
+      if (!objectData.path) {
+        logger.warn("Invalid path data:", objectData.path);
+        return null;
+      }
+      
+      // Create the path with all properties from the original object
+      obj = new Path(objectData.path, {
         ...objectData,
-        selectable: false
+        selectable: false,
+        stroke: objectData.stroke || '#000000',
+        strokeWidth: objectData.strokeWidth || 2
       });
     }
     
     if (obj) {
+      // Preserve the original position and other attributes
+      if (objectData.left !== undefined) obj.set('left', objectData.left);
+      if (objectData.top !== undefined) obj.set('top', objectData.top);
+      if (objectData.scaleX !== undefined) obj.set('scaleX', objectData.scaleX);
+      if (objectData.scaleY !== undefined) obj.set('scaleY', objectData.scaleY);
+      
+      // Add to canvas
       fabricCanvas.add(obj);
       fabricCanvas.requestRenderAll();
-      logger.info(`Added object of type ${objectData.type} to canvas`);
+      logger.info(`Successfully added object of type ${objectData.type} to canvas`);
       return obj;
+    } else {
+      logger.warn(`Failed to create object of type ${objectData.type}`);
     }
   } catch (err) {
     logger.error("Error adding object to canvas:", err);

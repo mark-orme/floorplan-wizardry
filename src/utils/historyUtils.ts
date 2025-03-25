@@ -25,11 +25,30 @@ export const serializeObject = (obj: FabricObject): any => {
   if (!obj || typeof obj.toObject !== 'function') return null;
   
   try {
+    // Use the fabric serialization with additional properties
     const serialized = obj.toObject();
-    // Add additional properties that might be needed for proper reconstruction
+    
+    // Ensure all necessary properties for reconstruction are included
     if ('id' in obj) {
       serialized.id = (obj as any).id || null;
     }
+    
+    // Ensure stroke properties are preserved for proper rendering
+    if (obj.stroke) serialized.stroke = obj.stroke;
+    if (obj.strokeWidth) serialized.strokeWidth = obj.strokeWidth;
+    
+    // Make sure position is properly captured
+    if (obj.left !== undefined) serialized.left = obj.left;
+    if (obj.top !== undefined) serialized.top = obj.top;
+    
+    // Preserve the type explicitly
+    serialized.type = obj.type;
+    
+    // For polylines, ensure points are deep copied to prevent reference issues
+    if (obj.type === 'polyline' && (obj as any).points) {
+      serialized.points = JSON.parse(JSON.stringify((obj as any).points));
+    }
+    
     return serialized;
   } catch (err) {
     console.error("Error serializing object:", err);
@@ -54,8 +73,11 @@ export const captureCurrentState = (
   
   logger.info(`Found ${currentObjects.length} objects to capture`);
   
-  // Serialize current objects with more reliable method
-  return currentObjects.map(serializeObject).filter(Boolean);
+  // Create a deep copy of the serialized objects to avoid reference issues
+  return currentObjects.map(obj => {
+    const serialized = serializeObject(obj);
+    return serialized ? JSON.parse(JSON.stringify(serialized)) : null;
+  }).filter(Boolean);
 };
 
 /**
@@ -92,14 +114,17 @@ export const pushToHistory = (
 ): void => {
   if (!historyRef.current) return;
   
+  // Create a deep copy of the state to avoid reference issues
+  const stateCopy = JSON.parse(JSON.stringify(state));
+  
   // Only add state if it's different from the most recent one
   const lastState = historyRef.current.past.length > 0 
     ? historyRef.current.past[historyRef.current.past.length - 1] 
     : null;
     
-  if (!lastState || areStatesDifferent(lastState, state)) {
+  if (!lastState || areStatesDifferent(lastState, stateCopy)) {
     // Add state to past and clear future
-    historyRef.current.past.push([...state]); // Create a copy of the state to avoid reference issues
+    historyRef.current.past.push(stateCopy);
     historyRef.current.future = [];
     
     // Limit history size
