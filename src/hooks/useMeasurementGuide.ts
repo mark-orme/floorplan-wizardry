@@ -1,9 +1,18 @@
 
+/**
+ * Hook for managing measurement guide visibility
+ * Controls when to show the measurement guide to users
+ * @module useMeasurementGuide
+ */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DrawingTool } from "./useCanvasState";
 
 /**
  * Hook to manage the measurement guide visibility
+ * Shows guide automatically for line tools unless user dismissed it
+ * 
+ * @param {DrawingTool | undefined} tool - Current drawing tool
+ * @returns {Object} Guide visibility state and handlers
  */
 export const useMeasurementGuide = (tool: DrawingTool | undefined) => {
   // Always declare all state and refs at the top level
