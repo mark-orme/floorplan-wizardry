@@ -9,6 +9,10 @@ import { Canvas as FabricCanvas } from "fabric";
 import { DEFAULT_RETRY_CONFIG, scheduleGridRetry, handleMaxAttemptsReached } from "@/utils/gridRetryUtils";
 import { DebugInfoState } from "@/types/drawingTypes";
 
+/**
+ * Props for the useGridRetry hook
+ * @interface UseGridRetryProps
+ */
 interface UseGridRetryProps {
   /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<any[]>;
@@ -28,7 +32,7 @@ interface UseGridRetryProps {
 
 /**
  * Hook for grid retry operations
- * @param props - Hook properties
+ * @param {UseGridRetryProps} props - Hook properties
  * @returns Memoized grid creation function with retry logic
  */
 export const useGridRetry = ({

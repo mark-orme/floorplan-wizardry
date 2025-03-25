@@ -6,13 +6,21 @@
 import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
 
+/**
+ * Props for the useFloorPlanBatchProcessing hook
+ * @interface UseFloorPlanBatchProcessingProps
+ */
 interface UseFloorPlanBatchProcessingProps {
+  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
 }
 
 /**
  * Hook that handles batch processing of floor plan rendering operations
+ * @param {UseFloorPlanBatchProcessingProps} props - Hook properties
+ * @returns Batch processing utilities and state
  */
 export const useFloorPlanBatchProcessing = ({
   fabricCanvasRef,

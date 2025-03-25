@@ -9,6 +9,10 @@ import { Canvas as FabricCanvas } from "fabric";
 import { gridManager, resetGridProgress } from "@/utils/gridManager";
 import { toast } from "sonner";
 
+/**
+ * Props for the useGridThrottling hook
+ * @interface UseGridThrottlingProps
+ */
 interface UseGridThrottlingProps {
   /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<any[]>;
@@ -16,7 +20,7 @@ interface UseGridThrottlingProps {
 
 /**
  * Hook for grid throttling operations
- * @param props - Hook properties
+ * @param {UseGridThrottlingProps} props - Hook properties
  * @returns Throttling utilities
  */
 export const useGridThrottling = ({
@@ -35,8 +39,8 @@ export const useGridThrottling = ({
   
   /**
    * Handle throttled grid creation
-   * @param canvas - The Fabric.js canvas instance
-   * @param createGridFn - Grid creation function to call when throttling expires
+   * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+   * @param {Function} createGridFn - Grid creation function to call when throttling expires
    * @returns Current grid objects
    */
   const handleThrottledCreation = useCallback((

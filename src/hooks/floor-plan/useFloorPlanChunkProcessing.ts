@@ -7,14 +7,23 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
 import { PIXELS_PER_METER } from "@/utils/drawing";
 
+/**
+ * Props for the useFloorPlanChunkProcessing hook
+ * @interface UseFloorPlanChunkProcessingProps
+ */
 interface UseFloorPlanChunkProcessingProps {
+  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Flag to track floor change operations */
   floorChangeInProgressRef: React.MutableRefObject<boolean>;
 }
 
 /**
  * Hook that handles chunk processing for large floor plans
+ * @param {UseFloorPlanChunkProcessingProps} props - Hook properties
+ * @returns Chunk processing utilities
  */
 export const useFloorPlanChunkProcessing = ({
   fabricCanvasRef,
@@ -23,6 +32,8 @@ export const useFloorPlanChunkProcessing = ({
 }: UseFloorPlanChunkProcessingProps) => {
   /**
    * Process floor plan strokes in chunks for better performance
+   * @param {Array<Array<{x: number, y: number}>>} strokes - Array of stroke coordinates
+   * @param {number} totalStrokes - Total number of strokes to process
    */
   const processFloorPlanInChunks = useCallback((
     strokes: Array<Array<{x: number, y: number}>>,

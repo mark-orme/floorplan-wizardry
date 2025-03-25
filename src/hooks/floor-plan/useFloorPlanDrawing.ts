@@ -10,15 +10,25 @@ import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanBatchProcessing } from "./useFloorPlanBatchProcessing";
 import { useFloorPlanChunkProcessing } from "./useFloorPlanChunkProcessing";
 
+/**
+ * Props for the useFloorPlanDrawing hook
+ * @interface UseFloorPlanDrawingProps
+ */
 interface UseFloorPlanDrawingProps {
+  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Function to create grid objects */
   createGrid: (canvas: FabricCanvas) => FabricObject[];
+  /** Flag to track floor change operations */
   floorChangeInProgressRef?: React.MutableRefObject<boolean>;
 }
 
 /**
  * Hook that handles drawing floor plans on the canvas
+ * @param {UseFloorPlanDrawingProps} props - Hook properties
+ * @returns Floor plan drawing utilities and state
  */
 export const useFloorPlanDrawing = ({
   fabricCanvasRef,
