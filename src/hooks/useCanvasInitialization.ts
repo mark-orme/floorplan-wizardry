@@ -4,7 +4,7 @@
  * Handles canvas creation, brush setup, and grid initialization
  * @module useCanvasInitialization
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useCanvasCreation } from "./useCanvasCreation";
 import { useCanvasBrush } from "./useCanvasBrush";
@@ -49,6 +49,10 @@ export const useCanvasInitialization = ({
   setHasError,
   setErrorMessage
 }: UseCanvasInitializationProps) => {
+  // Track initialization state
+  const [isInitialized, setIsInitialized] = useState(false);
+  const initTimeoutRef = useRef<number | null>(null);
+  
   // Use the smaller, focused hooks
   const { 
     canvasRef, 
@@ -81,22 +85,27 @@ export const useCanvasInitialization = ({
     setErrorMessage
   });
 
-  // Initialize canvas when component mounts or when dependencies change
-  useEffect(() => {
+  // Helper function to perform initialization that can be retried
+  const performInitialization = useCallback(() => {
+    console.log("Attempting canvas initialization with dimensions:", canvasDimensions);
+    
     if (!canvasRef.current) {
-      return;
+      console.warn("Canvas element still not available");
+      return false;
     }
     
     // Initialize the canvas
     const fabricCanvas = initializeCanvas();
     if (!fabricCanvas) {
-      return;
+      console.warn("Failed to initialize Fabric canvas");
+      return false;
     }
     
     // Set debug info for canvas initialization
     setDebugInfo(prev => ({
       ...prev, 
-      canvasInitialized: true
+      canvasInitialized: true,
+      dimensionsSet: true
     }));
     
     // Initialize the brush
@@ -130,15 +139,55 @@ export const useCanvasInitialization = ({
       initialToastShown = true;
     }
     
+    setIsInitialized(true);
+    return true;
+  }, [
+    canvasRef, 
+    canvasDimensions, 
+    initializeCanvas, 
+    setupBrush, 
+    createGrid, 
+    setupInteractions, 
+    setDebugInfo
+  ]);
+
+  // Initialize canvas when component mounts or when dependencies change
+  useEffect(() => {
+    // Clear any previous timeout
+    if (initTimeoutRef.current !== null) {
+      window.clearTimeout(initTimeoutRef.current);
+      initTimeoutRef.current = null;
+    }
+    
+    if (isInitialized && fabricCanvasRef.current) {
+      console.log("Canvas already initialized, skipping initialization");
+      return;
+    }
+    
+    // Wait for DOM to be fully rendered before attempting initialization
+    console.log("Scheduling canvas initialization...");
+    initTimeoutRef.current = window.setTimeout(() => {
+      // Attempt initialization
+      const success = performInitialization();
+      
+      // If initialization failed, retry after a short delay
+      if (!success) {
+        console.log("Initial canvas initialization failed, retrying in 1 second...");
+        initTimeoutRef.current = window.setTimeout(() => {
+          performInitialization();
+        }, 1000);
+      }
+    }, 500);
+    
     // Clean up on unmount
     return () => {
-      if (cleanupInteractions) {
-        cleanupInteractions();
+      if (initTimeoutRef.current !== null) {
+        window.clearTimeout(initTimeoutRef.current);
+        initTimeoutRef.current = null;
       }
       
-      // Don't dispose the canvas when switching floors or tools, only on component unmount
-      if (fabricCanvasRef.current === fabricCanvas) {
-        cleanupCanvas(fabricCanvas);
+      if (fabricCanvasRef.current) {
+        cleanupCanvas(fabricCanvasRef.current);
         fabricCanvasRef.current = null;
         canvasInitializedRef.current = false;
         gridLayerRef.current = [];
@@ -155,7 +204,11 @@ export const useCanvasInitialization = ({
     setupBrush,
     setupInteractions,
     cleanupCanvas,
-    createGrid
+    createGrid,
+    performInitialization,
+    isInitialized,
+    fabricCanvasRef,
+    canvasInitializedRef
   ]);
 
   return {

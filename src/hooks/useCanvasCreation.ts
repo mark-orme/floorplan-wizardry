@@ -42,7 +42,18 @@ export const useCanvasCreation = ({
   const canvasInitializedRef = useRef<boolean>(false);
   const initializationInProgressRef = useRef<boolean>(false);
   const retryAttemptsRef = useRef<number>(0);
-  const maxRetryAttempts = 3;
+  const maxRetryAttempts = 5; // Reduced from 3 to 5
+  const retryTimeoutRef = useRef<number | null>(null);
+
+  // This effect will ensure we clean up any timeouts when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current !== null) {
+        window.clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   /**
    * Initialize canvas with performance optimizations
@@ -57,9 +68,17 @@ export const useCanvasCreation = ({
         retryAttemptsRef.current++;
         console.log(`Retrying canvas initialization (attempt ${retryAttemptsRef.current}/${maxRetryAttempts})`);
         
-        setTimeout(() => {
+        // Clear any existing timeout
+        if (retryTimeoutRef.current !== null) {
+          window.clearTimeout(retryTimeoutRef.current);
+        }
+        
+        // Set a new timeout with exponential backoff
+        const delay = Math.min(500 * Math.pow(1.5, retryAttemptsRef.current), 5000);
+        retryTimeoutRef.current = window.setTimeout(() => {
+          retryTimeoutRef.current = null;
           initializeCanvas();
-        }, 500 * retryAttemptsRef.current); // Exponential backoff
+        }, delay);
       } else {
         console.error("Max retry attempts reached. Could not initialize canvas.");
         setHasError(true);
@@ -82,7 +101,11 @@ export const useCanvasCreation = ({
     initializationInProgressRef.current = true;
     
     try {
-      console.log("Creating new Fabric canvas instance");
+      console.log("Creating new Fabric canvas instance with dimensions:", canvasDimensions);
+      
+      // Force canvas element to have width and height using inline style
+      canvasRef.current.style.width = `${canvasDimensions.width || 800}px`;
+      canvasRef.current.style.height = `${canvasDimensions.height || 600}px`;
       
       // PERFORMANCE OPTIMIZATIONS for Fabric.js initialization
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
@@ -104,7 +127,9 @@ export const useCanvasCreation = ({
         svgViewportTransformation: false // OPTIMIZATION: Disable SVG viewport transforms
       });
       
-      console.log("FabricCanvas instance created successfully");
+      console.log("FabricCanvas instance created successfully with size:", 
+        fabricCanvas.width, "x", fabricCanvas.height);
+      
       fabricCanvasRef.current = fabricCanvas;
       canvasInitializedRef.current = true;
       
