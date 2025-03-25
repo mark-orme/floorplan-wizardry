@@ -1,24 +1,29 @@
-
 /**
  * Custom hook for tracking drawing state
  * Manages mouse events and drawing coordinate tracking
  * @module useDrawingState
  */
 import { useState, useCallback, useRef, useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
-import { PIXELS_PER_METER } from "@/utils/drawing";
-import { 
-  adjustPointForPanning, 
-  snapToGrid, 
-  snapPointsToGrid, 
-  pixelsToMeters, 
-  metersToPixels 
-} from "@/utils/geometry";
+import { calculateMidpoint } from "@/utils/geometry";
+import { snapToGrid, snapPointsToGrid, pixelsToMeters } from "@/utils/geometry";
 
 interface UseDrawingStateProps {
-  fabricCanvasRef: React.MutableRefObject<any>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool: DrawingTool;
+}
+
+interface MouseEvent {
+  e: MouseEvent | TouchEvent;
+  pointer?: Point;
+}
+
+interface LineScalingEvent {
+  startPoint: Point;
+  endPoint: Point;
+  e?: MouseEvent | TouchEvent;
 }
 
 /**
@@ -44,7 +49,7 @@ export const useDrawingState = ({
   // Track animation frame for performance
   const animationFrameRef = useRef<number | null>(null);
   // Use a ref to track the last logged position to reduce excessive logging
-  const lastLoggedPositionRef = useRef<{x: number, y: number} | null>(null);
+  const lastLoggedPositionRef = useRef<Point | null>(null);
   
   // Clear any existing timeouts and animation frames
   const cleanupTimeouts = useCallback(() => {

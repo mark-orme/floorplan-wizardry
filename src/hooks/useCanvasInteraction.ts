@@ -4,14 +4,14 @@
  * @module useCanvasInteraction
  */
 import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { addPinchToZoom } from "@/utils/fabricInteraction";
 
 /**
  * Hook to handle canvas interaction features like zooming and panning
  */
 export const useCanvasInteraction = () => {
-  const historyRef = useRef<{past: any[][], future: any[][]}>(
+  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>(
     { past: [], future: [] }
   );
 

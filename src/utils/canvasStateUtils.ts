@@ -49,12 +49,12 @@ export const applyCanvasState = (
         
         if (objData.type === 'polyline') {
           obj = new Polyline((objData as Polyline).points, {
-            ...(objData as any),
+            ...(objData as Polyline),
             selectable: false
           });
         } else if (objData.type === 'path') {
           obj = new Path((objData as Path).path, {
-            ...(objData as any),
+            ...(objData as Path),
             selectable: false
           });
         }

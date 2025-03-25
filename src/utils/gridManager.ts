@@ -5,10 +5,60 @@
  * @module gridManager
  */
 
+import { CanvasDimensions } from "@/types/drawingTypes";
+
+/**
+ * Interface for grid manager state
+ */
+export interface GridManagerState {
+  /** Whether grid creation is currently in progress */
+  creationInProgress: boolean;
+  
+  /** Number of consecutive reset attempts */
+  consecutiveResets: number;
+  
+  /** Maximum allowed consecutive resets before throttling */
+  maxConsecutiveResets: number;
+  
+  /** Last timestamp of grid creation attempt */
+  lastAttemptTime: number;
+  
+  /** Last timestamp of grid creation completion */
+  lastCreationTime: number;
+  
+  /** Whether the grid currently exists */
+  exists: boolean;
+  
+  /** Safety timeout period in milliseconds */
+  safetyTimeout: number;
+  
+  /** Throttle interval in milliseconds */
+  throttleInterval: number;
+  
+  /** Minimum recreation interval in milliseconds */
+  minRecreationInterval: number;
+  
+  /** Maximum number of allowed recreations */
+  maxRecreations: number;
+  
+  /** Total number of creation attempts */
+  totalCreations: number;
+  
+  /** Last dimensions used for grid creation */
+  lastDimensions: CanvasDimensions;
+  
+  /** Creation lock information */
+  creationLock: {
+    id: number;
+    timestamp: number;
+    isLocked: boolean;
+  }
+}
+
 /**
  * Grid creation progress tracking
  */
-export const gridManager = {
+export const gridManager: GridManagerState = {
   /** Whether grid creation is currently in progress */
   creationInProgress: false,
   

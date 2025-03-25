@@ -1,3 +1,4 @@
+
 /**
  * Grid operations module
  * Handles grid creation batch operations and error handling
@@ -13,6 +14,7 @@ import {
   shouldThrottleCreation
 } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
+import { CanvasDimensions } from "@/types/drawingTypes";
 
 // Re-export gridManager for use in other modules
 export { 
@@ -51,8 +53,8 @@ export const shouldThrottleGridCreation = (now: number): boolean => {
  * @returns Whether dimensions changed enough to recreate grid
  */
 export const hasDimensionsChangedSignificantly = (
-  oldDimensions: { width: number, height: number },
-  newDimensions: { width: number, height: number }
+  oldDimensions: CanvasDimensions,
+  newDimensions: CanvasDimensions
 ): boolean => {
   // For first creation, always proceed
   if (oldDimensions.width === 0 || oldDimensions.height === 0) {
@@ -72,15 +74,13 @@ export const hasDimensionsChangedSignificantly = (
  * @param err - Error object
  * @param setHasError - Function to set error state
  * @param setErrorMessage - Function to set error message
- * @param gridManager - The grid manager instance
  * @returns Empty array for grid objects
  */
 export const handleGridCreationError = (
-  err: any,
+  err: unknown,
   setHasError: (value: boolean) => void,
-  setErrorMessage: (value: string) => void,
-  gridManager: any
-): any[] => {
+  setErrorMessage: (value: string) => void
+): unknown[] => {
   console.error("Error creating grid:", err);
   setHasError(true);
   setErrorMessage(`Failed to create grid: ${err instanceof Error ? err.message : String(err)}`);
@@ -100,13 +100,12 @@ export const handleGridCreationError = (
  * @param setHasError - Function to set error state
  * @param setErrorMessage - Function to set error message
  * @param now - Current timestamp
- * @param gridManager - The grid manager instance
  * @returns Array of created grid objects
  */
 export const createGridBatch = (
   canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<any[]>,
-  canvasDimensions: { width: number, height: number },
+  gridLayerRef: React.MutableRefObject<unknown[]>,
+  canvasDimensions: CanvasDimensions,
   setDebugInfo: React.Dispatch<React.SetStateAction<{
     canvasInitialized: boolean;
     gridCreated: boolean;
@@ -115,9 +114,8 @@ export const createGridBatch = (
   }>>,
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void,
-  now: number,
-  gridManager: any
-): any[] => {
+  now: number
+): unknown[] => {
   console.log("Executing grid batch creation");
   
   // Get a unique lock ID for this operation
@@ -215,7 +213,6 @@ export const createGridBatch = (
     
     // Update the last creation time
     gridManager.lastCreationTime = now;
-    gridManager.initialized = true;
     
     return result.gridObjects;
   } catch (error) {

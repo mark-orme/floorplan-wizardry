@@ -5,6 +5,10 @@ declare module 'fabric' {
   interface ObjectOptions {
     objectType?: string;
   }
+  
+  interface Object {
+    objectType?: string;
+  }
 }
 
 // Define our custom events

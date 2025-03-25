@@ -1,6 +1,10 @@
 
+/**
+ * Custom hook for handling canvas resizing
+ * @module useCanvasResizing
+ */
 import { useEffect, useRef, useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { setCanvasDimensions } from "@/utils/fabricCanvas";
 import { CanvasDimensions, DebugInfoState } from "@/types/drawingTypes";
 
@@ -11,7 +15,7 @@ interface UseCanvasResizingProps {
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
-  createGrid: (canvas: FabricCanvas) => any[];
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
 }
 
 interface ResizingState {

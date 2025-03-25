@@ -12,13 +12,13 @@ import { useCanvasHistory } from "./useCanvasHistory"; // Import the new hook
 import { type FloorPlan } from "@/utils/drawing";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState, type Point } from "@/types/drawingTypes";
-import { snapToGrid, metersToPixels, pixelsToMeters } from "@/utils/geometry";
+import { snapToGrid, metersToPixels } from "@/utils/geometry";
 import { GRID_SIZE } from "@/utils/drawing";
 
 interface UseCanvasDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   tool: DrawingTool;
   currentFloor: number;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;

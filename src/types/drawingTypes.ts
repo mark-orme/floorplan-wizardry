@@ -35,6 +35,7 @@ export interface FloorPlan {
   svgData: string;
   gia: number;
   objects?: FabricObject[];
+  strokes?: Point[][];
 }
 
 /**
@@ -68,20 +69,20 @@ export interface DrawingState {
   currentPoint: Point | null;
   cursorPosition: Point | null;
   midPoint: Point | null;
-  currentZoom?: number; // Added currentZoom property
+  currentZoom?: number;
 }
 
 /**
  * Represents the available drawing tools
  * @type DrawingTool
  */
-export type DrawingTool = "straightLine" | "room" | "select";
+export type DrawingTool = "straightLine" | "room" | "select" | "hand";
 
 /**
  * Represents a callback function for grid creation
  * @type GridCreationCallback
  */
-export type GridCreationCallback = (canvas: any) => any[];
+export type GridCreationCallback = (canvas: FabricCanvas) => FabricObject[];
 
 /**
  * Interface for path processing callbacks
@@ -101,34 +102,34 @@ export interface PathProcessingCallbacks {
 export interface GridManagerState {
   // Creation time tracking
   lastCreationTime: number;
-  inProgress: boolean;
+  creationInProgress: boolean;
   
   // Dimensions tracking
-  lastDimensions: { width: number, height: number };
+  lastDimensions: CanvasDimensions;
   
   // Initialization state
-  initialized: boolean;
+  initialized?: boolean;
   totalCreations: number;
   
   // Configuration
   maxRecreations: number;
   minRecreationInterval: number;
   throttleInterval: number;
+  maxConsecutiveResets: number;
   
   // Grid state
   exists: boolean;
   
   // Batch processing state
-  batchTimeoutId: number | null;
+  batchTimeoutId?: number | null;
   
   // Safety timeout (ms) to reset inProgress if creation takes too long
   safetyTimeout: number;
   
   // Flags to prevent race conditions
-  lastResetTime: number;
+  lastAttemptTime: number;
   consecutiveResets: number;
-  maxConsecutiveResets: number;
-  resetDelay: number;
+  resetDelay?: number;
   
   // Track creation locks with timestamp
   creationLock: {

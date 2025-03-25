@@ -4,7 +4,7 @@
  * @module useCanvasTools
  */
 import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import { 
   clearDrawings as clearCanvasDrawings,
@@ -15,14 +15,14 @@ import { arrangeGridElements } from "@/utils/canvasLayerOrdering";
 
 interface UseCanvasToolsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<any[]>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
   tool: DrawingTool;
   zoomLevel: number;
   lineThickness: number;
   lineColor: string;
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  createGrid: (canvas: FabricCanvas) => any[];
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
 }
 
 /**

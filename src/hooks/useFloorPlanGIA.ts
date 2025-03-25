@@ -4,8 +4,9 @@
  * @module useFloorPlanGIA
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline } from "fabric";
+import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
 import { PIXELS_PER_METER, calculateGIA } from "@/utils/drawing";
+import { Point } from "@/types/drawingTypes";
 
 interface UseFloorPlanGIAProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -39,7 +40,7 @@ export const useFloorPlanGIA = ({
       
       let totalGIA = 0;
       const rooms = fabricCanvasRef.current.getObjects().filter(
-        obj => obj.type === 'polyline' && (obj as any).objectType === 'room'
+        obj => obj.type === 'polyline' && (obj as FabricObject).objectType === 'room'
       );
       
       // OPTIMIZATION: Limit processing to max 50 rooms for performance
@@ -52,7 +53,7 @@ export const useFloorPlanGIA = ({
           const points = coords.map(p => ({ 
             x: p.x / PIXELS_PER_METER, 
             y: p.y / PIXELS_PER_METER 
-          }));
+          })) as Point[];
           totalGIA += calculateGIA(points);
         }
       });

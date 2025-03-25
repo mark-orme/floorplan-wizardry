@@ -4,15 +4,20 @@
  * @module useFloorPlanDrawing
  */
 import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas, Polyline } from "fabric";
+import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { FloorPlan } from "@/utils/drawingTypes";
+import { FloorPlan } from "@/types/drawingTypes";
 
 interface UseFloorPlanDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<any[]>;
-  createGrid: (canvas: FabricCanvas) => any[];
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
   floorChangeInProgressRef?: React.MutableRefObject<boolean>;
+}
+
+interface Stroke {
+  x: number;
+  y: number;
 }
 
 /**
