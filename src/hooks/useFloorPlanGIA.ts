@@ -40,7 +40,7 @@ export const useFloorPlanGIA = ({
       
       let totalGIA = 0;
       const rooms = fabricCanvasRef.current.getObjects().filter(
-        obj => obj.type === 'polyline' && (obj as FabricObject).objectType === 'room'
+        obj => obj.type === 'polyline' && obj.objectType === 'room'
       );
       
       // OPTIMIZATION: Limit processing to max 50 rooms for performance
