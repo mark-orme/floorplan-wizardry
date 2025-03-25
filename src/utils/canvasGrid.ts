@@ -1,4 +1,3 @@
-
 /**
  * Canvas grid creation module
  * Provides a visual reference for drawing to scale

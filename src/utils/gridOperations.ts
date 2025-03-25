@@ -1,4 +1,3 @@
-
 /**
  * Grid operations module
  * Handles grid creation batch operations and error handling
@@ -10,7 +9,8 @@ import {
   resetGridProgress, 
   scheduleGridProgressReset,
   acquireGridCreationLock,
-  releaseGridCreationLock
+  releaseGridCreationLock,
+  shouldThrottleCreation
 } from "./gridManager";
 import { renderGridComponents, arrangeGridObjects } from "./gridRenderer";
 
@@ -20,7 +20,8 @@ export {
   resetGridProgress, 
   scheduleGridProgressReset,
   acquireGridCreationLock,
-  releaseGridCreationLock
+  releaseGridCreationLock,
+  shouldThrottleCreation
 };
 
 /**
