@@ -1,4 +1,3 @@
-
 import { Canvas } from "@/components/Canvas";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -7,6 +6,8 @@ import { toast } from "sonner";
 import { subscribeSyncChannel } from "@/utils/syncService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useFloorPlanStorage } from "@/hooks/useFloorPlanStorage";
+import { Cloud, CloudOff } from "lucide-react";
 
 /**
  * Main Index page component
@@ -17,6 +18,7 @@ const Index = () => {
   const [syncStatus, setSyncStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
 
   // Set up Pusher connection to the main channel
   const { isConnected, triggerEvent } = usePusher({
@@ -67,6 +69,31 @@ const Index = () => {
     }
   };
 
+  const formatLastSaved = () => {
+    if (!lastSaved) return 'Not saved yet';
+    const now = new Date();
+    const diff = now.getTime() - lastSaved.getTime();
+    
+    // If less than a minute
+    if (diff < 60 * 1000) {
+      return 'Just now';
+    }
+    
+    // If less than an hour
+    if (diff < 60 * 60 * 1000) {
+      const minutes = Math.floor(diff / (60 * 1000));
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    }
+    
+    // If today
+    if (now.toDateString() === lastSaved.toDateString()) {
+      return lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // Otherwise
+    return lastSaved.toLocaleString();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="py-6 px-6 border-b bg-white/50 dark:bg-black/50 backdrop-blur-sm flex justify-between items-center">
@@ -82,9 +109,14 @@ const Index = () => {
         <div className="flex gap-2 items-center">
           {user && (
             <div className="mr-4 flex items-center">
-              <span className="h-2 w-2 rounded-full mr-2 bg-blue-500"></span>
+              <span className={`h-2 w-2 rounded-full mr-2 ${isSaving ? 'bg-yellow-500 animate-pulse' : 'bg-blue-500'}`}></span>
               <span className="text-sm text-gray-600 dark:text-gray-300">
-                Cloud: {user.email?.split('@')[0] || 'User'}
+                {user.email?.split('@')[0] || 'User'}
+                {lastSaved && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    ({isSaving ? 'Saving...' : `Saved ${formatLastSaved()}`})
+                  </span>
+                )}
               </span>
             </div>
           )}
@@ -103,6 +135,17 @@ const Index = () => {
             }`}></span>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Sync: {syncStatus}
+            </span>
+          </div>
+          
+          <div className="flex items-center mr-4">
+            {isLoggedIn ? (
+              <Cloud className="w-4 h-4 mr-1 text-blue-500" />
+            ) : (
+              <CloudOff className="w-4 h-4 mr-1 text-gray-400" />
+            )}
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Cloud: {isLoggedIn ? 'Active' : 'Inactive'}
             </span>
           </div>
           

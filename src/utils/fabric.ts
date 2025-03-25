@@ -23,6 +23,17 @@ export {
 } from './fabricInteraction';
 
 /**
+ * Get environment variables with proper fallbacks
+ * @returns {Object} Environment variables
+ */
+export const getEnvVars = () => {
+  return {
+    SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || 'https://ovoljdbtmdcxlhrvnaul.supabase.co',
+    SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92b2xqZGJ0bWRjeGxocnZuYXVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MDMxMjksImV4cCI6MjA1ODQ3OTEyOX0.-ggpCyY0F2zR2MtDN6RaThlZosUc9nr4jL-7tkvSNgs'
+  };
+};
+
+/**
  * Workaround for missing moveTo in Fabric.js v6+ type definitions
  * This provides a compatibility layer for the functionality
  * 
