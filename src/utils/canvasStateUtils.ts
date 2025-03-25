@@ -87,3 +87,85 @@ export const applyCanvasState = (
   // STEP 5: Recalculate area after state change
   recalculateGIA();
 };
+
+/**
+ * Remove the last drawn object from the canvas
+ * 
+ * @param {FabricCanvas | null} fabricCanvas - The Fabric.js canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject | null} The removed object or null
+ */
+export const removeLastDrawnObject = (
+  fabricCanvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject | null => {
+  if (!fabricCanvas) return null;
+  
+  // Get all non-grid objects from the canvas
+  const drawingObjects = fabricCanvas.getObjects().filter(obj => 
+    !isGridObject(obj, gridLayerRef) && (obj.type === 'polyline' || obj.type === 'path')
+  );
+  
+  // If there are no drawing objects, return null
+  if (drawingObjects.length === 0) {
+    logger.info("No objects to remove");
+    return null;
+  }
+  
+  // Get the last drawn object
+  const lastObject = drawingObjects[drawingObjects.length - 1];
+  logger.info(`Removing last object of type: ${lastObject.type}`);
+  
+  try {
+    // Remove the object from the canvas
+    fabricCanvas.remove(lastObject);
+    fabricCanvas.requestRenderAll();
+    return lastObject;
+  } catch (err) {
+    logger.error("Error removing last object:", err);
+    return null;
+  }
+};
+
+/**
+ * Add an object to the canvas
+ * 
+ * @param {FabricCanvas | null} fabricCanvas - The Fabric.js canvas instance
+ * @param {any} objectData - Serialized object data
+ * @returns {FabricObject | null} The added object or null
+ */
+export const addObjectToCanvas = (
+  fabricCanvas: FabricCanvas | null,
+  objectData: any
+): FabricObject | null => {
+  if (!fabricCanvas || !objectData || !objectData.type) {
+    return null;
+  }
+  
+  try {
+    let obj: FabricObject | null = null;
+    
+    if (objectData.type === 'polyline') {
+      obj = new Polyline(objectData.points || [], {
+        ...objectData,
+        selectable: false
+      });
+    } else if (objectData.type === 'path') {
+      obj = new Path(objectData.path || '', {
+        ...objectData,
+        selectable: false
+      });
+    }
+    
+    if (obj) {
+      fabricCanvas.add(obj);
+      fabricCanvas.requestRenderAll();
+      logger.info(`Added object of type ${objectData.type} to canvas`);
+      return obj;
+    }
+  } catch (err) {
+    logger.error("Error adding object to canvas:", err);
+  }
+  
+  return null;
+};

@@ -6,8 +6,8 @@
 import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { captureCurrentState, pushToHistory, canUndo, canRedo, showHistoryToast, areStatesDifferent } from "@/utils/historyUtils";
-import { applyCanvasState } from "@/utils/canvasStateUtils";
+import { captureCurrentState, pushToHistory, canUndo, canRedo, showHistoryToast, areStatesDifferent, serializeObject } from "@/utils/historyUtils";
+import { applyCanvasState, removeLastDrawnObject, addObjectToCanvas } from "@/utils/canvasStateUtils";
 import logger from "@/utils/logger";
 
 interface UseCanvasHistoryProps {
@@ -28,6 +28,8 @@ export const useCanvasHistory = ({
 }: UseCanvasHistoryProps) => {
   // Track the last captured state to prevent duplicate history entries
   const lastCapturedStateRef = useRef<any[]>([]);
+  // Store the last removed object for redo
+  const lastRemovedObjectRef = useRef<any | null>(null);
 
   /**
    * Add current state to history before making changes
@@ -53,7 +55,7 @@ export const useCanvasHistory = ({
   }, [fabricCanvasRef, gridLayerRef, historyRef]);
 
   /**
-   * Undo the last drawing action
+   * Undo the last drawing action - only removes the last item
    */
   const handleUndo = useCallback(() => {
     if (!canUndo(historyRef)) {
@@ -61,29 +63,41 @@ export const useCanvasHistory = ({
       return;
     }
     
-    logger.info("Performing undo operation");
+    logger.info("Performing undo operation - removing last drawn object");
     
-    // Get current state for redo
-    const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
+    // Remove the last drawn object from canvas
+    const removedObject = removeLastDrawnObject(fabricCanvasRef.current, gridLayerRef);
     
-    // Add to future if different from last past state
-    historyRef.current.future.unshift([...currentState]);
-    logger.info(`Saved current state with ${currentState.length} objects for potential redo`);
-    
-    // Remove current state from past
-    historyRef.current.past.pop();
-    
-    // Get previous state (the one we want to restore)
-    const previousState = historyRef.current.past[historyRef.current.past.length - 1] || [];
-    logger.info(`Restoring previous state with ${previousState.length} objects`);
-    
-    // Apply previous state
-    applyCanvasState(fabricCanvasRef.current, previousState, gridLayerRef, recalculateGIA);
-    
-    // Update last captured state to match what's now on canvas
-    lastCapturedStateRef.current = [...previousState];
-    
-    showHistoryToast('undo', true);
+    if (removedObject) {
+      // Serialize the removed object for potential redo
+      const serializedObject = serializeObject(removedObject);
+      
+      if (serializedObject) {
+        // Store the removed object for redo
+        lastRemovedObjectRef.current = serializedObject;
+        
+        // Add to future history for redo
+        historyRef.current.future.unshift([serializedObject]);
+        logger.info(`Saved removed object of type ${serializedObject.type} for potential redo`);
+        
+        // Get current state after removal
+        const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
+        
+        // Update history with current state
+        historyRef.current.past.push([...currentState]);
+        
+        // Update last captured state
+        lastCapturedStateRef.current = [...currentState];
+        
+        // Recalculate GIA after state change
+        recalculateGIA();
+        
+        showHistoryToast('undo', true);
+      }
+    } else {
+      logger.warn("No object was removed during undo");
+      showHistoryToast('undo', false);
+    }
   }, [historyRef, fabricCanvasRef, gridLayerRef, recalculateGIA]);
 
   /**
@@ -97,21 +111,35 @@ export const useCanvasHistory = ({
     
     logger.info("Performing redo operation");
     
-    // Get future state
+    // Get future state (single removed object)
     const futureState = historyRef.current.future.shift() || [];
-    logger.info(`Restoring future state with ${futureState.length} objects`);
     
-    // Save current state to past
-    const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
-    historyRef.current.past.push([...currentState]);
-    
-    // Apply future state
-    applyCanvasState(fabricCanvasRef.current, futureState, gridLayerRef, recalculateGIA);
-    
-    // Update last captured state to match what's now on canvas
-    lastCapturedStateRef.current = [...futureState];
-    
-    showHistoryToast('redo', true);
+    if (futureState.length > 0) {
+      const objectToAdd = futureState[0];
+      logger.info(`Restoring object of type ${objectToAdd.type}`);
+      
+      // Add the object back to the canvas
+      const addedObject = addObjectToCanvas(fabricCanvasRef.current, objectToAdd);
+      
+      if (addedObject) {
+        // Get current state after addition
+        const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
+        
+        // Update last captured state
+        lastCapturedStateRef.current = [...currentState];
+        
+        // Recalculate GIA after state change
+        recalculateGIA();
+        
+        showHistoryToast('redo', true);
+      } else {
+        logger.warn("Failed to add object during redo");
+        showHistoryToast('redo', false);
+      }
+    } else {
+      logger.warn("No object to restore during redo");
+      showHistoryToast('redo', false);
+    }
   }, [historyRef, fabricCanvasRef, gridLayerRef, recalculateGIA]);
 
   return {

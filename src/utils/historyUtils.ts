@@ -19,8 +19,9 @@ export const isGridObject = (
 
 /**
  * Serialize a Fabric object to a simple object
+ * Exported for use in other modules
  */
-const serializeObject = (obj: FabricObject): any => {
+export const serializeObject = (obj: FabricObject): any => {
   if (!obj || typeof obj.toObject !== 'function') return null;
   
   try {
@@ -116,7 +117,8 @@ export const pushToHistory = (
  * Check if history has undo states available
  */
 export const canUndo = (historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>): boolean => {
-  return historyRef.current.past.length > 1;
+  // We can undo if there are drawing objects on the canvas
+  return historyRef.current.past.length > 0;
 };
 
 /**
