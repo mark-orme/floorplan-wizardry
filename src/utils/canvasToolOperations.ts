@@ -1,3 +1,4 @@
+
 /**
  * Canvas tool operation utilities
  * Provides functions for handling specific tool operations
@@ -9,10 +10,12 @@ import { clearCanvasObjects } from "@/utils/fabricHelpers";
 import { enablePanning, enableSelection, disableSelection } from "@/utils/fabricInteraction";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { arrangeGridElements } from "./canvasLayerOrdering";
+import logger from "@/utils/logger";
 
 /**
  * Clear all drawings from the canvas while preserving the grid
- * @param {FabricCanvas} fabricCanvas - The Fabric canvas instance
+ * 
+ * @param {FabricCanvas | null} fabricCanvas - The Fabric canvas instance
  * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to grid objects
  * @param {Function} createGrid - Function to recreate grid if needed
  * @returns {void}
@@ -23,7 +26,7 @@ export const clearDrawings = (
   createGrid: (canvas: FabricCanvas) => any[]
 ): void => {
   if (!fabricCanvas) {
-    console.error("Cannot clear drawings: fabric canvas is null");
+    logger.error("Cannot clear drawings: fabric canvas is null");
     return;
   }
   
@@ -32,7 +35,7 @@ export const clearDrawings = (
   clearCanvasObjects(fabricCanvas, gridObjects);
   
   if (gridObjects.length === 0 || !fabricCanvas.contains(gridObjects[0])) {
-    console.log("Recreating grid during clearDrawings...");
+    logger.info("Recreating grid during clearDrawings...");
     createGrid(fabricCanvas);
   }
   
@@ -41,8 +44,10 @@ export const clearDrawings = (
 
 /**
  * Change the current drawing tool and set up canvas accordingly
+ * Configures the canvas based on the selected tool
+ * 
  * @param {DrawingTool} newTool - The tool to switch to
- * @param {FabricCanvas} fabricCanvas - The Fabric canvas instance
+ * @param {FabricCanvas | null} fabricCanvas - The Fabric canvas instance
  * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to grid objects
  * @param {number} lineThickness - Current line thickness setting
  * @param {string} lineColor - Current line color setting
@@ -101,8 +106,9 @@ export const handleToolChange = (
 
 /**
  * Zoom the canvas in or out in exact 10% increments
+ * 
  * @param {string} direction - The zoom direction ("in" or "out")
- * @param {FabricCanvas} fabricCanvas - The Fabric canvas instance
+ * @param {FabricCanvas | null} fabricCanvas - The Fabric canvas instance
  * @param {number} currentZoomLevel - Current zoom level
  * @param {React.Dispatch<React.SetStateAction<number>>} setZoomLevel - State setter for zoom level
  * @returns {void}
@@ -115,19 +121,19 @@ export const handleZoom = (
 ): void => {
   if (!fabricCanvas) return;
   
-  // Use exact 10% increments for zooming
-  const zoomStep = 0.1; // 10% step
-  const minZoom = 0.5;  // 50% minimum zoom
-  const maxZoom = 3.0;  // 300% maximum zoom
+  // Define zoom constants
+  const ZOOM_STEP = 0.1;  // 10% step
+  const MIN_ZOOM = 0.5;   // 50% minimum zoom
+  const MAX_ZOOM = 3.0;   // 300% maximum zoom
   
   // Calculate the new zoom level in 10% increments
   let newZoom: number;
   if (direction === "in") {
     // Round up to next 10% increment
-    newZoom = Math.min(Math.ceil((currentZoomLevel + 0.05) * 10) / 10, maxZoom);
+    newZoom = Math.min(Math.ceil((currentZoomLevel + 0.05) * 10) / 10, MAX_ZOOM);
   } else {
     // Round down to previous 10% increment
-    newZoom = Math.max(Math.floor((currentZoomLevel - 0.05) * 10) / 10, minZoom);
+    newZoom = Math.max(Math.floor((currentZoomLevel - 0.05) * 10) / 10, MIN_ZOOM);
   }
   
   // Only apply zoom if it's different from current

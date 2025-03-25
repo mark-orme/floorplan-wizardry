@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for canvas actions (clear, save)
  * @module useCanvasActions
@@ -7,28 +6,55 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { FloorPlan, saveFloorPlans } from "@/utils/drawing";
+import logger from "@/utils/logger";
 
+/**
+ * Props for the useCanvasActions hook
+ */
 interface UseCanvasActionsProps {
+  /** Reference to the Fabric.js canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  
+  /** Reference to the history state for undo/redo operations */
   historyRef: React.MutableRefObject<{
     past: FabricObject[][], 
     future: FabricObject[][]
   }>;
+  
+  /** Function to clear all drawings from the canvas */
   clearDrawings: () => void;
+  
+  /** Array of floor plans */
   floorPlans: FloorPlan[];
+  
+  /** Current floor index */
   currentFloor: number;
+  
+  /** State setter for floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  
+  /** State setter for gross internal area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  
+  /** Optional function to save the current canvas state */
   saveCurrentState?: () => void;
 }
 
+/**
+ * Return value of the useCanvasActions hook
+ */
 interface UseCanvasActionsResult {
+  /** Function to clear the canvas */
   clearCanvas: () => void;
+  
+  /** Function to save the canvas as an image */
   saveCanvas: () => void;
 }
 
 /**
  * Hook for managing canvas actions like clearing and saving
+ * Provides functions for canvas operations with proper state management
+ * 
  * @param {UseCanvasActionsProps} props - Hook properties
  * @returns {UseCanvasActionsResult} Canvas action operations
  */
@@ -44,6 +70,7 @@ export const useCanvasActions = ({
 }: UseCanvasActionsProps): UseCanvasActionsResult => {
   /**
    * Clear all objects from the canvas
+   * Saves state before clearing and handles history management
    */
   const clearCanvas = useCallback((): void => {
     if (!fabricCanvasRef.current) return;
@@ -51,13 +78,13 @@ export const useCanvasActions = ({
     // Save current state before clearing (IMPORTANT)
     if (saveCurrentState) {
       saveCurrentState();
-      console.log("Saved state before clearing canvas");
+      logger.info("Saved state before clearing canvas");
     }
     
     clearDrawings();
     
     // Reset history but keep the cleared state
-    const emptyState: any[] = [];
+    const emptyState: FabricObject[] = [];
     historyRef.current.past = [emptyState];
     historyRef.current.future = [];
     
@@ -81,6 +108,7 @@ export const useCanvasActions = ({
 
   /**
    * Save the current floor plan as an image and to storage
+   * Exports the canvas as a PNG image and saves floor plan data
    */
   const saveCanvas = useCallback((): void => {
     if (!fabricCanvasRef.current) return;
@@ -107,11 +135,11 @@ export const useCanvasActions = ({
           toast.success("Floorplan image exported");
         })
         .catch(error => {
-          console.error("Save failed:", error);
+          logger.error("Save failed:", error);
           toast.error("Failed to save floor plans");
         });
     } catch (e) {
-      console.error('Save failed:', e);
+      logger.error('Save failed:', e);
       toast.error("Failed to save floorplan");
     }
   }, [fabricCanvasRef, floorPlans, currentFloor]);

@@ -1,9 +1,16 @@
+
 /**
  * Utilities for working with Fabric.js path objects
  * @module fabricPathUtils
  */
 import { Point } from './drawingTypes';
 import { PIXELS_PER_METER } from './drawing';
+
+/**
+ * Minimum distance between points to consider them separate (in meters)
+ * @constant
+ */
+const MIN_POINT_DISTANCE = 0.05;
 
 /** 
  * Convert fabric.js path points to our Point type 
@@ -17,7 +24,7 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
   
   try {
     // Extract all path commands
-    path.forEach((command, index) => {
+    path.forEach((command) => {
       if (Array.isArray(command)) {
         if (command[0] === 'M' || command[0] === 'L') { // Move to or Line to
           points.push({ 
@@ -81,7 +88,6 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
   // Filter out points that are too close to each other
   if (points.length > 2) {
     const filteredPoints: Point[] = [points[0]];
-    const minDistance = 0.05; // Minimum distance in meters
     
     for (let i = 1; i < points.length; i++) {
       const lastPoint = filteredPoints[filteredPoints.length - 1];
@@ -91,7 +97,7 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
       const distanceY = currentPoint.y - lastPoint.y;
       const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
       
-      if (pointDistance >= minDistance) {
+      if (pointDistance >= MIN_POINT_DISTANCE) {
         filteredPoints.push(currentPoint);
       }
     }
@@ -131,7 +137,7 @@ export const cleanPathData = (pathData: any[]): any[] => {
   
   const result: any[] = [];
   let previousPoint: Point | null = null;
-  const minDistance = 5; // Minimum pixel distance
+  const minPixelDistance = 5; // Minimum pixel distance
   
   // Process each command
   for (const command of pathData) {
@@ -153,7 +159,7 @@ export const cleanPathData = (pathData: any[]): any[] => {
         const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
         
         // Only add line commands if they're far enough from the previous point
-        if (pointDistance >= minDistance) {
+        if (pointDistance >= minPixelDistance) {
           result.push(command);
           previousPoint = currentPoint;
         }

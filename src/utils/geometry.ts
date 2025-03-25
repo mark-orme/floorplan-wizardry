@@ -1,3 +1,4 @@
+
 /**
  * Geometry utilities for floor plan drawing
  * Provides coordinate transformation, snapping, and measurement functions
@@ -7,13 +8,36 @@ import { Point, Stroke } from './drawingTypes';
 import { PIXELS_PER_METER, GRID_SIZE } from './drawing';
 
 // Measurement constants
-const DISTANCE_PRECISION = 0.1; // Precision for distance measurements (0.1m)
-const CLOSE_POINT_THRESHOLD = 0.05; // Threshold for considering points "close" (5cm)
-const FLOATING_POINT_TOLERANCE = 0.001; // Tolerance for floating point comparisons (1mm)
+/**
+ * Precision for distance measurements (0.1m)
+ * @constant
+ */
+export const DISTANCE_PRECISION = 0.1;
+
+/**
+ * Threshold for considering points "close" (5cm)
+ * @constant
+ */
+export const CLOSE_POINT_THRESHOLD = 0.05;
+
+/**
+ * Tolerance for floating point comparisons (1mm)
+ * @constant
+ */
+export const FLOATING_POINT_TOLERANCE = 0.001;
 
 // Straightening constants
-const HORIZONTAL_BIAS = 1.2; // Bias factor for favoring horizontal lines
-const VERTICAL_BIAS = 1.2; // Bias factor for favoring vertical lines
+/**
+ * Bias factor for favoring horizontal lines
+ * @constant
+ */
+export const HORIZONTAL_BIAS = 1.2;
+
+/**
+ * Bias factor for favoring vertical lines
+ * @constant
+ */
+export const VERTICAL_BIAS = 1.2;
 
 /** 
  * Snap a single point to the nearest grid intersection
@@ -159,9 +183,9 @@ export const calculateGIA = (stroke: Stroke): number => {
   
   // Shoelace formula for polygon area
   const area = Math.abs(
-    stroke.reduce((sum, p, i) => {
-      const next = stroke[(i + 1) % stroke.length];
-      return sum + (p.x * next.y - next.x * p.y);
+    stroke.reduce((sum, point, index) => {
+      const nextPoint = stroke[(index + 1) % stroke.length];
+      return sum + (point.x * nextPoint.y - nextPoint.x * point.y);
     }, 0) / 2
   );
   
@@ -178,13 +202,13 @@ export const calculateGIA = (stroke: Stroke): number => {
 export const adjustPointForPanning = (point: Point, canvas: any): Point => {
   if (!canvas || !canvas.viewportTransform) return point;
   
-  const vpt = canvas.viewportTransform;
+  const viewportTransform = canvas.viewportTransform;
   const zoom = canvas.getZoom();
   
   // First apply viewport transform to get correct pixel coordinates
   const pixelPoint = {
-    x: (point.x - vpt[4]) / vpt[0],
-    y: (point.y - vpt[5]) / vpt[3]
+    x: (point.x - viewportTransform[4]) / viewportTransform[0],
+    y: (point.y - viewportTransform[5]) / viewportTransform[3]
   };
   
   // Then convert from pixels to meters accounting for zoom

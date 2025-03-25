@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing points based on the drawing tool
  * @module usePointProcessing
@@ -5,17 +6,38 @@
 import { useCallback } from "react";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
-import { PIXELS_PER_METER, type Point as GeneralPoint } from "@/utils/drawing";
-import { metersToPixels } from "@/utils/geometry";
+import { PIXELS_PER_METER } from "@/utils/drawing";
 
+/**
+ * Interface defining the return value of usePointProcessing hook
+ */
 interface UsePointProcessingResult {
+  /**
+   * Process points based on the current drawing tool
+   * @param points - The points to process
+   * @returns Processed points
+   */
   processPoints: (points: Point[]) => Point[];
+  
+  /**
+   * Convert meter coordinates to pixel coordinates
+   * @param points - Points in meter coordinates
+   * @returns Points in pixel coordinates
+   */
   convertToPixelPoints: (points: Point[]) => Point[];
+  
+  /**
+   * Check if a shape is closed (first and last points are close)
+   * @param points - The points to check
+   * @returns True if the shape is closed
+   */
   isShapeClosed: (points: Point[]) => boolean;
 }
 
 /**
  * Hook for processing points based on the drawing tool
+ * Provides utility functions for point conversion and shape analysis
+ * 
  * @param {DrawingTool} tool - The current drawing tool
  * @param {string} lineColor - The current line color
  * @returns {UsePointProcessingResult} Point processing functions
@@ -23,6 +45,8 @@ interface UsePointProcessingResult {
 export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePointProcessingResult => {
   /**
    * Process points based on the drawing tool
+   * Applies tool-specific transformations to points
+   * 
    * @param {Point[]} points - The points to process
    * @returns {Point[]} The processed points
    */
@@ -39,6 +63,8 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
 
   /**
    * Convert meter coordinates to pixel coordinates for display
+   * Applies the PIXELS_PER_METER conversion factor
+   * 
    * @param {Point[]} points - The points in meter coordinates
    * @returns {Point[]} The points in pixel coordinates
    */
@@ -51,6 +77,8 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
 
   /**
    * Check if the shape is closed (first and last points are very close)
+   * Used for determining if a shape can be filled or measured
+   * 
    * @param {Point[]} points - The points of the shape
    * @returns {boolean} True if the shape is closed, false otherwise
    */
