@@ -1,11 +1,10 @@
-
 /**
  * Custom hook for grid management
  * Handles grid creation, caching, and lifecycle management
  * @module useCanvasGrid
  */
 import { useCallback, useRef, useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import { createGrid } from "@/utils/canvasGrid";
 import { 
   gridManager, 
@@ -215,7 +214,7 @@ export const useCanvasGrid = ({
       
       // Create a simple grid with just a few lines
       for (let x = 0; x <= width; x += 100) {
-        const line = new fabric.Line([x, 0, x, height], {
+        const line = new Line([x, 0, x, height], {
           stroke: '#CCDDEE',
           selectable: false,
           evented: false,
@@ -226,7 +225,7 @@ export const useCanvasGrid = ({
       }
       
       for (let y = 0; y <= height; y += 100) {
-        const line = new fabric.Line([0, y, width, y], {
+        const line = new Line([0, y, width, y], {
           stroke: '#CCDDEE',
           selectable: false,
           evented: false,
@@ -237,7 +236,7 @@ export const useCanvasGrid = ({
       }
       
       // Add a scale marker
-      const markerLine = new fabric.Line([width - 120, height - 30, width - 20, height - 30], {
+      const markerLine = new Line([width - 120, height - 30, width - 20, height - 30], {
         stroke: "#000000",
         strokeWidth: 3,
         selectable: false,
@@ -246,7 +245,7 @@ export const useCanvasGrid = ({
       canvas.add(markerLine);
       emergencyGrid.push(markerLine);
       
-      const markerText = new fabric.Text("1m", {
+      const markerText = new Text("1m", {
         left: width - 70,
         top: height - 45,
         fontSize: 16,

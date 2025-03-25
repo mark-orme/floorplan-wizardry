@@ -218,7 +218,6 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): { drawingState: 
   return {
     drawingState: {
       ...drawingState,
-      // Add currentZoom to be used by the DistanceTooltip
       currentZoom
     }
   };

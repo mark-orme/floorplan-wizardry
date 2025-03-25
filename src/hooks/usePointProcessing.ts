@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing points during drawing
  * @module usePointProcessing
@@ -7,9 +6,10 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import { 
   type Point,
+  type PathProcessingCallbacks,
   PIXELS_PER_METER,
   GRID_SIZE
-} from "@/utils/drawing";
+} from "@/types/drawingTypes";
 import { 
   snapToGrid, 
   snapPointsToGrid,
@@ -23,7 +23,6 @@ import {
   metersToPixels
 } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
-import { PathProcessingCallbacks } from "@/types/drawingTypes";
 
 /**
  * Hook for processing points during drawing operations

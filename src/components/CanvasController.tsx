@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { Line } from "fabric";
 
 // Custom hooks
 import { useCanvasState } from "@/hooks/useCanvasState";
@@ -315,7 +316,7 @@ export const CanvasController = () => {
               const height = fabricCanvasRef.current.height || 600;
               
               for (let x = 0; x <= width; x += 100) {
-                const line = new fabric.Line([x, 0, x, height], {
+                const line = new Line([x, 0, x, height], {
                   stroke: '#CCDDEE',
                   selectable: false,
                   evented: false,
@@ -326,7 +327,7 @@ export const CanvasController = () => {
               }
               
               for (let y = 0; y <= height; y += 100) {
-                const line = new fabric.Line([0, y, width, y], {
+                const line = new Line([0, y, width, y], {
                   stroke: '#CCDDEE',
                   selectable: false,
                   evented: false,

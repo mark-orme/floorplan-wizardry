@@ -31,7 +31,11 @@ export const useDrawingState = ({
 }: UseDrawingStateProps) => {
   // Track current drawing state
   const [drawingState, setDrawingState] = useState<DrawingState>({
-    isDrawing: false
+    isDrawing: false,
+    startPoint: null,
+    currentPoint: null,
+    cursorPosition: null,
+    midPoint: null
   });
   
   // Use ref for timeout cleanup
@@ -83,11 +87,13 @@ export const useDrawingState = ({
     // This ensures the initial click point lands perfectly on a grid line
     const startPoint = snapToGrid(rawStartPoint);
     
-    console.log("GRID SNAP (handleMouseDown):");
-    console.log("- Raw clicked point (pixels):", pointer.x, pointer.y);
-    console.log("- Converted to meters:", rawStartPoint);
-    console.log("- Snapped to grid (meters):", startPoint);
-    console.log("- Current zoom level:", zoom);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("GRID SNAP (handleMouseDown):");
+      console.log("- Raw clicked point (pixels):", pointer.x, pointer.y);
+      console.log("- Converted to meters:", rawStartPoint);
+      console.log("- Snapped to grid (meters):", startPoint);
+      console.log("- Current zoom level:", zoom);
+    }
     
     // Get cursor position in screen coordinates for tooltip positioning
     const absolutePosition = {
@@ -103,7 +109,9 @@ export const useDrawingState = ({
       midPoint: absolutePosition // Initially same as cursor position
     });
     
-    console.log("Drawing started at precisely snapped grid point (meters):", startPoint);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Drawing started at precisely snapped grid point (meters):", startPoint);
+    }
   }, [fabricCanvasRef, tool, cleanupTimeouts]);
 
   // Throttled update function using requestAnimationFrame with improved unit handling
@@ -179,7 +187,9 @@ export const useDrawingState = ({
     // Keep the drawing state active for a moment to ensure the tooltip is visible
     cleanupTimeouts();
     
-    console.log("Drawing ended, keeping state active briefly");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Drawing ended, keeping state active briefly");
+    }
     
     // Keep tooltip visible longer (750ms instead of 500ms)
     timeoutRef.current = window.setTimeout(() => {
@@ -190,7 +200,9 @@ export const useDrawingState = ({
         cursorPosition: null,
         midPoint: null
       });
-      console.log("Drawing state reset");
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Drawing state reset");
+      }
       timeoutRef.current = null;
     }, 750); // Longer delay to keep tooltip visible after drawing ends
   }, [cleanupTimeouts]);

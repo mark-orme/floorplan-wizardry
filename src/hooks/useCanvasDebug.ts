@@ -5,21 +5,14 @@
  */
 import { useState, useEffect } from "react";
 import { useCanvasPerformance } from "./useCanvasPerformance";
-import { type CanvasLoadTimes } from "@/types/drawingTypes";
-
-interface DebugInfo {
-  canvasInitialized: boolean;
-  gridCreated: boolean;
-  dimensionsSet: boolean;
-  brushInitialized: boolean;
-}
+import { type CanvasLoadTimes, type DebugInfoState } from "@/types/drawingTypes";
 
 /**
  * Hook for managing debug information and performance metrics
  * @returns Debug information and setters
  */
 export const useCanvasDebug = () => {
-  const [debugInfo, setDebugInfo] = useState<DebugInfo>({
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
     canvasInitialized: false,
     gridCreated: false,
     dimensionsSet: false,

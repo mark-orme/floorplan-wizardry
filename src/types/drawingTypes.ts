@@ -1,3 +1,4 @@
+
 /**
  * Drawing types module
  * Defines interfaces and types for canvas drawing and floor plan management
@@ -57,6 +58,7 @@ export interface DrawingState {
   currentPoint: Point | null;
   cursorPosition: Point | null;
   midPoint: Point | null;
+  currentZoom?: number; // Added currentZoom property
 }
 
 /**
@@ -69,7 +71,28 @@ export type DrawingTool = "straightLine" | "room" | "select";
  * Represents a callback function for grid creation
  * @type GridCreationCallback
  */
-export type GridCreationCallback = (canvas: fabric.Canvas) => fabric.Object[];
+export type GridCreationCallback = (canvas: any) => any[];
+
+/**
+ * Interface for canvas load time tracking
+ * @interface CanvasLoadTimes
+ */
+export interface CanvasLoadTimes {
+  startTime: number;
+  canvasReady: number;
+  gridCreated: number;
+}
+
+/**
+ * Interface for path processing callbacks
+ * @interface PathProcessingCallbacks
+ */
+export interface PathProcessingCallbacks {
+  processPoints: (points: Point[]) => Point[];
+  convertToPixelPoints: (meterPoints: Point[], zoom?: number) => Point[];
+  convertToMeterPoints: (pixelPoints: Point[], zoom?: number) => Point[];
+  isShapeClosed: (points: Point[]) => boolean;
+}
 
 /**
  * Grid manager state interface
@@ -105,7 +128,7 @@ export interface GridManagerState {
   lastResetTime: number;
   consecutiveResets: number;
   maxConsecutiveResets: number;
-  resetDelay: number; // Added missing property
+  resetDelay: number;
   
   // Track creation locks with timestamp
   creationLock: {
