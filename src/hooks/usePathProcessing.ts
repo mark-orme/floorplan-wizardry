@@ -11,6 +11,8 @@ import { DrawingTool } from "./useCanvasState";
 import { fabricPathToPoints } from "@/utils/fabricPathUtils";
 import { usePointProcessing } from "./usePointProcessing";
 import { usePolylineCreation } from "./usePolylineCreation";
+import { straightenStroke } from "@/utils/geometry";
+import logger from "@/utils/logger";
 
 interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -62,13 +64,13 @@ export const usePathProcessing = ({
    * @param {Path} path - The fabric.js path object
    */
   const processCreatedPath = useCallback((path: Path) => {
-    console.log("Path created event triggered");
+    logger.info("Path created event triggered");
     
     if (!fabricCanvasRef.current) return;
     const fabricCanvas = fabricCanvasRef.current;
     
     if (!path.path) {
-      console.error("Invalid path object:", path);
+      logger.error("Invalid path object:", path);
       return;
     }
     
@@ -86,10 +88,10 @@ export const usePathProcessing = ({
       
       // Extract points from path
       const points = fabricPathToPoints(path.path);
-      console.log("Points extracted from path:", points.length);
+      logger.info("Points extracted from path:", points.length);
       
       if (points.length < 2) {
-        console.error("Not enough points to create a path");
+        logger.error("Not enough points to create a path");
         fabricCanvas.remove(path);
         return;
       }
@@ -98,10 +100,16 @@ export const usePathProcessing = ({
       // This captures the color set by the brush or any custom color
       // Convert potentially complex stroke types to a simple string
       const pathColor = typeof path.stroke === 'string' ? path.stroke : lineColor;
-      console.log("Detected path color:", pathColor);
+      logger.info("Detected path color:", pathColor);
       
       // Process the points according to the current tool
-      const finalPoints = processPoints(points);
+      let finalPoints = processPoints(points);
+      
+      // Apply straightening for wall lines
+      if (tool === "straightLine") {
+        logger.info("Applying strict wall straightening");
+        finalPoints = straightenStroke(finalPoints);
+      }
       
       // Check if the shape is closed (first and last points are very close)
       const isEnclosed = isShapeClosed(finalPoints);
@@ -109,7 +117,7 @@ export const usePathProcessing = ({
       // Convert meter coordinates to pixel coordinates for display
       const pixelPoints = convertToPixelPoints(finalPoints);
       
-      console.log("Creating polyline with points:", pixelPoints.length, isEnclosed ? "(enclosed shape)" : "");
+      logger.info("Creating polyline with points:", pixelPoints.length, isEnclosed ? "(enclosed shape)" : "");
       
       // Remove the temporary path before creating the polyline
       fabricCanvas.remove(path);
@@ -119,12 +127,12 @@ export const usePathProcessing = ({
       const success = createPolyline(finalPoints, pixelPoints, isEnclosed, pathColor);
       
       if (success) {
-        console.log(`Line drawn and added to canvas successfully with color: ${pathColor}`);
+        logger.info(`Line drawn and added to canvas successfully with color: ${pathColor}`);
         // History is now handled in useCanvasDrawing to avoid duplicating entries
       }
       
     } catch (error) {
-      console.error("Error processing drawing:", error);
+      logger.error("Error processing drawing:", error);
       toast.error("Failed to process drawing");
       
       // Safety cleanup if there was an error
@@ -136,7 +144,7 @@ export const usePathProcessing = ({
         }
       }
     }
-  }, [fabricCanvasRef, processPoints, convertToPixelPoints, isShapeClosed, createPolyline, lineColor]);
+  }, [fabricCanvasRef, processPoints, convertToPixelPoints, isShapeClosed, createPolyline, lineColor, tool]);
   
   return { processCreatedPath };
 };

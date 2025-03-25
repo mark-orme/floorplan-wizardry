@@ -56,16 +56,7 @@ export const useCanvasEventHandlers = ({
       // This ensures we can properly undo to previous state
       saveCurrentState();
       
-      if (tool === "straightLine" && e.path && e.path.path) {
-        logger.info("Applying strict grid alignment to wall line");
-        try {
-          // Complex straightening logic handled by processCreatedPath
-          // Just provide the path as input 
-        } catch (err) {
-          logger.error("Error straightening wall line:", err);
-        }
-      }
-      
+      // Process the path based on the current tool
       processCreatedPath(e.path);
       handleMouseUp();
     };
