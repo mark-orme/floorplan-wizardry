@@ -9,6 +9,8 @@ import { CanvasContainer } from "./CanvasContainer";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { FloorPlan } from "@/utils/drawing";
+import { Button } from "./ui/button";
+import { HelpCircle } from "lucide-react";
 
 interface CanvasLayoutProps {
   tool: DrawingTool;
@@ -29,6 +31,7 @@ interface CanvasLayoutProps {
   onAddFloor: () => void;
   onLineThicknessChange: (thickness: number) => void;
   onLineColorChange: (color: string) => void;
+  onShowMeasurementGuide: () => void;
 }
 
 /**
@@ -54,25 +57,39 @@ export const CanvasLayout = ({
   onFloorSelect,
   onAddFloor,
   onLineThicknessChange,
-  onLineColorChange
+  onLineColorChange,
+  onShowMeasurementGuide
 }: CanvasLayoutProps): JSX.Element => {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto">
       {/* Drawing tools bar positioned at top */}
-      <DrawingToolbar
-        tool={tool}
-        onToolChange={onToolChange}
-        onUndo={onUndo}
-        onRedo={onRedo}
-        onZoom={onZoom}
-        onClear={onClear}
-        onSave={onSave}
-        gia={gia}
-        lineThickness={lineThickness}
-        lineColor={lineColor}
-        onLineThicknessChange={onLineThicknessChange}
-        onLineColorChange={onLineColorChange}
-      />
+      <div className="flex justify-between items-center">
+        <DrawingToolbar
+          tool={tool}
+          onToolChange={onToolChange}
+          onUndo={onUndo}
+          onRedo={onRedo}
+          onZoom={onZoom}
+          onClear={onClear}
+          onSave={onSave}
+          gia={gia}
+          lineThickness={lineThickness}
+          lineColor={lineColor}
+          onLineThicknessChange={onLineThicknessChange}
+          onLineColorChange={onLineColorChange}
+        />
+        
+        {/* Help button for measurement guide */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onShowMeasurementGuide}
+          className="ml-2"
+        >
+          <HelpCircle className="h-4 w-4 mr-2" />
+          Measurement Guide
+        </Button>
+      </div>
       
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar for floor plans */}

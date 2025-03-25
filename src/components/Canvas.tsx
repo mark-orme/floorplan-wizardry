@@ -9,6 +9,8 @@ import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";
+import { MeasurementGuideModal } from "./MeasurementGuideModal";
+import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 
 /**
  * Main Canvas component for floor plan drawing
@@ -48,6 +50,13 @@ export const Canvas = () => {
     drawingState,
     handleRetry
   } = CanvasController();
+  
+  // Measurement guide modal state
+  const { 
+    showMeasurementGuide, 
+    setShowMeasurementGuide,
+    handleCloseMeasurementGuide
+  } = useMeasurementGuide(tool);
 
   // We now default to select tool on initial load
   useEffect(() => {
@@ -120,6 +129,7 @@ export const Canvas = () => {
           onAddFloor={handleAddFloor}
           onLineThicknessChange={handleLineThicknessChange}
           onLineColorChange={handleLineColorChange}
+          onShowMeasurementGuide={() => setShowMeasurementGuide(true)}
         />
         
         {/* Render tooltip in a fixed position relative to the viewport */}
@@ -132,6 +142,20 @@ export const Canvas = () => {
             midPoint={drawingState?.midPoint}
           />
         </div>
+        
+        {/* Measurement guide modal */}
+        <MeasurementGuideModal
+          open={showMeasurementGuide}
+          onOpenChange={(open) => {
+            if (!open) {
+              // Handle closing with "don't show again" preference
+              const checkbox = document.getElementById("dont-show-again") as HTMLInputElement;
+              handleCloseMeasurementGuide(checkbox?.checked || false);
+            } else {
+              setShowMeasurementGuide(true);
+            }
+          }}
+        />
       </div>
     </LoadingErrorWrapper>
   );
