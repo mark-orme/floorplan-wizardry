@@ -7,7 +7,7 @@ import { subscribeSyncChannel } from "@/utils/syncService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useFloorPlanStorage } from "@/hooks/useFloorPlanStorage";
-import { Cloud, CloudOff } from "lucide-react";
+import { Cloud, CloudOff, ArrowLeft, Grid, Home } from "lucide-react";
 
 /**
  * Main Index page component
@@ -65,7 +65,7 @@ const Index = () => {
     if (user) {
       signOut();
     } else {
-      navigate('/auth');
+      navigate('/auth', { state: { returnTo: '/floorplans' } });
     }
   };
 
@@ -92,6 +92,10 @@ const Index = () => {
     
     // Otherwise
     return lastSaved.toLocaleString();
+  };
+
+  const handleNavigateToProperties = () => {
+    navigate('/properties');
   };
 
   return (
@@ -150,11 +154,21 @@ const Index = () => {
           </div>
           
           <Button 
+            onClick={handleNavigateToProperties}
+            variant="outline"
+            className="mr-2"
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Properties
+          </Button>
+          
+          <Button 
             onClick={testPusherConnection}
             variant="outline"
             className="mr-2"
           >
-            Test Pusher
+            <Grid className="mr-2 h-4 w-4" />
+            Test Sync
           </Button>
           
           <Button 
@@ -163,15 +177,6 @@ const Index = () => {
             className="mr-2"
           >
             {user ? 'Sign Out' : 'Sign In'}
-          </Button>
-          
-          <Button 
-            variant="destructive"
-            onClick={() => {
-              throw new Error("This is your first error!");
-            }}
-          >
-            Break the world
           </Button>
         </div>
       </header>

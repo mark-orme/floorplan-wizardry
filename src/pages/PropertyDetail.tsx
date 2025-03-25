@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Canvas } from '@/components/Canvas';
-import { ArrowLeft, Check, Edit, Eye, Send } from 'lucide-react';
+import { ArrowLeft, Check, Edit, Eye, Send, Grid, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useSyncedFloorPlans } from '@/hooks/useSyncedFloorPlans';
 import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
+import { toast } from 'sonner';
 
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,20 +25,24 @@ const PropertyDetail = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
       if (id) {
         try {
+          console.log("Fetching property with ID:", id);
           const property = await getProperty(id);
           if (!property) {
             setHasError(true);
             setErrorMessage('Property not found');
+            toast.error('Property not found');
           }
         } catch (error) {
           console.error('Error fetching property:', error);
           setHasError(true);
           setErrorMessage('Failed to load property details');
+          toast.error('Failed to load property details');
         }
       }
     };
@@ -61,14 +66,29 @@ const PropertyDetail = () => {
     }
   };
 
+  const navigateToProperties = () => {
+    navigate('/properties');
+  };
+
+  const navigateToFloorplans = () => {
+    navigate('/floorplans');
+  };
+
   const renderPropertyContent = () => {
     if (!currentProperty || !user) {
       return (
         <div className="container mx-auto py-12 text-center">
-          <p>Property not found</p>
-          <Button onClick={() => navigate('/properties')} className="mt-4">
-            Back to Properties
-          </Button>
+          <p>Property not found or you don't have access to view it</p>
+          <div className="flex justify-center gap-3 mt-4">
+            <Button onClick={navigateToProperties}>
+              <Home className="mr-2 h-4 w-4" />
+              Back to Properties
+            </Button>
+            <Button variant="outline" onClick={navigateToFloorplans}>
+              <Grid className="mr-2 h-4 w-4" />
+              Go to Floor Plan Editor
+            </Button>
+          </div>
         </div>
       );
     }
@@ -76,9 +96,18 @@ const PropertyDetail = () => {
     const canEdit = canEditProperty(currentProperty, userRole, user.id);
     
     const handleStatusChange = async (newStatus: PropertyStatus) => {
-      if (id) {
+      if (!id) return;
+      
+      setIsSubmitting(true);
+      try {
         await updatePropertyStatus(id, newStatus);
-        getProperty(id);
+        toast.success(`Property status updated to ${newStatus}`);
+        await getProperty(id);
+      } catch (error) {
+        console.error('Error updating property status:', error);
+        toast.error('Failed to update property status');
+      } finally {
+        setIsSubmitting(false);
       }
     };
 
@@ -98,9 +127,13 @@ const PropertyDetail = () => {
     return (
       <div className="container mx-auto py-6 px-4 max-w-7xl">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" onClick={() => navigate('/properties')}>
+          <Button variant="outline" size="sm" onClick={navigateToProperties}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            Back to Properties
+          </Button>
+          <Button variant="outline" size="sm" onClick={navigateToFloorplans}>
+            <Grid className="mr-2 h-4 w-4" />
+            Floor Plan Editor
           </Button>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -242,9 +275,10 @@ const PropertyDetail = () => {
                     {userRole === UserRole.PHOTOGRAPHER && currentProperty.status === PropertyStatus.DRAFT && (
                       <Button 
                         onClick={() => handleStatusChange(PropertyStatus.PENDING_REVIEW)}
+                        disabled={isSubmitting}
                       >
                         <Send className="mr-2 h-4 w-4" />
-                        Submit for Review
+                        {isSubmitting ? 'Submitting...' : 'Submit for Review'}
                       </Button>
                     )}
                   </div>

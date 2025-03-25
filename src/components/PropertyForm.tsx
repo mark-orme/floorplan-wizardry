@@ -10,6 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { ArrowLeft, Grid } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PropertyFormSchema = z.object({
   order_id: z.string().min(1, 'Order ID is required'),
@@ -24,6 +26,14 @@ const PropertyForm = () => {
   const { createProperty } = usePropertyManagement();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Redirect if user is not authenticated
+  if (!user) {
+    toast.error('You must be logged in to create a property');
+    navigate('/auth', { state: { returnTo: '/properties/new' } });
+    return null;
+  }
 
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(PropertyFormSchema),
@@ -48,6 +58,8 @@ const PropertyForm = () => {
       if (newProperty) {
         toast.success('Property created successfully');
         navigate(`/properties/${newProperty.id}`);
+      } else {
+        toast.error('Failed to create property');
       }
     } catch (error) {
       console.error('Error creating property:', error);
@@ -59,6 +71,17 @@ const PropertyForm = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-md">
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="outline" size="sm" onClick={() => navigate('/properties')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Properties
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => navigate('/floorplans')}>
+          <Grid className="mr-2 h-4 w-4" />
+          Floor Plan Editor
+        </Button>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Create New Property</CardTitle>

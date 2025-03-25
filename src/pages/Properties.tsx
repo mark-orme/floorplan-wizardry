@@ -5,49 +5,70 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, LogIn } from 'lucide-react';
+import { PlusCircle, Search, LogIn, ArrowLeftRight } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { insertTestData } from '@/utils/supabaseSetup';
 import { toast } from 'sonner';
+import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
 
 const Properties = () => {
   const { properties, isLoading, listProperties } = usePropertyManagement();
-  const { userRole, hasAccess, user } = useAuth();
+  const { userRole, hasAccess, user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load properties when component mounts
-    listProperties();
-  }, [listProperties]);
+    if (user) {
+      listProperties().catch(error => {
+        console.error("Error fetching properties:", error);
+        setHasError(true);
+        setErrorMessage("Failed to load properties");
+      });
+    }
+  }, [listProperties, user]);
 
   const handleRowClick = (id: string) => {
     navigate(`/properties/${id}`);
   };
 
   const handleAddProperty = async () => {
-    // If user is not logged in, redirect to auth page
     if (!user) {
       toast.info('Please sign in to create a new property');
-      navigate('/auth');
+      navigate('/auth', { state: { returnTo: '/properties/new' } });
       return;
     }
     
-    // Normal behavior - navigate to property form
     navigate('/properties/new');
+  };
+
+  const handleGoToFloorplans = () => {
+    navigate('/floorplans');
   };
 
   const handleAddTestData = async () => {
     if (!user) {
       toast.info('Please sign in to add test data');
-      navigate('/auth');
+      navigate('/auth', { state: { returnTo: '/properties' } });
       return;
     }
     
-    await insertTestData();
-    // Refresh the list after adding test data
+    try {
+      await insertTestData();
+      toast.success('Test data added successfully');
+      listProperties();
+    } catch (error) {
+      console.error('Error adding test data:', error);
+      toast.error('Failed to add test data');
+    }
+  };
+
+  const handleRetry = () => {
+    setHasError(false);
+    setErrorMessage('');
     listProperties();
   };
 
@@ -78,8 +99,95 @@ const Properties = () => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  console.log('Current user role:', userRole);
-  console.log('Current user:', user ? 'Logged in' : 'Not logged in');
+  const renderContent = () => {
+    if (!user) {
+      return (
+        <div className="text-center py-12 border rounded-lg bg-muted/50">
+          <h2 className="text-2xl font-bold mb-4">Welcome to Property Management</h2>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            Sign in to manage your properties, create floor plans, and more.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button onClick={() => navigate('/auth')}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign In
+            </Button>
+            <Button variant="outline" onClick={handleGoToFloorplans}>
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              Go to Floor Plan Editor
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (filteredProperties.length === 0) {
+      return (
+        <div className="text-center py-8 border rounded-lg bg-muted/50">
+          <p className="text-muted-foreground">
+            {searchTerm 
+              ? 'No properties match your search' 
+              : 'No properties found. Create your first property!'}
+          </p>
+          {!searchTerm && (
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <Button 
+                variant="default" 
+                onClick={handleAddProperty}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Property
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={handleAddTestData}
+              >
+                Add Test Data
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleGoToFloorplans}
+              >
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                Go to Floor Plan Editor
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Property Address</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Last Updated</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredProperties.map((property) => (
+              <TableRow 
+                key={property.id}
+                className="cursor-pointer hover:bg-accent/50"
+                onClick={() => handleRowClick(property.id)}
+              >
+                <TableCell className="font-medium">{property.order_id}</TableCell>
+                <TableCell>{property.address}</TableCell>
+                <TableCell>{property.client_name}</TableCell>
+                <TableCell>{getStatusBadge(property.status)}</TableCell>
+                <TableCell>{formatDate(property.updated_at)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -94,8 +202,7 @@ const Properties = () => {
           </p>
         </div>
 
-        <div className="flex space-x-3">
-          {/* Always show the New Property button, but with different styling based on auth state */}
+        <div className="flex flex-wrap gap-3">
           <Button onClick={handleAddProperty}>
             {!user ? (
               <>
@@ -110,95 +217,38 @@ const Properties = () => {
             )}
           </Button>
           
-          {/* Add Test Data button (now contextual based on environment) */}
-          {!properties.length && (
-            <Button onClick={handleAddTestData} variant="outline">
-              Add Test Data
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            onClick={handleGoToFloorplans}
+          >
+            <ArrowLeftRight className="mr-2 h-4 w-4" />
+            Floor Plan Editor
+          </Button>
         </div>
       </div>
 
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by order ID, address or client..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <p>Loading properties...</p>
-        </div>
-      ) : filteredProperties.length === 0 ? (
-        <div className="text-center py-8 border rounded-lg bg-muted/50">
-          <p className="text-muted-foreground">
-            {searchTerm 
-              ? 'No properties match your search' 
-              : 'No properties found. Create your first property!'}
-          </p>
-          {!searchTerm && (
-            <div className="mt-4 flex justify-center gap-3">
-              <Button 
-                variant="outline" 
-                onClick={handleAddProperty}
-              >
-                {!user ? (
-                  <>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Sign in to Create
-                  </>
-                ) : (
-                  <>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Create Property
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="secondary" 
-                onClick={handleAddTestData}
-              >
-                Add Test Data
-              </Button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Property Address</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProperties.map((property) => (
-                <TableRow 
-                  key={property.id}
-                  className="cursor-pointer hover:bg-accent/50"
-                  onClick={() => handleRowClick(property.id)}
-                >
-                  <TableCell className="font-medium">{property.order_id}</TableCell>
-                  <TableCell>{property.address}</TableCell>
-                  <TableCell>{property.client_name}</TableCell>
-                  <TableCell>{getStatusBadge(property.status)}</TableCell>
-                  <TableCell>{formatDate(property.updated_at)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+      {user && (
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by order ID, address or client..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       )}
+
+      <LoadingErrorWrapper
+        isLoading={isLoading || (user && authLoading)}
+        hasError={hasError}
+        errorMessage={errorMessage}
+        onRetry={handleRetry}
+      >
+        {renderContent()}
+      </LoadingErrorWrapper>
     </div>
   );
 };
