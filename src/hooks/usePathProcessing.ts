@@ -13,23 +13,59 @@ import { usePointProcessing } from "./usePointProcessing";
 import { usePolylineCreation } from "./usePolylineCreation";
 import { straightenStroke } from "@/utils/geometry";
 import logger from "@/utils/logger";
+import { FloorPlan } from "@/types/floorPlanTypes";
+import { Point } from "@/types/drawingTypes";
 
+/**
+ * Props for the usePathProcessing hook
+ * @interface UsePathProcessingProps
+ */
 interface UsePathProcessingProps {
+  /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<any[]>;
+  /** Reference to grid layer objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Reference to history state for undo/redo */
   historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  /** Current active drawing tool */
   tool: DrawingTool;
+  /** Current floor index */
   currentFloor: number;
-  setFloorPlans: React.Dispatch<React.SetStateAction<any[]>>;
+  /** Function to set floor plans */
+  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  /** Function to set gross internal area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  /** Current line thickness */
   lineThickness?: number;
+  /** Current line color */
   lineColor?: string;
+}
+
+/**
+ * Type definition for a Fabric path with enhanced properties
+ * @interface EnhancedPath
+ * @extends Path
+ */
+interface EnhancedPath extends Path {
+  /** Path data array */
+  path?: Array<Array<number | string>>;
+  /** Line color */
+  stroke?: string | null;
+}
+
+/**
+ * Type definition for the hook's return value
+ * @interface UsePathProcessingResult
+ */
+interface UsePathProcessingResult {
+  /** Process a newly created path and convert it to appropriate shapes */
+  processCreatedPath: (path: Path) => void;
 }
 
 /**
  * Hook for handling path creation and processing
  * @param {UsePathProcessingProps} props - Hook properties
- * @returns {Function} Path creation handler
+ * @returns {UsePathProcessingResult} Path creation handler
  */
 export const usePathProcessing = ({
   fabricCanvasRef,
@@ -41,7 +77,7 @@ export const usePathProcessing = ({
   setGia,
   lineThickness = 2,
   lineColor = "#000000"
-}: UsePathProcessingProps) => {
+}: UsePathProcessingProps): UsePathProcessingResult => {
   
   // Use the point processing hook, passing the line color
   const { processPoints, convertToPixelPoints, isShapeClosed } = usePointProcessing(tool, lineColor);
@@ -69,7 +105,8 @@ export const usePathProcessing = ({
     if (!fabricCanvasRef.current) return;
     const fabricCanvas = fabricCanvasRef.current;
     
-    if (!path.path) {
+    const enhancedPath = path as EnhancedPath;
+    if (!enhancedPath.path) {
       logger.error("Invalid path object:", path);
       return;
     }
@@ -87,7 +124,7 @@ export const usePathProcessing = ({
       }
       
       // Extract points from path
-      const points = fabricPathToPoints(path.path);
+      const points = fabricPathToPoints(enhancedPath.path);
       logger.info("Points extracted from path:", points.length);
       
       if (points.length < 2) {
@@ -99,7 +136,7 @@ export const usePathProcessing = ({
       // CRITICAL FIX: Get the path's current color before processing
       // This captures the color set by the brush or any custom color
       // Convert potentially complex stroke types to a simple string
-      const pathColor = typeof path.stroke === 'string' ? path.stroke : lineColor;
+      const pathColor = typeof enhancedPath.stroke === 'string' ? enhancedPath.stroke : lineColor;
       logger.info("Detected path color:", pathColor);
       
       // Process the points according to the current tool

@@ -1,10 +1,11 @@
 
 /**
  * Custom hook for grid management
+ * Handles grid creation, recreation, and error recovery
  * @module useGridManagement
  */
 import { useRef, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { resetGridProgress } from "@/utils/gridManager";
 import { createBasicEmergencyGrid, retryWithBackoff } from "@/utils/gridCreationUtils";
 import { 
@@ -12,35 +13,55 @@ import {
   incrementAttemptCount,
   markCreationSuccessful, 
   markInitialAttempted,
-  isMaxAttemptsReached
+  isMaxAttemptsReached,
+  GridAttemptStatus
 } from "@/utils/gridAttemptTracker";
 
+/**
+ * Props for the useGridManagement hook
+ * @interface UseGridManagementProps
+ */
 interface UseGridManagementProps {
+  /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Canvas dimensions */
   canvasDimensions: { width: number, height: number };
+  /** Debug information about canvas state */
   debugInfo: {
     canvasInitialized: boolean;
     gridCreated: boolean;
     dimensionsSet: boolean;
     brushInitialized: boolean;
   };
-  createGrid: (canvas: FabricCanvas) => any[];
+  /** Function to create grid elements */
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
+}
+
+/**
+ * Return type for the useGridManagement hook
+ * @interface UseGridManagementResult
+ */
+interface UseGridManagementResult {
+  /** Reference to grid layer objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
 }
 
 /**
  * Hook for managing grid creation and initialization
+ * @param {UseGridManagementProps} props - Hook properties
+ * @returns {UseGridManagementResult} Grid management utilities
  */
 export const useGridManagement = ({
   fabricCanvasRef,
   canvasDimensions,
   debugInfo,
   createGrid
-}: UseGridManagementProps) => {
+}: UseGridManagementProps): UseGridManagementResult => {
   // Grid layer reference - initialize with empty array
-  const gridLayerRef = useRef<any[]>([]);
+  const gridLayerRef = useRef<FabricObject[]>([]);
   
   // Track grid creation attempts with status object
-  const gridAttemptStatusRef = useRef(createGridAttemptTracker());
+  const gridAttemptStatusRef = useRef<GridAttemptStatus>(createGridAttemptTracker());
   
   // IMPROVED: Force grid creation on initial load and after any error with higher priority
   useEffect(() => {
@@ -63,7 +84,7 @@ export const useGridManagement = ({
     resetGridProgress();
     
     // Function to attempt grid creation
-    const attemptGridCreation = () => {
+    const attemptGridCreation = (): boolean => {
       if (!fabricCanvasRef.current) {
         if (process.env.NODE_ENV === 'development') {
           console.log("Fabric canvas not available yet, retrying soon");
@@ -146,10 +167,12 @@ export const useGridManagement = ({
           createEmergencyGridOnFailure();
         }
       }, 50);
+      
+      return false;
     };
     
     // Create emergency grid as last resort
-    const createEmergencyGridOnFailure = () => {
+    const createEmergencyGridOnFailure = (): void => {
       try {
         if (process.env.NODE_ENV === 'development') {
           console.log("All grid creation attempts failed, trying emergency method");
@@ -169,7 +192,7 @@ export const useGridManagement = ({
     // Start the first attempt
     attemptGridCreation();
     
-  }, [fabricCanvasRef.current]);
+  }, [fabricCanvasRef, createGrid]);
 
   // Add a second grid creation attempt when canvas dimensions change
   useEffect(() => {
@@ -181,10 +204,10 @@ export const useGridManagement = ({
       // Short timeout to ensure canvas is ready
       setTimeout(() => {
         resetGridProgress();
-        createGrid(fabricCanvasRef.current);
+        createGrid(fabricCanvasRef.current!);
       }, 100);
     }
-  }, [canvasDimensions.width, canvasDimensions.height]);
+  }, [canvasDimensions.width, canvasDimensions.height, fabricCanvasRef, createGrid]);
 
   return {
     gridLayerRef

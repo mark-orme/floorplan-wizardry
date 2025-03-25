@@ -38,6 +38,28 @@ interface UseCanvasInteractionResult {
 }
 
 /**
+ * Type definition for enhanced fabric objects with selection properties
+ * @interface SelectableFabricObject
+ * @extends FabricObject
+ */
+interface SelectableFabricObject extends FabricObject {
+  /** Type identifier for specialized handling */
+  objectType?: string;
+  /** Whether the object is selectable */
+  selectable?: boolean;
+  /** Whether the object responds to events */
+  evented?: boolean;
+  /** Cursor to show when hovering over the object */
+  hoverCursor?: string;
+  /** Line stroke width */
+  strokeWidth?: number;
+  /** Whether to use per-pixel target finding */
+  perPixelTargetFind?: boolean;
+  /** Tolerance for target finding */
+  targetFindTolerance?: number;
+}
+
+/**
  * Hook that provides canvas interaction options and object selection capabilities
  * @param {UseCanvasInteractionProps} props - Hook properties
  * @returns {UseCanvasInteractionResult} Canvas interaction functions
@@ -68,7 +90,7 @@ export const useCanvasInteraction = ({
     // Remove all selected objects
     activeObjects.forEach(obj => {
       // Skip grid elements
-      const objectType = (obj as FabricObject & { objectType?: string }).objectType;
+      const objectType = (obj as SelectableFabricObject).objectType;
       if (objectType && objectType.includes('grid')) {
         return;
       }
@@ -98,26 +120,21 @@ export const useCanvasInteraction = ({
     
     // Make objects selectable
     canvas.getObjects().forEach(obj => {
+      const fabricObj = obj as SelectableFabricObject;
       // Skip grid elements
-      const objectType = (obj as FabricObject & { objectType?: string }).objectType;
+      const objectType = fabricObj.objectType;
       if (!objectType || !objectType.includes('grid')) {
-        obj.selectable = true;
-        obj.hoverCursor = 'pointer';
+        fabricObj.selectable = true;
+        fabricObj.hoverCursor = 'pointer';
         
         // Ensure lines and polylines are selectable
         const isLineType = obj.type === 'polyline' || obj.type === 'line' || objectType === 'line';
         if (isLineType) {
-          obj.selectable = true;
-          obj.evented = true;
-          obj.hoverCursor = 'pointer';
+          fabricObj.selectable = true;
+          fabricObj.evented = true;
+          fabricObj.hoverCursor = 'pointer';
           
           // Increase hit box for easier selection
-          const fabricObj = obj as FabricObject & { 
-            strokeWidth?: number;
-            perPixelTargetFind?: boolean;
-            targetFindTolerance?: number;
-          };
-          
           fabricObj.strokeWidth = Math.max(fabricObj.strokeWidth || 2, 2);
           fabricObj.perPixelTargetFind = false;
           fabricObj.targetFindTolerance = 10;

@@ -10,12 +10,15 @@ import logger from "@/utils/logger";
 /**
  * Object with objectType property for type identification
  * @interface TypedFabricObject
+ * @extends FabricObject
  */
 interface TypedFabricObject extends FabricObject {
   /** Type identifier for specialized handling */
   objectType?: string;
   /** Stroke width for lines */
   strokeWidth?: number;
+  /** Object type from Fabric.js */
+  type?: string;
 }
 
 /**

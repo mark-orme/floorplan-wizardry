@@ -5,39 +5,81 @@
  * @module useDrawingTools
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { FloorPlan } from "@/utils/drawing";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { FloorPlan } from "@/types/floorPlanTypes";
 import { useCanvasTools } from "./useCanvasTools";
 import { useDrawingHistory } from "./useDrawingHistory";
 import { useCanvasActions } from "./useCanvasActions";
 import { DrawingTool } from "./useCanvasState";
 import logger from "@/utils/logger";
 
+/**
+ * Props for the useDrawingTools hook
+ * @interface UseDrawingToolsProps
+ */
 interface UseDrawingToolsProps {
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  /** Reference to grid layer objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Reference to history state for undo/redo */
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  /** Current active drawing tool */
   tool: DrawingTool;
+  /** Current zoom level */
   zoomLevel: number;
+  /** Current line thickness */
   lineThickness: number;
+  /** Current line color */
   lineColor: string;
+  /** Function to set the current tool */
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
+  /** Function to set the zoom level */
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
+  /** Array of floor plans */
   floorPlans: FloorPlan[];
+  /** Current floor index */
   currentFloor: number;
+  /** Function to set floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  /** Function to set gross internal area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
-  createGrid: (canvas: FabricCanvas) => any[];
+  /** Function to create grid elements */
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
+  /** Function to recalculate gross internal area */
   recalculateGIA: () => void;
+}
+
+/**
+ * Return type for the useDrawingTools hook
+ * @interface UseDrawingToolsResult
+ */
+interface UseDrawingToolsResult {
+  /** Clear all drawings from the canvas */
+  clearDrawings: () => void;
+  /** Change the current drawing tool */
+  handleToolChange: (tool: DrawingTool) => void;
+  /** Perform undo operation */
+  handleUndo: () => void;
+  /** Perform redo operation */
+  handleRedo: () => void;
+  /** Change zoom level */
+  handleZoom: (direction: "in" | "out") => void;
+  /** Clear the entire canvas */
+  clearCanvas: () => void;
+  /** Save the canvas as an image */
+  saveCanvas: () => void;
+  /** Save current state before making changes */
+  saveCurrentState: () => void;
 }
 
 /**
  * Main hook that orchestrates all drawing tool functionality
  * Composes smaller, focused hooks to provide a complete drawing toolkit
  * @param {UseDrawingToolsProps} props - Hook properties
- * @returns {Object} Drawing tool operations
+ * @returns {UseDrawingToolsResult} Drawing tool operations
  */
-export const useDrawingTools = (props: UseDrawingToolsProps) => {
+export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsResult => {
   const {
     fabricCanvasRef,
     gridLayerRef,
