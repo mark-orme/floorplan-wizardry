@@ -44,10 +44,9 @@ export default defineConfig(({ mode }) => ({
     sourcemap: true,
   },
   preview: {
-    // Ensure preview server also has proper HMR configuration
-    hmr: {
-      clientPort: 443,
-      protocol: 'wss'
-    }
+    // Preview server config
+    port: 8080,
+    host: "::"
+    // Note: HMR configuration belongs to the server section, not directly in preview
   }
 }));
