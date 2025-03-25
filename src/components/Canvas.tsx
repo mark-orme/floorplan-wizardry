@@ -4,7 +4,7 @@
  * Orchestrates the canvas setup, grid creation, and drawing tools
  * @module Canvas
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
 import { CanvasLayout } from "./CanvasLayout";
 import { CanvasController } from "./canvas/controller/CanvasController";
@@ -32,12 +32,19 @@ export const Canvas = (props: CanvasProps) => {
   // We need to use a stable controller reference
   const controllerRef = useRef<ReturnType<typeof CanvasController> | null>(null);
   
+  // Initialize component state hooks BEFORE any conditional state or effects
+  const [initialized, setInitialized] = useState(false);
+  
   // Initialize controller only once
   if (!controllerRef.current) {
     controllerRef.current = CanvasController();
+    // Set initialized flag after controller is created
+    if (!initialized) {
+      setInitialized(true);
+    }
   }
   
-  // Extract controller properties
+  // Extract controller properties - only after controller is guaranteed to exist
   const {
     tool,
     gia,
@@ -65,7 +72,7 @@ export const Canvas = (props: CanvasProps) => {
     handleRetry
   } = controllerRef.current;
   
-  // Measurement guide modal state - must be after other hooks
+  // Measurement guide modal state - must be AFTER all required hooks
   const { 
     showMeasurementGuide, 
     setShowMeasurementGuide,

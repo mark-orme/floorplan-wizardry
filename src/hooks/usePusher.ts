@@ -3,7 +3,7 @@
  * Custom hook for using Pusher in React components
  * @module usePusher
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Channel } from 'pusher-js';
 import { subscribeToChannel, unsubscribeFromChannel } from '@/utils/pusher';
 import logger from '@/utils/logger';
@@ -21,6 +21,16 @@ export const usePusher = ({
 }: UsePusherOptions) => {
   const [channel, setChannel] = useState<Channel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Use refs to avoid dependency issues with events
+  const eventsRef = useRef(events);
+  const channelNameRef = useRef(channelName);
+  
+  // Update refs when props change
+  useEffect(() => {
+    eventsRef.current = events;
+    channelNameRef.current = channelName;
+  }, [events, channelName]);
 
   // Subscribe to channel
   useEffect(() => {
@@ -31,7 +41,7 @@ export const usePusher = ({
       const newChannel = subscribeToChannel(channelName);
       
       // Bind events
-      Object.entries(events).forEach(([eventName, callback]) => {
+      Object.entries(eventsRef.current).forEach(([eventName, callback]) => {
         newChannel.bind(eventName, callback);
       });
       
@@ -43,7 +53,7 @@ export const usePusher = ({
         logger.info(`Cleaning up Pusher subscription to ${channelName}`);
         
         // Unbind events
-        Object.keys(events).forEach((eventName) => {
+        Object.keys(eventsRef.current).forEach((eventName) => {
           newChannel.unbind(eventName);
         });
         
@@ -54,20 +64,22 @@ export const usePusher = ({
     } catch (error) {
       logger.error('Error setting up Pusher subscription:', error);
       setIsConnected(false);
+      return undefined;
     }
   }, [channelName, enableSubscription]);
 
   // Function to manually trigger events for testing
   const triggerEvent = useCallback((eventName: string, data: any) => {
-    logger.info(`Manually triggering event ${eventName} on channel ${channelName}:`, data);
+    logger.info(`Manually triggering event ${eventName} on channel ${channelNameRef.current}:`, data);
     if (channel) {
       // In a real app, you'd typically send this to your server to trigger
       // This is just for local testing/debugging
-      if (events[eventName]) {
-        events[eventName](data);
+      const callback = eventsRef.current[eventName];
+      if (callback) {
+        callback(data);
       }
     }
-  }, [channel, channelName, events]);
+  }, [channel]);
 
   return {
     channel,

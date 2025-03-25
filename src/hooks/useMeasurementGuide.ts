@@ -9,13 +9,16 @@ export const useMeasurementGuide = (tool: DrawingTool) => {
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
   
   // Show the guide automatically when switching to line tools
+  // Safely handle tool being undefined initially
   useEffect(() => {
-    // Only run this effect if tool is defined
-    if (tool && (tool === "straightLine" || tool === "room") && 
+    if (!tool) return; // Guard against undefined tool
+    
+    // Only show guide when using line tools and user hasn't dismissed it before
+    if ((tool === "straightLine" || tool === "room") && 
         !localStorage.getItem("hideDrawingGuide")) {
       setShowMeasurementGuide(true);
     }
-  }, [tool]); // Ensure tool is the only dependency
+  }, [tool]); // Only depend on tool changes
   
   // Save user preference
   const handleCloseMeasurementGuide = (dontShowAgain: boolean) => {
