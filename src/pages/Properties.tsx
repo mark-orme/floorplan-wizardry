@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
@@ -14,29 +15,72 @@ import { toast } from 'sonner';
 import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
 
 const Properties = () => {
-  const { properties, isLoading, listProperties } = usePropertyManagement();
-  const { userRole, hasAccess, user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
-
+  
+  // Safely get auth state with error handling
+  const [authState, setAuthState] = useState({ 
+    user: null, 
+    userRole: null,
+    loading: true,
+    hasAccess: false
+  });
+  
+  // Safely initialize property management
+  const [propertyState, setPropertyState] = useState({
+    properties: [],
+    isLoading: true
+  });
+  
+  // Get auth context with error handling
   useEffect(() => {
-    if (user) {
-      listProperties().catch(error => {
-        console.error("Error fetching properties:", error);
-        setHasError(true);
-        setErrorMessage("Failed to load properties");
+    try {
+      const { user, userRole, loading, hasAccess } = useAuth();
+      setAuthState({
+        user,
+        userRole,
+        loading,
+        hasAccess: hasAccess || false
       });
+    } catch (error) {
+      console.error("Error accessing auth context:", error);
+      setHasError(true);
+      setErrorMessage("Authentication service unavailable");
     }
-  }, [listProperties, user]);
+  }, []);
+  
+  // Get property management with error handling
+  useEffect(() => {
+    try {
+      const { properties, isLoading, listProperties } = usePropertyManagement();
+      setPropertyState({
+        properties: properties || [],
+        isLoading: isLoading || false
+      });
+      
+      // Load properties if user is available
+      if (authState.user && !hasError) {
+        listProperties().catch(error => {
+          console.error("Error fetching properties:", error);
+          setHasError(true);
+          setErrorMessage("Failed to load properties");
+        });
+      }
+    } catch (error) {
+      console.error("Error accessing property management:", error);
+      setHasError(true);
+      setErrorMessage("Property service unavailable");
+    }
+  }, [authState.user]);
 
   const handleRowClick = (id: string) => {
     navigate(`/properties/${id}`);
   };
 
   const handleAddProperty = async () => {
-    if (!user) {
+    if (!authState.user) {
       toast.info('Please sign in to create a new property');
       navigate('/auth', { state: { returnTo: '/properties/new' } });
       return;
@@ -50,7 +94,7 @@ const Properties = () => {
   };
 
   const handleAddTestData = async () => {
-    if (!user) {
+    if (!authState.user) {
       toast.info('Please sign in to add test data');
       navigate('/auth', { state: { returnTo: '/properties' } });
       return;
@@ -59,7 +103,15 @@ const Properties = () => {
     try {
       await insertTestData();
       toast.success('Test data added successfully');
-      listProperties();
+      // Refresh properties after adding test data
+      try {
+        const { listProperties } = usePropertyManagement();
+        if (typeof listProperties === 'function') {
+          listProperties();
+        }
+      } catch (error) {
+        console.error("Error refreshing properties:", error);
+      }
     } catch (error) {
       console.error('Error adding test data:', error);
       toast.error('Failed to add test data');
@@ -69,7 +121,16 @@ const Properties = () => {
   const handleRetry = () => {
     setHasError(false);
     setErrorMessage('');
-    listProperties();
+    try {
+      const { listProperties } = usePropertyManagement();
+      if (typeof listProperties === 'function') {
+        listProperties();
+      }
+    } catch (error) {
+      console.error("Error retrying property load:", error);
+      setHasError(true);
+      setErrorMessage("Failed to reload properties");
+    }
   };
 
   const getStatusBadge = (status: PropertyStatus) => {
@@ -85,22 +146,24 @@ const Properties = () => {
     }
   };
 
-  const filteredProperties = properties.filter(prop => {
+  const filteredProperties = propertyState.properties.filter(prop => {
+    if (!prop) return false;
     const searchLower = searchTerm.toLowerCase();
     return (
-      prop.order_id.toLowerCase().includes(searchLower) ||
-      prop.address.toLowerCase().includes(searchLower) ||
-      prop.client_name.toLowerCase().includes(searchLower)
+      prop.order_id?.toLowerCase().includes(searchLower) ||
+      prop.address?.toLowerCase().includes(searchLower) ||
+      prop.client_name?.toLowerCase().includes(searchLower)
     );
   });
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const renderContent = () => {
-    if (!user) {
+    if (!authState.user) {
       return (
         <div className="text-center py-12 border rounded-lg bg-muted/50">
           <h2 className="text-2xl font-bold mb-4">Welcome to Property Management</h2>
@@ -170,7 +233,7 @@ const Properties = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProperties.map((property) => (
+            {filteredProperties.map((property) => property && (
               <TableRow 
                 key={property.id}
                 className="cursor-pointer hover:bg-accent/50"
@@ -195,16 +258,16 @@ const Properties = () => {
         <div>
           <h1 className="text-2xl font-bold">Properties</h1>
           <p className="text-muted-foreground">
-            {!user && 'Sign in to manage properties'}
-            {user && userRole === UserRole.PHOTOGRAPHER && 'Manage your properties'}
-            {user && userRole === UserRole.PROCESSING_MANAGER && 'Properties waiting for review'}
-            {user && userRole === UserRole.MANAGER && 'All properties in the system'}
+            {!authState.user && 'Sign in to manage properties'}
+            {authState.user && authState.userRole === UserRole.PHOTOGRAPHER && 'Manage your properties'}
+            {authState.user && authState.userRole === UserRole.PROCESSING_MANAGER && 'Properties waiting for review'}
+            {authState.user && authState.userRole === UserRole.MANAGER && 'All properties in the system'}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <Button onClick={handleAddProperty}>
-            {!user ? (
+            {!authState.user ? (
               <>
                 <LogIn className="mr-2 h-4 w-4" />
                 Sign in to Create
@@ -227,7 +290,7 @@ const Properties = () => {
         </div>
       </div>
 
-      {user && (
+      {authState.user && (
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -242,7 +305,7 @@ const Properties = () => {
       )}
 
       <LoadingErrorWrapper
-        isLoading={isLoading || (user && authLoading)}
+        isLoading={propertyState.isLoading || (authState.user && authState.loading)}
         hasError={hasError}
         errorMessage={errorMessage}
         onRetry={handleRetry}
