@@ -43,7 +43,7 @@ export const captureCurrentState = (
   fabricCanvas: FabricCanvas | null,
   gridLayerRef: React.MutableRefObject<any[]>
 ): any[] => {
-  console.log("Capturing current canvas state");
+  logger.info("Capturing current canvas state");
   if (!fabricCanvas) return [];
   
   // Get current non-grid objects 
@@ -51,7 +51,7 @@ export const captureCurrentState = (
     !isGridObject(obj, gridLayerRef) && (obj.type === 'polyline' || obj.type === 'path')
   );
   
-  console.log(`Found ${currentObjects.length} objects to capture`);
+  logger.info(`Found ${currentObjects.length} objects to capture`);
   
   // Serialize current objects with more reliable method
   return currentObjects.map(serializeObject).filter(Boolean);
@@ -98,7 +98,7 @@ export const pushToHistory = (
     
   if (!lastState || areStatesDifferent(lastState, state)) {
     // Add state to past and clear future
-    historyRef.current.past.push(state);
+    historyRef.current.past.push([...state]); // Create a copy of the state to avoid reference issues
     historyRef.current.future = [];
     
     // Limit history size
@@ -106,9 +106,9 @@ export const pushToHistory = (
       historyRef.current.past.shift();
     }
     
-    console.log(`History updated: ${historyRef.current.past.length} states in past, ${historyRef.current.future.length} in future`);
+    logger.info(`History updated: ${historyRef.current.past.length} states in past, ${historyRef.current.future.length} in future`);
   } else {
-    console.log("State unchanged, not adding to history");
+    logger.info("State unchanged, not adding to history");
   }
 };
 
@@ -136,3 +136,6 @@ export const showHistoryToast = (operation: 'undo' | 'redo', success: boolean): 
     toast.info(`Nothing to ${operation}`);
   }
 };
+
+// Add logger import
+import logger from "./logger";

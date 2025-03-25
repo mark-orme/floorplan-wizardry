@@ -11,6 +11,7 @@ import { useCanvasTools } from "./useCanvasTools";
 import { useDrawingHistory } from "./useDrawingHistory";
 import { useCanvasActions } from "./useCanvasActions";
 import { DrawingTool } from "./useCanvasState";
+import logger from "@/utils/logger";
 
 interface UseDrawingToolsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -76,6 +77,7 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
    * Handle undo operation - uses the canvas's attached undo function
    */
   const handleUndo = useCallback(() => {
+    logger.info("Triggering undo from drawing tools");
     if (!fabricCanvasRef.current) return;
     
     // Access the undo function from the canvas object (attached in useCanvasEventHandlers)
@@ -88,6 +90,7 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
    * Handle redo operation - uses the canvas's attached redo function
    */
   const handleRedo = useCallback(() => {
+    logger.info("Triggering redo from drawing tools");
     if (!fabricCanvasRef.current) return;
     
     // Access the redo function from the canvas object (attached in useCanvasEventHandlers)

@@ -8,6 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { captureCurrentState, pushToHistory, canUndo, canRedo, showHistoryToast, areStatesDifferent } from "@/utils/historyUtils";
 import { applyCanvasState } from "@/utils/canvasStateUtils";
+import logger from "@/utils/logger";
 
 interface UseCanvasHistoryProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -45,9 +46,9 @@ export const useCanvasHistory = ({
       pushToHistory(historyRef, currentState);
       // Update the last captured state
       lastCapturedStateRef.current = [...currentState];
-      console.log(`Saved state with ${currentState.length} objects to history`);
+      logger.info(`Saved state with ${currentState.length} objects to history`);
     } else {
-      console.log('State unchanged, skipping history update');
+      logger.info('State unchanged, skipping history update');
     }
   }, [fabricCanvasRef, gridLayerRef, historyRef]);
 
@@ -60,24 +61,21 @@ export const useCanvasHistory = ({
       return;
     }
     
-    console.log("Performing undo operation");
+    logger.info("Performing undo operation");
     
     // Get current state for redo
     const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
     
     // Add to future if different from last past state
-    const lastPastState = historyRef.current.past[historyRef.current.past.length - 1];
-    if (areStatesDifferent(lastPastState, currentState)) {
-      historyRef.current.future.unshift(currentState);
-      console.log(`Saved current state with ${currentState.length} objects for potential redo`);
-    }
+    historyRef.current.future.unshift([...currentState]);
+    logger.info(`Saved current state with ${currentState.length} objects for potential redo`);
     
     // Remove current state from past
-    const prevState = historyRef.current.past.pop();
+    historyRef.current.past.pop();
     
-    // Get previous state
+    // Get previous state (the one we want to restore)
     const previousState = historyRef.current.past[historyRef.current.past.length - 1] || [];
-    console.log(`Restoring previous state with ${previousState.length} objects`);
+    logger.info(`Restoring previous state with ${previousState.length} objects`);
     
     // Apply previous state
     applyCanvasState(fabricCanvasRef.current, previousState, gridLayerRef, recalculateGIA);
@@ -97,15 +95,15 @@ export const useCanvasHistory = ({
       return;
     }
     
-    console.log("Performing redo operation");
+    logger.info("Performing redo operation");
     
     // Get future state
     const futureState = historyRef.current.future.shift() || [];
-    console.log(`Restoring future state with ${futureState.length} objects`);
+    logger.info(`Restoring future state with ${futureState.length} objects`);
     
     // Save current state to past
     const currentState = captureCurrentState(fabricCanvasRef.current, gridLayerRef);
-    historyRef.current.past.push(currentState);
+    historyRef.current.past.push([...currentState]);
     
     // Apply future state
     applyCanvasState(fabricCanvasRef.current, futureState, gridLayerRef, recalculateGIA);

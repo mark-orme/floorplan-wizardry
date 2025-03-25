@@ -6,6 +6,7 @@
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
 import { DrawingTool } from "./useCanvasState";
+import logger from "@/utils/logger";
 
 interface UseCanvasEventHandlersProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -49,19 +50,19 @@ export const useCanvasEventHandlers = ({
     }
     
     const handlePathCreated = (e: {path: FabricPath}): void => {
-      console.log("Path created event triggered");
+      logger.info("Path created event triggered");
       
       // IMPORTANT: Save current state BEFORE making any changes
       // This ensures we can properly undo to previous state
       saveCurrentState();
       
       if (tool === "straightLine" && e.path && e.path.path) {
-        console.log("Applying strict grid alignment to wall line");
+        logger.info("Applying strict grid alignment to wall line");
         try {
           // Complex straightening logic handled by processCreatedPath
           // Just provide the path as input 
         } catch (err) {
-          console.error("Error straightening wall line:", err);
+          logger.error("Error straightening wall line:", err);
         }
       }
       
@@ -71,11 +72,13 @@ export const useCanvasEventHandlers = ({
     
     const handleObjectModified = () => {
       // Save state when objects are modified
+      logger.info("Object modified, saving state");
       saveCurrentState();
     };
     
     const handleObjectRemoved = () => {
       // Save state when objects are removed
+      logger.info("Object removed, saving state");
       saveCurrentState();
     };
     

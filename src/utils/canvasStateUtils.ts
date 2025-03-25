@@ -41,10 +41,15 @@ export const applyCanvasState = (
   });
   
   // STEP 2: Create and add new objects from state (restoration)
-  if (state.length > 0) {
+  if (state && state.length > 0) {
     logger.info(`Restoring ${state.length} objects`);
     state.forEach(objData => {
       try {
+        if (!objData || !objData.type) {
+          logger.warn("Invalid object data:", objData);
+          return;
+        }
+        
         let obj: FabricObject | null = null;
         
         if (objData.type === 'polyline') {
@@ -61,6 +66,7 @@ export const applyCanvasState = (
         
         if (obj) {
           fabricCanvas.add(obj);
+          logger.info(`Added object of type ${objData.type} to canvas`);
         }
       } catch (err) {
         logger.error("Error adding object from history:", err);
