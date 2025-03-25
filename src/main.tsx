@@ -11,19 +11,47 @@ Sentry.init({
   dsn: "https://abae2c559058eb2bbcd15686dac558ed@o4508914471927808.ingest.de.sentry.io/4509038014234704",
   integrations: [
     Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration()
+    Sentry.replayIntegration(),
+    new Sentry.BrowserProfilingIntegration(),
   ],
   // Enable automatic release tracking and source maps
   release: import.meta.env.VITE_SENTRY_RELEASE || "development",
   dist: import.meta.env.VITE_SENTRY_DIST,
   environment: import.meta.env.MODE,
+  
   // Tracing
   tracesSampleRate: 1.0, // Capture 100% of the transactions
   // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
   tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
+  
   // Session Replay
   replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%
-  replaysOnErrorSampleRate: 1.0 // 100% when sampling sessions where errors occur
+  replaysOnErrorSampleRate: 1.0, // 100% when sampling sessions where errors occur
+  
+  // Performance profiling
+  profilesSampleRate: 0.1, // Capture 10% of profiles
+  
+  // Ensure we capture breadcrumbs for better debugging context
+  beforeBreadcrumb(breadcrumb) {
+    return breadcrumb;
+  },
+  
+  // Add custom context to all errors
+  beforeSend(event) {
+    // Add app-specific tags
+    event.tags = {
+      ...event.tags,
+      appVersion: import.meta.env.VITE_APP_VERSION || 'unknown',
+      appBuild: import.meta.env.VITE_APP_BUILD || 'unknown'
+    };
+    
+    // Filter out sensitive data if needed
+    if (event.request && event.request.headers) {
+      delete event.request.headers['Authorization'];
+    }
+    
+    return event;
+  }
 });
 
 // Initialize Pusher
@@ -32,7 +60,26 @@ getPusher();
 // Create the root and render the application using our utility
 const rootElement = createRootElement("root");
 createRoot(rootElement).render(
-  <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
+  <Sentry.ErrorBoundary 
+    fallback={({ error, componentStack, resetError }) => (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="text-center p-6 max-w-md mx-auto">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-500 text-2xl">!</span>
+          </div>
+          <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+          <p className="text-gray-600 mb-4">We've encountered an error and our team has been notified.</p>
+          <button
+            onClick={resetError}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )}
+  >
     <App />
   </Sentry.ErrorBoundary>
 );
+

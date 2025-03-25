@@ -6,6 +6,7 @@
  */
 import { useCallback } from "react";
 import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
+import { captureError } from "@/utils/sentryUtils";
 
 /**
  * Interface for useFloorPlanLoader hook props
@@ -39,8 +40,8 @@ interface UseFloorPlanLoaderProps {
 export const useFloorPlanLoader = ({
   setIsLoading,
   setFloorPlans,
-  setHasError,
   setErrorMessage,
+  setHasError,
   loadData
 }: UseFloorPlanLoaderProps) => {
   
@@ -84,6 +85,15 @@ export const useFloorPlanLoader = ({
       return true;
     } catch (error) {
       console.error("Error loading floor plans:", error);
+      
+      // Report to Sentry
+      captureError(error, 'floor-plan-loading', {
+        tags: {
+          component: 'floor-plans',
+          operation: 'loading'
+        }
+      });
+      
       setHasError(true);
       setErrorMessage("Failed to load floor plans");
       setIsLoading(false);
@@ -95,3 +105,4 @@ export const useFloorPlanLoader = ({
     loadFloorPlansData
   };
 };
+

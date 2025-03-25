@@ -5,6 +5,7 @@
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { captureError } from "@/utils/sentryUtils";
 
 /**
  * Props for the useCanvasErrorHandling hook
@@ -62,6 +63,14 @@ export const useCanvasErrorHandling = ({
     setHasError(true);
     setErrorMessage(`Failed to ${context}: ${error instanceof Error ? error.message : String(error)}`);
     toast.error(`Failed to ${context}`);
+    
+    // Report error to Sentry
+    captureError(error, `canvas-${context}`, {
+      tags: {
+        component: 'canvas',
+        operation: context
+      }
+    });
   }, [setHasError, setErrorMessage]);
 
   return {
@@ -69,3 +78,4 @@ export const useCanvasErrorHandling = ({
     handleError
   };
 };
+

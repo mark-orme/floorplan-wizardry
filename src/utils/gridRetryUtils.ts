@@ -8,6 +8,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { createBasicEmergencyGrid } from "./gridCreationUtils";
 import { resetGridProgress } from "./gridManager";
 import { toast } from "sonner";
+import { captureError } from "./sentryUtils";
 
 /**
  * Default configuration for grid creation retries
@@ -48,6 +49,24 @@ export const scheduleGridRetry = (
     if (process.env.NODE_ENV === 'development') {
       console.warn("Max grid creation attempts reached, using emergency grid");
     }
+    
+    // Log to Sentry that we're hitting max retries
+    captureError(
+      new Error(`Grid creation max attempts (${config.maxAttempts}) reached`),
+      'grid-max-retries',
+      {
+        level: 'warning',
+        tags: {
+          component: 'grid',
+          operation: 'retry'
+        },
+        extra: {
+          attemptCount: attempt,
+          config
+        }
+      }
+    );
+    
     return 0;
   }
   
@@ -96,6 +115,25 @@ export const handleMaxAttemptsReached = (
     console.warn("Max grid creation attempts reached, using emergency grid");
   }
   
+  // Report to Sentry that we're using emergency grid
+  captureError(
+    new Error("Using emergency grid after max creation attempts"),
+    'grid-emergency-fallback',
+    {
+      level: 'warning',
+      tags: {
+        component: 'grid',
+        operation: 'emergency-grid'
+      },
+      extra: {
+        canvasInfo: canvas ? {
+          width: canvas.width,
+          height: canvas.height
+        } : 'No canvas'
+      }
+    }
+  );
+  
   // First notify the user that we're using a simplified grid
   toast.warning("Using simplified drawing grid due to creation difficulties.", {
     id: "emergency-grid",
@@ -115,6 +153,19 @@ export const handleMaxAttemptsReached = (
       setHasError(true);
       setErrorMessage("Failed to create grid after multiple attempts.");
       
+      captureError(
+        new Error("Emergency grid creation failed"),
+        'grid-emergency-failed',
+        {
+          level: 'error',
+          tags: {
+            component: 'grid',
+            operation: 'emergency-grid',
+            critical: 'true'
+          }
+        }
+      );
+      
       toast.error("Unable to create drawing grid. Please refresh the page.", {
         id: "grid-error",
         duration: 7000
@@ -125,6 +176,17 @@ export const handleMaxAttemptsReached = (
     // Critical failure
     setHasError(true);
     setErrorMessage(`Grid creation failed completely: ${error instanceof Error ? error.message : String(error)}`);
+    
+    captureError(error, 'grid-critical-failure', {
+      level: 'fatal',
+      tags: {
+        component: 'grid',
+        operation: 'emergency-grid',
+        critical: 'true'
+      }
+    });
+    
     return [];
   }
 };
+

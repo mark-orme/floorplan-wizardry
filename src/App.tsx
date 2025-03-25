@@ -14,29 +14,26 @@ import PropertyForm from "./components/PropertyForm";
 import RoleGuard from "./components/RoleGuard";
 import { UserRole } from "./lib/supabase";
 import { ErrorBoundary } from "react-error-boundary";
+import { ErrorFallback } from "./components/ErrorFallback";
+import * as Sentry from "@sentry/react";
 
+// Configure query client with Sentry integration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       staleTime: 30000,
+      // Add Sentry error reporting to React Query
+      onError: (error) => {
+        Sentry.captureException(error, {
+          tags: {
+            source: 'react-query'
+          }
+        });
+      }
     },
   },
 });
-
-// Simple fallback component for error boundaries
-const ErrorFallback = () => (
-  <div className="flex flex-col items-center justify-center h-screen">
-    <h2 className="text-xl font-semibold mb-4">Something went wrong</h2>
-    <p className="mb-4">We're having some trouble loading this page.</p>
-    <button 
-      onClick={() => window.location.href = '/properties'}
-      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-    >
-      Go to Properties
-    </button>
-  </div>
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -71,4 +68,5 @@ const App = () => (
   </QueryClientProvider>
 );
 
-export default App;
+export default Sentry.withProfiler(App);
+

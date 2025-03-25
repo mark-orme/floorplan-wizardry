@@ -8,6 +8,7 @@ import { Canvas } from "fabric";
 import { toast } from "sonner";
 import { gridManager } from "../gridManager";
 import logger from "../logger";
+import { captureError } from "../sentryUtils";
 
 /**
  * Handle grid creation errors
@@ -31,6 +32,21 @@ export const handleGridCreationError = (
   if (process.env.NODE_ENV === 'development') {
     logger.error("Error creating grid:", error);
   }
+  
+  // Report to Sentry
+  captureError(error, 'grid-creation', {
+    tags: {
+      component: 'grid',
+      operation: 'creation'
+    },
+    extra: {
+      gridManager: {
+        ...gridManager,
+        // Remove circular references
+        safetyTimeout: gridManager.safetyTimeout ? 'exists' : 'null'
+      }
+    }
+  });
   
   setHasError(true);
   setErrorMessage(`Error creating grid: ${error.message}`);
@@ -57,7 +73,7 @@ export const scheduleGridRetry = (
   delay: number = 1000
 ): number => {
   if (process.env.NODE_ENV === 'development') {
-    logger.log(`Scheduling grid retry in ${delay}ms`);
+    logger.info(`Scheduling grid retry in ${delay}ms`);
   }
   
   return window.setTimeout(() => {
@@ -69,6 +85,15 @@ export const scheduleGridRetry = (
       if (process.env.NODE_ENV === 'development') {
         logger.error("Error in grid retry:", error);
       }
+      
+      // Report retry error to Sentry
+      captureError(error, 'grid-retry-failure', {
+        tags: {
+          component: 'grid',
+          operation: 'retry'
+        }
+      });
     }
   }, delay);
 };
+

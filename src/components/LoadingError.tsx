@@ -1,5 +1,7 @@
 
+import { useEffect } from "react";
 import { Button } from "./ui/button";
+import { captureError } from "@/utils/sentryUtils";
 
 interface LoadingErrorProps {
   isLoading: boolean;
@@ -14,6 +16,20 @@ export const LoadingError = ({
   errorMessage,
   onRetry
 }: LoadingErrorProps) => {
+  // Report error to Sentry when an error occurs
+  useEffect(() => {
+    if (hasError && errorMessage) {
+      captureError(new Error(errorMessage), 'loading-error', {
+        tags: {
+          component: 'LoadingError'
+        },
+        extra: {
+          errorMessage
+        }
+      });
+    }
+  }, [hasError, errorMessage]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -46,3 +62,4 @@ export const LoadingError = ({
 
   return null;
 };
+

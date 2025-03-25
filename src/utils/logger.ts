@@ -2,8 +2,11 @@
 /**
  * Logger utility for consistent logging throughout the application
  * Provides level-based filtering and consistent formatting
+ * Also integrates with Sentry for error tracking
  * @module logger
  */
+
+import { captureError, captureMessage } from "./sentryUtils";
 
 /**
  * Available log levels for the logger
@@ -50,6 +53,7 @@ interface Logger {
 
 /**
  * Logger utility with consistent formatting and level-based filtering
+ * Also sends select logs to Sentry in production
  * @type {Logger}
  */
 const logger: Logger = {
@@ -72,6 +76,15 @@ const logger: Logger = {
   warn(message: string, ...args: any[]): void {
     if (LOG_LEVEL.warn >= CURRENT_LOG_LEVEL) {
       console.warn(`${formattedTimestamp()} warn: ${message}`, ...args);
+      
+      // In production, send warnings to Sentry as breadcrumbs
+      if (process.env.NODE_ENV === 'production') {
+        try {
+          captureMessage(message, 'warning', { extra: { args } });
+        } catch (e) {
+          // Silently fail if Sentry capture fails
+        }
+      }
     }
   },
 
@@ -83,6 +96,21 @@ const logger: Logger = {
   error(message: string, ...args: any[]): void {
     if (LOG_LEVEL.error >= CURRENT_LOG_LEVEL) {
       console.error(`${formattedTimestamp()} error: ${message}`, ...args);
+      
+      // Send errors to Sentry
+      if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
+        try {
+          const error = args[0] instanceof Error ? args[0] : new Error(message);
+          captureError(error, 'logger', {
+            extra: { 
+              originalMessage: message,
+              args: args.slice(1) // Skip the error object if it was the first arg
+            }
+          });
+        } catch (e) {
+          // Silently fail if Sentry capture fails
+        }
+      }
     }
   },
 
@@ -99,3 +127,4 @@ const logger: Logger = {
 };
 
 export default logger;
+
