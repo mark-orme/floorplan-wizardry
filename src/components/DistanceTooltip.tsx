@@ -3,7 +3,7 @@ import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
-import { GRID_SIZE } from "@/utils/drawing";
+import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
 
 interface DistanceTooltipProps {
   startPoint?: Point | null;
@@ -65,35 +65,34 @@ export const DistanceTooltip = memo(({
   // Determine position for tooltip - prefer midPoint if available
   const tooltipPosition = midPoint || position || displayEndPoint;
   
-  // Calculate a vertical offset to position tooltip above the line
+  // Calculate a smaller vertical offset to position tooltip closer to the line
   // Scale the offset based on zoom level to ensure visibility at high zoom levels
-  const baseOffset = -30; // Base offset in pixels
+  const baseOffset = -20; // Reduced from -30 to make it closer to the line
   const scaledOffset = baseOffset / Math.max(0.5, Math.min(effectiveZoom, 3)); // Adjust offset inversely with zoom
   
-  // Background opacity adjusted based on zoom for better visibility
-  const bgOpacity = Math.min(0.9, 0.8 + (effectiveZoom / 10));
-  
   // Convert meter position to pixel position for display
-  const pixelX = tooltipPosition.x * 100; // Using constant 100 pixels per meter for display
-  const pixelY = tooltipPosition.y * 100;
+  // Use PIXELS_PER_METER constant for more accurate positioning
+  const pixelX = tooltipPosition.x * PIXELS_PER_METER;
+  const pixelY = tooltipPosition.y * PIXELS_PER_METER;
   
   return (
     <div 
-      className="absolute pointer-events-none z-50 text-white px-3 py-2 rounded-md shadow-lg"
+      className="absolute pointer-events-none z-50 text-white px-2 py-1 rounded-md shadow-lg text-xs"
       style={{ 
         left: `${pixelX}px`, 
         top: `${pixelY + scaledOffset}px`,
         transform: `translate(-50%, -100%)`, // Center horizontally and position above the point
         willChange: "transform", // Hint for browser optimization
-        backgroundColor: `rgba(0, 0, 0, ${bgOpacity})`,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.3)" // More visible outline
+        backgroundColor: `rgba(0, 0, 0, 0.8)`,
+        boxShadow: "0 0 0 1px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2)", // Lighter shadow
+        maxWidth: "180px" // Prevent tooltip from getting too wide
       }}
     >
-      <div className="flex items-center gap-2 text-sm whitespace-nowrap">
-        <Ruler className="w-4 h-4" />
+      <div className="flex items-center gap-1 whitespace-nowrap">
+        <Ruler className="w-3 h-3 flex-shrink-0" />
         <span className="font-medium">{formattedDistance} m</span>
         {gridUnits > 0 && (
-          <span className="text-xs opacity-80">({gridUnits} grid units)</span>
+          <span className="text-xs opacity-80">({gridUnits} grid)</span>
         )}
       </div>
     </div>

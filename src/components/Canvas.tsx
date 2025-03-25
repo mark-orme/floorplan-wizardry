@@ -92,18 +92,6 @@ export const Canvas = () => {
     (!drawingState?.isDrawing && (tool === "straightLine" || tool === "room") && drawingState?.cursorPosition != null) ||
     // Also show when in select mode and actively manipulating a line
     (tool === "select" && drawingState?.isDrawing);
-  
-  // Log tooltip visibility for debugging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Tooltip visibility check:", {
-        isDrawing: !!drawingState?.isDrawing,
-        tool,
-        isVisible: isTooltipVisible,
-        cursorPosition: !!drawingState?.cursorPosition
-      });
-    }
-  }, [drawingState?.isDrawing, drawingState?.cursorPosition, tool, isTooltipVisible]);
 
   return (
     <LoadingErrorWrapper
@@ -135,8 +123,8 @@ export const Canvas = () => {
           onShowMeasurementGuide={() => setShowMeasurementGuide(true)}
         />
         
-        {/* Render tooltip in a fixed position relative to the viewport */}
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
+        {/* Render tooltip directly within the canvas space */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-50">
           <DistanceTooltip
             startPoint={drawingState?.startPoint}
             currentPoint={drawingState?.currentPoint}
