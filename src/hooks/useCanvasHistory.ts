@@ -4,14 +4,15 @@
  * With improved state serialization and restoration
  */
 import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { toast } from "sonner";
 import { captureCurrentState, pushToHistory, canUndo, canRedo, showHistoryToast, areStatesDifferent } from "@/utils/historyUtils";
 import { applyCanvasState } from "@/utils/canvasStateUtils";
 
 interface UseCanvasHistoryProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   recalculateGIA: () => void;
 }
 
@@ -25,7 +26,7 @@ export const useCanvasHistory = ({
   recalculateGIA
 }: UseCanvasHistoryProps) => {
   // Track the last captured state to prevent duplicate history entries
-  const lastCapturedStateRef = useRef<any[]>([]);
+  const lastCapturedStateRef = useRef<FabricObject[]>([]);
 
   /**
    * Add current state to history before making changes

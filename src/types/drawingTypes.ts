@@ -34,6 +34,7 @@ export interface FloorPlan {
   timestamp?: number;
   dimensions?: CanvasDimensions;
   objects?: any[];
+  strokes?: Point[][];
   // Add any other properties that might be needed
 }
 
@@ -55,6 +56,52 @@ export interface GridCreationState {
   maxRecreations: number;
   minRecreationInterval: number;
 }
+
+/**
+ * Drawing state interface for tracking current drawing operations
+ */
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint: Point | null;
+  currentPoint: Point | null;
+  cursorPosition: Point | null;
+  midPoint: Point | null;
+  currentZoom?: number;
+}
+
+/**
+ * Debug info state interface
+ */
+export interface DebugInfoState {
+  gridCreationAttempts: number;
+  gridCreationFailures: number;
+  lastGridCreationTime: number;
+  lastError: string | null;
+  lastErrorTime: number;
+  canvasObjects: number;
+  gridObjects: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  devicePixelRatio: number;
+  gridVisible: boolean;
+  performanceStats: Record<string, number>;
+}
+
+/**
+ * Canvas load times interface
+ */
+export interface CanvasLoadTimes {
+  canvasInitStart: number;
+  canvasInitEnd: number;
+  gridCreationStart: number;
+  gridCreationEnd: number;
+  totalLoadTime: number;
+}
+
+/**
+ * Grid creation callback type
+ */
+export type GridCreationCallback = (success: boolean) => void;
 
 /**
  * Type definition for FabricCanvas to match Canvas from fabric
