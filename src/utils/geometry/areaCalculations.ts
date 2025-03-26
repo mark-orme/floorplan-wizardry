@@ -1,3 +1,4 @@
+
 /**
  * Area calculation utilities module
  * Functions for calculating areas of shapes
