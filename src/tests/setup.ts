@@ -5,13 +5,24 @@
  * @module tests/setup
  */
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, expect as vitestExpect } from 'vitest';
+
+// Define types for mocked timers with __promisify__ property
+interface MockedSetTimeout extends Function {
+  __promisify__: Function;
+}
 
 // Mock setTimeout globally
-window.setTimeout = vi.fn().mockImplementation((cb, ms) => {
+const mockedSetTimeout = vi.fn().mockImplementation((cb, ms) => {
   if (typeof cb === 'function') cb();
   return 123 as unknown as NodeJS.Timeout;
-});
+}) as MockedSetTimeout;
+
+// Add required __promisify__ property
+mockedSetTimeout.__promisify__ = vi.fn();
+
+// Apply the mock
+window.setTimeout = mockedSetTimeout as unknown as typeof window.setTimeout;
 
 // Mock canvas
 window.HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
@@ -48,7 +59,8 @@ if (!global.MutationObserver) {
     constructor(callback: Function) {}
     disconnect() {}
     observe(element: Node, initObject: MutationObserverInit) {}
-  };
+    takeRecords() { return []; } // Add the missing takeRecords method
+  } as unknown as typeof MutationObserver;
 }
 
 // Mock ResizeObserver if not available
@@ -84,7 +96,7 @@ if (!window.performance || !window.performance.now) {
 }
 
 // Add missing jest-dom matchers
-expect.extend({
+vitestExpect.extend({
   toBeInTheDocument(received) {
     const pass = Boolean(received);
     return {
@@ -110,6 +122,9 @@ expect.extend({
     };
   }
 });
+
+// Make Vitest's expect available globally
+global.expect = vitestExpect;
 
 // Setup global test utilities
 global.afterEach(() => {
