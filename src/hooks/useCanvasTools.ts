@@ -7,9 +7,10 @@ import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import { 
-  clearDrawings as clearCanvasDrawings,
-  handleToolChange as changeCanvasTool,
-  handleZoom as zoomCanvas
+  clearDrawings,
+  handleToolChange,
+  handleZoom,
+  setActiveTool
 } from "@/utils/canvasToolOperations";
 import { arrangeGridElements } from "@/utils/canvasLayerOrdering";
 
@@ -44,16 +45,16 @@ export const useCanvasTools = ({
   /**
    * Clear all drawings from the canvas while preserving the grid
    */
-  const clearDrawings = useCallback(() => {
-    clearCanvasDrawings(fabricCanvasRef.current, gridLayerRef, createGrid);
+  const clearCanvasDrawings = useCallback(() => {
+    clearDrawings(fabricCanvasRef.current, gridLayerRef, createGrid);
   }, [fabricCanvasRef, gridLayerRef, createGrid]);
   
   /**
    * Change the current drawing tool
    * @param {DrawingTool} newTool - The tool to switch to
    */
-  const handleToolChange = useCallback((newTool: DrawingTool) => {
-    changeCanvasTool(
+  const handleCanvasToolChange = useCallback((newTool: DrawingTool) => {
+    handleToolChange(
       newTool, 
       fabricCanvasRef.current, 
       gridLayerRef, 
@@ -67,8 +68,8 @@ export const useCanvasTools = ({
    * Zoom the canvas in or out in exact 10% increments
    * @param {string} direction - The zoom direction ("in" or "out")
    */
-  const handleZoom = useCallback((direction: "in" | "out") => {
-    zoomCanvas(direction, fabricCanvasRef.current, zoomLevel, setZoomLevel);
+  const handleCanvasZoom = useCallback((direction: "in" | "out") => {
+    handleZoom(direction, fabricCanvasRef.current, zoomLevel, setZoomLevel);
   }, [fabricCanvasRef, zoomLevel, setZoomLevel]);
 
   // Set up panning when hand tool is selected
@@ -76,7 +77,7 @@ export const useCanvasTools = ({
     if (fabricCanvasRef.current) {
       if (tool === "select" || tool === "hand") {
         // Apply appropriate tool mode
-        handleToolChange(tool);
+        handleCanvasToolChange(tool);
       }
       
       // Ensure grid elements are in correct z-order after a short delay
@@ -86,11 +87,11 @@ export const useCanvasTools = ({
         }
       }, 100);
     }
-  }, [fabricCanvasRef, gridLayerRef, tool, handleToolChange]);
+  }, [fabricCanvasRef, gridLayerRef, tool, handleCanvasToolChange]);
 
   return {
-    clearDrawings,
-    handleToolChange,
-    handleZoom
+    clearDrawings: clearCanvasDrawings,
+    handleToolChange: handleCanvasToolChange,
+    handleZoom: handleCanvasZoom
   };
 };

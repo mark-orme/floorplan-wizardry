@@ -10,7 +10,8 @@ import {
   Line,
   Path,
   Circle,
-  IObjectOptions 
+  ObjectProps as FabricObjectProps,
+  Text
 } from "fabric";
 import { ObjectType, setObjectLayer } from './canvasLayerOrdering';
 import { Point } from '@/types/drawingTypes';
@@ -26,6 +27,130 @@ interface MeasurementTextOptions {
   backgroundColor?: string;
   padding?: number;
 }
+
+/**
+ * Handle switching between different drawing tools
+ * @param {DrawingTool} tool - The tool to switch to
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid layer objects
+ * @param {number} lineThickness - Line thickness in pixels
+ * @param {string} lineColor - Line color in hex format
+ * @param {React.Dispatch<React.SetStateAction<DrawingTool>>} setTool - Function to update tool state
+ */
+export const handleToolChange = (
+  newTool: DrawingTool,
+  canvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
+  lineThickness: number,
+  lineColor: string,
+  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>
+): void => {
+  if (!canvas) return;
+  
+  // Update the tool state
+  setTool(newTool);
+  
+  // Configure canvas based on selected tool
+  setActiveTool(canvas, newTool);
+  
+  // Update brush settings if drawing
+  if (newTool === 'draw' && canvas.freeDrawingBrush) {
+    canvas.freeDrawingBrush.width = lineThickness;
+    canvas.freeDrawingBrush.color = lineColor;
+  }
+  
+  // Ensure grid elements stay in the background
+  setTimeout(() => {
+    if (gridLayerRef.current && canvas) {
+      gridLayerRef.current.forEach(gridObj => {
+        if (canvas.contains(gridObj)) {
+          canvas.sendObjectToBack(gridObj);
+        }
+      });
+      canvas.requestRenderAll();
+    }
+  }, 100);
+};
+
+/**
+ * Handle zooming the canvas in or out
+ * @param {string} direction - The zoom direction ("in" or "out")
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {number} zoomLevel - Current zoom level
+ * @param {React.Dispatch<React.SetStateAction<number>>} setZoomLevel - Function to update zoom level
+ */
+export const handleZoom = (
+  direction: "in" | "out",
+  canvas: FabricCanvas | null,
+  zoomLevel: number,
+  setZoomLevel: React.Dispatch<React.SetStateAction<number>>
+): void => {
+  if (!canvas) return;
+  
+  const ZOOM_INCREMENT = 0.1;
+  let newZoom = zoomLevel;
+  
+  if (direction === "in") {
+    newZoom = Math.min(zoomLevel + ZOOM_INCREMENT, 5.0);
+  } else {
+    newZoom = Math.max(zoomLevel - ZOOM_INCREMENT, 0.1);
+  }
+  
+  // Round to 1 decimal place for clean values
+  newZoom = Math.round(newZoom * 10) / 10;
+  
+  // Apply zoom to canvas
+  canvas.setZoom(newZoom);
+  setZoomLevel(newZoom);
+  
+  // Fire custom zoom event
+  canvas.fire('custom:zoom-changed', { zoom: newZoom });
+  
+  canvas.requestRenderAll();
+};
+
+/**
+ * Clear drawings while preserving the grid
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid layer objects
+ * @param {Function} createGrid - Function to create grid if needed
+ */
+export const clearDrawings = (
+  canvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
+  createGrid: (canvas: FabricCanvas) => FabricObject[]
+): void => {
+  if (!canvas) return;
+  
+  try {
+    // Store all objects that aren't grid elements
+    const allObjects = canvas.getObjects();
+    const toKeep: FabricObject[] = [];
+    const toRemove: FabricObject[] = [];
+    
+    // Sort objects by whether they're grid elements
+    allObjects.forEach(obj => {
+      const isGridElement = gridLayerRef.current.includes(obj as FabricObject);
+      if (isGridElement) {
+        toKeep.push(obj as FabricObject);
+      } else {
+        toRemove.push(obj as FabricObject);
+      }
+    });
+    
+    // Remove non-grid elements
+    toRemove.forEach(obj => canvas.remove(obj));
+    
+    // Recreate grid if needed
+    if (toKeep.length === 0) {
+      gridLayerRef.current = createGrid(canvas);
+    }
+    
+    canvas.requestRenderAll();
+  } catch (error) {
+    logger.error("Failed to clear drawings:", error);
+  }
+};
 
 /**
  * Handle switching between different drawing tools
@@ -64,13 +189,13 @@ export const setActiveTool = (
  * Create a line between two points
  * @param {Point} start - Starting point
  * @param {Point} end - Ending point
- * @param {Partial<IObjectOptions>} options - Line options
+ * @param {Partial<FabricObjectProps>} options - Line options
  * @returns {Line} Created line object
  */
 export const createLine = (
   start: Point,
   end: Point,
-  options: Partial<IObjectOptions> = {}
+  options: Partial<FabricObjectProps> = {}
 ): Line => {
   // Ensure points are snapped to grid
   const snappedStart = snapToGrid(start);
@@ -100,12 +225,12 @@ export const createLine = (
 /**
  * Create a point marker at a specific location
  * @param {Point} point - Point location 
- * @param {Partial<IObjectOptions>} options - Circle options
+ * @param {Partial<FabricObjectProps>} options - Circle options
  * @returns {Circle} Created circle object
  */
 export const createPointMarker = (
   point: Point, 
-  options: Partial<IObjectOptions> = {}
+  options: Partial<FabricObjectProps> = {}
 ): Circle => {
   // Ensure point is snapped to grid
   const snappedPoint = snapToGrid(point);
@@ -145,14 +270,14 @@ export const addMeasurementToLine = (
   if (!canvas || !line) return;
   
   try {
-    const points = line.points || [];
-    if (points.length < 2) return;
+    // Use coords instead of points
+    const coords = line.coords || line.calcLinePoints?.() || {x1: 0, y1: 0, x2: 0, y2: 0};
     
     // Calculate midpoint position for the label
-    const x1 = points[0].x || 0;
-    const y1 = points[0].y || 0;
-    const x2 = points[1].x || 0;
-    const y2 = points[1].y || 0;
+    const x1 = coords.x1 || 0;
+    const y1 = coords.y1 || 0;
+    const x2 = coords.x2 || 0;
+    const y2 = coords.y2 || 0;
     
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
@@ -167,7 +292,7 @@ export const addMeasurementToLine = (
     } = options;
     
     // Create text object
-    const textObj = new fabric.Text(text, {
+    const textObj = new Text(text, {
       left: midX,
       top: midY,
       fontSize,

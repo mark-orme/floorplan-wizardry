@@ -31,7 +31,8 @@ interface UseCanvasBrushResult {
 }
 
 /**
- * Type definition for extended PencilBrush with additional properties
+ * Type definition for extended PencilBrush with custom properties
+ * This uses Omit to remove the decimate property so we can redefine it as optional
  */
 interface ExtendedPencilBrush extends Omit<PencilBrush, 'decimate'> {
   decimate?: number;

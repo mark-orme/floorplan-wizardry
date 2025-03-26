@@ -16,6 +16,78 @@ interface EventHandlers {
 }
 
 /**
+ * Setup a Fabric.js mock for testing
+ * @returns Object with mocked Fabric functions
+ */
+export const setupFabricMock = () => {
+  return {
+    Canvas: vi.fn().mockImplementation(() => ({
+      on: vi.fn().mockReturnValue({}),
+      off: vi.fn(),
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      dispose: vi.fn(),
+      clear: vi.fn(),
+      setZoom: vi.fn(),
+      getZoom: vi.fn().mockReturnValue(1),
+      freeDrawingBrush: {
+        color: "#000000",
+        width: 2
+      },
+      fire: vi.fn(),
+      contains: vi.fn().mockReturnValue(true),
+      renderAll: vi.fn(),
+      requestRenderAll: vi.fn(),
+      getElement: vi.fn().mockReturnValue(document.createElement('canvas')),
+      sendObjectToBack: vi.fn(),
+      bringObjectToFront: vi.fn()
+    })),
+    PencilBrush: vi.fn().mockImplementation(() => ({
+      color: "#000000",
+      width: 2,
+      decimate: 2
+    })),
+    Line: vi.fn().mockImplementation((points, options) => ({
+      type: 'line',
+      points,
+      ...options
+    }))
+  };
+};
+
+/**
+ * Create a mock grid layer reference for testing
+ * @returns Mocked grid layer reference
+ */
+export const createMockGridLayerRef = () => {
+  return {
+    current: [
+      { id: 'grid1', type: 'line' },
+      { id: 'grid2', type: 'line' }
+    ]
+  };
+};
+
+/**
+ * Create a mock history reference for testing
+ * @param past Array of past states
+ * @param future Array of future states
+ * @returns Mocked history reference
+ */
+export const createMockHistoryRef = (
+  past: any[][] = [],
+  future: any[][] = []
+) => {
+  return {
+    current: {
+      past,
+      future
+    }
+  };
+};
+
+/**
  * Create a mock Fabric.js canvas for testing
  * @returns {object} Mock canvas object with test methods
  */
@@ -45,16 +117,22 @@ export const createMockCanvas = (): {
     setWidth: vi.fn(),
     setHeight: vi.fn(),
     
-    // Event handling mocks
-    on: vi.fn((eventName: string, handler: EventCallback) => {
+    // Event handling mocks with more accurate return types
+    on: vi.fn().mockImplementation((eventName: string, handler: EventCallback) => {
       if (!eventHandlers[eventName]) {
         eventHandlers[eventName] = [];
       }
       eventHandlers[eventName].push(handler);
-      return canvas; // For chaining
+      // Return a function that can be used to remove the handler
+      return () => {
+        const index = eventHandlers[eventName].indexOf(handler);
+        if (index >= 0) {
+          eventHandlers[eventName].splice(index, 1);
+        }
+      };
     }),
     
-    off: vi.fn((eventName: string, handler?: EventCallback) => {
+    off: vi.fn().mockImplementation((eventName: string, handler?: EventCallback) => {
       if (eventName && handler && eventHandlers[eventName]) {
         const index = eventHandlers[eventName].indexOf(handler);
         if (index >= 0) {
@@ -64,14 +142,12 @@ export const createMockCanvas = (): {
         // Remove all handlers for this event
         delete eventHandlers[eventName];
       }
-      return canvas; // For chaining
     }),
     
     fire: vi.fn((eventName: string, eventData: any = {}) => {
       if (eventHandlers[eventName]) {
         eventHandlers[eventName].forEach(handler => handler(eventData));
       }
-      return canvas; // For chaining
     })
   };
   
@@ -143,6 +219,7 @@ export const createMockFabricObject = (
       } else {
         Object.assign(properties, propOrObject);
       }
+      return {} as FabricObject; // Return empty object for chaining
     }),
     toObject: vi.fn(() => ({ ...properties })),
     ...properties

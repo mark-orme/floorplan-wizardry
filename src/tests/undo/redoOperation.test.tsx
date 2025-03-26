@@ -5,7 +5,11 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Canvas } from "fabric";
-import { setupFabricMock, createMockGridLayerRef, createMockHistoryRef } from "../utils/canvasMocks";
+import { 
+  setupFabricMock, 
+  createMockGridLayerRef, 
+  createMockHistoryRef 
+} from "../utils/canvasMocks";
 
 // Mock fabric namespace
 vi.mock('fabric', () => setupFabricMock());

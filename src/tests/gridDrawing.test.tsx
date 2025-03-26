@@ -1,4 +1,3 @@
-
 /**
  * Grid drawing tests with mouse and stylus input
  * @module gridDrawing.test
@@ -11,7 +10,7 @@ import { initializeDrawingBrush, addPressureSensitivity } from '@/utils/fabricBr
 import { GRID_SIZE, PIXELS_PER_METER } from '@/utils/drawing';
 
 // Extended PencilBrush with additional properties for tests
-interface TestPencilBrush extends PencilBrush {
+interface TestPencilBrush extends Omit<PencilBrush, 'decimate'> {
   decimate?: number;
   width: number;
   color: string;

@@ -8,8 +8,8 @@ import {
   Canvas as FabricCanvas, 
   Object as FabricObject, 
   Line, 
-  Path, 
-  IObjectOptions
+  Path,
+  ObjectProps as FabricObjectProps 
 } from "fabric";
 import logger from "@/utils/logger";
 
@@ -110,13 +110,13 @@ export const sortObjectsByLayer = (canvas: FabricCanvas): void => {
 
 /**
  * Create a grid line with appropriate properties and layer ordering
- * @param {number[]} points - Line points [x1, y1, x2, y2]
- * @param {Partial<IObjectOptions>} options - Line options
+ * @param {[number, number, number, number]} points - Line points [x1, y1, x2, y2]
+ * @param {Partial<FabricObjectProps>} options - Line options
  * @returns {Line} Created line object
  */
 export const createGridLine = (
-  points: number[], 
-  options: Partial<IObjectOptions> = {}
+  points: [number, number, number, number], 
+  options: Partial<FabricObjectProps> = {}
 ): Line => {
   const line = new Line(points, {
     strokeWidth: 0.5,
@@ -135,13 +135,13 @@ export const createGridLine = (
 
 /**
  * Create a wall line with appropriate properties and layer ordering
- * @param {number[]} points - Line points [x1, y1, x2, y2]
- * @param {Partial<IObjectOptions>} options - Line options
+ * @param {[number, number, number, number]} points - Line points [x1, y1, x2, y2]
+ * @param {Partial<FabricObjectProps>} options - Line options
  * @returns {Line} Created wall line object
  */
 export const createWallLine = (
-  points: number[], 
-  options: Partial<IObjectOptions> = {}
+  points: [number, number, number, number], 
+  options: Partial<FabricObjectProps> = {}
 ): Line => {
   const line = new Line(points, {
     strokeWidth: 2,
@@ -180,7 +180,7 @@ export const updateAllObjectLayers = (canvas: FabricCanvas): void => {
         setObjectLayer(obj, ObjectType.WALL);
       } else if (obj instanceof Path) {
         // Default handling for paths
-        setObjectLayer(obj, ObjectType.DRAWING);
+        setObjectLayer(obj, ObjectType.WALL); // Changed from DRAWING to WALL
       }
     });
     
@@ -188,5 +188,31 @@ export const updateAllObjectLayers = (canvas: FabricCanvas): void => {
     sortObjectsByLayer(canvas);
   } catch (error) {
     logger.error("Failed to update all object layers:", error);
+  }
+};
+
+/**
+ * Ensure grid elements are properly arranged in z-order
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid layer objects
+ */
+export const arrangeGridElements = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): void => {
+  if (!canvas || !gridLayerRef.current) return;
+  
+  try {
+    // Send all grid elements to the back
+    gridLayerRef.current.forEach(gridObj => {
+      if (canvas.contains(gridObj)) {
+        canvas.sendObjectToBack(gridObj);
+      }
+    });
+    
+    // Request a render to apply changes
+    canvas.requestRenderAll();
+  } catch (error) {
+    logger.error("Failed to arrange grid elements:", error);
   }
 };
