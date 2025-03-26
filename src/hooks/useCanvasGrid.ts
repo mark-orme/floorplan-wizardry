@@ -116,21 +116,28 @@ export const useCanvasGrid = ({
     logger.debug("createGridCallback invoked with dimensions:", canvasDimensions);
     
     return safeGridOperation(() => {
-      // Validate components before proceeding
-      if (!validateGridComponents(canvas, gridLayerRef)) {
+      try {
+        // Validate components before proceeding
+        if (!validateGridComponents(canvas, gridLayerRef)) {
+          return gridLayerRef.current;
+        }
+        
+        // Ensure gridLayerRef is initialized
+        ensureGridLayerInitialized(gridLayerRef);
+        
+        // Check if we should throttle
+        if (shouldThrottleCreation()) {
+          return handleThrottledCreation(canvas, createGridWithRetry);
+        }
+        
+        // If not throttled, proceed with normal creation with retry logic
+        return createGridWithRetry(canvas);
+      } catch (error) {
+        logger.error("Error in grid creation:", error);
+        setHasError(true);
+        setErrorMessage("Error creating grid: " + (error instanceof Error ? error.message : String(error)));
         return gridLayerRef.current;
       }
-      
-      // Ensure gridLayerRef is initialized
-      ensureGridLayerInitialized(gridLayerRef);
-      
-      // Check if we should throttle
-      if (shouldThrottleCreation()) {
-        return handleThrottledCreation(canvas, createGridWithRetry);
-      }
-      
-      // If not throttled, proceed with normal creation with retry logic
-      return createGridWithRetry(canvas);
     }, 'create-grid', gridLayerRef.current);
     
   }, [
@@ -141,7 +148,9 @@ export const useCanvasGrid = ({
     shouldThrottleCreation, 
     handleThrottledCreation, 
     createGridWithRetry,
-    safeGridOperation
+    safeGridOperation,
+    setHasError,
+    setErrorMessage
   ]);
 
   return createGridCallback;

@@ -16,6 +16,7 @@ import {
   calculateGridDensity
 } from "./gridConstants";
 import logger from "./logger";
+import { createSmallGrid, createLargeGrid } from "./gridCreators";
 
 /**
  * Result of grid rendering operation
@@ -54,70 +55,43 @@ export const renderGridComponents = (
   // Calculate grid density based on canvas size
   const { smallGridVisible, smallGridInterval } = calculateGridDensity(width, height);
   
-  // Calculate the number of grid cells based on dimensions
-  const widthInMeters = Math.ceil(width / GRID_SCALE_FACTOR);
-  const heightInMeters = Math.ceil(height / GRID_SCALE_FACTOR);
-  
-  logger.debug(`Creating grid for ${widthInMeters}m x ${heightInMeters}m area`);
-  
-  // Create vertical grid lines
-  for (let i = 0; i <= widthInMeters; i += SMALL_GRID_SPACING) {
-    const isLargeGridLine = i % LARGE_GRID_SPACING === 0;
-    const x = i * GRID_SCALE_FACTOR;
+  try {
+    // Use the dedicated grid creators
+    const smallGrid = createSmallGrid(canvas, width, height);
+    const largeGrid = createLargeGrid(canvas, width, height);
     
-    // Only create small grid lines if they're visible and match the interval
-    if (isLargeGridLine || (smallGridVisible && i % (SMALL_GRID_SPACING * smallGridInterval) === 0)) {
-      const line = new Line(
-        [x, 0, x, height],
-        isLargeGridLine ? LARGE_GRID_LINE_OPTIONS : SMALL_GRID_LINE_OPTIONS
-      );
-      
-      if (isLargeGridLine) {
-        largeGridLines.push(line);
-      } else {
-        smallGridLines.push(line);
-      }
-      
-      // Add markers at intervals
-      if (isLargeGridLine && i % MARKER_INTERVAL === 0 && i > 0) {
-        const marker = new Text(i.toString(), {
-          ...MARKER_TEXT_OPTIONS,
-          left: x - 5,
-          top: 5
-        });
-        markers.push(marker);
-      }
-    }
-  }
-  
-  // Create horizontal grid lines
-  for (let i = 0; i <= heightInMeters; i += SMALL_GRID_SPACING) {
-    const isLargeGridLine = i % LARGE_GRID_SPACING === 0;
-    const y = i * GRID_SCALE_FACTOR;
+    smallGridLines.push(...smallGrid);
+    largeGridLines.push(...largeGrid);
     
-    // Only create small grid lines if they're visible and match the interval
-    if (isLargeGridLine || (smallGridVisible && i % (SMALL_GRID_SPACING * smallGridInterval) === 0)) {
-      const line = new Line(
-        [0, y, width, y],
-        isLargeGridLine ? LARGE_GRID_LINE_OPTIONS : SMALL_GRID_LINE_OPTIONS
-      );
-      
-      if (isLargeGridLine) {
-        largeGridLines.push(line);
-      } else {
-        smallGridLines.push(line);
-      }
-      
-      // Add markers at intervals
-      if (isLargeGridLine && i % MARKER_INTERVAL === 0 && i > 0) {
-        const marker = new Text(i.toString(), {
-          ...MARKER_TEXT_OPTIONS,
-          left: 5,
-          top: y - 10
-        });
-        markers.push(marker);
-      }
+    // Add text markers at major grid intersections
+    const widthInMeters = Math.ceil(width / GRID_SCALE_FACTOR);
+    const heightInMeters = Math.ceil(height / GRID_SCALE_FACTOR);
+    
+    // Create horizontal markers (along x-axis)
+    for (let i = LARGE_GRID_SPACING; i <= widthInMeters; i += MARKER_INTERVAL) {
+      const x = i * GRID_SCALE_FACTOR;
+      const marker = new Text(i.toString(), {
+        ...MARKER_TEXT_OPTIONS,
+        left: x - 5,
+        top: 5
+      });
+      markers.push(marker);
     }
+    
+    // Create vertical markers (along y-axis)
+    for (let i = LARGE_GRID_SPACING; i <= heightInMeters; i += MARKER_INTERVAL) {
+      const y = i * GRID_SCALE_FACTOR;
+      const marker = new Text(i.toString(), {
+        ...MARKER_TEXT_OPTIONS,
+        left: 5,
+        top: y - 10
+      });
+      markers.push(marker);
+    }
+    
+    logger.debug(`Created ${smallGridLines.length} small grid lines, ${largeGridLines.length} large grid lines, and ${markers.length} markers`);
+  } catch (error) {
+    logger.error("Error creating grid components:", error);
   }
   
   // Combine all grid objects

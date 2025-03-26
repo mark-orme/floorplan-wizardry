@@ -10,7 +10,7 @@ import logger from "@/utils/logger";
 /**
  * Object with objectType property for type identification
  */
-interface TypedFabricObject {
+interface TypedFabricObject extends FabricObject {
   /** Type identifier for specialized handling */
   objectType?: string;
   /** Stroke width for lines */
@@ -38,20 +38,25 @@ export const arrangeGridElements = (
   
   const gridElements = gridLayerRef.current;
   
+  if (!gridElements || gridElements.length === 0) {
+    logger.debug("No grid elements to arrange");
+    return;
+  }
+  
   // Find grid markers (scale indicators)
   const gridMarkers = gridElements.filter(obj => {
-    const typedObj = obj as unknown as TypedFabricObject;
-    return (typedObj.type === 'line' && typedObj.strokeWidth === 2) || 
-           typedObj.type === 'text';
+    const typedObj = obj as TypedFabricObject;
+    return (typedObj.type === 'text') || 
+           (typedObj.type === 'line' && typedObj.strokeWidth && typedObj.strokeWidth >= 1.2);
   });
   
   // Find grid lines
   const gridLines = gridElements.filter(obj => {
-    const typedObj = obj as unknown as TypedFabricObject;
-    return typedObj.type === 'line' && typedObj.strokeWidth !== 2;
+    const typedObj = obj as TypedFabricObject;
+    return typedObj.type === 'line' && (!typedObj.strokeWidth || typedObj.strokeWidth < 1.2);
   });
   
-  logger.debug(`Found ${gridMarkers.length} grid markers and ${gridLines.length} grid lines`);
+  logger.debug(`Found ${gridMarkers.length} grid markers and ${gridLines.length} grid lines to arrange`);
   
   // First send all grid lines to the back
   gridLines.forEach(line => {
@@ -70,4 +75,36 @@ export const arrangeGridElements = (
   // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
   fabricCanvas.requestRenderAll();
   logger.debug("Grid elements arranged successfully");
+};
+
+/**
+ * Ensure all grid elements are added to canvas
+ * Adds any grid elements that aren't already on the canvas
+ * 
+ * @param {FabricCanvas} fabricCanvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {void}
+ */
+export const ensureGridElementsAdded = (
+  fabricCanvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): void => {
+  if (!fabricCanvas || !gridLayerRef.current) {
+    return;
+  }
+  
+  // Check each grid element and add if not on canvas
+  gridLayerRef.current.forEach(gridObj => {
+    if (!fabricCanvas.contains(gridObj)) {
+      fabricCanvas.add(gridObj);
+    }
+  });
+  
+  // Arrange grid elements after ensuring they're all added
+  arrangeGridElements(fabricCanvas, gridLayerRef);
+};
+
+export default {
+  arrangeGridElements,
+  ensureGridElementsAdded
 };

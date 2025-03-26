@@ -65,7 +65,7 @@ export const useGridCreation = ({
    */
   const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
     if (process.env.NODE_ENV === 'development') {
-      logger.debug("createGridCallback invoked with FORCED CREATION", {
+      logger.debug("createGridCallback invoked with canvas dimensions", {
         canvasDimensions,
         gridExists: gridLayerRef?.current?.length > 0,
         initialized: (canvas as any).initialized
@@ -93,6 +93,14 @@ export const useGridCreation = ({
         
         // Force a render
         canvas.requestRenderAll();
+        
+        // Add debug info
+        setDebugInfo(prev => ({
+          ...prev,
+          gridCreated: true,
+          gridObjectCount: grid.length,
+          lastGridCreationTime: new Date().toISOString()
+        }));
       }
       
       return grid || gridLayerRef.current;
