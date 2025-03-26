@@ -84,16 +84,24 @@ export const useCanvasInteraction = ({
       return;
     }
     
+    // Filter out grid objects before deletion
+    const deletableObjects = activeObjects.filter(obj => {
+      const objectType = (obj as unknown as SelectableFabricObject).objectType;
+      // Return false for grid objects to exclude them from deletion
+      return !objectType || !objectType.includes('grid');
+    });
+    
+    // If no objects to delete after filtering
+    if (deletableObjects.length === 0) {
+      toast.info("Selected objects cannot be deleted. Grid elements are protected.");
+      return;
+    }
+    
     // Save current state before deletion for proper undo
     saveCurrentState();
     
-    // Remove all selected objects
-    activeObjects.forEach(obj => {
-      // Skip grid elements
-      const objectType = (obj as unknown as SelectableFabricObject).objectType;
-      if (objectType && objectType.includes('grid')) {
-        return;
-      }
+    // Remove all deletable objects
+    deletableObjects.forEach(obj => {
       canvas.remove(obj);
     });
     
@@ -101,12 +109,13 @@ export const useCanvasInteraction = ({
     canvas.discardActiveObject();
     canvas.requestRenderAll();
     
-    toast.success(`Deleted ${activeObjects.length} object(s)`);
+    toast.success(`Deleted ${deletableObjects.length} object(s)`);
   }, [fabricCanvasRef, saveCurrentState]);
   
   /**
    * Enable point-based selection mode (instead of lasso)
    * Makes objects individually selectable with better hit detection
+   * while ensuring grid elements cannot be selected
    */
   const enablePointSelection = useCallback(() => {
     if (!fabricCanvasRef.current) return;
@@ -118,12 +127,18 @@ export const useCanvasInteraction = ({
     canvas.defaultCursor = 'default';
     canvas.hoverCursor = 'pointer';
     
-    // Make objects selectable
+    // Make objects selectable, but not grid elements
     canvas.getObjects().forEach(obj => {
       const fabricObj = obj as unknown as SelectableFabricObject;
-      // Skip grid elements
       const objectType = fabricObj.objectType;
-      if (!objectType || !objectType.includes('grid')) {
+      
+      if (objectType && objectType.includes('grid')) {
+        // Grid elements are never selectable
+        fabricObj.selectable = false;
+        fabricObj.evented = false;
+        fabricObj.hoverCursor = 'default';
+      } else {
+        // Non-grid elements are selectable
         fabricObj.selectable = true;
         fabricObj.hoverCursor = 'pointer';
         

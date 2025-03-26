@@ -187,8 +187,8 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
       
       const evt = opt.e;
       extendedCanvas.isDragging = true;
-      extendedCanvas.lastPosX = evt.clientX;
-      extendedCanvas.lastPosY = evt.clientY;
+      extendedCanvas.lastPosX = evt.clientX || (evt.touches && evt.touches[0] ? evt.touches[0].clientX : 0);
+      extendedCanvas.lastPosY = evt.clientY || (evt.touches && evt.touches[0] ? evt.touches[0].clientY : 0);
       
       // Change cursor to indicate active panning
       canvas.defaultCursor = 'grabbing';
@@ -203,10 +203,14 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
       const evt = opt.e;
       const vpt = canvas.viewportTransform;
       
+      // Get current position, handling both mouse and touch events
+      const currentX = evt.clientX || (evt.touches && evt.touches[0] ? evt.touches[0].clientX : extendedCanvas.lastPosX);
+      const currentY = evt.clientY || (evt.touches && evt.touches[0] ? evt.touches[0].clientY : extendedCanvas.lastPosY);
+      
       // Calculate new position with enhanced panning range
-      // The multiplier (2) allows for faster panning
-      vpt[4] += (evt.clientX - extendedCanvas.lastPosX) * 1.5;
-      vpt[5] += (evt.clientY - extendedCanvas.lastPosY) * 1.5;
+      // The multiplier (1.5) allows for faster panning
+      vpt[4] += (currentX - extendedCanvas.lastPosX) * 1.5;
+      vpt[5] += (currentY - extendedCanvas.lastPosY) * 1.5;
       
       // Allow panning further than the default boundaries
       // This is key to exploring the "unlimited" grid
@@ -216,8 +220,8 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
       vpt[4] = Math.min(Math.max(vpt[4], -maxPanDistance), maxPanDistance);
       vpt[5] = Math.min(Math.max(vpt[5], -maxPanDistance), maxPanDistance);
       
-      extendedCanvas.lastPosX = evt.clientX;
-      extendedCanvas.lastPosY = evt.clientY;
+      extendedCanvas.lastPosX = currentX;
+      extendedCanvas.lastPosY = currentY;
       
       canvas.requestRenderAll();
       canvas.fire('viewport:transform');
@@ -259,4 +263,3 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
   
   canvas.requestRenderAll();
 };
-

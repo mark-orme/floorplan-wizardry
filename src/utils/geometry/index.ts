@@ -1,23 +1,33 @@
 
 /**
- * Re-exports all geometry utility functions
+ * Geometry utilities index
+ * Central export point for all geometry-related utility functions
  * @module geometry
  */
 
+// Export from areaCalculations
+export { calculateArea, calculateGIA } from './areaCalculations';
+
 // Export from constants
-export * from './constants';
+export { PIXELS_PER_METER, GRID_SIZE, GRID_MAJOR_INTERVAL } from './constants';
 
 // Export from coordinateTransforms
-export * from './coordinateTransforms';
+export { canvasToRealCoordinates, realToCanvasCoordinates } from './coordinateTransforms';
 
-// Export from gridOperations
-export * from './gridOperations';
+// Export from gridOperations - selectively export to avoid duplication
+export { snapToGrid, roundToGrid } from './gridOperations';
 
 // Export from lineOperations
-export * from './lineOperations';
-
-// Export from areaCalculations
-export * from './areaCalculations';
+export { 
+  calculateDistance, 
+  calculateMidpoint, 
+  createLine,
+  normalizePoints,
+  calculateAngle,
+  arePointsEqual, 
+  isPointOnLine,
+  isExactGridMultiple 
+} from './lineOperations';
 
 // Export from midpointCalculation
-export * from './midpointCalculation';
+export { findMidpoint } from './midpointCalculation';
