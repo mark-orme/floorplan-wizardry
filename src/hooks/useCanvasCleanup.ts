@@ -35,7 +35,7 @@ export const useCanvasCleanup = () => {
         } catch (error) {
           console.error("Error during delayed canvas cleanup:", error);
         }
-      }, 10);
+      }, 100); // Increased from 10ms to 100ms for more safety
     } catch (error) {
       console.error("Error during canvas cleanup:", error);
     }

@@ -55,6 +55,8 @@ interface UseCanvasInitializationResult {
 
 // Global tracker for initial toast shown
 let initialToastShown = false;
+// Track whether initialization is in progress
+let initializationInProgress = false;
 
 /**
  * Hook for initializing the canvas and related objects
@@ -73,6 +75,8 @@ export const useCanvasInitialization = ({
   // Track initialization state
   const [isInitialized, setIsInitialized] = useState(false);
   const initTimeoutRef = useRef<number | null>(null);
+  const initializationAttempts = useRef(0);
+  const maxInitAttempts = 3;
   
   // Use the smaller, focused hooks
   const { 
@@ -127,10 +131,20 @@ export const useCanvasInitialization = ({
    * @returns {boolean} Whether initialization was successful
    */
   const performInitialization = useCallback((): boolean => {
+    // Avoid multiple simultaneous initialization attempts
+    if (initializationInProgress) {
+      console.log("Initialization already in progress, skipping");
+      return false;
+    }
+    
+    initializationInProgress = true;
+    initializationAttempts.current += 1;
+    
     console.log("Attempting canvas initialization with dimensions:", canvasDimensions);
     
     if (!canvasRef.current) {
       console.warn("Canvas element still not available");
+      initializationInProgress = false;
       return false;
     }
     
@@ -138,6 +152,7 @@ export const useCanvasInitialization = ({
     const fabricCanvas = initializeCanvas();
     if (!fabricCanvas) {
       console.warn("Failed to initialize Fabric canvas");
+      initializationInProgress = false;
       return false;
     }
     
@@ -158,6 +173,9 @@ export const useCanvasInitialization = ({
       // Now that the grid is created, enable rendering
       fabricCanvas.renderOnAddRemove = true;
       fabricCanvas.requestRenderAll();
+      
+      // Mark initialization as no longer in progress
+      initializationInProgress = false;
     };
     
     // Use either requestIdleCallback or setTimeout as fallback
@@ -204,23 +222,29 @@ export const useCanvasInitialization = ({
       return;
     }
     
+    // Reset attempts counter on dependency changes
+    initializationAttempts.current = 0;
+    
     // Wait for DOM to be fully rendered before attempting initialization
     console.log("Scheduling canvas initialization...");
     initTimeoutRef.current = window.setTimeout(() => {
       // Attempt initialization
       const success = performInitialization();
       
-      // If initialization failed, retry after a short delay
-      if (!success) {
-        console.log("Initial canvas initialization failed, retrying in 1 second...");
+      // If initialization failed, retry after a short delay (with backoff)
+      if (!success && initializationAttempts.current < maxInitAttempts) {
+        const delay = Math.min(1000 * Math.pow(1.5, initializationAttempts.current), 5000);
+        console.log(`Initial canvas initialization failed, retrying in ${delay}ms (attempt ${initializationAttempts.current}/${maxInitAttempts})...`);
         initTimeoutRef.current = window.setTimeout(() => {
           performInitialization();
-        }, 1000);
+        }, delay);
       }
     }, 500);
     
     // Clean up on unmount
     return () => {
+      initializationInProgress = false;
+      
       // Clear any pending initialization timeouts
       if (initTimeoutRef.current !== null) {
         window.clearTimeout(initTimeoutRef.current);
@@ -240,16 +264,8 @@ export const useCanvasInitialization = ({
         try {
           console.log("Beginning canvas cleanup process");
           
-          // Use a delay to ensure all operations on the canvas are complete
-          // This helps avoid issues with disposal during render cycles
-          setTimeout(() => {
-            try {
-              // Use our cleanup utility function
-              cleanupCanvas(currentCanvas);
-            } catch (error) {
-              console.error("Error during delayed canvas cleanup:", error);
-            }
-          }, 50);
+          // Use our cleanup utility function
+          cleanupCanvas(currentCanvas);
         } catch (error) {
           console.error("Error initiating canvas cleanup:", error);
         }

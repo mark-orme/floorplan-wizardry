@@ -10,7 +10,8 @@ import { CanvasDimensions } from "@/types/drawingTypes";
 const canvasState = {
   prevDimensions: { width: 0, height: 0 },
   dimensionUpdateCount: 0,
-  initialSetupComplete: false
+  initialSetupComplete: false,
+  disposalInProgress: false
 };
 
 /**
@@ -125,6 +126,14 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
     return;
   }
   
+  // To prevent multiple disposal calls for the same canvas
+  if (canvasState.disposalInProgress) {
+    console.log("Canvas disposal already in progress, skipping");
+    return;
+  }
+  
+  canvasState.disposalInProgress = true;
+  
   // Set a flag to track if we've successfully disposed
   let disposedSuccessfully = false;
   
@@ -132,6 +141,7 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
     // First check if canvas is valid
     if (!isCanvasValid(canvas)) {
       console.log("Canvas appears to be invalid or already disposed");
+      canvasState.disposalInProgress = false;
       return;
     }
     
@@ -194,6 +204,8 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
     }
   } catch (error) {
     console.error("Error disposing canvas:", error);
+  } finally {
+    canvasState.disposalInProgress = false;
   }
 };
 

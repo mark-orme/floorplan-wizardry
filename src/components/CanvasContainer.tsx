@@ -32,43 +32,58 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
   const canvasReference = canvasRef || localCanvasRef;
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [dimensionsSetupAttempt, setDimensionsSetupAttempt] = useState(0);
   
   // Force initialization after render to ensure canvas has dimensions
   useEffect(() => {
-    if (canvasReference.current && containerRef.current) {
-      // Get container dimensions
-      const containerRect = containerRef.current.getBoundingClientRect();
-      
-      // Set canvas dimensions explicitly based on container
-      if (containerRect.width > 0 && containerRect.height > 0) {
-        canvasReference.current.width = containerRect.width;
-        canvasReference.current.height = Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT);
+    const setupCanvasDimensions = () => {
+      if (canvasReference.current && containerRef.current) {
+        // Get container dimensions
+        const containerRect = containerRef.current.getBoundingClientRect();
         
-        // Also set style dimensions to match
-        canvasReference.current.style.width = `${containerRect.width}px`;
-        canvasReference.current.style.height = `${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}px`;
-        
-        // Force a reflow to ensure dimensions are applied
-        canvasReference.current.getBoundingClientRect();
-        
-        // Signal that canvas is ready after dimensions are set
-        setCanvasReady(true);
-        
-        console.log("Canvas sized to dimensions:", 
-          containerRect.width, "x", Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT));
-      } else {
-        // Fallback sizes if container dimensions are not available
-        canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
-        canvasReference.current.height = DEFAULT_CANVAS_HEIGHT;
-        canvasReference.current.style.width = `${DEFAULT_CANVAS_WIDTH}px`;
-        canvasReference.current.style.height = `${DEFAULT_CANVAS_HEIGHT}px`;
-        console.log(`Using fallback canvas dimensions: ${DEFAULT_CANVAS_WIDTH}x${DEFAULT_CANVAS_HEIGHT}`);
-        
-        // Signal that canvas is ready even with fallback dimensions
-        setCanvasReady(true);
+        // Set canvas dimensions explicitly based on container
+        if (containerRect.width > 0 && containerRect.height > 0) {
+          canvasReference.current.width = containerRect.width;
+          canvasReference.current.height = Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT);
+          
+          // Also set style dimensions to match
+          canvasReference.current.style.width = `${containerRect.width}px`;
+          canvasReference.current.style.height = `${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}px`;
+          
+          // Force a reflow to ensure dimensions are applied
+          canvasReference.current.getBoundingClientRect();
+          
+          // Signal that canvas is ready after dimensions are set
+          setCanvasReady(true);
+          
+          console.log("Canvas sized to dimensions:", 
+            containerRect.width, "x", Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT));
+        } else {
+          // Fallback sizes if container dimensions are not available
+          canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
+          canvasReference.current.height = DEFAULT_CANVAS_HEIGHT;
+          canvasReference.current.style.width = `${DEFAULT_CANVAS_WIDTH}px`;
+          canvasReference.current.style.height = `${DEFAULT_CANVAS_HEIGHT}px`;
+          console.log(`Using fallback canvas dimensions: ${DEFAULT_CANVAS_WIDTH}x${DEFAULT_CANVAS_HEIGHT}`);
+          
+          // Signal that canvas is ready even with fallback dimensions
+          setCanvasReady(true);
+          
+          // Try again later if container dimensions are zero
+          if (dimensionsSetupAttempt < 3) {
+            setTimeout(() => {
+              setDimensionsSetupAttempt(prev => prev + 1);
+            }, 300);
+          }
+        }
       }
-    }
-  }, [canvasReference]);
+    };
+    
+    // Run the setup function
+    setupCanvasDimensions();
+    
+    // Rerun setup if the container or canvas change, or on retry attempts
+  }, [canvasReference, dimensionsSetupAttempt, containerRef.current]);
 
   return (
     <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible h-full">
@@ -76,6 +91,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
         ref={containerRef} 
         className="w-full h-full relative overflow-visible"
         data-testid="canvas-container"
+        style={{ minHeight: '600px' }} // Ensure minimum height
       >
         <canvas 
           ref={canvasReference} 
