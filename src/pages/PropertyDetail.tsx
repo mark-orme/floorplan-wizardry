@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus, canEditProperty } from '@/types/propertyTypes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Canvas } from '@/components/Canvas';
 import { ArrowLeft, Grid } from 'lucide-react';
 import { useSyncedFloorPlans } from '@/hooks/useSyncedFloorPlans';
 import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
