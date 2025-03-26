@@ -126,11 +126,11 @@ export const PropertyFloorPlanTab = ({
               </Badge>
             )}
           </div>
-          {(userRole === 'admin' || userRole === 'surveyor') && (
+          {(userRole === UserRole.MANAGER || userRole === UserRole.PHOTOGRAPHER) && (
             <Button 
               disabled={isSubmitting} 
               variant="default" 
-              onClick={() => onStatusChange('submitted')}
+              onClick={() => onStatusChange(PropertyStatus.PENDING_REVIEW)}
             >
               <Send className="h-4 w-4 mr-2" />
               Submit for Review
@@ -141,3 +141,4 @@ export const PropertyFloorPlanTab = ({
     </Card>
   );
 };
+
