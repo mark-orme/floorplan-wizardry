@@ -17,11 +17,50 @@ export const testUsers: TestUser[] = [
   { email: 'manager@nichecom.co.uk', password: 'password1', role: UserRole.MANAGER, label: 'Manager Test User' },
 ];
 
-// Define the Supabase User type to fix TypeScript error
+// Define interfaces for Supabase user data structures
 interface SupabaseUser {
   id: string;
   email?: string;
-  // Add other properties that might be needed
+  user_metadata?: Record<string, any>;
+}
+
+interface SignInResponse {
+  data: {
+    user: SupabaseUser | null;
+    session: any | null;
+  } | null;
+  error: Error | null;
+}
+
+interface UserProfileData {
+  user_id: string;
+  role: UserRole;
+  created_at: string;
+  [key: string]: any;
+}
+
+interface UserListResponse {
+  data: {
+    users: SupabaseUser[];
+  } | null;
+  error: Error | null;
+}
+
+interface CreateUserResponse {
+  data: {
+    user: SupabaseUser | null;
+  } | null;
+  error: Error | null;
+}
+
+interface InsertProfileResponse {
+  data: UserProfileData | null;
+  error: Error | null;
+}
+
+interface SelectProfileResponse {
+  data: UserProfileData | null;
+  error: Error | null;
 }
 
 /**
@@ -35,14 +74,14 @@ export const createTestUsers = async (): Promise<number> => {
     for (const testUser of testUsers) {
       try {
         // First check if user already exists by trying to sign in
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error: signInError }: SignInResponse = await supabase.auth.signInWithPassword({
           email: testUser.email,
           password: testUser.password,
         });
         
         if (signInData?.user) {
           // User exists and can sign in - make sure they have a profile
-          const { data: profileData } = await supabase
+          const { data: profileData }: SelectProfileResponse = await supabase
             .from('user_profiles')
             .select('*')
             .eq('user_id', signInData.user.id)
@@ -50,13 +89,15 @@ export const createTestUsers = async (): Promise<number> => {
             
           if (!profileData) {
             // Create profile if it doesn't exist
-            await supabase
+            const { error: insertError }: InsertProfileResponse = await supabase
               .from('user_profiles')
               .insert({
                 user_id: signInData.user.id,
                 role: testUser.role,
                 created_at: new Date().toISOString()
               });
+              
+            if (insertError) throw insertError;
             console.log(`Added profile for existing user: ${testUser.email}`);
           }
           
@@ -64,30 +105,34 @@ export const createTestUsers = async (): Promise<number> => {
         }
         
         // User doesn't exist or credentials are wrong - check if the email exists
-        const { data: userData } = await supabase.auth.admin.listUsers();
-        const users = userData?.users as SupabaseUser[] | undefined;
-        const existingUser = users?.find(u => u.email === testUser.email);
+        const { data: userData, error: listError }: UserListResponse = await supabase.auth.admin.listUsers();
+        
+        if (listError) throw listError;
+        
+        const users = userData?.users || [];
+        const existingUser = users.find(u => u.email === testUser.email);
         
         if (existingUser) {
           // Email exists but wrong password or other issue - delete the user
           console.log(`Deleting existing user with email: ${testUser.email}`);
-          await supabase.auth.admin.deleteUser(existingUser.id);
+          const { error: deleteError } = await supabase.auth.admin.deleteUser(existingUser.id);
+          if (deleteError) throw deleteError;
         }
         
         // Create new user
         console.log(`Creating new user: ${testUser.email}`);
-        const { data: newUserData, error } = await supabase.auth.admin.createUser({
+        const { data: newUserData, error: createError }: CreateUserResponse = await supabase.auth.admin.createUser({
           email: testUser.email,
           password: testUser.password,
           email_confirm: true, // This ensures the email is confirmed
           user_metadata: { role: testUser.role }
         });
         
-        if (error) throw error;
+        if (createError) throw createError;
         
         if (newUserData?.user) {
           // Create user profile
-          const { error: profileError } = await supabase
+          const { error: profileError }: InsertProfileResponse = await supabase
             .from('user_profiles')
             .insert({
               user_id: newUserData.user.id,
