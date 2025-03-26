@@ -89,7 +89,10 @@ export const useCanvasGrid = ({
   const { 
     createGridWithRetry,
     cleanup: cleanupRetry
-  } = useGridRetry();
+  } = useGridRetry({  // Fixed: Added object parameter to match hook's interface
+    setHasError,      
+    setErrorMessage
+  });
   
   // Clean up on unmount
   useEffect(() => {
@@ -163,15 +166,15 @@ export const useCanvasGrid = ({
         
         // Check if we should throttle
         if (shouldThrottleCreation()) {
-          handleThrottledCreation(canvas, (c: FabricCanvas) => createBaseGrid(c));
+          handleThrottledCreation(canvas, createBaseGrid);  // Fixed: Passed createBaseGrid directly
           return gridLayerRef.current;
         }
         
         // If not throttled, proceed with normal creation with retry logic
-        const gridObjects = createGridWithRetry(canvas);
+        const gridObjects = createGridWithRetry(canvas, createBaseGrid);  // Fixed: Added createBaseGrid as second parameter
         
         // Check if grid was actually created
-        if (!gridObjects || (typeof gridObjects !== 'boolean' && gridObjects.length === 0)) {
+        if (!gridObjects || (Array.isArray(gridObjects) && gridObjects.length === 0)) {  // Fixed: Explicit check for array
           logger.error("❌ Grid creation failed: No grid objects were created");
           setHasError(true);
           setErrorMessage("Grid creation failed: No grid objects were created");
@@ -185,12 +188,12 @@ export const useCanvasGrid = ({
         }
         
         // Log success
-        console.log(`✅ Grid created with ${gridObjects.length} objects`);
+        console.log(`✅ Grid created with ${Array.isArray(gridObjects) ? gridObjects.length : 0} objects`);  // Fixed: Added Array.isArray check
         
         // Force render after grid creation
         canvas.requestRenderAll();
         
-        return gridObjects;
+        return gridObjects as FabricObject[];  // Fixed: Type assertion to FabricObject[]
       } catch (error) {
         logger.error("Error in grid creation:", error);
         console.error("❌ Grid creation error:", error);

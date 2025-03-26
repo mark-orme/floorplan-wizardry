@@ -8,18 +8,42 @@ import { useCallback } from "react";
 import logger from "@/utils/logger";
 
 /**
- * Hook for grid safety operations
- * @returns Grid safety utilities
+ * Result of the useGridSafety hook
+ * @interface UseGridSafetyResult
  */
-export const useGridSafety = () => {
+interface UseGridSafetyResult {
+  /** Function to safely execute grid operations with error handling */
+  safeGridOperation: <T>(operation: () => T, operationName: string, fallbackResult: T) => T;
+}
+
+/**
+ * Hook for grid safety operations
+ * Provides utilities to execute grid operations safely with error handling
+ * and fallback mechanisms
+ * 
+ * @returns {UseGridSafetyResult} Grid safety utilities
+ * 
+ * @example
+ * const { safeGridOperation } = useGridSafety();
+ * 
+ * // Use safe operation to prevent crashes
+ * const result = safeGridOperation(
+ *   () => dangerousGridOperation(),
+ *   'create-grid',
+ *   fallbackGridObjects
+ * );
+ */
+export const useGridSafety = (): UseGridSafetyResult => {
   /**
    * Execute a grid operation safely
    * Ensures grid operations don't crash the application
+   * Provides proper error handling and fallback mechanism
    * 
+   * @template T - The return type of the operation
    * @param {Function} operation - The grid operation to perform
    * @param {string} operationName - Name of the operation (for logging)
-   * @param {any[]} fallbackResult - Fallback result if operation fails
-   * @returns Result of the operation or fallback
+   * @param {T} fallbackResult - Fallback result if operation fails
+   * @returns {T} Result of the operation or fallback
    */
   const safeGridOperation = useCallback(<T>(
     operation: () => T,

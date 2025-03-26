@@ -5,6 +5,18 @@
  * @module fabric
  */
 
+/**
+ * Export all utilities from the specialized files
+ * Provides a single import point for fabric-related utilities
+ * Organized by functionality for better code organization
+ * 
+ * @example
+ * import { 
+ *   getCanvasDimensions, 
+ *   isCanvasElementInitialized 
+ * } from '@/utils/fabric';
+ */
+
 // Export all utilities from the specialized files
 export * from './canvasCleanup';
 export { 

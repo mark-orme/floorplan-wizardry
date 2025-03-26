@@ -13,6 +13,7 @@ import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 
 /**
  * Props for the useCanvasGridInitialization hook
+ * @interface UseCanvasGridInitializationProps
  */
 interface UseCanvasGridInitializationProps {
   /** Function to set debug information */
@@ -24,23 +25,52 @@ interface UseCanvasGridInitializationProps {
 }
 
 /**
+ * Result of the useCanvasGridInitialization hook
+ * @interface UseCanvasGridInitializationResult
+ */
+interface UseCanvasGridInitializationResult {
+  /** Reference to track grid objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Function to initialize grid on canvas */
+  initializeGrid: (canvas: FabricCanvas, createGrid: (canvas: FabricCanvas) => FabricObject[]) => FabricObject[];
+}
+
+/**
  * Hook for initializing and managing canvas grid
- * @param props - Hook properties
- * @returns Object containing grid initialization functions
+ * Handles grid creation, error recovery, and emergency fallbacks
+ * 
+ * @param {UseCanvasGridInitializationProps} props - Hook properties
+ * @returns {UseCanvasGridInitializationResult} Grid initialization objects and methods
+ * 
+ * @example
+ * const { gridLayerRef, initializeGrid } = useCanvasGridInitialization({
+ *   setDebugInfo,
+ *   setHasError,
+ *   setErrorMessage
+ * });
+ * 
+ * // Initialize grid with custom creation function
+ * useEffect(() => {
+ *   if (canvas) {
+ *     initializeGrid(canvas, createGridCallback);
+ *   }
+ * }, [canvas]);
  */
 export const useCanvasGridInitialization = ({
   setDebugInfo,
   setHasError,
   setErrorMessage
-}: UseCanvasGridInitializationProps) => {
+}: UseCanvasGridInitializationProps): UseCanvasGridInitializationResult => {
   // Grid layer reference to track grid objects
   const gridLayerRef = useRef<FabricObject[]>([]);
   
   /**
    * Initialize grid on canvas with error handling
-   * @param canvas - The fabric canvas instance
-   * @param createGrid - Function to create grid objects
-   * @returns Array of created grid objects
+   * Handles validation, creation, and emergency fallbacks
+   * 
+   * @param {FabricCanvas} canvas - The fabric canvas instance
+   * @param {Function} createGrid - Function to create grid objects
+   * @returns {FabricObject[]} Array of created grid objects
    */
   const initializeGrid = useCallback((
     canvas: FabricCanvas,

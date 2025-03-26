@@ -1,7 +1,7 @@
 
 /**
  * Type definitions for geometric elements
- * Re-exports constants from central numerics module
+ * Provides types and constants for geometry operations
  * @module geometryTypes
  */
 
@@ -14,6 +14,8 @@ import {
 
 /**
  * Represents a 2D point in the drawing
+ * Used for coordinates in the canvas space
+ * 
  * @typedef {Object} Point
  * @property {number} x - X coordinate
  * @property {number} y - Y coordinate
@@ -22,18 +24,24 @@ export type Point = { x: number; y: number };
 
 /**
  * Represents a stroke (sequence of points) in the drawing
+ * Used for freehand drawing paths
+ * 
  * @typedef {Array<Point>} Stroke
  */
 export type Stroke = Point[];
 
 /**
  * Canvas dimensions type
+ * Represents the width and height of the canvas
+ * 
  * @typedef {Object} CanvasDimensions
- * @property {number} width - Canvas width
- * @property {number} height - Canvas height
+ * @property {number} width - Canvas width in pixels
+ * @property {number} height - Canvas height in pixels
  */
 export interface CanvasDimensions {
+  /** Canvas width in pixels */
   width: number;
+  /** Canvas height in pixels */
   height: number;
 }
 
