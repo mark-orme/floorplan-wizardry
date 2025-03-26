@@ -1,6 +1,5 @@
-
 import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
-import { getDB, STORE_NAME } from './drawingTypes';
+import { getDB, STORE_NAME } from '@/types/databaseTypes';
 
 /** Load floor plans from IndexedDB (with fallback to localStorage for migration) */
 export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
