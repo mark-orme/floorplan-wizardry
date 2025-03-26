@@ -7,6 +7,9 @@ import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { BaseEventHandlerProps } from "./types";
 
+/**
+ * Props for the useCanvasHandlers hook
+ */
 interface UseCanvasHandlersProps extends BaseEventHandlerProps {
   /** Function to handle undo operation */
   handleUndo: () => void;
@@ -20,6 +23,7 @@ interface UseCanvasHandlersProps extends BaseEventHandlerProps {
 
 /**
  * Hook to register global canvas handlers
+ * @param {UseCanvasHandlersProps} props - Hook properties
  */
 export const useCanvasHandlers = ({
   fabricCanvasRef,
@@ -27,7 +31,7 @@ export const useCanvasHandlers = ({
   handleRedo,
   saveCurrentState,
   deleteSelectedObjects
-}: UseCanvasHandlersProps) => {
+}: UseCanvasHandlersProps): void => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -35,18 +39,25 @@ export const useCanvasHandlers = ({
     
     // Expose undo/redo handlers to the global canvas object for debugging
     // This helps with external access from CanvasController
-    (fabricCanvas as any).handleUndo = handleUndo;
-    (fabricCanvas as any).handleRedo = handleRedo;
-    (fabricCanvas as any).saveCurrentState = saveCurrentState;
-    (fabricCanvas as any).deleteSelectedObjects = deleteSelectedObjects;
+    const enhancedCanvas = fabricCanvas as FabricCanvas & {
+      handleUndo?: () => void;
+      handleRedo?: () => void;
+      saveCurrentState?: () => void;
+      deleteSelectedObjects?: () => void;
+    };
+    
+    enhancedCanvas.handleUndo = handleUndo;
+    enhancedCanvas.handleRedo = handleRedo;
+    enhancedCanvas.saveCurrentState = saveCurrentState;
+    enhancedCanvas.deleteSelectedObjects = deleteSelectedObjects;
     
     return () => {
       if (fabricCanvas) {
         // Clean up custom handlers
-        delete (fabricCanvas as any).handleUndo;
-        delete (fabricCanvas as any).handleRedo;
-        delete (fabricCanvas as any).saveCurrentState;
-        delete (fabricCanvas as any).deleteSelectedObjects;
+        delete enhancedCanvas.handleUndo;
+        delete enhancedCanvas.handleRedo;
+        delete enhancedCanvas.saveCurrentState;
+        delete enhancedCanvas.deleteSelectedObjects;
       }
     };
   }, [fabricCanvasRef, handleUndo, handleRedo, saveCurrentState, deleteSelectedObjects]);

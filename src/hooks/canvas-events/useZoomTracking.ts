@@ -8,11 +8,26 @@ import { Canvas as FabricCanvas } from "fabric";
 import { BaseEventHandlerProps } from "./types";
 
 /**
+ * Props type for useZoomTracking
+ */
+type UseZoomTrackingProps = Pick<BaseEventHandlerProps, 'fabricCanvasRef'>;
+
+/**
+ * Result interface for useZoomTracking
+ */
+interface UseZoomTrackingResult {
+  /** Register zoom change tracking */
+  registerZoomTracking: () => (() => void) | undefined;
+}
+
+/**
  * Hook to handle zoom tracking
+ * @param {UseZoomTrackingProps} props - Hook properties
+ * @returns {UseZoomTrackingResult} Zoom tracking functions
  */
 export const useZoomTracking = ({
   fabricCanvasRef
-}: Pick<BaseEventHandlerProps, 'fabricCanvasRef'>) => {
+}: UseZoomTrackingProps): UseZoomTrackingResult => {
   /**
    * Register zoom change tracking
    * Sets up event listeners for zoom changes
@@ -22,16 +37,22 @@ export const useZoomTracking = ({
     const updateZoomLevel = (): void => {
       if (fabricCanvasRef.current) {
         const zoom = fabricCanvasRef.current.getZoom();
-        fabricCanvasRef.current.fire('custom:zoom-changed', { zoom });
+        // Type cast to access custom event type
+        const canvas = fabricCanvasRef.current as FabricCanvas & {
+          fire: (eventName: string, data: unknown) => void;
+        };
+        canvas.fire('custom:zoom-changed', { zoom });
       }
     };
     
     const fabricCanvas = fabricCanvasRef.current;
     if (fabricCanvas) {
-      fabricCanvas.on('zoom:changed' as any, updateZoomLevel);
+      // Cast to appropriate type for Fabric.js
+      const zoomChangedHandler = updateZoomLevel as (e: unknown) => void;
+      fabricCanvas.on('zoom:changed', zoomChangedHandler);
       
       return () => {
-        fabricCanvas.off('zoom:changed' as any, updateZoomLevel);
+        fabricCanvas.off('zoom:changed', zoomChangedHandler);
       };
     }
     

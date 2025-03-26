@@ -21,7 +21,7 @@ interface UseCanvasControllerToolsProps {
   /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   /** Current active drawing tool */
   tool: DrawingTool;
   /** Current zoom level */
@@ -64,7 +64,7 @@ interface UseCanvasControllerToolsResult {
   /** Function to clear the entire canvas */
   clearCanvas: () => void;
   /** Function to save the canvas state */
-  saveCanvas: () => void;
+  saveCanvas: () => boolean;
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
 }
@@ -74,7 +74,9 @@ interface UseCanvasControllerToolsResult {
  * @param {UseCanvasControllerToolsProps} props - Hook properties
  * @returns {UseCanvasControllerToolsResult} Drawing tool functions and handlers
  */
-export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps): UseCanvasControllerToolsResult => {
+export const useCanvasControllerTools = (
+  props: UseCanvasControllerToolsProps
+): UseCanvasControllerToolsResult => {
   const {
     fabricCanvasRef,
     gridLayerRef,
@@ -145,9 +147,11 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps): 
     recalculateGIA();
     
     return () => {
-      canvas.off('object:added', handleObjectChange);
-      canvas.off('object:removed', handleObjectChange);
-      canvas.off('object:modified', handleObjectChange);
+      if (canvas) {
+        canvas.off('object:added', handleObjectChange);
+        canvas.off('object:removed', handleObjectChange);
+        canvas.off('object:modified', handleObjectChange);
+      }
     };
   }, [fabricCanvasRef, recalculateGIA]);
 

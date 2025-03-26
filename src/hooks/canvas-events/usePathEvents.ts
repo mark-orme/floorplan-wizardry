@@ -8,6 +8,9 @@ import { Canvas as FabricCanvas, Path as FabricPath } from "fabric";
 import logger from "@/utils/logger";
 import { PathCreatedEvent, BaseEventHandlerProps } from "./types";
 
+/**
+ * Props for the usePathEvents hook
+ */
 interface UsePathEventsProps extends BaseEventHandlerProps {
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
@@ -19,13 +22,14 @@ interface UsePathEventsProps extends BaseEventHandlerProps {
 
 /**
  * Hook to handle path creation events
+ * @param {UsePathEventsProps} props - Hook properties
  */
 export const usePathEvents = ({
   fabricCanvasRef,
   saveCurrentState,
   processCreatedPath,
   handleMouseUp
-}: UsePathEventsProps) => {
+}: UsePathEventsProps): void => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -49,11 +53,14 @@ export const usePathEvents = ({
       handleMouseUp();
     };
     
-    fabricCanvas.on('path:created', handlePathCreated as any);
+    // Cast to fabric event handler type
+    const fabricPathCreated = handlePathCreated as (e: unknown) => void;
+    
+    fabricCanvas.on('path:created', fabricPathCreated);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('path:created', handlePathCreated as any);
+        fabricCanvas.off('path:created', fabricPathCreated);
       }
     };
   }, [fabricCanvasRef, processCreatedPath, handleMouseUp, saveCurrentState]);

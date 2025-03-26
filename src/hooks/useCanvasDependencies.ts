@@ -36,13 +36,25 @@ interface UseCanvasDependenciesProps {
 }
 
 /**
+ * Return type for useCanvasDependencies hook
+ */
+interface UseCanvasDependenciesResult {
+  /** Reference to grid layer objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Function to create grid */
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
+}
+
+/**
  * Hook that integrates all canvas dependency hooks
  * Manages grid, stylus detection, and zoom synchronization
  * 
  * @param {UseCanvasDependenciesProps} props - Hook properties
- * @returns {Object} Grid reference and creation function
+ * @returns {UseCanvasDependenciesResult} Grid reference and creation function
  */
-export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
+export const useCanvasDependencies = (
+  props: UseCanvasDependenciesProps
+): UseCanvasDependenciesResult => {
   const {
     fabricCanvasRef,
     canvasRef,
@@ -69,15 +81,15 @@ export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
   // Initialize grid management with explicit dimensions
   const { gridLayerRef: managedGridLayerRef } = useGridManagement({
     fabricCanvasRef,
-    canvasDimensions, // Pass canvasDimensions directly
-    debugInfo: debugInfo as any, // Type assertion to avoid type mismatch
+    canvasDimensions,
+    debugInfo,
     createGrid
   });
   
   // Initialize stylus detection
   useStylusDetection({
     canvasRef,
-    debugInfo: debugInfo as any // Type assertion to avoid type mismatch
+    debugInfo
   });
   
   // Initialize zoom state synchronization

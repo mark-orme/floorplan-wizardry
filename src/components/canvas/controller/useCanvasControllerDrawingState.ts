@@ -20,7 +20,7 @@ interface UseCanvasControllerDrawingStateProps {
   /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   /** Current active drawing tool */
   tool: DrawingTool;
   /** Current floor index */
@@ -42,10 +42,21 @@ interface UseCanvasControllerDrawingStateProps {
 }
 
 /**
+ * Return type for the hook
+ */
+interface UseCanvasControllerDrawingStateResult {
+  /** Current drawing state */
+  drawingState: DrawingState | null;
+}
+
+/**
  * Hook that handles drawing state in the canvas controller
  * @param {UseCanvasControllerDrawingStateProps} props - Hook properties
+ * @returns {UseCanvasControllerDrawingStateResult} Drawing state
  */
-export const useCanvasControllerDrawingState = (props: UseCanvasControllerDrawingStateProps) => {
+export const useCanvasControllerDrawingState = (
+  props: UseCanvasControllerDrawingStateProps
+): UseCanvasControllerDrawingStateResult => {
   const {
     fabricCanvasRef,
     gridLayerRef,

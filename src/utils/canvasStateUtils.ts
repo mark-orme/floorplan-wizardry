@@ -52,13 +52,15 @@ export const applyCanvasState = (
         
         let obj: FabricObject | null = null;
         
-        if (objData.type === 'polyline') {
-          obj = new Polyline(objData.points || [], {
+        if (objData.type === 'polyline' && Array.isArray(objData.points)) {
+          // TypeScript is aware that objData.points is an array
+          obj = new Polyline(objData.points, {
             ...objData,
             selectable: false
           });
-        } else if (objData.type === 'path') {
-          obj = new Path(objData.path || '', {
+        } else if (objData.type === 'path' && typeof objData.path === 'string') {
+          // TypeScript is aware that objData.path is a string
+          obj = new Path(objData.path, {
             ...objData,
             selectable: false
           });

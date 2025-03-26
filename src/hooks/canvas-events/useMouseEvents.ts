@@ -8,6 +8,9 @@ import { Canvas as FabricCanvas } from "fabric";
 import { BaseEventHandlerProps, TargetEvent, EditableFabricObject } from "./types";
 import logger from "@/utils/logger";
 
+/**
+ * Props for the useMouseEvents hook
+ */
 interface UseMouseEventsProps extends BaseEventHandlerProps {
   /** Function to handle mouse down event */
   handleMouseDown: (e: MouseEvent | TouchEvent) => void;
@@ -21,6 +24,7 @@ interface UseMouseEventsProps extends BaseEventHandlerProps {
 
 /**
  * Hook to handle mouse events (down, move, up, double-click)
+ * @param {UseMouseEventsProps} props - Hook properties
  */
 export const useMouseEvents = ({
   fabricCanvasRef,
@@ -29,11 +33,19 @@ export const useMouseEvents = ({
   handleMouseMove,
   handleMouseUp,
   saveCurrentState
-}: UseMouseEventsProps) => {
+}: UseMouseEventsProps): void => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
     const fabricCanvas = fabricCanvasRef.current;
+    
+    // Type for mouse event handlers that matches Fabric.js expectations
+    type FabricEventHandler = (e: unknown) => void;
+    
+    // Cast to Fabric event handler type
+    const fabricMouseDown = handleMouseDown as FabricEventHandler;
+    const fabricMouseMove = handleMouseMove as FabricEventHandler;
+    const fabricMouseUp = handleMouseUp as FabricEventHandler;
     
     /**
      * Handle double-click to enter edit mode for walls
@@ -57,17 +69,17 @@ export const useMouseEvents = ({
       }
     };
     
-    fabricCanvas.on('mouse:down', handleMouseDown as any);
-    fabricCanvas.on('mouse:move', handleMouseMove as any);
-    fabricCanvas.on('mouse:up', handleMouseUp as any);
-    fabricCanvas.on('mouse:dblclick', handleDoubleClick as any);
+    fabricCanvas.on('mouse:down', fabricMouseDown);
+    fabricCanvas.on('mouse:move', fabricMouseMove);
+    fabricCanvas.on('mouse:up', fabricMouseUp);
+    fabricCanvas.on('mouse:dblclick', handleDoubleClick as FabricEventHandler);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('mouse:down', handleMouseDown as any);
-        fabricCanvas.off('mouse:move', handleMouseMove as any);
-        fabricCanvas.off('mouse:up', handleMouseUp as any);
-        fabricCanvas.off('mouse:dblclick', handleDoubleClick as any);
+        fabricCanvas.off('mouse:down', fabricMouseDown);
+        fabricCanvas.off('mouse:move', fabricMouseMove);
+        fabricCanvas.off('mouse:up', fabricMouseUp);
+        fabricCanvas.off('mouse:dblclick', handleDoubleClick as FabricEventHandler);
       }
     };
   }, [fabricCanvasRef, handleMouseDown, handleMouseMove, handleMouseUp, tool, saveCurrentState]);

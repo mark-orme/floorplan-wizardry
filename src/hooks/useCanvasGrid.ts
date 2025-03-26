@@ -7,7 +7,8 @@
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { resetGridProgress } from "@/utils/gridManager";
-import { CanvasDimensions, DebugInfoState, GridCreationCallback } from "@/types/drawingTypes";
+import { CanvasDimensions } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 import logger from "@/utils/logger";
 
 // Import refactored grid hooks
@@ -16,6 +17,11 @@ import { useGridRetry } from "./grid/useGridRetry";
 import { useGridThrottling } from "./grid/useGridThrottling";
 import { useGridValidation } from "./grid/useGridValidation";
 import { useGridSafety } from "./grid/useGridSafety";
+
+/**
+ * Type for grid creation callback function
+ */
+export type GridCreationCallback = (canvas: FabricCanvas) => FabricObject[];
 
 /**
  * Properties required by the useCanvasGrid hook
@@ -57,7 +63,9 @@ export const useCanvasGrid = ({
   const { 
     validateGridComponents, 
     ensureGridLayerInitialized 
-  } = useGridValidation({ setDebugInfo });
+  } = useGridValidation({ 
+    setDebugInfo 
+  });
   
   // Use grid safety hook
   const { safeGridOperation } = useGridSafety();

@@ -9,16 +9,29 @@ import { usePointProcessing } from "./usePointProcessing";
 import { DrawingTool } from "./useCanvasState";
 import { Point, DrawingState } from "@/types/drawingTypes";
 
+/**
+ * Props for the useDrawingState hook
+ */
 interface UseDrawingStateProps {
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current active drawing tool */
   tool: DrawingTool;
 }
 
+/**
+ * Return type for the useDrawingState hook
+ */
 interface UseDrawingStateReturn {
+  /** Current drawing state */
   drawingState: DrawingState;
+  /** Handler for mouse down events */
   handleMouseDown: (e: MouseEvent | TouchEvent) => void;
+  /** Handler for mouse move events */
   handleMouseMove: (e: MouseEvent | TouchEvent) => void;
+  /** Handler for mouse up events */
   handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
+  /** Function to clean up any timeouts */
   cleanupTimeouts: () => void;
 }
 
@@ -79,15 +92,20 @@ export const useDrawingState = ({
     if (!point) return;
     
     // Update drawing state with new point
-    setDrawingState(prevState => ({
-      ...prevState,
-      currentPoint: point,
-      cursorPosition: point,
-      midPoint: {
-        x: (prevState.startPoint?.x || 0) + (point.x - (prevState.startPoint?.x || 0)) / 2,
-        y: (prevState.startPoint?.y || 0) + (point.y - (prevState.startPoint?.y || 0)) / 2
-      }
-    }));
+    setDrawingState(prevState => {
+      // Calculate midpoint between start and current point
+      const midPoint: Point | null = prevState.startPoint ? {
+        x: prevState.startPoint.x + (point.x - prevState.startPoint.x) / 2,
+        y: prevState.startPoint.y + (point.y - prevState.startPoint.y) / 2
+      } : null;
+      
+      return {
+        ...prevState,
+        currentPoint: point,
+        cursorPosition: point,
+        midPoint
+      };
+    });
   }, [fabricCanvasRef, drawingState.isDrawing, processPoint]);
   
   // Handle mouse up event - explicitly making parameter optional with ? symbol
