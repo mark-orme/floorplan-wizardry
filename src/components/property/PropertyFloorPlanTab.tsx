@@ -120,24 +120,22 @@ export const PropertyFloorPlanTab = ({
         <div className="flex items-center justify-between w-full">
           <div>
             {!canEdit && (
-              <Badge variant="outline" className="flex items-center">
-                <Eye className="mr-1 h-3 w-3" />
+              <Badge variant="outline">
+                <Eye className="h-3 w-3 mr-1" />
                 View Only
               </Badge>
             )}
           </div>
-          
-          <div className="flex gap-2">
-            {userRole === UserRole.PHOTOGRAPHER && property.status === PropertyStatus.DRAFT && (
-              <Button 
-                onClick={() => onStatusChange(PropertyStatus.PENDING_REVIEW)}
-                disabled={isSubmitting}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                {isSubmitting ? 'Submitting...' : 'Submit for Review'}
-              </Button>
-            )}
-          </div>
+          {(userRole === 'admin' || userRole === 'surveyor') && (
+            <Button 
+              disabled={isSubmitting} 
+              variant="default" 
+              onClick={() => onStatusChange('submitted')}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Submit for Review
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>

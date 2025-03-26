@@ -1,3 +1,4 @@
+
 /**
  * Grid drawing tests with mouse and stylus input
  * @module gridDrawing.test
@@ -16,9 +17,9 @@ interface FabricMouseEvent {
 
 // Mock fabric canvas
 vi.mock('fabric', () => {
-  const FabricMock = {
+  return {
     Canvas: vi.fn().mockImplementation(() => ({
-      on: vi.fn().mockReturnValue({}), // Return empty object for chaining
+      on: vi.fn(),
       off: vi.fn(),
       add: vi.fn(),
       remove: vi.fn(),
@@ -52,8 +53,6 @@ vi.mock('fabric', () => {
       ...options
     }))
   };
-  
-  return FabricMock;
 });
 
 describe('Grid drawing with mouse and stylus', () => {
