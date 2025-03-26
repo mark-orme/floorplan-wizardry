@@ -26,8 +26,8 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
-      "@typescript-eslint/no-unused-vars": "error", // Changed from off to error
-      "@typescript-eslint/no-magic-numbers": ["warn", {
+      "@typescript-eslint/no-unused-vars": "error", // Keep as error
+      "@typescript-eslint/no-magic-numbers": ["error", { // Changed to error
         "ignore": [0, 1, -1, 2], // Common values that don't need explaining
         "ignoreArrayIndexes": true,
         "ignoreDefaultValues": true,
@@ -54,22 +54,22 @@ export default tseslint.config(
       }],
       "jsdoc/require-param": "warn",
       "jsdoc/require-param-description": "warn",
-      "jsdoc/require-param-name": "error",
+      "jsdoc/require-param-name": "error", // Changed to error
       "jsdoc/require-param-type": "warn",
       "jsdoc/require-returns": "warn",
       "jsdoc/require-returns-description": "warn",
       "jsdoc/require-returns-type": "warn",
-      "jsdoc/check-param-names": "warn",
-      "jsdoc/check-tag-names": "warn",
-      "jsdoc/check-types": "warn",
-      "jsdoc/valid-types": "warn",
+      "jsdoc/check-param-names": "error", // Changed to error
+      "jsdoc/check-tag-names": "error", // Changed to error
+      "jsdoc/check-types": "error", // Changed to error
+      "jsdoc/valid-types": "error", // Changed to error
       "jsdoc/no-undefined-types": "warn",
       
       // New rules for code quality
       
       // Naming conventions
       "@typescript-eslint/naming-convention": [
-        "warn",
+        "error", // Changed to error
         {
           "selector": "variable",
           "format": ["camelCase", "UPPER_CASE", "PascalCase"]
@@ -100,7 +100,7 @@ export default tseslint.config(
       }],
       
       // Maximum function length
-      "max-lines-per-function": ["warn", { 
+      "max-lines-per-function": ["error", { // Changed to error
         "max": 50, 
         "skipBlankLines": true, 
         "skipComments": true 
@@ -113,21 +113,21 @@ export default tseslint.config(
       }],
       
       // Complexity limits
-      "complexity": ["warn", 10],
+      "complexity": ["error", 10], // Changed to error
       
       // Unused variables and imports (typescript-eslint handles no-unused-vars)
-      "no-unused-expressions": "error",
+      "no-unused-expressions": "error", // Keep as error
       
       // Consistent spacing and formatting
       "indent": ["warn", 2, { "SwitchCase": 1 }],
       "quotes": ["warn", "double", { "avoidEscape": true }],
-      "semi": ["warn", "always"],
+      "semi": ["error", "always"], // Changed to error
       "comma-dangle": ["warn", "always-multiline"],
       "object-curly-spacing": ["warn", "always"],
       "array-bracket-spacing": ["warn", "never"],
       
       // Prevent deeply nested code
-      "max-depth": ["warn", 3],
+      "max-depth": ["error", 3], // Changed to error
       
       // Encourage consistent use of destructuring
       "prefer-destructuring": ["warn", {
@@ -139,8 +139,8 @@ export default tseslint.config(
       "arrow-body-style": ["warn", "as-needed"],
       
       // Enforce consistent use of promise methods
-      "promise/catch-or-return": "warn",
-      "promise/always-return": "warn",
+      "promise/catch-or-return": "error", // Changed to error
+      "promise/always-return": "error", // Changed to error
       
       // Enforce consistent React component definitions
       "react/function-component-definition": ["warn", {
@@ -149,7 +149,7 @@ export default tseslint.config(
       }],
       
       // Enforce consistent React Hook usage
-      "react-hooks/exhaustive-deps": "warn"
+      "react-hooks/exhaustive-deps": "error" // Changed to error
     },
   }
 );
