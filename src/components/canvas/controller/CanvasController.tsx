@@ -105,8 +105,6 @@ export const useCanvasController = () => {
     createGrid 
   } = useCanvasControllerDependencies({
     fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
     updateDebugInfo
   });
   
@@ -153,7 +151,8 @@ export const useCanvasController = () => {
     setFloorPlans,
     setCurrentFloor,
     clearDrawings,
-    createGrid
+    createGrid,
+    recalculateGIA
   });
 
   // Initialize line settings management
@@ -161,6 +160,10 @@ export const useCanvasController = () => {
     handleLineThicknessChange,
     handleLineColorChange
   } = useCanvasControllerLineSettings({
+    fabricCanvasRef,
+    lineThickness,
+    lineColor,
+    tool,
     setLineThickness,
     setLineColor
   });
@@ -213,11 +216,8 @@ export const useCanvasController = () => {
     recalculateGIA
   });
   
-  // Canvas initialization and setup
-  const {
-    initializeCanvas
-  } = useCanvasControllerSetup({
-    canvasRef,
+  // Initialize setup hook
+  const { initializeCanvas } = useCanvasControllerSetup({
     fabricCanvasRef,
     gridLayerRef,
     isLoading,

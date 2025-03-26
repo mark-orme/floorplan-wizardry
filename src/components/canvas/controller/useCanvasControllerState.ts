@@ -5,6 +5,8 @@
  */
 import { useCanvasState } from "@/hooks/useCanvasState";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";
+import { useState } from "react";
+import { DrawingState } from "@/types/drawingTypes";
 
 /**
  * Hook that centralizes all state needed by the canvas controller
@@ -32,6 +34,9 @@ export const useCanvasControllerState = () => {
     resetLoadTimes
   } = useCanvasDebug();
 
+  // Drawing state for measurement tooltips
+  const [drawingState, setDrawingState] = useState<DrawingState | null>(null);
+
   return {
     // Tool state
     tool, setTool,
@@ -55,6 +60,9 @@ export const useCanvasControllerState = () => {
     // Line settings
     lineThickness, setLineThickness,
     lineColor, setLineColor,
+    
+    // Drawing state
+    drawingState, setDrawingState,
     
     // Debug state
     debugInfo, setDebugInfo,

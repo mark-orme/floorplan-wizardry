@@ -1,97 +1,133 @@
 
 /**
- * Hook for canvas initialization and setup
+ * Hook for setting up the canvas controller
  * @module useCanvasControllerSetup
  */
-import { useRef, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
-import { DebugInfoState } from "@/types/drawingTypes";
-import { DrawingTool } from "@/hooks/useCanvasState";
-import logger from "@/utils/logger";
-import { toast } from "sonner";
+import { useEffect, useCallback } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { FloorPlan } from "@/types/floorPlanTypes";
+import { DrawingState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 
-/**
- * Props interface for useCanvasControllerSetup hook
- * @interface UseCanvasControllerSetupProps
- */
 interface UseCanvasControllerSetupProps {
-  /** Current canvas dimensions */
-  canvasDimensions: { width: number; height: number };
-  /** Current active drawing tool */
-  tool: DrawingTool;
-  /** Index of current floor */
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  isLoading: boolean;
+  floorPlans: FloorPlan[];
   currentFloor: number;
-  /** Function to set zoom level */
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to set debug info */
-  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
-  /** Function to set error state */
-  setHasError: (value: boolean) => void;
-  /** Function to set error message */
-  setErrorMessage: (value: string) => void;
+  drawFloorPlan: (floorIndex: number, plans: FloorPlan[]) => void;
+  saveCurrentState: () => void;
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
+  handleError: (error: Error) => void;
+  updateDebugInfo: (info: Partial<DebugInfoState>) => void;
+  setDrawingState: React.Dispatch<React.SetStateAction<DrawingState | null>>;
+  recalculateGIA: () => void;
 }
 
 /**
- * Hook that handles canvas initialization and setup
- * @param {UseCanvasControllerSetupProps} props - Hook properties
- * @returns Initialized canvas references and related objects
+ * Hook that handles canvas controller setup
+ * @returns Setup functions
  */
-export const useCanvasControllerSetup = ({
-  canvasDimensions,
-  tool,
-  currentFloor,
-  setZoomLevel,
-  setDebugInfo,
-  setHasError,
-  setErrorMessage
-}: UseCanvasControllerSetupProps) => {
-  // Initialize canvas and grid with improved error handling
-  const { 
-    canvasRef, 
-    fabricCanvasRef, 
-    historyRef 
-  } = useCanvasInitialization({
-    canvasDimensions,
-    tool,
+export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) => {
+  const {
+    fabricCanvasRef,
+    gridLayerRef,
+    isLoading,
+    floorPlans,
     currentFloor,
-    setZoomLevel,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage
-  });
-  
-  // Add a check to verify that canvas references are valid
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      // Verify canvas element exists in the DOM
-      if (!canvasRef.current) {
-        logger.warn("Canvas element not found in DOM");
-      } else {
-        logger.info("Canvas element found in DOM");
+    drawFloorPlan,
+    saveCurrentState,
+    createGrid,
+    handleError,
+    updateDebugInfo,
+    setDrawingState,
+    recalculateGIA
+  } = props;
+
+  // Initialize canvas
+  const initializeCanvas = useCallback((canvasElem: HTMLCanvasElement) => {
+    if (!canvasElem) return;
+    
+    try {
+      // Clean up old canvas instance if exists
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
       }
       
-      // Verify fabric canvas is properly initialized
-      if (!fabricCanvasRef.current) {
-        logger.warn("Fabric canvas not initialized");
-      } else {
-        logger.info("Canvas setup complete with dimensions:", canvasDimensions);
-        setDebugInfo(prev => ({
-          ...prev,
-          dimensionsSet: true
-        }));
-      }
-    }, 500);
+      // Create new fabric canvas
+      const canvas = new FabricCanvas(canvasElem, {
+        width: canvasElem.width || 1200,
+        height: canvasElem.height || 800,
+        selection: true,
+        preserveObjectStacking: true
+      });
+      
+      // Store canvas reference
+      fabricCanvasRef.current = canvas;
+      
+      // Set initial drawing state
+      setDrawingState({
+        isDrawing: false,
+        startPoint: null,
+        currentPoint: null,
+        cursorPosition: null,
+        midPoint: null,
+        selectionActive: false,
+        currentZoom: canvas.getZoom()
+      });
+      
+      // Create grid
+      const gridLayer = createGrid(canvas);
+      gridLayerRef.current = gridLayer;
+      
+      // Trigger GIA calculation
+      setTimeout(() => {
+        if (typeof recalculateGIA === 'function') {
+          recalculateGIA();
+        }
+      }, 500);
+      
+      // Update debug info
+      updateDebugInfo({
+        canvasInitialized: true,
+        canvasInitTime: new Date().toISOString()
+      });
+      
+      // Save initial state
+      saveCurrentState();
+      
+      return canvas;
+    } catch (error) {
+      handleError(error as Error);
+      return null;
+    }
+  }, [
+    fabricCanvasRef,
+    gridLayerRef,
+    createGrid,
+    setDrawingState,
+    updateDebugInfo,
+    saveCurrentState,
+    handleError,
+    recalculateGIA
+  ]);
+
+  // Draw floor plan when data is loaded
+  useEffect(() => {
+    if (isLoading || !fabricCanvasRef.current || floorPlans.length === 0) return;
     
-    // Cleanup function
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [canvasRef, fabricCanvasRef, canvasDimensions, setDebugInfo]);
+    console.log("Drawing initial floor plan");
+    drawFloorPlan(currentFloor, floorPlans);
+    
+  }, [
+    isLoading,
+    fabricCanvasRef,
+    floorPlans,
+    currentFloor,
+    drawFloorPlan
+  ]);
 
   return {
-    canvasRef,
-    fabricCanvasRef,
-    historyRef
+    initializeCanvas
   };
 };

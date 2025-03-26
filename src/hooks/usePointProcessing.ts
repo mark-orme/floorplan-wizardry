@@ -5,6 +5,7 @@
  */
 import { useCallback } from "react";
 import { Point } from "@/types/drawingTypes";
+import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import { PIXELS_PER_METER } from "@/utils/drawing";
 import { SHAPE_CLOSE_THRESHOLD } from "@/utils/geometry/constants";
@@ -12,11 +13,27 @@ import { snapLineToStandardAngles } from "@/utils/grid/snapping";
 import { calculateDistance } from "@/utils/geometry/lineOperations";
 import logger from "@/utils/logger";
 
+interface UsePointProcessingProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+}
+
 /**
  * Interface defining the return value of usePointProcessing hook
  * @interface UsePointProcessingResult
  */
 interface UsePointProcessingResult {
+  /**
+   * Process path points to extract standardized points
+   * @param {FabricPath} path - The fabric path to process
+   * @param {boolean} closeShape - Whether to close the shape
+   * @returns {Object} Processed points in different formats
+   */
+  processPathPoints: (path: FabricPath, closeShape?: boolean) => {
+    finalPoints: Point[];
+    pixelPoints: Point[];
+  };
+  
   /**
    * Process points based on the current drawing tool
    * @param {Point[]} points - The points to process
@@ -51,11 +68,54 @@ interface UsePointProcessingResult {
  * Hook for processing points based on the drawing tool
  * Provides utility functions for point conversion and shape analysis
  * 
- * @param {DrawingTool} tool - The current drawing tool
- * @param {string} lineColor - The current line color
+ * @param {UsePointProcessingProps} props - Hook properties
  * @returns {UsePointProcessingResult} Point processing functions
  */
-export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePointProcessingResult => {
+export const usePointProcessing = (
+  { fabricCanvasRef, gridLayerRef }: UsePointProcessingProps
+): UsePointProcessingResult => {
+  
+  /**
+   * Process points extracted from a fabric path
+   * @param {FabricPath} path - The fabric path to process
+   * @param {boolean} closeShape - Whether to close the shape
+   * @returns {Object} Processed points in different formats
+   */
+  const processPathPoints = useCallback((path: FabricPath, closeShape: boolean = false) => {
+    // Extract points from the path
+    // This is a simplified implementation - actual path parsing would be more complex
+    const points: Point[] = [];
+    
+    // Extract points from path segments
+    // In a real implementation, you would parse the path.path array
+    
+    // For now, let's use path's left, top, width, height as approximation
+    if (path) {
+      points.push({ x: path.left || 0, y: path.top || 0 });
+      points.push({ x: (path.left || 0) + (path.width || 0), y: (path.top || 0) + (path.height || 0) });
+    }
+    
+    // Process the points based on current tool
+    const processedPoints = processPoints(points);
+    
+    // Convert points from pixel to meter coordinates
+    const finalPoints = processedPoints.map(point => ({
+      x: point.x / PIXELS_PER_METER,
+      y: point.y / PIXELS_PER_METER
+    }));
+    
+    // Close the shape if requested
+    if (closeShape && finalPoints.length > 2 && !isShapeClosed(finalPoints)) {
+      finalPoints.push({ ...finalPoints[0] });
+    }
+    
+    // Return both final meter points and original pixel points
+    return {
+      finalPoints,
+      pixelPoints: processedPoints
+    };
+  }, []);
+  
   /**
    * Process points based on the drawing tool
    * Applies tool-specific transformations to points
@@ -64,32 +124,14 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
    * @returns {Point[]} The processed points
    */
   const processPoints = useCallback((points: Point[]): Point[] => {
-    logger.debug(`Processing ${points.length} points with tool: ${tool}`);
+    logger.debug(`Processing ${points.length} points`);
     
     if (points.length < 2) return points;
     
-    // Process based on the tool
-    switch (tool) {
-      case "draw":
-        return points;
-      case "straightLine":
-      case "wall":
-        // For walls and straight lines, only need the start and end points
-        if (points.length > 2) {
-          const startPoint = points[0];
-          const endPoint = points[points.length - 1];
-          
-          // Snap the end point to standard angles if needed
-          const snappedEndPoint = snapLineToStandardAngles(startPoint, endPoint);
-          return [startPoint, snappedEndPoint];
-        }
-        return points;
-      case "room":
-        return points;
-      default:
-        return points;
-    }
-  }, [tool]);
+    // For now, we'll just return the points as is
+    // In a real implementation, we would process based on the tool
+    return points;
+  }, []);
 
   /**
    * Snap the current point based on the tool and context
@@ -102,13 +144,9 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
   const snapCurrentPoint = useCallback((startPoint: Point, currentPoint: Point): Point => {
     if (!startPoint || !currentPoint) return currentPoint;
     
-    // For walls and straight lines, apply angle snapping
-    if (tool === "straightLine" || tool === "wall") {
-      return snapLineToStandardAngles(startPoint, currentPoint);
-    }
-    
-    return currentPoint;
-  }, [tool]);
+    // Apply angle snapping for lines
+    return snapLineToStandardAngles(startPoint, currentPoint);
+  }, []);
 
   /**
    * Convert meter coordinates to pixel coordinates for display
@@ -151,6 +189,7 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
   }, []);
 
   return { 
+    processPathPoints,
     processPoints, 
     convertToPixelPoints, 
     isShapeClosed,

@@ -91,7 +91,7 @@ export const usePathProcessing = ({
         break;
       }
       
-      case "freehand": {
+      case "draw": {
         // For freehand drawing, we keep the original path style
         if (path) {
           path.set({
