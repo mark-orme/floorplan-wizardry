@@ -14,6 +14,20 @@ export interface CanvasDimensions {
 }
 
 /**
+ * Floor plan structure for storing drawing data
+ */
+export interface FloorPlan {
+  id: string;
+  name: string;
+  label: string;
+  strokes: Point[][];
+  areas?: number[];
+  rooms?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/**
  * Drawing state interface - represents the current state of drawing
  * @interface DrawingState
  */
@@ -42,4 +56,19 @@ export interface DebugInfoState {
   toolsInitialized?: boolean;
   canvasError?: string;
   lastAction?: string;
+}
+
+/**
+ * Grid creation callback type
+ */
+export type GridCreationCallback = (success: boolean) => void;
+
+/**
+ * Grid creation state type
+ */
+export interface GridCreationState {
+  isCreating: boolean;
+  attempts: number; 
+  success: boolean;
+  error?: string;
 }

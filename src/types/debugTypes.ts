@@ -18,27 +18,29 @@ export interface DebugInfoState {
   /** Whether the drawing brush has been initialized */
   brushInitialized: boolean;
   /** Number of grid creation attempts */
-  gridCreationAttempts: number;
+  gridCreationAttempts?: number;
   /** Number of grid creation failures */
-  gridCreationFailures: number;
+  gridCreationFailures?: number;
   /** Time taken for the last grid creation (ms) */
-  lastGridCreationTime: number;
+  lastGridCreationTime?: number;
   /** Last error message */
-  lastError: string | null;
+  lastError?: string | null;
   /** Timestamp of the last error */
-  lastErrorTime: number;
+  lastErrorTime?: number;
   /** Number of objects on the canvas */
-  canvasObjects: number;
+  canvasObjects?: number;
   /** Number of grid objects on the canvas */
-  gridObjects: number;
+  gridObjects?: number;
   /** Current canvas width */
-  canvasWidth: number;
+  canvasWidth?: number;
   /** Current canvas height */
-  canvasHeight: number;
+  canvasHeight?: number;
   /** Device pixel ratio */
-  devicePixelRatio: number;
+  devicePixelRatio?: number;
   /** Whether the grid is visible */
-  gridVisible: boolean;
+  gridVisible?: boolean;
   /** Performance statistics */
-  performanceStats: Partial<PerformanceMetrics>;
+  performanceStats?: Partial<PerformanceMetrics>;
+  /** Last action performed */
+  lastAction?: string;
 }

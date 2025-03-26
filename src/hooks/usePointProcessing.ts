@@ -7,7 +7,7 @@ import { useCallback } from "react";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
 import { PIXELS_PER_METER } from "@/utils/drawing";
-import { CLOSE_POINT_THRESHOLD } from "@/utils/geometry/constants";
+import { SHAPE_CLOSE_THRESHOLD } from "@/utils/geometry/constants";
 import logger from "@/utils/logger";
 
 /**
@@ -94,8 +94,8 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
     const firstPoint = points[0];
     const lastPoint = points[points.length - 1];
     
-    // Use the constant from geometry/constants.ts instead of a magic number
-    const distanceThreshold = CLOSE_POINT_THRESHOLD;
+    // Use the constant from geometry/constants.ts
+    const distanceThreshold = SHAPE_CLOSE_THRESHOLD;
 
     const dx = lastPoint.x - firstPoint.x;
     const dy = lastPoint.y - firstPoint.y;

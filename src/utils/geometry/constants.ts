@@ -46,3 +46,20 @@ export const MIN_LINE_LENGTH = 0.2;
  * Lines with angle deviations less than this will be straightened
  */
 export const MAX_ANGLE_DEVIATION = 10;
+
+/**
+ * Grid spacing in meters (0.1m = 10cm)
+ */
+export const GRID_SPACING = 0.1;
+
+/**
+ * Threshold for determining if a point is close to another
+ * Used for point snapping and shape closing detection
+ */
+export const CLOSE_POINT_THRESHOLD = 0.15;
+
+/**
+ * Floating point tolerance for equality comparisons
+ * Used to handle JS floating point arithmetic issues
+ */
+export const FLOATING_POINT_TOLERANCE = 0.0001;

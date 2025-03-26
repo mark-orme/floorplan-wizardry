@@ -10,8 +10,14 @@ export { calculateGIA } from './areaCalculations';
 
 // Export from constants
 export { 
-  GRID_SPACING,
+  HORIZONTAL_BIAS,
+  VERTICAL_BIAS,
   DISTANCE_PRECISION,
+  MEASUREMENT_UPDATE_INTERVAL,
+  SHAPE_CLOSE_THRESHOLD,
+  MIN_LINE_LENGTH,
+  MAX_ANGLE_DEVIATION,
+  GRID_SPACING,
   CLOSE_POINT_THRESHOLD,
   FLOATING_POINT_TOLERANCE
 } from './constants';
@@ -27,9 +33,3 @@ export {
 
 // Export from straightening
 export { straightenStroke } from './straightening';
-
-/**
- * This serves as the central export point for geometry utilities.
- * We've cleaned up the exports to only include functions that actually exist
- * in the imported modules to avoid TypeScript errors.
- */

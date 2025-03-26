@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { CanvasController } from './canvas/controller/CanvasController';
-import { useCanvasController } from './canvas/controller/useCanvasController';
+import { useCanvasController } from './canvas/controller/CanvasController';
 import { DistanceTooltip } from './DistanceTooltip';
 import { MeasurementGuide } from './MeasurementGuide';
 import { DrawingTool } from '@/hooks/useCanvasState';
@@ -96,10 +95,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         </div>
       )}
       
-      <CanvasController
-        canvasRef={canvasRef}
-        locked={lockDrawing}
-      />
+      <div ref={canvasRef} className="canvas-element w-full h-full border border-gray-200 rounded-md overflow-hidden" />
       
       {/* Tooltip for distance measurement - only show during active drawing with line tools */}
       {isTooltipVisible && (

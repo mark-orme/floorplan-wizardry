@@ -2,7 +2,8 @@
 import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
-import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
+import { calculateDistance } from "@/utils/geometry";
+import { isExactGridMultiple } from "@/utils/grid/core";
 import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
 
 interface DistanceTooltipProps {

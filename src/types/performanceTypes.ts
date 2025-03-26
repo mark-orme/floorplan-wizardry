@@ -1,39 +1,26 @@
 
 /**
- * Types for canvas performance tracking
+ * Type definitions for performance monitoring
  * @module performanceTypes
  */
 
 /**
- * Performance tracking result interface
- * @interface PerformanceMetrics
+ * Performance metrics interface
+ * Used for tracking rendering and operation performance
  */
 export interface PerformanceMetrics {
-  /** Average FPS */
+  /** Frames per second */
   fps: number;
   /** Number of dropped frames */
   droppedFrames: number;
   /** Average frame time in milliseconds */
   frameTime: number;
-  /** Maximum frame time recorded */
+  /** Maximum frame time in milliseconds */
   maxFrameTime: number;
-  /** Frames exceeding budget (potential stutters) */
+  /** Number of frames taking longer than 16ms (60fps threshold) */
   longFrames: number;
-  /** Reference time for measurements */
-  measuredSince: Date;
-}
-
-/**
- * Canvas load times type
- * @interface CanvasLoadTimes
- */
-export interface CanvasLoadTimes {
-  startTime: number;
-  canvasInitStart: number;
-  canvasInitEnd: number;
-  gridCreationStart: number;
-  gridCreationEnd: number;
-  totalLoadTime: number;
-  canvasReady: boolean;
-  gridCreated: boolean;
+  /** Time taken for the last operation */
+  lastOperationTime?: number;
+  /** Memory usage in MB */
+  memoryUsage?: number;
 }
