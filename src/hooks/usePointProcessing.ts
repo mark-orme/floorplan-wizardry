@@ -8,6 +8,8 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
 import { isTouchEvent } from "@/utils/fabric";
+import { snapToGrid } from "@/utils/grid/snapping";
+import { straightenStroke } from "@/utils/geometry/straightening";
 
 /**
  * Props for the usePointProcessing hook
@@ -78,11 +80,18 @@ export const usePointProcessing = ({
       return null;
     }
 
-    return {
+    // Apply grid snapping based on current tool
+    const point = {
       x: pointer.x,
       y: pointer.y
     };
-  }, [fabricCanvasRef]);
+    
+    if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
+      return snapToGrid(point);
+    }
+
+    return point;
+  }, [fabricCanvasRef, tool]);
   
   /**
    * Process path points from a fabric path
@@ -94,43 +103,41 @@ export const usePointProcessing = ({
     finalPoints: Point[];
     pixelPoints: Point[];
   } => {
-    // For now this is a placeholder implementation
-    // In a real implementation, this would extract points from the path
-    const finalPoints: Point[] = [];
-    const pixelPoints: Point[] = [];
-    
     // Extract points from path object if it exists
+    const extractedPoints: Point[] = [];
+    
     if (path && path.path) {
       try {
-        // Path data in Fabric.js is stored in a complex format
-        // This is a simplified example - actual implementation would be more complex
-        const pathData = path.path;
-        
         // Process the path data to extract points
-        // This is highly dependent on the specific format of your path data
-        for (let i = 0; i < pathData.length; i++) {
-          const cmd = pathData[i];
+        for (let i = 0; i < path.path.length; i++) {
+          const cmd = path.path[i];
           
           // Only process line commands (L, l) and move commands (M, m)
-          // This is a simplified version - real implementation would handle curves, etc.
           if (cmd[0] === 'L' || cmd[0] === 'l' || cmd[0] === 'M' || cmd[0] === 'm') {
-            pixelPoints.push({ x: cmd[1], y: cmd[2] });
-            finalPoints.push({ x: cmd[1], y: cmd[2] });
+            extractedPoints.push({ x: cmd[1], y: cmd[2] });
           }
         }
         
         // If the path should be enclosed, connect the last point to the first point
-        if (isEnclosed && finalPoints.length > 0) {
-          finalPoints.push({ ...finalPoints[0] });
-          pixelPoints.push({ ...pixelPoints[0] });
+        if (isEnclosed && extractedPoints.length > 0) {
+          extractedPoints.push({ ...extractedPoints[0] });
         }
       } catch (error) {
         console.error("Error processing path points:", error);
       }
     }
     
-    return { finalPoints, pixelPoints };
-  }, [fabricCanvasRef]);
+    // Apply grid snapping and straightening
+    const processedPoints = 
+      (tool === 'wall' || tool === 'room' || tool === 'straightLine') 
+        ? straightenStroke(extractedPoints.map(pt => snapToGrid(pt)))
+        : extractedPoints;
+    
+    return { 
+      finalPoints: processedPoints, 
+      pixelPoints: processedPoints 
+    };
+  }, [tool]);
   
   return { 
     processPoint,

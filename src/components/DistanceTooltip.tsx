@@ -46,17 +46,14 @@ export const DistanceTooltip = memo(({
     return null;
   }
   
-  // Calculate distance in meters (direct calculation for more reliability)
-  const dx = currentPoint.x - startPoint.x;
-  const dy = currentPoint.y - startPoint.y;
-  const distanceInPixels = Math.sqrt(dx * dx + dy * dy);
-  const distanceInMeters = distanceInPixels / PIXELS_PER_METER;
+  // Calculate distance in meters
+  const distance = calculateDistance(startPoint, currentPoint);
   
-  // Format distance to 1 decimal place
-  const formattedDistance = distanceInMeters.toFixed(1);
+  // Format distance to 2 decimal places
+  const formattedDistance = formatDistance(distance);
   
   // Only show if distance is meaningful (avoid tiny movements)
-  if (distanceInMeters < 0.05) {
+  if (distance < 0.05) {
     return null;
   }
   
@@ -67,18 +64,11 @@ export const DistanceTooltip = memo(({
   };
   
   // Calculate position in pixels
-  const pixelX = tooltipPosition.x * PIXELS_PER_METER;
-  const pixelY = tooltipPosition.y * PIXELS_PER_METER;
+  const pixelX = tooltipPosition.x;
+  const pixelY = tooltipPosition.y;
   
   // Use effective zoom (current zoom from canvas if available)
   const effectiveZoom = currentZoom || zoomLevel;
-  
-  console.log("Rendering tooltip:", {
-    distanceInMeters,
-    formattedDistance,
-    position: tooltipPosition,
-    pixelPos: { x: pixelX, y: pixelY }
-  });
   
   return (
     <div 
