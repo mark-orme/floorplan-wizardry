@@ -64,10 +64,11 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
   }, [canvasReference]);
 
   return (
-    <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible">
+    <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible h-full">
       <div 
         ref={containerRef} 
-        className="w-full h-[1000px] md:h-[1050px] relative overflow-visible"
+        className="w-full h-full relative overflow-visible"
+        data-testid="canvas-container"
       >
         <canvas 
           ref={canvasReference} 
@@ -76,6 +77,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
           aria-label="Floor plan drawing canvas"
           role="application"
           style={{ display: "block" }}
+          data-testid="canvas-element"
         />
       </div>
       <DebugInfo debugInfo={debugInfo} />

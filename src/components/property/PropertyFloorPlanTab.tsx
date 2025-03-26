@@ -36,7 +36,7 @@ export const PropertyFloorPlanTab = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="h-[800px] w-full"> {/* Increased height from 700px to 800px */}
+        <div className="h-[800px] w-full" data-testid="floor-plan-wrapper"> 
           <CanvasControllerProvider>
             <Canvas data-readonly={!canEdit} />
           </CanvasControllerProvider>

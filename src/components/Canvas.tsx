@@ -76,7 +76,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
   }, [isTooltipVisible, tool, drawingState]);
   
   return (
-    <div className="canvas-wrapper relative">
+    <div className="canvas-wrapper relative h-full w-full">
       {hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-red-100 bg-opacity-80 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
@@ -95,8 +95,12 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         </div>
       )}
       
-      <div className="canvas-element w-full h-full border border-gray-200 rounded-md overflow-hidden">
-        <canvas ref={canvasRef} />
+      <div className="canvas-container w-full h-full border border-gray-200 rounded-md overflow-hidden">
+        <canvas 
+          ref={canvasRef} 
+          className="w-full h-full"
+          data-testid="canvas-element"
+        />
       </div>
       
       {/* Measurement Tooltip */}
