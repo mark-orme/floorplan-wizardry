@@ -5,6 +5,12 @@
  * @module gridConstants
  */
 
+// Grid dimensions type
+export interface GridDimensions {
+  width: number;
+  height: number;
+}
+
 // Grid scale factors
 export const GRID_SCALE_FACTOR = 100; // 100px = 1 meter
 export const SMALL_GRID_SPACING = 0.1; // 0.1 meter

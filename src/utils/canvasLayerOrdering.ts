@@ -9,8 +9,9 @@ import logger from "@/utils/logger";
 
 /**
  * Object with objectType property for type identification
+ * Using FabricObject with our custom properties
  */
-interface TypedFabricObject extends FabricObject {
+interface TypedFabricObject {
   /** Type identifier for specialized handling */
   objectType?: string;
   /** Stroke width for lines */
@@ -45,14 +46,14 @@ export const arrangeGridElements = (
   
   // Find grid markers (scale indicators)
   const gridMarkers = gridElements.filter(obj => {
-    const typedObj = obj as TypedFabricObject;
+    const typedObj = obj as unknown as TypedFabricObject;
     return (typedObj.type === 'text') || 
            (typedObj.type === 'line' && typedObj.strokeWidth && typedObj.strokeWidth >= 1.2);
   });
   
   // Find grid lines
   const gridLines = gridElements.filter(obj => {
-    const typedObj = obj as TypedFabricObject;
+    const typedObj = obj as unknown as TypedFabricObject;
     return typedObj.type === 'line' && (!typedObj.strokeWidth || typedObj.strokeWidth < 1.2);
   });
   

@@ -99,7 +99,7 @@ export const useGridCreation = ({
           ...prev,
           gridCreated: true,
           gridObjectCount: grid.length,
-          lastGridCreationTime: new Date().toISOString()
+          lastGridCreationTime: Date.now() // Fix: Use number instead of string
         }));
       }
       
