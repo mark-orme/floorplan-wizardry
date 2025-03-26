@@ -70,6 +70,26 @@ export const useGridCreation = ({
       });
     }
     
+    // PATCH 2: Add validation for canvas
+    if (!canvas) {
+      logger.error("createGrid: Canvas is null or undefined");
+      return gridLayerRef.current;
+    }
+    
+    // Get actual dimensions from the canvas
+    const canvasWidth = canvas.getWidth?.() || canvas.width;
+    const canvasHeight = canvas.getHeight?.() || canvas.height;
+    
+    // PATCH 2: Check for valid dimensions
+    if (!canvasWidth || !canvasHeight || canvasWidth === 0 || canvasHeight === 0) {
+      logger.warn("createGrid: Canvas has zero width/height — skipping grid creation", {
+        width: canvasWidth,
+        height: canvasHeight,
+        canvasDimensions
+      });
+      return gridLayerRef.current;
+    }
+    
     // Force reset any stuck grid creation before attempting
     resetGridProgress();
     
@@ -89,7 +109,7 @@ export const useGridCreation = ({
           logger.debug(`Grid created successfully with ${grid.length} objects`);
         }
         
-        // Force a render
+        // PATCH 3: Force a render
         canvas.requestRenderAll();
         
         // Add debug info
@@ -99,6 +119,11 @@ export const useGridCreation = ({
           gridObjectCount: grid.length,
           lastGridCreationTime: Date.now() // Using number instead of string for timestamp
         }));
+      } else {
+        logger.warn("Grid creation returned no objects", {
+          canvasWidth, 
+          canvasHeight
+        });
       }
       
       return grid || gridLayerRef.current;

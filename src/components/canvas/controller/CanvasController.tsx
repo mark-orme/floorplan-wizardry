@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingTool } from '@/hooks/useCanvasState';
@@ -165,6 +164,19 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
         return;
       }
       
+      // PATCH 1: Check if canvas has valid dimensions before creating grid
+      if (!fabricCanvasRef.current.width || !fabricCanvasRef.current.height ||
+          fabricCanvasRef.current.width === 0 || fabricCanvasRef.current.height === 0) {
+        logger.warn("Canvas has zero dimensions, delaying grid creation", {
+          width: fabricCanvasRef.current.width,
+          height: fabricCanvasRef.current.height
+        });
+        
+        // Try again in a short while
+        setTimeout(attemptDirectInitialization, 300);
+        return;
+      }
+      
       try {
         // Check if the grid is already created by regular means
         if (gridCreatedRef.current) {
@@ -180,7 +192,7 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
           gridLayerRef.current = gridObjects;
           gridCreatedRef.current = true;
           
-          // Force render to ensure grid is visible
+          // PATCH 3: Force render to ensure grid is visible
           fabricCanvasRef.current.requestRenderAll();
           
           // Update debug info
@@ -201,8 +213,8 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
         resetEmergencyGridState(); // Reset state to allow a fresh attempt
         
         const emergencyGrid = createEmergencyGrid(fabricCanvasRef.current, {
-          width: initialCanvasWidth || 1000,
-          height: initialCanvasHeight || 800,
+          width: fabricCanvasRef.current.width || initialCanvasWidth || 1000,
+          height: fabricCanvasRef.current.height || initialCanvasHeight || 800,
           debug: true
         });
         
@@ -211,7 +223,7 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
           gridLayerRef.current = emergencyGrid;
           gridCreatedRef.current = true;
           
-          // Force render to ensure grid is visible
+          // PATCH 3: Force render to ensure grid is visible
           fabricCanvasRef.current.requestRenderAll();
           
           // Update debug info
@@ -240,7 +252,17 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
     }, 1500); // Wait 1.5 seconds before direct intervention
     
     return () => clearTimeout(timeoutId);
-  }, [createGrid, initialCanvasWidth, initialCanvasHeight, setDebugInfo, setHasError, setErrorMessage]);
+  }, [createGrid, initialCanvasWidth, initialCanvasHeight, setDebugInfo, setHasError, setErrorMessage, fabricCanvasRef.current]); // PATCH 1: Added fabricCanvasRef.current as dependency
+
+  // DEBUG TIP: Add debugging to monitor canvas size and object count
+  useEffect(() => {
+    if (fabricCanvasRef.current) {
+      const c = fabricCanvasRef.current;
+      console.log("📐 Canvas size:", c.getWidth?.() || c.width, c.getHeight?.() || c.height);
+      console.log("🎯 Objects after grid:", c.getObjects().length);
+      console.log("🔍 Grid layer objects:", gridLayerRef.current.length);
+    }
+  }, [gridCreatedRef.current]);
   
   // Define dummy functions for now - these will be properly implemented
   const refreshCanvas = () => {}; 

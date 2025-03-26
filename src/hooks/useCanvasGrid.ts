@@ -123,6 +123,29 @@ export const useCanvasGrid = ({
   const createGridCallback = useCallback((canvas: FabricCanvas): FabricObject[] => {
     logger.debug("createGridCallback invoked with dimensions:", canvasDimensions);
     
+    // PATCH 2: Add additional validation for canvas
+    if (!canvas) {
+      logger.error("createGrid: Canvas is null or undefined");
+      return gridLayerRef.current;
+    }
+    
+    if (typeof canvas.getWidth !== "function" || typeof canvas.getHeight !== "function") {
+      logger.error("createGrid: Invalid canvas instance - missing getWidth/getHeight methods");
+      return gridLayerRef.current;
+    }
+    
+    // PATCH 2: Check for valid dimensions
+    const canvasWidth = canvas.getWidth() || canvas.width;
+    const canvasHeight = canvas.getHeight() || canvas.height;
+    
+    if (!canvasWidth || !canvasHeight || canvasWidth === 0 || canvasHeight === 0) {
+      logger.warn("createGrid: Canvas has zero width/height — skipping grid creation", {
+        width: canvasWidth,
+        height: canvasHeight
+      });
+      return gridLayerRef.current;
+    }
+    
     return safeGridOperation(() => {
       try {
         // Validate components before proceeding
@@ -139,7 +162,15 @@ export const useCanvasGrid = ({
         }
         
         // If not throttled, proceed with normal creation with retry logic
-        return createGridWithRetry(canvas);
+        const gridObjects = createGridWithRetry(canvas);
+        
+        // PATCH 3: Force render after grid creation
+        if (gridObjects.length > 0) {
+          logger.info(`Grid created with ${gridObjects.length} objects, forcing render`);
+          canvas.requestRenderAll();
+        }
+        
+        return gridObjects;
       } catch (error) {
         logger.error("Error in grid creation:", error);
         setHasError(true);
