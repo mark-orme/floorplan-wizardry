@@ -1,214 +1,234 @@
 
 /**
  * Canvas tool operations
+ * Functions for handling tool-specific canvas operations
  * @module canvasToolOperations
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Point } from "fabric";
-import { toast } from "sonner";
-import { DrawingTool } from "@/hooks/useCanvasState";
-import { initializeDrawingBrush } from "./fabricBrush";
-import { enablePanning, enableSelection, disableSelection } from "./fabric";
-import logger from "./logger";
+import { 
+  Canvas as FabricCanvas, 
+  Object as FabricObject,
+  Line,
+  Path,
+  Circle,
+  IObjectOptions 
+} from "fabric";
+import { ObjectType, setObjectLayer } from './canvasLayerOrdering';
+import { Point } from '@/types/drawingTypes';
+import { DrawingTool } from '@/hooks/useCanvasState';
+import { snapToGrid } from './grid/core';
+import logger from './logger';
 
-/**
- * Type definition for fabric objects with tool-specific properties
- * Uses a type assertion pattern rather than direct inheritance
- */
-interface ToolOperationObject {
-  /** The underlying Fabric.js object */
-  fabricObject: FabricObject;
-  /** Type of the object */
-  type: string;
-  /** Whether the object is selectable */
-  selectable: boolean;
-  /** Cursor to show when hovering */
-  hoverCursor?: string;
-  /** Type of object for custom handling */
-  objectType?: string;
+// Type definition for measurement text options
+interface MeasurementTextOptions {
+  fontSize?: number;
+  fontFamily?: string;
+  fill?: string;
+  backgroundColor?: string;
+  padding?: number;
 }
 
 /**
- * Convert a FabricObject to our ToolOperationObject type
- * @param obj - Fabric.js object to convert
- * @returns ToolOperationObject representation
+ * Handle switching between different drawing tools
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {DrawingTool} tool - The selected drawing tool
  */
-const asToolObject = (obj: FabricObject): ToolOperationObject => {
-  return {
-    fabricObject: obj,
-    type: (obj as any).type || '',
-    selectable: obj.selectable || false,
-    hoverCursor: (obj as any).hoverCursor,
-    objectType: (obj as any).objectType
-  };
-};
-
-/**
- * Clear all drawings from canvas while preserving the grid
- * Removes all non-grid objects from the canvas
- * 
- * @param {FabricCanvas | null} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @param {(canvas: FabricCanvas) => FabricObject[]} createGrid - Function to recreate grid if needed
- * @returns {void}
- */
-export const clearDrawings = (
-  canvas: FabricCanvas | null,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>,
-  createGrid: (canvas: FabricCanvas) => FabricObject[]
+export const setActiveTool = (
+  canvas: FabricCanvas,
+  tool: DrawingTool
 ): void => {
   if (!canvas) return;
-  
-  // Pause rendering for performance
-  canvas.renderOnAddRemove = false;
   
   try {
-    // Get all objects that are not part of the grid
-    const objects = canvas.getObjects().filter(obj => {
-      const typedObj = asToolObject(obj);
-      return !typedObj.objectType?.includes('grid');
+    // Reset selection mode
+    canvas.selection = tool === 'select';
+    canvas.isDrawingMode = tool === 'draw';
+    
+    // Configure objects based on tool
+    const objects = canvas.getObjects();
+    objects.forEach(obj => {
+      // Make objects selectable only in select mode
+      (obj as FabricObject).selectable = tool === 'select';
+      (obj as FabricObject).evented = tool === 'select';
     });
     
-    // Remove non-grid objects
-    objects.forEach(obj => canvas.remove(obj));
+    logger.debug(`Tool set to: ${tool}`);
     
-    // Ensure grid is still intact, recreate if needed
-    if (gridLayerRef.current.length === 0) {
-      createGrid(canvas);
-    }
-    
-    // Resume rendering and refresh
-    canvas.renderOnAddRemove = true;
+    // Ensure canvas is refreshed
     canvas.requestRenderAll();
-    
-    // Show success toast
-    toast.success("Canvas cleared successfully");
   } catch (error) {
-    logger.error("Error clearing canvas:", error);
-    
-    // Show error toast
-    toast.error("Failed to clear canvas");
-    
-    // Resume rendering in case of error
-    canvas.renderOnAddRemove = true;
+    logger.error("Failed to set active tool:", error);
   }
 };
 
 /**
- * Change current drawing tool
- * Updates canvas mode and cursor based on selected tool
- * 
- * @param {DrawingTool} tool - The selected drawing tool
- * @param {FabricCanvas | null} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @param {number} lineThickness - Current line thickness
- * @param {string} lineColor - Current line color
- * @param {React.Dispatch<React.SetStateAction<DrawingTool>>} setTool - State setter for current tool
- * @returns {void}
+ * Create a line between two points
+ * @param {Point} start - Starting point
+ * @param {Point} end - Ending point
+ * @param {Partial<IObjectOptions>} options - Line options
+ * @returns {Line} Created line object
  */
-export const handleToolChange = (
-  tool: DrawingTool,
-  canvas: FabricCanvas | null,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>,
-  lineThickness: number,
-  lineColor: string,
-  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>
-): void => {
-  if (!canvas) return;
+export const createLine = (
+  start: Point,
+  end: Point,
+  options: Partial<IObjectOptions> = {}
+): Line => {
+  // Ensure points are snapped to grid
+  const snappedStart = snapToGrid(start);
+  const snappedEnd = snapToGrid(end);
   
-  logger.info(`Changing tool to: ${tool}`);
-  
-  // Update state
-  setTool(tool);
-  
-  // Configure canvas based on selected tool
-  switch (tool) {
-    case "hand":
-      // Enable panning mode for hand tool
-      canvas.isDrawingMode = false;
-      enablePanning(canvas, true);
-      break;
-      
-    case "select":
-      // Enable selection mode
-      canvas.isDrawingMode = false;
-      enablePanning(canvas, false);
-      enableSelection(canvas);
-      break;
-      
-    case "wall":
-    case "door":
-    case "window":
-    case "furniture":
-    case "straightLine":
-    case "area":
-    case "draw":
-    case "room":
-      // Drawing tools - enable drawing mode with appropriate settings
-      canvas.isDrawingMode = true;
-      enablePanning(canvas, false);
-      disableSelection(canvas);
-      
-      if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.color = lineColor;
-        canvas.freeDrawingBrush.width = lineThickness;
-      } else {
-        // Initialize brush if it doesn't exist
-        const brush = initializeDrawingBrush(canvas);
-        if (brush) {
-          brush.color = lineColor;
-          brush.width = lineThickness;
-          canvas.freeDrawingBrush = brush;
-        }
+  // Create the line
+  const line = new Line(
+    [snappedStart.x, snappedStart.y, snappedEnd.x, snappedEnd.y],
+    {
+      strokeWidth: 2,
+      stroke: '#000000',
+      selectable: true,
+      ...options,
+      data: { 
+        type: 'wall',
+        ...(options.data || {})
       }
-      break;
-      
-    default:
-      // Default to selection mode for unknown tools
-      canvas.isDrawingMode = false;
-      enablePanning(canvas, false);
-      enableSelection(canvas);
-      break;
-  }
+    }
+  );
   
-  // Render changes
-  canvas.requestRenderAll();
+  // Apply correct layer ordering
+  setObjectLayer(line, ObjectType.WALL);
+  
+  return line;
 };
 
-export const handleZoom = (
-  direction: "in" | "out",
-  canvas: FabricCanvas | null,
-  zoomLevel: number,
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>
+/**
+ * Create a point marker at a specific location
+ * @param {Point} point - Point location 
+ * @param {Partial<IObjectOptions>} options - Circle options
+ * @returns {Circle} Created circle object
+ */
+export const createPointMarker = (
+  point: Point, 
+  options: Partial<IObjectOptions> = {}
+): Circle => {
+  // Ensure point is snapped to grid
+  const snappedPoint = snapToGrid(point);
+  
+  // Create a small circle at the point
+  const circle = new Circle({
+    left: snappedPoint.x - 2,
+    top: snappedPoint.y - 2,
+    radius: 2,
+    fill: '#ff0000',
+    stroke: '#ff0000',
+    strokeWidth: 1,
+    selectable: false,
+    ...options,
+    data: {
+      type: 'marker',
+      ...(options.data || {})
+    }
+  });
+  
+  return circle;
+};
+
+/**
+ * Add a measurement label for a line
+ * @param {FabricCanvas} canvas - The fabric canvas
+ * @param {Line} line - The line to measure
+ * @param {string} text - Text to display
+ * @param {MeasurementTextOptions} options - Text display options
+ */
+export const addMeasurementToLine = (
+  canvas: FabricCanvas,
+  line: Line,
+  text: string,
+  options: MeasurementTextOptions = {}
+): void => {
+  if (!canvas || !line) return;
+  
+  try {
+    const points = line.points || [];
+    if (points.length < 2) return;
+    
+    // Calculate midpoint position for the label
+    const x1 = points[0].x || 0;
+    const y1 = points[0].y || 0;
+    const x2 = points[1].x || 0;
+    const y2 = points[1].y || 0;
+    
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    
+    // Default options
+    const {
+      fontSize = 12,
+      fontFamily = 'Arial',
+      fill = '#333',
+      backgroundColor = 'rgba(255,255,255,0.8)',
+      padding = 2
+    } = options;
+    
+    // Create text object
+    const textObj = new fabric.Text(text, {
+      left: midX,
+      top: midY,
+      fontSize,
+      fontFamily,
+      fill,
+      backgroundColor,
+      padding,
+      selectable: false,
+      data: { type: 'measurement' }
+    });
+    
+    // Center the text at the midpoint
+    textObj.set({
+      left: midX - (textObj.width || 0) / 2,
+      top: midY - (textObj.height || 0) / 2
+    });
+    
+    // Set proper layer ordering
+    setObjectLayer(textObj, ObjectType.MEASUREMENT);
+    
+    // Add to canvas
+    canvas.add(textObj);
+    canvas.requestRenderAll();
+  } catch (error) {
+    logger.error("Failed to add measurement to line:", error);
+  }
+};
+
+/**
+ * Clear all objects of a specific type from the canvas
+ * @param {FabricCanvas} canvas - The fabric canvas
+ * @param {string} dataType - The data type to clear
+ */
+export const clearObjectsByType = (
+  canvas: FabricCanvas, 
+  dataType: string
 ): void => {
   if (!canvas) return;
   
-  // Calculate new zoom level (in 10% increments)
-  let newZoom = zoomLevel;
-  
-  if (direction === "in") {
-    // Zoom in (max 5x)
-    newZoom = Math.min(5, zoomLevel + 0.1);
-  } else {
-    // Zoom out (min 0.1x)
-    newZoom = Math.max(0.1, zoomLevel - 0.1);
-  }
-  
-  // Only update if zoom level changed
-  if (newZoom !== zoomLevel) {
-    // Apply zoom centered on current viewport
-    const center = canvas.getCenter();
-    const zoomPoint = new Point(center.left, center.top);
-    canvas.zoomToPoint(zoomPoint, newZoom);
+  try {
+    const objects = canvas.getObjects();
+    const toRemove: FabricObject[] = [];
     
-    // Update state
-    setZoomLevel(newZoom);
+    // Find all objects matching the data type
+    objects.forEach(obj => {
+      const data = (obj as FabricObject).get('data');
+      if (data && data.type === dataType) {
+        toRemove.push(obj as FabricObject);
+      }
+    });
     
-    // Trigger zoom change event
-    canvas.fire('zoom:changed' as any);
+    // Remove all identified objects
+    toRemove.forEach(obj => {
+      canvas.remove(obj);
+    });
     
-    // Render changes
-    canvas.requestRenderAll();
-    
-    logger.info(`Zoom level changed to: ${newZoom.toFixed(1)}x`);
+    if (toRemove.length > 0) {
+      logger.debug(`Cleared ${toRemove.length} objects of type: ${dataType}`);
+      canvas.requestRenderAll();
+    }
+  } catch (error) {
+    logger.error(`Failed to clear objects of type ${dataType}:`, error);
   }
 };

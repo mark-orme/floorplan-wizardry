@@ -1,137 +1,120 @@
 
 /**
- * Emergency grid creation utilities
- * Provides fallback methods for grid creation when normal methods fail
+ * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
  */
-import { Canvas as FabricCanvas, Line, Text, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import logger from "./logger";
+import { GridCreationState } from "@/types/gridTypes";
+
+// Typings for grid creation parameters
+interface EmergencyGridOptions {
+  width: number;
+  height: number;
+  smallGridSize: number;
+  largeGridSize: number;
+  smallGridColor: string;
+  largeGridColor: string;
+  smallGridOpacity: number;
+  largeGridOpacity: number;
+}
 
 /**
- * Create a very basic emergency grid when all else fails
- * This is a simplified grid with minimal objects to ensure something is visible
+ * Create a fallback grid when the primary grid creation fails
+ * Uses a simplified approach to ensure at least basic grid appears
  * 
- * @param {FabricCanvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} [gridLayerRef] - Optional reference to store grid objects
- * @returns {FabricObject[]} Simple emergency grid objects
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {EmergencyGridOptions} options - Grid creation options
+ * @returns {FabricObject[]} Created grid objects
  */
-export const createBasicEmergencyGrid = (
-  canvas: FabricCanvas,
-  gridLayerRef?: React.MutableRefObject<FabricObject[]>
+export const createEmergencyGrid = (
+  canvas: FabricCanvas, 
+  options: Partial<EmergencyGridOptions> = {}
 ): FabricObject[] => {
-  logger.info("Creating emergency basic grid");
-  
-  const emergencyGrid: FabricObject[] = [];
-  
+  if (!canvas) {
+    logger.error("Emergency grid creation failed: Canvas is null");
+    return [];
+  }
+
   try {
-    // Clear any existing grid objects first
-    if (gridLayerRef?.current?.length) {
-      gridLayerRef.current.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.remove(obj);
-        }
-      });
-      gridLayerRef.current = [];
-    }
+    logger.warn("Using emergency grid creation as fallback");
     
-    // Use actual canvas dimensions or fallback to reasonable defaults
-    const width = Math.max(canvas.width || 800, 1200);
-    const height = Math.max(canvas.height || 600, 950);
+    // Default options
+    const {
+      width = 2000,
+      height = 2000,
+      smallGridSize = 10,
+      largeGridSize = 100,
+      smallGridColor = "rgba(200,200,200,0.3)",
+      largeGridColor = "rgba(150,150,150,0.5)",
+      smallGridOpacity = 0.3,
+      largeGridOpacity = 0.5
+    } = options;
     
-    // Extend the grid beyond canvas boundaries - much larger extension
-    const extensionFactor = 4.0;
-    const extendedWidth = width * extensionFactor;
-    const extendedHeight = height * extensionFactor;
+    const gridObjects: FabricObject[] = [];
     
-    // Start grid further outside the viewport for better panning
-    const startX = -width * (extensionFactor - 1) / 2;
-    const startY = -height * (extensionFactor - 1) / 2;
-    const endX = width * extensionFactor / 2;
-    const endY = height * extensionFactor / 2;
-    
-    // Create a more dense grid with appropriate spacing
-    const smallGridSpacing = 100; // 100px between small grid lines
-    const largeGridSpacing = 500; // 500px between large grid lines
-    
-    // Create small grid lines (light blue)
-    for (let x = startX; x <= endX; x += smallGridSpacing) {
-      const line = new Line([x, startY, x, endY], {
-        stroke: '#CCDDEE',
+    // Create minimal grid with just large grid lines for performance
+    for (let i = 0; i <= width; i += largeGridSize) {
+      const line = new Line([i, 0, i, height], {
+        stroke: largeGridColor,
         selectable: false,
         evented: false,
-        strokeWidth: 0.5,
-        objectCaching: true
+        opacity: largeGridOpacity,
+        strokeWidth: 1
       });
+      gridObjects.push(line);
       canvas.add(line);
-      emergencyGrid.push(line);
     }
     
-    for (let y = startY; y <= endY; y += smallGridSpacing) {
-      const line = new Line([startX, y, endX, y], {
-        stroke: '#CCDDEE',
+    for (let i = 0; i <= height; i += largeGridSize) {
+      const line = new Line([0, i, width, i], {
+        stroke: largeGridColor,
         selectable: false,
         evented: false,
-        strokeWidth: 0.5,
-        objectCaching: true
+        opacity: largeGridOpacity,
+        strokeWidth: 1
       });
+      gridObjects.push(line);
       canvas.add(line);
-      emergencyGrid.push(line);
     }
     
-    // Create large grid lines (darker blue)
-    for (let x = startX; x <= endX; x += largeGridSpacing) {
-      const line = new Line([x, startY, x, endY], {
-        stroke: '#4090CC',
-        selectable: false,
-        evented: false,
-        strokeWidth: 1.2,
-        objectCaching: true
-      });
-      canvas.add(line);
-      emergencyGrid.push(line);
-    }
-    
-    for (let y = startY; y <= endY; y += largeGridSpacing) {
-      const line = new Line([startX, y, endX, y], {
-        stroke: '#4090CC',
-        selectable: false,
-        evented: false,
-        strokeWidth: 1.2,
-        objectCaching: true
-      });
-      canvas.add(line);
-      emergencyGrid.push(line);
-    }
-    
-    // Force a render to ensure grid is visible
+    logger.info(`Emergency grid created with ${gridObjects.length} lines`);
     canvas.requestRenderAll();
     
-    // Update the grid layer ref if provided
-    if (gridLayerRef) {
-      gridLayerRef.current = emergencyGrid;
-    }
-    
-    logger.info(`Created emergency grid with ${emergencyGrid.length} lines`);
-    return emergencyGrid;
+    return gridObjects;
   } catch (error) {
-    logger.error("Error creating emergency grid:", error);
+    logger.error("Emergency grid creation failed with error:", error);
     return [];
   }
 };
 
 /**
- * Perform a quick validation of the canvas before creating emergency grid
- * @param {FabricCanvas} canvas - The canvas to check
- * @returns {boolean} Whether the canvas is valid
+ * Reset grid creation state after failures
+ * @param {GridCreationState} gridCreationState - Current grid creation state
+ * @returns {GridCreationState} Reset grid creation state
  */
-export const validateCanvasForEmergencyGrid = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) return false;
-  
-  // Basic validation of canvas properties
-  if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
-    logger.warn("Invalid canvas dimensions for emergency grid");
-    return false;
-  }
-  
-  return true;
+export const resetGridCreationState = (
+  gridCreationState: GridCreationState
+): GridCreationState => {
+  return {
+    ...gridCreationState,
+    creationInProgress: false,
+    lastAttemptTime: Date.now(),
+    consecutiveResets: gridCreationState.consecutiveResets + 1,
+    safetyTimeout: null
+  };
+};
+
+/**
+ * Determine if emergency grid creation should be triggered
+ * @param {GridCreationState} gridCreationState - Current grid creation state
+ * @returns {boolean} Whether emergency grid should be used
+ */
+export const shouldUseEmergencyGrid = (
+  gridCreationState: GridCreationState
+): boolean => {
+  return (
+    !gridCreationState.exists &&
+    gridCreationState.consecutiveResets >= gridCreationState.maxConsecutiveResets
+  );
 };

@@ -33,7 +33,7 @@ interface UseCanvasBrushResult {
 /**
  * Type definition for extended PencilBrush with additional properties
  */
-interface ExtendedPencilBrush extends PencilBrush {
+interface ExtendedPencilBrush extends Omit<PencilBrush, 'decimate'> {
   decimate?: number;
 }
 
@@ -65,7 +65,7 @@ export const useCanvasBrush = ({
       fabricCanvas.isDrawingMode = true;
       
       // OPTIMIZATION: Set brush properties for better performance
-      const extendedBrush = pencilBrush as ExtendedPencilBrush;
+      const extendedBrush = pencilBrush as unknown as ExtendedPencilBrush;
       if (extendedBrush) {
         extendedBrush.decimate = 2; // Reduce number of points for smoother performance
       }

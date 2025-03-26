@@ -5,10 +5,22 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Canvas } from "fabric";
+import { Canvas, PencilBrush } from "fabric";
 import { Canvas as CanvasComponent } from '@/components/Canvas';
 import { initializeDrawingBrush, addPressureSensitivity } from '@/utils/fabricBrush';
 import { GRID_SIZE, PIXELS_PER_METER } from '@/utils/drawing';
+
+// Extended PencilBrush with additional properties for tests
+interface TestPencilBrush extends PencilBrush {
+  decimate?: number;
+  width: number;
+  color: string;
+}
+
+// Define mock fabric event types
+interface FabricMouseEvent {
+  e: MouseEvent | TouchEvent;
+}
 
 // Mock fabric canvas
 vi.mock('fabric', () => {
@@ -49,11 +61,11 @@ vi.mock('fabric', () => {
 
 describe('Grid drawing with mouse and stylus', () => {
   let canvas: Canvas;
-  let brush: any;
+  let brush: TestPencilBrush;
   
   beforeEach(() => {
     canvas = new Canvas('test-canvas');
-    brush = initializeDrawingBrush(canvas);
+    brush = initializeDrawingBrush(canvas) as TestPencilBrush;
     if (brush) {
       canvas.freeDrawingBrush = brush;
     }
@@ -94,7 +106,7 @@ describe('Grid drawing with mouse and stylus', () => {
     
     // Simulate mouse down event
     const mouseEvent = new MouseEvent('mousedown');
-    const fabricEvent = { e: mouseEvent };
+    const fabricEvent: FabricMouseEvent = { e: mouseEvent };
     
     // Call the handler directly
     mockHandler(fabricEvent);
@@ -120,7 +132,7 @@ describe('Grid drawing with mouse and stylus', () => {
       touches: [{ force: 0.5, clientX: 100, clientY: 100 }]
     } as unknown as TouchEvent;
     
-    const fabricEvent = { e: touchEvent };
+    const fabricEvent: FabricMouseEvent = { e: touchEvent };
     
     // Call the handler directly
     mockHandler(fabricEvent);

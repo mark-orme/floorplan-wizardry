@@ -34,7 +34,7 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
 
   // Floor plan data loading
   const { 
-    loadFloorPlansData 
+    loadFloorPlansData: originalLoadFloorPlansData
   } = useFloorPlanLoader({
     setIsLoading,
     setFloorPlans,
@@ -42,6 +42,13 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
     setErrorMessage,
     loadData
   });
+
+  // Wrapper function to convert Promise<boolean> to Promise<void>
+  const loadFloorPlansData = async (): Promise<void> => {
+    await originalLoadFloorPlansData();
+    // Return void explicitly
+    return;
+  };
 
   // Load floor plans data
   useEffect(() => {
