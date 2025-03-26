@@ -37,24 +37,24 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
       // Set canvas dimensions explicitly based on container
       if (containerRect.width > 0 && containerRect.height > 0) {
         canvasReference.current.width = containerRect.width;
-        canvasReference.current.height = Math.max(containerRect.height, 950); // Increased from 900 to 950
+        canvasReference.current.height = Math.max(containerRect.height, 1000); // Increased from 950 to 1000
         
         // Also set style dimensions to match
         canvasReference.current.style.width = `${containerRect.width}px`;
-        canvasReference.current.style.height = `${Math.max(containerRect.height, 950)}px`; // Increased from 900 to 950
+        canvasReference.current.style.height = `${Math.max(containerRect.height, 1000)}px`; // Increased from 950 to 1000
         
         // Force a reflow to ensure dimensions are applied
         canvasReference.current.getBoundingClientRect();
         
         console.log("Canvas sized to dimensions:", 
-          containerRect.width, "x", Math.max(containerRect.height, 950));
+          containerRect.width, "x", Math.max(containerRect.height, 1000));
       } else {
         // Fallback sizes if container dimensions are not available
-        canvasReference.current.width = 1200; // Increased from 1000 to 1200
-        canvasReference.current.height = 950; // Increased from 900 to 950
-        canvasReference.current.style.width = "1200px"; // Increased from 1000 to 1200
-        canvasReference.current.style.height = "950px"; // Increased from 900 to 950
-        console.log("Using fallback canvas dimensions: 1200x950");
+        canvasReference.current.width = 1400; // Increased from 1200 to 1400
+        canvasReference.current.height = 1000; // Increased from 950 to 1000
+        canvasReference.current.style.width = "1400px"; // Increased from 1200 to 1400
+        canvasReference.current.style.height = "1000px"; // Increased from 950 to 1000
+        console.log("Using fallback canvas dimensions: 1400x1000");
       }
     }
   }, [canvasReference]);
@@ -63,7 +63,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
     <Card className="p-0 bg-white shadow-md rounded-lg"> {/* Removed padding completely */}
       <div 
         ref={containerRef} 
-        className="w-full h-[950px] md:h-[1000px] relative" // Increased heights from 900/950 to 950/1000
+        className="w-full h-[1000px] md:h-[1050px] relative" // Increased heights from 950/1000 to 1000/1050
       >
         <canvas 
           ref={canvasReference} 

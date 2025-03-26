@@ -18,11 +18,11 @@ export const LARGE_GRID_SPACING = 1.0; // 1.0 meter
 export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
 
 // Grid size limits to prevent performance issues
-export const MAX_SMALL_GRID_LINES = 1500; // Increased from 1200 to 1500
-export const MAX_LARGE_GRID_LINES = 300; // Increased from 250 to 300
+export const MAX_SMALL_GRID_LINES = 2000; // Increased from 1500 to 2000
+export const MAX_LARGE_GRID_LINES = 400; // Increased from 300 to 400
 
 // Grid extension factor (how much beyond canvas to draw)
-export const GRID_EXTENSION_FACTOR = 1.5; // Increased from 1.2 to 1.5 for better coverage
+export const GRID_EXTENSION_FACTOR = 3.0; // Increased from 1.5 to 3.0 for much better coverage
 
 // Style options for grid lines
 export const SMALL_GRID_LINE_OPTIONS = {
@@ -64,7 +64,7 @@ export const DISABLE_GRID_MARKERS = true;
  * @returns {boolean} True if small grid should be skipped
  */
 export const shouldSkipSmallGrid = (width: number, height: number): boolean => {
-  return width * height > 7000000; // Increased threshold from 6000000 to 7000000
+  return width * height > 8000000; // Increased threshold from 7000000 to 8000000
 };
 
 /**
@@ -79,9 +79,9 @@ export const calculateGridDensity = (width: number, height: number) => {
   const area = width * height;
   
   // For very large canvases, reduce grid density
-  if (area > 7000000) { // Increased from 6000000 to 7000000
+  if (area > 8000000) { // Increased from 7000000 to 8000000
     return { smallGridVisible: false, smallGridInterval: 5 };
-  } else if (area > 3000000) { // Increased from 2500000 to 3000000
+  } else if (area > 4000000) { // Increased from 3000000 to 4000000
     return { smallGridVisible: true, smallGridInterval: 2 };
   } else {
     return { smallGridVisible: true, smallGridInterval: 1 };

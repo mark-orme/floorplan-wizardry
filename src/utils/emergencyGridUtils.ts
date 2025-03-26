@@ -27,13 +27,16 @@ export const createBasicEmergencyGrid = (
     const width = Math.max(canvas.width || 800, 1200);
     const height = Math.max(canvas.height || 600, 950);
     
-    // Extend the grid beyond canvas boundaries
-    const extendedWidth = width * 1.5;
-    const extendedHeight = height * 1.5;
-    const startX = -width / 4;
-    const startY = -height / 4;
-    const endX = extendedWidth;
-    const endY = extendedHeight;
+    // Extend the grid beyond canvas boundaries - much larger extension
+    const extensionFactor = 4.0; // Increased from 1.5 to 4.0
+    const extendedWidth = width * extensionFactor;
+    const extendedHeight = height * extensionFactor;
+    
+    // Start grid further outside the viewport for better panning
+    const startX = -width * (extensionFactor - 1) / 2;
+    const startY = -height * (extensionFactor - 1) / 2;
+    const endX = width * extensionFactor / 2;
+    const endY = height * extensionFactor / 2;
     
     // Create a more dense grid with smaller intervals
     const smallGridSpacing = 50; // 50px between small grid lines

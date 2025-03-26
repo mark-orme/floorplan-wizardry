@@ -175,7 +175,67 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
       (obj as any).hoverCursor = 'grab';
     });
     
-    logger.info("Panning mode enabled");
+    // Increase the viewport boundaries for panning beyond visible area
+    // This will allow users to pan beyond the initial viewport
+    if (!extendedCanvas.originalViewportTransform) {
+      extendedCanvas.originalViewportTransform = [...canvas.viewportTransform];
+    }
+    
+    // Add enhanced panning mouse down handler
+    canvas.on('mouse:down', function(opt) {
+      if (!extendedCanvas.isPanning) return;
+      
+      const evt = opt.e;
+      extendedCanvas.isDragging = true;
+      extendedCanvas.lastPosX = evt.clientX;
+      extendedCanvas.lastPosY = evt.clientY;
+      
+      // Change cursor to indicate active panning
+      canvas.defaultCursor = 'grabbing';
+      canvas.hoverCursor = 'grabbing';
+      canvas.requestRenderAll();
+    });
+    
+    // Add enhanced panning mouse move handler
+    canvas.on('mouse:move', function(opt) {
+      if (!extendedCanvas.isDragging || !extendedCanvas.isPanning) return;
+      
+      const evt = opt.e;
+      const vpt = canvas.viewportTransform;
+      
+      // Calculate new position with enhanced panning range
+      // The multiplier (2) allows for faster panning
+      vpt[4] += (evt.clientX - extendedCanvas.lastPosX) * 1.5;
+      vpt[5] += (evt.clientY - extendedCanvas.lastPosY) * 1.5;
+      
+      // Allow panning further than the default boundaries
+      // This is key to exploring the "unlimited" grid
+      const maxPanDistance = Math.max(canvas.width, canvas.height) * 5;
+      
+      // Don't restrict panning too much - allow exploring beyond visible area
+      vpt[4] = Math.min(Math.max(vpt[4], -maxPanDistance), maxPanDistance);
+      vpt[5] = Math.min(Math.max(vpt[5], -maxPanDistance), maxPanDistance);
+      
+      extendedCanvas.lastPosX = evt.clientX;
+      extendedCanvas.lastPosY = evt.clientY;
+      
+      canvas.requestRenderAll();
+      canvas.fire('viewport:transform');
+    });
+    
+    // Add enhanced panning mouse up handler
+    canvas.on('mouse:up', function() {
+      if (!extendedCanvas.isPanning) return;
+      
+      extendedCanvas.isDragging = false;
+      
+      // Reset cursor back to grab (not grabbing)
+      canvas.defaultCursor = 'grab';
+      canvas.hoverCursor = 'grab';
+      canvas.requestRenderAll();
+    });
+    
+    logger.info("Enhanced panning mode enabled with extended boundaries");
   } else if (extendedCanvas.originalState) {
     // Restore original interaction modes
     canvas.selection = extendedCanvas.originalState.selection;
@@ -183,11 +243,20 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
     canvas.hoverCursor = extendedCanvas.originalState.hoverCursor;
     canvas.isDrawingMode = extendedCanvas.originalState.isDrawingMode;
     
-    // Clear reference to original state
+    // Remove panning event handlers
+    canvas.off('mouse:down');
+    canvas.off('mouse:move');
+    canvas.off('mouse:up');
+    
+    // Clear reference to original state and dragging state
     delete extendedCanvas.originalState;
+    delete extendedCanvas.isDragging;
+    delete extendedCanvas.lastPosX;
+    delete extendedCanvas.lastPosY;
     
     logger.info("Panning mode disabled");
   }
   
   canvas.requestRenderAll();
 };
+
