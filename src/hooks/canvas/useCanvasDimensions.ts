@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas dimensions
  * Handles setting up and tracking canvas sizing
@@ -6,6 +7,8 @@
 import { useEffect, useRef, useState } from "react";
 import logger from "@/utils/logger";
 import { captureError } from "@/utils/sentryUtils";
+import { handleError } from "@/utils/errorHandling";
+import { measurePerformance } from "@/utils/performance";
 import { 
   DEFAULT_CANVAS_HEIGHT,
   DEFAULT_CANVAS_WIDTH
@@ -43,8 +46,12 @@ export const useCanvasDimensions = ({
     const setupCanvasDimensions = () => {
       if (canvasReference.current && containerRef.current) {
         try {
-          // Get container dimensions
-          const containerRect = containerRef.current.getBoundingClientRect();
+          // Measure performance of the container size calculation
+          const [containerRect] = measurePerformance(
+            'Get container dimensions', 
+            () => containerRef.current!.getBoundingClientRect(),
+            { attempt: dimensionsSetupAttempt }
+          );
           
           // Track this attempt for debugging
           dimensionSetupHistoryRef.current.push({
@@ -69,16 +76,22 @@ export const useCanvasDimensions = ({
           if (containerRect.width > 0 && containerRect.height > 0) {
             logger.info(`Setting canvas dimensions to ${containerRect.width}x${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}`);
             
-            // Set canvas dimensions explicitly based on container
-            canvasReference.current.width = containerRect.width;
-            canvasReference.current.height = Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT);
-            
-            // Also set style dimensions to match
-            canvasReference.current.style.width = `${containerRect.width}px`;
-            canvasReference.current.style.height = `${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}px`;
-            
-            // Force a reflow to ensure dimensions are applied
-            canvasReference.current.getBoundingClientRect();
+            // Measure performance of the dimension setting
+            const [, dimensionSetMeasurement] = measurePerformance(
+              'Set canvas dimensions', 
+              () => {
+                // Set canvas dimensions explicitly based on container
+                canvasReference.current!.width = containerRect.width;
+                canvasReference.current!.height = Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT);
+                
+                // Also set style dimensions to match
+                canvasReference.current!.style.width = `${containerRect.width}px`;
+                canvasReference.current!.style.height = `${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}px`;
+                
+                // Force a reflow to ensure dimensions are applied
+                return canvasReference.current!.getBoundingClientRect();
+              }
+            );
             
             // Signal that canvas is ready after dimensions are set
             setCanvasReady(true);
@@ -88,7 +101,8 @@ export const useCanvasDimensions = ({
               width: canvasReference.current.width,
               height: canvasReference.current.height,
               containerWidth: containerRect.width,
-              containerHeight: containerRect.height
+              containerHeight: containerRect.height,
+              setTime: dimensionSetMeasurement.duration.toFixed(2) + 'ms'
             });
           } else {
             // Use fallback dimensions if container dimensions aren't available
@@ -133,14 +147,12 @@ export const useCanvasDimensions = ({
             }
           }
         } catch (error) {
-          logger.error("Error setting canvas dimensions:", error);
-          
-          // Report error to Sentry
-          captureError(error, 'canvas-container-setup-error', {
-            level: 'warning',
-            extra: {
-              setupHistory: dimensionSetupHistoryRef.current,
-              attempt: dimensionsSetupAttempt
+          handleError(error, {
+            component: 'useCanvasDimensions',
+            operation: 'setup-canvas-dimensions',
+            data: {
+              attempt: dimensionsSetupAttempt,
+              setupHistory: dimensionSetupHistoryRef.current
             }
           });
           

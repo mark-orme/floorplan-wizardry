@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for processing points in drawing operations
+ * Handles point transformation and grid snapping
  * @module usePointProcessing
  */
 import { useCallback } from "react";
@@ -10,6 +11,7 @@ import { DrawingTool } from "./useCanvasState";
 import { isTouchEvent } from "@/utils/fabric";
 import { snapToGrid } from "@/utils/grid/core"; // Import from core directly
 import { straightenStroke } from "@/utils/geometry/straightening";
+import { handleError } from "@/utils/errorHandling";
 
 /**
  * Props for the usePointProcessing hook
@@ -40,6 +42,8 @@ export interface UsePointProcessingReturn {
 
 /**
  * Hook for processing drawing points
+ * Handles point extraction, transformation, and grid snapping
+ * 
  * @param {UsePointProcessingProps} props - Hook properties
  * @returns {UsePointProcessingReturn} Point processing functions
  */
@@ -50,97 +54,13 @@ export const usePointProcessing = ({
 }: UsePointProcessingProps): UsePointProcessingReturn => {
   /**
    * Process point from mouse or touch event
+   * Extracts canvas coordinates and applies appropriate transformations
+   * 
    * @param {MouseEvent | TouchEvent} e - Mouse or touch event
    * @returns {Point | null} Processed point or null if not applicable
    */
   const processPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
-    if (!fabricCanvasRef.current) return null;
-
-    let clientX: number;
-    let clientY: number;
-
-    if (isTouchEvent(e)) {
-      clientX = e.touches[0]?.clientX || 0;
-      clientY = e.touches[0]?.clientY || 0;
-    } else {
-      clientX = (e as MouseEvent).clientX;
-      clientY = (e as MouseEvent).clientY;
-    }
-
-    if (clientX === undefined || clientY === undefined) {
-      console.warn("ClientX or ClientY is undefined. Touch event might be incomplete.");
-      return null;
-    }
-
-    // Create a pointer event-like object that Fabric.js can process
-    const pointer = fabricCanvasRef.current.getPointer({ clientX, clientY } as any);
-
-    if (!pointer || pointer.x === undefined || pointer.y === undefined) {
-      console.warn("Pointer or pointer coordinates are undefined.");
-      return null;
-    }
-
-    // Apply grid snapping based on current tool
-    const point = {
-      x: pointer.x,
-      y: pointer.y
-    };
-    
-    if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
-      return snapToGrid(point);
-    }
-
-    return point;
-  }, [fabricCanvasRef, tool]);
-  
-  /**
-   * Process path points from a fabric path
-   * @param {any} path - Fabric path object
-   * @param {boolean} isEnclosed - Whether the path should be enclosed
-   * @returns {Object} Processed points
-   */
-  const processPathPoints = useCallback((path: any, isEnclosed: boolean = false): { 
-    finalPoints: Point[];
-    pixelPoints: Point[];
-  } => {
-    // Extract points from path object if it exists
-    const extractedPoints: Point[] = [];
-    
-    if (path && path.path) {
-      try {
-        // Process the path data to extract points
-        for (let i = 0; i < path.path.length; i++) {
-          const cmd = path.path[i];
-          
-          // Only process line commands (L, l) and move commands (M, m)
-          if (cmd[0] === 'L' || cmd[0] === 'l' || cmd[0] === 'M' || cmd[0] === 'm') {
-            extractedPoints.push({ x: cmd[1], y: cmd[2] });
-          }
-        }
-        
-        // If the path should be enclosed, connect the last point to the first point
-        if (isEnclosed && extractedPoints.length > 0) {
-          extractedPoints.push({ ...extractedPoints[0] });
-        }
-      } catch (error) {
-        console.error("Error processing path points:", error);
-      }
-    }
-    
-    // Apply grid snapping and straightening
-    const processedPoints = 
-      (tool === 'wall' || tool === 'room' || tool === 'straightLine') 
-        ? straightenStroke(extractedPoints.map(pt => snapToGrid(pt)))
-        : extractedPoints;
-    
-    return { 
-      finalPoints: processedPoints, 
-      pixelPoints: processedPoints 
-    };
-  }, [tool]);
-  
-  return { 
-    processPoint: useCallback((e: MouseEvent | TouchEvent): Point | null => {
+    try {
       if (!fabricCanvasRef.current) return null;
 
       let clientX: number;
@@ -167,18 +87,83 @@ export const usePointProcessing = ({
         return null;
       }
 
-      // Apply grid snapping based on current tool
+      // Create point from pointer coordinates
       const point = {
         x: pointer.x,
         y: pointer.y
       };
       
+      // Apply grid snapping based on current tool
       if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
         return snapToGrid(point);
       }
 
       return point;
-    }, [fabricCanvasRef, tool]),
+    } catch (error) {
+      handleError(error, {
+        component: 'usePointProcessing',
+        operation: 'process-point'
+      });
+      return null;
+    }
+  }, [fabricCanvasRef, tool]);
+  
+  /**
+   * Process path points from a fabric path
+   * Extracts points, applies transformations, and handles path enclosure
+   * 
+   * @param {any} path - Fabric path object
+   * @param {boolean} isEnclosed - Whether the path should be enclosed
+   * @returns {Object} Processed points for final and pixel representations
+   */
+  const processPathPoints = useCallback((path: any, isEnclosed: boolean = false): { 
+    finalPoints: Point[];
+    pixelPoints: Point[];
+  } => {
+    try {
+      // Extract points from path object if it exists
+      const extractedPoints: Point[] = [];
+      
+      if (path && path.path) {
+        // Process the path data to extract points
+        for (let i = 0; i < path.path.length; i++) {
+          const cmd = path.path[i];
+          
+          // Only process line commands (L, l) and move commands (M, m)
+          if (cmd[0] === 'L' || cmd[0] === 'l' || cmd[0] === 'M' || cmd[0] === 'm') {
+            extractedPoints.push({ x: cmd[1], y: cmd[2] });
+          }
+        }
+        
+        // If the path should be enclosed, connect the last point to the first point
+        if (isEnclosed && extractedPoints.length > 0) {
+          extractedPoints.push({ ...extractedPoints[0] });
+        }
+      }
+      
+      // Apply grid snapping and straightening based on current tool
+      const processedPoints = 
+        (tool === 'wall' || tool === 'room' || tool === 'straightLine') 
+          ? straightenStroke(extractedPoints.map(pt => snapToGrid(pt)))
+          : extractedPoints;
+      
+      return { 
+        finalPoints: processedPoints, 
+        pixelPoints: processedPoints 
+      };
+    } catch (error) {
+      handleError(error, {
+        component: 'usePointProcessing',
+        operation: 'process-path-points'
+      });
+      
+      // Return empty arrays on error
+      return { finalPoints: [], pixelPoints: [] };
+    }
+  }, [tool]);
+  
+  return { 
+    processPoint,
     processPathPoints 
   };
 };

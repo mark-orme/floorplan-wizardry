@@ -8,7 +8,7 @@ import { DebugInfo } from "../DebugInfo";
 import { DebugInfoState } from "@/types/debugTypes";
 
 interface CanvasDebugWrapperProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   debugInfo: DebugInfoState;
   canvasReady: boolean;
   dimensionsSetupAttempt: number;

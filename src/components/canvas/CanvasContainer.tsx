@@ -12,6 +12,7 @@ import { DebugInfoState } from "@/types/debugTypes";
 import { useCanvasDimensions } from "@/hooks/canvas/useCanvasDimensions";
 import { CanvasElement } from "./CanvasElement";
 import { CanvasDebugWrapper } from "./CanvasDebugWrapper";
+import { handleError } from "@/utils/errorHandling";
 
 interface CanvasContainerProps {
   debugInfo: DebugInfoState;
@@ -46,13 +47,20 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
     useEffect(() => {
       if (!ref) return;
       
-      // Handle the ref properly based on its type
-      if (typeof ref === 'function') {
-        // If it's a function ref, call it with the current div
-        ref(containerRef.current);
-      } else {
-        // If it's an object ref, set its current property
-        ref.current = containerRef.current;
+      try {
+        // Handle the ref properly based on its type
+        if (typeof ref === 'function') {
+          // If it's a function ref, call it with the current div
+          ref(containerRef.current);
+        } else {
+          // If it's an object ref, set its current property
+          ref.current = containerRef.current;
+        }
+      } catch (error) {
+        handleError(error, {
+          component: 'CanvasContainer',
+          operation: 'ref-forwarding'
+        });
       }
     }, [ref]);
 
@@ -76,7 +84,7 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
           dimensionsSetupAttempt={dimensionsSetupAttempt}
           startTime={startTimeRef.current}
         >
-          {/* Debug wrapper gets canvas as children */}
+          {/* Debug wrapper children placeholder */}
         </CanvasDebugWrapper>
       </Card>
     );
