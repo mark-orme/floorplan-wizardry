@@ -15,7 +15,7 @@ import { useCanvasGrid } from '@/hooks/useCanvasGrid';
 import { useCanvasDimensions } from '@/hooks/useCanvasDimensions';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
-import { createEmergencyGrid } from '@/utils/emergencyGridUtils';
+import { createEmergencyGrid, attemptCanvasRepair, resetEmergencyGridState } from '@/utils/emergencyGridUtils';
 
 // Context interface
 export interface CanvasControllerContextValue {
@@ -71,6 +71,9 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
   const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({ past: [], future: [] });
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
   const gridCreatedRef = useRef<boolean>(false);
+  const directInitAttemptedRef = useRef<boolean>(false);
+  const maxDirectAttempts = 3;
+  const directAttemptsRef = useRef<number>(0);
   
   // Get canvas dimensions
   const { width: initialCanvasWidth, height: initialCanvasHeight } = useCanvasDimensions();
@@ -106,7 +109,7 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
     setErrorMessage
   });
   
-  // Create the grid management hook - fix the destructuring
+  // Get the createGrid function from useCanvasGrid
   const createGrid = useCanvasGrid({
     gridLayerRef,
     canvasDimensions: { width: initialCanvasWidth, height: initialCanvasHeight },
@@ -128,69 +131,116 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
     }
   }, [setupCanvasRef, setupFabricCanvasRef, setupHistoryRef]);
   
-  // Direct grid creation effect - this will create the grid regardless of other hooks
+  // Direct intervention effect - breaks the loop by detecting when we have continuous initialization
   useEffect(() => {
-    // Only proceed if we have a valid fabric canvas and haven't already created a grid
-    if (!fabricCanvasRef.current || gridCreatedRef.current) {
-      return;
-    }
-    
-    // Set a timeout to ensure canvas is fully ready
-    const timeoutId = setTimeout(() => {
-      try {
-        logger.info("Creating grid directly from CanvasController");
+    const attemptDirectInitialization = () => {
+      // Only proceed if we haven't reached max attempts
+      if (directAttemptsRef.current >= maxDirectAttempts) {
+        logger.warn(`Reached maximum direct initialization attempts (${maxDirectAttempts})`);
         
-        // Check that canvas is properly initialized
-        const canvas = fabricCanvasRef.current;
-        if (!canvas) {
-          logger.warn("Canvas not available for direct grid creation");
-          return;
-        }
-        
-        // Try normal grid creation first
-        let gridObjects = createGrid(canvas);
-        
-        // If that didn't work, try emergency grid
-        if (!gridObjects || gridObjects.length === 0) {
-          logger.warn("Direct grid creation failed, using emergency fallback");
-          gridObjects = createEmergencyGrid(canvas, {
-            width: initialCanvasWidth || 1000,
-            height: initialCanvasHeight || 800
-          });
+        // If we still don't have a grid after max attempts, try repair
+        if (!gridCreatedRef.current && fabricCanvasRef.current) {
+          logger.info("Attempting canvas repair after max direct attempts");
           
-          if (gridObjects.length > 0) {
-            toast.success("Grid created successfully", {
-              id: "emergency-grid-created",
-              duration: 2000
-            });
+          // Try to repair the canvas directly
+          const repaired = attemptCanvasRepair(fabricCanvasRef.current);
+          if (repaired) {
+            logger.info("Canvas repair successful");
+            toast.success("Canvas initialized successfully", { duration: 2000 });
+          } else {
+            logger.error("Canvas repair failed");
+            setHasError(true);
+            setErrorMessage("Canvas initialization failed. Please try refreshing the page.");
           }
         }
         
-        // Store grid objects in ref
-        gridLayerRef.current = gridObjects;
-        
-        // Mark grid as created
-        gridCreatedRef.current = true;
-        
-        // Force render to ensure grid is visible
-        canvas.requestRenderAll();
-        
-        // Update debug info
-        setDebugInfo(prev => ({
-          ...prev,
-          gridCreated: true,
-          gridObjectCount: gridObjects.length,
-          canvasReady: true
-        }));
-        
-        logger.info(`Grid initialized with ${gridObjects.length} objects from CanvasController`);
-      } catch (error) {
-        logger.error("Error in direct grid creation:", error);
+        return;
       }
-    }, 500);
+      
+      directAttemptsRef.current++;
+      logger.info(`Direct initialization attempt #${directAttemptsRef.current}`);
+      
+      if (!fabricCanvasRef.current) {
+        logger.warn("No fabricCanvas available for direct initialization");
+        return;
+      }
+      
+      try {
+        // Check if the grid is already created by regular means
+        if (gridCreatedRef.current) {
+          logger.info("Grid already created, skipping direct initialization");
+          return;
+        }
+        
+        // First attempt regular grid creation
+        const gridObjects = createGrid(fabricCanvasRef.current);
+        
+        if (gridObjects && gridObjects.length > 0) {
+          logger.info(`Direct grid creation successful with ${gridObjects.length} objects`);
+          gridLayerRef.current = gridObjects;
+          gridCreatedRef.current = true;
+          
+          // Force render to ensure grid is visible
+          fabricCanvasRef.current.requestRenderAll();
+          
+          // Update debug info
+          setDebugInfo(prev => ({
+            ...prev,
+            gridCreated: true,
+            gridObjectCount: gridObjects.length,
+            canvasReady: true
+          }));
+          
+          toast.success("Canvas initialized successfully", { duration: 2000 });
+          
+          return;
+        }
+        
+        // If regular creation fails, use emergency grid
+        logger.warn("Direct grid creation produced no objects, using emergency grid");
+        resetEmergencyGridState(); // Reset state to allow a fresh attempt
+        
+        const emergencyGrid = createEmergencyGrid(fabricCanvasRef.current, {
+          width: initialCanvasWidth || 1000,
+          height: initialCanvasHeight || 800,
+          debug: true
+        });
+        
+        if (emergencyGrid.length > 0) {
+          logger.info(`Emergency grid created with ${emergencyGrid.length} objects`);
+          gridLayerRef.current = emergencyGrid;
+          gridCreatedRef.current = true;
+          
+          // Force render to ensure grid is visible
+          fabricCanvasRef.current.requestRenderAll();
+          
+          // Update debug info
+          setDebugInfo(prev => ({
+            ...prev,
+            gridCreated: true,
+            gridObjectCount: emergencyGrid.length,
+            canvasReady: true,
+            isEmergencyGrid: true
+          }));
+        } else {
+          logger.error("Emergency grid creation failed");
+        }
+      } catch (error) {
+        logger.error("Error in direct initialization:", error);
+      }
+    };
+    
+    // Set timeout to allow normal initialization first, then intervene
+    const timeoutId = setTimeout(() => {
+      // Check if we already have a grid
+      if (!gridCreatedRef.current && fabricCanvasRef.current) {
+        logger.warn("No grid created by normal means, attempting direct initialization");
+        attemptDirectInitialization();
+      }
+    }, 1500); // Wait 1.5 seconds before direct intervention
     
     return () => clearTimeout(timeoutId);
-  }, [fabricCanvasRef.current, createGrid, initialCanvasWidth, initialCanvasHeight, setDebugInfo]);
+  }, [createGrid, initialCanvasWidth, initialCanvasHeight, setDebugInfo, setHasError, setErrorMessage]);
   
   // Define dummy functions for now - these will be properly implemented
   const refreshCanvas = () => {}; 
@@ -218,8 +268,15 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
     // Reset grid created flag
     gridCreatedRef.current = false;
     
+    // Reset direct initialization attempts
+    directAttemptsRef.current = 0;
+    directInitAttemptedRef.current = false;
+    
     // Clear grid objects
     gridLayerRef.current = [];
+    
+    // Reset emergency grid state
+    resetEmergencyGridState();
     
     // Reset error state
     setHasError(false);
