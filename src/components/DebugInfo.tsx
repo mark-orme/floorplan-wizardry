@@ -1,5 +1,5 @@
 
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 
 interface DebugInfoProps {
   debugInfo: DebugInfoState;
@@ -35,11 +35,11 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
         
         <div>
           <h3 className="font-bold">Performance Metrics</h3>
-          <p>FPS: {debugInfo.performanceStats.fps?.toFixed(1) || 'N/A'}</p>
-          <p>Dropped Frames: {debugInfo.performanceStats.droppedFrames || 0}</p>
-          <p>Avg Frame Time: {debugInfo.performanceStats.frameTime?.toFixed(2) || 'N/A'}ms</p>
-          <p>Max Frame Time: {debugInfo.performanceStats.maxFrameTime?.toFixed(2) || 'N/A'}ms</p>
-          <p>Long Frames: {debugInfo.performanceStats.longFrames || 0}</p>
+          <p>FPS: {debugInfo.performanceStats?.fps?.toFixed(1) || 'N/A'}</p>
+          <p>Dropped Frames: {debugInfo.performanceStats?.droppedFrames || 0}</p>
+          <p>Avg Frame Time: {debugInfo.performanceStats?.frameTime?.toFixed(2) || 'N/A'}ms</p>
+          <p>Max Frame Time: {debugInfo.performanceStats?.maxFrameTime?.toFixed(2) || 'N/A'}ms</p>
+          <p>Long Frames: {debugInfo.performanceStats?.longFrames || 0}</p>
           {debugInfo.lastError && (
             <p className="text-red-500">
               Error: {debugInfo.lastError} ({new Date(debugInfo.lastErrorTime || 0).toLocaleTimeString()})

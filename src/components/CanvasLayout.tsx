@@ -7,10 +7,11 @@ import { DrawingToolbar } from "./DrawingToolbar";
 import { FloorPlanList } from "./FloorPlanList";
 import { CanvasContainer } from "./CanvasContainer";
 import { DrawingTool } from "@/hooks/useCanvasState";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 import { FloorPlan } from "@/utils/drawing";
 import { Button } from "./ui/button";
 import { HelpCircle } from "lucide-react";
+import { ReactNode } from "react";
 
 interface CanvasLayoutProps {
   tool: DrawingTool;
@@ -33,6 +34,7 @@ interface CanvasLayoutProps {
   onLineThicknessChange: (thickness: number) => void;
   onLineColorChange: (color: string) => void;
   onShowMeasurementGuide: () => void;
+  children?: ReactNode; // Add children prop
 }
 
 /**
@@ -60,12 +62,13 @@ export const CanvasLayout = ({
   onAddFloor,
   onLineThicknessChange,
   onLineColorChange,
-  onShowMeasurementGuide
+  onShowMeasurementGuide,
+  children // Add children to destructuring
 }: CanvasLayoutProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-0 p-0 max-w-[2560px] mx-auto"> {/* Removed gap, increased max-width further */}
+    <div className="flex flex-col gap-0 p-0 max-w-[2560px] mx-auto">
       {/* Drawing tools bar positioned at top */}
-      <div className="flex justify-between items-center mb-0"> {/* Removed bottom margin */}
+      <div className="flex justify-between items-center mb-0">
         <DrawingToolbar
           tool={tool}
           onToolChange={onToolChange}
@@ -87,16 +90,16 @@ export const CanvasLayout = ({
           variant="outline"
           size="sm"
           onClick={onShowMeasurementGuide}
-          className="ml-1" /* Reduced margin */
+          className="ml-1"
         >
           <HelpCircle className="h-4 w-4 mr-1" />
           Measurement Guide
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-0"> {/* Removed gap entirely */}
+      <div className="flex flex-col md:flex-row gap-0">
         {/* Sidebar for floor plans - made even narrower */}
-        <div className="md:w-24"> {/* Reduced from w-28 to w-24 */}
+        <div className="md:w-24">
           <FloorPlanList 
             floorPlans={floorPlans}
             currentFloor={currentFloor}
@@ -107,10 +110,15 @@ export const CanvasLayout = ({
         
         {/* Canvas container - takes more space */}
         <div className="flex-1 canvas-container">
-          <CanvasContainer 
-            debugInfo={debugInfo} 
-            canvasRef={canvasRef}
-          />
+          {/* If children are provided, render them instead of CanvasContainer */}
+          {children ? (
+            children
+          ) : (
+            <CanvasContainer 
+              debugInfo={debugInfo} 
+              canvasRef={canvasRef}
+            />
+          )}
         </div>
       </div>
     </div>
