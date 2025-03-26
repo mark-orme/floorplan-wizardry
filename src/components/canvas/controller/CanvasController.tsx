@@ -104,8 +104,8 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
     setErrorMessage
   });
   
-  // Create the grid management hook
-  const { createGrid } = useCanvasGrid({
+  // Create the grid management hook - fix the destructuring
+  const createGrid = useCanvasGrid({
     gridLayerRef,
     canvasDimensions: { width: initialCanvasWidth, height: initialCanvasHeight },
     setDebugInfo,
