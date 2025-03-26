@@ -1,7 +1,11 @@
+
 import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
 import { getDB, STORE_NAME } from '@/types/databaseTypes';
 
-/** Load floor plans from IndexedDB (with fallback to localStorage for migration) */
+/** 
+ * Load floor plans from IndexedDB (with fallback to localStorage for migration)
+ * @returns {Promise<FloorPlan[]>} Floor plans loaded from storage
+ */
 export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
   try {
     // Try IndexedDB first
@@ -15,7 +19,7 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     // Fallback to localStorage for existing user data migration
     const saved = localStorage.getItem('floorPlans');
     if (saved) {
-      const parsedData = JSON.parse(saved);
+      const parsedData = JSON.parse(saved) as unknown[];
       // Validate and ensure all required fields are present
       const validData = ensureRequiredFields(parsedData);
       // Immediately save to IndexedDB for future use
@@ -29,7 +33,7 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     try {
       const saved = localStorage.getItem('floorPlans');
       if (saved) {
-        const parsedData = JSON.parse(saved);
+        const parsedData = JSON.parse(saved) as unknown[];
         return ensureRequiredFields(parsedData);
       }
     } catch (localError) {
@@ -48,8 +52,12 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
   }];
 };
 
-/** Save floor plans to IndexedDB (and localStorage as fallback) */
-export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<void> => {
+/** 
+ * Save floor plans to IndexedDB (and localStorage as fallback)
+ * @param {FloorPlan[]} floorPlans - Floor plans to save
+ * @returns {Promise<boolean>} Success indicator
+ */
+export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<boolean> => {
   try {
     // Ensure all required fields and valid paperSize values
     const validatedFloorPlans = ensureRequiredFields(floorPlans);
@@ -60,25 +68,33 @@ export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<void> => 
     
     // Also save to localStorage as fallback/migration path
     localStorage.setItem('floorPlans', JSON.stringify(validatedFloorPlans));
+    return true;
   } catch (e) {
     console.error('Failed to save floor plans to IndexedDB:', e);
     
     // Fallback to just localStorage
     try {
       localStorage.setItem('floorPlans', JSON.stringify(ensureRequiredFields(floorPlans)));
+      return true;
     } catch (localError) {
       console.error('Failed to save floor plans to localStorage:', localError);
+      return false;
     }
   }
 };
 
 /**
  * Helper function to ensure all required fields are present in FloorPlan objects
- * @param {any[]} floorPlans - Array of floor plans to validate
+ * @param {unknown[]} floorPlans - Array of floor plans to validate
  * @returns {FloorPlan[]} Validated floor plans with all required fields
  */
-function ensureRequiredFields(floorPlans: any[]): FloorPlan[] {
-  return floorPlans.map(plan => ({
+function ensureRequiredFields(floorPlans: unknown[]): FloorPlan[] {
+  if (!Array.isArray(floorPlans)) {
+    console.warn("Floor plans data is not an array, creating new empty array");
+    return [];
+  }
+  
+  return floorPlans.map((plan: any) => ({
     ...plan,
     paperSize: validatePaperSize(plan.paperSize),
     // Ensure required fields from both type systems

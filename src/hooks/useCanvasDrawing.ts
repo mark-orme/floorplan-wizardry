@@ -5,7 +5,7 @@
  * @module useCanvasDrawing
  */
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Polyline as FabricPolyline } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { useCanvasHistory } from "./useCanvasHistory";
@@ -156,18 +156,18 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     const fabricCanvas = fabricCanvasRef.current;
     if (fabricCanvas) {
       // Listen for both standard zoom events and our custom event
-      fabricCanvas.on('zoom:changed', updateZoomLevel as (e: unknown) => void);
+      fabricCanvas.on('zoom:changed', updateZoomLevel);
       fabricCanvas.on('custom:zoom-changed', updateZoomLevel);
       
       // Also update on viewport transform changes
-      fabricCanvas.on('viewport:transform', updateZoomLevel as (e: unknown) => void);
+      fabricCanvas.on('viewport:transform', updateZoomLevel);
     }
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('zoom:changed', updateZoomLevel as (e: unknown) => void);
+        fabricCanvas.off('zoom:changed', updateZoomLevel);
         fabricCanvas.off('custom:zoom-changed', updateZoomLevel);
-        fabricCanvas.off('viewport:transform', updateZoomLevel as (e: unknown) => void);
+        fabricCanvas.off('viewport:transform', updateZoomLevel);
       }
     };
   }, [fabricCanvasRef]); // Keep this simple to avoid dependency issues

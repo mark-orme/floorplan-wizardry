@@ -11,7 +11,7 @@ import { arrangeGridObjects } from "../gridRenderer";
 import { handleGridCreationError, scheduleGridRetry } from "./gridErrorHandling";
 import logger from "../logger";
 import { DebugInfoState } from "@/types/drawingTypes";
-import { renderGridComponents } from "../gridRenderer";
+import { renderGridComponents, GridRenderResult } from "../gridRenderer";
 
 /**
  * Create grid layer on the canvas with safety mechanisms
@@ -66,7 +66,7 @@ export const createGridLayer = (
   }
   
   // Create all grid components at once
-  const result = renderGridComponents(canvas, canvasWidth, canvasHeight);
+  const result: GridRenderResult = renderGridComponents(canvas, canvasWidth, canvasHeight);
   
   // Proper error handling and fallback logic
   if (!result.gridObjects.length) {
@@ -123,7 +123,7 @@ export const createFallbackGrid = (
   gridLayerRef: React.MutableRefObject<FabricObject[]>,
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>
 ): FabricObject[] => {
-  const fallbackResult = renderGridComponents(canvas, 800, 600);
+  const fallbackResult: GridRenderResult = renderGridComponents(canvas, 800, 600);
   
   if (fallbackResult.gridObjects.length > 0) {
     if (process.env.NODE_ENV === 'development') {

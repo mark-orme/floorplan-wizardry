@@ -14,8 +14,7 @@ import {
   incrementAttemptCount,
   markCreationSuccessful, 
   markInitialAttempted,
-  isMaxAttemptsReached,
-  GridAttemptStatus
+  isMaxAttemptsReached
 } from "@/utils/gridAttemptTracker";
 
 /**
@@ -33,6 +32,7 @@ interface UseGridManagementProps {
     gridCreated: boolean;
     dimensionsSet: boolean;
     brushInitialized: boolean;
+    [key: string]: unknown;
   };
   /** Function to create grid elements */
   createGrid: (canvas: FabricCanvas) => FabricObject[];
