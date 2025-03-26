@@ -7,6 +7,20 @@
 import { Point } from '@/types/drawingTypes';
 
 /**
+ * Grid line options interface
+ * Defines styling for grid lines
+ * @interface GridLineOptions
+ */
+export interface GridLineOptions {
+  stroke: string;
+  strokeWidth: number;
+  selectable?: boolean;
+  evented?: boolean;
+  objectType?: string;
+  opacity?: number;
+}
+
+/**
  * Validates if a point has valid x and y coordinates
  * Useful for filtering out invalid points
  * 
