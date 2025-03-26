@@ -9,6 +9,7 @@ import { Home } from "lucide-react";
 
 // Create a wrapper component that uses the canvas controller
 const CanvasApp = () => {
+  // Use the canvas controller hook to get all the necessary props
   const {
     tool,
     gia,
