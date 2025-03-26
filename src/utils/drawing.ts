@@ -66,5 +66,5 @@ export const calculateGIA = (points: Array<{x: number, y: number}>): number => {
  */
 export * from '@/types/drawingTypes';
 export * from './geometry'; // This now re-exports from all geometry modules
-export * from './fabricPathUtils';
+export * from './fabricPath'; // Use new modular path utilities
 export * from './floorPlanStorage';
