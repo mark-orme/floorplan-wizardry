@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for initializing the canvas
  * Handles canvas creation, brush setup, and grid initialization
@@ -11,7 +12,7 @@ import { useCanvasBrush } from "./useCanvasBrush";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import { useCanvasGrid } from "./useCanvasGrid";
 import { DrawingTool } from "./useCanvasState";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState, CanvasDimensions } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 
 /**
