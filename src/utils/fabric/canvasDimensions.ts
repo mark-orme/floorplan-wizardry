@@ -17,7 +17,8 @@ export const CANVAS_DIMENSIONS = {
   MIN_WIDTH: 400,
   MIN_HEIGHT: 300,
   DIMENSION_CHANGE_TOLERANCE: 5, // Minimum pixel difference to trigger resize
-  RESIZE_DEBOUNCE_MS: 500 // Debounce time for resize events
+  RESIZE_DEBOUNCE_MS: 500, // Debounce time for resize events
+  STROKE_WIDTH: 1 // Default stroke width for canvas elements
 };
 
 /**

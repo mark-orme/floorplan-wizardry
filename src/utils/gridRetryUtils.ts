@@ -24,7 +24,10 @@ export const DEFAULT_RETRY_CONFIG = {
   backoffFactor: 2,
   
   /** Minimum interval between attempts in milliseconds */
-  minAttemptInterval: 800  // Increased from 500ms to 800ms
+  minAttemptInterval: 800,  // Increased from 500ms to 800ms
+  
+  /** Maximum delay cap in milliseconds */
+  maxDelayMs: 3000
 };
 
 /**
@@ -73,7 +76,7 @@ export const scheduleGridRetry = (
   // Calculate delay with exponential backoff
   const delay = Math.min(
     config.initialDelay * Math.pow(config.backoffFactor, attempt - 1),
-    3000 // Cap at 3 seconds max (increased from 2 seconds)
+    config.maxDelayMs // Use constant instead of hardcoded 3000
   );
   
   if (process.env.NODE_ENV === 'development') {

@@ -64,8 +64,8 @@ export const createSmallGrid = (
   const extendedHeight = canvasHeight * extensionFactor;
   
   // Adjust grid offset to fill the canvas completely
-  const startX = -canvasWidth * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
-  const startY = -canvasHeight * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
+  const startX = -canvasWidth * GRID_OFFSET_FACTOR;
+  const startY = -canvasHeight * GRID_OFFSET_FACTOR;
   const endX = extendedWidth;
   const endY = extendedHeight;
   

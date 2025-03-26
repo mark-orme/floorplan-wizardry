@@ -11,6 +11,22 @@ import logger from "@/utils/logger";
 import { PIXELS_PER_METER } from "@/constants/numerics";
 
 /**
+ * Floor plan drawing constants
+ */
+const DRAWING_CONSTANTS = {
+  /** Default wall color */
+  DEFAULT_WALL_COLOR: '#000000',
+  /** Default room fill color with opacity */
+  DEFAULT_ROOM_FILL: 'rgba(200, 200, 255, 0.2)',
+  /** Default wall thickness in pixels */
+  DEFAULT_WALL_THICKNESS: 2,
+  /** Default room label font size */
+  ROOM_LABEL_FONT_SIZE: 14,
+  /** Default scale factor */
+  DEFAULT_SCALE: 1
+};
+
+/**
  * Floor plan drawing options
  * @interface FloorPlanDrawingOptions
  */
@@ -33,12 +49,12 @@ interface FloorPlanDrawingOptions {
  * Default drawing options
  */
 const DEFAULT_OPTIONS: FloorPlanDrawingOptions = {
-  wallColor: '#000000',
-  roomFillColor: 'rgba(200, 200, 255, 0.2)',
-  wallThickness: 2,
+  wallColor: DRAWING_CONSTANTS.DEFAULT_WALL_COLOR,
+  roomFillColor: DRAWING_CONSTANTS.DEFAULT_ROOM_FILL,
+  wallThickness: DRAWING_CONSTANTS.DEFAULT_WALL_THICKNESS,
   showLabels: true,
   showDimensions: true,
-  scale: 1
+  scale: DRAWING_CONSTANTS.DEFAULT_SCALE
 };
 
 /**
@@ -114,7 +130,7 @@ export const useFloorPlanDrawing = () => {
         wall.end.y * PIXELS_PER_METER
       ], {
         stroke: options.wallColor,
-        strokeWidth: wall.thickness || options.wallThickness || 2,
+        strokeWidth: wall.thickness || options.wallThickness || DRAWING_CONSTANTS.DEFAULT_WALL_THICKNESS,
         selectable: false,
         evented: false,
         objectCaching: true
@@ -157,8 +173,8 @@ export const useFloorPlanDrawing = () => {
         const text = new Text(room.name, {
           left: (room.bounds.x + room.bounds.width / 2) * PIXELS_PER_METER,
           top: (room.bounds.y + room.bounds.height / 2) * PIXELS_PER_METER,
-          fontSize: 14,
-          fill: '#000000',
+          fontSize: DRAWING_CONSTANTS.ROOM_LABEL_FONT_SIZE,
+          fill: DRAWING_CONSTANTS.DEFAULT_WALL_COLOR,
           textAlign: 'center',
           originX: 'center',
           originY: 'center',
@@ -194,7 +210,7 @@ export const useFloorPlanDrawing = () => {
       // Create a polyline for the stroke
       const polyline = new Polyline(pixelPoints, {
         stroke: options.wallColor,
-        strokeWidth: options.wallThickness || 2,
+        strokeWidth: options.wallThickness || DRAWING_CONSTANTS.DEFAULT_WALL_THICKNESS,
         fill: 'transparent',
         selectable: false,
         evented: false,
