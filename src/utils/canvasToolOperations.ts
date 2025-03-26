@@ -3,7 +3,7 @@
  * Canvas tool operations
  * @module canvasToolOperations
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Point } from "fabric";
 import { toast } from "sonner";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { initializeDrawingBrush } from "./fabricBrush";
@@ -121,6 +121,8 @@ export const handleToolChange = (
     case "furniture":
     case "straightLine":
     case "area":
+    case "draw":
+    case "room":
       // Drawing tools - enable drawing mode with appropriate settings
       canvas.isDrawingMode = true;
       enablePanning(canvas, false);
@@ -184,7 +186,8 @@ export const handleZoom = (
   if (newZoom !== zoomLevel) {
     // Apply zoom centered on current viewport
     const center = canvas.getCenter();
-    canvas.zoomToPoint({ x: center.left, y: center.top }, newZoom);
+    const zoomPoint = new Point(center.left, center.top);
+    canvas.zoomToPoint(zoomPoint, newZoom);
     
     // Update state
     setZoomLevel(newZoom);

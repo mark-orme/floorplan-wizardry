@@ -4,7 +4,7 @@
  * Provides functions for enhancing canvas interaction
  * @module fabricInteraction
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Point } from "fabric";
 import logger from "./logger";
 
 /**
@@ -73,7 +73,7 @@ export const addPinchToZoom = (canvas: FabricCanvas): void => {
   };
   
   // Add touch start event handler
-  canvas.on('touch:start', (e: any) => {
+  canvas.on('touch:start' as keyof FabricCanvas["__eventListeners"], (e: any) => {
     if (e.touches && e.touches.length === 2) {
       // Store initial touch positions for pinch gesture
       const p1 = e.touches[0];
@@ -89,7 +89,7 @@ export const addPinchToZoom = (canvas: FabricCanvas): void => {
   });
   
   // Add touch move event handler
-  canvas.on('touch:move', (e: any) => {
+  canvas.on('touch:move' as keyof FabricCanvas["__eventListeners"], (e: any) => {
     if (e.touches && e.touches.length === 2) {
       // Get current touch positions
       const p1 = e.touches[0];
@@ -107,8 +107,9 @@ export const addPinchToZoom = (canvas: FabricCanvas): void => {
       const newZoom = extendedCanvas.touchState.currentZoom * extendedCanvas.touchState.scale;
       const limitedZoom = Math.min(Math.max(newZoom, 0.5), 5);
       
-      // Apply the zoom
-      canvas.zoomToPoint({ x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 }, limitedZoom);
+      // Apply the zoom - create a proper Point instance
+      const zoomPoint = new Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
+      canvas.zoomToPoint(zoomPoint, limitedZoom);
       canvas.fire('zoom:changed' as any);
       
       // Prevent default touch behavior to avoid browser gestures
