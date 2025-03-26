@@ -26,25 +26,12 @@ export const useFloorPlanManagement = ({
    * Currently commented out as we're using a single floor for all plans
    */
   const handleAddFloor = useCallback(() => {
-    // Commented out as requested - drawing all floors on one page
-    /*
-    setFloorPlans(prev => [
-      ...prev, 
-      { 
-        strokes: [], 
-        label: `Floor ${prev.length + 1}`,
-        paperSize: "infinite" as PaperSize,
-        id: `floor-${Date.now()}`,
-        name: `Floor ${prev.length + 1}`,
-        gia: 0
-      }
-    ]);
-    toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);
-    */
+    // Just a placeholder function that doesn't do anything
+    // We're drawing all floors on one page
     
-    // Instead show a toast message explaining the current approach
-    toast.info("All floors are drawn on a single page for better visualization");
-  }, [floorPlans.length, setFloorPlans]);
+    // Commented out toast message to avoid showing notifications
+    // toast.info("All floors are drawn on a single page for better visualization");
+  }, []);
 
   /**
    * Select a floor plan
@@ -61,3 +48,4 @@ export const useFloorPlanManagement = ({
     handleSelectFloor
   };
 };
+

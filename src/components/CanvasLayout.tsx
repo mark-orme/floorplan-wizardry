@@ -63,7 +63,7 @@ export const CanvasLayout = ({
   onShowMeasurementGuide
 }: CanvasLayoutProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-4 p-2 max-w-[1600px] mx-auto"> {/* Reduced gap, padding, increased max-width */}
+    <div className="flex flex-col gap-2 p-1 max-w-[1800px] mx-auto"> {/* Reduced gap, padding, increased max-width */}
       {/* Drawing tools bar positioned at top */}
       <div className="flex justify-between items-center">
         <DrawingToolbar
@@ -94,14 +94,14 @@ export const CanvasLayout = ({
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-4"> {/* Reduced gap from 6 to 4 */}
+      <div className="flex flex-col md:flex-row gap-2"> {/* Reduced gap from 4 to 2 */}
         {/* Sidebar for floor plans - made narrower */}
-        <div className="md:w-48"> {/* Reduced from w-64 to w-48 */}
+        <div className="md:w-36"> {/* Reduced from w-48 to w-36 */}
           <FloorPlanList 
             floorPlans={floorPlans}
             currentFloor={currentFloor}
             onSelect={onFloorSelect}
-            onAdd={onAddFloor} // Fixed: Use the onAddFloor function that doesn't take parameters
+            onAdd={onAddFloor} // Use the onAddFloor function that doesn't take parameters
           />
         </div>
         
@@ -116,3 +116,4 @@ export const CanvasLayout = ({
     </div>
   );
 };
+

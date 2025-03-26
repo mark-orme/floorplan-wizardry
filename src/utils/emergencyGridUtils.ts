@@ -50,7 +50,7 @@ export const createBasicEmergencyGrid = (
       emergencyGrid.push(line);
     }
     
-    // Add a scale marker
+    // Add a scale marker (but no text to avoid displaying numbers)
     const markerLine = new Line([width - 120, height - 30, width - 20, height - 30], {
       stroke: "#000000",
       strokeWidth: 3,
@@ -60,17 +60,7 @@ export const createBasicEmergencyGrid = (
     canvas.add(markerLine);
     emergencyGrid.push(markerLine);
     
-    const markerText = new Text("1m", {
-      left: width - 70,
-      top: height - 45,
-      fontSize: 16,
-      fontWeight: 'bold',
-      fill: "#000000",
-      selectable: false,
-      evented: false
-    });
-    canvas.add(markerText);
-    emergencyGrid.push(markerText);
+    // Removed text marker to avoid showing numbers
     
     canvas.requestRenderAll();
     
@@ -90,3 +80,4 @@ export const createBasicEmergencyGrid = (
     return [];
   }
 };
+

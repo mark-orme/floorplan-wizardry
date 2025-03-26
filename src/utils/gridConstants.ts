@@ -54,7 +54,7 @@ export const MARKER_TEXT_OPTIONS = {
   objectCaching: true
 };
 
-// Set to true to disable markers
+// Set to true to disable markers - changing this to disable grid numbers
 export const DISABLE_GRID_MARKERS = true;
 
 /**
@@ -87,3 +87,4 @@ export const calculateGridDensity = (width: number, height: number) => {
     return { smallGridVisible: true, smallGridInterval: 1 };
   }
 };
+

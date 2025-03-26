@@ -37,37 +37,37 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
       // Set canvas dimensions explicitly based on container
       if (containerRect.width > 0 && containerRect.height > 0) {
         canvasReference.current.width = containerRect.width;
-        canvasReference.current.height = Math.max(containerRect.height, 700); // Increased from 500 to 700
+        canvasReference.current.height = Math.max(containerRect.height, 850); // Increased from 700 to 850
         
         // Also set style dimensions to match
         canvasReference.current.style.width = `${containerRect.width}px`;
-        canvasReference.current.style.height = `${Math.max(containerRect.height, 700)}px`; // Increased from 500 to 700
+        canvasReference.current.style.height = `${Math.max(containerRect.height, 850)}px`; // Increased from 700 to 850
         
         // Force a reflow to ensure dimensions are applied
         canvasReference.current.getBoundingClientRect();
         
         console.log("Canvas sized to dimensions:", 
-          containerRect.width, "x", Math.max(containerRect.height, 700));
+          containerRect.width, "x", Math.max(containerRect.height, 850));
       } else {
         // Fallback sizes if container dimensions are not available
-        canvasReference.current.width = 800;
-        canvasReference.current.height = 700; // Increased from 600 to 700
-        canvasReference.current.style.width = "800px";
-        canvasReference.current.style.height = "700px"; // Increased from 600 to 700
-        console.log("Using fallback canvas dimensions: 800x700");
+        canvasReference.current.width = 900;
+        canvasReference.current.height = 850; // Increased from 700 to 850
+        canvasReference.current.style.width = "900px";
+        canvasReference.current.style.height = "850px"; // Increased from 700 to 850
+        console.log("Using fallback canvas dimensions: 900x850");
       }
     }
   }, [canvasReference]);
 
   return (
-    <Card className="p-4 bg-white shadow-md rounded-lg"> {/* Reduced padding from p-6 to p-4 */}
+    <Card className="p-2 bg-white shadow-md rounded-lg"> {/* Reduced padding from p-4 to p-2 */}
       <div 
         ref={containerRef} 
-        className="w-full h-[700px] md:h-[800px] relative" // Increased heights from 500/600 to 700/800
+        className="w-full h-[850px] md:h-[900px] relative" // Increased heights from 700/800 to 850/900
       >
         <canvas 
           ref={canvasReference} 
-          className="w-full h-full border-2 border-gray-100 focus:outline-blue-500 focus:border-blue-500 rounded-md" 
+          className="w-full h-full border border-gray-100 focus:outline-blue-500 focus:border-blue-500 rounded-md" 
           tabIndex={0}
           aria-label="Floor plan drawing canvas"
           role="application"
@@ -78,3 +78,4 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
     </Card>
   );
 };
+
