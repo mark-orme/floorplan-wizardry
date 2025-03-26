@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for canvas debugging and performance monitoring
+ * Provides debug information, error state, and performance metrics
  * @module useCanvasDebug
  */
 import { useState, useEffect } from "react";
@@ -8,8 +9,22 @@ import { useCanvasPerformance } from "./useCanvasPerformance";
 import { DebugInfoState } from "@/types/debugTypes";
 
 /**
+ * Default performance values for initialization
+ */
+const DEFAULT_PERFORMANCE_STATS = {
+  fps: 0,
+  renderTime: 0,
+  gridCreationTime: 0,
+  objectCreationTime: 0,
+  droppedFrames: 0,
+  frameTime: 0,
+  maxFrameTime: 0,
+  longFrames: 0
+};
+
+/**
  * Hook for managing debug information and performance metrics
- * @returns Debug information and setters
+ * @returns {Object} Debug information, error state, and related functions
  */
 export const useCanvasDebug = () => {
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
@@ -24,26 +39,17 @@ export const useCanvasDebug = () => {
     canvasHeight: 0,
     lastInitTime: 0,
     lastGridCreationTime: 0,
-    // Optional properties
+    // Initialize optional properties with defaults
     gridObjects: 0,
     canvasObjects: 0,
     devicePixelRatio: window.devicePixelRatio || 1,
     lastError: undefined,
     lastErrorTime: 0,
-    performanceStats: {
-      fps: 0,
-      renderTime: 0,
-      gridCreationTime: 0,
-      objectCreationTime: 0,
-      droppedFrames: 0,
-      frameTime: 0,
-      maxFrameTime: 0,
-      longFrames: 0
-    }
+    performanceStats: { ...DEFAULT_PERFORMANCE_STATS }
   });
   
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   
   // Use the dedicated performance hook
   const { 
@@ -56,7 +62,10 @@ export const useCanvasDebug = () => {
     stopPerformanceTracking
   } = useCanvasPerformance();
 
-  // Track debug info changes for performance metrics
+  /**
+   * Track debug info changes for performance metrics
+   * Updates performance stats when canvas is initialized or grid is created
+   */
   useEffect(() => {
     if (debugInfo.canvasInitialized) {
       markCanvasReady();
@@ -71,9 +80,9 @@ export const useCanvasDebug = () => {
       ...prev,
       performanceStats: {
         fps: performanceMetrics.fps,
-        renderTime: prev.performanceStats?.renderTime,
-        gridCreationTime: prev.performanceStats?.gridCreationTime,
-        objectCreationTime: prev.performanceStats?.objectCreationTime,
+        renderTime: prev.performanceStats?.renderTime || 0,
+        gridCreationTime: prev.performanceStats?.gridCreationTime || 0,
+        objectCreationTime: prev.performanceStats?.objectCreationTime || 0,
         droppedFrames: performanceMetrics.droppedFrames,
         frameTime: performanceMetrics.frameTime,
         maxFrameTime: performanceMetrics.maxFrameTime,
@@ -88,7 +97,10 @@ export const useCanvasDebug = () => {
     performanceMetrics
   ]);
 
-  // Start performance tracking when canvas is initialized
+  /**
+   * Start performance tracking when canvas is initialized
+   * Cleans up tracking when component unmounts
+   */
   useEffect(() => {
     if (debugInfo.canvasInitialized) {
       startPerformanceTracking();
@@ -99,7 +111,10 @@ export const useCanvasDebug = () => {
     }
   }, [debugInfo.canvasInitialized, startPerformanceTracking, stopPerformanceTracking]);
 
-  const resetLoadTimes = () => {
+  /**
+   * Reset performance timing data
+   */
+  const resetLoadTimes = (): void => {
     resetPerformanceTimers();
   };
 

@@ -9,10 +9,13 @@
 export * from './canvasDimensions';
 export * from './canvasValidation';
 export * from './canvasCleanup';
-export * from './objects';
-export * from './registry';
+// Fix re-export ambiguity issues by being explicit
+export { clearCanvasObjects, canvasMoveTo } from './objects';
+export { registerCanvasElement, isCanvasRegistered, getCanvasRegistration, unregisterCanvasElement } from './registry';
 export * from './environment';
 export * from './events';
 export * from './selection';
 export * from './gestures';
-export * from './panning';
+// Export panning functions with explicit naming to avoid conflicts
+export { enablePanning, disablePanning } from './panning';
+

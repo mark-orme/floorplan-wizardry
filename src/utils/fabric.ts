@@ -13,7 +13,8 @@ export * from './fabric/index';
 // Individual exports for backward compatibility
 export { 
   setCanvasDimensions,
-  CANVAS_DIMENSIONS
+  // Fix the import - CanvasDimensions is the interface, not a constant
+  // Remove CANVAS_DIMENSIONS from here as it's now in environment.ts
 } from './fabric/canvasDimensions';
 
 export {
@@ -40,5 +41,7 @@ export {
 } from './fabric/registry';
 
 export {
-  getEnvVars
+  getEnvVars,
+  CANVAS_DIMENSIONS
 } from './fabric/environment';
+

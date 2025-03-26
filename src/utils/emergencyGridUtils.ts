@@ -1,4 +1,3 @@
-
 /**
  * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
@@ -6,7 +5,7 @@
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text, PencilBrush } from "fabric";
 import logger from "./logger";
 import { toast } from "sonner";
-import { forceCleanCanvasElement } from "./fabricCanvas";
+import { forceCleanCanvasElement } from "./fabric/canvasCleanup";
 
 // Typings for grid creation parameters
 interface EmergencyGridOptions {

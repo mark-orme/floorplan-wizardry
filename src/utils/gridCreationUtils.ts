@@ -4,7 +4,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import logger from "./logger";
-import { forceCleanCanvasElement } from "./fabricCanvas";
+import { forceCleanCanvasElement } from "./fabric/canvasCleanup";
 
 // Add a counter to limit the number of creation attempts
 let creationAttemptCounter = 0;

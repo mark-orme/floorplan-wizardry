@@ -3,11 +3,20 @@
  * Utilities for canvas panning functionality
  * @module fabric/panning
  */
-import { Canvas } from "fabric";
+import { Canvas, TPointerEvent, TPointerEventInfo } from "fabric";
 import logger from "../logger";
 
+/**
+ * Panning state interface
+ */
+interface PanningState {
+  isPanning: boolean;
+  lastPosX: number;
+  lastPosY: number;
+}
+
 // Panning state tracking
-const panningState = {
+const panningState: PanningState = {
   isPanning: false,
   lastPosX: 0,
   lastPosY: 0
@@ -22,19 +31,17 @@ export const enablePanning = (canvas: Canvas): void => {
   
   // Store original values to restore later
   const originalSelection = canvas.selection;
-  const originalInteractive = canvas.interactive;
   
-  // Disable selection and interaction during panning
+  // Disable selection during panning
   canvas.selection = false;
-  canvas.interactive = false;
   
   // Set panning cursor
   canvas.defaultCursor = 'grab';
   canvas.hoverCursor = 'grab';
   
   // Setup mouse down handler for panning
-  const mouseDownHandler = (opt: { e: MouseEvent }) => {
-    const evt = opt.e;
+  const mouseDownHandler = (opt: TPointerEventInfo<TPointerEvent>) => {
+    const evt = opt.e as MouseEvent;
     panningState.isPanning = true;
     panningState.lastPosX = evt.clientX;
     panningState.lastPosY = evt.clientY;
@@ -43,14 +50,14 @@ export const enablePanning = (canvas: Canvas): void => {
   };
   
   // Setup mouse move handler for panning
-  const mouseMoveHandler = (opt: { e: MouseEvent }) => {
+  const mouseMoveHandler = (opt: TPointerEventInfo<TPointerEvent>) => {
     if (panningState.isPanning) {
-      const evt = opt.e;
+      const evt = opt.e as MouseEvent;
       const deltaX = evt.clientX - panningState.lastPosX;
       const deltaY = evt.clientY - panningState.lastPosY;
       
-      // Update viewport position
-      canvas.relativePan({ x: deltaX, y: deltaY });
+      // Update viewport position using fabric's point structure
+      canvas.relativePan({ x: deltaX, y: deltaY } as any);
       
       // Update last position
       panningState.lastPosX = evt.clientX;
@@ -69,12 +76,11 @@ export const enablePanning = (canvas: Canvas): void => {
     
     // Restore original settings
     canvas.selection = originalSelection;
-    canvas.interactive = originalInteractive;
   };
   
-  // Add event listeners
-  canvas.on('mouse:down', mouseDownHandler);
-  canvas.on('mouse:move', mouseMoveHandler);
+  // Add event listeners (with proper type casting for Fabric.js v6)
+  canvas.on('mouse:down', mouseDownHandler as any);
+  canvas.on('mouse:move', mouseMoveHandler as any);
   canvas.on('mouse:up', mouseUpHandler);
   
   logger.info("Panning mode enabled");
