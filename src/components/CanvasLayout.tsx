@@ -63,9 +63,9 @@ export const CanvasLayout = ({
   onShowMeasurementGuide
 }: CanvasLayoutProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-2 p-1 max-w-[1800px] mx-auto"> {/* Reduced gap, padding, increased max-width */}
+    <div className="flex flex-col gap-1 p-0 max-w-[1920px] mx-auto"> {/* Reduced gap, padding, increased max-width */}
       {/* Drawing tools bar positioned at top */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-1"> {/* Added small bottom margin */}
         <DrawingToolbar
           tool={tool}
           onToolChange={onToolChange}
@@ -94,9 +94,9 @@ export const CanvasLayout = ({
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-2"> {/* Reduced gap from 4 to 2 */}
+      <div className="flex flex-col md:flex-row gap-1"> {/* Reduced gap from 2 to 1 */}
         {/* Sidebar for floor plans - made narrower */}
-        <div className="md:w-36"> {/* Reduced from w-48 to w-36 */}
+        <div className="md:w-28"> {/* Reduced from w-36 to w-28 */}
           <FloorPlanList 
             floorPlans={floorPlans}
             currentFloor={currentFloor}
@@ -116,4 +116,3 @@ export const CanvasLayout = ({
     </div>
   );
 };
-

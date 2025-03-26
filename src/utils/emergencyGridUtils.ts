@@ -18,7 +18,7 @@ export const createBasicEmergencyGrid = (
   gridLayerRef?: React.MutableRefObject<any[]>
 ): any[] => {
   if (process.env.NODE_ENV === 'development') {
-    console.log("Creating emergency basic grid");
+    console.log("Creating emergency basic grid - silently");
   }
   
   const emergencyGrid: any[] = [];
@@ -80,4 +80,3 @@ export const createBasicEmergencyGrid = (
     return [];
   }
 };
-
