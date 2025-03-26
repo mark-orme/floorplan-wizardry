@@ -3,7 +3,7 @@
  * Custom hook for initializing Fabric.js canvas
  * @module useCanvasCreation
  */
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { CanvasDimensions } from "@/types/drawingTypes";
@@ -42,8 +42,9 @@ export const useCanvasCreation = ({
   const canvasInitializedRef = useRef<boolean>(false);
   const initializationInProgressRef = useRef<boolean>(false);
   const retryAttemptsRef = useRef<number>(0);
-  const maxRetryAttempts = 5; // Max retry attempts for canvas initialization
+  const maxRetryAttempts = 10; // Increased retry attempts for canvas initialization
   const retryTimeoutRef = useRef<number | null>(null);
+  const [canvasElementChecked, setCanvasElementChecked] = useState<boolean>(false);
 
   // This effect will ensure we clean up any timeouts when the component unmounts
   useEffect(() => {
@@ -52,6 +53,51 @@ export const useCanvasCreation = ({
         window.clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
+    };
+  }, []);
+
+  // This effect will check for the canvas element periodically
+  useEffect(() => {
+    const checkCanvasElement = () => {
+      if (!canvasRef.current) {
+        // First try by ID
+        const canvasById = document.getElementById('fabric-canvas');
+        
+        // Then try by data-testid
+        const canvasByTestId = document.querySelector('[data-testid="canvas-element"]');
+        
+        // Use any method that works
+        if (canvasById instanceof HTMLCanvasElement) {
+          console.log("Found canvas element via id, using it directly");
+          canvasRef.current = canvasById;
+          setCanvasElementChecked(true);
+        } else if (canvasByTestId instanceof HTMLCanvasElement) {
+          console.log("Found canvas element via data-testid, using it directly");
+          canvasRef.current = canvasByTestId;
+          setCanvasElementChecked(true);
+        } else {
+          // Search for any canvas element on the page
+          const anyCanvas = document.querySelector('canvas');
+          if (anyCanvas instanceof HTMLCanvasElement) {
+            console.log("Found a canvas element on the page, using it as fallback");
+            canvasRef.current = anyCanvas;
+            setCanvasElementChecked(true);
+          } else {
+            console.log("No canvas element found yet, will retry");
+            // Retry after a short delay
+            setTimeout(checkCanvasElement, 500);
+          }
+        }
+      } else {
+        setCanvasElementChecked(true);
+      }
+    };
+    
+    // Start checking for canvas element
+    checkCanvasElement();
+    
+    return () => {
+      setCanvasElementChecked(false);
     };
   }, []);
 
@@ -129,6 +175,9 @@ export const useCanvasCreation = ({
       // Set width and height attributes
       canvasRef.current.width = canvasDimensions.width || 800;
       canvasRef.current.height = canvasDimensions.height || 600;
+      
+      // Trigger a forced reflow
+      canvasRef.current.getBoundingClientRect();
       
       // PERFORMANCE OPTIMIZATIONS for Fabric.js initialization
       const fabricCanvas = new FabricCanvas(canvasRef.current, {

@@ -44,6 +44,13 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
   } = useCanvasController();
   
   const [lockDrawing, setLockDrawing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Set mounted state after component is rendered
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
   
   useEffect(() => {
     if (readonly) {
@@ -77,7 +84,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
   }, [isTooltipVisible, tool, drawingState]);
   
   return (
-    <div className="canvas-wrapper relative h-full w-full" data-testid="canvas-wrapper">
+    <div className="canvas-wrapper relative h-full w-full" data-testid="canvas-wrapper" data-mounted={isMounted ? "true" : "false"}>
       {hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-red-100 bg-opacity-80 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">

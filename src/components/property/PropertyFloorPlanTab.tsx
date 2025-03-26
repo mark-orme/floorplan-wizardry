@@ -7,6 +7,7 @@ import { Eye, Send } from 'lucide-react';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
+import { useEffect, useState } from 'react';
 
 interface PropertyFloorPlanTabProps {
   canEdit: boolean;
@@ -25,6 +26,17 @@ export const PropertyFloorPlanTab = ({
   isSubmitting,
   onStatusChange
 }: PropertyFloorPlanTabProps) => {
+  const [isReady, setIsReady] = useState(false);
+  
+  // Set ready state after a short delay to ensure DOM is fully rendered
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
@@ -36,9 +48,13 @@ export const PropertyFloorPlanTab = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="h-[800px] w-full" data-testid="floor-plan-wrapper"> 
+        <div 
+          className="h-[800px] w-full" 
+          data-testid="floor-plan-wrapper"
+          data-canvas-ready={isReady ? "true" : "false"}
+        > 
           <CanvasControllerProvider>
-            <Canvas data-readonly={!canEdit} />
+            {isReady && <Canvas data-readonly={!canEdit} />}
           </CanvasControllerProvider>
         </div>
       </CardContent>

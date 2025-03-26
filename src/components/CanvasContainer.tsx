@@ -5,7 +5,7 @@
  * Also displays debug information
  * @module CanvasContainer
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "./ui/card";
 import { DebugInfo } from "./DebugInfo";
 import { DebugInfoState } from "@/types/drawingTypes";
@@ -31,6 +31,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
   const localCanvasRef = useDomRef<HTMLCanvasElement>(true);
   const canvasReference = canvasRef || localCanvasRef;
   const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasReady, setCanvasReady] = useState(false);
   
   // Force initialization after render to ensure canvas has dimensions
   useEffect(() => {
@@ -50,6 +51,9 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
         // Force a reflow to ensure dimensions are applied
         canvasReference.current.getBoundingClientRect();
         
+        // Signal that canvas is ready after dimensions are set
+        setCanvasReady(true);
+        
         console.log("Canvas sized to dimensions:", 
           containerRect.width, "x", Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT));
       } else {
@@ -59,6 +63,9 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
         canvasReference.current.style.width = `${DEFAULT_CANVAS_WIDTH}px`;
         canvasReference.current.style.height = `${DEFAULT_CANVAS_HEIGHT}px`;
         console.log(`Using fallback canvas dimensions: ${DEFAULT_CANVAS_WIDTH}x${DEFAULT_CANVAS_HEIGHT}`);
+        
+        // Signal that canvas is ready even with fallback dimensions
+        setCanvasReady(true);
       }
     }
   }, [canvasReference]);
@@ -79,9 +86,10 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
           style={{ display: "block" }}
           data-testid="canvas-element"
           id="fabric-canvas"
+          data-canvas-ready={canvasReady ? "true" : "false"}
         />
       </div>
-      <DebugInfo debugInfo={debugInfo} />
+      <DebugInfo debugInfo={{...debugInfo, canvasReady}} />
     </Card>
   );
 };
