@@ -13,6 +13,8 @@ import { useCanvasControllerTools } from './useCanvasControllerTools';
 import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
 import { useCanvasGrid } from '@/hooks/useCanvasGrid';
 import { useCanvasDimensions } from '@/hooks/useCanvasDimensions';
+import logger from '@/utils/logger';
+import { toast } from 'sonner';
 
 // Context interface
 export interface CanvasControllerContextValue {
@@ -102,6 +104,15 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
     setErrorMessage
   });
   
+  // Create the grid management hook
+  const { createGrid } = useCanvasGrid({
+    gridLayerRef,
+    canvasDimensions: { width: initialCanvasWidth, height: initialCanvasHeight },
+    setDebugInfo,
+    setHasError,
+    setErrorMessage
+  });
+  
   // Assign refs from setup
   useEffect(() => {
     if (setupCanvasRef.current) {
@@ -114,6 +125,71 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
       historyRef.current = setupHistoryRef.current;
     }
   }, [setupCanvasRef, setupFabricCanvasRef, setupHistoryRef]);
+  
+  // IMPORTANT: New effect to ensure grid is created once canvas is ready
+  useEffect(() => {
+    // Only proceed if we have a valid fabric canvas
+    if (!fabricCanvasRef.current) {
+      return;
+    }
+    
+    // Check that canvas is properly initialized
+    try {
+      // Ensure the canvas has actual dimensions
+      if (!fabricCanvasRef.current.width || !fabricCanvasRef.current.height) {
+        logger.warn("Canvas dimensions not set, deferring grid creation");
+        return;
+      }
+      
+      logger.info("Canvas is ready, explicitly creating grid");
+      
+      // Call createGrid with the current canvas
+      const gridObjects = createGrid(fabricCanvasRef.current);
+      
+      // Store result in gridLayerRef
+      gridLayerRef.current = gridObjects;
+      
+      // Force render to ensure grid is visible
+      fabricCanvasRef.current.requestRenderAll();
+      
+      logger.info(`Grid initialized with ${gridObjects.length} objects`);
+      
+      // Display a toast notification on successful grid creation
+      if (gridObjects.length > 0) {
+        toast.success("Grid initialized", {
+          id: "grid-init-success",
+          duration: 2000
+        });
+      }
+      
+      // Update debug info
+      setDebugInfo(prev => ({
+        ...prev,
+        gridCreated: true,
+        gridObjectCount: gridObjects.length,
+        canvasReady: true
+      }));
+    } catch (error) {
+      logger.error("Error initializing grid:", error);
+      
+      // Try creating emergency grid as fallback
+      if (fabricCanvasRef.current) {
+        try {
+          setTimeout(() => {
+            // Import directly here to avoid circular dependencies
+            import('@/utils/gridCreationUtils').then(({ createBasicEmergencyGrid }) => {
+              if (fabricCanvasRef.current) {
+                const emergencyGrid = createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+                logger.info(`Emergency grid created with ${emergencyGrid.length} objects`);
+              }
+            });
+          }, 200);
+        } catch (fallbackError) {
+          logger.error("Even emergency grid creation failed:", fallbackError);
+        }
+      }
+    }
+  }, [fabricCanvasRef.current, createGrid, setDebugInfo]);
   
   // Define dummy functions for now - these will be properly implemented
   const refreshCanvas = () => {}; 
