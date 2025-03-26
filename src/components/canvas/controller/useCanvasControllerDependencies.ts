@@ -39,7 +39,7 @@ interface UseCanvasControllerDependenciesResult {
   /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   /** Function to create grid */
-  createGrid: () => FabricObject[];
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
 }
 
 /**

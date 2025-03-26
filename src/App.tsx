@@ -23,13 +23,15 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 30000,
-      // Add Sentry error reporting to React Query
-      onError: (error) => {
-        Sentry.captureException(error, {
-          tags: {
-            source: 'react-query'
-          }
-        });
+      // Updated to use meta.onError which is the correct approach for TanStack Query v4+
+      meta: {
+        onError: (error: unknown) => {
+          Sentry.captureException(error, {
+            tags: {
+              source: 'react-query'
+            }
+          });
+        }
       }
     },
   },
@@ -69,4 +71,3 @@ const App = () => (
 );
 
 export default Sentry.withProfiler(App);
-

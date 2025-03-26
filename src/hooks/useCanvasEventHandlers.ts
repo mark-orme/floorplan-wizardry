@@ -4,7 +4,7 @@
  * @module useCanvasEventHandlers
  */
 import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, IEvent } from "fabric";
+import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, TEvent } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import logger from "@/utils/logger";
 
@@ -28,9 +28,9 @@ interface UseCanvasEventHandlersProps {
   /** Function to handle redo operation */
   handleRedo: () => void;
   /** Function to handle mouse down event */
-  handleMouseDown: (e: IEvent<MouseEvent>) => void;
+  handleMouseDown: (e: TEvent<MouseEvent>) => void;
   /** Function to handle mouse move event */
-  handleMouseMove: (e: IEvent<MouseEvent>) => void;
+  handleMouseMove: (e: TEvent<MouseEvent>) => void;
   /** Function to handle mouse up event */
   handleMouseUp: () => void;
   /** Function to process created path */
@@ -53,7 +53,7 @@ interface UseCanvasEventHandlersResult {
 /**
  * Type for Canvas Events with target object
  */
-interface TargetEvent extends IEvent<MouseEvent> {
+interface TargetEvent extends TEvent<MouseEvent> {
   target: FabricObject | null;
 }
 
@@ -67,10 +67,10 @@ interface PathCreatedEvent {
 /**
  * Extended FabricObject with editing properties
  */
-interface EditableFabricObject extends FabricObject {
+interface EditableFabricObject extends Omit<FabricObject, 'type'> {
   objectType?: string;
   isEditing?: boolean;
-  type?: string;
+  type: string;
 }
 
 /**

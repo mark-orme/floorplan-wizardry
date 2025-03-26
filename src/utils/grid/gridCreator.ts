@@ -1,4 +1,3 @@
-
 /**
  * Grid creator module
  * Core functionality for creating grid on canvas
@@ -7,11 +6,21 @@
 import { Canvas, Object as FabricObject } from "fabric";
 import { gridManager, acquireGridCreationLock, releaseGridCreationLock } from "../gridManager";
 import { validateCanvasForGrid } from "./gridValidation";
-import { renderGridComponents, GridRenderResult } from "../gridRenderer";
 import { arrangeGridObjects } from "../gridRenderer";
 import { handleGridCreationError, scheduleGridRetry } from "./gridErrorHandling";
 import logger from "../logger";
 import { DebugInfoState } from "@/types/drawingTypes";
+
+// Define the GridRenderResult interface that was missing
+interface GridRenderResult {
+  gridObjects: FabricObject[];
+  smallGridLines: FabricObject[];
+  largeGridLines: FabricObject[];
+  markers: FabricObject[];
+}
+
+// Import the renderGridComponents function
+import { renderGridComponents } from "../gridRenderer";
 
 /**
  * Create grid layer on the canvas with safety mechanisms

@@ -9,16 +9,14 @@ import logger from "@/utils/logger";
 
 /**
  * Object with objectType property for type identification
- * @interface TypedFabricObject
- * @extends FabricObject
  */
-interface TypedFabricObject extends FabricObject {
+interface TypedFabricObject {
   /** Type identifier for specialized handling */
   objectType?: string;
   /** Stroke width for lines */
   strokeWidth?: number;
   /** Object type from Fabric.js */
-  type?: string;
+  type: string;
 }
 
 /**
@@ -42,14 +40,14 @@ export const arrangeGridElements = (
   
   // Find grid markers (scale indicators)
   const gridMarkers = gridElements.filter(obj => {
-    const typedObj = obj as TypedFabricObject;
+    const typedObj = obj as unknown as TypedFabricObject;
     return (typedObj.type === 'line' && typedObj.strokeWidth === 2) || 
            typedObj.type === 'text';
   });
   
   // Find grid lines
   const gridLines = gridElements.filter(obj => {
-    const typedObj = obj as TypedFabricObject;
+    const typedObj = obj as unknown as TypedFabricObject;
     return typedObj.type === 'line' && typedObj.strokeWidth !== 2;
   });
   

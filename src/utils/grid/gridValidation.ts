@@ -67,7 +67,7 @@ export const canProceedWithGridCreation = (): boolean => {
   // Check if creation is already in progress
   if (gridManager.creationInProgress) {
     if (process.env.NODE_ENV === 'development') {
-      logger.log("Grid creation already in progress, cannot proceed");
+      logger.debug("Grid creation already in progress, cannot proceed");
     }
     return false;
   }
@@ -75,7 +75,7 @@ export const canProceedWithGridCreation = (): boolean => {
   // Check if we need to throttle
   if (shouldThrottleCreation()) {
     if (process.env.NODE_ENV === 'development') {
-      logger.log("Grid creation throttled, cannot proceed");
+      logger.debug("Grid creation throttled, cannot proceed");
     }
     return false;
   }
