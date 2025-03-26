@@ -3,7 +3,7 @@
  * Custom hook for tracking canvas performance metrics including frame drops
  * @module useCanvasPerformance
  */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { type CanvasLoadTimes } from "@/types/drawingTypes";
 
 /**
@@ -69,7 +69,7 @@ export const useCanvasPerformance = () => {
   /**
    * Mark the canvas as ready and record the time
    */
-  const markCanvasReady = () => {
+  const markCanvasReady = useCallback(() => {
     if (!loadTimes.canvasReady) {
       const timeElapsed = performance.now() - loadTimes.startTime;
       setLoadTimes(prev => ({ 
@@ -80,12 +80,12 @@ export const useCanvasPerformance = () => {
       }));
       console.log(`Canvas initialized in ${timeElapsed}ms`);
     }
-  };
+  }, [loadTimes.canvasReady, loadTimes.startTime]);
 
   /**
    * Mark the grid as created and record the time
    */
-  const markGridCreated = () => {
+  const markGridCreated = useCallback(() => {
     if (!gridCreatedRef.current && !loadTimes.gridCreated) {
       const timeElapsed = performance.now() - loadTimes.startTime;
       setLoadTimes(prev => ({ 
@@ -97,12 +97,12 @@ export const useCanvasPerformance = () => {
       gridCreatedRef.current = true;
       console.log(`Grid created in ${timeElapsed}ms`);
     }
-  };
+  }, [loadTimes.gridCreated, loadTimes.startTime]);
 
   /**
    * Start tracking frame performance
    */
-  const startPerformanceTracking = () => {
+  const startPerformanceTracking = useCallback(() => {
     // Reset tracking metrics
     framesRef.current = 0;
     frameTimesRef.current = [];
@@ -118,20 +118,20 @@ export const useCanvasPerformance = () => {
     }));
     
     console.log("Performance tracking started");
-  };
+  }, []);
   
   /**
    * Stop tracking frame performance
    */
-  const stopPerformanceTracking = () => {
+  const stopPerformanceTracking = useCallback(() => {
     isTrackingRef.current = false;
     console.log("Performance tracking stopped");
-  };
+  }, []);
   
   /**
    * Record a frame in the performance tracking
    */
-  const recordFrame = () => {
+  const recordFrame = useCallback(() => {
     if (!isTrackingRef.current) return;
     
     const now = performance.now();
@@ -156,12 +156,12 @@ export const useCanvasPerformance = () => {
     if (framesRef.current % 30 === 0) {
       updateMetrics();
     }
-  };
+  }, []);
   
   /**
    * Calculate and update performance metrics
    */
-  const updateMetrics = () => {
+  const updateMetrics = useCallback(() => {
     const now = performance.now();
     const totalTime = now - trackingStartTimeRef.current;
     const frameTimes = frameTimesRef.current;
@@ -186,12 +186,12 @@ export const useCanvasPerformance = () => {
       longFrames: longFramesRef.current,
       measuredSince: new Date(trackingStartTimeRef.current)
     });
-  };
+  }, []);
 
   /**
    * Reset performance timers for new measurements
    */
-  const resetPerformanceTimers = () => {
+  const resetPerformanceTimers = useCallback(() => {
     gridCreatedRef.current = false;
     setLoadTimes({
       startTime: performance.now(),
@@ -213,7 +213,7 @@ export const useCanvasPerformance = () => {
       longFrames: 0,
       measuredSince: new Date()
     });
-  };
+  }, []);
 
   return { 
     loadTimes,
