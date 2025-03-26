@@ -13,18 +13,22 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     const result = await db.get(STORE_NAME, 'current');
     
     if (result?.data) {
-      return ensureRequiredFields(result.data);
+      return ensureRequiredFields(Array.isArray(result.data) ? result.data : []);
     }
     
     // Fallback to localStorage for existing user data migration
     const saved = localStorage.getItem('floorPlans');
     if (saved) {
-      const parsedData = JSON.parse(saved) as unknown[];
-      // Validate and ensure all required fields are present
-      const validData = ensureRequiredFields(parsedData);
-      // Immediately save to IndexedDB for future use
-      await saveFloorPlans(validData);
-      return validData;
+      try {
+        const parsedData = JSON.parse(saved) as unknown[];
+        // Validate and ensure all required fields are present
+        const validData = ensureRequiredFields(Array.isArray(parsedData) ? parsedData : []);
+        // Immediately save to IndexedDB for future use
+        await saveFloorPlans(validData);
+        return validData;
+      } catch (parseError) {
+        console.error('Failed to parse floor plans from localStorage:', parseError);
+      }
     }
   } catch (e) {
     console.error('Failed to load floor plans from IndexedDB:', e);
@@ -33,8 +37,12 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     try {
       const saved = localStorage.getItem('floorPlans');
       if (saved) {
-        const parsedData = JSON.parse(saved) as unknown[];
-        return ensureRequiredFields(parsedData);
+        try {
+          const parsedData = JSON.parse(saved) as unknown[];
+          return ensureRequiredFields(Array.isArray(parsedData) ? parsedData : []);
+        } catch (parseError) {
+          console.error('Failed to parse floor plans from localStorage:', parseError);
+        }
       }
     } catch (localError) {
       console.error('Failed to load floor plans from localStorage:', localError);

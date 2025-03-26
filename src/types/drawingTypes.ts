@@ -58,22 +58,39 @@ export type GridCreationCallback = (canvas: any) => any[];
  * Grid creation state type
  */
 export interface GridCreationState {
+  /** Whether grid creation is in progress */
   isCreating: boolean;
+  /** Number of creation attempts */
   attempts: number; 
+  /** Whether creation was successful */
   success: boolean;
+  /** Error message if creation failed */
   error?: string;
+  /** Whether creation is currently in progress */
   creationInProgress?: boolean;
+  /** Number of consecutive reset attempts */
   consecutiveResets?: number;
+  /** Maximum allowed consecutive resets */
   maxConsecutiveResets?: number;
+  /** Timestamp of last attempt */
   lastAttemptTime?: number;
+  /** Timestamp of last successful creation */
   lastCreationTime?: number;
+  /** Minimum interval between creation attempts */
   throttleInterval?: number;
+  /** Whether grid already exists */
   exists?: boolean;
+  /** Timeout ID for safety mechanism */
   safetyTimeout?: number | null;
+  /** Total number of grid creations */
   totalCreations?: number;
+  /** Maximum allowed recreations */
   maxRecreations?: number;
+  /** Minimum interval between recreations */
   minRecreationInterval?: number;
-  lastDimensions?: any;
+  /** Last known canvas dimensions */
+  lastDimensions?: { width: number; height: number };
+  /** Creation lock mechanism */
   creationLock?: {
     id: number;
     timestamp: number;

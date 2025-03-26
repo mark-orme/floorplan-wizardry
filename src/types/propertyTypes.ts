@@ -2,12 +2,18 @@
 import { FloorPlan } from './floorPlanTypes';
 import { UserRole } from '@/lib/supabase';
 
+/**
+ * Property status enum
+ */
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING_REVIEW = 'pending_review',
   COMPLETED = 'completed'
 }
 
+/**
+ * Full property interface
+ */
 export interface Property {
   id: string;
   order_id: string;
@@ -23,6 +29,9 @@ export interface Property {
   notes?: string;
 }
 
+/**
+ * Property list item interface (for list views)
+ */
 export interface PropertyListItem {
   id: string;
   order_id: string;
@@ -34,6 +43,13 @@ export interface PropertyListItem {
   created_by?: string;
 }
 
+/**
+ * Check if user can edit a property
+ * @param property - The property to check
+ * @param userRole - The user's role
+ * @param userId - The user's ID
+ * @returns Boolean indicating if user can edit the property
+ */
 export const canEditProperty = (
   property: Property | PropertyListItem, 
   userRole: UserRole | null, 
@@ -59,6 +75,13 @@ export const canEditProperty = (
   return false;
 };
 
+/**
+ * Check if user can view a property
+ * @param property - The property to check
+ * @param userRole - The user's role
+ * @param userId - The user's ID
+ * @returns Boolean indicating if user can view the property
+ */
 export const canViewProperty = (
   property: Property | PropertyListItem, 
   userRole: UserRole | null, 

@@ -1,52 +1,22 @@
 
 /**
- * Type definitions for debug and diagnostic information
+ * Debug information state type definitions
  * @module debugTypes
  */
-import { PerformanceMetrics } from './performanceTypes';
 
 /**
- * Debug information state interface
+ * Debug information state for tracking canvas initialization and grid creation
+ * @interface DebugInfoState
  */
 export interface DebugInfoState {
   /** Whether the canvas has been initialized */
   canvasInitialized: boolean;
   /** Whether the grid has been created */
   gridCreated: boolean;
-  /** Whether canvas dimensions have been properly set */
+  /** Whether the canvas dimensions have been set */
   dimensionsSet: boolean;
-  /** Whether the drawing brush has been initialized */
+  /** Whether the brush has been initialized */
   brushInitialized: boolean;
-  /** Number of grid creation attempts */
-  gridCreationAttempts?: number;
-  /** Number of grid creation failures */
-  gridCreationFailures?: number;
-  /** Time taken for the last grid creation (ms) */
-  lastGridCreationTime?: number;
-  /** Last error message */
-  lastError?: string | null;
-  /** Timestamp of the last error */
-  lastErrorTime?: number;
-  /** Number of objects on the canvas */
-  canvasObjects?: number;
-  /** Number of objects in the grid layer */
-  gridObjects?: number;
-  /** Current canvas width */
-  canvasWidth?: number;
-  /** Current canvas height */
-  canvasHeight?: number;
-  /** Device pixel ratio */
-  devicePixelRatio?: number;
-  /** Whether the grid is visible */
-  gridVisible?: boolean;
-  /** Performance statistics */
-  performanceStats?: Partial<PerformanceMetrics>;
-  /** Last action performed */
-  lastAction?: string;
-  /** Grid state description */
-  gridState?: string;
-  /** Last grid operation description */
-  lastGridOperation?: string;
-  /** Count of grid objects */
-  gridObjectCount?: number;
+  /** Index signature to allow additional debug properties */
+  [key: string]: unknown;
 }
