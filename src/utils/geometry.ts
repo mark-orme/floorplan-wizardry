@@ -10,8 +10,9 @@
 import { calculateGIA } from './geometry/areaCalculations';
 import { GRID_SPACING, DISTANCE_PRECISION, CLOSE_POINT_THRESHOLD, FLOATING_POINT_TOLERANCE } from './geometry/constants';
 import { screenToCanvasCoordinates } from './geometry/coordinateTransforms';
-import { snapToGrid } from './geometry/gridOperations';
+import { snapToGrid } from './grid/core';
 import { calculateDistance, isExactGridMultiple as lineIsExactGridMultiple } from './geometry/lineOperations';
+import { straightenStroke } from './geometry/straightening';
 
 // Re-export specific functions with non-conflicting names
 export {
@@ -27,12 +28,15 @@ export {
   // From coordinateTransforms
   screenToCanvasCoordinates,
   
-  // From gridOperations
+  // From gridOperations (now in grid/core)
   snapToGrid,
   
   // From lineOperations (with renamed export to avoid conflict)
   calculateDistance,
-  lineIsExactGridMultiple
+  lineIsExactGridMultiple,
+  
+  // From straightening
+  straightenStroke
 };
 
 /**

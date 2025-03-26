@@ -19,17 +19,14 @@ export {
 // Export from coordinateTransforms
 export { screenToCanvasCoordinates } from './coordinateTransforms';
 
-// Export from gridOperations - selectively export to avoid duplication
-export { snapToGrid } from './gridOperations';
-
 // Export from lineOperations
 export { 
   calculateDistance,
   isExactGridMultiple
 } from './lineOperations';
 
-// Export from midpointCalculation
-// Note: If midpointCalculation.ts doesn't export findMidpoint, we'll omit this export
+// Export from straightening
+export { straightenStroke } from './straightening';
 
 /**
  * This serves as the central export point for geometry utilities.
