@@ -8,10 +8,30 @@ import { PIXELS_PER_METER } from './drawing';
 import logger from './logger';
 
 /**
- * Minimum distance between points to consider them separate (in meters)
- * @constant
+ * Path processing constants
  */
-const MIN_POINT_DISTANCE = 0.05;
+const PATH_CONSTANTS = {
+  /**
+   * Minimum distance between points to consider them separate (in meters)
+   * Used for filtering out redundant points
+   * @constant {number}
+   */
+  MIN_POINT_DISTANCE: 0.05,
+  
+  /**
+   * Minimum distance between points in pixels
+   * Used for cleanPathData function
+   * @constant {number}
+   */
+  MIN_PIXEL_DISTANCE: 5,
+  
+  /**
+   * Minimal offset for single-point paths
+   * When a path has only one point, this offset creates a second point
+   * @constant {number}
+   */
+  SINGLE_POINT_OFFSET: 0.1
+};
 
 /** 
  * Convert fabric.js path points to our Point type 
@@ -98,7 +118,7 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
       const distanceY = currentPoint.y - lastPoint.y;
       const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
       
-      if (pointDistance >= MIN_POINT_DISTANCE) {
+      if (pointDistance >= PATH_CONSTANTS.MIN_POINT_DISTANCE) {
         filteredPoints.push(currentPoint);
       }
     }
@@ -120,8 +140,8 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
   if (points.length === 1) {
     // Duplicate the single point slightly offset to create a minimal line
     points.push({ 
-      x: points[0].x + 0.1, 
-      y: points[0].y + 0.1 
+      x: points[0].x + PATH_CONSTANTS.SINGLE_POINT_OFFSET, 
+      y: points[0].y + PATH_CONSTANTS.SINGLE_POINT_OFFSET 
     });
   }
   
@@ -138,7 +158,6 @@ export const cleanPathData = (pathData: any[]): any[] => {
   
   const result: any[] = [];
   let previousPoint: Point | null = null;
-  const minPixelDistance = 5; // Minimum pixel distance
   
   // Process each command
   for (const command of pathData) {
@@ -160,7 +179,7 @@ export const cleanPathData = (pathData: any[]): any[] => {
         const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
         
         // Only add line commands if they're far enough from the previous point
-        if (pointDistance >= minPixelDistance) {
+        if (pointDistance >= PATH_CONSTANTS.MIN_PIXEL_DISTANCE) {
           result.push(command);
           previousPoint = currentPoint;
         }

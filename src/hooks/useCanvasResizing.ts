@@ -25,15 +25,73 @@ interface ResizingState {
   lastResizeTime: number;
 }
 
+/**
+ * Canvas resizing constants
+ */
+const RESIZING_CONSTANTS = {
+  /**
+   * Minimum time between resize operations in milliseconds
+   * Prevents too frequent resizing operations
+   * @constant {number}
+   */
+  MIN_RESIZE_INTERVAL: 2000,
+  
+  /**
+   * Horizontal padding in pixels for canvas width calculation
+   * @constant {number}
+   */
+  HORIZONTAL_PADDING: 20,
+  
+  /**
+   * Vertical padding in pixels for canvas height calculation
+   * @constant {number}
+   */
+  VERTICAL_PADDING: 20,
+  
+  /**
+   * Minimum width of the canvas in pixels
+   * @constant {number}
+   */
+  MIN_WIDTH: 600,
+  
+  /**
+   * Minimum height of the canvas in pixels
+   * @constant {number}
+   */
+  MIN_HEIGHT: 400,
+  
+  /**
+   * Dimension change tolerance in pixels
+   * Resize is only performed if dimensions change by more than this value
+   * @constant {number}
+   */
+  DIMENSION_TOLERANCE: 5,
+  
+  /**
+   * Debounce delay for window resize events in milliseconds
+   * @constant {number}
+   */
+  RESIZE_DEBOUNCE_DELAY: 1500,
+  
+  /**
+   * Initial resize delay in milliseconds
+   * @constant {number}
+   */
+  INITIAL_RESIZE_DELAY: 1000,
+  
+  /**
+   * Cool-down period after resize in milliseconds
+   * @constant {number}
+   */
+  RESIZE_COOLDOWN: 100
+};
+
 // Use module-level object instead of loose variables
 const resizingState: ResizingState = {
   initialResizeComplete: false,
   resizeInProgress: false,
   lastResizeTime: 0
 };
-
-// Minimum time between resizes (in milliseconds)
-const MIN_RESIZE_INTERVAL = 2000;
 
 export const useCanvasResizing = ({
   canvasRef,
@@ -62,9 +120,9 @@ export const useCanvasResizing = ({
       return;
     }
     
-    // Apply strict time-based throttling (one resize per 2 seconds maximum)
+    // Apply strict time-based throttling
     const now = Date.now();
-    if (now - lastResizeTimeRef.current < MIN_RESIZE_INTERVAL) {
+    if (now - lastResizeTimeRef.current < RESIZING_CONSTANTS.MIN_RESIZE_INTERVAL) {
       return;
     }
     
@@ -91,13 +149,12 @@ export const useCanvasResizing = ({
       return;
     }
     
-    const newWidth = Math.max(width - 20, 600);
-    const newHeight = Math.max(height - 20, 400);
+    const newWidth = Math.max(width - RESIZING_CONSTANTS.HORIZONTAL_PADDING, RESIZING_CONSTANTS.MIN_WIDTH);
+    const newHeight = Math.max(height - RESIZING_CONSTANTS.VERTICAL_PADDING, RESIZING_CONSTANTS.MIN_HEIGHT);
     
     // Skip update if dimensions haven't changed significantly (within tolerance)
-    const DIMENSION_TOLERANCE = 5; // Use a local constant instead of accessing from CANVAS_DIMENSIONS
-    if (Math.abs(newWidth - lastDimensionsRef.current.width) < DIMENSION_TOLERANCE && 
-        Math.abs(newHeight - lastDimensionsRef.current.height) < DIMENSION_TOLERANCE) {
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < RESIZING_CONSTANTS.DIMENSION_TOLERANCE && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < RESIZING_CONSTANTS.DIMENSION_TOLERANCE) {
       resizeInProgressRef.current = false;
       resizingState.resizeInProgress = false;
       return;
@@ -135,7 +192,7 @@ export const useCanvasResizing = ({
     setTimeout(() => {
       resizeInProgressRef.current = false;
       resizingState.resizeInProgress = false;
-    }, 100);
+    }, RESIZING_CONSTANTS.RESIZE_COOLDOWN);
   }, [canvasRef, fabricCanvasRef, setDimensions, setDebugInfo, setHasError, setErrorMessage, createGrid]);
 
   useEffect(() => {
@@ -144,11 +201,11 @@ export const useCanvasResizing = ({
         window.clearTimeout(resizeTimeoutRef.current);
       }
       
-      // Increase debounce time to 1500ms to reduce frequency
+      // Use constant instead of hardcoded value
       resizeTimeoutRef.current = window.setTimeout(() => {
         updateCanvasDimensions();
         resizeTimeoutRef.current = null;
-      }, 1500);
+      }, RESIZING_CONSTANTS.RESIZE_DEBOUNCE_DELAY);
     };
 
     window.addEventListener('resize', debouncedResizeHandler);
@@ -159,7 +216,7 @@ export const useCanvasResizing = ({
       initialResizeTimerRef.current = window.setTimeout(() => {
         updateCanvasDimensions();
         initialResizeTimerRef.current = null;
-      }, 1000);
+      }, RESIZING_CONSTANTS.INITIAL_RESIZE_DELAY);
     }
     
     return () => {

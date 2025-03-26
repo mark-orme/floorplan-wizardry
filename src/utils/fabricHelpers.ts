@@ -13,6 +13,23 @@ import {
 import { snapToAngle } from "@/utils/grid/snapping";
 
 /**
+ * Default object configuration constants
+ */
+const DEFAULT_OBJECT_CONFIG = {
+  /**
+   * Default stroke color
+   * @constant {string}
+   */
+  STROKE_COLOR: "#000000",
+  
+  /**
+   * Default fill color (transparent)
+   * @constant {string}
+   */
+  FILL_COLOR: "transparent"
+};
+
+/**
  * Convert point from pixels to meters
  * Transforms screen coordinates to real-world measurements
  * 
@@ -82,8 +99,8 @@ export const getObjectCenter = (obj: FabricObject): Point => {
 export const getDefaultObjectOptions = () => {
   return {
     strokeWidth: DEFAULT_LINE_THICKNESS,
-    stroke: "#000000",
-    fill: "transparent",
+    stroke: DEFAULT_OBJECT_CONFIG.STROKE_COLOR,
+    fill: DEFAULT_OBJECT_CONFIG.FILL_COLOR,
     selectable: true,
     hasControls: true,
     hasBorders: true,

@@ -1,6 +1,48 @@
+
 /**
  * Utility functions for displaying formatted values
+ * @module display
  */
+
+/**
+ * Decimal precision constants
+ */
+const DECIMAL_PRECISION = {
+  /**
+   * Precision for GIA (Gross Internal Area) values
+   * @constant {number}
+   */
+  GIA: 1,
+  
+  /**
+   * Precision for measurements in meters
+   * @constant {number}
+   */
+  METERS: 1,
+  
+  /**
+   * Precision for wall length
+   * @constant {number}
+   */
+  WALL_LENGTH: 1,
+  
+  /**
+   * Default precision for decimal formatting
+   * @constant {number}
+   */
+  DEFAULT: 2
+};
+
+/**
+ * Measurement conversion constants
+ */
+const MEASUREMENT_CONVERSION = {
+  /**
+   * Centimeters per meter for unit conversion
+   * @constant {number}
+   */
+  CM_PER_METER: 100
+};
 
 /**
  * Format GIA (Gross Internal Area) value with appropriate units
@@ -10,8 +52,8 @@
 export const formatGIA = (gia: number): string => {
   if (!gia || isNaN(gia)) return "0";
   
-  // Round to 1 decimal place
-  return gia.toFixed(1).replace(/\.0$/, '');
+  // Round to specified decimal places
+  return gia.toFixed(DECIMAL_PRECISION.GIA).replace(/\.0$/, '');
 };
 
 /**
@@ -25,14 +67,14 @@ export const formatMeasurement = (value: number, compact = false): string => {
   
   // For values less than 1 meter, show in centimeters
   if (value < 1) {
-    const cm = Math.round(value * 100);
+    const cm = Math.round(value * MEASUREMENT_CONVERSION.CM_PER_METER);
     return compact ? `${cm}cm` : `${cm} cm`;
   }
   
   // Otherwise show in meters with 1 decimal place
   return compact 
-    ? `${value.toFixed(1)}m` 
-    : `${value.toFixed(1)} m`;
+    ? `${value.toFixed(DECIMAL_PRECISION.METERS)}m` 
+    : `${value.toFixed(DECIMAL_PRECISION.METERS)} m`;
 };
 
 /**
@@ -41,17 +83,17 @@ export const formatMeasurement = (value: number, compact = false): string => {
  * @param {number} precision - Number of decimal places
  * @returns {string} Formatted number as string
  */
-export const formatDecimal = (value: number, precision = 2): string => {
+export const formatDecimal = (value: number, precision = DECIMAL_PRECISION.DEFAULT): string => {
   if (!value || isNaN(value)) return "0";
   return value.toFixed(precision).replace(/\.0+$/, '');
 };
 
 /**
- * Format a wall length measurement with consistent 1 decimal precision
+ * Format a wall length measurement with consistent decimal precision
  * @param {number} length - Wall length in meters
- * @returns {string} Formatted length with 1 decimal place
+ * @returns {string} Formatted length with specified decimal places
  */
 export const formatWallLength = (length: number): string => {
   if (!length || isNaN(length)) return "0.0";
-  return length.toFixed(1);
+  return length.toFixed(DECIMAL_PRECISION.WALL_LENGTH);
 };
