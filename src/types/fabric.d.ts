@@ -27,6 +27,12 @@ declare module 'fabric' {
     
     /** Event fired when viewport transform changes */
     'viewport:transform': { transform: number[] };
+    
+    /** Touch start event for mobile interactions */
+    'touch:start': { touches: { x: number; y: number }[] };
+    
+    /** Touch move event for mobile interactions */
+    'touch:move': { touches: { x: number; y: number }[]; e: TouchEvent };
   }
   
   /**
@@ -82,3 +88,4 @@ declare module 'fabric' {
     };
   }
 }
+

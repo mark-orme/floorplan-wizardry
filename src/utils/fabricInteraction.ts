@@ -73,7 +73,7 @@ export const addPinchToZoom = (canvas: FabricCanvas): void => {
   };
   
   // Add touch start event handler
-  canvas.on('touch:start' as keyof FabricCanvas["__eventListeners"], (e: any) => {
+  canvas.on('touch:start', (e: any) => {
     if (e.touches && e.touches.length === 2) {
       // Store initial touch positions for pinch gesture
       const p1 = e.touches[0];
@@ -89,7 +89,7 @@ export const addPinchToZoom = (canvas: FabricCanvas): void => {
   });
   
   // Add touch move event handler
-  canvas.on('touch:move' as keyof FabricCanvas["__eventListeners"], (e: any) => {
+  canvas.on('touch:move', (e: any) => {
     if (e.touches && e.touches.length === 2) {
       // Get current touch positions
       const p1 = e.touches[0];
