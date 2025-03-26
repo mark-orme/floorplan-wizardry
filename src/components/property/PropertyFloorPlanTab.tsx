@@ -53,9 +53,11 @@ export const PropertyFloorPlanTab = ({
           data-testid="floor-plan-wrapper"
           data-canvas-ready={isReady ? "true" : "false"}
         > 
-          <CanvasControllerProvider>
-            {isReady && <Canvas data-readonly={!canEdit} />}
-          </CanvasControllerProvider>
+          {isReady && (
+            <CanvasControllerProvider>
+              <Canvas data-readonly={!canEdit} />
+            </CanvasControllerProvider>
+          )}
         </div>
       </CardContent>
       <CardFooter>

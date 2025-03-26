@@ -12,6 +12,7 @@ import { captureError } from '@/utils/sentryUtils';
  * Includes fallback to EmergencyCanvas when main canvas fails
  */
 export const Canvas: React.FC = () => {
+  // Get canvas controller values
   const { 
     canvasRef, 
     debugInfo, 
@@ -28,9 +29,21 @@ export const Canvas: React.FC = () => {
   const errorDetailsRef = useRef<string[]>([]);
   const [diagnosticData, setDiagnosticData] = useState<Record<string, any>>({});
   const forceEmergencyRef = useRef<boolean>(false);
+  const componentMountedRef = useRef<boolean>(false);
+  
+  // Set mounted flag on initial render
+  useEffect(() => {
+    componentMountedRef.current = true;
+    
+    return () => {
+      componentMountedRef.current = false;
+    };
+  }, []);
   
   // Collect diagnostic data to help debug initialization issues
   useEffect(() => {
+    if (!componentMountedRef.current) return;
+    
     const collectDiagnosticInfo = () => {
       try {
         const diagnostics: Record<string, any> = {
@@ -54,7 +67,9 @@ export const Canvas: React.FC = () => {
           errorStack: errorDetailsRef.current.slice(-5) // Keep last 5 errors
         };
         
-        setDiagnosticData(diagnostics);
+        if (componentMountedRef.current) {
+          setDiagnosticData(diagnostics);
+        }
         
         // Log to console and Sentry for debugging
         if (process.env.NODE_ENV === 'development') {
@@ -82,6 +97,8 @@ export const Canvas: React.FC = () => {
   
   // Force emergency canvas on special error case
   useEffect(() => {
+    if (!componentMountedRef.current) return;
+    
     if (hasError) {
       const errorMsg = errorDetailsRef.current[errorDetailsRef.current.length - 1] || '';
       // Check for special error message that indicates we need to use emergency canvas
@@ -90,7 +107,10 @@ export const Canvas: React.FC = () => {
           errorMsg.includes('Too many canvas initialization attempts')) {
         logger.warn('Initialization blocked, forcing emergency canvas');
         forceEmergencyRef.current = true;
-        setUseEmergencyCanvas(true);
+        
+        if (componentMountedRef.current) {
+          setUseEmergencyCanvas(true);
+        }
         
         // Report this specific case
         captureError(
@@ -107,6 +127,8 @@ export const Canvas: React.FC = () => {
   
   // Track errors and switch to emergency canvas after too many failures
   useEffect(() => {
+    if (!componentMountedRef.current) return;
+    
     if (hasError) {
       const now = Date.now();
       lastErrorTimeRef.current = now;
@@ -170,11 +192,13 @@ export const Canvas: React.FC = () => {
           }
           
           // Switch to emergency canvas and notify user
-          setUseEmergencyCanvas(true);
-          toast.error('Canvas initialization failed. Using emergency mode.', {
-            id: 'canvas-failure',
-            duration: 5000
-          });
+          if (componentMountedRef.current) {
+            setUseEmergencyCanvas(true);
+            toast.error('Canvas initialization failed. Using emergency mode.', {
+              id: 'canvas-failure',
+              duration: 5000
+            });
+          }
         }
         
         return newCount;
@@ -184,6 +208,8 @@ export const Canvas: React.FC = () => {
   
   // Set a circuit breaker to automatically try again after 30 seconds
   useEffect(() => {
+    if (!componentMountedRef.current) return;
+    
     if (useEmergencyCanvas && !forceEmergencyRef.current) {
       // Clear any existing timer
       if (circuitBreakerTimerRef.current) {
@@ -195,7 +221,7 @@ export const Canvas: React.FC = () => {
         const timeSinceLastError = Date.now() - lastErrorTimeRef.current;
         
         // Only auto-retry if it's been at least 30 seconds since the last error
-        if (timeSinceLastError > 30000) {
+        if (timeSinceLastError > 30000 && componentMountedRef.current) {
           logger.info('Circuit breaker timer elapsed, automatically retrying main canvas');
           handleEmergencyRetry();
         }
@@ -227,11 +253,13 @@ export const Canvas: React.FC = () => {
     
     // Apply timeout to make sure React has time to unmount and clean up
     setTimeout(() => {
-      handleRetry();
-      toast.info('Attempting to initialize main canvas...', {
-        id: 'canvas-retry',
-        duration: 3000
-      });
+      if (componentMountedRef.current) {
+        handleRetry();
+        toast.info('Attempting to initialize main canvas...', {
+          id: 'canvas-retry',
+          duration: 3000
+        });
+      }
     }, 500);
   };
   

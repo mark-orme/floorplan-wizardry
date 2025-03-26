@@ -4,7 +4,7 @@
  * Provides utilities for safely disposing canvas instances
  * @module useCanvasCleanup
  */
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { disposeCanvas, isCanvasDisposed, forceCleanCanvasElement, isCanvasElementInitialized } from "@/utils/fabricCanvas";
 import logger from "@/utils/logger";
@@ -30,6 +30,8 @@ const canvasDisposalTracker = {
  */
 export const useCanvasCleanup = () => {
   const disposalInProgressRef = useRef(false);
+  // Add state to help with rendering and debugging
+  const [isResetting, setIsResetting] = useState(false);
   
   /**
    * Reset canvas initialization attempts counter
@@ -41,8 +43,19 @@ export const useCanvasCleanup = () => {
     // Only allow reset if it's been at least X time since last reset
     if (now - canvasDisposalTracker.lastResetTime > canvasDisposalTracker.resetIntervalMs) {
       logger.info("Resetting canvas initialization attempts counter");
+      
+      // Set resetting state first
+      setIsResetting(true);
+      
+      // Reset counters
       canvasDisposalTracker.initializationAttempts = 0;
       canvasDisposalTracker.lastResetTime = now;
+      
+      // Reset state after a short delay
+      setTimeout(() => {
+        setIsResetting(false);
+      }, 100);
+      
       return true;
     } else {
       logger.info(`Cannot reset initialization attempts yet. Wait ${Math.ceil((canvasDisposalTracker.resetIntervalMs - (now - canvasDisposalTracker.lastResetTime)) / 1000)} seconds more.`);
@@ -134,7 +147,7 @@ export const useCanvasCleanup = () => {
    * @param {HTMLCanvasElement} element - Canvas element to check
    * @returns {boolean} Whether the element is initialized
    */
-  const isCanvasElementInitialized = useCallback((element: HTMLCanvasElement): boolean => {
+  const checkCanvasElementInitialized = useCallback((element: HTMLCanvasElement): boolean => {
     if (!element) return false;
     
     // Check our tracker first
@@ -160,7 +173,7 @@ export const useCanvasCleanup = () => {
    * @param {HTMLCanvasElement} element - Canvas element to clean
    * @returns {boolean} Whether cleanup was successful
    */
-  const forceCleanCanvasElement = useCallback((element: HTMLCanvasElement): boolean => {
+  const forceCleanupCanvasElement = useCallback((element: HTMLCanvasElement): boolean => {
     if (!element) return false;
     
     // Remove from our tracker
@@ -170,13 +183,24 @@ export const useCanvasCleanup = () => {
     return forceCleanCanvasElement(element);
   }, []);
   
+  // Add a function to manually reduce the initialization attempts counter
+  const reduceInitializationAttempts = useCallback((reduceBy: number = 1) => {
+    canvasDisposalTracker.initializationAttempts = Math.max(
+      0, 
+      canvasDisposalTracker.initializationAttempts - reduceBy
+    );
+    logger.info(`Reduced initialization attempts to ${canvasDisposalTracker.initializationAttempts}`);
+  }, []);
+  
   return {
     cleanupCanvas,
-    isCanvasElementInitialized,
+    isCanvasElementInitialized: checkCanvasElementInitialized,
     markCanvasAsInitialized,
-    forceCleanCanvasElement,
+    forceCleanCanvasElement: forceCleanupCanvasElement,
     trackInitializationAttempt,
     resetInitializationAttempts,
+    reduceInitializationAttempts,
+    isResetting,
     // Export for debugging
     getInitializationAttempts: () => canvasDisposalTracker.initializationAttempts,
     getMaxInitializationAttempts: () => canvasDisposalTracker.maxInitializationAttempts
