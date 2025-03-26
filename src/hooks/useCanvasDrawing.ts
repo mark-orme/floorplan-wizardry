@@ -4,15 +4,15 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useEffect, useState, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
-import { useDrawingState } from "./useDrawingState";
 import { useCanvasHistory } from "./useCanvasHistory";
 import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { type FloorPlan } from "@/types/floorPlanTypes";
 import { DrawingTool } from "./useCanvasState";
 import { type DrawingState } from "@/types/drawingTypes";
+import { useCanvasDrawingState } from "./canvas/drawing/useCanvasDrawingState";
+import { useCanvasDrawingEvents } from "./canvas/drawing/useCanvasDrawingEvents";
 
 interface HistoryRef {
   past: FabricObject[][];
@@ -57,8 +57,18 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     recalculateGIA
   } = props;
   
-  // Track current zoom level for proper tooltip positioning
-  const [currentZoom, setCurrentZoom] = useState<number>(1);
+  // Use the drawing state hook to get all state-related functions
+  const {
+    drawingState,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    cleanupTimeouts,
+    updateZoomLevel
+  } = useCanvasDrawingState({
+    fabricCanvasRef,
+    tool
+  });
   
   // Use the improved history management hook
   const { saveCurrentState, handleUndo, handleRedo } = useCanvasHistory({
@@ -75,6 +85,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     }
   });
   
+  // Use the path processing hook
   const { processCreatedPath } = usePathProcessing({
     fabricCanvasRef,
     gridLayerRef,
@@ -88,19 +99,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     recalculateGIA
   });
   
-  const {
-    drawingState,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    cleanupTimeouts
-  } = useDrawingState({ 
-    fabricCanvasRef,
-    tool
-  });
-  
-  // Set up all event handlers using the dedicated hook
-  const { registerZoomTracking } = useCanvasEventHandlers({
+  // Register event handlers
+  useCanvasEventHandlers({
     fabricCanvasRef,
     tool,
     lineColor,
@@ -116,67 +116,22 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     deleteSelectedObjects
   });
   
-  // Add event listener to trigger GIA calculation when objects change
-  useEffect(() => {
-    if (!fabricCanvasRef.current || !recalculateGIA) return;
-    
-    const canvas = fabricCanvasRef.current;
-    
-    // Update GIA when objects are added, removed or modified
-    const handleObjectChange = () => {
-      if (recalculateGIA && typeof recalculateGIA === 'function') {
-        recalculateGIA();
-      }
-    };
-    
-    canvas.on('object:added', handleObjectChange);
-    canvas.on('object:removed', handleObjectChange);
-    canvas.on('object:modified', handleObjectChange);
-    
-    return () => {
-      canvas.off('object:added', handleObjectChange);
-      canvas.off('object:removed', handleObjectChange);
-      canvas.off('object:modified', handleObjectChange);
-    };
-  }, [fabricCanvasRef, recalculateGIA]);
-  
-  // Update zoom level whenever canvas changes - with stabilized dependencies
-  useEffect(() => {
-    const updateZoomLevel = () => {
-      if (fabricCanvasRef.current) {
-        const zoom = fabricCanvasRef.current.getZoom();
-        setCurrentZoom(zoom);
-      }
-    };
-    
-    // Initial update
-    updateZoomLevel();
-    
-    // Set up listeners for zoom changes
-    const fabricCanvas = fabricCanvasRef.current;
-    if (fabricCanvas) {
-      // Listen for both standard zoom events and our custom event
-      fabricCanvas.on('zoom:changed', updateZoomLevel);
-      fabricCanvas.on('custom:zoom-changed', updateZoomLevel);
-      
-      // Also update on viewport transform changes
-      fabricCanvas.on('viewport:transform', updateZoomLevel);
-    }
-    
-    return () => {
-      if (fabricCanvas) {
-        fabricCanvas.off('zoom:changed', updateZoomLevel);
-        fabricCanvas.off('custom:zoom-changed', updateZoomLevel);
-        fabricCanvas.off('viewport:transform', updateZoomLevel);
-      }
-    };
-  }, [fabricCanvasRef]); // Keep this simple to avoid dependency issues
+  // Register zoom and GIA event listeners
+  useCanvasDrawingEvents({
+    fabricCanvasRef,
+    tool,
+    saveCurrentState,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    processCreatedPath,
+    updateZoomLevel,
+    recalculateGIA,
+    deleteSelectedObjects
+  });
   
   // Return drawing state with current zoom level
   return {
-    drawingState: {
-      ...drawingState,
-      currentZoom
-    }
+    drawingState
   };
 };

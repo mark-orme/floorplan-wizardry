@@ -1,21 +1,17 @@
 
 /**
  * Hook for managing canvas drawing tools
- * Centralizes the control and operation of canvas tools and actions
- * @module useCanvasControllerTools
+ * @module canvas/controller/useCanvasToolsManager
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { useDrawingTools } from "@/hooks/useDrawingTools";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { FloorPlan } from "@/types/floorPlanTypes";
-import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
-import { useCanvasToolsManager } from "./canvas/controller/useCanvasToolsManager";
-import { useCanvasToolsGIA } from "./canvas/controller/useCanvasToolsGIA";
 
 /**
- * Props interface for useCanvasControllerTools hook
- * @interface UseCanvasControllerToolsProps
+ * Props interface for useCanvasToolsManager hook
  */
-interface UseCanvasControllerToolsProps {
+interface UseCanvasToolsManagerProps {
   /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Reference to the grid layer objects */
@@ -44,16 +40,17 @@ interface UseCanvasControllerToolsProps {
   setGia: React.Dispatch<React.SetStateAction<number>>;
   /** Function to create grid */
   createGrid: (canvas: FabricCanvas) => any[];
+  /** Function to recalculate GIA */
+  recalculateGIA: () => void;
 }
 
 /**
- * Hook that manages canvas drawing tools and operations
- * Provides functionality for tool changes, undo/redo, zooming and saving
+ * Hook that manages core drawing tools functionality
  * 
- * @param {UseCanvasControllerToolsProps} props - Hook properties
+ * @param {UseCanvasToolsManagerProps} props - Hook properties
  * @returns Drawing tool functions and handlers
  */
-export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) => {
+export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
   const {
     fabricCanvasRef,
     gridLayerRef,
@@ -68,24 +65,21 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     currentFloor,
     setFloorPlans,
     setGia,
-    createGrid
+    createGrid,
+    recalculateGIA
   } = props;
 
-  // Initialize GIA calculation hook
-  const { recalculateGIA } = useFloorPlanGIA({
-    fabricCanvasRef,
-    setGia
-  });
-
-  // Set up GIA calculation and event listeners
-  useCanvasToolsGIA({
-    fabricCanvasRef,
-    setGia,
-    recalculateGIA
-  });
-
-  // Get all drawing tool functions from the tool manager
-  const toolFunctions = useCanvasToolsManager({
+  // Use the drawing tools hook to get all tool functions
+  const {
+    clearDrawings,
+    handleToolChange,
+    handleUndo,
+    handleRedo,
+    handleZoom,
+    clearCanvas,
+    saveCanvas,
+    saveCurrentState
+  } = useDrawingTools({
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
@@ -103,5 +97,14 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     recalculateGIA
   });
 
-  return toolFunctions;
+  return {
+    clearDrawings,
+    handleToolChange,
+    handleUndo,
+    handleRedo,
+    handleZoom,
+    clearCanvas,
+    saveCanvas,
+    saveCurrentState
+  };
 };

@@ -1,26 +1,17 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePropertyManagement } from '@/hooks/usePropertyManagement';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { z } from 'zod';
+import { Form } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { ArrowLeft, Grid } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
-
-const PropertyFormSchema = z.object({
-  order_id: z.string().min(1, 'Order ID is required'),
-  address: z.string().min(5, 'Address must be at least 5 characters'),
-  client_name: z.string().min(2, 'Client name is required'),
-  branch_name: z.string().optional()
-});
-
-type PropertyFormValues = z.infer<typeof PropertyFormSchema>;
+import { PropertyFormHeader } from '@/components/property/PropertyFormHeader';
+import { PropertyFormFields, PropertyFormSchema, PropertyFormValues } from '@/components/property/PropertyFormFields';
+import { PropertyFormActions } from '@/components/property/PropertyFormActions';
 
 const PropertyForm = () => {
   const { createProperty } = usePropertyManagement();
@@ -106,18 +97,15 @@ const PropertyForm = () => {
     form.reset();
   };
 
+  const navigateBack = () => navigate('/properties');
+  const navigateToFloorplans = () => navigate('/floorplans');
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-md">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="outline" size="sm" onClick={() => navigate('/properties')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Properties
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate('/floorplans')}>
-          <Grid className="mr-2 h-4 w-4" />
-          Floor Plan Editor
-        </Button>
-      </div>
+      <PropertyFormHeader 
+        navigateBack={navigateBack} 
+        navigateToFloorplans={navigateToFloorplans} 
+      />
 
       <LoadingErrorWrapper
         isLoading={isLoading || authLoading}
@@ -135,75 +123,13 @@ const PropertyForm = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="order_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Order ID</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. ORD-12345" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Property Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. 123 Main St, City" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="client_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. John Smith" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="branch_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Branch Name (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Downtown Office" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <PropertyFormFields form={form} />
               </CardContent>
               
-              <CardFooter className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  type="button"
-                  onClick={() => navigate('/properties')}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating...' : 'Create Property'}
-                </Button>
-              </CardFooter>
+              <PropertyFormActions 
+                isSubmitting={isSubmitting} 
+                onCancel={navigateBack} 
+              />
             </form>
           </Form>
         </Card>
