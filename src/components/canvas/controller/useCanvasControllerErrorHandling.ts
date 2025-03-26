@@ -38,7 +38,8 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     setHasError(true);
     setErrorMessage(error.message);
     updateDebugInfo({ 
-      errorCount: prev => (prev || 0) + 1 
+      // Fixed: Use an object with direct value instead of a function
+      errorCount: (updateDebugInfo as any)?.errorCount ? (updateDebugInfo as any).errorCount + 1 : 1 
     });
   }, [setHasError, setErrorMessage, updateDebugInfo]);
 
@@ -48,7 +49,8 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     setErrorMessage("");
     updateDebugInfo({ 
       lastRetryTime: new Date().toISOString(),
-      retryCount: prev => (prev || 0) + 1
+      // Fixed: Use an object with direct value instead of a function
+      retryCount: (updateDebugInfo as any)?.retryCount ? (updateDebugInfo as any).retryCount + 1 : 1
     });
   }, [setHasError, setErrorMessage, updateDebugInfo]);
 

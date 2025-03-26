@@ -31,7 +31,8 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
   const throttleRef = useRef<number | null>(null);
   
   // Get point processing functions for snapping
-  const { snapCurrentPoint } = usePointProcessing(tool, "#000000");
+  // Fixed: Removed extra argument
+  const { snapCurrentPoint } = usePointProcessing(tool);
   
   // Initialize drawing state with all required properties
   const [drawingState, setDrawingState] = useState<DrawingState>({

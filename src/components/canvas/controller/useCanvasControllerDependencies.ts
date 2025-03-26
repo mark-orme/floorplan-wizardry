@@ -13,7 +13,7 @@ import { DebugInfoState } from "@/types/debugTypes";
  * @interface UseCanvasControllerDependenciesProps
  */
 interface UseCanvasControllerDependenciesProps {
-  /** Reference to the fabric canvas */
+  /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Reference to the HTML canvas element */
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -69,7 +69,13 @@ export const useCanvasControllerDependencies = ({
   // Provide fallback values for required props
   const resolvedCanvasRef = canvasRef || defaultCanvasRef;
   const resolvedCanvasDimensions = canvasDimensions || { width: 800, height: 600 };
-  const resolvedDebugInfo = debugInfo || { canvasInitialized: false, gridCreated: false };
+  // Fixed: Include all required properties in the default debug info
+  const resolvedDebugInfo = debugInfo || { 
+    canvasInitialized: false, 
+    gridCreated: false,
+    dimensionsSet: false,
+    brushInitialized: false 
+  };
   const resolvedSetDebugInfo = setDebugInfo || ((_: any) => {});
   const resolvedSetHasError = setHasError || ((_: boolean) => {});
   const resolvedSetErrorMessage = setErrorMessage || ((_: string) => {});

@@ -73,7 +73,8 @@ export const useCanvasController = () => {
     lineColor,
     setLineColor,
     drawingState,
-    setDrawingState
+    setDrawingState,
+    resetLoadTimes
   } = context;
   
   // Create refs for canvas and dependencies
@@ -102,11 +103,22 @@ export const useCanvasController = () => {
   
   // Initialize canvas dependencies, grid creation, etc.
   const { 
-    createGrid 
+    createGrid,
+    gridLayerRef: resolvedGridLayerRef
   } = useCanvasControllerDependencies({
     fabricCanvasRef,
-    updateDebugInfo
+    canvasRef,
+    debugInfo,
+    updateDebugInfo,
+    setHasError,
+    setErrorMessage,
+    zoomLevel
   });
+
+  // Use the resolved grid layer reference
+  if (resolvedGridLayerRef && resolvedGridLayerRef.current) {
+    gridLayerRef.current = resolvedGridLayerRef.current;
+  }
   
   // Initialize canvas tools (tool selection, drawing, etc.)
   const {
@@ -169,12 +181,17 @@ export const useCanvasController = () => {
   });
   
   // Initialize data loader
+  // Fixed: Modified loadData to return a Promise to match expected type
+  const asyncLoadData = async () => {
+    return Promise.resolve(loadData());
+  };
+  
   useCanvasControllerLoader({
     setIsLoading,
     setFloorPlans,
     setHasError,
     setErrorMessage,
-    loadData
+    loadData: asyncLoadData
   });
   
   // Delete selected objects
@@ -229,11 +246,17 @@ export const useCanvasController = () => {
     handleError,
     updateDebugInfo,
     setDrawingState,
-    recalculateGIA
+    recalculateGIA,
+    canvasRef
   });
   
   // Measurement guide modal
-  const { openMeasurementGuide } = useMeasurementGuide();
+  const { setShowMeasurementGuide } = useMeasurementGuide();
+  
+  // Fixed: Changed to properly match the expected function signature
+  const openMeasurementGuide = useCallback(() => {
+    setShowMeasurementGuide(true);
+  }, [setShowMeasurementGuide]);
   
   // Return comprehensive controller state and functions
   return {
