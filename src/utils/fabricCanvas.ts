@@ -157,16 +157,8 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
       return;
     }
     
-    // Safe approach to disposal - prevent issues with Fabric.js internals
+    // Safely remove all objects first
     try {
-      // First, remove all event listeners
-      canvas.off();
-      
-      // Mark the canvas as disposed first, before removing objects
-      // This helps prevent callbacks that might try to use the canvas during disposal
-      (canvas as any).disposed = true;
-      
-      // Remove all objects one by one to avoid batch operations
       const objects = [...canvas.getObjects()];
       objects.forEach(obj => {
         try {
@@ -175,6 +167,17 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
           // Silently fail for individual object removals
         }
       });
+    } catch (err) {
+      console.warn("Error removing canvas objects:", err);
+    }
+    
+    // Safe approach to disposal - prevent issues with Fabric.js internals
+    try {
+      // First, remove all event listeners
+      canvas.off();
+      
+      // Mark the canvas as disposed first, before finishing disposal
+      (canvas as any).disposed = true;
       
       // Get the canvas element before disposal (might be needed for DOM cleanup)
       const canvasElement = safelyGetCanvasElement(canvas);
@@ -185,12 +188,17 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
       // Mark flag since we successfully disposed the canvas
       disposedSuccessfully = true;
       
-      // If we got the element earlier, try to remove it from DOM as well
-      if (canvasElement && canvasElement.parentNode) {
+      // If we got the element earlier, try to remove fabric data attributes
+      if (canvasElement) {
         try {
-          canvasElement.parentNode.removeChild(canvasElement);
+          // Remove Fabric's data attribute to prevent "already initialized" errors
+          canvasElement.removeAttribute('data-fabric');
+          
+          // Also remove inline width/height to allow reinitializing with new dimensions
+          canvasElement.style.width = '';
+          canvasElement.style.height = '';
         } catch (err) {
-          console.warn("Failed to remove canvas from DOM:", err);
+          console.warn("Failed to clean canvas element attributes:", err);
         }
       }
     } catch (err) {
@@ -203,8 +211,9 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
         
         // Try to access and remove the canvas element directly
         const canvasElement = safelyGetCanvasElement(canvas);
-        if (canvasElement && canvasElement.parentNode) {
-          canvasElement.parentNode.removeChild(canvasElement);
+        if (canvasElement) {
+          // Remove Fabric's data attribute
+          canvasElement.removeAttribute('data-fabric');
           disposedSuccessfully = true;
         }
       } catch (domErr) {

@@ -58,7 +58,9 @@ export const createBasicEmergencyGrid = (
           left: 5,
           top: i - 15,
           fontSize: 10,
-          fill: "#666666"
+          fill: "#666666",
+          selectable: false,
+          evented: false
         });
         canvas.add(text);
         gridObjects.push(text);
@@ -82,7 +84,9 @@ export const createBasicEmergencyGrid = (
           left: i,
           top: 5,
           fontSize: 10,
-          fill: "#666666"
+          fill: "#666666",
+          selectable: false,
+          evented: false
         });
         canvas.add(text);
         gridObjects.push(text);
@@ -95,7 +99,9 @@ export const createBasicEmergencyGrid = (
       top: height / 2,
       fontSize: 14,
       fill: "red",
-      fontWeight: "bold"
+      fontWeight: "bold",
+      selectable: false,
+      evented: false
     });
     canvas.add(marker);
     gridObjects.push(marker);
@@ -133,6 +139,9 @@ export const isCanvasUsable = (canvas: FabricCanvas | null): boolean => {
     // Check that canvas element exists
     const element = canvas.getElement();
     if (!element || !(element instanceof HTMLCanvasElement)) return false;
+    
+    // Check if the canvas is marked as disposed
+    if ((canvas as any).disposed === true) return false;
     
     // Try to call a method to see if the canvas is functional
     canvas.getZoom();

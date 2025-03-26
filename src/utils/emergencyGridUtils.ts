@@ -280,6 +280,16 @@ export const attemptCanvasRepair = (
       return false;
     }
     
+    // Remove Fabric's data attribute to allow reinitialization
+    try {
+      canvasElement.removeAttribute('data-fabric');
+      // Also clear width/height styles
+      canvasElement.style.width = '';
+      canvasElement.style.height = '';
+    } catch (err) {
+      logger.warn("Could not clean canvas data attributes:", err);
+    }
+    
     // Check canvas dimensions
     if (canvas.width <= 0 || canvas.height <= 0) {
       logger.warn("Canvas has invalid dimensions, attempting to fix");

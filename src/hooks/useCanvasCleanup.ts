@@ -23,11 +23,14 @@ const cleanupState = {
   // Track current disposal timeout
   currentTimeoutId: null as number | null,
   // Track canvas instances being disposed to prevent double disposal
-  disposingCanvases: new WeakSet<FabricCanvas>()
+  disposingCanvases: new WeakSet<FabricCanvas>(),
+  // Track canvas elements that have been initialized to prevent multiple initializations
+  initializedCanvasElements: new WeakMap<HTMLCanvasElement, boolean>(),
+  // Flag to track if we're detecting a loop
+  loopDetected: false,
+  // Time when the last loop was detected
+  lastLoopDetectedTime: 0
 };
-
-// Track canvas element IDs to prevent multiple initializations
-const initializedCanvasElements = new WeakMap<HTMLCanvasElement, boolean>();
 
 /**
  * Hook to handle proper cleanup of canvas resources
@@ -57,6 +60,34 @@ export const useCanvasCleanup = () => {
   }, []);
 
   /**
+   * Check if we're in a cleanup loop
+   */
+  const isInCleanupLoop = useCallback((): boolean => {
+    // If we've already detected a loop recently, return true
+    if (cleanupState.loopDetected) {
+      // Check if enough time has passed to reset loop detection
+      const now = Date.now();
+      if (now - cleanupState.lastLoopDetectedTime > 10000) {
+        // Reset loop detection after 10 seconds
+        cleanupState.loopDetected = false;
+        logger.info("Reset canvas cleanup loop detection state");
+        return false;
+      }
+      return true;
+    }
+    
+    // Detect a loop if we have too many consecutive disposals
+    if (cleanupState.consecutiveDisposals > cleanupState.MAX_CONSECUTIVE_DISPOSALS) {
+      cleanupState.loopDetected = true;
+      cleanupState.lastLoopDetectedTime = Date.now();
+      logger.warn("Canvas cleanup loop detected");
+      return true;
+    }
+    
+    return false;
+  }, []);
+
+  /**
    * Properly dispose of canvas resources
    */
   const cleanupCanvas = useCallback((fabricCanvas: FabricCanvas | null) => {
@@ -71,25 +102,18 @@ export const useCanvasCleanup = () => {
       return;
     }
     
+    // Check if we're in a disposal loop
+    if (isInCleanupLoop()) {
+      logger.warn("Too many canvas disposals in short time, possible loop detected");
+      console.warn("CANVAS CLEANUP: Possible disposal loop detected, skipping cleanup");
+      return;
+    }
+    
     // Generate a unique identifier for this canvas instance
     const canvasId = Date.now();
     
-    // Detect potential disposal loops
+    // Increment the consecutive disposals counter
     cleanupState.consecutiveDisposals++;
-    
-    // Check if we've detected a disposal loop
-    if (cleanupState.consecutiveDisposals > cleanupState.MAX_CONSECUTIVE_DISPOSALS) {
-      logger.warn("Too many canvas disposals in short time, possible loop detected");
-      console.warn("CANVAS CLEANUP: Possible disposal loop detected, skipping cleanup");
-      
-      // Reset the counter after a short delay to allow future cleanups
-      const resetTimeoutId = window.setTimeout(() => {
-        cleanupState.consecutiveDisposals = 0;
-      }, 2000);
-      
-      disposeTimeoutsRef.current.push(resetTimeoutId);
-      return;
-    }
     
     // Check if we're in a disposal cooldown period to prevent loops
     if (cleanupState.recentlyDisposedCanvases.size > 2) {
@@ -143,7 +167,7 @@ export const useCanvasCleanup = () => {
       try {
         const canvasElement = fabricCanvas.getElement();
         if (canvasElement) {
-          initializedCanvasElements.delete(canvasElement);
+          cleanupState.initializedCanvasElements.delete(canvasElement);
           logger.debug("Canvas element marked as not initialized");
         }
       } catch (error) {
@@ -176,14 +200,16 @@ export const useCanvasCleanup = () => {
       isCleaningUpRef.current = false;
       cleanupState.disposingCanvases.delete(fabricCanvas);
     }
-  }, []);
+  }, [isInCleanupLoop]);
 
   /**
    * Check if a canvas element has already been initialized
    */
   const isCanvasElementInitialized = useCallback((element: HTMLCanvasElement | null): boolean => {
     if (!element) return false;
-    return initializedCanvasElements.has(element);
+    
+    // Check in our WeakMap if this element has been initialized
+    return cleanupState.initializedCanvasElements.has(element);
   }, []);
 
   /**
@@ -191,7 +217,7 @@ export const useCanvasCleanup = () => {
    */
   const markCanvasAsInitialized = useCallback((element: HTMLCanvasElement | null): void => {
     if (!element) return;
-    initializedCanvasElements.set(element, true);
+    cleanupState.initializedCanvasElements.set(element, true);
     logger.debug("Canvas element marked as initialized");
   }, []);
 
@@ -203,6 +229,7 @@ export const useCanvasCleanup = () => {
     cleanupState.consecutiveDisposals = 0;
     cleanupState.recentlyDisposedCanvases.clear();
     cleanupState.disposingCanvases = new WeakSet<FabricCanvas>();
+    cleanupState.loopDetected = false;
     logger.debug("Canvas cleanup state has been reset");
   }, []);
 
