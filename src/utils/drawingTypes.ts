@@ -1,3 +1,4 @@
+
 /**
  * Type definitions for drawing functionality
  * Re-exports constants from central numerics module
@@ -32,28 +33,30 @@ export type Stroke = Point[];
 // Re-export constants for backward compatibility
 export { GRID_SPACING, PIXELS_PER_METER, SMALL_GRID, LARGE_GRID };
 
-// IndexedDB Constants
 /**
- * Name of the IndexedDB database
- * @constant {string}
+ * Database constants for IndexedDB operations
+ * @constant {Object}
  */
-export const DB_NAME = 'FloorPlanDB';
-
-/**
- * Name of the object store in the database
- * @constant {string}
- */
-export const STORE_NAME = 'floorPlans';
+export const DB_CONSTANTS = {
+  /** Name of the IndexedDB database */
+  DB_NAME: 'FloorPlanDB',
+  
+  /** Name of the object store in the database */
+  STORE_NAME: 'floorPlans',
+  
+  /** Version of the IndexedDB database */
+  DB_VERSION: 1
+};
 
 /** 
  * Initialize IndexedDB 
  * @returns {Promise<IDBDatabase>} Initialized database
  */
 export const getDB = async () => {
-  return openDB(DB_NAME, 1, {
+  return openDB(DB_CONSTANTS.DB_NAME, DB_CONSTANTS.DB_VERSION, {
     upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(DB_CONSTANTS.STORE_NAME)) {
+        db.createObjectStore(DB_CONSTANTS.STORE_NAME, { keyPath: 'id' });
       }
     },
   });

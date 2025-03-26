@@ -8,16 +8,19 @@ import { useCallback, useRef } from "react";
 import logger from "@/utils/logger";
 
 /**
- * Base delay for exponential backoff (ms)
- * @constant {number}
+ * Retry configuration constants
+ * @constant {Object}
  */
-const BASE_RETRY_DELAY = 500;
-
-/**
- * Maximum number of retry attempts
- * @constant {number}
- */
-const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_CONSTANTS = {
+  /** Base delay for exponential backoff (ms) */
+  BASE_RETRY_DELAY: 500,
+  
+  /** Maximum number of retry attempts */
+  MAX_RETRY_ATTEMPTS: 3,
+  
+  /** Maximum delay cap in milliseconds */
+  MAX_DELAY_CAP: 3000
+};
 
 /**
  * Hook for managing grid creation retries
@@ -60,8 +63,8 @@ export const useGridRetry = () => {
     cancelRetry();
     
     // Check if max attempts reached
-    if (retryAttemptsRef.current >= MAX_RETRY_ATTEMPTS) {
-      logger.warn(`Maximum retry attempts (${MAX_RETRY_ATTEMPTS}) reached for grid creation`);
+    if (retryAttemptsRef.current >= RETRY_CONSTANTS.MAX_RETRY_ATTEMPTS) {
+      logger.warn(`Maximum retry attempts (${RETRY_CONSTANTS.MAX_RETRY_ATTEMPTS}) reached for grid creation`);
       return false;
     }
     
@@ -70,9 +73,12 @@ export const useGridRetry = () => {
     
     // Calculate delay with exponential backoff
     const calculatedDelay = customDelay || 
-      Math.pow(2, retryAttemptsRef.current - 1) * BASE_RETRY_DELAY;
+      Math.pow(2, retryAttemptsRef.current - 1) * RETRY_CONSTANTS.BASE_RETRY_DELAY;
     
-    logger.debug(`Scheduling grid creation retry ${retryAttemptsRef.current}/${MAX_RETRY_ATTEMPTS} in ${calculatedDelay}ms`);
+    // Cap the delay at the maximum value
+    const cappedDelay = Math.min(calculatedDelay, RETRY_CONSTANTS.MAX_DELAY_CAP);
+    
+    logger.debug(`Scheduling grid creation retry ${retryAttemptsRef.current}/${RETRY_CONSTANTS.MAX_RETRY_ATTEMPTS} in ${cappedDelay}ms`);
     
     // Schedule retry
     retryTimeoutRef.current = window.setTimeout(() => {
@@ -82,7 +88,7 @@ export const useGridRetry = () => {
       } catch (error) {
         logger.error("Error in grid creation retry:", error);
       }
-    }, calculatedDelay);
+    }, cappedDelay);
     
     return true;
   }, [cancelRetry]);

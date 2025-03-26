@@ -6,6 +6,12 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import jsdoc from "eslint-plugin-jsdoc";
 
+// Constants for ESLint configuration
+const MAX_LINE_LENGTH = 100;
+const MAX_FUNCTION_LINES = 50;
+const MAX_COMPLEXITY = 10;
+const MAX_DEPTH = 3;
+
 export default tseslint.config(
   { ignores: ["dist"] },
   {
@@ -91,7 +97,7 @@ export default tseslint.config(
       
       // Maximum line length
       "max-len": ["warn", { 
-        "code": 100, 
+        "code": MAX_LINE_LENGTH, 
         "ignoreComments": true, 
         "ignoreUrls": true,
         "ignoreStrings": true,
@@ -101,7 +107,7 @@ export default tseslint.config(
       
       // Maximum function length
       "max-lines-per-function": ["error", { // Changed to error
-        "max": 50, 
+        "max": MAX_FUNCTION_LINES, 
         "skipBlankLines": true, 
         "skipComments": true 
       }],
@@ -113,7 +119,7 @@ export default tseslint.config(
       }],
       
       // Complexity limits
-      "complexity": ["error", 10], // Changed to error
+      "complexity": ["error", MAX_COMPLEXITY], // Changed to error
       
       // Unused variables and imports (typescript-eslint handles no-unused-vars)
       "no-unused-expressions": "error", // Keep as error
@@ -127,7 +133,7 @@ export default tseslint.config(
       "array-bracket-spacing": ["warn", "never"],
       
       // Prevent deeply nested code
-      "max-depth": ["error", 3], // Changed to error
+      "max-depth": ["error", MAX_DEPTH], // Changed to error
       
       // Encourage consistent use of destructuring
       "prefer-destructuring": ["warn", {
