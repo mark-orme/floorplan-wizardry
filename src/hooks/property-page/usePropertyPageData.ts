@@ -12,7 +12,7 @@ export const usePropertyPageData = (user: any) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [hasError, setHasError] = useState(false);
   
-  // Initialize property management hook once
+  // Initialize property management hook once at the top level
   const propertyManagement = usePropertyManagement();
   const { properties, isLoading: propertiesLoading, listProperties } = propertyManagement;
 

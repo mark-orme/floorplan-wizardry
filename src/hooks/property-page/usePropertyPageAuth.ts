@@ -11,7 +11,7 @@ export const usePropertyPageAuth = () => {
   const navigate = useNavigate();
   const [hasError, setHasError] = useState(false);
   
-  // Get auth context properly
+  // Get auth context properly - always call hooks at the top level
   const { user, userRole, loading: authLoading } = useAuth();
   const hasAccess = userRole ? [UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER, UserRole.MANAGER].includes(userRole) : false;
   

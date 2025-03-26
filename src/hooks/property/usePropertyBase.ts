@@ -11,15 +11,8 @@ export const usePropertyBase = () => {
   const [authContextError, setAuthContextError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  let authData = { user: null, userRole: null };
-  
-  try {
-    authData = useAuth();
-  } catch (error) {
-    console.error('Auth context error in property management:', error);
-    setAuthContextError(true);
-  }
-  
+  // IMPORTANT: Always call hooks unconditionally at the top level
+  const authData = useAuth();
   const { user, userRole } = authData;
   
   /**
