@@ -6,7 +6,12 @@
  */
 import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { disposeCanvas, isCanvasDisposed, forceCleanCanvasElement, isCanvasElementInitialized } from "@/utils/fabricCanvas";
+import { 
+  disposeCanvas, 
+  isCanvasDisposed, 
+  forceCleanCanvasElement, 
+  isCanvasElementInitialized 
+} from "@/utils/fabric";
 import logger from "@/utils/logger";
 
 // Track canvas disposals to prevent loops

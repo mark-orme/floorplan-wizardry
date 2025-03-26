@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for initializing Fabric.js canvas
  * @module useCanvasCreation
@@ -9,7 +10,10 @@ import { CanvasDimensions } from "@/types/drawingTypes";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import logger from "@/utils/logger";
 import { forceResetCanvasElement } from "@/utils/gridCreationUtils";
-import { forceCleanCanvasElement, isCanvasElementInitialized } from "@/utils/fabricCanvas";
+import { 
+  forceCleanCanvasElement, 
+  isCanvasElementInitialized 
+} from "@/utils/fabric";
 import { captureError } from "@/utils/sentryUtils";
 
 /**

@@ -1,11 +1,10 @@
-
 /**
  * Custom hook for handling canvas resizing
  * @module useCanvasResizing
  */
 import { useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { setCanvasDimensions } from "@/utils/fabricCanvas";
+import { setCanvasDimensions, CANVAS_DIMENSIONS } from "@/utils/fabric";
 import { CanvasDimensions, DebugInfoState } from "@/types/drawingTypes";
 
 interface UseCanvasResizingProps {
@@ -93,9 +92,9 @@ export const useCanvasResizing = ({
     const newWidth = Math.max(width - 20, 600);
     const newHeight = Math.max(height - 20, 400);
     
-    // Skip update if dimensions haven't changed significantly (within 80px)
-    if (Math.abs(newWidth - lastDimensionsRef.current.width) < 80 && 
-        Math.abs(newHeight - lastDimensionsRef.current.height) < 80) {
+    // Skip update if dimensions haven't changed significantly (within tolerance)
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < CANVAS_DIMENSIONS.DIMENSION_CHANGE_TOLERANCE && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < CANVAS_DIMENSIONS.DIMENSION_CHANGE_TOLERANCE) {
       resizeInProgressRef.current = false;
       resizingState.resizeInProgress = false;
       return;
