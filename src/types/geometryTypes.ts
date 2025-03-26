@@ -47,3 +47,24 @@ export interface CanvasDimensions {
 
 // Re-export constants for backward compatibility
 export { GRID_SPACING, PIXELS_PER_METER, SMALL_GRID, LARGE_GRID };
+
+/**
+ * Drawing element types
+ * Identifies different types of drawing elements
+ */
+export enum DrawingElementType {
+  /** Wall element type */
+  WALL = 'wall',
+  
+  /** Room element type */
+  ROOM = 'room',
+  
+  /** Door element type */
+  DOOR = 'door',
+  
+  /** Window element type */
+  WINDOW = 'window',
+  
+  /** Generic element type */
+  GENERIC = 'generic'
+}

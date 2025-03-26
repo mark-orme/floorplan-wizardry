@@ -1,4 +1,3 @@
-
 /**
  * Utilities for working with Fabric.js path objects
  * @module fabricPathUtils
@@ -33,6 +32,82 @@ const PATH_CONSTANTS = {
   SINGLE_POINT_OFFSET: 0.1
 };
 
+/**
+ * Path command types used in fabricPathToPoints
+ */
+const PATH_COMMANDS = {
+  /**
+   * Move to command
+   * @constant {string}
+   */
+  MOVE_TO: 'M',
+  
+  /**
+   * Line to command
+   * @constant {string}
+   */
+  LINE_TO: 'L',
+  
+  /**
+   * Quadratic curve command
+   * @constant {string}
+   */
+  QUADRATIC_CURVE: 'Q',
+  
+  /**
+   * Bezier curve command
+   * @constant {string}
+   */
+  BEZIER_CURVE: 'C'
+};
+
+/**
+ * Command index constants for accessing path data
+ */
+const COMMAND_INDICES = {
+  /**
+   * Index of command type in path command array
+   * @constant {number}
+   */
+  COMMAND_TYPE: 0,
+  
+  /**
+   * Index of first coordinate in path command array
+   * @constant {number}
+   */
+  FIRST_COORD: 1,
+  
+  /**
+   * Index of second coordinate in path command array
+   * @constant {number}
+   */
+  SECOND_COORD: 2,
+  
+  /**
+   * Index of quadratic curve end x-coordinate
+   * @constant {number}
+   */
+  QUAD_END_X: 3,
+  
+  /**
+   * Index of quadratic curve end y-coordinate
+   * @constant {number}
+   */
+  QUAD_END_Y: 4,
+  
+  /**
+   * Index of bezier curve end x-coordinate
+   * @constant {number}
+   */
+  BEZIER_END_X: 5,
+  
+  /**
+   * Index of bezier curve end y-coordinate
+   * @constant {number}
+   */
+  BEZIER_END_Y: 6
+};
+
 /** 
  * Convert fabric.js path points to our Point type 
  * @param {any[]} path - Fabric.js path array
@@ -47,24 +122,28 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
     // Extract all path commands
     path.forEach((command) => {
       if (Array.isArray(command)) {
-        if (command[0] === 'M' || command[0] === 'L') { // Move to or Line to
+        if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.MOVE_TO || 
+            command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO) { 
+          // Move to or Line to
           points.push({ 
-            x: command[1] / PIXELS_PER_METER, 
-            y: command[2] / PIXELS_PER_METER 
+            x: command[COMMAND_INDICES.FIRST_COORD] / PIXELS_PER_METER, 
+            y: command[COMMAND_INDICES.SECOND_COORD] / PIXELS_PER_METER 
           });
         }
-        else if (command[0] === 'Q') { // Quadratic curve
+        else if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.QUADRATIC_CURVE) { 
+          // Quadratic curve
           // Add the control point and end point
           points.push({ 
-            x: command[3] / PIXELS_PER_METER, 
-            y: command[4] / PIXELS_PER_METER 
+            x: command[COMMAND_INDICES.QUAD_END_X] / PIXELS_PER_METER, 
+            y: command[COMMAND_INDICES.QUAD_END_Y] / PIXELS_PER_METER 
           }); // End point of curve
         }
-        else if (command[0] === 'C') { // Bezier curve
+        else if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.BEZIER_CURVE) { 
+          // Bezier curve
           // Add the end point of the curve
           points.push({ 
-            x: command[5] / PIXELS_PER_METER, 
-            y: command[6] / PIXELS_PER_METER 
+            x: command[COMMAND_INDICES.BEZIER_END_X] / PIXELS_PER_METER, 
+            y: command[COMMAND_INDICES.BEZIER_END_Y] / PIXELS_PER_METER 
           });
         }
       }
@@ -75,10 +154,11 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
       // Try to get just the first and last points
       for (const command of path) {
         if (Array.isArray(command) && command.length >= 3) {
-          if (command[0] === 'M' || command[0] === 'L') {
+          if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.MOVE_TO || 
+              command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO) {
             points.push({ 
-              x: command[1] / PIXELS_PER_METER, 
-              y: command[2] / PIXELS_PER_METER 
+              x: command[COMMAND_INDICES.FIRST_COORD] / PIXELS_PER_METER, 
+              y: command[COMMAND_INDICES.SECOND_COORD] / PIXELS_PER_METER 
             });
             break;
           }
@@ -89,8 +169,15 @@ export const fabricPathToPoints = (path: any[]): Point[] => {
       for (let i = path.length - 1; i >= 0; i--) {
         const command = path[i];
         if (Array.isArray(command) && command.length >= 3) {
-          if (command[0] === 'L' || command[0] === 'C' || command[0] === 'Q') {
-            const lastIndex = command[0] === 'L' ? 1 : command[0] === 'Q' ? 3 : 5;
+          if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO || 
+              command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.QUADRATIC_CURVE || 
+              command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.BEZIER_CURVE) {
+            const lastIndex = command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO ? 
+              COMMAND_INDICES.FIRST_COORD : 
+              (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.QUADRATIC_CURVE ? 
+                COMMAND_INDICES.QUAD_END_X : 
+                COMMAND_INDICES.BEZIER_END_X);
+            
             points.push({ 
               x: command[lastIndex] / PIXELS_PER_METER, 
               y: command[lastIndex + 1] / PIXELS_PER_METER 
@@ -163,15 +250,21 @@ export const cleanPathData = (pathData: any[]): any[] => {
   for (const command of pathData) {
     if (!Array.isArray(command)) continue;
     
-    const [commandType, ...coordinates] = command;
+    const commandType = command[COMMAND_INDICES.COMMAND_TYPE];
     
-    if (commandType === 'M') {
+    if (commandType === PATH_COMMANDS.MOVE_TO) {
       // Always keep the first move command
       result.push(command);
-      previousPoint = { x: coordinates[0], y: coordinates[1] };
+      previousPoint = { 
+        x: command[COMMAND_INDICES.FIRST_COORD], 
+        y: command[COMMAND_INDICES.SECOND_COORD] 
+      };
     } 
-    else if (commandType === 'L') {
-      const currentPoint = { x: coordinates[0], y: coordinates[1] };
+    else if (commandType === PATH_COMMANDS.LINE_TO) {
+      const currentPoint = { 
+        x: command[COMMAND_INDICES.FIRST_COORD], 
+        y: command[COMMAND_INDICES.SECOND_COORD] 
+      };
       
       if (previousPoint) {
         const distanceX = currentPoint.x - previousPoint.x;

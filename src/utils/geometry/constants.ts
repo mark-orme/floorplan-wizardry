@@ -46,3 +46,7 @@ export const STANDARD_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 // Precision constants
 export const COORDINATE_PRECISION = 3; // Decimal places for coordinate display
 export const ANGLE_PRECISION = 1; // Decimal places for angle display
+
+// Distance-related constants
+export const MIN_VISIBLE_DISTANCE = 0.05; // Minimum distance to show measurement tooltip (in meters)
+export const DEFAULT_TOOLTIP_MAX_WIDTH = 120; // Default max width for tooltips in pixels

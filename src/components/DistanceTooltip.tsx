@@ -9,6 +9,49 @@ import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, formatDistance } from "@/utils/geometry/lineOperations";
 import { PIXELS_PER_METER } from "@/constants/numerics";
+import { MIN_VISIBLE_DISTANCE, DEFAULT_TOOLTIP_MAX_WIDTH } from "@/utils/geometry/constants";
+
+/**
+ * Tooltip style constants
+ * @constant {Object}
+ */
+const TOOLTIP_STYLES = {
+  /**
+   * Background color with opacity
+   * @constant {string}
+   */
+  BACKGROUND_COLOR: "rgba(0, 0, 0, 0.9)",
+  
+  /**
+   * Border opacity
+   * @constant {number}
+   */
+  BORDER_OPACITY: 0.8,
+  
+  /**
+   * Shadow opacity
+   * @constant {number}
+   */
+  SHADOW_OPACITY: 0.4,
+  
+  /**
+   * Icon size in pixels
+   * @constant {number}
+   */
+  ICON_SIZE: 3,
+  
+  /**
+   * Border width in pixels
+   * @constant {number}
+   */
+  BORDER_WIDTH: 2,
+  
+  /**
+   * Line height multiplier
+   * @constant {number}
+   */
+  LINE_HEIGHT: 1.2
+};
 
 interface DistanceTooltipProps {
   startPoint?: Point | null;
@@ -53,7 +96,7 @@ export const DistanceTooltip = memo(({
   const formattedDistance = formatDistance(distance);
   
   // Only show if distance is meaningful (avoid tiny movements)
-  if (distance < 0.05) {
+  if (distance < MIN_VISIBLE_DISTANCE) {
     return null;
   }
   
@@ -78,15 +121,15 @@ export const DistanceTooltip = memo(({
         top: `${pixelY}px`,
         transform: `translate(-50%, -50%) scale(${effectiveZoom > 0 ? 1/effectiveZoom : 1})`, 
         willChange: "transform", 
-        outline: "2px solid rgba(255,255,255,0.8)",
-        maxWidth: "120px",
-        lineHeight: 1.2,
-        backgroundColor: "rgba(0, 0, 0, 0.9)",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.4)"
+        outline: `${TOOLTIP_STYLES.BORDER_WIDTH}px solid rgba(255,255,255,${TOOLTIP_STYLES.BORDER_OPACITY})`,
+        maxWidth: `${DEFAULT_TOOLTIP_MAX_WIDTH}px`,
+        lineHeight: TOOLTIP_STYLES.LINE_HEIGHT,
+        backgroundColor: TOOLTIP_STYLES.BACKGROUND_COLOR,
+        boxShadow: `0 2px 6px rgba(0,0,0,${TOOLTIP_STYLES.SHADOW_OPACITY}), 0 0 0 1px rgba(255,255,255,${TOOLTIP_STYLES.BORDER_OPACITY})`
       }}
     >
       <div className="flex items-center gap-2 whitespace-nowrap">
-        <Ruler className="w-3 h-3 flex-shrink-0" />
+        <Ruler className={`w-${TOOLTIP_STYLES.ICON_SIZE} h-${TOOLTIP_STYLES.ICON_SIZE} flex-shrink-0`} />
         <span className="font-semibold">{formattedDistance}m</span>
       </div>
     </div>

@@ -45,12 +45,53 @@ const MEASUREMENT_CONVERSION = {
 };
 
 /**
+ * Format text constants
+ */
+const FORMAT_TEXT = {
+  /**
+   * Zero value representation
+   * @constant {string}
+   */
+  ZERO_VALUE: "0",
+  
+  /**
+   * Zero GIA representation (with decimal)
+   * @constant {string}
+   */
+  ZERO_GIA: "0.0",
+  
+  /**
+   * Compact format suffix for centimeters
+   * @constant {string}
+   */
+  CM_COMPACT: "cm",
+  
+  /**
+   * Full format suffix for centimeters
+   * @constant {string}
+   */
+  CM_FULL: " cm",
+  
+  /**
+   * Compact format suffix for meters
+   * @constant {string}
+   */
+  M_COMPACT: "m",
+  
+  /**
+   * Full format suffix for meters
+   * @constant {string}
+   */
+  M_FULL: " m"
+};
+
+/**
  * Format GIA (Gross Internal Area) value with appropriate units
  * @param {number} gia - GIA value in square meters
  * @returns {string} Formatted GIA string (e.g., "125.5" or "0")
  */
 export const formatGIA = (gia: number): string => {
-  if (!gia || isNaN(gia)) return "0";
+  if (!gia || isNaN(gia)) return FORMAT_TEXT.ZERO_VALUE;
   
   // Round to specified decimal places
   return gia.toFixed(DECIMAL_PRECISION.GIA).replace(/\.0$/, '');
@@ -63,18 +104,18 @@ export const formatGIA = (gia: number): string => {
  * @returns {string} Formatted measurement string (e.g., "2.5m" or "250cm")
  */
 export const formatMeasurement = (value: number, compact = false): string => {
-  if (!value || isNaN(value)) return "0";
+  if (!value || isNaN(value)) return FORMAT_TEXT.ZERO_VALUE;
   
   // For values less than 1 meter, show in centimeters
   if (value < 1) {
     const cm = Math.round(value * MEASUREMENT_CONVERSION.CM_PER_METER);
-    return compact ? `${cm}cm` : `${cm} cm`;
+    return compact ? `${cm}${FORMAT_TEXT.CM_COMPACT}` : `${cm}${FORMAT_TEXT.CM_FULL}`;
   }
   
   // Otherwise show in meters with 1 decimal place
   return compact 
-    ? `${value.toFixed(DECIMAL_PRECISION.METERS)}m` 
-    : `${value.toFixed(DECIMAL_PRECISION.METERS)} m`;
+    ? `${value.toFixed(DECIMAL_PRECISION.METERS)}${FORMAT_TEXT.M_COMPACT}` 
+    : `${value.toFixed(DECIMAL_PRECISION.METERS)}${FORMAT_TEXT.M_FULL}`;
 };
 
 /**
@@ -84,7 +125,7 @@ export const formatMeasurement = (value: number, compact = false): string => {
  * @returns {string} Formatted number as string
  */
 export const formatDecimal = (value: number, precision = DECIMAL_PRECISION.DEFAULT): string => {
-  if (!value || isNaN(value)) return "0";
+  if (!value || isNaN(value)) return FORMAT_TEXT.ZERO_VALUE;
   return value.toFixed(precision).replace(/\.0+$/, '');
 };
 
@@ -94,6 +135,6 @@ export const formatDecimal = (value: number, precision = DECIMAL_PRECISION.DEFAU
  * @returns {string} Formatted length with specified decimal places
  */
 export const formatWallLength = (length: number): string => {
-  if (!length || isNaN(length)) return "0.0";
+  if (!length || isNaN(length)) return FORMAT_TEXT.ZERO_GIA;
   return length.toFixed(DECIMAL_PRECISION.WALL_LENGTH);
 };
