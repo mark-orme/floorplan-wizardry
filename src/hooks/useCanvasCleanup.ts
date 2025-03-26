@@ -5,7 +5,7 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { disposeCanvas } from "@/utils/fabricCanvas";
+import { disposeCanvas, isCanvasValid } from "@/utils/fabricCanvas";
 
 /**
  * Hook to handle proper cleanup of canvas resources
@@ -22,13 +22,20 @@ export const useCanvasCleanup = () => {
     
     try {
       // Before disposing, check if the canvas is valid
-      if (typeof fabricCanvas.getObjects !== 'function') {
+      if (!isCanvasValid(fabricCanvas)) {
         console.log("Canvas instance appears to be invalid or already disposed");
         return;
       }
       
-      disposeCanvas(fabricCanvas);
-      console.log("Canvas disposed successfully");
+      // Add a timeout to ensure we're not in the middle of a render cycle
+      // This helps prevent the "Cannot read properties of undefined (reading 'el')" error
+      setTimeout(() => {
+        try {
+          disposeCanvas(fabricCanvas);
+        } catch (error) {
+          console.error("Error during delayed canvas cleanup:", error);
+        }
+      }, 10);
     } catch (error) {
       console.error("Error during canvas cleanup:", error);
     }
@@ -38,4 +45,3 @@ export const useCanvasCleanup = () => {
     cleanupCanvas
   };
 };
-

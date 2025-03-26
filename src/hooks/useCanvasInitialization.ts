@@ -221,6 +221,7 @@ export const useCanvasInitialization = ({
     
     // Clean up on unmount
     return () => {
+      // Clear any pending initialization timeouts
       if (initTimeoutRef.current !== null) {
         window.clearTimeout(initTimeoutRef.current);
         initTimeoutRef.current = null;
@@ -229,17 +230,29 @@ export const useCanvasInitialization = ({
       // Store a local reference to the canvas before clearing it
       const currentCanvas = fabricCanvasRef.current;
       
-      // Set all refs to null first to avoid further operations
+      // Set all refs to null first to avoid further operations attempting to use them
       fabricCanvasRef.current = null;
       canvasInitializedRef.current = false;
       gridLayerRef.current = [];
       
       // Then dispose the canvas if it exists
       if (currentCanvas) {
-        // Use a small delay to ensure all operations on the canvas are complete
-        setTimeout(() => {
-          cleanupCanvas(currentCanvas);
-        }, 0);
+        try {
+          console.log("Beginning canvas cleanup process");
+          
+          // Use a delay to ensure all operations on the canvas are complete
+          // This helps avoid issues with disposal during render cycles
+          setTimeout(() => {
+            try {
+              // Use our cleanup utility function
+              cleanupCanvas(currentCanvas);
+            } catch (error) {
+              console.error("Error during delayed canvas cleanup:", error);
+            }
+          }, 50);
+        } catch (error) {
+          console.error("Error initiating canvas cleanup:", error);
+        }
       }
     };
   }, [
@@ -267,4 +280,3 @@ export const useCanvasInitialization = ({
     historyRef
   };
 };
-

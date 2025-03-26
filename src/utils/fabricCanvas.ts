@@ -1,3 +1,4 @@
+
 /**
  * Utilities for Fabric.js canvas management
  * @module fabricCanvas
@@ -61,6 +62,58 @@ export const setCanvasDimensions = (
 };
 
 /**
+ * Safely check if a canvas is valid and not already disposed
+ * @param {Canvas|null} canvas - The Fabric canvas instance to check
+ * @returns {boolean} Whether the canvas is valid
+ */
+export const isCanvasValid = (canvas: Canvas | null): boolean => {
+  if (!canvas) return false;
+  
+  try {
+    // Try to access some methods that should exist on valid canvas instances
+    return (
+      typeof canvas.getObjects === 'function' &&
+      typeof canvas.renderAll === 'function' &&
+      !canvas.__disposed
+    );
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * Safely get canvas element if available
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @returns {HTMLCanvasElement|null} The canvas element or null
+ */
+export const safelyGetCanvasElement = (canvas: Canvas): HTMLCanvasElement | null => {
+  if (!canvas) return null;
+  
+  try {
+    // First check if we can directly access the element via lowerCanvasEl (fabric implementation detail)
+    const directElement = (canvas as any).lowerCanvasEl;
+    if (directElement instanceof HTMLCanvasElement) {
+      return directElement;
+    }
+    
+    // If not, try the getElement method if available
+    if (typeof canvas.getElement === 'function') {
+      try {
+        const element = canvas.getElement();
+        return element instanceof HTMLCanvasElement ? element : null;
+      } catch (error) {
+        console.warn("Error accessing canvas element:", error);
+        return null;
+      }
+    }
+  } catch (error) {
+    console.warn("Error getting canvas element:", error);
+  }
+  
+  return null;
+};
+
+/**
  * Properly dispose the canvas instance to prevent memory leaks
  * @param {Canvas|null} canvas - The Fabric canvas instance to dispose
  */
@@ -70,7 +123,16 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
     return;
   }
   
+  // Set a flag to track if we've successfully disposed
+  let disposedSuccessfully = false;
+  
   try {
+    // First check if canvas is valid
+    if (!isCanvasValid(canvas)) {
+      console.log("Canvas appears to be invalid or already disposed");
+      return;
+    }
+    
     // Safe approach to disposal - prevent issues with Fabric.js internals
     try {
       // First, remove all event listeners
@@ -86,42 +148,47 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
         }
       });
       
+      // Get the canvas element before disposal (might be needed for DOM cleanup)
+      const canvasElement = safelyGetCanvasElement(canvas);
+      
       // Finally dispose the canvas
       canvas.dispose();
-    } catch (err) {
-      // Even if there's an error in the typical disposal flow, 
-      // we still want to try the direct DOM removal as fallback
-      console.warn("Standard canvas disposal failed, trying alternate approach:", err);
-    }
-    
-    // As a fallback, also try to clear the DOM 
-    try {
-      // Safely check if the canvas element can be retrieved
-      // The error is happening here when trying to access el on undefined
-      if (canvas && typeof canvas.getElement === 'function') {
+      
+      // Mark flag since we successfully disposed the canvas
+      disposedSuccessfully = true;
+      
+      // If we got the element earlier, try to remove it from DOM as well
+      if (canvasElement && canvasElement.parentNode) {
         try {
-          const canvasElement = canvas.getElement();
-          // Add null check before accessing properties
-          if (canvasElement && canvasElement.parentNode) {
-            try {
-              // Remove the canvas from DOM to prevent duplicate canvas initialization
-              canvasElement.parentNode.removeChild(canvasElement);
-            } catch (err) {
-              console.warn("Failed to remove canvas from DOM:", err);
-            }
-          }
+          canvasElement.parentNode.removeChild(canvasElement);
         } catch (err) {
-          // Handle the case where getElement() itself might fail
-          console.warn("Failed to get canvas element during disposal:", err);
+          console.warn("Failed to remove canvas from DOM:", err);
         }
-      } else {
-        console.warn("Cannot get canvas element: getElement method not available");
       }
     } catch (err) {
-      console.warn("Error during canvas DOM cleanup:", err);
+      console.warn("Standard canvas disposal failed:", err);
+      
+      // Even if there's an error, we want to try alternate approaches
+      try {
+        // Add a flag to canvas to mark it as disposed
+        (canvas as any).__disposed = true;
+        
+        // Try to access and remove the canvas element directly
+        const canvasElement = safelyGetCanvasElement(canvas);
+        if (canvasElement && canvasElement.parentNode) {
+          canvasElement.parentNode.removeChild(canvasElement);
+          disposedSuccessfully = true;
+        }
+      } catch (domErr) {
+        console.warn("DOM cleanup also failed:", domErr);
+      }
     }
     
-    console.log("Canvas disposed successfully");
+    if (disposedSuccessfully) {
+      console.log("Canvas disposed successfully");
+    } else {
+      console.warn("Canvas may not have been fully disposed");
+    }
   } catch (error) {
     console.error("Error disposing canvas:", error);
   }
