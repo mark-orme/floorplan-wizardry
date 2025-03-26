@@ -1,49 +1,16 @@
 
 /**
- * Geometry utilities module
- * Exports all geometry-related functions and constants
+ * Geometry utilities main module
+ * Re-exports functionality from specialized geometry modules
  * @module geometry
  */
 
-// Re-export constants
-export {
-  GRID_SPACING,
-  CLOSE_POINT_THRESHOLD,
-  SHAPE_CLOSE_THRESHOLD,
-  FLOATING_POINT_TOLERANCE,
-  MIN_LINE_LENGTH,
-  MIN_SHAPE_AREA,
-  ANGLE_SNAP_THRESHOLD,
-  LARGE_GRID_LINE_WIDTH,
-  SMALL_GRID_LINE_WIDTH,
-  AREA_PRECISION,
-  DISTANCE_PRECISION
-} from './constants';
+// Export constants from the constants module
+export * from './constants';
 
-// Re-export line operations (excluding calculateMidpoint to avoid conflict)
-export { 
-  calculateDistance,
-  formatDistance,
-  isExactGridMultiple,
-  calculateAngle,
-  calculatePreciseDistance
-} from './lineOperations';
-
-// Re-export the calculateMidpoint from midpointCalculation (preferred version)
-export { calculateMidpoint } from './midpointCalculation';
-
-// Re-export area calculations
+// Export functionality from specialized modules
 export * from './areaCalculations';
-
-// Re-export coordinate transforms
 export * from './coordinateTransforms';
-
-// Re-export straightening functions
+export * from './lineOperations';
+export * from './midpointCalculation';
 export * from './straightening';
-
-// Note: The following modules are not implemented yet:
-// - pointOperations
-// - shapeOperations
-// - snapping (now in grid/snapping.ts)
-
-// For now, we'll use the grid module for snapping operations

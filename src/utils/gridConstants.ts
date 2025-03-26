@@ -11,7 +11,10 @@ import {
   PIXELS_PER_METER,
   GRID_SPACING,
   SMALL_GRID_LINE_WIDTH,
-  LARGE_GRID_LINE_WIDTH
+  LARGE_GRID_LINE_WIDTH,
+  MAX_SMALL_GRID_LINES,
+  MAX_LARGE_GRID_LINES,
+  GRID_EXTENSION_FACTOR
 } from '@/constants/numerics';
 
 // Grid dimensions type
@@ -20,19 +23,22 @@ export interface GridDimensions {
   height: number;
 }
 
-// Define constants that aren't in numerics.ts
-export const MAX_SMALL_GRID_LINES = 300;
-export const MAX_LARGE_GRID_LINES = 100; 
-export const GRID_EXTENSION_FACTOR = 2;
-
 // Re-export constants for backward compatibility
 export const GRID_SCALE_FACTOR = PIXELS_PER_METER; // 100px = 1 meter
 export const SMALL_GRID_SPACING = GRID_SPACING; // 0.1 meter
 export const LARGE_GRID_SPACING = 1.0; // 1.0 meter
 export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
 
-// Export constants needed by grid utilities
-export { MAX_SMALL_GRID_LINES, MAX_LARGE_GRID_LINES, GRID_EXTENSION_FACTOR };
+// Re-export constants from numerics
+export {
+  PIXELS_PER_METER,
+  GRID_SPACING,
+  SMALL_GRID_LINE_WIDTH,
+  LARGE_GRID_LINE_WIDTH,
+  MAX_SMALL_GRID_LINES,
+  MAX_LARGE_GRID_LINES,
+  GRID_EXTENSION_FACTOR
+};
 
 // Style options for grid lines
 export const SMALL_GRID_LINE_OPTIONS = {
@@ -97,4 +103,3 @@ export const calculateGridDensity = (width: number, height: number) => {
     return { smallGridVisible: true, smallGridInterval: 1 };
   }
 };
-

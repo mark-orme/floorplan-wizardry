@@ -1,88 +1,94 @@
 
 /**
- * Custom hook for canvas initialization retry logic
- * Handles initialization attempts and backoff strategies
- * @module useCanvasRetryLogic
+ * Hook for Canvas Retry Logic
+ * Handles retry attempts for canvas initialization
+ * @module hooks/canvas-initialization/useCanvasRetryLogic
  */
-import { useCallback } from "react";
-import logger from "@/utils/logger";
+import { useCallback, useRef, useState } from 'react';
+import logger from '@/utils/logger';
 import { 
-  trackInitializationAttempt, 
-  resetInitializationState, 
-  canInitializeCanvas 
-} from "@/utils/canvas/safeCanvasInitialization";
+  resetInitializationState,
+  trackInitializationAttempt,
+  canInitializeCanvas,
+  getInitializationState
+} from '@/utils/canvas/safeCanvasInitialization';
 
 /**
  * Hook for managing canvas initialization retry logic
- * @returns Functions and state for managing initialization retries
+ * @returns Retry utilities and state tracking
  */
 export const useCanvasRetryLogic = () => {
-  // Track a new initialization attempt using the global tracker
-  const trackAttempt = useCallback(() => {
-    // Check if initialization is allowed first
-    if (!canInitializeCanvas()) {
-      logger.warn("Canvas initialization blocked by safety system");
-      return { 
-        shouldContinue: false, 
-        isCycleDetected: false,
-        isMaxAttemptsReached: true
-      };
-    }
-    
-    // Track this attempt
-    const status = trackInitializationAttempt();
-    
-    // Log the current attempt
-    console.log(`🔄 Canvas initialization attempt tracked`);
-    
-    // Handle result based on status
-    if (!status.allowed) {
-      if (status.reason === "max-global-attempts") {
-        logger.error(`Too many global initialization attempts (${status.globalCount}), blocking further attempts`);
-        return { 
-          shouldContinue: false, 
-          isCycleDetected: false,
-          isMaxAttemptsReached: true
-        };
-      }
-      
-      if (status.reason === "max-consecutive-attempts") {
-        logger.warn("Initialization cycle detected, breaking the loop");
-        
-        return { 
-          shouldContinue: false, 
-          isCycleDetected: true,
-          isMaxAttemptsReached: false
-        };
-      }
-    }
-    
-    return { 
-      shouldContinue: true,
-      isCycleDetected: false,
-      isMaxAttemptsReached: false
-    };
-  }, []);
+  const [retryCount, setRetryCount] = useState(0);
+  const retryTimerRef = useRef<number | null>(null);
+  const maxRetries = 3;
   
   /**
-   * Reset attempt counters after successful initialization
+   * Attempt to retry canvas initialization with exponential backoff
+   * @returns {boolean} True if retry will be attempted
    */
-  const resetInitializationTracking = useCallback(() => {
+  const retryWithBackoff = useCallback(() => {
+    // Clear any existing timer
+    if (retryTimerRef.current) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    
+    // Check if we're allowed to initialize
+    if (!canInitializeCanvas()) {
+      logger.warn('Canvas initialization blocked, cannot retry');
+      return false;
+    }
+    
+    // Check if we've exceeded max retries
+    if (retryCount >= maxRetries) {
+      logger.warn(`Maximum retry count (${maxRetries}) reached`);
+      return false;
+    }
+    
+    // Calculate delay with exponential backoff
+    const delay = Math.min(1000 * Math.pow(1.5, retryCount), 10000);
+    
+    // Schedule retry
+    retryTimerRef.current = window.setTimeout(() => {
+      logger.info(`Retrying canvas initialization (attempt ${retryCount + 1})`);
+      setRetryCount(prev => prev + 1);
+      trackInitializationAttempt();
+      retryTimerRef.current = null;
+    }, delay);
+    
+    return true;
+  }, [retryCount]);
+  
+  /**
+   * Reset retry counter and state
+   */
+  const resetRetry = useCallback(() => {
+    // Clear any existing timer
+    if (retryTimerRef.current) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    
+    setRetryCount(0);
     resetInitializationState();
   }, []);
   
   /**
-   * Check if initialization cycle was previously detected
-   * @returns Whether a cycle was detected
+   * Get current initialization state
    */
-  const isCycleDetected = useCallback(() => {
-    // We consider it a cycle if initialization is blocked
-    return !canInitializeCanvas();
-  }, []);
+  const getRetryState = useCallback(() => {
+    return {
+      retryCount,
+      initState: getInitializationState(),
+      canRetry: retryCount < maxRetries && canInitializeCanvas()
+    };
+  }, [retryCount]);
   
   return {
-    trackInitializationAttempt: trackAttempt,
-    resetInitializationTracking,
-    isCycleDetected
+    retryWithBackoff,
+    resetRetry,
+    retryCount,
+    maxRetries,
+    getRetryState
   };
 };

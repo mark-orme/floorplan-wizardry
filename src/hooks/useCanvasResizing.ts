@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas resizing
  * @module useCanvasResizing
@@ -115,7 +116,8 @@ export const useCanvasResizing = ({
     setDebugInfo(prev => ({...prev, dimensionsSet: true}));
     
     if (fabricCanvasRef.current) {
-      setCanvasDimensions(fabricCanvasRef.current, { width: newWidth, height: newHeight });
+      // Updated to use three arguments instead of two
+      setCanvasDimensions(fabricCanvasRef.current, newWidth, newHeight);
       
       // Only create grid on first resize
       if (!initialResizeCompleteRef.current) {

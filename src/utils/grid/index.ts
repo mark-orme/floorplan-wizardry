@@ -1,13 +1,33 @@
+
 /**
- * Grid utilities index file
- * Re-exports all grid-related functions for easier imports
+ * Grid utilities module
+ * Re-exports grid functionality from specialized modules
  * @module grid
  */
 
-// Export from the core file
-export * from './core';
+// Export basic grid operations
+export { 
+  createGrid,
+  createGridLines,
+  createGridWithSize,
+  disposeGrid
+} from './core';
 
-// Export from the snapping file
+// Export grid snapping functions with explicit names
+export { 
+  snapToGrid as snapPointToGrid,
+  snapToGridPoints as snapPointsToGrid
+} from './core';
+
+// Export measurement functions
+export * from './measurements';
+
+// Export snapping utilities
 export * from './snapping';
 
-// Other grid exports can be added here
+// Export safety utilities
+export * from './gridSafety';
+
+// Export error handling and validation
+export * from './gridErrorHandling';
+export * from './gridValidation';

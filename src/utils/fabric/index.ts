@@ -7,7 +7,12 @@
 
 // Export all utilities from the specialized files
 export * from './canvasCleanup';
-export * from './canvasDimensions';
+export { 
+  CANVAS_DIMENSIONS,
+  getCanvasDimensions,
+  resizeCanvasToContainer
+} from './canvasDimensions';
+export { setCanvasDimensions } from './canvasDimensions';
 export * from './canvasValidation';
 export * from './environment';
 export * from './events';
@@ -16,4 +21,3 @@ export * from './objects';
 export * from './panning';
 export * from './registry';
 export * from './selection';
-

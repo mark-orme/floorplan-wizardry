@@ -158,4 +158,3 @@ export const MAX_LARGE_GRID_LINES = 100;
  * @constant {number}
  */
 export const GRID_EXTENSION_FACTOR = 2;
-

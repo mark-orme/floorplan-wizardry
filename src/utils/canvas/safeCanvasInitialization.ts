@@ -1,125 +1,143 @@
 
 /**
- * Safe Canvas Initialization Utilities
- * Functions for safely initializing and validating canvas
- * @module safeCanvasInitialization
+ * Safe canvas initialization utilities
+ * Handles initialization with better error handling and recovery
+ * @module canvas/safeCanvasInitialization
  */
 import { Canvas as FabricCanvas } from "fabric";
 import logger from "@/utils/logger";
 
-/**
- * Initialization status tracking object
- * @type {Object}
- */
-let initializationStatus = {
-  inProgress: false,
+// State to track initialization attempts
+const initializationState = {
   attemptCount: 0,
   lastAttemptTime: 0,
-  blocked: false,
-  errorCount: 0,
-  successCount: 0
+  isInProgress: false,
+  maxAttempts: 5,
+  canInitialize: true,
+  blockedReason: "",
+  errors: [] as string[]
 };
 
 /**
- * Reset the initialization state
- * Call this when component remounts
+ * Reset the initialization state tracking
+ * Used when component remounts or when retry is needed
  */
-export function resetInitializationState(): void {
-  initializationStatus = {
-    inProgress: false,
-    attemptCount: 0,
-    lastAttemptTime: 0,
-    blocked: false,
-    errorCount: 0,
-    successCount: 0
-  };
-  logger.info("Canvas initialization state reset");
-}
+export const resetInitializationState = (): void => {
+  initializationState.attemptCount = 0;
+  initializationState.lastAttemptTime = 0;
+  initializationState.isInProgress = false;
+  initializationState.canInitialize = true;
+  initializationState.blockedReason = "";
+  initializationState.errors = [];
+  logger.info("Canvas initialization state has been reset");
+};
 
 /**
- * Get the current initialization status
- * @returns {Object} Current initialization status
+ * Prepare a canvas element for initialization
+ * Sets initial state and prepares the DOM element
+ * @param {HTMLCanvasElement} canvasElement - Canvas element to prepare
  */
-export function getInitializationStatus() {
-  return { ...initializationStatus };
-}
+export const prepareCanvasForInitialization = (canvasElement: HTMLCanvasElement): void => {
+  // Add a class to indicate initialization is in progress
+  canvasElement.classList.add("canvas-initializing");
+  
+  // Remove any old error indicators
+  canvasElement.classList.remove("canvas-error");
+  
+  // Set tabindex to make canvas focusable
+  canvasElement.setAttribute("tabindex", "0");
+  
+  // Set aria attributes for accessibility
+  canvasElement.setAttribute("aria-label", "Floor plan drawing canvas");
+  canvasElement.setAttribute("role", "application");
+  
+  // Record that initialization is in progress
+  initializationState.isInProgress = true;
+};
 
 /**
- * Prepare canvas element for initialization
- * @param {HTMLCanvasElement} canvasElement - The canvas element to prepare
+ * Validate that a canvas has been properly initialized
+ * @param {FabricCanvas} canvas - Canvas to validate
+ * @returns {boolean} True if canvas passed validation
  */
-export function prepareCanvasForInitialization(canvasElement: HTMLCanvasElement): void {
-  if (!canvasElement) return;
-
-  // Clear any existing content
-  const context = canvasElement.getContext('2d');
-  if (context) {
-    context.clearRect(0, 0, canvasElement.width, canvasElement.height);
-  }
+export const validateCanvasInitialization = (canvas: FabricCanvas): boolean => {
+  if (!canvas) return false;
   
-  // Set data attribute to mark canvas as being initialized
-  canvasElement.setAttribute('data-initialization-in-progress', 'true');
-  
-  // Log this attempt
-  initializationStatus.attemptCount++;
-  initializationStatus.lastAttemptTime = Date.now();
-  initializationStatus.inProgress = true;
-  
-  // Block if too many attempts
-  if (initializationStatus.attemptCount > 5 && 
-      Date.now() - initializationStatus.lastAttemptTime < 10000) {
-    initializationStatus.blocked = true;
-    logger.warn(`Canvas initialization blocked after ${initializationStatus.attemptCount} attempts`);
-    throw new Error(`Canvas initialization blocked after ${initializationStatus.attemptCount} attempts`);
-  }
-}
-
-/**
- * Validate canvas initialization
- * @param {FabricCanvas} canvas - The fabric canvas to validate
- * @returns {boolean} True if canvas is valid
- */
-export function validateCanvasInitialization(canvas: FabricCanvas | null): boolean {
-  if (!canvas) {
-    initializationStatus.errorCount++;
+  try {
+    // Check essential Fabric.js methods exist
+    if (typeof canvas.renderAll !== "function") return false;
+    if (typeof canvas.setWidth !== "function") return false;
+    if (typeof canvas.setHeight !== "function") return false;
+    
+    // Get basic properties to verify canvas object is working
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    
+    // Should have valid dimensions
+    if (width <= 0 || height <= 0) return false;
+    
+    // Mark initialization as complete
+    initializationState.isInProgress = false;
+    
+    return true;
+  } catch (error) {
+    logger.error("Canvas validation failed:", error);
     return false;
   }
-  
-  // Basic validation checks
-  const isValid = (
-    canvas.width > 0 &&
-    canvas.height > 0 &&
-    typeof canvas.add === 'function' &&
-    typeof canvas.renderAll === 'function'
-  );
-  
-  // Update status
-  if (isValid) {
-    initializationStatus.successCount++;
-    initializationStatus.inProgress = false;
-  } else {
-    initializationStatus.errorCount++;
-  }
-  
-  return isValid;
-}
+};
 
 /**
  * Handle initialization failure
- * @param {string} errorMessage - Error message
- * @param {boolean} critical - Whether this is a critical failure
+ * Records error and may block further attempts
+ * @param {string} reason - Reason for failure
+ * @param {boolean} blockFurtherAttempts - Whether to block further attempts
  */
-export function handleInitializationFailure(errorMessage: string, critical: boolean = false): void {
-  initializationStatus.errorCount++;
-  initializationStatus.inProgress = false;
+export const handleInitializationFailure = (
+  reason: string, 
+  blockFurtherAttempts: boolean = false
+): void => {
+  initializationState.errors.push(reason);
+  initializationState.isInProgress = false;
   
-  if (critical) {
-    initializationStatus.blocked = true;
+  // Check if we've exceeded maximum attempts
+  if (initializationState.attemptCount >= initializationState.maxAttempts) {
+    initializationState.canInitialize = false;
+    initializationState.blockedReason = 
+      `Canvas initialization blocked after ${initializationState.maxAttempts} attempts`;
+    logger.error(initializationState.blockedReason);
   }
   
-  logger.error(`Canvas initialization failed: ${errorMessage}`, { 
-    critical,
-    status: { ...initializationStatus }
-  });
-}
+  // Explicitly block further attempts if specified
+  if (blockFurtherAttempts) {
+    initializationState.canInitialize = false;
+    initializationState.blockedReason = reason;
+    logger.error(`Canvas initialization explicitly blocked: ${reason}`);
+  }
+};
 
+/**
+ * Track initialization attempt
+ * Increments counter and records time
+ * @returns {number} The current attempt count
+ */
+export const trackInitializationAttempt = (): number => {
+  initializationState.attemptCount += 1;
+  initializationState.lastAttemptTime = Date.now();
+  return initializationState.attemptCount;
+};
+
+/**
+ * Check if canvas can be initialized
+ * @returns {boolean} True if canvas can be initialized
+ */
+export const canInitializeCanvas = (): boolean => {
+  return initializationState.canInitialize;
+};
+
+/**
+ * Get the current initialization state
+ * @returns {Object} The current initialization state
+ */
+export const getInitializationState = () => {
+  return { ...initializationState };
+};
