@@ -7,6 +7,7 @@ import { useCallback, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { disposeCanvas, isCanvasValid } from "@/utils/fabricCanvas";
 import logger from "@/utils/logger";
+import { hardResetCanvasElement } from "@/utils/gridCreationUtils";
 
 // Global state management for canvas cleanup
 const cleanupState = {
@@ -35,7 +36,13 @@ const cleanupState = {
     initialized: boolean,
     timestamp: number,
     fabricIds: string[]
-  }>()
+  }>(),
+  // Completely block initializations after detecting severe loops
+  blockAllInitializations: false,
+  // Counter for consecutive initialization attempts
+  initializationAttempts: 0,
+  // Maximum allowed initialization attempts before blocking
+  MAX_INITIALIZATION_ATTEMPTS: 5
 };
 
 /**
@@ -69,6 +76,12 @@ export const useCanvasCleanup = () => {
    * Check if we're in a cleanup loop
    */
   const isInCleanupLoop = useCallback((): boolean => {
+    // If all initializations are blocked, return true immediately
+    if (cleanupState.blockAllInitializations) {
+      logger.warn("All canvas initializations are blocked due to severe loop detection");
+      return true;
+    }
+    
     // If we've already detected a loop recently, return true
     if (cleanupState.loopDetected) {
       // Check if enough time has passed to reset loop detection
@@ -100,6 +113,12 @@ export const useCanvasCleanup = () => {
     if (!element) return false;
     
     try {
+      // If we've detected a severe loop, perform a hard reset
+      if (cleanupState.loopDetected && 
+          cleanupState.consecutiveDisposals > cleanupState.MAX_CONSECUTIVE_DISPOSALS + 2) {
+        return hardResetCanvasElement(element);
+      }
+      
       // Remove all data attributes that Fabric uses to track initialization
       element.removeAttribute('data-fabric');
       element.removeAttribute('data-fabric-initialized');
@@ -118,6 +137,37 @@ export const useCanvasCleanup = () => {
       logger.error("Error during forced canvas element cleanup:", error);
       return false;
     }
+  }, []);
+
+  /**
+   * Track initialization attempts and block if too many occur
+   */
+  const trackInitializationAttempt = useCallback((): boolean => {
+    // Check if initializations are blocked
+    if (cleanupState.blockAllInitializations) {
+      logger.warn("Canvas initialization blocked - too many attempts");
+      return false;
+    }
+    
+    // Increment attempt counter
+    cleanupState.initializationAttempts++;
+    
+    // Check if we've reached the limit
+    if (cleanupState.initializationAttempts >= cleanupState.MAX_INITIALIZATION_ATTEMPTS) {
+      logger.error(`Too many canvas initialization attempts (${cleanupState.initializationAttempts}), blocking further attempts`);
+      cleanupState.blockAllInitializations = true;
+      
+      // Schedule a reset after a delay to recover
+      setTimeout(() => {
+        logger.info("Resetting canvas initialization block after timeout");
+        cleanupState.blockAllInitializations = false;
+        cleanupState.initializationAttempts = 0;
+      }, 10000); // 10-second timeout
+      
+      return false;
+    }
+    
+    return true;
   }, []);
 
   /**
@@ -272,6 +322,11 @@ export const useCanvasCleanup = () => {
   const markCanvasAsInitialized = useCallback((element: HTMLCanvasElement | null): void => {
     if (!element) return;
     
+    // Track the initialization attempt
+    if (!trackInitializationAttempt()) {
+      return;
+    }
+    
     cleanupState.initializedCanvasElements.set(element, true);
     
     // Also update our registry
@@ -284,7 +339,7 @@ export const useCanvasCleanup = () => {
     });
     
     logger.debug("Canvas element marked as initialized");
-  }, []);
+  }, [trackInitializationAttempt]);
 
   /**
    * Reset canvas cleanup state (useful for recovering from stuck states)
@@ -295,6 +350,8 @@ export const useCanvasCleanup = () => {
     cleanupState.recentlyDisposedCanvases.clear();
     cleanupState.disposingCanvases = new WeakSet<FabricCanvas>();
     cleanupState.loopDetected = false;
+    cleanupState.blockAllInitializations = false;
+    cleanupState.initializationAttempts = 0;
     logger.debug("Canvas cleanup state has been reset");
   }, []);
 
@@ -304,6 +361,7 @@ export const useCanvasCleanup = () => {
     markCanvasAsInitialized,
     forceCleanCanvasElement,
     resetCleanupState,
-    isCleaningUp: isCleaningUpRef.current
+    isCleaningUp: isCleaningUpRef.current,
+    isInitializationBlocked: cleanupState.blockAllInitializations
   };
 };

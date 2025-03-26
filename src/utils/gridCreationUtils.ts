@@ -1,4 +1,3 @@
-
 /**
  * Simple grid creation utilities for direct grid creation
  * @module gridCreationUtils
@@ -6,6 +5,48 @@
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import logger from "./logger";
 import { forceCleanCanvasElement } from "./fabricCanvas";
+
+// Add a counter to limit the number of creation attempts
+let creationAttemptCounter = 0;
+const MAX_CREATION_ATTEMPTS = 3;
+let lastAttemptTime = 0;
+const ATTEMPT_COOLDOWN_MS = 3000; // 3 second cooldown between attempts
+
+/**
+ * Reset the creation attempt counter
+ */
+export const resetCreationAttempts = () => {
+  creationAttemptCounter = 0;
+  lastAttemptTime = 0;
+  logger.debug("Creation attempt counter reset");
+};
+
+/**
+ * Check if we should allow a new grid creation attempt
+ * @returns {boolean} Whether to allow a new creation attempt
+ */
+export const shouldAllowCreationAttempt = (): boolean => {
+  const now = Date.now();
+  
+  // If we're within the cooldown period, don't allow
+  if (now - lastAttemptTime < ATTEMPT_COOLDOWN_MS) {
+    logger.warn(`Creation attempt cooldown in effect, ${ATTEMPT_COOLDOWN_MS - (now - lastAttemptTime)}ms remaining`);
+    return false;
+  }
+  
+  // If we've reached the max attempts, don't allow more
+  if (creationAttemptCounter >= MAX_CREATION_ATTEMPTS) {
+    logger.warn(`Maximum creation attempts (${MAX_CREATION_ATTEMPTS}) reached`);
+    return false;
+  }
+  
+  // Update the attempt counter and time
+  creationAttemptCounter++;
+  lastAttemptTime = now;
+  
+  logger.info(`Creation attempt ${creationAttemptCounter}/${MAX_CREATION_ATTEMPTS} allowed`);
+  return true;
+};
 
 /**
  * Create a very basic emergency grid without complex dependencies
@@ -20,6 +61,11 @@ export const createBasicEmergencyGrid = (
   gridLayerRef?: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] => {
   try {
+    // Check if we should even attempt to create a grid
+    if (!shouldAllowCreationAttempt()) {
+      return gridLayerRef?.current || [];
+    }
+    
     console.log("Creating basic emergency grid as last resort");
     
     if (!canvas) {
@@ -266,6 +312,54 @@ export const forceResetCanvasElement = (element: HTMLCanvasElement | null): bool
     return true;
   } catch (error) {
     logger.error("Failed to force reset canvas element:", error);
+    return false;
+  }
+};
+
+/**
+ * Hard reset of a canvas element to completely remove Fabric.js initialization
+ * This is more aggressive than forceResetCanvasElement
+ * 
+ * @param {HTMLCanvasElement|null} element - Canvas element to reset
+ * @returns {boolean} Success status
+ */
+export const hardResetCanvasElement = (element: HTMLCanvasElement | null): boolean => {
+  if (!element) return false;
+  
+  try {
+    logger.warn("Performing HARD RESET of canvas element");
+    
+    // First clean normally
+    forceCleanCanvasElement(element);
+    
+    // Clone and replace the canvas element
+    const parent = element.parentNode;
+    if (parent) {
+      // Create a completely new canvas element
+      const newCanvas = document.createElement('canvas');
+      
+      // Copy essential attributes
+      newCanvas.id = element.id;
+      newCanvas.className = element.className;
+      
+      // Copy dimensions
+      newCanvas.width = element.width || 800;
+      newCanvas.height = element.height || 600;
+      
+      // Set styles directly
+      newCanvas.style.width = `${newCanvas.width}px`;
+      newCanvas.style.height = `${newCanvas.height}px`;
+      
+      // Replace in DOM
+      parent.replaceChild(newCanvas, element);
+      
+      logger.info("Canvas element completely replaced with fresh element");
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    logger.error("Hard reset of canvas element failed:", error);
     return false;
   }
 };
