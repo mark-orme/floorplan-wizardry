@@ -69,7 +69,7 @@ export const useDrawingState = ({
     
     // Prevent selection when drawing
     fabricCanvasRef.current.selection = false;
-  }, [fabricCanvasRef, tool, processPoint]);
+  }, [fabricCanvasRef, processPoint]);
   
   // Handle mouse move event
   const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
@@ -90,7 +90,7 @@ export const useDrawingState = ({
     }));
   }, [fabricCanvasRef, drawingState.isDrawing, processPoint]);
   
-  // Handle mouse up event - making parameter optional to match expected types
+  // Handle mouse up event - explicitly making parameter optional with ? symbol
   const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
     if (!fabricCanvasRef.current || !drawingState.isDrawing) return;
     

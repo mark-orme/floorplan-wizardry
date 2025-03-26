@@ -44,7 +44,9 @@ export const usePathEvents = ({
       
       // Process the path based on the current tool
       processCreatedPath(e.path);
-      handleMouseUp(); // Call with no arguments as it's now optional
+      
+      // Call handleMouseUp with no arguments
+      handleMouseUp();
     };
     
     fabricCanvas.on('path:created', handlePathCreated as any);

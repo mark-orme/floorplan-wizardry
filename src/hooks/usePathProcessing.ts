@@ -5,7 +5,7 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
-import { usePointProcessing } from "./usePointProcessing";
+import { usePointProcessing, UsePointProcessingProps } from "./usePointProcessing";
 import { usePolylineCreation } from "./usePolylineCreation";
 import { DrawingTool } from "./useCanvasState";
 import { FloorPlan } from "@/types/floorPlanTypes";
@@ -27,7 +27,7 @@ interface UsePathProcessingProps {
 /**
  * Hook that handles processing paths on the canvas
  * @param {UsePathProcessingProps} props - Hook properties
- * @returns Processing functions
+ * @returns {{processCreatedPath: (path: FabricPath) => void}} Processing functions
  */
 export const usePathProcessing = ({
   fabricCanvasRef,
@@ -41,12 +41,14 @@ export const usePathProcessing = ({
   lineColor = "#000000",
   recalculateGIA
 }: UsePathProcessingProps) => {
-  // Initialize point processing hook with the proper props object including gridLayerRef
-  const { processPathPoints } = usePointProcessing({
+  // Initialize point processing hook with the proper props
+  const pointProcessingProps: UsePointProcessingProps = {
     fabricCanvasRef,
     tool,
     gridLayerRef
-  });
+  };
+  
+  const { processPathPoints } = usePointProcessing(pointProcessingProps);
   
   // Initialize polyline creation hook with GIA recalculation
   const { createPolyline } = usePolylineCreation({
@@ -64,9 +66,10 @@ export const usePathProcessing = ({
 
   /**
    * Process a created path and convert it to appropriate shape
-   * @param path - The Fabric.js path object
+   * @param {FabricPath} path - The Fabric.js path object
+   * @returns {void}
    */
-  const processCreatedPath = useCallback((path: FabricPath) => {
+  const processCreatedPath = useCallback((path: FabricPath): void => {
     if (!fabricCanvasRef.current || !processPathPoints) return;
     
     logger.info(`Processing path for tool: ${tool}`);
