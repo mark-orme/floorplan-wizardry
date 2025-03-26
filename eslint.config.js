@@ -27,6 +27,16 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-magic-numbers": ["warn", {
+        "ignore": [0, 1, -1, 2], // Common values that don't need explaining
+        "ignoreArrayIndexes": true,
+        "ignoreDefaultValues": true,
+        "ignoreEnums": true,
+        "ignoreNumericLiteralTypes": true,
+        "ignoreReadonlyClassProperties": true,
+        "enforceConst": true,
+        "detectObjects": false
+      }],
       "jsdoc/require-jsdoc": ["warn", {
         "publicOnly": true,
         "require": {

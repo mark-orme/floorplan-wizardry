@@ -1,4 +1,3 @@
-
 /**
  * Path processing utilities
  * Functions for processing and transforming paths drawn on canvas
@@ -8,6 +7,7 @@ import { Path as FabricPath } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { snapToGrid } from "@/utils/grid/snapping";
 import logger from "@/utils/logger";
+import { PATH_PROCESSING } from "./grid/gridPositioningConstants";
 
 /**
  * Type for path command
@@ -90,15 +90,15 @@ export const processPathPoints = (
     // Keep first and last points, filter mid-points if too many
     let filteredPoints: Point[] = [];
 
-    if (points.length <= 4) {
-      // If there are 4 or fewer points, keep them all
+    if (points.length <= PATH_PROCESSING.MIN_POINTS_THRESHOLD) {
+      // If there are few points, keep them all
       filteredPoints = [...points];
     } else {
       // Always keep the first and last points
       filteredPoints = [points[0]];
       
       // Sample mid-points if there are too many
-      const step = Math.max(1, Math.floor(points.length / 10));
+      const step = Math.max(1, Math.floor(points.length / PATH_PROCESSING.SAMPLING_DIVISOR));
       for (let i = step; i < points.length - 1; i += step) {
         filteredPoints.push(points[i]);
       }

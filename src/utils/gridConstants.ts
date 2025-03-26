@@ -40,6 +40,24 @@ export {
   GRID_EXTENSION_FACTOR
 };
 
+/**
+ * Canvas size thresholds for grid performance optimizations
+ * @constant {Object}
+ */
+export const GRID_PERFORMANCE_THRESHOLDS = {
+  /**
+   * Threshold for skipping small grid (square pixels)
+   * @constant {number}
+   */
+  SKIP_SMALL_GRID: 8000000,
+  
+  /**
+   * Threshold for reducing grid density level 1 (square pixels)
+   * @constant {number}
+   */
+  REDUCE_DENSITY_LEVEL_1: 4000000
+};
+
 // Style options for grid lines
 export const SMALL_GRID_LINE_OPTIONS = {
   stroke: "#A0C5E0",
@@ -80,7 +98,7 @@ export const DISABLE_GRID_MARKERS = true;
  * @returns {boolean} True if small grid should be skipped
  */
 export const shouldSkipSmallGrid = (width: number, height: number): boolean => {
-  return width * height > 8000000; // Increased threshold from 7000000 to 8000000
+  return width * height > GRID_PERFORMANCE_THRESHOLDS.SKIP_SMALL_GRID;
 };
 
 /**
@@ -95,9 +113,9 @@ export const calculateGridDensity = (width: number, height: number) => {
   const area = width * height;
   
   // For very large canvases, reduce grid density
-  if (area > 8000000) {
+  if (area > GRID_PERFORMANCE_THRESHOLDS.SKIP_SMALL_GRID) {
     return { smallGridVisible: false, smallGridInterval: 5 };
-  } else if (area > 4000000) {
+  } else if (area > GRID_PERFORMANCE_THRESHOLDS.REDUCE_DENSITY_LEVEL_1) {
     return { smallGridVisible: true, smallGridInterval: 2 };
   } else {
     return { smallGridVisible: true, smallGridInterval: 1 };

@@ -9,6 +9,7 @@ import { GridDimensions, MAX_SMALL_GRID_LINES, MAX_LARGE_GRID_LINES } from "./gr
 import { SMALL_GRID, LARGE_GRID } from "./drawing";
 import { CanvasDimensions } from "@/types/drawingTypes";
 import logger from "./logger";
+import { SMALL_GRID_DENSITY_DIVISOR, LARGE_GRID_DENSITY_DIVISOR, SCALE_MARKER } from "./grid/gridPositioningConstants";
 
 /**
  * Store grid dimensions in a metadata object for future comparison
@@ -35,7 +36,7 @@ export const storeGridDimensions = (obj: FabricObject, width: number, height: nu
  */
 export const calculateSmallGridSkip = (canvasWidth: number, canvasHeight: number): number => {
   const canvasArea = canvasWidth * canvasHeight;
-  return Math.max(1, Math.floor(Math.sqrt(canvasArea) / 300));
+  return Math.max(1, Math.floor(Math.sqrt(canvasArea) / SMALL_GRID_DENSITY_DIVISOR));
 };
 
 /**
@@ -48,7 +49,7 @@ export const calculateSmallGridSkip = (canvasWidth: number, canvasHeight: number
  */
 export const calculateLargeGridSkip = (canvasWidth: number, canvasHeight: number): number => {
   const canvasArea = canvasWidth * canvasHeight;
-  return Math.max(1, Math.floor(Math.sqrt(canvasArea) / 1500));
+  return Math.max(1, Math.floor(Math.sqrt(canvasArea) / LARGE_GRID_DENSITY_DIVISOR));
 };
 
 /**
@@ -76,13 +77,13 @@ export const createScaleMarkers = (
   try {
     // Create a more visible marker line in bottom right
     const markerLine = new Line([
-      canvasWidth - 120, 
-      canvasHeight - 30, 
-      canvasWidth - 20, 
-      canvasHeight - 30
+      canvasWidth - SCALE_MARKER.HORIZONTAL_OFFSET_START, 
+      canvasHeight - SCALE_MARKER.VERTICAL_OFFSET, 
+      canvasWidth - SCALE_MARKER.HORIZONTAL_OFFSET_END, 
+      canvasHeight - SCALE_MARKER.VERTICAL_OFFSET
     ], {
       stroke: "#000000", // Black for maximum contrast
-      strokeWidth: 3, // Thicker line
+      strokeWidth: SCALE_MARKER.LINE_WIDTH, // Thicker line
       selectable: false,
       evented: false,
       objectCaching: true,
@@ -91,16 +92,16 @@ export const createScaleMarkers = (
     
     // Create a text label for the marker with improved visibility
     const markerText = new Text("1m", {
-      left: canvasWidth - 70,
-      top: canvasHeight - 45,
-      fontSize: 16, // Larger font
+      left: canvasWidth - SCALE_MARKER.TEXT_HORIZONTAL_OFFSET,
+      top: canvasHeight - SCALE_MARKER.TEXT_VERTICAL_OFFSET,
+      fontSize: SCALE_MARKER.FONT_SIZE, // Larger font
       fontWeight: 'bold',
       fill: "#000000", // Black text
       selectable: false,
       evented: false,
       objectCaching: true,
       hoverCursor: 'default',
-      backgroundColor: 'rgba(255,255,255,0.7)' // Semi-transparent white background
+      backgroundColor: `rgba(255,255,255,${SCALE_MARKER.BACKGROUND_OPACITY})` // Semi-transparent white background
     });
     
     // Store grid dimensions in the marker line for future reference

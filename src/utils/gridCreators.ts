@@ -1,3 +1,4 @@
+
 /**
  * Functions for creating different types of grid lines
  * @module gridCreators
@@ -15,6 +16,7 @@ import {
   SMALL_GRID_LINE_OPTIONS,
   LARGE_GRID_LINE_OPTIONS
 } from "./gridConstants";
+import { GRID_OFFSET_FACTOR } from "./grid/gridPositioningConstants";
 
 /**
  * Creates small grid lines
@@ -62,8 +64,8 @@ export const createSmallGrid = (
   const extendedHeight = canvasHeight * extensionFactor;
   
   // Adjust grid offset to fill the canvas completely
-  const startX = -canvasWidth / 4; // Modified to extend grid further left
-  const startY = -canvasHeight / 4; // Modified to extend grid further up
+  const startX = -canvasWidth * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
+  const startY = -canvasHeight * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
   const endX = extendedWidth;
   const endY = extendedHeight;
   
@@ -129,8 +131,8 @@ export const createLargeGrid = (
   const extendedHeight = canvasHeight * extensionFactor;
   
   // Adjust grid offset to fill the canvas completely
-  const startX = -canvasWidth / 4; // Modified to extend grid further left
-  const startY = -canvasHeight / 4; // Modified to extend grid further up
+  const startX = -canvasWidth * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
+  const startY = -canvasHeight * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
   const endX = extendedWidth;
   const endY = extendedHeight;
   
