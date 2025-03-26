@@ -15,7 +15,7 @@ describe('Canvas Event Handlers', () => {
   let mockProcessCreatedPath: ReturnType<typeof vi.fn>;
   let mockHandleMouseUp: ReturnType<typeof vi.fn>;
   let mockDeleteSelectedObjects: ReturnType<typeof vi.fn>;
-  let defaultTool: DrawingTool = 'draw'; // Changed from 'pen' to 'draw' which is a valid DrawingTool
+  let defaultTool: DrawingTool = 'draw'; // Using 'draw' which is a valid DrawingTool
 
   beforeEach(() => {
     // Create mock Canvas with event handlers
@@ -40,7 +40,7 @@ describe('Canvas Event Handlers', () => {
       // When
       renderHook(() => usePathEvents({
         fabricCanvasRef,
-        tool: defaultTool,
+        tool: defaultTool, // Add the required tool property
         saveCurrentState: mockSaveCurrentState,
         processCreatedPath: mockProcessCreatedPath,
         handleMouseUp: mockHandleMouseUp
@@ -54,7 +54,7 @@ describe('Canvas Event Handlers', () => {
       // When
       const { unmount } = renderHook(() => usePathEvents({
         fabricCanvasRef,
-        tool: defaultTool,
+        tool: defaultTool, // Add the required tool property
         saveCurrentState: mockSaveCurrentState,
         processCreatedPath: mockProcessCreatedPath,
         handleMouseUp: mockHandleMouseUp
@@ -72,7 +72,7 @@ describe('Canvas Event Handlers', () => {
       // When
       renderHook(() => useObjectEvents({
         fabricCanvasRef,
-        tool: defaultTool,
+        tool: defaultTool, // Add the required tool property
         saveCurrentState: mockSaveCurrentState
       }));
       
@@ -85,7 +85,7 @@ describe('Canvas Event Handlers', () => {
       // When
       const { unmount } = renderHook(() => useObjectEvents({
         fabricCanvasRef,
-        tool: defaultTool,
+        tool: defaultTool, // Add the required tool property
         saveCurrentState: mockSaveCurrentState
       }));
       

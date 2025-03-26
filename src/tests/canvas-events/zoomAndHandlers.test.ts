@@ -65,7 +65,7 @@ describe('Canvas Zoom and Handlers', () => {
       // When
       renderHook(() => useCanvasHandlers({
         fabricCanvasRef,
-        tool: defaultTool,
+        tool: defaultTool, // Add the required tool property
         handleUndo: mockHandleUndo,
         handleRedo: mockHandleRedo,
         saveCurrentState: mockSaveCurrentState,
@@ -84,7 +84,7 @@ describe('Canvas Zoom and Handlers', () => {
       // When
       const { unmount } = renderHook(() => useCanvasHandlers({
         fabricCanvasRef,
-        tool: defaultTool,
+        tool: defaultTool, // Add the required tool property
         handleUndo: mockHandleUndo,
         handleRedo: mockHandleRedo,
         saveCurrentState: mockSaveCurrentState,

@@ -1,9 +1,10 @@
+
 /**
  * Canvas Profiler Hook
  * React hook for profiling Canvas component performance
  * @module hooks/useCanvasProfiler
  */
-import { useCallback } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { 
   canvasProfiler, 
   startCanvasOperation, 
@@ -39,6 +40,10 @@ interface UseCanvasProfilerResult {
   isEnabled: boolean;
   /** Toggle profiling on/off */
   toggleProfiling: () => void;
+  /** Get operation time - for test compatibility */
+  getOperationTime: (operationId: string) => number;
+  /** Clear profile data - for test compatibility */
+  clearProfileData: () => void;
 }
 
 /**
@@ -114,6 +119,24 @@ export const useCanvasProfiler = (
   }, []);
 
   /**
+   * Get operation time - for test compatibility
+   * @param {string} operationId - Operation ID
+   * @returns {number} Operation duration in ms
+   */
+  const getOperationTime = useCallback((operationId: string): number => {
+    const report = canvasProfiler.getPerformanceReport();
+    const operation = report.operations?.find((op: any) => op.id === operationId);
+    return operation?.duration || 0;
+  }, []);
+
+  /**
+   * Clear profile data - for test compatibility
+   */
+  const clearProfileData = useCallback((): void => {
+    canvasProfiler.reset();
+  }, []);
+
+  /**
    * Create a profiled wrapper for a function
    * @param {string} name - Operation name
    * @param {Function} fn - Function to profile
@@ -153,6 +176,8 @@ export const useCanvasProfiler = (
     profileFn,
     performanceData,
     isEnabled,
-    toggleProfiling
+    toggleProfiling,
+    getOperationTime,
+    clearProfileData
   };
 };

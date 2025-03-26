@@ -16,22 +16,28 @@ const mockPerformance = {
 vi.mock('@/utils/profiling/canvasProfiler', () => ({
   startCanvasOperation: vi.fn(),
   endCanvasOperation: vi.fn(),
-  getCanvasPerformanceReport: vi.fn(),
+  getCanvasPerformanceReport: vi.fn().mockReturnValue({
+    operations: [{ id: 'test-op-id', name: 'testOperation', duration: 50 }],
+    summary: {}
+  }),
   canvasProfiler: {
     initialize: vi.fn(),
-    startOperation: vi.fn(),
+    startOperation: vi.fn().mockReturnValue('test-op-id'),
     endOperation: vi.fn(),
-    getPerformanceReport: vi.fn(),
+    getPerformanceReport: vi.fn().mockReturnValue({
+      operations: [{ id: 'test-op-id', name: 'testOperation', duration: 50 }],
+      summary: {}
+    }),
     reset: vi.fn()
   }
 }));
 
 // Import after mocking
 import { 
+  canvasProfiler, 
   startCanvasOperation, 
   endCanvasOperation, 
-  getCanvasPerformanceReport,
-  canvasProfiler
+  getCanvasPerformanceReport
 } from '@/utils/profiling/canvasProfiler';
 
 describe('useCanvasProfiler', () => {
@@ -59,6 +65,8 @@ describe('useCanvasProfiler', () => {
     expect(result.current.endOperation).toBeInstanceOf(Function);
     expect(result.current.resetProfiling).toBeInstanceOf(Function);
     expect(result.current.getReport).toBeInstanceOf(Function);
+    expect(result.current.getOperationTime).toBeInstanceOf(Function);
+    expect(result.current.clearProfileData).toBeInstanceOf(Function);
   });
   
   test('startOperation should call profiler', () => {
@@ -69,10 +77,11 @@ describe('useCanvasProfiler', () => {
     (canvasProfiler.startOperation as ReturnType<typeof vi.fn>).mockReturnValue(mockOpId);
     
     // When
-    result.current.startOperation(operationName);
+    const resultId = result.current.startOperation(operationName);
     
     // Then
     expect(canvasProfiler.startOperation).toHaveBeenCalledWith(operationName, undefined);
+    expect(resultId).toBe(mockOpId);
   });
   
   test('endOperation should call profiler', () => {
@@ -87,26 +96,42 @@ describe('useCanvasProfiler', () => {
     expect(canvasProfiler.endOperation).toHaveBeenCalledWith(operationId);
   });
   
-  test('getReport should return operation duration', () => {
+  test('getReport should return operation data', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
-    const expectedReport = { operations: [], summary: {} };
+    const expectedReport = { 
+      operations: [{ id: 'test-op-id', name: 'testOperation', duration: 50 }], 
+      summary: {} 
+    };
     (canvasProfiler.getPerformanceReport as ReturnType<typeof vi.fn>).mockReturnValue(expectedReport);
     
     // When
     const report = result.current.getReport();
     
     // Then
-    expect(report).toBe(expectedReport);
+    expect(report).toEqual(expectedReport);
     expect(canvasProfiler.getPerformanceReport).toHaveBeenCalled();
   });
   
-  test('resetProfiling should clear profiling data', () => {
+  test('getOperationTime should return operation duration', () => {
+    // Given
+    const { result } = renderHook(() => useCanvasProfiler());
+    const operationId = 'test-op-id';
+    
+    // When
+    const duration = result.current.getOperationTime(operationId);
+    
+    // Then
+    expect(duration).toBe(50);
+    expect(canvasProfiler.getPerformanceReport).toHaveBeenCalled();
+  });
+  
+  test('clearProfileData should reset profiling data', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
     
     // When
-    result.current.resetProfiling();
+    result.current.clearProfileData();
     
     // Then
     expect(canvasProfiler.reset).toHaveBeenCalled();
@@ -120,21 +145,21 @@ describe('useCanvasProfiler', () => {
     (canvasProfiler.startOperation as ReturnType<typeof vi.fn>).mockReturnValue(mockOpId);
     
     // When - start and end an operation
-    result.current.startOperation(operationName);
-    result.current.endOperation(mockOpId);
+    const opId = result.current.startOperation(operationName);
+    result.current.endOperation(opId);
     
     // Then - verify the cycle was performed correctly
     expect(canvasProfiler.startOperation).toHaveBeenCalledWith(operationName, undefined);
     expect(canvasProfiler.endOperation).toHaveBeenCalledWith(mockOpId);
     
-    // When - we get the report
-    result.current.getReport();
+    // When - we get the operation time
+    const duration = result.current.getOperationTime(opId);
     
-    // Then - report is fetched
-    expect(canvasProfiler.getPerformanceReport).toHaveBeenCalled();
+    // Then - duration is returned
+    expect(duration).toBe(50);
     
     // When - we reset the profiler
-    result.current.resetProfiling();
+    result.current.clearProfileData();
     
     // Then - the data is cleared
     expect(canvasProfiler.reset).toHaveBeenCalled();
@@ -143,6 +168,9 @@ describe('useCanvasProfiler', () => {
   test('should handle multiple operations', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
+    (canvasProfiler.startOperation as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce('operation1-id')
+      .mockReturnValueOnce('operation2-id');
     
     // When - start and end multiple operations
     result.current.startOperation('operation1');
