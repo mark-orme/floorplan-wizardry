@@ -341,7 +341,7 @@ export const useCanvasInitialization = ({
     // Clear any previous timeout
     clearInitTimeouts();
     
-    if (isInitialized && fabricCanvasRef.current) {
+    if (isInitialized() && fabricCanvasRef.current) {
       logger.info("Canvas already initialized, skipping initialization");
       return;
     }
@@ -368,7 +368,8 @@ export const useCanvasInitialization = ({
           componentMountedRef.current &&
           canvasRef.current) { // Only retry if canvas element exists
         
-        const attemptNum = getInitializationState().attempts;
+        const initState = getInitializationState();
+        const attemptNum = initState.attempts;
         const delay = Math.min(1000 * Math.pow(1.5, attemptNum), 5000);
         logger.info(`Initial canvas initialization failed, retrying in ${delay}ms (attempt ${attemptNum})...`);
         

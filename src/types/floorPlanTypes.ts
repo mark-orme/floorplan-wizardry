@@ -1,107 +1,68 @@
 
 /**
- * Unified floor plan types to resolve conflicts between utility and type definitions
+ * Type definitions for floor plans
  * @module floorPlanTypes
  */
 
-import { Point, CanvasDimensions } from './drawingTypes';
+export interface Point {
+  x: number;
+  y: number;
+}
 
 /**
- * Paper size options for floor plans
- * @typedef {('A4'|'A3'|'infinite')} PaperSize
+ * Wall definition in a floor plan
+ * @interface Wall
  */
-export type PaperSize = 'A4' | 'A3' | 'infinite';
+export interface Wall {
+  id: string;
+  start: Point;
+  end: Point;
+  thickness?: number;
+  height?: number;
+  type?: 'interior' | 'exterior' | 'partition';
+}
 
 /**
- * Canvas object data that can be serialized and stored
- * @typedef {Object} SerializedCanvasObject
+ * Room definition in a floor plan
+ * @interface Room
  */
-export type SerializedCanvasObject = Record<string, unknown>;
+export interface Room {
+  id: string;
+  name: string;
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  area?: number;
+  type?: string;
+}
 
 /**
- * Unified FloorPlan interface that satisfies both type systems
+ * Paper size for printing
+ * @interface PaperSize
+ */
+export interface PaperSize {
+  width: number;
+  height: number;
+  name: string;
+}
+
+/**
+ * Floor plan definition
  * @interface FloorPlan
  */
 export interface FloorPlan {
-  /** Unique identifier for the floor plan */
   id: string;
-  
-  /** Name of the floor plan */
   name: string;
-  
-  /** Display label for the floor plan */
-  label: string;
-  
-  /** Gross internal area in square meters */
-  gia: number;
-  
-  /** Array of strokes (each a sequence of points) */
-  strokes: Point[][];
-  
-  /** Paper size for printing */
-  paperSize?: PaperSize;
-  
-  /** SVG data representation */
-  svgData?: string;
-  
-  /** Serialized canvas data */
-  canvas?: string;
-  
-  /** Timestamp when the floor plan was created or last modified */
-  timestamp?: number;
-  
-  /** Canvas dimensions */
-  dimensions?: CanvasDimensions;
-  
-  /** Serialized canvas objects */
-  objects?: SerializedCanvasObject[];
-  
-  /** Areas (optional) */
-  areas?: number[];
-  
-  /** Rooms (optional) */
-  rooms?: string[];
-  
-  /** Creation date */
-  createdAt?: Date;
-  
-  /** Last update date */
-  updatedAt?: Date;
-}
-
-/**
- * Floor plan template options for creating new floor plans
- * @interface FloorPlanTemplate
- */
-export interface FloorPlanTemplate {
-  /** Template identifier */
-  id: string;
-  
-  /** Template name */
-  name: string;
-  
-  /** Default paper size */
-  paperSize: PaperSize;
-  
-  /** Default canvas dimensions */
-  dimensions: CanvasDimensions;
-}
-
-/**
- * Floor plan storage model for database operations
- * @interface FloorPlanStorageModel
- * @extends FloorPlan
- */
-export interface FloorPlanStorageModel extends FloorPlan {
-  /** Property ID this floor plan belongs to */
-  propertyId?: string;
-  
-  /** User ID who created this floor plan */
-  userId?: string;
-  
-  /** Flag indicating if this floor plan is synchronized to cloud */
-  synced?: boolean;
-  
-  /** Version number for concurrency control */
-  version?: number;
+  walls: Wall[];
+  rooms: Room[];
+  level: number;
+  gia?: number;
+  scale?: number;
+  updatedAt?: string;
+  meta?: {
+    [key: string]: any;
+  };
 }

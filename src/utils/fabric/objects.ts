@@ -43,7 +43,7 @@ export const canvasMoveTo = (
     const vph = canvas.height as number;
     
     // Create a new viewport transform centered on the point
-    const vpt = [...canvas.viewportTransform!];
+    const vpt = [...canvas.viewportTransform!] as number[];
     vpt[4] = vpw / 2 - point.x * vpt[0];
     vpt[5] = vph / 2 - point.y * vpt[3];
     
@@ -52,7 +52,7 @@ export const canvasMoveTo = (
       canvas.setCursor('progress');
       
       // Use requestAnimationFrame for smooth animation
-      const startVpt = [...canvas.viewportTransform!];
+      const startVpt = [...canvas.viewportTransform!] as number[];
       const startTime = Date.now();
       const duration = 500;
       
@@ -67,7 +67,7 @@ export const canvasMoveTo = (
         // Interpolate between start and target
         const newVpt = startVpt.map((start, i) => 
           start + (vpt[i] - start) * easedProgress
-        );
+        ) as [number, number, number, number, number, number];
         
         canvas.setViewportTransform(newVpt);
         
@@ -81,7 +81,7 @@ export const canvasMoveTo = (
       requestAnimationFrame(animateViewport);
     } else {
       // Apply immediately
-      canvas.setViewportTransform(vpt);
+      canvas.setViewportTransform(vpt as [number, number, number, number, number, number]);
     }
   } catch (error) {
     logger.error("Error moving canvas:", error);
@@ -100,7 +100,7 @@ export const bringObjectToFront = (
   if (!canvas || !object) return;
   
   try {
-    object.bringToFront();
+    canvas.bringObjectToFront(object);
     canvas.requestRenderAll();
   } catch (error) {
     logger.error("Error bringing object to front:", error);
@@ -119,7 +119,7 @@ export const sendObjectToBack = (
   if (!canvas || !object) return;
   
   try {
-    object.sendToBack();
+    canvas.sendObjectToBack(object);
     canvas.requestRenderAll();
   } catch (error) {
     logger.error("Error sending object to back:", error);

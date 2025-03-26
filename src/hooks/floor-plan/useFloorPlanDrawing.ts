@@ -6,7 +6,7 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Rect, Line } from "fabric";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan, Wall, Room } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 import { PIXELS_PER_METER } from "@/constants/numerics";
 

@@ -59,10 +59,17 @@ export const enableCanvasPanning = (
 const setupDragPanning = (canvas: FabricCanvas): void => {
   // Mouse down event to start panning
   canvas.on("mouse:down", (opt) => {
-    if (opt.e.altKey) {
+    if (opt.e && 'altKey' in opt.e && opt.e.altKey) {
       panningState.isPanning = true;
-      panningState.lastPosX = opt.e.clientX;
-      panningState.lastPosY = opt.e.clientY;
+      
+      // Handle both mouse and touch events
+      const clientX = 'clientX' in opt.e ? opt.e.clientX : 
+                     (opt.e.touches && opt.e.touches[0] ? opt.e.touches[0].clientX : 0);
+      const clientY = 'clientY' in opt.e ? opt.e.clientY : 
+                     (opt.e.touches && opt.e.touches[0] ? opt.e.touches[0].clientY : 0);
+      
+      panningState.lastPosX = clientX;
+      panningState.lastPosY = clientY;
       canvas.defaultCursor = "grabbing";
       canvas.renderAll();
     }
@@ -70,14 +77,21 @@ const setupDragPanning = (canvas: FabricCanvas): void => {
   
   // Mouse move event to perform panning
   canvas.on("mouse:move", (opt) => {
-    if (panningState.isPanning) {
+    if (panningState.isPanning && opt.e) {
       const e = opt.e;
       const vpt = canvas.viewportTransform!;
-      vpt[4] += e.clientX - panningState.lastPosX;
-      vpt[5] += e.clientY - panningState.lastPosY;
+      
+      // Handle both mouse and touch events
+      const clientX = 'clientX' in e ? e.clientX : 
+                     (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      const clientY = 'clientY' in e ? e.clientY : 
+                     (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+      
+      vpt[4] += clientX - panningState.lastPosX;
+      vpt[5] += clientY - panningState.lastPosY;
       canvas.requestRenderAll();
-      panningState.lastPosX = e.clientX;
-      panningState.lastPosY = e.clientY;
+      panningState.lastPosX = clientX;
+      panningState.lastPosY = clientY;
     }
   });
   

@@ -57,7 +57,7 @@ export const useFloorPlans = ({
   }), [fabricCanvasRef, gridLayerRef, createGrid, recalculateGIA]);
   
   // Initialize floor plan drawing functionality
-  const { drawFloorPlan } = useFloorPlanDrawing(hookDeps);
+  const { drawFloorPlan } = useFloorPlanDrawing();
   
   // Initialize floor plan management (add, select)
   const { handleAddFloor, handleSelectFloor } = useFloorPlanManagement({
@@ -68,6 +68,18 @@ export const useFloorPlans = ({
   
   // Initialize floor plan storage - Get the loadData function that returns a promise
   const { loadData, saveData, lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
+
+  // Draw the floor plan with the proper canvas
+  const drawFloorPlanWithCanvas = useCallback((floorIndex: number, plans: FloorPlan[]) => {
+    if (!fabricCanvasRef.current) return;
+    if (plans.length === 0 || floorIndex >= plans.length) return;
+    
+    const floorPlan = plans[floorIndex];
+    drawFloorPlan(fabricCanvasRef.current, floorPlan);
+    
+    // Recalculate GIA after drawing
+    setTimeout(recalculateGIA, 200);
+  }, [fabricCanvasRef, drawFloorPlan, recalculateGIA]);
 
   // Update canvas when floor changes with debouncing - use stable version of dependencies
   useEffect(() => {
@@ -82,7 +94,7 @@ export const useFloorPlans = ({
     // Use a more efficient approach for floor changes
     const floorChangeHandler = () => {
       clearDrawings();
-      drawFloorPlan(currentFloor, floorPlans);
+      drawFloorPlanWithCanvas(currentFloor, floorPlans);
       
       // OPTIMIZATION: Delay GIA calculation after drawing is complete
       setTimeout(recalculateGIA, 200);
@@ -97,14 +109,14 @@ export const useFloorPlans = ({
     isLoading,
     fabricCanvasRef,
     clearDrawings,
-    drawFloorPlan,
+    drawFloorPlanWithCanvas,
     recalculateGIA
   ]);
 
   return {
     drawFloorPlan: useCallback((floorIndex = currentFloor) => 
-      drawFloorPlan(floorIndex, floorPlans), 
-      [currentFloor, floorPlans, drawFloorPlan]
+      drawFloorPlanWithCanvas(floorIndex, floorPlans), 
+      [currentFloor, floorPlans, drawFloorPlanWithCanvas]
     ),
     recalculateGIA,
     handleAddFloor,

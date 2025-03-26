@@ -5,17 +5,13 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Polyline as FabricPolyline, Object as FabricObject } from "fabric";
-import { PIXELS_PER_METER, calculateGIA } from "@/utils/drawing";
+import { PIXELS_PER_METER } from "@/utils/drawing";
 import { Point } from "@/types/drawingTypes";
+import { calculateGIA } from "@/utils/drawing";
 
 interface UseFloorPlanGIAProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
-}
-
-interface RoomCoordinates {
-  x: number;
-  y: number;
 }
 
 /**
@@ -60,7 +56,7 @@ export const useFloorPlanGIA = ({
           const points = coords.map(p => ({ 
             x: p.x / PIXELS_PER_METER, 
             y: p.y / PIXELS_PER_METER 
-          })) as RoomCoordinates[];
+          }));
           
           // Calculate GIA for this room
           const roomGIA = calculateGIA(points);

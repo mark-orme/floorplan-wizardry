@@ -1,133 +1,105 @@
 /**
- * Hook for canvas initialization retry logic
- * @module hooks/canvas-initialization/useCanvasRetryLogic
+ * Hook for managing canvas initialization retry logic
+ * @module useCanvasRetryLogic
  */
-import { useCallback, useState, useRef } from 'react';
-import logger from '@/utils/logger';
-import { getInitializationState } from '@/utils/canvas/safeCanvasInitialization';
+import { useRef, useCallback } from "react";
+import logger from "@/utils/logger";
+
+interface RetryAttemptStatus {
+  shouldContinue: boolean;
+  isMaxAttemptsReached: boolean;
+  isCycleDetected: boolean;
+}
 
 /**
- * Hook providing retry logic for canvas initialization
- * @returns Retry utilities
+ * Hook to handle canvas initialization retry logic
+ * Prevents infinite retry loops and tracks initialization attempts
  */
 export const useCanvasRetryLogic = () => {
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = useRef(5);
-  const lastRetryTime = useRef(0);
-  const cycleDetection = useRef({
-    errorCounts: {} as Record<string, number>,
-    consecutiveErrorTypes: [] as string[]
-  });
+  const MAX_RETRY_ATTEMPTS = 5;
+  const attemptsRef = useRef<number>(0);
+  const lastTimestampsRef = useRef<number[]>([]);
+  const cycleDetectedRef = useRef<boolean>(false);
   
   /**
-   * Retry with exponential backoff
-   * @returns {boolean} Whether retry was attempted
+   * Check if initialization attempts show a cycle pattern
    */
-  const retryWithBackoff = useCallback(() => {
-    if (retryCount >= maxRetries.current) {
-      logger.warn(`Exceeded max retries (${maxRetries.current})`);
-      return false;
-    }
-    
-    const waitTime = Math.min(1000 * Math.pow(1.5, retryCount), 10000);
-    logger.info(`Retrying canvas initialization in ${waitTime}ms (attempt ${retryCount + 1})`);
-    
-    setTimeout(() => {
-      lastRetryTime.current = Date.now();
-      setRetryCount(prev => prev + 1);
-    }, waitTime);
-    
-    return true;
-  }, [retryCount]);
-  
-  /**
-   * Reset retry state
-   */
-  const resetRetry = useCallback(() => {
-    setRetryCount(0);
-    lastRetryTime.current = 0;
-    cycleDetection.current = {
-      errorCounts: {},
-      consecutiveErrorTypes: []
-    };
+  const isCycleDetected = useCallback((): boolean => {
+    return cycleDetectedRef.current;
   }, []);
   
   /**
-   * Track initialization attempt
-   * @param {string} errorType - Type of error encountered
-   * @returns {boolean} Whether this appears to be a cycle
+   * Reset all initialization tracking state
    */
-  const trackInitializationAttempt = useCallback((errorType?: string) => {
-    if (errorType) {
-      // Track for cycle detection
-      cycleDetection.current.errorCounts[errorType] = 
-        (cycleDetection.current.errorCounts[errorType] || 0) + 1;
-      cycleDetection.current.consecutiveErrorTypes.push(errorType);
+  const resetInitializationTracking = useCallback((): void => {
+    attemptsRef.current = 0;
+    lastTimestampsRef.current = [];
+    cycleDetectedRef.current = false;
+    logger.info("Initialization tracking reset");
+  }, []);
+  
+  /**
+   * Track an initialization attempt and determine if we should continue trying
+   * @returns Status of the attempt and whether to continue
+   */
+  const trackInitializationAttempt = useCallback((): RetryAttemptStatus => {
+    // Track this attempt
+    attemptsRef.current += 1;
+    const now = Date.now();
+    lastTimestampsRef.current.push(now);
+    
+    // Keep only the last 10 timestamps
+    if (lastTimestampsRef.current.length > 10) {
+      lastTimestampsRef.current = lastTimestampsRef.current.slice(-10);
+    }
+    
+    // Check for a cycle (rapid consecutive attempts)
+    if (lastTimestampsRef.current.length >= 3) {
+      const timestamps = lastTimestampsRef.current;
+      const intervals = [];
       
-      // Keep only last 5 error types for cycle detection
-      if (cycleDetection.current.consecutiveErrorTypes.length > 5) {
-        cycleDetection.current.consecutiveErrorTypes.shift();
+      for (let i = 1; i < timestamps.length; i++) {
+        intervals.push(timestamps[i] - timestamps[i-1]);
       }
-    }
-    
-    return true;
-  }, []);
-  
-  /**
-   * Reset initialization tracking
-   */
-  const resetInitializationTracking = useCallback(() => {
-    resetRetry();
-  }, [resetRetry]);
-  
-  /**
-   * Check if a cycle of errors is detected
-   * @returns {boolean} Whether a cycle is detected
-   */
-  const isCycleDetected = useCallback(() => {
-    const { consecutiveErrorTypes, errorCounts } = cycleDetection.current;
-    
-    // Detect same error happening multiple times
-    for (const errorType in errorCounts) {
-      if (errorCounts[errorType] >= 3) {
-        return true;
-      }
-    }
-    
-    // Detect pattern of alternating errors
-    if (consecutiveErrorTypes.length >= 4) {
-      // Look for A-B-A-B pattern
-      const a = consecutiveErrorTypes[consecutiveErrorTypes.length - 4];
-      const b = consecutiveErrorTypes[consecutiveErrorTypes.length - 3];
-      const c = consecutiveErrorTypes[consecutiveErrorTypes.length - 2];
-      const d = consecutiveErrorTypes[consecutiveErrorTypes.length - 1];
       
-      if (a === c && b === d) {
-        return true;
+      // If we have at least 3 very similar intervals (within 100ms), that's a cycle
+      let similarIntervals = 0;
+      for (let i = 1; i < intervals.length; i++) {
+        if (Math.abs(intervals[i] - intervals[i-1]) < 100) {
+          similarIntervals++;
+        }
+      }
+      
+      if (similarIntervals >= 2) {
+        logger.warn("Initialization cycle detected!");
+        cycleDetectedRef.current = true;
+        return {
+          shouldContinue: false,
+          isMaxAttemptsReached: false,
+          isCycleDetected: true
+        };
       }
     }
     
-    return false;
-  }, []);
-  
-  /**
-   * Get the retry state
-   * @returns Retry state object
-   */
-  const getRetryState = useCallback(() => {
+    // Check max attempts
+    if (attemptsRef.current > MAX_RETRY_ATTEMPTS) {
+      logger.warn(`Max initialization attempts (${MAX_RETRY_ATTEMPTS}) reached`);
+      return {
+        shouldContinue: false,
+        isMaxAttemptsReached: true,
+        isCycleDetected: false
+      };
+    }
+    
+    // Otherwise, we can continue attempting
     return {
-      retryCount,
-      initState: getInitializationState(),
-      canRetry: retryCount < maxRetries.current
+      shouldContinue: true,
+      isMaxAttemptsReached: false,
+      isCycleDetected: false
     };
-  }, [retryCount]);
+  }, []);
   
   return {
-    retryWithBackoff,
-    resetRetry,
-    retryCount,
-    maxRetries: maxRetries.current,
-    getRetryState,
     trackInitializationAttempt,
     resetInitializationTracking,
     isCycleDetected

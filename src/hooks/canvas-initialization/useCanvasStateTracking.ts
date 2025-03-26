@@ -1,144 +1,138 @@
 
 /**
- * Hook for tracking canvas state
- * @module hooks/canvas-initialization/useCanvasStateTracking
+ * Hook for tracking canvas initialization state
+ * @module useCanvasStateTracking
  */
-import { useState, useCallback, useRef, useEffect } from 'react';
-import logger from '@/utils/logger';
-import { 
-  canInitializeCanvas, 
-  trackInitializationAttempt,
-  getInitializationState,
-  resetInitializationState
-} from '@/utils/canvas/safeCanvasInitialization';
+import { useCallback, useRef } from "react";
+import logger from "@/utils/logger";
+
+interface InitializationState {
+  attempts: number;
+  initializationInProgress: boolean;
+  canvasDisposalInProgress: boolean;
+  isInitialized: boolean;
+  lastAttemptTime: number;
+}
 
 /**
- * Hook for tracking canvas initialization state
- * @returns State tracking utilities
+ * Hook to track canvas initialization state
+ * Prevents parallel initialization and handles cleanup
  */
 export const useCanvasStateTracking = () => {
-  const [initializationComplete, setInitializationComplete] = useState(false);
-  const [initializationError, setInitializationError] = useState(false);
-  const [attemptCount, setAttemptCount] = useState(0);
-  const componentMountedRef = useRef(true);
-  const timeoutRefs = useRef<number[]>([]);
-  const isInitialized = useRef(false);
+  const componentMountedRef = useRef<boolean>(true);
+  const stateRef = useRef<InitializationState>({
+    attempts: 0,
+    initializationInProgress: false,
+    canvasDisposalInProgress: false,
+    isInitialized: false,
+    lastAttemptTime: 0
+  });
+  const timeoutIdsRef = useRef<number[]>([]);
+  const MAX_ATTEMPTS = 5;
   
-  // Clean up timeouts on unmount
-  useEffect(() => {
-    return () => {
-      componentMountedRef.current = false;
-      clearInitTimeouts();
-    };
+  /**
+   * Check if initialization has completed
+   */
+  const isInitialized = useCallback((): boolean => {
+    return stateRef.current.isInitialized;
   }, []);
   
-  // Track an initialization attempt
-  const recordInitializationAttempt = useCallback(() => {
-    const newCount = trackInitializationAttempt();
-    setAttemptCount(newCount);
-    return newCount;
-  }, []);
-  
-  // Mark initialization as complete
-  const markInitializationComplete = useCallback((success: boolean) => {
-    if (!componentMountedRef.current) return;
-    setInitializationComplete(success);
-    setInitializationError(!success);
-    isInitialized.current = success;
-    logger.info(`Canvas initialization ${success ? 'completed successfully' : 'failed'}`);
-  }, []);
-  
-  // Start initialization process
-  const startInitialization = useCallback(() => {
-    if (!componentMountedRef.current) return;
-    isInitialized.current = false;
-    setInitializationComplete(false);
-    setInitializationError(false);
-  }, []);
-  
-  // Complete initialization successfully
-  const completeInitialization = useCallback(() => {
-    if (!componentMountedRef.current) return;
-    markInitializationComplete(true);
-  }, [markInitializationComplete]);
-  
-  // Fail initialization
-  const failInitialization = useCallback((reason: string) => {
-    if (!componentMountedRef.current) return;
-    logger.error(`Canvas initialization failed: ${reason}`);
-    markInitializationComplete(false);
-  }, [markInitializationComplete]);
-  
-  // Set disposal state
-  const setDisposalState = useCallback((disposed: boolean) => {
-    if (!componentMountedRef.current) return;
-  }, []);
-  
-  // Set initialization timeout
-  const setInitTimeout = useCallback((callback: () => void, delay: number) => {
-    const timeoutId = window.setTimeout(() => {
-      if (componentMountedRef.current) {
-        callback();
-      }
-    }, delay);
-    timeoutRefs.current.push(timeoutId);
-    return timeoutId;
-  }, []);
-  
-  // Clear all initialization timeouts
-  const clearInitTimeouts = useCallback(() => {
-    timeoutRefs.current.forEach(id => window.clearTimeout(id));
-    timeoutRefs.current = [];
-  }, []);
-  
-  // Setup mounted tracking
-  const setupMountedTracking = useCallback(() => {
+  /**
+   * Setup tracking of component mount state 
+   */
+  const setupMountedTracking = useCallback((): (() => void) => {
     componentMountedRef.current = true;
+    
     return () => {
       componentMountedRef.current = false;
     };
   }, []);
   
-  // Check if max attempts are exceeded
-  const hasExceededMaxAttempts = useCallback(() => {
-    return attemptCount >= 5;
-  }, [attemptCount]);
-  
-  // Reset error state
-  const resetErrorState = useCallback(() => {
-    if (!componentMountedRef.current) return;
-    setInitializationError(false);
+  /**
+   * Get current initialization state
+   */
+  const getInitializationState = useCallback((): InitializationState => {
+    return { ...stateRef.current };
   }, []);
   
-  // Check if we can initialize the canvas
-  const canInitialize = useCallback(() => {
-    return canInitializeCanvas();
+  /**
+   * Set canvas disposal state
+   */
+  const setDisposalState = useCallback((isDisposing: boolean): void => {
+    stateRef.current.canvasDisposalInProgress = isDisposing;
   }, []);
   
-  // Reset initialization tracking
-  const resetInitializationTracking = useCallback(() => {
-    resetInitializationState();
-    setAttemptCount(0);
-    setInitializationComplete(false);
-    setInitializationError(false);
-    isInitialized.current = false;
+  /**
+   * Start the initialization process and track attempt
+   */
+  const startInitialization = useCallback((): number => {
+    stateRef.current.initializationInProgress = true;
+    stateRef.current.attempts += 1;
+    stateRef.current.lastAttemptTime = Date.now();
+    logger.info(`Starting initialization attempt ${stateRef.current.attempts}`);
+    return stateRef.current.attempts;
   }, []);
   
-  // Get the full initialization state
-  const getState = useCallback(() => {
-    return {
-      initializationComplete,
-      initializationError,
-      attemptCount,
-      isInitialized: isInitialized.current,
-      ...getInitializationState()
-    };
-  }, [initializationComplete, initializationError, attemptCount]);
+  /**
+   * Mark initialization as complete
+   */
+  const completeInitialization = useCallback((error?: Error): void => {
+    stateRef.current.initializationInProgress = false;
+    stateRef.current.isInitialized = true;
+    
+    if (error) {
+      logger.error("Initialization completed with error:", error);
+    } else {
+      logger.info("Initialization completed successfully");
+    }
+  }, []);
+  
+  /**
+   * Mark initialization as failed
+   */
+  const failInitialization = useCallback((error?: Error): void => {
+    stateRef.current.initializationInProgress = false;
+    
+    if (error) {
+      logger.error("Initialization failed with error:", error);
+    } else {
+      logger.warn("Initialization failed");
+    }
+  }, []);
+  
+  /**
+   * Check if max initialization attempts have been exceeded
+   */
+  const hasExceededMaxAttempts = useCallback((): boolean => {
+    return stateRef.current.attempts >= MAX_ATTEMPTS;
+  }, []);
+  
+  /**
+   * Set a timeout for retrying initialization
+   */
+  const setInitTimeout = useCallback((callback: () => void, delay: number): void => {
+    const id = window.setTimeout(() => {
+      callback();
+      
+      // Remove the timeout ID from the array after execution
+      timeoutIdsRef.current = timeoutIdsRef.current.filter(timeoutId => timeoutId !== id);
+    }, delay);
+    
+    timeoutIdsRef.current.push(id);
+  }, []);
+  
+  /**
+   * Clear all initialization timeouts
+   */
+  const clearInitTimeouts = useCallback((): void => {
+    timeoutIdsRef.current.forEach(id => {
+      window.clearTimeout(id);
+    });
+    
+    timeoutIdsRef.current = [];
+  }, []);
   
   return {
-    initializationComplete,
-    initializationError,
-    attemptCount,
     isInitialized,
     componentMountedRef,
     startInitialization,
@@ -146,15 +140,9 @@ export const useCanvasStateTracking = () => {
     failInitialization,
     setDisposalState,
     getInitializationState,
+    hasExceededMaxAttempts,
     setInitTimeout,
     clearInitTimeouts,
-    setupMountedTracking,
-    hasExceededMaxAttempts,
-    recordInitializationAttempt,
-    markInitializationComplete,
-    canInitialize,
-    getState,
-    resetErrorState,
-    resetInitializationTracking
+    setupMountedTracking
   };
 };
