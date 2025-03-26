@@ -1,10 +1,10 @@
 
-import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Line, Text } from 'fabric';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Button } from './ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
+import logger from '@/utils/logger';
 
 interface EmergencyCanvasProps {
   onRetry?: () => void;
@@ -14,7 +14,8 @@ interface EmergencyCanvasProps {
 
 /**
  * Simplified backup canvas component when the main canvas fails
- * This component has minimal dependencies and a simple implementation
+ * This component has minimal dependencies and renders a static grid
+ * without using Fabric.js to avoid initialization loops
  */
 export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({ 
   onRetry,
@@ -22,94 +23,105 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
   height = 600
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricRef = useRef<FabricCanvas | null>(null);
+  const [isGridRendered, setIsGridRendered] = useState(false);
   
+  // Draw a simple grid using plain Canvas API
   useEffect(() => {
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    // Initialize directly without complex hooks
     try {
-      // Create a fresh canvas element to ensure no initialization conflicts
-      const canvasElement = document.createElement('canvas');
-      canvasElement.width = width;
-      canvasElement.height = height;
-      canvasElement.style.width = `${width}px`;
-      canvasElement.style.height = `${height}px`;
+      logger.info('Initializing emergency canvas');
       
-      // Replace the existing element with our fresh one
-      if (canvasRef.current.parentNode) {
-        canvasRef.current.parentNode.replaceChild(canvasElement, canvasRef.current);
-        canvasRef.current = canvasElement;
+      // Set dimensions
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Get rendering context
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        logger.error('Failed to get canvas context');
+        return;
       }
       
-      // Create a new Fabric canvas instance
-      const fabricCanvas = new FabricCanvas(canvasElement, {
-        width,
-        height,
-        backgroundColor: '#f8f9fa'
-      });
-      fabricRef.current = fabricCanvas;
+      // Clear canvas and set background
+      ctx.fillStyle = '#f8f9fa';
+      ctx.fillRect(0, 0, width, height);
       
-      // Create basic grid lines
-      for (let i = 0; i <= width; i += 100) {
-        const line = new Line([i, 0, i, height], {
-          stroke: '#999',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
-        });
-        fabricCanvas.add(line);
+      // Draw grid lines
+      ctx.strokeStyle = '#dddddd';
+      ctx.lineWidth = 0.5;
+      
+      // Draw vertical lines every 20px
+      for (let x = 0; x <= width; x += 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
       }
       
-      for (let i = 0; i <= height; i += 100) {
-        const line = new Line([0, i, width, i], {
-          stroke: '#999',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
-        });
-        fabricCanvas.add(line);
+      // Draw horizontal lines every 20px
+      for (let y = 0; y <= height; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
       }
       
-      // Add message about emergency mode
-      const text = new Text('EMERGENCY MODE', {
-        left: width / 2 - 80,
-        top: height / 2 - 30,
-        fontSize: 20,
-        fontWeight: 'bold',
-        fill: 'red',
-        selectable: false,
-        evented: false
-      });
-      fabricCanvas.add(text);
+      // Draw major grid lines
+      ctx.strokeStyle = '#aaaaaa';
+      ctx.lineWidth = 1;
       
-      const subtext = new Text('Canvas initialization failed. Using simplified mode.', {
-        left: width / 2 - 150,
-        top: height / 2 + 10,
-        fontSize: 14,
-        fill: 'black',
-        selectable: false,
-        evented: false
-      });
-      fabricCanvas.add(subtext);
-      
-      fabricCanvas.renderAll();
-      
-      console.log('Emergency canvas initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize emergency canvas:', error);
-    }
-    
-    return () => {
-      if (fabricRef.current) {
-        try {
-          fabricRef.current.dispose();
-          fabricRef.current = null;
-        } catch (error) {
-          console.error('Error disposing emergency canvas:', error);
+      // Draw vertical lines every 100px
+      for (let x = 0; x <= width; x += 100) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+        
+        // Add labels
+        if (x > 0) {
+          ctx.fillStyle = '#666666';
+          ctx.font = '10px sans-serif';
+          ctx.fillText(`${x}px`, x + 2, 10);
         }
       }
-    };
+      
+      // Draw horizontal lines every 100px
+      for (let y = 0; y <= height; y += 100) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+        
+        // Add labels
+        if (y > 0) {
+          ctx.fillStyle = '#666666';
+          ctx.font = '10px sans-serif';
+          ctx.fillText(`${y}px`, 2, y - 2);
+        }
+      }
+      
+      // Add emergency mode message
+      ctx.fillStyle = 'rgba(220, 53, 69, 0.9)';
+      ctx.font = 'bold 20px sans-serif';
+      const mainText = 'EMERGENCY MODE';
+      const textWidth = ctx.measureText(mainText).width;
+      ctx.fillText(mainText, (width - textWidth) / 2, height / 2 - 15);
+      
+      // Add explanation
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.font = '14px sans-serif';
+      const subText = 'Canvas initialization failed. Using simplified mode.';
+      const subTextWidth = ctx.measureText(subText).width;
+      ctx.fillText(subText, (width - subTextWidth) / 2, height / 2 + 15);
+      
+      // Mark as rendered successfully
+      setIsGridRendered(true);
+      logger.info('Emergency canvas initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize emergency canvas:', error);
+    }
   }, [width, height]);
   
   return (
@@ -126,11 +138,22 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
       </Card>
       
       <Alert variant="destructive" className="mt-4">
+        <AlertCircle className="h-4 w-4" />
         <AlertTitle>Canvas Error</AlertTitle>
         <AlertDescription>
-          The main canvas failed to initialize after multiple attempts. Using simplified backup mode.
+          <p className="mb-2">
+            The main canvas failed to initialize after multiple attempts. Using simplified backup mode.
+          </p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Note: Drawing functionality is limited in emergency mode.
+          </p>
           <div className="mt-4">
-            <Button variant="outline" onClick={onRetry} className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={onRetry} 
+              className="flex items-center gap-2"
+              disabled={!isGridRendered}
+            >
               <RefreshCw size={16} />
               Retry with main canvas
             </Button>

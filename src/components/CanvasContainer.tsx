@@ -14,6 +14,7 @@ import {
   DEFAULT_CANVAS_HEIGHT,
   DEFAULT_CANVAS_WIDTH
 } from "@/constants/numerics";
+import logger from "@/utils/logger";
 
 interface CanvasContainerProps {
   debugInfo: DebugInfoState;
@@ -33,50 +34,58 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
   const [dimensionsSetupAttempt, setDimensionsSetupAttempt] = useState(0);
+  const setupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Force initialization after render to ensure canvas has dimensions
   useEffect(() => {
     const setupCanvasDimensions = () => {
       if (canvasReference.current && containerRef.current) {
-        // Get container dimensions
-        const containerRect = containerRef.current.getBoundingClientRect();
-        
-        // Log actual dimensions we're working with for debugging
-        console.log("Container dimensions:", containerRect.width, "x", containerRect.height);
-        
-        // Set canvas dimensions explicitly based on container
-        if (containerRect.width > 0 && containerRect.height > 0) {
-          canvasReference.current.width = containerRect.width;
-          canvasReference.current.height = Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT);
+        try {
+          // Get container dimensions
+          const containerRect = containerRef.current.getBoundingClientRect();
           
-          // Also set style dimensions to match
-          canvasReference.current.style.width = `${containerRect.width}px`;
-          canvasReference.current.style.height = `${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}px`;
-          
-          // Force a reflow to ensure dimensions are applied
-          canvasReference.current.getBoundingClientRect();
-          
-          // Signal that canvas is ready after dimensions are set
-          setCanvasReady(true);
-          
-          console.log("Canvas sized to dimensions:", 
-            containerRect.width, "x", Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT));
-        } else {
-          // Fallback sizes if container dimensions are not available
-          canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
-          canvasReference.current.height = DEFAULT_CANVAS_HEIGHT;
-          canvasReference.current.style.width = `${DEFAULT_CANVAS_WIDTH}px`;
-          canvasReference.current.style.height = `${DEFAULT_CANVAS_HEIGHT}px`;
-          console.log(`Using fallback canvas dimensions: ${DEFAULT_CANVAS_WIDTH}x${DEFAULT_CANVAS_HEIGHT}`);
-          
-          // Signal that canvas is ready even with fallback dimensions
-          setCanvasReady(true);
-          
-          // Try again later if container dimensions are zero
-          if (dimensionsSetupAttempt < 5) { // Increased max attempts from 3 to 5
-            setTimeout(() => {
-              setDimensionsSetupAttempt(prev => prev + 1);
-            }, 300);
+          // Only proceed if we have valid dimensions
+          if (containerRect.width > 0 && containerRect.height > 0) {
+            logger.info(`Setting canvas dimensions to ${containerRect.width}x${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}`);
+            
+            // Set canvas dimensions explicitly based on container
+            canvasReference.current.width = containerRect.width;
+            canvasReference.current.height = Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT);
+            
+            // Also set style dimensions to match
+            canvasReference.current.style.width = `${containerRect.width}px`;
+            canvasReference.current.style.height = `${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}px`;
+            
+            // Force a reflow to ensure dimensions are applied
+            canvasReference.current.getBoundingClientRect();
+            
+            // Signal that canvas is ready after dimensions are set
+            setCanvasReady(true);
+          } else {
+            // Use fallback dimensions if container dimensions aren't available
+            logger.warn("Container dimensions are zero, using fallback dimensions");
+            canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
+            canvasReference.current.height = DEFAULT_CANVAS_HEIGHT;
+            canvasReference.current.style.width = `${DEFAULT_CANVAS_WIDTH}px`;
+            canvasReference.current.style.height = `${DEFAULT_CANVAS_HEIGHT}px`;
+            
+            // Signal that canvas is ready even with fallback dimensions
+            setCanvasReady(true);
+            
+            // Try again later if container dimensions are zero and we haven't tried too many times
+            if (dimensionsSetupAttempt < 5) {
+              setupTimeoutRef.current = setTimeout(() => {
+                setDimensionsSetupAttempt(prev => prev + 1);
+              }, 300);
+            }
+          }
+        } catch (error) {
+          logger.error("Error setting canvas dimensions:", error);
+          // Set fallback dimensions on error
+          if (canvasReference.current) {
+            canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
+            canvasReference.current.height = DEFAULT_CANVAS_HEIGHT;
+            setCanvasReady(true);
           }
         }
       }
@@ -85,8 +94,13 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
     // Run the setup function
     setupCanvasDimensions();
     
-    // Rerun setup if the container or canvas change, or on retry attempts
-  }, [canvasReference, dimensionsSetupAttempt, containerRef.current]);
+    // Clean up timeout
+    return () => {
+      if (setupTimeoutRef.current) {
+        clearTimeout(setupTimeoutRef.current);
+      }
+    };
+  }, [canvasReference, dimensionsSetupAttempt, containerRef, setCanvasReady]);
 
   return (
     <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible h-full">
