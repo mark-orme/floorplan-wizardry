@@ -19,10 +19,18 @@ export {
 export * from './fabric/index';
 
 /**
- * Get environment variables with proper fallbacks
- * @returns {Object} Environment variables
+ * Environment variables interface
  */
-export const getEnvVars = () => {
+interface EnvVars {
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+}
+
+/**
+ * Get environment variables with proper fallbacks
+ * @returns {EnvVars} Environment variables
+ */
+export const getEnvVars = (): EnvVars => {
   return {
     SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
     SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || ''

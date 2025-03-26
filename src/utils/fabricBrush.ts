@@ -1,3 +1,4 @@
+
 /**
  * Utilities for Fabric.js brushes and drawing tools
  * @module fabricBrush
@@ -9,7 +10,7 @@ import { Canvas, PencilBrush } from "fabric";
  * @param {Canvas} canvas - The Fabric canvas instance
  * @returns {PencilBrush|null} The initialized brush or null if initialization fails
  */
-export const initializeDrawingBrush = (canvas: Canvas) => {
+export const initializeDrawingBrush = (canvas: Canvas): PencilBrush | null => {
   if (!canvas) {
     console.error("Cannot initialize brush: canvas is null");
     return null;
@@ -37,7 +38,7 @@ export const initializeDrawingBrush = (canvas: Canvas) => {
  * Add Pressure sensitivity for Apple Pencil and other stylus devices
  * @param {Canvas} canvas - The Fabric canvas instance
  */
-export const addPressureSensitivity = (canvas: Canvas) => {
+export const addPressureSensitivity = (canvas: Canvas): void => {
   if (!canvas) {
     console.error("Cannot add pressure sensitivity: canvas is null");
     return;
@@ -97,7 +98,7 @@ export const addPressureSensitivity = (canvas: Canvas) => {
  * @param {Canvas} canvas - The Fabric canvas instance
  * @param {number} thickness - The baseline thickness to track
  */
-export const trackLineThickness = (canvas: Canvas, thickness: number) => {
+export const trackLineThickness = (canvas: Canvas, thickness: number): void => {
   if (!canvas) return;
   
   try {

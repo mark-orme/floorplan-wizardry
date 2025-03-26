@@ -4,35 +4,35 @@
  * Provides a visual reference for drawing to scale
  * @module canvasGrid
  */
-import { Canvas } from "fabric";
+import { Canvas, Object as FabricObject } from "fabric";
 import { shouldThrottleCreation } from "./gridManager";
 import { validateCanvasForGrid } from "./grid/gridValidation";
 import { createGridLayer, createFallbackGrid } from "./grid/gridCreator";
 import { handleGridCreationError } from "./grid/gridErrorHandling";
 import { acquireGridLockWithSafety, cleanupGridResources } from "./grid/gridSafety";
 import logger from "./logger";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 
 /**
  * Create grid lines for the canvas
  * Creates both small (0.1m) and large (1m) grid lines with consistent performance
  * 
  * @param {Canvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to store grid objects
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
  * @param {{ width: number, height: number }} canvasDimensions - Current canvas dimensions
- * @param {Function} setDebugInfo - Function to update debug info state
- * @param {Function} setHasError - Function to set error state
- * @param {Function} setErrorMessage - Function to set error message
- * @returns {any[]} Array of created grid objects
+ * @param {React.Dispatch<React.SetStateAction<DebugInfoState>>} setDebugInfo - Function to update debug info state
+ * @param {(value: boolean) => void} setHasError - Function to set error state
+ * @param {(value: string) => void} setErrorMessage - Function to set error message
+ * @returns {FabricObject[]} Array of created grid objects
  */
 export const createGrid = (
   canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<any[]>,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
   canvasDimensions: { width: number, height: number },
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>,
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
-) => {
+): FabricObject[] => {
   if (process.env.NODE_ENV === 'development') {
     logger.debug("createGrid called with dimensions:", canvasDimensions);
   }

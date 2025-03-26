@@ -13,7 +13,7 @@ import logger from "./logger";
 /**
  * Type definition for fabric objects with tool-specific properties
  */
-interface ToolOperationObject {
+interface ToolOperationObject extends FabricObject {
   /** Type of the object */
   type: string;
   /** Whether the object is selectable */
@@ -30,7 +30,8 @@ interface ToolOperationObject {
  * 
  * @param {FabricCanvas | null} canvas - The fabric canvas instance
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @param {Function} createGrid - Function to recreate grid if needed
+ * @param {(canvas: FabricCanvas) => FabricObject[]} createGrid - Function to recreate grid if needed
+ * @returns {void}
  */
 export const clearDrawings = (
   canvas: FabricCanvas | null,
@@ -83,7 +84,8 @@ export const clearDrawings = (
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @param {number} lineThickness - Current line thickness
  * @param {string} lineColor - Current line color
- * @param {Function} setTool - State setter for current tool
+ * @param {React.Dispatch<React.SetStateAction<DrawingTool>>} setTool - State setter for current tool
+ * @returns {void}
  */
 export const handleToolChange = (
   tool: DrawingTool,
@@ -161,7 +163,8 @@ export const handleToolChange = (
  * @param {"in" | "out"} direction - Zoom direction
  * @param {FabricCanvas | null} canvas - The fabric canvas instance
  * @param {number} zoomLevel - Current zoom level
- * @param {Function} setZoomLevel - State setter for zoom level
+ * @param {React.Dispatch<React.SetStateAction<number>>} setZoomLevel - State setter for zoom level
+ * @returns {void}
  */
 export const handleZoom = (
   direction: "in" | "out",

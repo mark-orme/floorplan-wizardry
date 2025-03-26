@@ -11,10 +11,10 @@ import logger from "@/utils/logger";
  * Object with objectType property for type identification
  * Using FabricObject with our custom properties
  */
-interface TypedFabricObject {
+interface TypedFabricObject extends FabricObject {
   /** Type identifier for specialized handling */
   objectType?: string;
-  /** Stroke width for lines - made optional to prevent TypeScript error */
+  /** Stroke width for lines */
   strokeWidth?: number;
   /** Object type from Fabric.js */
   type: string;
@@ -46,14 +46,14 @@ export const arrangeGridElements = (
   
   // Find grid markers (scale indicators)
   const gridMarkers = gridElements.filter(obj => {
-    const typedObj = obj as unknown as TypedFabricObject;
+    const typedObj = obj as TypedFabricObject;
     return (typedObj.type === 'text') || 
            (typedObj.type === 'line' && typedObj.strokeWidth && typedObj.strokeWidth >= 1.2);
   });
   
   // Find grid lines
   const gridLines = gridElements.filter(obj => {
-    const typedObj = obj as unknown as TypedFabricObject;
+    const typedObj = obj as TypedFabricObject;
     return typedObj.type === 'line' && (!typedObj.strokeWidth || typedObj.strokeWidth < 1.2);
   });
   

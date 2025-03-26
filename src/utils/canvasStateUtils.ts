@@ -12,14 +12,14 @@ import logger from "./logger";
  * Replaces current drawing objects with the ones stored in the given state
  * 
  * @param {FabricCanvas | null} fabricCanvas - The Fabric.js canvas instance
- * @param {any[]} state - Array of serialized objects representing the state to apply
+ * @param {Record<string, any>[]} state - Array of serialized objects representing the state to apply
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @param {() => void} recalculateGIA - Function to recalculate Gross Internal Area after state change
  * @returns {void}
  */
 export const applyCanvasState = (
   fabricCanvas: FabricCanvas | null,
-  state: any[],
+  state: Record<string, any>[],
   gridLayerRef: React.MutableRefObject<FabricObject[]>,
   recalculateGIA: () => void
 ): void => {
@@ -131,12 +131,12 @@ export const removeLastDrawnObject = (
  * Add an object to the canvas
  * 
  * @param {FabricCanvas | null} fabricCanvas - The Fabric.js canvas instance
- * @param {any} objectData - Serialized object data
+ * @param {Record<string, any>} objectData - Serialized object data
  * @returns {FabricObject | null} The added object or null
  */
 export const addObjectToCanvas = (
   fabricCanvas: FabricCanvas | null,
-  objectData: any
+  objectData: Record<string, any>
 ): FabricObject | null => {
   if (!fabricCanvas || !objectData || !objectData.type) {
     logger.warn("Invalid canvas or object data for restoration");

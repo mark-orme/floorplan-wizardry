@@ -4,7 +4,7 @@
  * Provides fallback methods for grid creation when normal methods fail
  * @module emergencyGridUtils
  */
-import { Canvas as FabricCanvas, Line, Text } from "fabric";
+import { Canvas as FabricCanvas, Line, Text, Object as FabricObject } from "fabric";
 import logger from "./logger";
 
 /**
@@ -12,15 +12,16 @@ import logger from "./logger";
  * This is a simplified grid with minimal objects to ensure something is visible
  * 
  * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} [gridLayerRef] - Optional reference to store grid objects
  * @returns {FabricObject[]} Simple emergency grid objects
  */
 export const createBasicEmergencyGrid = (
   canvas: FabricCanvas,
-  gridLayerRef?: React.MutableRefObject<any[]>
-): any[] => {
+  gridLayerRef?: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
   logger.info("Creating emergency basic grid");
   
-  const emergencyGrid: any[] = [];
+  const emergencyGrid: FabricObject[] = [];
   
   try {
     // Clear any existing grid objects first
