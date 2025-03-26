@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for displaying formatted values
  */
@@ -30,10 +29,10 @@ export const formatMeasurement = (value: number, compact = false): string => {
     return compact ? `${cm}cm` : `${cm} cm`;
   }
   
-  // Otherwise show in meters with 2 decimal places
+  // Otherwise show in meters with 1 decimal place
   return compact 
-    ? `${value.toFixed(1).replace(/\.0$/, '')}m` 
-    : `${value.toFixed(1).replace(/\.0$/, '')} m`;
+    ? `${value.toFixed(1)}m` 
+    : `${value.toFixed(1)} m`;
 };
 
 /**

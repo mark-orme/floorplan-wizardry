@@ -64,18 +64,13 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     (tool === "select" && drawingState?.selectionActive)
   );
   
-  if (process.env.NODE_ENV === 'development') {
-    // Log tooltip visibility for debugging
-    console.log("Tooltip visibility:", {
-      isVisible: isTooltipVisible,
-      isDrawing: drawingState?.isDrawing,
-      tool,
-      startPoint: drawingState?.startPoint,
-      currentPoint: drawingState?.currentPoint,
-      cursorPosition: drawingState?.cursorPosition,
-      selectionActive: drawingState?.selectionActive
-    });
-  }
+  // Debug logging to help troubleshoot tooltip visibility
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Drawing state updated:", drawingState);
+      console.log("Tooltip visibility:", isTooltipVisible);
+    }
+  }, [drawingState, isTooltipVisible]);
   
   return (
     <div className="canvas-wrapper relative">
@@ -101,7 +96,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         <canvas ref={canvasRef} />
       </div>
       
-      {/* Tooltip for distance measurement - improved visibility */}
+      {/* Tooltip for distance measurement - improved for better visibility */}
       {isTooltipVisible && (
         <DistanceTooltip 
           startPoint={drawingState?.startPoint}

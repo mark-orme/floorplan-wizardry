@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing drawing state on the canvas
  * @module useDrawingState
@@ -9,6 +10,7 @@ import { DrawingState, Point } from "@/types/drawingTypes";
 import { snapToGrid } from "@/utils/grid/core";
 import { GRID_SIZE } from "@/utils/drawing";
 import { usePointProcessing } from "./usePointProcessing";
+import { calculateMidpoint } from "@/utils/geometry";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -110,10 +112,7 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
         const snappedPoint = snapCurrentPoint(drawingState.startPoint, pointer);
         
         // Calculate midpoint between start and current points
-        const midPoint = {
-          x: (drawingState.startPoint.x + snappedPoint.x) / 2,
-          y: (drawingState.startPoint.y + snappedPoint.y) / 2
-        };
+        const midPoint = calculateMidpoint(drawingState.startPoint, snappedPoint);
         
         // Update the current point with all required properties
         setDrawingState(prevState => ({
@@ -123,12 +122,16 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
           midPoint: midPoint
         }));
         
-        // Debug log for development
+        // Enhanced debug log for development
         if (process.env.NODE_ENV === 'development') {
           console.log("Drawing in progress:", {
             start: drawingState.startPoint,
             current: snappedPoint,
-            mid: midPoint
+            mid: midPoint,
+            distance: Math.sqrt(
+              Math.pow(snappedPoint.x - drawingState.startPoint.x, 2) + 
+              Math.pow(snappedPoint.y - drawingState.startPoint.y, 2)
+            ).toFixed(1) + "m"
           });
         }
       } else {

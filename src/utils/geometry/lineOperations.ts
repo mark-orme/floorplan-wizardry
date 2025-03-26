@@ -22,8 +22,13 @@ export const calculateDistance = (point1: Point, point2: Point): number => {
 export const formatDistance = (distance: number): string => {
   if (isNaN(distance)) return '0.0';
   
-  // Always show 1 decimal place
-  return distance.toFixed(1);
+  // Always show 1 decimal place for wall measurements
+  const formatted = distance.toFixed(1);
+  
+  // For debugging
+  console.log("Formatting distance:", { raw: distance, formatted });
+  
+  return formatted;
 };
 
 /**

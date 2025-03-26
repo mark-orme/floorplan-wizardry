@@ -1,8 +1,8 @@
 
-import React, { memo } from "react";
+import React, { memo, useEffect } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
-import { calculateDistance, formatDistance } from "@/utils/geometry/lineOperations";
+import { calculateDistance, formatDistance } from "@/utils/geometry";
 import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
 
 interface DistanceTooltipProps {
@@ -68,6 +68,14 @@ export const DistanceTooltip = memo(({
   // Convert the meter position to pixel position for display
   const pixelX = tooltipPosition.x * PIXELS_PER_METER;
   const pixelY = tooltipPosition.y * PIXELS_PER_METER;
+  
+  // Log for debugging
+  console.log("Rendering tooltip:", { 
+    formattedDistance, 
+    startPoint: displayStartPoint, 
+    endPoint: displayEndPoint,
+    position: { x: pixelX, y: pixelY }
+  });
   
   return (
     <div 
