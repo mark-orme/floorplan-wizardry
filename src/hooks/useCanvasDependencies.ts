@@ -66,10 +66,10 @@ export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
     setErrorMessage
   });
   
-  // Initialize grid management
+  // Initialize grid management with explicit dimensions
   const { gridLayerRef: managedGridLayerRef } = useGridManagement({
     fabricCanvasRef,
-    canvasDimensions,
+    canvasDimensions, // Pass canvasDimensions directly
     debugInfo,
     createGrid
   });

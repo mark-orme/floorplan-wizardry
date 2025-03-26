@@ -12,6 +12,15 @@ interface UseCanvasControllerErrorHandlingProps {
   updateDebugInfo: (info: Partial<DebugInfoState>) => void;
 }
 
+// Extend DebugInfoState to include our needed properties
+declare module '@/types/debugTypes' {
+  interface DebugInfoState {
+    errorCount?: number;
+    lastRetryTime?: string;
+    retryCount?: number;
+  }
+}
+
 /**
  * Hook that handles errors in the canvas controller
  * @returns Error handling functions
@@ -28,7 +37,9 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     console.error("Canvas error:", error);
     setHasError(true);
     setErrorMessage(error.message);
-    updateDebugInfo({ errorCount: prev => (prev || 0) + 1 });
+    updateDebugInfo({ 
+      errorCount: prev => (prev || 0) + 1 
+    });
   }, [setHasError, setErrorMessage, updateDebugInfo]);
 
   // Handle retry attempt

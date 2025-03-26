@@ -26,7 +26,7 @@ interface UseGridManagementProps {
   /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Canvas dimensions */
-  canvasDimensions: { width: number, height: number };
+  canvasDimensions: { width: number, height: number } | undefined;
   /** Debug information about canvas state */
   debugInfo: {
     canvasInitialized: boolean;
@@ -197,7 +197,8 @@ export const useGridManagement = ({
 
   // Add a second grid creation attempt when canvas dimensions change
   useEffect(() => {
-    if (canvasDimensions.width > 0 && canvasDimensions.height > 0 && fabricCanvasRef.current) {
+    // Add null/undefined check for canvasDimensions
+    if (canvasDimensions && canvasDimensions.width > 0 && canvasDimensions.height > 0 && fabricCanvasRef.current) {
       if (process.env.NODE_ENV === 'development') {
         console.log("Canvas dimensions changed, recreating grid", canvasDimensions);
       }
@@ -208,7 +209,7 @@ export const useGridManagement = ({
         createGrid(fabricCanvasRef.current!);
       }, 100);
     }
-  }, [canvasDimensions.width, canvasDimensions.height, fabricCanvasRef, createGrid]);
+  }, [canvasDimensions?.width, canvasDimensions?.height, fabricCanvasRef, createGrid]);
 
   return {
     gridLayerRef

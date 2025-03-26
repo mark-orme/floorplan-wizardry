@@ -1,4 +1,3 @@
-
 /**
  * Hook for setting up the canvas controller
  * @module useCanvasControllerSetup
@@ -8,6 +7,13 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { DrawingState } from "@/types/drawingTypes";
 import { DebugInfoState } from "@/types/debugTypes";
+
+// Extend DebugInfoState to include canvasInitTime
+declare module '@/types/debugTypes' {
+  interface DebugInfoState {
+    canvasInitTime?: string;
+  }
+}
 
 interface UseCanvasControllerSetupProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -22,6 +28,7 @@ interface UseCanvasControllerSetupProps {
   updateDebugInfo: (info: Partial<DebugInfoState>) => void;
   setDrawingState: React.Dispatch<React.SetStateAction<DrawingState | null>>;
   recalculateGIA: () => void;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
 
 /**
@@ -41,7 +48,8 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     handleError,
     updateDebugInfo,
     setDrawingState,
-    recalculateGIA
+    recalculateGIA,
+    canvasRef
   } = props;
 
   // Initialize canvas
