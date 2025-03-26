@@ -16,13 +16,24 @@ import {
 /**
  * Hook for canvas cleanup operations
  * Provides utilities for safe canvas disposal and initialization tracking
+ * Ensures proper memory management for canvas instances
  * 
  * @returns {Object} Canvas cleanup utilities
+ * 
+ * @example
+ * const { cleanupCanvas, isCanvasElementInitialized } = useCanvasCleanup();
+ * 
+ * // When unmounting component:
+ * useEffect(() => {
+ *   return () => {
+ *     cleanupCanvas(canvasRef.current);
+ *   };
+ * }, []);
  */
 export const useCanvasCleanup = () => {
   /**
    * Clean up a Fabric canvas instance
-   * Safely disposes canvas and its resources
+   * Safely disposes canvas and its resources to prevent memory leaks
    * 
    * @param {FabricCanvas | null} canvas - Canvas to clean up
    */

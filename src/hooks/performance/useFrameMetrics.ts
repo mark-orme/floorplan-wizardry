@@ -9,6 +9,8 @@ import type { PerformanceMetrics } from "@/types/performanceTypes";
 
 /**
  * Initial performance metrics state
+ * Sets default values for all performance tracking fields
+ * @constant {PerformanceMetrics} DEFAULT_METRICS
  */
 const DEFAULT_METRICS: PerformanceMetrics = {
   fps: 0,
@@ -21,13 +23,19 @@ const DEFAULT_METRICS: PerformanceMetrics = {
 
 /**
  * Hook for measuring and tracking frame-level performance
- * @returns Performance metric state and tracking functions
+ * Provides tools to monitor FPS, dropped frames, and rendering times
+ * 
+ * @returns {Object} Performance metric state and tracking functions
  */
 export const useFrameMetrics = () => {
   // State to store performance metrics
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(DEFAULT_METRICS);
   
-  // Refs to track metrics between frames
+  /**
+   * Reference to track metrics between frames
+   * Used for calculations without triggering component re-renders
+   * @type {React.MutableRefObject}
+   */
   const metricsRef = useRef({
     frames: 0,
     startTime: 0,
@@ -41,7 +49,7 @@ export const useFrameMetrics = () => {
   
   /**
    * Start performance tracking
-   * Resets counters and begins measuring
+   * Resets counters and begins measuring frame times
    */
   const startPerformanceTracking = useCallback(() => {
     const now = performance.now();
@@ -78,6 +86,7 @@ export const useFrameMetrics = () => {
   /**
    * Record a frame for performance tracking
    * Called on each animation frame to measure timing
+   * Detects dropped and long frames
    */
   const recordFrame = useCallback(() => {
     if (!metricsRef.current.tracking) return;
@@ -137,6 +146,7 @@ export const useFrameMetrics = () => {
   
   /**
    * Reset performance metrics to default state
+   * Clears all performance tracking data
    */
   const resetPerformanceMetrics = useCallback(() => {
     metricsRef.current = {

@@ -64,9 +64,7 @@ export const useCanvasGrid = ({
   const { 
     validateGridComponents, 
     ensureGridLayerInitialized 
-  } = useGridValidation({ 
-    setDebugInfo 
-  });
+  } = useGridValidation();
   
   // Use grid safety hook
   const { safeGridOperation } = useGridSafety();
@@ -85,21 +83,13 @@ export const useCanvasGrid = ({
     shouldThrottleCreation,
     handleThrottledCreation,
     cleanup: cleanupThrottling
-  } = useGridThrottling({
-    gridLayerRef
-  });
+  } = useGridThrottling();
   
   // Use grid retry hook
   const { 
     createGridWithRetry,
     cleanup: cleanupRetry
-  } = useGridRetry({
-    gridLayerRef,
-    createGridCallback: createBaseGrid,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage
-  });
+  } = useGridRetry();
   
   // Clean up on unmount
   useEffect(() => {
@@ -163,28 +153,34 @@ export const useCanvasGrid = ({
     return safeGridOperation(() => {
       try {
         // Validate components before proceeding
-        if (!validateGridComponents(canvas, gridLayerRef)) {
+        if (!validateGridComponents()) {
           logger.warn("Grid components validation failed");
           return gridLayerRef.current;
         }
         
         // Ensure gridLayerRef is initialized
-        ensureGridLayerInitialized(gridLayerRef);
+        ensureGridLayerInitialized();
         
         // Check if we should throttle
         if (shouldThrottleCreation()) {
-          return handleThrottledCreation(canvas, createGridWithRetry);
+          handleThrottledCreation(canvas, (c: FabricCanvas) => createBaseGrid(c));
+          return gridLayerRef.current;
         }
         
         // If not throttled, proceed with normal creation with retry logic
         const gridObjects = createGridWithRetry(canvas);
         
         // Check if grid was actually created
-        if (!gridObjects || gridObjects.length === 0) {
+        if (!gridObjects || (typeof gridObjects !== 'boolean' && gridObjects.length === 0)) {
           logger.error("❌ Grid creation failed: No grid objects were created");
           setHasError(true);
           setErrorMessage("Grid creation failed: No grid objects were created");
           toast.error("⚠️ Grid failed to render - switching to emergency mode");
+          return gridLayerRef.current;
+        }
+        
+        // If gridObjects is a boolean (from createGridWithRetry), return the current grid layer
+        if (typeof gridObjects === 'boolean') {
           return gridLayerRef.current;
         }
         
@@ -215,7 +211,8 @@ export const useCanvasGrid = ({
     createGridWithRetry,
     safeGridOperation,
     setHasError,
-    setErrorMessage
+    setErrorMessage,
+    createBaseGrid
   ]);
 
   return createGridCallback;

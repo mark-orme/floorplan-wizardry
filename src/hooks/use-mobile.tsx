@@ -9,7 +9,7 @@ import * as React from "react"
 /**
  * Mobile breakpoint in pixels
  * Screen widths below this value are considered mobile
- * @constant
+ * @constant {number} MOBILE_BREAKPOINT
  */
 const MOBILE_BREAKPOINT = 768
 
@@ -18,10 +18,20 @@ const MOBILE_BREAKPOINT = 768
  * Uses media queries and window resize events for responsive detection
  * 
  * @returns {boolean} True if viewport is mobile-sized, false otherwise
+ * 
+ * @example
+ * const isMobile = useIsMobile();
+ * 
+ * if (isMobile) {
+ *   // Render mobile view
+ * } else {
+ *   // Render desktop view
+ * }
  */
 export function useIsMobile() {
   /**
    * State to track mobile status
+   * Initially undefined before measurement
    * @type {boolean | undefined}
    */
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
