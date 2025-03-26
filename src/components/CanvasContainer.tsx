@@ -37,33 +37,33 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
       // Set canvas dimensions explicitly based on container
       if (containerRect.width > 0 && containerRect.height > 0) {
         canvasReference.current.width = containerRect.width;
-        canvasReference.current.height = Math.max(containerRect.height, 500);
+        canvasReference.current.height = Math.max(containerRect.height, 700); // Increased from 500 to 700
         
         // Also set style dimensions to match
         canvasReference.current.style.width = `${containerRect.width}px`;
-        canvasReference.current.style.height = `${Math.max(containerRect.height, 500)}px`;
+        canvasReference.current.style.height = `${Math.max(containerRect.height, 700)}px`; // Increased from 500 to 700
         
         // Force a reflow to ensure dimensions are applied
         canvasReference.current.getBoundingClientRect();
         
         console.log("Canvas sized to dimensions:", 
-          containerRect.width, "x", Math.max(containerRect.height, 500));
+          containerRect.width, "x", Math.max(containerRect.height, 700));
       } else {
         // Fallback sizes if container dimensions are not available
         canvasReference.current.width = 800;
-        canvasReference.current.height = 600;
+        canvasReference.current.height = 700; // Increased from 600 to 700
         canvasReference.current.style.width = "800px";
-        canvasReference.current.style.height = "600px";
-        console.log("Using fallback canvas dimensions: 800x600");
+        canvasReference.current.style.height = "700px"; // Increased from 600 to 700
+        console.log("Using fallback canvas dimensions: 800x700");
       }
     }
   }, [canvasReference]);
 
   return (
-    <Card className="p-6 bg-white shadow-md rounded-lg">
+    <Card className="p-4 bg-white shadow-md rounded-lg"> {/* Reduced padding from p-6 to p-4 */}
       <div 
         ref={containerRef} 
-        className="w-full h-[500px] md:h-[600px] relative"
+        className="w-full h-[700px] md:h-[800px] relative" // Increased heights from 500/600 to 700/800
       >
         <canvas 
           ref={canvasReference} 

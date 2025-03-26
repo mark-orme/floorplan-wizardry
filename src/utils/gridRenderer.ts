@@ -13,7 +13,8 @@ import {
   SMALL_GRID_LINE_OPTIONS,
   LARGE_GRID_LINE_OPTIONS,
   MARKER_TEXT_OPTIONS,
-  calculateGridDensity
+  calculateGridDensity,
+  DISABLE_GRID_MARKERS
 } from "./gridConstants";
 import logger from "./logger";
 import { createSmallGrid, createLargeGrid } from "./gridCreators";
@@ -63,30 +64,32 @@ export const renderGridComponents = (
     smallGridLines.push(...smallGrid);
     largeGridLines.push(...largeGrid);
     
-    // Add text markers at major grid intersections
-    const widthInMeters = Math.ceil(width / GRID_SCALE_FACTOR);
-    const heightInMeters = Math.ceil(height / GRID_SCALE_FACTOR);
-    
-    // Create horizontal markers (along x-axis)
-    for (let i = LARGE_GRID_SPACING; i <= widthInMeters; i += MARKER_INTERVAL) {
-      const x = i * GRID_SCALE_FACTOR;
-      const marker = new Text(i.toString(), {
-        ...MARKER_TEXT_OPTIONS,
-        left: x - 5,
-        top: 5
-      });
-      markers.push(marker);
-    }
-    
-    // Create vertical markers (along y-axis)
-    for (let i = LARGE_GRID_SPACING; i <= heightInMeters; i += MARKER_INTERVAL) {
-      const y = i * GRID_SCALE_FACTOR;
-      const marker = new Text(i.toString(), {
-        ...MARKER_TEXT_OPTIONS,
-        left: 5,
-        top: y - 10
-      });
-      markers.push(marker);
+    // Add text markers at major grid intersections only if not disabled
+    if (!DISABLE_GRID_MARKERS) {
+      const widthInMeters = Math.ceil(width / GRID_SCALE_FACTOR);
+      const heightInMeters = Math.ceil(height / GRID_SCALE_FACTOR);
+      
+      // Create horizontal markers (along x-axis)
+      for (let i = LARGE_GRID_SPACING; i <= widthInMeters; i += MARKER_INTERVAL) {
+        const x = i * GRID_SCALE_FACTOR;
+        const marker = new Text(i.toString(), {
+          ...MARKER_TEXT_OPTIONS,
+          left: x - 5,
+          top: 5
+        });
+        markers.push(marker);
+      }
+      
+      // Create vertical markers (along y-axis)
+      for (let i = LARGE_GRID_SPACING; i <= heightInMeters; i += MARKER_INTERVAL) {
+        const y = i * GRID_SCALE_FACTOR;
+        const marker = new Text(i.toString(), {
+          ...MARKER_TEXT_OPTIONS,
+          left: 5,
+          top: y - 10
+        });
+        markers.push(marker);
+      }
     }
     
     logger.debug(`Created ${smallGridLines.length} small grid lines, ${largeGridLines.length} large grid lines, and ${markers.length} markers`);

@@ -54,6 +54,9 @@ export const MARKER_TEXT_OPTIONS = {
   objectCaching: true
 };
 
+// Set to true to disable markers
+export const DISABLE_GRID_MARKERS = true;
+
 /**
  * Determines if small grid should be skipped based on canvas size
  * @param {number} width - Canvas width

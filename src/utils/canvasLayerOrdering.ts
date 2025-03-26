@@ -14,7 +14,7 @@ import logger from "@/utils/logger";
 interface TypedFabricObject {
   /** Type identifier for specialized handling */
   objectType?: string;
-  /** Stroke width for lines */
+  /** Stroke width for lines - made optional to prevent TypeScript error */
   strokeWidth?: number;
   /** Object type from Fabric.js */
   type: string;

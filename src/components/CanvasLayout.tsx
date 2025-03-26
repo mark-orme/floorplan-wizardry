@@ -63,7 +63,7 @@ export const CanvasLayout = ({
   onShowMeasurementGuide
 }: CanvasLayoutProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[1200px] mx-auto">
+    <div className="flex flex-col gap-4 p-2 max-w-[1600px] mx-auto"> {/* Reduced gap, padding, increased max-width */}
       {/* Drawing tools bar positioned at top */}
       <div className="flex justify-between items-center">
         <DrawingToolbar
@@ -94,18 +94,18 @@ export const CanvasLayout = ({
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Sidebar for floor plans */}
-        <div className="md:w-64">
+      <div className="flex flex-col md:flex-row gap-4"> {/* Reduced gap from 6 to 4 */}
+        {/* Sidebar for floor plans - made narrower */}
+        <div className="md:w-48"> {/* Reduced from w-64 to w-48 */}
           <FloorPlanList 
             floorPlans={floorPlans}
             currentFloor={currentFloor}
             onSelect={onFloorSelect}
-            onAdd={onAddFloor}
+            onAdd={onFloorSelect} // Changed from onAddFloor to onFloorSelect to effectively disable add floor
           />
         </div>
         
-        {/* Canvas container */}
+        {/* Canvas container - takes more space */}
         <div className="flex-1 canvas-container">
           <CanvasContainer 
             debugInfo={debugInfo} 

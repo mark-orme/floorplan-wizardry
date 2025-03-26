@@ -23,8 +23,11 @@ export const useFloorPlanManagement = ({
 }: UseFloorPlanManagementProps) => {
   /**
    * Add a new floor plan
+   * Currently commented out as we're using a single floor for all plans
    */
   const handleAddFloor = useCallback(() => {
+    // Commented out as requested - drawing all floors on one page
+    /*
     setFloorPlans(prev => [
       ...prev, 
       { 
@@ -37,6 +40,10 @@ export const useFloorPlanManagement = ({
       }
     ]);
     toast.success(`New floor plan added: Floor ${floorPlans.length + 1}`);
+    */
+    
+    // Instead show a toast message explaining the current approach
+    toast.info("All floors are drawn on a single page for better visualization");
   }, [floorPlans.length, setFloorPlans]);
 
   /**
