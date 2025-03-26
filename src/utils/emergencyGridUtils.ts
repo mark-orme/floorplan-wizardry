@@ -1,4 +1,3 @@
-
 /**
  * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
@@ -56,6 +55,15 @@ export const createEmergencyGrid = (
 
   if (!canvas) {
     logger.error("Emergency grid creation failed: Canvas is null");
+    return [];
+  }
+  
+  // PATCH 2: Additional validation to prevent errors with zero dimensions
+  if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
+    logger.error("Emergency grid creation failed: Canvas has zero dimensions", {
+      width: canvas.width,
+      height: canvas.height
+    });
     return [];
   }
 
@@ -196,7 +204,7 @@ export const createEmergencyGrid = (
     logger.info(`Emergency grid created with ${gridObjects.length} objects (${smallLinesAdded} small lines)`);
     console.log(`EMERGENCY GRID: Created ${gridObjects.length} objects`);
     
-    // Mark that emergency grid has been created
+    // Mark as rendered successfully
     emergencyGridCreated = true;
     
     // Notify the user
@@ -206,7 +214,7 @@ export const createEmergencyGrid = (
     });
     
     // Force redraw if requested
-    if (forceRender) {
+    if (options.forceRender !== false) { // Default to true if not specified
       canvas.renderAll();
       // Double check with a delayed render to ensure visibility
       setTimeout(() => {

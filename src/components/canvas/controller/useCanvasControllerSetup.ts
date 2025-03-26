@@ -47,14 +47,28 @@ export const useCanvasControllerSetup = ({
     const timeoutId = window.setTimeout(() => {
       if (!canvasRef.current) {
         logger.warn("Canvas element not found in DOM");
+        setHasError(true);
+        setErrorMessage("Canvas element not found in DOM. Please refresh the page.");
       } else {
         logger.info("Canvas element found in DOM");
       }
       
       if (!fabricCanvasRef.current) {
         logger.warn("Fabric canvas not initialized");
+        setHasError(true);
+        setErrorMessage("Canvas initialization failed. Please refresh the page and try again.");
       } else {
         logger.info("Canvas setup complete with dimensions:", canvasDimensions);
+        // Check if the canvas has valid dimensions
+        if (fabricCanvasRef.current.width === 0 || fabricCanvasRef.current.height === 0) {
+          logger.warn("Fabric canvas has zero dimensions:", {
+            width: fabricCanvasRef.current.width,
+            height: fabricCanvasRef.current.height
+          });
+          setHasError(true);
+          setErrorMessage("Canvas has invalid dimensions. Please refresh the page and try again.");
+        }
+        
         setDebugInfo(prev => ({
           ...prev,
           dimensionsSet: true,
@@ -66,7 +80,7 @@ export const useCanvasControllerSetup = ({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [canvasRef, fabricCanvasRef, canvasDimensions, setDebugInfo]);
+  }, [canvasRef, fabricCanvasRef, canvasDimensions, setDebugInfo, setHasError, setErrorMessage]);
 
   return {
     canvasRef,

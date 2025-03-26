@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CanvasContainer } from './CanvasContainer';
 import { useCanvasController } from './canvas/controller/CanvasController';
@@ -39,6 +40,12 @@ export const Canvas: React.FC = () => {
     console.log('Canvas component mounted with debugInfo:', debugInfo);
     console.log('Canvas ref exists:', !!canvasRef.current);
     
+    // Additional check for canvas initialization
+    if (!canvasRef.current) {
+      logger.warn("Canvas element not available on mount");
+      setFailedAttempts(prev => prev + 1);
+    }
+    
     return () => {
       componentMountedRef.current = false;
       
@@ -48,7 +55,7 @@ export const Canvas: React.FC = () => {
         circuitBreakerTimerRef.current = null;
       }
     };
-  }, [debugInfo]);
+  }, [debugInfo, canvasRef]);
   
   // HARD LIMIT: If we exceed this number of attempts, force emergency mode with no retries
   const MAX_TOLERATED_ATTEMPTS = 3; // Reduced from 50 to 3 to fail faster
@@ -229,7 +236,7 @@ export const Canvas: React.FC = () => {
   };
   
   // Use emergency canvas if too many failures or forced
-  if (useEmergencyCanvas) {
+  if (useEmergencyCanvas || (hasError && failedAttempts >= 2)) {
     return (
       <>
         <EmergencyCanvas 
