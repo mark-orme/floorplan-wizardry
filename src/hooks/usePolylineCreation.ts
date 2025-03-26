@@ -161,7 +161,7 @@ export const usePolylineCreation = ({
           // Calculate and update area for enclosed shapes
           if (isEnclosed && finalPoints.length > 2) {
             // The calculateGIA function expects Point[][], so we need to wrap finalPoints in an array
-            const area = calculateGIA([finalPoints]);
+            const area = calculateGIA([[...finalPoints]]);
             setGia(prev => prev + area);
             toast.success(`Room shape enclosed: ${area.toFixed(2)} m²`);
           }
