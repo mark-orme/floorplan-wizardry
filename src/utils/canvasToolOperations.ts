@@ -1,4 +1,3 @@
-
 /**
  * Canvas tool operations module
  * Provides functions for handling tool changes and canvas operations
@@ -76,10 +75,8 @@ export const handleToolChange = (
         canvas.freeDrawingBrush.color = lineColor || "#000000";
       }
       break;
-    case "eraser":
-      // Implement eraser tool logic
-      canvas.isDrawingMode = false;
-      break;
+    // Remove case "eraser" since it's not in the DrawingTool type
+    // If eraser needs to be handled, it should be added to DrawingTool type first
     case "straightLine":
       // Implement line tool logic
       canvas.isDrawingMode = false;
@@ -184,4 +181,3 @@ export const setActiveTool = (
   // Request a render to update display
   canvas.requestRenderAll();
 };
-
