@@ -33,6 +33,8 @@ export interface DebugInfoState {
   gridCreationAttempts?: number;
   gridCreationFailures?: number;
   lastGridCreationTime?: number;
+  dimensionAttempts?: number; // Added missing property
+  initTime?: number; // Added missing property for initialization time tracking
   
   // Load times for performance tracking
   loadTimes: Record<string, number>;
