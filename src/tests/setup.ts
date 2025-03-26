@@ -1,137 +1,117 @@
 
 /**
- * Vitest setup file
+ * Test Setup File
+ * Configures the test environment and global mocks
  * @module tests/setup
  */
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
-// This file will run before each test file
-// Add any global setup code here
+// Mock setTimeout globally
+window.setTimeout = vi.fn().mockImplementation((cb, ms) => {
+  if (typeof cb === 'function') cb();
+  return 123 as unknown as NodeJS.Timeout;
+});
 
-// Setup for Canvas API if needed (for jsdom)
-if (typeof window !== 'undefined') {
-  // Mock canvas methods that jsdom doesn't implement
-  if (!HTMLCanvasElement.prototype.getContext) {
-    // We need to use type assertion here to satisfy TypeScript's strict typing
-    HTMLCanvasElement.prototype.getContext = function(
-      contextId: string, 
-      options?: any
-    ) {
-      // Mock 2d context
-      if (contextId === '2d') {
-        // Create a partial implementation that satisfies TypeScript
-        const ctx = {
-          canvas: this,
-          getContextAttributes: () => ({}),
-          globalAlpha: 1.0,
-          globalCompositeOperation: 'source-over',
-          fillStyle: '#000000',
-          strokeStyle: '#000000',
-          lineWidth: 1,
-          lineCap: 'butt',
-          lineJoin: 'miter',
-          miterLimit: 10,
-          lineDashOffset: 0,
-          font: '10px sans-serif',
-          textAlign: 'start',
-          textBaseline: 'alphabetic',
-          direction: 'ltr',
-          imageSmoothingEnabled: true,
-          fillRect: function() {},
-          clearRect: function() {},
-          getImageData: function() {
-            return {
-              data: []
-            };
-          },
-          putImageData: function() {},
-          createImageData: function() {
-            return [];
-          },
-          setTransform: function() {},
-          drawImage: function() {},
-          save: function() {},
-          restore: function() {},
-          beginPath: function() {},
-          moveTo: function() {},
-          lineTo: function() {},
-          closePath: function() {},
-          stroke: function() {},
-          translate: function() {},
-          scale: function() {},
-          rotate: function() {},
-          arc: function() {},
-          fill: function() {},
-          transform: function() {},
-          rect: function() {},
-          clip: function() {},
-          
-          // Add missing methods required by TypeScript's CanvasRenderingContext2D
-          isPointInPath: function() { return false; },
-          isPointInStroke: function() { return false; },
-          createConicGradient: function() { return {} as any; },
-          createLinearGradient: function() { return {} as any; },
-          createPattern: function() { return null; },
-          createRadialGradient: function() { return {} as any; },
-          measureText: function() { return { width: 0 } as any; },
-          
-          // For fabric.js specific needs
-          currentTransform: null,
-          mozCurrentTransform: [1, 0, 0, 1, 0, 0],
-          mozCurrentTransformInverse: [1, 0, 0, 1, 0, 0],
-          
-          // Add stubs for all remaining methods
-          addHitRegion: function() {},
-          clearHitRegions: function() {},
-          ellipse: function() {},
-          resetTransform: function() {},
-          drawFocusIfNeeded: function() {},
-          scrollPathIntoView: function() {},
-          quadraticCurveTo: function() {},
-          bezierCurveTo: function() {},
-          fillText: function() {},
-          strokeText: function() {},
-          setLineDash: function() { return []; },
-          getLineDash: function() { return []; }
-        };
-        
-        // Use type assertion to tell TypeScript this partial implementation is sufficient
-        return ctx as unknown as CanvasRenderingContext2D;
-      }
-      // Mock bitmaprenderer context
-      else if (contextId === 'bitmaprenderer') {
-        return {
-          canvas: this,
-          transferFromImageBitmap: function() {}
-        } as unknown as ImageBitmapRenderingContext;
-      }
-      // Mock webgl context
-      else if (contextId === 'webgl') {
-        return {
-          canvas: this,
-          // Add minimum WebGL context properties
-          drawingBufferWidth: 0,
-          drawingBufferHeight: 0
-        } as unknown as WebGLRenderingContext;
-      }
-      // Mock webgl2 context
-      else if (contextId === 'webgl2') {
-        return {
-          canvas: this,
-          // Add minimum WebGL2 context properties
-          drawingBufferWidth: 0,
-          drawingBufferHeight: 0
-        } as unknown as WebGL2RenderingContext;
-      }
-      
-      return null;
-    } as any; // Final type assertion to make TypeScript happy
-  }
+// Mock canvas
+window.HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+  clearRect: vi.fn(),
+  fillRect: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  stroke: vi.fn(),
+  arc: vi.fn(),
+  fill: vi.fn(),
+  strokeRect: vi.fn(),
+  translate: vi.fn(),
+  scale: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  setTransform: vi.fn(),
+  drawImage: vi.fn(),
+  putImageData: vi.fn(),
+  getImageData: vi.fn().mockReturnValue({
+    data: new Uint8ClampedArray(4)
+  }),
+  fillText: vi.fn(),
+  setLineDash: vi.fn(),
+  createLinearGradient: vi.fn().mockReturnValue({
+    addColorStop: vi.fn()
+  }),
+  createPattern: vi.fn()
+});
+
+// Mock MutationObserver if not available
+if (!global.MutationObserver) {
+  global.MutationObserver = class MutationObserver {
+    constructor(callback: Function) {}
+    disconnect() {}
+    observe(element: Node, initObject: MutationObserverInit) {}
+  };
 }
 
-// Import the matchers from @testing-library/jest-dom
-import '@testing-library/jest-dom/matchers';
-import { expect } from 'vitest';
-import * as matchers from '@testing-library/jest-dom/matchers';
+// Mock ResizeObserver if not available
+if (!global.ResizeObserver) {
+  global.ResizeObserver = class ResizeObserver {
+    constructor(callback: Function) {}
+    disconnect() {}
+    observe(element: Element, options?: ResizeObserverOptions) {}
+    unobserve(element: Element) {}
+  };
+}
 
-// Add jest-dom custom matchers
-expect.extend(matchers);
+// Mock IntersectionObserver if not available
+if (!global.IntersectionObserver) {
+  global.IntersectionObserver = class IntersectionObserver {
+    constructor(callback: Function, options?: IntersectionObserverInit) {}
+    disconnect() {}
+    observe(element: Element) {}
+    unobserve(element: Element) {}
+    root = null;
+    rootMargin = '';
+    thresholds: number[] = [];
+    takeRecords() { return []; }
+  };
+}
+
+// Mock performance.now if not available
+if (!window.performance || !window.performance.now) {
+  window.performance = {
+    ...window.performance,
+    now: () => Date.now()
+  };
+}
+
+// Add missing jest-dom matchers
+expect.extend({
+  toBeInTheDocument(received) {
+    const pass = Boolean(received);
+    return {
+      message: () => `expected ${received} ${pass ? 'not ' : ''}to be in the document`,
+      pass
+    };
+  },
+  toHaveAttribute(received, name, value) {
+    const hasAttribute = received.hasAttribute(name);
+    const attributeValue = received.getAttribute(name);
+    const pass = value === undefined 
+      ? hasAttribute 
+      : hasAttribute && attributeValue === value;
+      
+    return {
+      message: () => {
+        if (value === undefined) {
+          return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}"`;
+        }
+        return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}" with value "${value}"`;
+      },
+      pass
+    };
+  }
+});
+
+// Setup global test utilities
+global.afterEach(() => {
+  vi.clearAllMocks();
+});

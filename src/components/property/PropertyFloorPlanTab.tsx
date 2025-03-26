@@ -1,4 +1,9 @@
 
+/**
+ * Property Floor Plan Tab Component
+ * Provides an interactive floor plan editor with appropriate controls based on user role
+ * @module components/property/PropertyFloorPlanTab
+ */
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Canvas } from '@/components/Canvas';
 import { Badge } from '@/components/ui/badge';
@@ -10,17 +15,36 @@ import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasC
 import { useEffect, useState } from 'react';
 import { resetInitializationState } from '@/utils/canvas/safeCanvasInitialization';
 import { useCanvasErrorHandling } from '@/hooks/useCanvasErrorHandling';
+import { toast } from 'sonner';
+import { handleError } from '@/utils/errorHandling';
 
+/**
+ * PropertyFloorPlanTab component props
+ * @interface PropertyFloorPlanTabProps
+ */
 interface PropertyFloorPlanTabProps {
+  /** Whether the current user can edit the property */
   canEdit: boolean;
+  /** The role of the current user */
   userRole: UserRole;
+  /** Property data */
   property: {
+    /** Current status of the property */
     status: PropertyStatus;
   };
+  /** Whether a status change submission is in progress */
   isSubmitting: boolean;
+  /** Handler for property status changes */
   onStatusChange: (status: PropertyStatus) => Promise<void>;
 }
 
+/**
+ * PropertyFloorPlanTab Component
+ * Displays and enables interaction with a property floor plan
+ * 
+ * @param {PropertyFloorPlanTabProps} props - Component properties
+ * @returns {JSX.Element} Rendered component
+ */
 export const PropertyFloorPlanTab = ({
   canEdit,
   userRole,
@@ -56,28 +80,65 @@ export const PropertyFloorPlanTab = ({
     loadData: async () => {}
   });
   
-  // Provide a retry mechanism if canvas initialization fails
+  /**
+   * Handle canvas initialization retry
+   * Resets and attempts to reinitialize the canvas
+   */
   const handleCanvasRetry = () => {
-    // Reset canvas initialization state
-    resetInitializationState();
-    
-    setIsReady(false);
-    setInitError(false);
-    setInitAttempt(prev => prev + 1);
-    
-    // Try to re-initialize after a delay
-    setTimeout(() => {
-      setIsReady(true);
-    }, 800);
+    try {
+      // Reset canvas initialization state
+      resetInitializationState();
+      
+      setIsReady(false);
+      setInitError(false);
+      setInitAttempt(prev => prev + 1);
+      
+      // Try to re-initialize after a delay
+      setTimeout(() => {
+        setIsReady(true);
+      }, 800);
+    } catch (error) {
+      handleError(error, {
+        component: 'PropertyFloorPlanTab',
+        operation: 'canvas-retry'
+      });
+    }
   };
   
-  // Handler for canvas initialization errors
+  /**
+   * Handle canvas error
+   * Sets error state and logs the issue
+   */
   const handleCanvasError = () => {
     setInitError(true);
     
     // If we've tried 3 times, stop trying to avoid loops
     if (initAttempt >= 2) {
-      console.error("Canvas initialization failed after multiple attempts");
+      const errorMessage = "Canvas initialization failed after multiple attempts";
+      console.error(errorMessage);
+      
+      // Notify user of the issue
+      toast.error(errorMessage, {
+        id: "canvas-init-error",
+        duration: 5000
+      });
+    }
+  };
+  
+  /**
+   * Handle status change with error handling
+   * @param {PropertyStatus} newStatus - The new status to set
+   */
+  const handleStatusChange = async (newStatus: PropertyStatus) => {
+    try {
+      await onStatusChange(newStatus);
+      toast.success("Status updated successfully");
+    } catch (error) {
+      handleError(error, {
+        component: 'PropertyFloorPlanTab',
+        operation: 'status-change',
+        data: { newStatus }
+      });
     }
   };
   
@@ -130,7 +191,7 @@ export const PropertyFloorPlanTab = ({
             <Button 
               disabled={isSubmitting} 
               variant="default" 
-              onClick={() => onStatusChange(PropertyStatus.PENDING_REVIEW)}
+              onClick={() => handleStatusChange(PropertyStatus.PENDING_REVIEW)}
             >
               <Send className="h-4 w-4 mr-2" />
               Submit for Review
@@ -141,4 +202,3 @@ export const PropertyFloorPlanTab = ({
     </Card>
   );
 };
-
