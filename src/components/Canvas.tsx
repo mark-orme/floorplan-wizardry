@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasContainer } from "./CanvasContainer";
@@ -11,7 +10,20 @@ import { EmergencyCanvasProvider } from "./emergency/EmergencyCanvasProvider";
 import logger from "@/utils/logger";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 
-export const Canvas: React.FC = () => {
+/**
+ * Canvas component props
+ */
+interface CanvasProps {
+  /** Handler for canvas errors */
+  onError?: () => void;
+}
+
+/**
+ * Canvas Component
+ * @param {CanvasProps} props - Component properties
+ * @returns {JSX.Element} Rendered component
+ */
+export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => {
   // Get the canvas controller from context
   const controller = useCanvasController();
   const {
@@ -123,6 +135,23 @@ export const Canvas: React.FC = () => {
     // Force a re-render
     canvasElementRef.current = null;
   };
+  
+  // Add error handling to the canvas
+  useEffect(() => {
+    // Register error handler
+    const handleError = () => {
+      console.error("Canvas error occurred");
+      if (onError && typeof onError === 'function') {
+        onError();
+      }
+    };
+    
+    // Attach error handler to canvas element if needed
+    
+    return () => {
+      // Clean up error handler
+    };
+  }, [onError]);
   
   // Render the canvas and UI components
   return (

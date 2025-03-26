@@ -4,19 +4,13 @@
  * Provides an interactive floor plan editor with appropriate controls based on user role
  * @module components/property/PropertyFloorPlanTab
  */
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Canvas } from '@/components/Canvas';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Eye, RefreshCw, Send } from 'lucide-react';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
-import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
-import { useEffect, useState } from 'react';
-import { resetInitializationState } from '@/utils/canvas/safeCanvasInitialization';
 import { useCanvasErrorHandling } from '@/hooks/useCanvasErrorHandling';
-import { toast } from 'sonner';
-import { handleError } from '@/utils/errorHandling';
+import { FloorPlanCanvas } from './FloorPlanCanvas';
+import { FloorPlanActions } from './FloorPlanActions';
 
 /**
  * PropertyFloorPlanTab component props
@@ -52,25 +46,7 @@ export const PropertyFloorPlanTab = ({
   isSubmitting,
   onStatusChange
 }: PropertyFloorPlanTabProps) => {
-  const [isReady, setIsReady] = useState(false);
-  const [initAttempt, setInitAttempt] = useState(0);
   const [initError, setInitError] = useState(false);
-  
-  // Set ready state after a short delay to ensure DOM is fully rendered
-  useEffect(() => {
-    // Reset canvas initialization state at the start
-    resetInitializationState();
-    
-    // Unmount any existing canvas before trying to render a new one
-    setIsReady(false);
-    setInitError(false);
-    
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
   
   // Set up error handling
   const { handleRetry } = useCanvasErrorHandling({
@@ -81,65 +57,11 @@ export const PropertyFloorPlanTab = ({
   });
   
   /**
-   * Handle canvas initialization retry
-   * Resets and attempts to reinitialize the canvas
-   */
-  const handleCanvasRetry = () => {
-    try {
-      // Reset canvas initialization state
-      resetInitializationState();
-      
-      setIsReady(false);
-      setInitError(false);
-      setInitAttempt(prev => prev + 1);
-      
-      // Try to re-initialize after a delay
-      setTimeout(() => {
-        setIsReady(true);
-      }, 800);
-    } catch (error) {
-      handleError(error, {
-        component: 'PropertyFloorPlanTab',
-        operation: 'canvas-retry'
-      });
-    }
-  };
-  
-  /**
    * Handle canvas error
    * Sets error state and logs the issue
    */
   const handleCanvasError = () => {
     setInitError(true);
-    
-    // If we've tried 3 times, stop trying to avoid loops
-    if (initAttempt >= 2) {
-      const errorMessage = "Canvas initialization failed after multiple attempts";
-      console.error(errorMessage);
-      
-      // Notify user of the issue
-      toast.error(errorMessage, {
-        id: "canvas-init-error",
-        duration: 5000
-      });
-    }
-  };
-  
-  /**
-   * Handle status change with error handling
-   * @param {PropertyStatus} newStatus - The new status to set
-   */
-  const handleStatusChange = async (newStatus: PropertyStatus) => {
-    try {
-      await onStatusChange(newStatus);
-      toast.success("Status updated successfully");
-    } catch (error) {
-      handleError(error, {
-        component: 'PropertyFloorPlanTab',
-        operation: 'status-change',
-        data: { newStatus }
-      });
-    }
   };
   
   return (
@@ -153,51 +75,15 @@ export const PropertyFloorPlanTab = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <div 
-          className="h-[800px] w-full" 
-          data-testid="floor-plan-wrapper"
-          data-canvas-ready={isReady ? "true" : "false"}
-          data-init-attempt={initAttempt}
-          data-init-error={initError ? "true" : "false"}
-        > 
-          {isReady && (
-            <CanvasControllerProvider key={`canvas-controller-${initAttempt}`}>
-              <Canvas key={`canvas-${initAttempt}`} />
-            </CanvasControllerProvider>
-          )}
-          
-          {initError && initAttempt >= 2 && (
-            <div className="flex flex-col items-center justify-center h-full bg-gray-50 border border-gray-200 rounded-md p-4">
-              <p className="text-red-500 mb-4">Canvas initialization failed.</p>
-              <Button onClick={handleCanvasRetry} variant="outline">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Try Again
-              </Button>
-            </div>
-          )}
-        </div>
+        <FloorPlanCanvas onCanvasError={handleCanvasError} />
       </CardContent>
       <CardFooter>
-        <div className="flex items-center justify-between w-full">
-          <div>
-            {!canEdit && (
-              <Badge variant="outline">
-                <Eye className="h-3 w-3 mr-1" />
-                View Only
-              </Badge>
-            )}
-          </div>
-          {(userRole === UserRole.MANAGER || userRole === UserRole.PHOTOGRAPHER) && (
-            <Button 
-              disabled={isSubmitting} 
-              variant="default" 
-              onClick={() => handleStatusChange(PropertyStatus.PENDING_REVIEW)}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Submit for Review
-            </Button>
-          )}
-        </div>
+        <FloorPlanActions
+          canEdit={canEdit}
+          userRole={userRole}
+          isSubmitting={isSubmitting}
+          onStatusChange={onStatusChange}
+        />
       </CardFooter>
     </Card>
   );
