@@ -7,7 +7,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 
-// Create a wrapper component that uses the canvas controller
+/**
+ * Zoom direction type
+ */
+type ZoomDirection = "in" | "out";
+
+/**
+ * Canvas application component
+ * Wraps the canvas with necessary controllers and UI
+ * @returns {JSX.Element} Rendered component
+ */
 const CanvasApp = () => {
   // Use the canvas controller hook to get all the necessary props
   const {
@@ -33,8 +42,11 @@ const CanvasApp = () => {
     openMeasurementGuide
   } = useCanvasController();
 
-  // Adapter function to convert direction-based zoom to level-based zoom
-  const handleZoomAdapter = (direction: "in" | "out") => {
+  /**
+   * Adapter function to convert direction-based zoom to level-based zoom
+   * @param {ZoomDirection} direction - Zoom direction ("in" or "out")
+   */
+  const handleZoomAdapter = (direction: ZoomDirection) => {
     // Convert direction to a zoom level adjustment
     const zoomChange = direction === "in" ? 1.2 : 0.8;
     handleZoom(zoomChange);
@@ -68,6 +80,11 @@ const CanvasApp = () => {
   );
 };
 
+/**
+ * Main Index page component
+ * Provides the layout and navigation for the floor plan editor
+ * @returns {JSX.Element} Rendered component
+ */
 const Index = () => {
   const navigate = useNavigate();
   

@@ -52,7 +52,7 @@ export interface DebugInfoState {
     fps?: number;
     /** Dropped frames count */
     droppedFrames?: number;
-    /** Average frame time in milliseconds */
+    /** Frame time in milliseconds */
     frameTime?: number;
     /** Maximum frame time in milliseconds */
     maxFrameTime?: number;

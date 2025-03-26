@@ -1,30 +1,15 @@
 
 /**
- * Fabric interaction utilities index
- * Central export point for all fabric interaction modules
- * @module fabric/index
+ * Fabric utilities index file
+ * Re-exports all Fabric.js related utilities for easier imports
+ * @module fabric
  */
 
-// Export from selection management
-export {
-  enableSelection,
-  disableSelection
-} from './selection';
-
-// Export from gesture support
-export {
-  addPinchToZoom,
-  snapToAngle
-} from './gestures';
-
-// Export from panning
-export {
-  enablePanning
-} from './panning';
-
-// Export from events (common helpers)
-export {
-  isTouchEvent,
-  getClientX,
-  getClientY
-} from './events';
+// Re-export all utilities from the fabric subdirectories
+export * from './canvasDimensions';
+export * from './canvasValidation';
+export * from './canvasCleanup';
+export * from './events';
+export * from './selection';
+export * from './gestures';
+export * from './panning';
