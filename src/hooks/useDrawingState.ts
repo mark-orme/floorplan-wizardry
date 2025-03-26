@@ -31,8 +31,11 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
   const throttleRef = useRef<number | null>(null);
   
   // Get point processing functions for snapping
-  // Fixed: Removed extra argument
-  const { snapCurrentPoint } = usePointProcessing(tool);
+  // Fix: Pass an object with the required properties instead of just the tool
+  const { snapCurrentPoint } = usePointProcessing({
+    fabricCanvasRef,
+    gridLayerRef: { current: [] }
+  });
   
   // Initialize drawing state with all required properties
   const [drawingState, setDrawingState] = useState<DrawingState>({

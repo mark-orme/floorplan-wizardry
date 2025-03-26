@@ -40,10 +40,11 @@ export const usePathProcessing = ({
   lineColor = "#000000",
   recalculateGIA
 }: UsePathProcessingProps) => {
-  // Initialize point processing hook
+  // Initialize point processing hook with the proper props object
   const { processPathPoints } = usePointProcessing({
     fabricCanvasRef,
-    gridLayerRef
+    gridLayerRef,
+    tool
   });
   
   // Initialize polyline creation hook with GIA recalculation

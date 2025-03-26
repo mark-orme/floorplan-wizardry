@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing points based on the drawing tool
  * @module usePointProcessing
@@ -13,9 +12,13 @@ import { snapLineToStandardAngles } from "@/utils/grid/snapping";
 import { calculateDistance } from "@/utils/geometry/lineOperations";
 import logger from "@/utils/logger";
 
-interface UsePointProcessingProps {
+/**
+ * Interface for usePointProcessing props
+ */
+export interface UsePointProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  tool?: DrawingTool; // Made optional to allow it to work with useDrawingState's simplified call
 }
 
 /**
@@ -72,8 +75,9 @@ interface UsePointProcessingResult {
  * @returns {UsePointProcessingResult} Point processing functions
  */
 export const usePointProcessing = (
-  { fabricCanvasRef, gridLayerRef }: UsePointProcessingProps
+  props: UsePointProcessingProps
 ): UsePointProcessingResult => {
+  const { fabricCanvasRef, gridLayerRef, tool } = props;
   
   /**
    * Process points extracted from a fabric path
