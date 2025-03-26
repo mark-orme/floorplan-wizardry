@@ -4,7 +4,7 @@
  * @module usePolylineCreation
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Polyline as FabricPolyline, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { PIXELS_PER_METER } from "@/utils/drawing";
 import { calculateGIA } from "@/utils/geometry";
@@ -59,8 +59,8 @@ interface UsePolylineCreationProps {
 interface UsePolylineCreationResult {
   /** Create a polyline from points and add it to the canvas */
   createPolyline: (
-    finalPoints: Point[], 
-    pixelPoints: Point[], 
+    finalPoints: { x: number; y: number }[], 
+    pixelPoints: { x: number; y: number }[], 
     isEnclosed?: boolean, 
     overrideColor?: string
   ) => boolean;
@@ -95,8 +95,8 @@ export const usePolylineCreation = ({
    * @returns Boolean indicating success
    */
   const createPolyline = useCallback((
-    finalPoints: Point[],
-    pixelPoints: Point[],
+    finalPoints: { x: number; y: number }[],
+    pixelPoints: { x: number; y: number }[],
     isEnclosed: boolean = false,
     overrideColor?: string
   ): boolean => {
@@ -120,7 +120,7 @@ export const usePolylineCreation = ({
       };
 
       // Create the polyline with pixel points
-      const polyline = new Polyline(pixelPoints, polylineOptions);
+      const polyline = new FabricPolyline(pixelPoints, polylineOptions);
       
       // Add the processed polyline to canvas
       fabricCanvas.add(polyline);

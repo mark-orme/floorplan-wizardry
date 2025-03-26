@@ -4,7 +4,7 @@
  * @module useFloorPlanChunkProcessing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Polyline as FabricPolyline, Object as FabricObject } from "fabric";
 import { PIXELS_PER_METER } from "@/utils/drawing";
 
 /**
@@ -52,7 +52,7 @@ export const useFloorPlanChunkProcessing = ({
       for (let i = startIndex; i < endIndex; i++) {
         const stroke = strokes[i];
         
-        const polyline = new Polyline(
+        const polyline = new FabricPolyline(
           stroke.map(point => ({ x: point.x * PIXELS_PER_METER, y: point.y * PIXELS_PER_METER })),
           {
             stroke: '#000000',

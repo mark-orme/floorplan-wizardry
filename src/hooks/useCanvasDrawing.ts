@@ -5,7 +5,7 @@
  * @module useCanvasDrawing
  */
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Polyline as FabricPolyline } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useDrawingState } from "./useDrawingState";
 import { useCanvasHistory } from "./useCanvasHistory";
