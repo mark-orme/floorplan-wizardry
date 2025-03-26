@@ -5,6 +5,7 @@
 import { openDB, DBSchema } from 'idb';
 import type { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import type { PerformanceMetrics } from './performanceTypes';
 
 // Re-export these types for backward compatibility
 export type { FloorPlan, PaperSize };
@@ -90,18 +91,7 @@ export interface DebugInfoState {
   /** Whether the grid is visible */
   gridVisible: boolean;
   /** Performance statistics */
-  performanceStats: {
-    /** Average frames per second */
-    fps?: number;
-    /** Number of dropped frames */
-    droppedFrames?: number;
-    /** Average frame time in milliseconds */
-    frameTime?: number;
-    /** Maximum frame time recorded */
-    maxFrameTime?: number;
-    /** Number of frames exceeding budget */
-    longFrames?: number;
-  };
+  performanceStats: Partial<PerformanceMetrics>;
 }
 
 /**
@@ -141,30 +131,8 @@ export interface GridCreationState {
   complete?: boolean;
 }
 
-/**
- * Canvas load times type
- * @typedef {Object} CanvasLoadTimes
- */
-export interface CanvasLoadTimes {
-  startTime: number;
-  canvasInitStart: number;
-  canvasInitEnd: number;
-  gridCreationStart: number;
-  gridCreationEnd: number;
-  totalLoadTime: number;
-  canvasReady: boolean;
-  gridCreated: boolean;
-}
-
-/**
- * Database schema for IndexedDB
- */
-export interface FloorPlanDBSchema extends DBSchema {
-  floorPlans: {
-    key: string;
-    value: FloorPlan;
-  };
-}
+// Re-export types from performanceTypes for backward compatibility
+export type { PerformanceMetrics, CanvasLoadTimes } from './performanceTypes';
 
 // Scale factors
 /**
