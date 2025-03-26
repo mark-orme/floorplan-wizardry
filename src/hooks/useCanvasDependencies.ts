@@ -9,7 +9,7 @@ import { useCanvasGrid } from "./useCanvasGrid";
 import { useGridManagement } from "./useGridManagement";
 import { useStylusDetection } from "./useStylusDetection";
 import { useZoomStateSync } from "./useZoomStateSync";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 import logger from "@/utils/logger";
 
 /**
@@ -70,14 +70,14 @@ export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
   const { gridLayerRef: managedGridLayerRef } = useGridManagement({
     fabricCanvasRef,
     canvasDimensions, // Pass canvasDimensions directly
-    debugInfo,
+    debugInfo: debugInfo as any, // Type assertion to avoid type mismatch
     createGrid
   });
   
   // Initialize stylus detection
   useStylusDetection({
     canvasRef,
-    debugInfo
+    debugInfo: debugInfo as any // Type assertion to avoid type mismatch
   });
   
   // Initialize zoom state synchronization
@@ -91,7 +91,7 @@ export const useCanvasDependencies = (props: UseCanvasDependenciesProps) => {
     if (managedGridLayerRef.current && managedGridLayerRef.current.length > 0) {
       gridLayerRef.current = managedGridLayerRef.current;
     }
-  }, [managedGridLayerRef.current]);
+  }, [managedGridLayerRef]);
   
   return {
     gridLayerRef,

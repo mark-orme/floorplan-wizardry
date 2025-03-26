@@ -70,11 +70,16 @@ export const useCanvasControllerDependencies = ({
   const resolvedCanvasRef = canvasRef || defaultCanvasRef;
   const resolvedCanvasDimensions = canvasDimensions || { width: 800, height: 600 };
   // Fixed: Include all required properties in the default debug info
-  const resolvedDebugInfo = debugInfo || { 
+  const resolvedDebugInfo: DebugInfoState = debugInfo || { 
     canvasInitialized: false, 
     gridCreated: false,
     dimensionsSet: false,
-    brushInitialized: false 
+    brushInitialized: false,
+    canvasCreated: false,
+    canvasLoaded: false,
+    canvasWidth: 0,
+    canvasHeight: 0,
+    loadTimes: {}
   };
   const resolvedSetDebugInfo = setDebugInfo || ((_: any) => {});
   const resolvedSetHasError = setHasError || ((_: boolean) => {});

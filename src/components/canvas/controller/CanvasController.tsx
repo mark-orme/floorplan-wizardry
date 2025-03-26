@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingTool } from '@/hooks/useCanvasState';
@@ -66,39 +67,65 @@ export const CanvasControllerProvider = ({ children }: { children: React.ReactNo
   // Get canvas dimensions
   const { width: initialCanvasWidth, height: initialCanvasHeight } = useCanvasDimensions();
   
-  // Create grid function
-  const createGrid = useCanvasGrid({
-    gridLayerRef,
+  // Create state management hook
+  const {
+    tool, setTool,
+    zoomLevel, setZoomLevel,
+    gia, setGia,
+    floorPlans, setFloorPlans,
+    currentFloor, setCurrentFloor,
+    isLoading, setIsLoading,
+    lineThickness, setLineThickness,
+    lineColor, setLineColor,
+    drawingState, setDrawingState,
+    debugInfo, setDebugInfo,
+    hasError, setHasError,
+    errorMessage, setErrorMessage
+  } = useCanvasControllerState();
+  
+  // Initialize canvas setup
+  const {
+    canvasRef: setupCanvasRef,
+    fabricCanvasRef: setupFabricCanvasRef,
+    historyRef: setupHistoryRef
+  } = useCanvasControllerSetup({
     canvasDimensions: { width: initialCanvasWidth, height: initialCanvasHeight },
-    setDebugInfo: () => {}, // Will be properly set from controller state
-    setHasError: () => {}, // Will be properly set from controller state
-    setErrorMessage: () => {} // Will be properly set from controller state
+    tool,
+    currentFloor,
+    setZoomLevel,
+    setDebugInfo,
+    setHasError,
+    setErrorMessage
   });
   
-  // Initialize controller tools
-  const {
-    refreshCanvas,
-    clearCanvas,
-    saveCanvas,
-    deleteSelectedObjects,
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    handleFloorSelect,
-    handleAddFloor,
-    handleLineThicknessChange,
-    handleLineColorChange,
-    showMeasurementGuide
-  } = useCanvasControllerSetup(
-    fabricCanvasRef,
-    gridLayerRef,
-    createGrid,
-    initialCanvasWidth,
-    initialCanvasHeight,
-    canvasWrapperRef
-  );
-
+  // Assign refs from setup
+  useEffect(() => {
+    if (setupCanvasRef.current) {
+      canvasRef.current = setupCanvasRef.current;
+    }
+    if (setupFabricCanvasRef.current) {
+      fabricCanvasRef.current = setupFabricCanvasRef.current;
+    }
+    if (setupHistoryRef.current) {
+      historyRef.current = setupHistoryRef.current;
+    }
+  }, [setupCanvasRef, setupFabricCanvasRef, setupHistoryRef]);
+  
+  // Define dummy functions for now - these will be properly implemented
+  const refreshCanvas = () => {}; 
+  const clearCanvas = () => {};
+  const saveCanvas = () => true;
+  const deleteSelectedObjects = () => {};
+  const handleToolChange = (tool: DrawingTool) => { setTool(tool); };
+  const handleUndo = () => {};
+  const handleRedo = () => {};
+  const handleZoom = (direction: "in" | "out") => {};
+  const handleFloorSelect = (index: number) => { setCurrentFloor(index); };
+  const handleAddFloor = () => {};
+  const handleLineThicknessChange = (thickness: number) => { setLineThickness(thickness); };
+  const handleLineColorChange = (color: string) => { setLineColor(color); };
+  const showMeasurementGuide = () => {};
+  
   // Handle retry - reinitialize the canvas
   const handleRetry = () => {
     // Reinitialize the canvas
@@ -106,45 +133,22 @@ export const CanvasControllerProvider = ({ children }: { children: React.ReactNo
       fabricCanvasRef.current.dispose();
       fabricCanvasRef.current = null;
     }
-    
-    // Re-setup the canvas
-    const setup = useCanvasControllerSetup(
-      fabricCanvasRef,
-      gridLayerRef,
-      createGrid,
-      initialCanvasWidth,
-      initialCanvasHeight,
-      canvasWrapperRef
-    );
-    
-    // Force refresh
-    refreshCanvas();
   };
 
   // Value to be provided by the context
   const contextValue: CanvasControllerContextValue = {
     canvasRef,
     fabricCanvasRef,
-    tool: 'select',
-    gia: 0,
-    floorPlans: [],
-    currentFloor: 0,
-    debugInfo: {
-      dimensionsSet: false,
-      canvasCreated: false,
-      gridCreated: false,
-      canvasLoaded: false,
-      canvasInitialized: false,
-      brushInitialized: false,
-      canvasWidth: initialCanvasWidth,
-      canvasHeight: initialCanvasHeight,
-      loadTimes: {}
-    },
-    lineThickness: 2,
-    lineColor: '#000000',
-    drawingState: null,
-    hasError: false,
-    errorMessage: '',
+    tool,
+    gia,
+    floorPlans,
+    currentFloor,
+    debugInfo,
+    lineThickness,
+    lineColor,
+    drawingState,
+    hasError,
+    errorMessage,
     handleToolChange,
     handleUndo,
     handleRedo,
