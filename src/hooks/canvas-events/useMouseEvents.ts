@@ -10,11 +10,11 @@ import logger from "@/utils/logger";
 
 interface UseMouseEventsProps extends BaseEventHandlerProps {
   /** Function to handle mouse down event */
-  handleMouseDown: (e: any) => void;
+  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
   /** Function to handle mouse move event */
-  handleMouseMove: (e: any) => void;
+  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
   /** Function to handle mouse up event */
-  handleMouseUp: () => void;
+  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
 }
@@ -59,14 +59,14 @@ export const useMouseEvents = ({
     
     fabricCanvas.on('mouse:down', handleMouseDown as any);
     fabricCanvas.on('mouse:move', handleMouseMove as any);
-    fabricCanvas.on('mouse:up', handleMouseUp);
+    fabricCanvas.on('mouse:up', handleMouseUp as any);
     fabricCanvas.on('mouse:dblclick', handleDoubleClick as any);
     
     return () => {
       if (fabricCanvas) {
         fabricCanvas.off('mouse:down', handleMouseDown as any);
         fabricCanvas.off('mouse:move', handleMouseMove as any);
-        fabricCanvas.off('mouse:up', handleMouseUp);
+        fabricCanvas.off('mouse:up', handleMouseUp as any);
         fabricCanvas.off('mouse:dblclick', handleDoubleClick as any);
       }
     };

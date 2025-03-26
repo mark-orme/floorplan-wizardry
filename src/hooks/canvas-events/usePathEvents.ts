@@ -14,7 +14,7 @@ interface UsePathEventsProps extends BaseEventHandlerProps {
   /** Function to process created path */
   processCreatedPath: (path: FabricPath) => void;
   /** Function to handle mouse up event */
-  handleMouseUp: (e?: Event) => void;
+  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
 }
 
 /**
@@ -44,7 +44,7 @@ export const usePathEvents = ({
       
       // Process the path based on the current tool
       processCreatedPath(e.path);
-      handleMouseUp();
+      handleMouseUp(); // Call with no arguments as it's now optional
     };
     
     fabricCanvas.on('path:created', handlePathCreated as any);

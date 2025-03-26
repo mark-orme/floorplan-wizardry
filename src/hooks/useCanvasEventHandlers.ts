@@ -37,11 +37,11 @@ interface UseCanvasEventHandlersProps {
   /** Function to handle redo operation */
   handleRedo: () => void;
   /** Function to handle mouse down event */
-  handleMouseDown: (e: any) => void;
+  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
   /** Function to handle mouse move event */
-  handleMouseMove: (e: any) => void;
+  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
   /** Function to handle mouse up event */
-  handleMouseUp: () => void;
+  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
   /** Function to process created path */
   processCreatedPath: (path: FabricPath) => void;
   /** Function to clean up timeouts */

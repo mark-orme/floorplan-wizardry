@@ -18,7 +18,7 @@ interface UseDrawingStateReturn {
   drawingState: DrawingState;
   handleMouseDown: (e: MouseEvent | TouchEvent) => void;
   handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
+  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
   cleanupTimeouts: () => void;
 }
 
@@ -90,8 +90,8 @@ export const useDrawingState = ({
     }));
   }, [fabricCanvasRef, drawingState.isDrawing, processPoint]);
   
-  // Handle mouse up event
-  const handleMouseUp = useCallback((e: MouseEvent | TouchEvent) => {
+  // Handle mouse up event - making parameter optional to match expected types
+  const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
     if (!fabricCanvasRef.current || !drawingState.isDrawing) return;
     
     // Re-enable selection

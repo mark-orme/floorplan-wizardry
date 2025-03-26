@@ -29,8 +29,8 @@ export interface UsePointProcessingProps {
 interface UsePointProcessingReturn {
   /** Process canvas point for drawing */
   processPoint: (e: MouseEvent | TouchEvent) => Point | null;
-  /** Process path points from a path (optional) */
-  processPathPoints?: (path: any, isEnclosed?: boolean) => { finalPoints: Point[], pixelPoints: Point[] };
+  /** Process path points from a path */
+  processPathPoints: (path: any, isEnclosed?: boolean) => { finalPoints: Point[], pixelPoints: Point[] };
 }
 
 /**
@@ -77,7 +77,7 @@ export const usePointProcessing = ({
       x: pointer.x,
       y: pointer.y
     };
-  }, [fabricCanvasRef, tool]);
+  }, [fabricCanvasRef]);
   
   /**
    * Process path points from a fabric path
