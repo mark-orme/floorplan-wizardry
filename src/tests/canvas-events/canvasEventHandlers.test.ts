@@ -11,11 +11,11 @@ describe('Canvas Event Handlers', () => {
   // Mock canvas and references
   let mockCanvas: Canvas;
   let fabricCanvasRef: { current: Canvas | null };
-  let mockSaveCurrentState: vi.Mock;
-  let mockProcessCreatedPath: vi.Mock;
-  let mockHandleMouseUp: vi.Mock;
-  let mockDeleteSelectedObjects: vi.Mock;
-  let defaultTool: DrawingTool = 'pen';
+  let mockSaveCurrentState: ReturnType<typeof vi.fn>;
+  let mockProcessCreatedPath: ReturnType<typeof vi.fn>;
+  let mockHandleMouseUp: ReturnType<typeof vi.fn>;
+  let mockDeleteSelectedObjects: ReturnType<typeof vi.fn>;
+  let defaultTool: DrawingTool = 'draw'; // Changed from 'pen' to 'draw' which is a valid DrawingTool
 
   beforeEach(() => {
     // Create mock Canvas with event handlers

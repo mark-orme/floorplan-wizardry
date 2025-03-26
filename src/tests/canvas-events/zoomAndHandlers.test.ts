@@ -10,10 +10,10 @@ describe('Canvas Zoom and Handlers', () => {
   // Mock canvas and references
   let mockCanvas: Canvas & { fire?: Function };
   let fabricCanvasRef: { current: Canvas | null };
-  let mockHandleUndo: vi.Mock;
-  let mockHandleRedo: vi.Mock;
-  let mockSaveCurrentState: vi.Mock;
-  let mockDeleteSelectedObjects: vi.Mock;
+  let mockHandleUndo: ReturnType<typeof vi.fn>;
+  let mockHandleRedo: ReturnType<typeof vi.fn>;
+  let mockSaveCurrentState: ReturnType<typeof vi.fn>;
+  let mockDeleteSelectedObjects: ReturnType<typeof vi.fn>;
   let defaultTool: DrawingTool = 'select';
 
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('Canvas Zoom and Handlers', () => {
       expect(mockCanvas.on).toHaveBeenCalledWith('zoom:changed', expect.any(Function));
       
       // When zoom changes
-      const zoomChangedHandler = (mockCanvas.on as vi.Mock).mock.calls.find(
+      const zoomChangedHandler = (mockCanvas.on as ReturnType<typeof vi.fn>).mock.calls.find(
         call => call[0] === 'zoom:changed'
       )[1];
       zoomChangedHandler();

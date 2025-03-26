@@ -16,16 +16,22 @@ const mockPerformance = {
 vi.mock('@/utils/profiling/canvasProfiler', () => ({
   startCanvasOperation: vi.fn(),
   endCanvasOperation: vi.fn(),
-  getOperationDuration: vi.fn(),
-  clearProfilingData: vi.fn(),
+  getCanvasPerformanceReport: vi.fn(),
+  canvasProfiler: {
+    initialize: vi.fn(),
+    startOperation: vi.fn(),
+    endOperation: vi.fn(),
+    getPerformanceReport: vi.fn(),
+    reset: vi.fn()
+  }
 }));
 
 // Import after mocking
 import { 
   startCanvasOperation, 
   endCanvasOperation, 
-  getOperationDuration, 
-  clearProfilingData 
+  getCanvasPerformanceReport,
+  canvasProfiler
 } from '@/utils/profiling/canvasProfiler';
 
 describe('useCanvasProfiler', () => {
@@ -51,89 +57,87 @@ describe('useCanvasProfiler', () => {
     // Then
     expect(result.current.startOperation).toBeInstanceOf(Function);
     expect(result.current.endOperation).toBeInstanceOf(Function);
-    expect(result.current.getOperationTime).toBeInstanceOf(Function);
-    expect(result.current.clearProfileData).toBeInstanceOf(Function);
+    expect(result.current.resetProfiling).toBeInstanceOf(Function);
+    expect(result.current.getReport).toBeInstanceOf(Function);
   });
   
-  test('startOperation should call performance mark', () => {
+  test('startOperation should call profiler', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
     const operationName = 'testOperation';
+    const mockOpId = 'test-op-id';
+    (canvasProfiler.startOperation as ReturnType<typeof vi.fn>).mockReturnValue(mockOpId);
     
     // When
     result.current.startOperation(operationName);
     
     // Then
-    expect(performance.mark).toHaveBeenCalledWith(`${operationName}-start`);
-    expect(startCanvasOperation).toHaveBeenCalledWith(operationName);
+    expect(canvasProfiler.startOperation).toHaveBeenCalledWith(operationName, undefined);
   });
   
-  test('endOperation should call performance measure', () => {
+  test('endOperation should call profiler', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
-    const operationName = 'testOperation';
+    const operationId = 'testOperation-123';
     
     // When
-    result.current.endOperation(operationName);
+    result.current.endOperation(operationId);
     
     // Then
-    expect(performance.measure).toHaveBeenCalledWith(
-      operationName,
-      `${operationName}-start`
-    );
-    expect(endCanvasOperation).toHaveBeenCalledWith(operationName);
+    expect(canvasProfiler.endOperation).toHaveBeenCalledWith(operationId);
   });
   
-  test('getOperationTime should return operation duration', () => {
+  test('getReport should return operation duration', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
-    const operationName = 'testOperation';
-    const expectedDuration = 50;
-    
-    // Mock the getOperationDuration to return our expected value
-    (getOperationDuration as vi.Mock).mockReturnValue(expectedDuration);
+    const expectedReport = { operations: [], summary: {} };
+    (canvasProfiler.getPerformanceReport as ReturnType<typeof vi.fn>).mockReturnValue(expectedReport);
     
     // When
-    const duration = result.current.getOperationTime(operationName);
+    const report = result.current.getReport();
     
     // Then
-    expect(duration).toBe(expectedDuration);
-    expect(getOperationDuration).toHaveBeenCalledWith(operationName);
+    expect(report).toBe(expectedReport);
+    expect(canvasProfiler.getPerformanceReport).toHaveBeenCalled();
   });
   
-  test('clearProfileData should clear performance marks and measures', () => {
+  test('resetProfiling should clear profiling data', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
     
     // When
-    result.current.clearProfileData();
+    result.current.resetProfiling();
     
     // Then
-    expect(performance.clearMarks).toHaveBeenCalled();
-    expect(performance.clearMeasures).toHaveBeenCalled();
-    expect(clearProfilingData).toHaveBeenCalled();
+    expect(canvasProfiler.reset).toHaveBeenCalled();
   });
   
   test('should profile complete operation cycle', () => {
     // Given
     const { result } = renderHook(() => useCanvasProfiler());
     const operationName = 'testOperation';
-    const expectedDuration = 50;
-    
-    (getOperationDuration as vi.Mock).mockReturnValue(expectedDuration);
+    const mockOpId = 'test-op-id';
+    (canvasProfiler.startOperation as ReturnType<typeof vi.fn>).mockReturnValue(mockOpId);
     
     // When - start and end an operation
     result.current.startOperation(operationName);
-    result.current.endOperation(operationName);
+    result.current.endOperation(mockOpId);
     
-    // Then - we can get its duration
-    expect(result.current.getOperationTime(operationName)).toBe(expectedDuration);
+    // Then - verify the cycle was performed correctly
+    expect(canvasProfiler.startOperation).toHaveBeenCalledWith(operationName, undefined);
+    expect(canvasProfiler.endOperation).toHaveBeenCalledWith(mockOpId);
     
-    // When - we clear the data
-    result.current.clearProfileData();
+    // When - we get the report
+    result.current.getReport();
+    
+    // Then - report is fetched
+    expect(canvasProfiler.getPerformanceReport).toHaveBeenCalled();
+    
+    // When - we reset the profiler
+    result.current.resetProfiling();
     
     // Then - the data is cleared
-    expect(clearProfilingData).toHaveBeenCalled();
+    expect(canvasProfiler.reset).toHaveBeenCalled();
   });
   
   test('should handle multiple operations', () => {
@@ -142,13 +146,13 @@ describe('useCanvasProfiler', () => {
     
     // When - start and end multiple operations
     result.current.startOperation('operation1');
-    result.current.endOperation('operation1');
+    result.current.endOperation('operation1-id');
     
     result.current.startOperation('operation2');
-    result.current.endOperation('operation2');
+    result.current.endOperation('operation2-id');
     
     // Then - both operations are profiled
-    expect(startCanvasOperation).toHaveBeenCalledTimes(2);
-    expect(endCanvasOperation).toHaveBeenCalledTimes(2);
+    expect(canvasProfiler.startOperation).toHaveBeenCalledTimes(2);
+    expect(canvasProfiler.endOperation).toHaveBeenCalledTimes(2);
   });
 });

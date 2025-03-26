@@ -1,10 +1,9 @@
-
 /**
  * Canvas Profiler Hook
  * React hook for profiling Canvas component performance
  * @module hooks/useCanvasProfiler
  */
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useCallback } from 'react';
 import { 
   canvasProfiler, 
   startCanvasOperation, 
@@ -88,7 +87,7 @@ export const useCanvasProfiler = (
    * @returns {string} Operation ID
    */
   const startOperation = useCallback((name: string, metadata?: Record<string, any>): string => {
-    return startCanvasOperation(name, metadata);
+    return canvasProfiler.startOperation(name, metadata);
   }, []);
 
   /**
@@ -96,7 +95,7 @@ export const useCanvasProfiler = (
    * @param {string} id - Operation ID from startOperation
    */
   const endOperation = useCallback((id: string): void => {
-    endCanvasOperation(id);
+    canvasProfiler.endOperation(id);
   }, []);
 
   /**
@@ -104,7 +103,6 @@ export const useCanvasProfiler = (
    */
   const resetProfiling = useCallback((): void => {
     canvasProfiler.reset();
-    setPerformanceData({});
   }, []);
 
   /**
@@ -112,7 +110,7 @@ export const useCanvasProfiler = (
    * @returns {Record<string, any>} Performance report
    */
   const getReport = useCallback((): Record<string, any> => {
-    return getCanvasPerformanceReport();
+    return canvasProfiler.getPerformanceReport();
   }, []);
 
   /**
@@ -122,9 +120,7 @@ export const useCanvasProfiler = (
    * @returns {Function} Profiled function
    */
   const profileFn = useCallback(<T extends Function>(name: string, fn: T): T => {
-    if (!isEnabled) return fn;
-    
-    return ((...args: any[]) => {
+    const wrappedFn = ((...args: any[]) => {
       const opId = startOperation(name);
       try {
         const result = fn(...args);
@@ -138,7 +134,9 @@ export const useCanvasProfiler = (
         throw error;
       }
     }) as unknown as T;
-  }, [isEnabled, startOperation, endOperation]);
+    
+    return wrappedFn;
+  }, [startOperation, endOperation]);
 
   /**
    * Toggle profiling on/off

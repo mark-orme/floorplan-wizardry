@@ -1,4 +1,3 @@
-
 /**
  * Canvas Profiler Module
  * Utilities for performance profiling and monitoring canvas operations
@@ -113,51 +112,6 @@ class CanvasProfiler {
   }
 
   /**
-   * Wrap a function with profiling
-   * @param {string} operationName - Name of the operation
-   * @param {Function} fn - Function to wrap
-   * @param {Record<string, any>} metadata - Additional context data
-   * @returns {Function} Wrapped function with profiling
-   */
-  profileFunction<T extends (...args: any[]) => any>(
-    operationName: string,
-    fn: T,
-    metadata?: Record<string, any>
-  ): (...args: Parameters<T>) => ReturnType<T> {
-    if (!this.enabled) return fn;
-    
-    return (...args: Parameters<T>): ReturnType<T> => {
-      const opId = this.startOperation(operationName, {
-        ...metadata,
-        arguments: this.options.enableLogging ? args : undefined
-      });
-      
-      try {
-        const result = fn(...args);
-        
-        // Handle promises
-        if (result instanceof Promise) {
-          return result
-            .then(value => {
-              this.endOperation(opId);
-              return value;
-            })
-            .catch(error => {
-              this.endOperation(opId);
-              throw error;
-            }) as ReturnType<T>;
-        }
-        
-        this.endOperation(opId);
-        return result;
-      } catch (error) {
-        this.endOperation(opId);
-        throw error;
-      }
-    };
-  }
-
-  /**
    * Get performance report for all operations
    * @returns {Record<string, any>} Performance statistics
    */
@@ -225,19 +179,6 @@ class CanvasProfiler {
 
 // Create singleton instance
 export const canvasProfiler = new CanvasProfiler();
-
-/**
- * Higher-order function to profile async canvas operations
- * @param {string} operationName - Name of the operation
- * @param {Function} fn - Async function to profile
- * @returns {Function} Profiled async function
- */
-export const profileCanvasOperation = <T extends (...args: any[]) => Promise<any>>(
-  operationName: string,
-  fn: T
-): ((...args: Parameters<T>) => Promise<ReturnType<T>>) => {
-  return canvasProfiler.profileFunction(operationName, fn);
-};
 
 /**
  * Mark the start of a canvas operation
