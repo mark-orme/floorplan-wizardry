@@ -4,10 +4,15 @@
  * Functions for processing and transforming paths drawn on canvas
  * @module pathProcessingUtils
  */
-import { Path as FabricPath, Point as FabricPoint } from "fabric";
+import { Path as FabricPath } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { snapToGrid } from "@/utils/grid/snapping";
 import logger from "@/utils/logger";
+
+/**
+ * Type for path command
+ */
+type PathCommand = (string | number)[];
 
 /**
  * Extract points from a Fabric.js path
@@ -21,7 +26,7 @@ export const extractPointsFromPath = (path: FabricPath): Point[] => {
   }
 
   try {
-    const pathArray = path.path;
+    const pathArray = path.path as PathCommand[];
     const points: Point[] = [];
     
     // Extract all points from the path array
@@ -30,21 +35,33 @@ export const extractPointsFromPath = (path: FabricPath): Point[] => {
       
       // Skip 'M' (move) commands without coordinates
       if (pathCmd[0] === 'M' && pathCmd.length > 2) {
-        points.push({ x: pathCmd[1], y: pathCmd[2] });
+        // Ensure numeric values for coordinates
+        const x = Number(pathCmd[1]);
+        const y = Number(pathCmd[2]);
+        if (!isNaN(x) && !isNaN(y)) {
+          points.push({ x, y });
+        }
       }
       
       // Add line points from 'L' (line) commands
       if (pathCmd[0] === 'L' && pathCmd.length > 2) {
-        points.push({ x: pathCmd[1], y: pathCmd[2] });
+        // Ensure numeric values for coordinates
+        const x = Number(pathCmd[1]);
+        const y = Number(pathCmd[2]);
+        if (!isNaN(x) && !isNaN(y)) {
+          points.push({ x, y });
+        }
       }
       
       // Add curve points from 'Q' (quadratic) and 'C' (cubic) commands
       if ((pathCmd[0] === 'Q' || pathCmd[0] === 'C') && pathCmd.length > 4) {
         // Add the end point of the curve (last two coordinates)
-        const endX = pathCmd[pathCmd.length - 2];
-        const endY = pathCmd[pathCmd.length - 1];
+        const endX = Number(pathCmd[pathCmd.length - 2]);
+        const endY = Number(pathCmd[pathCmd.length - 1]);
         
-        points.push({ x: endX, y: endY });
+        if (!isNaN(endX) && !isNaN(endY)) {
+          points.push({ x: endX, y: endY });
+        }
       }
     }
     

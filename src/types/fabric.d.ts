@@ -40,6 +40,9 @@ declare module 'fabric' {
    * @interface Object
    */
   interface Object {
+    /** Unique identifier for the object */
+    id?: string | number;
+    
     /** Type of object for specialized handling */
     objectType?: 'line' | 'room' | 'grid' | 'wall' | 'measurement' | 'furniture' | 'text' | string;
     
@@ -88,4 +91,3 @@ declare module 'fabric' {
     };
   }
 }
-

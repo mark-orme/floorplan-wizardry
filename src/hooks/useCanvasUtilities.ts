@@ -27,10 +27,15 @@ export const useCanvasUtilities = () => {
       const allObjects = canvas.getObjects();
       
       // Create a Set of grid object IDs for efficient lookups
-      const gridIds = new Set(gridElements.map(obj => obj.id));
+      // Use type-safe approach to check for id property
+      const gridIds = new Set(
+        gridElements
+          .filter(obj => 'id' in obj && obj.id !== undefined)
+          .map(obj => obj.id)
+      );
       
-      // Filter out grid elements
-      return allObjects.filter(obj => !gridIds.has(obj.id));
+      // Filter out grid elements using type-safe approach
+      return allObjects.filter(obj => !('id' in obj) || !gridIds.has(obj.id));
     },
     []
   );

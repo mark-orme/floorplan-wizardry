@@ -19,6 +19,8 @@ export {
 
 export {
   isCanvasValid,
+  safeGetObjectById,
+  safeCanvasContains,
   isCanvasEmpty,
   getCanvasDimensions,
   verifyCanvasConfiguration,

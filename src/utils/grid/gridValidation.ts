@@ -106,7 +106,12 @@ export const canProceedWithGridCreation = (): ValidationResult => {
  * @returns {boolean} Whether the object is a grid element
  */
 export const isGridElement = (obj: unknown, gridIds: ObjectId[]): boolean => {
-  if (!obj || typeof obj !== 'object' || !('id' in obj)) {
+  if (!obj || typeof obj !== 'object') {
+    return false;
+  }
+  
+  // Type-safe approach to check for id property
+  if (!('id' in obj)) {
     return false;
   }
   
