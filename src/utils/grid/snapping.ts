@@ -1,4 +1,3 @@
-
 /**
  * Grid snapping operations
  * Functions for snapping points and shapes to the grid
@@ -8,6 +7,7 @@ import { Point } from '@/types/drawingTypes';
 import { GRID_SIZE } from '../drawing';
 import { snapToGrid } from './core';
 import { FLOATING_POINT_TOLERANCE } from '../geometry/constants';
+import { calculateAngle } from '../geometry/lineOperations';
 
 /** 
  * Snap an array of points to the grid for consistent alignment
@@ -56,4 +56,59 @@ export const forceGridAlignment = (point: Point): Point => {
     x: Number(x.toFixed(3)),
     y: Number(y.toFixed(3))
   };
+};
+
+/**
+ * Snap line to standard angles (0, 45, 90 degrees) if it's close
+ * Makes it easier to draw perfectly straight lines and diagonals 
+ * 
+ * @param {Point} startPoint - Starting point (already snapped to grid)
+ * @param {Point} endPoint - Current end point to snap
+ * @param {number} angleThreshold - Maximum angle difference to snap (degrees)
+ * @returns {Point} Snapped end point
+ */
+export const snapLineToStandardAngles = (
+  startPoint: Point, 
+  endPoint: Point,
+  angleThreshold: number = 10
+): Point => {
+  // Calculate the current angle
+  const angle = calculateAngle(startPoint, endPoint);
+  const distance = Math.sqrt(
+    Math.pow(endPoint.x - startPoint.x, 2) + 
+    Math.pow(endPoint.y - startPoint.y, 2)
+  );
+  
+  // Check if we're close to any standard angle (0, 45, 90, 135, 180, etc.)
+  const standardAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+  
+  let closestAngle = angle;
+  let minDifference = 360;
+  
+  standardAngles.forEach(standardAngle => {
+    const diff = Math.min(
+      Math.abs(angle - standardAngle),
+      Math.abs(360 - Math.abs(angle - standardAngle))
+    );
+    
+    if (diff < minDifference && diff <= angleThreshold) {
+      minDifference = diff;
+      closestAngle = standardAngle;
+    }
+  });
+  
+  // If we're close to a standard angle, snap to it
+  if (closestAngle !== angle) {
+    const radians = closestAngle * (Math.PI / 180);
+    const snappedPoint = {
+      x: startPoint.x + Math.cos(radians) * distance,
+      y: startPoint.y + Math.sin(radians) * distance
+    };
+    
+    // Make sure the snapped point is also on the grid
+    return snapToGrid(snappedPoint, GRID_SIZE);
+  }
+  
+  // Otherwise, just snap to grid
+  return snapToGrid(endPoint, GRID_SIZE);
 };

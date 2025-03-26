@@ -12,11 +12,16 @@ import {
   GRID_SPACING, 
   CLOSE_POINT_THRESHOLD, 
   FLOATING_POINT_TOLERANCE,
-  AREA_PRECISION 
+  AREA_PRECISION,
+  DISTANCE_PRECISION 
 } from './geometry/constants';
 import { screenToCanvasCoordinates } from './geometry/coordinateTransforms';
 import { snapToGrid } from './grid/core';
-import { calculateDistance, isExactGridMultiple as lineIsExactGridMultiple } from './geometry/lineOperations';
+import { 
+  calculateDistance, 
+  formatDistance, 
+  isExactGridMultiple as lineIsExactGridMultiple 
+} from './geometry/lineOperations';
 import { straightenStroke } from './geometry/straightening';
 
 // Re-export specific functions with non-conflicting names
@@ -27,6 +32,7 @@ export {
   // From constants
   GRID_SPACING,
   AREA_PRECISION,
+  DISTANCE_PRECISION,
   CLOSE_POINT_THRESHOLD,
   FLOATING_POINT_TOLERANCE,
   
@@ -38,6 +44,7 @@ export {
   
   // From lineOperations (with renamed export to avoid conflict)
   calculateDistance,
+  formatDistance,
   lineIsExactGridMultiple,
   
   // From straightening

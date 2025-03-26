@@ -2,8 +2,7 @@
 import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
-import { calculateDistance } from "@/utils/geometry";
-import { isExactGridMultiple } from "@/utils/grid/core";
+import { calculateDistance, formatDistance } from "@/utils/geometry/lineOperations";
 import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
 
 interface DistanceTooltipProps {
@@ -33,7 +32,6 @@ export const DistanceTooltip = memo(({
 }: DistanceTooltipProps): React.ReactElement | null => {
   // For hovering (not actively drawing), we need either the position or the current point
   if (!isVisible) {
-    console.log("Tooltip hidden: isVisible is false");
     return null;
   }
   
@@ -43,7 +41,6 @@ export const DistanceTooltip = memo(({
   
   // Exit if we don't have sufficient points to calculate
   if (!displayStartPoint || !displayEndPoint) {
-    console.log("Tooltip hidden: missing start or end points", { displayStartPoint, displayEndPoint });
     return null;
   }
   
@@ -56,7 +53,6 @@ export const DistanceTooltip = memo(({
   // If position is same as startPoint (no movement) or distance is too small, don't show
   if ((position === startPoint || distanceInMeters < 0.05) && 
       !(startPoint && currentPoint && startPoint !== currentPoint)) {
-    console.log("Tooltip hidden: distance too small or no movement", { distanceInMeters });
     return null;
   }
   
@@ -64,28 +60,17 @@ export const DistanceTooltip = memo(({
   const gridUnits = Math.round(distanceInMeters / GRID_SIZE);
   
   // Format the distance to always show 1 decimal place for consistency
-  // This ensures measurements like 1.0m, 1.1m, 1.2m, etc.
-  const formattedDistance = distanceInMeters.toFixed(1);
+  const formattedDistance = formatDistance(distanceInMeters);
   
   // Calculate the exact midpoint of the line for tooltip placement
-  // This is crucial for placing the tooltip directly on the line
   const tooltipPosition = midPoint || {
     x: (displayStartPoint.x + displayEndPoint.x) / 2,
     y: (displayStartPoint.y + displayEndPoint.y) / 2
   };
   
   // Convert the meter position to pixel position for display
-  // The PIXELS_PER_METER conversion is critical for correct positioning
   const pixelX = tooltipPosition.x * PIXELS_PER_METER;
   const pixelY = tooltipPosition.y * PIXELS_PER_METER;
-  
-  console.log("Showing tooltip:", { 
-    distanceInMeters, 
-    formattedDistance, 
-    gridUnits,
-    pixelPosition: { x: pixelX, y: pixelY },
-    tooltipPosition
-  });
   
   return (
     <div 
@@ -93,22 +78,18 @@ export const DistanceTooltip = memo(({
       style={{ 
         left: `${pixelX}px`, 
         top: `${pixelY}px`,
-        transform: `translate(-50%, -50%) scale(${effectiveZoom > 0 ? 1/effectiveZoom : 1})`, // Scale inversely with zoom
+        transform: `translate(-50%, -50%) scale(${effectiveZoom > 0 ? 1/effectiveZoom : 1})`, 
         willChange: "transform", 
         outline: "2px solid rgba(255,255,255,0.8)",
         maxWidth: "120px",
         lineHeight: 1.2,
-        // Ensure high contrast for visibility
         backgroundColor: "rgba(0, 0, 0, 0.9)",
         boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.4)"
       }}
     >
       <div className="flex items-center gap-2 whitespace-nowrap">
         <Ruler className="w-3 h-3 flex-shrink-0" />
-        <span className="font-semibold">{formattedDistance}m</span>
-        {gridUnits > 0 && (
-          <span className="opacity-90 text-[0.7rem]">({gridUnits})</span>
-        )}
+        <span className="font-semibold">{formattedDistance}</span>
       </div>
     </div>
   );

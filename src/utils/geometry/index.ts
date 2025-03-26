@@ -34,3 +34,10 @@ export * from './midpointCalculation';
 
 // Re-export straightening functions
 export * from './straightening';
+
+// Note: The following modules are not implemented yet:
+// - pointOperations
+// - shapeOperations
+// - snapping (now in grid/snapping.ts)
+
+// For now, we'll use the grid module for snapping operations

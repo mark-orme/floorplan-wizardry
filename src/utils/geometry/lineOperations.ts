@@ -1,64 +1,69 @@
-/**
- * Line operation utilities
- * @module lineOperations
- */
-import { Point } from '@/types/drawingTypes';
-import { GRID_SPACING, FLOATING_POINT_TOLERANCE } from './constants';
 
 /**
- * Calculate the distance between two points
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {number} Distance in pixels
+ * Line operation utilities
+ * Provides functions for line measurements and manipulations
+ * @module geometry/lineOperations
  */
-export const calculateDistance = (p1: Point, p2: Point): number => {
-  if (!p1 || !p2) return 0;
+import { Point } from '@/types/geometryTypes';
+import { GRID_SIZE } from '../drawing';
+import { DISTANCE_PRECISION, FLOATING_POINT_TOLERANCE } from './constants';
+import logger from '../logger';
+
+/**
+ * Calculate the Euclidean distance between two points
+ * Used for line length measurements and proximity checks
+ * 
+ * @param {Point} point1 - First point 
+ * @param {Point} point2 - Second point
+ * @returns {number} Distance in the same units as the input points (usually meters)
+ */
+export const calculateDistance = (point1: Point, point2: Point): number => {
+  if (!point1 || !point2) return 0;
   
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
- * Check if a value is an exact multiple of the grid spacing
- * @param {number} value - Value to check
- * @returns {boolean} True if value is an exact multiple
+ * Check if a value is exactly divisible by the grid size
+ * Used to verify grid alignment of points
+ * 
+ * @param {number} value - The value to check
+ * @returns {boolean} True if the value is an exact multiple of grid size
  */
 export const isExactGridMultiple = (value: number): boolean => {
-  const remainder = Math.abs(value % GRID_SPACING);
-  // Check if remainder is very close to 0 or very close to grid spacing
+  const gridSize = GRID_SIZE;
+  const remainder = Math.abs(value % gridSize);
   return remainder < FLOATING_POINT_TOLERANCE || 
-         Math.abs(remainder - GRID_SPACING) < FLOATING_POINT_TOLERANCE;
+         Math.abs(remainder - gridSize) < FLOATING_POINT_TOLERANCE;
 };
 
 /**
- * Check if a line is exactly aligned with the grid
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {boolean} True if the line is grid-aligned
+ * Format a distance value to a specified precision with proper units
+ * 
+ * @param {number} distance - The distance to format
+ * @param {number} precision - Number of decimal places
+ * @returns {string} Formatted distance string (e.g., "1.5m")
  */
-export const lineIsExactGridMultiple = (p1: Point, p2: Point): boolean => {
-  return isExactGridMultiple(p1.x) && 
-         isExactGridMultiple(p1.y) && 
-         isExactGridMultiple(p2.x) && 
-         isExactGridMultiple(p2.y);
+export const formatDistance = (distance: number, precision: number = DISTANCE_PRECISION): string => {
+  return `${distance.toFixed(precision)}m`;
 };
 
 /**
- * Get the angle between two points in degrees
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
+ * Calculate the angle of a line between two points in degrees
+ * Used for angle snapping and axis alignment
+ * 
+ * @param {Point} start - Start point of the line
+ * @param {Point} end - End point of the line
  * @returns {number} Angle in degrees (0-360)
  */
-export const getAngleBetweenPoints = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  
-  // Calculate angle in radians and convert to degrees
+export const calculateAngle = (start: Point, end: Point): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
   let angle = Math.atan2(dy, dx) * (180 / Math.PI);
   
-  // Normalize to 0-360 range
+  // Normalize to 0-360
   if (angle < 0) {
     angle += 360;
   }
@@ -67,25 +72,45 @@ export const getAngleBetweenPoints = (p1: Point, p2: Point): number => {
 };
 
 /**
- * Check if a line is horizontal within a given tolerance
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @param {number} tolerance - Angle tolerance in degrees
- * @returns {boolean} True if line is horizontal
+ * Check if a point is close to a line segment
+ * Used for selection and hover detection
+ * 
+ * @param {Point} point - The point to check
+ * @param {Point} lineStart - Start point of the line
+ * @param {Point} lineEnd - End point of the line
+ * @param {number} threshold - Maximum distance to consider "close"
+ * @returns {boolean} True if the point is close to the line segment
  */
-export const isHorizontalLine = (p1: Point, p2: Point, tolerance = 5): boolean => {
-  const angle = getAngleBetweenPoints(p1, p2);
-  return (Math.abs(angle) < tolerance || Math.abs(angle - 180) < tolerance);
-};
-
-/**
- * Check if a line is vertical within a given tolerance
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @param {number} tolerance - Angle tolerance in degrees
- * @returns {boolean} True if line is vertical
- */
-export const isVerticalLine = (p1: Point, p2: Point, tolerance = 5): boolean => {
-  const angle = getAngleBetweenPoints(p1, p2);
-  return (Math.abs(angle - 90) < tolerance || Math.abs(angle - 270) < tolerance);
+export const isPointNearLine = (
+  point: Point,
+  lineStart: Point,
+  lineEnd: Point,
+  threshold: number = 0.1 // Default to 0.1m (10cm)
+): boolean => {
+  // Calculate the distance from the point to the line
+  const lineLength = calculateDistance(lineStart, lineEnd);
+  if (lineLength === 0) return false;
+  
+  // Calculate the nearest point on the line
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  
+  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / 
+            (dx * dx + dy * dy);
+  
+  // If t is outside [0,1], the closest point is one of the endpoints
+  if (t < 0) {
+    return calculateDistance(point, lineStart) <= threshold;
+  }
+  if (t > 1) {
+    return calculateDistance(point, lineEnd) <= threshold;
+  }
+  
+  // If t is within [0,1], find the closest point on the line
+  const closestPoint = {
+    x: lineStart.x + t * dx,
+    y: lineStart.y + t * dy
+  };
+  
+  return calculateDistance(point, closestPoint) <= threshold;
 };

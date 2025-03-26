@@ -38,11 +38,11 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     deleteSelectedObjects,
     handleLineThicknessChange,
     handleLineColorChange,
-    handleRetry
+    handleRetry,
+    openMeasurementGuide
   } = useCanvasController();
   
   const [lockDrawing, setLockDrawing] = useState(false);
-  const [isMeasurementGuideOpen, setIsMeasurementGuideOpen] = useState(false);
   
   useEffect(() => {
     if (readonly) {
@@ -50,28 +50,9 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     }
   }, [readonly]);
   
-  // Enable debugging for tooltip visibility
-  useEffect(() => {
-    if (drawingState) {
-      const isActiveDrawing = drawingState.isDrawing && 
-                          (tool === "straightLine" || tool === "wall") && 
-                          drawingState.startPoint && 
-                          drawingState.currentPoint;
-      
-      console.log("Tooltip visibility state:", {
-        isDrawing: drawingState.isDrawing,
-        tool,
-        hasStartPoint: !!drawingState.startPoint,
-        hasCurrentPoint: !!drawingState.currentPoint,
-        toolIsLineType: (tool === "straightLine" || tool === "wall"),
-        shouldShowTooltip: isActiveDrawing
-      });
-    }
-  }, [drawingState, tool]);
-  
   // Improved tooltip visibility logic - show when drawing or in select mode with an active selection
   const isTooltipVisible = Boolean(
-    // Always show during active drawing with straight line tools
+    // Always show during active drawing with line tools
     (drawingState?.isDrawing && (tool === "straightLine" || tool === "wall")) ||
     // Show when hovering with these tools even if not actively drawing
     (!drawingState?.isDrawing && (tool === "straightLine" || tool === "wall") && 
@@ -81,17 +62,6 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     // Show when objects are selected (for measurements of selected objects)
     (tool === "select" && drawingState?.selectionActive)
   );
-  
-  console.log("Tooltip visibility decision:", isTooltipVisible);
-  
-  const closeMeasurementGuide = () => {
-    setIsMeasurementGuideOpen(false);
-  };
-  
-  // Display measurement guide dialog when requested
-  if (isMeasurementGuideOpen) {
-    return <MeasurementGuide onClose={closeMeasurementGuide} />;
-  }
   
   return (
     <div className="canvas-wrapper relative">
@@ -103,6 +73,12 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
             <p className="mt-4 text-sm text-gray-500">
               Try refreshing the page or contact support if the issue persists.
             </p>
+            <button 
+              onClick={handleRetry}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Retry Loading
+            </button>
           </div>
         </div>
       )}
@@ -111,7 +87,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         <canvas ref={canvasRef} />
       </div>
       
-      {/* Tooltip for distance measurement - only show during active drawing with line tools */}
+      {/* Tooltip for distance measurement - show during active drawing with line tools */}
       {isTooltipVisible && (
         <DistanceTooltip 
           startPoint={drawingState?.startPoint}

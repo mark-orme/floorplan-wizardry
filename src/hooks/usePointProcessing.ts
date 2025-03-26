@@ -8,6 +8,8 @@ import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
 import { PIXELS_PER_METER } from "@/utils/drawing";
 import { SHAPE_CLOSE_THRESHOLD } from "@/utils/geometry/constants";
+import { snapLineToStandardAngles } from "@/utils/grid/snapping";
+import { calculateDistance } from "@/utils/geometry/lineOperations";
 import logger from "@/utils/logger";
 
 /**
@@ -35,6 +37,14 @@ interface UsePointProcessingResult {
    * @returns {boolean} True if the shape is closed
    */
   isShapeClosed: (points: Point[]) => boolean;
+  
+  /**
+   * Snap points based on the current tool and context
+   * @param {Point} startPoint - The starting point
+   * @param {Point} currentPoint - The current point
+   * @returns {Point} The snapped current point
+   */
+  snapCurrentPoint: (startPoint: Point, currentPoint: Point) => Point;
 }
 
 /**
@@ -55,14 +65,49 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
    */
   const processPoints = useCallback((points: Point[]): Point[] => {
     logger.debug(`Processing ${points.length} points with tool: ${tool}`);
+    
+    if (points.length < 2) return points;
+    
+    // Process based on the tool
     switch (tool) {
       case "draw":
+        return points;
       case "straightLine":
+      case "wall":
+        // For walls and straight lines, only need the start and end points
+        if (points.length > 2) {
+          const startPoint = points[0];
+          const endPoint = points[points.length - 1];
+          
+          // Snap the end point to standard angles if needed
+          const snappedEndPoint = snapLineToStandardAngles(startPoint, endPoint);
+          return [startPoint, snappedEndPoint];
+        }
+        return points;
       case "room":
         return points;
       default:
         return points;
     }
+  }, [tool]);
+
+  /**
+   * Snap the current point based on the tool and context
+   * Used during active drawing to guide the user
+   * 
+   * @param {Point} startPoint - The start point of the current drawing
+   * @param {Point} currentPoint - The current mouse position
+   * @returns {Point} The snapped current point
+   */
+  const snapCurrentPoint = useCallback((startPoint: Point, currentPoint: Point): Point => {
+    if (!startPoint || !currentPoint) return currentPoint;
+    
+    // For walls and straight lines, apply angle snapping
+    if (tool === "straightLine" || tool === "wall") {
+      return snapLineToStandardAngles(startPoint, currentPoint);
+    }
+    
+    return currentPoint;
   }, [tool]);
 
   /**
@@ -95,11 +140,9 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
     const lastPoint = points[points.length - 1];
     
     // Use the constant from geometry/constants.ts
-    const distanceThreshold = SHAPE_CLOSE_THRESHOLD;
+    const distanceThreshold = SHAPE_CLOSE_THRESHOLD / PIXELS_PER_METER; // Convert to meters
 
-    const dx = lastPoint.x - firstPoint.x;
-    const dy = lastPoint.y - firstPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const distance = calculateDistance(firstPoint, lastPoint);
     
     const isClosed = distance <= distanceThreshold;
     logger.debug(`Shape closed check: distance=${distance.toFixed(3)}m, threshold=${distanceThreshold}m, result=${isClosed}`);
@@ -107,5 +150,10 @@ export const usePointProcessing = (tool: DrawingTool, lineColor: string): UsePoi
     return isClosed;
   }, []);
 
-  return { processPoints, convertToPixelPoints, isShapeClosed };
+  return { 
+    processPoints, 
+    convertToPixelPoints, 
+    isShapeClosed,
+    snapCurrentPoint
+  };
 };

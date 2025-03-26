@@ -70,6 +70,7 @@ export const AREA_PRECISION = 2;
 
 /**
  * Distance precision for measurements
+ * Number of decimal places for distance values
  * @constant {number}
  */
-export const DISTANCE_PRECISION = 2;
+export const DISTANCE_PRECISION = 1;
