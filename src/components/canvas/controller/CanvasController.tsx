@@ -15,6 +15,7 @@ import { useCanvasGrid } from '@/hooks/useCanvasGrid';
 import { useCanvasDimensions } from '@/hooks/useCanvasDimensions';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
+import { createEmergencyGrid } from '@/utils/emergencyGridUtils';
 
 // Context interface
 export interface CanvasControllerContextValue {
@@ -69,6 +70,7 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
   const gridLayerRef = useRef<FabricObject[]>([]);
   const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({ past: [], future: [] });
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
+  const gridCreatedRef = useRef<boolean>(false);
   
   // Get canvas dimensions
   const { width: initialCanvasWidth, height: initialCanvasHeight } = useCanvasDimensions();
@@ -126,70 +128,69 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
     }
   }, [setupCanvasRef, setupFabricCanvasRef, setupHistoryRef]);
   
-  // IMPORTANT: New effect to ensure grid is created once canvas is ready
+  // Direct grid creation effect - this will create the grid regardless of other hooks
   useEffect(() => {
-    // Only proceed if we have a valid fabric canvas
-    if (!fabricCanvasRef.current) {
+    // Only proceed if we have a valid fabric canvas and haven't already created a grid
+    if (!fabricCanvasRef.current || gridCreatedRef.current) {
       return;
     }
     
-    // Check that canvas is properly initialized
-    try {
-      // Ensure the canvas has actual dimensions
-      if (!fabricCanvasRef.current.width || !fabricCanvasRef.current.height) {
-        logger.warn("Canvas dimensions not set, deferring grid creation");
-        return;
-      }
-      
-      logger.info("Canvas is ready, explicitly creating grid");
-      
-      // Call createGrid with the current canvas
-      const gridObjects = createGrid(fabricCanvasRef.current);
-      
-      // Store result in gridLayerRef
-      gridLayerRef.current = gridObjects;
-      
-      // Force render to ensure grid is visible
-      fabricCanvasRef.current.requestRenderAll();
-      
-      logger.info(`Grid initialized with ${gridObjects.length} objects`);
-      
-      // Display a toast notification on successful grid creation
-      if (gridObjects.length > 0) {
-        toast.success("Grid initialized", {
-          id: "grid-init-success",
-          duration: 2000
-        });
-      }
-      
-      // Update debug info
-      setDebugInfo(prev => ({
-        ...prev,
-        gridCreated: true,
-        gridObjectCount: gridObjects.length,
-        canvasReady: true
-      }));
-    } catch (error) {
-      logger.error("Error initializing grid:", error);
-      
-      // Try creating emergency grid as fallback
-      if (fabricCanvasRef.current) {
-        try {
-          setTimeout(() => {
-            // Import directly here to avoid circular dependencies
-            import('@/utils/gridCreationUtils').then(({ createBasicEmergencyGrid }) => {
-              if (fabricCanvasRef.current) {
-                const emergencyGrid = createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
-                logger.info(`Emergency grid created with ${emergencyGrid.length} objects`);
-              }
-            });
-          }, 200);
-        } catch (fallbackError) {
-          logger.error("Even emergency grid creation failed:", fallbackError);
+    // Set a timeout to ensure canvas is fully ready
+    const timeoutId = setTimeout(() => {
+      try {
+        logger.info("Creating grid directly from CanvasController");
+        
+        // Check that canvas is properly initialized
+        const canvas = fabricCanvasRef.current;
+        if (!canvas) {
+          logger.warn("Canvas not available for direct grid creation");
+          return;
         }
+        
+        // Try normal grid creation first
+        let gridObjects = createGrid(canvas);
+        
+        // If that didn't work, try emergency grid
+        if (!gridObjects || gridObjects.length === 0) {
+          logger.warn("Direct grid creation failed, using emergency fallback");
+          gridObjects = createEmergencyGrid(canvas, {
+            width: initialCanvasWidth || 1000,
+            height: initialCanvasHeight || 800
+          });
+          
+          if (gridObjects.length > 0) {
+            toast.success("Grid created successfully", {
+              id: "emergency-grid-created",
+              duration: 2000
+            });
+          }
+        }
+        
+        // Store grid objects in ref
+        gridLayerRef.current = gridObjects;
+        
+        // Mark grid as created
+        gridCreatedRef.current = true;
+        
+        // Force render to ensure grid is visible
+        canvas.requestRenderAll();
+        
+        // Update debug info
+        setDebugInfo(prev => ({
+          ...prev,
+          gridCreated: true,
+          gridObjectCount: gridObjects.length,
+          canvasReady: true
+        }));
+        
+        logger.info(`Grid initialized with ${gridObjects.length} objects from CanvasController`);
+      } catch (error) {
+        logger.error("Error in direct grid creation:", error);
       }
-    }
-  }, [fabricCanvasRef.current, createGrid, setDebugInfo]);
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [fabricCanvasRef.current, createGrid, initialCanvasWidth, initialCanvasHeight, setDebugInfo]);
   
   // Define dummy functions for now - these will be properly implemented
   const refreshCanvas = () => {}; 
@@ -213,6 +214,19 @@ export const CanvasControllerProvider = ({ children }: CanvasControllerProviderP
       fabricCanvasRef.current.dispose();
       fabricCanvasRef.current = null;
     }
+    
+    // Reset grid created flag
+    gridCreatedRef.current = false;
+    
+    // Clear grid objects
+    gridLayerRef.current = [];
+    
+    // Reset error state
+    setHasError(false);
+    setErrorMessage("");
+    
+    // Show toast
+    toast.info("Reinitializing canvas...");
   };
 
   // Value to be provided by the context

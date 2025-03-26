@@ -3,9 +3,8 @@
  * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import logger from "./logger";
-import { GridCreationState } from "@/types/gridTypes";
 
 // Typings for grid creation parameters
 interface EmergencyGridOptions {
@@ -17,6 +16,7 @@ interface EmergencyGridOptions {
   largeGridColor: string;
   smallGridOpacity: number;
   largeGridOpacity: number;
+  showMarkers: boolean;
 }
 
 /**
@@ -41,29 +41,46 @@ export const createEmergencyGrid = (
     
     // Default options
     const {
-      width = 2000,
-      height = 2000,
-      smallGridSize = 10,
+      width = canvas.width || 1000,
+      height = canvas.height || 800,
+      smallGridSize = 20,
       largeGridSize = 100,
       smallGridColor = "rgba(200,200,200,0.3)",
-      largeGridColor = "rgba(150,150,150,0.5)",
+      largeGridColor = "rgba(100,100,100,0.6)",
       smallGridOpacity = 0.3,
-      largeGridOpacity = 0.5
+      largeGridOpacity = 0.6,
+      showMarkers = true
     } = options;
     
     const gridObjects: FabricObject[] = [];
     
-    // Create minimal grid with just large grid lines for performance
+    // Create large grid lines (primary lines)
     for (let i = 0; i <= width; i += largeGridSize) {
       const line = new Line([i, 0, i, height], {
         stroke: largeGridColor,
         selectable: false,
         evented: false,
         opacity: largeGridOpacity,
-        strokeWidth: 1
+        strokeWidth: 1,
+        objectCaching: false
       });
       gridObjects.push(line);
       canvas.add(line);
+      
+      // Add text markers at major grid lines
+      if (showMarkers && i > 0) {
+        const text = new Text(`${i / 100}m`, {
+          left: i,
+          top: 10,
+          fontSize: 12,
+          fill: largeGridColor,
+          selectable: false,
+          evented: false,
+          objectCaching: false
+        });
+        gridObjects.push(text);
+        canvas.add(text);
+      }
     }
     
     for (let i = 0; i <= height; i += largeGridSize) {
@@ -72,13 +89,70 @@ export const createEmergencyGrid = (
         selectable: false,
         evented: false,
         opacity: largeGridOpacity,
-        strokeWidth: 1
+        strokeWidth: 1,
+        objectCaching: false
       });
       gridObjects.push(line);
       canvas.add(line);
+      
+      // Add text markers at major grid lines
+      if (showMarkers && i > 0) {
+        const text = new Text(`${i / 100}m`, {
+          left: 10,
+          top: i,
+          fontSize: 12,
+          fill: largeGridColor,
+          selectable: false,
+          evented: false,
+          objectCaching: false
+        });
+        gridObjects.push(text);
+        canvas.add(text);
+      }
     }
     
-    logger.info(`Emergency grid created with ${gridObjects.length} lines`);
+    // Create small grid lines (less important, for fine measurements)
+    // Only add a limited number for performance
+    const maxSmallLines = 100; // Limit to prevent performance issues
+    let smallLinesAdded = 0;
+    
+    for (let i = 0; i <= width && smallLinesAdded < maxSmallLines; i += smallGridSize) {
+      // Skip if this is already a large grid line
+      if (i % largeGridSize === 0) continue;
+      
+      const line = new Line([i, 0, i, height], {
+        stroke: smallGridColor,
+        selectable: false,
+        evented: false,
+        opacity: smallGridOpacity,
+        strokeWidth: 0.5,
+        objectCaching: false
+      });
+      gridObjects.push(line);
+      canvas.add(line);
+      smallLinesAdded++;
+    }
+    
+    for (let i = 0; i <= height && smallLinesAdded < maxSmallLines; i += smallGridSize) {
+      // Skip if this is already a large grid line
+      if (i % largeGridSize === 0) continue;
+      
+      const line = new Line([0, i, width, i], {
+        stroke: smallGridColor,
+        selectable: false,
+        evented: false,
+        opacity: smallGridOpacity,
+        strokeWidth: 0.5,
+        objectCaching: false
+      });
+      gridObjects.push(line);
+      canvas.add(line);
+      smallLinesAdded++;
+    }
+    
+    logger.info(`Emergency grid created with ${gridObjects.length} objects (${smallLinesAdded} small lines)`);
+    
+    // Force redraw
     canvas.requestRenderAll();
     
     return gridObjects;
@@ -86,35 +160,4 @@ export const createEmergencyGrid = (
     logger.error("Emergency grid creation failed with error:", error);
     return [];
   }
-};
-
-/**
- * Reset grid creation state after failures
- * @param {GridCreationState} gridCreationState - Current grid creation state
- * @returns {GridCreationState} Reset grid creation state
- */
-export const resetGridCreationState = (
-  gridCreationState: GridCreationState
-): GridCreationState => {
-  return {
-    ...gridCreationState,
-    creationInProgress: false,
-    lastAttemptTime: Date.now(),
-    consecutiveResets: gridCreationState.consecutiveResets + 1,
-    safetyTimeout: null
-  };
-};
-
-/**
- * Determine if emergency grid creation should be triggered
- * @param {GridCreationState} gridCreationState - Current grid creation state
- * @returns {boolean} Whether emergency grid should be used
- */
-export const shouldUseEmergencyGrid = (
-  gridCreationState: GridCreationState
-): boolean => {
-  return (
-    !gridCreationState.exists &&
-    gridCreationState.consecutiveResets >= gridCreationState.maxConsecutiveResets
-  );
 };
