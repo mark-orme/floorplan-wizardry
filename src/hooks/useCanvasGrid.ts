@@ -129,8 +129,9 @@ export const useCanvasGrid = ({
       return gridLayerRef.current;
     }
     
+    // Extra Validation: Check if canvas has required methods
     if (typeof canvas.getWidth !== "function" || typeof canvas.getHeight !== "function") {
-      logger.error("createGrid: Invalid canvas instance - missing getWidth/getHeight methods");
+      logger.error("🛑 createGrid: Invalid canvas instance - missing getWidth/getHeight methods");
       return gridLayerRef.current;
     }
     

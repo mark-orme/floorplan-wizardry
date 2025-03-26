@@ -4,7 +4,6 @@ import { Canvas as FabricCanvas } from "fabric";
 import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
 import { DebugInfoState } from "@/types/debugTypes";
 import { DrawingTool } from "@/hooks/useCanvasState";
-import { Point } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
 
@@ -51,14 +50,20 @@ export const useCanvasControllerSetup = ({
         setErrorMessage("Canvas element not found in DOM. Please refresh the page.");
       } else {
         logger.info("Canvas element found in DOM");
+        console.log("🧱 canvasRef:", canvasRef.current);
+        console.log("📐 Dimensions:", canvasRef.current.width, canvasRef.current.height);
       }
       
       if (!fabricCanvasRef.current) {
         logger.warn("Fabric canvas not initialized");
         setHasError(true);
         setErrorMessage("Canvas initialization failed. Please refresh the page and try again.");
+        console.log("🎨 fabricCanvasRef is null");
       } else {
         logger.info("Canvas setup complete with dimensions:", canvasDimensions);
+        console.log("🎨 fabricCanvasRef:", fabricCanvasRef.current);
+        console.log("🧮 Objects on canvas:", fabricCanvasRef.current.getObjects()?.length);
+        
         // Check if the canvas has valid dimensions
         if (fabricCanvasRef.current.width === 0 || fabricCanvasRef.current.height === 0) {
           logger.warn("Fabric canvas has zero dimensions:", {

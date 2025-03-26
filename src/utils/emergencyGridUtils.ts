@@ -1,3 +1,4 @@
+
 /**
  * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
@@ -220,6 +221,7 @@ export const createEmergencyGrid = (
       setTimeout(() => {
         if (canvas) {
           canvas.renderAll();
+          console.log("EMERGENCY GRID: Forced second render after delay");
         }
       }, 500);
     }
