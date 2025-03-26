@@ -110,8 +110,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     handleRedo,
     handleMouseDown,
     handleMouseMove,
-    // Fix: Updated to match the expected function signature
-    handleMouseUp: handleMouseUp,
+    handleMouseUp,
     processCreatedPath,
     cleanupTimeouts,
     deleteSelectedObjects
