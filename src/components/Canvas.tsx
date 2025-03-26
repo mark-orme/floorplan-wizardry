@@ -27,6 +27,7 @@ export const Canvas: React.FC = () => {
   const circuitBreakerTimerRef = useRef<NodeJS.Timeout | null>(null);
   const errorDetailsRef = useRef<string[]>([]);
   const [diagnosticData, setDiagnosticData] = useState<Record<string, any>>({});
+  const forceEmergencyRef = useRef<boolean>(false);
   
   // Collect diagnostic data to help debug initialization issues
   useEffect(() => {
@@ -79,6 +80,31 @@ export const Canvas: React.FC = () => {
     collectDiagnosticInfo();
   }, [debugInfo, failedAttempts, canvasRef, hasError]);
   
+  // Force emergency canvas on special error case
+  useEffect(() => {
+    if (hasError) {
+      const errorMsg = errorDetailsRef.current[errorDetailsRef.current.length - 1] || '';
+      // Check for special error message that indicates we need to use emergency canvas
+      if (errorMsg.includes('Canvas initialization failed after multiple attempts') ||
+          errorMsg.includes('blocked after') ||
+          errorMsg.includes('Too many canvas initialization attempts')) {
+        logger.warn('Initialization blocked, forcing emergency canvas');
+        forceEmergencyRef.current = true;
+        setUseEmergencyCanvas(true);
+        
+        // Report this specific case
+        captureError(
+          new Error('Canvas initialization blocked, forcing emergency mode'),
+          'canvas-forced-emergency',
+          {
+            level: 'warning',
+            extra: { diagnosticData, errorHistory: errorDetailsRef.current }
+          }
+        );
+      }
+    }
+  }, [hasError, diagnosticData]);
+  
   // Track errors and switch to emergency canvas after too many failures
   useEffect(() => {
     if (hasError) {
@@ -116,8 +142,8 @@ export const Canvas: React.FC = () => {
         
         logger.warn(`Canvas initialization failed (attempt ${newCount})`);
         
-        // If we have 3+ errors in 2 seconds or 3+ total failures, switch to emergency canvas
-        if (recentErrors.length >= 3 || newCount >= 3) {
+        // If we have 3+ errors in 2 seconds or 2+ total failures, switch to emergency canvas
+        if (recentErrors.length >= 2 || newCount >= 2 || forceEmergencyRef.current) {
           logger.error('Too many canvas failures, switching to emergency canvas', {
             errorCount: newCount,
             recentErrors: recentErrors.length,
@@ -158,7 +184,7 @@ export const Canvas: React.FC = () => {
   
   // Set a circuit breaker to automatically try again after 30 seconds
   useEffect(() => {
-    if (useEmergencyCanvas) {
+    if (useEmergencyCanvas && !forceEmergencyRef.current) {
       // Clear any existing timer
       if (circuitBreakerTimerRef.current) {
         clearTimeout(circuitBreakerTimerRef.current);
@@ -185,6 +211,14 @@ export const Canvas: React.FC = () => {
   
   // Handle retry from emergency canvas
   const handleEmergencyRetry = () => {
+    // If we specifically detected a blocking condition, don't allow retries
+    if (forceEmergencyRef.current) {
+      toast.info('Canvas initialization is blocked. Please refresh the page to try again.', {
+        duration: 5000
+      });
+      return;
+    }
+    
     logger.info('Manual retry requested from emergency canvas');
     attemptTimestampsRef.current = []; // Clear error history
     errorDetailsRef.current = []; // Clear error details
@@ -208,6 +242,8 @@ export const Canvas: React.FC = () => {
         <EmergencyCanvas 
           onRetry={handleEmergencyRetry} 
           diagnosticData={diagnosticData} 
+          width={800}
+          height={600}
         />
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded text-xs font-mono max-h-40 overflow-auto">

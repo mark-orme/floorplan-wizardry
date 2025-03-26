@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for initializing Fabric.js canvas
  * @module useCanvasCreation
@@ -11,6 +10,7 @@ import { useCanvasCleanup } from "./useCanvasCleanup";
 import logger from "@/utils/logger";
 import { forceResetCanvasElement } from "@/utils/gridCreationUtils";
 import { forceCleanCanvasElement, isCanvasElementInitialized } from "@/utils/fabricCanvas";
+import { captureError } from "@/utils/sentryUtils";
 
 /**
  * Props for useCanvasCreation hook
@@ -55,7 +55,10 @@ export const useCanvasCreation = ({
     cleanupCanvas, 
     isCanvasElementInitialized: checkCanvasElementInitialized, 
     markCanvasAsInitialized,
-    forceCleanCanvasElement: cleanup
+    forceCleanCanvasElement: cleanup,
+    trackInitializationAttempt,
+    resetInitializationAttempts,
+    getInitializationAttempts
   } = useCanvasCleanup();
 
   // This effect will ensure we clean up any timeouts when the component unmounts
@@ -115,6 +118,45 @@ export const useCanvasCreation = ({
 
   // Initialize canvas with performance optimizations and duplicate initialization checks
   const initializeCanvas = useCallback((): FabricCanvas | null => {
+    // Check if we should allow this initialization attempt
+    if (!trackInitializationAttempt()) {
+      // If we've exceeded max attempts, try to reset the counter
+      // but only show the emergency canvas after this
+      if (getInitializationAttempts() > 5) {
+        logger.warn("Max initialization attempts exceeded, emergency canvas may be needed");
+        
+        // Report critical error to help debug
+        captureError(
+          new Error(`Canvas initialization blocked after ${getInitializationAttempts()} attempts`),
+          'canvas-initialization-blocked',
+          {
+            level: 'error',
+            extra: { 
+              canvasInfo: canvasRef.current ? {
+                id: canvasRef.current.id,
+                width: canvasRef.current.width,
+                height: canvasRef.current.height
+              } : 'No canvas element'
+            }
+          }
+        );
+        
+        // Set error to trigger emergency canvas
+        setHasError(true);
+        setErrorMessage("Canvas initialization failed after multiple attempts. Using emergency mode.");
+        return null;
+      }
+      
+      // Try to reset the counter if we're blocked
+      const resetSuccessful = resetInitializationAttempts();
+      if (!resetSuccessful) {
+        // If we can't reset yet, we need to bail out with an error
+        setHasError(true);
+        setErrorMessage("Canvas initialization temporarily blocked. Please wait a moment.");
+        return null;
+      }
+    }
+
     if (!canvasRef.current) {
       console.warn("Canvas reference is not available yet");
       
@@ -306,7 +348,10 @@ export const useCanvasCreation = ({
     cleanupCanvas, 
     checkCanvasElementInitialized, 
     markCanvasAsInitialized, 
-    cleanup
+    cleanup,
+    trackInitializationAttempt,
+    resetInitializationAttempts,
+    getInitializationAttempts
   ]);
 
   return {

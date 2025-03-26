@@ -3,9 +3,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Button } from './ui/button';
-import { RefreshCw, AlertCircle, Bug } from 'lucide-react';
+import { RefreshCw, AlertCircle, Bug, Download } from 'lucide-react';
 import logger from '@/utils/logger';
 import { captureError } from '@/utils/sentryUtils';
+import { toast } from 'sonner';
 
 interface EmergencyCanvasProps {
   onRetry?: () => void;
@@ -28,6 +29,25 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGridRendered, setIsGridRendered] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [canRetry, setCanRetry] = useState(true);
+  
+  // Check if retry is blocked by initialization attempts counter
+  useEffect(() => {
+    // Look for specific error patterns that indicate a retry would be pointless
+    const errorHistory = diagnosticData.errorStack || [];
+    const isBlocked = errorHistory.some((err: string) => 
+      err.includes('Too many canvas initialization attempts') ||
+      err.includes('Canvas initialization blocked')
+    );
+    
+    if (isBlocked) {
+      setCanRetry(false);
+      toast.warning("Canvas initialization is blocked. Please refresh the page to try again.", {
+        id: "canvas-blocked",
+        duration: 5000
+      });
+    }
+  }, [diagnosticData]);
   
   // Draw a simple grid using plain Canvas API
   useEffect(() => {
@@ -129,7 +149,12 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
       // Add explanation
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.font = '14px sans-serif';
-      const subText = 'Canvas initialization failed. Using simplified mode.';
+      
+      // Choose the appropriate message based on retry availability
+      const subText = canRetry 
+        ? 'Canvas initialization failed. Using simplified mode.' 
+        : 'Canvas blocked. Please refresh the page.';
+      
       const subTextWidth = ctx.measureText(subText).width;
       ctx.fillText(subText, (width - subTextWidth) / 2, height / 2 + 15);
       
@@ -150,10 +175,30 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
         extra: { diagnosticData }
       });
     }
-  }, [width, height, diagnosticData]);
+  }, [width, height, diagnosticData, canRetry]);
   
   const toggleDebugInfo = () => {
     setShowDebug(prev => !prev);
+  };
+  
+  // Function to download diagnostic data for debugging
+  const downloadDiagnosticData = () => {
+    try {
+      const dataStr = JSON.stringify(diagnosticData, null, 2);
+      const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+      
+      const exportName = `canvas-diagnostics-${new Date().toISOString()}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportName);
+      linkElement.click();
+      
+      toast.success('Diagnostic data downloaded');
+    } catch (error) {
+      toast.error('Failed to download diagnostic data');
+      console.error('Error downloading diagnostic data:', error);
+    }
   };
   
   return (
@@ -174,21 +219,25 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
         <AlertTitle>Canvas Error</AlertTitle>
         <AlertDescription>
           <p className="mb-2">
-            The main canvas failed to initialize after multiple attempts. Using simplified backup mode.
+            {canRetry 
+              ? "The main canvas failed to initialize after multiple attempts. Using simplified backup mode."
+              : "Canvas initialization is blocked due to too many failed attempts. Please refresh the page."}
           </p>
           <p className="text-sm text-muted-foreground mb-4">
             Note: Drawing functionality is limited in emergency mode.
           </p>
           <div className="flex gap-3 mt-4">
-            <Button 
-              variant="outline" 
-              onClick={onRetry} 
-              className="flex items-center gap-2"
-              disabled={!isGridRendered}
-            >
-              <RefreshCw size={16} />
-              Retry with main canvas
-            </Button>
+            {canRetry && (
+              <Button 
+                variant="outline" 
+                onClick={onRetry} 
+                className="flex items-center gap-2"
+                disabled={!isGridRendered}
+              >
+                <RefreshCw size={16} />
+                Retry with main canvas
+              </Button>
+            )}
             
             <Button
               variant="ghost"
@@ -198,6 +247,16 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
             >
               <Bug size={16} />
               {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              onClick={downloadDiagnosticData}
+              className="flex items-center gap-2"
+              size="sm"
+            >
+              <Download size={16} />
+              Download Diagnostics
             </Button>
           </div>
         </AlertDescription>
