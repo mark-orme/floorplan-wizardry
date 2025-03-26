@@ -11,8 +11,11 @@
 if (typeof window !== 'undefined') {
   // Mock canvas methods that jsdom doesn't implement
   if (!HTMLCanvasElement.prototype.getContext) {
-    HTMLCanvasElement.prototype.getContext = function(contextId: string, options?: any) {
-      // Only mock 2d context
+    HTMLCanvasElement.prototype.getContext = function(
+      contextId: "2d" | "bitmaprenderer" | "webgl" | "webgl2", 
+      options?: any
+    ): CanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | null {
+      // Mock 2d context
       if (contextId === '2d') {
         // Create a partial implementation that satisfies TypeScript
         const ctx = {
@@ -93,6 +96,32 @@ if (typeof window !== 'undefined') {
         // Use type assertion to tell TypeScript this partial implementation is sufficient
         return ctx as unknown as CanvasRenderingContext2D;
       }
+      // Mock bitmaprenderer context
+      else if (contextId === 'bitmaprenderer') {
+        return {
+          canvas: this,
+          transferFromImageBitmap: function() {}
+        } as unknown as ImageBitmapRenderingContext;
+      }
+      // Mock webgl context
+      else if (contextId === 'webgl') {
+        return {
+          canvas: this,
+          // Add minimum WebGL context properties
+          drawingBufferWidth: 0,
+          drawingBufferHeight: 0
+        } as unknown as WebGLRenderingContext;
+      }
+      // Mock webgl2 context
+      else if (contextId === 'webgl2') {
+        return {
+          canvas: this,
+          // Add minimum WebGL2 context properties
+          drawingBufferWidth: 0,
+          drawingBufferHeight: 0
+        } as unknown as WebGL2RenderingContext;
+      }
+      
       return null;
     };
   }
