@@ -10,6 +10,7 @@ import { usePropertyBase } from './usePropertyBase';
  * Hook for property creation operations
  */
 export const usePropertyCreate = () => {
+  // Always call hooks unconditionally at the top level
   const { user, isLoading, setIsLoading, checkAuthentication } = usePropertyBase();
 
   /**

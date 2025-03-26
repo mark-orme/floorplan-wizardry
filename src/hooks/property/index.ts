@@ -19,7 +19,7 @@ import { usePropertyFloorPlan } from './usePropertyFloorPlan';
  * but with better internal organization
  */
 export const usePropertyManagement = () => {
-  // Initialize all the specialized hooks
+  // Initialize all the specialized hooks - always at the top level
   const { isLoading: createLoading, createProperty } = usePropertyCreate();
   const { 
     properties, 

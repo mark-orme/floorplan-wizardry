@@ -9,7 +9,7 @@ import { usePropertyManagement } from '@/hooks/usePropertyManagement';
  * This maintains the same API as the original usePropertyPage hook
  */
 export const usePropertyPage = () => {
-  // Initialize all the specialized hooks
+  // Initialize all the specialized hooks - always at the top level in a consistent order
   const { authState, hasError: authError, setHasError: setAuthError, navigate } = usePropertyPageAuth();
   
   const { 
@@ -23,7 +23,9 @@ export const usePropertyPage = () => {
     handleRetry
   } = usePropertyPageData(authState.user);
 
-  const { listProperties } = usePropertyManagement();
+  // Make sure we initialize hooks unconditionally
+  const propertyManagement = usePropertyManagement();
+  const { listProperties } = propertyManagement;
   
   const {
     handleRowClick,

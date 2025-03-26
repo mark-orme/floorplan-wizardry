@@ -10,6 +10,7 @@ import { UserRole } from '@/lib/supabase';
  * Hook for property query operations (listing and fetching)
  */
 export const usePropertyQuery = () => {
+  // Always call hooks unconditionally at the top level
   const { user, userRole, isLoading, setIsLoading, checkAuthentication } = usePropertyBase();
   const [properties, setProperties] = useState<PropertyListItem[]>([]);
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);

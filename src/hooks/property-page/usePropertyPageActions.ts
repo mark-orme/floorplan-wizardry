@@ -11,6 +11,7 @@ export const usePropertyPageActions = (
   user: any,
   listProperties: () => Promise<any>
 ) => {
+  // Always call hooks at the top level
   const navigate = useNavigate();
 
   const handleRowClick = useCallback((id: string) => {
