@@ -66,6 +66,8 @@ export const useGridCreation = ({
     console.log("🎨 createGridCallback invoked with canvas dimensions", {
       canvasDimensions,
       gridExists: gridLayerRef?.current?.length > 0,
+      canvasWidth: canvas?.width,
+      canvasHeight: canvas?.height,
       initialized: (canvas as any).initialized
     });
     
@@ -119,6 +121,16 @@ export const useGridCreation = ({
         setHasError, 
         setErrorMessage
       );
+      
+      // IMPROVED: More detailed logging of grid creation results
+      console.log("⚠️ createGrid returned:", {
+        gridObjectCount: grid?.length || 0,
+        firstObject: grid && grid.length > 0 ? {
+          type: grid[0].type,
+          selectable: grid[0].selectable,
+          visible: grid[0].visible
+        } : 'No objects created'
+      });
       
       if (grid && grid.length > 0) {
         console.log(`✅ Grid created successfully with ${grid.length} objects`);

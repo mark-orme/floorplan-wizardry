@@ -12,6 +12,7 @@ import { handleGridCreationError } from "./grid/gridErrorHandling";
 import { acquireGridLockWithSafety, cleanupGridResources } from "./grid/gridSafety";
 import logger from "./logger";
 import { DebugInfoState } from "@/types/debugTypes";
+import { toast } from "sonner";
 
 /**
  * Create grid lines for the canvas
@@ -35,10 +36,18 @@ export const createGrid = (
 ): FabricObject[] => {
   if (process.env.NODE_ENV === 'development') {
     logger.debug("createGrid called with dimensions:", canvasDimensions);
+    console.log("🌐 createGrid called with canvas dimensions:", {
+      width: canvas?.width,
+      height: canvas?.height,
+      getWidth: canvas?.getWidth?.(),
+      getHeight: canvas?.getHeight?.(),
+      provided: canvasDimensions
+    });
   }
   
   // Validate inputs first
   if (!validateCanvasForGrid(canvas, gridLayerRef, canvasDimensions)) {
+    console.error("❌ Grid validation failed, cannot create grid");
     return gridLayerRef.current;
   }
   
@@ -52,44 +61,50 @@ export const createGrid = (
     return gridLayerRef.current;
   }
   
-  // Add a small delay before attempting to acquire a lock to prevent race conditions
-  setTimeout(() => {
-    // Acquire lock with safety timeout
-    const lockInfo = acquireGridLockWithSafety();
-    if (!lockInfo) {
-      return gridLayerRef.current;
-    }
+  try {
+    // Create the grid layer directly - immediate mode for better reliability
+    const gridObjects = createGridLayer(canvas, gridLayerRef, canvasDimensions, setDebugInfo);
     
-    const { lockId, safetyTimeoutId } = lockInfo;
-    
-    try {
-      // Create the grid layer
-      createGridLayer(canvas, gridLayerRef, canvasDimensions, setDebugInfo);
+    if (!gridObjects || gridObjects.length === 0) {
+      logger.error("⚠️ createGridLayer returned empty array, trying fallback");
+      console.error("⚠️ Grid creation failed: createGridLayer returned no objects");
       
-      // Force a render
-      canvas.requestRenderAll();
+      // Try fallback grid immediately
+      const fallbackGrid = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
       
-      // Clean up resources
-      cleanupGridResources(lockId, safetyTimeoutId);
-      
-      return gridLayerRef.current;
-    } catch (error) {
-      // Handle errors
-      if (error instanceof Error) {
-        handleGridCreationError(error, setHasError, setErrorMessage);
-      } else {
-        handleGridCreationError(new Error('Unknown error during grid creation'), setHasError, setErrorMessage);
+      if (!fallbackGrid || fallbackGrid.length === 0) {
+        toast.error("Grid creation failed - no objects could be created");
+        setHasError(true);
+        setErrorMessage("Failed to create grid with both normal and fallback methods");
       }
       
-      // Clean up resources
-      cleanupGridResources(lockId, safetyTimeoutId);
-      
+      return fallbackGrid;
+    }
+    
+    // Force a render
+    canvas.requestRenderAll();
+    
+    return gridObjects;
+  } catch (error) {
+    // Handle errors
+    if (error instanceof Error) {
+      handleGridCreationError(error, setHasError, setErrorMessage);
+      console.error("❌ Grid creation error:", error.message);
+    } else {
+      handleGridCreationError(new Error('Unknown error during grid creation'), setHasError, setErrorMessage);
+      console.error("❌ Unknown grid creation error");
+    }
+    
+    // Try fallback grid on error
+    try {
+      logger.info("Attempting fallback grid after error");
+      return createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
+    } catch (fallbackError) {
+      logger.error("Even fallback grid creation failed:", fallbackError);
+      toast.error("All grid creation methods failed");
       return [];
     }
-  }, 100); // Increased delay from 50ms to 100ms to reduce rapid creation attempts
-  
-  // Return current grid until the async creation completes
-  return gridLayerRef.current;
+  }
 };
 
 // Re-export all grid utility functions for easier imports

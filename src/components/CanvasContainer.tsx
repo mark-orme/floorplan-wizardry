@@ -45,24 +45,6 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
       canvasSize: { width: number; height: number } | null;
     }>>([]);
     
-    // Forward the ref to the container div or use our local ref
-    // Handle both function refs and object refs safely
-    const divRef = useRef<HTMLDivElement>(null);
-    
-    // Effect to handle ref forwarding properly
-    useEffect(() => {
-      if (!ref) return;
-      
-      // Handle the ref properly based on its type
-      if (typeof ref === 'function') {
-        // If it's a function ref, call it with the current div
-        ref(containerRef.current);
-      } else {
-        // If it's an object ref, set its current property
-        ref.current = containerRef.current;
-      }
-    }, [ref]);
-    
     // Force initialization after render to ensure canvas has dimensions
     useEffect(() => {
       const setupCanvasDimensions = () => {
@@ -107,6 +89,14 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
               
               // Signal that canvas is ready after dimensions are set
               setCanvasReady(true);
+              
+              // Log success for debugging
+              console.log("✅ Canvas dimensions set successfully:", {
+                width: canvasReference.current.width,
+                height: canvasReference.current.height,
+                containerWidth: containerRect.width,
+                containerHeight: containerRect.height
+              });
             } else {
               // Use fallback dimensions if container dimensions aren't available
               logger.warn("Container dimensions are zero, using fallback dimensions", {
@@ -181,6 +171,20 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
         }
       };
     }, [canvasReference, dimensionsSetupAttempt]);
+
+    // Effect to handle ref forwarding properly
+    useEffect(() => {
+      if (!ref) return;
+      
+      // Handle the ref properly based on its type
+      if (typeof ref === 'function') {
+        // If it's a function ref, call it with the current div
+        ref(containerRef.current);
+      } else {
+        // If it's an object ref, set its current property
+        ref.current = containerRef.current;
+      }
+    }, [ref]);
 
     return (
       <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible h-full">
