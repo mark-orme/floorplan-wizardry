@@ -1,79 +1,143 @@
 
 /**
  * Grid safety hook
- * Provides safety mechanisms for grid operations
+ * Manages safety mechanisms for grid creation
  * @module useGridSafety
  */
-import { useCallback } from "react";
-import { Object as FabricObject } from "fabric";
+import { useCallback, useRef } from "react";
 import logger from "@/utils/logger";
 
 /**
- * Safety timeout in milliseconds to prevent infinite loops
+ * Default safety timeout duration in milliseconds
+ * @constant {number}
  */
-const SAFETY_TIMEOUT = 5000;
+const DEFAULT_SAFETY_TIMEOUT = 5000; // 5 seconds
 
 /**
- * Hook for grid operation safety
- * Prevents infinite loops and provides error boundaries for grid operations
+ * Hook for managing grid creation safety
+ * Implements lock mechanism and safety timeouts
  * 
- * @returns {Object} Safety utility functions
+ * @returns {Object} Safety management functions
  */
 export const useGridSafety = () => {
+  // Safety state refs
+  const safetyTimeoutRef = useRef<number | null>(null);
+  const creationLockRef = useRef<{
+    id: number;
+    isLocked: boolean;
+    timestamp: number;
+  }>({ id: 0, isLocked: false, timestamp: 0 });
+  
   /**
-   * Perform a grid operation with safety mechanisms
-   * Provides timeout protection and error handling
+   * Acquire a safety lock for grid creation
+   * Prevents concurrent grid creation operations
    * 
-   * @param {Function} operation - The operation to perform
-   * @param {string} operationName - Name of the operation for logging
-   * @param {FabricObject[]} fallbackResult - Fallback result if operation fails
-   * @returns {FabricObject[]} Result of the operation or fallback
+   * @param {number} [timeout] - Custom timeout duration
+   * @returns {Object|null} Lock information or null if couldn't acquire
    */
-  const safeGridOperation = useCallback(<T extends FabricObject[]>(
-    operation: () => T,
-    operationName: string,
-    fallbackResult: T
-  ): T => {
-    // Use a timeout to prevent infinite loops
-    let operationComplete = false;
-    let timeoutId: number | null = null;
-    
-    try {
-      // Set safety timeout
-      timeoutId = window.setTimeout(() => {
-        if (!operationComplete) {
-          logger.error(`Operation "${operationName}" timed out after ${SAFETY_TIMEOUT}ms`);
-          operationComplete = true;
-        }
-      }, SAFETY_TIMEOUT);
-      
-      // Perform the operation
-      const result = operation();
-      
-      // Mark as complete
-      operationComplete = true;
-      
-      // Clear safety timeout
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-      }
-      
-      return result;
-    } catch (error) {
-      // Mark as complete
-      operationComplete = true;
-      
-      // Clear safety timeout
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-      }
-      
-      logger.error(`Error in grid operation "${operationName}":`, error);
-      return fallbackResult;
+  const acquireSafetyLock = useCallback((
+    timeout: number = DEFAULT_SAFETY_TIMEOUT
+  ): { lockId: number; safetyTimeoutId: number } | null => {
+    // Check if lock is already held
+    if (creationLockRef.current.isLocked) {
+      logger.debug("Grid creation lock already held, can't acquire new lock");
+      return null;
     }
+    
+    // Clear any existing timeout
+    if (safetyTimeoutRef.current !== null) {
+      window.clearTimeout(safetyTimeoutRef.current);
+    }
+    
+    // Generate a new lock ID
+    const lockId = Math.floor(Math.random() * 1000000);
+    
+    // Set the lock
+    creationLockRef.current = {
+      id: lockId,
+      isLocked: true,
+      timestamp: Date.now()
+    };
+    
+    // Set up safety timeout to release lock automatically
+    const safetyTimeoutId = window.setTimeout(() => {
+      logger.warn(`Grid creation safety timeout triggered after ${timeout}ms`);
+      releaseSafetyLock(lockId);
+    }, timeout);
+    
+    // Store timeout ID
+    safetyTimeoutRef.current = safetyTimeoutId;
+    
+    logger.debug(`Grid creation safety lock acquired: ${lockId}, timeout: ${timeout}ms`);
+    
+    return { lockId, safetyTimeoutId };
+  }, []);
+  
+  /**
+   * Release a safety lock
+   * Clears timeout and releases lock
+   * 
+   * @param {number} lockId - ID of the lock to release
+   * @returns {boolean} Whether lock was successfully released
+   */
+  const releaseSafetyLock = useCallback((lockId: number): boolean => {
+    // Verify lock ID matches
+    if (creationLockRef.current.id !== lockId) {
+      logger.warn(`Attempted to release grid creation lock with incorrect ID: ${lockId} vs ${creationLockRef.current.id}`);
+      return false;
+    }
+    
+    // Clear safety timeout
+    if (safetyTimeoutRef.current !== null) {
+      window.clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
+    
+    // Release the lock
+    creationLockRef.current = {
+      id: 0,
+      isLocked: false,
+      timestamp: 0
+    };
+    
+    logger.debug(`Grid creation safety lock released: ${lockId}`);
+    
+    return true;
+  }, []);
+  
+  /**
+   * Check if safety lock is held
+   * @returns {boolean} Whether lock is currently held
+   */
+  const isSafetyLockHeld = useCallback((): boolean => {
+    return creationLockRef.current.isLocked;
+  }, []);
+  
+  /**
+   * Reset safety state
+   * Clears timeout and releases any held lock
+   */
+  const resetSafetyState = useCallback((): void => {
+    // Clear safety timeout
+    if (safetyTimeoutRef.current !== null) {
+      window.clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
+    
+    // Reset lock
+    creationLockRef.current = {
+      id: 0,
+      isLocked: false,
+      timestamp: 0
+    };
+    
+    logger.debug("Grid creation safety state reset");
   }, []);
   
   return {
-    safeGridOperation
+    acquireSafetyLock,
+    releaseSafetyLock,
+    isSafetyLockHeld,
+    resetSafetyState
   };
 };

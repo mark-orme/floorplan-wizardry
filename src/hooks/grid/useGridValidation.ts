@@ -16,6 +16,8 @@ import logger from "@/utils/logger";
 export const useGridValidation = () => {
   /**
    * Validate grid components before grid creation
+   * Verifies required browser APIs and environment compatibility
+   * 
    * @returns {boolean} True if validation passes
    */
   const validateGridComponents = useCallback((): boolean => {
@@ -44,6 +46,8 @@ export const useGridValidation = () => {
   
   /**
    * Ensure grid layer reference is initialized
+   * Prepares the environment for grid creation
+   * This is a no-op in the current implementation
    */
   const ensureGridLayerInitialized = useCallback((): void => {
     // This is a no-op in this implementation, but could

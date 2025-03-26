@@ -1,202 +1,192 @@
 
 /**
- * Logger utility for consistent application logging
- * Provides log level control and formatting
+ * Logging utility module
+ * Provides consistent logging functionality throughout the application
  * @module logger
  */
 
 /**
- * Log levels enum
+ * Log levels enumeration
+ * Defines the available logging levels in order of importance
  * @enum {number}
  */
 enum LogLevel {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-  NONE = 4
+  NONE = 0,   // No logging
+  ERROR = 1,  // Errors only
+  WARN = 2,   // Errors and warnings
+  INFO = 3,   // Errors, warnings, and information
+  DEBUG = 4,  // All logging including debug
+  TRACE = 5   // Detailed tracing (most verbose)
 }
 
 /**
- * Current log level for the application
- * Can be adjusted at runtime
+ * Current log level
+ * Set based on environment and user preferences
  * @type {LogLevel}
  */
-let currentLogLevel = import.meta.env.DEV ? LogLevel.DEBUG : LogLevel.WARN;
+let currentLogLevel: LogLevel = 
+  process.env.NODE_ENV === 'production' 
+    ? LogLevel.WARN    // Default to warnings and errors in production
+    : LogLevel.DEBUG;  // Full logging in development
 
 /**
- * Configuration for logger
- * @interface LoggerConfig
+ * Check if a specific log level is currently enabled
+ * @param {LogLevel} level - The log level to check
+ * @returns {boolean} Whether the level is enabled
  */
-interface LoggerConfig {
-  /** Whether to include timestamps in logs */
-  useTimestamps: boolean;
-  /** Whether to use colors in console logs */
-  useColors: boolean;
-  /** Whether to track log counts */
-  trackCounts: boolean;
-}
-
-/**
- * Logger configuration with default values
- * @type {LoggerConfig}
- */
-const config: LoggerConfig = {
-  useTimestamps: true,
-  useColors: true,
-  trackCounts: false
+const isLevelEnabled = (level: LogLevel): boolean => {
+  return level <= currentLogLevel;
 };
 
 /**
- * Counters for each log level
- * Used when trackCounts is enabled
+ * Set the current log level
+ * @param {LogLevel|string} level - The log level to set
  */
-const counts = {
-  debug: 0,
-  info: 0,
-  warn: 0,
-  error: 0
-};
-
-/**
- * Format a log message with timestamp and prefix
- * @param {string} level - Log level string
- * @param {string} message - Log message
- * @param {any[]} args - Additional arguments
- * @returns {[string, ...any[]]} Formatted message and arguments
- */
-const formatMessage = (level: string, message: string, ...args: any[]): [string, ...any[]] => {
-  let formattedMessage = message;
-  
-  // Add timestamp if enabled
-  if (config.useTimestamps) {
-    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    formattedMessage = `[${timestamp}] ${formattedMessage}`;
+const setLogLevel = (level: LogLevel | string): void => {
+  if (typeof level === 'string') {
+    // Convert string to enum value
+    const levelMap: Record<string, LogLevel> = {
+      'none': LogLevel.NONE,
+      'error': LogLevel.ERROR,
+      'warn': LogLevel.WARN,
+      'info': LogLevel.INFO,
+      'debug': LogLevel.DEBUG,
+      'trace': LogLevel.TRACE,
+    };
+    
+    currentLogLevel = levelMap[level.toLowerCase()] ?? LogLevel.INFO;
+  } else {
+    currentLogLevel = level;
   }
   
-  // Add level prefix
-  formattedMessage = `[${level.toUpperCase()}] ${formattedMessage}`;
+  // Log the level change (except in NONE mode)
+  if (currentLogLevel > LogLevel.NONE) {
+    console.log(`[Logger] Log level set to: ${LogLevel[currentLogLevel]}`);
+  }
+};
+
+/**
+ * Format log messages with consistent structure
+ * @param {string} level - Log level name
+ * @param {string} message - Main log message
+ * @param {any[]} args - Additional arguments to log
+ * @returns {[string, ...any[]]} Formatted message and arguments
+ */
+const formatLog = (level: string, message: string, args: any[]): [string, ...any[]] => {
+  const timestamp = new Date().toISOString().slice(11, 19); // HH:MM:SS
+  const formattedMessage = `[${timestamp}] [${level}] ${message}`;
   
   return [formattedMessage, ...args];
 };
 
 /**
- * Logger object with methods for different log levels
+ * Log an error message
+ * @param {string} message - Error message
+ * @param {...any} args - Additional arguments
  */
-const logger = {
-  /**
-   * Set the current log level
-   * @param {LogLevel} level - New log level
-   */
-  setLevel(level: LogLevel): void {
-    currentLogLevel = level;
-  },
-  
-  /**
-   * Get the current log level
-   * @returns {LogLevel} Current log level
-   */
-  getLevel(): LogLevel {
-    return currentLogLevel;
-  },
-  
-  /**
-   * Update logger configuration
-   * @param {Partial<LoggerConfig>} newConfig - New configuration options
-   */
-  configure(newConfig: Partial<LoggerConfig>): void {
-    Object.assign(config, newConfig);
-  },
-  
-  /**
-   * Get log counts for each level
-   * @returns {Record<string, number>} Log counts
-   */
-  getCounts(): Record<string, number> {
-    return { ...counts };
-  },
-  
-  /**
-   * Log a debug message
-   * @param {string} message - Message to log
-   * @param {...any} args - Additional arguments
-   */
-  debug(message: string, ...args: any[]): void {
-    if (currentLogLevel <= LogLevel.DEBUG) {
-      if (config.trackCounts) counts.debug++;
-      console.debug(...formatMessage('debug', message, ...args));
-    }
-  },
-  
-  /**
-   * Log an info message
-   * @param {string} message - Message to log
-   * @param {...any} args - Additional arguments
-   */
-  info(message: string, ...args: any[]): void {
-    if (currentLogLevel <= LogLevel.INFO) {
-      if (config.trackCounts) counts.info++;
-      console.info(...formatMessage('info', message, ...args));
-    }
-  },
-  
-  /**
-   * Log a warning message
-   * @param {string} message - Message to log
-   * @param {...any} args - Additional arguments
-   */
-  warn(message: string, ...args: any[]): void {
-    if (currentLogLevel <= LogLevel.WARN) {
-      if (config.trackCounts) counts.warn++;
-      console.warn(...formatMessage('warn', message, ...args));
-    }
-  },
-  
-  /**
-   * Log an error message
-   * @param {string} message - Message to log
-   * @param {...any} args - Additional arguments
-   */
-  error(message: string, ...args: any[]): void {
-    if (currentLogLevel <= LogLevel.ERROR) {
-      if (config.trackCounts) counts.error++;
-      console.error(...formatMessage('error', message, ...args));
-    }
-  },
-  
-  /**
-   * Group log messages into a collapsible section
-   * @param {string} label - Group label
-   * @param {LogLevel} level - Log level
-   */
-  group(label: string, level: LogLevel = LogLevel.DEBUG): void {
-    if (currentLogLevel <= level) {
-      console.group(label);
-    }
-  },
-  
-  /**
-   * Group log messages into a collapsed section
-   * @param {string} label - Group label
-   * @param {LogLevel} level - Log level
-   */
-  groupCollapsed(label: string, level: LogLevel = LogLevel.DEBUG): void {
-    if (currentLogLevel <= level) {
-      console.groupCollapsed(label);
-    }
-  },
-  
-  /**
-   * End the current log group
-   * @param {LogLevel} level - Log level
-   */
-  groupEnd(level: LogLevel = LogLevel.DEBUG): void {
-    if (currentLogLevel <= level) {
-      console.groupEnd();
-    }
+const error = (message: string, ...args: any[]): void => {
+  if (isLevelEnabled(LogLevel.ERROR)) {
+    console.error(...formatLog('ERROR', message, args));
   }
 };
 
-// Export default logger and log level enum
+/**
+ * Log a warning message
+ * @param {string} message - Warning message
+ * @param {...any} args - Additional arguments
+ */
+const warn = (message: string, ...args: any[]): void => {
+  if (isLevelEnabled(LogLevel.WARN)) {
+    console.warn(...formatLog('WARN', message, args));
+  }
+};
+
+/**
+ * Log an informational message
+ * @param {string} message - Info message
+ * @param {...any} args - Additional arguments
+ */
+const info = (message: string, ...args: any[]): void => {
+  if (isLevelEnabled(LogLevel.INFO)) {
+    console.info(...formatLog('INFO', message, args));
+  }
+};
+
+/**
+ * Log a debug message
+ * @param {string} message - Debug message
+ * @param {...any} args - Additional arguments
+ */
+const debug = (message: string, ...args: any[]): void => {
+  if (isLevelEnabled(LogLevel.DEBUG)) {
+    console.debug(...formatLog('DEBUG', message, args));
+  }
+};
+
+/**
+ * Log a detailed trace message
+ * @param {string} message - Trace message
+ * @param {...any} args - Additional arguments
+ */
+const trace = (message: string, ...args: any[]): void => {
+  if (isLevelEnabled(LogLevel.TRACE)) {
+    console.debug(...formatLog('TRACE', message, args));
+  }
+};
+
+/**
+ * Group related log messages together
+ * @param {string} label - Group label
+ * @param {Function} logFunction - Function containing grouped logs
+ */
+const group = (label: string, logFunction: () => void): void => {
+  if (isLevelEnabled(LogLevel.DEBUG)) {
+    console.group(`[Group] ${label}`);
+    try {
+      logFunction();
+    } finally {
+      console.groupEnd();
+    }
+  } else {
+    // Execute without grouping if debug not enabled
+    logFunction();
+  }
+};
+
+/**
+ * Measure execution time of a function
+ * @param {string} label - Label for the measurement
+ * @param {Function} fn - Function to measure
+ * @returns The return value of the measured function
+ */
+const time = <T>(label: string, fn: () => T): T => {
+  if (isLevelEnabled(LogLevel.DEBUG)) {
+    console.time(`[Time] ${label}`);
+    try {
+      return fn();
+    } finally {
+      console.timeEnd(`[Time] ${label}`);
+    }
+  } else {
+    // Execute without timing if debug not enabled
+    return fn();
+  }
+};
+
+/**
+ * Logger object with all available methods
+ */
+const logger = {
+  error,
+  warn,
+  info,
+  debug,
+  trace,
+  group,
+  time,
+  setLogLevel,
+  isLevelEnabled,
+  levels: LogLevel
+};
+
 export default logger;
-export { LogLevel };

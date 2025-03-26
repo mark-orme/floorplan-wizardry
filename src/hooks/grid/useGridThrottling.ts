@@ -9,11 +9,13 @@ import logger from "@/utils/logger";
 
 /**
  * Minimum time between grid creation attempts in milliseconds
+ * @constant {number}
  */
 const MIN_THROTTLE_INTERVAL = 1000;
 
 /**
  * Grid throttling state
+ * @type {Object}
  */
 let lastAttemptTime = 0;
 
@@ -26,6 +28,8 @@ let lastAttemptTime = 0;
 export const useGridThrottling = () => {
   /**
    * Check if grid creation should be throttled
+   * Compares current time with last attempt time
+   * 
    * @returns {boolean} True if creation should be throttled
    */
   const shouldThrottleCreation = useCallback((): boolean => {
@@ -42,6 +46,7 @@ export const useGridThrottling = () => {
   /**
    * Handle throttled grid creation
    * Updates the last attempt time and logs the throttling
+   * Called when a creation attempt is made but throttled
    */
   const handleThrottledCreation = useCallback((): void => {
     // Update the last attempt time
@@ -52,6 +57,8 @@ export const useGridThrottling = () => {
   
   /**
    * Clean up throttling state
+   * Resets the last attempt time
+   * Used when unmounting or resetting the component
    */
   const cleanup = useCallback((): void => {
     // Reset throttling state

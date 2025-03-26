@@ -1,235 +1,198 @@
 
 /**
- * Grid manager utility
- * Provides centralized management of grid creation state
+ * Grid manager module
+ * Central module for grid state management across the application
  * @module gridManager
  */
 
-import { CanvasDimensions } from "@/types/drawingTypes";
-
 /**
- * Interface for grid manager state
+ * Grid creation state object
+ * Maintains state for grid creation operations
+ * @type {Object}
  */
-export interface GridManagerState {
-  /** Whether grid creation is currently in progress */
-  creationInProgress: boolean;
-  
-  /** Number of consecutive reset attempts */
-  consecutiveResets: number;
-  
-  /** Maximum allowed consecutive resets before throttling */
-  maxConsecutiveResets: number;
-  
-  /** Last timestamp of grid creation attempt */
-  lastAttemptTime: number;
-  
-  /** Last timestamp of grid creation completion */
-  lastCreationTime: number;
-  
-  /** Whether the grid currently exists */
-  exists: boolean;
-  
-  /** Safety timeout period in milliseconds */
-  safetyTimeout: number;
-  
-  /** Throttle interval in milliseconds */
-  throttleInterval: number;
-  
-  /** Minimum recreation interval in milliseconds */
-  minRecreationInterval: number;
-  
-  /** Maximum number of allowed recreations */
-  maxRecreations: number;
-  
-  /** Total number of creation attempts */
-  totalCreations: number;
-  
-  /** Last dimensions used for grid creation */
-  lastDimensions: CanvasDimensions;
-  
-  /** Creation lock information */
-  creationLock: {
-    id: number;
-    timestamp: number;
-    isLocked: boolean;
-  }
-}
-
-/**
- * Grid creation progress tracking
- */
-export const gridManager: GridManagerState = {
-  /** Whether grid creation is currently in progress */
+export const gridManager = {
+  /**
+   * Whether grid creation is currently in progress
+   * @type {boolean}
+   */
   creationInProgress: false,
   
-  /** Number of consecutive reset attempts */
+  /**
+   * Count of consecutive times grid creation had to be reset
+   * Used for detecting problematic grid creation cycles
+   * @type {number}
+   */
   consecutiveResets: 0,
   
-  /** Maximum allowed consecutive resets before throttling */
+  /**
+   * Maximum allowable consecutive resets before emergency measures
+   * @type {number}
+   */
   maxConsecutiveResets: 5,
   
-  /** Last timestamp of grid creation attempt */
+  /**
+   * Timestamp of last grid creation attempt
+   * Used for throttling calculations
+   * @type {number}
+   */
   lastAttemptTime: 0,
   
-  /** Last timestamp of grid creation completion */
+  /**
+   * Timestamp of last successful grid creation
+   * Used for determining grid age and recreation timing
+   * @type {number}
+   */
   lastCreationTime: 0,
   
-  /** Whether the grid currently exists */
+  /**
+   * Whether a grid already exists on the canvas
+   * Prevents duplicate grid creation
+   * @type {boolean}
+   */
   exists: false,
   
-  /** Safety timeout period in milliseconds */
-  safetyTimeout: 5000,
+  /**
+   * Safety timeout ID for grid creation operations
+   * Used to automatically release locks in case of failures
+   * @type {number|null}
+   */
+  safetyTimeout: null,
   
-  /** Throttle interval in milliseconds */
-  throttleInterval: 2000,
+  /**
+   * Minimum time between grid creation attempts (ms)
+   * Controls throttling frequency
+   * @type {number}
+   */
+  throttleInterval: 1000,
   
-  /** Minimum recreation interval in milliseconds */
-  minRecreationInterval: 60000,
+  /**
+   * Minimum time between grid recreations (ms)
+   * Prevents excessive recreation during resize or other events
+   * @type {number}
+   */
+  minRecreationInterval: 500,
   
-  /** Maximum number of allowed recreations */
-  maxRecreations: 20,
+  /**
+   * Maximum recreations allowed per session
+   * Prevents infinite recreation loops
+   * @type {number}
+   */
+  maxRecreations: 100,
   
-  /** Total number of creation attempts */
+  /**
+   * Total count of grid creations in current session
+   * Used for tracking recreation limits
+   * @type {number}
+   */
   totalCreations: 0,
   
-  /** Last dimensions used for grid creation */
-  lastDimensions: { width: 0, height: 0 },
+  /**
+   * Last recorded canvas dimensions
+   * Used to check if dimensions have changed before recreating
+   * @type {Object|null}
+   */
+  lastDimensions: null,
   
-  /** Creation lock information */
+  /**
+   * Lock state for grid creation
+   * Prevents concurrent grid creation operations
+   * @type {Object}
+   */
   creationLock: {
+    /**
+     * Unique identifier for current lock
+     * @type {number}
+     */
     id: 0,
+    
+    /**
+     * Timestamp when lock was created
+     * @type {number}
+     */
     timestamp: 0,
+    
+    /**
+     * Whether the lock is currently active
+     * @type {boolean}
+     */
     isLocked: false
   }
 };
 
 /**
- * Start a grid creation process
- * Prevents concurrent grid creations
- * 
- * @returns {boolean} Whether the creation was allowed to start
+ * Check if grid creation should be throttled
+ * @returns {boolean} Whether creation should be throttled
  */
-export const startGridCreation = (): boolean => {
-  if (gridManager.creationInProgress) {
-    return false;
-  }
-  
-  gridManager.creationInProgress = true;
-  gridManager.lastAttemptTime = Date.now();
-  
-  return true;
+export const shouldThrottleCreation = (): boolean => {
+  const now = Date.now();
+  return now - gridManager.lastAttemptTime < gridManager.throttleInterval;
 };
 
 /**
- * Complete a grid creation process
- * Updates tracking state after successful creation
- */
-export const completeGridCreation = (): void => {
-  gridManager.creationInProgress = false;
-  gridManager.consecutiveResets = 0;
-};
-
-/**
- * Reset grid creation progress
- * Typically used when grid creation fails or needs to be retried
+ * Reset grid creation progress state
+ * Used when cleaning up grid creation or handling failures
  */
 export const resetGridProgress = (): void => {
-  if (gridManager.creationInProgress) {
-    gridManager.consecutiveResets += 1;
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Grid creation progress reset, consecutive resets: ${gridManager.consecutiveResets}`);
-    }
+  // Increment consecutive reset counter
+  gridManager.consecutiveResets++;
+  
+  // Reset creation in progress flag
+  gridManager.creationInProgress = false;
+  
+  // Clear any existing safety timeout
+  if (gridManager.safetyTimeout !== null) {
+    clearTimeout(gridManager.safetyTimeout);
+    gridManager.safetyTimeout = null;
   }
   
-  gridManager.creationInProgress = false;
-};
-
-/**
- * Schedule a grid progress reset after a timeout
- * Useful for preventing stuck creation states
- * 
- * @param {number} timeout - Timeout in milliseconds
- * @returns {number} The timeout ID
- */
-export const scheduleGridProgressReset = (timeout: number): number => {
-  return window.setTimeout(() => {
-    resetGridProgress();
-  }, timeout);
+  // Reset lock if it exists
+  if (gridManager.creationLock.isLocked) {
+    gridManager.creationLock = {
+      id: 0,
+      timestamp: 0,
+      isLocked: false
+    };
+  }
 };
 
 /**
  * Acquire a lock for grid creation
- * Prevents concurrent grid creations
- * 
  * @returns {boolean} Whether the lock was acquired
  */
 export const acquireGridCreationLock = (): boolean => {
   if (gridManager.creationLock.isLocked) {
+    // Lock already held
     return false;
   }
   
-  gridManager.creationLock.isLocked = true;
-  gridManager.creationLock.id = Date.now();
-  gridManager.creationLock.timestamp = Date.now();
+  // Generate a unique lock ID and acquire the lock
+  const lockId = Math.floor(Math.random() * 1000000);
+  gridManager.creationLock = {
+    id: lockId,
+    timestamp: Date.now(),
+    isLocked: true
+  };
   
   return true;
 };
 
 /**
  * Release a grid creation lock
- * Allows other operations to proceed
- * 
- * @param {number} lockId - The ID of the lock to release
- * @returns {boolean} Whether the lock was released
+ * @param {number} lockId - ID of the lock to release
+ * @returns {boolean} Whether the lock was successfully released
  */
 export const releaseGridCreationLock = (lockId: number): boolean => {
+  // Check if the lock ID matches
   if (gridManager.creationLock.id !== lockId) {
-    // Only the lock owner can release it
     return false;
   }
   
-  gridManager.creationLock.isLocked = false;
-  return true;
-};
-
-/**
- * Check if grid creation should be throttled
- * Based on recent creation attempts
- * 
- * @returns {boolean} Whether creation should be throttled
- */
-export const shouldThrottleCreation = (): boolean => {
-  const now = Date.now();
-  
-  // If we've had too many consecutive resets, throttle creation
-  if (gridManager.consecutiveResets >= gridManager.maxConsecutiveResets) {
-    return now - gridManager.lastAttemptTime < gridManager.throttleInterval;
-  }
-  
-  return false;
-};
-
-/**
- * Check if grid creation is currently allowed
- * Based on throttling and concurrency limits
- * 
- * @returns {boolean} Whether grid creation is allowed
- */
-export const canCreateGrid = (): boolean => {
-  // Prevent creating if already in progress
-  if (gridManager.creationInProgress) {
-    return false;
-  }
-  
-  // Check if we need to throttle due to too many resets
-  if (gridManager.consecutiveResets >= gridManager.maxConsecutiveResets) {
-    // Only allow after a cooldown period (5 seconds)
-    const now = Date.now();
-    if (now - gridManager.lastAttemptTime < 5000) {
-      return false;
-    }
-  }
+  // Release the lock
+  gridManager.creationLock = {
+    id: 0,
+    timestamp: 0,
+    isLocked: false
+  };
   
   return true;
 };
