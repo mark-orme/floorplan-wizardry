@@ -63,12 +63,12 @@ export const CanvasLayout = ({
   onLineThicknessChange,
   onLineColorChange,
   onShowMeasurementGuide,
-  children // Add children to destructuring
+  children
 }: CanvasLayoutProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-0 p-0 max-w-[2560px] mx-auto">
+    <div className="flex flex-col h-full w-full max-w-[2560px] mx-auto">
       {/* Drawing tools bar positioned at top */}
-      <div className="flex justify-between items-center mb-0">
+      <div className="flex justify-between items-center mb-2 p-2 border-b bg-background/80 sticky top-0 z-10">
         <DrawingToolbar
           tool={tool}
           onToolChange={onToolChange}
@@ -97,9 +97,9 @@ export const CanvasLayout = ({
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-0">
-        {/* Sidebar for floor plans - made even narrower */}
-        <div className="md:w-24">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-150px)] overflow-hidden">
+        {/* Sidebar for floor plans */}
+        <div className="md:w-24 border-r bg-muted/10 overflow-y-auto">
           <FloorPlanList 
             floorPlans={floorPlans}
             currentFloor={currentFloor}
@@ -109,7 +109,7 @@ export const CanvasLayout = ({
         </div>
         
         {/* Canvas container - takes more space */}
-        <div className="flex-1 canvas-container">
+        <div className="flex-1 overflow-auto h-full">
           {/* If children are provided, render them instead of CanvasContainer */}
           {children ? (
             children
