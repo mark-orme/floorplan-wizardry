@@ -50,35 +50,30 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     }
   }, [readonly]);
   
-  // Improved tooltip visibility logic - simplify and make more reliable
+  // Simplified tooltip visibility logic - show during active drawing with line tools
   const isTooltipVisible = Boolean(
-    // Show when drawing with wall or line tools
-    (tool === "straightLine" || tool === "wall") &&
+    // Show when drawing with wall, straightLine or room tools
+    (tool === "straightLine" || tool === "wall" || tool === "room") &&
+    drawingState?.isDrawing && 
     drawingState?.startPoint && 
     drawingState?.currentPoint &&
-    // Ensure we have real coordinates for the tooltip
+    // Ensure we have valid coordinates
     drawingState.startPoint.x !== undefined &&
     drawingState.startPoint.y !== undefined &&
     drawingState.currentPoint.x !== undefined &&
     drawingState.currentPoint.y !== undefined
   );
   
-  // Get relevant points for the tooltip
-  const startPoint = drawingState?.startPoint;
-  const currentPoint = drawingState?.currentPoint;
-  const midPoint = drawingState?.midPoint;
-  
-  // Debug logging for tooltip visibility
+  // Log for debugging
   useEffect(() => {
-    console.log("Drawing state updated:", drawingState);
-    console.log("Tooltip visibility:", isTooltipVisible);
-    console.log("Tooltip points:", { 
-      startPoint,
-      currentPoint,
-      midPoint,
-      cursorPosition: drawingState?.cursorPosition
+    console.log("Tooltip visibility check:", {
+      isTooltipVisible,
+      tool,
+      isDrawing: drawingState?.isDrawing,
+      startPoint: drawingState?.startPoint,
+      currentPoint: drawingState?.currentPoint
     });
-  }, [drawingState, isTooltipVisible, startPoint, currentPoint, midPoint]);
+  }, [isTooltipVisible, tool, drawingState]);
   
   return (
     <div className="canvas-wrapper relative">
@@ -104,12 +99,12 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         <canvas ref={canvasRef} />
       </div>
       
-      {/* Fixed Tooltip for distance measurement */}
+      {/* Measurement Tooltip */}
       {isTooltipVisible && (
         <DistanceTooltip 
-          startPoint={startPoint}
-          currentPoint={currentPoint}
-          midPoint={midPoint}
+          startPoint={drawingState?.startPoint}
+          currentPoint={drawingState?.currentPoint}
+          midPoint={drawingState?.midPoint}
           position={drawingState?.cursorPosition}
           isVisible={isTooltipVisible}
           currentZoom={drawingState?.currentZoom}

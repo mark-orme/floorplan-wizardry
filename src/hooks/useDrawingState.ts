@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing drawing state on the canvas
  * @module useDrawingState
@@ -7,7 +8,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import { DrawingState, Point } from "@/types/drawingTypes";
 import { snapToGrid } from "@/utils/grid/core";
-import { GRID_SIZE } from "@/utils/drawing";
+import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
 import { usePointProcessing } from "./usePointProcessing";
 import { calculateMidpoint } from "@/utils/geometry";
 
@@ -67,8 +68,11 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e.e);
     
-    // Snap the initial point to grid
-    const snappedPoint = snapToGrid(pointer, GRID_SIZE);
+    // Snap the initial point to grid (convert to meters)
+    const snappedPoint = {
+      x: Math.round(pointer.x / PIXELS_PER_METER * 10) / 10,
+      y: Math.round(pointer.y / PIXELS_PER_METER * 10) / 10
+    };
     
     // Start drawing, set the starting point with all required properties
     setDrawingState(prev => ({
@@ -77,10 +81,7 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
       startPoint: snappedPoint,
       currentPoint: snappedPoint,
       cursorPosition: pointer,
-      midPoint: {
-        x: snappedPoint.x,
-        y: snappedPoint.y
-      }
+      midPoint: snappedPoint
     }));
     
     console.log("Mouse down - Start drawing at:", snappedPoint);
@@ -105,42 +106,53 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
       if (!canvas) return;
       
       const pointer = canvas.getPointer(e.e);
+      const cursorPointInMeters = {
+        x: pointer.x / PIXELS_PER_METER,
+        y: pointer.y / PIXELS_PER_METER
+      };
       
       // Always update cursor position for tooltips, even when not drawing
       if (drawingState.isDrawing && drawingState.startPoint) {
-        // Apply point snapping based on the current tool
-        const snappedPoint = snapCurrentPoint(drawingState.startPoint, pointer);
+        // Apply point snapping to get grid aligned point in meters
+        const snappedPoint = {
+          x: Math.round(cursorPointInMeters.x * 10) / 10,
+          y: Math.round(cursorPointInMeters.y * 10) / 10
+        };
         
         // Calculate midpoint between start and current points
-        const midPoint = calculateMidpoint(drawingState.startPoint, snappedPoint);
+        const midPoint = {
+          x: (drawingState.startPoint.x + snappedPoint.x) / 2,
+          y: (drawingState.startPoint.y + snappedPoint.y) / 2
+        };
         
         // Update the current point with all required properties
         setDrawingState(prevState => ({
           ...prevState,
           currentPoint: snappedPoint,
-          cursorPosition: pointer,
+          cursorPosition: cursorPointInMeters,
           midPoint: midPoint
         }));
         
-        // Enhanced debug log for development
+        // Enhanced debug log
+        const dx = snappedPoint.x - drawingState.startPoint.x;
+        const dy = snappedPoint.y - drawingState.startPoint.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
         console.log("Drawing in progress:", {
           start: drawingState.startPoint,
           current: snappedPoint,
           mid: midPoint,
-          distance: Math.sqrt(
-            Math.pow(snappedPoint.x - drawingState.startPoint.x, 2) + 
-            Math.pow(snappedPoint.y - drawingState.startPoint.y, 2)
-          ).toFixed(1) + "m"
+          distance: distance.toFixed(1) + "m"
         });
       } else {
         // Just update cursor position for hover tooltips
         setDrawingState(prevState => ({
           ...prevState,
-          cursorPosition: pointer
+          cursorPosition: cursorPointInMeters
         }));
       }
     });
-  }, [fabricCanvasRef, drawingState.isDrawing, drawingState.startPoint, snapCurrentPoint]);
+  }, [fabricCanvasRef, drawingState.isDrawing, drawingState.startPoint]);
   
   /**
    * Handle mouse up event on the canvas

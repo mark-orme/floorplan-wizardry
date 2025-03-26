@@ -1,3 +1,4 @@
+
 import { Point } from '@/types/geometryTypes';
 import { DISTANCE_PRECISION, GRID_SPACING, FLOATING_POINT_TOLERANCE } from './constants';
 

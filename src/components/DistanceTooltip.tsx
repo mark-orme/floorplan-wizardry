@@ -28,56 +28,51 @@ export const DistanceTooltip = memo(({
   isVisible,
   position,
   zoomLevel = 1,
-  currentZoom
+  currentZoom = 1
 }: DistanceTooltipProps): React.ReactElement | null => {
-  // Enhanced visibility check
-  // If explicitly not visible, don't render
-  if (isVisible === false) {
-    console.log("Tooltip explicitly hidden");
+  // Basic visibility check - if explicitly not visible, don't render
+  if (!isVisible) {
     return null;
   }
   
-  // Use start & current point for active drawing, or position for hover measurements
-  const displayStartPoint = startPoint || position;
-  const displayEndPoint = currentPoint || position;
-  
-  // Exit early if we don't have sufficient points to calculate
-  if (!displayStartPoint || !displayEndPoint) {
-    console.log("Missing points for distance tooltip", { displayStartPoint, displayEndPoint });
+  // Required points check
+  if (!startPoint || !currentPoint) {
+    console.log("Missing required points for distance tooltip");
     return null;
   }
   
-  // Use currentZoom if provided, otherwise fall back to zoomLevel
-  const effectiveZoom = currentZoom || zoomLevel;
+  // Calculate distance in meters (direct calculation for more reliability)
+  const dx = currentPoint.x - startPoint.x;
+  const dy = currentPoint.y - startPoint.y;
+  const distanceInPixels = Math.sqrt(dx * dx + dy * dy);
+  const distanceInMeters = distanceInPixels / PIXELS_PER_METER;
   
-  // Calculate distance in meters with precision matching grid size (0.1m)
-  const distanceInMeters = calculateDistance(displayStartPoint, displayEndPoint);
+  // Format distance to 1 decimal place
+  const formattedDistance = distanceInMeters.toFixed(1);
   
-  // If points are too close, don't show tooltip yet
+  // Only show if distance is meaningful (avoid tiny movements)
   if (distanceInMeters < 0.05) {
     return null;
   }
   
-  // Format the distance to always show 1 decimal place for consistency
-  const formattedDistance = formatDistance(distanceInMeters);
-  
-  // Calculate the exact midpoint of the line for tooltip placement
+  // Use provided midpoint or calculate it
   const tooltipPosition = midPoint || {
-    x: (displayStartPoint.x + displayEndPoint.x) / 2,
-    y: (displayStartPoint.y + displayEndPoint.y) / 2
+    x: (startPoint.x + currentPoint.x) / 2,
+    y: (startPoint.y + currentPoint.y) / 2
   };
   
-  // Convert the meter position to pixel position for display
+  // Calculate position in pixels
   const pixelX = tooltipPosition.x * PIXELS_PER_METER;
   const pixelY = tooltipPosition.y * PIXELS_PER_METER;
   
-  // Log for debugging
-  console.log("Rendering distance tooltip:", { 
-    formattedDistance, 
-    startPoint: displayStartPoint, 
-    endPoint: displayEndPoint,
-    position: { x: pixelX, y: pixelY },
-    isVisible
+  // Use effective zoom (current zoom from canvas if available)
+  const effectiveZoom = currentZoom || zoomLevel;
+  
+  console.log("Rendering tooltip:", {
+    distanceInMeters,
+    formattedDistance,
+    position: tooltipPosition,
+    pixelPos: { x: pixelX, y: pixelY }
   });
   
   return (
