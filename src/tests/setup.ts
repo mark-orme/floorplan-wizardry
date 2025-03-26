@@ -16,10 +16,10 @@ interface MockedSetTimeout extends Function {
 const mockedSetTimeout = vi.fn().mockImplementation((cb, ms) => {
   if (typeof cb === 'function') cb();
   return 123 as unknown as NodeJS.Timeout;
-}) as MockedSetTimeout;
+});
 
-// Add required __promisify__ property
-mockedSetTimeout.__promisify__ = vi.fn();
+// Add required __promisify__ property to the mock function
+(mockedSetTimeout as unknown as MockedSetTimeout).__promisify__ = vi.fn();
 
 // Apply the mock
 window.setTimeout = mockedSetTimeout as unknown as typeof window.setTimeout;
