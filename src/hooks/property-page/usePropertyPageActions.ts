@@ -1,4 +1,9 @@
 
+/**
+ * Hook for handling property page actions
+ * Provides navigation and data management for the property page
+ * @module usePropertyPageActions
+ */
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { insertTestData } from '@/utils/supabaseSetup';
@@ -6,6 +11,8 @@ import { toast } from 'sonner';
 
 /**
  * Hook for handling property page actions
+ * Provides navigation and data manipulation functions
+ * 
  * @param {any} user - The current authenticated user
  * @param {Function} listProperties - Function to refresh the properties list
  * @returns {Object} Object containing handler functions for property page actions
@@ -19,6 +26,8 @@ export const usePropertyPageActions = (
 
   /**
    * Handles row click in the property list
+   * Navigates to the property detail page
+   * 
    * @param {string} id - Property ID
    */
   const handleRowClick = useCallback((id: string) => {
@@ -41,6 +50,7 @@ export const usePropertyPageActions = (
 
   /**
    * Navigates to floorplans page
+   * Provides direct access to the floor plan editor
    */
   const handleGoToFloorplans = useCallback(() => {
     navigate('/floorplans');
@@ -48,6 +58,7 @@ export const usePropertyPageActions = (
 
   /**
    * Adds test data to the database
+   * Creates sample properties for development and testing
    * Shows a toast notification based on the result
    */
   const handleAddTestData = useCallback(async () => {

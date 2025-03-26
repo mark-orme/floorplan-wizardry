@@ -1,4 +1,9 @@
 
+/**
+ * Tests for PropertyFloorPlanTab component
+ * Verifies rendering and interactions within the floor plan tab
+ * @module tests/property/PropertyFloorPlanTab.test
+ */
 import { describe, test, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PropertyFloorPlanTab } from '@/components/property/PropertyFloorPlanTab';
@@ -41,7 +46,13 @@ vi.mock('@/utils/canvas/safeCanvasInitialization', () => ({
   resetInitializationState: vi.fn()
 }));
 
+/**
+ * Test suite for PropertyFloorPlanTab component
+ */
 describe('PropertyFloorPlanTab', () => {
+  /**
+   * Default props for testing the component
+   */
   const defaultProps = {
     canEdit: true,
     userRole: UserRole.PHOTOGRAPHER,
@@ -50,6 +61,9 @@ describe('PropertyFloorPlanTab', () => {
     onStatusChange: vi.fn().mockResolvedValue(undefined)
   };
 
+  /**
+   * Test that the component renders floor plan canvas and actions
+   */
   test('renders floor plan canvas and actions', () => {
     // When
     render(<PropertyFloorPlanTab {...defaultProps} />);
@@ -59,6 +73,9 @@ describe('PropertyFloorPlanTab', () => {
     expect(screen.getByTestId('mock-floor-plan-actions')).toBeInTheDocument();
   });
   
+  /**
+   * Test that the component handles status change errors properly
+   */
   test('handles status change error', async () => {
     // Given
     const error = new Error('Status change failed');
@@ -82,6 +99,9 @@ describe('PropertyFloorPlanTab', () => {
     });
   });
   
+  /**
+   * Test that the component handles canvas errors properly
+   */
   test('handles canvas error', () => {
     // When
     render(<PropertyFloorPlanTab {...defaultProps} />);

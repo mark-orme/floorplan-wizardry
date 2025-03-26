@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for drawing tools functionality
  * Orchestrates tool behavior, history, and canvas operations
@@ -74,6 +75,7 @@ interface UseDrawingToolsResult {
 /**
  * Main hook that orchestrates all drawing tool functionality
  * Composes smaller, focused hooks to provide a complete drawing toolkit
+ * 
  * @param {UseDrawingToolsProps} props - Hook properties
  * @returns {UseDrawingToolsResult} Drawing tool operations
  */
@@ -149,6 +151,7 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
   
   /**
    * Save current state before changes
+   * Captures the current canvas state for history tracking
    */
   const saveCurrentState = useCallback(() => {
     if (!fabricCanvasRef.current) return;
@@ -178,7 +181,10 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
     saveCurrentState
   });
   
-  // Wrap saveCanvas to return a boolean value as required by the interface
+  /**
+   * Wrap saveCanvas to return a boolean value as required by the interface
+   * @returns {boolean} Success indicator
+   */
   const saveCanvas = useCallback(() => {
     // Call the original saveCanvas function
     originalSaveCanvas();

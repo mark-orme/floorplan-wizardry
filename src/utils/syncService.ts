@@ -15,6 +15,9 @@ const UPDATE_EVENT = 'update-floorplan';
 
 /**
  * Generate a unique device ID to identify this client
+ * Used to filter out self-originated updates in the sync process
+ * 
+ * @returns {string} Unique device identifier
  */
 const getDeviceId = (): string => {
   let deviceId = localStorage.getItem('device_id');
@@ -32,7 +35,9 @@ const DEVICE_ID = getDeviceId();
 
 /**
  * Subscribe to floor plan sync channel
- * @returns The Pusher channel instance
+ * Creates and returns a Pusher channel subscription
+ * 
+ * @returns {Object} The Pusher channel instance
  */
 export const subscribeSyncChannel = () => {
   logger.info('Subscribing to floor plan sync channel');
@@ -41,7 +46,9 @@ export const subscribeSyncChannel = () => {
 
 /**
  * Broadcast floor plan update to all connected devices
- * @param floorPlans The updated floor plans to broadcast
+ * Sends the updated floor plans to other devices via Pusher
+ * 
+ * @param {FloorPlan[]} floorPlans - The updated floor plans to broadcast
  */
 export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[]) => {
   logger.info('Broadcasting floor plan update');
@@ -81,8 +88,10 @@ export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[]) => {
 
 /**
  * Check if an update is from this device
- * @param sourceDeviceId The device ID from the update event
- * @returns True if the update is from this device
+ * Used to prevent processing own updates in sync mechanisms
+ * 
+ * @param {string} sourceDeviceId - The device ID from the update event
+ * @returns {boolean} True if the update is from this device
  */
 export const isUpdateFromThisDevice = (sourceDeviceId: string): boolean => {
   return sourceDeviceId === DEVICE_ID;

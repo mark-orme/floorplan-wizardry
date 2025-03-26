@@ -2,6 +2,7 @@
 /**
  * Enhanced canvas layer ordering utility
  * Provides robust functionality for handling z-order of canvas objects
+ * @module useCanvasLayerOrdering
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import logger from "@/utils/logger";
@@ -93,6 +94,9 @@ export const arrangeGridElementsWithRetry = (
   let attempts = 0;
   const maxAttempts = 3;
   
+  /**
+   * Recursive function to attempt grid arrangement with exponential backoff
+   */
   const attemptArrangement = () => {
     const success = ensureGridVisibility(fabricCanvas, gridLayerRef);
     attempts++;

@@ -14,31 +14,59 @@ import { type DrawingState } from "@/types/drawingTypes";
 import { useCanvasDrawingState } from "./canvas/drawing/useCanvasDrawingState";
 import { useCanvasDrawingEvents } from "./canvas/drawing/useCanvasDrawingEvents";
 
+/**
+ * History state reference object
+ * @interface HistoryRef
+ */
 interface HistoryRef {
+  /** Array of past states for undo operations */
   past: FabricObject[][];
+  /** Array of future states for redo operations */
   future: FabricObject[][];
 }
 
+/**
+ * Props for the useCanvasDrawing hook
+ * @interface UseCanvasDrawingProps
+ */
 interface UseCanvasDrawingProps {
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Reference to history state for undo/redo */
   historyRef: React.MutableRefObject<HistoryRef>;
+  /** Current active drawing tool */
   tool: DrawingTool;
+  /** Current floor index */
   currentFloor: number;
+  /** Function to set floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  /** Function to set gross internal area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  /** Current line thickness */
   lineThickness?: number;
+  /** Current line color */
   lineColor?: string;
+  /** Function to delete selected objects */
   deleteSelectedObjects?: () => void;
+  /** Function to recalculate gross internal area */
   recalculateGIA?: () => void;
 }
 
+/**
+ * Result type for the useCanvasDrawing hook
+ * @interface UseCanvasDrawingResult
+ */
 interface UseCanvasDrawingResult {
+  /** Current drawing state */
   drawingState: DrawingState;
 }
 
 /**
  * Hook for handling all drawing-related operations on the canvas
+ * Coordinates multiple sub-hooks for complete drawing functionality
+ * 
  * @param {UseCanvasDrawingProps} props - Hook properties
  * @returns {UseCanvasDrawingResult} Drawing state and handlers
  */

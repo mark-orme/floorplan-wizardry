@@ -16,18 +16,38 @@ import { useFloorPlanGIA } from "./useFloorPlanGIA";
 import { useFloorPlanManagement } from "./useFloorPlanManagement";
 import { useFloorPlanStorage } from "./useFloorPlanStorage";
 
+/**
+ * Props for the useFloorPlans hook
+ * @interface UseFloorPlansProps
+ */
 interface UseFloorPlansProps {
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<any[]>;
+  /** Array of floor plans */
   floorPlans: FloorPlan[];
+  /** Index of the currently selected floor */
   currentFloor: number;
+  /** Whether data is currently loading */
   isLoading: boolean;
+  /** State setter for Gross Internal Area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  /** State setter for floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  /** Function to clear all drawings from canvas */
   clearDrawings: () => void;
+  /** Function to create a grid on the canvas */
   createGrid: (canvas: FabricCanvas) => any[];
 }
 
+/**
+ * Hook for managing floor plans with multiple specialized sub-hooks
+ * Handles drawing, GIA calculation, management, and storage of floor plans
+ * 
+ * @param {UseFloorPlansProps} props - Hook properties
+ * @returns {Object} Floor plan operations and state
+ */
 export const useFloorPlans = ({
   fabricCanvasRef,
   gridLayerRef,
@@ -69,7 +89,11 @@ export const useFloorPlans = ({
   // Initialize floor plan storage - Get the loadData function that returns a promise
   const { loadData, saveData, lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
 
-  // Draw the floor plan with the proper canvas
+  /**
+   * Draws the floor plan on the canvas with proper error handling
+   * @param {number} floorIndex - Index of the floor to draw
+   * @param {FloorPlan[]} plans - Array of floor plans
+   */
   const drawFloorPlanWithCanvas = useCallback((floorIndex: number, plans: FloorPlan[]) => {
     if (!fabricCanvasRef.current) return;
     if (plans.length === 0 || floorIndex >= plans.length) return;

@@ -15,7 +15,8 @@ import logger from '@/utils/logger';
 /**
  * Hook for managing floor plans with real-time sync across devices
  * and Supabase cloud storage
- * @returns Synchronized floor plans state and operations
+ * 
+ * @returns {Object} Synchronized floor plans state and operations
  */
 export const useSyncedFloorPlans = () => {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
@@ -29,7 +30,9 @@ export const useSyncedFloorPlans = () => {
   // Initialize Supabase floor plans
   const { saveToSupabase, loadFromSupabase, isLoggedIn } = useSupabaseFloorPlans();
 
-  // Initialize sync channel
+  /**
+   * Initialize sync channel on component mount
+   */
   useEffect(() => {
     const channel = subscribeSyncChannel();
     setSyncChannel(channel);
@@ -41,10 +44,16 @@ export const useSyncedFloorPlans = () => {
     };
   }, []);
 
-  // Set up sync event listeners
+  /**
+   * Set up sync event listeners for real-time updates
+   */
   useEffect(() => {
     if (!syncChannel) return;
 
+    /**
+     * Handler for floor plan updates from other devices
+     * @param {any} data - The update data received from Pusher
+     */
     const handleFloorPlanUpdate = (data: any) => {
       // Skip if this update is from this device
       if (isUpdateFromThisDevice(data.deviceId)) {
@@ -79,14 +88,17 @@ export const useSyncedFloorPlans = () => {
     };
 
     // Listen for update events
-    syncChannel.bind(`client-update-floorplan`, handleFloorPlanUpdate);
+    syncChannel.bind(`client-${UPDATE_EVENT}`, handleFloorPlanUpdate);
 
     return () => {
-      syncChannel.unbind(`client-update-floorplan`, handleFloorPlanUpdate);
+      syncChannel.unbind(`client-${UPDATE_EVENT}`, handleFloorPlanUpdate);
     };
   }, [syncChannel, saveToSupabase, isLoggedIn]);
 
-  // Load initial data
+  /**
+   * Load initial floor plan data from Supabase or local storage
+   * @returns {Promise<FloorPlan[]>} The loaded floor plans
+   */
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -126,7 +138,12 @@ export const useSyncedFloorPlans = () => {
     }
   }, [isLoggedIn, loadFromSupabase]);
 
-  // Auto-save with debounce and sync across devices
+  /**
+   * Save floor plans with debouncing and multi-device synchronization
+   * Updates local state, persists to storage, and broadcasts to other devices
+   * 
+   * @param {FloorPlan[]} newFloorPlans - The floor plans to save
+   */
   const saveFloorPlansWithSync = useCallback((newFloorPlans: FloorPlan[]) => {
     setFloorPlans(newFloorPlans);
 
