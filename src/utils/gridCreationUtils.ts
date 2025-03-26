@@ -178,9 +178,20 @@ export const retryWithBackoff = (
     }
     
     try {
-      fn();
+      const result = fn();
+      
+      // If function returns true, consider it successful
+      // If it returns false or undefined, retry
+      if (result !== true && attempt < maxAttempts - 1) {
+        retryWithBackoff(fn, attempt + 1, maxAttempts, baseDelay, backoffFactor);
+      }
     } catch (error) {
       console.error(`Error during retry attempt #${attempt + 1}:`, error);
+      
+      // Retry on error if we haven't reached max attempts
+      if (attempt < maxAttempts - 1) {
+        retryWithBackoff(fn, attempt + 1, maxAttempts, baseDelay, backoffFactor);
+      }
     }
   }, delay);
 };

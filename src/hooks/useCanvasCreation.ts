@@ -7,6 +7,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { CanvasDimensions } from "@/types/drawingTypes";
+import { useCanvasCleanup } from "./useCanvasCleanup";
+import logger from "@/utils/logger";
 
 /**
  * Props for useCanvasCreation hook
@@ -45,6 +47,9 @@ export const useCanvasCreation = ({
   const maxRetryAttempts = 10; // Increased retry attempts for canvas initialization
   const retryTimeoutRef = useRef<number | null>(null);
   const [canvasElementChecked, setCanvasElementChecked] = useState<boolean>(false);
+  
+  // Get canvas cleanup utilities
+  const { cleanupCanvas, isCanvasElementInitialized, markCanvasAsInitialized } = useCanvasCleanup();
 
   // This effect will ensure we clean up any timeouts when the component unmounts
   useEffect(() => {
@@ -154,12 +159,34 @@ export const useCanvasCreation = ({
       }
     }
     
+    // CRITICAL CHECK: If we already have an initialized canvas, return it instead of creating a new one
     if (canvasInitializedRef.current && fabricCanvasRef.current) {
+      logger.debug("Canvas already initialized, reusing existing instance");
       return fabricCanvasRef.current;
     }
     
     // Prevent concurrent initializations
     if (initializationInProgressRef.current) {
+      logger.debug("Canvas initialization already in progress, skipping");
+      return null;
+    }
+    
+    // Check if the canvas element has already been initialized by another instance
+    if (canvasRef.current && isCanvasElementInitialized(canvasRef.current)) {
+      logger.warn("Canvas element already has a Fabric instance attached, disposing first");
+      
+      // If we have a previous canvas instance, dispose it first
+      if (fabricCanvasRef.current) {
+        cleanupCanvas(fabricCanvasRef.current);
+        fabricCanvasRef.current = null;
+      }
+      
+      // Wait a bit before continuing to ensure disposal is complete
+      // This could be improved with a promise-based approach
+      const timeoutId = setTimeout(() => {
+        initializeCanvas();
+      }, 500);
+      
       return null;
     }
     
@@ -202,6 +229,11 @@ export const useCanvasCreation = ({
       console.log("FabricCanvas instance created successfully with size:", 
         fabricCanvas.width, "x", fabricCanvas.height);
       
+      // Mark this canvas element as initialized to prevent duplicate initialization
+      if (canvasRef.current) {
+        markCanvasAsInitialized(canvasRef.current);
+      }
+      
       fabricCanvasRef.current = fabricCanvas;
       canvasInitializedRef.current = true;
       
@@ -222,7 +254,7 @@ export const useCanvasCreation = ({
       initializationInProgressRef.current = false;
       return null;
     }
-  }, [canvasDimensions, setHasError, setErrorMessage]);
+  }, [canvasDimensions, setHasError, setErrorMessage, cleanupCanvas, isCanvasElementInitialized, markCanvasAsInitialized]);
 
   return {
     canvasRef,
