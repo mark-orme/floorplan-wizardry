@@ -27,15 +27,30 @@ export const PropertyFloorPlanTab = ({
   onStatusChange
 }: PropertyFloorPlanTabProps) => {
   const [isReady, setIsReady] = useState(false);
+  const [initAttempt, setInitAttempt] = useState(0); // Track initialization attempts
   
   // Set ready state after a short delay to ensure DOM is fully rendered
   useEffect(() => {
+    // Unmount any existing canvas before trying to render a new one
+    setIsReady(false);
+    
     const timer = setTimeout(() => {
       setIsReady(true);
-    }, 300);
+    }, 500); // Increased from 300ms to 500ms to ensure proper DOM setup
     
     return () => clearTimeout(timer);
   }, []);
+  
+  // Provide a retry mechanism if canvas initialization fails
+  const handleCanvasRetry = () => {
+    setIsReady(false);
+    setInitAttempt(prev => prev + 1);
+    
+    // Try to re-initialize after a delay
+    setTimeout(() => {
+      setIsReady(true);
+    }, 800);
+  };
   
   return (
     <Card className="mb-4">
@@ -52,9 +67,10 @@ export const PropertyFloorPlanTab = ({
           className="h-[800px] w-full" 
           data-testid="floor-plan-wrapper"
           data-canvas-ready={isReady ? "true" : "false"}
+          data-init-attempt={initAttempt}
         > 
           {isReady && (
-            <CanvasControllerProvider>
+            <CanvasControllerProvider key={`canvas-${initAttempt}`}>
               <Canvas data-readonly={!canEdit} />
             </CanvasControllerProvider>
           )}

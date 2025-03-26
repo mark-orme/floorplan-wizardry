@@ -32,12 +32,24 @@ export const useCanvasCleanup = () => {
   const disposalInProgressRef = useRef(false);
   // Add state to help with rendering and debugging
   const [isResetting, setIsResetting] = useState(false);
+  const componentMountedRef = useRef(true);
+  
+  // Set mounted flag to true on initial render
+  const trackMounted = useCallback(() => {
+    componentMountedRef.current = true;
+    return () => {
+      componentMountedRef.current = false;
+    };
+  }, []);
   
   /**
    * Reset canvas initialization attempts counter
    * Should be called when we want to allow a fresh set of attempts
    */
   const resetInitializationAttempts = useCallback(() => {
+    // Prevent state updates if component unmounted
+    if (!componentMountedRef.current) return false;
+    
     const now = Date.now();
     
     // Only allow reset if it's been at least X time since last reset
@@ -53,7 +65,9 @@ export const useCanvasCleanup = () => {
       
       // Reset state after a short delay
       setTimeout(() => {
-        setIsResetting(false);
+        if (componentMountedRef.current) {
+          setIsResetting(false);
+        }
       }, 100);
       
       return true;
@@ -61,6 +75,28 @@ export const useCanvasCleanup = () => {
       logger.info(`Cannot reset initialization attempts yet. Wait ${Math.ceil((canvasDisposalTracker.resetIntervalMs - (now - canvasDisposalTracker.lastResetTime)) / 1000)} seconds more.`);
       return false;
     }
+  }, []);
+  
+  /**
+   * Force reset initialization attempts without time check
+   */
+  const forceResetInitializationAttempts = useCallback(() => {
+    logger.info("Forcing reset of canvas initialization attempts");
+    
+    canvasDisposalTracker.initializationAttempts = 0;
+    canvasDisposalTracker.lastResetTime = Date.now();
+    
+    // Only update state if component is still mounted
+    if (componentMountedRef.current) {
+      setIsResetting(true);
+      setTimeout(() => {
+        if (componentMountedRef.current) {
+          setIsResetting(false);
+        }
+      }, 100);
+    }
+    
+    return true;
   }, []);
   
   /**
@@ -199,8 +235,10 @@ export const useCanvasCleanup = () => {
     forceCleanCanvasElement: forceCleanupCanvasElement,
     trackInitializationAttempt,
     resetInitializationAttempts,
+    forceResetInitializationAttempts,
     reduceInitializationAttempts,
     isResetting,
+    trackMounted,
     // Export for debugging
     getInitializationAttempts: () => canvasDisposalTracker.initializationAttempts,
     getMaxInitializationAttempts: () => canvasDisposalTracker.maxInitializationAttempts

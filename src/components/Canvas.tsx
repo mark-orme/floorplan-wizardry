@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { CanvasContainer } from './CanvasContainer';
 import { useCanvasController } from './canvas/controller/CanvasController';
@@ -37,6 +36,12 @@ export const Canvas: React.FC = () => {
     
     return () => {
       componentMountedRef.current = false;
+      
+      // Clear any pending timers
+      if (circuitBreakerTimerRef.current) {
+        clearTimeout(circuitBreakerTimerRef.current);
+        circuitBreakerTimerRef.current = null;
+      }
     };
   }, []);
   
@@ -100,11 +105,14 @@ export const Canvas: React.FC = () => {
     if (!componentMountedRef.current) return;
     
     if (hasError) {
-      const errorMsg = errorDetailsRef.current[errorDetailsRef.current.length - 1] || '';
+      const errorMsg = errorDetailsRef.current.length > 0 ? 
+        errorDetailsRef.current[errorDetailsRef.current.length - 1] : '';
+      
       // Check for special error message that indicates we need to use emergency canvas
       if (errorMsg.includes('Canvas initialization failed after multiple attempts') ||
           errorMsg.includes('blocked after') ||
-          errorMsg.includes('Too many canvas initialization attempts')) {
+          errorMsg.includes('Too many canvas initialization attempts') ||
+          errorMsg.includes('Canvas element not available')) {
         logger.warn('Initialization blocked, forcing emergency canvas');
         forceEmergencyRef.current = true;
         
@@ -147,62 +155,64 @@ export const Canvas: React.FC = () => {
         timestamp => timestamp > twoSecondsAgo
       );
       
-      setFailedAttempts(prev => {
-        const newCount = prev + 1;
-        
-        // Add error details to help with debugging
-        errorDetailsRef.current.push(`Error #${newCount} at ${new Date().toISOString()}: Canvas state - ${JSON.stringify({
-          ready: debugInfo.canvasReady,
-          dimensions: `${debugInfo.canvasWidth}x${debugInfo.canvasHeight}`,
-          gridCreated: debugInfo.gridCreated
-        })}`);
-        
-        // If we have more than 10 errors, trim the list
-        if (errorDetailsRef.current.length > 10) {
-          errorDetailsRef.current.shift();
-        }
-        
-        logger.warn(`Canvas initialization failed (attempt ${newCount})`);
-        
-        // If we have 3+ errors in 2 seconds or 2+ total failures, switch to emergency canvas
-        if (recentErrors.length >= 2 || newCount >= 2 || forceEmergencyRef.current) {
-          logger.error('Too many canvas failures, switching to emergency canvas', {
-            errorCount: newCount,
-            recentErrors: recentErrors.length,
-            errorDetails: errorDetailsRef.current.join('\n')
-          });
+      if (componentMountedRef.current) {
+        setFailedAttempts(prev => {
+          const newCount = prev + 1;
           
-          // Report critical error to Sentry with diagnostic data
-          captureError(
-            new Error(`Canvas initialization failed after ${newCount} attempts`),
-            'canvas-initialization-critical',
-            {
-              level: 'error',
-              extra: {
-                diagnosticData,
-                errorHistory: errorDetailsRef.current,
-                timestamps: attemptTimestampsRef.current
-              }
-            }
-          );
+          // Add error details to help with debugging
+          errorDetailsRef.current.push(`Error #${newCount} at ${new Date().toISOString()}: Canvas state - ${JSON.stringify({
+            ready: debugInfo.canvasReady,
+            dimensions: `${debugInfo.canvasWidth}x${debugInfo.canvasHeight}`,
+            gridCreated: debugInfo.gridCreated
+          })}`);
           
-          // Clear any pending circuit breaker timer
-          if (circuitBreakerTimerRef.current) {
-            clearTimeout(circuitBreakerTimerRef.current);
+          // If we have more than 10 errors, trim the list
+          if (errorDetailsRef.current.length > 10) {
+            errorDetailsRef.current.shift();
           }
           
-          // Switch to emergency canvas and notify user
-          if (componentMountedRef.current) {
-            setUseEmergencyCanvas(true);
-            toast.error('Canvas initialization failed. Using emergency mode.', {
-              id: 'canvas-failure',
-              duration: 5000
+          logger.warn(`Canvas initialization failed (attempt ${newCount})`);
+          
+          // If we have 3+ errors in 2 seconds or 2+ total failures, switch to emergency canvas
+          if (recentErrors.length >= 2 || newCount >= 2 || forceEmergencyRef.current) {
+            logger.error('Too many canvas failures, switching to emergency canvas', {
+              errorCount: newCount,
+              recentErrors: recentErrors.length,
+              errorDetails: errorDetailsRef.current.join('\n')
             });
+            
+            // Report critical error to Sentry with diagnostic data
+            captureError(
+              new Error(`Canvas initialization failed after ${newCount} attempts`),
+              'canvas-initialization-critical',
+              {
+                level: 'error',
+                extra: {
+                  diagnosticData,
+                  errorHistory: errorDetailsRef.current,
+                  timestamps: attemptTimestampsRef.current
+                }
+              }
+            );
+            
+            // Clear any pending circuit breaker timer
+            if (circuitBreakerTimerRef.current) {
+              clearTimeout(circuitBreakerTimerRef.current);
+            }
+            
+            // Switch to emergency canvas and notify user
+            if (componentMountedRef.current) {
+              setUseEmergencyCanvas(true);
+              toast.error('Canvas initialization failed. Using emergency mode.', {
+                id: 'canvas-failure',
+                duration: 5000
+              });
+            }
           }
-        }
-        
-        return newCount;
-      });
+          
+          return newCount;
+        });
+      }
     }
   }, [hasError, debugInfo, diagnosticData]);
   
@@ -246,24 +256,27 @@ export const Canvas: React.FC = () => {
     }
     
     logger.info('Manual retry requested from emergency canvas');
-    attemptTimestampsRef.current = []; // Clear error history
-    errorDetailsRef.current = []; // Clear error details
-    setFailedAttempts(0);
-    setUseEmergencyCanvas(false);
     
-    // Apply timeout to make sure React has time to unmount and clean up
-    setTimeout(() => {
-      if (componentMountedRef.current) {
-        handleRetry();
-        toast.info('Attempting to initialize main canvas...', {
-          id: 'canvas-retry',
-          duration: 3000
-        });
-      }
-    }, 500);
+    if (componentMountedRef.current) {
+      attemptTimestampsRef.current = []; // Clear error history
+      errorDetailsRef.current = []; // Clear error details
+      setFailedAttempts(0);
+      setUseEmergencyCanvas(false);
+      
+      // Apply timeout to make sure React has time to unmount and clean up
+      setTimeout(() => {
+        if (componentMountedRef.current) {
+          handleRetry();
+          toast.info('Attempting to initialize main canvas...', {
+            id: 'canvas-retry',
+            duration: 3000
+          });
+        }
+      }, 500);
+    }
   };
   
-  // Use emergency canvas if too many failures
+  // Use emergency canvas if too many failures or forced
   if (useEmergencyCanvas) {
     return (
       <>
@@ -272,6 +285,7 @@ export const Canvas: React.FC = () => {
           diagnosticData={diagnosticData} 
           width={800}
           height={600}
+          forceDisableRetry={forceEmergencyRef.current}
         />
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded text-xs font-mono max-h-40 overflow-auto">
