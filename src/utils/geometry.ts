@@ -6,13 +6,34 @@
  * @module geometry
  */
 
-// Re-export everything from the new modular structure
-export * from './geometry/constants';
-export * from './geometry/gridOperations';
-export * from './geometry/lineOperations';
-export * from './geometry/areaCalculations';
-export * from './geometry/coordinateTransforms';
-export * from './geometry/midpointCalculation';
+// Explicitly import the functions we need from different modules to avoid conflicts
+import { calculateGIA } from './geometry/areaCalculations';
+import { GRID_SPACING, DISTANCE_PRECISION, CLOSE_POINT_THRESHOLD, FLOATING_POINT_TOLERANCE } from './geometry/constants';
+import { screenToCanvasCoordinates } from './geometry/coordinateTransforms';
+import { snapToGrid } from './geometry/gridOperations';
+import { calculateDistance, isExactGridMultiple as lineIsExactGridMultiple } from './geometry/lineOperations';
+
+// Re-export specific functions with non-conflicting names
+export {
+  // From areaCalculations
+  calculateGIA,
+  
+  // From constants
+  GRID_SPACING,
+  DISTANCE_PRECISION,
+  CLOSE_POINT_THRESHOLD,
+  FLOATING_POINT_TOLERANCE,
+  
+  // From coordinateTransforms
+  screenToCanvasCoordinates,
+  
+  // From gridOperations
+  snapToGrid,
+  
+  // From lineOperations (with renamed export to avoid conflict)
+  calculateDistance,
+  lineIsExactGridMultiple
+};
 
 /**
  * This module serves as a centralized export point for all geometry-related
