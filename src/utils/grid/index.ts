@@ -11,11 +11,18 @@ export {
   snapToGridPoints as snapPointsToGrid
 } from './core';
 
-// Export measurement functions
+// Export measurement functions 
 export * from './measurements';
 
-// Export snapping utilities
-export * from './snapping';
+// Export snapping utilities - explicitly export to avoid ambiguity
+export {
+  snapToGrid,
+  snapToAngle,
+  snapWithThreshold,
+  getNearestGridIntersection,
+  snapLineToStandardAngles,
+  // Don't re-export distanceToNearestGridLine since it's also in measurements
+} from './snapping';
 
 // Export safety utilities
 export * from './gridSafety';
@@ -23,3 +30,6 @@ export * from './gridSafety';
 // Export error handling and validation
 export * from './gridErrorHandling';
 export * from './gridValidation';
+
+// Export grid creation utilities
+export * from './gridCreation';

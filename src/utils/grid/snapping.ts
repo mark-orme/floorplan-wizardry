@@ -1,4 +1,3 @@
-
 /**
  * Grid snapping utilities module
  * Functions for snapping points and angles to the grid
@@ -85,6 +84,55 @@ export const getNearestGridIntersection = (
   return {
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
+  };
+};
+
+/**
+ * Snap a line to standard angles (0, 45, 90, 135, etc.)
+ * Useful for straightening walls and lines
+ * 
+ * @param {Point} startPoint - Line start point
+ * @param {Point} endPoint - Line end point
+ * @param {number[]} angles - Array of allowed angles in degrees (default: [0, 45, 90, 135, 180, 225, 270, 315])
+ * @returns {Point} Modified end point that creates a line with a standard angle
+ */
+export const snapLineToStandardAngles = (
+  startPoint: Point,
+  endPoint: Point,
+  angles: number[] = [0, 45, 90, 135, 180, 225, 270, 315]
+): Point => {
+  if (!startPoint || !endPoint) return endPoint;
+  
+  // Calculate the current angle
+  const dx = endPoint.x - startPoint.x;
+  const dy = endPoint.y - startPoint.y;
+  const currentAngleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+  
+  // Find the closest standard angle
+  let closestAngle = angles[0];
+  let minDiff = Math.abs(currentAngleDeg - angles[0]);
+  
+  for (let i = 1; i < angles.length; i++) {
+    const diff = Math.abs(currentAngleDeg - angles[i]);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closestAngle = angles[i];
+    }
+  }
+  
+  // If the angle is already close enough (within 5 degrees), don't snap
+  if (minDiff < 5) {
+    return endPoint;
+  }
+  
+  // Calculate the distance from start to end
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Calculate the new end point based on the closest standard angle
+  const angleRad = closestAngle * (Math.PI / 180);
+  return {
+    x: startPoint.x + distance * Math.cos(angleRad),
+    y: startPoint.y + distance * Math.sin(angleRad)
   };
 };
 
