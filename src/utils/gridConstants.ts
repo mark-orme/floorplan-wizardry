@@ -10,9 +10,6 @@
 import {
   PIXELS_PER_METER,
   GRID_SPACING,
-  MAX_SMALL_GRID_LINES,
-  MAX_LARGE_GRID_LINES,
-  GRID_EXTENSION_FACTOR,
   SMALL_GRID_LINE_WIDTH,
   LARGE_GRID_LINE_WIDTH
 } from '@/constants/numerics';
@@ -22,6 +19,11 @@ export interface GridDimensions {
   width: number;
   height: number;
 }
+
+// Define constants that aren't in numerics.ts
+export const MAX_SMALL_GRID_LINES = 300;
+export const MAX_LARGE_GRID_LINES = 100; 
+export const GRID_EXTENSION_FACTOR = 2;
 
 // Re-export constants for backward compatibility
 export const GRID_SCALE_FACTOR = PIXELS_PER_METER; // 100px = 1 meter

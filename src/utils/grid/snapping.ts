@@ -84,3 +84,54 @@ export const snapToGridPoints = (
   
   return closestPoint;
 };
+
+/**
+ * Snap a line to standard angles (0, 45, 90, 135, 180, etc.)
+ * @param {Point} startPoint - Line start point
+ * @param {Point} endPoint - Line end point 
+ * @param {number[]} standardAngles - Array of standard angles to snap to (in degrees)
+ * @returns {Point} New endpoint that creates a line at a standard angle
+ */
+export const snapLineToStandardAngles = (
+  startPoint: Point,
+  endPoint: Point,
+  standardAngles: number[] = [0, 45, 90, 135, 180, 225, 270, 315]
+): Point => {
+  // Calculate the angle of the line
+  const dx = endPoint.x - startPoint.x;
+  const dy = endPoint.y - startPoint.y;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  
+  // Calculate the distance between the points
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Find the closest standard angle
+  let closestAngle = angle;
+  let minAngleDiff = Number.MAX_VALUE;
+  
+  for (const standardAngle of standardAngles) {
+    // Normalize the difference to be within -180 to 180
+    let diff = Math.abs(((angle - standardAngle + 180) % 360) - 180);
+    if (diff > 180) diff = 360 - diff;
+    
+    if (diff < minAngleDiff && diff < ANGLE_SNAP_THRESHOLD) {
+      minAngleDiff = diff;
+      closestAngle = standardAngle;
+    }
+  }
+  
+  // If we didn't find a close enough standard angle, return the original endpoint
+  if (minAngleDiff === Number.MAX_VALUE) {
+    return endPoint;
+  }
+  
+  // Convert back to radians
+  const snappedAngleRadians = closestAngle * (Math.PI / 180);
+  
+  // Calculate the new endpoint based on the snapped angle and original distance
+  return {
+    x: startPoint.x + distance * Math.cos(snappedAngleRadians),
+    y: startPoint.y + distance * Math.sin(snappedAngleRadians)
+  };
+};
+

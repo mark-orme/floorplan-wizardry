@@ -123,3 +123,39 @@ export const AREA_PRECISION = 2;
  * @constant {number}
  */
 export const DISTANCE_PRECISION = 2;
+
+/**
+ * Default canvas width in pixels
+ * Used when container dimensions are not available
+ * @constant {number}
+ */
+export const DEFAULT_CANVAS_WIDTH = 800;
+
+/**
+ * Default canvas height in pixels
+ * Used when container dimensions are not available
+ * @constant {number}
+ */
+export const DEFAULT_CANVAS_HEIGHT = 600;
+
+/**
+ * Maximum number of small grid lines
+ * For performance considerations
+ * @constant {number}
+ */
+export const MAX_SMALL_GRID_LINES = 300;
+
+/**
+ * Maximum number of large grid lines
+ * For performance considerations
+ * @constant {number}
+ */
+export const MAX_LARGE_GRID_LINES = 100;
+
+/**
+ * Grid extension factor
+ * How much to extend the grid beyond the canvas edges
+ * @constant {number}
+ */
+export const GRID_EXTENSION_FACTOR = 2;
+

@@ -1,21 +1,19 @@
 
 /**
- * Fabric utilities index file
- * Re-exports all Fabric.js related utilities for easier imports
+ * Fabric utilities module
+ * Re-exports from specialized fabric utility modules
  * @module fabric
  */
 
-// Re-export all utilities from the fabric subdirectories
+// Export all utilities from the specialized files
+export * from './canvasCleanup';
 export * from './canvasDimensions';
 export * from './canvasValidation';
-export * from './canvasCleanup';
-// Fix re-export ambiguity issues by being explicit
-export { clearCanvasObjects, canvasMoveTo } from './objects';
-export { registerCanvasElement, isCanvasRegistered, getCanvasRegistration, unregisterCanvasElement } from './registry';
 export * from './environment';
 export * from './events';
-export * from './selection';
 export * from './gestures';
-// Export panning functions with explicit naming to avoid conflicts
-export { enablePanning, disablePanning } from './panning';
+export * from './objects';
+export * from './panning';
+export * from './registry';
+export * from './selection';
 

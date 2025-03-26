@@ -1,35 +1,33 @@
 
 /**
- * Geometry constants for calculations and operations
- * Re-exports from central numerics module
- * @module constants
+ * Geometry constants module
+ * Defines constants used for geometric calculations
+ * @module geometry/constants
  */
 
-// Re-export from central constants module
-import {
-  GRID_SPACING,
-  CLOSE_POINT_THRESHOLD,
-  SHAPE_CLOSE_THRESHOLD,
+import { 
+  PIXELS_PER_METER, 
   FLOATING_POINT_TOLERANCE,
   MIN_LINE_LENGTH,
-  MIN_SHAPE_AREA,
-  ANGLE_SNAP_THRESHOLD,
-  LARGE_GRID_LINE_WIDTH,
-  SMALL_GRID_LINE_WIDTH,
-  AREA_PRECISION,
-  DISTANCE_PRECISION
+  MIN_SHAPE_AREA
 } from '@/constants/numerics';
 
-export {
-  GRID_SPACING,
-  CLOSE_POINT_THRESHOLD,
-  SHAPE_CLOSE_THRESHOLD,
+// Re-export constants
+export { 
+  PIXELS_PER_METER, 
   FLOATING_POINT_TOLERANCE,
   MIN_LINE_LENGTH,
-  MIN_SHAPE_AREA,
-  ANGLE_SNAP_THRESHOLD,
-  LARGE_GRID_LINE_WIDTH,
-  SMALL_GRID_LINE_WIDTH,
-  AREA_PRECISION,
-  DISTANCE_PRECISION
+  MIN_SHAPE_AREA
 };
+
+// Angular constants
+export const DEGREES_TO_RADIANS = Math.PI / 180;
+export const RADIANS_TO_DEGREES = 180 / Math.PI;
+
+// Standard angles for snapping (in degrees)
+export const STANDARD_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+// Precision constants
+export const COORDINATE_PRECISION = 3; // Decimal places for coordinate display
+export const ANGLE_PRECISION = 1; // Decimal places for angle display
+
