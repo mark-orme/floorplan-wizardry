@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { FloorPlan } from '@/utils/drawing'; 
@@ -36,7 +37,7 @@ const CanvasControllerContext = createContext<CanvasControllerContextValue | nul
 export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tool, setTool] = useState<DrawingTool>('select');
   const [gia, setGia] = useState<number>(0);
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([{ id: 0, name: 'Ground Floor', strokes: [] }]);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([{ id: '0', name: 'Ground Floor', strokes: [] }]);
   const [currentFloor, setCurrentFloor] = useState<number>(0);
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>('#000000');
@@ -98,7 +99,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
       const newFloorPlans = [...prev];
       const newFloorIndex = newFloorPlans.length;
       newFloorPlans.push({
-        id: newFloorIndex,
+        id: `${newFloorIndex}`,
         name: `Floor ${newFloorIndex + 1}`,
         strokes: []
       });
