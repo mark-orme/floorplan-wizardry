@@ -15,7 +15,8 @@ export {
 export {
   snapPointsToGrid,
   snapToNearestGridLine,
-  forceGridAlignment
+  forceGridAlignment,
+  snapLineToStandardAngles
 } from './snapping';
 
 // Export from measurements

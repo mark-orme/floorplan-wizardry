@@ -1,3 +1,4 @@
+
 /**
  * Grid snapping operations
  * Functions for snapping points and shapes to the grid
@@ -8,6 +9,9 @@ import { GRID_SIZE } from '../drawing';
 import { snapToGrid } from './core';
 import { FLOATING_POINT_TOLERANCE } from '../geometry/constants';
 import { calculateAngle } from '../geometry/lineOperations';
+
+// Re-export snapToGrid from core to provide API compatibility
+export { snapToGrid } from './core';
 
 /** 
  * Snap an array of points to the grid for consistent alignment

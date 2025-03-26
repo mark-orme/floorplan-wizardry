@@ -1,6 +1,5 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { fabric } from "fabric";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasContainer } from "./CanvasContainer";
 import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
@@ -12,27 +11,23 @@ import logger from "@/utils/logger";
 
 export const Canvas: React.FC = () => {
   // Get the canvas controller from context
+  const controller = useCanvasController();
   const {
-    canvasDimensions,
-    gridLayerRef,
-    historyRef,
     tool,
     currentFloor,
-    setFloorPlans,
-    setGia,
     lineThickness,
     lineColor,
-    createGrid
-  } = useCanvasController();
+  } = controller;
   
   // References
   const canvasElementRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const gridLayerRef = useRef<FabricCanvas["getObjects"] extends () => infer T ? T : never[]>([]);
+  const historyRef = useRef<{past: any[][], future: any[][]}>({ past: [], future: [] });
   
   // Debug state
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
     canvasReady: false,
-    fabricInitialized: false,
     gridCreated: false,
     gridObjectCount: 0,
     lastInitTime: 0,
@@ -52,11 +47,11 @@ export const Canvas: React.FC = () => {
     canvasElementRef,
     fabricCanvasRef,
     gridLayerRef,
-    canvasDimensions,
+    canvasDimensions: controller.dimensions,
     setDebugInfo,
     setHasError,
     setErrorMessage,
-    createGrid
+    createGrid: controller.createGrid || (() => [])
   });
   
   // Set up drawing on the canvas
@@ -66,8 +61,8 @@ export const Canvas: React.FC = () => {
     historyRef,
     tool,
     currentFloor,
-    setFloorPlans,
-    setGia,
+    setFloorPlans: controller.setFloorPlans || (() => {}),
+    setGia: controller.setGia || (() => {}),
     lineThickness,
     lineColor,
     deleteSelectedObjects,
