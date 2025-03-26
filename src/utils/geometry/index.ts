@@ -1,35 +1,35 @@
 
 /**
- * Geometry utilities index
- * Central export point for all geometry-related utility functions
+ * Geometry utilities module
+ * Exports all geometry-related functions and constants
  * @module geometry
  */
 
-// Export from areaCalculations
-export { calculateGIA } from './areaCalculations';
-
-// Export from constants
-export { 
-  HORIZONTAL_BIAS,
-  VERTICAL_BIAS,
-  DISTANCE_PRECISION,
-  MEASUREMENT_UPDATE_INTERVAL,
-  SHAPE_CLOSE_THRESHOLD,
-  MIN_LINE_LENGTH,
-  MAX_ANGLE_DEVIATION,
+// Re-export constants
+export {
   GRID_SPACING,
   CLOSE_POINT_THRESHOLD,
-  FLOATING_POINT_TOLERANCE
+  SHAPE_CLOSE_THRESHOLD,
+  FLOATING_POINT_TOLERANCE,
+  MIN_LINE_LENGTH,
+  MIN_SHAPE_AREA,
+  ANGLE_SNAP_THRESHOLD,
+  LARGE_GRID_LINE_WIDTH,
+  SMALL_GRID_LINE_WIDTH,
+  AREA_PRECISION
 } from './constants';
 
-// Export from coordinateTransforms
-export { screenToCanvasCoordinates } from './coordinateTransforms';
+// Re-export point operations
+export * from './pointOperations';
 
-// Export from lineOperations
-export { 
-  calculateDistance,
-  isExactGridMultiple
-} from './lineOperations';
+// Re-export line operations
+export * from './lineOperations';
 
-// Export from straightening
-export { straightenStroke } from './straightening';
+// Re-export shape operations
+export * from './shapeOperations';
+
+// Re-export area calculations
+export * from './areaCalculations';
+
+// Re-export snapping utilities
+export * from './snapping';

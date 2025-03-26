@@ -29,7 +29,7 @@ export interface DebugInfoState {
   lastErrorTime?: number;
   /** Number of objects on the canvas */
   canvasObjects?: number;
-  /** Number of grid objects on the canvas */
+  /** Number of objects in the grid layer */
   gridObjects?: number;
   /** Current canvas width */
   canvasWidth?: number;
@@ -43,4 +43,10 @@ export interface DebugInfoState {
   performanceStats?: Partial<PerformanceMetrics>;
   /** Last action performed */
   lastAction?: string;
+  /** Grid state description */
+  gridState?: string;
+  /** Last grid operation description */
+  lastGridOperation?: string;
+  /** Count of grid objects */
+  gridObjectCount?: number;
 }

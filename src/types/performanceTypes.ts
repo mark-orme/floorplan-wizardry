@@ -44,4 +44,10 @@ export interface CanvasLoadTimes {
   readyTime?: number;
   /** Total initialization time in ms */
   totalInitTime?: number;
+  /** Timestamp when canvas became ready */
+  canvasReady?: number;
+  /** Timestamp when grid was created */
+  gridCreated?: number;
+  /** Start time for performance measurements */
+  startTime?: number;
 }

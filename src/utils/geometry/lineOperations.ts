@@ -1,4 +1,3 @@
-
 /**
  * Line operation utilities
  * @module lineOperations
@@ -31,6 +30,19 @@ export const isExactGridMultiple = (value: number): boolean => {
   // Check if remainder is very close to 0 or very close to grid spacing
   return remainder < FLOATING_POINT_TOLERANCE || 
          Math.abs(remainder - GRID_SPACING) < FLOATING_POINT_TOLERANCE;
+};
+
+/**
+ * Check if a line is exactly aligned with the grid
+ * @param {Point} p1 - First point
+ * @param {Point} p2 - Second point
+ * @returns {boolean} True if the line is grid-aligned
+ */
+export const lineIsExactGridMultiple = (p1: Point, p2: Point): boolean => {
+  return isExactGridMultiple(p1.x) && 
+         isExactGridMultiple(p1.y) && 
+         isExactGridMultiple(p2.x) && 
+         isExactGridMultiple(p2.y);
 };
 
 /**
