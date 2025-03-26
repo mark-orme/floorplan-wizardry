@@ -74,7 +74,9 @@ export const isCanvasValid = (canvas: Canvas | null): boolean => {
     return (
       typeof canvas.getObjects === 'function' &&
       typeof canvas.renderAll === 'function' &&
-      !canvas.__disposed
+      // Fix: use the proper property for checking if canvas is disposed
+      // The Canvas type has a 'disposed' property, not '__disposed'
+      !(canvas as any).disposed
     );
   } catch (error) {
     return false;
@@ -171,7 +173,8 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
       // Even if there's an error, we want to try alternate approaches
       try {
         // Add a flag to canvas to mark it as disposed
-        (canvas as any).__disposed = true;
+        // Fix: Use the proper property 'disposed' instead of '__disposed'
+        (canvas as any).disposed = true;
         
         // Try to access and remove the canvas element directly
         const canvasElement = safelyGetCanvasElement(canvas);
