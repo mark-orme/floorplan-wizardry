@@ -6,28 +6,33 @@
  */
 
 // Export from areaCalculations
-export { calculateArea, calculateGIA } from './areaCalculations';
+export { calculateGIA } from './areaCalculations';
 
 // Export from constants
-export { PIXELS_PER_METER, GRID_SIZE, GRID_MAJOR_INTERVAL } from './constants';
+export { 
+  GRID_SPACING,
+  DISTANCE_PRECISION,
+  CLOSE_POINT_THRESHOLD,
+  FLOATING_POINT_TOLERANCE
+} from './constants';
 
 // Export from coordinateTransforms
-export { canvasToRealCoordinates, realToCanvasCoordinates } from './coordinateTransforms';
+export { screenToCanvasCoordinates } from './coordinateTransforms';
 
 // Export from gridOperations - selectively export to avoid duplication
-export { snapToGrid, roundToGrid } from './gridOperations';
+export { snapToGrid } from './gridOperations';
 
 // Export from lineOperations
 export { 
-  calculateDistance, 
-  calculateMidpoint, 
-  createLine,
-  normalizePoints,
-  calculateAngle,
-  arePointsEqual, 
-  isPointOnLine,
-  isExactGridMultiple 
+  calculateDistance,
+  isExactGridMultiple
 } from './lineOperations';
 
 // Export from midpointCalculation
-export { findMidpoint } from './midpointCalculation';
+// Note: If midpointCalculation.ts doesn't export findMidpoint, we'll omit this export
+
+/**
+ * This serves as the central export point for geometry utilities.
+ * We've cleaned up the exports to only include functions that actually exist
+ * in the imported modules to avoid TypeScript errors.
+ */

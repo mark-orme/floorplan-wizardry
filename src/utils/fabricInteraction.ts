@@ -4,7 +4,7 @@
  * Provides functions for enhancing canvas interaction
  * @module fabricInteraction
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Point } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Point, TPointerEvent } from "fabric";
 import logger from "./logger";
 
 /**
@@ -138,6 +138,41 @@ export const snapToAngle = (angle: number): number => {
 };
 
 /**
+ * Type guard to check if event is a touch event
+ * @param {MouseEvent | TouchEvent} event - The event to check
+ * @returns {boolean} True if event is a touch event
+ */
+const isTouchEvent = (event: MouseEvent | TouchEvent): event is TouchEvent => {
+  return 'touches' in event;
+};
+
+/**
+ * Safely get client X position from mouse or touch event
+ * @param {MouseEvent | TouchEvent} event - The event
+ * @param {number} fallback - Fallback value
+ * @returns {number} The client X position
+ */
+const getClientX = (event: MouseEvent | TouchEvent, fallback: number): number => {
+  if (isTouchEvent(event)) {
+    return event.touches && event.touches[0] ? event.touches[0].clientX : fallback;
+  }
+  return (event as MouseEvent).clientX;
+};
+
+/**
+ * Safely get client Y position from mouse or touch event
+ * @param {MouseEvent | TouchEvent} event - The event
+ * @param {number} fallback - Fallback value
+ * @returns {number} The client Y position
+ */
+const getClientY = (event: MouseEvent | TouchEvent, fallback: number): number => {
+  if (isTouchEvent(event)) {
+    return event.touches && event.touches[0] ? event.touches[0].clientY : fallback;
+  }
+  return (event as MouseEvent).clientY;
+};
+
+/**
  * Enable panning mode for the canvas
  * Allows dragging the canvas viewport with the mouse
  * 
@@ -185,10 +220,10 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
     canvas.on('mouse:down', function(opt) {
       if (!extendedCanvas.isPanning) return;
       
-      const evt = opt.e;
+      const evt = opt.e as MouseEvent | TouchEvent;
       extendedCanvas.isDragging = true;
-      extendedCanvas.lastPosX = evt.clientX || (evt.touches && evt.touches[0] ? evt.touches[0].clientX : 0);
-      extendedCanvas.lastPosY = evt.clientY || (evt.touches && evt.touches[0] ? evt.touches[0].clientY : 0);
+      extendedCanvas.lastPosX = getClientX(evt, 0);
+      extendedCanvas.lastPosY = getClientY(evt, 0);
       
       // Change cursor to indicate active panning
       canvas.defaultCursor = 'grabbing';
@@ -200,12 +235,12 @@ export const enablePanning = (canvas: FabricCanvas, enable: boolean): void => {
     canvas.on('mouse:move', function(opt) {
       if (!extendedCanvas.isDragging || !extendedCanvas.isPanning) return;
       
-      const evt = opt.e;
+      const evt = opt.e as MouseEvent | TouchEvent;
       const vpt = canvas.viewportTransform;
       
       // Get current position, handling both mouse and touch events
-      const currentX = evt.clientX || (evt.touches && evt.touches[0] ? evt.touches[0].clientX : extendedCanvas.lastPosX);
-      const currentY = evt.clientY || (evt.touches && evt.touches[0] ? evt.touches[0].clientY : extendedCanvas.lastPosY);
+      const currentX = getClientX(evt, extendedCanvas.lastPosX);
+      const currentY = getClientY(evt, extendedCanvas.lastPosY);
       
       // Calculate new position with enhanced panning range
       // The multiplier (1.5) allows for faster panning
