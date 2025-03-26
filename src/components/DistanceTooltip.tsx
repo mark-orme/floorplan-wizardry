@@ -56,9 +56,6 @@ export const DistanceTooltip = memo(({
     return null;
   }
   
-  // Calculate grid units for clearer representation (how many 0.1m grid cells)
-  const gridUnits = Math.round(distanceInMeters / GRID_SIZE);
-  
   // Format the distance to always show 1 decimal place for consistency
   const formattedDistance = formatDistance(distanceInMeters);
   
@@ -89,7 +86,7 @@ export const DistanceTooltip = memo(({
     >
       <div className="flex items-center gap-2 whitespace-nowrap">
         <Ruler className="w-3 h-3 flex-shrink-0" />
-        <span className="font-semibold">{formattedDistance}</span>
+        <span className="font-semibold">{formattedDistance}m</span>
       </div>
     </div>
   );

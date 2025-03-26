@@ -50,7 +50,8 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     }
   }, [readonly]);
   
-  // Improved tooltip visibility logic - show when drawing or in select mode with an active selection
+  // Enhanced tooltip visibility logic - show during active drawing with line tools
+  // and also when hovering over existing lines in selection mode
   const isTooltipVisible = Boolean(
     // Always show during active drawing with line tools
     (drawingState?.isDrawing && (tool === "straightLine" || tool === "wall")) ||
@@ -62,6 +63,19 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     // Show when objects are selected (for measurements of selected objects)
     (tool === "select" && drawingState?.selectionActive)
   );
+  
+  if (process.env.NODE_ENV === 'development') {
+    // Log tooltip visibility for debugging
+    console.log("Tooltip visibility:", {
+      isVisible: isTooltipVisible,
+      isDrawing: drawingState?.isDrawing,
+      tool,
+      startPoint: drawingState?.startPoint,
+      currentPoint: drawingState?.currentPoint,
+      cursorPosition: drawingState?.cursorPosition,
+      selectionActive: drawingState?.selectionActive
+    });
+  }
   
   return (
     <div className="canvas-wrapper relative">
@@ -87,7 +101,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         <canvas ref={canvasRef} />
       </div>
       
-      {/* Tooltip for distance measurement - show during active drawing with line tools */}
+      {/* Tooltip for distance measurement - improved visibility */}
       {isTooltipVisible && (
         <DistanceTooltip 
           startPoint={drawingState?.startPoint}

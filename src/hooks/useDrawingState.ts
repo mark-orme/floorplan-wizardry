@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing drawing state on the canvas
  * @module useDrawingState
@@ -76,7 +75,10 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
       startPoint: snappedPoint,
       currentPoint: snappedPoint,
       cursorPosition: pointer,
-      midPoint: null
+      midPoint: {
+        x: snappedPoint.x,
+        y: snappedPoint.y
+      }
     }));
     
     console.log("Mouse down - Start drawing at:", snappedPoint);
@@ -120,6 +122,15 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
           cursorPosition: pointer,
           midPoint: midPoint
         }));
+        
+        // Debug log for development
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Drawing in progress:", {
+            start: drawingState.startPoint,
+            current: snappedPoint,
+            mid: midPoint
+          });
+        }
       } else {
         // Just update cursor position for hover tooltips
         setDrawingState(prevState => ({
@@ -140,8 +151,9 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     const canvas = fabricCanvasRef.current;
     const hasActiveSelection = canvas.getActiveObject() !== null;
     
-    // Clear drawing state after a short delay
-    // But preserve selection state for tooltips on selected objects
+    console.log("Mouse up - Completing drawing. Selection active:", hasActiveSelection);
+    
+    // Keep the measurement tooltip visible for a moment after drawing
     timeoutRef.current = window.setTimeout(() => {
       // Keep drawing state true for a little longer to show the measurement
       setDrawingState(prevState => ({

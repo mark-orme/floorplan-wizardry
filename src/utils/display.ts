@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for displaying formatted values
  */
@@ -31,8 +32,8 @@ export const formatMeasurement = (value: number, compact = false): string => {
   
   // Otherwise show in meters with 2 decimal places
   return compact 
-    ? `${value.toFixed(2).replace(/\.00$/, '')}m` 
-    : `${value.toFixed(2).replace(/\.00$/, '')} m`;
+    ? `${value.toFixed(1).replace(/\.0$/, '')}m` 
+    : `${value.toFixed(1).replace(/\.0$/, '')} m`;
 };
 
 /**
@@ -44,4 +45,14 @@ export const formatMeasurement = (value: number, compact = false): string => {
 export const formatDecimal = (value: number, precision = 2): string => {
   if (!value || isNaN(value)) return "0";
   return value.toFixed(precision).replace(/\.0+$/, '');
+};
+
+/**
+ * Format a wall length measurement with consistent 1 decimal precision
+ * @param {number} length - Wall length in meters
+ * @returns {string} Formatted length with 1 decimal place
+ */
+export const formatWallLength = (length: number): string => {
+  if (!length || isNaN(length)) return "0.0";
+  return length.toFixed(1);
 };
