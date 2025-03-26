@@ -26,7 +26,7 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "error", // Changed from off to error
       "@typescript-eslint/no-magic-numbers": ["warn", {
         "ignore": [0, 1, -1, 2], // Common values that don't need explaining
         "ignoreArrayIndexes": true,
@@ -37,6 +37,8 @@ export default tseslint.config(
         "enforceConst": true,
         "detectObjects": false
       }],
+      
+      // JSDoc rules (already in place)
       "jsdoc/require-jsdoc": ["warn", {
         "publicOnly": true,
         "require": {
@@ -61,7 +63,93 @@ export default tseslint.config(
       "jsdoc/check-tag-names": "warn",
       "jsdoc/check-types": "warn",
       "jsdoc/valid-types": "warn",
-      "jsdoc/no-undefined-types": "warn"
+      "jsdoc/no-undefined-types": "warn",
+      
+      // New rules for code quality
+      
+      // Naming conventions
+      "@typescript-eslint/naming-convention": [
+        "warn",
+        {
+          "selector": "variable",
+          "format": ["camelCase", "UPPER_CASE", "PascalCase"]
+        },
+        {
+          "selector": "function",
+          "format": ["camelCase", "PascalCase"]
+        },
+        {
+          "selector": "typeLike",
+          "format": ["PascalCase"]
+        },
+        {
+          "selector": "interface",
+          "format": ["PascalCase"],
+          "prefix": ["I"]
+        }
+      ],
+      
+      // Maximum line length
+      "max-len": ["warn", { 
+        "code": 100, 
+        "ignoreComments": true, 
+        "ignoreUrls": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreRegExpLiterals": true
+      }],
+      
+      // Maximum function length
+      "max-lines-per-function": ["warn", { 
+        "max": 50, 
+        "skipBlankLines": true, 
+        "skipComments": true 
+      }],
+      
+      // Import order
+      "sort-imports": ["warn", {
+        "ignoreCase": true,
+        "ignoreDeclarationSort": true
+      }],
+      
+      // Complexity limits
+      "complexity": ["warn", 10],
+      
+      // Unused variables and imports (typescript-eslint handles no-unused-vars)
+      "no-unused-expressions": "error",
+      
+      // Consistent spacing and formatting
+      "indent": ["warn", 2, { "SwitchCase": 1 }],
+      "quotes": ["warn", "double", { "avoidEscape": true }],
+      "semi": ["warn", "always"],
+      "comma-dangle": ["warn", "always-multiline"],
+      "object-curly-spacing": ["warn", "always"],
+      "array-bracket-spacing": ["warn", "never"],
+      
+      // Prevent deeply nested code
+      "max-depth": ["warn", 3],
+      
+      // Encourage consistent use of destructuring
+      "prefer-destructuring": ["warn", {
+        "array": true,
+        "object": true
+      }],
+      
+      // Enforce consistent arrow function syntax
+      "arrow-body-style": ["warn", "as-needed"],
+      
+      // Enforce consistent use of promise methods
+      "promise/catch-or-return": "warn",
+      "promise/always-return": "warn",
+      
+      // Enforce consistent React component definitions
+      "react/function-component-definition": ["warn", {
+        "namedComponents": "arrow-function",
+        "unnamedComponents": "arrow-function"
+      }],
+      
+      // Enforce consistent React Hook usage
+      "react-hooks/exhaustive-deps": "warn"
     },
   }
 );
