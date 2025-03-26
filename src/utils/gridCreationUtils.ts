@@ -5,6 +5,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import logger from "./logger";
+import { forceCleanCanvasElement } from "./fabricCanvas";
 
 /**
  * Create a very basic emergency grid without complex dependencies
@@ -212,5 +213,59 @@ export const retryWithBackoff = (
 export const clearRetryTimeout = (timeoutId: number | null): void => {
   if (timeoutId !== null) {
     window.clearTimeout(timeoutId);
+  }
+};
+
+/**
+ * Forcibly reset a canvas element for reinitialization
+ * @param {HTMLCanvasElement|null} element - Canvas element to reset
+ * @returns {boolean} Success status
+ */
+export const forceResetCanvasElement = (element: HTMLCanvasElement | null): boolean => {
+  if (!element) return false;
+  
+  try {
+    // First clean Fabric.js data attributes using existing utility
+    forceCleanCanvasElement(element);
+    
+    // Completely recreate the canvas by replacing it with a clone
+    const parent = element.parentNode;
+    if (parent) {
+      const clone = element.cloneNode(false) as HTMLCanvasElement;
+      
+      // Preserve ID and other important attributes
+      clone.id = element.id;
+      clone.className = element.className;
+      clone.style.cssText = element.style.cssText;
+      
+      // Remove any data attributes from the clone to ensure freshness
+      Array.from(clone.attributes)
+        .filter(attr => attr.name.startsWith('data-'))
+        .forEach(attr => {
+          clone.removeAttribute(attr.name);
+        });
+      
+      // Replace the original element with our clone
+      parent.replaceChild(clone, element);
+      
+      logger.info("Canvas element forcibly reset by replacement");
+      return true;
+    }
+    
+    // If we couldn't replace the element, at least try to reset its state
+    const width = element.width;
+    const height = element.height;
+    
+    // Reset dimensions to force canvas reinitialization
+    element.width = 1;
+    element.height = 1;
+    element.width = width;
+    element.height = height;
+    
+    logger.info("Canvas element partially reset");
+    return true;
+  } catch (error) {
+    logger.error("Failed to force reset canvas element:", error);
+    return false;
   }
 };

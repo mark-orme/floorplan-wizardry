@@ -6,6 +6,7 @@
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text, PencilBrush } from "fabric";
 import logger from "./logger";
 import { toast } from "sonner";
+import { forceCleanCanvasElement } from "./fabricCanvas";
 
 // Typings for grid creation parameters
 interface EmergencyGridOptions {
@@ -206,11 +207,11 @@ export const createEmergencyGrid = (
     
     // Force redraw if requested
     if (forceRender) {
-      canvas.requestRenderAll();
+      canvas.renderAll();
       // Double check with a delayed render to ensure visibility
       setTimeout(() => {
         if (canvas) {
-          canvas.requestRenderAll();
+          canvas.renderAll();
         }
       }, 500);
     }
@@ -280,12 +281,16 @@ export const attemptCanvasRepair = (
       return false;
     }
     
-    // Remove Fabric's data attribute to allow reinitialization
+    // Get all data attributes on the element to help with repair
+    const dataAttributes = Array.from(canvasElement.attributes)
+      .filter(attr => attr.name.startsWith('data-'))
+      .map(attr => attr.name);
+    
+    console.log("CANVAS REPAIR: Canvas has data attributes:", dataAttributes);
+    
+    // Force clean the canvas element
     try {
-      canvasElement.removeAttribute('data-fabric');
-      // Also clear width/height styles
-      canvasElement.style.width = '';
-      canvasElement.style.height = '';
+      forceCleanCanvasElement(canvasElement);
     } catch (err) {
       logger.warn("Could not clean canvas data attributes:", err);
     }
@@ -310,7 +315,7 @@ export const attemptCanvasRepair = (
     }
     
     // Try to refresh the canvas display
-    canvas.requestRenderAll();
+    canvas.renderAll();
     
     // Create emergency grid if there's nothing on the canvas
     if (canvas.getObjects().length === 0) {
@@ -322,6 +327,50 @@ export const attemptCanvasRepair = (
   } catch (error) {
     logger.error("Canvas repair failed:", error);
     console.error("CANVAS REPAIR ERROR:", error);
+    return false;
+  }
+};
+
+/**
+ * Reset a canvas element for reinitialization
+ * @param {HTMLCanvasElement} element - Canvas element to reset
+ * @returns {boolean} Whether the reset was successful
+ */
+export const resetCanvasElement = (element: HTMLCanvasElement): boolean => {
+  if (!element) return false;
+  
+  try {
+    // Remove all data attributes
+    Array.from(element.attributes)
+      .filter(attr => attr.name.startsWith('data-'))
+      .forEach(attr => {
+        try {
+          element.removeAttribute(attr.name);
+        } catch (e) {
+          // Ignore errors
+        }
+      });
+    
+    // Reset width and height to clean values
+    if (element.width > 0 && element.height > 0) {
+      const width = element.width;
+      const height = element.height;
+      
+      // This forces a re-creation of the backing store
+      element.width = 1;
+      element.height = 1;
+      element.width = width;
+      element.height = height;
+    }
+    
+    // Reset styles
+    element.style.width = '';
+    element.style.height = '';
+    
+    logger.info("Canvas element reset successfully");
+    return true;
+  } catch (error) {
+    logger.error("Error resetting canvas element:", error);
     return false;
   }
 };

@@ -12,7 +12,13 @@ const canvasState = {
   initialSetupComplete: false,
   disposalInProgress: false,
   // Keep track of disposed canvases to prevent re-disposing
-  disposedCanvases: new WeakSet<Canvas>()
+  disposedCanvases: new WeakSet<Canvas>(),
+  // Registry of canvas elements and their initialization state
+  canvasElementRegistry: new WeakMap<HTMLCanvasElement, {
+    initialized: boolean,
+    timestamp: number,
+    canvas: Canvas | null
+  }>()
 };
 
 /**
@@ -126,6 +132,44 @@ export const safelyGetCanvasElement = (canvas: Canvas): HTMLCanvasElement | null
 };
 
 /**
+ * Forcibly clean a canvas element to allow reinitialization
+ * @param {HTMLCanvasElement|null} element - The canvas element to clean
+ * @returns {boolean} Whether cleaning was successful
+ */
+export const forceCleanCanvasElement = (element: HTMLCanvasElement | null): boolean => {
+  if (!element) return false;
+  
+  try {
+    // Remove Fabric's data attributes
+    element.removeAttribute('data-fabric');
+    element.removeAttribute('data-fabric-initialized');
+    
+    // Remove all data attributes just to be safe
+    Array.from(element.attributes)
+      .filter(attr => attr.name.startsWith('data-'))
+      .forEach(attr => {
+        try {
+          element.removeAttribute(attr.name);
+        } catch (err) {
+          // Ignore errors removing attributes
+        }
+      });
+    
+    // Reset the width/height style attributes
+    element.style.width = '';
+    element.style.height = '';
+    
+    // Remove the element from our registry
+    canvasState.canvasElementRegistry.delete(element);
+    
+    return true;
+  } catch (error) {
+    console.error("Error cleaning canvas element:", error);
+    return false;
+  }
+};
+
+/**
  * Properly dispose the canvas instance to prevent memory leaks
  * @param {Canvas|null} canvas - The Fabric canvas instance to dispose
  */
@@ -157,6 +201,9 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
       return;
     }
     
+    // Get the canvas element before disposal (needed for DOM cleanup)
+    const canvasElement = safelyGetCanvasElement(canvas);
+    
     // Safely remove all objects first
     try {
       const objects = [...canvas.getObjects()];
@@ -179,27 +226,15 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
       // Mark the canvas as disposed first, before finishing disposal
       (canvas as any).disposed = true;
       
-      // Get the canvas element before disposal (might be needed for DOM cleanup)
-      const canvasElement = safelyGetCanvasElement(canvas);
-      
       // Finally dispose the canvas
       canvas.dispose();
       
       // Mark flag since we successfully disposed the canvas
       disposedSuccessfully = true;
       
-      // If we got the element earlier, try to remove fabric data attributes
+      // If we got the element earlier, force clean it
       if (canvasElement) {
-        try {
-          // Remove Fabric's data attribute to prevent "already initialized" errors
-          canvasElement.removeAttribute('data-fabric');
-          
-          // Also remove inline width/height to allow reinitializing with new dimensions
-          canvasElement.style.width = '';
-          canvasElement.style.height = '';
-        } catch (err) {
-          console.warn("Failed to clean canvas element attributes:", err);
-        }
+        forceCleanCanvasElement(canvasElement);
       }
     } catch (err) {
       console.warn("Standard canvas disposal failed:", err);
@@ -209,11 +244,9 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
         // Add a flag to canvas to mark it as disposed
         (canvas as any).disposed = true;
         
-        // Try to access and remove the canvas element directly
-        const canvasElement = safelyGetCanvasElement(canvas);
+        // Try to access and force clean the canvas element
         if (canvasElement) {
-          // Remove Fabric's data attribute
-          canvasElement.removeAttribute('data-fabric');
+          forceCleanCanvasElement(canvasElement);
           disposedSuccessfully = true;
         }
       } catch (domErr) {
@@ -294,4 +327,41 @@ export const isCanvasDisposed = (canvas: Canvas | null): boolean => {
 export const resetCanvasStateTracker = (): void => {
   canvasState.disposalInProgress = false;
   console.log("Canvas state tracker has been reset");
+};
+
+/**
+ * Check if a canvas element has a Fabric.js instance attached
+ * @param {HTMLCanvasElement} element - Canvas element to check
+ * @returns {boolean} Whether element is initialized
+ */
+export const isCanvasElementInitialized = (element: HTMLCanvasElement | null): boolean => {
+  if (!element) return false;
+  
+  try {
+    // First check for Fabric's data attribute
+    if (element.hasAttribute('data-fabric')) {
+      return true;
+    }
+    
+    // Then check our registry
+    return canvasState.canvasElementRegistry.has(element);
+  } catch (error) {
+    console.warn("Error checking canvas element initialization:", error);
+    return false;
+  }
+};
+
+/**
+ * Register a canvas element and its instance
+ * @param {HTMLCanvasElement} element - Canvas element to register
+ * @param {Canvas} canvas - Fabric canvas instance
+ */
+export const registerCanvasElement = (element: HTMLCanvasElement, canvas: Canvas): void => {
+  if (!element || !canvas) return;
+  
+  canvasState.canvasElementRegistry.set(element, {
+    initialized: true,
+    timestamp: Date.now(),
+    canvas
+  });
 };

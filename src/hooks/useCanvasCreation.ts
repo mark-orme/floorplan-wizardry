@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { CanvasDimensions } from "@/types/drawingTypes";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import logger from "@/utils/logger";
+import { forceResetCanvasElement } from "@/utils/gridCreationUtils";
+import { forceCleanCanvasElement, isCanvasElementInitialized } from "@/utils/fabricCanvas";
 
 /**
  * Props for useCanvasCreation hook
@@ -49,7 +51,12 @@ export const useCanvasCreation = ({
   const [canvasElementChecked, setCanvasElementChecked] = useState<boolean>(false);
   
   // Get canvas cleanup utilities
-  const { cleanupCanvas, isCanvasElementInitialized, markCanvasAsInitialized } = useCanvasCleanup();
+  const { 
+    cleanupCanvas, 
+    isCanvasElementInitialized: checkCanvasElementInitialized, 
+    markCanvasAsInitialized,
+    forceCleanCanvasElement: cleanup
+  } = useCanvasCleanup();
 
   // This effect will ensure we clean up any timeouts when the component unmounts
   useEffect(() => {
@@ -106,7 +113,7 @@ export const useCanvasCreation = ({
     };
   }, []);
 
-  // Initialize canvas with performance optimizations
+  // Initialize canvas with performance optimizations and duplicate initialization checks
   const initializeCanvas = useCallback((): FabricCanvas | null => {
     if (!canvasRef.current) {
       console.warn("Canvas reference is not available yet");
@@ -171,9 +178,31 @@ export const useCanvasCreation = ({
       return null;
     }
     
-    // Check if the canvas element has already been initialized by another instance
-    if (canvasRef.current && isCanvasElementInitialized(canvasRef.current)) {
-      logger.warn("Canvas element already has a Fabric instance attached, disposing first");
+    // Get the canvas element
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) {
+      logger.error("Canvas element not available");
+      return null;
+    }
+    
+    // Check for Fabric.js data attribute directly before trying checkCanvasElementInitialized
+    // This is a direct approach to catch initialization issues early
+    if (canvasElement.hasAttribute('data-fabric')) {
+      logger.warn("Canvas element has data-fabric attribute - forcing cleanup");
+      
+      // Try to force clean the canvas element first
+      forceCleanCanvasElement(canvasElement);
+      
+      // If it still has the attribute, try a more aggressive approach
+      if (canvasElement.hasAttribute('data-fabric')) {
+        logger.warn("Canvas element still has data-fabric attribute after cleanup - forcing reset");
+        forceResetCanvasElement(canvasElement);
+      }
+    }
+    
+    // Now use our hook's check function as a secondary check
+    if (checkCanvasElementInitialized(canvasElement)) {
+      logger.warn("Canvas element already has a Fabric instance attached - forcing cleanup");
       
       // If we have a previous canvas instance, dispose it first
       if (fabricCanvasRef.current) {
@@ -181,33 +210,39 @@ export const useCanvasCreation = ({
         fabricCanvasRef.current = null;
       }
       
-      // Wait a bit before continuing to ensure disposal is complete
-      // This could be improved with a promise-based approach
-      const timeoutId = setTimeout(() => {
-        initializeCanvas();
-      }, 500);
+      // Force clean the element
+      cleanup(canvasElement);
       
-      return null;
+      // If it's still marked as initialized, we need to reset it more aggressively
+      if (isCanvasElementInitialized(canvasElement)) {
+        logger.warn("Canvas element still marked as initialized after cleanup - forcing reset");
+        forceResetCanvasElement(canvasElement);
+      }
     }
     
     initializationInProgressRef.current = true;
     
     try {
+      // Log with additional debugging information
       console.log("Creating new Fabric canvas instance with dimensions:", canvasDimensions);
+      console.log("Canvas element has data-fabric attribute:", canvasElement.hasAttribute('data-fabric'));
       
       // Force canvas element to have width and height using inline style
-      canvasRef.current.style.width = `${canvasDimensions.width || 800}px`;
-      canvasRef.current.style.height = `${canvasDimensions.height || 600}px`;
+      canvasElement.style.width = `${canvasDimensions.width || 800}px`;
+      canvasElement.style.height = `${canvasDimensions.height || 600}px`;
       
       // Set width and height attributes
-      canvasRef.current.width = canvasDimensions.width || 800;
-      canvasRef.current.height = canvasDimensions.height || 600;
+      canvasElement.width = canvasDimensions.width || 800;
+      canvasElement.height = canvasDimensions.height || 600;
       
       // Trigger a forced reflow
-      canvasRef.current.getBoundingClientRect();
+      canvasElement.getBoundingClientRect();
+      
+      // Attempting canvas initialization with dimensions... debug message
+      console.log(`Attempting canvas initialization with dimensions... ${canvasDimensions.width || 800} x ${canvasDimensions.height || 600}`);
       
       // PERFORMANCE OPTIMIZATIONS for Fabric.js initialization
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
+      const fabricCanvas = new FabricCanvas(canvasElement, {
         backgroundColor: "#FFFFFF",
         isDrawingMode: true,
         selection: false,
@@ -230,8 +265,8 @@ export const useCanvasCreation = ({
         fabricCanvas.width, "x", fabricCanvas.height);
       
       // Mark this canvas element as initialized to prevent duplicate initialization
-      if (canvasRef.current) {
-        markCanvasAsInitialized(canvasRef.current);
+      if (canvasElement) {
+        markCanvasAsInitialized(canvasElement);
       }
       
       fabricCanvasRef.current = fabricCanvas;
@@ -243,6 +278,10 @@ export const useCanvasCreation = ({
       // OPTIMIZATION: Precompile frequent canvas operations
       fabricCanvas.calcViewportBoundaries();
       
+      // Success metrics
+      console.log(`Canvas initialized in ${Date.now() - performance.now()}ms`);
+      console.log("Performance tracking started");
+      
       initializationInProgressRef.current = false;
       
       return fabricCanvas;
@@ -251,10 +290,24 @@ export const useCanvasCreation = ({
       setHasError(true);
       setErrorMessage(`Failed to initialize canvas: ${err instanceof Error ? err.message : String(err)}`);
       toast.error("Failed to initialize canvas");
+      
+      // Force clean the element after error
+      if (canvasElement) {
+        forceCleanCanvasElement(canvasElement);
+      }
+      
       initializationInProgressRef.current = false;
       return null;
     }
-  }, [canvasDimensions, setHasError, setErrorMessage, cleanupCanvas, isCanvasElementInitialized, markCanvasAsInitialized]);
+  }, [
+    canvasDimensions, 
+    setHasError, 
+    setErrorMessage, 
+    cleanupCanvas, 
+    checkCanvasElementInitialized, 
+    markCanvasAsInitialized, 
+    cleanup
+  ]);
 
   return {
     canvasRef,

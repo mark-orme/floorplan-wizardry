@@ -29,7 +29,13 @@ const cleanupState = {
   // Flag to track if we're detecting a loop
   loopDetected: false,
   // Time when the last loop was detected
-  lastLoopDetectedTime: 0
+  lastLoopDetectedTime: 0,
+  // Track all canvas elements to ensure they are properly handled
+  canvasElementRegistry: new WeakMap<HTMLCanvasElement, {
+    initialized: boolean,
+    timestamp: number,
+    fabricIds: string[]
+  }>()
 };
 
 /**
@@ -85,6 +91,33 @@ export const useCanvasCleanup = () => {
     }
     
     return false;
+  }, []);
+
+  /**
+   * Force clean a canvas element by removing Fabric data attributes
+   */
+  const forceCleanCanvasElement = useCallback((element: HTMLCanvasElement | null): boolean => {
+    if (!element) return false;
+    
+    try {
+      // Remove all data attributes that Fabric uses to track initialization
+      element.removeAttribute('data-fabric');
+      element.removeAttribute('data-fabric-initialized');
+      
+      // Also remove inline width/height to allow reinitializing with new dimensions
+      element.style.width = '';
+      element.style.height = '';
+      
+      // Clean internal registry
+      cleanupState.initializedCanvasElements.delete(element);
+      cleanupState.canvasElementRegistry.delete(element);
+      
+      logger.debug("Canvas element forcibly cleaned");
+      return true;
+    } catch (error) {
+      logger.error("Error during forced canvas element cleanup:", error);
+      return false;
+    }
   }, []);
 
   /**
@@ -149,6 +182,14 @@ export const useCanvasCleanup = () => {
         return;
       }
       
+      // Try to get canvas element before disposal
+      let canvasElement: HTMLCanvasElement | null = null;
+      try {
+        canvasElement = fabricCanvas.getElement();
+      } catch (e) {
+        logger.debug("Could not get canvas element during cleanup");
+      }
+      
       // Track this disposal to detect loops
       cleanupState.recentlyDisposedCanvases.add(canvasId);
       
@@ -164,14 +205,12 @@ export const useCanvasCleanup = () => {
       disposeTimeoutsRef.current.push(cooldownTimeoutId);
       
       // Mark canvas element as not initialized anymore
-      try {
-        const canvasElement = fabricCanvas.getElement();
-        if (canvasElement) {
-          cleanupState.initializedCanvasElements.delete(canvasElement);
-          logger.debug("Canvas element marked as not initialized");
-        }
-      } catch (error) {
-        logger.error("Error accessing canvas element during cleanup:", error);
+      if (canvasElement) {
+        cleanupState.initializedCanvasElements.delete(canvasElement);
+        logger.debug("Canvas element marked as not initialized");
+        
+        // Force clean the element to prevent reinitialization issues
+        forceCleanCanvasElement(canvasElement);
       }
       
       // Add a timeout to ensure we're not in the middle of a render cycle
@@ -182,9 +221,19 @@ export const useCanvasCleanup = () => {
           if (fabricCanvas && isCanvasValid(fabricCanvas) && !fabricCanvas.disposed) {
             disposeCanvas(fabricCanvas);
             logger.info("Canvas disposed successfully");
+            
+            // Force clean the element after disposal
+            if (canvasElement) {
+              forceCleanCanvasElement(canvasElement);
+            }
           }
         } catch (error) {
           logger.error("Error during delayed canvas cleanup:", error);
+          
+          // Force clean the element even after error
+          if (canvasElement) {
+            forceCleanCanvasElement(canvasElement);
+          }
         } finally {
           // Always reset the flags
           cleanupState.disposalInProgress = false;
@@ -200,7 +249,7 @@ export const useCanvasCleanup = () => {
       isCleaningUpRef.current = false;
       cleanupState.disposingCanvases.delete(fabricCanvas);
     }
-  }, [isInCleanupLoop]);
+  }, [isInCleanupLoop, forceCleanCanvasElement]);
 
   /**
    * Check if a canvas element has already been initialized
@@ -208,8 +257,13 @@ export const useCanvasCleanup = () => {
   const isCanvasElementInitialized = useCallback((element: HTMLCanvasElement | null): boolean => {
     if (!element) return false;
     
+    // Check if the element has a data-fabric attribute
+    const hasFabricAttribute = element.hasAttribute('data-fabric');
+    
     // Check in our WeakMap if this element has been initialized
-    return cleanupState.initializedCanvasElements.has(element);
+    const isTrackedAsInitialized = cleanupState.initializedCanvasElements.has(element);
+    
+    return hasFabricAttribute || isTrackedAsInitialized;
   }, []);
 
   /**
@@ -217,7 +271,18 @@ export const useCanvasCleanup = () => {
    */
   const markCanvasAsInitialized = useCallback((element: HTMLCanvasElement | null): void => {
     if (!element) return;
+    
     cleanupState.initializedCanvasElements.set(element, true);
+    
+    // Also update our registry
+    cleanupState.canvasElementRegistry.set(element, {
+      initialized: true,
+      timestamp: Date.now(),
+      fabricIds: Array.from(element.attributes)
+        .filter(attr => attr.name.startsWith('data-'))
+        .map(attr => attr.name)
+    });
+    
     logger.debug("Canvas element marked as initialized");
   }, []);
 
@@ -237,6 +302,7 @@ export const useCanvasCleanup = () => {
     cleanupCanvas,
     isCanvasElementInitialized,
     markCanvasAsInitialized,
+    forceCleanCanvasElement,
     resetCleanupState,
     isCleaningUp: isCleaningUpRef.current
   };
