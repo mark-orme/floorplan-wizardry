@@ -4,6 +4,7 @@ import { renderHook } from '@testing-library/react';
 import { useZoomTracking } from '@/hooks/canvas-events/useZoomTracking';
 import { useCanvasHandlers } from '@/hooks/canvas-events/useCanvasHandlers';
 import { Canvas } from 'fabric';
+import { DrawingTool } from '@/hooks/useCanvasState';
 
 describe('Canvas Zoom and Handlers', () => {
   // Mock canvas and references
@@ -13,6 +14,7 @@ describe('Canvas Zoom and Handlers', () => {
   let mockHandleRedo: vi.Mock;
   let mockSaveCurrentState: vi.Mock;
   let mockDeleteSelectedObjects: vi.Mock;
+  let defaultTool: DrawingTool = 'select';
 
   beforeEach(() => {
     // Create mock Canvas
@@ -63,6 +65,7 @@ describe('Canvas Zoom and Handlers', () => {
       // When
       renderHook(() => useCanvasHandlers({
         fabricCanvasRef,
+        tool: defaultTool,
         handleUndo: mockHandleUndo,
         handleRedo: mockHandleRedo,
         saveCurrentState: mockSaveCurrentState,
@@ -81,6 +84,7 @@ describe('Canvas Zoom and Handlers', () => {
       // When
       const { unmount } = renderHook(() => useCanvasHandlers({
         fabricCanvasRef,
+        tool: defaultTool,
         handleUndo: mockHandleUndo,
         handleRedo: mockHandleRedo,
         saveCurrentState: mockSaveCurrentState,

@@ -45,7 +45,7 @@ describe('FloorPlanActions', () => {
     render(
       <FloorPlanActions 
         {...defaultProps}
-        userRole={UserRole.USER}
+        userRole={UserRole.PROCESSING_MANAGER} // Using an existing role that's not PHOTOGRAPHER or MANAGER
       />
     );
     

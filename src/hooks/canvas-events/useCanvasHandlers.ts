@@ -37,6 +37,7 @@ interface UseCanvasHandlersProps extends BaseEventHandlerProps {
  */
 export const useCanvasHandlers = ({
   fabricCanvasRef,
+  tool, // Required by the BaseEventHandlerProps type
   handleUndo,
   handleRedo,
   saveCurrentState,
