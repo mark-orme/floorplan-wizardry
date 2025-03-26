@@ -28,4 +28,3 @@ export {
   getClientX,
   getClientY
 } from './events';
-

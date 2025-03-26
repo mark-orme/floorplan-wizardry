@@ -26,7 +26,7 @@ export {
   
   // Panning
   enablePanning
-} from './fabric';
+} from './fabric/index';
 
 /**
  * Get environment variables with proper fallbacks

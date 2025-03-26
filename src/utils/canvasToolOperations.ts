@@ -7,7 +7,7 @@ import { Canvas as FabricCanvas, Object as FabricObject, Point } from "fabric";
 import { toast } from "sonner";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { initializeDrawingBrush } from "./fabricBrush";
-import { enablePanning, enableSelection, disableSelection } from "./fabricInteraction";
+import { enablePanning, enableSelection, disableSelection } from "./fabric";
 import logger from "./logger";
 
 /**
