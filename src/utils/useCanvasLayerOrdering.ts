@@ -61,7 +61,8 @@ export const ensureGridVisibility = (
     // Bring grid markers to front of grid elements
     gridMarkers.forEach(marker => {
       if (fabricCanvas.contains(marker)) {
-        fabricCanvas.bringForward(marker, false);
+        // Use bringObjectToFront instead of bringForward for Fabric.js v6 compatibility
+        fabricCanvas.bringObjectToFront(marker);
       }
     });
     

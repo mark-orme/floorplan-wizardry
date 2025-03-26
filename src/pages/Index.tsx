@@ -30,7 +30,7 @@ const CanvasApp = () => {
     handleAddFloor,
     handleLineThicknessChange,
     handleLineColorChange,
-    showMeasurementGuide
+    openMeasurementGuide
   } = useCanvasController();
 
   return (
@@ -54,7 +54,7 @@ const CanvasApp = () => {
       onAddFloor={handleAddFloor}
       onLineThicknessChange={handleLineThicknessChange}
       onLineColorChange={handleLineColorChange}
-      onShowMeasurementGuide={showMeasurementGuide || (() => {})}
+      onShowMeasurementGuide={openMeasurementGuide}
     >
       <Canvas />
     </CanvasLayout>
