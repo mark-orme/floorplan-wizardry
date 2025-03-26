@@ -50,6 +50,12 @@ export const straightenStroke = (stroke: Point[]): Point[] => {
     const absDistanceX = Math.abs(distanceX);
     const absDistanceY = Math.abs(distanceY);
     
+    console.log("Straightening line:", {
+      original: { start: startPoint, end: endPoint },
+      gridSnapped: { start: gridStart, end: gridEnd },
+      distances: { x: distanceX, y: distanceY, absX: absDistanceX, absY: absDistanceY }
+    });
+    
     // Determine if the line should be horizontal, vertical, or diagonal
     // Use stricter comparison for wall precision
     if (absDistanceX >= absDistanceY * HORIZONTAL_BIAS) { 

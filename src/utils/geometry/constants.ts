@@ -1,54 +1,48 @@
 
 /**
- * Constants for geometry calculations and grid operations
+ * Geometry constants module
+ * Constants for geometry calculations and conversions
  * @module geometryConstants
  */
 
 /**
- * Grid spacing in meters (0.1m = 10cm)
- * This is the primary grid spacing constant used throughout the application
- * @constant
+ * Horizontal bias factor for line straightening
+ * Higher values make it easier to draw horizontal lines
  */
-export const GRID_SPACING = 0.1;
+export const HORIZONTAL_BIAS = 1.5;
 
 /**
- * Precision for distance measurements (0.1m)
- * @constant
+ * Vertical bias factor for line straightening
+ * Higher values make it easier to draw vertical lines 
+ */
+export const VERTICAL_BIAS = 1.5;
+
+/**
+ * Distance precision for measurement calculations
+ * Rounds measurements to this precision (0.1m)
  */
 export const DISTANCE_PRECISION = 0.1;
 
 /**
- * Threshold for considering points "close" (5cm)
- * @constant
+ * Measurement update interval in milliseconds
+ * How frequently to update measurements during drawing
  */
-export const CLOSE_POINT_THRESHOLD = 0.05;
+export const MEASUREMENT_UPDATE_INTERVAL = 33;
 
 /**
- * Tolerance for floating point comparisons (1mm)
- * @constant
+ * Threshold for determining if shapes are closed
+ * Maximum distance between start and end points to be considered closed
  */
-export const FLOATING_POINT_TOLERANCE = 0.001;
+export const SHAPE_CLOSE_THRESHOLD = 0.3;
 
 /**
- * Bias factor for favoring horizontal lines
- * @constant
+ * Minimum line length in meters to be straightened
+ * Lines shorter than this may not be straightened
  */
-export const HORIZONTAL_BIAS = 1.2;
+export const MIN_LINE_LENGTH = 0.2;
 
 /**
- * Bias factor for favoring vertical lines
- * @constant
+ * Maximum angle deviation for straightening
+ * Lines with angle deviations less than this will be straightened
  */
-export const VERTICAL_BIAS = 1.2;
-
-/**
- * Area measurement precision (3 decimal places - mm²)
- * @constant
- */
-export const AREA_PRECISION = 3;
-
-/**
- * Maximum angle deviation for lines to be considered straight (degrees)
- * @constant
- */
-export const MAX_ANGLE_DEVIATION = 5;
+export const MAX_ANGLE_DEVIATION = 10;

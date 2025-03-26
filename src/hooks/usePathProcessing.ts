@@ -154,6 +154,10 @@ export const usePathProcessing = ({
       
       logger.info("Creating polyline with points:", pixelPoints.length, isEnclosed ? "(enclosed shape)" : "");
       
+      // Log the specific points for debugging
+      console.log("Final points for drawing:", finalPoints);
+      console.log("Pixel points for display:", pixelPoints);
+      
       // Remove the temporary path before creating the polyline
       fabricCanvas.remove(path);
       

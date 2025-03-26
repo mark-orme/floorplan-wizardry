@@ -1,107 +1,67 @@
 
-/**
- * Main Canvas component for floor plan drawing
- * Orchestrates the canvas setup, grid creation, and drawing tools
- * @module Canvas
- */
-import { useEffect, useRef, useState } from "react";
-import { LoadingErrorWrapper } from "./LoadingErrorWrapper";
-import { CanvasLayout } from "./CanvasLayout";
-import { CanvasControllerProvider, useCanvasController } from "./canvas/controller/CanvasController";
-import { DistanceTooltip } from "./DistanceTooltip";
-import { MeasurementGuideModal } from "./MeasurementGuideModal";
-import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
-import logger from "@/utils/logger";
-import { toast } from "sonner";
+import React, { useEffect, useState } from 'react';
+import { CanvasController } from './canvas/controller/CanvasController';
+import { useCanvasController } from './canvas/controller/useCanvasController';
+import { DistanceTooltip } from './DistanceTooltip';
+import { MeasurementGuide } from './MeasurementGuide';
+import { DrawingTool } from '@/hooks/useCanvasState';
+import { DrawingState } from '@/types/drawingTypes';
 
 interface CanvasProps {
-  readonly?: boolean;
   'data-readonly'?: boolean;
 }
 
 /**
- * Inner Canvas component that uses the canvas controller context
+ * Main Canvas component
+ * Handles rendering and interactions with the canvas
+ * @param {CanvasProps} props - Component properties
+ * @returns {JSX.Element} - Canvas component
  */
-const CanvasInner = (props: CanvasProps) => {
+export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element => {
   const {
+    canvasRef,
+    debugInfo,
+    hasError,
+    errorMessage,
     tool,
     gia,
     floorPlans,
     currentFloor,
-    isLoading,
-    hasError,
-    errorMessage,
-    debugInfo,
-    canvasRef,
+    drawingState,
     lineThickness,
     lineColor,
-    loadData,
-    handleFloorSelect,
-    handleAddFloor,
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    clearCanvas,
-    saveCanvas,
-    deleteSelectedObjects,
-    handleLineThicknessChange,
-    handleLineColorChange,
-    drawingState,
-    handleRetry
+    actions,
+    isMeasurementGuideOpen,
+    closeMeasurementGuide
   } = useCanvasController();
-
-  // Track initialization with refs 
-  const isFirstMountRef = useRef<boolean>(true);
-  const initTimeoutRef = useRef<number | null>(null);
   
-  // Measurement guide modal state - using custom hook with safe default
-  const { 
-    showMeasurementGuide, 
-    setShowMeasurementGuide,
-    handleCloseMeasurementGuide
-  } = useMeasurementGuide(tool); 
+  const [lockDrawing, setLockDrawing] = useState(false);
   
-  // Ensure canvas initialization happens properly
   useEffect(() => {
-    // Clear any existing timeout
-    if (initTimeoutRef.current !== null) {
-      window.clearTimeout(initTimeoutRef.current);
+    if (readonly) {
+      setLockDrawing(true);
     }
-    
-    // Initialize after a short delay to ensure DOM is ready
-    initTimeoutRef.current = window.setTimeout(() => {
-      if (isFirstMountRef.current) {
-        logger.info("Loading initial canvas data");
-        loadData()
-          .then(() => {
-            // We default to select tool on initial load
-            logger.info("Using default tool: select");
-            handleToolChange("select");
-            
-            // Show a toast to indicate successful initialization
-            toast.success("Canvas ready!", {
-              id: "canvas-ready",
-              duration: 3000
-            });
-          })
-          .catch(error => {
-            logger.error("Error initializing canvas:", error);
-          })
-          .finally(() => {
-            isFirstMountRef.current = false;
-          });
-      }
-    }, 800); // Slightly longer delay to ensure DOM is fully ready
-    
-    // Cleanup function
-    return () => {
-      if (initTimeoutRef.current !== null) {
-        window.clearTimeout(initTimeoutRef.current);
-      }
-    };
-  }, [loadData, handleToolChange]);
-
+  }, [readonly]);
+  
+  // Enable debugging for tooltip visibility
+  useEffect(() => {
+    if (drawingState) {
+      const isActiveDrawing = drawingState.isDrawing && 
+                          (tool === "straightLine" || tool === "wall") && 
+                          drawingState.startPoint && 
+                          drawingState.currentPoint;
+      
+      console.log("Tooltip visibility state:", {
+        isDrawing: drawingState.isDrawing,
+        tool,
+        hasStartPoint: !!drawingState.startPoint,
+        hasCurrentPoint: !!drawingState.currentPoint,
+        toolIsLineType: (tool === "straightLine" || tool === "wall"),
+        shouldShowTooltip: isActiveDrawing
+      });
+    }
+  }, [drawingState, tool]);
+  
   // Improved tooltip visibility logic - show when drawing or in select mode with an active selection
   const isTooltipVisible = Boolean(
     // Always show during active drawing with straight line tools
@@ -111,116 +71,47 @@ const CanvasInner = (props: CanvasProps) => {
      drawingState?.cursorPosition != null && drawingState?.startPoint != null) ||
     // Also show when in select mode and actively manipulating objects
     (tool === "select" && drawingState?.isDrawing) ||
-    // Show when selecting a line or wall
+    // Show when objects are selected (for measurements of selected objects)
     (tool === "select" && drawingState?.selectionActive)
   );
-
-  // Log tooltip state for debugging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug("Tooltip state:", { 
-        isVisible: isTooltipVisible, 
-        drawingState: drawingState,
-        tool: tool 
-      });
-    }
-  }, [isTooltipVisible, drawingState, tool]);
-
-  return (
-    <LoadingErrorWrapper
-      isLoading={isLoading}
-      hasError={hasError}
-      errorMessage={errorMessage}
-      onRetry={handleRetry}
-    >
-      <div className="relative w-full h-full">
-        <CanvasLayout
-          tool={tool}
-          gia={gia}
-          floorPlans={floorPlans}
-          currentFloor={currentFloor}
-          debugInfo={debugInfo}
-          canvasRef={canvasRef}
-          lineThickness={lineThickness}
-          lineColor={lineColor}
-          onToolChange={handleToolChange}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onZoom={handleZoom}
-          onClear={clearCanvas}
-          onSave={saveCanvas}
-          onDelete={deleteSelectedObjects}
-          onFloorSelect={handleFloorSelect}
-          onAddFloor={handleAddFloor}
-          onLineThicknessChange={handleLineThicknessChange}
-          onLineColorChange={handleLineColorChange}
-          onShowMeasurementGuide={() => setShowMeasurementGuide(true)}
-        />
-        
-        {/* Render tooltip directly within the canvas space */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-50">
-          <DistanceTooltip
-            startPoint={drawingState?.startPoint}
-            currentPoint={drawingState?.currentPoint}
-            isVisible={isTooltipVisible}
-            position={drawingState?.cursorPosition}
-            midPoint={drawingState?.midPoint}
-            currentZoom={drawingState?.currentZoom}
-          />
-        </div>
-        
-        {/* Measurement guide modal */}
-        <MeasurementGuideModal
-          open={showMeasurementGuide}
-          onOpenChange={(open) => {
-            if (!open) {
-              // Handle closing with "don't show again" preference
-              const checkbox = document.getElementById("dont-show-again") as HTMLInputElement;
-              handleCloseMeasurementGuide(checkbox?.checked || false);
-            } else {
-              setShowMeasurementGuide(true);
-            }
-          }}
-        />
-      </div>
-    </LoadingErrorWrapper>
-  );
-};
-
-/**
- * Main Canvas component for floor plan drawing
- * Handles canvas setup, grid creation, and drawing tools
- * @returns {JSX.Element} Rendered component
- */
-export const Canvas = (props: CanvasProps) => {
-  // Error state to catch any initialization errors 
-  const [errorState, setErrorState] = useState({ hasError: false, message: "" });
   
-  try {
-    return (
-      <CanvasControllerProvider>
-        <CanvasInner {...props} />
-      </CanvasControllerProvider>
-    );
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Error rendering Canvas:", error);
-    
-    if (!errorState.hasError) {
-      setErrorState({ hasError: true, message: errorMessage });
-    }
-    
-    return (
-      <LoadingErrorWrapper 
-        isLoading={false} 
-        hasError={true} 
-        errorMessage={errorState.message}
-        onRetry={() => window.location.reload()}
-      >
-        <div className="w-full h-full flex items-center justify-center">
-          <p>Error initializing canvas: {errorState.message}</p>
-        </div>
-      </LoadingErrorWrapper>
-    );
+  console.log("Tooltip visibility decision:", isTooltipVisible);
+  
+  // Display measurement guide dialog when requested
+  if (isMeasurementGuideOpen) {
+    return <MeasurementGuide onClose={closeMeasurementGuide} />;
   }
+  
+  return (
+    <div className="canvas-wrapper relative">
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-100 bg-opacity-80 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
+            <h3 className="text-xl font-bold text-red-600 mb-2">Canvas Error</h3>
+            <p className="text-gray-700">{errorMessage}</p>
+            <p className="mt-4 text-sm text-gray-500">
+              Try refreshing the page or contact support if the issue persists.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      <CanvasController
+        canvasRef={canvasRef}
+        locked={lockDrawing}
+      />
+      
+      {/* Tooltip for distance measurement - only show during active drawing with line tools */}
+      {isTooltipVisible && (
+        <DistanceTooltip 
+          startPoint={drawingState?.startPoint}
+          currentPoint={drawingState?.currentPoint}
+          midPoint={drawingState?.midPoint}
+          position={drawingState?.cursorPosition}
+          isVisible={isTooltipVisible}
+          currentZoom={drawingState?.currentZoom}
+        />
+      )}
+    </div>
+  );
 };

@@ -2,15 +2,8 @@
 import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
-import { calculateDistance, lineIsExactGridMultiple } from "@/utils/geometry";
+import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
 import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface DistanceTooltipProps {
   startPoint?: Point | null;
@@ -39,6 +32,7 @@ export const DistanceTooltip = memo(({
 }: DistanceTooltipProps): React.ReactElement | null => {
   // For hovering (not actively drawing), we need either the position or the current point
   if (!isVisible) {
+    console.log("Tooltip hidden: isVisible is false");
     return null;
   }
   
@@ -48,6 +42,7 @@ export const DistanceTooltip = memo(({
   
   // Exit if we don't have sufficient points to calculate
   if (!displayStartPoint || !displayEndPoint) {
+    console.log("Tooltip hidden: missing start or end points", { displayStartPoint, displayEndPoint });
     return null;
   }
   
@@ -60,6 +55,7 @@ export const DistanceTooltip = memo(({
   // If position is same as startPoint (no movement) or distance is too small, don't show
   if ((position === startPoint || distanceInMeters < 0.05) && 
       !(startPoint && currentPoint && startPoint !== currentPoint)) {
+    console.log("Tooltip hidden: distance too small or no movement", { distanceInMeters });
     return null;
   }
   
@@ -81,6 +77,14 @@ export const DistanceTooltip = memo(({
   // The PIXELS_PER_METER conversion is critical for correct positioning
   const pixelX = tooltipPosition.x * PIXELS_PER_METER;
   const pixelY = tooltipPosition.y * PIXELS_PER_METER;
+  
+  console.log("Showing tooltip:", { 
+    distanceInMeters, 
+    formattedDistance, 
+    gridUnits,
+    pixelPosition: { x: pixelX, y: pixelY },
+    tooltipPosition
+  });
   
   return (
     <div 

@@ -140,25 +140,24 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     // Clear drawing state after a short delay
     // But preserve selection state for tooltips on selected objects
     timeoutRef.current = window.setTimeout(() => {
+      // Keep drawing state true for a little longer to show the measurement
       setDrawingState(prevState => ({
         ...prevState,
-        isDrawing: false,
-        // Keep start and current points for a moment to show final measurement
-        // startPoint: null,
-        // currentPoint: null,
-        // midPoint: null,
+        isDrawing: false,  // We need this to be false to stop actual drawing
         selectionActive: hasActiveSelection
       }));
       
       // Only after showing the measurement, fully clear the points
+      // This has been increased from 1.5 to 2.5 seconds to ensure measurement visibility
       setTimeout(() => {
+        console.log("Clearing drawing points after showing measurement");
         setDrawingState(prevState => ({
           ...prevState,
           startPoint: null,
           currentPoint: null,
           midPoint: null,
         }));
-      }, 1500); // Keep measurement visible for 1.5 seconds after finishing
+      }, 2500); // Keep measurement visible for 2.5 seconds after finishing
     }, 50);
   }, [fabricCanvasRef]);
   
