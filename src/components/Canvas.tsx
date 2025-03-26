@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CanvasContainer } from './CanvasContainer';
 import { useCanvasController } from './canvas/controller/CanvasController';
 import { EmergencyCanvas } from './EmergencyCanvas';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
+import { captureError } from '@/utils/sentryUtils';
 
 /**
  * Main Canvas component that uses CanvasContainer
@@ -23,6 +25,59 @@ export const Canvas: React.FC = () => {
   const attemptTimestampsRef = useRef<number[]>([]);
   const lastErrorTimeRef = useRef<number>(0);
   const circuitBreakerTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const errorDetailsRef = useRef<string[]>([]);
+  const [diagnosticData, setDiagnosticData] = useState<Record<string, any>>({});
+  
+  // Collect diagnostic data to help debug initialization issues
+  useEffect(() => {
+    const collectDiagnosticInfo = () => {
+      try {
+        const diagnostics: Record<string, any> = {
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          devicePixelRatio: window.devicePixelRatio,
+          viewportSize: {
+            width: window.innerWidth,
+            height: window.innerHeight
+          },
+          debugInfo: debugInfo,
+          failedAttempts: failedAttempts,
+          canvas: canvasRef.current ? {
+            id: canvasRef.current.id,
+            width: canvasRef.current.width,
+            height: canvasRef.current.height,
+            hasAttributes: canvasRef.current ? 
+              Array.from(canvasRef.current.attributes).map(a => a.name) : 
+              'No attributes'
+          } : 'No canvas ref',
+          errorStack: errorDetailsRef.current.slice(-5) // Keep last 5 errors
+        };
+        
+        setDiagnosticData(diagnostics);
+        
+        // Log to console and Sentry for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Canvas initialization diagnostic data:', diagnostics);
+        }
+        
+        if (failedAttempts > 1) {
+          captureError(
+            new Error(`Canvas initialization loop detected (${failedAttempts} attempts)`),
+            'canvas-initialization-loop',
+            {
+              level: 'warning',
+              extra: diagnostics
+            }
+          );
+        }
+      } catch (e) {
+        console.error('Error collecting diagnostic data:', e);
+      }
+    };
+    
+    // Collect diagnostics on mount and when error state changes
+    collectDiagnosticInfo();
+  }, [debugInfo, failedAttempts, canvasRef, hasError]);
   
   // Track errors and switch to emergency canvas after too many failures
   useEffect(() => {
@@ -46,11 +101,42 @@ export const Canvas: React.FC = () => {
       
       setFailedAttempts(prev => {
         const newCount = prev + 1;
+        
+        // Add error details to help with debugging
+        errorDetailsRef.current.push(`Error #${newCount} at ${new Date().toISOString()}: Canvas state - ${JSON.stringify({
+          ready: debugInfo.canvasReady,
+          dimensions: `${debugInfo.canvasWidth}x${debugInfo.canvasHeight}`,
+          gridCreated: debugInfo.gridCreated
+        })}`);
+        
+        // If we have more than 10 errors, trim the list
+        if (errorDetailsRef.current.length > 10) {
+          errorDetailsRef.current.shift();
+        }
+        
         logger.warn(`Canvas initialization failed (attempt ${newCount})`);
         
         // If we have 3+ errors in 2 seconds or 3+ total failures, switch to emergency canvas
         if (recentErrors.length >= 3 || newCount >= 3) {
-          logger.error('Too many canvas failures, switching to emergency canvas');
+          logger.error('Too many canvas failures, switching to emergency canvas', {
+            errorCount: newCount,
+            recentErrors: recentErrors.length,
+            errorDetails: errorDetailsRef.current.join('\n')
+          });
+          
+          // Report critical error to Sentry with diagnostic data
+          captureError(
+            new Error(`Canvas initialization failed after ${newCount} attempts`),
+            'canvas-initialization-critical',
+            {
+              level: 'error',
+              extra: {
+                diagnosticData,
+                errorHistory: errorDetailsRef.current,
+                timestamps: attemptTimestampsRef.current
+              }
+            }
+          );
           
           // Clear any pending circuit breaker timer
           if (circuitBreakerTimerRef.current) {
@@ -68,7 +154,7 @@ export const Canvas: React.FC = () => {
         return newCount;
       });
     }
-  }, [hasError]);
+  }, [hasError, debugInfo, diagnosticData]);
   
   // Set a circuit breaker to automatically try again after 30 seconds
   useEffect(() => {
@@ -101,6 +187,7 @@ export const Canvas: React.FC = () => {
   const handleEmergencyRetry = () => {
     logger.info('Manual retry requested from emergency canvas');
     attemptTimestampsRef.current = []; // Clear error history
+    errorDetailsRef.current = []; // Clear error details
     setFailedAttempts(0);
     setUseEmergencyCanvas(false);
     
@@ -116,7 +203,20 @@ export const Canvas: React.FC = () => {
   
   // Use emergency canvas if too many failures
   if (useEmergencyCanvas) {
-    return <EmergencyCanvas onRetry={handleEmergencyRetry} />;
+    return (
+      <>
+        <EmergencyCanvas 
+          onRetry={handleEmergencyRetry} 
+          diagnosticData={diagnosticData} 
+        />
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded text-xs font-mono max-h-40 overflow-auto">
+            <h3 className="font-bold text-red-700 mb-2">Debug Information:</h3>
+            <pre>{JSON.stringify(diagnosticData, null, 2)}</pre>
+          </div>
+        )}
+      </>
+    );
   }
   
   // Otherwise use regular canvas

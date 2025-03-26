@@ -1,4 +1,3 @@
-
 /**
  * Container component for the canvas element
  * Wraps the canvas element and provides a reference to it
@@ -8,13 +7,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Card } from "./ui/card";
 import { DebugInfo } from "./DebugInfo";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 import { useDomRef } from "@/hooks/useDomRef";
 import { 
   DEFAULT_CANVAS_HEIGHT,
   DEFAULT_CANVAS_WIDTH
 } from "@/constants/numerics";
 import logger from "@/utils/logger";
+import { captureError } from "@/utils/sentryUtils";
 
 interface CanvasContainerProps {
   debugInfo: DebugInfoState;
@@ -35,6 +35,13 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
   const [canvasReady, setCanvasReady] = useState(false);
   const [dimensionsSetupAttempt, setDimensionsSetupAttempt] = useState(0);
   const setupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
+  const dimensionSetupHistoryRef = useRef<Array<{
+    attempt: number;
+    timestamp: string;
+    containerSize: { width: number; height: number } | null;
+    canvasSize: { width: number; height: number } | null;
+  }>>([]);
   
   // Force initialization after render to ensure canvas has dimensions
   useEffect(() => {
@@ -43,6 +50,25 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
         try {
           // Get container dimensions
           const containerRect = containerRef.current.getBoundingClientRect();
+          
+          // Track this attempt for debugging
+          dimensionSetupHistoryRef.current.push({
+            attempt: dimensionsSetupAttempt,
+            timestamp: new Date().toISOString(),
+            containerSize: containerRect ? { 
+              width: containerRect.width, 
+              height: containerRect.height 
+            } : null,
+            canvasSize: canvasReference.current ? {
+              width: canvasReference.current.width,
+              height: canvasReference.current.height
+            } : null
+          });
+          
+          // Keep history within reasonable size
+          if (dimensionSetupHistoryRef.current.length > 10) {
+            dimensionSetupHistoryRef.current.shift();
+          }
           
           // Only proceed if we have valid dimensions
           if (containerRect.width > 0 && containerRect.height > 0) {
@@ -63,7 +89,16 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
             setCanvasReady(true);
           } else {
             // Use fallback dimensions if container dimensions aren't available
-            logger.warn("Container dimensions are zero, using fallback dimensions");
+            logger.warn("Container dimensions are zero, using fallback dimensions", {
+              containerRect: containerRect ? {
+                width: containerRect.width,
+                height: containerRect.height
+              } : 'No container rect',
+              fallbackWidth: DEFAULT_CANVAS_WIDTH,
+              fallbackHeight: DEFAULT_CANVAS_HEIGHT,
+              attempt: dimensionsSetupAttempt
+            });
+            
             canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
             canvasReference.current.height = DEFAULT_CANVAS_HEIGHT;
             canvasReference.current.style.width = `${DEFAULT_CANVAS_WIDTH}px`;
@@ -71,6 +106,21 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
             
             // Signal that canvas is ready even with fallback dimensions
             setCanvasReady(true);
+            
+            // Report to Sentry on persistent dimension issues
+            if (dimensionsSetupAttempt >= 3) {
+              captureError(
+                new Error(`Canvas container dimensions issue after ${dimensionsSetupAttempt} attempts`),
+                'canvas-container-dimensions',
+                {
+                  level: 'warning',
+                  extra: {
+                    setupHistory: dimensionSetupHistoryRef.current,
+                    timeElapsed: Date.now() - startTimeRef.current
+                  }
+                }
+              );
+            }
             
             // Try again later if container dimensions are zero and we haven't tried too many times
             if (dimensionsSetupAttempt < 5) {
@@ -81,6 +131,16 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
           }
         } catch (error) {
           logger.error("Error setting canvas dimensions:", error);
+          
+          // Report error to Sentry
+          captureError(error, 'canvas-container-setup-error', {
+            level: 'error',
+            extra: {
+              setupHistory: dimensionSetupHistoryRef.current,
+              attempt: dimensionsSetupAttempt
+            }
+          });
+          
           // Set fallback dimensions on error
           if (canvasReference.current) {
             canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
@@ -120,9 +180,15 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
           data-testid="canvas-element"
           id="fabric-canvas"
           data-canvas-ready={canvasReady ? "true" : "false"}
+          data-dimension-attempts={dimensionsSetupAttempt}
         />
       </div>
-      <DebugInfo debugInfo={{...debugInfo, canvasReady}} />
+      <DebugInfo debugInfo={{
+        ...debugInfo, 
+        canvasReady,
+        dimensionAttempts: dimensionsSetupAttempt,
+        initTime: Date.now() - startTimeRef.current
+      }} />
     </Card>
   );
 };

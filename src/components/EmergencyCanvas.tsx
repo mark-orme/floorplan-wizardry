@@ -3,13 +3,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Button } from './ui/button';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Bug } from 'lucide-react';
 import logger from '@/utils/logger';
+import { captureError } from '@/utils/sentryUtils';
 
 interface EmergencyCanvasProps {
   onRetry?: () => void;
   width?: number;
   height?: number;
+  diagnosticData?: Record<string, any>;
 }
 
 /**
@@ -20,10 +22,12 @@ interface EmergencyCanvasProps {
 export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({ 
   onRetry,
   width = 800,
-  height = 600
+  height = 600,
+  diagnosticData = {}
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGridRendered, setIsGridRendered] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   
   // Draw a simple grid using plain Canvas API
   useEffect(() => {
@@ -32,6 +36,19 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
     
     try {
       logger.info('Initializing emergency canvas');
+      
+      // Report to Sentry that emergency canvas was used
+      captureError(
+        new Error('Emergency canvas activated'),
+        'emergency-canvas-fallback',
+        {
+          level: 'warning',
+          extra: {
+            diagnosticData,
+            timestamp: new Date().toISOString()
+          }
+        }
+      );
       
       // Set dimensions
       canvas.width = width;
@@ -116,13 +133,28 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
       const subTextWidth = ctx.measureText(subText).width;
       ctx.fillText(subText, (width - subTextWidth) / 2, height / 2 + 15);
       
+      // Add diagnostic message
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.font = '12px sans-serif';
+      const diagText = 'Click "Debug Info" for details.';
+      const diagWidth = ctx.measureText(diagText).width;
+      ctx.fillText(diagText, (width - diagWidth) / 2, height / 2 + 40);
+      
       // Mark as rendered successfully
       setIsGridRendered(true);
       logger.info('Emergency canvas initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize emergency canvas:', error);
+      captureError(error, 'emergency-canvas-init-error', {
+        level: 'error',
+        extra: { diagnosticData }
+      });
     }
-  }, [width, height]);
+  }, [width, height, diagnosticData]);
+  
+  const toggleDebugInfo = () => {
+    setShowDebug(prev => !prev);
+  };
   
   return (
     <div className="relative">
@@ -147,7 +179,7 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
           <p className="text-sm text-muted-foreground mb-4">
             Note: Drawing functionality is limited in emergency mode.
           </p>
-          <div className="mt-4">
+          <div className="flex gap-3 mt-4">
             <Button 
               variant="outline" 
               onClick={onRetry} 
@@ -157,9 +189,26 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
               <RefreshCw size={16} />
               Retry with main canvas
             </Button>
+            
+            <Button
+              variant="ghost"
+              onClick={toggleDebugInfo}
+              className="flex items-center gap-2"
+              size="sm"
+            >
+              <Bug size={16} />
+              {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+            </Button>
           </div>
         </AlertDescription>
       </Alert>
+      
+      {showDebug && (
+        <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded text-xs font-mono max-h-60 overflow-auto">
+          <h3 className="font-bold text-gray-700 mb-2">Debug Information:</h3>
+          <pre>{JSON.stringify(diagnosticData, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 };
