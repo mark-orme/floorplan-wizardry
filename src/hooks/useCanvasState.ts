@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for centralized canvas state management
  * @module useCanvasState
@@ -16,23 +17,41 @@ export type DrawingTool = "draw" | "straightLine" | "hand" | "select" | "room" |
  * Canvas state return type
  */
 interface CanvasStateReturn {
+  /** Currently active drawing tool */
   tool: DrawingTool;
+  /** Function to set the active drawing tool */
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
+  /** Current zoom level of the canvas */
   zoomLevel: number;
+  /** Function to set the zoom level */
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
+  /** Gross internal area calculation */
   gia: number;
+  /** Function to set the gross internal area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
+  /** Array of floor plans in the project */
   floorPlans: FloorPlan[];
+  /** Function to update the floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  /** Current active floor index */
   currentFloor: number;
+  /** Function to set the current floor index */
   setCurrentFloor: React.Dispatch<React.SetStateAction<number>>;
+  /** Loading state of the canvas */
   isLoading: boolean;
+  /** Function to set the loading state */
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Canvas dimensions (width and height) */
   canvasDimensions: CanvasDimensions;
+  /** Function to set canvas dimensions */
   setCanvasDimensions: React.Dispatch<React.SetStateAction<CanvasDimensions>>;
+  /** Line thickness for drawing */
   lineThickness: number;
+  /** Function to set line thickness */
   setLineThickness: React.Dispatch<React.SetStateAction<number>>;
+  /** Line color for drawing */
   lineColor: string;
+  /** Function to set line color */
   setLineColor: React.Dispatch<React.SetStateAction<string>>;
 }
 
