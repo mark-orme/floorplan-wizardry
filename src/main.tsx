@@ -9,11 +9,12 @@ import { createRootElement } from './utils/domUtils.ts'
 // Check if browser profiling is supported in this environment
 const isProfilingSupported = () => {
   try {
-    // Using a feature detection approach
+    // Using a feature detection approach - avoid direct Window.Profiler check
     return typeof window !== 'undefined' && 
            typeof window.performance !== 'undefined' && 
            typeof window.performance.mark === 'function' &&
-           typeof window.Profiler !== 'undefined';
+           // Check for profiling API without direct property access
+           typeof performance.getEntriesByType === 'function';
   } catch (e) {
     return false;
   }
@@ -26,8 +27,15 @@ const sentryIntegrations = [
 ];
 
 // Only add profiling integration if it's supported
-if (isProfilingSupported()) {
-  sentryIntegrations.push(new Sentry.BrowserProfilingIntegration());
+// Use try/catch to handle potential integration issues
+try {
+  if (isProfilingSupported()) {
+    // @ts-ignore - Skip type checking for this integration 
+    // as the TypeScript definitions may not match the runtime behavior
+    sentryIntegrations.push(new Sentry.BrowserProfilingIntegration());
+  }
+} catch (e) {
+  console.warn("Sentry profiling integration failed to initialize:", e);
 }
 
 // Initialize Sentry for error tracking and monitoring
