@@ -9,6 +9,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useGridThrottling } from "./grid/useGridThrottling";
 import { useGridValidation } from "./grid/useGridValidation";
 import { useGridRetry } from "./grid/useGridRetry";
+import { useCanvasUtilities } from "./useCanvasUtilities";
 import { createSmallScaleGrid, createLargeScaleGrid } from "@/utils/grid/gridCreation";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
@@ -39,6 +40,9 @@ export const useCanvasGrid = ({
   const { validateGridComponents, ensureGridLayerInitialized } = useGridValidation();
   const { scheduleRetry, cancelRetry, resetRetryState } = useGridRetry();
   
+  // Use our new canvas utilities
+  const { safeCanvasOperation, isCanvasReady } = useCanvasUtilities();
+  
   /**
    * Create grid on the canvas with error handling
    */
@@ -58,54 +62,65 @@ export const useCanvasGrid = ({
       return;
     }
     
-    // Clear existing grid objects
-    try {
-      if (gridLayerRef.current.length > 0) {
-        gridLayerRef.current.forEach(obj => {
-          if (fabricCanvasRef.current?.contains(obj)) {
-            fabricCanvasRef.current.remove(obj);
-          }
-        });
-        gridLayerRef.current = [];
-      }
-      
-      const canvas = fabricCanvasRef.current;
-      const width = canvasDimensions.width;
-      const height = canvasDimensions.height;
-      
-      // Create small and large grid lines
-      const smallGridObjects = createSmallScaleGrid(canvas, width, height);
-      const largeGridObjects = createLargeScaleGrid(canvas, width, height);
-      
-      // Add all objects to the canvas
-      [...smallGridObjects, ...largeGridObjects].forEach(obj => {
-        canvas.add(obj);
-      });
-      
-      // Order the grid - small grid at back, large grid in front
-      smallGridObjects.forEach(obj => canvas.sendObjectToBack(obj));
-      
-      // Store all grid objects in the ref
-      gridLayerRef.current = [...smallGridObjects, ...largeGridObjects];
-      
-      // Update initialization state
-      gridInitializedRef.current = true;
-      
-      // Force a canvas render
-      canvas.requestRenderAll();
-      
-      logger.info(`Grid created with ${gridLayerRef.current.length} objects`);
-    } catch (error) {
-      logger.error("Error creating grid:", error);
-      // Schedule a retry
+    // Check if canvas is ready
+    if (!isCanvasReady(fabricCanvasRef.current)) {
+      logger.warn("Canvas is not ready for grid creation");
       scheduleRetry(() => createCanvasGrid());
+      return;
     }
+    
+    // Use safeCanvasOperation to handle creation with error handling
+    safeCanvasOperation(
+      fabricCanvasRef.current,
+      () => {
+        const canvas = fabricCanvasRef.current!;
+        
+        // Clear existing grid objects
+        if (gridLayerRef.current.length > 0) {
+          gridLayerRef.current.forEach(obj => {
+            if (canvas.contains(obj)) {
+              canvas.remove(obj);
+            }
+          });
+          gridLayerRef.current = [];
+        }
+        
+        const width = canvasDimensions.width;
+        const height = canvasDimensions.height;
+        
+        // Create small and large grid lines
+        const smallGridObjects = createSmallScaleGrid(canvas, width, height);
+        const largeGridObjects = createLargeScaleGrid(canvas, width, height);
+        
+        // Add all objects to the canvas
+        [...smallGridObjects, ...largeGridObjects].forEach(obj => {
+          canvas.add(obj);
+        });
+        
+        // Order the grid - small grid at back, large grid in front
+        smallGridObjects.forEach(obj => canvas.sendObjectToBack(obj));
+        
+        // Store all grid objects in the ref
+        gridLayerRef.current = [...smallGridObjects, ...largeGridObjects];
+        
+        // Update initialization state
+        gridInitializedRef.current = true;
+        
+        // Force a canvas render
+        canvas.requestRenderAll();
+        
+        logger.info(`Grid created with ${gridLayerRef.current.length} objects`);
+      },
+      "Failed to create grid"
+    ) || scheduleRetry(() => createCanvasGrid()); // Schedule retry if operation failed
   }, [
     fabricCanvasRef, 
     canvasDimensions, 
     shouldThrottleCreation, 
     handleThrottledCreation, 
-    validateGridComponents, 
+    validateGridComponents,
+    safeCanvasOperation,
+    isCanvasReady,
     scheduleRetry
   ]);
   
@@ -115,30 +130,38 @@ export const useCanvasGrid = ({
   const updateGridVisibility = useCallback(() => {
     if (!fabricCanvasRef.current || gridLayerRef.current.length === 0) return;
     
-    // Filter grid objects by type
-    const smallGridLines = gridLayerRef.current.filter(obj => 
-      obj.type === 'line' && obj.strokeWidth && obj.strokeWidth < 1
+    safeCanvasOperation(
+      fabricCanvasRef.current,
+      () => {
+        const canvas = fabricCanvasRef.current!;
+        
+        // Filter grid objects by type
+        const smallGridLines = gridLayerRef.current.filter(obj => 
+          obj.type === 'line' && obj.strokeWidth && obj.strokeWidth < 1
+        );
+        
+        const largeGridLines = gridLayerRef.current.filter(obj => 
+          obj.type === 'line' && obj.strokeWidth && obj.strokeWidth >= 1
+        );
+        
+        // Show/hide small grid based on zoom level
+        const showSmallGrid = zoomLevel >= 0.8;
+        
+        smallGridLines.forEach(line => {
+          line.visible = showSmallGrid;
+        });
+        
+        // Always show large grid
+        largeGridLines.forEach(line => {
+          line.visible = true;
+        });
+        
+        // Render the changes
+        canvas.requestRenderAll();
+      },
+      "Failed to update grid visibility"
     );
-    
-    const largeGridLines = gridLayerRef.current.filter(obj => 
-      obj.type === 'line' && obj.strokeWidth && obj.strokeWidth >= 1
-    );
-    
-    // Show/hide small grid based on zoom level
-    const showSmallGrid = zoomLevel >= 0.8;
-    
-    smallGridLines.forEach(line => {
-      line.visible = showSmallGrid;
-    });
-    
-    // Always show large grid
-    largeGridLines.forEach(line => {
-      line.visible = true;
-    });
-    
-    // Render the changes
-    fabricCanvasRef.current.requestRenderAll();
-  }, [fabricCanvasRef, zoomLevel]);
+  }, [fabricCanvasRef, zoomLevel, safeCanvasOperation]);
   
   // Create grid when canvas or dimensions change
   useEffect(() => {

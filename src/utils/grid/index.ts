@@ -33,3 +33,6 @@ export * from './gridValidation';
 
 // Export grid creation utilities
 export * from './gridCreation';
+
+// Export type utilities
+export * from './typeUtils';

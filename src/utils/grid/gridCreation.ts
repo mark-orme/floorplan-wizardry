@@ -7,6 +7,7 @@
 import { Canvas, Object as FabricObject, Line } from "fabric";
 import logger from "../logger";
 import { SMALL_GRID_LINE_OPTIONS, LARGE_GRID_LINE_OPTIONS } from "../gridConstants";
+import { GridLineOptions } from "./typeUtils";
 
 /**
  * Creates a basic grid with given parameters
@@ -14,7 +15,7 @@ import { SMALL_GRID_LINE_OPTIONS, LARGE_GRID_LINE_OPTIONS } from "../gridConstan
  * @param {number} width - Canvas width
  * @param {number} height - Canvas height
  * @param {number} gridSpacing - Grid spacing
- * @param {Object} lineOptions - Line style options
+ * @param {GridLineOptions} lineOptions - Line style options
  * @returns {FabricObject[]} Created grid objects
  */
 export const createBasicGrid = (
@@ -22,11 +23,13 @@ export const createBasicGrid = (
   width: number,
   height: number,
   gridSpacing: number,
-  lineOptions: any
+  lineOptions: GridLineOptions
 ): FabricObject[] => {
   const gridObjects: FabricObject[] = [];
   
-  if (!canvas || width <= 0 || height <= 0) {
+  // Validate parameters
+  if (!canvas || typeof width !== 'number' || typeof height !== 'number' || 
+      width <= 0 || height <= 0 || typeof gridSpacing !== 'number' || gridSpacing <= 0) {
     logger.error("Invalid parameters for createBasicGrid");
     return gridObjects;
   }
@@ -60,7 +63,18 @@ export const createSmallScaleGrid = (
 ): FabricObject[] => {
   // Use the standard small grid spacing (typically 10px = 0.1m)
   const gridSpacing = 10;
-  return createBasicGrid(canvas, width, height, gridSpacing, SMALL_GRID_LINE_OPTIONS);
+  
+  // Validate canvas
+  if (!canvas) {
+    logger.error("Invalid canvas for createSmallScaleGrid");
+    return [];
+  }
+  
+  // Validate dimensions
+  const validWidth = typeof width === 'number' && width > 0 ? width : canvas.width || 800;
+  const validHeight = typeof height === 'number' && height > 0 ? height : canvas.height || 600;
+  
+  return createBasicGrid(canvas, validWidth, validHeight, gridSpacing, SMALL_GRID_LINE_OPTIONS);
 };
 
 /**
@@ -77,5 +91,16 @@ export const createLargeScaleGrid = (
 ): FabricObject[] => {
   // Use the standard large grid spacing (typically 100px = 1m)
   const gridSpacing = 100;
-  return createBasicGrid(canvas, width, height, gridSpacing, LARGE_GRID_LINE_OPTIONS);
+  
+  // Validate canvas
+  if (!canvas) {
+    logger.error("Invalid canvas for createLargeScaleGrid");
+    return [];
+  }
+  
+  // Validate dimensions
+  const validWidth = typeof width === 'number' && width > 0 ? width : canvas.width || 800;
+  const validHeight = typeof height === 'number' && height > 0 ? height : canvas.height || 600;
+  
+  return createBasicGrid(canvas, validWidth, validHeight, gridSpacing, LARGE_GRID_LINE_OPTIONS);
 };

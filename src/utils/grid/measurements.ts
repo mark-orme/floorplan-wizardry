@@ -6,6 +6,7 @@
  */
 import { Point } from '@/types/drawingTypes';
 import { GRID_SPACING, PIXELS_PER_METER } from '../gridConstants';
+import { normalizePoint } from './typeUtils';
 
 /**
  * Calculate distance to nearest grid line
@@ -19,21 +20,22 @@ export const distanceToNearestGridLine = (
   point: Point,
   gridSize: number = GRID_SPACING
 ): {x: number, y: number} => {
-  if (!point) return { x: 0, y: 0 };
+  const validPoint = normalizePoint(point);
+  const validGridSize = gridSize > 0 ? gridSize : GRID_SPACING;
   
   // Calculate remainder when divided by grid size
-  const remainderX = Math.abs(point.x % gridSize);
-  const remainderY = Math.abs(point.y % gridSize);
+  const remainderX = Math.abs(validPoint.x % validGridSize);
+  const remainderY = Math.abs(validPoint.y % validGridSize);
   
   // Find shorter distance to grid line
   const distanceX = Math.min(
     remainderX,
-    gridSize - remainderX
+    validGridSize - remainderX
   );
   
   const distanceY = Math.min(
     remainderY, 
-    gridSize - remainderY
+    validGridSize - remainderY
   );
   
   return { x: distanceX, y: distanceY };
@@ -47,10 +49,11 @@ export const distanceToNearestGridLine = (
  * @returns {number} Distance in grid units
  */
 export const calculateDistance = (point1: Point, point2: Point): number => {
-  if (!point1 || !point2) return 0;
+  const validPoint1 = normalizePoint(point1);
+  const validPoint2 = normalizePoint(point2);
   
-  const dx = point2.x - point1.x;
-  const dy = point2.y - point1.y;
+  const dx = validPoint2.x - validPoint1.x;
+  const dy = validPoint2.y - validPoint1.y;
   
   return Math.sqrt(dx * dx + dy * dy);
 };
@@ -62,7 +65,10 @@ export const calculateDistance = (point1: Point, point2: Point): number => {
  * @returns {number} Distance in meters
  */
 export const pixelsToMeters = (pixelDistance: number): number => {
-  return pixelDistance / PIXELS_PER_METER;
+  const validPixelDistance = isNaN(pixelDistance) ? 0 : pixelDistance;
+  const validPixelsPerMeter = PIXELS_PER_METER > 0 ? PIXELS_PER_METER : 100;
+  
+  return validPixelDistance / validPixelsPerMeter;
 };
 
 /**
@@ -72,7 +78,10 @@ export const pixelsToMeters = (pixelDistance: number): number => {
  * @returns {number} Distance in pixels
  */
 export const metersToPixels = (meterDistance: number): number => {
-  return meterDistance * PIXELS_PER_METER;
+  const validMeterDistance = isNaN(meterDistance) ? 0 : meterDistance;
+  const validPixelsPerMeter = PIXELS_PER_METER > 0 ? PIXELS_PER_METER : 100;
+  
+  return validMeterDistance * validPixelsPerMeter;
 };
 
 /**
@@ -84,14 +93,21 @@ export const metersToPixels = (meterDistance: number): number => {
 export const calculatePolygonArea = (points: Point[]): number => {
   if (!points || points.length < 3) return 0;
   
+  // Validate all points and filter out invalid ones
+  const validPoints = points.map(point => normalizePoint(point)).filter(point => 
+    point.x !== undefined && point.y !== undefined
+  );
+  
+  if (validPoints.length < 3) return 0;
+  
   let area = 0;
-  const n = points.length;
+  const n = validPoints.length;
   
   // Calculate area using Shoelace formula
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;
-    area += points[i].x * points[j].y;
-    area -= points[j].x * points[i].y;
+    area += validPoints[i].x * validPoints[j].y;
+    area -= validPoints[j].x * validPoints[i].y;
   }
   
   area = Math.abs(area) / 2;
@@ -109,12 +125,19 @@ export const calculatePolygonArea = (points: Point[]): number => {
 export const calculatePolygonPerimeter = (points: Point[]): number => {
   if (!points || points.length < 2) return 0;
   
+  // Validate all points and filter out invalid ones
+  const validPoints = points.map(point => normalizePoint(point)).filter(point => 
+    point.x !== undefined && point.y !== undefined
+  );
+  
+  if (validPoints.length < 2) return 0;
+  
   let perimeter = 0;
-  const n = points.length;
+  const n = validPoints.length;
   
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;
-    perimeter += calculateDistance(points[i], points[j]);
+    perimeter += calculateDistance(validPoints[i], validPoints[j]);
   }
   
   // Convert perimeter from pixels to meters
