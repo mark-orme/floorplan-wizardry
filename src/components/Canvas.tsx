@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CanvasContainer } from './CanvasContainer';
 import { useCanvasController } from './canvas/controller/CanvasController';
@@ -45,6 +46,9 @@ export const Canvas: React.FC = () => {
     };
   }, []);
   
+  // HARD LIMIT: If we exceed this number of attempts, force emergency mode with no retries
+  const MAX_TOLERATED_ATTEMPTS = 50;
+  
   // Collect diagnostic data to help debug initialization issues
   useEffect(() => {
     if (!componentMountedRef.current) return;
@@ -76,14 +80,33 @@ export const Canvas: React.FC = () => {
           setDiagnosticData(diagnostics);
         }
         
-        // Log to console and Sentry for debugging
+        // Log to console for debugging
         if (process.env.NODE_ENV === 'development') {
           console.log('Canvas initialization diagnostic data:', diagnostics);
         }
         
-        if (failedAttempts > 1) {
+        // Check for severe initialization loop
+        if (failedAttempts > MAX_TOLERATED_ATTEMPTS) {
+          logger.error(`Canvas initialization loop detected (${failedAttempts} attempts) - emergency shutdown`);
+          forceEmergencyRef.current = true;
+          
+          if (componentMountedRef.current) {
+            setUseEmergencyCanvas(true);
+          }
+          
+          // Report this critical case
           captureError(
             new Error(`Canvas initialization loop detected (${failedAttempts} attempts)`),
+            'canvas-critical-loop',
+            {
+              level: 'error',
+              extra: { diagnostics }
+            }
+          );
+        }
+        else if (failedAttempts > 10) {
+          captureError(
+            new Error(`Canvas initialization issues (${failedAttempts} attempts)`),
             'canvas-initialization-loop',
             {
               level: 'warning',
@@ -98,7 +121,7 @@ export const Canvas: React.FC = () => {
     
     // Collect diagnostics on mount and when error state changes
     collectDiagnosticInfo();
-  }, [debugInfo, failedAttempts, canvasRef, hasError]);
+  }, [debugInfo, failedAttempts, canvasRef, hasError, MAX_TOLERATED_ATTEMPTS]);
   
   // Force emergency canvas on special error case
   useEffect(() => {
@@ -136,6 +159,20 @@ export const Canvas: React.FC = () => {
   // Track errors and switch to emergency canvas after too many failures
   useEffect(() => {
     if (!componentMountedRef.current) return;
+    
+    // Break extreme loops by forcing emergency mode
+    if (failedAttempts > MAX_TOLERATED_ATTEMPTS && !useEmergencyCanvas) {
+      if (componentMountedRef.current) {
+        forceEmergencyRef.current = true;
+        setUseEmergencyCanvas(true);
+        
+        toast.error('Canvas initialization failed. Emergency mode activated.', {
+          id: 'canvas-failure-extreme',
+          duration: 5000
+        });
+      }
+      return;
+    }
     
     if (hasError) {
       const now = Date.now();
@@ -181,20 +218,6 @@ export const Canvas: React.FC = () => {
               errorDetails: errorDetailsRef.current.join('\n')
             });
             
-            // Report critical error to Sentry with diagnostic data
-            captureError(
-              new Error(`Canvas initialization failed after ${newCount} attempts`),
-              'canvas-initialization-critical',
-              {
-                level: 'error',
-                extra: {
-                  diagnosticData,
-                  errorHistory: errorDetailsRef.current,
-                  timestamps: attemptTimestampsRef.current
-                }
-              }
-            );
-            
             // Clear any pending circuit breaker timer
             if (circuitBreakerTimerRef.current) {
               clearTimeout(circuitBreakerTimerRef.current);
@@ -214,7 +237,7 @@ export const Canvas: React.FC = () => {
         });
       }
     }
-  }, [hasError, debugInfo, diagnosticData]);
+  }, [hasError, debugInfo, diagnosticData, useEmergencyCanvas, MAX_TOLERATED_ATTEMPTS]);
   
   // Set a circuit breaker to automatically try again after 30 seconds
   useEffect(() => {

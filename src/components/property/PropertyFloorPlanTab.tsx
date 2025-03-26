@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Canvas } from '@/components/Canvas';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Send } from 'lucide-react';
+import { Eye, RefreshCw, Send } from 'lucide-react';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
@@ -28,11 +28,13 @@ export const PropertyFloorPlanTab = ({
 }: PropertyFloorPlanTabProps) => {
   const [isReady, setIsReady] = useState(false);
   const [initAttempt, setInitAttempt] = useState(0); // Track initialization attempts
+  const [initError, setInitError] = useState(false);
   
   // Set ready state after a short delay to ensure DOM is fully rendered
   useEffect(() => {
     // Unmount any existing canvas before trying to render a new one
     setIsReady(false);
+    setInitError(false);
     
     const timer = setTimeout(() => {
       setIsReady(true);
@@ -44,12 +46,23 @@ export const PropertyFloorPlanTab = ({
   // Provide a retry mechanism if canvas initialization fails
   const handleCanvasRetry = () => {
     setIsReady(false);
+    setInitError(false);
     setInitAttempt(prev => prev + 1);
     
     // Try to re-initialize after a delay
     setTimeout(() => {
       setIsReady(true);
     }, 800);
+  };
+  
+  // Handler for canvas initialization errors
+  const handleCanvasError = () => {
+    setInitError(true);
+    
+    // If we've tried 3 times, stop trying to avoid loops
+    if (initAttempt >= 2) {
+      console.error("Canvas initialization failed after multiple attempts");
+    }
   };
   
   return (
@@ -68,11 +81,22 @@ export const PropertyFloorPlanTab = ({
           data-testid="floor-plan-wrapper"
           data-canvas-ready={isReady ? "true" : "false"}
           data-init-attempt={initAttempt}
+          data-init-error={initError ? "true" : "false"}
         > 
           {isReady && (
-            <CanvasControllerProvider key={`canvas-${initAttempt}`}>
-              <Canvas data-readonly={!canEdit} />
+            <CanvasControllerProvider key={`canvas-controller-${initAttempt}`}>
+              <Canvas key={`canvas-${initAttempt}`} />
             </CanvasControllerProvider>
+          )}
+          
+          {initError && initAttempt >= 2 && (
+            <div className="flex flex-col items-center justify-center h-full bg-gray-50 border border-gray-200 rounded-md p-4">
+              <p className="text-red-500 mb-4">Canvas initialization failed.</p>
+              <Button onClick={handleCanvasRetry} variant="outline">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try Again
+              </Button>
+            </div>
           )}
         </div>
       </CardContent>

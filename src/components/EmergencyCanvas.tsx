@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -13,6 +12,7 @@ interface EmergencyCanvasProps {
   width?: number;
   height?: number;
   diagnosticData?: Record<string, any>;
+  forceDisableRetry?: boolean;
 }
 
 /**
@@ -24,7 +24,8 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
   onRetry,
   width = 800,
   height = 600,
-  diagnosticData = {}
+  diagnosticData = {},
+  forceDisableRetry = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGridRendered, setIsGridRendered] = useState(false);
@@ -40,14 +41,14 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
       err.includes('Canvas initialization blocked')
     );
     
-    if (isBlocked) {
+    if (isBlocked || forceDisableRetry) {
       setCanRetry(false);
       toast.warning("Canvas initialization is blocked. Please refresh the page to try again.", {
         id: "canvas-blocked",
         duration: 5000
       });
     }
-  }, [diagnosticData]);
+  }, [diagnosticData, forceDisableRetry]);
   
   // Draw a simple grid using plain Canvas API
   useEffect(() => {
