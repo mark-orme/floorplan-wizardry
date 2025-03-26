@@ -20,17 +20,23 @@ export {
   DISTANCE_PRECISION
 } from './constants';
 
-// Re-export line operations
-export * from './lineOperations';
+// Re-export line operations (excluding calculateMidpoint to avoid conflict)
+export { 
+  calculateDistance,
+  formatDistance,
+  isExactGridMultiple,
+  calculateAngle,
+  calculatePreciseDistance
+} from './lineOperations';
+
+// Re-export the calculateMidpoint from midpointCalculation (preferred version)
+export { calculateMidpoint } from './midpointCalculation';
 
 // Re-export area calculations
 export * from './areaCalculations';
 
 // Re-export coordinate transforms
 export * from './coordinateTransforms';
-
-// Re-export midpoint calculation
-export * from './midpointCalculation';
 
 // Re-export straightening functions
 export * from './straightening';

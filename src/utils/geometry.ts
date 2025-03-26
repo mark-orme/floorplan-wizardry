@@ -22,6 +22,7 @@ import {
   formatDistance, 
   isExactGridMultiple as lineIsExactGridMultiple 
 } from './geometry/lineOperations';
+import { calculateMidpoint } from './geometry/midpointCalculation';
 import { straightenStroke } from './geometry/straightening';
 
 // Re-export specific functions with non-conflicting names
@@ -46,6 +47,9 @@ export {
   calculateDistance,
   formatDistance,
   lineIsExactGridMultiple,
+  
+  // From midpointCalculation
+  calculateMidpoint,
   
   // From straightening
   straightenStroke
