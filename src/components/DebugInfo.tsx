@@ -26,10 +26,10 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
           <p>Dimensions Set: {debugInfo.dimensionsSet ? "✅" : "❌"}</p>
           <p>Brush Initialized: {debugInfo.brushInitialized ? "✅" : "❌"}</p>
           <p>
-            Grid Objects: {debugInfo.gridObjects} / Canvas Objects: {debugInfo.canvasObjects}
+            Grid Objects: {debugInfo.gridObjects ?? 'N/A'} / Canvas Objects: {debugInfo.canvasObjects ?? 'N/A'}
           </p>
           <p>
-            Canvas Size: {debugInfo.canvasWidth}x{debugInfo.canvasHeight} (DPR: {debugInfo.devicePixelRatio})
+            Canvas Size: {debugInfo.canvasWidth ?? 'N/A'}x{debugInfo.canvasHeight ?? 'N/A'} (DPR: {debugInfo.devicePixelRatio ?? 'N/A'})
           </p>
         </div>
         
@@ -42,7 +42,7 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
           <p>Long Frames: {debugInfo.performanceStats?.longFrames || 0}</p>
           {debugInfo.lastError && (
             <p className="text-red-500">
-              Error: {debugInfo.lastError} ({new Date(debugInfo.lastErrorTime || 0).toLocaleTimeString()})
+              Error: {String(debugInfo.lastError)} ({new Date(debugInfo.lastErrorTime || 0).toLocaleTimeString()})
             </p>
           )}
         </div>

@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useCanvasPerformance } from "./useCanvasPerformance";
-import { type DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/debugTypes";
 
 /**
  * Hook for managing debug information and performance metrics
@@ -29,7 +29,13 @@ export const useCanvasDebug = () => {
     canvasHeight: 0,
     devicePixelRatio: window.devicePixelRatio || 1,
     gridVisible: true,
-    performanceStats: {}
+    performanceStats: {
+      fps: 0,
+      droppedFrames: 0,
+      frameTime: 0,
+      maxFrameTime: 0,
+      longFrames: 0
+    }
   });
   
   const [hasError, setHasError] = useState(false);
