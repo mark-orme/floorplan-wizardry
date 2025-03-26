@@ -116,7 +116,7 @@ export const CanvasLayout = ({
           ) : (
             <CanvasContainer 
               debugInfo={debugInfo} 
-              canvasRef={canvasRef}
+              canvasElementRef={canvasRef}
             />
           )}
         </div>

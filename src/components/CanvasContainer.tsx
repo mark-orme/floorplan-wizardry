@@ -45,15 +45,16 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
     }>>([]);
     
     // Forward the ref to the container div or use our local ref
-    const divRef = ref || containerRef;
+    // Handle both function refs and object refs safely
+    const divRef = (ref && typeof ref !== 'function') ? ref : containerRef;
     
     // Force initialization after render to ensure canvas has dimensions
     useEffect(() => {
       const setupCanvasDimensions = () => {
-        if (canvasReference.current && divRef.current) {
+        if (canvasReference.current && containerRef.current) {
           try {
             // Get container dimensions
-            const containerRect = divRef.current.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
             
             // Track this attempt for debugging
             dimensionSetupHistoryRef.current.push({
@@ -164,12 +165,19 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
           clearTimeout(setupTimeoutRef.current);
         }
       };
-    }, [canvasReference, dimensionsSetupAttempt, divRef, setCanvasReady]);
+    }, [canvasReference, dimensionsSetupAttempt]);
+
+    // Set the ref passed to the div - handles both function refs and object refs
+    useEffect(() => {
+      if (typeof ref === 'function' && containerRef.current) {
+        ref(containerRef.current);
+      }
+    }, [ref]);
 
     return (
       <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible h-full">
         <div 
-          ref={divRef} 
+          ref={containerRef} 
           className="w-full h-full relative overflow-visible"
           data-testid="canvas-container"
           style={{ minHeight: '600px' }} // Ensure minimum height

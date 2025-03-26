@@ -278,7 +278,7 @@ export const Canvas: React.FC = () => {
     );
   }
   
-  // Otherwise use regular canvas - now using proper ref forwarding
+  // Otherwise use regular canvas - with the updated prop name
   return (
     <CanvasContainer 
       ref={containerRef} 
