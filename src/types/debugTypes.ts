@@ -1,41 +1,19 @@
 
+/**
+ * Debug info state type for tracking canvas initialization
+ * @interface DebugInfoState
+ */
 export interface DebugInfoState {
-  // Core canvas state flags
-  dimensionsSet: boolean;
-  canvasCreated: boolean;
-  gridCreated: boolean;
-  canvasLoaded: boolean;
-  canvasInitialized: boolean;
-  brushInitialized: boolean;
+  /** Whether the canvas element is ready */
   canvasReady: boolean;
-  
-  // Canvas dimensions
-  canvasWidth: number;
-  canvasHeight: number;
-  
-  // Grid and canvas objects count
-  gridObjects?: number;
-  canvasObjects?: number;
-  
-  // Performance tracking
-  devicePixelRatio?: number;
-  performanceStats?: {
-    fps: number;
-    droppedFrames: number;
-    frameTime: number;
-    maxFrameTime: number;
-    longFrames: number;
-  };
-  
-  // Error tracking
-  lastError?: any;
-  lastErrorTime?: number;
-  gridCreationAttempts?: number;
-  gridCreationFailures?: number;
-  lastGridCreationTime?: number;
-  dimensionAttempts?: number; // Added missing property
-  initTime?: number; // Added missing property for initialization time tracking
-  
-  // Load times for performance tracking
-  loadTimes: Record<string, number>;
+  /** Whether the grid has been created */
+  gridCreated: boolean;
+  /** Timestamp of last initialization */
+  lastInitTime: number;
+  /** Timestamp of last grid creation */
+  lastGridCreationTime: number;
+  /** Whether canvas dimensions have been set (optional) */
+  dimensionsSet?: boolean;
+  /** Whether canvas has been initialized (optional) */
+  canvasInitialized?: boolean;
 }

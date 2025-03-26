@@ -17,6 +17,8 @@ export const Canvas: React.FC = () => {
     currentFloor,
     lineThickness,
     lineColor,
+    dimensions, // Make sure dimensions exist
+    floorPlans,
   } = controller;
   
   // References
@@ -29,7 +31,6 @@ export const Canvas: React.FC = () => {
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
     canvasReady: false,
     gridCreated: false,
-    gridObjectCount: 0,
     lastInitTime: 0,
     lastGridCreationTime: 0
   });
@@ -40,29 +41,49 @@ export const Canvas: React.FC = () => {
   
   // Initialize the canvas
   const { 
-    isInitialized,
+    canvasRef,
+    fabricCanvasRef: initFabricCanvasRef,
+    gridLayerRef: initGridLayerRef,
+    historyRef: initHistoryRef,
     deleteSelectedObjects,
     recalculateGIA
   } = useCanvasInitialization({
-    canvasElementRef,
-    fabricCanvasRef,
-    gridLayerRef,
-    canvasDimensions: controller.dimensions,
+    canvasDimensions: dimensions || { width: 800, height: 600 }, // Provide fallback dimensions
+    tool,
+    currentFloor,
+    setZoomLevel: (zoom) => console.log('Zoom changed:', zoom), // Placeholder for now
     setDebugInfo,
     setHasError,
-    setErrorMessage,
-    createGrid: controller.createGrid || (() => [])
+    setErrorMessage
   });
+  
+  // Sync refs from initialization
+  useEffect(() => {
+    if (initFabricCanvasRef.current && !fabricCanvasRef.current) {
+      fabricCanvasRef.current = initFabricCanvasRef.current;
+    }
+    if (initGridLayerRef.current.length && !gridLayerRef.current.length) {
+      gridLayerRef.current = initGridLayerRef.current;
+    }
+  }, [initFabricCanvasRef.current, initGridLayerRef.current]);
   
   // Set up drawing on the canvas
   const { drawingState } = useCanvasDrawing({
     fabricCanvasRef,
     gridLayerRef,
-    historyRef,
+    historyRef: initHistoryRef, // Use the history from initialization
     tool,
     currentFloor,
-    setFloorPlans: controller.setFloorPlans || (() => {}),
-    setGia: controller.setGia || (() => {}),
+    setFloorPlans: (floorPlans) => {
+      if (controller.setFloorPlans) {
+        controller.setFloorPlans(floorPlans);
+      }
+    },
+    setGia: (gia) => {
+      if (controller.setGia) {
+        controller.setGia(gia);
+      }
+    },
     lineThickness,
     lineColor,
     deleteSelectedObjects,

@@ -10,7 +10,7 @@ import { snapToGrid } from './core';
 import { FLOATING_POINT_TOLERANCE } from '../geometry/constants';
 import { calculateAngle } from '../geometry/lineOperations';
 
-// Re-export snapToGrid from core to provide API compatibility
+// Re-export snapToGrid from core for API compatibility
 export { snapToGrid } from './core';
 
 /** 

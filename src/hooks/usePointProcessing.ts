@@ -8,7 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
 import { isTouchEvent } from "@/utils/fabric";
-import { snapToGrid } from "@/utils/grid/snapping";
+import { snapToGrid } from "@/utils/grid/core"; // Import directly from core
 import { straightenStroke } from "@/utils/geometry/straightening";
 
 /**

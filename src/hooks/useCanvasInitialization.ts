@@ -16,6 +16,18 @@ import { DebugInfoState, CanvasDimensions } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 
+// Type definition for the props to ensure they're all required
+interface UseCanvasInitializationProps {
+  canvasDimensions: CanvasDimensions;
+  tool?: DrawingTool;
+  currentFloor?: number;
+  setZoomLevel?: React.Dispatch<React.SetStateAction<number>>;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  setHasError: (value: boolean) => void;
+  setErrorMessage: (value: string) => void;
+  createGrid?: (canvas: FabricCanvas) => FabricObject[];
+}
+
 // Global tracker for initial toast shown
 let initialToastShown = false;
 // Track whether initialization is in progress
@@ -36,13 +48,21 @@ const MAX_GLOBAL_INIT_ATTEMPTS = 5;
  */
 export const useCanvasInitialization = ({
   canvasDimensions,
-  tool,
-  currentFloor,
-  setZoomLevel,
+  tool = 'select',
+  currentFloor = 0,
+  setZoomLevel = () => {},
   setDebugInfo,
   setHasError,
-  setErrorMessage
-}) => {
+  setErrorMessage,
+  createGrid = () => []
+}: UseCanvasInitializationProps) => {
+  // Check if we have valid dimensions to prevent the width/height error
+  if (!canvasDimensions || typeof canvasDimensions.width !== 'number' || typeof canvasDimensions.height !== 'number') {
+    // Log the issue and use default dimensions
+    console.warn("Invalid or missing canvas dimensions provided to useCanvasInitialization. Using defaults.");
+    canvasDimensions = { width: 800, height: 600 };
+  }
+
   // Track initialization state
   const [isInitialized, setIsInitialized] = useState(false);
   const initTimeoutRef = useRef<number | null>(null);
@@ -86,7 +106,7 @@ export const useCanvasInitialization = ({
   const gridLayerRef = useRef<FabricObject[]>([]);
   
   // Use the grid creation hook
-  const createGrid = useCanvasGrid({
+  const createGridImpl = useCanvasGrid({
     gridLayerRef,
     canvasDimensions,
     setDebugInfo,
@@ -287,8 +307,27 @@ export const useCanvasInitialization = ({
         if (fabricCanvas) {
           fabricCanvas.renderOnAddRemove = true;
           
-          // Directly create the grid
-          const gridObjects = createGrid(fabricCanvas);
+          // Try using the provided createGrid function first
+          let gridObjects: FabricObject[] = [];
+          
+          try {
+            // Use the provided grid creation function if it exists and returns a valid array
+            if (typeof createGrid === 'function') {
+              const result = createGrid(fabricCanvas);
+              if (Array.isArray(result) && result.length > 0) {
+                gridObjects = result;
+                console.log("✅ Grid created using provided createGrid function:", gridObjects.length, "objects");
+              }
+            }
+          } catch (createGridError) {
+            console.error("Error using provided createGrid function:", createGridError);
+          }
+          
+          // If the provided function didn't work, use our own implementation
+          if (gridObjects.length === 0) {
+            console.log("Using internal grid creation implementation...");
+            gridObjects = createGridImpl(fabricCanvas);
+          }
           
           // If we didn't create any grid objects, try emergency grid and show toast
           if (!gridObjects || gridObjects.length === 0) {
@@ -300,6 +339,9 @@ export const useCanvasInitialization = ({
             createBasicEmergencyGrid(fabricCanvas, gridLayerRef);
           } else {
             console.log("✅ Grid successfully created:", gridObjects.length, "objects");
+            
+            // Update the gridLayerRef to track all grid objects
+            gridLayerRef.current = gridObjects;
             
             // Show success toast
             toast.success(`Grid created with ${gridObjects.length} objects`);
@@ -376,6 +418,7 @@ export const useCanvasInitialization = ({
     initializeCanvas, 
     setupBrush, 
     createGrid, 
+    createGridImpl,
     setupInteractions, 
     setDebugInfo,
     isInitialized,
@@ -505,6 +548,7 @@ export const useCanvasInitialization = ({
     setupInteractions,
     cleanupCanvas,
     createGrid,
+    createGridImpl,
     performInitialization,
     isInitialized,
     fabricCanvasRef,
@@ -512,10 +556,60 @@ export const useCanvasInitialization = ({
     canvasRef
   ]);
 
+  // Add a function to delete selected objects
+  const deleteSelectedObjects = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    const activeObjects = canvas.getActiveObjects();
+    
+    if (activeObjects.length > 0) {
+      // Save current state for undo
+      if (historyRef.current) {
+        const currentState = canvas.getObjects().filter(obj => 
+          !gridLayerRef.current.includes(obj)
+        );
+        historyRef.current.past.push([...currentState]);
+        historyRef.current.future = [];
+      }
+      
+      // Remove selected objects
+      canvas.remove(...activeObjects);
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+      
+      // Recalculate GIA if objects were removed
+      if (typeof createGrid === 'function') {
+        createGrid(canvas);
+      }
+      
+      toast.success(`Deleted ${activeObjects.length} object(s)`);
+    }
+  }, [fabricCanvasRef, gridLayerRef, historyRef, createGrid]);
+
+  // Add a simple function to recalculate GIA
+  const recalculateGIA = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // This is a placeholder - the actual implementation would calculate GIA
+    console.log("Recalculating GIA...");
+    
+    // If a grid function was provided, use it to refresh the grid
+    if (typeof createGrid === 'function') {
+      try {
+        createGrid(fabricCanvasRef.current);
+      } catch (error) {
+        console.error("Error recalculating GIA:", error);
+      }
+    }
+  }, [fabricCanvasRef, createGrid]);
+
   return {
     canvasRef,
     fabricCanvasRef,
     gridLayerRef,
-    historyRef
+    historyRef,
+    deleteSelectedObjects,
+    recalculateGIA
   };
 };
