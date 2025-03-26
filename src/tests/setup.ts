@@ -11,10 +11,11 @@
 if (typeof window !== 'undefined') {
   // Mock canvas methods that jsdom doesn't implement
   if (!HTMLCanvasElement.prototype.getContext) {
-    HTMLCanvasElement.prototype.getContext = function(contextId) {
+    HTMLCanvasElement.prototype.getContext = function(contextId: string, options?: any) {
       // Only mock 2d context
       if (contextId === '2d') {
-        return {
+        // Create a partial implementation that satisfies TypeScript
+        const ctx = {
           canvas: this,
           getContextAttributes: () => ({}),
           globalAlpha: 1.0,
@@ -59,7 +60,38 @@ if (typeof window !== 'undefined') {
           transform: function() {},
           rect: function() {},
           clip: function() {},
+          
+          // Add missing methods required by TypeScript's CanvasRenderingContext2D
+          isPointInPath: function() { return false; },
+          isPointInStroke: function() { return false; },
+          createConicGradient: function() { return {} as any; },
+          createLinearGradient: function() { return {} as any; },
+          createPattern: function() { return null; },
+          createRadialGradient: function() { return {} as any; },
+          measureText: function() { return { width: 0 } as any; },
+          
+          // For fabric.js specific needs
+          currentTransform: null,
+          mozCurrentTransform: [1, 0, 0, 1, 0, 0],
+          mozCurrentTransformInverse: [1, 0, 0, 1, 0, 0],
+          
+          // Add stubs for all remaining methods
+          addHitRegion: function() {},
+          clearHitRegions: function() {},
+          ellipse: function() {},
+          resetTransform: function() {},
+          drawFocusIfNeeded: function() {},
+          scrollPathIntoView: function() {},
+          quadraticCurveTo: function() {},
+          bezierCurveTo: function() {},
+          fillText: function() {},
+          strokeText: function() {},
+          setLineDash: function() { return []; },
+          getLineDash: function() { return []; }
         };
+        
+        // Use type assertion to tell TypeScript this partial implementation is sufficient
+        return ctx as unknown as CanvasRenderingContext2D;
       }
       return null;
     };
