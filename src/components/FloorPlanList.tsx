@@ -8,7 +8,7 @@ interface FloorPlanListProps {
   floorPlans: FloorPlan[];
   currentFloor: number;
   onSelect: (index: number) => void;
-  onAdd: () => void;
+  onAdd: () => void; // This prop should not take parameters
 }
 
 export const FloorPlanList = ({

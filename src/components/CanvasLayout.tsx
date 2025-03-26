@@ -101,7 +101,7 @@ export const CanvasLayout = ({
             floorPlans={floorPlans}
             currentFloor={currentFloor}
             onSelect={onFloorSelect}
-            onAdd={onFloorSelect} // Changed from onAddFloor to onFloorSelect to effectively disable add floor
+            onAdd={onAddFloor} // Fixed: Use the onAddFloor function that doesn't take parameters
           />
         </div>
         
