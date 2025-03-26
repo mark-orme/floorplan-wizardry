@@ -33,16 +33,25 @@ export default tseslint.config(
           "FunctionDeclaration": true,
           "MethodDefinition": true,
           "ClassDeclaration": true,
-          "ArrowFunctionExpression": false,
-          "FunctionExpression": false
+          "ArrowFunctionExpression": true,
+          "FunctionExpression": true
         }
       }],
       "jsdoc/require-description": ["warn", {
-        "contexts": ["FunctionDeclaration", "ClassDeclaration"]
+        "contexts": ["FunctionDeclaration", "ClassDeclaration", "ArrowFunctionExpression", "FunctionExpression", "MethodDefinition"]
       }],
+      "jsdoc/require-param": "warn",
       "jsdoc/require-param-description": "warn",
+      "jsdoc/require-param-name": "error",
+      "jsdoc/require-param-type": "warn",
+      "jsdoc/require-returns": "warn",
       "jsdoc/require-returns-description": "warn",
-      "jsdoc/valid-types": "warn"
+      "jsdoc/require-returns-type": "warn",
+      "jsdoc/check-param-names": "warn",
+      "jsdoc/check-tag-names": "warn",
+      "jsdoc/check-types": "warn",
+      "jsdoc/valid-types": "warn",
+      "jsdoc/no-undefined-types": "warn"
     },
   }
 );
