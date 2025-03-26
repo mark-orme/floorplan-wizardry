@@ -14,7 +14,7 @@ interface UsePathEventsProps extends BaseEventHandlerProps {
   /** Function to process created path */
   processCreatedPath: (path: FabricPath) => void;
   /** Function to handle mouse up event */
-  handleMouseUp: () => void;
+  handleMouseUp: (e?: Event) => void;
 }
 
 /**

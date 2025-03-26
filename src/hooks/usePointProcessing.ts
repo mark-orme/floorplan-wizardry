@@ -1,12 +1,13 @@
+
 /**
  * Custom hook for processing points in drawing operations
  * @module usePointProcessing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
-import { isTouchEvent, getClientX, getClientY } from "@/utils/fabric";
+import { isTouchEvent } from "@/utils/fabric";
 
 /**
  * Props for the usePointProcessing hook
@@ -17,6 +18,8 @@ export interface UsePointProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current active drawing tool */
   tool?: DrawingTool;
+  /** Reference to grid layer objects (optional) */
+  gridLayerRef?: React.MutableRefObject<FabricObject[]>;
 }
 
 /**
@@ -25,7 +28,9 @@ export interface UsePointProcessingProps {
  */
 interface UsePointProcessingReturn {
   /** Process canvas point for drawing */
-  processPoint: (e: Event) => Point | null;
+  processPoint: (e: MouseEvent | TouchEvent) => Point | null;
+  /** Process path points from a path (optional) */
+  processPathPoints?: (path: any, isEnclosed?: boolean) => { finalPoints: Point[], pixelPoints: Point[] };
 }
 
 /**
@@ -35,21 +40,22 @@ interface UsePointProcessingReturn {
  */
 export const usePointProcessing = ({
   fabricCanvasRef,
-  tool = "draw"
+  tool = "draw",
+  gridLayerRef
 }: UsePointProcessingProps): UsePointProcessingReturn => {
   /**
    * Process point from mouse or touch event
-   * @param {Event} e - Mouse or touch event
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
    * @returns {Point | null} Processed point or null if not applicable
    */
-  const processPoint = useCallback((e: Event): Point | null => {
+  const processPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
     if (!fabricCanvasRef.current) return null;
 
     let clientX, clientY;
 
     if (isTouchEvent(e)) {
-      clientX = getClientX(e);
-      clientY = getClientY(e);
+      clientX = e.touches[0]?.clientX || 0;
+      clientY = e.touches[0]?.clientY || 0;
     } else {
       clientX = (e as MouseEvent).clientX;
       clientY = (e as MouseEvent).clientY;
@@ -73,5 +79,25 @@ export const usePointProcessing = ({
     };
   }, [fabricCanvasRef, tool]);
   
-  return { processPoint };
+  /**
+   * Process path points from a fabric path
+   * @param {any} path - Fabric path object
+   * @param {boolean} isEnclosed - Whether the path should be enclosed
+   * @returns {Object} Processed points
+   */
+  const processPathPoints = useCallback((path: any, isEnclosed: boolean = false) => {
+    // This is a placeholder implementation
+    // Actual implementation would process path points for creation of lines or shapes
+    const finalPoints: Point[] = [];
+    const pixelPoints: Point[] = [];
+    
+    // Path points processing logic would go here
+    
+    return { finalPoints, pixelPoints };
+  }, [fabricCanvasRef]);
+  
+  return { 
+    processPoint,
+    processPathPoints 
+  };
 };

@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing drawing state
  * @module useDrawingState
@@ -7,7 +8,6 @@ import { Canvas as FabricCanvas } from "fabric";
 import { usePointProcessing } from "./usePointProcessing";
 import { DrawingTool } from "./useCanvasState";
 import { Point, DrawingState } from "@/types/drawingTypes";
-import { getClientX, getClientY, isTouchEvent } from "@/utils/fabric";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -16,9 +16,9 @@ interface UseDrawingStateProps {
 
 interface UseDrawingStateReturn {
   drawingState: DrawingState;
-  handleMouseDown: (e: Event) => void;
-  handleMouseMove: (e: Event) => void;
-  handleMouseUp: (e: Event) => void;
+  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
+  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
+  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
   cleanupTimeouts: () => void;
 }
 
@@ -51,7 +51,7 @@ export const useDrawingState = ({
   });
   
   // Handle mouse down event
-  const handleMouseDown = useCallback((e: Event) => {
+  const handleMouseDown = useCallback((e: MouseEvent | TouchEvent) => {
     if (!fabricCanvasRef.current) return;
     
     const point = processPoint(e);
@@ -72,7 +72,7 @@ export const useDrawingState = ({
   }, [fabricCanvasRef, tool, processPoint]);
   
   // Handle mouse move event
-  const handleMouseMove = useCallback((e: Event) => {
+  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!fabricCanvasRef.current || !drawingState.isDrawing) return;
     
     const point = processPoint(e);
@@ -91,7 +91,7 @@ export const useDrawingState = ({
   }, [fabricCanvasRef, drawingState.isDrawing, processPoint]);
   
   // Handle mouse up event
-  const handleMouseUp = useCallback((e: Event) => {
+  const handleMouseUp = useCallback((e: MouseEvent | TouchEvent) => {
     if (!fabricCanvasRef.current || !drawingState.isDrawing) return;
     
     // Re-enable selection

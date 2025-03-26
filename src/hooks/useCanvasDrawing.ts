@@ -110,7 +110,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     handleRedo,
     handleMouseDown,
     handleMouseMove,
-    handleMouseUp,
+    // Fix for TS2322 error: Making sure handleMouseUp accepts Event parameter
+    handleMouseUp: (e: Event) => handleMouseUp(e),
     processCreatedPath,
     cleanupTimeouts,
     deleteSelectedObjects

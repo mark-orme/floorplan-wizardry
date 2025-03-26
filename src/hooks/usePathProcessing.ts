@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing paths drawn on the canvas
  * @module usePathProcessing
@@ -40,11 +41,11 @@ export const usePathProcessing = ({
   lineColor = "#000000",
   recalculateGIA
 }: UsePathProcessingProps) => {
-  // Initialize point processing hook with the proper props object
+  // Initialize point processing hook with the proper props object including gridLayerRef
   const { processPathPoints } = usePointProcessing({
     fabricCanvasRef,
-    gridLayerRef,
-    tool
+    tool,
+    gridLayerRef
   });
   
   // Initialize polyline creation hook with GIA recalculation
@@ -66,7 +67,7 @@ export const usePathProcessing = ({
    * @param path - The Fabric.js path object
    */
   const processCreatedPath = useCallback((path: FabricPath) => {
-    if (!fabricCanvasRef.current) return;
+    if (!fabricCanvasRef.current || !processPathPoints) return;
     
     logger.info(`Processing path for tool: ${tool}`);
     
