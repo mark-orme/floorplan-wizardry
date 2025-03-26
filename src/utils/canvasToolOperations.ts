@@ -12,8 +12,11 @@ import logger from "./logger";
 
 /**
  * Type definition for fabric objects with tool-specific properties
+ * Uses a type assertion pattern rather than direct inheritance
  */
-interface ToolOperationObject extends FabricObject {
+interface ToolOperationObject {
+  /** The underlying Fabric.js object */
+  fabricObject: FabricObject;
   /** Type of the object */
   type: string;
   /** Whether the object is selectable */
@@ -23,6 +26,21 @@ interface ToolOperationObject extends FabricObject {
   /** Type of object for custom handling */
   objectType?: string;
 }
+
+/**
+ * Convert a FabricObject to our ToolOperationObject type
+ * @param obj - Fabric.js object to convert
+ * @returns ToolOperationObject representation
+ */
+const asToolObject = (obj: FabricObject): ToolOperationObject => {
+  return {
+    fabricObject: obj,
+    type: (obj as any).type || '',
+    selectable: obj.selectable || false,
+    hoverCursor: (obj as any).hoverCursor,
+    objectType: (obj as any).objectType
+  };
+};
 
 /**
  * Clear all drawings from canvas while preserving the grid
@@ -46,7 +64,7 @@ export const clearDrawings = (
   try {
     // Get all objects that are not part of the grid
     const objects = canvas.getObjects().filter(obj => {
-      const typedObj = obj as unknown as ToolOperationObject;
+      const typedObj = asToolObject(obj);
       return !typedObj.objectType?.includes('grid');
     });
     
@@ -156,16 +174,6 @@ export const handleToolChange = (
   canvas.requestRenderAll();
 };
 
-/**
- * Handle zoom operations
- * Zooms canvas in or out in 10% increments
- * 
- * @param {"in" | "out"} direction - Zoom direction
- * @param {FabricCanvas | null} canvas - The fabric canvas instance
- * @param {number} zoomLevel - Current zoom level
- * @param {React.Dispatch<React.SetStateAction<number>>} setZoomLevel - State setter for zoom level
- * @returns {void}
- */
 export const handleZoom = (
   direction: "in" | "out",
   canvas: FabricCanvas | null,

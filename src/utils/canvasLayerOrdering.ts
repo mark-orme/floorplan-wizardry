@@ -9,9 +9,11 @@ import logger from "@/utils/logger";
 
 /**
  * Object with objectType property for type identification
- * Using FabricObject with our custom properties
+ * Using custom properties with Fabric Object instead of extending it
  */
-interface TypedFabricObject extends FabricObject {
+interface TypedFabricObject {
+  /** The underlying Fabric.js object */
+  fabricObject: FabricObject;
   /** Type identifier for specialized handling */
   objectType?: string;
   /** Stroke width for lines */
@@ -19,6 +21,20 @@ interface TypedFabricObject extends FabricObject {
   /** Object type from Fabric.js */
   type: string;
 }
+
+/**
+ * Converts a FabricObject to our TypedFabricObject interface
+ * @param obj - Fabric.js object to convert
+ * @returns TypedFabricObject representation
+ */
+const asTypedObject = (obj: FabricObject): TypedFabricObject => {
+  return {
+    fabricObject: obj,
+    objectType: (obj as any).objectType,
+    strokeWidth: (obj as any).strokeWidth,
+    type: (obj as any).type
+  };
+};
 
 /**
  * Arrange grid elements in the correct z-order
@@ -46,14 +62,14 @@ export const arrangeGridElements = (
   
   // Find grid markers (scale indicators)
   const gridMarkers = gridElements.filter(obj => {
-    const typedObj = obj as TypedFabricObject;
+    const typedObj = asTypedObject(obj);
     return (typedObj.type === 'text') || 
            (typedObj.type === 'line' && typedObj.strokeWidth && typedObj.strokeWidth >= 1.2);
   });
   
   // Find grid lines
   const gridLines = gridElements.filter(obj => {
-    const typedObj = obj as TypedFabricObject;
+    const typedObj = asTypedObject(obj);
     return typedObj.type === 'line' && (!typedObj.strokeWidth || typedObj.strokeWidth < 1.2);
   });
   
