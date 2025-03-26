@@ -9,11 +9,12 @@ import { Canvas as FabricCanvas } from "fabric";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils"; 
 import { DebugInfoState } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
+import { toast } from "sonner";
 
 // Refined retry configuration
 const RETRY_CONFIG = {
-  MAX_ATTEMPTS: 5,          // Increased from 3 to 5
-  BASE_DELAY: 300,          // Adjusted base delay
+  MAX_ATTEMPTS: 5,          // Maximum number of attempts
+  BASE_DELAY: 300,          // Base delay in ms
   MAX_DELAY: 2000,          // Maximum delay between retries
   BACKOFF_FACTOR: 1.5       // Exponential backoff factor
 };
@@ -112,9 +113,29 @@ export const useGridRetry = ({
       logger.warn(`Max attempts (${RETRY_CONFIG.MAX_ATTEMPTS}) reached, using emergency grid`);
       
       try {
-        // Create emergency grid directly
+        // Display a toast notification to inform the user
+        toast.warning("Using simplified grid due to initialization issues", {
+          id: "emergency-grid-toast",
+          duration: 3000
+        });
+        
+        // Create emergency grid directly - with additional logging
+        console.log("Creating emergency grid due to max retries");
         const emergencyGrid = createBasicEmergencyGrid(canvas, gridLayerRef);
-        setDebugInfo(prev => ({...prev, gridCreated: true, isEmergencyGrid: true}));
+        
+        console.log(`Emergency grid created with ${emergencyGrid.length} elements`);
+        
+        // Update debug info regardless of success
+        setDebugInfo(prev => ({
+          ...prev, 
+          gridCreated: true, 
+          isEmergencyGrid: true,
+          gridObjectCount: emergencyGrid.length
+        }));
+        
+        // Force render to ensure grid is visible
+        canvas.requestRenderAll();
+        
         return emergencyGrid;
       } catch (error) {
         logger.error("Failed to create emergency grid:", error);

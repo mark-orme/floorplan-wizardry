@@ -1,4 +1,3 @@
-
 /**
  * Utilities for Fabric.js canvas management
  * @module fabricCanvas

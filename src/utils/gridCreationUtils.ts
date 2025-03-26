@@ -1,183 +1,140 @@
+
 /**
  * Grid creation utilities
- * Provides helper functions for grid creation and retry operations
  * @module gridCreationUtils
  */
-import { Canvas as FabricCanvas, Line } from "fabric";
-import { resetGridProgress } from "./gridManager";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import logger from "./logger";
-import {
-  MAX_RETRY_ATTEMPTS,
-  DEFAULT_THROTTLE_DELAY,
-  RETRY_BACKOFF_FACTOR,
-  MAX_RETRY_DELAY,
-  LARGE_GRID,
-  SMALL_GRID
-} from "@/constants/numerics";
-
-// Constants for grid configuration
-const GRID_LINE_COLORS = {
-  STANDARD: '#CCDDEE',
-  MAJOR: '#4090CC'  // Changed to a more visible blue
-};
-
-const GRID_LINE_WIDTHS = {
-  STANDARD: 0.5,
-  MAJOR: 1.5
-};
-
-const GRID_SPACING = {
-  SMALL: SMALL_GRID,  // 10px between grid lines (0.1m)
-  MAJOR: LARGE_GRID   // 100px for major grid lines (1m)
-};
-
-const RETRY_CONFIG = {
-  MAX_ATTEMPTS: MAX_RETRY_ATTEMPTS,
-  BASE_DELAY: DEFAULT_THROTTLE_DELAY,
-  GROWTH_FACTOR: RETRY_BACKOFF_FACTOR,
-  MAX_DELAY: MAX_RETRY_DELAY
-};
 
 /**
- * Create basic grid lines directly on the canvas
- * Used as emergency fallback when regular grid creation fails
+ * Create a very basic emergency grid when all other methods fail
+ * This is a last resort to ensure at least some grid appears
  * 
- * @param {FabricCanvas} fabricCanvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to store grid objects
- * @returns {any[]} Created grid objects
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject[]} Created emergency grid objects
  */
 export const createBasicEmergencyGrid = (
-  fabricCanvas: FabricCanvas,
-  gridLayerRef: React.MutableRefObject<any[]>
-): any[] => {
-  logger.debug("Creating basic emergency grid");
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  if (!canvas) {
+    console.error("Cannot create emergency grid: canvas is null");
+    return [];
+  }
   
   try {
-    // Ensure gridLayerRef is initialized
-    if (!gridLayerRef.current) {
-      gridLayerRef.current = [];
-    }
+    console.log("Creating emergency grid as last resort");
     
-    // Clear any existing grid objects first
+    // Clear existing grid objects if any
     if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
-        if (fabricCanvas.contains(obj)) {
-          fabricCanvas.remove(obj);
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
         }
       });
       gridLayerRef.current = [];
     }
     
-    const canvasWidth = fabricCanvas.width || 1000;
-    const canvasHeight = fabricCanvas.height || 800;
+    const emergencyGrid: FabricObject[] = [];
+    const canvasWidth = Math.max(canvas.width || 800, 800);
+    const canvasHeight = Math.max(canvas.height || 600, 600);
     
-    // Create an extended grid that goes beyond canvas boundaries
-    const gridObjects: any[] = [];
-    const extensionFactor = 3;
-    const extendedWidth = canvasWidth * extensionFactor;
-    const extendedHeight = canvasHeight * extensionFactor;
+    // Create a background rectangle to ensure grid is visible
+    canvas.backgroundColor = '#fcfcfd';
     
-    // Calculate grid bounds
-    const startX = -canvasWidth;
-    const startY = -canvasHeight;
-    const endX = canvasWidth * 2;
-    const endY = canvasHeight * 2;
+    // Use larger grid spacing for emergency grid (every 100px)
+    const gridSpacing = 100;
     
-    // Draw major grid lines first (every 100px)
-    for (let x = startX; x <= endX; x += GRID_SPACING.MAJOR) {
-      const line = new Line([x, startY, x, endY], {
-        stroke: GRID_LINE_COLORS.MAJOR,
+    // Create vertical lines
+    for (let i = 0; i <= canvasWidth; i += gridSpacing) {
+      const line = new Line([i, 0, i, canvasHeight], {
+        stroke: 'rgba(120,130,140,0.5)',
+        strokeWidth: 1,
         selectable: false,
         evented: false,
-        strokeWidth: GRID_LINE_WIDTHS.MAJOR,
-        objectCaching: true
+        hoverCursor: 'default'
       });
-      fabricCanvas.add(line);
-      gridObjects.push(line);
+      emergencyGrid.push(line);
+      canvas.add(line);
     }
     
-    for (let y = startY; y <= endY; y += GRID_SPACING.MAJOR) {
-      const line = new Line([startX, y, endX, y], {
-        stroke: GRID_LINE_COLORS.MAJOR,
+    // Create horizontal lines
+    for (let i = 0; i <= canvasHeight; i += gridSpacing) {
+      const line = new Line([0, i, canvasWidth, i], {
+        stroke: 'rgba(120,130,140,0.5)',
+        strokeWidth: 1,
         selectable: false,
         evented: false,
-        strokeWidth: GRID_LINE_WIDTHS.MAJOR,
-        objectCaching: true
+        hoverCursor: 'default'
       });
-      fabricCanvas.add(line);
-      gridObjects.push(line);
+      emergencyGrid.push(line);
+      canvas.add(line);
     }
     
-    // Draw minor grid lines (every 10px)
-    for (let x = startX; x <= endX; x += GRID_SPACING.SMALL) {
-      // Skip if this is also a major grid line
-      if (x % GRID_SPACING.MAJOR === 0) continue;
-      
-      const line = new Line([x, startY, x, endY], {
-        stroke: GRID_LINE_COLORS.STANDARD,
+    // Add some text markers at key points
+    const markers = [
+      { x: 100, y: 100, text: "1m" },
+      { x: 200, y: 200, text: "2m" },
+      { x: 100, y: 200, text: "2m²" }
+    ];
+    
+    markers.forEach(marker => {
+      const text = new Text(marker.text, {
+        left: marker.x,
+        top: marker.y,
+        fontSize: 12,
+        fill: 'rgba(100,110,120,0.8)',
         selectable: false,
         evented: false,
-        strokeWidth: GRID_LINE_WIDTHS.STANDARD,
-        objectCaching: true
+        hoverCursor: 'default'
       });
-      fabricCanvas.add(line);
-      gridObjects.push(line);
-    }
+      emergencyGrid.push(text);
+      canvas.add(text);
+    });
     
-    for (let y = startY; y <= endY; y += GRID_SPACING.SMALL) {
-      // Skip if this is also a major grid line
-      if (y % GRID_SPACING.MAJOR === 0) continue;
-      
-      const line = new Line([startX, y, endX, y], {
-        stroke: GRID_LINE_COLORS.STANDARD,
-        selectable: false,
-        evented: false,
-        strokeWidth: GRID_LINE_WIDTHS.STANDARD,
-        objectCaching: true
-      });
-      fabricCanvas.add(line);
-      gridObjects.push(line);
-    }
+    // Force render
+    canvas.requestRenderAll();
     
-    // Force a render
-    fabricCanvas.requestRenderAll();
+    // Store in ref
+    gridLayerRef.current = emergencyGrid;
     
-    // Update the gridLayerRef
-    gridLayerRef.current = gridObjects;
-    
-    logger.debug(`Created emergency grid with ${gridObjects.length} lines`);
-    
-    return gridObjects;
-  } catch (err) {
-    logger.error("Error creating emergency grid:", err);
+    console.log(`Emergency grid created with ${emergencyGrid.length} objects`);
+    return emergencyGrid;
+  } catch (error) {
+    console.error("Failed to create emergency grid:", error);
     return [];
   }
 };
 
 /**
- * Retry grid creation with exponential backoff
- * 
- * @param {Function} attemptFunction - The function to retry
- * @param {number} attemptCount - Current attempt count
+ * Calculate exponential backoff delay for retries
+ * @param {number} attempt - Current attempt number (1-based)
  * @param {number} maxAttempts - Maximum number of attempts
+ * @returns {number} Delay in milliseconds
+ */
+export const calculateBackoffDelay = (attempt: number, maxAttempts: number): number => {
+  const baseDelay = 300;
+  const maxDelay = 2000;
+  return Math.min(baseDelay * Math.pow(1.5, attempt), maxDelay);
+};
+
+/**
+ * Retry a function with exponential backoff
+ * @param {Function} fn - Function to retry
+ * @param {number} attempt - Current attempt number
+ * @param {number} maxAttempts - Maximum number of attempts
+ * @returns {number} Timeout ID
  */
 export const retryWithBackoff = (
-  attemptFunction: () => void,
-  attemptCount: number,
-  maxAttempts: number = RETRY_CONFIG.MAX_ATTEMPTS
-): void => {
-  if (attemptCount >= maxAttempts) return;
+  fn: () => boolean | void,
+  attempt: number,
+  maxAttempts: number
+): number => {
+  const delay = calculateBackoffDelay(attempt, maxAttempts);
+  console.log(`Scheduling retry #${attempt + 1}/${maxAttempts} in ${delay}ms`);
   
-  // Calculate delay with exponential backoff, but capped at maximum delay
-  const delayMs = Math.min(
-    Math.pow(RETRY_CONFIG.GROWTH_FACTOR, attemptCount) * RETRY_CONFIG.BASE_DELAY, 
-    RETRY_CONFIG.MAX_DELAY
-  );
-  
-  logger.debug(`Scheduling next grid attempt ${attemptCount + 1}/${maxAttempts} in ${delayMs}ms`);
-  
-  setTimeout(() => {
-    resetGridProgress();
-    attemptFunction();
-  }, delayMs);
+  return window.setTimeout(() => {
+    fn();
+  }, delay);
 };

@@ -41,6 +41,9 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
         // Get container dimensions
         const containerRect = containerRef.current.getBoundingClientRect();
         
+        // Log actual dimensions we're working with for debugging
+        console.log("Container dimensions:", containerRect.width, "x", containerRect.height);
+        
         // Set canvas dimensions explicitly based on container
         if (containerRect.width > 0 && containerRect.height > 0) {
           canvasReference.current.width = containerRect.width;
@@ -70,7 +73,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
           setCanvasReady(true);
           
           // Try again later if container dimensions are zero
-          if (dimensionsSetupAttempt < 3) {
+          if (dimensionsSetupAttempt < 5) { // Increased max attempts from 3 to 5
             setTimeout(() => {
               setDimensionsSetupAttempt(prev => prev + 1);
             }, 300);

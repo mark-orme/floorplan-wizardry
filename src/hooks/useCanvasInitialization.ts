@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for initializing the canvas
  * Handles canvas creation, brush setup, and grid initialization
@@ -12,7 +11,8 @@ import { useCanvasBrush } from "./useCanvasBrush";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import { useCanvasGrid } from "./useCanvasGrid";
 import { DrawingTool } from "./useCanvasState";
-import { DebugInfoState, CanvasDimensions } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/drawingTypes";
+import logger from "@/utils/logger";
 
 /**
  * Props for useCanvasInitialization hook
@@ -166,24 +166,26 @@ export const useCanvasInitialization = ({
     // Initialize the brush
     setupBrush(fabricCanvas);
     
-    // Create grid after canvas is rendered, using idle callback
-    const createGridWhenIdle = () => {
+    // IMPROVED: Create grid immediately after canvas is rendered instead of using idleCallback
+    const createGridSafely = () => {
+      // Reset retry counter for grid creation to give it a fresh start
+      console.log("Creating grid on initialized canvas");
+      
+      // Enable rendering first
+      fabricCanvas.renderOnAddRemove = true;
+      
+      // Directly create the grid
       createGrid(fabricCanvas);
       
-      // Now that the grid is created, enable rendering
-      fabricCanvas.renderOnAddRemove = true;
+      // Force render after grid is created
       fabricCanvas.requestRenderAll();
       
       // Mark initialization as no longer in progress
       initializationInProgress = false;
     };
     
-    // Use either requestIdleCallback or setTimeout as fallback
-    if (typeof window.requestIdleCallback === 'function') {
-      requestIdleCallback(createGridWhenIdle, { timeout: 500 });
-    } else {
-      setTimeout(createGridWhenIdle, 200);
-    }
+    // Use a short timeout instead of requestIdleCallback for more reliable execution
+    setTimeout(createGridSafely, 100);
     
     // Setup interactions (pinch-to-zoom, etc.)
     const cleanupInteractions = setupInteractions(fabricCanvas);
