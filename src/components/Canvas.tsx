@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { CanvasContainer } from './CanvasContainer';
 import { useCanvasController } from './canvas/controller/CanvasController';
@@ -31,6 +30,7 @@ export const Canvas: React.FC = () => {
   const [diagnosticData, setDiagnosticData] = useState<Record<string, any>>({});
   const forceEmergencyRef = useRef<boolean>(false);
   const componentMountedRef = useRef<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     // Set mounted flag on initial render
@@ -38,16 +38,38 @@ export const Canvas: React.FC = () => {
     
     // Log helpful debug info
     console.log('Canvas component mounted with debugInfo:', debugInfo);
-    console.log('Canvas ref exists:', !!canvasRef.current);
     
-    // Additional check for canvas initialization
-    if (!canvasRef.current) {
-      logger.warn("Canvas element not available on mount");
-      setFailedAttempts(prev => prev + 1);
-    }
+    // Don't check for canvas ref immediately - wait for DOM to be ready
+    const checkCanvasReady = () => {
+      if (!componentMountedRef.current) return;
+      
+      // Only count as a failed attempt if the DOM has had time to render
+      // and canvas is still not available
+      if (!canvasRef.current) {
+        logger.warn("Canvas element not available after DOM render");
+        if (componentMountedRef.current) {
+          setFailedAttempts(prev => prev + 1);
+        }
+      } else {
+        // Successfully found canvas element
+        logger.info("Canvas element found in DOM", {
+          width: canvasRef.current.width,
+          height: canvasRef.current.height
+        });
+        
+        // Reset failed attempts if we previously incremented them
+        if (failedAttempts > 0 && componentMountedRef.current) {
+          setFailedAttempts(0);
+        }
+      }
+    };
+    
+    // Give the DOM time to render before checking for the canvas element
+    const timeoutId = setTimeout(checkCanvasReady, 500);
     
     return () => {
       componentMountedRef.current = false;
+      clearTimeout(timeoutId);
       
       // Clear any pending timers
       if (circuitBreakerTimerRef.current) {
@@ -55,7 +77,7 @@ export const Canvas: React.FC = () => {
         circuitBreakerTimerRef.current = null;
       }
     };
-  }, [debugInfo, canvasRef]);
+  }, [debugInfo, canvasRef, failedAttempts]);
   
   // HARD LIMIT: If we exceed this number of attempts, force emergency mode with no retries
   const MAX_TOLERATED_ATTEMPTS = 3; // Reduced from 50 to 3 to fail faster
@@ -256,6 +278,12 @@ export const Canvas: React.FC = () => {
     );
   }
   
-  // Otherwise use regular canvas
-  return <CanvasContainer debugInfo={debugInfo} canvasRef={canvasRef} />;
+  // Otherwise use regular canvas - now using proper ref forwarding
+  return (
+    <CanvasContainer 
+      ref={containerRef} 
+      debugInfo={debugInfo} 
+      canvasElementRef={canvasRef} 
+    />
+  );
 };
