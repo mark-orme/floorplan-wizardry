@@ -12,5 +12,10 @@ export * from './constants';
 export * from './areaCalculations';
 export * from './coordinateTransforms';
 export * from './lineOperations';
-export * from './midpointCalculation';
+// Don't re-export midpointCalculation since it has a duplicate calculateMidpoint
+import * as MidpointCalculations from './midpointCalculation';
+export { 
+  // Only export what doesn't conflict
+  MidpointCalculations
+};
 export * from './straightening';

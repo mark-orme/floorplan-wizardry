@@ -5,15 +5,7 @@
  * @module grid
  */
 
-// Export basic grid operations
-export { 
-  createGrid,
-  createGridLines,
-  createGridWithSize,
-  disposeGrid
-} from './core';
-
-// Export grid snapping functions with explicit names
+// Export basic grid operations from core
 export { 
   snapToGrid as snapPointToGrid,
   snapToGridPoints as snapPointsToGrid

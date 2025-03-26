@@ -1,148 +1,127 @@
 
 /**
- * Fabric object manipulation utilities
- * Functions for working with Fabric.js objects
+ * Fabric objects utilities
+ * Functions for managing objects on canvas
  * @module fabric/objects
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Point } from "fabric";
 import logger from "@/utils/logger";
-import { isCanvasValid } from "./canvasValidation";
 
 /**
- * Clear all objects from the canvas
- * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
- * @param {boolean} preserveGrid - Whether to preserve grid elements
- * @returns {boolean} Whether the operation was successful
+ * Clear all objects from canvas
+ * @param {FabricCanvas | null} canvas - Canvas to clear
+ * @returns {number} Number of objects removed
  */
-export const clearCanvasObjects = (
-  canvas: FabricCanvas | null | undefined,
-  preserveGrid: boolean = true
-): boolean => {
-  if (!isCanvasValid(canvas)) {
-    return false;
-  }
+export const clearCanvasObjects = (canvas: FabricCanvas | null): number => {
+  if (!canvas) return 0;
   
   try {
-    if (preserveGrid) {
-      // Remove all non-grid objects
-      const objects = canvas!.getObjects();
-      const toRemove = [];
-      
-      for (const obj of objects) {
-        const objectType = (obj as any).objectType;
-        if (!objectType || !objectType.includes('grid')) {
-          toRemove.push(obj);
-        }
-      }
-      
-      // Remove collected objects
-      toRemove.forEach(obj => canvas!.remove(obj));
-    } else {
-      // Remove all objects including grid
-      canvas!.clear();
-    }
-    
-    canvas!.requestRenderAll();
-    return true;
+    const objectCount = canvas.getObjects().length;
+    canvas.clear();
+    return objectCount;
   } catch (error) {
     logger.error("Error clearing canvas objects:", error);
-    return false;
+    return 0;
   }
 };
 
 /**
- * Move canvas view to a specific point (panning)
- * @param {FabricCanvas} canvas - Fabric canvas instance
- * @param {number} x - X coordinate to move to
- * @param {number} y - Y coordinate to move to
- * @param {boolean} absolute - Whether coordinates are absolute or relative
- * @returns {boolean} Whether the operation was successful
+ * Move to position on canvas
+ * @param {FabricCanvas | null} canvas - Canvas to pan
+ * @param {Point} point - Target point in canvas coordinates
+ * @param {boolean} animate - Whether to animate the movement
  */
 export const canvasMoveTo = (
-  canvas: FabricCanvas | null | undefined,
-  x: number,
-  y: number,
-  absolute: boolean = true
-): boolean => {
-  if (!isCanvasValid(canvas)) {
-    return false;
-  }
+  canvas: FabricCanvas | null,
+  point: { x: number; y: number },
+  animate: boolean = false
+): void => {
+  if (!canvas) return;
   
   try {
-    if (absolute) {
-      // For absolute positioning, use viewportTransform directly
-      const vpt = canvas!.viewportTransform;
-      if (vpt) {
-        vpt[4] = x;
-        vpt[5] = y;
-        canvas!.requestRenderAll();
-      }
+    const vpw = canvas.width as number;
+    const vph = canvas.height as number;
+    
+    // Create a new viewport transform centered on the point
+    const vpt = [...canvas.viewportTransform!];
+    vpt[4] = vpw / 2 - point.x * vpt[0];
+    vpt[5] = vph / 2 - point.y * vpt[3];
+    
+    if (animate) {
+      // Animate the viewport transformation
+      canvas.setCursor('progress');
+      
+      // Use requestAnimationFrame for smooth animation
+      const startVpt = [...canvas.viewportTransform!];
+      const startTime = Date.now();
+      const duration = 500;
+      
+      const animateViewport = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Ease function (ease-out-cubic)
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        
+        // Interpolate between start and target
+        const newVpt = startVpt.map((start, i) => 
+          start + (vpt[i] - start) * easedProgress
+        );
+        
+        canvas.setViewportTransform(newVpt);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateViewport);
+        } else {
+          canvas.setCursor('default');
+        }
+      };
+      
+      requestAnimationFrame(animateViewport);
     } else {
-      // For relative positioning, use relativePan
-      canvas!.relativePan({ x, y });
+      // Apply immediately
+      canvas.setViewportTransform(vpt);
     }
-    
-    return true;
   } catch (error) {
-    logger.error("Error moving canvas view:", error);
-    return false;
+    logger.error("Error moving canvas:", error);
   }
 };
 
 /**
- * Group objects together
- * @param {FabricCanvas} canvas - Fabric canvas instance
- * @param {FabricObject[]} objects - Objects to group
- * @param {Object} options - Group options
- * @returns {FabricObject | null} Created group or null if failed
- */
-export const groupObjects = (
-  canvas: FabricCanvas | null | undefined,
-  objects: FabricObject[],
-  options: Record<string, any> = {}
-): FabricObject | null => {
-  if (!isCanvasValid(canvas) || !objects || objects.length === 0) {
-    return null;
-  }
-  
-  try {
-    // Remove objects from canvas first
-    objects.forEach(obj => canvas!.remove(obj));
-    
-    // Create group with the objects
-    const group = new fabric.Group(objects, options);
-    
-    // Add group to canvas
-    canvas!.add(group);
-    canvas!.requestRenderAll();
-    
-    return group;
-  } catch (error) {
-    logger.error("Error grouping objects:", error);
-    return null;
-  }
-};
-
-/**
- * Bring object to front of canvas
- * @param {FabricCanvas} canvas - Fabric canvas instance
+ * Bring an object to the front of the canvas
+ * @param {FabricCanvas | null} canvas - Canvas containing the object
  * @param {FabricObject} object - Object to bring to front
- * @returns {boolean} Whether the operation was successful
  */
-export const bringToFront = (
-  canvas: FabricCanvas | null | undefined,
+export const bringObjectToFront = (
+  canvas: FabricCanvas | null,
   object: FabricObject
-): boolean => {
-  if (!isCanvasValid(canvas) || !object) {
-    return false;
-  }
+): void => {
+  if (!canvas || !object) return;
   
   try {
-    canvas!.bringToFront(object);
-    canvas!.requestRenderAll();
-    return true;
+    object.bringToFront();
+    canvas.requestRenderAll();
   } catch (error) {
     logger.error("Error bringing object to front:", error);
-    return false;
+  }
+};
+
+/**
+ * Send an object to the back of the canvas
+ * @param {FabricCanvas | null} canvas - Canvas containing the object
+ * @param {FabricObject} object - Object to send to back
+ */
+export const sendObjectToBack = (
+  canvas: FabricCanvas | null,
+  object: FabricObject
+): void => {
+  if (!canvas || !object) return;
+  
+  try {
+    object.sendToBack();
+    canvas.requestRenderAll();
+  } catch (error) {
+    logger.error("Error sending object to back:", error);
   }
 };

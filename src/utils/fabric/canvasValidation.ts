@@ -90,37 +90,3 @@ export const safelyGetCanvasElement = (canvas: FabricCanvas | null): HTMLCanvasE
     return null;
   }
 };
-
-/**
- * Set canvas dimensions and ensure they're valid
- * @param {HTMLCanvasElement} canvasElement - Canvas element
- * @param {number} width - Width to set
- * @param {number} height - Height to set
- * @returns {boolean} True if dimensions were set successfully
- */
-export const setCanvasDimensions = (
-  canvasElement: HTMLCanvasElement | null,
-  width: number,
-  height: number
-): boolean => {
-  if (!canvasElement) return false;
-  
-  try {
-    // Set width and height attributes
-    canvasElement.width = width;
-    canvasElement.height = height;
-    
-    // Also set style dimensions
-    canvasElement.style.width = `${width}px`;
-    canvasElement.style.height = `${height}px`;
-    
-    // Force a reflow
-    canvasElement.getBoundingClientRect();
-    
-    // Verify dimensions were set
-    return canvasElement.width === width && canvasElement.height === height;
-  } catch (error) {
-    logger.error("Error setting canvas dimensions:", error);
-    return false;
-  }
-};
