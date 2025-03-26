@@ -1,3 +1,4 @@
+
 /**
  * Path processing utilities
  * Functions for processing and transforming paths drawn on canvas
@@ -86,7 +87,7 @@ export const processPathPoints = (
       }
       
       // Add the last point
-      filteredPoints.push(points[points.length - 1]];
+      filteredPoints.push(points[points.length - 1]);
     }
     
     // Always snap points to grid for consistency

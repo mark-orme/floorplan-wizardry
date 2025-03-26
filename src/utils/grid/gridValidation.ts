@@ -5,80 +5,115 @@
  * @module gridValidation
  */
 import { Canvas } from "fabric";
+import { ObjectId } from "@/types/fabricTypes";
 import { gridManager, shouldThrottleCreation } from "../gridManager";
 import logger from "../logger";
+
+/**
+ * Type-safe validation result interface
+ */
+export interface ValidationResult {
+  valid: boolean;
+  message?: string;
+  details?: Record<string, unknown>;
+}
 
 /**
  * Validates the canvas and dimensions for grid creation
  * Ensures all required parameters are valid before proceeding
  * 
- * @param {Canvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]>} gridLayerRef - Reference to store grid objects
+ * @param {Canvas | null} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<any[]> | null} gridLayerRef - Reference to store grid objects
  * @param {{ width: number, height: number }} canvasDimensions - Current canvas dimensions
- * @returns {boolean} Whether validation passes
+ * @returns {ValidationResult} Validation result with status and message
  */
 export const validateCanvasForGrid = (
   canvas: Canvas | null,
   gridLayerRef: React.MutableRefObject<any[]> | null,
   canvasDimensions: { width: number, height: number }
-): boolean => {
+): ValidationResult => {
   // Basic validation
   if (!canvas) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.error("Canvas is null in grid validation");
-    }
-    return false;
+    return { 
+      valid: false, 
+      message: "Canvas is null in grid validation"
+    };
   }
   
   if (!gridLayerRef) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.error("gridLayerRef is null in grid validation");
-    }
-    return false;
+    return { 
+      valid: false, 
+      message: "Grid layer reference is null in grid validation"
+    };
   }
 
   // Ensure valid dimensions
   if (!canvasDimensions.width || !canvasDimensions.height || 
       canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.error("Invalid dimensions in grid validation:", canvasDimensions);
-    }
-    return false;
+    return { 
+      valid: false, 
+      message: "Invalid dimensions in grid validation",
+      details: canvasDimensions
+    };
   }
   
   // Check if we should throttle
   if (shouldThrottleCreation()) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.warn("Throttling grid creation due to too many recent attempts");
-    }
-    return false;
+    return { 
+      valid: false, 
+      message: "Throttling grid creation due to too many recent attempts"
+    };
   }
   
-  return true;
+  return { valid: true };
 };
 
 /**
  * Check if the current grid creation state allows proceeding
  * Verifies that creation is not in progress and throttling is not active
  * 
- * @returns {boolean} Whether grid creation can proceed
+ * @returns {ValidationResult} Whether grid creation can proceed
  */
-export const canProceedWithGridCreation = (): boolean => {
+export const canProceedWithGridCreation = (): ValidationResult => {
   // Check if creation is already in progress
   if (gridManager.creationInProgress) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug("Grid creation already in progress, cannot proceed");
-    }
-    return false;
+    return {
+      valid: false,
+      message: "Grid creation already in progress, cannot proceed"
+    };
   }
   
   // Check if we need to throttle
   if (shouldThrottleCreation()) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug("Grid creation throttled, cannot proceed");
-    }
+    return {
+      valid: false,
+      message: "Grid creation throttled, cannot proceed", 
+      details: {
+        lastAttemptTime: gridManager.lastAttemptTime,
+        throttleInterval: gridManager.throttleInterval,
+        currentTime: Date.now()
+      }
+    };
+  }
+  
+  return { valid: true };
+};
+
+/**
+ * Type-safe function to check if an object is a grid element
+ * @param {unknown} obj - Object to check
+ * @param {ObjectId[]} gridIds - Array of grid element IDs
+ * @returns {boolean} Whether the object is a grid element
+ */
+export const isGridElement = (obj: unknown, gridIds: ObjectId[]): boolean => {
+  if (!obj || typeof obj !== 'object' || !('id' in obj)) {
     return false;
   }
   
-  return true;
+  const objId = (obj as { id?: unknown }).id;
+  if (objId === undefined || objId === null) {
+    return false;
+  }
+  
+  return gridIds.includes(objId as ObjectId);
 };

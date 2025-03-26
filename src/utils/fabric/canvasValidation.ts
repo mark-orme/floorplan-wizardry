@@ -1,27 +1,31 @@
 
 /**
  * Canvas validation utilities
+ * Provides type-safe functions for validating canvas objects
  * @module fabric/canvasValidation
  */
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import logger from '@/utils/logger';
+import { ObjectId, isValidObjectId } from '@/types/fabricTypes';
 
 /**
- * Check if a canvas object is valid and usable
- * @param canvas - Canvas to check
- * @returns Whether canvas is valid
+ * Check if a canvas instance is valid and usable
+ * @param {unknown} canvas - Canvas to check
+ * @returns {canvas is FabricCanvas} Whether canvas is valid
  */
-export const isCanvasValid = (canvas: FabricCanvas | null): boolean => {
+export const isCanvasValid = (canvas: unknown): canvas is FabricCanvas => {
   if (!canvas) return false;
   
   try {
-    // Check if the canvas has required methods
+    // Type guard to check if the object resembles a Fabric.js canvas
+    const canvasObj = canvas as Record<string, unknown>;
+    
     return (
-      typeof canvas.getWidth === 'function' &&
-      typeof canvas.getHeight === 'function' &&
-      typeof canvas.add === 'function' &&
-      typeof canvas.remove === 'function' &&
-      typeof canvas.getObjects === 'function'
+      typeof canvasObj.getWidth === 'function' &&
+      typeof canvasObj.getHeight === 'function' &&
+      typeof canvasObj.add === 'function' &&
+      typeof canvasObj.remove === 'function' &&
+      typeof canvasObj.getObjects === 'function'
     );
   } catch (error) {
     logger.error('Error checking canvas validity:', error);
@@ -30,94 +34,65 @@ export const isCanvasValid = (canvas: FabricCanvas | null): boolean => {
 };
 
 /**
- * Check if canvas is empty
- * @param canvas - Canvas to check
- * @returns Whether canvas has no objects
+ * Check if a fabric object is valid
+ * @param {unknown} object - Object to check
+ * @returns {object is FabricObject} Whether object is valid
  */
-export const isCanvasEmpty = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) return true;
+export const isFabricObjectValid = (object: unknown): object is FabricObject => {
+  if (!object) return false;
   
   try {
-    const objects = canvas.getObjects();
-    return objects.length === 0;
-  } catch (error) {
-    logger.error('Error checking if canvas is empty:', error);
-    return true;
-  }
-};
-
-/**
- * Get canvas dimensions
- * @param canvas - Canvas to measure
- * @returns Canvas dimensions or null if invalid
- */
-export const getCanvasDimensions = (canvas: FabricCanvas | null): { width: number; height: number } | null => {
-  if (!canvas) return null;
-  
-  try {
-    return {
-      width: canvas.getWidth(),
-      height: canvas.getHeight()
-    };
-  } catch (error) {
-    logger.error('Error getting canvas dimensions:', error);
-    return null;
-  }
-};
-
-/**
- * Verify that the canvas is configured correctly
- * @param canvas - Canvas to verify
- * @returns Status of verification
- */
-export const verifyCanvasConfiguration = (canvas: FabricCanvas | null): boolean => {
-  if (!isCanvasValid(canvas)) return false;
-  
-  try {
-    // Check various canvas configuration properties
+    // Type guard to check if the object resembles a Fabric.js object
+    const fabricObj = object as Record<string, unknown>;
+    
     return (
-      canvas!.selection !== undefined &&
-      canvas!.viewportTransform !== undefined &&
-      canvas!.backgroundColor !== undefined
+      typeof fabricObj.get === 'function' &&
+      typeof fabricObj.set === 'function' &&
+      typeof fabricObj.toObject === 'function'
     );
   } catch (error) {
-    logger.error('Error verifying canvas configuration:', error);
+    logger.error('Error checking fabric object validity:', error);
     return false;
   }
 };
 
 /**
- * Get canvas element safely
- * @param canvasRef - Reference to canvas element
- * @returns Canvas element or null
+ * Safely get object by ID from canvas
+ * @param {FabricCanvas | null} canvas - Canvas to search
+ * @param {ObjectId} id - Object ID to find
+ * @returns {FabricObject | null} Found object or null
  */
-export const safelyGetCanvasElement = (canvasRef: React.RefObject<HTMLCanvasElement>): HTMLCanvasElement | null => {
-  if (canvasRef.current) return canvasRef.current;
+export const safeGetObjectById = (
+  canvas: FabricCanvas | null, 
+  id: ObjectId
+): FabricObject | null => {
+  if (!isCanvasValid(canvas) || !isValidObjectId(id)) return null;
   
-  // Try to find canvas by ID
-  const canvasById = document.getElementById('fabric-canvas') as HTMLCanvasElement | null;
-  if (canvasById) return canvasById;
-  
-  // Try to find canvas by data attribute
-  const canvasByData = document.querySelector('[data-testid="canvas-element"]') as HTMLCanvasElement | null;
-  if (canvasByData) return canvasByData;
-  
-  return null;
+  try {
+    const objects = canvas.getObjects();
+    return objects.find(obj => obj.id === id) || null;
+  } catch (error) {
+    logger.error(`Error getting object with ID ${id}:`, error);
+    return null;
+  }
 };
 
 /**
- * Check if canvas is disposed
- * @param canvas - Canvas to check
- * @returns Whether canvas is disposed
+ * Safely check if canvas contains an object
+ * @param {FabricCanvas | null} canvas - Canvas to check
+ * @param {FabricObject | null} obj - Object to look for
+ * @returns {boolean} Whether canvas contains the object
  */
-export const isCanvasDisposed = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) return true;
+export const safeCanvasContains = (
+  canvas: FabricCanvas | null, 
+  obj: FabricObject | null
+): boolean => {
+  if (!isCanvasValid(canvas) || !isFabricObjectValid(obj)) return false;
   
   try {
-    // Check if essential methods are still functional
-    return typeof canvas.getObjects !== 'function';
+    return canvas.contains(obj);
   } catch (error) {
-    // If accessing the method throws an error, the canvas is likely disposed
-    return true;
+    logger.error('Error checking if canvas contains object:', error);
+    return false;
   }
 };
