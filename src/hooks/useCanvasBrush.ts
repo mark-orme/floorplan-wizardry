@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for initializing and managing canvas brushes
+ * Handles brush creation, configuration, and pressure sensitivity
  * @module useCanvasBrush
  */
 import { useCallback } from "react";
@@ -33,8 +34,11 @@ interface UseCanvasBrushResult {
 
 /**
  * Type definition for extended PencilBrush with custom properties
+ * @interface ExtendedPencilBrush
+ * @extends PencilBrush
  */
 interface ExtendedPencilBrush extends PencilBrush {
+  /** Decimation level for stroke simplification */
   decimate: number;
 }
 

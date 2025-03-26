@@ -1,12 +1,15 @@
 
 /**
  * Utilities for Fabric.js brushes and drawing tools
+ * Provides brush initialization and configuration functions
  * @module fabricBrush
  */
 import { Canvas, PencilBrush } from "fabric";
 
 /**
  * Initialize a drawing brush for a Fabric canvas
+ * Creates and configures a PencilBrush with optimized settings
+ * 
  * @param {Canvas} canvas - The Fabric canvas instance
  * @returns {PencilBrush|null} The initialized brush or null if initialization fails
  */
@@ -36,6 +39,8 @@ export const initializeDrawingBrush = (canvas: Canvas): PencilBrush | null => {
 
 /**
  * Add Pressure sensitivity for Apple Pencil and other stylus devices
+ * Configures brush width to respond to pressure input
+ * 
  * @param {Canvas} canvas - The Fabric canvas instance
  */
 export const addPressureSensitivity = (canvas: Canvas): void => {
@@ -95,6 +100,8 @@ export const addPressureSensitivity = (canvas: Canvas): void => {
 
 /**
  * Track baseline line thickness for consistent reset after pressure changes
+ * Stores the default line thickness in a custom canvas property
+ * 
  * @param {Canvas} canvas - The Fabric canvas instance
  * @param {number} thickness - The baseline thickness to track
  */

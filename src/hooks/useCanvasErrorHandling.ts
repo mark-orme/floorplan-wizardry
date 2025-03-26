@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for canvas error handling and retries
+ * Provides centralized error handling and recovery mechanisms
  * @module useCanvasErrorHandling
  */
 import { useCallback } from "react";
@@ -36,6 +37,8 @@ interface UseCanvasErrorHandlingResult {
 
 /**
  * Hook for managing canvas error states and retry functionality
+ * Provides consistent error handling and retry mechanisms
+ * 
  * @param {UseCanvasErrorHandlingProps} props - Hook properties
  * @returns {UseCanvasErrorHandlingResult} Error handling utilities
  */
@@ -47,6 +50,7 @@ export const useCanvasErrorHandling = ({
 }: UseCanvasErrorHandlingProps): UseCanvasErrorHandlingResult => {
   /**
    * Handle retry after an error occurs
+   * Resets state and attempts to reload data
    */
   const handleRetry = useCallback(() => {
     try {
@@ -73,6 +77,8 @@ export const useCanvasErrorHandling = ({
 
   /**
    * Handle specific errors
+   * Processes errors, updates state, and notifies the user
+   * 
    * @param {unknown} error - The error that occurred
    * @param {string} context - Context description for the error
    */

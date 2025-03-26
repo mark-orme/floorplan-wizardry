@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for cleaning up canvas instances
+ * Manages proper disposal of Fabric.js canvas resources
  * @module useCanvasCleanup
  */
 import { useCallback } from "react";
@@ -14,11 +15,15 @@ import {
 
 /**
  * Hook for canvas cleanup operations
- * @returns Canvas cleanup utilities
+ * Provides utilities for safe canvas disposal and initialization tracking
+ * 
+ * @returns {Object} Canvas cleanup utilities
  */
 export const useCanvasCleanup = () => {
   /**
    * Clean up a Fabric canvas instance
+   * Safely disposes canvas and its resources
+   * 
    * @param {FabricCanvas | null} canvas - Canvas to clean up
    */
   const cleanupCanvas = useCallback((canvas: FabricCanvas | null) => {

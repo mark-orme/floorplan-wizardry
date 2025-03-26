@@ -1,9 +1,16 @@
 
+/**
+ * Utilities for floor plan storage and persistence
+ * Manages saving and loading floor plans to/from IndexedDB and localStorage
+ * @module floorPlanStorage
+ */
 import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
 import { getDB, STORE_NAME } from '@/types/databaseTypes';
 
 /** 
  * Load floor plans from IndexedDB (with fallback to localStorage for migration)
+ * Retrieves saved floor plans with fallback mechanisms for backward compatibility
+ * 
  * @returns {Promise<FloorPlan[]>} Floor plans loaded from storage
  */
 export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
@@ -64,6 +71,8 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
 
 /** 
  * Save floor plans to IndexedDB (and localStorage as fallback)
+ * Persists floor plan data with validation and multiple storage options
+ * 
  * @param {FloorPlan[]} floorPlans - Floor plans to save
  * @returns {Promise<boolean>} Success indicator
  */
@@ -95,6 +104,8 @@ export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<boolean> 
 
 /**
  * Helper function to ensure all required fields are present in FloorPlan objects
+ * Validates and normalizes floor plan data for storage
+ * 
  * @param {unknown[]} floorPlans - Array of floor plans to validate
  * @returns {FloorPlan[]} Validated floor plans with all required fields
  */
@@ -121,6 +132,8 @@ function ensureRequiredFields(floorPlans: unknown[]): FloorPlan[] {
 
 /**
  * Validate and correct paperSize values to ensure they match the PaperSize type
+ * Normalizes paper size values for consistency
+ * 
  * @param {string | undefined} paperSize - The paper size to validate
  * @returns {PaperSize} A valid paper size
  */

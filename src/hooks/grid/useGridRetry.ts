@@ -1,254 +1,90 @@
 
 /**
- * Hook for managing grid creation retries
- * Provides automatic retry functionality with backoff
+ * Hook for grid retry operations
+ * Provides utilities to handle retrying grid creation after failures
  * @module useGridRetry
  */
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils"; 
-import { DebugInfoState } from "@/types/drawingTypes";
+import { scheduleGridRetry } from "@/utils/grid/gridErrorHandling";
 import logger from "@/utils/logger";
-import { toast } from "sonner";
-
-// Refined retry configuration
-const RETRY_CONFIG = {
-  MAX_ATTEMPTS: 5,          // Maximum number of attempts
-  BASE_DELAY: 300,          // Base delay in ms
-  MAX_DELAY: 2000,          // Maximum delay between retries
-  BACKOFF_FACTOR: 1.5       // Exponential backoff factor
-};
 
 /**
- * Props for the useGridRetry hook
- * @interface UseGridRetryProps
+ * Interface for retry configuration
+ * @interface RetryConfig
  */
-interface UseGridRetryProps {
-  /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<any[]>;
-  
-  /** Base grid creation callback */
-  createGridCallback: (canvas: FabricCanvas) => any[];
-  
-  /** Setter for debug information state */
-  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
-  
-  /** Setter for error state */
-  setHasError: (value: boolean) => void;
-  
-  /** Setter for error message */
-  setErrorMessage: (value: string) => void;
+interface RetryConfig {
+  /** Maximum number of retry attempts */
+  maxRetries: number;
+  /** Base delay between retry attempts in milliseconds */
+  baseDelay: number;
+  /** Whether to use exponential backoff for retry delays */
+  useExponentialBackoff: boolean;
 }
 
 /**
- * Hook for grid retry operations
- * @param {UseGridRetryProps} props - Hook properties
- * @returns Memoized grid creation function with retry logic
+ * Default retry configuration
+ * @constant
  */
-export const useGridRetry = ({
-  gridLayerRef,
-  createGridCallback,
-  setDebugInfo,
-  setHasError,
-  setErrorMessage
-}: UseGridRetryProps) => {
-  // Track retry attempts
-  const attemptCountRef = useRef<number>(0);
-  
-  // Track retry timeout IDs
-  const retryTimeoutRef = useRef<number | null>(null);
-  
-  // Flag to prevent multiple concurrent retry operations
-  const isRetryingRef = useRef<boolean>(false);
-  
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 1000,
+  useExponentialBackoff: true
+};
+
+/**
+ * Hook for grid retry operations
+ * Provides functionality to retry grid creation with exponential backoff
+ * 
+ * @returns Object containing retry utility functions
+ */
+export const useGridRetry = () => {
   /**
-   * Calculate delay for the next retry with exponential backoff
+   * Calculate delay for the next retry attempt
+   * Uses exponential backoff if configured
+   * 
+   * @param {number} attempt - Current retry attempt number
+   * @param {RetryConfig} config - Retry configuration
+   * @returns {number} Delay in milliseconds
    */
-  const calculateRetryDelay = useCallback((attempt: number): number => {
-    return Math.min(
-      RETRY_CONFIG.BASE_DELAY * Math.pow(RETRY_CONFIG.BACKOFF_FACTOR, attempt),
-      RETRY_CONFIG.MAX_DELAY
-    );
+  const calculateRetryDelay = useCallback((attempt: number, config: RetryConfig = DEFAULT_RETRY_CONFIG): number => {
+    if (config.useExponentialBackoff) {
+      // Exponential backoff: baseDelay * 2^attempt
+      return config.baseDelay * Math.pow(2, attempt);
+    }
+    // Linear backoff: baseDelay * attempt
+    return config.baseDelay * attempt;
   }, []);
   
   /**
-   * Schedule next retry with exponential backoff
+   * Retry grid creation with exponential backoff
+   * 
+   * @param {FabricCanvas} canvas - The Fabric canvas instance
+   * @param {Function} createGridCallback - Function to create the grid
+   * @param {number} attempt - Current retry attempt number
+   * @param {RetryConfig} config - Retry configuration
+   * @returns {number|null} Timeout ID or null if max retries reached
    */
-  const scheduleRetry = useCallback((canvas: FabricCanvas): number | null => {
-    if (!canvas) return null;
-    
-    // Prevent scheduling multiple retries
-    if (isRetryingRef.current) {
-      logger.warn("A retry is already scheduled, skipping");
+  const retryWithBackoff = useCallback((
+    canvas: FabricCanvas,
+    createGridCallback: (canvas: FabricCanvas) => void,
+    attempt: number = 0,
+    config: RetryConfig = DEFAULT_RETRY_CONFIG
+  ): number | null => {
+    if (attempt >= config.maxRetries) {
+      logger.warn(`Max retries (${config.maxRetries}) reached for grid creation`);
       return null;
     }
     
-    // Check if already at max attempts
-    const currentAttempt = attemptCountRef.current;
-    if (currentAttempt >= RETRY_CONFIG.MAX_ATTEMPTS) {
-      logger.warn(`Max grid creation attempts (${RETRY_CONFIG.MAX_ATTEMPTS}) reached`);
-      return null;
-    }
+    const delay = calculateRetryDelay(attempt, config);
+    logger.info(`Scheduling grid creation retry ${attempt + 1}/${config.maxRetries} in ${delay}ms`);
     
-    isRetryingRef.current = true;
-    
-    const delay = calculateRetryDelay(currentAttempt);
-    logger.info(`Scheduling grid retry attempt #${currentAttempt + 1} in ${delay}ms`);
-    
-    return window.setTimeout(() => {
-      logger.info(`Executing grid retry #${currentAttempt + 1}`);
-      attemptCountRef.current += 1;
-      
-      try {
-        // Check that canvas is still valid
-        if (canvas) {
-          // Try to create grid with original callback
-          const gridObjects = createGridCallback(canvas);
-          
-          // Log the result for debugging
-          console.log(`Grid retry #${currentAttempt + 1} result: ${gridObjects.length} objects`);
-          
-          // If we still have no grid, try a more aggressive approach on the last attempt
-          if (gridObjects.length === 0 && currentAttempt >= RETRY_CONFIG.MAX_ATTEMPTS - 1) {
-            console.log("Final retry with no objects, forcing simple grid creation");
-            setTimeout(() => {
-              createBasicEmergencyGrid(canvas, gridLayerRef); 
-            }, 100);
-          }
-        }
-      } catch (error) {
-        logger.error("Error during grid retry:", error);
-      } finally {
-        isRetryingRef.current = false;
-      }
-    }, delay);
-  }, [calculateRetryDelay, createGridCallback, gridLayerRef]);
-  
-  /**
-   * Create grid with retry capability
-   * @param canvas - The Fabric.js canvas instance
-   * @returns Created grid objects
-   */
-  const createGridWithRetry = useCallback((canvas: FabricCanvas): any[] => {
-    logger.info(`Grid creation attempt #${attemptCountRef.current + 1}/${RETRY_CONFIG.MAX_ATTEMPTS}`);
-    
-    // Clear any existing retry timeout
-    if (retryTimeoutRef.current !== null) {
-      window.clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
-    
-    // If we've exceeded max attempts, create emergency grid
-    if (attemptCountRef.current >= RETRY_CONFIG.MAX_ATTEMPTS) {
-      logger.warn(`Max attempts (${RETRY_CONFIG.MAX_ATTEMPTS}) reached, using emergency grid`);
-      
-      try {
-        // Display a toast notification to inform the user
-        toast.warning("Using simplified grid due to initialization issues", {
-          id: "emergency-grid-toast",
-          duration: 3000
-        });
-        
-        // Create emergency grid directly - with additional logging
-        console.log("Creating emergency grid due to max retries");
-        const emergencyGrid = createBasicEmergencyGrid(canvas, gridLayerRef);
-        
-        console.log(`Emergency grid created with ${emergencyGrid.length} elements`);
-        
-        // Update debug info regardless of success
-        setDebugInfo(prev => ({
-          ...prev, 
-          gridCreated: true, 
-          isEmergencyGrid: true,
-          gridObjectCount: emergencyGrid.length
-        }));
-        
-        // Force render to ensure grid is visible
-        if (canvas) {
-          canvas.requestRenderAll();
-        }
-        
-        return emergencyGrid;
-      } catch (error) {
-        logger.error("Failed to create emergency grid:", error);
-        setHasError(true);
-        setErrorMessage("Failed to create drawing grid. Please try refreshing.");
-        return [];
-      }
-    }
-    
-    // Try to create the grid normally
-    try {
-      // Check if canvas is valid before proceeding
-      if (!canvas) {
-        logger.warn("Canvas is null, skipping grid creation");
-        return gridLayerRef.current;
-      }
-      
-      const grid = createGridCallback(canvas);
-      
-      // If grid creation succeeded, reset attempt counter
-      if (grid && grid.length > 0) {
-        logger.info(`Grid created successfully with ${grid.length} objects`);
-        attemptCountRef.current = 0;
-        isRetryingRef.current = false;
-        
-        // Force a render to ensure grid is visible
-        canvas.requestRenderAll();
-        return grid;
-      }
-      
-      // If grid is empty, create emergency grid directly on last attempt
-      if (attemptCountRef.current >= RETRY_CONFIG.MAX_ATTEMPTS - 1) {
-        console.log("Last attempt with no grid, forcing emergency grid creation");
-        setTimeout(() => createBasicEmergencyGrid(canvas, gridLayerRef), 50);
-      }
-      
-      // Schedule retry if creation returned empty grid
-      retryTimeoutRef.current = scheduleRetry(canvas);
-      return gridLayerRef.current;
-    } catch (error) {
-      logger.error("Error in grid creation:", error);
-      
-      // On last attempt, try emergency grid regardless of error
-      if (attemptCountRef.current >= RETRY_CONFIG.MAX_ATTEMPTS - 1) {
-        console.log("Error on last attempt, forcing emergency grid creation");
-        setTimeout(() => createBasicEmergencyGrid(canvas, gridLayerRef), 50);
-      }
-      
-      // Schedule retry on error
-      retryTimeoutRef.current = scheduleRetry(canvas);
-      return gridLayerRef.current;
-    }
-  }, [
-    createGridCallback, 
-    gridLayerRef, 
-    scheduleRetry, 
-    setDebugInfo, 
-    setHasError, 
-    setErrorMessage
-  ]);
-  
-  /**
-   * Clean up any pending timeouts
-   */
-  const cleanup = useCallback(() => {
-    if (retryTimeoutRef.current !== null) {
-      window.clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
-    attemptCountRef.current = 0;
-    isRetryingRef.current = false;
-  }, []);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
-  
+    return scheduleGridRetry(canvas, createGridCallback, delay);
+  }, [calculateRetryDelay]);
+
   return {
-    createGridWithRetry,
-    cleanup,
-    retryConfig: RETRY_CONFIG
+    retryWithBackoff,
+    calculateRetryDelay,
+    DEFAULT_RETRY_CONFIG
   };
 };

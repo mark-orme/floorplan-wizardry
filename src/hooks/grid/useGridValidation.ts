@@ -1,106 +1,92 @@
 
 /**
  * Hook for grid validation operations
- * Validates grid components and state
+ * Provides utilities to validate grid creation parameters and results
  * @module useGridValidation
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DebugInfoState } from "@/types/drawingTypes";
-import { toast } from "sonner";
-
-/**
- * Props for the useGridValidation hook
- * @interface UseGridValidationProps
- */
-interface UseGridValidationProps {
-  /** Setter for debug information state */
-  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
-}
+import logger from "@/utils/logger";
 
 /**
  * Hook for grid validation operations
- * @param {UseGridValidationProps} props - Hook properties
- * @returns {Object} Grid validation utilities
+ * Ensures grid parameters and creations are valid
+ * 
+ * @returns Object containing validation utility functions
  */
-export const useGridValidation = ({
-  setDebugInfo
-}: UseGridValidationProps) => {
+export const useGridValidation = () => {
   /**
-   * Validate that all required grid components are available
-   * @param {FabricCanvas} canvas - The Fabric.js canvas instance
-   * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to the grid layer
-   * @returns {boolean} Whether the grid components are valid
+   * Validate grid creation parameters
+   * Ensures required parameters for grid creation are valid
+   * 
+   * @param {FabricCanvas | null} canvas - The Fabric canvas instance
+   * @param {number} gridSpacing - Grid spacing in pixels
+   * @param {number} canvasWidth - Canvas width in pixels
+   * @param {number} canvasHeight - Canvas height in pixels
+   * @returns {boolean} True if parameters are valid, false otherwise
    */
-  const validateGridComponents = useCallback((
-    canvas: FabricCanvas | null, 
-    gridLayerRef: React.MutableRefObject<FabricObject[]>
+  const validateGridParameters = useCallback((
+    canvas: FabricCanvas | null,
+    gridSpacing: number,
+    canvasWidth: number,
+    canvasHeight: number
   ): boolean => {
-    // Check if canvas exists
+    // Check if canvas is available
     if (!canvas) {
-      setDebugInfo(prev => ({
-        ...prev,
-        gridState: 'invalid',
-        lastGridOperation: 'Validation failed: Canvas is null'
-      }));
+      logger.warn("Cannot validate grid parameters: Canvas is null");
       return false;
     }
     
-    // Check if gridLayerRef is initialized
-    if (!gridLayerRef) {
-      setDebugInfo(prev => ({
-        ...prev,
-        gridState: 'invalid',
-        lastGridOperation: 'Validation failed: gridLayerRef is null'
-      }));
+    // Check if grid spacing is valid
+    if (gridSpacing <= 0) {
+      logger.warn(`Invalid grid spacing: ${gridSpacing}`);
       return false;
     }
     
-    return true;
-  }, [setDebugInfo]);
-  
-  /**
-   * Ensure grid layer is initialized
-   * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to the grid layer
-   * @returns {FabricObject[]} The initialized grid layer
-   */
-  const ensureGridLayerInitialized = useCallback((
-    gridLayerRef: React.MutableRefObject<FabricObject[]>
-  ): FabricObject[] => {
-    if (!gridLayerRef.current) {
-      gridLayerRef.current = [];
-      setDebugInfo(prev => ({
-        ...prev,
-        gridState: 'initialized',
-        lastGridOperation: 'Grid layer initialized'
-      }));
-    }
-    
-    return gridLayerRef.current;
-  }, [setDebugInfo]);
-  
-  /**
-   * Validate canvas dimensions for grid creation
-   * @param {{ width: number, height: number }} dimensions - Canvas dimensions
-   * @returns {boolean} Whether dimensions are valid
-   */
-  const validateDimensions = useCallback((dimensions: { width: number, height: number }): boolean => {
-    if (!dimensions || typeof dimensions.width !== 'number' || typeof dimensions.height !== 'number') {
-      toast.error("Invalid canvas dimensions");
-      return false;
-    }
-    
-    if (dimensions.width <= 0 || dimensions.height <= 0) {
-      toast.error("Canvas dimensions must be positive");
+    // Check if canvas dimensions are valid
+    if (canvasWidth <= 0 || canvasHeight <= 0) {
+      logger.warn(`Invalid canvas dimensions: ${canvasWidth}x${canvasHeight}`);
       return false;
     }
     
     return true;
   }, []);
   
+  /**
+   * Validate grid creation result
+   * Ensures grid was created successfully and contains the expected objects
+   * 
+   * @param {FabricObject[]} gridObjects - Grid objects created
+   * @param {number} expectedCount - Expected number of grid objects
+   * @returns {boolean} True if grid creation was successful, false otherwise
+   */
+  const validateGridCreation = useCallback((
+    gridObjects: FabricObject[],
+    expectedCount: number = 0
+  ): boolean => {
+    // Check if grid objects array exists
+    if (!Array.isArray(gridObjects)) {
+      logger.warn("Grid objects is not an array");
+      return false;
+    }
+    
+    // If expectedCount is provided, check if the grid has the expected number of objects
+    if (expectedCount > 0 && gridObjects.length !== expectedCount) {
+      logger.warn(`Expected ${expectedCount} grid objects, but got ${gridObjects.length}`);
+      return false;
+    }
+    
+    // Ensure grid has at least some objects
+    if (gridObjects.length === 0) {
+      logger.warn("Grid contains no objects");
+      return false;
+    }
+    
+    return true;
+  }, []);
+
   return {
-    validateGridComponents,
-    ensureGridLayerInitialized,
-    validateDimensions
+    validateGridParameters,
+    validateGridCreation
   };
 };

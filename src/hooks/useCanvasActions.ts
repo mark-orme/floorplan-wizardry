@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for canvas actions (clear, save)
+ * Provides high-level operations for canvas management
  * @module useCanvasActions
  */
 import { useCallback } from "react";

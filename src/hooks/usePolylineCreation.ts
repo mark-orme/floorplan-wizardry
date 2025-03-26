@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for creating polylines from processed points
+ * Manages the creation of line segments and shapes on the canvas
  * @module usePolylineCreation
  */
 import { useCallback } from "react";
@@ -69,8 +70,8 @@ interface UsePolylineCreationResult {
  * Hook for creating polylines from processed points
  * Handles the creation and styling of polylines on the canvas
  * 
- * @param props - Hook properties
- * @returns Object with createPolyline function
+ * @param {UsePolylineCreationProps} props - Hook properties
+ * @returns {UsePolylineCreationResult} Object with createPolyline function
  */
 export const usePolylineCreation = ({
   fabricCanvasRef,
@@ -87,11 +88,11 @@ export const usePolylineCreation = ({
   
   /**
    * Create a polyline from processed points and add it to canvas
-   * @param finalPoints - Array of points in meter coordinates
-   * @param pixelPoints - Array of points in pixel coordinates
-   * @param isEnclosed - Whether the shape is enclosed (closed)
-   * @param overrideColor - Optional color override
-   * @returns Boolean indicating success
+   * @param {Point[]} finalPoints - Array of points in meter coordinates
+   * @param {Point[]} pixelPoints - Array of points in pixel coordinates
+   * @param {boolean} isEnclosed - Whether the shape is enclosed (closed)
+   * @param {string} overrideColor - Optional color override
+   * @returns {boolean} Boolean indicating success
    */
   const createPolyline = useCallback((
     finalPoints: Point[],

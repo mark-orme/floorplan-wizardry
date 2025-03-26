@@ -1,93 +1,65 @@
 
 /**
- * Hook for managing grid creation throttling
- * Prevents excessive grid recreations under certain conditions
+ * Hook for grid throttling operations
+ * Provides utilities to throttle grid creation and updates
  * @module useGridThrottling
  */
-import { useRef, useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { gridManager, resetGridProgress } from "@/utils/gridManager";
-import { toast } from "sonner";
-
-/**
- * Props for the useGridThrottling hook
- * @interface UseGridThrottlingProps
- */
-interface UseGridThrottlingProps {
-  /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<any[]>;
-}
+import logger from "@/utils/logger";
 
 /**
  * Hook for grid throttling operations
- * @param {UseGridThrottlingProps} props - Hook properties
- * @returns Throttling utilities
+ * Prevents excessive grid creation operations during rapid interactions
+ * 
+ * @returns Object containing throttling utility functions
  */
-export const useGridThrottling = ({
-  gridLayerRef
-}: UseGridThrottlingProps) => {
-  // Track grid creation timeouts
-  const creationTimeoutRef = useRef<number | null>(null);
+export const useGridThrottling = () => {
+  // Reference to store timeout ID
+  const throttleTimeoutRef = useRef<number | null>(null);
   
   /**
-   * Check if grid creation should be throttled
-   * @returns Whether to throttle grid creation
+   * Clear any existing throttle timeout
    */
-  const shouldThrottleCreation = useCallback((): boolean => {
-    return gridManager.consecutiveResets >= gridManager.maxConsecutiveResets - 1;
+  const clearThrottleTimeout = useCallback(() => {
+    if (throttleTimeoutRef.current !== null) {
+      window.clearTimeout(throttleTimeoutRef.current);
+      throttleTimeoutRef.current = null;
+    }
   }, []);
   
   /**
-   * Handle throttled grid creation
-   * @param {FabricCanvas} canvas - The Fabric.js canvas instance
-   * @param {Function} createGridFn - Grid creation function to call when throttling expires
-   * @returns Current grid objects
+   * Throttle grid creation function
+   * Ensures grid creation is not called too frequently
+   * 
+   * @param {FabricCanvas} canvas - The Fabric canvas instance
+   * @param {Function} createGridCallback - Function to create the grid
+   * @param {number} delay - Throttle delay in milliseconds
+   * @returns {void}
    */
-  const handleThrottledCreation = useCallback((
+  const throttleGridCreation = useCallback((
     canvas: FabricCanvas,
-    createGridFn: (canvas: FabricCanvas) => any[]
-  ): any[] => {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn("Throttling grid creation due to too many resets");
-    }
-    
+    createGridCallback: (canvas: FabricCanvas) => void,
+    delay: number = 200
+  ): void => {
     // Clear any existing timeout
-    if (creationTimeoutRef.current !== null) {
-      clearTimeout(creationTimeoutRef.current);
-    }
+    clearThrottleTimeout();
     
-    // Schedule delayed creation
-    creationTimeoutRef.current = window.setTimeout(() => {
-      if (!canvas) return;
-      
-      // Only try again if reset counter has been reduced
-      if (gridManager.consecutiveResets < gridManager.maxConsecutiveResets) {
-        resetGridProgress();
-        createGridFn(canvas);
-      } else {
-        toast.error("Grid creation is temporarily paused. Please wait a moment.", {
-          id: "grid-throttled",
-          duration: 3000
-        });
+    // Schedule new timeout
+    throttleTimeoutRef.current = window.setTimeout(() => {
+      try {
+        createGridCallback(canvas);
+        logger.debug("Throttled grid creation executed");
+      } catch (error) {
+        logger.error("Error in throttled grid creation:", error);
       }
-    }, 2000);
-    
-    return gridLayerRef.current;
-  }, [gridLayerRef]);
-  
-  /**
-   * Clean up any pending timeouts
-   */
-  const cleanup = useCallback(() => {
-    if (creationTimeoutRef.current !== null) {
-      clearTimeout(creationTimeoutRef.current);
-      creationTimeoutRef.current = null;
-    }
-  }, []);
-  
+      throttleTimeoutRef.current = null;
+    }, delay);
+  }, [clearThrottleTimeout]);
+
   return {
-    shouldThrottleCreation,
-    handleThrottledCreation,
-    cleanup
+    throttleGridCreation,
+    clearThrottleTimeout,
+    throttleTimeoutRef
   };
 };

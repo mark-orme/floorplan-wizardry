@@ -1,6 +1,7 @@
 
 /**
  * Fabric.js helper utilities
+ * Provides common utilities for working with Fabric.js objects and coordinates
  * @module fabricHelpers
  */
 import { Object as FabricObject, Point as FabricPoint } from "fabric";
@@ -13,6 +14,8 @@ import { snapToAngle } from "@/utils/grid/snapping";
 
 /**
  * Convert point from pixels to meters
+ * Transforms screen coordinates to real-world measurements
+ * 
  * @param {Point} point - Point in pixels
  * @returns {Point} Point in meters
  */
@@ -25,6 +28,8 @@ export const pixelsToMeters = (point: Point): Point => {
 
 /**
  * Convert point from meters to pixels
+ * Transforms real-world measurements to screen coordinates
+ * 
  * @param {Point} point - Point in meters
  * @returns {Point} Point in pixels
  */
@@ -37,6 +42,8 @@ export const metersToPixels = (point: Point): Point => {
 
 /**
  * Convert Fabric.js point to our Point type
+ * Simplifies Fabric.js point objects to plain objects
+ * 
  * @param {FabricPoint} fabricPoint - Fabric.js point
  * @returns {Point} Simple point object
  */
@@ -46,6 +53,8 @@ export const fromFabricPoint = (fabricPoint: FabricPoint): Point => {
 
 /**
  * Create Fabric.js point from our Point type
+ * Converts plain point objects to Fabric.js Point instances
+ * 
  * @param {Point} point - Simple point object
  * @returns {FabricPoint} Fabric.js point
  */
@@ -55,6 +64,8 @@ export const toFabricPoint = (point: Point): FabricPoint => {
 
 /**
  * Get object center as Point
+ * Calculates the center coordinates of a Fabric.js object
+ * 
  * @param {FabricObject} obj - Fabric.js object
  * @returns {Point} Center point
  */
@@ -64,6 +75,8 @@ export const getObjectCenter = (obj: FabricObject): Point => {
 
 /**
  * Create default object options
+ * Provides consistent settings for new Fabric.js objects
+ * 
  * @returns {Object} Default fabric object options
  */
 export const getDefaultObjectOptions = () => {
@@ -79,4 +92,3 @@ export const getDefaultObjectOptions = () => {
     evented: true
   };
 };
-

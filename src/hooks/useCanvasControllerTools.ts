@@ -1,6 +1,7 @@
 
 /**
  * Hook for managing canvas drawing tools
+ * Centralizes the control and operation of canvas tools and actions
  * @module useCanvasControllerTools
  */
 import { useCallback, useEffect } from "react";

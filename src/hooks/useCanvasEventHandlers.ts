@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for handling canvas event registration and cleanup
+ * Centralizes all event handler management for canvas operations
  * @module useCanvasEventHandlers
  */
 import { useCallback } from "react";
@@ -62,6 +63,7 @@ interface UseCanvasEventHandlersResult {
 /**
  * Hook that handles canvas event registration and cleanup
  * Manages all event listeners for the canvas
+ * 
  * @param {UseCanvasEventHandlersProps} props - Hook properties
  * @returns {UseCanvasEventHandlersResult} Event handling utilities
  */
