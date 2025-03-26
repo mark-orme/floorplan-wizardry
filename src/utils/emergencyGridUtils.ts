@@ -3,7 +3,7 @@
  * Emergency grid utilities for when standard initialization fails
  * @module emergencyGridUtils
  */
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import logger from '@/utils/logger';
 import { GRID_SPACING } from '@/constants/numerics';
 import { disposeCanvas } from './fabric/canvasCleanup';
@@ -48,7 +48,7 @@ export const createEmergencyGrid = (canvas: FabricCanvas | null): boolean => {
     const height = canvas.getHeight();
     
     for (let i = 0; i < width; i += gridSpacing) {
-      canvas.add(new fabric.Line([i, 0, i, height], {
+      canvas.add(new Line([i, 0, i, height], {
         stroke: '#eeeeee',
         selectable: false,
         evented: false
@@ -56,7 +56,7 @@ export const createEmergencyGrid = (canvas: FabricCanvas | null): boolean => {
     }
     
     for (let i = 0; i < height; i += gridSpacing) {
-      canvas.add(new fabric.Line([0, i, width, i], {
+      canvas.add(new Line([0, i, width, i], {
         stroke: '#eeeeee',
         selectable: false,
         evented: false

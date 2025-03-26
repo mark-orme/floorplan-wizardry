@@ -41,5 +41,5 @@ export const getDB = async () => {
   });
 };
 
-// Export the FloorPlanStorageModel type for reuse
+// Export the type only (not the interface again)
 export type { FloorPlanStorageModel };

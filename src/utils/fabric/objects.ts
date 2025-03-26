@@ -37,7 +37,7 @@ export const canvasMoveTo = (canvas: FabricCanvas | null, x: number, y: number):
   
   try {
     const vpt = canvas!.viewportTransform;
-    if (vpt) {
+    if (vpt && vpt.length >= 6) {
       // Set translation components of the transform matrix
       vpt[4] = x;
       vpt[5] = y;
@@ -57,7 +57,8 @@ export const bringObjectToFront = (canvas: FabricCanvas | null, obj: FabricObjec
   if (!isCanvasValid(canvas) || !obj) return;
   
   try {
-    canvas!.bringToFront(obj);
+    // Bring object to front in the canvas
+    obj.bringToFront();
     canvas!.requestRenderAll();
   } catch (error) {
     logger.error('Error bringing object to front:', error);
@@ -73,7 +74,8 @@ export const sendObjectToBack = (canvas: FabricCanvas | null, obj: FabricObject)
   if (!isCanvasValid(canvas) || !obj) return;
   
   try {
-    canvas!.sendToBack(obj);
+    // Send object to back in the canvas
+    obj.sendToBack();
     canvas!.requestRenderAll();
   } catch (error) {
     logger.error('Error sending object to back:', error);

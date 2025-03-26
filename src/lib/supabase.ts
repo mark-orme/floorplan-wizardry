@@ -1,13 +1,19 @@
 
 import { createClient } from "@supabase/supabase-js";
-import { getEnvVars } from "@/utils/fabric";
 import { toast } from "sonner";
 
-// Get environment variables
-const { SUPABASE_URL, SUPABASE_ANON_KEY } = getEnvVars();
+// Define hardcoded fallback values for development
+const FALLBACK_SUPABASE_URL = "https://your-project.supabase.co";
+const FALLBACK_SUPABASE_ANON_KEY = "your-anon-key";
+
+// Get actual environment variables if available
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
 
 // Check if required environment variables are set
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
+    SUPABASE_URL === FALLBACK_SUPABASE_URL || 
+    SUPABASE_ANON_KEY === FALLBACK_SUPABASE_ANON_KEY) {
   console.error("Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.");
 }
 
@@ -19,7 +25,9 @@ export const supabase = createClient(
 
 // Add a method to check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
-  return !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
+  return !!SUPABASE_URL && !!SUPABASE_ANON_KEY && 
+    SUPABASE_URL !== FALLBACK_SUPABASE_URL && 
+    SUPABASE_ANON_KEY !== FALLBACK_SUPABASE_ANON_KEY;
 };
 
 // User roles

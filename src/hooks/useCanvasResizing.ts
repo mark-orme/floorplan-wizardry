@@ -5,7 +5,8 @@
  */
 import { useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { setCanvasDimensions, CANVAS_DIMENSIONS } from "@/utils/fabric";
+import { setCanvasDimensions } from "@/utils/fabric";
+import { CANVAS_DIMENSIONS } from "@/utils/fabric/canvasDimensions";
 import { CanvasDimensions, DebugInfoState } from "@/types/drawingTypes";
 
 interface UseCanvasResizingProps {
@@ -94,8 +95,9 @@ export const useCanvasResizing = ({
     const newHeight = Math.max(height - 20, 400);
     
     // Skip update if dimensions haven't changed significantly (within tolerance)
-    if (Math.abs(newWidth - lastDimensionsRef.current.width) < CANVAS_DIMENSIONS.DIMENSION_CHANGE_TOLERANCE && 
-        Math.abs(newHeight - lastDimensionsRef.current.height) < CANVAS_DIMENSIONS.DIMENSION_CHANGE_TOLERANCE) {
+    const DIMENSION_TOLERANCE = 5; // Use a local constant instead of accessing from CANVAS_DIMENSIONS
+    if (Math.abs(newWidth - lastDimensionsRef.current.width) < DIMENSION_TOLERANCE && 
+        Math.abs(newHeight - lastDimensionsRef.current.height) < DIMENSION_TOLERANCE) {
       resizeInProgressRef.current = false;
       resizingState.resizeInProgress = false;
       return;

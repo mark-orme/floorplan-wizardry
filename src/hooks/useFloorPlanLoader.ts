@@ -1,11 +1,10 @@
-
 /**
  * Custom hook for loading floor plan data
  * Handles loading, error handling, and default floor plan creation
  * @module useFloorPlanLoader
  */
 import { useCallback } from "react";
-import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/floorPlanTypes";
 import { captureError } from "@/utils/sentryUtils";
 
 /**
@@ -74,7 +73,7 @@ export const useFloorPlanLoader = ({
           gia: 0,
           strokes: [],
           label: defaultName,
-          paperSize: "infinite" as PaperSize
+          paperSize: "infinite"
         }];
         setFloorPlans(defaultPlan);
         console.log("Created default floor plan");
@@ -105,4 +104,3 @@ export const useFloorPlanLoader = ({
     loadFloorPlansData
   };
 };
-
