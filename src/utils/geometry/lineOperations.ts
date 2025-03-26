@@ -103,3 +103,38 @@ export const calculateMidpoint = (p1: Point, p2: Point): Point => {
     y: (p1.y + p2.y) / 2
   };
 };
+
+/**
+ * Check if a point lies on a line segment within a certain tolerance
+ * @param {Point} point - Point to check
+ * @param {Point} lineStart - Start point of line
+ * @param {Point} lineEnd - End point of line
+ * @param {number} tolerance - Distance tolerance (default: 0.1)
+ * @returns {boolean} Whether the point is on the line segment
+ */
+export const isPointOnLine = (
+  point: Point,
+  lineStart: Point,
+  lineEnd: Point,
+  tolerance: number = 0.1
+): boolean => {
+  // Calculate distances
+  const d1 = calculateDistance(point, lineStart);
+  const d2 = calculateDistance(point, lineEnd);
+  const lineLength = calculateDistance(lineStart, lineEnd);
+  
+  // Check if point is outside the line segment bounds
+  if (d1 > lineLength + tolerance || d2 > lineLength + tolerance) {
+    return false;
+  }
+  
+  // Calculate perpendicular distance to the line
+  const A = lineEnd.y - lineStart.y;
+  const B = lineStart.x - lineEnd.x;
+  const C = lineEnd.x * lineStart.y - lineStart.x * lineEnd.y;
+  
+  const perpDistance = Math.abs(A * point.x + B * point.y + C) / Math.sqrt(A * A + B * B);
+  
+  // Point is on line if perpendicular distance is within tolerance
+  return perpDistance <= tolerance;
+};

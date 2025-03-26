@@ -16,6 +16,10 @@ export default defineConfig({
     },
     include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
+    // Add necessary DOM testing capabilities
+    deps: {
+      inline: [/@testing-library\/jest-dom/],
+    },
   },
   resolve: {
     alias: {

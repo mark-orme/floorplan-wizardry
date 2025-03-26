@@ -128,4 +128,10 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Add global mocks or custom matchers here
+// Import the matchers from @testing-library/jest-dom
+import '@testing-library/jest-dom/matchers';
+import { expect } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Add jest-dom custom matchers
+expect.extend(matchers);
