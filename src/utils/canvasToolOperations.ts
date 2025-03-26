@@ -1,3 +1,4 @@
+
 /**
  * Canvas tool operations module
  * Provides functions for handling tool changes and canvas operations
@@ -68,7 +69,7 @@ export const handleToolChange = (
   
   // Apply tool-specific settings
   switch (newTool) {
-    case "pen":
+    case "draw":
       canvas.isDrawingMode = true;
       if (canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush.width = lineThickness || DEFAULT_LINE_THICKNESS;
@@ -79,7 +80,7 @@ export const handleToolChange = (
       // Implement eraser tool logic
       canvas.isDrawingMode = false;
       break;
-    case "line":
+    case "straightLine":
       // Implement line tool logic
       canvas.isDrawingMode = false;
       break;
@@ -163,7 +164,7 @@ export const setActiveTool = (
   
   // Apply tool-specific settings
   switch (tool) {
-    case "pen":
+    case "draw":
       canvas.isDrawingMode = true;
       break;
     case "select":
@@ -183,3 +184,4 @@ export const setActiveTool = (
   // Request a render to update display
   canvas.requestRenderAll();
 };
+

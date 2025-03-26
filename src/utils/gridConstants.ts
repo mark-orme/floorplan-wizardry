@@ -29,6 +29,9 @@ export const SMALL_GRID_SPACING = GRID_SPACING; // 0.1 meter
 export const LARGE_GRID_SPACING = 1.0; // 1.0 meter
 export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
 
+// Export constants needed by grid utilities
+export { MAX_SMALL_GRID_LINES, MAX_LARGE_GRID_LINES, GRID_EXTENSION_FACTOR };
+
 // Style options for grid lines
 export const SMALL_GRID_LINE_OPTIONS = {
   stroke: "#A0C5E0",
@@ -92,3 +95,4 @@ export const calculateGridDensity = (width: number, height: number) => {
     return { smallGridVisible: true, smallGridInterval: 1 };
   }
 };
+

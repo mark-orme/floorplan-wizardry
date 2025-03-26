@@ -28,6 +28,12 @@ export {
 };
 
 /**
+ * Define GRID_SIZE as GRID_SPACING for backward compatibility
+ * Used by grid utilities for coordinate operations
+ */
+export const GRID_SIZE = GRID_SPACING;
+
+/**
  * Drawing constants
  */
 export const DEFAULT_LINE_COLOR = "#000000"; // Default line color (black)
@@ -39,3 +45,4 @@ export * from '@/types/drawingTypes';
 export * from './geometry'; // This now re-exports from all geometry modules
 export * from './fabricPathUtils';
 export * from './floorPlanStorage';
+
