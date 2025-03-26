@@ -31,6 +31,13 @@ interface UseCanvasBrushResult {
 }
 
 /**
+ * Type definition for extended PencilBrush with additional properties
+ */
+interface ExtendedPencilBrush extends PencilBrush {
+  decimate?: number;
+}
+
+/**
  * Hook to handle brush initialization and configuration
  * Manages drawing brush settings and pressure sensitivity
  * 
@@ -58,8 +65,9 @@ export const useCanvasBrush = ({
       fabricCanvas.isDrawingMode = true;
       
       // OPTIMIZATION: Set brush properties for better performance
-      if ('decimate' in pencilBrush) {
-        (pencilBrush as unknown as { decimate: number }).decimate = 2; // Reduce number of points for smoother performance
+      const extendedBrush = pencilBrush as ExtendedPencilBrush;
+      if (extendedBrush) {
+        extendedBrush.decimate = 2; // Reduce number of points for smoother performance
       }
       
       setDebugInfo(prev => ({

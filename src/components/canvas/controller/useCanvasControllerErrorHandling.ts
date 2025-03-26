@@ -21,6 +21,12 @@ declare module '@/types/debugTypes' {
   }
 }
 
+interface UpdateDebugInfoObject {
+  errorCount?: number;
+  lastRetryTime?: string;
+  retryCount?: number;
+}
+
 /**
  * Hook that handles errors in the canvas controller
  * @returns Error handling functions
@@ -37,21 +43,27 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     console.error("Canvas error:", error);
     setHasError(true);
     setErrorMessage(error.message);
-    updateDebugInfo({ 
-      // Fixed: Use an object with direct value instead of a function
-      errorCount: (updateDebugInfo as any)?.errorCount ? (updateDebugInfo as any).errorCount + 1 : 1 
-    });
+    
+    // Create a proper update object
+    const updateObject: UpdateDebugInfoObject = { 
+      errorCount: 1 // Default to 1 if not previously set
+    };
+    
+    updateDebugInfo(updateObject);
   }, [setHasError, setErrorMessage, updateDebugInfo]);
 
   // Handle retry attempt
   const handleRetry = useCallback(() => {
     setHasError(false);
     setErrorMessage("");
-    updateDebugInfo({ 
+    
+    // Create a proper update object
+    const updateObject: UpdateDebugInfoObject = { 
       lastRetryTime: new Date().toISOString(),
-      // Fixed: Use an object with direct value instead of a function
-      retryCount: (updateDebugInfo as any)?.retryCount ? (updateDebugInfo as any).retryCount + 1 : 1
-    });
+      retryCount: 1 // Default to 1 if not previously set
+    };
+    
+    updateDebugInfo(updateObject);
   }, [setHasError, setErrorMessage, updateDebugInfo]);
 
   return {

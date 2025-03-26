@@ -55,13 +55,17 @@ export const useCanvasController = (): CanvasControllerContextValue => {
   return context;
 };
 
+interface CanvasControllerProviderProps {
+  children: React.ReactNode;
+}
+
 // Provider component
-export const CanvasControllerProvider = ({ children }: { children: React.ReactNode }): JSX.Element => {
+export const CanvasControllerProvider = ({ children }: CanvasControllerProviderProps): JSX.Element => {
   // Canvas references
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
-  const historyRef = useRef<{past: any[][], future: any[][]}>({ past: [], future: [] });
+  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({ past: [], future: [] });
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
   
   // Get canvas dimensions

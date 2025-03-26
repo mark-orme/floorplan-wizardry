@@ -12,14 +12,18 @@ interface UseCanvasControllerLoaderProps {
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
-  loadData: () => Promise<any>;
+  loadData: () => Promise<unknown>;
+}
+
+interface UseCanvasControllerLoaderResult {
+  loadFloorPlansData: () => Promise<void>;
 }
 
 /**
  * Hook that handles loading floor plan data
  * @returns Data loading functions
  */
-export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps) => {
+export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps): UseCanvasControllerLoaderResult => {
   const {
     setIsLoading,
     setFloorPlans,

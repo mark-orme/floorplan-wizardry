@@ -81,7 +81,7 @@ export const useCanvasControllerDependencies = ({
     canvasHeight: 0,
     loadTimes: {}
   };
-  const resolvedSetDebugInfo = setDebugInfo || ((_: any) => {});
+  const resolvedSetDebugInfo = setDebugInfo || ((_: React.SetStateAction<DebugInfoState>) => {});
   const resolvedSetHasError = setHasError || ((_: boolean) => {});
   const resolvedSetErrorMessage = setErrorMessage || ((_: string) => {});
   const resolvedZoomLevel = zoomLevel || 1;

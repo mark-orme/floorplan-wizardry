@@ -4,12 +4,11 @@
  * @module useCanvasControllerSetup
  */
 import { useRef, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import logger from "@/utils/logger";
-import { toast } from "sonner";
 
 /**
  * Props interface for useCanvasControllerSetup hook
@@ -32,12 +31,21 @@ interface UseCanvasControllerSetupProps {
   setErrorMessage: (value: string) => void;
 }
 
+interface UseCanvasControllerSetupResult {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  historyRef: React.MutableRefObject<{
+    past: FabricObject[][];
+    future: FabricObject[][];
+  }>;
+}
+
 /**
  * Hook that handles canvas initialization and setup
  * Manages canvas creation, initialization and validation
  * 
  * @param {UseCanvasControllerSetupProps} props - Hook properties 
- * @returns {Object} Initialized canvas references and related objects
+ * @returns {UseCanvasControllerSetupResult} Initialized canvas references and related objects
  */
 export const useCanvasControllerSetup = ({
   canvasDimensions,
@@ -47,7 +55,7 @@ export const useCanvasControllerSetup = ({
   setDebugInfo,
   setHasError,
   setErrorMessage
-}: UseCanvasControllerSetupProps) => {
+}: UseCanvasControllerSetupProps): UseCanvasControllerSetupResult => {
   // Initialize canvas and grid with improved error handling
   const { 
     canvasRef, 
@@ -80,7 +88,8 @@ export const useCanvasControllerSetup = ({
         logger.info("Canvas setup complete with dimensions:", canvasDimensions);
         setDebugInfo(prev => ({
           ...prev,
-          dimensionsSet: true
+          dimensionsSet: true,
+          canvasInitialized: true
         }));
       }
     }, 500);
