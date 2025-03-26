@@ -1,8 +1,9 @@
+
 /**
  * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text, PencilBrush } from "fabric";
 import logger from "./logger";
 import { toast } from "sonner";
 
@@ -307,7 +308,8 @@ export const attemptCanvasRepair = (
     // Ensure brush is initialized
     if (!canvas.freeDrawingBrush) {
       logger.warn("Free drawing brush not initialized, attempting to fix");
-      canvas.freeDrawingBrush = new (canvas.getConstructor('PencilBrush'))();
+      // In Fabric.js v6, we need to create a new PencilBrush directly instead of using getConstructor
+      canvas.freeDrawingBrush = new PencilBrush(canvas);
       canvas.freeDrawingBrush.width = 2;
       canvas.freeDrawingBrush.color = "#000000";
     }

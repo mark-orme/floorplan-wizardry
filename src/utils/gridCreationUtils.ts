@@ -131,3 +131,45 @@ export const isCanvasUsable = (canvas: FabricCanvas | null): boolean => {
     return false;
   }
 };
+
+/**
+ * Retry a function with exponential backoff
+ * 
+ * @param {Function} fn - The function to retry
+ * @param {number} attempt - Current attempt number (starting at 0)
+ * @param {number} maxAttempts - Maximum number of attempts
+ * @param {number} baseDelay - Base delay in ms (will be multiplied by backoff factor)
+ * @param {number} backoffFactor - Factor to increase delay by for each attempt
+ * @returns {number} Timeout ID for potential cancellation
+ */
+export const retryWithBackoff = (
+  fn: () => boolean | void,
+  attempt: number = 0,
+  maxAttempts: number = 3,
+  baseDelay: number = 200,
+  backoffFactor: number = 1.5
+): number => {
+  // Calculate delay with exponential backoff
+  const delay = Math.min(
+    baseDelay * Math.pow(backoffFactor, attempt),
+    5000 // Maximum 5 second delay
+  );
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Scheduling retry attempt #${attempt + 1} in ${delay}ms`);
+  }
+  
+  // Return the timeout ID
+  return window.setTimeout(() => {
+    if (attempt >= maxAttempts) {
+      console.warn(`Maximum retry attempts (${maxAttempts}) reached`);
+      return;
+    }
+    
+    try {
+      fn();
+    } catch (error) {
+      console.error(`Error during retry attempt #${attempt + 1}:`, error);
+    }
+  }, delay);
+};
