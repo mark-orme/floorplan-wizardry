@@ -36,7 +36,15 @@ export const useCanvasDebug = () => {
   const [errorMessage, setErrorMessage] = useState("");
   
   // Use the dedicated performance hook
-  const { loadTimes, markCanvasReady, markGridCreated, resetPerformanceTimers } = useCanvasPerformance();
+  const { 
+    loadTimes, 
+    markCanvasReady, 
+    markGridCreated, 
+    resetPerformanceTimers,
+    performanceMetrics,
+    startPerformanceTracking,
+    stopPerformanceTracking
+  } = useCanvasPerformance();
 
   // Track debug info changes for performance metrics
   useEffect(() => {
@@ -47,7 +55,36 @@ export const useCanvasDebug = () => {
     if (debugInfo.gridCreated) {
       markGridCreated();
     }
-  }, [debugInfo, markCanvasReady, markGridCreated]);
+    
+    // Update performance stats in debug info
+    setDebugInfo(prev => ({
+      ...prev,
+      performanceStats: {
+        fps: performanceMetrics.fps,
+        droppedFrames: performanceMetrics.droppedFrames,
+        frameTime: performanceMetrics.frameTime,
+        maxFrameTime: performanceMetrics.maxFrameTime,
+        longFrames: performanceMetrics.longFrames
+      }
+    }));
+  }, [
+    debugInfo.canvasInitialized, 
+    debugInfo.gridCreated, 
+    markCanvasReady, 
+    markGridCreated,
+    performanceMetrics
+  ]);
+
+  // Start performance tracking when canvas is initialized
+  useEffect(() => {
+    if (debugInfo.canvasInitialized) {
+      startPerformanceTracking();
+      
+      return () => {
+        stopPerformanceTracking();
+      };
+    }
+  }, [debugInfo.canvasInitialized, startPerformanceTracking, stopPerformanceTracking]);
 
   const resetLoadTimes = () => {
     resetPerformanceTimers();
@@ -61,6 +98,9 @@ export const useCanvasDebug = () => {
     errorMessage,
     setErrorMessage,
     loadTimes,
-    resetLoadTimes
+    resetLoadTimes,
+    performanceMetrics,
+    startPerformanceTracking,
+    stopPerformanceTracking
   };
 };

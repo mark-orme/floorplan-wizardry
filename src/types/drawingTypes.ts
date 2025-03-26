@@ -56,26 +56,52 @@ export interface CanvasDimensions {
 }
 
 /**
- * Debug info state type
- * @typedef {Object} DebugInfoState
+ * Debug information state interface
  */
 export interface DebugInfoState {
+  /** Whether the canvas has been initialized */
   canvasInitialized: boolean;
+  /** Whether the grid has been created */
   gridCreated: boolean;
+  /** Whether canvas dimensions have been properly set */
   dimensionsSet: boolean;
+  /** Whether the drawing brush has been initialized */
   brushInitialized: boolean;
-  gridCreationAttempts?: number;
-  gridCreationFailures?: number;
-  lastGridCreationTime?: number;
-  lastError?: Error | null;
-  lastErrorTime?: number;
-  canvasObjects?: number;
-  gridObjects?: number;
-  canvasWidth?: number;
-  canvasHeight?: number;
-  devicePixelRatio?: number;
-  gridVisible?: boolean;
-  performanceStats?: Record<string, number>;
+  /** Number of grid creation attempts */
+  gridCreationAttempts: number;
+  /** Number of grid creation failures */
+  gridCreationFailures: number;
+  /** Time taken for the last grid creation (ms) */
+  lastGridCreationTime: number;
+  /** Last error message */
+  lastError: string | null;
+  /** Timestamp of the last error */
+  lastErrorTime: number;
+  /** Number of objects on the canvas */
+  canvasObjects: number;
+  /** Number of grid objects on the canvas */
+  gridObjects: number;
+  /** Current canvas width */
+  canvasWidth: number;
+  /** Current canvas height */
+  canvasHeight: number;
+  /** Device pixel ratio */
+  devicePixelRatio: number;
+  /** Whether the grid is visible */
+  gridVisible: boolean;
+  /** Performance statistics */
+  performanceStats: {
+    /** Average frames per second */
+    fps?: number;
+    /** Number of dropped frames */
+    droppedFrames?: number;
+    /** Average frame time in milliseconds */
+    frameTime?: number;
+    /** Maximum frame time recorded */
+    maxFrameTime?: number;
+    /** Number of frames exceeding budget */
+    longFrames?: number;
+  };
 }
 
 /**

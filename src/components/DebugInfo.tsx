@@ -1,20 +1,52 @@
 
+import { DebugInfoState } from "@/types/drawingTypes";
+
 interface DebugInfoProps {
-  debugInfo: {
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-  };
+  debugInfo: DebugInfoState;
 }
 
-export const DebugInfo = ({ debugInfo }: DebugInfoProps) => {
+/**
+ * Displays debug information about the canvas state
+ * @param {DebugInfoProps} props - Component properties
+ * @returns {JSX.Element} Debug information component
+ */
+export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
+  // Only show in development mode
+  if (process.env.NODE_ENV !== "development") {
+    return <></>;
+  }
+
   return (
-    <div className="text-xs mt-2 text-gray-500 grid grid-cols-2 gap-1 border-t pt-2">
-      <div>Canvas Initialized: {debugInfo.canvasInitialized ? '✅' : '❌'}</div>
-      <div>Grid Created: {debugInfo.gridCreated ? '✅' : '❌'}</div>
-      <div>Dimensions Set: {debugInfo.dimensionsSet ? '✅' : '❌'}</div>
-      <div>Brush Initialized: {debugInfo.brushInitialized ? '✅' : '❌'}</div>
+    <div className="mt-4 p-2 text-xs bg-gray-100 rounded-md overflow-auto max-h-32">
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <h3 className="font-bold">Canvas State</h3>
+          <p>Initialized: {debugInfo.canvasInitialized ? "✅" : "❌"}</p>
+          <p>Grid Created: {debugInfo.gridCreated ? "✅" : "❌"}</p>
+          <p>Dimensions Set: {debugInfo.dimensionsSet ? "✅" : "❌"}</p>
+          <p>Brush Initialized: {debugInfo.brushInitialized ? "✅" : "❌"}</p>
+          <p>
+            Grid Objects: {debugInfo.gridObjects} / Canvas Objects: {debugInfo.canvasObjects}
+          </p>
+          <p>
+            Canvas Size: {debugInfo.canvasWidth}x{debugInfo.canvasHeight} (DPR: {debugInfo.devicePixelRatio})
+          </p>
+        </div>
+        
+        <div>
+          <h3 className="font-bold">Performance Metrics</h3>
+          <p>FPS: {debugInfo.performanceStats.fps?.toFixed(1) || 'N/A'}</p>
+          <p>Dropped Frames: {debugInfo.performanceStats.droppedFrames || 0}</p>
+          <p>Avg Frame Time: {debugInfo.performanceStats.frameTime?.toFixed(2) || 'N/A'}ms</p>
+          <p>Max Frame Time: {debugInfo.performanceStats.maxFrameTime?.toFixed(2) || 'N/A'}ms</p>
+          <p>Long Frames: {debugInfo.performanceStats.longFrames || 0}</p>
+          {debugInfo.lastError && (
+            <p className="text-red-500">
+              Error: {debugInfo.lastError} ({new Date(debugInfo.lastErrorTime || 0).toLocaleTimeString()})
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
