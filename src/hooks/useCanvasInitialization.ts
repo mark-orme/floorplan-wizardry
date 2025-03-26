@@ -98,6 +98,9 @@ export const useCanvasInitialization = ({
   useEffect(() => {
     componentMountedRef.current = true;
     
+    // Log initial state
+    console.log("💡 Canvas initialization started with dimensions:", canvasDimensions);
+    
     return () => {
       componentMountedRef.current = false;
     };
@@ -110,6 +113,9 @@ export const useCanvasInitialization = ({
   const performInitialization = useCallback((): boolean => {
     // First, increment global attempt counter to track overall initialization attempts
     globalInitAttempts++;
+    
+    // Log the current attempt
+    console.log(`🔄 Canvas initialization attempt #${globalInitAttempts}`);
     
     // Check if we've exceeded the global maximum attempts
     if (globalInitAttempts > MAX_GLOBAL_INIT_ATTEMPTS) {
@@ -174,15 +180,15 @@ export const useCanvasInitialization = ({
     logger.info("Attempting canvas initialization with dimensions:", canvasDimensions);
     console.log("📏 Attempting canvas initialization with dimensions:", canvasDimensions);
     
-    // CRITICAL CHANGE: Add a stronger guard to break the retry loop if canvas ref is null
+    // CRITICAL CHECK: Verify canvas element exists and has dimensions
     if (!canvasRef.current) {
-      logger.warn("Canvas element still not available — NOT retrying");
+      logger.warn("⚠️ Canvas element not available - cannot initialize fabric canvas");
       console.log("🛑 Canvas element not available, can't initialize fabric canvas");
       initializationInProgress = false;
       
       // Check if we should trigger emergency mode
       if (initializationAttempts.current >= maxInitAttempts) {
-        logger.error("Canvas reference never available after multiple attempts, triggering emergency mode");
+        logger.error("Canvas reference never available after multiple attempts");
         
         if (componentMountedRef.current) {
           setHasError(true);
@@ -193,20 +199,31 @@ export const useCanvasInitialization = ({
       return false;
     }
     
-    console.log("🧱 canvasRef exists:", canvasRef.current);
+    // Check canvas dimensions
+    console.log("🧱 canvasRef exists with dimensions:", 
+      canvasRef.current.offsetWidth, "x", canvasRef.current.offsetHeight);
+    
+    // Don't proceed if canvas has zero dimensions
+    if (canvasRef.current.offsetWidth === 0 || canvasRef.current.offsetHeight === 0) {
+      logger.warn("⚠️ Canvas element has zero dimensions - cannot initialize fabric canvas");
+      console.log("🛑 Canvas element has zero dimensions, can't initialize fabric canvas");
+      initializationInProgress = false;
+      
+      return false;
+    }
     
     // Initialize the canvas
     const fabricCanvas = initializeCanvas();
     
     // CRITICAL CHANGE: More detailed logging about why initialization failed
     if (!fabricCanvas) {
-      logger.warn("Fabric canvas was not created - check DOM or ref issues");
+      logger.warn("⚠️ Fabric canvas was not created - check DOM or ref issues");
       console.log("🎨 Fabric canvas was not created - initialization failed");
       initializationInProgress = false;
       
       // Check for too many retries and trigger emergency mode
       if (initializationAttempts.current >= maxInitAttempts) {
-        logger.error("Canvas initialization failed after multiple attempts, triggering emergency mode");
+        logger.error("Canvas initialization failed after multiple attempts");
         
         if (componentMountedRef.current) {
           setHasError(true);
@@ -249,13 +266,19 @@ export const useCanvasInitialization = ({
           // Directly create the grid
           const gridObjects = createGrid(fabricCanvas);
           
-          // If we didn't create any grid objects, try emergency grid
+          // If we didn't create any grid objects, try emergency grid and show toast
           if (!gridObjects || gridObjects.length === 0) {
-            logger.info("No grid objects created, trying basic emergency grid");
+            logger.info("⚠️ No grid objects created, trying basic emergency grid");
             console.log("⚠️ No grid objects created, trying emergency grid");
+            
+            toast.error("⚠️ Grid failed to render - switching to emergency mode");
+            
             createBasicEmergencyGrid(fabricCanvas, gridLayerRef);
           } else {
             console.log("✅ Grid successfully created:", gridObjects.length, "objects");
+            
+            // Show success toast
+            toast.success(`Grid created with ${gridObjects.length} objects`);
           }
           
           // Force render after grid is created
@@ -276,6 +299,9 @@ export const useCanvasInitialization = ({
       } catch (error) {
         logger.error("Error creating grid:", error);
         console.error("❌ Error creating grid:", error);
+        
+        // Show error toast
+        toast.error("Grid creation failed with error");
         
         // Try emergency grid on error
         if (fabricCanvas) {
@@ -364,13 +390,13 @@ export const useCanvasInitialization = ({
       
       // Check if canvas element exists and has dimensions
       if (!canvasRef.current || canvasRef.current.offsetWidth === 0) {
-        logger.warn("Canvas not ready for initialization, waiting for next frame...");
+        console.log("⏳ Canvas not ready yet, waiting for next frame...");
         requestAnimationFrame(waitForCanvasElement);
         return;
       }
       
       // Now that we have a valid canvas element, attempt initialization
-      console.log("Canvas element ready with dimensions:", 
+      console.log("✅ Canvas element ready with dimensions:", 
                   canvasRef.current.offsetWidth, "x", canvasRef.current.offsetHeight);
       const success = performInitialization();
       
