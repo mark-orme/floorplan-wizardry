@@ -11,10 +11,11 @@
 if (typeof window !== 'undefined') {
   // Mock canvas methods that jsdom doesn't implement
   if (!HTMLCanvasElement.prototype.getContext) {
+    // We need to use type assertion here to satisfy TypeScript's strict typing
     HTMLCanvasElement.prototype.getContext = function(
       contextId: string, 
       options?: any
-    ): CanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | null {
+    ) {
       // Mock 2d context
       if (contextId === '2d') {
         // Create a partial implementation that satisfies TypeScript
@@ -123,7 +124,7 @@ if (typeof window !== 'undefined') {
       }
       
       return null;
-    };
+    } as any; // Final type assertion to make TypeScript happy
   }
 }
 
