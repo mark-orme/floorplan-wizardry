@@ -6,14 +6,34 @@ import './index.css'
 import { getPusher } from './utils/pusher.ts'
 import { createRootElement } from './utils/domUtils.ts'
 
+// Check if browser profiling is supported in this environment
+const isProfilingSupported = () => {
+  try {
+    // Using a feature detection approach
+    return typeof window !== 'undefined' && 
+           typeof window.performance !== 'undefined' && 
+           typeof window.performance.mark === 'function' &&
+           typeof window.Profiler !== 'undefined';
+  } catch (e) {
+    return false;
+  }
+};
+
+// Create integrations array based on browser support
+const sentryIntegrations = [
+  Sentry.browserTracingIntegration(),
+  Sentry.replayIntegration(),
+];
+
+// Only add profiling integration if it's supported
+if (isProfilingSupported()) {
+  sentryIntegrations.push(new Sentry.BrowserProfilingIntegration());
+}
+
 // Initialize Sentry for error tracking and monitoring
 Sentry.init({
   dsn: "https://abae2c559058eb2bbcd15686dac558ed@o4508914471927808.ingest.de.sentry.io/4509038014234704",
-  integrations: [
-    Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
-    new Sentry.BrowserProfilingIntegration(),
-  ],
+  integrations: sentryIntegrations,
   // Enable automatic release tracking and source maps
   release: import.meta.env.VITE_SENTRY_RELEASE || "development",
   dist: import.meta.env.VITE_SENTRY_DIST,
@@ -28,8 +48,8 @@ Sentry.init({
   replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%
   replaysOnErrorSampleRate: 1.0, // 100% when sampling sessions where errors occur
   
-  // Performance profiling
-  profilesSampleRate: 0.1, // Capture 10% of profiles
+  // Performance profiling - only applied when integration is added
+  profilesSampleRate: isProfilingSupported() ? 0.1 : 0, // Capture 10% of profiles when supported
   
   // Ensure we capture breadcrumbs for better debugging context
   beforeBreadcrumb(breadcrumb) {
@@ -82,4 +102,3 @@ createRoot(rootElement).render(
     <App />
   </Sentry.ErrorBoundary>
 );
-
