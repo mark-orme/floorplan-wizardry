@@ -3,29 +3,13 @@
  * Drawing state type definitions
  * @module drawingTypes
  */
-export interface Point {
-  x: number;
-  y: number;
-}
+import { FloorPlan, PaperSize, Point } from './floorPlanTypes';
+
+export { FloorPlan, PaperSize, Point };
 
 export interface CanvasDimensions {
   width: number;
   height: number;
-}
-
-/**
- * Floor plan structure for storing drawing data
- */
-export interface FloorPlan {
-  id: string;
-  name: string;
-  label: string;
-  strokes: Point[][];
-  areas?: number[];
-  rooms?: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
-  gia: number; // Required to match floorPlanTypes.FloorPlan
 }
 
 /**

@@ -4,7 +4,7 @@
  * Functions for managing objects on canvas
  * @module fabric/objects
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Point } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import logger from "@/utils/logger";
 
 /**
@@ -100,7 +100,7 @@ export const bringObjectToFront = (
   if (!canvas || !object) return;
   
   try {
-    canvas.bringObjectToFront(object);
+    canvas.bringToFront(object);
     canvas.requestRenderAll();
   } catch (error) {
     logger.error("Error bringing object to front:", error);
@@ -119,7 +119,7 @@ export const sendObjectToBack = (
   if (!canvas || !object) return;
   
   try {
-    canvas.sendObjectToBack(object);
+    canvas.sendToBack(object);
     canvas.requestRenderAll();
   } catch (error) {
     logger.error("Error sending object to back:", error);

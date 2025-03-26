@@ -9,8 +9,7 @@ import { toast } from "sonner";
 import { PIXELS_PER_METER, DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
 import { calculateGIA } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { Point } from "@/types/drawingTypes";
+import { FloorPlan, Point } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 
 /**
@@ -59,8 +58,8 @@ interface UsePolylineCreationProps {
 interface UsePolylineCreationResult {
   /** Create a polyline from points and add it to the canvas */
   createPolyline: (
-    finalPoints: { x: number; y: number }[], 
-    pixelPoints: { x: number; y: number }[], 
+    finalPoints: Point[], 
+    pixelPoints: Point[], 
     isEnclosed?: boolean, 
     overrideColor?: string
   ) => boolean;
@@ -95,8 +94,8 @@ export const usePolylineCreation = ({
    * @returns Boolean indicating success
    */
   const createPolyline = useCallback((
-    finalPoints: { x: number; y: number }[],
-    pixelPoints: { x: number; y: number }[],
+    finalPoints: Point[],
+    pixelPoints: Point[],
     isEnclosed: boolean = false,
     overrideColor?: string
   ): boolean => {
@@ -141,10 +140,19 @@ export const usePolylineCreation = ({
       setFloorPlans(prev => {
         const newFloorPlans = [...prev];
         if (newFloorPlans[currentFloor]) {
-          newFloorPlans[currentFloor] = {
-            ...newFloorPlans[currentFloor],
-            strokes: [...newFloorPlans[currentFloor].strokes, finalPoints]
-          };
+          // Create a clone of the current floor plan
+          const updatedFloorPlan = { ...newFloorPlans[currentFloor] };
+          
+          // Ensure strokes array exists
+          if (!updatedFloorPlan.strokes) {
+            updatedFloorPlan.strokes = [];
+          }
+          
+          // Add the new stroke
+          updatedFloorPlan.strokes = [...updatedFloorPlan.strokes, finalPoints];
+          
+          // Update the floor plan in the array
+          newFloorPlans[currentFloor] = updatedFloorPlan;
           
           // Calculate and update area for enclosed shapes
           if (isEnclosed && finalPoints.length > 2) {

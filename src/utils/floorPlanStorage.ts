@@ -51,12 +51,14 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
   
   // Default floor plan if none exists
   return [{
-    strokes: [], 
-    label: 'Ground Floor', 
-    paperSize: 'infinite' as PaperSize,
     id: `floor-${Date.now()}`, 
     name: 'Ground Floor',
-    gia: 0
+    label: 'Ground Floor',
+    gia: 0,
+    strokes: [],
+    walls: [],
+    rooms: [],
+    level: 0
   }];
 };
 
@@ -108,9 +110,12 @@ function ensureRequiredFields(floorPlans: unknown[]): FloorPlan[] {
     // Ensure required fields from both type systems
     id: plan.id || `floor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     name: plan.name || plan.label || 'Unnamed Floor',
-    gia: typeof plan.gia === 'number' ? plan.gia : 0,
     label: plan.label || plan.name || 'Unnamed Floor',
-    strokes: Array.isArray(plan.strokes) ? plan.strokes : []
+    gia: typeof plan.gia === 'number' ? plan.gia : 0,
+    strokes: Array.isArray(plan.strokes) ? plan.strokes : [],
+    walls: Array.isArray(plan.walls) ? plan.walls : [],
+    rooms: Array.isArray(plan.rooms) ? plan.rooms : [],
+    level: typeof plan.level === 'number' ? plan.level : 0
   }));
 }
 

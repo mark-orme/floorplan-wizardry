@@ -1,30 +1,22 @@
 
 /**
- * Type definitions for database schema
+ * Database types and utilities
  * @module databaseTypes
  */
-import { DBSchema } from 'idb';
-import { FloorPlanStorageModel } from './floorPlanTypes';
 import { openDB } from 'idb';
+import { FloorPlanStorageModel } from './floorPlanTypes';
 
+// IndexedDB Constants
 /**
- * IndexedDB Schema definition
- * @interface FloorPlanDBSchema
- */
-export interface FloorPlanDBSchema extends DBSchema {
-  floorPlans: {
-    key: string;
-    value: {
-      id: string;
-      data: FloorPlanStorageModel[];
-    };
-  };
-}
-
-/**
- * IndexedDB Constants
+ * Name of the IndexedDB database
+ * @constant {string}
  */
 export const DB_NAME = 'FloorPlanDB';
+
+/**
+ * Name of the object store in the database
+ * @constant {string}
+ */
 export const STORE_NAME = 'floorPlans';
 
 /** 
@@ -32,7 +24,7 @@ export const STORE_NAME = 'floorPlans';
  * @returns {Promise<IDBDatabase>} Initialized database
  */
 export const getDB = async () => {
-  return openDB<FloorPlanDBSchema>(DB_NAME, 1, {
+  return openDB(DB_NAME, 1, {
     upgrade(db) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
@@ -40,3 +32,6 @@ export const getDB = async () => {
     },
   });
 };
+
+// Export the FloorPlanStorageModel type for reuse
+export type { FloorPlanStorageModel };

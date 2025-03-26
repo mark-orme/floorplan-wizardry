@@ -1,147 +1,150 @@
 
 /**
- * Fabric gesture utilities
- * Functions for handling touch gestures
+ * Gestures for fabric.js canvas
+ * Utilities for handling touch and mouse gestures on canvas
  * @module fabric/gestures
  */
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Point as FabricPoint } from "fabric";
 import logger from "@/utils/logger";
-import { isCanvasValid } from "./canvasValidation";
 
 /**
- * Add pinch-to-zoom functionality to canvas
- * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
- * @returns {boolean} Whether the operation was successful
+ * Initialize touch and mouse gestures for canvas
+ * @param canvas - Fabric canvas to initialize gestures on
  */
-export const addPinchToZoom = (
-  canvas: FabricCanvas | null | undefined
-): boolean => {
-  if (!isCanvasValid(canvas)) {
-    return false;
+export const initializeCanvasGestures = (canvas: FabricCanvas): void => {
+  if (!canvas) {
+    logger.error("Cannot initialize gestures on null canvas");
+    return;
   }
   
   try {
-    let initialDistance = 0;
-    let initialZoom = 1;
+    // Set up pinch zoom for touch devices
+    setupPinchZoom(canvas);
     
-    // Touch start handler
-    const touchStartHandler = (e: TouchEvent) => {
-      if (e.touches && e.touches.length === 2) {
-        // Calculate initial distance between touch points
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        initialDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) +
-          Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-        
-        // Store initial zoom
-        initialZoom = canvas!.getZoom();
-        
-        // Prevent default to avoid unwanted behavior
-        e.preventDefault();
-      }
-    };
+    // Set up mouse wheel zoom
+    setupMousewheelZoom(canvas);
     
-    // Touch move handler
-    const touchMoveHandler = (e: TouchEvent) => {
-      if (e.touches && e.touches.length === 2) {
-        // Calculate current distance
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const currentDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) +
-          Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-        
-        // Calculate zoom ratio
-        const zoomRatio = currentDistance / initialDistance;
-        const newZoom = initialZoom * zoomRatio;
-        
-        // Apply zoom, clamped to reasonable limits
-        const clampedZoom = Math.min(Math.max(newZoom, 0.5), 10);
-        
-        // Calculate center point
-        const centerX = (touch1.clientX + touch2.clientX) / 2;
-        const centerY = (touch1.clientY + touch2.clientY) / 2;
-        
-        // Zoom to point
-        const point = {
-          x: centerX,
-          y: centerY
-        };
-        
-        // Get position of point on canvas
-        const canvasElement = canvas!.getElement() as HTMLCanvasElement;
-        const rect = canvasElement.getBoundingClientRect();
-        const canvasPoint = {
-          x: (point.x - rect.left) / canvas!.getZoom(),
-          y: (point.y - rect.top) / canvas!.getZoom()
-        };
-        
-        // Set zoom
-        canvas!.zoomToPoint(canvasPoint, clampedZoom);
-        
-        // Prevent default to avoid unwanted behavior
-        e.preventDefault();
-      }
-    };
-    
-    // Get canvas element
-    const canvasElement = canvas!.getElement() as HTMLCanvasElement;
-    
-    // Add event listeners
-    canvasElement.addEventListener('touchstart', touchStartHandler);
-    canvasElement.addEventListener('touchmove', touchMoveHandler);
-    
-    // Store references to handlers for potential cleanup
-    (canvas as any)._pinchHandlers = {
-      touchStart: touchStartHandler,
-      touchMove: touchMoveHandler
-    };
-    
-    logger.info("Pinch-to-zoom functionality added to canvas");
-    return true;
+    logger.info("Canvas gestures initialized successfully");
   } catch (error) {
-    logger.error("Error adding pinch-to-zoom:", error);
-    return false;
+    logger.error("Error initializing canvas gestures:", error);
   }
 };
 
 /**
- * Remove pinch-to-zoom functionality
- * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
- * @returns {boolean} Whether the operation was successful
+ * Set up pinch zoom for touch devices
+ * @param canvas - Fabric canvas to set up
  */
-export const removePinchToZoom = (
-  canvas: FabricCanvas | null | undefined
-): boolean => {
-  if (!isCanvasValid(canvas)) {
-    return false;
-  }
+const setupPinchZoom = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
   
-  try {
-    // Get handlers
-    const handlers = (canvas as any)._pinchHandlers;
+  let lastDistance = 0;
+  let isDragging = false;
+  let lastPoint: { x: number, y: number } | null = null;
+  
+  canvas.on('touchstart', (e) => {
+    if (!e.touches) return;
     
-    if (handlers) {
-      // Get canvas element
-      const canvasElement = canvas!.getElement() as HTMLCanvasElement;
-      
-      // Remove event listeners
-      canvasElement.removeEventListener('touchstart', handlers.touchStart);
-      canvasElement.removeEventListener('touchmove', handlers.touchMove);
-      
-      // Remove handler references
-      delete (canvas as any)._pinchHandlers;
-      
-      logger.info("Pinch-to-zoom functionality removed from canvas");
-      return true;
+    if (e.touches.length === 2) {
+      // Pinch start - calculate initial distance
+      const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+      lastDistance = getDistance(point1, point2);
+    } else if (e.touches.length === 1) {
+      // Single touch - start dragging
+      isDragging = true;
+      lastPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
+  });
+  
+  canvas.on('touchmove', (e) => {
+    if (!e.touches) return;
     
-    return false;
-  } catch (error) {
-    logger.error("Error removing pinch-to-zoom:", error);
-    return false;
-  }
+    if (e.touches.length === 2) {
+      // Pinch move - handle zoom
+      e.preventDefault();
+      const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+      const distance = getDistance(point1, point2);
+      
+      if (lastDistance > 0) {
+        const midpoint = {
+          x: (point1.x + point2.x) / 2,
+          y: (point1.y + point2.y) / 2
+        };
+        const pointer = new FabricPoint(midpoint.x, midpoint.y);
+        
+        // Calculate zoom ratio
+        const zoomRatio = distance / lastDistance;
+        const zoom = canvas.getZoom() * zoomRatio;
+        
+        // Apply zoom with limits
+        canvas.zoomToPoint(pointer, Math.min(Math.max(zoom, 0.1), 10));
+        
+        // Trigger custom event for zoom change tracking
+        canvas.fire('custom:zoom-changed', { zoom });
+      }
+      
+      lastDistance = distance;
+    } else if (e.touches.length === 1 && isDragging && lastPoint) {
+      // Single touch move - handle panning
+      const currentPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const deltaX = currentPoint.x - lastPoint.x;
+      const deltaY = currentPoint.y - lastPoint.y;
+      
+      const vpt = canvas.viewportTransform!;
+      vpt[4] += deltaX;
+      vpt[5] += deltaY;
+      canvas.requestRenderAll();
+      
+      lastPoint = currentPoint;
+    }
+  });
+  
+  canvas.on('touchend', () => {
+    // Reset state
+    lastDistance = 0;
+    isDragging = false;
+    lastPoint = null;
+  });
+};
+
+/**
+ * Set up mouse wheel zoom
+ * @param canvas - Fabric canvas to set up
+ */
+const setupMousewheelZoom = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
+  
+  canvas.on('mouse:wheel', (opt) => {
+    const e = opt.e;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Get mouse position
+    const pointer = canvas.getPointer(e);
+    const point = new FabricPoint(pointer.x, pointer.y);
+    
+    // Calculate zoom
+    const delta = e.deltaY;
+    const zoomFactor = delta > 0 ? 0.95 : 1.05;
+    const zoom = canvas.getZoom() * zoomFactor;
+    
+    // Apply zoom with limits
+    canvas.zoomToPoint(point, Math.min(Math.max(zoom, 0.1), 10));
+    
+    // Trigger custom event for zoom change tracking
+    canvas.fire('custom:zoom-changed', { zoom });
+  });
+};
+
+/**
+ * Calculate distance between two points
+ * @param point1 - First point
+ * @param point2 - Second point
+ * @returns Distance between points
+ */
+const getDistance = (point1: { x: number, y: number }, point2: { x: number, y: number }): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
+  return Math.sqrt(dx * dx + dy * dy);
 };

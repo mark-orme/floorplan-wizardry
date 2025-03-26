@@ -5,8 +5,8 @@
  * @module useFloorPlanDrawing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Rect, Line } from "fabric";
-import { FloorPlan, Wall, Room } from "@/types/floorPlanTypes";
+import { Canvas as FabricCanvas, Rect, Line, Polyline, IText } from "fabric";
+import { FloorPlan, Wall, Room, Point } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 import { PIXELS_PER_METER } from "@/constants/numerics";
 
@@ -59,79 +59,151 @@ export const useFloorPlanDrawing = () => {
     options: FloorPlanDrawingOptions = DEFAULT_OPTIONS
   ): Promise<void> => {
     if (!canvas || !floorPlan) {
-      logger.warn('Cannot draw floor plan: Invalid canvas or floor plan data');
+      logger.error("Cannot draw floor plan: Canvas or plan is null");
       return;
     }
     
-    // Merge with default options
-    const drawOptions = { ...DEFAULT_OPTIONS, ...options };
-    
     try {
-      const { scale = 1, wallColor, wallThickness } = drawOptions;
+      // Set options with defaults
+      const drawOptions = { ...DEFAULT_OPTIONS, ...options };
       
-      // Clear existing floor plan objects if needed
-      // (skipped - usually you'd want to clear specific groups)
-      
-      // Draw walls
+      // Draw walls if they exist
       if (floorPlan.walls && floorPlan.walls.length > 0) {
-        for (const wall of floorPlan.walls) {
-          if (wall.start && wall.end) {
-            const line = new Line([
-              wall.start.x * PIXELS_PER_METER * scale,
-              wall.start.y * PIXELS_PER_METER * scale,
-              wall.end.x * PIXELS_PER_METER * scale,
-              wall.end.y * PIXELS_PER_METER * scale
-            ], {
-              stroke: wallColor,
-              strokeWidth: wallThickness,
-              selectable: true,
-              objectType: 'wall',
-              strokeLineCap: 'round',
-              strokeLineJoin: 'round'
-            });
-            
-            canvas.add(line);
-          }
-        }
+        drawWalls(canvas, floorPlan.walls, drawOptions);
+      } else {
+        logger.info("No walls to draw in floor plan");
       }
       
-      // Draw rooms (basic rectangles for demonstration)
+      // Draw rooms if they exist
       if (floorPlan.rooms && floorPlan.rooms.length > 0) {
-        for (const room of floorPlan.rooms) {
-          if (room.bounds) {
-            const { x, y, width, height } = room.bounds;
-            
-            const rect = new Rect({
-              left: x * PIXELS_PER_METER * scale,
-              top: y * PIXELS_PER_METER * scale,
-              width: width * PIXELS_PER_METER * scale,
-              height: height * PIXELS_PER_METER * scale,
-              fill: drawOptions.roomFillColor,
-              stroke: drawOptions.wallColor,
-              strokeWidth: 1,
-              selectable: true,
-              objectType: 'room',
-              name: room.name || 'Unnamed Room'
-            });
-            
-            canvas.add(rect);
-            
-            // Add room label if enabled
-            if (drawOptions.showLabels && room.name) {
-              // Room label implementation would go here
-            }
-          }
-        }
+        drawRooms(canvas, floorPlan.rooms, drawOptions);
+      } else {
+        logger.info("No rooms to draw in floor plan");
+      }
+      
+      // Draw strokes if they exist (from drawing tools)
+      if (floorPlan.strokes && floorPlan.strokes.length > 0) {
+        drawStrokes(canvas, floorPlan.strokes, drawOptions);
       }
       
       // Render the canvas
       canvas.requestRenderAll();
       
+      logger.info("Floor plan drawn successfully");
     } catch (error) {
-      logger.error('Error drawing floor plan:', error);
-      throw error;
+      logger.error("Error drawing floor plan:", error);
     }
   }, []);
+  
+  /**
+   * Draw walls on the canvas
+   * @param {FabricCanvas} canvas - Fabric canvas instance
+   * @param {Wall[]} walls - Array of walls to draw
+   * @param {FloorPlanDrawingOptions} options - Drawing options
+   */
+  const drawWalls = (
+    canvas: FabricCanvas,
+    walls: Wall[],
+    options: FloorPlanDrawingOptions
+  ): void => {
+    walls.forEach(wall => {
+      const line = new Line([
+        wall.start.x * PIXELS_PER_METER,
+        wall.start.y * PIXELS_PER_METER,
+        wall.end.x * PIXELS_PER_METER,
+        wall.end.y * PIXELS_PER_METER
+      ], {
+        stroke: options.wallColor,
+        strokeWidth: wall.thickness || options.wallThickness || 2,
+        selectable: false,
+        evented: false,
+        objectCaching: true
+      });
+      
+      canvas.add(line);
+    });
+  };
+  
+  /**
+   * Draw rooms on the canvas
+   * @param {FabricCanvas} canvas - Fabric canvas instance
+   * @param {Room[]} rooms - Array of rooms to draw
+   * @param {FloorPlanDrawingOptions} options - Drawing options
+   */
+  const drawRooms = (
+    canvas: FabricCanvas,
+    rooms: Room[],
+    options: FloorPlanDrawingOptions
+  ): void => {
+    rooms.forEach(room => {
+      // Create room rectangle
+      const rect = new Rect({
+        left: room.bounds.x * PIXELS_PER_METER,
+        top: room.bounds.y * PIXELS_PER_METER,
+        width: room.bounds.width * PIXELS_PER_METER,
+        height: room.bounds.height * PIXELS_PER_METER,
+        fill: options.roomFillColor,
+        stroke: options.wallColor,
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectCaching: true
+      });
+      
+      canvas.add(rect);
+      
+      // Add room label if enabled
+      if (options.showLabels && room.name) {
+        const text = new IText(room.name, {
+          left: (room.bounds.x + room.bounds.width / 2) * PIXELS_PER_METER,
+          top: (room.bounds.y + room.bounds.height / 2) * PIXELS_PER_METER,
+          fontSize: 14,
+          fill: '#000000',
+          textAlign: 'center',
+          originX: 'center',
+          originY: 'center',
+          selectable: false,
+          evented: false
+        });
+        
+        canvas.add(text);
+      }
+    });
+  };
+  
+  /**
+   * Draw strokes on the canvas
+   * @param {FabricCanvas} canvas - Fabric canvas instance
+   * @param {Point[][]} strokes - Array of point arrays defining strokes
+   * @param {FloorPlanDrawingOptions} options - Drawing options
+   */
+  const drawStrokes = (
+    canvas: FabricCanvas,
+    strokes: Point[][],
+    options: FloorPlanDrawingOptions
+  ): void => {
+    strokes.forEach(stroke => {
+      if (stroke.length < 2) return;
+      
+      // Convert stroke points to pixel coordinates
+      const pixelPoints = stroke.map(point => ({
+        x: point.x * PIXELS_PER_METER,
+        y: point.y * PIXELS_PER_METER
+      }));
+      
+      // Create a polyline for the stroke
+      const polyline = new Polyline(pixelPoints, {
+        stroke: options.wallColor,
+        strokeWidth: options.wallThickness || 2,
+        fill: 'transparent',
+        selectable: false,
+        evented: false,
+        objectCaching: true
+      });
+      
+      canvas.add(polyline);
+    });
+  };
   
   return { drawFloorPlan };
 };

@@ -43,11 +43,7 @@ export interface Room {
  * Paper size for printing
  * @interface PaperSize
  */
-export interface PaperSize {
-  width: number;
-  height: number;
-  name: string;
-}
+export type PaperSize = 'A4' | 'A3' | 'infinite';
 
 /**
  * Floor plan definition
@@ -56,13 +52,24 @@ export interface PaperSize {
 export interface FloorPlan {
   id: string;
   name: string;
-  walls: Wall[];
-  rooms: Room[];
-  level: number;
+  walls?: Wall[];
+  rooms?: Room[];
+  level?: number;
   gia?: number;
   scale?: number;
   updatedAt?: string;
   meta?: {
     [key: string]: any;
   };
+  // Properties needed from drawingTypes.FloorPlan
+  label: string;
+  strokes: Point[][];
+  areas?: number[];
+  createdAt?: Date;
+}
+
+// Storage model for IndexedDB
+export interface FloorPlanStorageModel {
+  id: string;
+  data: FloorPlan[];
 }
