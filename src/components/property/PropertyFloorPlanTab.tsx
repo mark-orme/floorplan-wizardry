@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Send } from 'lucide-react';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
+import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
 
 interface PropertyFloorPlanTabProps {
   canEdit: boolean;
