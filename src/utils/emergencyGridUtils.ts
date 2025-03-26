@@ -1,4 +1,3 @@
-
 /**
  * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
@@ -80,21 +79,6 @@ export const createEmergencyGrid = (
     } = options;
     
     const gridObjects: FabricObject[] = [];
-    
-    if (debug) {
-      // Check if canvas is initialized properly
-      console.log("EMERGENCY GRID DEBUG:", {
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height,
-        actualCanvasElement: canvas.getElement(),
-        elementDimensions: canvas.getElement() ? 
-          `${canvas.getElement().width}x${canvas.getElement().height}` : 
-          "No element found",
-        isDrawingMode: canvas.isDrawingMode,
-        zoomLevel: canvas.getZoom(),
-        viewportTransform: canvas.viewportTransform
-      });
-    }
     
     // Create large grid lines (primary lines)
     for (let i = 0; i <= width; i += largeGridSize) {

@@ -17,6 +17,10 @@ import {
   isMaxAttemptsReached
 } from "@/utils/gridAttemptTracker";
 
+// Track last attempt time to rate-limit grid creation
+let lastGridAttemptTime = 0;
+const MIN_ATTEMPT_INTERVAL = 1000; // 1 second between attempts
+
 /**
  * Props for the useGridManagement hook
  * @interface UseGridManagementProps
@@ -78,11 +82,27 @@ export const useGridManagement = ({
       return;
     }
     
+    // Check rate-limiting - don't create grid too frequently
+    const now = Date.now();
+    if (now - lastGridAttemptTime < MIN_ATTEMPT_INTERVAL) {
+      console.log(`Grid creation attempted too soon after last attempt, waiting. Last: ${lastGridAttemptTime}, Now: ${now}`);
+      
+      // Schedule attempt after the minimum interval
+      const timeoutId = setTimeout(() => {
+        attemptGridCreation();
+      }, MIN_ATTEMPT_INTERVAL);
+      
+      return () => clearTimeout(timeoutId);
+    }
+    
     // Mark initial attempt as completed
     gridAttemptStatusRef.current = markInitialAttempted(gridAttemptStatusRef.current);
     
     // Always reset progress first to break any stuck locks
     resetGridProgress();
+    
+    // Update attempt time
+    lastGridAttemptTime = now;
     
     // Function to attempt grid creation
     const attemptGridCreation = (): boolean => {
@@ -113,7 +133,36 @@ export const useGridManagement = ({
           gridLayerRef.current = [];
         }
         
-        const grid = createGrid(fabricCanvasRef.current);
+        const canvas = fabricCanvasRef.current;
+        
+        if (!canvas) {
+          console.error("Canvas is null during grid creation attempt");
+          return false;
+        }
+        
+        // Check if canvas already has grid objects
+        const existingObjects = canvas.getObjects();
+        if (existingObjects.length > 0) {
+          console.log(`Canvas already has ${existingObjects.length} objects, might have grid already`);
+          
+          // Assume some of these are grid objects and mark as successful
+          gridAttemptStatusRef.current = markCreationSuccessful(gridAttemptStatusRef.current);
+          
+          // Update gridLayerRef with existing objects that might be grid
+          // This is a heuristic approach - assuming objects with certain properties are grid
+          const possibleGridObjects = existingObjects.filter(obj => 
+            (obj.selectable === false || obj.evented === false) && 
+            ((obj as any).type === 'line' || (obj as any).type === 'text')
+          );
+          
+          if (possibleGridObjects.length > 0) {
+            console.log(`Found ${possibleGridObjects.length} possible grid objects in canvas`);
+            gridLayerRef.current = possibleGridObjects;
+            return true;
+          }
+        }
+        
+        const grid = createGrid(canvas);
         
         if (grid && grid.length > 0) {
           if (process.env.NODE_ENV === 'development') {
@@ -123,9 +172,37 @@ export const useGridManagement = ({
           gridAttemptStatusRef.current = markCreationSuccessful(gridAttemptStatusRef.current);
           return true;
         }
+        
+        // If standard grid creation failed, try emergency grid
+        console.log("Standard grid creation returned 0 objects, trying emergency grid");
+        const emergencyGrid = createBasicEmergencyGrid(canvas, gridLayerRef);
+        
+        if (emergencyGrid && emergencyGrid.length > 0) {
+          console.log(`Emergency grid created with ${emergencyGrid.length} objects`);
+          canvas.requestRenderAll();
+          gridAttemptStatusRef.current = markCreationSuccessful(gridAttemptStatusRef.current);
+          return true;
+        }
       } catch (err) {
         if (process.env.NODE_ENV === 'development') {
           console.error("Error during grid creation attempt:", err);
+        }
+        
+        // Try emergency grid on error
+        try {
+          if (fabricCanvasRef.current) {
+            console.log("Error during normal grid creation, trying emergency grid");
+            const emergencyGrid = createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+            
+            if (emergencyGrid && emergencyGrid.length > 0) {
+              console.log(`Emergency grid created with ${emergencyGrid.length} objects after error`);
+              fabricCanvasRef.current.requestRenderAll();
+              gridAttemptStatusRef.current = markCreationSuccessful(gridAttemptStatusRef.current);
+              return true;
+            }
+          }
+        } catch (emergencyError) {
+          console.error("Even emergency grid creation failed:", emergencyError);
         }
       }
       
@@ -203,10 +280,42 @@ export const useGridManagement = ({
         console.log("Canvas dimensions changed, recreating grid", canvasDimensions);
       }
       
+      // Check rate-limiting - don't create grid too frequently
+      const now = Date.now();
+      if (now - lastGridAttemptTime < MIN_ATTEMPT_INTERVAL) {
+        console.log("Grid recreation for dimensions change attempted too soon, skipping");
+        return;
+      }
+      
+      // Update attempt time
+      lastGridAttemptTime = now;
+      
       // Short timeout to ensure canvas is ready
       setTimeout(() => {
         resetGridProgress();
-        createGrid(fabricCanvasRef.current!);
+        
+        // Check if canvas still exists
+        if (!fabricCanvasRef.current) {
+          console.log("Canvas no longer exists when attempting to recreate grid");
+          return;
+        }
+        
+        try {
+          const grid = createGrid(fabricCanvasRef.current);
+          
+          // If standard grid creation fails, try emergency grid
+          if (!grid || grid.length === 0) {
+            console.log("Standard grid recreation returned 0 objects, trying emergency grid");
+            createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+          }
+        } catch (error) {
+          console.error("Error during grid recreation:", error);
+          
+          // Try emergency grid on error
+          if (fabricCanvasRef.current) {
+            createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+          }
+        }
       }, 100);
     }
   }, [canvasDimensions?.width, canvasDimensions?.height, fabricCanvasRef, createGrid]);

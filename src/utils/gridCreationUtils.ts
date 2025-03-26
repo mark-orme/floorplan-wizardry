@@ -30,6 +30,17 @@ export const createBasicEmergencyGrid = (
     const width = canvas.width || 800;
     const height = canvas.height || 600;
     
+    // Clear any existing grid objects
+    if (gridLayerRef && gridLayerRef.current.length > 0) {
+      console.log(`Removing ${gridLayerRef.current.length} existing grid objects`);
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    }
+    
     // Create horizontal lines every 100px
     for (let i = 0; i <= height; i += 100) {
       const line = new Line([0, i, width, i], {

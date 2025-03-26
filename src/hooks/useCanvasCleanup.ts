@@ -13,7 +13,7 @@ let disposalInProgress = false;
 
 // Track recently disposed canvases to prevent dispose/recreate loops
 const recentlyDisposedCanvases = new Set<number>();
-const DISPOSAL_COOLDOWN_MS = 2000;
+const DISPOSAL_COOLDOWN_MS = 5000; // Increased from 2000 to 5000 ms
 
 /**
  * Hook to handle proper cleanup of canvas resources
@@ -32,7 +32,7 @@ export const useCanvasCleanup = () => {
     const canvasId = Date.now();
     
     // Check if we're in a disposal cooldown period to prevent loops
-    if (recentlyDisposedCanvases.size > 3) {
+    if (recentlyDisposedCanvases.size > 2) { // Reduced from 3 to 2 for earlier detection
       logger.warn("Too many canvas disposals in short time, possible loop detected");
       console.warn("CANVAS CLEANUP: Possible disposal loop detected, skipping cleanup");
       return;
@@ -77,7 +77,7 @@ export const useCanvasCleanup = () => {
           // Always reset the flag
           disposalInProgress = false;
         }
-      }, 100); // Reduced to 100ms for faster cleanup
+      }, 250); // Increased from 100 to 250ms for more stable cleanup
     } catch (error) {
       logger.error("Error during canvas cleanup:", error);
       disposalInProgress = false;
