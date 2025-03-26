@@ -1,6 +1,7 @@
 
 /**
  * Custom hook for tracking canvas performance metrics including frame drops
+ * Combines load time tracking and frame metrics
  * @module useCanvasPerformance
  */
 import { useCallback } from "react";
@@ -10,9 +11,22 @@ import type { CanvasLoadTimes, PerformanceMetrics } from "@/types/performanceTyp
 
 /**
  * Hook for tracking canvas performance metrics and frame drops
- * @returns Performance tracking state and functions
+ * Provides comprehensive performance monitoring for canvas operations
+ * 
+ * @returns {Object} Performance tracking state and functions
+ * 
+ * @example
+ * const { 
+ *   loadTimes, 
+ *   markCanvasReady, 
+ *   performanceMetrics,
+ *   startPerformanceTracking 
+ * } = useCanvasPerformance();
  */
 export const useCanvasPerformance = () => {
+  /**
+   * Extract load time tracking functions and state
+   */
   const {
     loadTimes,
     markCanvasReady,
@@ -20,6 +34,9 @@ export const useCanvasPerformance = () => {
     resetLoadTimers
   } = useLoadTimeTracker();
 
+  /**
+   * Extract frame metrics tracking functions and state
+   */
   const {
     performanceMetrics,
     startPerformanceTracking,
@@ -31,6 +48,7 @@ export const useCanvasPerformance = () => {
 
   /**
    * Reset all performance timers for new measurements
+   * Clears both load times and frame metrics
    */
   const resetPerformanceTimers = useCallback(() => {
     resetLoadTimers();

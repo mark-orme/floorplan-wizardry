@@ -57,9 +57,45 @@ export const useGridThrottling = () => {
     }, delay);
   }, [clearThrottleTimeout]);
 
+  /**
+   * Determine if grid creation should be throttled
+   * Checks current state to decide if throttling is needed
+   * 
+   * @returns {boolean} True if throttling is needed
+   */
+  const shouldThrottleCreation = useCallback((): boolean => {
+    return throttleTimeoutRef.current !== null;
+  }, []);
+
+  /**
+   * Handle throttled grid creation
+   * Executes grid creation with throttling applied
+   * 
+   * @param {FabricCanvas} canvas - The Fabric canvas instance
+   * @param {Function} createGridCallback - Function to create the grid
+   * @returns {void}
+   */
+  const handleThrottledCreation = useCallback((
+    canvas: FabricCanvas,
+    createGridCallback: (canvas: FabricCanvas) => void
+  ): void => {
+    throttleGridCreation(canvas, createGridCallback);
+  }, [throttleGridCreation]);
+
+  /**
+   * Clean up any pending throttled operations
+   * Used when component is unmounting
+   */
+  const cleanup = useCallback(() => {
+    clearThrottleTimeout();
+  }, [clearThrottleTimeout]);
+
   return {
     throttleGridCreation,
     clearThrottleTimeout,
-    throttleTimeoutRef
+    throttleTimeoutRef,
+    shouldThrottleCreation,
+    handleThrottledCreation,
+    cleanup
   };
 };

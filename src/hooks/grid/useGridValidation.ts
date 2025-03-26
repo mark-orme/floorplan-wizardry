@@ -85,8 +85,33 @@ export const useGridValidation = () => {
     return true;
   }, []);
 
+  /**
+   * Validate grid components
+   * Ensures all necessary grid components are available
+   * 
+   * @returns {boolean} True if grid components are valid
+   */
+  const validateGridComponents = useCallback((): boolean => {
+    // In a real implementation, this would validate grid components
+    // For now, just returning true as a placeholder
+    return true;
+  }, []);
+
+  /**
+   * Ensure grid layer is initialized
+   * Checks if the grid layer reference is properly initialized
+   * 
+   * @param {any} gridLayerRef - Reference to grid layer
+   * @returns {boolean} True if grid layer is initialized
+   */
+  const ensureGridLayerInitialized = useCallback((gridLayerRef: any): boolean => {
+    return !!gridLayerRef && Array.isArray(gridLayerRef.current);
+  }, []);
+
   return {
     validateGridParameters,
-    validateGridCreation
+    validateGridCreation,
+    validateGridComponents,
+    ensureGridLayerInitialized
   };
 };

@@ -1,12 +1,18 @@
 
 /**
  * Hook for handling keyboard events for canvas
+ * Provides keyboard shortcut functionality for canvas operations
  * @module useKeyboardEvents
  */
 import { useEffect } from "react";
 import { BaseEventHandlerProps } from "./types";
 import logger from "@/utils/logger";
 
+/**
+ * Props for useKeyboardEvents hook
+ * @interface UseKeyboardEventsProps
+ * @extends BaseEventHandlerProps
+ */
 interface UseKeyboardEventsProps extends BaseEventHandlerProps {
   /** Function to delete selected objects */
   deleteSelectedObjects: () => void;
@@ -14,6 +20,16 @@ interface UseKeyboardEventsProps extends BaseEventHandlerProps {
 
 /**
  * Hook to handle keyboard events
+ * Sets up event listeners for keyboard shortcuts like delete/backspace
+ * 
+ * @param {UseKeyboardEventsProps} props - Hook properties
+ * 
+ * @example
+ * useKeyboardEvents({
+ *   tool,
+ *   fabricCanvasRef,
+ *   deleteSelectedObjects
+ * });
  */
 export const useKeyboardEvents = ({
   tool,
@@ -22,6 +38,8 @@ export const useKeyboardEvents = ({
   useEffect(() => {
     /**
      * Handle keyboard event for delete key
+     * Deletes selected objects when in select mode
+     * 
      * @param {KeyboardEvent} e - Keyboard event
      */
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -36,8 +54,8 @@ export const useKeyboardEvents = ({
     // Add keyboard event listeners
     window.addEventListener('keydown', handleKeyDown);
     
+    // Remove keyboard event listeners on cleanup
     return () => {
-      // Remove keyboard event listeners
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [tool, deleteSelectedObjects]);

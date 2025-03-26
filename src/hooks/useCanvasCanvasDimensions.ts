@@ -14,7 +14,11 @@ import { CanvasDimensions } from '@/types/drawingTypes';
  * @returns {CanvasDimensions} Current canvas dimensions
  */
 export const useCanvasDimensions = (): CanvasDimensions => {
-  // Initialize with default dimensions
+  /**
+   * State to store current canvas dimensions
+   * Initialized with default values that will be updated on mount
+   * @type {CanvasDimensions}
+   */
   const [dimensions, setDimensions] = useState<CanvasDimensions>({
     width: 800,
     height: 600
@@ -24,6 +28,7 @@ export const useCanvasDimensions = (): CanvasDimensions => {
     /**
      * Update dimensions based on container size
      * Measures the canvas container element and updates state
+     * @function
      */
     const updateDimensions = () => {
       const container = document.getElementById('canvas-container');
@@ -38,7 +43,10 @@ export const useCanvasDimensions = (): CanvasDimensions => {
     // Initial update
     updateDimensions();
     
-    // Add window resize listener
+    /**
+     * Window resize event handler
+     * Updates dimensions when window size changes
+     */
     window.addEventListener('resize', updateDimensions);
     
     // Clean up event listener on unmount

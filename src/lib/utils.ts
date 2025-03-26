@@ -29,6 +29,7 @@ export function cn(...inputs: ClassValue[]): string {
 
 /**
  * Formats a number as a currency string
+ * Uses the Intl.NumberFormat API for localized currency formatting
  * 
  * @param {number} value - The number to format
  * @param {string} [currency="USD"] - The currency code
@@ -56,6 +57,7 @@ export function formatCurrency(
 
 /**
  * Formats a date to a human-readable string
+ * Uses the toLocaleDateString method for localized date formatting
  * 
  * @param {Date | string | number} date - The date to format
  * @param {string} [locale="en-US"] - The locale to use for formatting
@@ -64,6 +66,10 @@ export function formatCurrency(
  * @example
  * // Returns "Jan 1, 2023"
  * formatDate(new Date(2023, 0, 1))
+ * 
+ * @example
+ * // Returns "1 Jan 2023" (with en-GB locale)
+ * formatDate(new Date(2023, 0, 1), "en-GB")
  */
 export function formatDate(
   date: Date | string | number,
@@ -82,6 +88,7 @@ export function formatDate(
 
 /**
  * Truncates a string to a maximum length and adds an ellipsis if truncated
+ * Useful for displaying long text in constrained spaces
  * 
  * @param {string} str - The string to truncate
  * @param {number} [maxLength=50] - Maximum length before truncation
@@ -90,6 +97,10 @@ export function formatDate(
  * @example
  * // Returns "This is a..."
  * truncateString("This is a long string", 10)
+ * 
+ * @example
+ * // Returns "Short" (no truncation needed)
+ * truncateString("Short", 10)
  */
 export function truncateString(str: string, maxLength: number = 50): string {
   if (str.length <= maxLength) return str;

@@ -12,9 +12,16 @@ import logger from "../logger";
  * Makes objects non-selectable for drawing modes
  * 
  * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @returns {void}
+ * 
+ * @example
+ * // Disable selection when switching to drawing mode
+ * disableSelection(fabricCanvas);
  */
 export const disableSelection = (canvas: FabricCanvas): void => {
+  // Disable canvas selection
   canvas.selection = false;
+  // Change cursor to crosshair for drawing
   canvas.defaultCursor = 'crosshair';
   canvas.hoverCursor = 'crosshair';
   
@@ -35,9 +42,16 @@ export const disableSelection = (canvas: FabricCanvas): void => {
  * Makes objects selectable for selection mode
  * 
  * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @returns {void}
+ * 
+ * @example
+ * // Enable selection when switching to select mode
+ * enableSelection(fabricCanvas);
  */
 export const enableSelection = (canvas: FabricCanvas): void => {
+  // Enable canvas selection
   canvas.selection = true;
+  // Change cursor to default for selection
   canvas.defaultCursor = 'default';
   canvas.hoverCursor = 'move';
   
@@ -51,6 +65,7 @@ export const enableSelection = (canvas: FabricCanvas): void => {
     }
   });
   
+  // Render canvas to show selection changes
   canvas.requestRenderAll();
   logger.info("Selection mode enabled");
 };

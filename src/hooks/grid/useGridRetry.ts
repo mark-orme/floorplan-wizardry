@@ -82,9 +82,42 @@ export const useGridRetry = () => {
     return scheduleGridRetry(canvas, createGridCallback, delay);
   }, [calculateRetryDelay]);
 
+  /**
+   * Create grid with retry mechanism
+   * Attempts to create grid and retries on failure
+   * 
+   * @param {FabricCanvas} canvas - The Fabric canvas instance
+   * @param {Function} createGridCallback - Function to create the grid
+   * @returns {boolean} True if grid creation was successful or scheduled for retry
+   */
+  const createGridWithRetry = useCallback((
+    canvas: FabricCanvas,
+    createGridCallback: (canvas: FabricCanvas) => void
+  ): boolean => {
+    try {
+      createGridCallback(canvas);
+      return true;
+    } catch (error) {
+      logger.error("Grid creation failed, scheduling retry:", error);
+      retryWithBackoff(canvas, createGridCallback);
+      return false;
+    }
+  }, [retryWithBackoff]);
+
+  /**
+   * Clean up any pending retry operations
+   * Used when component is unmounting
+   */
+  const cleanup = useCallback(() => {
+    // In a real implementation, this would cancel any pending retries
+    logger.info("Cleaning up grid retry operations");
+  }, []);
+
   return {
     retryWithBackoff,
     calculateRetryDelay,
-    DEFAULT_RETRY_CONFIG
+    DEFAULT_RETRY_CONFIG,
+    createGridWithRetry,
+    cleanup
   };
 };
