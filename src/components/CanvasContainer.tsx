@@ -60,10 +60,10 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
   }, [canvasReference]);
 
   return (
-    <Card className="p-0 bg-white shadow-md rounded-lg"> {/* Removed padding completely */}
+    <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible"> {/* Added overflow-visible to allow tooltips to extend beyond container */}
       <div 
         ref={containerRef} 
-        className="w-full h-[1000px] md:h-[1050px] relative" // Increased heights from 950/1000 to 1000/1050
+        className="w-full h-[1000px] md:h-[1050px] relative overflow-visible" // Added overflow-visible, increased heights from 950/1000 to 1000/1050
       >
         <canvas 
           ref={canvasReference} 

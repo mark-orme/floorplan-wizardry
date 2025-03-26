@@ -86,10 +86,13 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     throttleRef.current = window.requestAnimationFrame(() => {
       throttleRef.current = null;
       
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      const pointer = canvas.getPointer(e.e);
+      
+      // Always update cursor position for tooltips, even when not drawing
       if (drawingState.isDrawing) {
-        const canvas = fabricCanvasRef.current;
-        const pointer = canvas.getPointer(e.e);
-        
         // Calculate midpoint between start and current points
         const midPoint = drawingState.startPoint ? {
           x: (drawingState.startPoint.x + pointer.x) / 2,
@@ -101,8 +104,13 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
           ...prevState,
           currentPoint: pointer,
           cursorPosition: pointer,
-          midPoint: midPoint,
-          selectionActive: false
+          midPoint: midPoint
+        }));
+      } else {
+        // Just update cursor position for hover tooltips
+        setDrawingState(prevState => ({
+          ...prevState,
+          cursorPosition: pointer
         }));
       }
     });
@@ -114,16 +122,20 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
   const handleMouseUp = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
+    // Update selection state based on canvas state
+    const canvas = fabricCanvasRef.current;
+    const hasActiveSelection = canvas.getActiveObject() !== null;
+    
     // Clear drawing state after a short delay
+    // But preserve selection state for tooltips on selected objects
     timeoutRef.current = window.setTimeout(() => {
       setDrawingState(prevState => ({
         ...prevState,
         isDrawing: false,
         startPoint: null,
         currentPoint: null,
-        cursorPosition: null,
         midPoint: null,
-        selectionActive: false
+        selectionActive: hasActiveSelection
       }));
     }, 50);
   }, [fabricCanvasRef]);

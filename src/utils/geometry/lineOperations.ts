@@ -1,3 +1,4 @@
+
 /**
  * Line operations utilities
  * Functions for straightening and measuring lines
@@ -104,7 +105,7 @@ export const straightenStroke = (stroke: Point[]): Point[] => {
 
 /**
  * Calculate exact distance between two points in meters
- * FIXED: Now correctly accounts for 0.1m grid size
+ * Accounts for 0.1m grid size and provides enhanced precision for the tooltip
  * @param startPoint - Starting point 
  * @param endPoint - Ending point
  * @returns Distance in meters, rounded to 1 decimal place for better usability
@@ -127,4 +128,20 @@ export const calculateDistance = (startPoint: Point, endPoint: Point): number =>
     logger.error("Error calculating distance:", error);
     return 0;
   }
+};
+
+/**
+ * Checks if a point is exactly on a grid multiple
+ * Useful for displaying when a measurement perfectly aligns with the grid
+ * @param value - The coordinate value to check
+ * @returns True if the value is an exact multiple of the grid size
+ */
+export const isExactGridMultiple = (value: number): boolean => {
+  if (value === 0) return true;
+  
+  const gridMultiple = value / GRID_SIZE;
+  const roundedGridMultiple = Math.round(gridMultiple);
+  
+  // Check if the value is very close to a grid multiple (accounting for floating point errors)
+  return Math.abs(gridMultiple - roundedGridMultiple) < 0.001;
 };

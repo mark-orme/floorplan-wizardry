@@ -4,6 +4,13 @@ import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, isExactGridMultiple } from "@/utils/geometry";
 import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface DistanceTooltipProps {
   startPoint?: Point | null;
@@ -82,12 +89,12 @@ export const DistanceTooltip = memo(({
         top: `${pixelY}px`,
         transform: `translate(-50%, -50%) scale(${effectiveZoom > 0 ? 1/effectiveZoom : 1})`, // Scale inversely with zoom
         willChange: "transform", 
-        outline: "2px solid rgba(255,255,255,0.6)",
+        outline: "2px solid rgba(255,255,255,0.8)",
         maxWidth: "120px",
         lineHeight: 1.2,
         // Ensure high contrast for visibility
         backgroundColor: "rgba(0, 0, 0, 0.9)",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.3)"
+        boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.4)"
       }}
     >
       <div className="flex items-center gap-2 whitespace-nowrap">

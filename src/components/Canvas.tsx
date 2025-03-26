@@ -104,10 +104,10 @@ const CanvasInner = (props: CanvasProps) => {
 
   // Determine tooltip visibility - show when drawing or in select mode with an active selection
   const isTooltipVisible = 
-    // Always show during active drawing with straightLine or room tools
-    (drawingState?.isDrawing && (tool === "straightLine" || tool === "room")) ||
+    // Always show during active drawing with straightLine or wall tools
+    (drawingState?.isDrawing && (tool === "straightLine" || tool === "wall")) ||
     // Show when hovering with these tools even if not actively drawing
-    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "room") && drawingState?.cursorPosition != null) ||
+    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "wall") && drawingState?.cursorPosition != null) ||
     // Also show when in select mode and actively manipulating a line
     (tool === "select" && drawingState?.isDrawing) ||
     // Show when selecting a wall
