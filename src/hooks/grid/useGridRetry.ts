@@ -102,7 +102,19 @@ export const useGridRetry = ({
       try {
         // Check that canvas is still valid
         if (canvas) {
-          createGridCallback(canvas);
+          // Try to create grid with original callback
+          const gridObjects = createGridCallback(canvas);
+          
+          // Log the result for debugging
+          console.log(`Grid retry #${currentAttempt + 1} result: ${gridObjects.length} objects`);
+          
+          // If we still have no grid, try a more aggressive approach on the last attempt
+          if (gridObjects.length === 0 && currentAttempt >= RETRY_CONFIG.MAX_ATTEMPTS - 1) {
+            console.log("Final retry with no objects, forcing simple grid creation");
+            setTimeout(() => {
+              createBasicEmergencyGrid(canvas, gridLayerRef); 
+            }, 100);
+          }
         }
       } catch (error) {
         logger.error("Error during grid retry:", error);
@@ -110,7 +122,7 @@ export const useGridRetry = ({
         isRetryingRef.current = false;
       }
     }, delay);
-  }, [calculateRetryDelay, createGridCallback]);
+  }, [calculateRetryDelay, createGridCallback, gridLayerRef]);
   
   /**
    * Create grid with retry capability
@@ -186,11 +198,23 @@ export const useGridRetry = ({
         return grid;
       }
       
+      // If grid is empty, create emergency grid directly on last attempt
+      if (attemptCountRef.current >= RETRY_CONFIG.MAX_ATTEMPTS - 1) {
+        console.log("Last attempt with no grid, forcing emergency grid creation");
+        setTimeout(() => createBasicEmergencyGrid(canvas, gridLayerRef), 50);
+      }
+      
       // Schedule retry if creation returned empty grid
       retryTimeoutRef.current = scheduleRetry(canvas);
       return gridLayerRef.current;
     } catch (error) {
       logger.error("Error in grid creation:", error);
+      
+      // On last attempt, try emergency grid regardless of error
+      if (attemptCountRef.current >= RETRY_CONFIG.MAX_ATTEMPTS - 1) {
+        console.log("Error on last attempt, forcing emergency grid creation");
+        setTimeout(() => createBasicEmergencyGrid(canvas, gridLayerRef), 50);
+      }
       
       // Schedule retry on error
       retryTimeoutRef.current = scheduleRetry(canvas);

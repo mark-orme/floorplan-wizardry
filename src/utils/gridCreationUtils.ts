@@ -5,6 +5,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import logger from "./logger";
+import { toast } from "sonner";
 
 /**
  * Create a very basic emergency grid when all other methods fail
@@ -26,6 +27,12 @@ export const createBasicEmergencyGrid = (
   try {
     console.log("Creating emergency grid as last resort");
     
+    // Show a toast to notify the user
+    toast.info("Using simplified grid", {
+      id: "emergency-grid-toast",
+      duration: 3000
+    });
+    
     // Clear existing grid objects if any
     if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
@@ -37,19 +44,22 @@ export const createBasicEmergencyGrid = (
     }
     
     const emergencyGrid: FabricObject[] = [];
+    
+    // Force canvas dimensions to be valid
     const canvasWidth = Math.max(canvas.width || 800, 800);
     const canvasHeight = Math.max(canvas.height || 600, 600);
     
     // Create a background rectangle to ensure grid is visible
-    canvas.backgroundColor = '#fcfcfd';
+    canvas.backgroundColor = '#ffffff';
     
     // Use larger grid spacing for emergency grid (every 100px)
     const gridSpacing = 100;
+    const smallGridSpacing = 20;
     
-    // Create vertical lines
-    for (let i = 0; i <= canvasWidth; i += gridSpacing) {
-      const line = new Line([i, 0, i, canvasHeight], {
-        stroke: 'rgba(120,130,140,0.5)',
+    // Create vertical large lines (every meter)
+    for (let i = 0; i <= canvasWidth + 200; i += gridSpacing) {
+      const line = new Line([i, 0, i, canvasHeight + 200], {
+        stroke: 'rgba(100,110,120,0.5)',
         strokeWidth: 1,
         selectable: false,
         evented: false,
@@ -59,10 +69,10 @@ export const createBasicEmergencyGrid = (
       canvas.add(line);
     }
     
-    // Create horizontal lines
-    for (let i = 0; i <= canvasHeight; i += gridSpacing) {
-      const line = new Line([0, i, canvasWidth, i], {
-        stroke: 'rgba(120,130,140,0.5)',
+    // Create horizontal large lines (every meter)
+    for (let i = 0; i <= canvasHeight + 200; i += gridSpacing) {
+      const line = new Line([0, i, canvasWidth + 200, i], {
+        stroke: 'rgba(100,110,120,0.5)',
         strokeWidth: 1,
         selectable: false,
         evented: false,
@@ -72,7 +82,39 @@ export const createBasicEmergencyGrid = (
       canvas.add(line);
     }
     
-    // Add some text markers at key points
+    // Create vertical small lines for more detail
+    for (let i = 0; i <= canvasWidth + 200; i += smallGridSpacing) {
+      // Skip if this would be a large grid line
+      if (i % gridSpacing === 0) continue;
+      
+      const line = new Line([i, 0, i, canvasHeight + 200], {
+        stroke: 'rgba(180,185,190,0.3)',
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        hoverCursor: 'default'
+      });
+      emergencyGrid.push(line);
+      canvas.add(line);
+    }
+    
+    // Create horizontal small lines for more detail
+    for (let i = 0; i <= canvasHeight + 200; i += smallGridSpacing) {
+      // Skip if this would be a large grid line
+      if (i % gridSpacing === 0) continue;
+      
+      const line = new Line([0, i, canvasWidth + 200, i], {
+        stroke: 'rgba(180,185,190,0.3)',
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        hoverCursor: 'default'
+      });
+      emergencyGrid.push(line);
+      canvas.add(line);
+    }
+    
+    // Add some text markers at key points for scale reference
     const markers = [
       { x: 100, y: 100, text: "1m" },
       { x: 200, y: 200, text: "2m" },

@@ -7,6 +7,9 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { disposeCanvas, isCanvasValid } from "@/utils/fabricCanvas";
 
+// Flag to track if canvas disposal is in progress globally
+let disposalInProgress = false;
+
 /**
  * Hook to handle proper cleanup of canvas resources
  */
@@ -20,10 +23,19 @@ export const useCanvasCleanup = () => {
       return;
     }
     
+    // Prevent concurrent disposals
+    if (disposalInProgress) {
+      console.log("Canvas disposal already in progress, skipping");
+      return;
+    }
+    
+    disposalInProgress = true;
+    
     try {
       // Before disposing, check if the canvas is valid
       if (!isCanvasValid(fabricCanvas)) {
         console.log("Canvas instance appears to be invalid or already disposed");
+        disposalInProgress = false;
         return;
       }
       
@@ -38,10 +50,14 @@ export const useCanvasCleanup = () => {
           }
         } catch (error) {
           console.error("Error during delayed canvas cleanup:", error);
+        } finally {
+          // Always reset the flag
+          disposalInProgress = false;
         }
-      }, 200); // Increased to 200ms for more safety
+      }, 100); // Reduced to 100ms for faster cleanup
     } catch (error) {
       console.error("Error during canvas cleanup:", error);
+      disposalInProgress = false;
     }
   }, []);
 
