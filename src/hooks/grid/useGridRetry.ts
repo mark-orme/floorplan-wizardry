@@ -58,6 +58,9 @@ export const useGridRetry = ({
   // Track retry timeout IDs
   const retryTimeoutRef = useRef<number | null>(null);
   
+  // Flag to prevent multiple concurrent retry operations
+  const isRetryingRef = useRef<boolean>(false);
+  
   /**
    * Calculate delay for the next retry with exponential backoff
    */
@@ -74,11 +77,20 @@ export const useGridRetry = ({
   const scheduleRetry = useCallback((canvas: FabricCanvas): number | null => {
     if (!canvas) return null;
     
+    // Prevent scheduling multiple retries
+    if (isRetryingRef.current) {
+      logger.warn("A retry is already scheduled, skipping");
+      return null;
+    }
+    
+    // Check if already at max attempts
     const currentAttempt = attemptCountRef.current;
     if (currentAttempt >= RETRY_CONFIG.MAX_ATTEMPTS) {
       logger.warn(`Max grid creation attempts (${RETRY_CONFIG.MAX_ATTEMPTS}) reached`);
       return null;
     }
+    
+    isRetryingRef.current = true;
     
     const delay = calculateRetryDelay(currentAttempt);
     logger.info(`Scheduling grid retry attempt #${currentAttempt + 1} in ${delay}ms`);
@@ -86,10 +98,16 @@ export const useGridRetry = ({
     return window.setTimeout(() => {
       logger.info(`Executing grid retry #${currentAttempt + 1}`);
       attemptCountRef.current += 1;
+      
       try {
-        createGridCallback(canvas);
+        // Check that canvas is still valid
+        if (canvas) {
+          createGridCallback(canvas);
+        }
       } catch (error) {
         logger.error("Error during grid retry:", error);
+      } finally {
+        isRetryingRef.current = false;
       }
     }, delay);
   }, [calculateRetryDelay, createGridCallback]);
@@ -134,7 +152,9 @@ export const useGridRetry = ({
         }));
         
         // Force render to ensure grid is visible
-        canvas.requestRenderAll();
+        if (canvas) {
+          canvas.requestRenderAll();
+        }
         
         return emergencyGrid;
       } catch (error) {
@@ -147,12 +167,22 @@ export const useGridRetry = ({
     
     // Try to create the grid normally
     try {
+      // Check if canvas is valid before proceeding
+      if (!canvas) {
+        logger.warn("Canvas is null, skipping grid creation");
+        return gridLayerRef.current;
+      }
+      
       const grid = createGridCallback(canvas);
       
       // If grid creation succeeded, reset attempt counter
       if (grid && grid.length > 0) {
         logger.info(`Grid created successfully with ${grid.length} objects`);
         attemptCountRef.current = 0;
+        isRetryingRef.current = false;
+        
+        // Force a render to ensure grid is visible
+        canvas.requestRenderAll();
         return grid;
       }
       
@@ -184,6 +214,7 @@ export const useGridRetry = ({
       retryTimeoutRef.current = null;
     }
     attemptCountRef.current = 0;
+    isRetryingRef.current = false;
   }, []);
   
   // Clean up on unmount

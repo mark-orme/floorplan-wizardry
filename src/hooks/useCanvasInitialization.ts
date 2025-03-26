@@ -58,6 +58,8 @@ interface UseCanvasInitializationResult {
 let initialToastShown = false;
 // Track whether initialization is in progress
 let initializationInProgress = false;
+// Track whether canvas is being disposed
+let canvasDisposalInProgress = false;
 
 /**
  * Hook for initializing the canvas and related objects
@@ -137,6 +139,12 @@ export const useCanvasInitialization = ({
       console.log("Initialization already in progress, skipping");
       return false;
     }
+
+    // Don't attempt to initialize if disposal is in progress
+    if (canvasDisposalInProgress) {
+      console.log("Canvas disposal in progress, skipping initialization");
+      return false;
+    }
     
     initializationInProgress = true;
     initializationAttempts.current += 1;
@@ -167,26 +175,41 @@ export const useCanvasInitialization = ({
     // Initialize the brush
     setupBrush(fabricCanvas);
     
-    // IMPROVED: Create grid immediately after canvas is rendered instead of using idleCallback
+    // IMPROVED: Create grid directly after canvas is initialized
     const createGridSafely = () => {
-      // Reset retry counter for grid creation to give it a fresh start
-      console.log("Creating grid on initialized canvas");
-      
-      // Enable rendering first
-      fabricCanvas.renderOnAddRemove = true;
-      
-      // Directly create the grid
-      createGrid(fabricCanvas);
-      
-      // Force render after grid is created
-      fabricCanvas.requestRenderAll();
-      
-      // Mark initialization as no longer in progress
-      initializationInProgress = false;
+      try {
+        // Reset retry counter for grid creation to give it a fresh start
+        console.log("Creating grid on initialized canvas");
+        
+        // Enable rendering first
+        if (fabricCanvas) {
+          fabricCanvas.renderOnAddRemove = true;
+          
+          // Directly create the grid
+          const gridObjects = createGrid(fabricCanvas);
+          
+          // Force render after grid is created
+          fabricCanvas.requestRenderAll();
+          
+          // Set debug info for grid creation
+          setDebugInfo(prev => ({
+            ...prev,
+            gridCreated: true,
+            gridObjectCount: gridObjects.length
+          }));
+          
+          console.log(`Grid created with ${gridObjects.length} objects`);
+        }
+      } catch (error) {
+        console.error("Error creating grid:", error);
+      } finally {
+        // Mark initialization as no longer in progress
+        initializationInProgress = false;
+      }
     };
     
-    // Use a short timeout instead of requestIdleCallback for more reliable execution
-    setTimeout(createGridSafely, 100);
+    // Use a short timeout to ensure canvas is fully ready
+    setTimeout(createGridSafely, 50);
     
     // Setup interactions (pinch-to-zoom, etc.)
     const cleanupInteractions = setupInteractions(fabricCanvas);
@@ -246,6 +269,8 @@ export const useCanvasInitialization = ({
     
     // Clean up on unmount
     return () => {
+      // Set flag to prevent further operations during cleanup
+      canvasDisposalInProgress = true;
       initializationInProgress = false;
       
       // Clear any pending initialization timeouts
@@ -271,7 +296,13 @@ export const useCanvasInitialization = ({
           cleanupCanvas(currentCanvas);
         } catch (error) {
           console.error("Error initiating canvas cleanup:", error);
+        } finally {
+          // Reset disposal flag
+          canvasDisposalInProgress = false;
         }
+      } else {
+        // Reset disposal flag
+        canvasDisposalInProgress = false;
       }
     };
   }, [

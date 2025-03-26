@@ -31,11 +31,15 @@ export const useCanvasCleanup = () => {
       // This helps prevent the "Cannot read properties of undefined (reading 'el')" error
       setTimeout(() => {
         try {
-          disposeCanvas(fabricCanvas);
+          // Add additional check to ensure canvas is still valid right before disposal
+          if (fabricCanvas && isCanvasValid(fabricCanvas)) {
+            disposeCanvas(fabricCanvas);
+            console.log("Canvas disposed successfully");
+          }
         } catch (error) {
           console.error("Error during delayed canvas cleanup:", error);
         }
-      }, 100); // Increased from 10ms to 100ms for more safety
+      }, 200); // Increased to 200ms for more safety
     } catch (error) {
       console.error("Error during canvas cleanup:", error);
     }
