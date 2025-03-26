@@ -1,4 +1,3 @@
-
 /**
  * Grid creation utilities
  * Provides helper functions for grid creation and retry operations
@@ -7,6 +6,14 @@
 import { Canvas as FabricCanvas, Line } from "fabric";
 import { resetGridProgress } from "./gridManager";
 import logger from "./logger";
+import {
+  MAX_RETRY_ATTEMPTS,
+  DEFAULT_THROTTLE_DELAY,
+  RETRY_BACKOFF_FACTOR,
+  MAX_RETRY_DELAY,
+  LARGE_GRID,
+  SMALL_GRID
+} from "@/constants/numerics";
 
 // Constants for grid configuration
 const GRID_LINE_COLORS = {
@@ -20,15 +27,15 @@ const GRID_LINE_WIDTHS = {
 };
 
 const GRID_SPACING = {
-  SMALL: 100,  // 100px between grid lines
-  MAJOR: 500   // 500px for major grid lines
+  SMALL: SMALL_GRID,  // 10px between grid lines (0.1m)
+  MAJOR: LARGE_GRID   // 100px for major grid lines (1m)
 };
 
 const RETRY_CONFIG = {
-  MAX_ATTEMPTS: 5,    // Increased max attempts
-  BASE_DELAY: 300,    // Base delay in ms
-  GROWTH_FACTOR: 1.5, // Exponential growth factor
-  MAX_DELAY: 2000     // Maximum delay cap in ms
+  MAX_ATTEMPTS: MAX_RETRY_ATTEMPTS,
+  BASE_DELAY: DEFAULT_THROTTLE_DELAY,
+  GROWTH_FACTOR: RETRY_BACKOFF_FACTOR,
+  MAX_DELAY: MAX_RETRY_DELAY
 };
 
 /**
@@ -76,7 +83,7 @@ export const createBasicEmergencyGrid = (
     const endX = canvasWidth * 2;
     const endY = canvasHeight * 2;
     
-    // Draw major grid lines first (every 500px)
+    // Draw major grid lines first (every 100px)
     for (let x = startX; x <= endX; x += GRID_SPACING.MAJOR) {
       const line = new Line([x, startY, x, endY], {
         stroke: GRID_LINE_COLORS.MAJOR,
@@ -101,7 +108,7 @@ export const createBasicEmergencyGrid = (
       gridObjects.push(line);
     }
     
-    // Draw minor grid lines (every 100px)
+    // Draw minor grid lines (every 10px)
     for (let x = startX; x <= endX; x += GRID_SPACING.SMALL) {
       // Skip if this is also a major grid line
       if (x % GRID_SPACING.MAJOR === 0) continue;

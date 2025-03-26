@@ -1,10 +1,16 @@
-
 /**
  * Type definitions for drawing functionality
+ * Re-exports constants from central numerics module
  * @module drawingTypes
  */
 import { openDB } from 'idb';
 import type { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
+import { 
+  GRID_SPACING,
+  PIXELS_PER_METER,
+  SMALL_GRID,
+  LARGE_GRID
+} from "@/constants/numerics";
 
 // Re-export these types for backward compatibility
 export type { FloorPlan, PaperSize };
@@ -23,30 +29,8 @@ export type Point = { x: number; y: number };
  */
 export type Stroke = Point[];
 
-// Scale factors
-/**
- * Size of the small grid in meters
- * @constant {number}
- */
-export const GRID_SIZE = 0.1; // 0.1m grid
-
-/**
- * Number of pixels per meter (scale factor)
- * @constant {number}
- */
-export const PIXELS_PER_METER = 100; // 1 meter = 100 pixels
-
-/**
- * Size of the small grid in pixels
- * @constant {number}
- */
-export const SMALL_GRID = GRID_SIZE * PIXELS_PER_METER; // 0.1m grid = 10px
-
-/**
- * Size of the large grid in pixels
- * @constant {number}
- */
-export const LARGE_GRID = 1.0 * PIXELS_PER_METER; // 1.0m grid = 100px
+// Re-export constants for backward compatibility
+export { GRID_SPACING, PIXELS_PER_METER, SMALL_GRID, LARGE_GRID };
 
 // IndexedDB Constants
 /**

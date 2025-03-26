@@ -11,6 +11,7 @@ import {
 } from "@/utils/fabricBrush";
 import { DebugInfoState } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
+import { DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
 
 /**
  * Props for useCanvasBrush hook
@@ -32,10 +33,9 @@ interface UseCanvasBrushResult {
 
 /**
  * Type definition for extended PencilBrush with custom properties
- * This uses Omit to remove the decimate property so we can redefine it as optional
  */
-interface ExtendedPencilBrush extends Omit<PencilBrush, 'decimate'> {
-  decimate?: number;
+interface ExtendedPencilBrush extends PencilBrush {
+  decimate: number;
 }
 
 /**
@@ -61,12 +61,12 @@ export const useCanvasBrush = ({
     const pencilBrush = initializeDrawingBrush(fabricCanvas) as PencilBrush;
     if (pencilBrush) {
       fabricCanvas.freeDrawingBrush = pencilBrush;
-      fabricCanvas.freeDrawingBrush.width = 2;
+      fabricCanvas.freeDrawingBrush.width = DEFAULT_LINE_THICKNESS;
       fabricCanvas.freeDrawingBrush.color = "#000000";
       fabricCanvas.isDrawingMode = true;
       
       // OPTIMIZATION: Set brush properties for better performance
-      const extendedBrush = pencilBrush as unknown as ExtendedPencilBrush;
+      const extendedBrush = pencilBrush as ExtendedPencilBrush;
       if (extendedBrush) {
         extendedBrush.decimate = 2; // Reduce number of points for smoother performance
       }

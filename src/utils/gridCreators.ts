@@ -1,4 +1,3 @@
-
 /**
  * Functions for creating different types of grid lines
  * @module gridCreators
@@ -7,12 +6,15 @@ import { Canvas, Line } from "fabric";
 import { 
   MAX_SMALL_GRID_LINES, 
   MAX_LARGE_GRID_LINES,
-  shouldSkipSmallGrid,
   GRID_EXTENSION_FACTOR,
+  SMALL_GRID,
+  LARGE_GRID
+} from "@/constants/numerics";
+import { 
+  shouldSkipSmallGrid,
   SMALL_GRID_LINE_OPTIONS,
   LARGE_GRID_LINE_OPTIONS
 } from "./gridConstants";
-import { SMALL_GRID, LARGE_GRID } from "./drawing";
 
 /**
  * Creates small grid lines

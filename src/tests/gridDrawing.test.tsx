@@ -4,17 +4,10 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Canvas, PencilBrush } from "fabric";
+import { Canvas, PencilBrush, BaseBrush } from "fabric";
 import { Canvas as CanvasComponent } from '@/components/Canvas';
 import { initializeDrawingBrush, addPressureSensitivity } from '@/utils/fabricBrush';
-import { GRID_SIZE, PIXELS_PER_METER } from '@/utils/drawing';
-
-// Extended PencilBrush with additional properties for tests
-interface TestPencilBrush extends Omit<PencilBrush, 'decimate'> {
-  decimate?: number;
-  width: number;
-  color: string;
-}
+import { PIXELS_PER_METER, GRID_SPACING } from '@/constants/numerics';
 
 // Define mock fabric event types
 interface FabricMouseEvent {
@@ -46,8 +39,13 @@ vi.mock('fabric', () => {
     PencilBrush: vi.fn().mockImplementation(() => ({
       color: "#000000",
       width: 2,
-      decimate: 2
+      decimate: 2,
+      _saveAndTransform: vi.fn(),
+      _setShadow: vi.fn(),
+      _resetShadow: vi.fn(),
+      _isOutSideCanvas: vi.fn()
     })),
+    BaseBrush: vi.fn(),
     Line: vi.fn().mockImplementation((points, options) => ({
       type: 'line',
       points,
@@ -60,11 +58,11 @@ vi.mock('fabric', () => {
 
 describe('Grid drawing with mouse and stylus', () => {
   let canvas: Canvas;
-  let brush: TestPencilBrush;
+  let brush: PencilBrush;
   
   beforeEach(() => {
     canvas = new Canvas('test-canvas');
-    brush = initializeDrawingBrush(canvas) as TestPencilBrush;
+    brush = initializeDrawingBrush(canvas) as PencilBrush;
     if (brush) {
       canvas.freeDrawingBrush = brush;
     }
@@ -166,8 +164,8 @@ describe('Grid loading reliability', () => {
     // 3. Verify the number of grid lines created
     // 4. Verify their positions match GRID_SIZE intervals
     
-    expect(GRID_SIZE).toBeDefined();
-    expect(typeof GRID_SIZE).toBe('number');
+    expect(GRID_SPACING).toBeDefined();
+    expect(typeof GRID_SPACING).toBe('number');
   });
   
   it('ensures grid is loaded before drawing operations', () => {

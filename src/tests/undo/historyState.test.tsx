@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Canvas } from "fabric";
-import { MAX_HISTORY_STATES } from "@/utils/drawing";
+import { MAX_HISTORY_STATES } from "@/constants/numerics";
 import { 
   setupFabricMock, 
   createMockGridLayerRef, 

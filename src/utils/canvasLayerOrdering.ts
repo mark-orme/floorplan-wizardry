@@ -1,218 +1,122 @@
-
 /**
- * Canvas layer ordering utilities
- * Functions for maintaining the correct z-index ordering of canvas objects
+ * Canvas layer ordering utility module
+ * Provides functions for managing z-index of canvas objects
  * @module canvasLayerOrdering
  */
+import { Canvas, Object as FabricObject } from "fabric";
 import { 
-  Canvas as FabricCanvas, 
-  Object as FabricObject, 
-  Line, 
-  Path,
-  ObjectProps as FabricObjectProps 
-} from "fabric";
-import logger from "@/utils/logger";
+  PIXELS_PER_METER,
+  LARGE_GRID,
+  SMALL_GRID 
+} from "@/constants/numerics";
 
-// Layer ordering constants
-export const LAYER_ORDER = {
-  GRID: 1,
-  DRAWING: 10,
-  SELECTION: 20,
-  MEASUREMENT: 30,
-  TOOLTIP: 40
-};
-
-// Object type definitions for layer ordering
-export enum ObjectType {
-  GRID_LINE = 'gridLine',
-  WALL = 'wall',
+/**
+ * Object type enumeration for layer ordering
+ */
+enum ObjectType {
+  GRID = 'grid',
+  DRAWING = 'drawing',
   ROOM = 'room',
-  MEASUREMENT = 'measurement',
-  TOOLTIP = 'tooltip',
-  SELECTION = 'selection'
+  MARKER = 'marker',
+  MEASUREMENT = 'measurement'
 }
 
 /**
- * Set appropriate z-index for an object based on its type
- * @param {FabricObject} obj - The fabric object to set z-index for
- * @param {ObjectType} type - Type of the object
- * @returns {FabricObject} The same object with updated z-index
- */
-export const setObjectLayer = (
-  obj: FabricObject, 
-  type: ObjectType
-): FabricObject => {
-  if (!obj) return obj;
-  
-  let zIndex = 10; // Default z-index
-  
-  switch (type) {
-    case ObjectType.GRID_LINE:
-      zIndex = LAYER_ORDER.GRID;
-      break;
-    case ObjectType.WALL:
-    case ObjectType.ROOM:
-      zIndex = LAYER_ORDER.DRAWING;
-      break;
-    case ObjectType.SELECTION:
-      zIndex = LAYER_ORDER.SELECTION;
-      break;
-    case ObjectType.MEASUREMENT:
-      zIndex = LAYER_ORDER.MEASUREMENT;
-      break;
-    case ObjectType.TOOLTIP:
-      zIndex = LAYER_ORDER.TOOLTIP;
-      break;
-    default:
-      zIndex = LAYER_ORDER.DRAWING;
-  }
-  
-  // Set the z-index on the object
-  if (obj.set) {
-    obj.set('zIndex', zIndex);
-    
-    // Apply common properties for all grid lines
-    if (type === ObjectType.GRID_LINE) {
-      obj.set({
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default'
-      });
-    }
-  }
-  
-  return obj;
-};
-
-/**
- * Sort canvas objects by their z-index property
- * @param {FabricCanvas} canvas - The fabric canvas instance
- */
-export const sortObjectsByLayer = (canvas: FabricCanvas): void => {
-  if (!canvas || !canvas.getObjects) return;
-  
-  try {
-    const objects = canvas.getObjects();
-    
-    // Sort objects by z-index
-    objects.sort((a, b) => {
-      const aZ = (a as FabricObject & { zIndex?: number }).zIndex || 0;
-      const bZ = (b as FabricObject & { zIndex?: number }).zIndex || 0;
-      return aZ - bZ;
-    });
-    
-    // Request a re-render to apply the new ordering
-    canvas.requestRenderAll();
-  } catch (error) {
-    logger.error("Failed to sort objects by layer:", error);
-  }
-};
-
-/**
- * Create a grid line with appropriate properties and layer ordering
- * @param {[number, number, number, number]} points - Line points [x1, y1, x2, y2]
- * @param {Partial<FabricObjectProps>} options - Line options
- * @returns {Line} Created line object
- */
-export const createGridLine = (
-  points: [number, number, number, number], 
-  options: Partial<FabricObjectProps> = {}
-): Line => {
-  const line = new Line(points, {
-    strokeWidth: 0.5,
-    stroke: 'rgba(200,200,200,0.3)',
-    selectable: false,
-    evented: false,
-    hoverCursor: 'default',
-    ...options
-  });
-  
-  // Apply grid line layer ordering
-  setObjectLayer(line, ObjectType.GRID_LINE);
-  
-  return line;
-};
-
-/**
- * Create a wall line with appropriate properties and layer ordering
- * @param {[number, number, number, number]} points - Line points [x1, y1, x2, y2]
- * @param {Partial<FabricObjectProps>} options - Line options
- * @returns {Line} Created wall line object
- */
-export const createWallLine = (
-  points: [number, number, number, number], 
-  options: Partial<FabricObjectProps> = {}
-): Line => {
-  const line = new Line(points, {
-    strokeWidth: 2,
-    stroke: '#000000',
-    selectable: true,
-    ...options
-  });
-  
-  // Apply wall line layer ordering
-  setObjectLayer(line, ObjectType.WALL);
-  
-  return line;
-};
-
-/**
- * Apply correct layering to all objects in the canvas
- * @param {FabricCanvas} canvas - The fabric canvas instance
- */
-export const updateAllObjectLayers = (canvas: FabricCanvas): void => {
-  if (!canvas || !canvas.getObjects) return;
-  
-  try {
-    const objects = canvas.getObjects();
-    
-    // Process each object based on its type
-    objects.forEach(obj => {
-      // Apply appropriate layer based on object properties
-      if (obj.get('data')?.type === 'grid') {
-        setObjectLayer(obj, ObjectType.GRID_LINE);
-      } else if (obj.get('data')?.type === 'wall') {
-        setObjectLayer(obj, ObjectType.WALL);
-      } else if (obj.get('data')?.type === 'measurement') {
-        setObjectLayer(obj, ObjectType.MEASUREMENT);
-      } else if (obj instanceof Line) {
-        // Default handling for untagged lines
-        setObjectLayer(obj, ObjectType.WALL);
-      } else if (obj instanceof Path) {
-        // Default handling for paths
-        setObjectLayer(obj, ObjectType.WALL); // Changed from DRAWING to WALL
-      }
-    });
-    
-    // Apply the layer ordering
-    sortObjectsByLayer(canvas);
-  } catch (error) {
-    logger.error("Failed to update all object layers:", error);
-  }
-};
-
-/**
- * Ensure grid elements are properly arranged in z-order
- * @param {FabricCanvas} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid layer objects
+ * Ensures grid elements are at the bottom layer of the canvas
+ * @param {Canvas} canvas - The Fabric.js canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  */
 export const arrangeGridElements = (
-  canvas: FabricCanvas,
+  canvas: Canvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): void => {
-  if (!canvas || !gridLayerRef.current) return;
+  if (!canvas || !gridLayerRef || !gridLayerRef.current) return;
   
-  try {
-    // Send all grid elements to the back
-    gridLayerRef.current.forEach(gridObj => {
-      if (canvas.contains(gridObj)) {
-        canvas.sendObjectToBack(gridObj);
-      }
-    });
-    
-    // Request a render to apply changes
-    canvas.requestRenderAll();
-  } catch (error) {
-    logger.error("Failed to arrange grid elements:", error);
+  const allObjects = canvas.getObjects();
+  if (!allObjects || allObjects.length === 0) return;
+  
+  // Process grid objects first (send to back)
+  gridLayerRef.current.forEach(gridObject => {
+    if (canvas.contains(gridObject)) {
+      canvas.sendObjectToBack(gridObject);
+    }
+  });
+  
+  // Request a render to update the display
+  canvas.requestRenderAll();
+};
+
+/**
+ * Checks if an object is a grid element
+ * @param {FabricObject} obj - The object to check
+ * @returns {boolean} True if object is a grid element
+ */
+export const isGridElement = (obj: FabricObject): boolean => {
+  if (!obj) return false;
+  
+  // Check for grid by objectType property
+  if ((obj as any).objectType === ObjectType.GRID) return true;
+  
+  // Check for grid by id property
+  if ((obj as any).id && typeof (obj as any).id === 'string') {
+    return (obj as any).id.startsWith('grid-');
   }
+  
+  return false;
+};
+
+/**
+ * Separates grid objects from non-grid objects
+ * @param {Canvas} canvas - The Fabric.js canvas instance
+ * @returns {{gridObjects: FabricObject[], drawingObjects: FabricObject[]}} Separated objects
+ */
+export const separateGridAndDrawingObjects = (
+  canvas: Canvas
+): {
+  gridObjects: FabricObject[];
+  drawingObjects: FabricObject[];
+} => {
+  const allObjects = canvas.getObjects();
+  const gridObjects: FabricObject[] = [];
+  const drawingObjects: FabricObject[] = [];
+  
+  allObjects.forEach(obj => {
+    if (isGridElement(obj)) {
+      gridObjects.push(obj);
+    } else {
+      drawingObjects.push(obj);
+    }
+  });
+  
+  return { gridObjects, drawingObjects };
+};
+
+/**
+ * Creates points array for a rectangle using corner coordinates
+ * @param {number} left - Left coordinate
+ * @param {number} top - Top coordinate
+ * @param {number} width - Rectangle width
+ * @param {number} height - Rectangle height
+ * @returns {number[][]} Array of corner points for the rectangle
+ */
+export const createRectanglePoints = (
+  left: number,
+  top: number,
+  width: number,
+  height: number
+): [number, number, number, number] => {
+  return [left, top, left + width, top + height];
+};
+
+/**
+ * Creates a grid coordinate rectangle for the canvas
+ * @param {Canvas} canvas - The Fabric.js canvas instance
+ * @returns {number[][]} Coordinates for the rectangle
+ */
+export const createCanvasCoordinateRect = (canvas: Canvas): [number, number, number, number] => {
+  const width = canvas.width || 1000;
+  const height = canvas.height || 800;
+  
+  // Create rectangle with specified dimensions
+  return createRectanglePoints(0, 0, width, height) as [number, number, number, number];
 };

@@ -6,7 +6,7 @@
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Polyline as FabricPolyline, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { PIXELS_PER_METER } from "@/utils/drawing";
+import { PIXELS_PER_METER, DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
 import { calculateGIA } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
 import { FloorPlan } from "@/types/floorPlanTypes";
@@ -81,7 +81,7 @@ export const usePolylineCreation = ({
   currentFloor,
   setFloorPlans,
   setGia,
-  lineThickness = 2,
+  lineThickness = DEFAULT_LINE_THICKNESS,
   lineColor = "#000000",
   recalculateGIA
 }: UsePolylineCreationProps): UsePolylineCreationResult => {

@@ -1,9 +1,14 @@
 
+/**
+ * Distance tooltip component
+ * Displays the distance measurement between two points
+ * @module DistanceTooltip
+ */
 import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, formatDistance } from "@/utils/geometry/lineOperations";
-import { PIXELS_PER_METER } from "@/utils/drawing";
+import { PIXELS_PER_METER } from "@/constants/numerics";
 
 interface DistanceTooltipProps {
   startPoint?: Point | null;

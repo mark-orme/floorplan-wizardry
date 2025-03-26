@@ -1,9 +1,21 @@
 
 /**
  * Grid constants module
+ * Re-exports from central numerics module
  * Defines constants used for grid drawing and configuration
  * @module gridConstants
  */
+
+// Import from central constants module
+import {
+  PIXELS_PER_METER,
+  GRID_SPACING,
+  MAX_SMALL_GRID_LINES,
+  MAX_LARGE_GRID_LINES,
+  GRID_EXTENSION_FACTOR,
+  SMALL_GRID_LINE_WIDTH,
+  LARGE_GRID_LINE_WIDTH
+} from '@/constants/numerics';
 
 // Grid dimensions type
 export interface GridDimensions {
@@ -11,25 +23,18 @@ export interface GridDimensions {
   height: number;
 }
 
-// Grid scale factors
-export const GRID_SCALE_FACTOR = 100; // 100px = 1 meter
-export const SMALL_GRID_SPACING = 0.1; // 0.1 meter
+// Re-export constants for backward compatibility
+export const GRID_SCALE_FACTOR = PIXELS_PER_METER; // 100px = 1 meter
+export const SMALL_GRID_SPACING = GRID_SPACING; // 0.1 meter
 export const LARGE_GRID_SPACING = 1.0; // 1.0 meter
 export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
-
-// Grid size limits to prevent performance issues
-export const MAX_SMALL_GRID_LINES = 2000; // Increased from 1500 to 2000
-export const MAX_LARGE_GRID_LINES = 400; // Increased from 300 to 400
-
-// Grid extension factor (how much beyond canvas to draw)
-export const GRID_EXTENSION_FACTOR = 3.0; // Increased from 1.5 to 3.0 for much better coverage
 
 // Style options for grid lines
 export const SMALL_GRID_LINE_OPTIONS = {
   stroke: "#A0C5E0",
   selectable: false,
   evented: false,
-  strokeWidth: 0.5,
+  strokeWidth: SMALL_GRID_LINE_WIDTH,
   objectCaching: true,
   hoverCursor: 'default',
   opacity: 0.85
@@ -39,7 +44,7 @@ export const LARGE_GRID_LINE_OPTIONS = {
   stroke: "#4090CC",
   selectable: false,
   evented: false,
-  strokeWidth: 1.2,
+  strokeWidth: LARGE_GRID_LINE_WIDTH,
   objectCaching: true,
   hoverCursor: 'default',
   opacity: 0.95
@@ -79,9 +84,9 @@ export const calculateGridDensity = (width: number, height: number) => {
   const area = width * height;
   
   // For very large canvases, reduce grid density
-  if (area > 8000000) { // Increased from 7000000 to 8000000
+  if (area > 8000000) {
     return { smallGridVisible: false, smallGridInterval: 5 };
-  } else if (area > 4000000) { // Increased from 3000000 to 4000000
+  } else if (area > 4000000) {
     return { smallGridVisible: true, smallGridInterval: 2 };
   } else {
     return { smallGridVisible: true, smallGridInterval: 1 };

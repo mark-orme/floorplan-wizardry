@@ -10,6 +10,10 @@ import { Card } from "./ui/card";
 import { DebugInfo } from "./DebugInfo";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { useDomRef } from "@/hooks/useDomRef";
+import { 
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH
+} from "@/constants/numerics";
 
 interface CanvasContainerProps {
   debugInfo: DebugInfoState;
@@ -37,33 +41,33 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
       // Set canvas dimensions explicitly based on container
       if (containerRect.width > 0 && containerRect.height > 0) {
         canvasReference.current.width = containerRect.width;
-        canvasReference.current.height = Math.max(containerRect.height, 1000); // Increased from 950 to 1000
+        canvasReference.current.height = Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT);
         
         // Also set style dimensions to match
         canvasReference.current.style.width = `${containerRect.width}px`;
-        canvasReference.current.style.height = `${Math.max(containerRect.height, 1000)}px`; // Increased from 950 to 1000
+        canvasReference.current.style.height = `${Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT)}px`;
         
         // Force a reflow to ensure dimensions are applied
         canvasReference.current.getBoundingClientRect();
         
         console.log("Canvas sized to dimensions:", 
-          containerRect.width, "x", Math.max(containerRect.height, 1000));
+          containerRect.width, "x", Math.max(containerRect.height, DEFAULT_CANVAS_HEIGHT));
       } else {
         // Fallback sizes if container dimensions are not available
-        canvasReference.current.width = 1400; // Increased from 1200 to 1400
-        canvasReference.current.height = 1000; // Increased from 950 to 1000
-        canvasReference.current.style.width = "1400px"; // Increased from 1200 to 1400
-        canvasReference.current.style.height = "1000px"; // Increased from 950 to 1000
-        console.log("Using fallback canvas dimensions: 1400x1000");
+        canvasReference.current.width = DEFAULT_CANVAS_WIDTH;
+        canvasReference.current.height = DEFAULT_CANVAS_HEIGHT;
+        canvasReference.current.style.width = `${DEFAULT_CANVAS_WIDTH}px`;
+        canvasReference.current.style.height = `${DEFAULT_CANVAS_HEIGHT}px`;
+        console.log(`Using fallback canvas dimensions: ${DEFAULT_CANVAS_WIDTH}x${DEFAULT_CANVAS_HEIGHT}`);
       }
     }
   }, [canvasReference]);
 
   return (
-    <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible"> {/* Added overflow-visible to allow tooltips to extend beyond container */}
+    <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible">
       <div 
         ref={containerRef} 
-        className="w-full h-[1000px] md:h-[1050px] relative overflow-visible" // Added overflow-visible, increased heights from 950/1000 to 1000/1050
+        className="w-full h-[1000px] md:h-[1050px] relative overflow-visible"
       >
         <canvas 
           ref={canvasReference} 
@@ -71,7 +75,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
           tabIndex={0}
           aria-label="Floor plan drawing canvas"
           role="application"
-          style={{ display: "block" }} // Ensure canvas is visible
+          style={{ display: "block" }}
         />
       </div>
       <DebugInfo debugInfo={debugInfo} />

@@ -6,30 +6,30 @@
  * @module drawing
  */
 
-import { GRID_SPACING } from './geometry/constants';
+import { 
+  PIXELS_PER_METER,
+  GRID_SPACING,
+  SMALL_GRID,
+  LARGE_GRID,
+  MAX_HISTORY_STATES,
+  MAX_OBJECTS_PER_CANVAS,
+  DEFAULT_LINE_THICKNESS
+} from '@/constants/numerics';
 
-/**
- * Unit conversion constants
- */
-export const PIXELS_PER_METER = 100; // 100 pixels = 1 meter (exact conversion)
-export const GRID_SIZE = GRID_SPACING; // Grid size in meters (0.1m = 10cm)
-
-/**
- * Grid display constants 
- */
-export const SMALL_GRID = PIXELS_PER_METER * GRID_SIZE; // 0.1m (10px)
-export const LARGE_GRID = PIXELS_PER_METER; // 1m (100px)
-
-/**
- * Performance and memory management constants
- */
-export const MAX_HISTORY_STATES = 50; // Maximum undo/redo history states
-export const MAX_OBJECTS_PER_CANVAS = 1000; // Safety limit for number of objects
+// Re-export constants for backward compatibility
+export {
+  PIXELS_PER_METER,
+  GRID_SPACING,
+  SMALL_GRID,
+  LARGE_GRID,
+  MAX_HISTORY_STATES,
+  MAX_OBJECTS_PER_CANVAS,
+  DEFAULT_LINE_THICKNESS
+};
 
 /**
  * Drawing constants
  */
-export const DEFAULT_LINE_THICKNESS = 2; // Default line thickness in pixels
 export const DEFAULT_LINE_COLOR = "#000000"; // Default line color (black)
 
 /**

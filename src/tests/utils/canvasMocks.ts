@@ -1,268 +1,138 @@
 
 /**
- * Canvas mocks for testing
- * Provides mock implementations of Fabric.js objects and methods
+ * Mocks for canvas testing
  * @module canvasMocks
  */
 import { vi } from 'vitest';
-import type { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-
-// Type for event callbacks in the mocked canvas
-type EventCallback = (e: any) => void;
-
-// Type for recording event handlers
-interface EventHandlers {
-  [eventName: string]: EventCallback[];
-}
+import { Canvas, BaseBrush, Object as FabricObject } from 'fabric';
 
 /**
- * Setup a Fabric.js mock for testing
- * @returns Object with mocked Fabric functions
+ * Type for mock event callbacks
+ */
+type EventCallback = (event: any) => void;
+
+/**
+ * Sets up a mock for the fabric Canvas
+ * @returns {Object} Mocked fabric namespace
  */
 export const setupFabricMock = () => {
   return {
-    Canvas: vi.fn().mockImplementation(() => ({
-      on: vi.fn().mockReturnValue({}),
-      off: vi.fn(),
-      add: vi.fn(),
-      remove: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      dispose: vi.fn(),
-      clear: vi.fn(),
-      setZoom: vi.fn(),
-      getZoom: vi.fn().mockReturnValue(1),
-      freeDrawingBrush: {
+    Canvas: vi.fn().mockImplementation(() => {
+      const mockCanvas = {
+        on: vi.fn((_eventName: string, _handler: EventCallback) => mockCanvas),
+        off: vi.fn((_eventName: string, _handler?: EventCallback) => mockCanvas),
+        add: vi.fn(),
+        remove: vi.fn(),
+        contains: vi.fn().mockReturnValue(true),
+        getObjects: vi.fn().mockReturnValue([]),
+        setZoom: vi.fn(),
+        getZoom: vi.fn().mockReturnValue(1),
+        sendToBack: vi.fn(),
+        bringToFront: vi.fn(),
+        sendObjectToBack: vi.fn(),
+        bringObjectToFront: vi.fn(),
+        renderAll: vi.fn(),
+        requestRenderAll: vi.fn(),
+        dispose: vi.fn(),
+        clear: vi.fn(),
+        setWidth: vi.fn(),
+        setHeight: vi.fn(),
+        setDimensions: vi.fn(),
+        isDrawingMode: false,
+        selection: true,
+        freeDrawingBrush: {
+          color: "#000000",
+          width: 2
+        },
+        width: 1000,
+        height: 800
+      };
+      return mockCanvas;
+    }),
+    Point: vi.fn(),
+    Object: {},
+    Line: vi.fn(),
+    PencilBrush: vi.fn().mockImplementation(() => {
+      return {
         color: "#000000",
-        width: 2
-      },
-      fire: vi.fn(),
-      contains: vi.fn().mockReturnValue(true),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      getElement: vi.fn().mockReturnValue(document.createElement('canvas')),
-      sendObjectToBack: vi.fn(),
-      bringObjectToFront: vi.fn()
-    })),
-    PencilBrush: vi.fn().mockImplementation(() => ({
-      color: "#000000",
-      width: 2,
-      decimate: 2
-    })),
-    Line: vi.fn().mockImplementation((points, options) => ({
-      type: 'line',
-      points,
-      ...options
-    }))
+        width: 2,
+        decimate: 2,
+        _saveAndTransform: vi.fn(),
+        _setShadow: vi.fn(),
+        _resetShadow: vi.fn(),
+        _isOutSideCanvas: vi.fn()
+      };
+    }),
+    BaseBrush: vi.fn(),
+    IEvent: vi.fn(),
+    util: {
+      object: {
+        extend: vi.fn()
+      }
+    }
   };
 };
 
 /**
- * Create a mock grid layer reference for testing
- * @returns Mocked grid layer reference
+ * Creates a mock grid layer reference
+ * @returns {Object} A mock grid layer reference
  */
 export const createMockGridLayerRef = () => {
   return {
     current: [
-      { id: 'grid1', type: 'line' },
-      { id: 'grid2', type: 'line' }
+      { id: 'grid1', type: 'line', objectType: 'grid', toObject: () => ({ id: 'grid1', objectType: 'grid' }) },
+      { id: 'grid2', type: 'line', objectType: 'grid', toObject: () => ({ id: 'grid2', objectType: 'grid' }) },
     ]
   };
 };
 
 /**
- * Create a mock history reference for testing
- * @param past Array of past states
- * @param future Array of future states
- * @returns Mocked history reference
+ * Creates a mock history reference
+ * @param {any[][]} past - Past state array
+ * @param {any[][]} future - Future state array
+ * @returns {Object} A mock history reference
  */
-export const createMockHistoryRef = (
-  past: any[][] = [],
-  future: any[][] = []
-) => {
+export const createMockHistoryRef = (past: any[][] = [], future: any[][] = []) => {
   return {
     current: {
-      past,
-      future
+      past: [...past],
+      future: [...future]
     }
   };
 };
 
 /**
- * Create a mock Fabric.js canvas for testing
- * @returns {object} Mock canvas object with test methods
+ * Creates a mock object with specified properties
+ * @param {Object} properties - Properties to include in the mock object
+ * @returns {Object} A mock Fabric object
  */
-export const createMockCanvas = (): {
-  canvas: Partial<FabricCanvas>;
-  eventHandlers: EventHandlers;
-  triggerEvent: (eventName: string, eventData: any) => void;
-} => {
-  // Record registered event handlers
-  const eventHandlers: EventHandlers = {};
-  
-  // Create a basic mock of canvas methods
-  const canvas: Partial<FabricCanvas> = {
-    add: vi.fn(),
-    remove: vi.fn(),
-    clear: vi.fn(),
-    getObjects: vi.fn().mockReturnValue([]),
-    setActiveObject: vi.fn(),
-    getActiveObject: vi.fn(),
-    renderAll: vi.fn(),
-    requestRenderAll: vi.fn(),
-    getElement: vi.fn().mockReturnValue(document.createElement('canvas')),
-    setZoom: vi.fn(),
-    getZoom: vi.fn().mockReturnValue(1),
-    zoomToPoint: vi.fn(),
-    dispose: vi.fn(),
-    setWidth: vi.fn(),
-    setHeight: vi.fn(),
-    
-    // Event handling mocks with more accurate return types
-    on: vi.fn().mockImplementation((eventName: string, handler: EventCallback) => {
-      if (!eventHandlers[eventName]) {
-        eventHandlers[eventName] = [];
-      }
-      eventHandlers[eventName].push(handler);
-      // Return a function that can be used to remove the handler
-      return () => {
-        const index = eventHandlers[eventName].indexOf(handler);
-        if (index >= 0) {
-          eventHandlers[eventName].splice(index, 1);
-        }
-      };
-    }),
-    
-    off: vi.fn().mockImplementation((eventName: string, handler?: EventCallback) => {
-      if (eventName && handler && eventHandlers[eventName]) {
-        const index = eventHandlers[eventName].indexOf(handler);
-        if (index >= 0) {
-          eventHandlers[eventName].splice(index, 1);
-        }
-      } else if (eventName && !handler) {
-        // Remove all handlers for this event
-        delete eventHandlers[eventName];
-      }
-    }),
-    
-    fire: vi.fn((eventName: string, eventData: any = {}) => {
-      if (eventHandlers[eventName]) {
-        eventHandlers[eventName].forEach(handler => handler(eventData));
-      }
-    })
-  };
-  
-  // Drawing-related properties
-  Object.defineProperties(canvas, {
-    isDrawingMode: {
-      get: vi.fn().mockReturnValue(false),
-      set: vi.fn()
-    },
-    selection: {
-      get: vi.fn().mockReturnValue(true),
-      set: vi.fn()
-    },
-    width: {
-      get: vi.fn().mockReturnValue(800),
-      set: vi.fn()
-    },
-    height: {
-      get: vi.fn().mockReturnValue(600),
-      set: vi.fn()
-    },
-    freeDrawingBrush: {
-      value: {
-        width: 2,
-        color: '#000000',
-        decimate: 2
-      },
-      writable: true
-    }
-  });
-  
-  // Helper function to trigger events for testing
-  const triggerEvent = (eventName: string, eventData: any) => {
-    if (eventHandlers[eventName]) {
-      eventHandlers[eventName].forEach(handler => handler(eventData));
-    }
-  };
-  
+export const createMockObject = (properties: Record<string, any> = {}) => {
   return {
-    canvas,
-    eventHandlers,
-    triggerEvent
-  };
-};
-
-/**
- * Create a mock Fabric.js object for testing
- * @param {string} type - Object type (e.g., 'line', 'path')
- * @param {object} props - Object properties
- * @returns {object} Mock Fabric.js object
- */
-export const createMockFabricObject = (
-  type: string,
-  props: Record<string, any> = {}
-): Partial<FabricObject> => {
-  const properties: Record<string, any> = {
-    type,
-    selectable: true,
-    evented: true,
-    ...props
-  };
-  
-  // Create a mock object with get/set methods
-  return {
-    get: vi.fn((prop: string) => properties[prop]),
-    set: vi.fn((propOrObject: string | Record<string, any>, value?: any) => {
-      if (typeof propOrObject === 'string') {
-        properties[propOrObject] = value;
-      } else {
-        Object.assign(properties, propOrObject);
+    type: 'object',
+    visible: true,
+    set: vi.fn().mockImplementation(function(this: any, key: string | Record<string, any>, value?: any) {
+      if (typeof key === 'object') {
+        Object.assign(this, key);
+      } else if (typeof key === 'string' && value !== undefined) {
+        this[key] = value;
       }
-      return {} as FabricObject; // Return empty object for chaining
+      return this;
     }),
-    toObject: vi.fn(() => ({ ...properties })),
+    toObject: vi.fn().mockReturnValue({}),
     ...properties
   };
 };
 
 /**
- * Create a mock browser pointer event for testing
- * @param {string} type - Event type (e.g., 'mousedown', 'touchstart')
- * @param {object} options - Event options
- * @returns {object} Mock pointer event
+ * Creates a mock polyline object
+ * @param {Array} points - Array of points for the polyline
+ * @param {Object} properties - Additional properties for the polyline
+ * @returns {Object} A mock polyline object
  */
-export const createMockPointerEvent = (
-  type: string, 
-  options: Record<string, any> = {}
-): any => {
-  const isTouch = type.startsWith('touch');
-  
-  if (isTouch) {
-    // Create mock touch event
-    return {
-      type,
-      touches: [
-        { 
-          clientX: options.clientX || 100, 
-          clientY: options.clientY || 100,
-          force: options.force || 0
-        }
-      ],
-      preventDefault: vi.fn(),
-      stopPropagation: vi.fn(),
-      ...options
-    };
-  } else {
-    // Create mock mouse event
-    return {
-      type,
-      clientX: options.clientX || 100,
-      clientY: options.clientY || 100,
-      button: options.button || 0, // 0 = left button
-      preventDefault: vi.fn(),
-      stopPropagation: vi.fn(),
-      ...options
-    };
-  }
+export const createMockPolyline = (points: Array<{x: number, y: number}> = [], properties: Record<string, any> = {}) => {
+  return createMockObject({
+    type: 'polyline',
+    points,
+    ...properties
+  });
 };

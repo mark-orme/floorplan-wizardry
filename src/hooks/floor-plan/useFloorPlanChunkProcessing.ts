@@ -5,7 +5,7 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Polyline as FabricPolyline, Object as FabricObject } from "fabric";
-import { PIXELS_PER_METER } from "@/utils/drawing";
+import { PIXELS_PER_METER, STROKE_CHUNK_SIZE, CHUNK_PROCESSING_DELAY } from "@/constants/numerics";
 
 /**
  * Props for the useFloorPlanChunkProcessing hook
@@ -49,13 +49,10 @@ export const useFloorPlanChunkProcessing = ({
   ) => {
     if (!fabricCanvasRef.current) return;
     
-    // OPTIMIZATION: Use chunk processing for large floor plans
-    const CHUNK_SIZE = 20; // Process 20 strokes at a time - reduced for better performance
-    
     const processStrokeChunk = (startIndex: number) => {
       if (!fabricCanvasRef.current) return;
       
-      const endIndex = Math.min(startIndex + CHUNK_SIZE, totalStrokes);
+      const endIndex = Math.min(startIndex + STROKE_CHUNK_SIZE, totalStrokes);
       
       for (let i = startIndex; i < endIndex; i++) {
         const stroke = strokes[i];
@@ -91,7 +88,7 @@ export const useFloorPlanChunkProcessing = ({
       
       // If there are more chunks to process, schedule next chunk
       if (endIndex < totalStrokes) {
-        setTimeout(() => processStrokeChunk(endIndex), 10); // Reduced delay for faster processing
+        setTimeout(() => processStrokeChunk(endIndex), CHUNK_PROCESSING_DELAY);
       } else {
         // All chunks processed
         if (fabricCanvasRef.current) {
@@ -105,7 +102,7 @@ export const useFloorPlanChunkProcessing = ({
     // Start processing the first chunk
     if (totalStrokes > 0) {
       floorChangeInProgressRef.current = true;
-      if (totalStrokes > CHUNK_SIZE) {
+      if (totalStrokes > STROKE_CHUNK_SIZE) {
         // For large plans, use chunked processing
         processStrokeChunk(0);
       } else {
