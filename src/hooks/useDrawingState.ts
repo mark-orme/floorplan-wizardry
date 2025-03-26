@@ -108,7 +108,7 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
           midPoint: midPoint
         }));
         
-        if (tool === "straightLine" || tool === "wall" || tool === "line") {
+        if (tool === "straightLine" || tool === "wall") {
           console.log("Drawing line:", { 
             start: drawingState.startPoint, 
             current: pointer, 

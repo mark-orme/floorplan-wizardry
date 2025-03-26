@@ -140,9 +140,9 @@ export const usePathProcessing = ({
       // Process the points according to the current tool
       let finalPoints = processPoints(points);
       
-      // Apply straightening for wall lines
-      if (tool === "straightLine") {
-        logger.info("Applying strict wall straightening");
+      // Apply straightening for wall and straightLine tools
+      if (tool === "straightLine" || tool === "wall") {
+        logger.info(`Applying strict line straightening for ${tool} tool`);
         finalPoints = straightenStroke(finalPoints);
       }
       

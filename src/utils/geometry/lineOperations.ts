@@ -33,7 +33,7 @@ export const straightenStroke = (stroke: Point[]): Point[] => {
       return stroke;
     }
     
-    // Ensure both points are exactly on grid
+    // Ensure both points are exactly on grid by rounding to nearest grid multiple
     const gridStart = {
       x: Math.round(startPoint.x / GRID_SIZE) * GRID_SIZE,
       y: Math.round(startPoint.y / GRID_SIZE) * GRID_SIZE
