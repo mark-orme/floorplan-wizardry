@@ -13,6 +13,11 @@ interface UseFloorPlanGIAProps {
   setGia: React.Dispatch<React.SetStateAction<number>>;
 }
 
+interface RoomCoordinates {
+  x: number;
+  y: number;
+}
+
 /**
  * Hook that handles GIA calculations for floor plans
  */
@@ -55,7 +60,7 @@ export const useFloorPlanGIA = ({
           const points = coords.map(p => ({ 
             x: p.x / PIXELS_PER_METER, 
             y: p.y / PIXELS_PER_METER 
-          })) as { x: number; y: number }[];
+          })) as RoomCoordinates[];
           
           // Calculate GIA for this room
           const roomGIA = calculateGIA(points);

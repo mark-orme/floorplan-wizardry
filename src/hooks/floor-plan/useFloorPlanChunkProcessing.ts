@@ -21,6 +21,14 @@ interface UseFloorPlanChunkProcessingProps {
 }
 
 /**
+ * Stroke point interface
+ */
+interface StrokePoint {
+  x: number;
+  y: number;
+}
+
+/**
  * Hook that handles chunk processing for large floor plans
  * @param {UseFloorPlanChunkProcessingProps} props - Hook properties
  * @returns Chunk processing utilities
@@ -32,11 +40,11 @@ export const useFloorPlanChunkProcessing = ({
 }: UseFloorPlanChunkProcessingProps) => {
   /**
    * Process floor plan strokes in chunks for better performance
-   * @param {Array<Array<{x: number, y: number}>>} strokes - Array of stroke coordinates
+   * @param {Array<Array<StrokePoint>>} strokes - Array of stroke coordinates
    * @param {number} totalStrokes - Total number of strokes to process
    */
   const processFloorPlanInChunks = useCallback((
-    strokes: Array<Array<{x: number, y: number}>>,
+    strokes: Array<Array<StrokePoint>>,
     totalStrokes: number
   ) => {
     if (!fabricCanvasRef.current) return;
