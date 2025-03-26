@@ -149,9 +149,10 @@ export const usePolylineCreation = ({
             updatedFloorPlan.strokes = [];
           }
           
-          // Add the new stroke - make sure it's in the right format
+          // Add the new stroke
           const newStrokes = [...updatedFloorPlan.strokes];
-          newStrokes.push([finalPoints]); // Wrap finalPoints in array to match Point[][] type
+          // Push a new stroke - making sure it's a Point[][]
+          newStrokes.push([...finalPoints]); // Spread finalPoints to ensure it's treated as an array of points
           updatedFloorPlan.strokes = newStrokes;
           
           // Update the floor plan in the array
