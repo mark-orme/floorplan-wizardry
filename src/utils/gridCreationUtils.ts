@@ -11,7 +11,7 @@ import logger from "./logger";
 // Constants for grid configuration
 const GRID_LINE_COLORS = {
   STANDARD: '#CCDDEE',
-  MAJOR: '#CCDDEE'
+  MAJOR: '#4090CC'  // Changed to a more visible blue
 };
 
 const GRID_LINE_WIDTHS = {
@@ -25,10 +25,10 @@ const GRID_SPACING = {
 };
 
 const RETRY_CONFIG = {
-  MAX_ATTEMPTS: 12,
-  BASE_DELAY: 100,  // Base delay in ms
-  GROWTH_FACTOR: 1.3,  // Exponential growth factor
-  MAX_DELAY: 800  // Maximum delay cap in ms
+  MAX_ATTEMPTS: 5,    // Increased max attempts
+  BASE_DELAY: 300,    // Base delay in ms
+  GROWTH_FACTOR: 1.5, // Exponential growth factor
+  MAX_DELAY: 2000     // Maximum delay cap in ms
 };
 
 /**
@@ -43,9 +43,7 @@ export const createBasicEmergencyGrid = (
   fabricCanvas: FabricCanvas,
   gridLayerRef: React.MutableRefObject<any[]>
 ): any[] => {
-  if (process.env.NODE_ENV === 'development') {
-    logger.debug("Creating basic emergency grid");
-  }
+  logger.debug("Creating basic emergency grid");
   
   try {
     // Ensure gridLayerRef is initialized
@@ -53,43 +51,98 @@ export const createBasicEmergencyGrid = (
       gridLayerRef.current = [];
     }
     
-    const canvasWidth = fabricCanvas.width || 800;
-    const canvasHeight = fabricCanvas.height || 600;
+    // Clear any existing grid objects first
+    if (gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
+        if (fabricCanvas.contains(obj)) {
+          fabricCanvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    }
     
-    // Create very basic grid lines directly
-    for (let xPosition = 0; xPosition <= canvasWidth; xPosition += GRID_SPACING.SMALL) {
-      const line = new Line([xPosition, 0, xPosition, canvasHeight], {
+    const canvasWidth = fabricCanvas.width || 1000;
+    const canvasHeight = fabricCanvas.height || 800;
+    
+    // Create an extended grid that goes beyond canvas boundaries
+    const gridObjects: any[] = [];
+    const extensionFactor = 3;
+    const extendedWidth = canvasWidth * extensionFactor;
+    const extendedHeight = canvasHeight * extensionFactor;
+    
+    // Calculate grid bounds
+    const startX = -canvasWidth;
+    const startY = -canvasHeight;
+    const endX = canvasWidth * 2;
+    const endY = canvasHeight * 2;
+    
+    // Draw major grid lines first (every 500px)
+    for (let x = startX; x <= endX; x += GRID_SPACING.MAJOR) {
+      const line = new Line([x, startY, x, endY], {
+        stroke: GRID_LINE_COLORS.MAJOR,
+        selectable: false,
+        evented: false,
+        strokeWidth: GRID_LINE_WIDTHS.MAJOR,
+        objectCaching: true
+      });
+      fabricCanvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    for (let y = startY; y <= endY; y += GRID_SPACING.MAJOR) {
+      const line = new Line([startX, y, endX, y], {
+        stroke: GRID_LINE_COLORS.MAJOR,
+        selectable: false,
+        evented: false,
+        strokeWidth: GRID_LINE_WIDTHS.MAJOR,
+        objectCaching: true
+      });
+      fabricCanvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Draw minor grid lines (every 100px)
+    for (let x = startX; x <= endX; x += GRID_SPACING.SMALL) {
+      // Skip if this is also a major grid line
+      if (x % GRID_SPACING.MAJOR === 0) continue;
+      
+      const line = new Line([x, startY, x, endY], {
         stroke: GRID_LINE_COLORS.STANDARD,
         selectable: false,
         evented: false,
-        strokeWidth: xPosition % GRID_SPACING.MAJOR === 0 ? GRID_LINE_WIDTHS.MAJOR : GRID_LINE_WIDTHS.STANDARD
+        strokeWidth: GRID_LINE_WIDTHS.STANDARD,
+        objectCaching: true
       });
       fabricCanvas.add(line);
-      gridLayerRef.current.push(line);
+      gridObjects.push(line);
     }
     
-    for (let yPosition = 0; yPosition <= canvasHeight; yPosition += GRID_SPACING.SMALL) {
-      const line = new Line([0, yPosition, canvasWidth, yPosition], {
+    for (let y = startY; y <= endY; y += GRID_SPACING.SMALL) {
+      // Skip if this is also a major grid line
+      if (y % GRID_SPACING.MAJOR === 0) continue;
+      
+      const line = new Line([startX, y, endX, y], {
         stroke: GRID_LINE_COLORS.STANDARD,
         selectable: false,
         evented: false,
-        strokeWidth: yPosition % GRID_SPACING.MAJOR === 0 ? GRID_LINE_WIDTHS.MAJOR : GRID_LINE_WIDTHS.STANDARD
+        strokeWidth: GRID_LINE_WIDTHS.STANDARD,
+        objectCaching: true
       });
       fabricCanvas.add(line);
-      gridLayerRef.current.push(line);
+      gridObjects.push(line);
     }
     
+    // Force a render
     fabricCanvas.requestRenderAll();
     
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug("Created basic emergency grid");
-    }
+    // Update the gridLayerRef
+    gridLayerRef.current = gridObjects;
     
-    return gridLayerRef.current;
+    logger.debug(`Created emergency grid with ${gridObjects.length} lines`);
+    
+    return gridObjects;
   } catch (err) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.error("Even emergency grid creation failed:", err);
-    }
+    logger.error("Error creating emergency grid:", err);
     return [];
   }
 };
@@ -114,9 +167,7 @@ export const retryWithBackoff = (
     RETRY_CONFIG.MAX_DELAY
   );
   
-  if (process.env.NODE_ENV === 'development') {
-    logger.debug(`Scheduling next grid attempt ${attemptCount + 1}/${maxAttempts} in ${delayMs}ms`);
-  }
+  logger.debug(`Scheduling next grid attempt ${attemptCount + 1}/${maxAttempts} in ${delayMs}ms`);
   
   setTimeout(() => {
     resetGridProgress();

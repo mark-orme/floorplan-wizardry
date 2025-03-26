@@ -9,6 +9,11 @@ import { DISTANCE_PRECISION, GRID_SPACING, FLOATING_POINT_TOLERANCE } from './co
  * @returns {number} - Distance in meters
  */
 export const calculateDistance = (point1: Point, point2: Point): number => {
+  if (!point1 || !point2) {
+    console.warn("Invalid points in calculateDistance", { point1, point2 });
+    return 0;
+  }
+  
   const dx = point2.x - point1.x;
   const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
@@ -20,7 +25,10 @@ export const calculateDistance = (point1: Point, point2: Point): number => {
  * @returns {string} - Formatted distance string with 1 decimal place
  */
 export const formatDistance = (distance: number): string => {
-  if (isNaN(distance)) return '0.0';
+  if (isNaN(distance) || distance === undefined) {
+    console.warn("Invalid distance value in formatDistance:", distance);
+    return "0.0";
+  }
   
   // Always show 1 decimal place for wall measurements
   const formatted = distance.toFixed(1);
@@ -38,6 +46,11 @@ export const formatDistance = (distance: number): string => {
  * @returns {Point} - Midpoint coordinates
  */
 export const calculateMidpoint = (point1: Point, point2: Point): Point => {
+  if (!point1 || !point2) {
+    console.warn("Invalid points in calculateMidpoint", { point1, point2 });
+    return { x: 0, y: 0 };
+  }
+  
   return {
     x: (point1.x + point2.x) / 2,
     y: (point1.y + point2.y) / 2

@@ -2,7 +2,7 @@
 import React, { memo, useEffect } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
-import { calculateDistance, formatDistance } from "@/utils/geometry";
+import { calculateDistance, formatDistance } from "@/utils/geometry/lineOperations";
 import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
 
 interface DistanceTooltipProps {
@@ -30,8 +30,8 @@ export const DistanceTooltip = memo(({
   zoomLevel = 1,
   currentZoom
 }: DistanceTooltipProps): React.ReactElement | null => {
-  // For hovering (not actively drawing), we need either the position or the current point
-  if (!isVisible) {
+  // If not visible or missing critical points, don't render
+  if (!isVisible || (!startPoint && !position)) {
     return null;
   }
   
@@ -39,8 +39,9 @@ export const DistanceTooltip = memo(({
   const displayStartPoint = startPoint || position;
   const displayEndPoint = currentPoint || position;
   
-  // Exit if we don't have sufficient points to calculate
+  // Exit early if we don't have sufficient points to calculate
   if (!displayStartPoint || !displayEndPoint) {
+    console.log("Missing points for distance tooltip", { displayStartPoint, displayEndPoint });
     return null;
   }
   
@@ -50,9 +51,8 @@ export const DistanceTooltip = memo(({
   // Calculate distance in meters with precision matching grid size (0.1m)
   const distanceInMeters = calculateDistance(displayStartPoint, displayEndPoint);
   
-  // If position is same as startPoint (no movement) or distance is too small, don't show
-  if ((position === startPoint || distanceInMeters < 0.05) && 
-      !(startPoint && currentPoint && startPoint !== currentPoint)) {
+  // If points are too close, don't show tooltip yet
+  if (distanceInMeters < 0.05) {
     return null;
   }
   

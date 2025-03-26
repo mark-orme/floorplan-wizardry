@@ -64,13 +64,24 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     (tool === "select" && drawingState?.selectionActive)
   );
   
+  // Get relevant points for the tooltip
+  const startPoint = drawingState?.startPoint || drawingState?.cursorPosition;
+  const currentPoint = drawingState?.currentPoint || drawingState?.cursorPosition;
+  const midPoint = drawingState?.midPoint;
+  
   // Debug logging to help troubleshoot tooltip visibility
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.log("Drawing state updated:", drawingState);
       console.log("Tooltip visibility:", isTooltipVisible);
+      console.log("Tooltip points:", { 
+        startPoint,
+        currentPoint,
+        midPoint,
+        cursorPosition: drawingState?.cursorPosition
+      });
     }
-  }, [drawingState, isTooltipVisible]);
+  }, [drawingState, isTooltipVisible, startPoint, currentPoint, midPoint]);
   
   return (
     <div className="canvas-wrapper relative">
@@ -97,11 +108,11 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
       </div>
       
       {/* Tooltip for distance measurement - improved for better visibility */}
-      {isTooltipVisible && (
+      {isTooltipVisible && startPoint && currentPoint && (
         <DistanceTooltip 
-          startPoint={drawingState?.startPoint}
-          currentPoint={drawingState?.currentPoint}
-          midPoint={drawingState?.midPoint}
+          startPoint={startPoint}
+          currentPoint={currentPoint}
+          midPoint={midPoint}
           position={drawingState?.cursorPosition}
           isVisible={isTooltipVisible}
           currentZoom={drawingState?.currentZoom}
