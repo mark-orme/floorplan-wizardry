@@ -4,7 +4,7 @@
  * @module databaseTypes
  */
 import { openDB } from 'idb';
-import type { FloorPlan } from './floorPlanTypes';
+import { FloorPlan } from './floorPlanTypes';
 
 // IndexedDB Constants
 /**
@@ -41,5 +41,5 @@ export const getDB = async () => {
   });
 };
 
-// Export the type only (no duplicate export)
+// Export the FloorPlan type only (with proper type import)
 export type { FloorPlan };

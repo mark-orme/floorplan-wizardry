@@ -7,8 +7,8 @@ const FALLBACK_SUPABASE_URL = "https://your-project.supabase.co";
 const FALLBACK_SUPABASE_ANON_KEY = "your-anon-key";
 
 // Get actual environment variables if available
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
 
 // Check if required environment variables are set
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
