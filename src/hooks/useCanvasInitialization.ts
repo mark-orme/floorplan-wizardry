@@ -252,14 +252,38 @@ export const useCanvasInitialization = ({
     // Initialize the brush
     setupBrush(fabricCanvas);
     
-    // Create grid directly after canvas is initialized
+    // Create grid only after verifying the canvas has valid dimensions
     const createGridSafely = () => {
       try {
         // Reset retry counter for grid creation to give it a fresh start
         logger.info("Creating grid on initialized canvas");
         console.log("🔲 Creating grid on initialized canvas");
         
-        // Enable rendering first
+        // CRITICAL CHECK: First verify canvas has valid dimensions before creating grid
+        if (!fabricCanvas || 
+            !fabricCanvas.width || 
+            !fabricCanvas.height || 
+            fabricCanvas.width === 0 || 
+            fabricCanvas.height === 0) {
+          logger.error("⛔️ Grid creation blocked: Canvas has zero dimensions");
+          console.error("⛔️ Grid creation blocked: Canvas has zero dimensions", {
+            width: fabricCanvas?.width,
+            height: fabricCanvas?.height
+          });
+          
+          // Set error to trigger emergency canvas
+          if (componentMountedRef.current) {
+            setHasError(true);
+            setErrorMessage("Grid creation failed: Canvas has zero dimensions");
+            toast.error("⚠️ Grid creation failed: Canvas has zero dimensions");
+          }
+          
+          // Mark initialization as no longer in progress
+          initializationInProgress = false;
+          return;
+        }
+        
+        // Now create the grid with verified dimensions
         if (fabricCanvas) {
           fabricCanvas.renderOnAddRemove = true;
           

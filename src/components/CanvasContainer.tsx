@@ -1,3 +1,4 @@
+
 /**
  * Container component for the canvas element
  * Wraps the canvas element and provides a reference to it
@@ -46,7 +47,21 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
     
     // Forward the ref to the container div or use our local ref
     // Handle both function refs and object refs safely
-    const divRef = (ref && typeof ref !== 'function') ? ref : containerRef;
+    const divRef = useRef<HTMLDivElement>(null);
+    
+    // Effect to handle ref forwarding properly
+    useEffect(() => {
+      if (!ref) return;
+      
+      // Handle the ref properly based on its type
+      if (typeof ref === 'function') {
+        // If it's a function ref, call it with the current div
+        ref(containerRef.current);
+      } else {
+        // If it's an object ref, set its current property
+        ref.current = containerRef.current;
+      }
+    }, [ref]);
     
     // Force initialization after render to ensure canvas has dimensions
     useEffect(() => {
@@ -166,13 +181,6 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
         }
       };
     }, [canvasReference, dimensionsSetupAttempt]);
-
-    // Set the ref passed to the div - handles both function refs and object refs
-    useEffect(() => {
-      if (typeof ref === 'function' && containerRef.current) {
-        ref(containerRef.current);
-      }
-    }, [ref]);
 
     return (
       <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible h-full">

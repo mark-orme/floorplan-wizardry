@@ -304,7 +304,7 @@ export const Canvas: React.FC = () => {
     );
   }
   
-  // Otherwise use regular canvas - with the updated prop name
+  // Otherwise use regular canvas - with the updated prop name for canvas element reference
   return (
     <CanvasContainer 
       ref={containerRef} 
