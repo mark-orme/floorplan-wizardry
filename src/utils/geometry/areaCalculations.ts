@@ -13,7 +13,7 @@ import { CLOSE_POINT_THRESHOLD } from './constants';
  * @param {Point[]} polygonPoints - Array of points representing a closed shape
  * @returns {number} Calculated area in square meters
  */
-export const calculateGIA = (polygonPoints: { x: number; y: number }[]): number => {
+export const calculateGIA = (polygonPoints: Point[]): number => {
   if (!polygonPoints || polygonPoints.length < 3) return 0;
   
   // Shoelace formula for polygon area
@@ -34,10 +34,10 @@ export const calculateGIA = (polygonPoints: { x: number; y: number }[]): number 
  * @param {number} minDistance - Minimum distance between points (in meters)
  * @returns {Point[]} Filtered points with redundant points removed
  */
-export const filterRedundantPoints = (pointsArray: { x: number; y: number }[], minDistance: number = CLOSE_POINT_THRESHOLD): { x: number; y: number }[] => {
+export const filterRedundantPoints = (pointsArray: Point[], minDistance: number = CLOSE_POINT_THRESHOLD): Point[] => {
   if (!pointsArray || pointsArray.length <= 2) return pointsArray;
   
-  const filteredPoints: { x: number; y: number }[] = [pointsArray[0]];
+  const filteredPoints: Point[] = [pointsArray[0]];
   
   for (let i = 1; i < pointsArray.length; i++) {
     const lastPoint = filteredPoints[filteredPoints.length - 1];
