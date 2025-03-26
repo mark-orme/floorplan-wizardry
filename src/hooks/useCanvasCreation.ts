@@ -55,44 +55,56 @@ export const useCanvasCreation = ({
     };
   }, []);
 
-  /**
-   * Initialize canvas with performance optimizations
-   * @returns {FabricCanvas | null} Initialized canvas or null if failed
-   */
+  // Initialize canvas with performance optimizations
   const initializeCanvas = useCallback((): FabricCanvas | null => {
     if (!canvasRef.current) {
       console.warn("Canvas reference is not available yet");
       
-      // Check if the canvas element exists in the DOM using data-testid
-      const canvasElement = document.querySelector('[data-testid="canvas-element"]');
-      if (canvasElement instanceof HTMLCanvasElement) {
+      // First try by ID
+      const canvasById = document.getElementById('fabric-canvas');
+      
+      // Then try by data-testid
+      const canvasByTestId = document.querySelector('[data-testid="canvas-element"]');
+      
+      // Use any method that works
+      if (canvasById instanceof HTMLCanvasElement) {
+        console.log("Found canvas element via id, using it directly");
+        canvasRef.current = canvasById;
+      } else if (canvasByTestId instanceof HTMLCanvasElement) {
         console.log("Found canvas element via data-testid, using it directly");
-        canvasRef.current = canvasElement;
+        canvasRef.current = canvasByTestId;
       } else {
-        // Retry initialization after a delay if we haven't exceeded max attempts
-        if (retryAttemptsRef.current < maxRetryAttempts) {
-          retryAttemptsRef.current++;
-          console.log(`Retrying canvas initialization (attempt ${retryAttemptsRef.current}/${maxRetryAttempts})`);
-          
-          // Clear any existing timeout
-          if (retryTimeoutRef.current !== null) {
-            window.clearTimeout(retryTimeoutRef.current);
+        // Search for any canvas element on the page
+        const anyCanvas = document.querySelector('canvas');
+        if (anyCanvas instanceof HTMLCanvasElement) {
+          console.log("Found a canvas element on the page, using it as fallback");
+          canvasRef.current = anyCanvas;
+        } else {
+          // Retry initialization after a delay if we haven't exceeded max attempts
+          if (retryAttemptsRef.current < maxRetryAttempts) {
+            retryAttemptsRef.current++;
+            console.log(`Retrying canvas initialization (attempt ${retryAttemptsRef.current}/${maxRetryAttempts})`);
+            
+            // Clear any existing timeout
+            if (retryTimeoutRef.current !== null) {
+              window.clearTimeout(retryTimeoutRef.current);
+            }
+            
+            // Set a new timeout with exponential backoff
+            const delay = Math.min(500 * Math.pow(1.5, retryAttemptsRef.current), 5000);
+            retryTimeoutRef.current = window.setTimeout(() => {
+              retryTimeoutRef.current = null;
+              initializeCanvas();
+            }, delay);
+          } else {
+            console.error("Max retry attempts reached. Could not initialize canvas.");
+            setHasError(true);
+            setErrorMessage("Could not initialize canvas after multiple attempts. Please refresh the page.");
+            toast.error("Failed to initialize canvas. Please refresh the page.");
           }
           
-          // Set a new timeout with exponential backoff
-          const delay = Math.min(500 * Math.pow(1.5, retryAttemptsRef.current), 5000);
-          retryTimeoutRef.current = window.setTimeout(() => {
-            retryTimeoutRef.current = null;
-            initializeCanvas();
-          }, delay);
-        } else {
-          console.error("Max retry attempts reached. Could not initialize canvas.");
-          setHasError(true);
-          setErrorMessage("Could not initialize canvas after multiple attempts. Please refresh the page.");
-          toast.error("Failed to initialize canvas. Please refresh the page.");
+          return null;
         }
-        
-        return null;
       }
     }
     
@@ -113,6 +125,10 @@ export const useCanvasCreation = ({
       // Force canvas element to have width and height using inline style
       canvasRef.current.style.width = `${canvasDimensions.width || 800}px`;
       canvasRef.current.style.height = `${canvasDimensions.height || 600}px`;
+      
+      // Set width and height attributes
+      canvasRef.current.width = canvasDimensions.width || 800;
+      canvasRef.current.height = canvasDimensions.height || 600;
       
       // PERFORMANCE OPTIMIZATIONS for Fabric.js initialization
       const fabricCanvas = new FabricCanvas(canvasRef.current, {

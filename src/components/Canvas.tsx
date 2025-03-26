@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
+import { CanvasContainer } from './CanvasContainer';
 import { useCanvasController } from './canvas/controller/CanvasController';
 import { DistanceTooltip } from './DistanceTooltip';
 import { MeasurementGuide } from './MeasurementGuide';
@@ -76,7 +77,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
   }, [isTooltipVisible, tool, drawingState]);
   
   return (
-    <div className="canvas-wrapper relative h-full w-full">
+    <div className="canvas-wrapper relative h-full w-full" data-testid="canvas-wrapper">
       {hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-red-100 bg-opacity-80 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
@@ -95,13 +96,7 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         </div>
       )}
       
-      <div className="canvas-container w-full h-full border border-gray-200 rounded-md overflow-hidden">
-        <canvas 
-          ref={canvasRef} 
-          className="w-full h-full"
-          data-testid="canvas-element"
-        />
-      </div>
+      <CanvasContainer debugInfo={debugInfo} canvasRef={canvasRef} />
       
       {/* Measurement Tooltip */}
       {isTooltipVisible && (

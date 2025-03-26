@@ -78,6 +78,7 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
           role="application"
           style={{ display: "block" }}
           data-testid="canvas-element"
+          id="fabric-canvas"
         />
       </div>
       <DebugInfo debugInfo={debugInfo} />
