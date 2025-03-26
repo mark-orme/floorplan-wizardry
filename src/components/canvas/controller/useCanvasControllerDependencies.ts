@@ -69,7 +69,7 @@ export const useCanvasControllerDependencies = ({
   // Provide fallback values for required props
   const resolvedCanvasRef = canvasRef || defaultCanvasRef;
   const resolvedCanvasDimensions = canvasDimensions || { width: 800, height: 600 };
-  // Fixed: Include all required properties in the default debug info
+  // Fixed: Include all required properties in the default debug info, including canvasReady
   const resolvedDebugInfo: DebugInfoState = debugInfo || { 
     canvasInitialized: false, 
     gridCreated: false,
@@ -77,6 +77,7 @@ export const useCanvasControllerDependencies = ({
     brushInitialized: false,
     canvasCreated: false,
     canvasLoaded: false,
+    canvasReady: false,
     canvasWidth: 0,
     canvasHeight: 0,
     loadTimes: {}

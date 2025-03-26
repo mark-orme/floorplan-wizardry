@@ -33,6 +33,7 @@ export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabr
     brushInitialized: false,
     canvasCreated: false,
     canvasLoaded: false,
+    canvasReady: false,
     canvasWidth: 0,
     canvasHeight: 0,
     loadTimes: {
