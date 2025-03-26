@@ -85,3 +85,39 @@ export const verifyCanvasConfiguration = (canvas: FabricCanvas | null): boolean 
     return false;
   }
 };
+
+/**
+ * Get canvas element safely
+ * @param canvasRef - Reference to canvas element
+ * @returns Canvas element or null
+ */
+export const safelyGetCanvasElement = (canvasRef: React.RefObject<HTMLCanvasElement>): HTMLCanvasElement | null => {
+  if (canvasRef.current) return canvasRef.current;
+  
+  // Try to find canvas by ID
+  const canvasById = document.getElementById('fabric-canvas') as HTMLCanvasElement | null;
+  if (canvasById) return canvasById;
+  
+  // Try to find canvas by data attribute
+  const canvasByData = document.querySelector('[data-testid="canvas-element"]') as HTMLCanvasElement | null;
+  if (canvasByData) return canvasByData;
+  
+  return null;
+};
+
+/**
+ * Check if canvas is disposed
+ * @param canvas - Canvas to check
+ * @returns Whether canvas is disposed
+ */
+export const isCanvasDisposed = (canvas: FabricCanvas | null): boolean => {
+  if (!canvas) return true;
+  
+  try {
+    // Check if essential methods are still functional
+    return typeof canvas.getObjects !== 'function';
+  } catch (error) {
+    // If accessing the method throws an error, the canvas is likely disposed
+    return true;
+  }
+};

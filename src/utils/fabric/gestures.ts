@@ -7,6 +7,17 @@
 import { Canvas as FabricCanvas, Point as FabricPoint } from "fabric";
 import logger from "@/utils/logger";
 
+// Custom interface for our touch events
+interface CustomTouchEvent {
+  touches: { clientX: number; clientY: number; force?: number }[];
+  preventDefault: () => void;
+}
+
+// Custom interface for fabric event with touches
+interface CustomFabricTouchEvent {
+  e: CustomTouchEvent;
+}
+
 /**
  * Initialize touch and mouse gestures for canvas
  * @param canvas - Fabric canvas to initialize gestures on
@@ -41,7 +52,8 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
   let isDragging = false;
   let lastPoint: { x: number, y: number } | null = null;
   
-  canvas.on('touchstart', (e) => {
+  // Use native DOM event listeners instead of fabric events for touch
+  canvas.upperCanvasEl.addEventListener('touchstart', (e: TouchEvent) => {
     if (!e.touches) return;
     
     if (e.touches.length === 2) {
@@ -56,7 +68,7 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
     }
   });
   
-  canvas.on('touchmove', (e) => {
+  canvas.upperCanvasEl.addEventListener('touchmove', (e: TouchEvent) => {
     if (!e.touches) return;
     
     if (e.touches.length === 2) {
@@ -71,14 +83,17 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
           x: (point1.x + point2.x) / 2,
           y: (point1.y + point2.y) / 2
         };
-        const pointer = new FabricPoint(midpoint.x, midpoint.y);
         
         // Calculate zoom ratio
         const zoomRatio = distance / lastDistance;
-        const zoom = canvas.getZoom() * zoomRatio;
+        const currentZoom = canvas.getZoom();
+        const zoom = currentZoom * zoomRatio;
+        
+        // Convert to fabric point for zooming
+        const fabric_point = new FabricPoint(midpoint.x, midpoint.y);
         
         // Apply zoom with limits
-        canvas.zoomToPoint(pointer, Math.min(Math.max(zoom, 0.1), 10));
+        canvas.zoomToPoint(fabric_point, Math.min(Math.max(zoom, 0.1), 10));
         
         // Trigger custom event for zoom change tracking
         canvas.fire('custom:zoom-changed', { zoom });
@@ -100,7 +115,7 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
     }
   });
   
-  canvas.on('touchend', () => {
+  canvas.upperCanvasEl.addEventListener('touchend', () => {
     // Reset state
     lastDistance = 0;
     isDragging = false;
@@ -116,7 +131,7 @@ const setupMousewheelZoom = (canvas: FabricCanvas): void => {
   if (!canvas) return;
   
   canvas.on('mouse:wheel', (opt) => {
-    const e = opt.e;
+    const e = opt.e as WheelEvent;
     e.preventDefault();
     e.stopPropagation();
     

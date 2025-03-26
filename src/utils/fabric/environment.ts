@@ -1,42 +1,70 @@
 
 /**
- * Environment utilities for Fabric.js
+ * Environment and configuration utilities for Fabric.js
  * @module fabric/environment
  */
+import logger from '@/utils/logger';
 
 /**
- * Environment variables interface
+ * Default canvas dimensions
  */
-export interface EnvVars {
-  /** Supabase URL */
-  SUPABASE_URL: string;
-  /** Supabase anonymous key */
-  SUPABASE_ANON_KEY: string;
-}
+export const CANVAS_DIMENSIONS = {
+  width: 800,
+  height: 600
+};
 
 /**
- * Get environment variables with proper fallbacks
- * @returns {EnvVars} Environment variables
+ * Environment variables with defaults
  */
-export const getEnvVars = (): EnvVars => {
+const ENV_DEFAULTS = {
+  CANVAS_WIDTH: CANVAS_DIMENSIONS.width.toString(),
+  CANVAS_HEIGHT: CANVAS_DIMENSIONS.height.toString(),
+  GRID_SIZE: '20',
+  PIXELS_PER_METER: '100',
+  DEBUG_MODE: 'false'
+};
+
+/**
+ * Get environment variables with fallbacks to defaults
+ * @returns Environment variables
+ */
+export const getEnvVars = () => {
+  const env = {
+    CANVAS_WIDTH: process.env.CANVAS_WIDTH || ENV_DEFAULTS.CANVAS_WIDTH,
+    CANVAS_HEIGHT: process.env.CANVAS_HEIGHT || ENV_DEFAULTS.CANVAS_HEIGHT,
+    GRID_SIZE: process.env.GRID_SIZE || ENV_DEFAULTS.GRID_SIZE,
+    PIXELS_PER_METER: process.env.PIXELS_PER_METER || ENV_DEFAULTS.PIXELS_PER_METER,
+    DEBUG_MODE: process.env.DEBUG_MODE || ENV_DEFAULTS.DEBUG_MODE
+  };
+  
   return {
-    SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
-    SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+    ...env,
+    isDebugMode: env.DEBUG_MODE.toLowerCase() === 'true'
   };
 };
 
 /**
- * Canvas dimensions constants
+ * Set a canvas to match environment dimensions
+ * @param canvas - Canvas to set dimensions for
  */
-export const CANVAS_DIMENSIONS = {
-  /** Minimum width for canvas */
-  MIN_WIDTH: 1200,
-  /** Minimum height for canvas */
-  MIN_HEIGHT: 950,
-  /** Default width for canvas */
-  DEFAULT_WIDTH: 800,
-  /** Default height for canvas */
-  DEFAULT_HEIGHT: 600,
-  /** Dimension change tolerance (in pixels) */
-  DIMENSION_CHANGE_TOLERANCE: 20
+export const setCanvasDimensionsFromEnv = (canvas: HTMLCanvasElement | null): void => {
+  if (!canvas) {
+    logger.error("Cannot set dimensions for null canvas");
+    return;
+  }
+  
+  try {
+    const env = getEnvVars();
+    const width = parseInt(env.CANVAS_WIDTH);
+    const height = parseInt(env.CANVAS_HEIGHT);
+    
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    
+    logger.info(`Canvas dimensions set to ${width}x${height} from environment`);
+  } catch (error) {
+    logger.error("Error setting canvas dimensions from environment:", error);
+  }
 };

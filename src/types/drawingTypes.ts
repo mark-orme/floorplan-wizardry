@@ -3,9 +3,9 @@
  * Drawing state type definitions
  * @module drawingTypes
  */
-import { FloorPlan, PaperSize, Point } from './floorPlanTypes';
+import type { FloorPlan, PaperSize, Point } from './floorPlanTypes';
 
-export { FloorPlan, PaperSize, Point };
+export type { FloorPlan, PaperSize, Point };
 
 export interface CanvasDimensions {
   width: number;

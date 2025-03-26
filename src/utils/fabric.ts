@@ -19,19 +19,30 @@ export {
 
 export {
   isCanvasValid,
+  isCanvasEmpty,
+  getCanvasDimensions,
+  verifyCanvasConfiguration,
   safelyGetCanvasElement,
   isCanvasDisposed
 } from './fabric/canvasValidation';
 
 export {
+  clearCanvas,
   disposeCanvas,
+  removeObjectsFromCanvas,
+  resetCanvasTransform,
   forceCleanCanvasElement,
-  resetCanvasStateTracker
+  resetCanvasStateTracker,
+  isCanvasElementInitialized,
+  markCanvasAsInitialized,
+  isCanvasElementInDOM
 } from './fabric/canvasCleanup';
 
 export {
   clearCanvasObjects,
-  canvasMoveTo
+  canvasMoveTo,
+  bringObjectToFront,
+  sendObjectToBack
 } from './fabric/objects';
 
 export {
@@ -44,4 +55,3 @@ export {
   getEnvVars,
   CANVAS_DIMENSIONS
 } from './fabric/environment';
-

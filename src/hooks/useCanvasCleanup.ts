@@ -9,8 +9,8 @@ import logger from "@/utils/logger";
 import { 
   isCanvasElementInitialized, 
   markCanvasAsInitialized,
-  isCanvasElementInDOM
-} from "@/utils/fabric";
+  isCanvasElementInDOM 
+} from "@/utils/fabric/canvasCleanup";
 
 /**
  * Hook for canvas cleanup operations
@@ -40,4 +40,3 @@ export const useCanvasCleanup = () => {
     isCanvasElementInDOM
   };
 };
-

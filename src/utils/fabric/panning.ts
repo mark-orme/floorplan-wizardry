@@ -1,13 +1,14 @@
-/**
- * Panning utilities for Fabric.js canvas
- * Handles canvas panning with mouse and touch interactions
- * @module fabric/panning
- */
-import { Canvas as FabricCanvas } from "fabric";
-import logger from "@/utils/logger";
 
 /**
- * Enable panning on a canvas
+ * Panning utilities for fabric.js canvas
+ * Enables canvas panning/dragging with mouse
+ * @module fabric/panning
+ */
+import { Canvas as FabricCanvas } from 'fabric';
+import logger from '@/utils/logger';
+
+/**
+ * Enable panning/dragging on canvas
  * @param canvas - Canvas to enable panning on
  */
 export const enableCanvasPanning = (canvas: FabricCanvas): void => {
@@ -17,73 +18,64 @@ export const enableCanvasPanning = (canvas: FabricCanvas): void => {
   }
   
   try {
-    const panState = {
-      isPanning: false,
-      lastPosX: 0,
-      lastPosY: 0,
-      panningEnabled: true
-    };
+    // Variables to track panning state
+    let isPanning = false;
+    let lastPosX = 0;
+    let lastPosY = 0;
     
-    // Store the state on the canvas object for access in event handlers
-    (canvas as any).panState = panState;
+    // Disable selection to prevent interference with panning
+    canvas.selection = false;
     
-    // Mouse down event - start panning
-    canvas.on('mouse:down', (opt) => {
-      const evt = opt.e;
-      if (!panState.panningEnabled) return;
+    // Setup mouse down event to start panning
+    canvas.on('mouse:down', function(opt) {
+      const evt = opt.e as MouseEvent;
       
-      // Only pan with middle mouse button or when 'alt' key is held
-      const isMiddleButton = evt.button === 1;
-      const isAltKey = evt.altKey;
-      const isSpaceKey = isSpaceKeyPressed();
-      
-      if (isMiddleButton || isAltKey || isSpaceKey) {
-        panState.isPanning = true;
-        canvas.selection = false;
-        canvas.setCursor('grab');
+      // Middle mouse button or holding space key
+      if (evt.button === 1 || (evt.button === 0 && canvas.wrapperEl?.classList.contains('panning-mode'))) {
+        isPanning = true;
         
-        // Save starting positions
-        panState.lastPosX = evt.clientX || 0;
-        panState.lastPosY = evt.clientY || 0;
+        // Remember position
+        lastPosX = evt.clientX;
+        lastPosY = evt.clientY;
         
-        // Prevent default to avoid selecting text while panning
-        evt.preventDefault();
+        // Change cursor
+        canvas.defaultCursor = 'grabbing';
       }
     });
     
-    // Mouse move event - update canvas position while panning
-    canvas.on('mouse:move', (opt) => {
-      const evt = opt.e;
-      if (!panState.isPanning) return;
-      
-      // Calculate how much the mouse has moved
-      const currentClientX = evt.clientX || 0;
-      const currentClientY = evt.clientY || 0;
-      
-      const deltaX = currentClientX - panState.lastPosX;
-      const deltaY = currentClientY - panState.lastPosY;
-      
-      // Update the last position
-      panState.lastPosX = currentClientX;
-      panState.lastPosY = currentClientY;
-      
-      // Apply the delta to the viewport transform
-      const vpt = canvas.viewportTransform!;
-      vpt[4] += deltaX;
-      vpt[5] += deltaY;
-      
-      // Render changes
-      canvas.requestRenderAll();
-      
-      // Prevent default to avoid selecting text while panning
-      evt.preventDefault();
+    // Setup mouse move event to perform panning
+    canvas.on('mouse:move', function(opt) {
+      if (isPanning) {
+        const evt = opt.e as MouseEvent;
+        
+        // Get delta movement
+        const deltaX = evt.clientX - lastPosX;
+        const deltaY = evt.clientY - lastPosY;
+        
+        // Update last position
+        lastPosX = evt.clientX;
+        lastPosY = evt.clientY;
+        
+        // Move the canvas
+        const vpt = canvas.viewportTransform!;
+        vpt[4] += deltaX;
+        vpt[5] += deltaY;
+        
+        // Render the change
+        canvas.requestRenderAll();
+      }
     });
     
-    // Mouse up event - stop panning
-    canvas.on('mouse:up', () => {
-      panState.isPanning = false;
-      canvas.selection = true;
-      canvas.setCursor('default');
+    // Setup mouse up event to stop panning
+    canvas.on('mouse:up', function() {
+      isPanning = false;
+      canvas.defaultCursor = 'default';
+    });
+    
+    // Allow mouse wheel to work even when panning
+    canvas.on('mouse:wheel', function(opt) {
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
     });
     
     logger.info("Canvas panning enabled");
@@ -93,29 +85,27 @@ export const enableCanvasPanning = (canvas: FabricCanvas): void => {
 };
 
 /**
- * Disable panning on a canvas
+ * Disable panning/dragging on canvas
  * @param canvas - Canvas to disable panning on
  */
 export const disableCanvasPanning = (canvas: FabricCanvas): void => {
-  if (!canvas) return;
+  if (!canvas) {
+    logger.error("Cannot disable panning on null canvas");
+    return;
+  }
   
   try {
-    const panState = (canvas as any).panState;
-    if (panState) {
-      panState.panningEnabled = false;
-    }
+    // Restore default canvas behavior
+    canvas.selection = true;
+    canvas.defaultCursor = 'default';
+    
+    // Remove event listeners
+    canvas.off('mouse:down');
+    canvas.off('mouse:move');
+    canvas.off('mouse:up');
     
     logger.info("Canvas panning disabled");
   } catch (error) {
     logger.error("Error disabling canvas panning:", error);
   }
-};
-
-/**
- * Check if the space key is currently pressed
- */
-const isSpaceKeyPressed = (): boolean => {
-  // We can't reliably track key state across events,
-  // but we keep this function for future improvements
-  return false;
 };

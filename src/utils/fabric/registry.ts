@@ -1,128 +1,62 @@
 
 /**
- * Fabric canvas registry utilities
- * Functions for tracking and managing canvas instances
+ * Canvas registry utilities
  * @module fabric/registry
  */
-import { Canvas as FabricCanvas } from "fabric";
-import logger from "@/utils/logger";
+import logger from '@/utils/logger';
 
 /**
- * Canvas registration entry type
- * @interface CanvasRegistration
+ * Registry to track canvas elements
  */
-interface CanvasRegistration {
-  /** Canvas instance */
-  canvas: FabricCanvas;
-  /** Element ID associated with canvas */
-  elementId: string;
-  /** Registration timestamp */
-  timestamp: number;
-  /** Canvas purpose or role */
-  purpose?: string;
+interface CanvasRegistry {
+  canvases: Map<string, HTMLCanvasElement>;
+  lastRegistered: string | null;
 }
 
-/**
- * Registry of all active canvases
- */
-const canvasRegistry: Map<string, CanvasRegistration> = new Map();
+// Initialize global registry
+const registry: CanvasRegistry = {
+  canvases: new Map(),
+  lastRegistered: null
+};
 
 /**
- * Register a canvas in the registry
- * @param {FabricCanvas} canvas - Canvas to register
- * @param {string} elementId - ID of the canvas element
- * @param {string} purpose - Purpose or role of the canvas
- * @returns {boolean} Whether registration was successful
+ * Register a canvas element with an ID
+ * @param id - Unique ID for the canvas
+ * @param element - Canvas element to register
+ * @returns Success status
  */
-export const registerCanvasElement = (
-  canvas: FabricCanvas,
-  elementId: string,
-  purpose?: string
-): boolean => {
-  if (!canvas || !elementId) {
-    logger.error("Cannot register canvas: Invalid canvas or element ID");
+export const registerCanvasElement = (id: string, element: HTMLCanvasElement): boolean => {
+  if (!element) {
+    logger.error(`Cannot register null canvas with ID: ${id}`);
     return false;
   }
   
   try {
-    // Create registration entry
-    const registration: CanvasRegistration = {
-      canvas,
-      elementId,
-      timestamp: Date.now(),
-      purpose
-    };
-    
-    // Add to registry
-    canvasRegistry.set(elementId, registration);
-    
-    logger.info(`Canvas registered: ${elementId}${purpose ? ` (${purpose})` : ''}`);
+    // Register the element
+    registry.canvases.set(id, element);
+    registry.lastRegistered = id;
+    logger.info(`Canvas registered with ID: ${id}`);
     return true;
   } catch (error) {
-    logger.error("Error registering canvas:", error);
+    logger.error(`Error registering canvas with ID ${id}:`, error);
     return false;
   }
 };
 
 /**
- * Check if a canvas is registered
- * @param {string} elementId - ID of the canvas element
- * @returns {boolean} Whether the canvas is registered
+ * Check if a canvas ID is registered
+ * @param id - Canvas ID to check
+ * @returns Whether canvas is registered
  */
-export const isCanvasRegistered = (elementId: string): boolean => {
-  return canvasRegistry.has(elementId);
+export const isCanvasRegistered = (id: string): boolean => {
+  return registry.canvases.has(id);
 };
 
 /**
- * Get a registered canvas by element ID
- * @param {string} elementId - ID of the canvas element
- * @returns {CanvasRegistration | undefined} Registration entry or undefined if not found
+ * Get a registered canvas element
+ * @param id - Canvas ID to retrieve
+ * @returns Canvas element or null if not found
  */
-export const getCanvasRegistration = (elementId: string): CanvasRegistration | undefined => {
-  return canvasRegistry.get(elementId);
-};
-
-/**
- * Unregister a canvas
- * @param {string} elementId - ID of the canvas element
- * @returns {boolean} Whether unregistration was successful
- */
-export const unregisterCanvasElement = (elementId: string): boolean => {
-  if (!elementId) {
-    logger.error("Cannot unregister canvas: Invalid element ID");
-    return false;
-  }
-  
-  try {
-    // Check if registered
-    if (!canvasRegistry.has(elementId)) {
-      logger.warn(`Canvas not found in registry: ${elementId}`);
-      return false;
-    }
-    
-    // Remove from registry
-    canvasRegistry.delete(elementId);
-    
-    logger.info(`Canvas unregistered: ${elementId}`);
-    return true;
-  } catch (error) {
-    logger.error("Error unregistering canvas:", error);
-    return false;
-  }
-};
-
-/**
- * Get all registered canvases
- * @returns {CanvasRegistration[]} Array of all registered canvases
- */
-export const getAllRegisteredCanvases = (): CanvasRegistration[] => {
-  return Array.from(canvasRegistry.values());
-};
-
-/**
- * Get count of registered canvases
- * @returns {number} Number of registered canvases
- */
-export const getRegisteredCanvasCount = (): number => {
-  return canvasRegistry.size;
+export const getCanvasRegistration = (id: string): HTMLCanvasElement | null => {
+  return registry.canvases.get(id) || null;
 };

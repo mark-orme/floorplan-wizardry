@@ -4,7 +4,7 @@
  * @module databaseTypes
  */
 import { openDB } from 'idb';
-import { FloorPlanStorageModel } from './floorPlanTypes';
+import type { FloorPlan } from './floorPlanTypes';
 
 // IndexedDB Constants
 /**
@@ -18,6 +18,14 @@ export const DB_NAME = 'FloorPlanDB';
  * @constant {string}
  */
 export const STORE_NAME = 'floorPlans';
+
+/** 
+ * Storage model for IndexedDB
+ */
+export interface FloorPlanStorageModel {
+  id: string;
+  data: FloorPlan[];
+}
 
 /** 
  * Initialize IndexedDB 

@@ -1,40 +1,50 @@
 
-import { Canvas as FabricCanvas } from "fabric";
-import logger from "@/utils/logger";
+/**
+ * Safe canvas initialization utilities
+ * @module canvas/safeCanvasInitialization
+ */
+import { Canvas as FabricCanvas } from 'fabric';
+import logger from '@/utils/logger';
 
-// State tracking for canvas initialization
-let initializationState = {
+/**
+ * Initialization state interface
+ */
+interface InitializationState {
+  attemptCount: number;
+  lastAttemptTime: number;
+  isInProgress: boolean;
+  maxAttempts: number;
+  canInitialize: boolean;
+  blockedReason: string;
+  errors: string[];
+  initializationInProgress: boolean;
+  canvasDisposalInProgress: boolean;
+  isInitialized: boolean;
+}
+
+// Global initialization state
+let initState: InitializationState = {
   attemptCount: 0,
   lastAttemptTime: 0,
   isInProgress: false,
-  maxAttempts: 3,
+  maxAttempts: 5,
   canInitialize: true,
   blockedReason: '',
-  errors: [] as string[],
+  errors: [],
   initializationInProgress: false,
   canvasDisposalInProgress: false,
   isInitialized: false
 };
 
-// Global safety timeouts
-let safetyTimeout: NodeJS.Timeout | null = null;
-let creationTimeout: NodeJS.Timeout | null = null;
-
 /**
- * Reset canvas initialization state
- * Call this when a complete reset is needed
+ * Reset initialization state
  */
-export const resetInitializationState = () => {
-  // Clear any pending timeouts
-  if (safetyTimeout) clearTimeout(safetyTimeout);
-  if (creationTimeout) clearTimeout(creationTimeout);
-  
-  // Reset the state object
-  initializationState = {
+export const resetInitializationState = (): void => {
+  initState = {
     attemptCount: 0,
     lastAttemptTime: 0,
     isInProgress: false,
-    maxAttempts: 3,
+    maxAttempts: 5,
     canInitialize: true,
     blockedReason: '',
     errors: [],
@@ -42,201 +52,186 @@ export const resetInitializationState = () => {
     canvasDisposalInProgress: false,
     isInitialized: false
   };
-  
-  logger.info("Canvas initialization state reset");
+  logger.info('Canvas initialization state reset');
 };
 
 /**
- * Get current initialization state (read-only)
- * @returns Current initialization state
+ * Check if initialization should continue
+ * @returns Validation result with status and message
  */
-export const getInitializationState = () => {
-  return { ...initializationState };
-};
-
-/**
- * Update initialization state
- * @param updates - Partial state updates
- */
-export const updateInitializationState = (updates: Partial<typeof initializationState>) => {
-  initializationState = {
-    ...initializationState,
-    ...updates
-  };
-};
-
-/**
- * Check if canvas initialization can proceed
- * @returns Object with result and reason
- */
-export const canInitializeCanvas = () => {
-  // Check if initialization is already in progress
-  if (initializationState.isInProgress) {
-    return {
-      shouldContinue: false,
-      reason: 'Initialization already in progress'
-    };
-  }
-  
-  // Check for too many attempts
-  if (initializationState.attemptCount >= initializationState.maxAttempts) {
-    return {
-      isMaxAttemptsReached: true,
-      shouldContinue: false,
-      reason: `Maximum attempts (${initializationState.maxAttempts}) reached`
-    };
-  }
-  
-  // Check for rapid reinitializations
+export const shouldContinueInitialization = (): { 
+  shouldContinue: boolean; 
+  reason?: string; 
+  isMaxAttemptsReached: boolean; 
+  isCycleDetected: boolean;
+} => {
   const now = Date.now();
-  const timeSinceLastAttempt = now - initializationState.lastAttemptTime;
-  if (initializationState.lastAttemptTime > 0 && timeSinceLastAttempt < 1000) {
-    return {
-      isCycleDetected: true,
-      shouldContinue: false,
-      reason: 'Initialization cycle detected (too frequent attempts)'
+  const timeSinceLastAttempt = now - initState.lastAttemptTime;
+  
+  // Check if max attempts reached
+  if (initState.attemptCount >= initState.maxAttempts) {
+    return { 
+      shouldContinue: false, 
+      reason: `Maximum initialization attempts (${initState.maxAttempts}) reached`,
+      isMaxAttemptsReached: true,
+      isCycleDetected: false
     };
   }
   
-  return {
+  // Check for rapid cycles (prevent infinite loops)
+  if (timeSinceLastAttempt < 100 && initState.attemptCount > 2) {
+    return { 
+      shouldContinue: false, 
+      reason: 'Initialization cycle detected (too many attempts in short time)',
+      isMaxAttemptsReached: false,
+      isCycleDetected: true
+    };
+  }
+  
+  // Check if already initialized
+  if (initState.isInitialized) {
+    return { 
+      shouldContinue: false, 
+      reason: 'Canvas already initialized',
+      isMaxAttemptsReached: false,
+      isCycleDetected: false
+    };
+  }
+  
+  // Check if initialization is already in progress
+  if (initState.initializationInProgress) {
+    return { 
+      shouldContinue: false, 
+      reason: 'Initialization already in progress',
+      isMaxAttemptsReached: false,
+      isCycleDetected: false
+    };
+  }
+  
+  // Check if canvas disposal is in progress
+  if (initState.canvasDisposalInProgress) {
+    return { 
+      shouldContinue: false, 
+      reason: 'Canvas disposal in progress',
+      isMaxAttemptsReached: false,
+      isCycleDetected: false
+    };
+  }
+  
+  return { 
     shouldContinue: true,
-    reason: 'Canvas initialization can proceed'
+    isMaxAttemptsReached: false,
+    isCycleDetected: false
   };
 };
 
 /**
- * Record canvas initialization attempt
+ * Prepare canvas element for initialization
+ * @param canvasElement - Canvas element to prepare
  */
-export const recordInitializationAttempt = () => {
-  updateInitializationState({
-    attemptCount: initializationState.attemptCount + 1,
-    lastAttemptTime: Date.now(),
-    isInProgress: true,
-    initializationInProgress: true
-  });
-};
-
-/**
- * Record canvas disposal start
- */
-export const recordDisposalStart = () => {
-  updateInitializationState({
-    canvasDisposalInProgress: true
-  });
-};
-
-/**
- * Record canvas initialization completed
- * @param success - Whether initialization was successful
- * @param error - Error message if initialization failed
- */
-export const recordInitializationCompleted = (success: boolean, error?: string) => {
-  updateInitializationState({
-    isInProgress: false,
-    isInitialized: success,
-    initializationInProgress: false,
-    canvasDisposalInProgress: false
-  });
-  
-  if (!success && error) {
-    initializationState.errors.push(error);
-  }
-};
-
-/**
- * Initialize canvas with safety mechanisms
- * @param canvasElement - Canvas element to initialize
- * @param options - Canvas initialization options
- * @returns New FabricCanvas instance
- */
-export const safeInitializeCanvas = (
-  canvasElement: HTMLCanvasElement | null,
-  options: Record<string, any> = {}
-): FabricCanvas | null => {
+export const prepareCanvasForInitialization = (canvasElement: HTMLCanvasElement): void => {
   if (!canvasElement) {
-    logger.error('Cannot initialize canvas: element is null');
-    return null;
+    throw new Error('Cannot prepare null canvas element');
   }
   
+  // Increment attempt counter
+  initState.attemptCount++;
+  initState.lastAttemptTime = Date.now();
+  initState.initializationInProgress = true;
+  
   try {
-    // Record initialization attempt
-    recordInitializationAttempt();
+    // Make sure the element is visible
+    canvasElement.style.display = 'block';
     
-    // Start a safety timeout to prevent hanging initializations
-    if (safetyTimeout) clearTimeout(safetyTimeout);
-    safetyTimeout = setTimeout(() => {
-      if (initializationState.initializationInProgress) {
-        logger.warn('Canvas initialization safety timeout triggered');
-        recordInitializationCompleted(false, 'Safety timeout triggered');
-      }
-    }, 5000);
+    // Clear any existing inline styles that might interfere
+    canvasElement.style.position = 'relative';
+    canvasElement.style.userSelect = 'none';
     
-    // Create new Fabric canvas
-    const canvas = new FabricCanvas(canvasElement, options);
+    // Reset any transform
+    canvasElement.style.transform = 'none';
     
-    // We were successful, so complete initialization
-    recordInitializationCompleted(true);
-    if (safetyTimeout) clearTimeout(safetyTimeout);
-    
-    return canvas;
+    // Mark that initialization has started
+    logger.info(`Preparing canvas for initialization (attempt ${initState.attemptCount})`);
   } catch (error) {
-    logger.error('Error initializing canvas:', error);
-    recordInitializationCompleted(false, String(error));
-    if (safetyTimeout) clearTimeout(safetyTimeout);
-    return null;
+    logger.error('Error preparing canvas for initialization:', error);
+    throw error;
   }
 };
 
 /**
- * Safely dispose of a canvas
- * @param canvas - Canvas to dispose
+ * Validate that canvas initialization succeeded
+ * @param canvas - Canvas instance to validate
+ * @returns Whether canvas is valid
  */
-export const safeDisposeCanvas = (canvas: FabricCanvas | null): void => {
-  if (!canvas) return;
-  
-  try {
-    recordDisposalStart();
-    canvas.dispose();
-    logger.info('Canvas disposed successfully');
-  } catch (error) {
-    logger.error('Error disposing canvas:', error);
-  } finally {
-    updateInitializationState({
-      canvasDisposalInProgress: false
-    });
+export const validateCanvasInitialization = (canvas: FabricCanvas | null): boolean => {
+  if (!canvas) {
+    initState.errors.push('Canvas is null after initialization');
+    initState.initializationInProgress = false;
+    return false;
   }
-};
-
-/**
- * Safely check if canvas is initialized
- * @param canvas - Canvas to check
- */
-export const isCanvasInitialized = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) return false;
   
   try {
-    // Check if canvas has basic properties that would be set during initialization
-    return (
-      canvas.getWidth !== undefined &&
-      canvas.getHeight !== undefined &&
-      !initializationState.initializationInProgress &&
-      !initializationState.canvasDisposalInProgress
+    // Check that canvas has required methods
+    const isValid = (
+      typeof canvas.getWidth === 'function' &&
+      typeof canvas.getHeight === 'function' &&
+      typeof canvas.add === 'function' &&
+      typeof canvas.remove === 'function' &&
+      typeof canvas.getObjects === 'function'
     );
+    
+    if (isValid) {
+      initState.isInitialized = true;
+      initState.initializationInProgress = false;
+      logger.info('Canvas initialization validated successfully');
+      return true;
+    } else {
+      initState.errors.push('Canvas is missing required methods');
+      initState.initializationInProgress = false;
+      return false;
+    }
   } catch (error) {
-    logger.error('Error checking canvas initialization:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    initState.errors.push(`Error validating canvas: ${errorMessage}`);
+    initState.initializationInProgress = false;
     return false;
   }
 };
 
 /**
- * Get metrics about canvas initialization
+ * Handle initialization failure
+ * @param error - Error message or object
+ * @param shouldReset - Whether to reset canvas state
  */
-export const getInitializationMetrics = () => {
-  return {
-    attempts: initializationState.attemptCount,
-    maxAttempts: initializationState.maxAttempts,
-    lastAttemptTime: initializationState.lastAttemptTime,
-    isInitialized: initializationState.isInitialized,
-    errors: [...initializationState.errors]
-  };
+export const handleInitializationFailure = (error: unknown, shouldReset: boolean = false): void => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  
+  // Log the error
+  logger.error('Canvas initialization failed:', errorMessage);
+  
+  // Store the error
+  initState.errors.push(errorMessage);
+  
+  // Reset the initialization state if requested
+  initState.initializationInProgress = false;
+  
+  if (shouldReset) {
+    resetInitializationState();
+  }
+};
+
+/**
+ * Get current initialization state attempts
+ * @returns Current attempt count
+ */
+export const getInitializationAttempts = (): number => {
+  return initState.attemptCount;
+};
+
+/**
+ * Get initialization errors
+ * @returns Array of error messages
+ */
+export const getInitializationErrors = (): string[] => {
+  return [...initState.errors];
 };

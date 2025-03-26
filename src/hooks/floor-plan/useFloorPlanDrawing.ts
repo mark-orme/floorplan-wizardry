@@ -5,7 +5,7 @@
  * @module useFloorPlanDrawing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Rect, Line, Polyline, IText } from "fabric";
+import { Canvas as FabricCanvas, Rect, Line, Polyline, Text } from "fabric";
 import { FloorPlan, Wall, Room, Point } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 import { PIXELS_PER_METER } from "@/constants/numerics";
@@ -154,7 +154,7 @@ export const useFloorPlanDrawing = () => {
       
       // Add room label if enabled
       if (options.showLabels && room.name) {
-        const text = new IText(room.name, {
+        const text = new Text(room.name, {
           left: (room.bounds.x + room.bounds.width / 2) * PIXELS_PER_METER,
           top: (room.bounds.y + room.bounds.height / 2) * PIXELS_PER_METER,
           fontSize: 14,
