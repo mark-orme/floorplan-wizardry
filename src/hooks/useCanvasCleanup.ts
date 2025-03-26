@@ -14,11 +14,18 @@ export const useCanvasCleanup = () => {
   /**
    * Properly dispose of canvas resources
    */
-  const cleanupCanvas = useCallback((fabricCanvas: FabricCanvas) => {
-    if (!fabricCanvas) return;
+  const cleanupCanvas = useCallback((fabricCanvas: FabricCanvas | null) => {
+    if (!fabricCanvas) {
+      console.log("No canvas to clean up - already null");
+      return;
+    }
     
-    disposeCanvas(fabricCanvas);
-    console.log("Canvas disposed successfully");
+    try {
+      disposeCanvas(fabricCanvas);
+      console.log("Canvas disposed successfully");
+    } catch (error) {
+      console.error("Error during canvas cleanup:", error);
+    }
   }, []);
 
   return {
