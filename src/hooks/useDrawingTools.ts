@@ -166,7 +166,7 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
   // Canvas actions (clear, save)
   const {
     clearCanvas,
-    saveCanvas
+    saveCanvas: originalSaveCanvas
   } = useCanvasActions({
     fabricCanvasRef,
     historyRef,
@@ -177,6 +177,14 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
     setGia,
     saveCurrentState
   });
+  
+  // Wrap saveCanvas to return a boolean value as required by the interface
+  const saveCanvas = useCallback(() => {
+    // Call the original saveCanvas function
+    originalSaveCanvas();
+    // Return true to indicate success
+    return true;
+  }, [originalSaveCanvas]);
   
   return {
     clearDrawings,

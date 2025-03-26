@@ -49,16 +49,13 @@ export const useCanvasControllerDependencies = ({
   zoomLevel
 }: UseCanvasControllerDependenciesProps) => {
   // Initialize canvas dependencies (grid, stylus, zoom sync)
-  const { gridLayerRef, createGrid } = useCanvasDependencies({
-    fabricCanvasRef,
+  const canvasDeps = useCanvasDependencies({
     canvasRef,
-    canvasDimensions,
-    debugInfo,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage,
-    zoomLevel
+    fabricCanvasRef
   });
+  
+  // Extract the grid layer ref and create grid function
+  const { gridLayerRef, createGrid } = canvasDeps;
   
   return {
     gridLayerRef,

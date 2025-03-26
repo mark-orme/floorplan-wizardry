@@ -5,6 +5,7 @@ import { DebugInfoState } from '@/types/debugTypes';
 
 interface CanvasDependenciesProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
 }
 
 /**
@@ -14,9 +15,10 @@ interface EnhancedDebugInfoState extends DebugInfoState {
   [key: string]: unknown;
 }
 
-export const useCanvasDependencies = ({ canvasRef }: CanvasDependenciesProps) => {
+export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabricCanvasRef }: CanvasDependenciesProps) => {
   // References
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const internalFabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const fabricCanvasRef = externalFabricCanvasRef || internalFabricCanvasRef;
   const gridLayerRef = useRef<FabricObject[]>([]);
   const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
     past: [],
@@ -40,12 +42,23 @@ export const useCanvasDependencies = ({ canvasRef }: CanvasDependenciesProps) =>
     }
   });
   
+  /**
+   * Create grid function placeholder
+   * This should be implemented or imported from the grid creation module
+   */
+  const createGrid = (canvas: FabricCanvas): FabricObject[] => {
+    // This is a placeholder - in a real implementation this would create the grid
+    console.log("Creating grid - placeholder implementation");
+    return gridLayerRef.current;
+  };
+  
   return {
     canvasRef,
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
     debugInfo,
-    setDebugInfo
+    setDebugInfo,
+    createGrid
   };
 };
