@@ -21,6 +21,12 @@ export const useCanvasCleanup = () => {
     }
     
     try {
+      // Before disposing, check if the canvas is valid
+      if (typeof fabricCanvas.getObjects !== 'function') {
+        console.log("Canvas instance appears to be invalid or already disposed");
+        return;
+      }
+      
       disposeCanvas(fabricCanvas);
       console.log("Canvas disposed successfully");
     } catch (error) {
@@ -32,3 +38,4 @@ export const useCanvasCleanup = () => {
     cleanupCanvas
   };
 };
+

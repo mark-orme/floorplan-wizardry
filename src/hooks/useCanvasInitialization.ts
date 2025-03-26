@@ -226,11 +226,20 @@ export const useCanvasInitialization = ({
         initTimeoutRef.current = null;
       }
       
-      if (fabricCanvasRef.current) {
-        cleanupCanvas(fabricCanvasRef.current);
-        fabricCanvasRef.current = null;
-        canvasInitializedRef.current = false;
-        gridLayerRef.current = [];
+      // Store a local reference to the canvas before clearing it
+      const currentCanvas = fabricCanvasRef.current;
+      
+      // Set all refs to null first to avoid further operations
+      fabricCanvasRef.current = null;
+      canvasInitializedRef.current = false;
+      gridLayerRef.current = [];
+      
+      // Then dispose the canvas if it exists
+      if (currentCanvas) {
+        // Use a small delay to ensure all operations on the canvas are complete
+        setTimeout(() => {
+          cleanupCanvas(currentCanvas);
+        }, 0);
       }
     };
   }, [
@@ -258,3 +267,4 @@ export const useCanvasInitialization = ({
     historyRef
   };
 };
+

@@ -1,4 +1,3 @@
-
 /**
  * Utilities for Fabric.js canvas management
  * @module fabricCanvas
@@ -97,19 +96,29 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
     
     // As a fallback, also try to clear the DOM 
     try {
-      const canvasElement = canvas.getElement();
-      // Add null check before accessing properties
-      if (canvasElement && canvasElement.parentNode) {
+      // Safely check if the canvas element can be retrieved
+      // The error is happening here when trying to access el on undefined
+      if (canvas && typeof canvas.getElement === 'function') {
         try {
-          // Remove the canvas from DOM to prevent duplicate canvas initialization
-          canvasElement.parentNode.removeChild(canvasElement);
+          const canvasElement = canvas.getElement();
+          // Add null check before accessing properties
+          if (canvasElement && canvasElement.parentNode) {
+            try {
+              // Remove the canvas from DOM to prevent duplicate canvas initialization
+              canvasElement.parentNode.removeChild(canvasElement);
+            } catch (err) {
+              console.warn("Failed to remove canvas from DOM:", err);
+            }
+          }
         } catch (err) {
-          console.warn("Failed to remove canvas from DOM:", err);
+          // Handle the case where getElement() itself might fail
+          console.warn("Failed to get canvas element during disposal:", err);
         }
+      } else {
+        console.warn("Cannot get canvas element: getElement method not available");
       }
     } catch (err) {
-      // Handle the case where getElement() itself might fail
-      console.warn("Failed to get canvas element during disposal:", err);
+      console.warn("Error during canvas DOM cleanup:", err);
     }
     
     console.log("Canvas disposed successfully");
