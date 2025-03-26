@@ -37,7 +37,13 @@ const CanvasControllerContext = createContext<CanvasControllerContextValue | nul
 export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tool, setTool] = useState<DrawingTool>('select');
   const [gia, setGia] = useState<number>(0);
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([{ id: '0', name: 'Ground Floor', strokes: [] }]);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([{ 
+    id: '0', 
+    name: 'Ground Floor', 
+    label: 'Ground Floor', // Add the required label property
+    gia: 0, // Add the required gia property
+    strokes: [] 
+  }]);
   const [currentFloor, setCurrentFloor] = useState<number>(0);
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>('#000000');
@@ -101,6 +107,8 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
       newFloorPlans.push({
         id: `${newFloorIndex}`,
         name: `Floor ${newFloorIndex + 1}`,
+        label: `Floor ${newFloorIndex + 1}`, // Add the required label property
+        gia: 0, // Add the required gia property
         strokes: []
       });
       return newFloorPlans;
