@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 
 interface MeasurementGuideProps {
@@ -8,69 +9,58 @@ interface MeasurementGuideProps {
 }
 
 /**
- * Component that displays a guide for measurement tools and units
+ * Guide for floor plan measurements
  * @param {MeasurementGuideProps} props - Component properties
- * @returns {JSX.Element} Measurement guide component
+ * @returns {JSX.Element} MeasurementGuide component
  */
-export const MeasurementGuide = ({ onClose }: MeasurementGuideProps): JSX.Element => {
+export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) => {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 top-2"
-          onClick={onClose}
-        >
-          <X size={18} />
-        </Button>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Floor Plan Measurement Guide</DialogTitle>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-4 top-4" 
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
+        
+        <div className="space-y-4 mt-2">
+          <section>
+            <h3 className="font-semibold text-lg mb-2">Drawing to Scale</h3>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Each grid square represents 0.1 meters (10 cm)</li>
+              <li>Large grid lines appear every 1 meter</li>
+              <li>Measurements are automatically displayed while drawing</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-lg mb-2">Drawing Tips</h3>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Use the straight line tool for precise wall measurements</li>
+              <li>Lines automatically snap to the grid for accuracy</li>
+              <li>Close shapes completely to measure room areas</li>
+              <li>Use the select tool to adjust existing elements</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-lg mb-2">Gross Internal Area (GIA)</h3>
+            <p>GIA is calculated automatically based on the closed areas in your floor plan. It represents the total usable internal floor area.</p>
+          </section>
 
-        <h2 className="text-2xl font-bold mb-4">Measurement Guide</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">Drawing Tools</h3>
-            <p className="text-gray-700">
-              When using the Straight Line or Wall tools, measurements will automatically 
-              appear while drawing to show the exact distance.
-            </p>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold">Grid System</h3>
-            <p className="text-gray-700">
-              The grid system uses a 10cm (0.1m) small grid and 1m large grid. All measurements 
-              are based on real-world units:
-            </p>
-            <ul className="list-disc pl-6 mt-2">
-              <li>Small grid squares = 0.1m (10cm)</li>
-              <li>Large grid squares = 1.0m</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold">Measurement Units</h3>
-            <p className="text-gray-700">
-              All measurements are shown in meters (m) with one decimal place precision.
-              Values in parentheses () show how many 10cm grid squares the line spans.
-            </p>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold">Tips for Accurate Measurements</h3>
-            <ul className="list-disc pl-6 mt-2">
-              <li>Lines snap to grid points for precision</li>
-              <li>Use the zoom in/out tools for detailed work</li>
-              <li>Enclosed shapes show their area automatically</li>
-              <li>The Select tool allows measuring existing elements</li>
-            </ul>
-          </div>
+          <section className="pt-2">
+            <Button onClick={onClose} className="w-full">
+              Got it
+            </Button>
+          </section>
         </div>
-        
-        <div className="mt-6 text-right">
-          <Button onClick={onClose}>Close Guide</Button>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

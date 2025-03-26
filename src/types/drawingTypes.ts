@@ -25,6 +25,7 @@ export interface FloorPlan {
   rooms?: string[];
   createdAt?: Date;
   updatedAt?: Date;
+  gia?: number; // Added to match floorPlanTypes.FloorPlan
 }
 
 /**
@@ -48,20 +49,10 @@ export interface DrawingState {
   currentZoom?: number;
 }
 
-// Debug info state for tracking canvas setup
-export interface DebugInfoState {
-  dimensionsSet?: boolean;
-  canvasInitialized?: boolean;
-  gridCreated?: boolean;
-  toolsInitialized?: boolean;
-  canvasError?: string;
-  lastAction?: string;
-}
-
 /**
  * Grid creation callback type
  */
-export type GridCreationCallback = (success: boolean) => void;
+export type GridCreationCallback = (canvas: any) => any[];
 
 /**
  * Grid creation state type
@@ -71,4 +62,21 @@ export interface GridCreationState {
   attempts: number; 
   success: boolean;
   error?: string;
+  creationInProgress?: boolean;
+  consecutiveResets?: number;
+  maxConsecutiveResets?: number;
+  lastAttemptTime?: number;
+  lastCreationTime?: number;
+  throttleInterval?: number;
+  exists?: boolean;
+  safetyTimeout?: number | null;
+  totalCreations?: number;
+  maxRecreations?: number;
+  minRecreationInterval?: number;
+  lastDimensions?: any;
+  creationLock?: {
+    id: number;
+    timestamp: number;
+    isLocked: boolean;
+  };
 }

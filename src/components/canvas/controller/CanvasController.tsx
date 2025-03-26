@@ -4,7 +4,7 @@
  * Centralizes all canvas state and operations
  * @module CanvasController
  */
-import { ReactNode, createContext, useContext, useEffect } from "react";
+import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 
 // Import all the refactored hooks
 import { useCanvasControllerState } from "./useCanvasControllerState";
@@ -136,6 +136,23 @@ const useCanvasControllerHooks = () => {
     saveCurrentState
   });
 
+  // State for measurement guide
+  const [isMeasurementGuideOpen, setIsMeasurementGuideOpen] = useState(false);
+  
+  // Actions object for the Canvas component
+  const actions = {
+    handleToolChange,
+    handleUndo,
+    handleRedo,
+    handleZoom,
+    clearCanvas,
+    saveCanvas,
+    deleteSelectedObjects,
+    handleLineThicknessChange: () => {},
+    handleLineColorChange: () => {},
+    handleRetry: () => {}
+  };
+
   // Run selection mode setup when tool changes
   useEffect(() => {
     setupSelectionMode();
@@ -202,6 +219,10 @@ const useCanvasControllerHooks = () => {
     loadData
   });
   
+  // Functions for measurement guide
+  const openMeasurementGuide = () => setIsMeasurementGuideOpen(true);
+  const closeMeasurementGuide = () => setIsMeasurementGuideOpen(false);
+  
   // Return everything that the Canvas component needs
   return {
     // State
@@ -243,7 +264,15 @@ const useCanvasControllerHooks = () => {
     drawingState,
     
     // Error handling
-    handleRetry
+    handleRetry,
+    
+    // Measurement guide
+    isMeasurementGuideOpen,
+    openMeasurementGuide,
+    closeMeasurementGuide,
+    
+    // Actions grouped object
+    actions
   };
 };
 

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useCanvasController } from './canvas/controller/CanvasController';
 import { DistanceTooltip } from './DistanceTooltip';
 import { MeasurementGuide } from './MeasurementGuide';
@@ -29,12 +29,20 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     drawingState,
     lineThickness,
     lineColor,
-    actions,
-    isMeasurementGuideOpen,
-    closeMeasurementGuide
+    handleToolChange,
+    handleUndo,
+    handleRedo,
+    handleZoom,
+    clearCanvas,
+    saveCanvas,
+    deleteSelectedObjects,
+    handleLineThicknessChange,
+    handleLineColorChange,
+    handleRetry
   } = useCanvasController();
   
   const [lockDrawing, setLockDrawing] = useState(false);
+  const [isMeasurementGuideOpen, setIsMeasurementGuideOpen] = useState(false);
   
   useEffect(() => {
     if (readonly) {
@@ -76,6 +84,10 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
   
   console.log("Tooltip visibility decision:", isTooltipVisible);
   
+  const closeMeasurementGuide = () => {
+    setIsMeasurementGuideOpen(false);
+  };
+  
   // Display measurement guide dialog when requested
   if (isMeasurementGuideOpen) {
     return <MeasurementGuide onClose={closeMeasurementGuide} />;
@@ -95,7 +107,9 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         </div>
       )}
       
-      <div ref={canvasRef} className="canvas-element w-full h-full border border-gray-200 rounded-md overflow-hidden" />
+      <div className="canvas-element w-full h-full border border-gray-200 rounded-md overflow-hidden">
+        <canvas ref={canvasRef} />
+      </div>
       
       {/* Tooltip for distance measurement - only show during active drawing with line tools */}
       {isTooltipVisible && (

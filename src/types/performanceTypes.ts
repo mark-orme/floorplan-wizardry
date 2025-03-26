@@ -23,4 +23,25 @@ export interface PerformanceMetrics {
   lastOperationTime?: number;
   /** Memory usage in MB */
   memoryUsage?: number;
+  /** Timestamp when measurement started */
+  measuredSince?: number;
+}
+
+/**
+ * Canvas load times interface
+ * Used for tracking canvas initialization times
+ */
+export interface CanvasLoadTimes {
+  /** Timestamp when canvas initialization started */
+  startInitTime: number;
+  /** Timestamp when canvas was initialized */
+  canvasInitTime?: number;
+  /** Timestamp when grid was created */
+  gridCreatedTime?: number;
+  /** Timestamp when tools were initialized */
+  toolsInitTime?: number;
+  /** Timestamp when canvas was fully ready */
+  readyTime?: number;
+  /** Total initialization time in ms */
+  totalInitTime?: number;
 }

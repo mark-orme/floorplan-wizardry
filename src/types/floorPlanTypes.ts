@@ -55,6 +55,18 @@ export interface FloorPlan {
   
   /** Serialized canvas objects */
   objects?: SerializedCanvasObject[];
+  
+  /** Areas (optional) */
+  areas?: number[];
+  
+  /** Rooms (optional) */
+  rooms?: string[];
+  
+  /** Creation date */
+  createdAt?: Date;
+  
+  /** Last update date */
+  updatedAt?: Date;
 }
 
 /**
