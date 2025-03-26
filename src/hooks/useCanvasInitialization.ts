@@ -220,6 +220,9 @@ export const useCanvasInitialization = ({
     // If we got here, canvas was successfully created
     console.log("✅ Fabric canvas created successfully:", fabricCanvas.width, "x", fabricCanvas.height);
     
+    // IMPORTANT: Make sure the fabric canvas ref is updated
+    fabricCanvasRef.current = fabricCanvas;
+    
     // Set debug info for canvas initialization
     if (componentMountedRef.current) {
       setDebugInfo(prev => ({
@@ -228,9 +231,6 @@ export const useCanvasInitialization = ({
         dimensionsSet: true
       }));
     }
-    
-    // Important: make sure the fabric canvas ref is updated
-    fabricCanvasRef.current = fabricCanvas;
     
     // Initialize the brush
     setupBrush(fabricCanvas);
@@ -358,17 +358,23 @@ export const useCanvasInitialization = ({
     // Reset attempts counter on dependency changes
     initializationAttempts.current = 0;
     
-    // Wait for DOM to be fully rendered before attempting initialization
-    logger.info("Scheduling canvas initialization...");
-    initTimeoutRef.current = window.setTimeout(() => {
-      // Skip if component unmounted
+    // IMPORTANT: Use requestAnimationFrame to wait for DOM to be fully rendered
+    const waitForCanvasElement = () => {
       if (!componentMountedRef.current) return;
       
-      // Attempt initialization
+      // Check if canvas element exists and has dimensions
+      if (!canvasRef.current || canvasRef.current.offsetWidth === 0) {
+        logger.warn("Canvas not ready for initialization, waiting for next frame...");
+        requestAnimationFrame(waitForCanvasElement);
+        return;
+      }
+      
+      // Now that we have a valid canvas element, attempt initialization
+      console.log("Canvas element ready with dimensions:", 
+                  canvasRef.current.offsetWidth, "x", canvasRef.current.offsetHeight);
       const success = performInitialization();
       
       // If initialization failed, retry after a short delay (with backoff)
-      // CRITICAL CHANGE: Add additional checks to prevent infinite retry loop
       if (!success && 
           initializationAttempts.current < maxInitAttempts && 
           globalInitAttempts < MAX_GLOBAL_INIT_ATTEMPTS &&
@@ -385,7 +391,10 @@ export const useCanvasInitialization = ({
           performInitialization();
         }, delay);
       }
-    }, 500);
+    };
+    
+    // Start waiting for canvas element to be ready
+    requestAnimationFrame(waitForCanvasElement);
     
     // Clean up on unmount
     return () => {
