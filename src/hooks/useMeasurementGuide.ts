@@ -3,12 +3,18 @@ import { useState, useCallback } from 'react';
 
 /**
  * Hook for managing the measurement guide modal
- * @returns Measurement guide state and handlers
+ * @returns {Object} Measurement guide state and handler functions
  */
 export const useMeasurementGuide = () => {
+  /**
+   * State for controlling measurement guide visibility
+   */
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
   
-  // Handle closing the measurement guide
+  /**
+   * Handles closing the measurement guide
+   * @param {boolean} dontShowAgain - If true, stores preference in localStorage
+   */
   const handleCloseMeasurementGuide = useCallback((dontShowAgain: boolean) => {
     setShowMeasurementGuide(false);
     
@@ -17,7 +23,9 @@ export const useMeasurementGuide = () => {
     }
   }, []);
   
-  // Open measurement guide
+  /**
+   * Opens the measurement guide modal
+   */
   const openMeasurementGuide = useCallback(() => {
     setShowMeasurementGuide(true);
   }, []);

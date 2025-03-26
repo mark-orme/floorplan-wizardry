@@ -6,6 +6,10 @@ import { useCanvasHandlers } from '@/hooks/canvas-events/useCanvasHandlers';
 import { Canvas } from 'fabric';
 import { DrawingTool } from '@/hooks/useCanvasState';
 
+/**
+ * Tests for Canvas Zoom and Handlers functionality
+ * Verifies zoom tracking and event handling behaviors
+ */
 describe('Canvas Zoom and Handlers', () => {
   // Mock canvas and references
   let mockCanvas: Canvas & { fire?: Function };

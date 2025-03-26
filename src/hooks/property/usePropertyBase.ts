@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 /**
  * Base hook for property management operations
  * Provides shared state and authentication handling
+ * @returns {Object} Authentication state and validation helpers
  */
 export const usePropertyBase = () => {
   const [authContextError, setAuthContextError] = useState(false);
@@ -17,7 +18,7 @@ export const usePropertyBase = () => {
   
   /**
    * Check if user has valid authentication
-   * @returns boolean indicating if user can perform operations
+   * @returns {boolean} Indicates if user can perform operations
    */
   const checkAuthentication = () => {
     if (authContextError) {

@@ -6,13 +6,23 @@
 import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 
+/**
+ * Props for the useZoomStateSync hook
+ * @interface UseZoomStateSyncProps
+ */
 interface UseZoomStateSyncProps {
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current zoom level to synchronize */
   zoomLevel: number;
 }
 
 /**
  * Hook for ensuring zoom level is properly synchronized across components
+ * Triggers custom zoom events to keep UI components in sync with canvas zoom
+ * 
+ * @param {UseZoomStateSyncProps} props - Hook properties
+ * @returns {Object} Empty object as this hook only performs side effects
  */
 export const useZoomStateSync = ({
   fabricCanvasRef,

@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 
 /**
  * Hook for handling property data for the property page
+ * @param {any} user - The current authenticated user
+ * @returns {Object} Object containing property data state and handlers
  */
 export const usePropertyPageData = (user: any) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,7 +18,9 @@ export const usePropertyPageData = (user: any) => {
   const propertyManagement = usePropertyManagement();
   const { properties, isLoading: propertiesLoading, listProperties } = propertyManagement;
 
-  // Load properties when user is authenticated
+  /**
+   * Load properties when user is authenticated
+   */
   useEffect(() => {
     const loadProperties = async () => {
       if (!user) return;
@@ -35,7 +39,9 @@ export const usePropertyPageData = (user: any) => {
     }
   }, [user, hasError, listProperties]);
 
-  // Filter properties based on search term
+  /**
+   * Filter properties based on search term
+   */
   const filteredProperties = (properties || []).filter(prop => {
     if (!prop) return false;
     const searchLower = searchTerm.toLowerCase();
@@ -46,6 +52,9 @@ export const usePropertyPageData = (user: any) => {
     );
   });
 
+  /**
+   * Retry loading properties after an error
+   */
   const handleRetry = useCallback(() => {
     setHasError(false);
     setErrorMessage('');

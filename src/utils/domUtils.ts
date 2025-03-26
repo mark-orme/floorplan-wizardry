@@ -6,9 +6,10 @@
 
 /**
  * Safely get an element by ID with proper typing
- * @param id - Element ID to find
- * @param elementType - Type of HTML element expected (for TypeScript)
- * @returns The element or null if not found
+ * @param {string} id - Element ID to find
+ * @param {Function} elementType - Constructor for the expected HTML element type
+ * @returns {T|null} The element or null if not found
+ * @template T - Type of HTML element to return
  */
 export function getElementByIdSafe<T extends HTMLElement>(
   id: string,
@@ -19,8 +20,9 @@ export function getElementByIdSafe<T extends HTMLElement>(
 
 /**
  * Create a root element for mounting React components
- * @param rootId - ID of the element to use as root
- * @returns The root element or throws an error if not found
+ * @param {string} rootId - ID of the element to use as root
+ * @returns {HTMLElement} The root element
+ * @throws {Error} If the element with the given ID is not found
  */
 export function createRootElement(rootId: string): HTMLElement {
   const rootElement = getElementByIdSafe(rootId);

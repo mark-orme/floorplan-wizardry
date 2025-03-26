@@ -7,6 +7,10 @@ import { useKeyboardEvents } from '@/hooks/canvas-events/useKeyboardEvents';
 import { Canvas } from 'fabric';
 import { DrawingTool } from '@/hooks/useCanvasState';
 
+/**
+ * Tests for Canvas Event Handlers
+ * Verifies that event handlers are properly registered and cleaned up
+ */
 describe('Canvas Event Handlers', () => {
   // Mock canvas and references
   let mockCanvas: Canvas;

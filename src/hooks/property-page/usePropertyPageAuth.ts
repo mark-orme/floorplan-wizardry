@@ -6,6 +6,7 @@ import { UserRole } from '@/lib/supabase';
 
 /**
  * Hook for handling authentication state for the property page
+ * @returns {Object} Authentication state and navigation helpers
  */
 export const usePropertyPageAuth = () => {
   const navigate = useNavigate();
@@ -13,6 +14,10 @@ export const usePropertyPageAuth = () => {
   
   // Get auth context properly - always call hooks at the top level
   const { user, userRole, loading: authLoading } = useAuth();
+  
+  /**
+   * Determines if user has access to property management based on role
+   */
   const hasAccess = userRole ? [UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER, UserRole.MANAGER].includes(userRole) : false;
   
   return {
