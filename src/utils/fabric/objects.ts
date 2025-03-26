@@ -1,104 +1,148 @@
 
 /**
- * Utilities for managing canvas objects
+ * Fabric object manipulation utilities
+ * Functions for working with Fabric.js objects
  * @module fabric/objects
  */
-import { Canvas, Object as FabricObject } from "fabric";
-import logger from "../logger";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import logger from "@/utils/logger";
+import { isCanvasValid } from "./canvasValidation";
 
 /**
- * Clear objects from canvas while preserving grid
- * @param {Canvas} canvas - The Fabric canvas instance
- * @param {FabricObject[]} gridObjects - Grid objects to preserve
+ * Clear all objects from the canvas
+ * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
+ * @param {boolean} preserveGrid - Whether to preserve grid elements
+ * @returns {boolean} Whether the operation was successful
  */
-export const clearCanvasObjects = (canvas: Canvas, gridObjects: FabricObject[]): void => {
-  if (!canvas) {
-    logger.error("Cannot clear canvas: canvas is null");
-    return;
+export const clearCanvasObjects = (
+  canvas: FabricCanvas | null | undefined,
+  preserveGrid: boolean = true
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
   }
   
   try {
-    // Reduce log frequency
-    if (gridObjects.length > 0) {
-      logger.info(`Clearing canvas objects while preserving ${gridObjects.length} grid objects`);
-    }
-    
-    // Get all objects that are not grid
-    const objectsToRemove = canvas.getObjects().filter(obj => 
-      !gridObjects.includes(obj)
-    );
-    
-    // Only log if there's something to remove
-    if (objectsToRemove.length > 0) {
-      logger.info(`Found ${objectsToRemove.length} objects to remove`);
-    }
-    
-    // Remove them one by one to avoid potential issues with batch operations
-    objectsToRemove.forEach(obj => {
-      try {
-        canvas.remove(obj);
-      } catch (err) {
-        logger.warn("Error removing object:", err);
+    if (preserveGrid) {
+      // Remove all non-grid objects
+      const objects = canvas!.getObjects();
+      const toRemove = [];
+      
+      for (const obj of objects) {
+        const objectType = (obj as any).objectType;
+        if (!objectType || !objectType.includes('grid')) {
+          toRemove.push(obj);
+        }
       }
-    });
+      
+      // Remove collected objects
+      toRemove.forEach(obj => canvas!.remove(obj));
+    } else {
+      // Remove all objects including grid
+      canvas!.clear();
+    }
     
-    canvas.requestRenderAll();
+    canvas!.requestRenderAll();
+    return true;
   } catch (error) {
     logger.error("Error clearing canvas objects:", error);
+    return false;
   }
 };
 
 /**
- * Workaround for missing moveTo in Fabric.js v6+ type definitions
- * This provides a compatibility layer for the functionality
- * 
- * @param {Canvas} canvas The fabric.js canvas instance
- * @param {FabricObject} object The object to move
- * @param {number} index The index to move the object to
- * @returns {boolean} indicating success
+ * Move canvas view to a specific point (panning)
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {number} x - X coordinate to move to
+ * @param {number} y - Y coordinate to move to
+ * @param {boolean} absolute - Whether coordinates are absolute or relative
+ * @returns {boolean} Whether the operation was successful
  */
-export const canvasMoveTo = (canvas: Canvas, object: FabricObject, index: number): boolean => {
-  if (!canvas || !object) return false;
+export const canvasMoveTo = (
+  canvas: FabricCanvas | null | undefined,
+  x: number,
+  y: number,
+  absolute: boolean = true
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
+  }
   
   try {
-    // Try the native moveTo method first (will work if available)
-    if (typeof (canvas as any).moveTo === 'function') {
-      (canvas as any).moveTo(object, index);
-      return true;
+    if (absolute) {
+      // For absolute positioning, use viewportTransform directly
+      const vpt = canvas!.viewportTransform;
+      if (vpt) {
+        vpt[4] = x;
+        vpt[5] = y;
+        canvas!.requestRenderAll();
+      }
+    } else {
+      // For relative positioning, use relativePan
+      canvas!.relativePan({ x, y });
     }
     
-    // Fallback to manual reordering if moveTo is not available
-    const objects = canvas.getObjects();
-    const currentIndex = objects.indexOf(object);
-    
-    if (currentIndex === -1) return false; // Object not in canvas
-    if (currentIndex === index) return true; // Already at target position
-    
-    // Remove from current position and insert at new position
-    canvas.remove(object);
-    
-    // Get updated list of objects
-    const updatedObjects = canvas.getObjects();
-    
-    // Calculate actual insert position based on current objects
-    const insertIndex = Math.min(index, updatedObjects.length);
-    
-    // Reconstruct the objects array with the object at the new position
-    const newObjects = [
-      ...updatedObjects.slice(0, insertIndex),
-      object,
-      ...updatedObjects.slice(insertIndex)
-    ];
-    
-    // Clear and re-add all objects in the new order
-    canvas.clear();
-    newObjects.forEach(obj => canvas.add(obj));
-    
-    // Use requestRenderAll instead of renderAll for Fabric.js v6 compatibility
-    canvas.requestRenderAll();
     return true;
   } catch (error) {
-    logger.error("Error in canvasMoveTo:", error);
+    logger.error("Error moving canvas view:", error);
+    return false;
+  }
+};
+
+/**
+ * Group objects together
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {FabricObject[]} objects - Objects to group
+ * @param {Object} options - Group options
+ * @returns {FabricObject | null} Created group or null if failed
+ */
+export const groupObjects = (
+  canvas: FabricCanvas | null | undefined,
+  objects: FabricObject[],
+  options: Record<string, any> = {}
+): FabricObject | null => {
+  if (!isCanvasValid(canvas) || !objects || objects.length === 0) {
+    return null;
+  }
+  
+  try {
+    // Remove objects from canvas first
+    objects.forEach(obj => canvas!.remove(obj));
+    
+    // Create group with the objects
+    const group = new fabric.Group(objects, options);
+    
+    // Add group to canvas
+    canvas!.add(group);
+    canvas!.requestRenderAll();
+    
+    return group;
+  } catch (error) {
+    logger.error("Error grouping objects:", error);
+    return null;
+  }
+};
+
+/**
+ * Bring object to front of canvas
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {FabricObject} object - Object to bring to front
+ * @returns {boolean} Whether the operation was successful
+ */
+export const bringToFront = (
+  canvas: FabricCanvas | null | undefined,
+  object: FabricObject
+): boolean => {
+  if (!isCanvasValid(canvas) || !object) {
+    return false;
+  }
+  
+  try {
+    canvas!.bringToFront(object);
+    canvas!.requestRenderAll();
+    return true;
+  } catch (error) {
+    logger.error("Error bringing object to front:", error);
     return false;
   }
 };

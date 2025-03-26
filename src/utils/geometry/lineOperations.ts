@@ -1,127 +1,105 @@
 
-import { Point } from '@/types/geometryTypes';
-import { DISTANCE_PRECISION, GRID_SPACING, FLOATING_POINT_TOLERANCE } from './constants';
+/**
+ * Line operation utilities module
+ * Functions for calculating and manipulating lines
+ * @module geometry/lineOperations
+ */
+import { Point } from '@/types/drawingTypes';
+import { FLOATING_POINT_TOLERANCE, GRID_SPACING, DISTANCE_PRECISION } from './constants';
 
 /**
- * Calculate the distance between two points in meters
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @returns {number} - Distance in meters
+ * Calculate distance between two points
+ * @param {Point} p1 - First point
+ * @param {Point} p2 - Second point
+ * @returns {number} Distance between points in the same units as input
  */
-export const calculateDistance = (point1: Point, point2: Point): number => {
-  if (!point1 || !point2) {
-    console.warn("Invalid points in calculateDistance", { point1, point2 });
-    return 0;
+export const calculateDistance = (p1: Point, p2: Point): number => {
+  if (!p1 || !p2) return 0;
+  
+  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+};
+
+/**
+ * Calculate distance with higher precision
+ * Used for critical measurements where precision is important
+ * @param {Point} p1 - First point
+ * @param {Point} p2 - Second point
+ * @returns {number} Precise distance between points
+ */
+export const calculatePreciseDistance = (p1: Point, p2: Point): number => {
+  if (!p1 || !p2) return 0;
+  
+  // Use higher precision calculation
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.hypot(dx, dy);
+};
+
+/**
+ * Format a distance measurement for display
+ * @param {number} distance - Distance value to format
+ * @param {number} precision - Number of decimal places
+ * @returns {string} Formatted distance string with units
+ */
+export const formatDistance = (distance: number, precision: number = DISTANCE_PRECISION): string => {
+  if (distance === null || distance === undefined || isNaN(distance)) return "0m";
+  
+  // Format based on size
+  if (distance < 0.1) {
+    // Convert to cm for very small distances
+    return `${(distance * 100).toFixed(0)}cm`;
+  } else {
+    // Use meters with appropriate precision
+    return `${distance.toFixed(precision)}m`;
   }
-  
-  const dx = point2.x - point1.x;
-  const dy = point2.y - point1.y;
-  
-  // Calculate the Euclidean distance
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  // Debug log for distance calculation
-  console.log("Distance calculation:", { point1, point2, distance });
-  
-  return distance;
 };
 
 /**
- * Format a distance value with proper precision for display
- * @param {number} distance - Distance in meters
- * @returns {string} - Formatted distance string with 1 decimal place
+ * Check if a point is an exact multiple of the grid spacing
+ * Used for checking if a point perfectly aligns with the grid
+ * @param {number} value - Coordinate value to check
+ * @returns {boolean} Whether value is an exact grid multiple
  */
-export const formatDistance = (distance: number): string => {
-  if (isNaN(distance) || distance === undefined) {
-    console.warn("Invalid distance value in formatDistance:", distance);
-    return "0.0";
-  }
+export const isExactGridMultiple = (value: number): boolean => {
+  const ratio = value / GRID_SPACING;
+  const roundedRatio = Math.round(ratio);
   
-  // Always show 1 decimal place for wall measurements
-  const formatted = distance.toFixed(1);
-  
-  // For debugging
-  console.log("Formatting distance:", { raw: distance, formatted });
-  
-  return formatted;
+  // Check if very close to an integer multiple
+  return Math.abs(ratio - roundedRatio) < FLOATING_POINT_TOLERANCE;
 };
 
 /**
- * Calculate the midpoint between two points
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @returns {Point} - Midpoint coordinates
+ * Calculate angle between two points in degrees
+ * @param {Point} p1 - First point (start)
+ * @param {Point} p2 - Second point (end)
+ * @returns {number} Angle in degrees (0-360)
  */
-export const calculateMidpoint = (point1: Point, point2: Point): Point => {
-  if (!point1 || !point2) {
-    console.warn("Invalid points in calculateMidpoint", { point1, point2 });
-    return { x: 0, y: 0 };
-  }
+export const calculateAngle = (p1: Point, p2: Point): number => {
+  if (!p1 || !p2) return 0;
   
-  const midpoint = {
-    x: (point1.x + point2.x) / 2,
-    y: (point1.y + point2.y) / 2
-  };
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
   
-  // Debug log for midpoint calculation
-  console.log("Midpoint calculation:", { point1, point2, midpoint });
-  
-  return midpoint;
-};
-
-/**
- * Check if a line is exactly on the grid
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @returns {boolean} - True if the line follows grid multiples
- */
-export const isExactGridMultiple = (point1: Point, point2: Point): boolean => {
-  // Check if both points are at grid intersections
-  const isPoint1OnGrid = 
-    Math.abs(point1.x % GRID_SPACING) < FLOATING_POINT_TOLERANCE &&
-    Math.abs(point1.y % GRID_SPACING) < FLOATING_POINT_TOLERANCE;
-  
-  const isPoint2OnGrid = 
-    Math.abs(point2.x % GRID_SPACING) < FLOATING_POINT_TOLERANCE &&
-    Math.abs(point2.y % GRID_SPACING) < FLOATING_POINT_TOLERANCE;
-  
-  return isPoint1OnGrid && isPoint2OnGrid;
-};
-
-/**
- * Calculate the angle of a line in degrees
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @returns {number} - Angle in degrees (0-360)
- */
-export const calculateAngle = (point1: Point, point2: Point): number => {
-  const dx = point2.x - point1.x;
-  const dy = point2.y - point1.y;
-  
-  // Calculate angle in radians and convert to degrees
+  // Calculate angle in radians, then convert to degrees
   let angle = Math.atan2(dy, dx) * (180 / Math.PI);
   
   // Normalize to 0-360 range
-  if (angle < 0) {
-    angle += 360;
-  }
+  if (angle < 0) angle += 360;
   
   return angle;
 };
 
 /**
- * Calculate distance with a specific precision
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @param {number} precision - Number of decimal places
- * @returns {number} - Distance with specific precision
+ * Calculate the midpoint between two points
+ * @param {Point} p1 - First point
+ * @param {Point} p2 - Second point
+ * @returns {Point} The midpoint between p1 and p2
  */
-export const calculatePreciseDistance = (
-  point1: Point, 
-  point2: Point, 
-  precision: number = DISTANCE_PRECISION
-): number => {
-  const distance = calculateDistance(point1, point2);
-  const factor = Math.pow(10, precision);
-  return Math.round(distance * factor) / factor;
+export const calculateMidpoint = (p1: Point, p2: Point): Point => {
+  if (!p1 || !p2) return { x: 0, y: 0 };
+  
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
+  };
 };

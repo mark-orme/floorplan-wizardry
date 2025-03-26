@@ -1,189 +1,184 @@
 
 /**
- * Utilities for canvas cleanup and disposal
+ * Fabric canvas cleanup utilities
+ * Functions for cleaning up and disposing canvas resources
  * @module fabric/canvasCleanup
  */
-import { Canvas, Object as FabricObject } from "fabric";
-import { safelyGetCanvasElement, markCanvasAsDisposed, isCanvasValid } from "./canvasValidation";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import logger from "@/utils/logger";
+import { isCanvasValid, safelyGetCanvasElement } from "./canvasValidation";
 
-// State tracking for cleanup operations
-const cleanupState = {
-  disposalInProgress: false
+/**
+ * State tracker for canvas cleanup
+ */
+const canvasStateTracker = {
+  disposeCount: 0,
+  cleanupCount: 0
 };
 
 /**
- * Forcibly clean a canvas element to allow reinitialization
- * @param {HTMLCanvasElement|null} element - The canvas element to clean
- * @returns {boolean} Whether cleaning was successful
+ * Reset canvas state tracker
  */
-export const forceCleanCanvasElement = (element: HTMLCanvasElement | null): boolean => {
-  if (!element) return false;
+export const resetCanvasStateTracker = (): void => {
+  canvasStateTracker.disposeCount = 0;
+  canvasStateTracker.cleanupCount = 0;
+};
+
+/**
+ * Safely dispose a Fabric canvas
+ * Properly cleans up resources and event listeners
+ * @param {FabricCanvas | null | undefined} canvas - Canvas to dispose
+ * @returns {boolean} Whether the canvas was successfully disposed
+ */
+export const disposeCanvas = (
+  canvas: FabricCanvas | null | undefined
+): boolean => {
+  if (!canvas) {
+    return false;
+  }
   
   try {
-    // Remove Fabric's data attributes
-    element.removeAttribute('data-fabric');
-    element.removeAttribute('data-fabric-initialized');
+    // Check if already disposed
+    if ((canvas as any)._isDisposed === true) {
+      return true;
+    }
     
-    // Remove all data attributes just to be safe
-    Array.from(element.attributes)
-      .filter(attr => attr.name.startsWith('data-'))
-      .forEach(attr => {
-        try {
-          element.removeAttribute(attr.name);
-        } catch (err) {
-          // Ignore errors removing attributes
-        }
-      });
+    // Clean up objects
+    canvas.clear();
     
-    // Reset the width/height style attributes
-    element.style.width = '';
-    element.style.height = '';
+    // Remove event listeners
+    canvas.dispose();
     
+    // Mark as disposed
+    (canvas as any)._isDisposed = true;
+    
+    // Track disposal
+    canvasStateTracker.disposeCount++;
+    
+    logger.info(`Canvas disposed successfully (total: ${canvasStateTracker.disposeCount})`);
     return true;
   } catch (error) {
-    console.error("Error cleaning canvas element:", error);
+    logger.error("Error disposing canvas:", error);
     return false;
   }
 };
 
 /**
- * Properly dispose the canvas instance to prevent memory leaks
- * @param {Canvas|null} canvas - The Fabric canvas instance to dispose
+ * Force clean a canvas element directly
+ * Used for emergency cleanup when Fabric methods fail
+ * @param {HTMLCanvasElement | null | undefined} canvasElement - Canvas element to clean
+ * @returns {boolean} Whether the canvas was successfully cleaned
  */
-export const disposeCanvas = (canvas: Canvas | null): void => {
-  if (!canvas) {
-    console.log("No canvas to dispose");
-    return;
+export const forceCleanCanvasElement = (
+  canvasElement: HTMLCanvasElement | null | undefined
+): boolean => {
+  if (!canvasElement) {
+    return false;
   }
-  
-  // Check if disposal is already in progress
-  if (cleanupState.disposalInProgress) {
-    console.log("Canvas disposal already in progress, skipping");
-    return;
-  }
-  
-  cleanupState.disposalInProgress = true;
-  
-  // Set a flag to track if we've successfully disposed
-  let disposedSuccessfully = false;
   
   try {
-    // First check if canvas is valid
-    if (!isCanvasValid(canvas)) {
-      console.log("Canvas appears to be invalid or already disposed");
-      cleanupState.disposalInProgress = false;
-      return;
+    // Clear canvas with native API
+    const ctx = canvasElement.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     }
     
-    // Get the canvas element before disposal (needed for DOM cleanup)
-    const canvasElement = safelyGetCanvasElement(canvas);
-    
-    // Safely remove all objects first
-    try {
-      const objects = [...canvas.getObjects()];
-      objects.forEach(obj => {
-        try {
-          canvas.remove(obj);
-        } catch (err) {
-          // Silently fail for individual object removals
-        }
-      });
-    } catch (err) {
-      console.warn("Error removing canvas objects:", err);
+    // Remove all event listeners
+    const newCanvas = canvasElement.cloneNode(false) as HTMLCanvasElement;
+    if (canvasElement.parentNode) {
+      canvasElement.parentNode.replaceChild(newCanvas, canvasElement);
     }
     
-    // Safe approach to disposal - prevent issues with Fabric.js internals
+    // Track cleanup
+    canvasStateTracker.cleanupCount++;
+    
+    logger.info(`Canvas element force cleaned (total: ${canvasStateTracker.cleanupCount})`);
+    return true;
+  } catch (error) {
+    logger.error("Error force cleaning canvas element:", error);
+    return false;
+  }
+};
+
+/**
+ * Emergency cleanup for a Fabric canvas
+ * Attempts multiple strategies for thorough cleanup
+ * @param {FabricCanvas | null | undefined} canvas - Canvas to clean up
+ * @returns {boolean} Whether any cleanup was successful
+ */
+export const emergencyCanvasCleanup = (
+  canvas: FabricCanvas | null | undefined
+): boolean => {
+  if (!canvas) {
+    return false;
+  }
+  
+  let success = false;
+  
+  // Try safe disposal first
+  if (isCanvasValid(canvas)) {
     try {
-      // First, remove all event listeners
+      // Remove all objects
+      canvas.clear();
+      
+      // Remove event handlers
       canvas.off();
       
-      // Mark the canvas as disposed
-      markCanvasAsDisposed(canvas);
-      
-      // Finally dispose the canvas
+      // Attempt dispose
       canvas.dispose();
       
-      // Mark flag since we successfully disposed the canvas
-      disposedSuccessfully = true;
-      
-      // If we got the element earlier, force clean it
-      if (canvasElement) {
-        forceCleanCanvasElement(canvasElement);
-      }
-    } catch (err) {
-      console.warn("Standard canvas disposal failed:", err);
-      
-      // Even if there's an error, we want to try alternate approaches
-      try {
-        // Try to access and force clean the canvas element
-        if (canvasElement) {
-          forceCleanCanvasElement(canvasElement);
-          disposedSuccessfully = true;
-        }
-      } catch (domErr) {
-        console.warn("DOM cleanup also failed:", domErr);
-      }
+      success = true;
+    } catch (error) {
+      logger.error("Safe disposal failed:", error);
     }
-    
-    if (disposedSuccessfully) {
-      console.log("Canvas disposed successfully");
-    } else {
-      console.warn("Canvas may not have been fully disposed");
-    }
-  } catch (error) {
-    console.error("Error disposing canvas:", error);
-  } finally {
-    cleanupState.disposalInProgress = false;
   }
+  
+  // Force clean the canvas element if we have access to it
+  const canvasElement = safelyGetCanvasElement(canvas);
+  if (canvasElement) {
+    success = forceCleanCanvasElement(canvasElement) || success;
+  }
+  
+  // Mark as disposed
+  (canvas as any)._isDisposed = true;
+  
+  return success;
 };
 
 /**
- * Clear objects from canvas while preserving grid
- * @param {Canvas} canvas - The Fabric canvas instance
- * @param {FabricObject[]} gridObjects - Grid objects to preserve
+ * Remove specific objects from canvas
+ * Safely removes objects matching a predicate
+ * @param {FabricCanvas | null | undefined} canvas - Canvas to remove objects from
+ * @param {Function} predicate - Function to determine which objects to remove
+ * @returns {number} Number of objects removed
  */
-export const clearCanvasObjects = (canvas: Canvas, gridObjects: FabricObject[]): void => {
-  if (!canvas) {
-    console.error("Cannot clear canvas: canvas is null");
-    return;
+export const removeCanvasObjectsByPredicate = (
+  canvas: FabricCanvas | null | undefined,
+  predicate: (obj: FabricObject) => boolean
+): number => {
+  if (!isCanvasValid(canvas)) {
+    return 0;
   }
   
   try {
-    // Reduce log frequency
-    if (gridObjects.length > 0) {
-      console.log(`Clearing canvas objects while preserving ${gridObjects.length} grid objects`);
-    }
+    const objects = canvas!.getObjects();
+    let removedCount = 0;
     
-    // Get all objects that are not grid
-    const objectsToRemove = canvas.getObjects().filter(obj => 
-      !gridObjects.includes(obj)
-    );
-    
-    // Only log if there's something to remove
-    if (objectsToRemove.length > 0) {
-      console.log(`Found ${objectsToRemove.length} objects to remove`);
-    }
-    
-    // Remove them one by one to avoid potential issues with batch operations
-    objectsToRemove.forEach(obj => {
-      try {
-        canvas.remove(obj);
-      } catch (err) {
-        console.warn("Error removing object:", err);
+    // Remove objects in reverse order to avoid index issues
+    for (let i = objects.length - 1; i >= 0; i--) {
+      if (predicate(objects[i])) {
+        canvas!.remove(objects[i]);
+        removedCount++;
       }
-    });
+    }
     
-    canvas.requestRenderAll();
+    if (removedCount > 0) {
+      canvas!.requestRenderAll();
+    }
+    
+    return removedCount;
   } catch (error) {
-    console.error("Error clearing canvas objects:", error);
+    logger.error("Error removing canvas objects:", error);
+    return 0;
   }
-};
-
-/**
- * Reset the canvas state tracker
- * This is useful if the app gets into a bad state
- */
-export const resetCanvasStateTracker = (): void => {
-  cleanupState.disposalInProgress = false;
-  console.log("Canvas state tracker has been reset");
 };

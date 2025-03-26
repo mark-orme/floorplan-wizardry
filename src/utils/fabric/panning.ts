@@ -1,109 +1,195 @@
 
 /**
- * Utilities for canvas panning functionality
+ * Fabric panning utilities
+ * Functions for enabling and managing canvas panning
  * @module fabric/panning
  */
-import { Canvas, TPointerEvent, TPointerEventInfo } from "fabric";
-import logger from "../logger";
+import { Canvas as FabricCanvas, TPointerEventInfo, TPointerEvent } from "fabric";
+import logger from "@/utils/logger";
+import { isCanvasValid } from "./canvasValidation";
 
 /**
- * Panning state interface
+ * Handler data for panning
+ * @interface PanHandlers
  */
-interface PanningState {
-  isPanning: boolean;
-  lastPosX: number;
-  lastPosY: number;
+interface PanHandlers {
+  /** Mouse down handler */
+  mouseDown: (e: TPointerEventInfo<TPointerEvent>) => void;
+  /** Mouse move handler */
+  mouseMove: (e: TPointerEventInfo<TPointerEvent>) => void;
+  /** Mouse up handler */
+  mouseUp: () => void;
 }
 
-// Panning state tracking
-const panningState: PanningState = {
-  isPanning: false,
-  lastPosX: 0,
-  lastPosY: 0
-};
-
 /**
- * Enable panning mode on canvas
- * @param {Canvas} canvas - The Fabric canvas instance
+ * Enable panning on a canvas
+ * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
+ * @param {string} panKey - Key to hold for panning (e.g., "space")
+ * @returns {boolean} Whether panning was successfully enabled
  */
-export const enablePanning = (canvas: Canvas): void => {
-  if (!canvas) return;
+export const enablePanning = (
+  canvas: FabricCanvas | null | undefined,
+  panKey: string = "space"
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
+  }
   
-  // Store original values to restore later
-  const originalSelection = canvas.selection;
-  
-  // Disable selection during panning
-  canvas.selection = false;
-  
-  // Set panning cursor
-  canvas.defaultCursor = 'grab';
-  canvas.hoverCursor = 'grab';
-  
-  // Setup mouse down handler for panning
-  const mouseDownHandler = (opt: TPointerEventInfo<TPointerEvent>) => {
-    const evt = opt.e as MouseEvent;
-    panningState.isPanning = true;
-    panningState.lastPosX = evt.clientX;
-    panningState.lastPosY = evt.clientY;
-    canvas.defaultCursor = 'grabbing';
-    canvas.hoverCursor = 'grabbing';
-  };
-  
-  // Setup mouse move handler for panning
-  const mouseMoveHandler = (opt: TPointerEventInfo<TPointerEvent>) => {
-    if (panningState.isPanning) {
-      const evt = opt.e as MouseEvent;
-      const deltaX = evt.clientX - panningState.lastPosX;
-      const deltaY = evt.clientY - panningState.lastPosY;
-      
-      // Update viewport position using fabric's point structure
-      canvas.relativePan({ x: deltaX, y: deltaY } as any);
-      
-      // Update last position
-      panningState.lastPosX = evt.clientX;
-      panningState.lastPosY = evt.clientY;
-      
-      // Force render
-      canvas.requestRenderAll();
+  try {
+    // Check if panning is already enabled
+    if ((canvas as any)._panningEnabled) {
+      return true;
     }
-  };
-  
-  // Setup mouse up handler to end panning
-  const mouseUpHandler = () => {
-    panningState.isPanning = false;
-    canvas.defaultCursor = 'grab';
-    canvas.hoverCursor = 'grab';
     
-    // Restore original settings
-    canvas.selection = originalSelection;
-  };
-  
-  // Add event listeners (with proper type casting for Fabric.js v6)
-  canvas.on('mouse:down', mouseDownHandler as any);
-  canvas.on('mouse:move', mouseMoveHandler as any);
-  canvas.on('mouse:up', mouseUpHandler);
-  
-  logger.info("Panning mode enabled");
+    let isPanning = false;
+    let lastPosX = 0;
+    let lastPosY = 0;
+    let isPanKeyDown = false;
+    
+    // Keyboard event handlers
+    const keyDownHandler = (e: KeyboardEvent) => {
+      if (e.key === panKey) {
+        isPanKeyDown = true;
+        canvas!.defaultCursor = 'grab';
+      }
+    };
+    
+    const keyUpHandler = (e: KeyboardEvent) => {
+      if (e.key === panKey) {
+        isPanKeyDown = false;
+        canvas!.defaultCursor = 'default';
+      }
+    };
+    
+    // Mouse event handlers for panning
+    const mouseDown = (e: TPointerEventInfo<TPointerEvent>) => {
+      if (isPanKeyDown || canvas!.isDrawingMode === false) {
+        isPanning = true;
+        lastPosX = e.pointer!.x;
+        lastPosY = e.pointer!.y;
+        canvas!.defaultCursor = 'grabbing';
+      }
+    };
+    
+    const mouseMove = (e: TPointerEventInfo<TPointerEvent>) => {
+      if (isPanning) {
+        // Calculate how much to move the canvas
+        const deltaX = e.pointer!.x - lastPosX;
+        const deltaY = e.pointer!.y - lastPosY;
+        
+        // Update last position
+        lastPosX = e.pointer!.x;
+        lastPosY = e.pointer!.y;
+        
+        // Move the canvas
+        const vpt = canvas!.viewportTransform;
+        if (vpt) {
+          vpt[4] += deltaX;
+          vpt[5] += deltaY;
+          canvas!.requestRenderAll();
+          
+          // Fire custom event for panning
+          canvas!.fire('panning', { x: deltaX, y: deltaY });
+        }
+      }
+    };
+    
+    const mouseUp = () => {
+      isPanning = false;
+      canvas!.defaultCursor = isPanKeyDown ? 'grab' : 'default';
+    };
+    
+    // Add event listeners
+    canvas!.on('mouse:down', mouseDown);
+    canvas!.on('mouse:move', mouseMove);
+    canvas!.on('mouse:up', mouseUp);
+    
+    // Add keyboard event listeners
+    window.addEventListener('keydown', keyDownHandler);
+    window.addEventListener('keyup', keyUpHandler);
+    
+    // Store handlers for cleanup
+    (canvas as any)._panHandlers = {
+      mouseDown,
+      mouseMove,
+      mouseUp,
+      keyDown: keyDownHandler,
+      keyUp: keyUpHandler
+    };
+    
+    // Mark panning as enabled
+    (canvas as any)._panningEnabled = true;
+    
+    logger.info("Panning enabled on canvas");
+    return true;
+  } catch (error) {
+    logger.error("Error enabling panning:", error);
+    return false;
+  }
 };
 
 /**
- * Disable panning mode on canvas
- * @param {Canvas} canvas - The Fabric canvas instance
+ * Disable panning on a canvas
+ * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
+ * @returns {boolean} Whether panning was successfully disabled
  */
-export const disablePanning = (canvas: Canvas): void => {
-  if (!canvas) return;
+export const disablePanning = (
+  canvas: FabricCanvas | null | undefined
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
+  }
   
-  // Reset cursor
-  canvas.defaultCursor = 'default';
-  canvas.hoverCursor = 'move';
+  try {
+    // Check if panning is enabled
+    if (!(canvas as any)._panningEnabled) {
+      return true;
+    }
+    
+    // Get handlers
+    const handlers = (canvas as any)._panHandlers;
+    
+    if (handlers) {
+      // Remove canvas event listeners
+      canvas!.off('mouse:down', handlers.mouseDown);
+      canvas!.off('mouse:move', handlers.mouseMove);
+      canvas!.off('mouse:up', handlers.mouseUp);
+      
+      // Remove keyboard event listeners
+      window.removeEventListener('keydown', handlers.keyDown);
+      window.removeEventListener('keyup', handlers.keyUp);
+      
+      // Remove handler references
+      delete (canvas as any)._panHandlers;
+      
+      // Mark panning as disabled
+      (canvas as any)._panningEnabled = false;
+      
+      // Reset cursor
+      canvas!.defaultCursor = 'default';
+      
+      logger.info("Panning disabled on canvas");
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    logger.error("Error disabling panning:", error);
+    return false;
+  }
+};
+
+/**
+ * Check if panning is enabled on a canvas
+ * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
+ * @returns {boolean} Whether panning is enabled
+ */
+export const isPanningEnabled = (
+  canvas: FabricCanvas | null | undefined
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
+  }
   
-  // Remove all mouse event handlers
-  canvas.off('mouse:down');
-  canvas.off('mouse:move');
-  canvas.off('mouse:up');
-  
-  // Reset panning state
-  panningState.isPanning = false;
-  
-  logger.info("Panning mode disabled");
+  return (canvas as any)._panningEnabled === true;
 };

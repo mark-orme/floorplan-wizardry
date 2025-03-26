@@ -1,177 +1,92 @@
 
 /**
- * Sentry utility functions for consistent error tracking across the application
+ * Utility functions for error reporting to Sentry
  * @module sentryUtils
  */
-import * as Sentry from "@sentry/react";
 
 /**
- * Interface for error capturing options
+ * Options for error tracking
  * @interface CaptureErrorOptions
  */
 interface CaptureErrorOptions {
-  /** Tags to attach to the error */
+  /** Tags for categorizing the error */
   tags?: Record<string, string>;
-  /** Additional context data */
-  extra?: Record<string, any>;
+  /** Additional context information */
+  extra?: Record<string, unknown>;
   /** User information */
   user?: {
     id?: string;
     email?: string;
     username?: string;
   };
-  /** Error level */
-  level?: Sentry.SeverityLevel;
+  /** Level of the error */
+  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
 }
 
 /**
- * Capture an error with Sentry
- * 
- * @param {unknown} error - The error object to capture
- * @param {string} context - Context description of where the error occurred
- * @param {CaptureErrorOptions} options - Additional options for error tracking
+ * Capture and report an error to Sentry
+ * @param {unknown} error - The error to capture
+ * @param {string} source - Source of the error 
+ * @param {CaptureErrorOptions} options - Additional options for error reporting
  */
 export const captureError = (
-  error: unknown, 
-  context: string,
+  error: unknown,
+  source: string = 'unknown',
   options: CaptureErrorOptions = {}
 ): void => {
-  const { tags, extra, user, level = "error" } = options;
+  console.error(`[${source}] Error:`, error);
   
-  // Set scope with additional information
-  Sentry.withScope((scope) => {
-    // Add context as tag
-    scope.setTag("context", context);
-    
-    // Add any additional tags
-    if (tags) {
-      Object.entries(tags).forEach(([key, value]) => {
-        scope.setTag(key, value);
-      });
-    }
-    
-    // Add extra context data
-    if (extra) {
-      Object.entries(extra).forEach(([key, value]) => {
-        scope.setExtra(key, value);
-      });
-    }
-    
-    // Add user context if available
-    if (user) {
-      scope.setUser(user);
-    }
-    
-    // Set the severity level
-    scope.setLevel(level);
-    
-    // Capture the exception
-    if (error instanceof Error) {
-      Sentry.captureException(error);
-    } else {
-      // If it's not an Error object, create one to capture the stack trace
-      const normalizedError = new Error(typeof error === 'string' ? error : 'Unknown error');
-      // Add the original error as context
-      scope.setExtra('originalError', error);
-      Sentry.captureException(normalizedError);
-    }
-  });
-  
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`[${context}]`, error);
+  // In development, log the error with options
+  if (import.meta.env.DEV) {
+    console.groupCollapsed(`Error details (${source}):`);
+    console.error('Error:', error);
+    console.info('Tags:', options.tags || {});
+    console.info('Extra:', options.extra || {});
+    console.info('User:', options.user || {});
+    console.groupEnd();
   }
+  
+  // When Sentry is added, uncomment this code
+  /*
+  if (typeof window.Sentry !== 'undefined') {
+    window.Sentry.captureException(error, {
+      tags: { 
+        ...options.tags,
+        source
+      },
+      extra: options.extra,
+      user: options.user,
+      level: options.level || 'error'
+    });
+  }
+  */
 };
 
 /**
- * Capture a message with Sentry
- * 
+ * Capture a message to Sentry
  * @param {string} message - The message to capture
- * @param {Sentry.SeverityLevel} level - Severity level of the message
- * @param {CaptureErrorOptions} options - Additional options for the message
+ * @param {string} source - Source of the message
+ * @param {CaptureErrorOptions} options - Additional options for message reporting
  */
 export const captureMessage = (
   message: string,
-  level: Sentry.SeverityLevel = "info",
+  source: string = 'unknown',
   options: CaptureErrorOptions = {}
 ): void => {
-  const { tags, extra, user } = options;
+  console.info(`[${source}] Message:`, message);
   
-  // Set scope with additional information
-  Sentry.withScope((scope) => {
-    // Add any tags
-    if (tags) {
-      Object.entries(tags).forEach(([key, value]) => {
-        scope.setTag(key, value);
-      });
-    }
-    
-    // Add extra context data
-    if (extra) {
-      Object.entries(extra).forEach(([key, value]) => {
-        scope.setExtra(key, value);
-      });
-    }
-    
-    // Add user context if available
-    if (user) {
-      scope.setUser(user);
-    }
-    
-    // Set the severity level
-    scope.setLevel(level);
-    
-    // Capture the message
-    Sentry.captureMessage(message);
-  });
-  
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    const logMethod = level === 'error' ? console.error :
-                      level === 'warning' ? console.warn :
-                      level === 'debug' ? console.debug :
-                      console.info;
-    
-    logMethod(`[Sentry ${level}] ${message}`);
-  }
-};
-
-/**
- * Create a transaction for performance monitoring
- * 
- * @param {string} name - Transaction name
- * @param {string} op - Operation type
- * @returns {Sentry.Transaction | undefined} Transaction object
- */
-export const startTransaction = (
-  name: string,
-  op: string
-): Sentry.Transaction | undefined => {
-  try {
-    return Sentry.startTransaction({
-      name,
-      op
+  // When Sentry is added, uncomment this code
+  /*
+  if (typeof window.Sentry !== 'undefined') {
+    window.Sentry.captureMessage(message, {
+      tags: { 
+        ...options.tags,
+        source
+      },
+      extra: options.extra,
+      user: options.user,
+      level: options.level || 'info'
     });
-  } catch (error) {
-    console.error('Failed to start Sentry transaction:', error);
-    return undefined;
   }
+  */
 };
-
-/**
- * Set user information in Sentry
- * 
- * @param {Object} user - User information
- */
-export const setUser = (user: {
-  id?: string;
-  email?: string;
-  username?: string;
-} | null): void => {
-  if (user) {
-    Sentry.setUser(user);
-  } else {
-    Sentry.setUser(null);
-  }
-};
-

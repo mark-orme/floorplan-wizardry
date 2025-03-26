@@ -1,79 +1,62 @@
 
 /**
- * Hook for tracking canvas and grid load times
+ * Custom hook for tracking canvas load times
+ * Measures various phases of canvas initialization
  * @module useLoadTimeTracker
  */
-import { useState, useRef, useCallback } from "react";
-import { type CanvasLoadTimes } from "@/types/performanceTypes";
+import { useState, useCallback } from "react";
+import type { CanvasLoadTimes } from "@/types/performanceTypes";
 
 /**
- * Hook for tracking canvas initialization and grid creation times
- * @returns Load time tracking state and functions
+ * Hook for tracking and managing canvas load times
+ * @returns Load time tracking state and marker functions
  */
 export const useLoadTimeTracker = () => {
+  // Initialize load times state with start time
   const [loadTimes, setLoadTimes] = useState<CanvasLoadTimes>({
     startInitTime: performance.now(),
-    canvasInitTime: 0,
-    gridCreatedTime: 0,
-    toolsInitTime: 0,
-    readyTime: 0,
-    totalInitTime: 0,
-    canvasReady: false,
-    gridCreated: false,
-    startTime: performance.now()
   });
-  
-  // Track if grid creation has been marked already
-  const gridCreatedRef = useRef(false);
 
   /**
-   * Mark the canvas as ready and record the time
+   * Mark when canvas is ready for interaction
+   * Calculates total initialization time
    */
   const markCanvasReady = useCallback(() => {
-    if (!loadTimes.canvasReady) {
-      const timeElapsed = performance.now() - (loadTimes.startTime || loadTimes.startInitTime);
-      setLoadTimes(prev => ({ 
-        ...prev, 
-        canvasReady: true,
-        canvasInitEnd: timeElapsed,
-        totalLoadTime: timeElapsed
-      }));
-      console.log(`Canvas initialized in ${timeElapsed}ms`);
-    }
-  }, [loadTimes.canvasReady, loadTimes.startTime, loadTimes.startInitTime]);
+    const readyTime = performance.now();
+    
+    setLoadTimes(prev => {
+      // Calculate total time
+      const totalInitTime = prev.startInitTime ? readyTime - prev.startInitTime : undefined;
+      
+      return {
+        ...prev,
+        readyTime,
+        totalInitTime,
+        canvasReady: true
+      };
+    });
+  }, []);
 
   /**
-   * Mark the grid as created and record the time
+   * Mark when grid is created on canvas
    */
   const markGridCreated = useCallback(() => {
-    if (!gridCreatedRef.current && !loadTimes.gridCreated) {
-      const timeElapsed = performance.now() - (loadTimes.startTime || loadTimes.startInitTime);
-      setLoadTimes(prev => ({ 
-        ...prev, 
-        gridCreated: true,
-        gridCreationEnd: timeElapsed,
-        totalLoadTime: timeElapsed
-      }));
-      gridCreatedRef.current = true;
-      console.log(`Grid created in ${timeElapsed}ms`);
-    }
-  }, [loadTimes.gridCreated, loadTimes.startTime, loadTimes.startInitTime]);
+    const gridCreatedTime = performance.now();
+    
+    setLoadTimes(prev => ({
+      ...prev,
+      gridCreatedTime,
+      gridCreated: true
+    }));
+  }, []);
 
   /**
-   * Reset performance timers for new measurements
+   * Reset all load time tracking
+   * Used when reinitializing canvas
    */
   const resetLoadTimers = useCallback(() => {
-    gridCreatedRef.current = false;
     setLoadTimes({
       startInitTime: performance.now(),
-      canvasInitTime: 0,
-      gridCreatedTime: 0,
-      toolsInitTime: 0,
-      readyTime: 0,
-      totalInitTime: 0,
-      canvasReady: false,
-      gridCreated: false,
-      startTime: performance.now()
     });
   }, []);
 

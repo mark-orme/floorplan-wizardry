@@ -1,130 +1,106 @@
 
 /**
- * Custom hook for optimized chunk processing of floor plan strokes
+ * Hook for processing floor plans in chunks to prevent UI freezing
+ * Breaks down large operations into manageable chunks for better responsiveness
  * @module useFloorPlanChunkProcessing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline as FabricPolyline, Object as FabricObject } from "fabric";
-import { PIXELS_PER_METER, STROKE_CHUNK_SIZE, CHUNK_PROCESSING_DELAY } from "@/constants/numerics";
+import { FloorPlan } from "@/types/floorPlanTypes";
+import logger from "@/utils/logger";
 
 /**
- * Props for the useFloorPlanChunkProcessing hook
- * @interface UseFloorPlanChunkProcessingProps
+ * Options for chunk processing
+ * @interface ChunkProcessingOptions
  */
-interface UseFloorPlanChunkProcessingProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Flag to track floor change operations */
-  floorChangeInProgressRef: React.MutableRefObject<boolean>;
+interface ChunkProcessingOptions {
+  /** Size of each chunk */
+  chunkSize?: number;
+  /** Delay between chunks in ms */
+  chunkDelay?: number;
+  /** Whether to show progress notifications */
+  showProgress?: boolean;
+  /** Callback for progress updates */
+  onProgress?: (processed: number, total: number) => void;
 }
 
 /**
- * Stroke point interface
+ * Default options for chunk processing
  */
-interface StrokePoint {
-  x: number;
-  y: number;
-}
+const DEFAULT_OPTIONS: ChunkProcessingOptions = {
+  chunkSize: 5,
+  chunkDelay: 0,
+  showProgress: true
+};
 
 /**
- * Hook that handles chunk processing for large floor plans
- * @param {UseFloorPlanChunkProcessingProps} props - Hook properties
+ * Create a delay promise
+ * @param {number} ms - Milliseconds to delay
+ * @returns {Promise<void>} Promise that resolves after the delay
+ */
+const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Hook for processing floor plans in chunks to avoid UI freezing
  * @returns Chunk processing utilities
  */
-export const useFloorPlanChunkProcessing = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  floorChangeInProgressRef
-}: UseFloorPlanChunkProcessingProps) => {
+export const useFloorPlanChunkProcessing = () => {
   /**
-   * Process floor plan strokes in chunks for better performance
-   * @param {Array<Array<StrokePoint>>} strokes - Array of stroke coordinates
-   * @param {number} totalStrokes - Total number of strokes to process
+   * Process floor plans in chunks
+   * @param {FloorPlan[]} floorPlans - Array of floor plans to process
+   * @param {Function} processFn - Function to process each floor plan
+   * @param {ChunkProcessingOptions} options - Processing options
+   * @returns {Promise<Array<{success: boolean, plan: FloorPlan, error?: Error}>>} Processing results
    */
-  const processFloorPlanInChunks = useCallback((
-    strokes: Array<Array<StrokePoint>>,
-    totalStrokes: number
-  ) => {
-    if (!fabricCanvasRef.current) return;
+  const chunkProcessFloorPlans = useCallback(async <T>(
+    floorPlans: FloorPlan[],
+    processFn: (plan: FloorPlan) => Promise<T>,
+    options: ChunkProcessingOptions = DEFAULT_OPTIONS
+  ): Promise<Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}>> => {
+    // Merge with default options
+    const processOptions = { ...DEFAULT_OPTIONS, ...options };
+    const results: Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}> = [];
     
-    const processStrokeChunk = (startIndex: number) => {
-      if (!fabricCanvasRef.current) return;
-      
-      const endIndex = Math.min(startIndex + STROKE_CHUNK_SIZE, totalStrokes);
-      
-      for (let i = startIndex; i < endIndex; i++) {
-        const stroke = strokes[i];
+    const { chunkSize = 5, chunkDelay = 0, onProgress } = processOptions;
+    
+    try {
+      // Process in chunks
+      for (let i = 0; i < floorPlans.length; i += chunkSize) {
+        // Get current chunk
+        const chunk = floorPlans.slice(i, i + chunkSize);
         
-        const polyline = new FabricPolyline(
-          stroke.map(point => ({ x: point.x * PIXELS_PER_METER, y: point.y * PIXELS_PER_METER })),
-          {
-            stroke: '#000000',
-            strokeWidth: 2,
-            fill: 'transparent',
-            objectType: 'line',
-            objectCaching: true,
-            strokeUniform: false,
-            perPixelTargetFind: false,
-            selectable: false,
-            evented: false
+        // Process each item in the chunk
+        const chunkPromises = chunk.map(async (plan) => {
+          try {
+            const result = await processFn(plan);
+            return { success: true, plan, result };
+          } catch (error) {
+            const errorObj = error instanceof Error ? error : new Error(String(error));
+            logger.error(`Error processing floor plan ${plan.label}:`, errorObj);
+            return { success: false, plan, error: errorObj };
           }
-        );
+        });
         
-        if (stroke.length > 2 && 
-            Math.abs(stroke[0].x - stroke[stroke.length-1].x) < 0.01 && 
-            Math.abs(stroke[0].y - stroke[stroke.length-1].y) < 0.01) {
-          polyline.set({
-            fill: 'rgba(0, 0, 255, 0.1)',
-            objectType: 'room'
-          });
+        // Wait for all items in this chunk to complete
+        const chunkResults = await Promise.all(chunkPromises);
+        results.push(...chunkResults);
+        
+        // Report progress
+        if (onProgress) {
+          onProgress(Math.min(i + chunkSize, floorPlans.length), floorPlans.length);
         }
         
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.add(polyline);
+        // Add delay between chunks if specified
+        if (chunkDelay > 0 && i + chunkSize < floorPlans.length) {
+          await delay(chunkDelay);
         }
       }
       
-      // If there are more chunks to process, schedule next chunk
-      if (endIndex < totalStrokes) {
-        setTimeout(() => processStrokeChunk(endIndex), CHUNK_PROCESSING_DELAY);
-      } else {
-        // All chunks processed
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.renderOnAddRemove = true;
-          fabricCanvasRef.current.requestRenderAll();
-        }
-        floorChangeInProgressRef.current = false;
-      }
-    };
-    
-    // Start processing the first chunk
-    if (totalStrokes > 0) {
-      floorChangeInProgressRef.current = true;
-      if (totalStrokes > STROKE_CHUNK_SIZE) {
-        // For large plans, use chunked processing
-        processStrokeChunk(0);
-      } else {
-        // For small plans, process all at once
-        processStrokeChunk(0);
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.renderOnAddRemove = true;
-          fabricCanvasRef.current.requestRenderAll();
-        }
-        floorChangeInProgressRef.current = false;
-      }
-    } else {
-      // No strokes to draw
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.renderOnAddRemove = true;
-        fabricCanvasRef.current.requestRenderAll();
-      }
-      floorChangeInProgressRef.current = false;
+      return results;
+    } catch (error) {
+      logger.error('Chunk processing error:', error);
+      throw error;
     }
-  }, [fabricCanvasRef, floorChangeInProgressRef]);
-
-  return {
-    processFloorPlanInChunks
-  };
+  }, []);
+  
+  return { chunkProcessFloorPlans };
 };

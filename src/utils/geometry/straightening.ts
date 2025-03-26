@@ -1,118 +1,148 @@
 /**
- * Line straightening utilities
- * Provides functions for straightening wall lines and strokes
+ * Line straightening utilities module
+ * Functions for straightening lines and shapes
  * @module geometry/straightening
  */
 import { Point } from '@/types/drawingTypes';
-import { snapToGrid } from '../grid/core';
-import { GRID_SIZE } from '../drawing';
 import { calculateAngle } from './lineOperations';
 import { ANGLE_SNAP_THRESHOLD } from './constants';
 
 /**
- * Straightens a stroke to ensure perfect horizontal or vertical alignment
- * Critical for creating accurate wall layouts with natural drawing
- * 
- * @param {Point[]} points - The array of points to straighten
- * @returns {Point[]} Straightened array of points
+ * Straighten a line by aligning it to the nearest cardinal or 45° angle
+ * @param {Point} start - Start point of the line
+ * @param {Point} end - End point of the line
+ * @param {number} threshold - Angle threshold for snapping in degrees
+ * @returns {Point} New end point for the straightened line
  */
-export const straightenStroke = (points: Point[]): Point[] => {
-  if (!points || points.length < 2) return points;
+export const straightenLine = (
+  start: Point, 
+  end: Point, 
+  threshold: number = ANGLE_SNAP_THRESHOLD
+): Point => {
+  if (!start || !end) return end;
+  
+  // Calculate original distance and angle
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Get the angle and normalize to 0-360
+  let angle = calculateAngle(start, end);
+  
+  // Find the nearest 45° increment
+  const snapIncrement = 45;
+  const snapAngle = Math.round(angle / snapIncrement) * snapIncrement;
+  
+  // Check if we should snap
+  if (Math.abs(angle - snapAngle) <= threshold) {
+    // Convert back to radians for calculation
+    const radians = snapAngle * (Math.PI / 180);
+    
+    // Calculate new end point along the snapped angle
+    return {
+      x: start.x + distance * Math.cos(radians),
+      y: start.y + distance * Math.sin(radians)
+    };
+  }
+  
+  // If not within threshold, return original end point
+  return end;
+};
+
+/**
+ * Straighten a polygon by aligning each segment to the nearest cardinal or 45° angle
+ * @param {Point[]} points - Array of points forming the polygon
+ * @param {number} threshold - Angle threshold for snapping in degrees
+ * @returns {Point[]} New array of points for the straightened polygon
+ */
+export const straightenPolygon = (
+  points: Point[], 
+  threshold: number = ANGLE_SNAP_THRESHOLD
+): Point[] => {
+  if (!points || points.length < 3) return points;
   
   const result: Point[] = [];
-  let lastPoint = points[0];
-  result.push(snapToGrid(lastPoint, GRID_SIZE));
+  const n = points.length;
   
-  // For lines with just two points (start and end), use angle-based snap
-  if (points.length === 2) {
-    const startPoint = result[0]; // Already snapped
-    const endPoint = points[1];
-    const angle = calculateAngle(startPoint, endPoint);
-    
-    // Snap to horizontal, vertical, or 45-degree angles
-    let snappedAngle = angle;
-    
-    if (angle < (0 + ANGLE_SNAP_THRESHOLD) || angle > (360 - ANGLE_SNAP_THRESHOLD)) {
-      // Snap to horizontal right (0 degrees)
-      snappedAngle = 0;
-    } else if (Math.abs(angle - 45) < ANGLE_SNAP_THRESHOLD) {
-      // Snap to 45 degrees
-      snappedAngle = 45;
-    } else if (Math.abs(angle - 90) < ANGLE_SNAP_THRESHOLD) {
-      // Snap to vertical up (90 degrees)
-      snappedAngle = 90;
-    } else if (Math.abs(angle - 135) < ANGLE_SNAP_THRESHOLD) {
-      // Snap to 135 degrees
-      snappedAngle = 135;
-    } else if (Math.abs(angle - 180) < ANGLE_SNAP_THRESHOLD) {
-      // Snap to horizontal left (180 degrees)
-      snappedAngle = 180;
-    } else if (Math.abs(angle - 225) < ANGLE_SNAP_THRESHOLD) {
-      // Snap to 225 degrees
-      snappedAngle = 225;
-    } else if (Math.abs(angle - 270) < ANGLE_SNAP_THRESHOLD) {
-      // Snap to vertical down (270 degrees)
-      snappedAngle = 270;
-    } else if (Math.abs(angle - 315) < ANGLE_SNAP_THRESHOLD) {
-      // Snap to 315 degrees
-      snappedAngle = 315;
-    }
-    
-    // If the angle was snapped, use the snapped angle to calculate the end point
-    if (snappedAngle !== angle) {
-      const distance = Math.sqrt(
-        Math.pow(endPoint.x - startPoint.x, 2) + 
-        Math.pow(endPoint.y - startPoint.y, 2)
-      );
-      
-      const radians = snappedAngle * (Math.PI / 180);
-      const newEndPoint = {
-        x: startPoint.x + Math.cos(radians) * distance,
-        y: startPoint.y + Math.sin(radians) * distance
-      };
-      
-      result.push(snapToGrid(newEndPoint, GRID_SIZE));
-    } else {
-      // No angle snap applied, just snap to grid
-      result.push(snapToGrid(endPoint, GRID_SIZE));
-    }
-    
-    return result;
-  }
+  // Keep the first point as is
+  result.push({ ...points[0] });
   
-  // For multiple points (more complex shapes), use the original straightening logic
-  // Process all points except the first and last
-  for (let i = 1; i < points.length - 1; i++) {
+  // Process each segment
+  for (let i = 1; i < n; i++) {
+    const prevPoint = result[i - 1];
     const currentPoint = points[i];
-    const nextPoint = points[i + 1];
     
-    // Check if we should force horizontal or vertical
-    const deltaX = Math.abs(currentPoint.x - lastPoint.x);
-    const deltaY = Math.abs(currentPoint.y - lastPoint.y);
+    // Straighten the current segment
+    const straightenedPoint = straightenLine(prevPoint, currentPoint, threshold);
+    result.push(straightenedPoint);
+  }
+  
+  // Handle the closing segment if needed
+  if (points[0] !== points[n - 1]) {
+    // Make sure the polygon is closed with a straight line
+    const closingPoint = straightenLine(result[n - 1], result[0], threshold);
+    // Replace the first point with the corrected closing point
+    result[0] = closingPoint;
+  }
+  
+  return result;
+};
+
+/**
+ * Check if a polygon has aligned walls (parallel to axes)
+ * Used to validate floor plan geometry
+ * @param {Point[]} points - Array of points forming the polygon
+ * @param {number} threshold - Angle threshold in degrees
+ * @returns {boolean} Whether the polygon has aligned walls
+ */
+export const hasAlignedWalls = (
+  points: Point[], 
+  threshold: number = ANGLE_SNAP_THRESHOLD
+): boolean => {
+  if (!points || points.length < 3) return false;
+  
+  const n = points.length;
+  
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
     
-    // Decide if this should be a horizontal or vertical line
-    if (deltaX >= deltaY) {
-      // Horizontal line - keep X, snap Y to last point
-      result.push({
-        x: currentPoint.x,
-        y: lastPoint.y
-      });
-    } else {
-      // Vertical line - keep Y, snap X to last point
-      result.push({
-        x: lastPoint.x,
-        y: currentPoint.y
-      });
+    const angle = calculateAngle(points[i], points[j]);
+    const mod90 = angle % 90;
+    
+    // Check if any wall is not aligned to 0°, 90°, 180°, 270°
+    if (Math.min(mod90, 90 - mod90) > threshold) {
+      return false;
     }
-    
-    lastPoint = result[result.length - 1];
   }
   
-  // Add the last point
-  if (points.length > 1) {
-    result.push(snapToGrid(points[points.length - 1], GRID_SIZE));
+  return true;
+};
+
+/**
+ * Straighten a stroke (sequence of points) to create cleaner lines
+ * @param {Point[]} points - Array of points in the stroke
+ * @param {number} threshold - Angle threshold for straightening
+ * @returns {Point[]} Straightened points
+ */
+export const straightenStroke = (
+  points: Point[],
+  threshold: number = ANGLE_SNAP_THRESHOLD
+): Point[] => {
+  if (!points || points.length < 2) return points;
+  
+  // For simple two-point strokes, just straighten the line
+  if (points.length === 2) {
+    const end = straightenLine(points[0], points[1], threshold);
+    return [points[0], end];
   }
   
-  // Ensure all points are snapped to the grid
-  return result.map(point => snapToGrid(point, GRID_SIZE));
+  // For longer strokes, we need to analyze the overall direction
+  const startPoint = points[0];
+  const endPoint = points[points.length - 1];
+  
+  // Straighten the overall direction
+  const straightEnd = straightenLine(startPoint, endPoint, threshold);
+  
+  // Create a new array with just the start and straightened end
+  return [startPoint, straightEnd];
 };

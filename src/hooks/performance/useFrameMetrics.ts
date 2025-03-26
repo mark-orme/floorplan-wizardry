@@ -1,141 +1,158 @@
 
 /**
- * Hook for tracking frame performance metrics
+ * Custom hook for tracking frame-by-frame performance metrics
+ * Measures FPS, frame drops, and other performance indicators
  * @module useFrameMetrics
  */
-import { useState, useRef, useCallback } from "react";
-import { type PerformanceMetrics } from "@/types/performanceTypes";
+import { useState, useCallback, useRef } from "react";
+import type { PerformanceMetrics } from "@/types/performanceTypes";
 
 /**
- * Hook for tracking frame rate and dropped frames
- * @returns Frame metrics tracking state and functions
+ * Initial performance metrics state
+ */
+const DEFAULT_METRICS: PerformanceMetrics = {
+  fps: 0,
+  droppedFrames: 0,
+  frameTime: 0,
+  maxFrameTime: 0,
+  longFrames: 0,
+  measuredSince: 0
+};
+
+/**
+ * Hook for measuring and tracking frame-level performance
+ * @returns Performance metric state and tracking functions
  */
 export const useFrameMetrics = () => {
-  // Performance metrics tracking
-  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
-    fps: 0,
+  // State to store performance metrics
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(DEFAULT_METRICS);
+  
+  // Refs to track metrics between frames
+  const metricsRef = useRef({
+    frames: 0,
+    startTime: 0,
+    lastFrameTime: 0,
+    totalFrameTime: 0,
     droppedFrames: 0,
-    frameTime: 0,
     maxFrameTime: 0,
     longFrames: 0,
-    measuredSince: performance.now()
+    tracking: false
   });
   
-  // References for performance tracking
-  const framesRef = useRef(0);
-  const lastFrameTimeRef = useRef(performance.now());
-  const frameTimesRef = useRef<number[]>([]);
-  const longFramesRef = useRef(0);
-  const trackingStartTimeRef = useRef(performance.now());
-  const isTrackingRef = useRef(false);
-  
-  // Target frame rate and budget
-  const targetFps = 60;
-  const frameBudget = 1000 / targetFps; // ~16.67ms for 60fps
-
   /**
-   * Start tracking frame performance
+   * Start performance tracking
+   * Resets counters and begins measuring
    */
   const startPerformanceTracking = useCallback(() => {
-    // Reset tracking metrics
-    framesRef.current = 0;
-    frameTimesRef.current = [];
-    longFramesRef.current = 0;
-    trackingStartTimeRef.current = performance.now();
-    lastFrameTimeRef.current = performance.now();
-    isTrackingRef.current = true;
-    
-    // Update measurement start time
-    setPerformanceMetrics(prev => ({
-      ...prev,
-      measuredSince: performance.now()
-    }));
-    
-    console.log("Performance tracking started");
-  }, []);
-  
-  /**
-   * Stop tracking frame performance
-   */
-  const stopPerformanceTracking = useCallback(() => {
-    isTrackingRef.current = false;
-    console.log("Performance tracking stopped");
-  }, []);
-  
-  /**
-   * Calculate and update performance metrics
-   */
-  const updateMetrics = useCallback(() => {
     const now = performance.now();
-    const totalTime = now - trackingStartTimeRef.current;
-    const frameTimes = frameTimesRef.current;
     
-    if (frameTimes.length === 0) return;
-    
-    // Calculate metrics
-    const fps = framesRef.current / (totalTime / 1000);
-    const avgFrameTime = frameTimes.reduce((sum, time) => sum + time, 0) / frameTimes.length;
-    const maxFrameTime = Math.max(...frameTimes);
-    
-    // Estimate dropped frames based on expected frames vs actual frames
-    const expectedFrames = (totalTime / 1000) * targetFps;
-    const droppedFrames = Math.max(0, Math.round(expectedFrames - framesRef.current));
-    
-    // Update state
-    setPerformanceMetrics({
-      fps: Math.round(fps * 10) / 10, // Round to 1 decimal place
-      droppedFrames,
-      frameTime: Math.round(avgFrameTime * 100) / 100, // Round to 2 decimal places
-      maxFrameTime: Math.round(maxFrameTime * 100) / 100,
-      longFrames: longFramesRef.current,
-      measuredSince: trackingStartTimeRef.current
-    });
-  }, []);
-  
-  /**
-   * Record a frame in the performance tracking
-   */
-  const recordFrame = useCallback(() => {
-    if (!isTrackingRef.current) return;
-    
-    const now = performance.now();
-    const frameTime = now - lastFrameTimeRef.current;
-    lastFrameTimeRef.current = now;
-    
-    // Record frame time
-    frameTimesRef.current.push(frameTime);
-    framesRef.current++;
-    
-    // Check if frame exceeds budget (dropped frame)
-    if (frameTime > frameBudget * 1.5) {
-      longFramesRef.current++;
-    }
-    
-    // Limit the number of samples to avoid memory growth
-    if (frameTimesRef.current.length > 300) {
-      frameTimesRef.current.shift();
-    }
-    
-    // Update metrics every 30 frames
-    if (framesRef.current % 30 === 0) {
-      updateMetrics();
-    }
-  }, [updateMetrics]);
-
-  /**
-   * Reset performance metrics
-   */
-  const resetPerformanceMetrics = useCallback(() => {
-    setPerformanceMetrics({
-      fps: 0,
+    // Reset metric tracking
+    metricsRef.current = {
+      frames: 0,
+      startTime: now,
+      lastFrameTime: now,
+      totalFrameTime: 0,
       droppedFrames: 0,
-      frameTime: 0,
       maxFrameTime: 0,
       longFrames: 0,
-      measuredSince: performance.now()
+      tracking: true
+    };
+    
+    setPerformanceMetrics({
+      ...DEFAULT_METRICS,
+      measuredSince: now
     });
   }, []);
-
+  
+  /**
+   * Stop performance tracking
+   * Finalizes metrics and stops measuring
+   */
+  const stopPerformanceTracking = useCallback(() => {
+    metricsRef.current.tracking = false;
+    
+    // Calculate final metrics
+    updateMetrics();
+  }, []);
+  
+  /**
+   * Record a frame for performance tracking
+   * Called on each animation frame to measure timing
+   */
+  const recordFrame = useCallback(() => {
+    if (!metricsRef.current.tracking) return;
+    
+    const now = performance.now();
+    const frameDuration = now - metricsRef.current.lastFrameTime;
+    
+    // Track frame stats
+    metricsRef.current.frames++;
+    metricsRef.current.totalFrameTime += frameDuration;
+    metricsRef.current.lastFrameTime = now;
+    
+    // Check for dropped frames (over 16.67ms = 60fps threshold)
+    if (frameDuration > 16.67) {
+      metricsRef.current.droppedFrames++;
+      
+      // Count long frames (over 33.33ms = 30fps threshold)
+      if (frameDuration > 33.33) {
+        metricsRef.current.longFrames++;
+      }
+    }
+    
+    // Track max frame time
+    metricsRef.current.maxFrameTime = Math.max(
+      metricsRef.current.maxFrameTime,
+      frameDuration
+    );
+    
+    // Update metrics every 30 frames
+    if (metricsRef.current.frames % 30 === 0) {
+      updateMetrics();
+    }
+  }, []);
+  
+  /**
+   * Update performance metrics based on collected data
+   * Calculates aggregate metrics like FPS and average frame time
+   */
+  const updateMetrics = useCallback(() => {
+    const metrics = metricsRef.current;
+    
+    if (metrics.frames === 0) return;
+    
+    const elapsedTime = performance.now() - metrics.startTime;
+    const fps = Math.round((metrics.frames * 1000) / elapsedTime);
+    const avgFrameTime = metrics.totalFrameTime / metrics.frames;
+    
+    setPerformanceMetrics({
+      fps,
+      frameTime: avgFrameTime,
+      droppedFrames: metrics.droppedFrames,
+      maxFrameTime: metrics.maxFrameTime,
+      longFrames: metrics.longFrames,
+      measuredSince: metrics.startTime
+    });
+  }, []);
+  
+  /**
+   * Reset performance metrics to default state
+   */
+  const resetPerformanceMetrics = useCallback(() => {
+    metricsRef.current = {
+      frames: 0,
+      startTime: 0,
+      lastFrameTime: 0,
+      totalFrameTime: 0,
+      droppedFrames: 0,
+      maxFrameTime: 0,
+      longFrames: 0,
+      tracking: false
+    };
+    
+    setPerformanceMetrics(DEFAULT_METRICS);
+  }, []);
+  
   return {
     performanceMetrics,
     startPerformanceTracking,

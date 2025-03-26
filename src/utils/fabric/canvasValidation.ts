@@ -1,139 +1,125 @@
 
 /**
- * Utilities for canvas validation and element management
+ * Fabric canvas validation utilities
+ * Functions for validating canvas state and elements
  * @module fabric/canvasValidation
  */
-import { Canvas } from "fabric";
-
-// Registry to track canvas elements and their state
-const canvasRegistry = new WeakMap<HTMLCanvasElement, {
-  initialized: boolean,
-  timestamp: number,
-  canvas: Canvas | null
-}>();
-
-// Set to track disposed canvases
-const disposedCanvases = new WeakSet<Canvas>();
+import { Canvas as FabricCanvas } from "fabric";
+import logger from "@/utils/logger";
 
 /**
- * Safely check if a canvas is valid and not already disposed
- * @param {Canvas|null} canvas - The Fabric canvas instance to check
+ * Check if a canvas is valid and ready for operations
+ * @param {FabricCanvas | null | undefined} canvas - Canvas to validate
  * @returns {boolean} Whether the canvas is valid
  */
-export const isCanvasValid = (canvas: Canvas | null): boolean => {
-  if (!canvas) return false;
-  
-  // If we know this canvas has been disposed, return false immediately
-  if (disposedCanvases.has(canvas)) {
+export const isCanvasValid = (canvas: FabricCanvas | null | undefined): boolean => {
+  if (!canvas) {
     return false;
   }
   
   try {
-    // Check if the canvas has been explicitly marked as disposed
-    if ((canvas as any).disposed === true) {
+    // Check if the canvas has been disposed
+    if ((canvas as any)._isDisposed === true) {
       return false;
     }
     
-    // Try to access some methods that should exist on valid canvas instances
-    return (
-      typeof canvas.getObjects === 'function' &&
-      typeof canvas.renderAll === 'function'
-    );
+    // Check if the canvas element still exists
+    const canvasElement = canvas.getElement() as HTMLCanvasElement;
+    if (!canvasElement || !canvasElement.getContext) {
+      return false;
+    }
+    
+    // Check if the canvas has a valid rendering context
+    const ctx = canvasElement.getContext('2d');
+    if (!ctx) {
+      return false;
+    }
+    
+    return true;
   } catch (error) {
-    console.warn("Error checking canvas validity:", error);
+    logger.error("Error validating canvas:", error);
     return false;
   }
 };
 
 /**
- * Safely get canvas element if available
- * @param {Canvas} canvas - The Fabric canvas instance
- * @returns {HTMLCanvasElement|null} The canvas element or null
+ * Safely get the canvas element with validation
+ * @param {FabricCanvas | null | undefined} canvas - Canvas to get element from
+ * @returns {HTMLCanvasElement | null} Canvas element or null if invalid
  */
-export const safelyGetCanvasElement = (canvas: Canvas): HTMLCanvasElement | null => {
-  if (!canvas) return null;
-  
-  try {
-    // First check if we can directly access the element via lowerCanvasEl (fabric implementation detail)
-    const directElement = (canvas as any).lowerCanvasEl;
-    if (directElement instanceof HTMLCanvasElement) {
-      return directElement;
-    }
-    
-    // If not, try the getElement method if available
-    if (typeof canvas.getElement === 'function') {
-      try {
-        const element = canvas.getElement();
-        return element instanceof HTMLCanvasElement ? element : null;
-      } catch (error) {
-        console.warn("Error accessing canvas element:", error);
-        return null;
-      }
-    }
-  } catch (error) {
-    console.warn("Error getting canvas element:", error);
+export const safelyGetCanvasElement = (
+  canvas: FabricCanvas | null | undefined
+): HTMLCanvasElement | null => {
+  if (!isCanvasValid(canvas)) {
+    return null;
   }
   
-  return null;
-};
-
-/**
- * Check if a canvas is already disposed
- * @param {Canvas|null} canvas - The Fabric canvas instance to check
- * @returns {boolean} Whether the canvas is disposed
- */
-export const isCanvasDisposed = (canvas: Canvas | null): boolean => {
-  if (!canvas) return true;
-  
-  return disposedCanvases.has(canvas) || 
-         (canvas as any).disposed === true;
-};
-
-/**
- * Check if a canvas element has a Fabric.js instance attached
- * @param {HTMLCanvasElement} element - Canvas element to check
- * @returns {boolean} Whether element is initialized
- */
-export const isCanvasElementInitialized = (element: HTMLCanvasElement | null): boolean => {
-  if (!element) return false;
-  
   try {
-    // First check for Fabric's data attribute
-    if (element.hasAttribute('data-fabric')) {
-      return true;
-    }
-    
-    // Then check our registry
-    return canvasRegistry.has(element);
+    return canvas!.getElement() as HTMLCanvasElement;
   } catch (error) {
-    console.warn("Error checking canvas element initialization:", error);
+    logger.error("Error getting canvas element:", error);
+    return null;
+  }
+};
+
+/**
+ * Check if a canvas has been disposed
+ * @param {FabricCanvas | null | undefined} canvas - Canvas to check
+ * @returns {boolean} Whether the canvas has been disposed
+ */
+export const isCanvasDisposed = (canvas: FabricCanvas | null | undefined): boolean => {
+  if (!canvas) {
+    return true;
+  }
+  
+  return (canvas as any)._isDisposed === true;
+};
+
+/**
+ * Check if a canvas element is still attached to the DOM
+ * @param {HTMLCanvasElement | null | undefined} canvasElement - Canvas element to check
+ * @returns {boolean} Whether the canvas element is attached to the DOM
+ */
+export const isCanvasElementInDOM = (
+  canvasElement: HTMLCanvasElement | null | undefined
+): boolean => {
+  if (!canvasElement) {
     return false;
   }
+  
+  return document.body.contains(canvasElement);
 };
 
 /**
- * Register a canvas element and its instance
- * @param {HTMLCanvasElement} element - Canvas element to register
- * @param {Canvas} canvas - Fabric canvas instance
+ * Check if a canvas can be safely used for drawing
+ * Comprehensive validation of canvas readiness
+ * @param {FabricCanvas | null | undefined} canvas - Canvas to validate
+ * @returns {boolean} Whether the canvas is ready for drawing
  */
-export const registerCanvasElement = (element: HTMLCanvasElement, canvas: Canvas): void => {
-  if (!element || !canvas) return;
+export const canvasIsReadyForDrawing = (
+  canvas: FabricCanvas | null | undefined
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
+  }
   
-  canvasRegistry.set(element, {
-    initialized: true,
-    timestamp: Date.now(),
-    canvas
-  });
-};
-
-/**
- * Add canvas to the disposed canvases set
- * @param {Canvas} canvas - Canvas to mark as disposed
- */
-export const markCanvasAsDisposed = (canvas: Canvas): void => {
-  if (!canvas) return;
-  
-  // Mark this canvas as disposed to prevent future disposal attempts
-  disposedCanvases.add(canvas);
-  (canvas as any).disposed = true;
+  try {
+    // Additional checks for drawing readiness
+    const canvasElement = canvas!.getElement() as HTMLCanvasElement;
+    
+    // Check if canvas has non-zero dimensions
+    if (canvasElement.width === 0 || canvasElement.height === 0) {
+      return false;
+    }
+    
+    // Check if canvas has valid drawing brush
+    if (canvas!.isDrawingMode && !canvas!.freeDrawingBrush) {
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    logger.error("Error checking canvas drawing readiness:", error);
+    return false;
+  }
 };

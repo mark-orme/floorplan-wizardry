@@ -1,90 +1,147 @@
 
 /**
- * Fabric.js gesture handling utilities
- * Provides functions for touch gestures and angle snapping
+ * Fabric gesture utilities
+ * Functions for handling touch gestures
  * @module fabric/gestures
  */
-import { Canvas as FabricCanvas, Point } from "fabric";
-import logger from "../logger";
+import { Canvas as FabricCanvas } from "fabric";
+import logger from "@/utils/logger";
+import { isCanvasValid } from "./canvasValidation";
 
 /**
- * Add pinch-to-zoom gesture support
- * Enables touch-based zooming on the canvas
- * 
- * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * Add pinch-to-zoom functionality to canvas
+ * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
+ * @returns {boolean} Whether the operation was successful
  */
-export const addPinchToZoom = (canvas: FabricCanvas): void => {
-  // Cast to any to avoid TypeScript issues with custom properties
-  const extendedCanvas = canvas as any;
+export const addPinchToZoom = (
+  canvas: FabricCanvas | null | undefined
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
+  }
   
-  // Initialize touch state
-  extendedCanvas.touchState = {
-    scale: 1,
-    startDistance: 0,
-    currentZoom: canvas.getZoom()
-  };
-  
-  // Add touch start event handler
-  canvas.on('touch:start', (e: any) => {
-    if (e.touches && e.touches.length === 2) {
-      // Store initial touch positions for pinch gesture
-      const p1 = e.touches[0];
-      const p2 = e.touches[1];
-      
-      // Calculate initial distance between touch points
-      const dx = p1.x - p2.x;
-      const dy = p1.y - p2.y;
-      extendedCanvas.touchState.startDistance = Math.sqrt(dx * dx + dy * dy);
-      extendedCanvas.touchState.currentZoom = canvas.getZoom();
-      logger.debug("Pinch gesture started, distance:", extendedCanvas.touchState.startDistance);
-    }
-  });
-  
-  // Add touch move event handler
-  canvas.on('touch:move', (e: any) => {
-    if (e.touches && e.touches.length === 2) {
-      // Get current touch positions
-      const p1 = e.touches[0];
-      const p2 = e.touches[1];
-      
-      // Calculate current distance between touch points
-      const dx = p1.x - p2.x;
-      const dy = p1.y - p2.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // Calculate zoom scale based on pinch gesture
-      extendedCanvas.touchState.scale = distance / extendedCanvas.touchState.startDistance;
-      
-      // Apply zoom with limits
-      const newZoom = extendedCanvas.touchState.currentZoom * extendedCanvas.touchState.scale;
-      const limitedZoom = Math.min(Math.max(newZoom, 0.5), 5);
-      
-      // Apply the zoom - create a proper Point instance
-      const zoomPoint = new Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
-      canvas.zoomToPoint(zoomPoint, limitedZoom);
-      canvas.fire('zoom:changed' as any);
-      
-      // Prevent default touch behavior to avoid browser gestures
-      e.e.preventDefault();
-      e.e.stopPropagation();
-    }
-  });
-  
-  logger.info("Pinch-to-zoom gesture support added");
+  try {
+    let initialDistance = 0;
+    let initialZoom = 1;
+    
+    // Touch start handler
+    const touchStartHandler = (e: TouchEvent) => {
+      if (e.touches && e.touches.length === 2) {
+        // Calculate initial distance between touch points
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        initialDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        
+        // Store initial zoom
+        initialZoom = canvas!.getZoom();
+        
+        // Prevent default to avoid unwanted behavior
+        e.preventDefault();
+      }
+    };
+    
+    // Touch move handler
+    const touchMoveHandler = (e: TouchEvent) => {
+      if (e.touches && e.touches.length === 2) {
+        // Calculate current distance
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        
+        // Calculate zoom ratio
+        const zoomRatio = currentDistance / initialDistance;
+        const newZoom = initialZoom * zoomRatio;
+        
+        // Apply zoom, clamped to reasonable limits
+        const clampedZoom = Math.min(Math.max(newZoom, 0.5), 10);
+        
+        // Calculate center point
+        const centerX = (touch1.clientX + touch2.clientX) / 2;
+        const centerY = (touch1.clientY + touch2.clientY) / 2;
+        
+        // Zoom to point
+        const point = {
+          x: centerX,
+          y: centerY
+        };
+        
+        // Get position of point on canvas
+        const canvasElement = canvas!.getElement() as HTMLCanvasElement;
+        const rect = canvasElement.getBoundingClientRect();
+        const canvasPoint = {
+          x: (point.x - rect.left) / canvas!.getZoom(),
+          y: (point.y - rect.top) / canvas!.getZoom()
+        };
+        
+        // Set zoom
+        canvas!.zoomToPoint(canvasPoint, clampedZoom);
+        
+        // Prevent default to avoid unwanted behavior
+        e.preventDefault();
+      }
+    };
+    
+    // Get canvas element
+    const canvasElement = canvas!.getElement() as HTMLCanvasElement;
+    
+    // Add event listeners
+    canvasElement.addEventListener('touchstart', touchStartHandler);
+    canvasElement.addEventListener('touchmove', touchMoveHandler);
+    
+    // Store references to handlers for potential cleanup
+    (canvas as any)._pinchHandlers = {
+      touchStart: touchStartHandler,
+      touchMove: touchMoveHandler
+    };
+    
+    logger.info("Pinch-to-zoom functionality added to canvas");
+    return true;
+  } catch (error) {
+    logger.error("Error adding pinch-to-zoom:", error);
+    return false;
+  }
 };
 
 /**
- * Snap angle to nearest 45° increment
- * Helps with creating aligned walls and shapes
- * 
- * @param {number} angle - The original angle in degrees
- * @returns {number} The snapped angle in degrees
+ * Remove pinch-to-zoom functionality
+ * @param {FabricCanvas | null | undefined} canvas - Fabric canvas instance
+ * @returns {boolean} Whether the operation was successful
  */
-export const snapToAngle = (angle: number): number => {
-  // Convert to positive angle between 0-360
-  angle = (angle % 360 + 360) % 360;
+export const removePinchToZoom = (
+  canvas: FabricCanvas | null | undefined
+): boolean => {
+  if (!isCanvasValid(canvas)) {
+    return false;
+  }
   
-  // Snap to nearest 45 degree increment
-  const increment = 45;
-  return Math.round(angle / increment) * increment;
+  try {
+    // Get handlers
+    const handlers = (canvas as any)._pinchHandlers;
+    
+    if (handlers) {
+      // Get canvas element
+      const canvasElement = canvas!.getElement() as HTMLCanvasElement;
+      
+      // Remove event listeners
+      canvasElement.removeEventListener('touchstart', handlers.touchStart);
+      canvasElement.removeEventListener('touchmove', handlers.touchMove);
+      
+      // Remove handler references
+      delete (canvas as any)._pinchHandlers;
+      
+      logger.info("Pinch-to-zoom functionality removed from canvas");
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    logger.error("Error removing pinch-to-zoom:", error);
+    return false;
+  }
 };

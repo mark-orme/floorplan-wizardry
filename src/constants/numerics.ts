@@ -1,232 +1,125 @@
 
 /**
- * Central module for numeric constants used throughout the application
- * Each constant has documentation explaining its purpose and usage
+ * Numeric constants used throughout the application
+ * Centralizes numeric values to avoid magic numbers
  * @module numerics
  */
 
 /**
- * Coordinates and measurements
+ * Grid spacing in meters
+ * Default grid size for the canvas grid system
+ * @constant {number}
  */
+export const GRID_SPACING = 0.5;
 
 /**
- * Pixels per meter for coordinate conversion
- * Used for translating between real-world and screen coordinates
+ * Pixels per meter conversion ratio
+ * Used to convert between real-world meters and pixels on screen
  * @constant {number}
  */
 export const PIXELS_PER_METER = 100;
 
 /**
- * Grid spacing in meters (0.1m = 10cm)
- * Defines the smallest grid subdivision
+ * Small grid cell size in meters
+ * Used for the smaller grid lines
  * @constant {number}
  */
-export const GRID_SPACING = 0.1;
+export const SMALL_GRID = 0.5;
 
 /**
- * Small grid size in pixels (10px)
- * Derived from GRID_SPACING * PIXELS_PER_METER
+ * Large grid cell size in meters
+ * Used for the larger, more prominent grid lines
  * @constant {number}
  */
-export const SMALL_GRID = GRID_SPACING * PIXELS_PER_METER;
+export const LARGE_GRID = 1.0;
 
 /**
- * Large grid size in pixels (100px)
- * Represents 1 meter on the grid
+ * Maximum number of history states to keep
+ * For undo/redo functionality
  * @constant {number}
  */
-export const LARGE_GRID = PIXELS_PER_METER;
+export const MAX_HISTORY_STATES = 100;
 
 /**
- * Canvas and grid configuration
- */
-
-/**
- * Maximum number of objects allowed per canvas
- * Safety limit to prevent performance degradation
+ * Maximum number of objects allowed on a canvas
+ * For performance considerations
  * @constant {number}
  */
-export const MAX_OBJECTS_PER_CANVAS = 1000;
-
-/**
- * Maximum number of small grid lines to render
- * Prevents performance issues on large canvases
- * @constant {number}
- */
-export const MAX_SMALL_GRID_LINES = 2000;
-
-/**
- * Maximum number of large grid lines to render
- * Prevents performance issues on large canvases
- * @constant {number}
- */
-export const MAX_LARGE_GRID_LINES = 400;
-
-/**
- * Multiplier for extending grid beyond canvas boundaries
- * Ensures grid covers panning area
- * @constant {number}
- */
-export const GRID_EXTENSION_FACTOR = 3.0;
-
-/**
- * Drawing settings
- */
+export const MAX_OBJECTS_PER_CANVAS = 5000;
 
 /**
  * Default line thickness in pixels
- * Standard width for drawing operations
+ * Used as the starting thickness for drawing tools
  * @constant {number}
  */
 export const DEFAULT_LINE_THICKNESS = 2;
 
 /**
- * Maximum history states for undo/redo operations
- * Limits memory usage while providing sufficient history
- * @constant {number}
- */
-export const MAX_HISTORY_STATES = 50;
-
-/**
- * Tolerance values for geometric operations
- */
-
-/**
- * Threshold in pixels for considering points as close/identical
- * Used in shape closing checks
+ * Threshold in pixels to consider points as close
+ * Used for snapping and selection
  * @constant {number}
  */
 export const CLOSE_POINT_THRESHOLD = 10;
 
 /**
- * Threshold in pixels for shape closing detection
- * Slightly larger than CLOSE_POINT_THRESHOLD for better usability
+ * Threshold in pixels to consider a shape as closed
+ * Used for polygon completion
  * @constant {number}
  */
 export const SHAPE_CLOSE_THRESHOLD = 15;
 
 /**
- * Minimum distance in pixels for a valid line
- * Prevents creation of extremely short lines
+ * Tolerance for floating point comparisons
+ * Used when checking equality of coordinates
+ * @constant {number}
+ */
+export const FLOATING_POINT_TOLERANCE = 0.0001;
+
+/**
+ * Minimum line length in pixels to be considered valid
+ * Prevents creation of tiny/accidental lines
  * @constant {number}
  */
 export const MIN_LINE_LENGTH = 5;
 
 /**
- * Minimum area in square pixels for a valid shape
- * Prevents creation of extremely small shapes
+ * Minimum shape area in square pixels to be considered valid
+ * Prevents creation of tiny/accidental shapes
  * @constant {number}
  */
 export const MIN_SHAPE_AREA = 100;
 
 /**
- * Floating point comparison tolerance
- * Used for numerical equality checks
+ * Threshold in degrees for angle snapping
+ * Used to determine when to snap to preset angles
  * @constant {number}
  */
-export const FLOATING_POINT_TOLERANCE = 0.00001;
-
-/**
- * Angle snap threshold in degrees
- * Used for forcing lines to 0, 45, 90 degrees etc.
- * @constant {number}
- */
-export const ANGLE_SNAP_THRESHOLD = 10;
-
-/**
- * Grid styling
- */
+export const ANGLE_SNAP_THRESHOLD = 5;
 
 /**
  * Width of large grid lines in pixels
+ * Used for visual styling of the grid
  * @constant {number}
  */
-export const LARGE_GRID_LINE_WIDTH = 1.2;
+export const LARGE_GRID_LINE_WIDTH = 1;
 
 /**
  * Width of small grid lines in pixels
+ * Used for visual styling of the grid
  * @constant {number}
  */
 export const SMALL_GRID_LINE_WIDTH = 0.5;
 
 /**
- * Precision settings
- */
-
-/**
- * Number of decimal places for area calculations
+ * Precision for area calculations
+ * Number of decimal places to round to
  * @constant {number}
  */
 export const AREA_PRECISION = 2;
 
 /**
- * Number of decimal places for distance measurements
+ * Precision for distance measurements
+ * Number of decimal places to round to
  * @constant {number}
  */
-export const DISTANCE_PRECISION = 1;
-
-/**
- * Performance optimization
- */
-
-/**
- * Default delay in milliseconds for throttled operations
- * @constant {number}
- */
-export const DEFAULT_THROTTLE_DELAY = 300;
-
-/**
- * Maximum delay in milliseconds for retried operations
- * @constant {number}
- */
-export const MAX_RETRY_DELAY = 2000;
-
-/**
- * Exponential backoff factor for retries
- * @constant {number}
- */
-export const RETRY_BACKOFF_FACTOR = 1.5;
-
-/**
- * Maximum number of retry attempts
- * @constant {number}
- */
-export const MAX_RETRY_ATTEMPTS = 5;
-
-/**
- * Canvas dimension defaults
- */
-
-/**
- * Default canvas height in pixels when container dimensions are unavailable
- * @constant {number}
- */
-export const DEFAULT_CANVAS_HEIGHT = 1000;
-
-/**
- * Default canvas width in pixels when container dimensions are unavailable
- * @constant {number}
- */
-export const DEFAULT_CANVAS_WIDTH = 1400;
-
-/**
- * Threshold for skipping small grid on large canvases (in pixels²)
- * @constant {number}
- */
-export const SMALL_GRID_SKIP_THRESHOLD = 8000000;
-
-/**
- * Chunk processing
- */
-
-/**
- * Number of strokes to process in each chunk for large floor plans
- * @constant {number}
- */
-export const STROKE_CHUNK_SIZE = 20;
-
-/**
- * Delay between chunk processing in milliseconds
- * @constant {number}
- */
-export const CHUNK_PROCESSING_DELAY = 10;
+export const DISTANCE_PRECISION = 2;

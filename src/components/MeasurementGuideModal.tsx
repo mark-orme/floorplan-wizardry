@@ -1,112 +1,95 @@
 
-import React from "react";
+/**
+ * Modal component for displaying measurement guidelines
+ * Provides educational information about measurement tools
+ * @module MeasurementGuideModal
+ */
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Ruler,
-  Maximize2,
-  Square,
-  MousePointerClick,
-  Move,
-} from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
+/**
+ * Props for the MeasurementGuideModal component
+ */
 interface MeasurementGuideModalProps {
+  /** Whether the modal is open */
   open: boolean;
+  /** Function to set the open state */
   onOpenChange: (open: boolean) => void;
 }
 
 /**
- * Modal that provides guidance on taking accurate measurements
- * in the floor plan drawing tool
+ * Modal that displays measurement guidelines and tips
+ * @param {MeasurementGuideModalProps} props - Component props
+ * @returns {JSX.Element} Rendered component
  */
-export const MeasurementGuideModal = ({
-  open,
-  onOpenChange,
-}: MeasurementGuideModalProps) => {
+export const MeasurementGuideModal = ({ open, onOpenChange }: MeasurementGuideModalProps) => {
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  /**
+   * Handle closing the modal with option to not show again
+   */
+  const handleClose = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('dontShowMeasurementGuide', 'true');
+    }
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Ruler className="w-5 h-5" />
-            Measurement Guide
-          </DialogTitle>
+          <DialogTitle>Measurement Guide</DialogTitle>
           <DialogDescription>
-            How to create accurate floor plan measurements
+            Tips for accurate floor plan measurements
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
-              <MousePointerClick className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h3 className="font-medium">Click to start drawing</h3>
-              <p className="text-sm text-muted-foreground">
-                Click once to set your starting point, then move to create a line
-              </p>
-            </div>
+        <div className="space-y-4 my-4">
+          <div>
+            <h3 className="font-medium mb-1">Grid System</h3>
+            <p className="text-sm text-muted-foreground">
+              Each small grid square represents 0.5 meters. Large grid lines appear every 1 meter.
+            </p>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
-              <Move className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-medium">Watch the measurements</h3>
-              <p className="text-sm text-muted-foreground">
-                As you move, a tooltip will show the exact distance in meters
-              </p>
-            </div>
+          <div>
+            <h3 className="font-medium mb-1">Drawing Walls</h3>
+            <p className="text-sm text-muted-foreground">
+              Use the "Line" tool to draw walls. Click to start, move to the end point, then click again.
+              Hold Shift while drawing to snap to 45° and 90° angles.
+            </p>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="bg-amber-100 dark:bg-amber-900 p-2 rounded-full">
-              <Square className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <h3 className="font-medium">Close shapes for area calculation</h3>
-              <p className="text-sm text-muted-foreground">
-                When creating rooms, end near your starting point to calculate area
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
-              <Maximize2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h3 className="font-medium">Grid alignment</h3>
-              <p className="text-sm text-muted-foreground">
-                Lines snap to the grid (0.1m) for precision. Check the tooltip for exact measurements.
-              </p>
-            </div>
+          <div>
+            <h3 className="font-medium mb-1">Measuring Areas</h3>
+            <p className="text-sm text-muted-foreground">
+              Use the "Polygon" tool to outline rooms. Close the shape by clicking near the starting point.
+              The area will be calculated automatically.
+            </p>
           </div>
         </div>
 
-        <DialogFooter className="flex items-center justify-between">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="dont-show-again"
-              className="mr-2"
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="dontShow"
+              checked={dontShowAgain}
+              onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
             />
-            <label htmlFor="dont-show-again" className="text-xs text-muted-foreground">
-              Don't show again
-            </label>
+            <Label htmlFor="dontShow" className="text-sm">Don't show again</Label>
           </div>
-          <Button onClick={() => onOpenChange(false)}>
-            Got it
-          </Button>
+          <Button onClick={handleClose}>Got it</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

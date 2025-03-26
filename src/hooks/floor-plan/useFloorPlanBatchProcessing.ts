@@ -1,80 +1,87 @@
 
 /**
- * Custom hook for optimized batch processing of floor plan rendering
+ * Hook for batch processing floor plan operations
+ * Provides utilities for processing multiple floor plans efficiently
  * @module useFloorPlanBatchProcessing
  */
-import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
+import { useCallback } from "react";
+import { FloorPlan } from "@/types/floorPlanTypes";
+import logger from "@/utils/logger";
 
 /**
- * Props for the useFloorPlanBatchProcessing hook
- * @interface UseFloorPlanBatchProcessingProps
+ * Options for batch processing
+ * @interface BatchProcessingOptions
  */
-interface UseFloorPlanBatchProcessingProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+interface BatchProcessingOptions {
+  /** Whether to continue processing after errors */
+  continueOnError?: boolean;
+  /** Maximum concurrent operations */
+  concurrency?: number;
+  /** Whether to show progress notifications */
+  showProgress?: boolean;
 }
 
 /**
- * Result of the useFloorPlanBatchProcessing hook
- * @interface UseFloorPlanBatchProcessingResult
+ * Default options for batch processing
  */
-interface UseFloorPlanBatchProcessingResult {
-  /** Reference to batched drawing operations */
-  batchedDrawOpsRef: React.MutableRefObject<Polyline[]>;
-  /** Reference to animation frame ID */
-  animFrameRef: React.MutableRefObject<number | null>;
-  /** Process all batched drawing operations */
-  processBatchedDrawing: () => void;
-}
+const DEFAULT_OPTIONS: BatchProcessingOptions = {
+  continueOnError: false,
+  concurrency: 1,
+  showProgress: true
+};
 
 /**
- * Hook that handles batch processing of floor plan rendering operations
- * @param {UseFloorPlanBatchProcessingProps} props - Hook properties
- * @returns {UseFloorPlanBatchProcessingResult} Batch processing utilities and state
+ * Hook for performing batch operations on floor plans
+ * @returns Batch processing functions
  */
-export const useFloorPlanBatchProcessing = ({
-  fabricCanvasRef,
-  gridLayerRef
-}: UseFloorPlanBatchProcessingProps): UseFloorPlanBatchProcessingResult => {
-  // Refs to manage batched operations
-  const batchedDrawOpsRef = useRef<Polyline[]>([]);
-  const animFrameRef = useRef<number | null>(null);
-
+export const useFloorPlanBatchProcessing = () => {
   /**
-   * Process batched drawing operations in a single render cycle
+   * Process floor plans in batches
+   * @param {FloorPlan[]} floorPlans - Array of floor plans to process
+   * @param {Function} processFn - Function to process each floor plan
+   * @param {BatchProcessingOptions} options - Processing options
+   * @returns {Promise<Array<{success: boolean, plan: FloorPlan, error?: Error}>>} Processing results
    */
-  const processBatchedDrawing = useCallback(() => {
-    if (!fabricCanvasRef.current || batchedDrawOpsRef.current.length === 0) return;
+  const batchProcessFloorPlans = useCallback(async <T>(
+    floorPlans: FloorPlan[],
+    processFn: (plan: FloorPlan, index: number) => Promise<T>,
+    options: BatchProcessingOptions = DEFAULT_OPTIONS
+  ): Promise<Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}>> => {
+    // Merge with default options
+    const processOptions = { ...DEFAULT_OPTIONS, ...options };
+    const results: Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}> = [];
     
-    const canvas = fabricCanvasRef.current;
-    
-    // Process all batched polylines at once
-    canvas.renderOnAddRemove = false;
-    
-    // Add all polylines in one batch
-    batchedDrawOpsRef.current.forEach(polyline => {
-      canvas.add(polyline);
-    });
-    
-    // Ensure grid stays in background
-    gridLayerRef.current.forEach(gridObj => {
-      canvas.sendObjectToBack(gridObj);
-    });
-    
-    canvas.renderOnAddRemove = true;
-    canvas.requestRenderAll();
-    
-    // Clear the batch
-    batchedDrawOpsRef.current = [];
-    animFrameRef.current = null;
-  }, [fabricCanvasRef, gridLayerRef]);
-
-  return {
-    batchedDrawOpsRef,
-    animFrameRef,
-    processBatchedDrawing
-  };
+    try {
+      // Process in batches according to concurrency
+      const { concurrency = 1 } = processOptions;
+      
+      // For now we're using sequential processing (concurrency=1)
+      // due to fabric.js thread limitations
+      for (let i = 0; i < floorPlans.length; i++) {
+        const plan = floorPlans[i];
+        
+        try {
+          logger.info(`Processing floor plan ${i+1}/${floorPlans.length}: ${plan.label}`);
+          const result = await processFn(plan, i);
+          results.push({ success: true, plan, result });
+        } catch (error) {
+          const errorObj = error instanceof Error ? error : new Error(String(error));
+          logger.error(`Error processing floor plan ${plan.label}:`, errorObj);
+          results.push({ success: false, plan, error: errorObj });
+          
+          // Stop processing if continueOnError is false
+          if (!processOptions.continueOnError) {
+            break;
+          }
+        }
+      }
+      
+      return results;
+    } catch (error) {
+      logger.error('Batch processing error:', error);
+      throw error;
+    }
+  }, []);
+  
+  return { batchProcessFloorPlans };
 };
