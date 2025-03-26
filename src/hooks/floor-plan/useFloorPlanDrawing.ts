@@ -28,9 +28,24 @@ interface UseFloorPlanDrawingProps {
 }
 
 /**
+ * Return type for the useFloorPlanDrawing hook
+ * @interface UseFloorPlanDrawingResult
+ */
+interface UseFloorPlanDrawingResult {
+  /** Function to draw a floor plan on the canvas */
+  drawFloorPlan: (currentFloor: number, floorPlans: FloorPlan[]) => void;
+  /** Function to process batched drawing operations */
+  processBatchedDrawing: () => void;
+  /** Reference to the last drawn floor index */
+  lastDrawnFloorRef: React.MutableRefObject<number | null>;
+  /** Reference to flag tracking floor change in progress */
+  floorChangeInProgressRef: React.MutableRefObject<boolean>;
+}
+
+/**
  * Hook that handles drawing floor plans on the canvas
  * @param {UseFloorPlanDrawingProps} props - Hook properties
- * @returns Floor plan drawing utilities and state
+ * @returns {UseFloorPlanDrawingResult} Floor plan drawing utilities and state
  */
 export const useFloorPlanDrawing = ({
   fabricCanvasRef,
@@ -38,7 +53,7 @@ export const useFloorPlanDrawing = ({
   createGrid,
   floorChangeInProgressRef = useRef(false),
   recalculateGIA
-}: UseFloorPlanDrawingProps) => {
+}: UseFloorPlanDrawingProps): UseFloorPlanDrawingResult => {
   const lastDrawnFloorRef = useRef<number | null>(null);
   
   // Initialize batch processing hook

@@ -1,112 +1,51 @@
 
-/**
- * Custom hook for integrating canvas dependency hooks
- * @module useCanvasDependencies
- */
-import { useEffect, useRef } from "react";
+import { useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useCanvasGrid } from "./useCanvasGrid";
-import { useGridManagement } from "./useGridManagement";
-import { useStylusDetection } from "./useStylusDetection";
-import { useZoomStateSync } from "./useZoomStateSync";
-import { DebugInfoState } from "@/types/debugTypes";
-import logger from "@/utils/logger";
+import { DebugInfoState } from '@/types/debugTypes';
 
-/**
- * Props interface for useCanvasDependencies hook
- * @interface UseCanvasDependenciesProps
- */
-interface UseCanvasDependenciesProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the HTML canvas element */
+interface CanvasDependenciesProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  /** Current canvas dimensions */
-  canvasDimensions: { width: number, height: number };
-  /** Current debug info state */
-  debugInfo: DebugInfoState;
-  /** Function to set debug info */
-  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
-  /** Function to set error state */
-  setHasError: (value: boolean) => void;
-  /** Function to set error message */
-  setErrorMessage: (value: string) => void;
-  /** Current zoom level */
-  zoomLevel: number;
 }
 
 /**
- * Return type for useCanvasDependencies hook
+ * Enhanced DebugInfoState with index signature support
  */
-interface UseCanvasDependenciesResult {
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Function to create grid */
-  createGrid: (canvas: FabricCanvas) => FabricObject[];
+interface EnhancedDebugInfoState extends DebugInfoState {
+  [key: string]: unknown;
 }
 
-/**
- * Hook that integrates all canvas dependency hooks
- * Manages grid, stylus detection, and zoom synchronization
- * 
- * @param {UseCanvasDependenciesProps} props - Hook properties
- * @returns {UseCanvasDependenciesResult} Grid reference and creation function
- */
-export const useCanvasDependencies = (
-  props: UseCanvasDependenciesProps
-): UseCanvasDependenciesResult => {
-  const {
-    fabricCanvasRef,
-    canvasRef,
-    canvasDimensions,
-    debugInfo,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage,
-    zoomLevel
-  } = props;
-  
-  // Initialize gridLayerRef first before passing it to other hooks
+export const useCanvasDependencies = ({ canvasRef }: CanvasDependenciesProps) => {
+  // References
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
-  
-  // Create grid management
-  const createGrid = useCanvasGrid({
-    gridLayerRef,
-    canvasDimensions,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage
+  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
+    past: [],
+    future: []
   });
   
-  // Initialize grid management with explicit dimensions
-  const { gridLayerRef: managedGridLayerRef } = useGridManagement({
-    fabricCanvasRef,
-    canvasDimensions,
-    debugInfo,
-    createGrid
-  });
-  
-  // Initialize stylus detection
-  useStylusDetection({
-    canvasRef,
-    debugInfo
-  });
-  
-  // Initialize zoom state synchronization
-  useZoomStateSync({
-    fabricCanvasRef,
-    zoomLevel
-  });
-  
-  // Sync the gridLayerRef with managedGridLayerRef
-  useEffect(() => {
-    if (managedGridLayerRef.current && managedGridLayerRef.current.length > 0) {
-      gridLayerRef.current = managedGridLayerRef.current;
+  // State initialization
+  const [debugInfo, setDebugInfo] = useState<EnhancedDebugInfoState>({
+    canvasInitialized: false,
+    gridCreated: false,
+    dimensionsSet: false,
+    brushInitialized: false,
+    canvasCreated: false,
+    canvasLoaded: false,
+    canvasWidth: 0,
+    canvasHeight: 0,
+    loadTimes: {
+      start: 0,
+      initialized: 0,
+      rendered: 0
     }
-  }, [managedGridLayerRef]);
+  });
   
   return {
+    canvasRef,
+    fabricCanvasRef,
     gridLayerRef,
-    createGrid
+    historyRef,
+    debugInfo,
+    setDebugInfo
   };
 };

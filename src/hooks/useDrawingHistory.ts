@@ -5,11 +5,12 @@
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 
 interface UseDrawingHistoryProps {
-  fabricCanvasRef: React.MutableRefObject<any>;
-  gridLayerRef: React.MutableRefObject<any[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   clearDrawings: () => void;
   recalculateGIA: () => void;
 }

@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for drawing tools functionality
  * Orchestrates tool behavior, history, and canvas operations
@@ -8,7 +7,6 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useCanvasTools } from "./useCanvasTools";
-import { useDrawingHistory } from "./useDrawingHistory";
 import { useCanvasActions } from "./useCanvasActions";
 import { DrawingTool } from "./useCanvasState";
 import logger from "@/utils/logger";
@@ -68,7 +66,7 @@ interface UseDrawingToolsResult {
   /** Clear the entire canvas */
   clearCanvas: () => void;
   /** Save the canvas as an image */
-  saveCanvas: () => void;
+  saveCanvas: () => boolean;
   /** Save current state before making changes */
   saveCurrentState: () => void;
 }
@@ -123,8 +121,12 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
     if (!fabricCanvasRef.current) return;
     
     // Access the undo function from the canvas object (attached in useCanvasEventHandlers)
-    if ((fabricCanvasRef.current as any).handleUndo) {
-      (fabricCanvasRef.current as any).handleUndo();
+    const canvas = fabricCanvasRef.current as FabricCanvas & {
+      handleUndo?: () => void;
+    };
+    
+    if (canvas.handleUndo) {
+      canvas.handleUndo();
     }
   }, [fabricCanvasRef]);
   
@@ -136,8 +138,12 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
     if (!fabricCanvasRef.current) return;
     
     // Access the redo function from the canvas object (attached in useCanvasEventHandlers)
-    if ((fabricCanvasRef.current as any).handleRedo) {
-      (fabricCanvasRef.current as any).handleRedo();
+    const canvas = fabricCanvasRef.current as FabricCanvas & {
+      handleRedo?: () => void;
+    };
+    
+    if (canvas.handleRedo) {
+      canvas.handleRedo();
     }
   }, [fabricCanvasRef]);
   
@@ -148,8 +154,12 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
     if (!fabricCanvasRef.current) return;
     
     // Access the saveCurrentState function from the canvas object
-    if ((fabricCanvasRef.current as any).saveCurrentState) {
-      (fabricCanvasRef.current as any).saveCurrentState();
+    const canvas = fabricCanvasRef.current as FabricCanvas & {
+      saveCurrentState?: () => void;
+    };
+    
+    if (canvas.saveCurrentState) {
+      canvas.saveCurrentState();
     }
   }, [fabricCanvasRef]);
   

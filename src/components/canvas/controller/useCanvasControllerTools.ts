@@ -64,7 +64,7 @@ interface UseCanvasControllerToolsResult {
   /** Function to clear the entire canvas */
   clearCanvas: () => void;
   /** Function to save the canvas state */
-  saveCanvas: () => boolean;
+  saveCanvas: () => boolean; // Changed to boolean return type
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
 }
@@ -162,7 +162,7 @@ export const useCanvasControllerTools = (
     handleRedo,
     handleZoom,
     clearCanvas,
-    saveCanvas,
+    saveCanvas, // This now correctly returns a boolean
     saveCurrentState
   };
 };

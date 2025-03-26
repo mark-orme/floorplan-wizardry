@@ -39,9 +39,7 @@ interface UseGridCreationProps {
  * Result type for the useGridCreation hook
  * @interface UseGridCreationResult
  */
-interface UseGridCreationResult {
-  (canvas: FabricCanvas): FabricObject[];
-}
+type UseGridCreationResult = (canvas: FabricCanvas) => FabricObject[];
 
 /**
  * Hook for grid creation operations

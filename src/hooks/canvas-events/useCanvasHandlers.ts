@@ -8,6 +8,16 @@ import { Canvas as FabricCanvas } from "fabric";
 import { BaseEventHandlerProps } from "./types";
 
 /**
+ * Extended Canvas interface with custom handlers
+ */
+interface ExtendedFabricCanvas extends FabricCanvas {
+  handleUndo?: () => void;
+  handleRedo?: () => void;
+  saveCurrentState?: () => void;
+  deleteSelectedObjects?: () => void;
+}
+
+/**
  * Props for the useCanvasHandlers hook
  */
 interface UseCanvasHandlersProps extends BaseEventHandlerProps {
@@ -39,12 +49,7 @@ export const useCanvasHandlers = ({
     
     // Expose undo/redo handlers to the global canvas object for debugging
     // This helps with external access from CanvasController
-    const enhancedCanvas = fabricCanvas as FabricCanvas & {
-      handleUndo?: () => void;
-      handleRedo?: () => void;
-      saveCurrentState?: () => void;
-      deleteSelectedObjects?: () => void;
-    };
+    const enhancedCanvas = fabricCanvas as ExtendedFabricCanvas;
     
     enhancedCanvas.handleUndo = handleUndo;
     enhancedCanvas.handleRedo = handleRedo;

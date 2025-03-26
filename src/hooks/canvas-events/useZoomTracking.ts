@@ -21,6 +21,20 @@ interface UseZoomTrackingResult {
 }
 
 /**
+ * Custom event interface for zoom events
+ */
+interface ZoomChangedEvent {
+  zoom: number;
+}
+
+/**
+ * Extended Canvas type with custom events
+ */
+interface ExtendedFabricCanvas extends FabricCanvas {
+  fire(eventName: string, data: unknown): void;
+}
+
+/**
  * Hook to handle zoom tracking
  * @param {UseZoomTrackingProps} props - Hook properties
  * @returns {UseZoomTrackingResult} Zoom tracking functions
@@ -38,9 +52,7 @@ export const useZoomTracking = ({
       if (fabricCanvasRef.current) {
         const zoom = fabricCanvasRef.current.getZoom();
         // Type cast to access custom event type
-        const canvas = fabricCanvasRef.current as FabricCanvas & {
-          fire: (eventName: string, data: unknown) => void;
-        };
+        const canvas = fabricCanvasRef.current as ExtendedFabricCanvas;
         canvas.fire('custom:zoom-changed', { zoom });
       }
     };
