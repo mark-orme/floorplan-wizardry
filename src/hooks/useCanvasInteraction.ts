@@ -39,14 +39,12 @@ interface UseCanvasInteractionResult {
 
 /**
  * Type definition for enhanced fabric objects with selection properties
- * @interface SelectableFabricObject
- * @extends FabricObject
  */
-interface SelectableFabricObject extends FabricObject {
+interface SelectableFabricObject {
   /** Type identifier for specialized handling */
   objectType?: string;
   /** Whether the object is selectable */
-  selectable?: boolean;
+  selectable: boolean;
   /** Whether the object responds to events */
   evented?: boolean;
   /** Cursor to show when hovering over the object */
@@ -57,6 +55,8 @@ interface SelectableFabricObject extends FabricObject {
   perPixelTargetFind?: boolean;
   /** Tolerance for target finding */
   targetFindTolerance?: number;
+  /** Object type from Fabric */
+  type: string;
 }
 
 /**
@@ -90,7 +90,7 @@ export const useCanvasInteraction = ({
     // Remove all selected objects
     activeObjects.forEach(obj => {
       // Skip grid elements
-      const objectType = (obj as SelectableFabricObject).objectType;
+      const objectType = (obj as unknown as SelectableFabricObject).objectType;
       if (objectType && objectType.includes('grid')) {
         return;
       }
@@ -120,7 +120,7 @@ export const useCanvasInteraction = ({
     
     // Make objects selectable
     canvas.getObjects().forEach(obj => {
-      const fabricObj = obj as SelectableFabricObject;
+      const fabricObj = obj as unknown as SelectableFabricObject;
       // Skip grid elements
       const objectType = fabricObj.objectType;
       if (!objectType || !objectType.includes('grid')) {

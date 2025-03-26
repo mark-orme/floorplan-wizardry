@@ -4,7 +4,7 @@
  * Contains configuration values for grid dimensions and styling
  * @module gridConstants
  */
-import logger from "./logger";
+import { Canvas, Line, Text } from "fabric";
 
 /** Base cell size in pixels */
 export const GRID_CELL_SIZE = 20;
@@ -12,103 +12,100 @@ export const GRID_CELL_SIZE = 20;
 /** Scale factor for real-world dimensions (1 meter = 100 pixels) */
 export const GRID_SCALE_FACTOR = 100;
 
-/** Small grid line color */
-export const SMALL_GRID_COLOR = '#e5e5e5';
+/** Small grid spacing in meters */
+export const SMALL_GRID_SPACING = 0.1;
 
-/** Large grid line color */
-export const LARGE_GRID_COLOR = '#cccccc';
+/** Large grid spacing in meters */
+export const LARGE_GRID_SPACING = 1;
 
-/** Text marker color */
-export const MARKER_TEXT_COLOR = '#888888';
+/** Marker interval in meters */
+export const MARKER_INTERVAL = 1;
 
-/** Line marker color */
-export const MARKER_LINE_COLOR = '#888888';
+/** Maximum number of small grid lines to render */
+export const MAX_SMALL_GRID_LINES = 500;
 
-/** Distance between large grid lines in meters */
-export const LARGE_GRID_SPACING = 1; // 1 meter
+/** Maximum number of large grid lines to render */
+export const MAX_LARGE_GRID_LINES = 100;
 
-/** Distance between small grid lines in meters */
-export const SMALL_GRID_SPACING = 0.1; // 0.1 meters
+/** Grid extension factor - how much to extend grid beyond visible area */
+export const GRID_EXTENSION_FACTOR = 1.5;
 
-/** Maximum grid rendering dimensions (pixels) */
-export const MAX_GRID_DIMENSIONS = {
-  width: 2000,
-  height: 2000
-};
-
-/** How often to place numerical markers (in meters) */
-export const MARKER_INTERVAL = 5; // Every 5 meters
-
-/** Whether to use optimized grid rendering for large canvases */
-export const USE_OPTIMIZED_GRID = true;
-
-/** Threshold for using optimized grid rendering (width * height) */
-export const OPTIMIZATION_THRESHOLD = 1000000; // 1M pixels (e.g., 1000x1000)
-
-/** Default line options for small grid lines */
+/** Styling options for small grid lines */
 export const SMALL_GRID_LINE_OPTIONS = {
-  stroke: SMALL_GRID_COLOR,
+  stroke: "#E0E5EC",
+  selectable: false,
+  evented: false,
   strokeWidth: 0.5,
-  selectable: false,
-  evented: false,
-  objectType: 'grid'
+  objectCaching: true,
+  hoverCursor: 'default',
+  opacity: 0.7,
+  objectType: 'grid-small'
 };
 
-/** Default line options for large grid lines */
+/** Styling options for large grid lines */
 export const LARGE_GRID_LINE_OPTIONS = {
-  stroke: LARGE_GRID_COLOR,
-  strokeWidth: 1,
+  stroke: "#C0D0E0",
   selectable: false,
   evented: false,
-  objectType: 'grid'
+  strokeWidth: 1,
+  objectCaching: true,
+  hoverCursor: 'default',
+  opacity: 0.8,
+  objectType: 'grid-large'
 };
 
-/** Default text options for grid markers */
+/** Styling options for grid marker text */
 export const MARKER_TEXT_OPTIONS = {
-  fill: MARKER_TEXT_COLOR,
-  fontFamily: 'Arial',
   fontSize: 12,
+  fill: "#708090",
   selectable: false,
   evented: false,
-  objectType: 'grid'
+  objectCaching: true,
+  hoverCursor: 'default',
+  objectType: 'grid-marker'
 };
 
 /**
- * Calculate optimized grid density based on canvas size
- * @param {number} width - Canvas width
- * @param {number} height - Canvas height
- * @returns {{ smallGridVisible: boolean, smallGridInterval: number }}
+ * Grid dimensions metadata interface
+ * @interface GridDimensions
+ */
+export interface GridDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Calculate grid density based on canvas dimensions
+ * Determines how many lines to skip for optimal performance
+ * 
+ * @param {number} width - Canvas width in pixels
+ * @param {number} height - Canvas height in pixels
+ * @returns {Object} Grid density configuration
  */
 export const calculateGridDensity = (width: number, height: number) => {
-  const pixelArea = width * height;
+  const area = width * height;
   
-  // Default values
-  const defaultDensity = {
-    smallGridVisible: true,
-    smallGridInterval: 1 // Show every small grid line
+  // Skip small grid entirely for very large canvases
+  const smallGridVisible = area < 2000000;
+  
+  // Determine interval for small grid lines (1 = every line, 2 = every other line, etc.)
+  let smallGridInterval = 1;
+  if (area > 500000) smallGridInterval = 2;
+  if (area > 1000000) smallGridInterval = 5;
+  if (area > 1500000) smallGridInterval = 10;
+  
+  return {
+    smallGridVisible,
+    smallGridInterval
   };
-  
-  if (!USE_OPTIMIZED_GRID || pixelArea < OPTIMIZATION_THRESHOLD) {
-    return defaultDensity;
-  }
-  
-  logger.debug(`Large canvas detected (${width}x${height}), optimizing grid density`);
-  
-  // For very large canvases, show fewer small grid lines
-  if (pixelArea > OPTIMIZATION_THRESHOLD * 4) {
-    return {
-      smallGridVisible: false, // Hide small grid completely
-      smallGridInterval: 0
-    };
-  } else if (pixelArea > OPTIMIZATION_THRESHOLD * 2) {
-    return {
-      smallGridVisible: true,
-      smallGridInterval: 5 // Show every 5th small grid line
-    };
-  } else {
-    return {
-      smallGridVisible: true,
-      smallGridInterval: 2 // Show every 2nd small grid line
-    };
-  }
+};
+
+/**
+ * Check if small grid should be skipped based on canvas dimensions
+ * @param {number} width - Canvas width
+ * @param {number} height - Canvas height
+ * @returns {boolean} Whether to skip small grid
+ */
+export const shouldSkipSmallGrid = (width: number, height: number): boolean => {
+  return width * height > 2000000; // Skip for very large canvases
 };

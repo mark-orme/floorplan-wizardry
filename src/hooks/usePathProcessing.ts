@@ -42,15 +42,15 @@ interface UsePathProcessingProps {
 }
 
 /**
- * Enhanced Fabric Path with additional properties
- * @interface EnhancedPath
- * @extends Path
+ * Enhanced Fabric Path for type handling
  */
-interface EnhancedPath extends Path {
-  /** Path data array */
-  path?: Array<Array<number | string>>;
+interface EnhancedPath {
+  /** Path data property */
+  path?: Array<Array<string | number>>;
   /** Line color */
   stroke?: string | null;
+  /** Type property */
+  type: string;
 }
 
 /**
@@ -105,7 +105,7 @@ export const usePathProcessing = ({
     if (!fabricCanvasRef.current) return;
     const fabricCanvas = fabricCanvasRef.current;
     
-    const enhancedPath = path as EnhancedPath;
+    const enhancedPath = path as unknown as EnhancedPath;
     if (!enhancedPath.path) {
       logger.error("Invalid path object:", path);
       return;

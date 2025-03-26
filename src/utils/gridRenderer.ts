@@ -157,7 +157,16 @@ export const arrangeGridObjects = (
   
   // Arrange z-order: small lines at back, large lines in middle, markers at front
   smallGridLines.forEach(obj => canvas.sendObjectToBack(obj));
-  largeGridLines.forEach(obj => canvas.bringForward(obj));
+  
+  // Use bringObjectToFront instead of bringForward for Fabric.js v6 compatibility
+  largeGridLines.forEach(obj => {
+    // First send to back, then bring forward so they're between small grid and markers
+    canvas.sendObjectToBack(obj);
+    canvas.bringObjectToFront(obj);
+    // Then send behind markers which will be brought to front next
+    smallGridLines.forEach(() => canvas.sendObjectBackwards(obj));
+  });
+  
   markers.forEach(obj => canvas.bringObjectToFront(obj));
   
   // Request render

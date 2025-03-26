@@ -9,6 +9,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { resetGridProgress } from "@/utils/gridManager";
 import { createBasicEmergencyGrid, retryWithBackoff } from "@/utils/gridCreationUtils";
 import { 
+  GridAttemptTracker, 
   createGridAttemptTracker, 
   incrementAttemptCount,
   markCreationSuccessful, 
@@ -61,7 +62,7 @@ export const useGridManagement = ({
   const gridLayerRef = useRef<FabricObject[]>([]);
   
   // Track grid creation attempts with status object
-  const gridAttemptStatusRef = useRef<GridAttemptStatus>(createGridAttemptTracker());
+  const gridAttemptStatusRef = useRef<GridAttemptTracker>(createGridAttemptTracker());
   
   // IMPROVED: Force grid creation on initial load and after any error with higher priority
   useEffect(() => {

@@ -4,7 +4,7 @@
  * @module useCanvasEventHandlers
  */
 import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, TEvent } from "fabric";
+import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, TEvent, TPointerEvent, TPointerEventInfo } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import logger from "@/utils/logger";
 
@@ -28,9 +28,9 @@ interface UseCanvasEventHandlersProps {
   /** Function to handle redo operation */
   handleRedo: () => void;
   /** Function to handle mouse down event */
-  handleMouseDown: (e: TEvent<MouseEvent>) => void;
+  handleMouseDown: (e: TPointerEventInfo<TPointerEvent>) => void;
   /** Function to handle mouse move event */
-  handleMouseMove: (e: TEvent<MouseEvent>) => void;
+  handleMouseMove: (e: TPointerEventInfo<TPointerEvent>) => void;
   /** Function to handle mouse up event */
   handleMouseUp: () => void;
   /** Function to process created path */
@@ -53,7 +53,7 @@ interface UseCanvasEventHandlersResult {
 /**
  * Type for Canvas Events with target object
  */
-interface TargetEvent extends TEvent<MouseEvent> {
+interface TargetEvent extends TPointerEventInfo<TPointerEvent> {
   target: FabricObject | null;
 }
 
@@ -176,8 +176,8 @@ export const useCanvasEventHandlers = ({
     };
     
     fabricCanvas.on('path:created', handlePathCreated as any);
-    fabricCanvas.on('mouse:down', handleMouseDown);
-    fabricCanvas.on('mouse:move', handleMouseMove);
+    fabricCanvas.on('mouse:down', handleMouseDown as any);
+    fabricCanvas.on('mouse:move', handleMouseMove as any);
     fabricCanvas.on('mouse:up', handleMouseUp);
     fabricCanvas.on('object:modified', handleObjectModified);
     fabricCanvas.on('object:removed', handleObjectRemoved);
@@ -198,8 +198,8 @@ export const useCanvasEventHandlers = ({
       
       if (fabricCanvas) {
         fabricCanvas.off('path:created', handlePathCreated as any);
-        fabricCanvas.off('mouse:down', handleMouseDown);
-        fabricCanvas.off('mouse:move', handleMouseMove);
+        fabricCanvas.off('mouse:down', handleMouseDown as any);
+        fabricCanvas.off('mouse:move', handleMouseMove as any);
         fabricCanvas.off('mouse:up', handleMouseUp);
         fabricCanvas.off('object:modified', handleObjectModified);
         fabricCanvas.off('object:removed', handleObjectRemoved);
