@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingTool } from '@/hooks/useCanvasState';
@@ -135,6 +134,8 @@ export const CanvasControllerProvider = ({ children }: { children: React.ReactNo
       canvasCreated: false,
       gridCreated: false,
       canvasLoaded: false,
+      canvasInitialized: false,
+      brushInitialized: false,
       canvasWidth: initialCanvasWidth,
       canvasHeight: initialCanvasHeight,
       loadTimes: {}
