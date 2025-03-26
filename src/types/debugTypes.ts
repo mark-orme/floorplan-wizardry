@@ -38,6 +38,8 @@ export interface DebugInfoState {
   lastError?: string;
   /** Last error timestamp (optional) */
   lastErrorTime?: number;
+  /** Initialization time in milliseconds (optional) */
+  initTime?: number;
   /** Performance statistics (optional) */
   performanceStats?: {
     /** Render time in milliseconds */
@@ -48,5 +50,13 @@ export interface DebugInfoState {
     objectCreationTime?: number;
     /** Frame rate */
     fps?: number;
+    /** Dropped frames count */
+    droppedFrames?: number;
+    /** Average frame time in milliseconds */
+    frameTime?: number;
+    /** Maximum frame time in milliseconds */
+    maxFrameTime?: number;
+    /** Count of long frames */
+    longFrames?: number;
   };
 }

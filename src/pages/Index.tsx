@@ -33,6 +33,13 @@ const CanvasApp = () => {
     openMeasurementGuide
   } = useCanvasController();
 
+  // Adapter function to convert direction-based zoom to level-based zoom
+  const handleZoomAdapter = (direction: "in" | "out") => {
+    // Convert direction to a zoom level adjustment
+    const zoomChange = direction === "in" ? 1.2 : 0.8;
+    handleZoom(zoomChange);
+  };
+
   return (
     <CanvasLayout
       tool={tool}
@@ -46,7 +53,7 @@ const CanvasApp = () => {
       onToolChange={handleToolChange}
       onUndo={handleUndo}
       onRedo={handleRedo}
-      onZoom={handleZoom}
+      onZoom={handleZoomAdapter}
       onClear={clearCanvas}
       onSave={saveCanvas}
       onDelete={deleteSelectedObjects}

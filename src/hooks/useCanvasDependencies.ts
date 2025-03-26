@@ -36,11 +36,8 @@ export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabr
     canvasReady: false,
     canvasWidth: 0,
     canvasHeight: 0,
-    loadTimes: {
-      start: 0,
-      initialized: 0,
-      rendered: 0
-    }
+    lastInitTime: 0,
+    lastGridCreationTime: 0
   });
   
   /**

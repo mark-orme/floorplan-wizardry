@@ -1,4 +1,3 @@
-
 /**
  * Container component for the canvas element
  * Wraps the canvas element and provides a reference to it
@@ -211,7 +210,7 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
           ...debugInfo, 
           canvasReady,
           dimensionAttempts: dimensionsSetupAttempt,
-          initTime: Date.now() - startTimeRef.current
+          lastInitTime: debugInfo.lastInitTime || Date.now() - startTimeRef.current
         }} />
       </Card>
     );
