@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for loading floor plan data
  * Handles loading, error handling, and default floor plan creation
@@ -72,8 +73,7 @@ export const useFloorPlanLoader = ({
           name: defaultName,
           gia: 0,
           strokes: [],
-          label: defaultName,
-          paperSize: "infinite"
+          label: defaultName
         }];
         setFloorPlans(defaultPlan);
         console.log("Created default floor plan");

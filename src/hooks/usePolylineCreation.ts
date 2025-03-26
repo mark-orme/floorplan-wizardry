@@ -129,8 +129,8 @@ export const usePolylineCreation = ({
       // Ensure grid stays in the background
       gridLayerRef.current.forEach(gridObj => {
         if (fabricCanvas.contains(gridObj)) {
-          // Use the object method instead of canvas method
-          gridObj.sendToBack();
+          // Send grid object to back in the canvas (not using the object method)
+          fabricCanvas.sendObjectToBack(gridObj);
         }
       });
       
@@ -149,8 +149,9 @@ export const usePolylineCreation = ({
             updatedFloorPlan.strokes = [];
           }
           
-          // Add the new stroke - wrap finalPoints in an array to satisfy Point[][] type
-          const newStrokes = [...updatedFloorPlan.strokes, [finalPoints]];
+          // Add the new stroke - make sure it's in the right format
+          const newStrokes = [...updatedFloorPlan.strokes];
+          newStrokes.push([finalPoints]); // Wrap finalPoints in array to match Point[][] type
           updatedFloorPlan.strokes = newStrokes;
           
           // Update the floor plan in the array

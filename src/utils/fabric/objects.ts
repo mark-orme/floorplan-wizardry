@@ -57,8 +57,8 @@ export const bringObjectToFront = (canvas: FabricCanvas | null, obj: FabricObjec
   if (!isCanvasValid(canvas) || !obj) return;
   
   try {
-    // Bring object to front in the canvas
-    obj.bringToFront();
+    // Use canvas method to bring object to front
+    canvas!.bringObjectToFront(obj);
     canvas!.requestRenderAll();
   } catch (error) {
     logger.error('Error bringing object to front:', error);
@@ -74,8 +74,8 @@ export const sendObjectToBack = (canvas: FabricCanvas | null, obj: FabricObject)
   if (!isCanvasValid(canvas) || !obj) return;
   
   try {
-    // Send object to back in the canvas
-    obj.sendToBack();
+    // Use canvas method to send object to back
+    canvas!.sendObjectToBack(obj);
     canvas!.requestRenderAll();
   } catch (error) {
     logger.error('Error sending object to back:', error);

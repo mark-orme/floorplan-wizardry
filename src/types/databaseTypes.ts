@@ -41,5 +41,5 @@ export const getDB = async () => {
   });
 };
 
-// Export the type only (not the interface again)
-export type { FloorPlanStorageModel };
+// Export the type only (no duplicate export)
+export type { FloorPlan };
