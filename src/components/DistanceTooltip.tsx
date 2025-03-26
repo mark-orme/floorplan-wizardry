@@ -1,9 +1,9 @@
 
-import React, { memo, useEffect } from "react";
+import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
 import { calculateDistance, formatDistance } from "@/utils/geometry/lineOperations";
-import { GRID_SIZE, PIXELS_PER_METER } from "@/utils/drawing";
+import { PIXELS_PER_METER } from "@/utils/drawing";
 
 interface DistanceTooltipProps {
   startPoint?: Point | null;
@@ -30,8 +30,10 @@ export const DistanceTooltip = memo(({
   zoomLevel = 1,
   currentZoom
 }: DistanceTooltipProps): React.ReactElement | null => {
-  // If not visible or missing critical points, don't render
-  if (!isVisible || (!startPoint && !position)) {
+  // Enhanced visibility check
+  // If explicitly not visible, don't render
+  if (isVisible === false) {
+    console.log("Tooltip explicitly hidden");
     return null;
   }
   
@@ -70,11 +72,12 @@ export const DistanceTooltip = memo(({
   const pixelY = tooltipPosition.y * PIXELS_PER_METER;
   
   // Log for debugging
-  console.log("Rendering tooltip:", { 
+  console.log("Rendering distance tooltip:", { 
     formattedDistance, 
     startPoint: displayStartPoint, 
     endPoint: displayEndPoint,
-    position: { x: pixelX, y: pixelY }
+    position: { x: pixelX, y: pixelY },
+    isVisible
   });
   
   return (

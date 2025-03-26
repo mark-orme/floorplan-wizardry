@@ -1,4 +1,3 @@
-
 import { Point } from '@/types/geometryTypes';
 import { DISTANCE_PRECISION, GRID_SPACING, FLOATING_POINT_TOLERANCE } from './constants';
 
@@ -16,7 +15,14 @@ export const calculateDistance = (point1: Point, point2: Point): number => {
   
   const dx = point2.x - point1.x;
   const dy = point2.y - point1.y;
-  return Math.sqrt(dx * dx + dy * dy);
+  
+  // Calculate the Euclidean distance
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Debug log for distance calculation
+  console.log("Distance calculation:", { point1, point2, distance });
+  
+  return distance;
 };
 
 /**
@@ -51,10 +57,15 @@ export const calculateMidpoint = (point1: Point, point2: Point): Point => {
     return { x: 0, y: 0 };
   }
   
-  return {
+  const midpoint = {
     x: (point1.x + point2.x) / 2,
     y: (point1.y + point2.y) / 2
   };
+  
+  // Debug log for midpoint calculation
+  console.log("Midpoint calculation:", { point1, point2, midpoint });
+  
+  return midpoint;
 };
 
 /**

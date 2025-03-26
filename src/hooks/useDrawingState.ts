@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing drawing state on the canvas
  * @module useDrawingState
@@ -40,7 +39,8 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     currentPoint: null,
     cursorPosition: null,
     midPoint: null,
-    selectionActive: false
+    selectionActive: false,
+    currentZoom: 1
   });
   
   /**
@@ -123,17 +123,15 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
         }));
         
         // Enhanced debug log for development
-        if (process.env.NODE_ENV === 'development') {
-          console.log("Drawing in progress:", {
-            start: drawingState.startPoint,
-            current: snappedPoint,
-            mid: midPoint,
-            distance: Math.sqrt(
-              Math.pow(snappedPoint.x - drawingState.startPoint.x, 2) + 
-              Math.pow(snappedPoint.y - drawingState.startPoint.y, 2)
-            ).toFixed(1) + "m"
-          });
-        }
+        console.log("Drawing in progress:", {
+          start: drawingState.startPoint,
+          current: snappedPoint,
+          mid: midPoint,
+          distance: Math.sqrt(
+            Math.pow(snappedPoint.x - drawingState.startPoint.x, 2) + 
+            Math.pow(snappedPoint.y - drawingState.startPoint.y, 2)
+          ).toFixed(1) + "m"
+        });
       } else {
         // Just update cursor position for hover tooltips
         setDrawingState(prevState => ({
@@ -158,23 +156,23 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     
     // Keep the measurement tooltip visible for a moment after drawing
     timeoutRef.current = window.setTimeout(() => {
-      // Keep drawing state true for a little longer to show the measurement
+      // First update to keep points but mark drawing as complete
       setDrawingState(prevState => ({
         ...prevState,
-        isDrawing: false,  // We need this to be false to stop actual drawing
+        isDrawing: false,
         selectionActive: hasActiveSelection
       }));
       
-      // Only after showing the measurement, fully clear the points
-      // This has been increased to 2.5 seconds to ensure measurement visibility
+      // After a longer delay, clear the points
       setTimeout(() => {
+        // Then fully clear the points after showing measurement
         setDrawingState(prevState => ({
           ...prevState,
           startPoint: null,
           currentPoint: null,
           midPoint: null,
         }));
-      }, 2500); // Keep measurement visible for 2.5 seconds after finishing
+      }, 5000); // Extended to 5 seconds for better visibility
     }, 50);
   }, [fabricCanvasRef]);
   

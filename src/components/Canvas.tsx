@@ -50,37 +50,34 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
     }
   }, [readonly]);
   
-  // Enhanced tooltip visibility logic - show during active drawing with line tools
-  // and also when hovering over existing lines in selection mode
+  // Improved tooltip visibility logic - simplify and make more reliable
   const isTooltipVisible = Boolean(
-    // Always show during active drawing with line tools
-    (drawingState?.isDrawing && (tool === "straightLine" || tool === "wall")) ||
-    // Show when hovering with these tools even if not actively drawing
-    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "wall") && 
-     drawingState?.cursorPosition != null && drawingState?.startPoint != null) ||
-    // Also show when in select mode and actively manipulating objects
-    (tool === "select" && drawingState?.isDrawing) ||
-    // Show when objects are selected (for measurements of selected objects)
-    (tool === "select" && drawingState?.selectionActive)
+    // Show when drawing with wall or line tools
+    (tool === "straightLine" || tool === "wall") &&
+    drawingState?.startPoint && 
+    drawingState?.currentPoint &&
+    // Ensure we have real coordinates for the tooltip
+    drawingState.startPoint.x !== undefined &&
+    drawingState.startPoint.y !== undefined &&
+    drawingState.currentPoint.x !== undefined &&
+    drawingState.currentPoint.y !== undefined
   );
   
   // Get relevant points for the tooltip
-  const startPoint = drawingState?.startPoint || drawingState?.cursorPosition;
-  const currentPoint = drawingState?.currentPoint || drawingState?.cursorPosition;
+  const startPoint = drawingState?.startPoint;
+  const currentPoint = drawingState?.currentPoint;
   const midPoint = drawingState?.midPoint;
   
-  // Debug logging to help troubleshoot tooltip visibility
+  // Debug logging for tooltip visibility
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Drawing state updated:", drawingState);
-      console.log("Tooltip visibility:", isTooltipVisible);
-      console.log("Tooltip points:", { 
-        startPoint,
-        currentPoint,
-        midPoint,
-        cursorPosition: drawingState?.cursorPosition
-      });
-    }
+    console.log("Drawing state updated:", drawingState);
+    console.log("Tooltip visibility:", isTooltipVisible);
+    console.log("Tooltip points:", { 
+      startPoint,
+      currentPoint,
+      midPoint,
+      cursorPosition: drawingState?.cursorPosition
+    });
   }, [drawingState, isTooltipVisible, startPoint, currentPoint, midPoint]);
   
   return (
@@ -107,8 +104,8 @@ export const Canvas = ({ 'data-readonly': readonly }: CanvasProps): JSX.Element 
         <canvas ref={canvasRef} />
       </div>
       
-      {/* Tooltip for distance measurement - improved for better visibility */}
-      {isTooltipVisible && startPoint && currentPoint && (
+      {/* Fixed Tooltip for distance measurement */}
+      {isTooltipVisible && (
         <DistanceTooltip 
           startPoint={startPoint}
           currentPoint={currentPoint}
