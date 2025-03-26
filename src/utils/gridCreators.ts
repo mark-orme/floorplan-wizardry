@@ -54,25 +54,29 @@ export const createSmallGrid = (
   const smallGridStep = SMALL_GRID;
   let smallGridCount = 0;
   
-  // Extended grid coverage with better visibility
+  // Extended grid coverage
   const extensionFactor = GRID_EXTENSION_FACTOR;
   const extendedWidth = canvasWidth * extensionFactor;
   const extendedHeight = canvasHeight * extensionFactor;
-  const startX = -extendedWidth / 2;
-  const startY = -extendedHeight / 2;
+  
+  // Adjust grid offset to fill the canvas completely
+  const startX = -canvasWidth / 4; // Modified to extend grid further left
+  const startY = -canvasHeight / 4; // Modified to extend grid further up
+  const endX = extendedWidth;
+  const endY = extendedHeight;
   
   // Create vertical small grid lines
-  for (let position = startX; position <= extendedWidth && smallGridCount < MAX_SMALL_GRID_LINES; position += smallGridStep) {
+  for (let position = startX; position <= endX && smallGridCount < MAX_SMALL_GRID_LINES; position += smallGridStep) {
     // Create more visible lines with increased opacity and slightly darker color
-    const smallGridLine = new Line([position, startY, position, extendedHeight], SMALL_GRID_LINE_OPTIONS);
+    const smallGridLine = new Line([position, startY, position, endY], SMALL_GRID_LINE_OPTIONS);
     
     smallGridObjects.push(smallGridLine);
     smallGridCount++;
   }
   
   // Create horizontal small grid lines
-  for (let position = startY; position <= extendedHeight && smallGridCount < MAX_SMALL_GRID_LINES*2; position += smallGridStep) {
-    const smallGridLine = new Line([startX, position, extendedWidth, position], SMALL_GRID_LINE_OPTIONS);
+  for (let position = startY; position <= endY && smallGridCount < MAX_SMALL_GRID_LINES*2; position += smallGridStep) {
+    const smallGridLine = new Line([startX, position, endX, position], SMALL_GRID_LINE_OPTIONS);
     
     smallGridObjects.push(smallGridLine);
     smallGridCount++;
@@ -117,24 +121,28 @@ export const createLargeGrid = (
   const largeGridStep = LARGE_GRID;
   let largeGridCount = 0;
   
-  // Extended grid coverage with better visibility
+  // Extended grid coverage
   const extensionFactor = GRID_EXTENSION_FACTOR;
   const extendedWidth = canvasWidth * extensionFactor;
   const extendedHeight = canvasHeight * extensionFactor;
-  const startX = -extendedWidth / 2;
-  const startY = -extendedHeight / 2;
+  
+  // Adjust grid offset to fill the canvas completely
+  const startX = -canvasWidth / 4; // Modified to extend grid further left
+  const startY = -canvasHeight / 4; // Modified to extend grid further up
+  const endX = extendedWidth;
+  const endY = extendedHeight;
   
   // Create vertical large grid lines
-  for (let position = startX; position <= extendedWidth && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
-    const largeGridLine = new Line([position, startY, position, extendedHeight], LARGE_GRID_LINE_OPTIONS);
+  for (let position = startX; position <= endX && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+    const largeGridLine = new Line([position, startY, position, endY], LARGE_GRID_LINE_OPTIONS);
     
     largeGridObjects.push(largeGridLine);
     largeGridCount++;
   }
   
   // Create horizontal large grid lines
-  for (let position = startY; position <= extendedHeight && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
-    const largeGridLine = new Line([startX, position, extendedWidth, position], LARGE_GRID_LINE_OPTIONS);
+  for (let position = startY; position <= endY && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+    const largeGridLine = new Line([startX, position, endX, position], LARGE_GRID_LINE_OPTIONS);
     
     largeGridObjects.push(largeGridLine);
     largeGridCount++;

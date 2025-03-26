@@ -63,9 +63,9 @@ export const CanvasLayout = ({
   onShowMeasurementGuide
 }: CanvasLayoutProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-1 p-0 max-w-[1920px] mx-auto"> {/* Reduced gap, padding, increased max-width */}
+    <div className="flex flex-col gap-0 p-0 max-w-[2560px] mx-auto"> {/* Removed gap, increased max-width further */}
       {/* Drawing tools bar positioned at top */}
-      <div className="flex justify-between items-center mb-1"> {/* Added small bottom margin */}
+      <div className="flex justify-between items-center mb-0"> {/* Removed bottom margin */}
         <DrawingToolbar
           tool={tool}
           onToolChange={onToolChange}
@@ -87,21 +87,21 @@ export const CanvasLayout = ({
           variant="outline"
           size="sm"
           onClick={onShowMeasurementGuide}
-          className="ml-2"
+          className="ml-1" /* Reduced margin */
         >
-          <HelpCircle className="h-4 w-4 mr-2" />
+          <HelpCircle className="h-4 w-4 mr-1" />
           Measurement Guide
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-1"> {/* Reduced gap from 2 to 1 */}
-        {/* Sidebar for floor plans - made narrower */}
-        <div className="md:w-28"> {/* Reduced from w-36 to w-28 */}
+      <div className="flex flex-col md:flex-row gap-0"> {/* Removed gap entirely */}
+        {/* Sidebar for floor plans - made even narrower */}
+        <div className="md:w-24"> {/* Reduced from w-28 to w-24 */}
           <FloorPlanList 
             floorPlans={floorPlans}
             currentFloor={currentFloor}
             onSelect={onFloorSelect}
-            onAdd={onAddFloor} // Use the onAddFloor function that doesn't take parameters
+            onAdd={onAddFloor}
           />
         </div>
         

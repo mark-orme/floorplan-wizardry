@@ -24,43 +24,70 @@ export const createBasicEmergencyGrid = (
   const emergencyGrid: any[] = [];
   
   try {
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
+    const width = Math.max(canvas.width || 800, 1200);
+    const height = Math.max(canvas.height || 600, 950);
     
-    // Create a simple grid with just a few lines
-    for (let x = 0; x <= width; x += 100) {
-      const line = new Line([x, 0, x, height], {
+    // Extend the grid beyond canvas boundaries
+    const extendedWidth = width * 1.5;
+    const extendedHeight = height * 1.5;
+    const startX = -width / 4;
+    const startY = -height / 4;
+    const endX = extendedWidth;
+    const endY = extendedHeight;
+    
+    // Create a more dense grid with smaller intervals
+    const smallGridSpacing = 50; // 50px between small grid lines
+    const largeGridSpacing = 100; // 100px between large grid lines
+    
+    // Create small grid lines (light blue)
+    for (let x = startX; x <= endX; x += smallGridSpacing) {
+      const line = new Line([x, startY, x, endY], {
         stroke: '#CCDDEE',
         selectable: false,
         evented: false,
-        strokeWidth: x % 500 === 0 ? 1.5 : 0.5
+        strokeWidth: 0.5,
+        objectCaching: true
       });
       canvas.add(line);
       emergencyGrid.push(line);
     }
     
-    for (let y = 0; y <= height; y += 100) {
-      const line = new Line([0, y, width, y], {
+    for (let y = startY; y <= endY; y += smallGridSpacing) {
+      const line = new Line([startX, y, endX, y], {
         stroke: '#CCDDEE',
         selectable: false,
         evented: false,
-        strokeWidth: y % 500 === 0 ? 1.5 : 0.5
+        strokeWidth: 0.5,
+        objectCaching: true
       });
       canvas.add(line);
       emergencyGrid.push(line);
     }
     
-    // Add a scale marker (but no text to avoid displaying numbers)
-    const markerLine = new Line([width - 120, height - 30, width - 20, height - 30], {
-      stroke: "#000000",
-      strokeWidth: 3,
-      selectable: false,
-      evented: false
-    });
-    canvas.add(markerLine);
-    emergencyGrid.push(markerLine);
+    // Create large grid lines (darker blue)
+    for (let x = startX; x <= endX; x += largeGridSpacing) {
+      const line = new Line([x, startY, x, endY], {
+        stroke: '#4090CC',
+        selectable: false,
+        evented: false,
+        strokeWidth: 1.2,
+        objectCaching: true
+      });
+      canvas.add(line);
+      emergencyGrid.push(line);
+    }
     
-    // Removed text marker to avoid showing numbers
+    for (let y = startY; y <= endY; y += largeGridSpacing) {
+      const line = new Line([startX, y, endX, y], {
+        stroke: '#4090CC',
+        selectable: false,
+        evented: false,
+        strokeWidth: 1.2,
+        objectCaching: true
+      });
+      canvas.add(line);
+      emergencyGrid.push(line);
+    }
     
     canvas.requestRenderAll();
     

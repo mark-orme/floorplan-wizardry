@@ -37,33 +37,33 @@ export const CanvasContainer = ({ debugInfo, canvasRef }: CanvasContainerProps):
       // Set canvas dimensions explicitly based on container
       if (containerRect.width > 0 && containerRect.height > 0) {
         canvasReference.current.width = containerRect.width;
-        canvasReference.current.height = Math.max(containerRect.height, 900); // Increased from 850 to 900
+        canvasReference.current.height = Math.max(containerRect.height, 950); // Increased from 900 to 950
         
         // Also set style dimensions to match
         canvasReference.current.style.width = `${containerRect.width}px`;
-        canvasReference.current.style.height = `${Math.max(containerRect.height, 900)}px`; // Increased from 850 to 900
+        canvasReference.current.style.height = `${Math.max(containerRect.height, 950)}px`; // Increased from 900 to 950
         
         // Force a reflow to ensure dimensions are applied
         canvasReference.current.getBoundingClientRect();
         
         console.log("Canvas sized to dimensions:", 
-          containerRect.width, "x", Math.max(containerRect.height, 900));
+          containerRect.width, "x", Math.max(containerRect.height, 950));
       } else {
         // Fallback sizes if container dimensions are not available
-        canvasReference.current.width = 1000; // Increased from 900 to 1000
-        canvasReference.current.height = 900; // Increased from 850 to 900
-        canvasReference.current.style.width = "1000px"; // Increased from 900 to 1000
-        canvasReference.current.style.height = "900px"; // Increased from 850 to 900
-        console.log("Using fallback canvas dimensions: 1000x900");
+        canvasReference.current.width = 1200; // Increased from 1000 to 1200
+        canvasReference.current.height = 950; // Increased from 900 to 950
+        canvasReference.current.style.width = "1200px"; // Increased from 1000 to 1200
+        canvasReference.current.style.height = "950px"; // Increased from 900 to 950
+        console.log("Using fallback canvas dimensions: 1200x950");
       }
     }
   }, [canvasReference]);
 
   return (
-    <Card className="p-1 bg-white shadow-md rounded-lg"> {/* Reduced padding from p-2 to p-1 */}
+    <Card className="p-0 bg-white shadow-md rounded-lg"> {/* Removed padding completely */}
       <div 
         ref={containerRef} 
-        className="w-full h-[900px] md:h-[950px] relative" // Increased heights from 850/900 to 900/950
+        className="w-full h-[950px] md:h-[1000px] relative" // Increased heights from 900/950 to 950/1000
       >
         <canvas 
           ref={canvasReference} 

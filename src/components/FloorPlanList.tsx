@@ -18,14 +18,14 @@ export const FloorPlanList = ({
   onAdd,
 }: FloorPlanListProps) => {
   return (
-    <div className="flex flex-col space-y-1 p-2 bg-gray-50 dark:bg-gray-900 rounded-md"> {/* Reduced padding and spacing */}
-      <h3 className="text-xs font-medium mb-1">Floor Plans</h3> {/* Reduced text size and margin */}
-      <div className="flex flex-col space-y-0.5"> {/* Reduced gap between buttons */}
+    <div className="flex flex-col space-y-0.5 p-1 bg-gray-50 dark:bg-gray-900 rounded-md"> {/* Further reduced padding and spacing */}
+      <h3 className="text-xs font-medium mb-0.5">Floor Plans</h3> {/* Reduced margin more */}
+      <div className="flex flex-col space-y-0"> {/* Removed spacing between buttons */}
         {floorPlans.map((plan, index) => (
           <Button
             key={index}
             variant={currentFloor === index ? "default" : "outline"}
-            className="justify-start text-xs py-0.5 h-auto" /* Smaller text, reduced padding, and auto height */
+            className="justify-start text-xs py-0 h-6 min-h-0 px-1" /* Smaller height, reduced padding */
             onClick={() => onSelect(index)}
           >
             {plan.label}

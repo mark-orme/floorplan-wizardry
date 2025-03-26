@@ -31,9 +31,8 @@ export const setCanvasDimensions = (
     const { width, height } = dimensions;
     
     // More aggressive tolerance - skip update for small changes
-    // Increased from 10px to 30px to further reduce updates
-    if (Math.abs(width - canvasState.prevDimensions.width) < 30 && 
-        Math.abs(height - canvasState.prevDimensions.height) < 30) {
+    if (Math.abs(width - canvasState.prevDimensions.width) < 20 && 
+        Math.abs(height - canvasState.prevDimensions.height) < 20) {
       return;
     }
     
@@ -43,15 +42,19 @@ export const setCanvasDimensions = (
     // Increment update count
     canvasState.dimensionUpdateCount++;
     
-    // Only log first dimension update and every 10th after that
-    if (!canvasState.initialSetupComplete || canvasState.dimensionUpdateCount % 10 === 0) {
+    // Only log first dimension update and every 20th after that to reduce console spam
+    if (!canvasState.initialSetupComplete || canvasState.dimensionUpdateCount % 20 === 0) {
       console.log(`Setting canvas dimensions to ${width}x${height}`);
       canvasState.initialSetupComplete = true;
     }
     
-    canvas.setDimensions({ width, height });
+    // Use higher dimensions values
+    const finalWidth = Math.max(width, 1200);
+    const finalHeight = Math.max(height, 950);
     
-    // Only render if dimensions have changed significantly
+    canvas.setDimensions({ width: finalWidth, height: finalHeight });
+    
+    // Force render
     canvas.requestRenderAll();
   } catch (error) {
     console.error("Failed to set canvas dimensions:", error);
