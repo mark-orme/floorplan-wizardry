@@ -17,6 +17,7 @@ import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 import { useCanvasGridInitialization } from "./useCanvasGridInitialization";
 import { useCanvasRetryLogic } from "./useCanvasRetryLogic";
 import { useCanvasStateTracking } from "./useCanvasStateTracking";
+import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 
 // Type definition for the props to ensure they're all required
 interface UseCanvasInitializationProps {
@@ -121,6 +122,9 @@ export const useCanvasInitialization = ({
   useEffect(() => {
     const cleanup = setupMountedTracking();
     
+    // Reset initialization state when the component mounts
+    resetInitializationState();
+    
     // Log initial state
     console.log("💡 Canvas initialization started with dimensions:", canvasDimensions);
     
@@ -223,19 +227,9 @@ export const useCanvasInitialization = ({
     console.log("🧱 canvasRef exists with dimensions:", 
       canvasRef.current.offsetWidth, "x", canvasRef.current.offsetHeight);
     
-    // Don't proceed if canvas has zero dimensions
-    if (canvasRef.current.offsetWidth === 0 || canvasRef.current.offsetHeight === 0) {
-      logger.warn("⚠️ Canvas element has zero dimensions - cannot initialize fabric canvas");
-      console.log("🛑 Canvas element has zero dimensions, can't initialize fabric canvas");
-      failInitialization();
-      
-      return false;
-    }
-    
     // Initialize the canvas
     const fabricCanvas = initializeCanvas();
     
-    // CRITICAL CHANGE: More detailed logging about why initialization failed
     if (!fabricCanvas) {
       logger.warn("⚠️ Fabric canvas was not created - check DOM or ref issues");
       console.log("🎨 Fabric canvas was not created - initialization failed");

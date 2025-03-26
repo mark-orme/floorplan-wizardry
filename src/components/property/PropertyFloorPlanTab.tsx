@@ -8,6 +8,8 @@ import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
 import { useEffect, useState } from 'react';
+import { resetInitializationState } from '@/utils/canvas/safeCanvasInitialization';
+import { useCanvasErrorHandling } from '@/hooks/useCanvasErrorHandling';
 
 interface PropertyFloorPlanTabProps {
   canEdit: boolean;
@@ -32,6 +34,9 @@ export const PropertyFloorPlanTab = ({
   
   // Set ready state after a short delay to ensure DOM is fully rendered
   useEffect(() => {
+    // Reset canvas initialization state at the start
+    resetInitializationState();
+    
     // Unmount any existing canvas before trying to render a new one
     setIsReady(false);
     setInitError(false);
@@ -43,8 +48,19 @@ export const PropertyFloorPlanTab = ({
     return () => clearTimeout(timer);
   }, []);
   
+  // Set up error handling
+  const { handleRetry } = useCanvasErrorHandling({
+    setHasError: setInitError,
+    setErrorMessage: () => {},
+    resetLoadTimes: () => {},
+    loadData: async () => {}
+  });
+  
   // Provide a retry mechanism if canvas initialization fails
   const handleCanvasRetry = () => {
+    // Reset canvas initialization state
+    resetInitializationState();
+    
     setIsReady(false);
     setInitError(false);
     setInitAttempt(prev => prev + 1);

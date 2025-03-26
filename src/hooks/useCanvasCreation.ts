@@ -9,11 +9,11 @@ import { toast } from "sonner";
 import { CanvasDimensions } from "@/types/drawingTypes";
 import { useCanvasCleanup } from "./useCanvasCleanup";
 import logger from "@/utils/logger";
-import { forceResetCanvasElement } from "@/utils/gridCreationUtils";
 import { 
-  forceCleanCanvasElement, 
-  isCanvasElementInitialized 
-} from "@/utils/fabric";
+  prepareCanvasForInitialization, 
+  validateCanvasInitialization,
+  handleInitializationFailure
+} from "@/utils/canvas/safeCanvasInitialization";
 import { captureError } from "@/utils/sentryUtils";
 
 /**
@@ -50,7 +50,7 @@ export const useCanvasCreation = ({
   const canvasInitializedRef = useRef<boolean>(false);
   const initializationInProgressRef = useRef<boolean>(false);
   const retryAttemptsRef = useRef<number>(0);
-  const maxRetryAttempts = 10; // Increased retry attempts for canvas initialization
+  const maxRetryAttempts = 5; // Reduced to prevent excessive attempts
   const retryTimeoutRef = useRef<number | null>(null);
   const [canvasElementChecked, setCanvasElementChecked] = useState<boolean>(false);
   
@@ -58,11 +58,7 @@ export const useCanvasCreation = ({
   const { 
     cleanupCanvas, 
     isCanvasElementInitialized: checkCanvasElementInitialized, 
-    markCanvasAsInitialized,
-    forceCleanCanvasElement: cleanup,
-    trackInitializationAttempt,
-    resetInitializationAttempts,
-    getInitializationAttempts
+    markCanvasAsInitialized
   } = useCanvasCleanup();
 
   // This effect will ensure we clean up any timeouts when the component unmounts
@@ -122,94 +118,10 @@ export const useCanvasCreation = ({
 
   // Initialize canvas with performance optimizations and duplicate initialization checks
   const initializeCanvas = useCallback((): FabricCanvas | null => {
-    // Check if we should allow this initialization attempt
-    if (!trackInitializationAttempt()) {
-      // If we've exceeded max attempts, try to reset the counter
-      // but only show the emergency canvas after this
-      if (getInitializationAttempts() > 5) {
-        logger.warn("Max initialization attempts exceeded, emergency canvas may be needed");
-        
-        // Report critical error to help debug
-        captureError(
-          new Error(`Canvas initialization blocked after ${getInitializationAttempts()} attempts`),
-          'canvas-initialization-blocked',
-          {
-            level: 'error',
-            extra: { 
-              canvasInfo: canvasRef.current ? {
-                id: canvasRef.current.id,
-                width: canvasRef.current.width,
-                height: canvasRef.current.height
-              } : 'No canvas element'
-            }
-          }
-        );
-        
-        // Set error to trigger emergency canvas
-        setHasError(true);
-        setErrorMessage("Canvas initialization failed after multiple attempts. Using emergency mode.");
-        return null;
-      }
-      
-      // Try to reset the counter if we're blocked
-      const resetSuccessful = resetInitializationAttempts();
-      if (!resetSuccessful) {
-        // If we can't reset yet, we need to bail out with an error
-        setHasError(true);
-        setErrorMessage("Canvas initialization temporarily blocked. Please wait a moment.");
-        return null;
-      }
-    }
-
-    if (!canvasRef.current) {
-      console.warn("Canvas reference is not available yet");
-      
-      // First try by ID
-      const canvasById = document.getElementById('fabric-canvas');
-      
-      // Then try by data-testid
-      const canvasByTestId = document.querySelector('[data-testid="canvas-element"]');
-      
-      // Use any method that works
-      if (canvasById instanceof HTMLCanvasElement) {
-        console.log("Found canvas element via id, using it directly");
-        canvasRef.current = canvasById;
-      } else if (canvasByTestId instanceof HTMLCanvasElement) {
-        console.log("Found canvas element via data-testid, using it directly");
-        canvasRef.current = canvasByTestId;
-      } else {
-        // Search for any canvas element on the page
-        const anyCanvas = document.querySelector('canvas');
-        if (anyCanvas instanceof HTMLCanvasElement) {
-          console.log("Found a canvas element on the page, using it as fallback");
-          canvasRef.current = anyCanvas;
-        } else {
-          // Retry initialization after a delay if we haven't exceeded max attempts
-          if (retryAttemptsRef.current < maxRetryAttempts) {
-            retryAttemptsRef.current++;
-            console.log(`Retrying canvas initialization (attempt ${retryAttemptsRef.current}/${maxRetryAttempts})`);
-            
-            // Clear any existing timeout
-            if (retryTimeoutRef.current !== null) {
-              window.clearTimeout(retryTimeoutRef.current);
-            }
-            
-            // Set a new timeout with exponential backoff
-            const delay = Math.min(500 * Math.pow(1.5, retryAttemptsRef.current), 5000);
-            retryTimeoutRef.current = window.setTimeout(() => {
-              retryTimeoutRef.current = null;
-              initializeCanvas();
-            }, delay);
-          } else {
-            console.error("Max retry attempts reached. Could not initialize canvas.");
-            setHasError(true);
-            setErrorMessage("Could not initialize canvas after multiple attempts. Please refresh the page.");
-            toast.error("Failed to initialize canvas. Please refresh the page.");
-          }
-          
-          return null;
-        }
-      }
+    // Prevent concurrent initializations
+    if (initializationInProgressRef.current) {
+      logger.debug("Canvas initialization already in progress, skipping");
+      return null;
     }
     
     // CRITICAL CHECK: If we already have an initialized canvas, return it instead of creating a new one
@@ -218,60 +130,33 @@ export const useCanvasCreation = ({
       return fabricCanvasRef.current;
     }
     
-    // Prevent concurrent initializations
-    if (initializationInProgressRef.current) {
-      logger.debug("Canvas initialization already in progress, skipping");
-      return null;
-    }
-    
     // Get the canvas element
     const canvasElement = canvasRef.current;
     if (!canvasElement) {
-      logger.error("Canvas element not available");
+      // If canvas element is not available, retry with limited attempts
+      if (retryAttemptsRef.current < maxRetryAttempts) {
+        retryAttemptsRef.current++;
+        const delay = Math.min(300 * Math.pow(1.3, retryAttemptsRef.current), 3000);
+        
+        retryTimeoutRef.current = window.setTimeout(() => {
+          retryTimeoutRef.current = null;
+          initializeCanvas();
+        }, delay);
+      } else {
+        // Max retries reached, fail with error
+        setHasError(true);
+        setErrorMessage("Could not find canvas element after multiple attempts");
+        toast.error("Failed to find canvas element. Please refresh the page.");
+      }
+      
       return null;
-    }
-    
-    // Check for Fabric.js data attribute directly before trying checkCanvasElementInitialized
-    // This is a direct approach to catch initialization issues early
-    if (canvasElement.hasAttribute('data-fabric')) {
-      logger.warn("Canvas element has data-fabric attribute - forcing cleanup");
-      
-      // Try to force clean the canvas element first
-      forceCleanCanvasElement(canvasElement);
-      
-      // If it still has the attribute, try a more aggressive approach
-      if (canvasElement.hasAttribute('data-fabric')) {
-        logger.warn("Canvas element still has data-fabric attribute after cleanup - forcing reset");
-        forceResetCanvasElement(canvasElement);
-      }
-    }
-    
-    // Now use our hook's check function as a secondary check
-    if (checkCanvasElementInitialized(canvasElement)) {
-      logger.warn("Canvas element already has a Fabric instance attached - forcing cleanup");
-      
-      // If we have a previous canvas instance, dispose it first
-      if (fabricCanvasRef.current) {
-        cleanupCanvas(fabricCanvasRef.current);
-        fabricCanvasRef.current = null;
-      }
-      
-      // Force clean the element
-      cleanup(canvasElement);
-      
-      // If it's still marked as initialized, we need to reset it more aggressively
-      if (isCanvasElementInitialized(canvasElement)) {
-        logger.warn("Canvas element still marked as initialized after cleanup - forcing reset");
-        forceResetCanvasElement(canvasElement);
-      }
     }
     
     initializationInProgressRef.current = true;
     
     try {
-      // Log with additional debugging information
-      console.log("Creating new Fabric canvas instance with dimensions:", canvasDimensions);
-      console.log("Canvas element has data-fabric attribute:", canvasElement.hasAttribute('data-fabric'));
+      // Prepare the canvas element for initialization
+      prepareCanvasForInitialization(canvasElement);
       
       // Force canvas element to have width and height using inline style
       canvasElement.style.width = `${canvasDimensions.width || 800}px`;
@@ -292,20 +177,25 @@ export const useCanvasCreation = ({
         backgroundColor: "#FFFFFF",
         isDrawingMode: true,
         selection: false,
-        width: canvasDimensions.width || 800, // Fallback dimensions if not specified
-        height: canvasDimensions.height || 600, // Fallback dimensions if not specified
+        width: canvasDimensions.width || 800,
+        height: canvasDimensions.height || 600,
         renderOnAddRemove: false,
         stateful: false,
         fireRightClick: false,
         stopContextMenu: true,
         enableRetinaScaling: false,
         perPixelTargetFind: false,
-        skipOffscreen: true, // OPTIMIZATION: Skip rendering objects outside canvas viewport
-        objectCaching: true, // OPTIMIZATION: Enable object caching for all objects
-        imageSmoothingEnabled: false, // OPTIMIZATION: Disable image smoothing for better performance
-        preserveObjectStacking: false, // OPTIMIZATION: Disable object stacking preservation for performance
-        svgViewportTransformation: false // OPTIMIZATION: Disable SVG viewport transforms
+        skipOffscreen: true,
+        objectCaching: true,
+        imageSmoothingEnabled: false,
+        preserveObjectStacking: false,
+        svgViewportTransformation: false
       });
+      
+      // Validate the created canvas
+      if (!validateCanvasInitialization(fabricCanvas)) {
+        throw new Error("Canvas validation failed after creation");
+      }
       
       console.log("FabricCanvas instance created successfully with size:", 
         fabricCanvas.width, "x", fabricCanvas.height);
@@ -324,23 +214,26 @@ export const useCanvasCreation = ({
       // OPTIMIZATION: Precompile frequent canvas operations
       fabricCanvas.calcViewportBoundaries();
       
-      // Success metrics
-      console.log(`Canvas initialized in ${Date.now() - performance.now()}ms`);
-      console.log("Performance tracking started");
-      
       initializationInProgressRef.current = false;
       
       return fabricCanvas;
     } catch (err) {
-      console.error("Error initializing canvas:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("Error initializing canvas:", errorMessage);
+      
+      handleInitializationFailure(errorMessage, false);
+      
       setHasError(true);
-      setErrorMessage(`Failed to initialize canvas: ${err instanceof Error ? err.message : String(err)}`);
+      setErrorMessage(`Failed to initialize canvas: ${errorMessage}`);
       toast.error("Failed to initialize canvas");
       
-      // Force clean the element after error
-      if (canvasElement) {
-        forceCleanCanvasElement(canvasElement);
-      }
+      captureError(err, 'canvas-initialization-error', {
+        level: 'error',
+        extra: { 
+          dimensions: canvasDimensions,
+          retryAttempts: retryAttemptsRef.current
+        }
+      });
       
       initializationInProgressRef.current = false;
       return null;
@@ -351,11 +244,7 @@ export const useCanvasCreation = ({
     setErrorMessage, 
     cleanupCanvas, 
     checkCanvasElementInitialized, 
-    markCanvasAsInitialized, 
-    cleanup,
-    trackInitializationAttempt,
-    resetInitializationAttempts,
-    getInitializationAttempts
+    markCanvasAsInitialized
   ]);
 
   return {

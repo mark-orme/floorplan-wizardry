@@ -1,3 +1,4 @@
+
 /**
  * Hook for canvas initialization and setup
  * @module useCanvasControllerSetup
@@ -7,6 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasInitialization } from "@/hooks/canvas-initialization";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { DrawingTool } from "@/hooks/useCanvasState";
+import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import logger from "@/utils/logger";
 
 /**
@@ -55,6 +57,11 @@ export const useCanvasControllerSetup = ({
   setHasError,
   setErrorMessage
 }: UseCanvasControllerSetupProps): UseCanvasControllerSetupResult => {
+  // Reset initialization state at the beginning
+  useEffect(() => {
+    resetInitializationState();
+  }, []);
+  
   // Initialize canvas and grid with improved error handling
   const { 
     canvasRef, 

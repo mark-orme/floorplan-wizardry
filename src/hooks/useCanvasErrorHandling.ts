@@ -6,7 +6,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { captureError } from "@/utils/sentryUtils";
-import { useGridSafety } from "./grid/useGridSafety";
+import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 
 /**
  * Props for the useCanvasErrorHandling hook
@@ -45,18 +45,31 @@ export const useCanvasErrorHandling = ({
   resetLoadTimes,
   loadData
 }: UseCanvasErrorHandlingProps): UseCanvasErrorHandlingResult => {
-  // Use the grid safety hook for consistent error handling
-  const { safeGridOperation } = useGridSafety();
-  
   /**
    * Handle retry after an error occurs
    */
   const handleRetry = useCallback(() => {
-    safeGridOperation(() => {
+    try {
+      // Reset canvas initialization state
+      resetInitializationState();
+      
+      // Reset error state
+      setHasError(false);
+      setErrorMessage("");
+      
+      // Reset load times
       resetLoadTimes();
-      loadData();
-    }, 'retry-operation', undefined);
-  }, [loadData, resetLoadTimes, safeGridOperation]);
+      
+      // Attempt to reload data
+      loadData().catch(error => {
+        handleError(error, "retry-load-data");
+      });
+      
+      toast.success("Retrying...", { id: "canvas-retry" });
+    } catch (error) {
+      handleError(error, "retry-operation");
+    }
+  }, [loadData, resetLoadTimes, setHasError, setErrorMessage]);
 
   /**
    * Handle specific errors

@@ -7,7 +7,9 @@ import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";
 import { DebugInfoState } from "@/types/debugTypes";
+import { EmergencyCanvasProvider } from "./emergency/EmergencyCanvasProvider";
 import logger from "@/utils/logger";
+import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 
 export const Canvas: React.FC = () => {
   // Get the canvas controller from context
@@ -101,37 +103,52 @@ export const Canvas: React.FC = () => {
     currentZoom 
   } = drawingState;
   
-  // Log drawing state for debugging
-  useEffect(() => {
-    if (isDrawing && startPoint && currentPoint) {
-      logger.debug("Drawing:", { start: startPoint, current: currentPoint });
-    }
-  }, [isDrawing, startPoint, currentPoint]);
+  // Handle canvas retry
+  const handleCanvasRetry = () => {
+    // Reset error state
+    setHasError(false);
+    setErrorMessage("");
+    
+    // Reset initialization state
+    resetInitializationState();
+    
+    // Update debug info
+    setDebugInfo(prev => ({
+      ...prev,
+      canvasReady: false,
+      gridCreated: false,
+      lastInitTime: Date.now()
+    }));
+    
+    // Force a re-render
+    canvasElementRef.current = null;
+  };
   
   // Render the canvas and UI components
   return (
     <div className="relative w-full h-full">
-      <CanvasContainer
+      <EmergencyCanvasProvider
+        errorState={hasError}
+        errorMessage={errorMessage}
         debugInfo={debugInfo}
-        canvasElementRef={canvasElementRef}
-      />
-      
-      {/* Distance measurement tooltip */}
-      <DistanceTooltip
-        startPoint={startPoint}
-        currentPoint={currentPoint}
-        midPoint={midPoint}
-        isVisible={isDrawing && tool === 'wall' && !!startPoint && !!currentPoint}
-        currentZoom={currentZoom}
-      />
-      
-      {/* Error display */}
-      {hasError && (
-        <div className="absolute top-4 left-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <strong className="font-bold">Error:</strong>
-          <span className="block sm:inline"> {errorMessage}</span>
-        </div>
-      )}
+        onRetry={handleCanvasRetry}
+        width={canvasDimensions.width}
+        height={canvasDimensions.height}
+      >
+        <CanvasContainer
+          debugInfo={debugInfo}
+          canvasElementRef={canvasElementRef}
+        />
+        
+        {/* Distance measurement tooltip */}
+        <DistanceTooltip
+          startPoint={startPoint}
+          currentPoint={currentPoint}
+          midPoint={midPoint}
+          isVisible={isDrawing && tool === 'wall' && !!startPoint && !!currentPoint}
+          currentZoom={currentZoom}
+        />
+      </EmergencyCanvasProvider>
     </div>
   );
 };
