@@ -2,15 +2,59 @@
 import { useState } from "react";
 import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
-import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
+import { CanvasControllerProvider, useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 
 // Create a wrapper component that uses the canvas controller
 const CanvasApp = () => {
+  const {
+    tool,
+    gia,
+    floorPlans,
+    currentFloor,
+    debugInfo,
+    lineThickness,
+    lineColor,
+    canvasRef,
+    handleToolChange,
+    handleUndo,
+    handleRedo,
+    handleZoom,
+    clearCanvas,
+    saveCanvas,
+    deleteSelectedObjects,
+    handleFloorSelect,
+    handleAddFloor,
+    handleLineThicknessChange,
+    handleLineColorChange,
+    openMeasurementGuide
+  } = useCanvasController();
+
   return (
-    <CanvasLayout>
+    <CanvasLayout
+      tool={tool}
+      gia={gia}
+      floorPlans={floorPlans}
+      currentFloor={currentFloor}
+      debugInfo={debugInfo}
+      canvasRef={canvasRef}
+      lineThickness={lineThickness}
+      lineColor={lineColor}
+      onToolChange={handleToolChange}
+      onUndo={handleUndo}
+      onRedo={handleRedo}
+      onZoom={handleZoom}
+      onClear={clearCanvas}
+      onSave={saveCanvas}
+      onDelete={deleteSelectedObjects}
+      onFloorSelect={handleFloorSelect}
+      onAddFloor={handleAddFloor}
+      onLineThicknessChange={handleLineThicknessChange}
+      onLineColorChange={handleLineColorChange}
+      onShowMeasurementGuide={openMeasurementGuide}
+    >
       <Canvas />
     </CanvasLayout>
   );
