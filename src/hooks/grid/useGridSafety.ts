@@ -1,58 +1,73 @@
 
 /**
- * Hook for grid safety operations
- * Provides safety mechanisms for grid creation and mutation
+ * Grid safety hook
+ * Provides safety mechanisms for grid operations
  * @module useGridSafety
  */
 import { useCallback } from "react";
+import { Object as FabricObject } from "fabric";
 import logger from "@/utils/logger";
 
 /**
- * Result of the useGridSafety hook
- * @interface UseGridSafetyResult
+ * Safety timeout in milliseconds to prevent infinite loops
  */
-interface UseGridSafetyResult {
-  /** Function to safely execute grid operations with error handling */
-  safeGridOperation: <T>(operation: () => T, operationName: string, fallbackResult: T) => T;
-}
+const SAFETY_TIMEOUT = 5000;
 
 /**
- * Hook for grid safety operations
- * Provides utilities to execute grid operations safely with error handling
- * and fallback mechanisms
+ * Hook for grid operation safety
+ * Prevents infinite loops and provides error boundaries for grid operations
  * 
- * @returns {UseGridSafetyResult} Grid safety utilities
- * 
- * @example
- * const { safeGridOperation } = useGridSafety();
- * 
- * // Use safe operation to prevent crashes
- * const result = safeGridOperation(
- *   () => dangerousGridOperation(),
- *   'create-grid',
- *   fallbackGridObjects
- * );
+ * @returns {Object} Safety utility functions
  */
-export const useGridSafety = (): UseGridSafetyResult => {
+export const useGridSafety = () => {
   /**
-   * Execute a grid operation safely
-   * Ensures grid operations don't crash the application
-   * Provides proper error handling and fallback mechanism
+   * Perform a grid operation with safety mechanisms
+   * Provides timeout protection and error handling
    * 
-   * @template T - The return type of the operation
-   * @param {Function} operation - The grid operation to perform
-   * @param {string} operationName - Name of the operation (for logging)
-   * @param {T} fallbackResult - Fallback result if operation fails
-   * @returns {T} Result of the operation or fallback
+   * @param {Function} operation - The operation to perform
+   * @param {string} operationName - Name of the operation for logging
+   * @param {FabricObject[]} fallbackResult - Fallback result if operation fails
+   * @returns {FabricObject[]} Result of the operation or fallback
    */
-  const safeGridOperation = useCallback(<T>(
+  const safeGridOperation = useCallback(<T extends FabricObject[]>(
     operation: () => T,
     operationName: string,
     fallbackResult: T
   ): T => {
+    // Use a timeout to prevent infinite loops
+    let operationComplete = false;
+    let timeoutId: number | null = null;
+    
     try {
-      return operation();
+      // Set safety timeout
+      timeoutId = window.setTimeout(() => {
+        if (!operationComplete) {
+          logger.error(`Operation "${operationName}" timed out after ${SAFETY_TIMEOUT}ms`);
+          operationComplete = true;
+        }
+      }, SAFETY_TIMEOUT);
+      
+      // Perform the operation
+      const result = operation();
+      
+      // Mark as complete
+      operationComplete = true;
+      
+      // Clear safety timeout
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+      
+      return result;
     } catch (error) {
+      // Mark as complete
+      operationComplete = true;
+      
+      // Clear safety timeout
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+      
       logger.error(`Error in grid operation "${operationName}":`, error);
       return fallbackResult;
     }

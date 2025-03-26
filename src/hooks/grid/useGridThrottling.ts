@@ -1,99 +1,64 @@
 
 /**
- * Hook for grid throttling operations
- * Provides utilities to throttle grid creation and updates
+ * Grid throttling hook
+ * Manages throttling for grid creation to prevent excessive operations
  * @module useGridThrottling
  */
-import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { useCallback } from "react";
 import logger from "@/utils/logger";
 
 /**
- * Hook for grid throttling operations
- * Prevents excessive grid creation operations during rapid interactions
+ * Minimum time between grid creation attempts in milliseconds
+ */
+const MIN_THROTTLE_INTERVAL = 1000;
+
+/**
+ * Grid throttling state
+ */
+let lastAttemptTime = 0;
+
+/**
+ * Hook for managing grid creation throttling
+ * Prevents too many grid creation operations in a short time
  * 
- * @returns Object containing throttling utility functions
+ * @returns {Object} Throttling utility functions
  */
 export const useGridThrottling = () => {
-  // Reference to store timeout ID
-  const throttleTimeoutRef = useRef<number | null>(null);
-  
   /**
-   * Clear any existing throttle timeout
-   */
-  const clearThrottleTimeout = useCallback(() => {
-    if (throttleTimeoutRef.current !== null) {
-      window.clearTimeout(throttleTimeoutRef.current);
-      throttleTimeoutRef.current = null;
-    }
-  }, []);
-  
-  /**
-   * Throttle grid creation function
-   * Ensures grid creation is not called too frequently
-   * 
-   * @param {FabricCanvas} canvas - The Fabric canvas instance
-   * @param {Function} createGridCallback - Function to create the grid
-   * @param {number} delay - Throttle delay in milliseconds
-   * @returns {void}
-   */
-  const throttleGridCreation = useCallback((
-    canvas: FabricCanvas,
-    createGridCallback: (canvas: FabricCanvas) => void,
-    delay: number = 200
-  ): void => {
-    // Clear any existing timeout
-    clearThrottleTimeout();
-    
-    // Schedule new timeout
-    throttleTimeoutRef.current = window.setTimeout(() => {
-      try {
-        createGridCallback(canvas);
-        logger.debug("Throttled grid creation executed");
-      } catch (error) {
-        logger.error("Error in throttled grid creation:", error);
-      }
-      throttleTimeoutRef.current = null;
-    }, delay);
-  }, [clearThrottleTimeout]);
-
-  /**
-   * Determine if grid creation should be throttled
-   * Checks current state to decide if throttling is needed
-   * 
-   * @returns {boolean} True if throttling is needed
+   * Check if grid creation should be throttled
+   * @returns {boolean} True if creation should be throttled
    */
   const shouldThrottleCreation = useCallback((): boolean => {
-    return throttleTimeoutRef.current !== null;
+    const now = Date.now();
+    const shouldThrottle = now - lastAttemptTime < MIN_THROTTLE_INTERVAL;
+    
+    if (shouldThrottle) {
+      logger.debug(`Grid creation throttled. Last attempt: ${lastAttemptTime}, Now: ${now}`);
+    }
+    
+    return shouldThrottle;
   }, []);
-
+  
   /**
    * Handle throttled grid creation
-   * Executes grid creation with throttling applied
-   * 
-   * @param {FabricCanvas} canvas - The Fabric canvas instance
-   * @param {Function} createGridCallback - Function to create the grid
-   * @returns {void}
+   * Updates the last attempt time and logs the throttling
    */
-  const handleThrottledCreation = useCallback((
-    canvas: FabricCanvas,
-    createGridCallback: (canvas: FabricCanvas) => void
-  ): void => {
-    throttleGridCreation(canvas, createGridCallback);
-  }, [throttleGridCreation]);
-
+  const handleThrottledCreation = useCallback((): void => {
+    // Update the last attempt time
+    lastAttemptTime = Date.now();
+    
+    logger.debug("Grid creation throttled, skipping this attempt");
+  }, []);
+  
   /**
-   * Clean up any pending throttled operations
-   * Used when component is unmounting
+   * Clean up throttling state
    */
-  const cleanup = useCallback(() => {
-    clearThrottleTimeout();
-  }, [clearThrottleTimeout]);
-
+  const cleanup = useCallback((): void => {
+    // Reset throttling state
+    lastAttemptTime = 0;
+  }, []);
+  
   return {
-    throttleGridCreation,
-    clearThrottleTimeout,
-    throttleTimeoutRef,
     shouldThrottleCreation,
     handleThrottledCreation,
     cleanup

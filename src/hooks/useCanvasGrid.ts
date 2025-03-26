@@ -89,8 +89,8 @@ export const useCanvasGrid = ({
   const { 
     createGridWithRetry,
     cleanup: cleanupRetry
-  } = useGridRetry({  // Fixed: Added object parameter to match hook's interface
-    setHasError,      
+  } = useGridRetry({
+    setHasError,
     setErrorMessage
   });
   
@@ -166,15 +166,17 @@ export const useCanvasGrid = ({
         
         // Check if we should throttle
         if (shouldThrottleCreation()) {
-          handleThrottledCreation(canvas, createBaseGrid);  // Fixed: Passed createBaseGrid directly
+          // Fix: handleThrottledCreation doesn't take arguments in this implementation
+          handleThrottledCreation();
           return gridLayerRef.current;
         }
         
         // If not throttled, proceed with normal creation with retry logic
-        const gridObjects = createGridWithRetry(canvas, createBaseGrid);  // Fixed: Added createBaseGrid as second parameter
+        // Fix: createGridWithRetry expects canvas as the first parameter
+        const gridObjects = createGridWithRetry(canvas, createBaseGrid);
         
         // Check if grid was actually created
-        if (!gridObjects || (Array.isArray(gridObjects) && gridObjects.length === 0)) {  // Fixed: Explicit check for array
+        if (!gridObjects || (Array.isArray(gridObjects) && gridObjects.length === 0)) {
           logger.error("❌ Grid creation failed: No grid objects were created");
           setHasError(true);
           setErrorMessage("Grid creation failed: No grid objects were created");
@@ -188,12 +190,12 @@ export const useCanvasGrid = ({
         }
         
         // Log success
-        console.log(`✅ Grid created with ${Array.isArray(gridObjects) ? gridObjects.length : 0} objects`);  // Fixed: Added Array.isArray check
+        console.log(`✅ Grid created with ${Array.isArray(gridObjects) ? gridObjects.length : 0} objects`);
         
         // Force render after grid creation
         canvas.requestRenderAll();
         
-        return gridObjects as FabricObject[];  // Fixed: Type assertion to FabricObject[]
+        return gridObjects as FabricObject[];
       } catch (error) {
         logger.error("Error in grid creation:", error);
         console.error("❌ Grid creation error:", error);
