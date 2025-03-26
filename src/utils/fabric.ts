@@ -1,4 +1,3 @@
-
 /**
  * Re-exports all Fabric.js utilities
  * @module fabric
@@ -15,12 +14,19 @@ export {
   clearCanvasObjects
 } from './fabricCanvas';
 
-// Export from fabricInteraction
+// Export from fabric interaction modules
 export {
+  // Selection
+  enableSelection,
+  disableSelection,
+  
+  // Gestures
   addPinchToZoom,
   snapToAngle,
+  
+  // Panning
   enablePanning
-} from './fabricInteraction';
+} from './fabric';
 
 /**
  * Get environment variables with proper fallbacks

@@ -8,7 +8,7 @@ import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { DrawingTool } from "./useCanvasState";
-import { enableSelection, disableSelection } from "@/utils/fabricInteraction";
+import { enableSelection, disableSelection } from "@/utils/fabric";
 import logger from "@/utils/logger";
 
 /**
