@@ -1,3 +1,4 @@
+
 import React, { memo } from "react";
 import { type Point } from "@/types/drawingTypes";
 import { Ruler } from "lucide-react";
@@ -57,7 +58,8 @@ export const DistanceTooltip = memo(({
   const distanceInMeters = calculateDistance(displayStartPoint, displayEndPoint);
   
   // If position is same as startPoint (no movement) or distance is too small, don't show
-  if (position === startPoint || distanceInMeters < 0.05) {
+  if ((position === startPoint || distanceInMeters < 0.05) && 
+      !(startPoint && currentPoint && startPoint !== currentPoint)) {
     return null;
   }
   

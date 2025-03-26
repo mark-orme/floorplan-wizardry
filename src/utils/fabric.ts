@@ -1,3 +1,4 @@
+
 /**
  * Re-exports all Fabric.js utilities
  * @module fabric
@@ -15,18 +16,7 @@ export {
 } from './fabricCanvas';
 
 // Export from fabric interaction modules
-export {
-  // Selection
-  enableSelection,
-  disableSelection,
-  
-  // Gestures
-  addPinchToZoom,
-  snapToAngle,
-  
-  // Panning
-  enablePanning
-} from './fabric/index';
+export * from './fabric/index';
 
 /**
  * Get environment variables with proper fallbacks

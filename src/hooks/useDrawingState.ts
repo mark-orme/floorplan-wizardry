@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing drawing state on the canvas
  * @module useDrawingState
@@ -61,14 +60,16 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     const pointer = canvas.getPointer(e.e);
     
     // Start drawing, set the starting point with all required properties
-    setDrawingState({
+    setDrawingState(prev => ({
+      ...prev,
       isDrawing: true,
       startPoint: pointer,
       currentPoint: pointer,
       cursorPosition: pointer,
-      midPoint: null,
-      selectionActive: false
-    });
+      midPoint: null
+    }));
+    
+    console.log("Mouse down - Start drawing at:", pointer);
   }, [fabricCanvasRef]);
   
   /**
@@ -106,6 +107,14 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
           cursorPosition: pointer,
           midPoint: midPoint
         }));
+        
+        if (tool === "straightLine" || tool === "wall" || tool === "line") {
+          console.log("Drawing line:", { 
+            start: drawingState.startPoint, 
+            current: pointer, 
+            mid: midPoint 
+          });
+        }
       } else {
         // Just update cursor position for hover tooltips
         setDrawingState(prevState => ({
@@ -114,7 +123,7 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
         }));
       }
     });
-  }, [fabricCanvasRef, drawingState.isDrawing, drawingState.startPoint]);
+  }, [fabricCanvasRef, drawingState.isDrawing, drawingState.startPoint, tool]);
   
   /**
    * Handle mouse up event on the canvas
@@ -126,17 +135,30 @@ export const useDrawingState = (props: UseDrawingStateProps) => {
     const canvas = fabricCanvasRef.current;
     const hasActiveSelection = canvas.getActiveObject() !== null;
     
+    console.log("Mouse up - End drawing, selection active:", hasActiveSelection);
+    
     // Clear drawing state after a short delay
     // But preserve selection state for tooltips on selected objects
     timeoutRef.current = window.setTimeout(() => {
       setDrawingState(prevState => ({
         ...prevState,
         isDrawing: false,
-        startPoint: null,
-        currentPoint: null,
-        midPoint: null,
+        // Keep start and current points for a moment to show final measurement
+        // startPoint: null,
+        // currentPoint: null,
+        // midPoint: null,
         selectionActive: hasActiveSelection
       }));
+      
+      // Only after showing the measurement, fully clear the points
+      setTimeout(() => {
+        setDrawingState(prevState => ({
+          ...prevState,
+          startPoint: null,
+          currentPoint: null,
+          midPoint: null,
+        }));
+      }, 1500); // Keep measurement visible for 1.5 seconds after finishing
     }, 50);
   }, [fabricCanvasRef]);
   

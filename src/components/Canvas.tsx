@@ -102,16 +102,29 @@ const CanvasInner = (props: CanvasProps) => {
     };
   }, [loadData, handleToolChange]);
 
-  // Determine tooltip visibility - show when drawing or in select mode with an active selection
-  const isTooltipVisible = 
-    // Always show during active drawing with straightLine or wall tools
-    (drawingState?.isDrawing && (tool === "straightLine" || tool === "wall")) ||
+  // Improved tooltip visibility logic - show when drawing or in select mode with an active selection
+  const isTooltipVisible = Boolean(
+    // Always show during active drawing with straight line tools
+    (drawingState?.isDrawing && (tool === "straightLine" || tool === "wall" || tool === "line")) ||
     // Show when hovering with these tools even if not actively drawing
-    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "wall") && drawingState?.cursorPosition != null) ||
-    // Also show when in select mode and actively manipulating a line
+    (!drawingState?.isDrawing && (tool === "straightLine" || tool === "wall" || tool === "line") && 
+     drawingState?.cursorPosition != null && drawingState?.startPoint != null) ||
+    // Also show when in select mode and actively manipulating objects
     (tool === "select" && drawingState?.isDrawing) ||
-    // Show when selecting a wall
-    (tool === "select" && drawingState?.selectionActive);
+    // Show when selecting a line or wall
+    (tool === "select" && drawingState?.selectionActive)
+  );
+
+  // Log tooltip state for debugging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug("Tooltip state:", { 
+        isVisible: isTooltipVisible, 
+        drawingState: drawingState,
+        tool: tool 
+      });
+    }
+  }, [isTooltipVisible, drawingState, tool]);
 
   return (
     <LoadingErrorWrapper
