@@ -17,7 +17,8 @@ src/
 ├── contexts/       # React context providers
 ├── hooks/          # Custom React hooks
 │   ├── floor-plan/ # Floor plan specific hooks
-│   └── grid/       # Grid management hooks
+│   ├── grid/       # Grid management hooks
+│   └── canvas-initialization/ # Canvas initialization hooks
 ├── lib/            # Core libraries and utilities
 ├── pages/          # Page components
 ├── tests/          # Test files and utilities
@@ -34,6 +35,27 @@ src/
 - **Fabric.js Integration**: Custom extensions for drawing and manipulation
 - **Event Handling**: Touch, mouse, and stylus event normalization
 - **Object Management**: Creation, selection, and modification of canvas objects
+
+#### Grid System Architecture
+- **Modular Hook Design**: 
+  - `useGridCreation`: Base grid creation logic
+  - `useGridRetry`: Retry mechanisms for reliability
+  - `useGridThrottling`: Performance optimization
+  - `useGridValidation`: Input validation and preparation
+  - `useGridSafety`: Error boundaries and timeout protection
+  
+- **Grid Creation Process**:
+  1. Validation: Check canvas and input validity 
+  2. Throttling: Prevent excessive grid creation operations
+  3. Creation: Generate grid lines with proper batching
+  4. Safety: Monitor for timeouts and prevent infinite loops
+  5. Error Recovery: Implement fallbacks and retry mechanisms
+
+- **Error Recovery System**:
+  - Multiple fallback methods for grid creation
+  - Automatic retries with exponential backoff
+  - Emergency grid creation when all else fails
+  - Detailed error logging and debugging information
 
 #### Geometry Calculations
 - **Grid Operations**: Snapping, alignment, and coordinate transformation
@@ -104,11 +126,26 @@ src/
 
 ### Working with the Canvas
 
-#### Grid System
-The application uses a grid system with the following characteristics:
-- Base grid spacing: `GRID_SPACING = 0.1` meters (10cm)
-- Large grid: 1.0 meters (100cm)
-- Pixels per meter: 100 pixels (configurable)
+#### Grid System Implementation
+The application uses a modular grid system with the following characteristics:
+- **Base Settings**:
+  - Base grid spacing: `GRID_SIZE = 0.1` meters (10cm)
+  - Large grid: 1.0 meters (100cm)
+  - Pixels per meter: 100 pixels (configurable)
+
+- **Grid Component Architecture**:
+  - `useCanvasGrid`: Main hook that composes specialized grid hooks
+  - `useGridCreation`: Handles the actual grid line creation
+  - `useGridRetry`: Implements retry logic for reliability
+  - `useGridThrottling`: Manages performance optimization
+  - `useGridValidation`: Validates inputs before grid creation
+  - `useGridSafety`: Provides timeouts and safety boundaries
+
+- **Error Recovery Strategy**:
+  - Multi-level fallback mechanisms
+  - Automatic retry with exponential backoff
+  - Emergency grid creation when normal methods fail
+  - Detailed logging for debugging
 
 #### Performance Considerations
 

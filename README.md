@@ -21,7 +21,7 @@ This application allows architects, designers, and homeowners to:
 - **Wall Tool**: Create walls with proper thickness and connections
 
 ### Measurement & Precision
-- **Grid System**: Precise 0.1m and 1.0m grid for accurate measurements
+- **Advanced Grid System**: Precise 0.1m and 1.0m grid with multi-layered architecture and error recovery
 - **Smart Snapping**: Objects snap to grid points for alignment
 - **Real-time Measurements**: Display distances and areas as you draw
 - **Scale Management**: Work in real-world measurements (meters)
@@ -62,6 +62,15 @@ The application follows a component-based architecture with:
 - **Utility Functions**: Manage geometry calculations and data processing
 - **Custom Hooks**: Separate logic concerns (drawing, resizing, history, etc.)
 - **Context Providers**: Manage application state and user preferences
+
+#### Grid System Architecture
+
+The application implements a robust grid system with:
+
+- **Modular Hook Design**: Specialized hooks for different grid functionalities
+- **Error Recovery**: Automatic retry mechanisms and fallback grid rendering
+- **Performance Optimization**: Throttling and batched operations for smooth performance
+- **Safety Mechanisms**: Lock acquisition and timeout protection to prevent rendering issues
 
 ## Getting Started
 
