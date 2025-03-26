@@ -1,7 +1,7 @@
 
 import { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
+import { useCanvasInitialization } from "@/hooks/canvas-initialization";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import logger from "@/utils/logger";

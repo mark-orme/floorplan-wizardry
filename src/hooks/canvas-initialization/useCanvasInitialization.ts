@@ -1,20 +1,22 @@
 
 /**
  * Custom hook for initializing the canvas
- * Handles canvas creation, brush setup, and grid initialization
+ * Main entry point that coordinates all canvas initialization hooks
  * @module useCanvasInitialization
  */
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { useCanvasCreation } from "./useCanvasCreation";
-import { useCanvasBrush } from "./useCanvasBrush";
-import { useCanvasCleanup } from "./useCanvasCleanup";
-import { useCanvasGrid } from "./useCanvasGrid";
-import { DrawingTool } from "./useCanvasState";
+import { useCanvasCreation } from "../useCanvasCreation";
+import { useCanvasBrush } from "../useCanvasBrush";
+import { useCanvasCleanup } from "../useCanvasCleanup";
+import { DrawingTool } from "../useCanvasState";
 import { DebugInfoState, CanvasDimensions } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
+import { useCanvasGridInitialization } from "./useCanvasGridInitialization";
+import { useCanvasRetryLogic } from "./useCanvasRetryLogic";
+import { useCanvasStateTracking } from "./useCanvasStateTracking";
 
 // Type definition for the props to ensure they're all required
 interface UseCanvasInitializationProps {
@@ -30,21 +32,12 @@ interface UseCanvasInitializationProps {
 
 // Global tracker for initial toast shown
 let initialToastShown = false;
-// Track whether initialization is in progress
-let initializationInProgress = false;
-// Track whether canvas is being disposed
-let canvasDisposalInProgress = false;
-// Track if we're in an initialization cycle
-let canvasInitializationCycleDetected = false;
-// Count consecutive initializations to detect loops
-let consecutiveInitializations = 0;
-const MAX_CONSECUTIVE_INITIALIZATIONS = 3;
-// Add a global attempt counter to track overall initialization attempts
-let globalInitAttempts = 0;
-const MAX_GLOBAL_INIT_ATTEMPTS = 5;
 
 /**
- * Hook for initializing the canvas and related objects
+ * Main hook for initializing the canvas and related objects
+ * Coordinates all sub-hooks for different aspects of initialization
+ * @param props - Hook properties
+ * @returns Initialized canvas objects and related functions
  */
 export const useCanvasInitialization = ({
   canvasDimensions,
@@ -63,12 +56,27 @@ export const useCanvasInitialization = ({
     canvasDimensions = { width: 800, height: 600 };
   }
 
-  // Track initialization state
-  const [isInitialized, setIsInitialized] = useState(false);
-  const initTimeoutRef = useRef<number | null>(null);
-  const initializationAttempts = useRef(0);
-  const maxInitAttempts = 2; // Reduced from 3 to 2
-  const componentMountedRef = useRef(true); // Track if component is mounted
+  // Use the state tracking hooks
+  const {
+    isInitialized,
+    componentMountedRef,
+    startInitialization,
+    completeInitialization,
+    failInitialization,
+    setDisposalState,
+    getInitializationState,
+    setInitTimeout,
+    clearInitTimeouts,
+    setupMountedTracking,
+    hasExceededMaxAttempts
+  } = useCanvasStateTracking();
+  
+  // Use the retry logic hook
+  const {
+    trackInitializationAttempt,
+    resetInitializationTracking,
+    isCycleDetected
+  } = useCanvasRetryLogic();
   
   // Use the smaller, focused hooks
   const { 
@@ -92,6 +100,13 @@ export const useCanvasInitialization = ({
     future: []
   });
   
+  // Use the grid initialization hook
+  const { gridLayerRef, initializeGrid } = useCanvasGridInitialization({
+    setDebugInfo,
+    setHasError,
+    setErrorMessage
+  });
+  
   // Define a simple setupInteractions function
   const setupInteractions = useCallback((canvas: FabricCanvas): (() => void) => {
     // Basic interactions setup
@@ -101,101 +116,86 @@ export const useCanvasInitialization = ({
   }, []);
   
   const { cleanupCanvas } = useCanvasCleanup();
-  
-  // Grid layer reference
-  const gridLayerRef = useRef<FabricObject[]>([]);
-  
-  // Use the grid creation hook
-  const createGridImpl = useCanvasGrid({
-    gridLayerRef,
-    canvasDimensions,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage
-  });
 
   // Set component mounted flag
   useEffect(() => {
-    componentMountedRef.current = true;
+    const cleanup = setupMountedTracking();
     
     // Log initial state
     console.log("💡 Canvas initialization started with dimensions:", canvasDimensions);
     
-    return () => {
-      componentMountedRef.current = false;
-    };
-  }, []);
+    return cleanup;
+  }, [setupMountedTracking, canvasDimensions]);
 
   /**
    * Helper function to perform initialization that can be retried
-   * @returns {boolean} Whether initialization was successful
+   * @returns Whether initialization was successful
    */
   const performInitialization = useCallback((): boolean => {
-    // First, increment global attempt counter to track overall initialization attempts
-    globalInitAttempts++;
-    
-    // Log the current attempt
-    console.log(`🔄 Canvas initialization attempt #${globalInitAttempts}`);
-    
-    // Check if we've exceeded the global maximum attempts
-    if (globalInitAttempts > MAX_GLOBAL_INIT_ATTEMPTS) {
-      logger.error(`Too many global initialization attempts (${globalInitAttempts}), blocking further attempts`);
-      
-      // Only update error state if component is still mounted
-      if (componentMountedRef.current) {
-        setHasError(true);
-        setErrorMessage(`Canvas initialization failed after multiple attempts. Using emergency mode.`);
-      }
-      
-      // Return false to break the retry chain
+    // Check for detected cycles first
+    if (isCycleDetected()) {
+      logger.warn("Initialization cycle previously detected, skipping attempt");
       return false;
     }
     
-    // Detect initialization cycles and break them
-    consecutiveInitializations++;
-    if (consecutiveInitializations > MAX_CONSECUTIVE_INITIALIZATIONS) {
-      logger.warn("Initialization cycle detected, breaking the loop");
-      canvasInitializationCycleDetected = true;
-      consecutiveInitializations = 0;
+    // Track attempt and check if we should continue
+    const attemptStatus = trackInitializationAttempt();
+    if (!attemptStatus.shouldContinue) {
+      // Handle max attempts reached
+      if (attemptStatus.isMaxAttemptsReached) {
+        logger.error("Max initialization attempts reached");
+        
+        // Only update error state if component is still mounted
+        if (componentMountedRef.current) {
+          setHasError(true);
+          setErrorMessage(`Canvas initialization failed after multiple attempts. Using emergency mode.`);
+        }
+      }
       
-      // Try to create an emergency grid instead
-      if (fabricCanvasRef.current) {
-        try {
-          logger.info("Creating basic emergency grid due to initialization cycle");
-          createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
-          
-          if (componentMountedRef.current) {
-            setIsInitialized(true);
+      // Handle cycle detection
+      if (attemptStatus.isCycleDetected) {
+        // Try to create an emergency grid instead
+        if (fabricCanvasRef.current) {
+          try {
+            logger.info("Creating basic emergency grid due to initialization cycle");
+            createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+            
+            if (componentMountedRef.current) {
+              completeInitialization();
+            }
+            return true;
+          } catch (error) {
+            logger.error("Failed to create emergency grid:", error);
           }
-          return true;
-        } catch (error) {
-          logger.error("Failed to create emergency grid:", error);
         }
       }
       
       return false;
     }
     
+    // Get current initialization state
+    const initState = getInitializationState();
+    
     // Avoid multiple simultaneous initialization attempts
-    if (initializationInProgress) {
+    if (initState.initializationInProgress) {
       logger.info("Initialization already in progress, skipping");
       return false;
     }
 
     // Don't attempt to initialize if disposal is in progress
-    if (canvasDisposalInProgress) {
+    if (initState.canvasDisposalInProgress) {
       logger.info("Canvas disposal in progress, skipping initialization");
       return false;
     }
     
     // Don't reinitialize if canvas already exists and initialized flag is set
-    if (isInitialized && fabricCanvasRef.current) {
+    if (initState.isInitialized && fabricCanvasRef.current) {
       logger.info("Canvas already initialized, skipping initialization");
       return true;
     }
     
-    initializationInProgress = true;
-    initializationAttempts.current += 1;
+    // Mark initialization as started
+    const attemptNum = startInitialization();
     
     logger.info("Attempting canvas initialization with dimensions:", canvasDimensions);
     console.log("📏 Attempting canvas initialization with dimensions:", canvasDimensions);
@@ -204,10 +204,10 @@ export const useCanvasInitialization = ({
     if (!canvasRef.current) {
       logger.warn("⚠️ Canvas element not available - cannot initialize fabric canvas");
       console.log("🛑 Canvas element not available, can't initialize fabric canvas");
-      initializationInProgress = false;
+      failInitialization();
       
       // Check if we should trigger emergency mode
-      if (initializationAttempts.current >= maxInitAttempts) {
+      if (hasExceededMaxAttempts()) {
         logger.error("Canvas reference never available after multiple attempts");
         
         if (componentMountedRef.current) {
@@ -227,7 +227,7 @@ export const useCanvasInitialization = ({
     if (canvasRef.current.offsetWidth === 0 || canvasRef.current.offsetHeight === 0) {
       logger.warn("⚠️ Canvas element has zero dimensions - cannot initialize fabric canvas");
       console.log("🛑 Canvas element has zero dimensions, can't initialize fabric canvas");
-      initializationInProgress = false;
+      failInitialization();
       
       return false;
     }
@@ -239,10 +239,10 @@ export const useCanvasInitialization = ({
     if (!fabricCanvas) {
       logger.warn("⚠️ Fabric canvas was not created - check DOM or ref issues");
       console.log("🎨 Fabric canvas was not created - initialization failed");
-      initializationInProgress = false;
+      failInitialization();
       
       // Check for too many retries and trigger emergency mode
-      if (initializationAttempts.current >= maxInitAttempts) {
+      if (hasExceededMaxAttempts()) {
         logger.error("Canvas initialization failed after multiple attempts");
         
         if (componentMountedRef.current) {
@@ -275,123 +275,22 @@ export const useCanvasInitialization = ({
     // Create grid only after verifying the canvas has valid dimensions
     const createGridSafely = () => {
       try {
-        // Reset retry counter for grid creation to give it a fresh start
-        logger.info("Creating grid on initialized canvas");
-        console.log("🔲 Creating grid on initialized canvas");
-        
-        // CRITICAL CHECK: First verify canvas has valid dimensions before creating grid
-        if (!fabricCanvas || 
-            !fabricCanvas.width || 
-            !fabricCanvas.height || 
-            fabricCanvas.width === 0 || 
-            fabricCanvas.height === 0) {
-          logger.error("⛔️ Grid creation blocked: Canvas has zero dimensions");
-          console.error("⛔️ Grid creation blocked: Canvas has zero dimensions", {
-            width: fabricCanvas?.width,
-            height: fabricCanvas?.height
-          });
-          
-          // Set error to trigger emergency canvas
-          if (componentMountedRef.current) {
-            setHasError(true);
-            setErrorMessage("Grid creation failed: Canvas has zero dimensions");
-            toast.error("⚠️ Grid creation failed: Canvas has zero dimensions");
-          }
-          
-          // Mark initialization as no longer in progress
-          initializationInProgress = false;
-          return;
-        }
-        
-        // Now create the grid with verified dimensions
-        if (fabricCanvas) {
-          fabricCanvas.renderOnAddRemove = true;
-          
-          // Try using the provided createGrid function first
-          let gridObjects: FabricObject[] = [];
-          
-          try {
-            // Use the provided grid creation function if it exists and returns a valid array
-            if (typeof createGrid === 'function') {
-              const result = createGrid(fabricCanvas);
-              if (Array.isArray(result) && result.length > 0) {
-                gridObjects = result;
-                console.log("✅ Grid created using provided createGrid function:", gridObjects.length, "objects");
-              }
-            }
-          } catch (createGridError) {
-            console.error("Error using provided createGrid function:", createGridError);
-          }
-          
-          // If the provided function didn't work, use our own implementation
-          if (gridObjects.length === 0) {
-            console.log("Using internal grid creation implementation...");
-            gridObjects = createGridImpl(fabricCanvas);
-          }
-          
-          // If we didn't create any grid objects, try emergency grid and show toast
-          if (!gridObjects || gridObjects.length === 0) {
-            logger.info("⚠️ No grid objects created, trying basic emergency grid");
-            console.log("⚠️ No grid objects created, trying emergency grid");
-            
-            toast.error("⚠️ Grid failed to render - switching to emergency mode");
-            
-            createBasicEmergencyGrid(fabricCanvas, gridLayerRef);
-          } else {
-            console.log("✅ Grid successfully created:", gridObjects.length, "objects");
-            
-            // Update the gridLayerRef to track all grid objects
-            gridLayerRef.current = gridObjects;
-            
-            // Show success toast
-            toast.success(`Grid created with ${gridObjects.length} objects`);
-          }
+        // Create the grid using our grid initialization hook
+        if (fabricCanvas && fabricCanvas.width > 0 && fabricCanvas.height > 0) {
+          const grid = initializeGrid(fabricCanvas, createGrid);
           
           // Force render after grid is created
           fabricCanvas.requestRenderAll();
-          console.log("🔄 Requesting canvas render");
-          
-          // Set debug info for grid creation
-          if (componentMountedRef.current) {
-            setDebugInfo(prev => ({
-              ...prev,
-              gridCreated: true,
-              gridObjectCount: gridLayerRef.current.length
-            }));
-          }
-          
-          logger.info(`Grid created with ${gridLayerRef.current.length} objects`);
+        } else {
+          logger.error("Cannot create grid: Canvas has invalid dimensions");
         }
       } catch (error) {
-        logger.error("Error creating grid:", error);
-        console.error("❌ Error creating grid:", error);
-        
-        // Show error toast
-        toast.error("Grid creation failed with error");
-        
-        // Try emergency grid on error
-        if (fabricCanvas) {
-          try {
-            console.log("🚨 Attempting emergency grid creation");
-            createBasicEmergencyGrid(fabricCanvas, gridLayerRef);
-          } catch (emergencyError) {
-            logger.error("Emergency grid creation also failed:", emergencyError);
-            console.error("❌ Emergency grid creation also failed:", emergencyError);
-          }
-        }
+        logger.error("Error in grid creation:", error);
       } finally {
-        // Mark initialization as no longer in progress
-        initializationInProgress = false;
-        
-        // Reset consecutive initializations counter on success
-        consecutiveInitializations = 0;
-        
-        // Reset global attempts counter on success
-        globalInitAttempts = 0;
-        
-        // Mark as initialized if component is still mounted
+        // Mark initialization as complete
+        resetInitializationTracking();
         if (componentMountedRef.current) {
-          setIsInitialized(true);
+          completeInitialization();
         }
       }
     };
@@ -417,8 +316,7 @@ export const useCanvasInitialization = ({
     canvasDimensions, 
     initializeCanvas, 
     setupBrush, 
-    createGrid, 
-    createGridImpl,
+    createGrid,
     setupInteractions, 
     setDebugInfo,
     isInitialized,
@@ -426,30 +324,33 @@ export const useCanvasInitialization = ({
     gridLayerRef,
     setHasError,
     setErrorMessage,
-    componentMountedRef
+    componentMountedRef,
+    trackInitializationAttempt,
+    resetInitializationTracking,
+    isCycleDetected,
+    startInitialization,
+    failInitialization,
+    completeInitialization,
+    getInitializationState,
+    hasExceededMaxAttempts,
+    initializeGrid
   ]);
 
   // Initialize canvas when component mounts or when dependencies change
   useEffect(() => {
     // Skip initialization if we detected an initialization cycle
-    if (canvasInitializationCycleDetected) {
+    if (isCycleDetected()) {
       logger.info("Skipping initialization due to detected cycle");
       return;
     }
     
     // Clear any previous timeout
-    if (initTimeoutRef.current !== null) {
-      window.clearTimeout(initTimeoutRef.current);
-      initTimeoutRef.current = null;
-    }
+    clearInitTimeouts();
     
     if (isInitialized && fabricCanvasRef.current) {
       logger.info("Canvas already initialized, skipping initialization");
       return;
     }
-    
-    // Reset attempts counter on dependency changes
-    initializationAttempts.current = 0;
     
     // IMPORTANT: Use requestAnimationFrame to wait for DOM to be fully rendered
     const waitForCanvasElement = () => {
@@ -469,15 +370,15 @@ export const useCanvasInitialization = ({
       
       // If initialization failed, retry after a short delay (with backoff)
       if (!success && 
-          initializationAttempts.current < maxInitAttempts && 
-          globalInitAttempts < MAX_GLOBAL_INIT_ATTEMPTS &&
+          !hasExceededMaxAttempts() && 
           componentMountedRef.current &&
           canvasRef.current) { // Only retry if canvas element exists
         
-        const delay = Math.min(1000 * Math.pow(1.5, initializationAttempts.current), 5000);
-        logger.info(`Initial canvas initialization failed, retrying in ${delay}ms (attempt ${initializationAttempts.current}/${maxInitAttempts})...`);
+        const attemptNum = getInitializationState().attempts;
+        const delay = Math.min(1000 * Math.pow(1.5, attemptNum), 5000);
+        logger.info(`Initial canvas initialization failed, retrying in ${delay}ms (attempt ${attemptNum})...`);
         
-        initTimeoutRef.current = window.setTimeout(() => {
+        setInitTimeout(() => {
           // Skip if component unmounted during timeout
           if (!componentMountedRef.current) return;
           
@@ -491,24 +392,14 @@ export const useCanvasInitialization = ({
     
     // Clean up on unmount
     return () => {
-      // Set mounted flag to false
-      componentMountedRef.current = false;
-      
-      // Clear any pending initialization timeouts
-      if (initTimeoutRef.current !== null) {
-        window.clearTimeout(initTimeoutRef.current);
-        initTimeoutRef.current = null;
-      }
-      
       // Skip cleanup if cycle detected, as it may be part of the problem
-      if (canvasInitializationCycleDetected) {
+      if (isCycleDetected()) {
         logger.info("Skipping canvas disposal due to detected cycle");
         return;
       }
       
       // Set flag to prevent further operations during cleanup
-      canvasDisposalInProgress = true;
-      initializationInProgress = false;
+      setDisposalState(true);
       
       // Store a local reference to the canvas before clearing it
       const currentCanvas = fabricCanvasRef.current;
@@ -529,11 +420,11 @@ export const useCanvasInitialization = ({
           logger.error("Error initiating canvas cleanup:", error);
         } finally {
           // Reset disposal flag
-          canvasDisposalInProgress = false;
+          setDisposalState(false);
         }
       } else {
         // Reset disposal flag
-        canvasDisposalInProgress = false;
+        setDisposalState(false);
       }
     };
   }, [
@@ -548,12 +439,18 @@ export const useCanvasInitialization = ({
     setupInteractions,
     cleanupCanvas,
     createGrid,
-    createGridImpl,
     performInitialization,
     isInitialized,
     fabricCanvasRef,
     canvasInitializedRef,
-    canvasRef
+    canvasRef,
+    clearInitTimeouts,
+    componentMountedRef,
+    hasExceededMaxAttempts,
+    isCycleDetected,
+    setDisposalState,
+    setInitTimeout,
+    getInitializationState
   ]);
 
   // Add a function to delete selected objects

@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasContainer } from "./CanvasContainer";
-import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
+import { useCanvasInitialization } from "@/hooks/canvas-initialization";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DistanceTooltip } from "./DistanceTooltip";

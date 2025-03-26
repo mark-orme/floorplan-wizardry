@@ -1,11 +1,10 @@
-
 /**
  * Hook for canvas initialization and setup
  * @module useCanvasControllerSetup
  */
 import { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useCanvasInitialization } from "@/hooks/useCanvasInitialization";
+import { useCanvasInitialization } from "@/hooks/canvas-initialization";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import logger from "@/utils/logger";
