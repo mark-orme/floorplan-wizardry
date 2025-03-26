@@ -27,7 +27,7 @@ export const PropertyFloorPlanTab = ({
   onStatusChange
 }: PropertyFloorPlanTabProps) => {
   const [isReady, setIsReady] = useState(false);
-  const [initAttempt, setInitAttempt] = useState(0); // Track initialization attempts
+  const [initAttempt, setInitAttempt] = useState(0);
   const [initError, setInitError] = useState(false);
   
   // Set ready state after a short delay to ensure DOM is fully rendered
@@ -38,7 +38,7 @@ export const PropertyFloorPlanTab = ({
     
     const timer = setTimeout(() => {
       setIsReady(true);
-    }, 500); // Increased from 300ms to 500ms to ensure proper DOM setup
+    }, 500);
     
     return () => clearTimeout(timer);
   }, []);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { CanvasContainer } from './CanvasContainer';
 import { useCanvasController } from './canvas/controller/CanvasController';
@@ -16,7 +15,8 @@ export const Canvas: React.FC = () => {
   const { 
     canvasRef, 
     debugInfo, 
-    hasError, 
+    hasError,
+    errorMessage,
     handleRetry
   } = useCanvasController();
   
@@ -31,9 +31,13 @@ export const Canvas: React.FC = () => {
   const forceEmergencyRef = useRef<boolean>(false);
   const componentMountedRef = useRef<boolean>(false);
   
-  // Set mounted flag on initial render
   useEffect(() => {
+    // Set mounted flag on initial render
     componentMountedRef.current = true;
+    
+    // Log helpful debug info
+    console.log('Canvas component mounted with debugInfo:', debugInfo);
+    console.log('Canvas ref exists:', !!canvasRef.current);
     
     return () => {
       componentMountedRef.current = false;
@@ -44,10 +48,10 @@ export const Canvas: React.FC = () => {
         circuitBreakerTimerRef.current = null;
       }
     };
-  }, []);
+  }, [debugInfo]);
   
   // HARD LIMIT: If we exceed this number of attempts, force emergency mode with no retries
-  const MAX_TOLERATED_ATTEMPTS = 50;
+  const MAX_TOLERATED_ATTEMPTS = 3; // Reduced from 50 to 3 to fail faster
   
   // Collect diagnostic data to help debug initialization issues
   useEffect(() => {
@@ -73,7 +77,8 @@ export const Canvas: React.FC = () => {
               Array.from(canvasRef.current.attributes).map(a => a.name) : 
               'No attributes'
           } : 'No canvas ref',
-          errorStack: errorDetailsRef.current.slice(-5) // Keep last 5 errors
+          errorStack: errorDetailsRef.current.slice(-5), // Keep last 5 errors
+          errorMessage: errorMessage
         };
         
         if (componentMountedRef.current) {
@@ -104,16 +109,6 @@ export const Canvas: React.FC = () => {
             }
           );
         }
-        else if (failedAttempts > 10) {
-          captureError(
-            new Error(`Canvas initialization issues (${failedAttempts} attempts)`),
-            'canvas-initialization-loop',
-            {
-              level: 'warning',
-              extra: diagnostics
-            }
-          );
-        }
       } catch (e) {
         console.error('Error collecting diagnostic data:', e);
       }
@@ -121,40 +116,7 @@ export const Canvas: React.FC = () => {
     
     // Collect diagnostics on mount and when error state changes
     collectDiagnosticInfo();
-  }, [debugInfo, failedAttempts, canvasRef, hasError, MAX_TOLERATED_ATTEMPTS]);
-  
-  // Force emergency canvas on special error case
-  useEffect(() => {
-    if (!componentMountedRef.current) return;
-    
-    if (hasError) {
-      const errorMsg = errorDetailsRef.current.length > 0 ? 
-        errorDetailsRef.current[errorDetailsRef.current.length - 1] : '';
-      
-      // Check for special error message that indicates we need to use emergency canvas
-      if (errorMsg.includes('Canvas initialization failed after multiple attempts') ||
-          errorMsg.includes('blocked after') ||
-          errorMsg.includes('Too many canvas initialization attempts') ||
-          errorMsg.includes('Canvas element not available')) {
-        logger.warn('Initialization blocked, forcing emergency canvas');
-        forceEmergencyRef.current = true;
-        
-        if (componentMountedRef.current) {
-          setUseEmergencyCanvas(true);
-        }
-        
-        // Report this specific case
-        captureError(
-          new Error('Canvas initialization blocked, forcing emergency mode'),
-          'canvas-forced-emergency',
-          {
-            level: 'warning',
-            extra: { diagnosticData, errorHistory: errorDetailsRef.current }
-          }
-        );
-      }
-    }
-  }, [hasError, diagnosticData]);
+  }, [debugInfo, failedAttempts, canvasRef, hasError, MAX_TOLERATED_ATTEMPTS, errorMessage]);
   
   // Track errors and switch to emergency canvas after too many failures
   useEffect(() => {
@@ -197,11 +159,7 @@ export const Canvas: React.FC = () => {
           const newCount = prev + 1;
           
           // Add error details to help with debugging
-          errorDetailsRef.current.push(`Error #${newCount} at ${new Date().toISOString()}: Canvas state - ${JSON.stringify({
-            ready: debugInfo.canvasReady,
-            dimensions: `${debugInfo.canvasWidth}x${debugInfo.canvasHeight}`,
-            gridCreated: debugInfo.gridCreated
-          })}`);
+          errorDetailsRef.current.push(`Error #${newCount} at ${new Date().toISOString()}: ${errorMessage || 'Unknown error'}`);
           
           // If we have more than 10 errors, trim the list
           if (errorDetailsRef.current.length > 10) {
@@ -210,7 +168,7 @@ export const Canvas: React.FC = () => {
           
           logger.warn(`Canvas initialization failed (attempt ${newCount})`);
           
-          // If we have 3+ errors in 2 seconds or 2+ total failures, switch to emergency canvas
+          // If we have 2+ errors in 2 seconds or 2+ total failures, switch to emergency canvas
           if (recentErrors.length >= 2 || newCount >= 2 || forceEmergencyRef.current) {
             logger.error('Too many canvas failures, switching to emergency canvas', {
               errorCount: newCount,
@@ -237,36 +195,7 @@ export const Canvas: React.FC = () => {
         });
       }
     }
-  }, [hasError, debugInfo, diagnosticData, useEmergencyCanvas, MAX_TOLERATED_ATTEMPTS]);
-  
-  // Set a circuit breaker to automatically try again after 30 seconds
-  useEffect(() => {
-    if (!componentMountedRef.current) return;
-    
-    if (useEmergencyCanvas && !forceEmergencyRef.current) {
-      // Clear any existing timer
-      if (circuitBreakerTimerRef.current) {
-        clearTimeout(circuitBreakerTimerRef.current);
-      }
-      
-      // Set timer to automatically retry after 30 seconds
-      circuitBreakerTimerRef.current = setTimeout(() => {
-        const timeSinceLastError = Date.now() - lastErrorTimeRef.current;
-        
-        // Only auto-retry if it's been at least 30 seconds since the last error
-        if (timeSinceLastError > 30000 && componentMountedRef.current) {
-          logger.info('Circuit breaker timer elapsed, automatically retrying main canvas');
-          handleEmergencyRetry();
-        }
-      }, 30000);
-    }
-    
-    return () => {
-      if (circuitBreakerTimerRef.current) {
-        clearTimeout(circuitBreakerTimerRef.current);
-      }
-    };
-  }, [useEmergencyCanvas]);
+  }, [hasError, debugInfo, useEmergencyCanvas, MAX_TOLERATED_ATTEMPTS, errorMessage]);
   
   // Handle retry from emergency canvas
   const handleEmergencyRetry = () => {
