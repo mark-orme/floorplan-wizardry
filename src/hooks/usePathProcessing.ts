@@ -1,71 +1,32 @@
-
 /**
- * Custom hook for processing Fabric.js paths into polylines
+ * Custom hook for processing paths drawn on the canvas
  * @module usePathProcessing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Path, Object as FabricObject } from "fabric";
-import { toast } from "sonner";
-import { MAX_OBJECTS_PER_CANVAS } from "@/utils/drawing";
-import { DrawingTool } from "./useCanvasState";
-import { fabricPathToPoints } from "@/utils/fabricPathUtils";
+import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
 import { usePointProcessing } from "./usePointProcessing";
 import { usePolylineCreation } from "./usePolylineCreation";
-import { straightenStroke } from "@/utils/geometry";
-import logger from "@/utils/logger";
+import { DrawingTool } from "./useCanvasState";
 import { FloorPlan } from "@/types/floorPlanTypes";
-import { Point } from "@/types/drawingTypes";
+import logger from "@/utils/logger";
 
-/**
- * Props for the usePathProcessing hook
- * @interface UsePathProcessingProps
- */
 interface UsePathProcessingProps {
-  /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
-  /** Current active drawing tool */
+  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   tool: DrawingTool;
-  /** Current floor index */
   currentFloor: number;
-  /** Function to set floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set gross internal area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Current line thickness */
   lineThickness?: number;
-  /** Current line color */
   lineColor?: string;
+  recalculateGIA?: () => void;
 }
 
 /**
- * Enhanced Fabric Path for type handling
- */
-interface EnhancedPath {
-  /** Path data property */
-  path?: Array<Array<string | number>>;
-  /** Line color */
-  stroke?: string | null;
-  /** Type property */
-  type: string;
-}
-
-/**
- * Type definition for the hook's return value
- * @interface UsePathProcessingResult
- */
-interface UsePathProcessingResult {
-  /** Process a newly created path and convert it to appropriate shapes */
-  processCreatedPath: (path: Path) => void;
-}
-
-/**
- * Hook for handling path creation and processing
+ * Hook that handles processing paths on the canvas
  * @param {UsePathProcessingProps} props - Hook properties
- * @returns {UsePathProcessingResult} Path creation handler
+ * @returns Processing functions
  */
 export const usePathProcessing = ({
   fabricCanvasRef,
@@ -76,13 +37,16 @@ export const usePathProcessing = ({
   setFloorPlans,
   setGia,
   lineThickness = 2,
-  lineColor = "#000000"
-}: UsePathProcessingProps): UsePathProcessingResult => {
+  lineColor = "#000000",
+  recalculateGIA
+}: UsePathProcessingProps) => {
+  // Initialize point processing hook
+  const { processPathPoints } = usePointProcessing({
+    fabricCanvasRef,
+    gridLayerRef
+  });
   
-  // Use the point processing hook, passing the line color
-  const { processPoints, convertToPixelPoints, isShapeClosed } = usePointProcessing(tool, lineColor);
-  
-  // Use the polyline creation hook
+  // Initialize polyline creation hook with GIA recalculation
   const { createPolyline } = usePolylineCreation({
     fabricCanvasRef,
     gridLayerRef,
@@ -92,97 +56,66 @@ export const usePathProcessing = ({
     setFloorPlans,
     setGia,
     lineThickness,
-    lineColor
+    lineColor,
+    recalculateGIA
   });
-  
+
   /**
-   * Process a newly created path and convert it to appropriate shapes
-   * @param {Path} path - The fabric.js path object
+   * Process a created path and convert it to appropriate shape
+   * @param path - The Fabric.js path object
    */
-  const processCreatedPath = useCallback((path: Path) => {
-    logger.info("Path created event triggered");
-    
+  const processCreatedPath = useCallback((path: FabricPath) => {
     if (!fabricCanvasRef.current) return;
-    const fabricCanvas = fabricCanvasRef.current;
     
-    const enhancedPath = path as unknown as EnhancedPath;
-    if (!enhancedPath.path) {
-      logger.error("Invalid path object:", path);
-      return;
+    logger.info(`Processing path for tool: ${tool}`);
+    
+    // Remove original path since we'll convert it
+    if (path) {
+      fabricCanvasRef.current.remove(path);
     }
     
-    try {
-      // Check for too many objects on canvas (performance optimization)
-      const currentObjects = fabricCanvas.getObjects().filter(obj => 
-        obj.type === 'polyline' || obj.type === 'path'
-      );
-      
-      if (currentObjects.length > MAX_OBJECTS_PER_CANVAS) {
-        toast.warning(`Maximum objects reached (${MAX_OBJECTS_PER_CANVAS}). Please save or clear some objects.`);
-        fabricCanvas.remove(path);
-        return;
+    // Process the path based on current tool
+    switch (tool) {
+      case "wall":
+      case "straightLine": {
+        // Process path points and create a straight polyline
+        const { finalPoints, pixelPoints } = processPathPoints(path);
+        createPolyline(finalPoints, pixelPoints);
+        break;
       }
       
-      // Extract points from path
-      const points = fabricPathToPoints(enhancedPath.path);
-      logger.info("Points extracted from path:", points.length);
-      
-      if (points.length < 2) {
-        logger.error("Not enough points to create a path");
-        fabricCanvas.remove(path);
-        return;
+      case "room": {
+        // Process path points and create an enclosed shape
+        const { finalPoints, pixelPoints } = processPathPoints(path, true);
+        createPolyline(finalPoints, pixelPoints, true);
+        break;
       }
       
-      // Get the path's current color before processing
-      const pathColor = typeof enhancedPath.stroke === 'string' ? enhancedPath.stroke : lineColor;
-      logger.info("Detected path color:", pathColor);
-      
-      // Process the points according to the current tool
-      let finalPoints = processPoints(points);
-      
-      // Apply straightening for wall and straightLine tools
-      if (tool === "straightLine" || tool === "wall") {
-        logger.info(`Applying strict line straightening for ${tool} tool`);
-        finalPoints = straightenStroke(finalPoints);
-      }
-      
-      // Check if the shape is closed (first and last points are very close)
-      const isEnclosed = isShapeClosed(finalPoints);
-      
-      // Convert meter coordinates to pixel coordinates for display
-      const pixelPoints = convertToPixelPoints(finalPoints);
-      
-      logger.info("Creating polyline with points:", pixelPoints.length, isEnclosed ? "(enclosed shape)" : "");
-      
-      // Log the specific points for debugging
-      console.log("Final points for drawing:", finalPoints);
-      console.log("Pixel points for display:", pixelPoints);
-      
-      // Remove the temporary path before creating the polyline
-      fabricCanvas.remove(path);
-      
-      // Create the polyline from the processed points, passing the isEnclosed flag
-      // Pass the original path's color to maintain color consistency 
-      const success = createPolyline(finalPoints, pixelPoints, isEnclosed, pathColor);
-      
-      if (success) {
-        logger.info(`Line drawn and added to canvas successfully with color: ${pathColor}`);
-      }
-      
-    } catch (error) {
-      logger.error("Error processing drawing:", error);
-      toast.error("Failed to process drawing");
-      
-      // Safety cleanup if there was an error
-      if (fabricCanvasRef.current && path) {
-        try {
-          fabricCanvasRef.current.remove(path);
-        } catch (e) {
-          // Ignore errors during cleanup
+      case "freehand": {
+        // For freehand drawing, we keep the original path style
+        if (path) {
+          path.set({
+            stroke: lineColor,
+            strokeWidth: lineThickness,
+            fill: 'transparent'
+          });
+          fabricCanvasRef.current.add(path);
         }
+        break;
       }
+      
+      default:
+        // For other tools, just keep the original path
+        if (path) {
+          fabricCanvasRef.current.add(path);
+        }
+        break;
     }
-  }, [fabricCanvasRef, processPoints, convertToPixelPoints, isShapeClosed, createPolyline, lineColor, tool]);
-  
+    
+    // Force canvas to render
+    fabricCanvasRef.current.requestRenderAll();
+    
+  }, [fabricCanvasRef, tool, processPathPoints, createPolyline, lineThickness, lineColor]);
+
   return { processCreatedPath };
 };

@@ -1,59 +1,67 @@
 
 /**
- * Hook for managing canvas drawing state
+ * Hook for managing drawing state in the canvas controller
  * @module useCanvasControllerDrawingState
  */
 import { useEffect } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { DrawingTool } from "@/hooks/useCanvasState";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { FloorPlan } from "@/types/floorPlanTypes";
+import { DrawingState } from "@/types/drawingTypes";
 
 /**
- * Props interface for useCanvasControllerDrawingState hook
+ * Props for useCanvasControllerDrawingState hook
  * @interface UseCanvasControllerDrawingStateProps
  */
 interface UseCanvasControllerDrawingStateProps {
-  /** Reference to the fabric canvas */
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   /** Current active drawing tool */
   tool: DrawingTool;
-  /** Index of current floor */
+  /** Current floor index */
   currentFloor: number;
   /** Function to update floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set the GIA (Gross Internal Area) */
+  /** Function to update GIA */
   setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Current line thickness setting */
+  /** Current line thickness */
   lineThickness: number;
-  /** Current line color setting */
+  /** Current line color */
   lineColor: string;
   /** Function to delete selected objects */
-  deleteSelectedObjects?: () => void;
+  deleteSelectedObjects: () => void;
+  /** Function to update drawing state */
+  setDrawingState: React.Dispatch<React.SetStateAction<DrawingState | null>>;
+  /** Function to recalculate GIA */
+  recalculateGIA?: () => void;
 }
 
 /**
- * Hook that manages canvas drawing state for the controller
+ * Hook that handles drawing state in the canvas controller
  * @param {UseCanvasControllerDrawingStateProps} props - Hook properties
- * @returns Drawing state and related functions
  */
-export const useCanvasControllerDrawingState = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  historyRef,
-  tool,
-  currentFloor,
-  setFloorPlans,
-  setGia,
-  lineThickness,
-  lineColor,
-  deleteSelectedObjects
-}: UseCanvasControllerDrawingStateProps) => {
-  // Use the drawing hook to get drawing state
+export const useCanvasControllerDrawingState = (props: UseCanvasControllerDrawingStateProps) => {
+  const {
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    tool,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    lineThickness,
+    lineColor,
+    deleteSelectedObjects,
+    setDrawingState,
+    recalculateGIA
+  } = props;
+  
+  // Use the canvas drawing hook
   const { drawingState } = useCanvasDrawing({
     fabricCanvasRef,
     gridLayerRef,
@@ -64,47 +72,14 @@ export const useCanvasControllerDrawingState = ({
     setGia,
     lineThickness,
     lineColor,
-    deleteSelectedObjects
+    deleteSelectedObjects,
+    recalculateGIA
   });
   
-  // Enhanced drawing state visualization for select tool
+  // Update the controller drawing state whenever it changes
   useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    
-    // Customize selection appearance for edit mode
-    if (tool === "select") {
-      // Set selection style
-      canvas.selectionColor = 'rgba(100, 100, 255, 0.1)';
-      canvas.selectionBorderColor = 'rgba(100, 100, 255, 0.8)';
-      canvas.selectionLineWidth = 1;
-      
-      // Enable measurements for selected objects
-      canvas.on('selection:created', (e) => {
-        if (e.selected && e.selected.length === 1) {
-          const obj = e.selected[0];
-          // Show measurement info for the selected wall
-          if ((obj as any).objectType === 'line' || obj.type === 'polyline') {
-            // Trigger measurement display logic here
-            canvas.fire('measurement:show', { target: obj });
-          }
-        }
-      });
-      
-      canvas.on('selection:cleared', () => {
-        // Hide measurement info
-        canvas.fire('measurement:hide', {});
-      });
-    }
-    
-    return () => {
-      canvas.off('selection:created');
-      canvas.off('selection:cleared');
-    };
-  }, [fabricCanvasRef, tool]);
+    setDrawingState(drawingState);
+  }, [drawingState, setDrawingState]);
   
-  return {
-    drawingState
-  };
+  return { drawingState };
 };

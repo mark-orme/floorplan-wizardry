@@ -1,105 +1,116 @@
 
 /**
- * Canvas controller component
- * Centralizes all canvas state and operations
- * @module CanvasController
+ * Canvas Controller
+ * Main orchestration component for the canvas drawing system
+ * Centralizes all controller logic and state
  */
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
-
-// Import all the refactored hooks
+import React, { createContext, useContext, useCallback, useRef, useMemo } from "react";
 import { useCanvasControllerState } from "./useCanvasControllerState";
 import { useCanvasControllerSetup } from "./useCanvasControllerSetup";
 import { useCanvasControllerDependencies } from "./useCanvasControllerDependencies";
-import { useCanvasControllerTools } from "./useCanvasControllerTools";
-import { useCanvasControllerFloorPlans } from "./useCanvasControllerFloorPlans";
-import { useCanvasControllerLineSettings } from "./useCanvasControllerLineSettings";
 import { useCanvasControllerErrorHandling } from "./useCanvasControllerErrorHandling";
-import { useCanvasControllerDrawingState } from "./useCanvasControllerDrawingState";
+import { useCanvasControllerFloorPlans } from "./useCanvasControllerFloorPlans";
+import { useCanvasControllerTools } from "./useCanvasControllerTools";
+import { useCanvasControllerLineSettings } from "./useCanvasControllerLineSettings";
 import { useCanvasControllerLoader } from "./useCanvasControllerLoader";
-import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
+import { useCanvasControllerDrawingState } from "./useCanvasControllerDrawingState";
+import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
+import { Canvas as FabricCanvas } from "fabric";
+import { DrawingState } from "@/types/drawingTypes";
+import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 
-// Create a context to hold all canvas controller values
-const CanvasControllerContext = createContext<ReturnType<typeof useCanvasControllerHooks> | null>(null);
+// Create Context for Canvas Controller
+const CanvasControllerContext = createContext<ReturnType<typeof useCanvasControllerState> | null>(null);
 
-// Custom hook to access the canvas controller context
+/**
+ * Provider component that wraps the application with canvas controller context
+ * @param {Object} props - Component properties 
+ * @returns {JSX.Element} Provider component with canvas controller context
+ */
+export const CanvasControllerProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  // Initialize core canvas state
+  const state = useCanvasControllerState();
+  
+  return (
+    <CanvasControllerContext.Provider value={state}>
+      {children}
+    </CanvasControllerContext.Provider>
+  );
+};
+
+/**
+ * Custom hook to access the canvas controller from any component
+ * @returns Canvas controller state and functions
+ */
 export const useCanvasController = () => {
   const context = useContext(CanvasControllerContext);
+  
   if (!context) {
     throw new Error("useCanvasController must be used within a CanvasControllerProvider");
   }
-  return context;
-};
-
-// Hook that combines all the canvas controller hooks
-const useCanvasControllerHooks = () => {
-  // 1. Initialize state
+  
   const {
-    tool, setTool,
-    zoomLevel, setZoomLevel,
-    gia, setGia,
-    floorPlans, setFloorPlans,
-    currentFloor, setCurrentFloor,
-    isLoading, setIsLoading,
-    canvasDimensions, setCanvasDimensions,
-    lineThickness, setLineThickness,
-    lineColor, setLineColor,
-    debugInfo, setDebugInfo,
-    hasError, setHasError,
-    errorMessage, setErrorMessage,
-    resetLoadTimes
-  } = useCanvasControllerState();
-  
-  // 2. Initialize canvas and references
-  const { 
-    canvasRef, 
-    fabricCanvasRef, 
-    historyRef 
-  } = useCanvasControllerSetup({
-    canvasDimensions,
     tool,
-    currentFloor,
+    setTool,
+    zoomLevel,
     setZoomLevel,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage
-  });
-  
-  // 3. Initialize canvas dependencies
-  const { gridLayerRef, createGrid } = useCanvasControllerDependencies({
-    fabricCanvasRef,
-    canvasRef,
-    canvasDimensions,
+    gia,
+    setGia,
+    floorPlans,
+    setFloorPlans,
+    currentFloor,
+    setCurrentFloor,
     debugInfo,
     setDebugInfo,
+    isLoading,
+    setIsLoading,
+    hasError,
+    setHasError,
+    errorMessage, 
+    setErrorMessage,
+    lineThickness,
+    setLineThickness,
+    lineColor,
+    setLineColor,
+    drawingState,
+    setDrawingState
+  } = context;
+  
+  // Create refs for canvas and dependencies
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const gridLayerRef = useRef<any[]>([]);
+  const historyRef = useRef<{past: any[][], future: any[][]}>({ past: [], future: [] });
+  
+  // Initialize GIA calculation
+  const { recalculateGIA } = useFloorPlanGIA({
+    fabricCanvasRef,
+    setGia
+  });
+  
+  // Debug info updating
+  const updateDebugInfo = useCallback((info: Partial<typeof debugInfo>) => {
+    setDebugInfo(prev => ({ ...prev, ...info }));
+  }, [setDebugInfo]);
+  
+  // Initialize error handling
+  const { handleError, handleRetry } = useCanvasControllerErrorHandling({
     setHasError,
     setErrorMessage,
-    zoomLevel
+    updateDebugInfo
   });
-
-  // 4. Initialize floor plans (without clearDrawings yet)
-  // We'll pass a dummy clearDrawings function first and update it after tools are initialized
-  const dummyClearDrawings = () => {};
   
-  const {
-    drawFloorPlan,
-    recalculateGIA,
-    handleAddFloor,
-    handleFloorSelect,
-    loadData
-  } = useCanvasControllerFloorPlans({
+  // Initialize canvas dependencies, grid creation, etc.
+  const { 
+    createGrid 
+  } = useCanvasControllerDependencies({
     fabricCanvasRef,
     gridLayerRef,
-    floorPlans,
-    currentFloor,
-    isLoading,
-    setGia,
-    setFloorPlans,
-    setCurrentFloor,
-    clearDrawings: dummyClearDrawings,
-    createGrid
+    historyRef,
+    updateDebugInfo
   });
-
-  // 5. Initialize drawing tools with recalculateGIA
+  
+  // Initialize canvas tools (tool selection, drawing, etc.)
   const {
     clearDrawings,
     handleToolChange,
@@ -126,78 +137,68 @@ const useCanvasControllerHooks = () => {
     createGrid
   });
   
-  // Initialize canvas interaction tools for delete functionality
+  // Initialize floor plan management
   const {
-    deleteSelectedObjects,
-    setupSelectionMode
-  } = useCanvasInteraction({
+    drawFloorPlan,
+    handleAddFloor,
+    handleFloorSelect,
+    loadData
+  } = useCanvasControllerFloorPlans({
     fabricCanvasRef,
-    tool,
-    saveCurrentState
+    gridLayerRef,
+    floorPlans,
+    currentFloor,
+    isLoading,
+    setGia,
+    setFloorPlans,
+    setCurrentFloor,
+    clearDrawings,
+    createGrid
   });
 
-  // State for measurement guide
-  const [isMeasurementGuideOpen, setIsMeasurementGuideOpen] = useState(false);
-  
-  // Actions object for the Canvas component
-  const actions = {
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    clearCanvas,
-    saveCanvas,
-    deleteSelectedObjects,
-    handleLineThicknessChange: () => {},
-    handleLineColorChange: () => {},
-    handleRetry: () => {}
-  };
-
-  // Run selection mode setup when tool changes
-  useEffect(() => {
-    setupSelectionMode();
-  }, [tool, setupSelectionMode]);
-
-  // 6. Update the recalculateGIA in drawing tools
-  useEffect(() => {
-    // This is a workaround for the circular dependency
-    if (typeof recalculateGIA === 'function') {
-      // Using a global object to pass the function reference
-      // This avoids direct mutation of the hook
-      (window as any).__canvasHelpers = {
-        ...(window as any).__canvasHelpers,
-        recalculateGIA
-      };
-    }
-  }, [recalculateGIA]);
-
-  // 7. Initialize line settings
-  const { 
-    handleLineThicknessChange, 
-    handleLineColorChange 
+  // Initialize line settings management
+  const {
+    handleLineThicknessChange,
+    handleLineColorChange
   } = useCanvasControllerLineSettings({
-    fabricCanvasRef,
-    lineThickness,
-    lineColor,
     setLineThickness,
-    setLineColor,
-    tool
+    setLineColor
   });
   
-  // 8. Initialize error handling
-  const { 
-    handleRetry 
-  } = useCanvasControllerErrorHandling({
+  // Initialize data loader
+  useCanvasControllerLoader({
+    setIsLoading,
+    setFloorPlans,
     setHasError,
     setErrorMessage,
-    resetLoadTimes,
     loadData
   });
   
-  // 9. Initialize drawing state (for measurement tooltips)
-  const { 
-    drawingState 
-  } = useCanvasControllerDrawingState({
+  // Delete selected objects
+  const deleteSelectedObjects = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Get active objects or selected object
+    const activeObject = fabricCanvasRef.current.getActiveObject();
+    
+    if (activeObject) {
+      // Save state before making changes
+      saveCurrentState();
+      
+      // Remove the object
+      fabricCanvasRef.current.remove(activeObject);
+      
+      // Deselect and render
+      fabricCanvasRef.current.discardActiveObject();
+      fabricCanvasRef.current.requestRenderAll();
+      
+      // Recalculate GIA after object deletion
+      recalculateGIA();
+    }
+  }, [fabricCanvasRef, saveCurrentState, recalculateGIA]);
+  
+  // Drawing state management
+  useCanvasControllerDrawingState({
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
@@ -207,89 +208,77 @@ const useCanvasControllerHooks = () => {
     setGia,
     lineThickness,
     lineColor,
-    deleteSelectedObjects
+    deleteSelectedObjects,
+    setDrawingState,
+    recalculateGIA
   });
   
-  // 10. Initialize floor plan loader
-  useCanvasControllerLoader({
-    setIsLoading,
-    setFloorPlans,
-    setHasError,
-    setErrorMessage,
-    loadData
+  // Canvas initialization and setup
+  const {
+    initializeCanvas
+  } = useCanvasControllerSetup({
+    canvasRef,
+    fabricCanvasRef,
+    gridLayerRef,
+    isLoading,
+    floorPlans,
+    currentFloor,
+    drawFloorPlan,
+    saveCurrentState,
+    createGrid,
+    handleError,
+    updateDebugInfo,
+    setDrawingState,
+    recalculateGIA
   });
   
-  // Functions for measurement guide
-  const openMeasurementGuide = () => setIsMeasurementGuideOpen(true);
-  const closeMeasurementGuide = () => setIsMeasurementGuideOpen(false);
+  // Measurement guide modal
+  const { openMeasurementGuide } = useMeasurementGuide();
   
-  // Return everything that the Canvas component needs
+  // Return comprehensive controller state and functions
   return {
+    // Canvas refs
+    canvasRef,
+    fabricCanvasRef,
+    
     // State
     tool,
+    zoomLevel,
     gia,
     floorPlans,
     currentFloor,
+    debugInfo,
     isLoading,
     hasError,
     errorMessage,
-    debugInfo,
-    canvasRef,
     lineThickness,
     lineColor,
+    drawingState,
     
-    // Data loading
-    loadData,
-    
-    // Floor plan operations
-    handleFloorSelect,
-    handleAddFloor,
-    
-    // Drawing tools
+    // Tool handlers
     handleToolChange,
     handleUndo,
     handleRedo,
     handleZoom,
     clearCanvas,
     saveCanvas,
-    
-    // Selection tools
     deleteSelectedObjects,
     
-    // Line settings
+    // Floor plan handlers
+    handleFloorSelect,
+    handleAddFloor,
+    
+    // Line settings handlers
     handleLineThicknessChange,
     handleLineColorChange,
     
-    // Drawing state (for tooltips)
-    drawingState,
-    
-    // Error handling
+    // Error handlers
     handleRetry,
     
     // Measurement guide
-    isMeasurementGuideOpen,
     openMeasurementGuide,
-    closeMeasurementGuide,
     
-    // Actions grouped object
-    actions
+    // Canvas initialization
+    initializeCanvas
   };
-};
-
-// Actual React component that provides canvas controller context
-interface CanvasControllerProviderProps {
-  children: ReactNode;
-}
-
-/**
- * Provider component that wraps children with canvas controller context
- */
-export const CanvasControllerProvider = ({ children }: CanvasControllerProviderProps) => {
-  const controllerValues = useCanvasControllerHooks();
-  
-  return (
-    <CanvasControllerContext.Provider value={controllerValues}>
-      {children}
-    </CanvasControllerContext.Provider>
-  );
 };

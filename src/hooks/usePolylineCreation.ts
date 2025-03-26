@@ -47,6 +47,9 @@ interface UsePolylineCreationProps {
   
   /** Line color in hex format */
   lineColor?: string;
+  
+  /** Function to recalculate GIA */
+  recalculateGIA?: () => void;
 }
 
 /**
@@ -79,7 +82,8 @@ export const usePolylineCreation = ({
   setFloorPlans,
   setGia,
   lineThickness = 2,
-  lineColor = "#000000"
+  lineColor = "#000000",
+  recalculateGIA
 }: UsePolylineCreationProps): UsePolylineCreationResult => {
   
   /**
@@ -151,6 +155,12 @@ export const usePolylineCreation = ({
         }
         return newFloorPlans;
       });
+      
+      // Recalculate GIA after adding the polyline
+      if (recalculateGIA && typeof recalculateGIA === 'function') {
+        logger.info("Triggering GIA recalculation after polyline creation");
+        recalculateGIA();
+      }
 
       return true;
     } catch (err) {
@@ -158,7 +168,7 @@ export const usePolylineCreation = ({
       toast.error("Failed to create line");
       return false;
     }
-  }, [fabricCanvasRef, gridLayerRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor]);
+  }, [fabricCanvasRef, gridLayerRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor, recalculateGIA]);
 
   return { createPolyline };
 };

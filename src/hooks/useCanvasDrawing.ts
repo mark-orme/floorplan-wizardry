@@ -30,6 +30,7 @@ interface UseCanvasDrawingProps {
   lineThickness?: number;
   lineColor?: string;
   deleteSelectedObjects?: () => void;
+  recalculateGIA?: () => void;
 }
 
 interface UseCanvasDrawingResult {
@@ -52,7 +53,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     setGia,
     lineThickness = 2,
     lineColor = "#000000",
-    deleteSelectedObjects = () => {}
+    deleteSelectedObjects = () => {},
+    recalculateGIA
   } = props;
   
   // Track current zoom level for proper tooltip positioning
@@ -67,6 +69,9 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
       if (process.env.NODE_ENV === 'development') {
         console.log("Recalculating GIA after history operation");
       }
+      if (recalculateGIA && typeof recalculateGIA === 'function') {
+        recalculateGIA();
+      }
     }
   });
   
@@ -79,7 +84,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     setFloorPlans,
     setGia,
     lineThickness,
-    lineColor
+    lineColor,
+    recalculateGIA
   });
   
   const {
@@ -109,6 +115,30 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     cleanupTimeouts,
     deleteSelectedObjects
   });
+  
+  // Add event listener to trigger GIA calculation when objects change
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !recalculateGIA) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Update GIA when objects are added, removed or modified
+    const handleObjectChange = () => {
+      if (recalculateGIA && typeof recalculateGIA === 'function') {
+        recalculateGIA();
+      }
+    };
+    
+    canvas.on('object:added', handleObjectChange);
+    canvas.on('object:removed', handleObjectChange);
+    canvas.on('object:modified', handleObjectChange);
+    
+    return () => {
+      canvas.off('object:added', handleObjectChange);
+      canvas.off('object:removed', handleObjectChange);
+      canvas.off('object:modified', handleObjectChange);
+    };
+  }, [fabricCanvasRef, recalculateGIA]);
   
   // Update zoom level whenever canvas changes - with stabilized dependencies
   useEffect(() => {

@@ -41,22 +41,23 @@ export const useFloorPlans = ({
 }: UseFloorPlansProps) => {
   const floorChangeInProgressRef = useRef(false);
   
-  // Memoize hook dependencies to prevent circular dependencies
-  const hookDeps = useMemo(() => ({
-    fabricCanvasRef,
-    gridLayerRef,
-    createGrid,
-    floorChangeInProgressRef
-  }), [fabricCanvasRef, gridLayerRef, createGrid]);
-  
-  // Initialize floor plan drawing functionality
-  const { drawFloorPlan } = useFloorPlanDrawing(hookDeps);
-  
   // Initialize GIA calculation
   const { recalculateGIA } = useFloorPlanGIA({
     fabricCanvasRef,
     setGia
   });
+  
+  // Memoize hook dependencies to prevent circular dependencies
+  const hookDeps = useMemo(() => ({
+    fabricCanvasRef,
+    gridLayerRef,
+    createGrid,
+    floorChangeInProgressRef,
+    recalculateGIA  // Pass recalculateGIA to the drawing hook
+  }), [fabricCanvasRef, gridLayerRef, createGrid, recalculateGIA]);
+  
+  // Initialize floor plan drawing functionality
+  const { drawFloorPlan } = useFloorPlanDrawing(hookDeps);
   
   // Initialize floor plan management (add, select)
   const { handleAddFloor, handleSelectFloor } = useFloorPlanManagement({

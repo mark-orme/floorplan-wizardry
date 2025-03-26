@@ -23,6 +23,8 @@ interface UseFloorPlanDrawingProps {
   createGrid: (canvas: FabricCanvas) => FabricObject[];
   /** Flag to track floor change operations */
   floorChangeInProgressRef?: React.MutableRefObject<boolean>;
+  /** Function to recalculate GIA */
+  recalculateGIA?: () => void;
 }
 
 /**
@@ -34,7 +36,8 @@ export const useFloorPlanDrawing = ({
   fabricCanvasRef,
   gridLayerRef,
   createGrid,
-  floorChangeInProgressRef = useRef(false)
+  floorChangeInProgressRef = useRef(false),
+  recalculateGIA
 }: UseFloorPlanDrawingProps) => {
   const lastDrawnFloorRef = useRef<number | null>(null);
   
@@ -111,13 +114,23 @@ export const useFloorPlanDrawing = ({
     
     processFloorPlanInChunks(currentPlan.strokes, totalStrokes);
     
+    // Recalculate GIA after drawing floor plan
+    if (recalculateGIA && typeof recalculateGIA === 'function') {
+      // Use setTimeout to allow rendering to complete first
+      setTimeout(() => {
+        console.log("Recalculating GIA after drawing floor plan");
+        recalculateGIA();
+      }, 500);
+    }
+    
   }, [
     fabricCanvasRef, 
     gridLayerRef, 
     createGrid, 
     animFrameRef, 
     batchedDrawOpsRef, 
-    processFloorPlanInChunks
+    processFloorPlanInChunks,
+    recalculateGIA
   ]);
 
   return {
