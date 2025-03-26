@@ -23,8 +23,8 @@ export interface PerformanceMetrics {
   lastOperationTime?: number;
   /** Memory usage in MB */
   memoryUsage?: number;
-  /** Timestamp when measurement started */
-  measuredSince?: number;
+  /** Timestamp (in ms) when measurement started */
+  measuredSince: number;
 }
 
 /**
@@ -44,10 +44,16 @@ export interface CanvasLoadTimes {
   readyTime?: number;
   /** Total initialization time in ms */
   totalInitTime?: number;
-  /** Timestamp when canvas became ready */
-  canvasReady?: number;
-  /** Timestamp when grid was created */
-  gridCreated?: number;
+  /** Whether canvas has become ready */
+  canvasReady?: boolean;
+  /** Whether grid has been created */
+  gridCreated?: boolean;
   /** Start time for performance measurements */
   startTime?: number;
+  /** Canvas init end time */
+  canvasInitEnd?: number;
+  /** Grid creation end time */
+  gridCreationEnd?: number;
+  /** Total load time */
+  totalLoadTime?: number;
 }

@@ -25,7 +25,7 @@ export interface FloorPlan {
   rooms?: string[];
   createdAt?: Date;
   updatedAt?: Date;
-  gia: number; // Changed from optional to required to match floorPlanTypes.FloorPlan
+  gia: number; // Required to match floorPlanTypes.FloorPlan
 }
 
 /**
@@ -82,4 +82,4 @@ export interface GridCreationState {
 }
 
 // Re-export DebugInfoState from debugTypes
-export { DebugInfoState } from './debugTypes';
+export type { DebugInfoState } from './debugTypes';

@@ -16,20 +16,21 @@ export {
   ANGLE_SNAP_THRESHOLD,
   LARGE_GRID_LINE_WIDTH,
   SMALL_GRID_LINE_WIDTH,
-  AREA_PRECISION
+  AREA_PRECISION,
+  DISTANCE_PRECISION
 } from './constants';
-
-// Re-export point operations
-export * from './pointOperations';
 
 // Re-export line operations
 export * from './lineOperations';
 
-// Re-export shape operations
-export * from './shapeOperations';
-
 // Re-export area calculations
 export * from './areaCalculations';
 
-// Re-export snapping utilities
-export * from './snapping';
+// Re-export coordinate transforms
+export * from './coordinateTransforms';
+
+// Re-export midpoint calculation
+export * from './midpointCalculation';
+
+// Re-export straightening functions
+export * from './straightening';

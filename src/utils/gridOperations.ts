@@ -8,14 +8,18 @@ import logger from "./logger";
 
 // Current grid state
 const gridState: GridCreationState = {
+  isCreating: false,
+  attempts: 0,
+  success: false,
+  error: undefined,
   creationInProgress: false,
   consecutiveResets: 0,
   maxConsecutiveResets: 5,
   lastAttemptTime: 0,
   lastCreationTime: 0,
+  throttleInterval: 1000,
   exists: false,
   safetyTimeout: null,
-  throttleInterval: 1000,
   totalCreations: 0,
   maxRecreations: 20,
   minRecreationInterval: 5000,
@@ -37,10 +41,11 @@ export const canScheduleGridCreation = (state: GridCreationState = gridState): b
   if (state.creationInProgress) return false;
   
   // If we've had too many consecutive resets, throttle creation
-  if (state.consecutiveResets > state.maxConsecutiveResets) return false;
+  if (state.consecutiveResets && state.maxConsecutiveResets && 
+      state.consecutiveResets > state.maxConsecutiveResets) return false;
   
   // If we've recently created a grid, throttle creation
-  if (state.lastCreationTime && 
+  if (state.lastCreationTime && state.throttleInterval && 
       Date.now() - state.lastCreationTime < state.throttleInterval && 
       state.exists) return false;
   
@@ -71,14 +76,16 @@ export const shouldThrottleGridCreation = (): boolean => {
   const state = getCurrentGridState();
   
   // Check if throttling is needed to prevent excessive grid creation
-  if (state.lastCreationTime && 
+  if (state.lastCreationTime && state.throttleInterval && 
       Date.now() - state.lastCreationTime < state.throttleInterval && 
       state.exists) {
     return true;
   }
   
   // Check if max recreations limit is exceeded
-  if (state.totalCreations > state.maxRecreations && 
+  if (state.totalCreations && state.maxRecreations && state.minRecreationInterval && 
+      state.totalCreations > state.maxRecreations && 
+      state.lastCreationTime && 
       Date.now() - state.lastCreationTime < state.minRecreationInterval) {
     return true;
   }
@@ -122,9 +129,11 @@ export const tryCreateGrid = (
   try {
     // Update grid state to reflect the attempt
     updateGridState({
+      isCreating: true,
+      attempts: (state.attempts || 0) + 1,
       creationInProgress: true,
       lastAttemptTime: Date.now(),
-      consecutiveResets: state.consecutiveResets + 1
+      consecutiveResets: (state.consecutiveResets || 0) + 1
     });
     
     // Create grid lines
@@ -132,11 +141,13 @@ export const tryCreateGrid = (
     
     // Update grid state on success
     updateGridState({
+      isCreating: false,
+      success: true,
       creationInProgress: false,
       consecutiveResets: 0,
       lastCreationTime: Date.now(),
       exists: true,
-      totalCreations: state.totalCreations + 1
+      totalCreations: (state.totalCreations || 0) + 1
     });
     
     // Reset grid progress after successful creation
@@ -156,8 +167,11 @@ export const tryCreateGrid = (
     console.error("Grid creation failed:", error);
     
     updateGridState({
+      isCreating: false,
+      success: false,
+      error: error.message,
       creationInProgress: false,
-      consecutiveResets: state.consecutiveResets + 1
+      consecutiveResets: (state.consecutiveResets || 0) + 1
     });
     
     setErrorMessage(`Grid creation failed: ${error.message}`);
@@ -185,7 +199,7 @@ export const tryCreateGrid = (
  */
 export const acquireGridCreationLock = (id: string): boolean => {
   const state = getCurrentGridState();
-  if (state.creationLock.isLocked) return false;
+  if (state.creationLock && state.creationLock.isLocked) return false;
   
   updateGridState({
     creationLock: {
@@ -217,7 +231,9 @@ export const releaseGridCreationLock = (id: string): void => {
  */
 export const scheduleGridProgressReset = (reason: string): number => {
   const timeoutId = window.setTimeout(() => {
-    gridState.creationInProgress = false;
+    updateGridState({
+      creationInProgress: false
+    });
   }, 5000);
   return timeoutId;
 };

@@ -67,3 +67,9 @@ export const SMALL_GRID_LINE_WIDTH = 0.5;
  * @constant {number}
  */
 export const AREA_PRECISION = 2;
+
+/**
+ * Distance precision for measurements
+ * @constant {number}
+ */
+export const DISTANCE_PRECISION = 2;

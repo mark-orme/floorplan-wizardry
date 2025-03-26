@@ -18,7 +18,7 @@ export const useFrameMetrics = () => {
     frameTime: 0,
     maxFrameTime: 0,
     longFrames: 0,
-    measuredSince: new Date()
+    measuredSince: performance.now()
   });
   
   // References for performance tracking
@@ -48,7 +48,7 @@ export const useFrameMetrics = () => {
     // Update measurement start time
     setPerformanceMetrics(prev => ({
       ...prev,
-      measuredSince: new Date()
+      measuredSince: performance.now()
     }));
     
     console.log("Performance tracking started");
@@ -88,7 +88,7 @@ export const useFrameMetrics = () => {
       frameTime: Math.round(avgFrameTime * 100) / 100, // Round to 2 decimal places
       maxFrameTime: Math.round(maxFrameTime * 100) / 100,
       longFrames: longFramesRef.current,
-      measuredSince: new Date(trackingStartTimeRef.current)
+      measuredSince: trackingStartTimeRef.current
     });
   }, []);
   
@@ -132,7 +132,7 @@ export const useFrameMetrics = () => {
       frameTime: 0,
       maxFrameTime: 0,
       longFrames: 0,
-      measuredSince: new Date()
+      measuredSince: performance.now()
     });
   }, []);
 
