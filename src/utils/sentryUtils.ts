@@ -84,6 +84,59 @@ export const captureError = (
 };
 
 /**
+ * Capture a message with Sentry
+ * 
+ * @param {string} message - The message to capture
+ * @param {Sentry.SeverityLevel} level - Severity level of the message
+ * @param {CaptureErrorOptions} options - Additional options for the message
+ */
+export const captureMessage = (
+  message: string,
+  level: Sentry.SeverityLevel = "info",
+  options: CaptureErrorOptions = {}
+): void => {
+  const { tags, extra, user } = options;
+  
+  // Set scope with additional information
+  Sentry.withScope((scope) => {
+    // Add any tags
+    if (tags) {
+      Object.entries(tags).forEach(([key, value]) => {
+        scope.setTag(key, value);
+      });
+    }
+    
+    // Add extra context data
+    if (extra) {
+      Object.entries(extra).forEach(([key, value]) => {
+        scope.setExtra(key, value);
+      });
+    }
+    
+    // Add user context if available
+    if (user) {
+      scope.setUser(user);
+    }
+    
+    // Set the severity level
+    scope.setLevel(level);
+    
+    // Capture the message
+    Sentry.captureMessage(message);
+  });
+  
+  // Log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    const logMethod = level === 'error' ? console.error :
+                      level === 'warning' ? console.warn :
+                      level === 'debug' ? console.debug :
+                      console.info;
+    
+    logMethod(`[Sentry ${level}] ${message}`);
+  }
+};
+
+/**
  * Create a transaction for performance monitoring
  * 
  * @param {string} name - Transaction name
