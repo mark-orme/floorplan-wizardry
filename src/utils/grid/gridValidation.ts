@@ -1,124 +1,143 @@
 
 /**
  * Grid validation module
- * Provides validation functions for grid creation
- * @module gridValidation
+ * Validates grid components and dimensions for safe operations
+ * @module grid/gridValidation
  */
-import { Canvas } from "fabric";
-import { ObjectId } from "@/types/fabricTypes";
-import { gridManager, shouldThrottleCreation } from "../gridManager";
+import { Canvas, Object as FabricObject } from "fabric";
 import logger from "../logger";
 
 /**
- * Type-safe validation result interface
- */
-export interface ValidationResult {
-  valid: boolean;
-  message?: string;
-  details?: Record<string, unknown>;
-}
-
-/**
- * Validates the canvas and dimensions for grid creation
- * Ensures all required parameters are valid before proceeding
+ * Validates that canvas is ready for grid creation
+ * Performs essential checks on the canvas object
  * 
- * @param {Canvas | null} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<any[]> | null} gridLayerRef - Reference to store grid objects
- * @param {{ width: number, height: number }} canvasDimensions - Current canvas dimensions
- * @returns {ValidationResult} Validation result with status and message
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @param {{ width: number, height: number }} dimensions - Canvas dimensions
+ * @returns {boolean} True if canvas is valid for grid creation
  */
 export const validateCanvasForGrid = (
-  canvas: Canvas | null,
-  gridLayerRef: React.MutableRefObject<any[]> | null,
-  canvasDimensions: { width: number, height: number }
-): ValidationResult => {
-  // Basic validation
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
+  dimensions: { width: number, height: number }
+): boolean => {
+  // Check if canvas exists
   if (!canvas) {
-    return { 
-      valid: false, 
-      message: "Canvas is null in grid validation"
-    };
+    logger.error("Cannot create grid: Canvas is null or undefined");
+    return false;
   }
   
+  // Check if gridLayerRef exists
   if (!gridLayerRef) {
-    return { 
-      valid: false, 
-      message: "Grid layer reference is null in grid validation"
-    };
-  }
-
-  // Ensure valid dimensions
-  if (!canvasDimensions.width || !canvasDimensions.height || 
-      canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
-    return { 
-      valid: false, 
-      message: "Invalid dimensions in grid validation",
-      details: canvasDimensions
-    };
+    logger.error("Cannot create grid: Grid layer reference is null or undefined");
+    return false;
   }
   
-  // Check if we should throttle
-  if (shouldThrottleCreation()) {
-    return { 
-      valid: false, 
-      message: "Throttling grid creation due to too many recent attempts"
-    };
+  // Check if canvas dimensions are valid
+  if (!dimensions || !dimensions.width || !dimensions.height || 
+      dimensions.width <= 0 || dimensions.height <= 0) {
+    logger.error("Cannot create grid: Invalid canvas dimensions", dimensions);
+    return false;
   }
   
-  return { valid: true };
+  // Check if canvas has required methods
+  if (typeof canvas.getWidth !== "function" || typeof canvas.getHeight !== "function") {
+    logger.error("Cannot create grid: Canvas missing required methods");
+    return false;
+  }
+  
+  // Check if canvas width/height methods return valid values
+  const canvasWidth = canvas.getWidth();
+  const canvasHeight = canvas.getHeight();
+  
+  if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
+    logger.error("Cannot create grid: Canvas reports invalid dimensions", {
+      width: canvasWidth,
+      height: canvasHeight
+    });
+    return false;
+  }
+  
+  return true;
 };
 
 /**
- * Check if the current grid creation state allows proceeding
- * Verifies that creation is not in progress and throttling is not active
+ * Validate grid points are within valid range
+ * Ensures grid points won't cause performance issues
  * 
- * @returns {ValidationResult} Whether grid creation can proceed
+ * @param {number} startX - Starting X coordinate
+ * @param {number} endX - Ending X coordinate
+ * @param {number} startY - Starting Y coordinate
+ * @param {number} endY - Ending Y coordinate
+ * @param {number} spacing - Grid line spacing
+ * @param {number} maxLines - Maximum number of lines to create
+ * @returns {boolean} True if grid points are valid
  */
-export const canProceedWithGridCreation = (): ValidationResult => {
-  // Check if creation is already in progress
-  if (gridManager.creationInProgress) {
-    return {
-      valid: false,
-      message: "Grid creation already in progress, cannot proceed"
-    };
+export const validateGridPoints = (
+  startX: number,
+  endX: number,
+  startY: number,
+  endY: number,
+  spacing: number,
+  maxLines: number
+): boolean => {
+  // Check if spacing is valid
+  if (!spacing || spacing <= 0) {
+    logger.error("Invalid grid spacing:", spacing);
+    return false;
   }
   
-  // Check if we need to throttle
-  if (shouldThrottleCreation()) {
-    return {
-      valid: false,
-      message: "Grid creation throttled, cannot proceed", 
-      details: {
-        lastAttemptTime: gridManager.lastAttemptTime,
-        throttleInterval: gridManager.throttleInterval,
-        currentTime: Date.now()
-      }
-    };
+  // Calculate number of lines
+  const horizontalLines = Math.ceil((endY - startY) / spacing);
+  const verticalLines = Math.ceil((endX - startX) / spacing);
+  
+  // Check if we'll exceed maximum line count
+  if (horizontalLines > maxLines || verticalLines > maxLines) {
+    logger.warn(`Too many grid lines: ${horizontalLines} horizontal, ${verticalLines} vertical. Max: ${maxLines}`);
+    return false;
   }
   
-  return { valid: true };
+  // Check for unreasonable values that might cause performance issues
+  if (endX - startX > 10000 || endY - startY > 10000) {
+    logger.warn("Grid dimensions too large, may cause performance issues");
+    return false;
+  }
+  
+  return true;
 };
 
 /**
- * Type-safe function to check if an object is a grid element
- * @param {unknown} obj - Object to check
- * @param {ObjectId[]} gridIds - Array of grid element IDs
- * @returns {boolean} Whether the object is a grid element
+ * Check if grid needs to be recreated based on dimension changes
+ * 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @param {{ width: number, height: number }} newDimensions - New canvas dimensions
+ * @returns {boolean} True if grid should be recreated
  */
-export const isGridElement = (obj: unknown, gridIds: ObjectId[]): boolean => {
-  if (!obj || typeof obj !== 'object') {
-    return false;
+export const shouldRecreateGrid = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
+  newDimensions: { width: number, height: number }
+): boolean => {
+  if (!gridLayerRef || !gridLayerRef.current || gridLayerRef.current.length === 0) {
+    return true;
   }
   
-  // Type-safe approach to check for id property
-  if (!('id' in obj)) {
-    return false;
+  // Check if any grid object exists and has stored dimensions
+  const firstGridObject = gridLayerRef.current[0];
+  if (!firstGridObject) {
+    return true;
   }
   
-  const objId = (obj as { id?: unknown }).id;
-  if (objId === undefined || objId === null) {
-    return false;
+  // Get stored dimensions from grid object
+  const storedDimensions = (firstGridObject as any).gridDimensions;
+  if (!storedDimensions) {
+    return true;
   }
   
-  return gridIds.includes(objId as ObjectId);
+  // Check if dimensions have changed significantly (more than 10%)
+  const widthChange = Math.abs(storedDimensions.width - newDimensions.width) / storedDimensions.width;
+  const heightChange = Math.abs(storedDimensions.height - newDimensions.height) / storedDimensions.height;
+  
+  return widthChange > 0.1 || heightChange > 0.1;
 };

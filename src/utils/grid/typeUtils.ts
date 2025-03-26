@@ -1,86 +1,79 @@
 
 /**
- * Type utilities for grid operations
- * Provides type-safe interfaces and type guards for grid functions
+ * Grid type utilities
+ * Provides utilities for type checking and validation
  * @module grid/typeUtils
  */
 import { Point } from '@/types/drawingTypes';
 
 /**
- * Grid point interface with strict typing
- * @interface GridPoint
+ * Validates if a point has valid x and y coordinates
+ * Useful for filtering out invalid points
+ * 
+ * @param {any} point - The point to validate
+ * @returns {boolean} True if point has valid coordinates
  */
-export interface GridPoint {
-  x: number;
-  y: number;
-}
-
-/**
- * Type guard to check if a value is a valid grid point
- * @param {unknown} point - The value to check
- * @returns {boolean} True if the value is a valid grid point
- */
-export function isValidGridPoint(point: unknown): point is GridPoint {
-  if (!point || typeof point !== 'object') return false;
+export const isValidGridPoint = (point: any): boolean => {
+  if (!point) return false;
   
-  const p = point as Record<string, unknown>;
-  return (
-    'x' in p && 
-    'y' in p && 
-    typeof p.x === 'number' && 
-    typeof p.y === 'number' && 
-    !isNaN(p.x) && 
-    !isNaN(p.y)
-  );
-}
-
-/**
- * Type-safe grid spacing configuration
- * @interface GridSpacingConfig
- */
-export interface GridSpacingConfig {
-  smallGridSpacing: number;
-  largeGridSpacing: number;
-  pixelsPerMeter: number;
-}
-
-/**
- * Grid line style options with strict typing
- * @interface GridLineOptions
- */
-export interface GridLineOptions {
-  stroke: string;
-  strokeWidth: number;
-  selectable: boolean;
-  evented: boolean;
-  objectCaching: boolean;
-  [key: string]: any; // Allow additional properties
-}
-
-/**
- * Normalize and validate a Point object
- * @param {Point | null | undefined} point - Point to validate
- * @param {Point} defaultValue - Default value to use if point is invalid
- * @returns {Point} Validated point
- */
-export function normalizePoint(point: Point | null | undefined, defaultValue: Point = { x: 0, y: 0 }): Point {
-  if (!point) return { ...defaultValue };
-  
-  const x = typeof point.x === 'number' && !isNaN(point.x) ? point.x : defaultValue.x;
-  const y = typeof point.y === 'number' && !isNaN(point.y) ? point.y : defaultValue.y;
-  
-  return { x, y };
-}
-
-/**
- * Validate grid size value
- * @param {unknown} size - Grid size to validate
- * @param {number} defaultSize - Default size to use if invalid
- * @returns {number} Validated grid size
- */
-export function validateGridSize(size: unknown, defaultSize: number = 10): number {
-  if (typeof size !== 'number' || isNaN(size) || size <= 0) {
-    return defaultSize;
+  // Check if point has x and y properties
+  if (typeof point.x === 'undefined' || typeof point.y === 'undefined') {
+    return false;
   }
-  return size;
-}
+  
+  // Check if x and y are finite numbers
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Normalizes a point to ensure it has valid coordinates
+ * Returns a safe point with default values if input is invalid
+ * 
+ * @param {Point} point - The point to normalize
+ * @returns {Point} Normalized point with valid coordinates
+ */
+export const normalizePoint = (point: Point): Point => {
+  if (!point) return { x: 0, y: 0 };
+  
+  // Return a safe point with finite numbers
+  return {
+    x: Number.isFinite(point.x) ? point.x : 0,
+    y: Number.isFinite(point.y) ? point.y : 0
+  };
+};
+
+/**
+ * Filters an array of points to remove invalid entries
+ * Useful for cleaning up user input or external data
+ * 
+ * @param {Point[]} points - Array of points to filter
+ * @returns {Point[]} Array with only valid points
+ */
+export const filterValidPoints = (points: Point[]): Point[] => {
+  if (!Array.isArray(points)) return [];
+  
+  return points.filter(isValidGridPoint);
+};
+
+/**
+ * Rounds point coordinates to a specified precision
+ * Useful for snapping or display purposes
+ * 
+ * @param {Point} point - The point to round
+ * @param {number} precision - Number of decimal places (default: 0)
+ * @returns {Point} Point with rounded coordinates
+ */
+export const roundPointCoordinates = (point: Point, precision: number = 0): Point => {
+  if (!isValidGridPoint(point)) return { x: 0, y: 0 };
+  
+  const factor = Math.pow(10, precision);
+  
+  return {
+    x: Math.round(point.x * factor) / factor,
+    y: Math.round(point.y * factor) / factor
+  };
+};
