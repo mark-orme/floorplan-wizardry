@@ -16,4 +16,37 @@ export interface DebugInfoState {
   dimensionsSet?: boolean;
   /** Whether canvas has been initialized (optional) */
   canvasInitialized?: boolean;
+  /** Whether brush is initialized (optional) */
+  brushInitialized?: boolean;
+  /** Whether canvas is created (optional) */
+  canvasCreated?: boolean;
+  /** Whether canvas is loaded (optional) */
+  canvasLoaded?: boolean;
+  /** Canvas width in pixels (optional) */
+  canvasWidth?: number;
+  /** Canvas height in pixels (optional) */
+  canvasHeight?: number;
+  /** Device pixel ratio (optional) */
+  devicePixelRatio?: number;
+  /** Number of grid objects (optional) */
+  gridObjects?: number;
+  /** Number of canvas objects (optional) */
+  canvasObjects?: number;
+  /** Dimension setup attempts (optional) */
+  dimensionAttempts?: number;
+  /** Last error message (optional) */
+  lastError?: string;
+  /** Last error timestamp (optional) */
+  lastErrorTime?: number;
+  /** Performance statistics (optional) */
+  performanceStats?: {
+    /** Render time in milliseconds */
+    renderTime?: number;
+    /** Grid creation time in milliseconds */
+    gridCreationTime?: number;
+    /** Object creation time in milliseconds */
+    objectCreationTime?: number;
+    /** Frame rate */
+    fps?: number;
+  };
 }

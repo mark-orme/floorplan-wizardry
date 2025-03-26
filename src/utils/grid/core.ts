@@ -1,52 +1,59 @@
 
 /**
- * Core grid operations 
- * Basic utilities for grid snapping and alignment
+ * Core grid utilities module
+ * Contains basic grid utility functions
  * @module grid/core
  */
 import { Point } from '@/types/drawingTypes';
 import { GRID_SIZE } from '../drawing';
-import { FLOATING_POINT_TOLERANCE } from '../geometry/constants';
-import logger from '../logger';
-
-/** 
- * Snap a single point to the nearest grid intersection
- * Critical utility for ensuring walls start and end exactly on grid lines
- * Performs mathematical rounding to ensure precise alignment with grid
- * 
- * @param {Point} point - The point to snap (in meters)
- * @param {number} gridSize - Optional grid size in meters (defaults to GRID_SIZE constant)
- * @returns {Point} Snapped point with exact grid alignment (in meters)
- */
-export function snapToGrid(point: Point, gridSize = GRID_SIZE): Point {
-  if (!point) return { x: 0, y: 0 };
-
-  const snappedX = Math.round(point.x / gridSize) * gridSize;
-  const snappedY = Math.round(point.y / gridSize) * gridSize;
-
-  const result = {
-    x: snappedX,
-    y: snappedY
-  };
-
-  if (process.env.NODE_ENV === 'development') {
-    logger.debug(
-      `SnapToGrid: (${point.x.toFixed(3)}m, ${point.y.toFixed(3)}m) → (${result.x.toFixed(3)}m, ${result.y.toFixed(3)}m) @ grid ${gridSize}m`
-    );
-  }
-
-  return result;
-}
 
 /**
- * Checks if a value is an exact multiple of the grid size (0.1m)
- * Used to verify that points are precisely aligned to grid
- * 
- * @param value - The value to check (in meters)
- * @returns Whether the value is an exact multiple of grid size
+ * Snap a point to the grid
+ * @param {Point} point - The point to snap (in meters)
+ * @param {number} gridSize - Grid size in meters (default: from GRID_SIZE constant)
+ * @returns {Point} Snapped point (in meters)
  */
-export const isExactGridMultiple = (value: number): boolean => {
-  // Convert to string to handle floating point precision issues
-  const rounded = Number((Math.round(value / GRID_SIZE) * GRID_SIZE).toFixed(3));
-  return Math.abs(value - rounded) < FLOATING_POINT_TOLERANCE; // Allow tiny rounding error
+export const snapToGrid = (point: Point, gridSize: number = GRID_SIZE): Point => {
+  if (!point) return { x: 0, y: 0 };
+  
+  // Round to the nearest grid point
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
+};
+
+/**
+ * Snap a point to specific grid points
+ * @param {Point} point - The point to snap (in meters)
+ * @param {Point[]} gridPoints - Array of grid points to snap to
+ * @param {number} snapThreshold - Maximum distance to snap (in meters)
+ * @returns {Point} Snapped point, or original if no snap
+ */
+export const snapToGridPoints = (
+  point: Point, 
+  gridPoints: Point[], 
+  snapThreshold: number = GRID_SIZE / 4
+): Point => {
+  if (!point || !gridPoints || gridPoints.length === 0) {
+    return point;
+  }
+  
+  // Find the closest grid point
+  let closestPoint = point;
+  let minDistance = Number.MAX_VALUE;
+  
+  for (const gridPoint of gridPoints) {
+    const distance = Math.sqrt(
+      Math.pow(gridPoint.x - point.x, 2) + 
+      Math.pow(gridPoint.y - point.y, 2)
+    );
+    
+    if (distance < minDistance && distance <= snapThreshold) {
+      minDistance = distance;
+      closestPoint = gridPoint;
+    }
+  }
+  
+  return closestPoint;
 };

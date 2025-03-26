@@ -8,7 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
 import { isTouchEvent } from "@/utils/fabric";
-import { snapToGrid } from "@/utils/grid/core"; // Import directly from core
+import { snapToGrid } from "@/utils/grid/core"; // Import from core directly
 import { straightenStroke } from "@/utils/geometry/straightening";
 
 /**
@@ -140,7 +140,45 @@ export const usePointProcessing = ({
   }, [tool]);
   
   return { 
-    processPoint,
+    processPoint: useCallback((e: MouseEvent | TouchEvent): Point | null => {
+      if (!fabricCanvasRef.current) return null;
+
+      let clientX: number;
+      let clientY: number;
+
+      if (isTouchEvent(e)) {
+        clientX = e.touches[0]?.clientX || 0;
+        clientY = e.touches[0]?.clientY || 0;
+      } else {
+        clientX = (e as MouseEvent).clientX;
+        clientY = (e as MouseEvent).clientY;
+      }
+
+      if (clientX === undefined || clientY === undefined) {
+        console.warn("ClientX or ClientY is undefined. Touch event might be incomplete.");
+        return null;
+      }
+
+      // Create a pointer event-like object that Fabric.js can process
+      const pointer = fabricCanvasRef.current.getPointer({ clientX, clientY } as any);
+
+      if (!pointer || pointer.x === undefined || pointer.y === undefined) {
+        console.warn("Pointer or pointer coordinates are undefined.");
+        return null;
+      }
+
+      // Apply grid snapping based on current tool
+      const point = {
+        x: pointer.x,
+        y: pointer.y
+      };
+      
+      if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
+        return snapToGrid(point);
+      }
+
+      return point;
+    }, [fabricCanvasRef, tool]),
     processPathPoints 
   };
 };

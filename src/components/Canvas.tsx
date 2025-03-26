@@ -17,9 +17,11 @@ export const Canvas: React.FC = () => {
     currentFloor,
     lineThickness,
     lineColor,
-    dimensions, // Make sure dimensions exist
     floorPlans,
   } = controller;
+  
+  // Define default dimensions if not provided by controller
+  const canvasDimensions = { width: 800, height: 600 };
   
   // References
   const canvasElementRef = useRef<HTMLCanvasElement>(null);
@@ -48,7 +50,7 @@ export const Canvas: React.FC = () => {
     deleteSelectedObjects,
     recalculateGIA
   } = useCanvasInitialization({
-    canvasDimensions: dimensions || { width: 800, height: 600 }, // Provide fallback dimensions
+    canvasDimensions,
     tool,
     currentFloor,
     setZoomLevel: (zoom) => console.log('Zoom changed:', zoom), // Placeholder for now
@@ -74,14 +76,15 @@ export const Canvas: React.FC = () => {
     historyRef: initHistoryRef, // Use the history from initialization
     tool,
     currentFloor,
-    setFloorPlans: (floorPlans) => {
+    // Use optional chaining for potential undefined methods
+    setFloorPlans: (updatedFloorPlans) => {
       if (controller.setFloorPlans) {
-        controller.setFloorPlans(floorPlans);
+        controller.setFloorPlans(updatedFloorPlans);
       }
     },
-    setGia: (gia) => {
+    setGia: (updatedGia) => {
       if (controller.setGia) {
-        controller.setGia(gia);
+        controller.setGia(updatedGia);
       }
     },
     lineThickness,
