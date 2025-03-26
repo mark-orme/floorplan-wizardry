@@ -10,7 +10,9 @@ const canvasState = {
   prevDimensions: { width: 0, height: 0 },
   dimensionUpdateCount: 0,
   initialSetupComplete: false,
-  disposalInProgress: false
+  disposalInProgress: false,
+  // Keep track of disposed canvases to prevent re-disposing
+  disposedCanvases: new WeakSet<Canvas>()
 };
 
 /**
@@ -69,16 +71,24 @@ export const setCanvasDimensions = (
 export const isCanvasValid = (canvas: Canvas | null): boolean => {
   if (!canvas) return false;
   
+  // If we know this canvas has been disposed, return false immediately
+  if (canvasState.disposedCanvases.has(canvas)) {
+    return false;
+  }
+  
   try {
+    // Check if the canvas has been explicitly marked as disposed
+    if ((canvas as any).disposed === true) {
+      return false;
+    }
+    
     // Try to access some methods that should exist on valid canvas instances
     return (
       typeof canvas.getObjects === 'function' &&
-      typeof canvas.renderAll === 'function' &&
-      // Fix: use the proper property for checking if canvas is disposed
-      // The Canvas type has a 'disposed' property, not '__disposed'
-      !(canvas as any).disposed
+      typeof canvas.renderAll === 'function'
     );
   } catch (error) {
+    console.warn("Error checking canvas validity:", error);
     return false;
   }
 };
@@ -125,13 +135,16 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
     return;
   }
   
-  // To prevent multiple disposal calls for the same canvas
-  if (canvasState.disposalInProgress) {
-    console.log("Canvas disposal already in progress, skipping");
+  // Check if this canvas is already being disposed or has been disposed
+  if (canvasState.disposalInProgress || canvasState.disposedCanvases.has(canvas)) {
+    console.log("Canvas disposal already in progress or already disposed, skipping");
     return;
   }
   
   canvasState.disposalInProgress = true;
+  
+  // Mark this canvas as disposed to prevent future disposal attempts
+  canvasState.disposedCanvases.add(canvas);
   
   // Set a flag to track if we've successfully disposed
   let disposedSuccessfully = false;
@@ -148,6 +161,10 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
     try {
       // First, remove all event listeners
       canvas.off();
+      
+      // Mark the canvas as disposed first, before removing objects
+      // This helps prevent callbacks that might try to use the canvas during disposal
+      (canvas as any).disposed = true;
       
       // Remove all objects one by one to avoid batch operations
       const objects = [...canvas.getObjects()];
@@ -182,7 +199,6 @@ export const disposeCanvas = (canvas: Canvas | null): void => {
       // Even if there's an error, we want to try alternate approaches
       try {
         // Add a flag to canvas to mark it as disposed
-        // Fix: Use the proper property 'disposed' instead of '__disposed'
         (canvas as any).disposed = true;
         
         // Try to access and remove the canvas element directly
@@ -248,4 +264,25 @@ export const clearCanvasObjects = (canvas: Canvas, gridObjects: FabricObject[]):
   } catch (error) {
     console.error("Error clearing canvas objects:", error);
   }
+};
+
+/**
+ * Check if a canvas is already disposed
+ * @param {Canvas|null} canvas - The Fabric canvas instance to check
+ * @returns {boolean} Whether the canvas is disposed
+ */
+export const isCanvasDisposed = (canvas: Canvas | null): boolean => {
+  if (!canvas) return true;
+  
+  return canvasState.disposedCanvases.has(canvas) || 
+         (canvas as any).disposed === true;
+};
+
+/**
+ * Reset the canvas state tracker
+ * This is useful if the app gets into a bad state
+ */
+export const resetCanvasStateTracker = (): void => {
+  canvasState.disposalInProgress = false;
+  console.log("Canvas state tracker has been reset");
 };

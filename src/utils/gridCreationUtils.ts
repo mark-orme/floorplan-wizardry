@@ -195,3 +195,13 @@ export const retryWithBackoff = (
     }
   }, delay);
 };
+
+/**
+ * Clear any pending retry timeouts
+ * @param {number|null} timeoutId - The timeout ID to clear
+ */
+export const clearRetryTimeout = (timeoutId: number | null): void => {
+  if (timeoutId !== null) {
+    window.clearTimeout(timeoutId);
+  }
+};

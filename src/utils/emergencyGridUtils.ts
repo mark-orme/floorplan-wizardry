@@ -1,3 +1,4 @@
+
 /**
  * Emergency grid utilities for handling grid failure recovery
  * @module emergencyGridUtils
@@ -289,10 +290,10 @@ export const attemptCanvasRepair = (
     // Ensure canvas is in drawing mode
     canvas.isDrawingMode = true;
     
-    // Ensure brush is initialized
+    // Ensure brush is initialized for Fabric.js v6
     if (!canvas.freeDrawingBrush) {
       logger.warn("Free drawing brush not initialized, attempting to fix");
-      // In Fabric.js v6, we need to create a new PencilBrush directly instead of using getConstructor
+      // In Fabric.js v6, we need to create a new PencilBrush directly
       canvas.freeDrawingBrush = new PencilBrush(canvas);
       canvas.freeDrawingBrush.width = 2;
       canvas.freeDrawingBrush.color = "#000000";

@@ -3,17 +3,28 @@
  * Custom hook for proper canvas cleanup
  * @module useCanvasCleanup
  */
-import { useCallback } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { disposeCanvas, isCanvasValid } from "@/utils/fabricCanvas";
 import logger from "@/utils/logger";
 
-// Flag to track if canvas disposal is in progress globally
-let disposalInProgress = false;
-
-// Track recently disposed canvases to prevent dispose/recreate loops
-const recentlyDisposedCanvases = new Set<number>();
-const DISPOSAL_COOLDOWN_MS = 5000; // Increased from 2000 to 5000 ms
+// Global state management for canvas cleanup
+const cleanupState = {
+  // Flag to track if canvas disposal is in progress globally
+  disposalInProgress: false,
+  // Track recently disposed canvases to prevent dispose/recreate loops
+  recentlyDisposedCanvases: new Set<number>(),
+  // Track consecutive disposal attempts to detect loops
+  consecutiveDisposals: 0,
+  // Maximum allowed consecutive disposals before loop detection
+  MAX_CONSECUTIVE_DISPOSALS: 2,
+  // Cooldown period for disposals (ms)
+  DISPOSAL_COOLDOWN_MS: 5000,
+  // Track current disposal timeout
+  currentTimeoutId: null as number | null,
+  // Track canvas instances being disposed to prevent double disposal
+  disposingCanvases: new WeakSet<FabricCanvas>()
+};
 
 // Track canvas element IDs to prevent multiple initializations
 const initializedCanvasElements = new WeakMap<HTMLCanvasElement, boolean>();
@@ -22,6 +33,29 @@ const initializedCanvasElements = new WeakMap<HTMLCanvasElement, boolean>();
  * Hook to handle proper cleanup of canvas resources
  */
 export const useCanvasCleanup = () => {
+  // Local references to track state within this hook instance
+  const isCleaningUpRef = useRef(false);
+  const mountTimeRef = useRef(Date.now());
+  const disposeTimeoutsRef = useRef<number[]>([]);
+
+  // Clean up any lingering timeouts when unmounting
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts created by this hook instance
+      disposeTimeoutsRef.current.forEach(timeoutId => {
+        window.clearTimeout(timeoutId);
+      });
+      disposeTimeoutsRef.current = [];
+      
+      // Reset the cleanup state if it's been a while since mount
+      // This helps recover from stuck states
+      if (Date.now() - mountTimeRef.current > 10000) {
+        cleanupState.disposalInProgress = false;
+        cleanupState.consecutiveDisposals = 0;
+      }
+    };
+  }, []);
+
   /**
    * Properly dispose of canvas resources
    */
@@ -31,39 +65,79 @@ export const useCanvasCleanup = () => {
       return;
     }
     
+    // Don't dispose the same canvas twice
+    if (cleanupState.disposingCanvases.has(fabricCanvas)) {
+      logger.debug("This canvas is already being disposed, skipping");
+      return;
+    }
+    
     // Generate a unique identifier for this canvas instance
     const canvasId = Date.now();
     
-    // Check if we're in a disposal cooldown period to prevent loops
-    if (recentlyDisposedCanvases.size > 2) { // Reduced from 3 to 2 for earlier detection
+    // Detect potential disposal loops
+    cleanupState.consecutiveDisposals++;
+    
+    // Check if we've detected a disposal loop
+    if (cleanupState.consecutiveDisposals > cleanupState.MAX_CONSECUTIVE_DISPOSALS) {
       logger.warn("Too many canvas disposals in short time, possible loop detected");
       console.warn("CANVAS CLEANUP: Possible disposal loop detected, skipping cleanup");
+      
+      // Reset the counter after a short delay to allow future cleanups
+      const resetTimeoutId = window.setTimeout(() => {
+        cleanupState.consecutiveDisposals = 0;
+      }, 2000);
+      
+      disposeTimeoutsRef.current.push(resetTimeoutId);
+      return;
+    }
+    
+    // Check if we're in a disposal cooldown period to prevent loops
+    if (cleanupState.recentlyDisposedCanvases.size > 2) {
+      logger.warn("Too many recent canvas disposals, possible loop detected");
+      console.warn("CANVAS CLEANUP: Too many recent disposals, skipping cleanup");
       return;
     }
     
     // Prevent concurrent disposals
-    if (disposalInProgress) {
+    if (cleanupState.disposalInProgress) {
       logger.debug("Canvas disposal already in progress, skipping");
       return;
     }
     
-    disposalInProgress = true;
+    // Set local cleaning flag to true
+    isCleaningUpRef.current = true;
+    
+    // Mark this canvas as being disposed
+    cleanupState.disposingCanvases.add(fabricCanvas);
+    
+    // Set global disposal in progress flag
+    cleanupState.disposalInProgress = true;
     
     try {
       // Before disposing, check if the canvas is valid
       if (!isCanvasValid(fabricCanvas)) {
         logger.debug("Canvas instance appears to be invalid or already disposed");
-        disposalInProgress = false;
+        
+        // Reset flags
+        cleanupState.disposalInProgress = false;
+        isCleaningUpRef.current = false;
+        cleanupState.disposingCanvases.delete(fabricCanvas);
         return;
       }
       
       // Track this disposal to detect loops
-      recentlyDisposedCanvases.add(canvasId);
+      cleanupState.recentlyDisposedCanvases.add(canvasId);
       
       // Clear tracked disposals after cooldown period
-      setTimeout(() => {
-        recentlyDisposedCanvases.delete(canvasId);
-      }, DISPOSAL_COOLDOWN_MS);
+      const cooldownTimeoutId = window.setTimeout(() => {
+        cleanupState.recentlyDisposedCanvases.delete(canvasId);
+        // Also decrease consecutive disposals count after cooldown
+        if (cleanupState.consecutiveDisposals > 0) {
+          cleanupState.consecutiveDisposals--;
+        }
+      }, cleanupState.DISPOSAL_COOLDOWN_MS);
+      
+      disposeTimeoutsRef.current.push(cooldownTimeoutId);
       
       // Mark canvas element as not initialized anymore
       try {
@@ -77,24 +151,30 @@ export const useCanvasCleanup = () => {
       }
       
       // Add a timeout to ensure we're not in the middle of a render cycle
-      // This helps prevent the "Cannot read properties of undefined (reading 'el')" error
-      setTimeout(() => {
+      // This helps prevent React errors during disposal
+      const disposeTimeoutId = window.setTimeout(() => {
         try {
           // Add additional check to ensure canvas is still valid right before disposal
-          if (fabricCanvas && isCanvasValid(fabricCanvas)) {
+          if (fabricCanvas && isCanvasValid(fabricCanvas) && !fabricCanvas.disposed) {
             disposeCanvas(fabricCanvas);
             logger.info("Canvas disposed successfully");
           }
         } catch (error) {
           logger.error("Error during delayed canvas cleanup:", error);
         } finally {
-          // Always reset the flag
-          disposalInProgress = false;
+          // Always reset the flags
+          cleanupState.disposalInProgress = false;
+          isCleaningUpRef.current = false;
+          cleanupState.disposingCanvases.delete(fabricCanvas);
         }
-      }, 250); // Increased from 100 to 250ms for more stable cleanup
+      }, 250);
+      
+      disposeTimeoutsRef.current.push(disposeTimeoutId);
     } catch (error) {
       logger.error("Error during canvas cleanup:", error);
-      disposalInProgress = false;
+      cleanupState.disposalInProgress = false;
+      isCleaningUpRef.current = false;
+      cleanupState.disposingCanvases.delete(fabricCanvas);
     }
   }, []);
 
@@ -115,9 +195,22 @@ export const useCanvasCleanup = () => {
     logger.debug("Canvas element marked as initialized");
   }, []);
 
+  /**
+   * Reset canvas cleanup state (useful for recovering from stuck states)
+   */
+  const resetCleanupState = useCallback((): void => {
+    cleanupState.disposalInProgress = false;
+    cleanupState.consecutiveDisposals = 0;
+    cleanupState.recentlyDisposedCanvases.clear();
+    cleanupState.disposingCanvases = new WeakSet<FabricCanvas>();
+    logger.debug("Canvas cleanup state has been reset");
+  }, []);
+
   return {
     cleanupCanvas,
     isCanvasElementInitialized,
-    markCanvasAsInitialized
+    markCanvasAsInitialized,
+    resetCleanupState,
+    isCleaningUp: isCleaningUpRef.current
   };
 };
