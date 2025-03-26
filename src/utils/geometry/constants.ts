@@ -50,3 +50,7 @@ export const ANGLE_PRECISION = 1; // Decimal places for angle display
 // Distance-related constants
 export const MIN_VISIBLE_DISTANCE = 0.05; // Minimum distance to show measurement tooltip (in meters)
 export const DEFAULT_TOOLTIP_MAX_WIDTH = 120; // Default max width for tooltips in pixels
+
+// Straightening constants
+export const DEFAULT_STRAIGHTENING_THRESHOLD = 5; // Default threshold for line straightening (in degrees)
+export const WALL_ALIGNMENT_THRESHOLD = 3; // Threshold for detecting aligned walls (in degrees)

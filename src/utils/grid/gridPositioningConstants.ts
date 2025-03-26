@@ -95,5 +95,40 @@ export const PATH_PROCESSING = {
    * Sampling divisor for path point reduction
    * @constant {number}
    */
-  SAMPLING_DIVISOR: 10
+  SAMPLING_DIVISOR: 10,
+  
+  /**
+   * Maximum points per path for optimal performance
+   * @constant {number}
+   */
+  MAX_POINTS_PER_PATH: 500,
+  
+  /**
+   * Distance threshold for point simplification
+   * @constant {number}
+   */
+  SIMPLIFICATION_THRESHOLD: 2
+};
+
+/**
+ * Grid performance thresholds for adaptive rendering
+ */
+export const GRID_PERFORMANCE = {
+  /**
+   * Canvas area threshold for reducing small grid density
+   * @constant {number}
+   */
+  REDUCE_SMALL_GRID_THRESHOLD: 4000000,
+  
+  /**
+   * Canvas area threshold for disabling small grid
+   * @constant {number}
+   */
+  DISABLE_SMALL_GRID_THRESHOLD: 8000000,
+  
+  /**
+   * Canvas area threshold for reducing large grid density
+   * @constant {number}
+   */
+  REDUCE_LARGE_GRID_THRESHOLD: 10000000
 };

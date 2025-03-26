@@ -2,6 +2,42 @@
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 
+/**
+ * Line settings constants
+ * @constant {Object}
+ */
+const LINE_SETTINGS = {
+  /**
+   * Minimum line thickness in pixels
+   * @constant {number}
+   */
+  MIN_THICKNESS: 1,
+  
+  /**
+   * Maximum line thickness in pixels
+   * @constant {number}
+   */
+  MAX_THICKNESS: 10,
+  
+  /**
+   * Line thickness step size
+   * @constant {number}
+   */
+  THICKNESS_STEP: 1,
+  
+  /**
+   * Color picker width in pixels
+   * @constant {number}
+   */
+  COLOR_PICKER_SIZE: 8,
+  
+  /**
+   * Slider width in rems
+   * @constant {number}
+   */
+  SLIDER_WIDTH: 28
+};
+
 export interface LineSettingsProps {
   thickness: number;
   color: string;
@@ -24,12 +60,12 @@ export const LineSettings = ({
         <Label htmlFor="thickness" className="text-xs font-medium">Thickness: {thickness}px</Label>
         <Slider
           id="thickness"
-          min={1}
-          max={10}
-          step={1}
+          min={LINE_SETTINGS.MIN_THICKNESS}
+          max={LINE_SETTINGS.MAX_THICKNESS}
+          step={LINE_SETTINGS.THICKNESS_STEP}
           value={[thickness]}
           onValueChange={(values) => onThicknessChange(values[0])}
-          className="w-28"
+          className={`w-${LINE_SETTINGS.SLIDER_WIDTH}`}
         />
       </div>
       
@@ -40,7 +76,7 @@ export const LineSettings = ({
           type="color"
           value={color}
           onChange={(e) => onColorChange(e.target.value)}
-          className="w-8 h-8 p-1 border rounded cursor-pointer"
+          className={`w-${LINE_SETTINGS.COLOR_PICKER_SIZE} h-${LINE_SETTINGS.COLOR_PICKER_SIZE} p-1 border rounded cursor-pointer`}
         />
       </div>
     </div>
