@@ -7,6 +7,7 @@ export interface DebugInfoState {
   canvasLoaded: boolean;
   canvasInitialized: boolean;
   brushInitialized: boolean;
+  canvasReady: boolean;
   
   // Canvas dimensions
   canvasWidth: number;
