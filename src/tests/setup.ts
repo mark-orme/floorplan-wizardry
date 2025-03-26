@@ -12,7 +12,7 @@ if (typeof window !== 'undefined') {
   // Mock canvas methods that jsdom doesn't implement
   if (!HTMLCanvasElement.prototype.getContext) {
     HTMLCanvasElement.prototype.getContext = function(
-      contextId: "2d" | "bitmaprenderer" | "webgl" | "webgl2", 
+      contextId: string, 
       options?: any
     ): CanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | null {
       // Mock 2d context
