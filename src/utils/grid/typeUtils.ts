@@ -1,93 +1,92 @@
 
 /**
  * Grid type utilities
- * Provides utilities for type checking and validation
+ * Provides type definitions for grid components
  * @module grid/typeUtils
  */
-import { Point } from '@/types/drawingTypes';
+
+// Import types from centralized location
+import type { Point } from '@/types/floorPlanTypes';
 
 /**
- * Grid line options interface
- * Defines styling for grid lines
+ * Options for grid line styling
  * @interface GridLineOptions
  */
 export interface GridLineOptions {
+  /** Line color */
   stroke: string;
+  /** Line width */
   strokeWidth: number;
-  selectable?: boolean;
-  evented?: boolean;
-  objectType?: string;
-  opacity?: number;
+  /** Whether line can be selected */
+  selectable: boolean;
+  /** Whether line responds to events */
+  evented: boolean;
+  /** Whether to cache the object */
+  objectCaching: boolean;
+  /** Cursor style when hovering */
+  hoverCursor: string;
+  /** Line opacity */
+  opacity: number;
 }
 
 /**
- * Validates if a point has valid x and y coordinates
- * Useful for filtering out invalid points
- * 
- * @param {any} point - The point to validate
- * @returns {boolean} True if point has valid coordinates
+ * Grid point interface extending Point
+ * @interface GridPoint
  */
-export const isValidGridPoint = (point: any): boolean => {
-  if (!point) return false;
-  
-  // Check if point has x and y properties
-  if (typeof point.x === 'undefined' || typeof point.y === 'undefined') {
-    return false;
-  }
-  
-  // Check if x and y are finite numbers
-  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
-    return false;
-  }
-  
-  return true;
-};
+export interface GridPoint extends Point {
+  /** Optional snapped indicator */
+  snapped?: boolean;
+  /** Distance to nearest grid line */
+  distance?: number;
+  /** Original unsnapped point */
+  original?: Point;
+}
 
 /**
- * Normalizes a point to ensure it has valid coordinates
- * Returns a safe point with default values if input is invalid
- * 
- * @param {Point} point - The point to normalize
- * @returns {Point} Normalized point with valid coordinates
+ * Grid line interface
+ * @interface GridLine
  */
-export const normalizePoint = (point: Point): Point => {
-  if (!point) return { x: 0, y: 0 };
-  
-  // Return a safe point with finite numbers
-  return {
-    x: Number.isFinite(point.x) ? point.x : 0,
-    y: Number.isFinite(point.y) ? point.y : 0
-  };
-};
+export interface GridLine {
+  /** Line start point */
+  start: Point;
+  /** Line end point */
+  end: Point;
+  /** Whether it's a major grid line */
+  isMajor: boolean;
+  /** Line orientation */
+  orientation: 'horizontal' | 'vertical';
+}
 
 /**
- * Filters an array of points to remove invalid entries
- * Useful for cleaning up user input or external data
- * 
- * @param {Point[]} points - Array of points to filter
- * @returns {Point[]} Array with only valid points
+ * Grid marker interface for text labels
+ * @interface GridMarker
  */
-export const filterValidPoints = (points: Point[]): Point[] => {
-  if (!Array.isArray(points)) return [];
-  
-  return points.filter(isValidGridPoint);
-};
+export interface GridMarker {
+  /** Position of the marker */
+  position: Point;
+  /** Text content */
+  text: string;
+  /** Whether it's a major marker */
+  isMajor: boolean;
+  /** Marker orientation */
+  orientation: 'horizontal' | 'vertical';
+}
 
 /**
- * Rounds point coordinates to a specified precision
- * Useful for snapping or display purposes
- * 
- * @param {Point} point - The point to round
- * @param {number} precision - Number of decimal places (default: 0)
- * @returns {Point} Point with rounded coordinates
+ * Grid creation context
+ * @interface GridCreationContext
  */
-export const roundPointCoordinates = (point: Point, precision: number = 0): Point => {
-  if (!isValidGridPoint(point)) return { x: 0, y: 0 };
-  
-  const factor = Math.pow(10, precision);
-  
-  return {
-    x: Math.round(point.x * factor) / factor,
-    y: Math.round(point.y * factor) / factor
-  };
-};
+export interface GridCreationContext {
+  /** Canvas width */
+  width: number;
+  /** Canvas height */
+  height: number;
+  /** Small grid spacing */
+  smallGridSpacing: number;
+  /** Large grid spacing */
+  largeGridSpacing: number;
+  /** Extension factor for grid size */
+  extensionFactor: number;
+  /** Grid offset factor */
+  offsetFactor: number;
+}

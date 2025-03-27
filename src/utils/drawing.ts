@@ -4,9 +4,8 @@
  * @module drawing
  */
 
-// Re-export types from floorPlanTypes for backwards compatibility
-export type { FloorPlan } from '@/types/floorPlanTypes';
-export type { Wall, Room, Point, Stroke, PaperSize } from '@/types/floorPlanTypes';
+// Re-export types from floorPlanTypes.ts using export type for TypeScript isolatedModules compatibility
+export type { FloorPlan, Wall, Room, Point, Stroke, PaperSize } from '@/types/floorPlanTypes';
 
 import { 
   PIXELS_PER_METER,
@@ -70,9 +69,9 @@ export const calculateGIA = (points: Array<{x: number, y: number}>): number => {
 };
 
 /**
- * Re-export everything from the specialized files
+ * Re-export everything from the specialized files using proper type exports
  */
-export * from '@/types/drawingTypes';
+export type * from '@/types/drawingTypes';
 export * from './geometry'; // This now re-exports from all geometry modules
 export * from './fabricPath'; // Use new modular path utilities
 export * from './floorPlanStorage';

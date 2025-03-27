@@ -5,6 +5,10 @@
  */
 
 import { Object as FabricObject, Point } from 'fabric';
+import type { Point as AppPoint } from './floorPlanTypes';
+
+// Export AppPoint type for compatibility with our application Point interface
+export type { AppPoint };
 
 /**
  * Options used when creating a Fabric.js canvas
