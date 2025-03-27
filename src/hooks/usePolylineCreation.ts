@@ -120,7 +120,7 @@ export const usePolylineCreation = ({
       // Fabric.js needs points in the format {x: number, y: number}
       const formattedPoints = pixelPoints.map(point => ({ x: point.x, y: point.y }));
       
-      // Create the polyline object
+      // Create the polyline object with improved visibility
       const polyline = new FabricPolyline(formattedPoints, {
         stroke: overrideColor || lineColor,
         strokeWidth: lineThickness,
@@ -130,6 +130,8 @@ export const usePolylineCreation = ({
         objectType: isEnclosed ? 'room' : (tool === 'wall' ? 'wall' : 'line'),
         selectable: true, // Allow selection for editing
         strokeUniform: true, // Maintain stroke width during scaling
+        evented: true, // Ensure object receives events
+        perPixelTargetFind: false, // Improves performance and makes lines easier to select
       });
       
       // Add the polyline to the canvas

@@ -38,6 +38,8 @@ export interface DrawingState {
   selectionActive: boolean;
   /** Current zoom level of the canvas */
   currentZoom?: number;
+  /** Current distance between start and current points in meters */
+  distance?: number | null;
 }
 
 /**

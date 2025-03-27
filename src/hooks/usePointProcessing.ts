@@ -84,12 +84,7 @@ export const usePointProcessing = ({
         y: pointer.y
       };
       
-      // For drawing tools that need snapping, apply it directly
-      if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
-        // Apply grid snapping with a reasonable snap threshold (10px)
-        return snapToGrid(point, 10);
-      }
-      
+      // Return the raw point - snapping will be applied in the interaction handlers
       return point;
     } catch (error) {
       handleError(error, {
@@ -98,7 +93,7 @@ export const usePointProcessing = ({
       });
       return null;
     }
-  }, [fabricCanvasRef, tool]);
+  }, [fabricCanvasRef]);
   
   /**
    * Process path points from a fabric path
@@ -142,8 +137,12 @@ export const usePointProcessing = ({
         // Apply straightening for these tools
         processedPoints = straightenStroke(extractedPoints);
         
-        // Also apply snapping to each point
-        processedPoints = processedPoints.map(point => snapToGrid(point, 10));
+        // Also apply snapping to each point with reduced threshold for better precision
+        processedPoints = processedPoints.map(point => snapToGrid(point, 5));
+      } else if (tool === 'draw') {
+        // For freehand drawing, we don't straighten but still snap to grid
+        // Use a smaller snap threshold for freehand to maintain more natural drawing
+        processedPoints = processedPoints.map(point => snapToGrid(point, 3));
       }
       
       return { 

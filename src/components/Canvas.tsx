@@ -243,7 +243,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         style={{ border: CANVAS_STYLES.BORDER }}
       />
       
-      <div className="absolute top-2 right-2 bg-white/80 p-2 rounded shadow text-xs">
+      <div className="absolute top-2 right-2 bg-white/90 p-2 rounded shadow text-xs">
         <div>Current tool: {tool}</div>
         <div>Snap to grid: {snapEnabled ? 'On' : 'Off'}</div>
         <button 
@@ -254,16 +254,23 @@ export const Canvas: React.FC<CanvasProps> = ({
         </button>
       </div>
       
-      {/* Distance tooltip for measurements - only show when actively drawing lines */}
-      <DistanceTooltip
-        startPoint={drawingState.startPoint}
-        currentPoint={drawingState.currentPoint}
-        midPoint={drawingState.midPoint}
-        isVisible={Boolean(drawingState.isDrawing && drawingState.startPoint && drawingState.currentPoint && (tool === 'straightLine' || tool === 'wall'))}
-        currentZoom={currentZoom}
-        isSnappedToGrid={drawingState.startPoint && isSnappedToGrid(drawingState.startPoint)}
-        isAutoStraightened={drawingState.startPoint && drawingState.currentPoint && isLineAutoStraightened(drawingState.startPoint, drawingState.currentPoint)}
-      />
+      {/* Distance tooltip for measurements - show when actively drawing lines */}
+      {drawingState.isDrawing && 
+       drawingState.startPoint && 
+       drawingState.midPoint && 
+       (tool === 'straightLine' || tool === 'wall') && (
+        <DistanceTooltip
+          startPoint={drawingState.startPoint}
+          currentPoint={drawingState.currentPoint}
+          midPoint={drawingState.midPoint}
+          isVisible={true}
+          currentZoom={currentZoom}
+          isSnappedToGrid={drawingState.startPoint && isSnappedToGrid(drawingState.startPoint)}
+          isAutoStraightened={drawingState.startPoint && 
+                             drawingState.currentPoint && 
+                             isLineAutoStraightened(drawingState.startPoint, drawingState.currentPoint)}
+        />
+      )}
     </>
   );
 };

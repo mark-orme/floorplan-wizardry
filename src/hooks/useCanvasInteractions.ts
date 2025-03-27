@@ -9,7 +9,8 @@ import { DrawingState, Point } from '@/types/drawingTypes';
 import { DrawingTool } from './useCanvasState';
 import { usePointProcessing } from './usePointProcessing';
 import { useSnapToGrid } from './useSnapToGrid';
-import { calculateMidpoint } from '@/utils/geometry';
+import { calculateMidpoint, calculateDistance, formatDistance } from '@/utils/geometry';
+import { PIXELS_PER_METER } from '@/constants/numerics';
 
 interface UseCanvasInteractionsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -53,7 +54,8 @@ export const useCanvasInteractions = ({
     cursorPosition: null,
     midPoint: null,
     selectionActive: false,
-    currentZoom: 1
+    currentZoom: 1,
+    distance: null
   });
 
   // Point processing utilities
@@ -81,7 +83,8 @@ export const useCanvasInteractions = ({
       isDrawing: false,
       startPoint: null,
       currentPoint: null,
-      midPoint: null
+      midPoint: null,
+      distance: null
     }));
   }, []);
 
@@ -98,11 +101,19 @@ export const useCanvasInteractions = ({
         ? calculateMidpoint(prev.startPoint, point)
         : null;
         
+      // Calculate distance in meters for tooltip
+      let distance = null;
+      if (prev.startPoint && point) {
+        const pixelDistance = calculateDistance(prev.startPoint, point);
+        distance = pixelDistance / PIXELS_PER_METER;
+      }
+        
       return {
         ...prev,
         currentPoint: point,
         cursorPosition: point, // Also update cursor position
-        midPoint
+        midPoint,
+        distance
       };
     });
   }, []);
@@ -131,7 +142,8 @@ export const useCanvasInteractions = ({
       isDrawing: true,
       startPoint: snappedPoint,
       currentPoint: snappedPoint,
-      midPoint: null
+      midPoint: null,
+      distance: 0
     }));
     
     console.log("Drawing started at:", snappedPoint);
@@ -181,11 +193,19 @@ export const useCanvasInteractions = ({
       ? calculateMidpoint(drawingState.startPoint, processedPoint)
       : null;
     
+    // Calculate distance in meters for tooltip
+    let distance = null;
+    if (drawingState.startPoint && processedPoint) {
+      const pixelDistance = calculateDistance(drawingState.startPoint, processedPoint);
+      distance = pixelDistance / PIXELS_PER_METER;
+    }
+    
     // Update drawing state
     setDrawingState(prev => ({
       ...prev,
       currentPoint: processedPoint,
-      midPoint
+      midPoint,
+      distance
     }));
   }, [drawingState.isDrawing, drawingState.startPoint, tool, processPoint, snapPointToGrid, snapLineToGrid, snapEnabled]);
 
@@ -229,17 +249,23 @@ export const useCanvasInteractions = ({
       // Calculate final midpoint
       const midPoint = calculateMidpoint(drawingState.startPoint, finalPoint);
       
+      // Calculate final distance in meters
+      const pixelDistance = calculateDistance(drawingState.startPoint, finalPoint);
+      const distance = pixelDistance / PIXELS_PER_METER;
+      
       // Update drawing state with final point
       setDrawingState(prev => ({
         ...prev,
         currentPoint: finalPoint,
         midPoint,
+        distance,
         isDrawing: false
       }));
       
       console.log("Drawing completed:", { 
         start: drawingState.startPoint, 
         end: finalPoint,
+        distance: `${distance.toFixed(1)}m`,
         tool
       });
     } else {
