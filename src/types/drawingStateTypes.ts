@@ -22,12 +22,12 @@ import { Point } from './geometryTypes';
  * @property {boolean} stylusDetected - Whether stylus is detected
  * @property {boolean} pathDragging - Whether path dragging is enabled
  * @property {boolean} creatingShape - Whether shape creation is in progress
+ * @property {number} currentZoom - Current zoom level for scaling display
  * @property {Point | null} startPoint - The starting point of the drawing
  * @property {Point | null} currentPoint - The current point of the drawing
  * @property {Point | null} cursorPosition - The current cursor position
  * @property {Point | null} midPoint - The midpoint between start and current point
  * @property {boolean} selectionActive - Whether a selection is active
- * @property {number} currentZoom - Current zoom level for scaling display
  * @property {Point[]} points - Array of all points in the current stroke
  * @property {number | null} distance - Distance between startPoint and currentPoint
  */

@@ -29,7 +29,9 @@ export enum DrawingMode {
   /** Eraser tool */
   Erase = 'erase',
   /** Measurement tool */
-  Measure = 'measure'
+  Measure = 'measure',
+  /** Draw mode */
+  Draw = 'draw'
 }
 
 /**
@@ -46,7 +48,8 @@ export const DRAWING_TOOL_GROUPS = {
   /** Line drawing tools */
   LINES: [
     DrawingMode.Free,
-    DrawingMode.Straight
+    DrawingMode.Straight,
+    DrawingMode.Draw
   ],
   
   /** Construction tools */
@@ -71,3 +74,9 @@ export const DRAWING_TOOL_GROUPS = {
     DrawingMode.Erase
   ]
 };
+
+/**
+ * Type alias for DrawingMode to use in various hooks
+ * This ensures compatibility between DrawingMode and DrawingTool
+ */
+export type DrawingTool = DrawingMode | 'draw' | 'text' | 'select' | 'hand' | 'erase';

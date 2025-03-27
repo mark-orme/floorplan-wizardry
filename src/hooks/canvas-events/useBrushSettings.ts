@@ -1,65 +1,100 @@
 
 /**
- * Hook for managing brush settings on the canvas
- * @module useBrushSettings
+ * Hook for canvas brush settings
+ * @module canvas-events/useBrushSettings
  */
-import { useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
-import { BaseEventHandlerProps, EventHandlerResult } from "./types";
-import { BRUSH_CONSTANTS } from "@/constants/brushConstants";
+import { useEffect, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { EventHandlerResult, UseBrushSettingsProps } from './types';
 
 /**
- * Props for the useBrushSettings hook
+ * Default brush width
  */
-interface UseBrushSettingsProps extends BaseEventHandlerProps {
-  /** Current drawing tool */
-  tool: DrawingTool;
-  /** Line color for drawing */
-  lineColor: string;
-  /** Line thickness for drawing */
-  lineThickness: number;
-}
+const DEFAULT_BRUSH_WIDTH = 2;
 
 /**
- * Hook to manage brush settings for drawing
- * @param {UseBrushSettingsProps} props - Hook properties
- * @returns {EventHandlerResult} Cleanup function
+ * Default brush color
  */
-export const useBrushSettings = ({
-  fabricCanvasRef,
-  tool,
-  lineColor = BRUSH_CONSTANTS.DEFAULT_PENCIL_COLOR,
-  lineThickness = BRUSH_CONSTANTS.DEFAULT_PENCIL_WIDTH
+const DEFAULT_BRUSH_COLOR = '#000000';
+
+/**
+ * Hook for managing brush settings in the canvas
+ * 
+ * @param {UseBrushSettingsProps} props - Properties for the hook
+ * @returns {EventHandlerResult} - Event handler result with cleanup function
+ */
+export const useBrushSettings = ({ 
+  fabricCanvasRef, 
+  tool 
 }: UseBrushSettingsProps): EventHandlerResult => {
-  // Update brush settings when tool, color, or thickness changes
-  useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
+  
+  /**
+   * Initialize brush settings
+   */
+  const initializeBrush = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    
-    // Set drawing mode based on tool
-    canvas.isDrawingMode = tool === 'draw';
-    
-    // Configure brush properties when drawing is enabled
-    if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
-      // Set brush color and width
-      canvas.freeDrawingBrush.color = lineColor;
-      canvas.freeDrawingBrush.width = lineThickness;
-      
-      // Set brush shadow for better visibility
-      canvas.freeDrawingBrush.shadow = new (canvas.freeDrawingBrush.constructor as any).Shadow(
-        BRUSH_CONSTANTS.DEFAULT_SHADOW_COLOR,
-        0,
-        0,
-        BRUSH_CONSTANTS.DEFAULT_SHADOW_BLUR
-      );
+    if (!canvas) return;
+
+    try {
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.width = DEFAULT_BRUSH_WIDTH;
+        canvas.freeDrawingBrush.color = DEFAULT_BRUSH_COLOR;
+      }
+    } catch (error) {
+      console.error('Error initializing brush:', error);
     }
-  }, [fabricCanvasRef, tool, lineColor, lineThickness]);
+  }, [fabricCanvasRef]);
+
+  /**
+   * Update brush settings when the tool changes
+   */
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    // Only set drawing mode when relevant tools are selected
+    canvas.isDrawingMode = tool === 'free' || tool === 'draw';
+    
+    // Initialize brush if it exists
+    if (canvas.freeDrawingBrush) {
+      initializeBrush();
+    }
+
+    return () => {
+      // Clean up
+      if (canvas && canvas.freeDrawingBrush) {
+        canvas.isDrawingMode = false;
+      }
+    };
+  }, [fabricCanvasRef, tool, initializeBrush]);
+
+  /**
+   * Register event handlers
+   */
+  const register = useCallback(() => {
+    initializeBrush();
+  }, [initializeBrush]);
+
+  /**
+   * Unregister event handlers
+   */
+  const unregister = useCallback(() => {
+    // Nothing to unregister for brush settings
+  }, []);
+
+  /**
+   * Clean up resources
+   */
+  const cleanup = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (canvas && canvas.freeDrawingBrush) {
+      canvas.isDrawingMode = false;
+    }
+  }, [fabricCanvasRef]);
 
   return {
-    cleanup: () => {
-      // No special cleanup needed
-    }
+    register,
+    unregister,
+    cleanup
   };
 };

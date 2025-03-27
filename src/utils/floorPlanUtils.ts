@@ -21,9 +21,10 @@ export const FLOOR_PLAN_CONSTANTS = {
  * 
  * @param {string} id - Floor plan unique identifier
  * @param {string} name - Floor plan name
+ * @param {number} [level] - Optional floor level
  * @returns {FloorPlan} New floor plan object
  */
-export const createFloorPlan = (id: string, name: string): FloorPlan => {
+export const createFloorPlan = (id: string, name: string, level?: number): FloorPlan => {
   const timestamp = new Date().toISOString();
   
   return {
@@ -31,7 +32,7 @@ export const createFloorPlan = (id: string, name: string): FloorPlan => {
     name,
     label: name,
     gia: FLOOR_PLAN_CONSTANTS.DEFAULT_GIA,
-    level: FLOOR_PLAN_CONSTANTS.DEFAULT_FLOOR_LEVEL,
+    level: level !== undefined ? level : FLOOR_PLAN_CONSTANTS.DEFAULT_FLOOR_LEVEL,
     walls: [],
     rooms: [],
     strokes: [],

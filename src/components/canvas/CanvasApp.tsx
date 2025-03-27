@@ -3,7 +3,7 @@ import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { ZOOM_MULTIPLIERS, ZoomDirection } from "@/constants/zoomConstants";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types/core/DebugInfo";
 
 /**
  * Canvas application component
@@ -55,6 +55,7 @@ export const CanvasApp = () => {
 
   // Create a safe debug info object with required properties for type compatibility
   const safeDebugInfo: DebugInfoState = {
+    ...debugInfo,
     canvasInitialized: debugInfo.canvasInitialized || false,
     dimensionsSet: debugInfo.dimensionsSet || false,
     gridCreated: debugInfo.gridCreated || false,

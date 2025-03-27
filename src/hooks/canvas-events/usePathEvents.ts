@@ -1,81 +1,97 @@
 
 /**
- * Hook for handling path creation events
- * @module usePathEvents
+ * Hook for canvas path events
+ * @module canvas-events/usePathEvents
  */
-import { useEffect } from "react";
-import { Canvas as FabricCanvas, Path as FabricPath, TEvent, TPointerEvent } from "fabric";
-import logger from "@/utils/logger";
-import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import { useCallback, useEffect } from 'react';
+import { EventHandlerResult, UsePathEventsProps } from './types';
 
 /**
- * Event interface with path created
+ * Hook for handling path creation events in the canvas
+ * 
+ * @param {UsePathEventsProps} props - Properties for the hook
+ * @returns {EventHandlerResult} - Event handler result with cleanup function
  */
-interface PathCreatedEvent extends Partial<TEvent<TPointerEvent>> {
-  path: FabricPath;
-}
-
-/**
- * Props for the usePathEvents hook
- */
-interface UsePathEventsProps extends BaseEventHandlerProps {
-  /** Function to save current state before making changes */
-  saveCurrentState: () => void;
-  /** Function to process created path */
-  processCreatedPath: (path: FabricPath) => void;
-  /** Function to handle mouse up event */
-  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
-}
-
-/**
- * Hook to handle path creation events
- * @param {UsePathEventsProps} props - Hook properties
- * @returns {EventHandlerResult} Cleanup function
- */
-export const usePathEvents = ({
-  fabricCanvasRef,
-  saveCurrentState,
-  processCreatedPath,
-  handleMouseUp
+export const usePathEvents = ({ 
+  fabricCanvasRef, 
+  tool 
 }: UsePathEventsProps): EventHandlerResult => {
+  
+  /**
+   * Handle path created event
+   */
+  const handlePathCreated = useCallback((e: any) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    try {
+      const path = e.path;
+      if (path) {
+        path.set({
+          objectType: 'path',
+          id: `path-${Date.now()}`
+        });
+        
+        // Optionally set other properties on the path
+        // path.set({ fill: null, evented: true, selectable: true });
+        
+        // Make sure the canvas renders the updated path
+        canvas.renderAll();
+      }
+    } catch (error) {
+      console.error('Error in path created handler:', error);
+    }
+  }, [fabricCanvasRef]);
+
+  /**
+   * Set up path events
+   */
   useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const fabricCanvas = fabricCanvasRef.current;
-    
-    /**
-     * Handle path created event
-     * @param {PathCreatedEvent} e - Event object containing the created path
-     */
-    const handlePathCreated = (e: PathCreatedEvent): void => {
-      logger.info("Path created event triggered");
-      
-      // IMPORTANT: Save current state BEFORE making any changes
-      // This ensures we can properly undo to previous state
-      saveCurrentState();
-      
-      // Process the path based on the current tool
-      processCreatedPath(e.path);
-      
-      // Call handleMouseUp with no arguments
-      handleMouseUp();
-    };
-    
-    // Register the event handler with typed casting
-    fabricCanvas.on('path:created', handlePathCreated as any);
-    
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    // Only attach path events when in drawing mode
+    if (tool === 'free' || tool === 'draw') {
+      canvas.on('path:created', handlePathCreated);
+    }
+
     return () => {
-      if (fabricCanvas) {
-        fabricCanvas.off('path:created', handlePathCreated as any);
+      if (canvas) {
+        canvas.off('path:created', handlePathCreated);
       }
     };
-  }, [fabricCanvasRef, processCreatedPath, handleMouseUp, saveCurrentState]);
+  }, [fabricCanvasRef, tool, handlePathCreated]);
+
+  /**
+   * Register event handlers
+   */
+  const register = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    canvas.on('path:created', handlePathCreated);
+  }, [fabricCanvasRef, handlePathCreated]);
+
+  /**
+   * Unregister event handlers
+   */
+  const unregister = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    canvas.off('path:created', handlePathCreated);
+  }, [fabricCanvasRef, handlePathCreated]);
+
+  /**
+   * Clean up resources
+   */
+  const cleanup = useCallback(() => {
+    unregister();
+  }, [unregister]);
 
   return {
-    cleanup: () => {
-      if (fabricCanvasRef.current) {
-        logger.debug("Path events cleanup");
-      }
-    }
+    register,
+    unregister,
+    cleanup
   };
 };

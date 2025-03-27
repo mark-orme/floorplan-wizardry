@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useState, useRef } from 'react';
-import { DrawingTool } from '@/hooks/useCanvasState';
+import { DrawingMode, DrawingTool } from '@/constants/drawingModes';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import { DebugInfoState } from '@/types';
+import { DebugInfoState } from '@/types/core/DebugInfo';
 import { toast } from 'sonner';
 import { createFloorPlan } from '@/utils/floorPlanUtils';
 

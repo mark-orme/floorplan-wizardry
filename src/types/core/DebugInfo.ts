@@ -80,7 +80,7 @@ export interface DebugInfoState {
   /** Performance statistics */
   performanceStats: PerformanceStats;
   
-  // Optional debug fields
+  // Optional debug fields - these can be added dynamically
   /** Grid initialization state */
   gridInitialized?: boolean;
   /** Custom debug messages */

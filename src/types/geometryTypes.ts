@@ -1,42 +1,23 @@
 
 /**
- * Type definitions for geometric elements
- * Provides types and constants for geometry operations
- * @module geometryTypes
+ * Geometry type definitions
+ * @module types/geometryTypes
  */
-
-import { 
-  GRID_SPACING,
-  PIXELS_PER_METER,
-  SMALL_GRID,
-  LARGE_GRID
-} from "@/constants/numerics";
 
 /**
- * Represents a 2D point in the drawing
- * Used for coordinates in the canvas space
- * 
- * @typedef {Object} Point
- * @property {number} x - X coordinate
- * @property {number} y - Y coordinate
+ * Point interface with basic 2D coordinates
+ * @interface Point
  */
-export type Point = { x: number; y: number };
-
-/**
- * Represents a stroke (sequence of points) in the drawing
- * Used for freehand drawing paths
- * 
- * @typedef {Array<Point>} Stroke
- */
-export type Stroke = Point[];
+export interface Point {
+  /** X coordinate */
+  x: number;
+  /** Y coordinate */
+  y: number;
+}
 
 /**
  * Canvas dimensions type
- * Represents the width and height of the canvas
- * 
- * @typedef {Object} CanvasDimensions
- * @property {number} width - Canvas width in pixels
- * @property {number} height - Canvas height in pixels
+ * @interface CanvasDimensions
  */
 export interface CanvasDimensions {
   /** Canvas width in pixels */
@@ -45,64 +26,100 @@ export interface CanvasDimensions {
   height: number;
 }
 
-// Re-export constants for backward compatibility
-export { GRID_SPACING, PIXELS_PER_METER, SMALL_GRID, LARGE_GRID };
-
 /**
- * Drawing element types
- * Identifies different types of drawing elements
+ * Rectangle dimensions
+ * @interface Rectangle
  */
-export enum DrawingElementType {
-  /** Wall element type */
-  WALL = 'wall',
-  
-  /** Room element type */
-  ROOM = 'room',
-  
-  /** Door element type */
-  DOOR = 'door',
-  
-  /** Window element type */
-  WINDOW = 'window',
-  
-  /** Generic element type */
-  GENERIC = 'generic'
+export interface Rectangle {
+  /** X coordinate of top-left corner */
+  x: number;
+  /** Y coordinate of top-left corner */
+  y: number;
+  /** Width of rectangle */
+  width: number;
+  /** Height of rectangle */
+  height: number;
 }
 
 /**
- * Type guard to check if a value is a Point
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a valid Point
+ * Line segment defined by two points
+ * @interface Line
  */
-export function isPoint(value: unknown): value is Point {
-  return typeof value === 'object' && 
-         value !== null && 
-         'x' in value && 
-         'y' in value &&
-         typeof (value as Point).x === 'number' &&
-         typeof (value as Point).y === 'number';
+export interface Line {
+  /** Start point */
+  start: Point;
+  /** End point */
+  end: Point;
 }
 
 /**
- * Type guard to check if a value is a Stroke
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a valid Stroke
+ * Circle geometry
+ * @interface Circle
  */
-export function isStroke(value: unknown): value is Stroke {
-  return Array.isArray(value) && 
-         value.every(point => isPoint(point));
+export interface Circle {
+  /** Center point */
+  center: Point;
+  /** Radius */
+  radius: number;
 }
 
 /**
- * Type guard to check if a value is CanvasDimensions
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is valid CanvasDimensions
+ * Utility functions for working with Points
  */
-export function isCanvasDimensions(value: unknown): value is CanvasDimensions {
-  return typeof value === 'object' && 
-         value !== null && 
-         'width' in value && 
-         'height' in value &&
-         typeof (value as CanvasDimensions).width === 'number' &&
-         typeof (value as CanvasDimensions).height === 'number';
-}
+export const PointUtils = {
+  /**
+   * Add two points
+   * @param p1 First point
+   * @param p2 Second point
+   * @returns New point with coordinates added
+   */
+  add: (p1: Point, p2: Point): Point => ({
+    x: p1.x + p2.x,
+    y: p1.y + p2.y
+  }),
+
+  /**
+   * Subtract second point from first
+   * @param p1 First point
+   * @param p2 Second point to subtract
+   * @returns New point with coordinates subtracted
+   */
+  subtract: (p1: Point, p2: Point): Point => ({
+    x: p1.x - p2.x,
+    y: p1.y - p2.y
+  }),
+
+  /**
+   * Multiply point coordinates by scalar
+   * @param p Point
+   * @param scalar Scalar value
+   * @returns New point with coordinates multiplied
+   */
+  multiply: (p: Point, scalar: number): Point => ({
+    x: p.x * scalar,
+    y: p.y * scalar
+  }),
+
+  /**
+   * Calculate distance between two points
+   * @param p1 First point
+   * @param p2 Second point
+   * @returns Distance between points
+   */
+  distance: (p1: Point, p2: Point): number => {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  },
+
+  /**
+   * Calculate midpoint between two points
+   * @param p1 First point
+   * @param p2 Second point
+   * @returns Midpoint
+   */
+  midpoint: (p1: Point, p2: Point): Point => ({
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
+  })
+};

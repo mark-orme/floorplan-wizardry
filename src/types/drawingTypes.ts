@@ -3,6 +3,7 @@
  * Drawing-related type definitions
  * @module types/drawingTypes
  */
+import { Point } from './geometryTypes';
 
 /**
  * Canvas dimensions
@@ -12,16 +13,6 @@ export interface CanvasDimensions {
   width: number;
   /** Canvas height */
   height: number;
-}
-
-/**
- * Point coordinates
- */
-export interface Point {
-  /** X coordinate */
-  x: number;
-  /** Y coordinate */
-  y: number;
 }
 
 /**
@@ -56,7 +47,7 @@ export interface PerformanceStats {
  * Debug information state
  * Importing from debugTypes to ensure consistency
  */
-export type { DebugInfoState } from './debugTypes';
+export type { DebugInfoState } from './core/DebugInfo';
 
 /**
  * Drawing state
@@ -99,13 +90,13 @@ export interface DrawingState {
   /** Distance for compatibility */
   distance: number | null;
   /** Cursor position for more accurate drawing */
-  cursorPosition?: Point | null;
+  cursorPosition: Point | null;
 }
 
 /**
- * Drawing mode
+ * Drawing mode - re-export from drawingModes.ts to ensure consistent usage
  */
-export type DrawingMode = 'free' | 'straight' | 'polygon' | 'rectangle' | 'circle' | 'text' | 'wall' | 'hand';
+export type { DrawingMode, DrawingTool } from '@/constants/drawingModes';
 
 /**
  * Canvas operation types
