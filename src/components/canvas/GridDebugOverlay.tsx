@@ -45,10 +45,12 @@ export const GridDebugOverlay = ({
     
     const updateStats = () => {
       const health = checkGridHealth();
-      setGridStats({
-        exists: health.exists,
-        size: health.size
-      });
+      if (health) {
+        setGridStats({
+          exists: health.exists,
+          size: health.size
+        });
+      }
     };
     
     // Update once on mount

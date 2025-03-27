@@ -147,7 +147,7 @@ export const handleMaxAttemptsReached = (
     // Create an emergency grid as last resort
     const emergencyGrid = createBasicEmergencyGrid(canvas, gridLayerRef);
     
-    if (emergencyGrid.length > 0) {
+    if (emergencyGrid && emergencyGrid.length > 0) {
       // Emergency grid created successfully
       setDebugInfo(prev => ({...prev, gridCreated: true}));
       return emergencyGrid;
@@ -192,4 +192,3 @@ export const handleMaxAttemptsReached = (
     return [];
   }
 };
-

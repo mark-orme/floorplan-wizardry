@@ -91,8 +91,8 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     setErrorMessage,
     // Pass our emergency grid creation function
     createGrid: (canvas) => {
-      const initialGridCreated = createBasicEmergencyGrid(canvas, gridLayerRef);
-      return gridLayerRef.current;
+      const grid = createBasicEmergencyGrid(canvas, gridLayerRef);
+      return grid;
     }
   });
   

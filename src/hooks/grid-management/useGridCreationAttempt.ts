@@ -7,14 +7,13 @@
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { resetGridProgress } from "@/utils/gridManager";
-import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
+import { createBasicEmergencyGrid, retryWithBackoff } from "@/utils/gridCreationUtils";
 import { 
   GridAttemptTracker,
   incrementAttemptCount,
   markCreationSuccessful,
   isMaxAttemptsReached
 } from "./";
-import { retryWithBackoff } from "@/utils/gridCreationUtils";
 import { MIN_ATTEMPT_INTERVAL } from "./constants";
 
 /**

@@ -11,6 +11,16 @@ import logger from '@/utils/logger';
 import { resetGridProgress } from '@/utils/gridManager';
 import { createBasicEmergencyGrid, verifyGridExists } from '@/utils/gridCreationUtils';
 
+interface GridHealthCheckResult {
+  exists: boolean;
+  size: number;
+  objectsOnCanvas: number;
+  canvasDimensions: {
+    width: number;
+    height: number;
+  };
+}
+
 /**
  * Hook for debugging and recovering from grid creation issues
  * 
@@ -45,7 +55,7 @@ export const useGridCreationDebug = (
    * Check grid health
    * Verifies if grid exists on canvas
    */
-  const checkGridHealth = useCallback(() => {
+  const checkGridHealth = useCallback((): GridHealthCheckResult | false => {
     if (!fabricCanvasRef.current) return false;
     
     const exists = verifyGridExists(fabricCanvasRef.current, gridLayerRef);
@@ -75,7 +85,7 @@ export const useGridCreationDebug = (
   const fixGridIssues = useCallback(() => {
     const health = checkGridHealth();
     
-    if (!health.exists || health.size === 0) {
+    if (health && (!health.exists || health.size === 0)) {
       toast.warning("Grid missing, attempting recovery");
       return forceGridCreation();
     }
@@ -101,7 +111,7 @@ export const useGridCreationDebug = (
     
     const interval = setInterval(() => {
       const health = checkGridHealth();
-      if (!health.exists && health.size === 0) {
+      if (health && !health.exists && health.size === 0) {
         logger.warn("Grid missing during health check");
       }
     }, 5000);

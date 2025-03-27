@@ -27,6 +27,8 @@ export interface UseCanvasInitializationProps {
   setHasError: (value: boolean) => void;
   /** Function to set error message */
   setErrorMessage: (value: string) => void;
+  /** Optional function to create grid on canvas */
+  createGrid?: (canvas: FabricCanvas) => FabricObject[];
 }
 
 export interface UseCanvasInitializationResult {
