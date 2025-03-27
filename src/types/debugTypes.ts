@@ -44,8 +44,16 @@ export interface DebugInfoState {
   hasError: boolean;
   /** Error message */
   errorMessage: string;
+  /** Performance statistics */
+  performanceStats?: {
+    fps?: number;
+    frameTime?: number;
+    objectCount?: number;
+    renderTime?: number;
+    [key: string]: number | undefined;
+  };
   /** Any additional debug info */
-  [key: string]: boolean | number | string | object;
+  [key: string]: boolean | number | string | object | undefined;
 }
 
 /**

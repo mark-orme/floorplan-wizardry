@@ -114,3 +114,19 @@ export type CanvasOperation = 'draw' | 'erase' | 'select' | 'move' | 'zoom' | 'm
  * Type for zoom direction values
  */
 export type ZoomDirection = 'in' | 'out';
+
+/**
+ * Canvas events map for type-safe event handling
+ */
+export interface CanvasEvents {
+  'object:added': any;
+  'object:removed': any;
+  'object:modified': any;
+  'object:selected': any;
+  'selection:cleared': any;
+  'mouse:down': any;
+  'mouse:move': any;
+  'mouse:up': any;
+  'path:created': any;
+  'zoom:updated': any;
+}

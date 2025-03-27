@@ -24,7 +24,7 @@ export const GRID_POSITIONING = {
   
   /**
    * Margin for grid from canvas edge
-   * Pixels to leave as margin between grid and canvas edge
+   * Pixels to leave as margin between canvas edge
    * @constant {number}
    */
   EDGE_MARGIN: 20,
@@ -42,6 +42,36 @@ export const GRID_POSITIONING = {
    * @constant {number}
    */
   MARKER_FONT_SIZE: 10
+};
+
+/**
+ * Path processing constants
+ */
+export const PATH_PROCESSING = {
+  /**
+   * Minimum distance for a valid path in pixels
+   */
+  MIN_PATH_DISTANCE: 5,
+  
+  /**
+   * Maximum angle variation for auto-straightening in degrees
+   */
+  STRAIGHTEN_ANGLE_THRESHOLD: 10,
+  
+  /**
+   * Extension factor for walls
+   */
+  WALL_EXTENSION_FACTOR: 0.05,
+  
+  /**
+   * Minimum number of points to keep in a full path
+   */
+  MIN_POINTS_THRESHOLD: 10,
+  
+  /**
+   * Divisor for sampling when reducing path point count
+   */
+  SAMPLING_DIVISOR: 8
 };
 
 // For backward compatibility

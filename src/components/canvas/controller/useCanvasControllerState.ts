@@ -7,13 +7,17 @@ import { useCanvasState } from "@/hooks/useCanvasState";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import { useState } from "react";
 import { DrawingState } from "@/types/drawingTypes";
+import { FloorPlan } from "@/types/floorPlanTypes";
 
 /**
  * Hook that centralizes all state needed by the canvas controller
  * @returns All state variables and setters for the canvas controller
  */
 export const useCanvasControllerState = () => {
-  // Canvas state (tools, dimensions, etc.)
+  // Get all states from useCanvasState hook
+  const canvasState = useCanvasState();
+  
+  // Extract all properties from canvas state
   const {
     tool, setTool,
     zoomLevel, setZoomLevel,
@@ -25,7 +29,7 @@ export const useCanvasControllerState = () => {
     lineThickness, setLineThickness,
     lineColor, setLineColor,
     snapToGrid, setSnapToGrid
-  } = useCanvasState();
+  } = canvasState;
   
   // Debug and error state
   const {

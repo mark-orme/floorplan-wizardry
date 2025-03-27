@@ -1,98 +1,110 @@
 
 /**
- * Hook for loading floor plan data in the canvas controller
- * Handles data loading operations with appropriate state management
- * @module useCanvasControllerLoader
+ * Canvas controller loader hook
+ * Handles loading and error states for the canvas controller
+ * @module canvas/controller/useCanvasControllerLoader
  */
-import { useEffect } from "react";
-import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
-import { FloorPlan } from "@/types/floorPlanTypes";
+
+import { useState, useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { DebugInfoState } from "@/types/debugTypes";
+
+/**
+ * Timeout duration for loading operations in milliseconds
+ */
+const LOADING_TIMEOUT = 5000;
+
+/**
+ * Number of retries for canvas operations
+ */
+const MAX_RETRIES = 3;
+
+/**
+ * Delay between retries in milliseconds
+ */
+const RETRY_DELAY = 500;
 
 /**
  * Props for the useCanvasControllerLoader hook
- * @interface UseCanvasControllerLoaderProps
  */
 interface UseCanvasControllerLoaderProps {
-  /** State setter for loading status */
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  /** State setter for floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set error state */
-  setHasError: (value: boolean) => void;
-  /** Function to set error message */
-  setErrorMessage: (value: string) => void;
-  /** Function to load data from storage */
-  loadData: () => Promise<unknown>;
+  /** Canvas reference */
+  canvasRef: React.RefObject<FabricCanvas | null>;
+  /** Debug info state */
+  debugInfo: DebugInfoState;
+  /** Set debug info function */
+  setDebugInfo: (info: Partial<DebugInfoState>) => void;
+  /** Set error message function */
+  setErrorMessage: (message: string) => void;
 }
 
 /**
- * Return type for the useCanvasControllerLoader hook
- * @interface UseCanvasControllerLoaderResult
+ * Hook that manages canvas loading states and error handling
+ * 
+ * @param {UseCanvasControllerLoaderProps} props - Hook props
+ * @returns {object} Loading state and error handlers
  */
-interface UseCanvasControllerLoaderResult {
-  /** Function to load floor plans data */
-  loadFloorPlansData: () => Promise<void>;
-}
-
-/**
- * Hook that handles loading floor plan data
- * Manages loading state and error handling
- * 
- * @param {UseCanvasControllerLoaderProps} props - Hook properties 
- * @returns {UseCanvasControllerLoaderResult} Data loading functions
- * 
- * @example
- * const { loadFloorPlansData } = useCanvasControllerLoader({
- *   setIsLoading,
- *   setFloorPlans,
- *   setHasError,
- *   setErrorMessage,
- *   loadData
- * });
- * 
- * // Load data when component mounts
- * useEffect(() => {
- *   loadFloorPlansData();
- * }, []);
- */
-export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps): UseCanvasControllerLoaderResult => {
-  const {
-    setIsLoading,
-    setFloorPlans,
-    setHasError,
-    setErrorMessage,
-    loadData
-  } = props;
-
-  // Floor plan data loading
-  const { 
-    loadFloorPlansData: originalLoadFloorPlansData
-  } = useFloorPlanLoader({
-    setIsLoading,
-    setFloorPlans,
-    setHasError,
-    setErrorMessage,
-    loadData
-  });
-
-  /**
-   * Wrapper function to convert Promise<boolean> to Promise<void>
-   * Ensures consistent return type for loadFloorPlansData
-   * 
-   * @returns {Promise<void>} Promise that resolves when data is loaded
-   */
-  const loadFloorPlansData = async (): Promise<void> => {
-    await originalLoadFloorPlansData();
-    // Return void explicitly
-    return;
-  };
-
-  // Load floor plans data on mount
+export const useCanvasControllerLoader = ({
+  canvasRef,
+  debugInfo,
+  setDebugInfo,
+  setErrorMessage
+}: UseCanvasControllerLoaderProps) => {
+  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const [retries, setRetries] = useState(0);
+  
+  // Effect to initialize the canvas
   useEffect(() => {
-    loadFloorPlansData();
-  }, [loadFloorPlansData]);
-
+    if (!canvasRef.current) {
+      // Start loading
+      setIsLoading(true);
+      
+      // Set timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
+        if (isLoading && retries < MAX_RETRIES) {
+          // Retry loading
+          setRetries(prev => prev + 1);
+          setErrorMessage("Canvas loading timeout, retrying...");
+        } else if (retries >= MAX_RETRIES) {
+          // Max retries reached
+          setIsLoading(false);
+          setErrorMessage("Canvas loading failed after multiple attempts.");
+          setDebugInfo({
+            hasError: true,
+            canvasInitialized: false,
+            canvasReady: false
+          });
+        }
+      }, LOADING_TIMEOUT);
+      
+      return () => {
+        clearTimeout(timeout);
+      };
+    } else {
+      // Canvas is loaded
+      setIsLoading(false);
+      setRetries(0);
+    }
+  }, [canvasRef, isLoading, retries, setDebugInfo, setErrorMessage]);
+  
+  /**
+   * Handle canvas loading error
+   * @param {Error} error - Error object
+   * @param {string} operation - Operation that failed
+   */
+  const handleError = (error: Error, operation: string) => {
+    console.error(`Canvas ${operation} error:`, error);
+    setErrorMessage(`Canvas error (${operation}): ${error.message}`);
+    setDebugInfo({
+      hasError: true,
+      errorMessage: error.message
+    });
+  };
+  
   return {
-    loadFloorPlansData
+    isLoading,
+    setIsLoading,
+    handleError
   };
 };

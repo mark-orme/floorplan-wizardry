@@ -4,6 +4,7 @@
  * @module grid/typeUtils
  */
 import { Line } from "fabric";
+import { Point } from "@/types/drawingTypes";
 
 /**
  * Options for grid lines
@@ -59,4 +60,25 @@ export const PATH_PROCESSING = {
    * Extension factor for walls
    */
   WALL_EXTENSION_FACTOR: 0.05
+};
+
+/**
+ * Converts an application Point to a Fabric.js compatible point
+ * @param point - Application point with x,y coordinates
+ * @returns Point-like object compatible with Fabric.js
+ */
+export const toFabricPoint = (point: Point): {x: number, y: number} => {
+  return {x: point.x, y: point.y};
+};
+
+/**
+ * Normalizes a point to ensure it has valid x,y coordinates
+ * @param point - Point to normalize
+ * @returns Normalized point with valid coordinates
+ */
+export const normalizePoint = (point: any): Point => {
+  return {
+    x: typeof point.x === 'number' ? point.x : 0,
+    y: typeof point.y === 'number' ? point.y : 0
+  };
 };
