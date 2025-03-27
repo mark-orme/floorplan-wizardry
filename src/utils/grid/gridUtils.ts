@@ -60,7 +60,8 @@ export const resizeGrid = (
   
   if (gridLayerRef.current.length === 0) {
     // No grid to resize, create a new one
-    return createBasicEmergencyGrid(canvas, gridLayerRef);
+    const gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+    return gridObjects.length > 0; // Return boolean success status
   }
   
   try {
@@ -73,7 +74,8 @@ export const resizeGrid = (
     
     if (Math.abs(currentGridSize - expectedSize) > expectedSize * 0.2) {
       logger.info("Grid size mismatch, recreating");
-      return createBasicEmergencyGrid(canvas, gridLayerRef);
+      const gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+      return gridObjects.length > 0; // Return boolean success status
     }
     
     // Otherwise, just ensure all grid objects are visible

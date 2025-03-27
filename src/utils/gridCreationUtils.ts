@@ -3,7 +3,7 @@
  * Grid creation utility functions
  * @module gridCreationUtils
  */
-import { Canvas, Object as FabricObject } from "fabric";
+import { Canvas, Object as FabricObject, Line } from "fabric";
 import logger from "./logger";
 
 /**
@@ -37,7 +37,7 @@ export const createBasicEmergencyGrid = (
     
     // Create small grid lines
     for (let x = 0; x <= width; x += smallGridSpacing) {
-      const line = new fabric.Line([x, 0, x, height], {
+      const line = new Line([x, 0, x, height], {
         stroke: '#e0e0e0',
         strokeWidth: 0.5,
         selectable: false,
@@ -50,7 +50,7 @@ export const createBasicEmergencyGrid = (
     }
     
     for (let y = 0; y <= height; y += smallGridSpacing) {
-      const line = new fabric.Line([0, y, width, y], {
+      const line = new Line([0, y, width, y], {
         stroke: '#e0e0e0',
         strokeWidth: 0.5,
         selectable: false,
@@ -64,7 +64,7 @@ export const createBasicEmergencyGrid = (
     
     // Create large grid lines
     for (let x = 0; x <= width; x += largeGridSpacing) {
-      const line = new fabric.Line([x, 0, x, height], {
+      const line = new Line([x, 0, x, height], {
         stroke: '#d0d0d0',
         strokeWidth: 1,
         selectable: false,
@@ -77,7 +77,7 @@ export const createBasicEmergencyGrid = (
     }
     
     for (let y = 0; y <= height; y += largeGridSpacing) {
-      const line = new fabric.Line([0, y, width, y], {
+      const line = new Line([0, y, width, y], {
         stroke: '#d0d0d0',
         strokeWidth: 1,
         selectable: false,
