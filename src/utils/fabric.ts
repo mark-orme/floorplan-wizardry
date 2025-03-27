@@ -72,7 +72,9 @@ export {
   isMouseEvent,
   isKeyboardEvent,
   extractClientCoordinates,
-  getTouchCount
+  getTouchCount,
+  isIOSPlatform,
+  applyIOSEventFixes
 } from './fabric/events';
 
 // Selection mode utilities

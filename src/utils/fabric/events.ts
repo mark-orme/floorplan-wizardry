@@ -88,3 +88,52 @@ export function getTouchCount(event: Event): number {
   }
   return 0;
 }
+
+/**
+ * Detect if the current platform is iOS
+ * Used to apply specific fixes for iOS devices
+ * 
+ * @returns {boolean} True if running on iOS platform
+ */
+export function isIOSPlatform(): boolean {
+  const userAgent = navigator.userAgent || '';
+  return /iPad|iPhone|iPod/.test(userAgent) && 
+         !(window as any).MSStream; // Exclude IE11
+}
+
+/**
+ * Apply iOS-specific event fixes to a canvas element
+ * iOS has various quirks with touch events that need special handling
+ * 
+ * @param {HTMLCanvasElement} canvasElement - The canvas element to apply fixes to
+ */
+export function applyIOSEventFixes(canvasElement: HTMLCanvasElement): void {
+  if (!isIOSPlatform()) return;
+  
+  // Prevent scrolling when interacting with canvas on iOS
+  canvasElement.style.touchAction = 'none';
+  
+  // iOS-specific event handler to prevent default behaviors
+  const preventIOSBehaviors = (e: TouchEvent) => {
+    if (e.touches.length <= 1) {
+      e.preventDefault(); // Prevent scrolling for single-touch interactions
+    }
+  };
+  
+  // Add passive: false to ensure preventDefault works
+  canvasElement.addEventListener('touchstart', preventIOSBehaviors, { passive: false });
+  canvasElement.addEventListener('touchmove', preventIOSBehaviors, { passive: false });
+  
+  // Add specific handler for Apple Pencil if detected
+  const handleTouchForce = (e: TouchEvent) => {
+    // Check if this touch has force data (Apple Pencil)
+    if (e.touches[0] && 'force' in e.touches[0]) {
+      e.preventDefault();
+      // Prevent any default behavior for stylus/pencil
+    }
+  };
+  
+  canvasElement.addEventListener('touchmove', handleTouchForce, { passive: false });
+  
+  console.log('iOS event fixes applied to canvas');
+}
