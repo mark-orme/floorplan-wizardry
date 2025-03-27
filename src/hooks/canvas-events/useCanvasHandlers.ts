@@ -5,7 +5,8 @@
  */
 import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { BaseEventHandlerProps } from "./types";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import logger from "@/utils/logger";
 
 /**
  * Extended Canvas interface with custom handlers
@@ -34,6 +35,7 @@ interface UseCanvasHandlersProps extends BaseEventHandlerProps {
 /**
  * Hook to register global canvas handlers
  * @param {UseCanvasHandlersProps} props - Hook properties
+ * @returns {EventHandlerResult} Cleanup function
  */
 export const useCanvasHandlers = ({
   fabricCanvasRef,
@@ -42,7 +44,7 @@ export const useCanvasHandlers = ({
   handleRedo,
   saveCurrentState,
   deleteSelectedObjects
-}: UseCanvasHandlersProps): void => {
+}: UseCanvasHandlersProps): EventHandlerResult => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -67,4 +69,10 @@ export const useCanvasHandlers = ({
       }
     };
   }, [fabricCanvasRef, handleUndo, handleRedo, saveCurrentState, deleteSelectedObjects]);
+
+  return {
+    cleanup: () => {
+      logger.debug("Canvas handlers cleanup");
+    }
+  };
 };

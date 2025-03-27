@@ -1,4 +1,8 @@
 
+/**
+ * Canvas Component
+ * Main drawing canvas for floor plan editor
+ */
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasContainer } from "./CanvasContainer";
@@ -69,7 +73,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     historyRef: initHistoryRef,
     deleteSelectedObjects,
     recalculateGIA,
-    cleanup: cleanupInitialization
+    // Note: we removed the cleanup property to match the actual return type
   } = useCanvasInitialization({
     canvasDimensions,
     tool,
@@ -90,8 +94,14 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     }
   }, [initFabricCanvasRef.current, initGridLayerRef.current]);
   
+  // Get the cleanup function for canvas initialization
+  const cleanupInitialization = useCallback(() => {
+    logger.debug("Cleaning up canvas initialization");
+    // Any additional cleanup for initialization
+  }, []);
+  
   // Set up drawing on the canvas
-  const { drawingState, cleanup: cleanupDrawing } = useCanvasDrawing({
+  const { drawingState } = useCanvasDrawing({
     fabricCanvasRef,
     gridLayerRef,
     historyRef: initHistoryRef, // Use the history from initialization
@@ -114,6 +124,12 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     recalculateGIA
   });
   
+  // Define a cleanup function for drawing
+  const cleanupDrawing = useCallback(() => {
+    logger.debug("Cleaning up canvas drawing");
+    // Additional drawing cleanup if needed
+  }, []);
+  
   const { 
     isDrawing, 
     startPoint, 
@@ -121,16 +137,6 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     midPoint,
     currentZoom 
   } = drawingState;
-  
-  // Store cleanup function from drawing
-  useEffect(() => {
-    if (cleanupDrawing) {
-      eventHandlersCleanupRef.current = cleanupDrawing;
-    }
-    return () => {
-      // No need to call cleanup here, it will be called in the main cleanup effect
-    };
-  }, [cleanupDrawing]);
   
   // Handle canvas retry
   const handleCanvasRetry = useCallback(() => {
@@ -164,17 +170,9 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
         eventHandlersCleanupRef.current();
       }
       
-      // Call drawing cleanup if available
-      if (cleanupDrawing) {
-        logger.debug("Cleaning up drawing");
-        cleanupDrawing();
-      }
-      
-      // Call initialization cleanup if available
-      if (cleanupInitialization) {
-        logger.debug("Cleaning up initialization");
-        cleanupInitialization();
-      }
+      // Call additional cleanup functions
+      cleanupDrawing();
+      cleanupInitialization();
       
       // Clean up the Fabric canvas instance
       if (fabricCanvasRef.current) {

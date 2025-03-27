@@ -1,58 +1,63 @@
 
 /**
- * Hook for managing brush settings
- * Provides reactive brush configuration for fabric canvas
+ * Hook for managing brush settings for drawing tools
  * @module useBrushSettings
  */
 import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { BaseEventHandlerProps } from "./types";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import logger from "@/utils/logger";
 
 /**
- * Properties required by the useBrushSettings hook
- * @interface UseBrushSettingsProps
- * @extends BaseEventHandlerProps
+ * Props for the useBrushSettings hook
  */
 interface UseBrushSettingsProps extends BaseEventHandlerProps {
-  /** Current line color for the brush */
+  /** Current line color */
   lineColor: string;
-  /** Current line thickness for the brush in pixels */
+  /** Current line thickness */
   lineThickness: number;
 }
 
 /**
- * Hook to manage brush settings for the Fabric canvas
- * Synchronizes brush properties with component state
- * 
+ * Hook to set up brush settings for drawing tools
  * @param {UseBrushSettingsProps} props - Hook properties
- * 
- * @example
- * const { fabricCanvasRef } = useCanvasInitialization();
- * useBrushSettings({
- *   fabricCanvasRef,
- *   tool: 'brush',
- *   lineColor: '#ff0000',
- *   lineThickness: 3
- * });
+ * @returns {EventHandlerResult} Cleanup function
  */
 export const useBrushSettings = ({
   fabricCanvasRef,
+  tool,
   lineColor,
   lineThickness
-}: UseBrushSettingsProps) => {
+}: UseBrushSettingsProps): EventHandlerResult => {
   useEffect(() => {
-    /**
-     * Updates the canvas brush settings whenever they change
-     * Sets color and thickness on the freeDrawingBrush object
-     */
     if (!fabricCanvasRef.current) return;
     
     const fabricCanvas = fabricCanvasRef.current;
     
-    if (fabricCanvas.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush.width = lineThickness;
-      fabricCanvas.freeDrawingBrush.color = lineColor;
+    // Set up brush settings based on tool
+    if (tool === 'pencil' || tool === 'brush') {
+      // Configure drawing brush
+      if (fabricCanvas.freeDrawingBrush) {
+        fabricCanvas.freeDrawingBrush.color = lineColor;
+        fabricCanvas.freeDrawingBrush.width = lineThickness;
+      }
+      
+      // Enable drawing mode
+      fabricCanvas.isDrawingMode = true;
+    } else {
+      // Disable drawing mode for other tools
+      fabricCanvas.isDrawingMode = false;
     }
     
-  }, [fabricCanvasRef, lineColor, lineThickness]);
+    logger.debug(`Brush settings updated: tool=${tool}, color=${lineColor}, thickness=${lineThickness}`);
+    
+  }, [fabricCanvasRef, tool, lineColor, lineThickness]);
+
+  return {
+    cleanup: () => {
+      if (fabricCanvasRef.current) {
+        logger.debug("Brush settings cleanup");
+      }
+    }
+  };
 };

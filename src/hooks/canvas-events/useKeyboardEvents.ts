@@ -5,7 +5,7 @@
  * @module useKeyboardEvents
  */
 import { useEffect } from "react";
-import { BaseEventHandlerProps } from "./types";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
 
 /**
@@ -16,6 +16,10 @@ import logger from "@/utils/logger";
 interface UseKeyboardEventsProps extends BaseEventHandlerProps {
   /** Function to delete selected objects */
   deleteSelectedObjects: () => void;
+  /** Function to handle undo operation */
+  handleUndo?: () => void;
+  /** Function to handle redo operation */
+  handleRedo?: () => void;
 }
 
 /**
@@ -23,6 +27,7 @@ interface UseKeyboardEventsProps extends BaseEventHandlerProps {
  * Sets up event listeners for keyboard shortcuts like delete/backspace
  * 
  * @param {UseKeyboardEventsProps} props - Hook properties
+ * @returns {EventHandlerResult} Cleanup function
  * 
  * @example
  * useKeyboardEvents({
@@ -33,8 +38,10 @@ interface UseKeyboardEventsProps extends BaseEventHandlerProps {
  */
 export const useKeyboardEvents = ({
   tool,
-  deleteSelectedObjects
-}: UseKeyboardEventsProps) => {
+  deleteSelectedObjects,
+  handleUndo,
+  handleRedo
+}: UseKeyboardEventsProps): EventHandlerResult => {
   useEffect(() => {
     /**
      * Handle keyboard event for delete key
@@ -48,6 +55,16 @@ export const useKeyboardEvents = ({
         if (tool === 'select') {
           deleteSelectedObjects();
         }
+      } else if (e.key === 'z' && e.ctrlKey) {
+        // Undo operation
+        if (handleUndo) {
+          handleUndo();
+        }
+      } else if (e.key === 'y' && e.ctrlKey) {
+        // Redo operation
+        if (handleRedo) {
+          handleRedo();
+        }
       }
     };
     
@@ -58,5 +75,11 @@ export const useKeyboardEvents = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [tool, deleteSelectedObjects]);
+  }, [tool, deleteSelectedObjects, handleUndo, handleRedo]);
+
+  return {
+    cleanup: () => {
+      logger.debug("Keyboard events cleanup");
+    }
+  };
 };

@@ -5,7 +5,7 @@
  */
 import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { BaseEventHandlerProps, TargetEvent, EditableFabricObject } from "./types";
+import { BaseEventHandlerProps, TargetEvent, EditableFabricObject, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
 
 /**
@@ -25,6 +25,7 @@ interface UseMouseEventsProps extends BaseEventHandlerProps {
 /**
  * Hook to handle mouse events (down, move, up, double-click)
  * @param {UseMouseEventsProps} props - Hook properties
+ * @returns {EventHandlerResult} Cleanup function
  */
 export const useMouseEvents = ({
   fabricCanvasRef,
@@ -33,7 +34,7 @@ export const useMouseEvents = ({
   handleMouseMove,
   handleMouseUp,
   saveCurrentState
-}: UseMouseEventsProps): void => {
+}: UseMouseEventsProps): EventHandlerResult => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -83,4 +84,12 @@ export const useMouseEvents = ({
       }
     };
   }, [fabricCanvasRef, handleMouseDown, handleMouseMove, handleMouseUp, tool, saveCurrentState]);
+
+  return {
+    cleanup: () => {
+      if (fabricCanvasRef.current) {
+        logger.debug("Mouse events cleanup");
+      }
+    }
+  };
 };

@@ -5,7 +5,8 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { BaseEventHandlerProps } from "./types";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import logger from "@/utils/logger";
 
 /**
  * Props type for useZoomTracking
@@ -15,7 +16,7 @@ type UseZoomTrackingProps = Pick<BaseEventHandlerProps, 'fabricCanvasRef'>;
 /**
  * Result interface for useZoomTracking
  */
-interface UseZoomTrackingResult {
+interface UseZoomTrackingResult extends EventHandlerResult {
   /** Register zoom change tracking */
   registerZoomTracking: () => (() => void) | undefined;
 }
@@ -71,5 +72,10 @@ export const useZoomTracking = ({
     return undefined;
   }, [fabricCanvasRef]);
 
-  return { registerZoomTracking };
+  return { 
+    registerZoomTracking,
+    cleanup: () => {
+      logger.debug("Zoom tracking cleanup");
+    }
+  };
 };

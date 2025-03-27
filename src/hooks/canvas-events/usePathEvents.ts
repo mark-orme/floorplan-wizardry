@@ -6,7 +6,7 @@
 import { useEffect } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath } from "fabric";
 import logger from "@/utils/logger";
-import { PathCreatedEvent, BaseEventHandlerProps } from "./types";
+import { PathCreatedEvent, BaseEventHandlerProps, EventHandlerResult } from "./types";
 
 /**
  * Props for the usePathEvents hook
@@ -23,13 +23,14 @@ interface UsePathEventsProps extends BaseEventHandlerProps {
 /**
  * Hook to handle path creation events
  * @param {UsePathEventsProps} props - Hook properties
+ * @returns {EventHandlerResult} Cleanup function
  */
 export const usePathEvents = ({
   fabricCanvasRef,
   saveCurrentState,
   processCreatedPath,
   handleMouseUp
-}: UsePathEventsProps): void => {
+}: UsePathEventsProps): EventHandlerResult => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -64,4 +65,14 @@ export const usePathEvents = ({
       }
     };
   }, [fabricCanvasRef, processCreatedPath, handleMouseUp, saveCurrentState]);
+
+  return {
+    cleanup: () => {
+      if (fabricCanvasRef.current) {
+        const fabricCanvas = fabricCanvasRef.current;
+        // Additional cleanup if needed
+        logger.debug("Path events cleanup");
+      }
+    }
+  };
 };

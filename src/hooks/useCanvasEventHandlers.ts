@@ -119,7 +119,6 @@ export const useCanvasEventHandlers = ({
     tool,
     handleUndo,
     handleRedo,
-    saveCurrentState,
     deleteSelectedObjects
   });
   

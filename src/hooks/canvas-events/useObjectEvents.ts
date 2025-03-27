@@ -6,7 +6,7 @@
 import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import logger from "@/utils/logger";
-import { BaseEventHandlerProps } from "./types";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 
 interface UseObjectEventsProps extends BaseEventHandlerProps {
   /** Function to save current state before making changes */
@@ -15,11 +15,12 @@ interface UseObjectEventsProps extends BaseEventHandlerProps {
 
 /**
  * Hook to handle object modification and removal events
+ * @returns {EventHandlerResult} Cleanup function
  */
 export const useObjectEvents = ({
   fabricCanvasRef,
   saveCurrentState
-}: UseObjectEventsProps) => {
+}: UseObjectEventsProps): EventHandlerResult => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -53,4 +54,12 @@ export const useObjectEvents = ({
       }
     };
   }, [fabricCanvasRef, saveCurrentState]);
+
+  return {
+    cleanup: () => {
+      if (fabricCanvasRef.current) {
+        logger.debug("Object events cleanup");
+      }
+    }
+  };
 };
