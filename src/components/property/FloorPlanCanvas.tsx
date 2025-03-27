@@ -12,7 +12,8 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { handleError } from "@/utils/errorHandling";
-import { Canvas } from "@/components/Canvas"; // Add proper import
+import { Canvas } from "@/components/Canvas";
+import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
 
 // Constants for component
 const CANVAS_WIDTH = 800;
@@ -28,7 +29,10 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   const [isReady, setIsReady] = useState(false);
   const [initAttempt, setInitAttempt] = useState(0);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [showDebug, setShowDebug] = useState(true); // Show debug panel by default
   const unmountedRef = useRef(false);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const gridLayerRef = useRef<FabricCanvas.Object[]>([]);
   
   // Set ready state after a short delay to ensure DOM is fully rendered
   useEffect(() => {
@@ -63,6 +67,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
       // Reset state to trigger re-rendering
       setIsReady(false);
       setFabricCanvas(null);
+      fabricCanvasRef.current = null;
       setInitAttempt(prev => prev + 1);
       
       toast.info("Retrying canvas initialization...");
@@ -88,6 +93,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   const handleCanvasReady = (canvas: FabricCanvas) => {
     console.log('FloorPlanCanvas: Canvas ready callback received');
     setFabricCanvas(canvas);
+    fabricCanvasRef.current = canvas;
     toast.success("Canvas initialized successfully");
   };
   
@@ -120,6 +126,27 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
     };
   }, [fabricCanvas]);
   
+  // Toggle debug panel visibility with double Escape key
+  useEffect(() => {
+    let lastEscTime = 0;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const now = Date.now();
+        if (now - lastEscTime < 500) {
+          // Double Escape within 500ms
+          setShowDebug(prev => !prev);
+          lastEscTime = 0; // Reset
+        } else {
+          lastEscTime = now;
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+  
   return (
     <div 
       className="h-[800px] w-full relative" 
@@ -136,10 +163,23 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
             onCanvasReady={handleCanvasReady}
             onCanvasError={handleCanvasInitError}
           >
-            <Canvas key={`canvas-${initAttempt}`} onError={onCanvasError} />
+            <Canvas 
+              key={`canvas-${initAttempt}`} 
+              onError={onCanvasError}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              onCanvasReady={handleCanvasReady}
+            />
           </ReliableCanvasContainer>
         </CanvasControllerProvider>
       )}
+      
+      {/* Grid Debug Panel */}
+      <GridDebugPanel 
+        fabricCanvasRef={fabricCanvasRef}
+        gridLayerRef={gridLayerRef}
+        visible={showDebug}
+      />
       
       {initAttempt >= 2 && !fabricCanvas && (
         <div className="flex flex-col items-center justify-center h-full bg-gray-50 border border-gray-200 rounded-md p-4">

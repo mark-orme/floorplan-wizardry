@@ -4,8 +4,9 @@
  * Handles the initialization of the Fabric.js canvas
  * @module useCanvasInit
  */
-import { useEffect, useContext } from 'react';
+import { useEffect } from 'react';
 import { useCanvasController } from '@/components/canvas/controller/CanvasController';
+import { toast } from 'sonner';
 
 interface UseCanvasInitProps {
   onError?: () => void;
@@ -23,20 +24,24 @@ export const useCanvasInit = ({ onError }: UseCanvasInitProps) => {
   useEffect(() => {
     const handleInitError = (error: Error) => {
       console.error("Canvas initialization error:", error);
+      
+      // Show error toast
+      toast.error("Canvas initialization failed. Please try refreshing the page.");
+      
       if (onError) {
         onError();
       }
     };
 
-    // Set up error handler
-    window.addEventListener('canvas-init-error', (e: any) => {
+    // Set up error handler for canvas initialization errors
+    const listener = (e: any) => {
       handleInitError(e.detail || new Error('Unknown canvas error'));
-    });
+    };
+    
+    window.addEventListener('canvas-init-error', listener);
 
     return () => {
-      window.removeEventListener('canvas-init-error', (e: any) => {
-        handleInitError(e.detail || new Error('Unknown canvas error'));
-      });
+      window.removeEventListener('canvas-init-error', listener);
     };
   }, [onError]);
 
