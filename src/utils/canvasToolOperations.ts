@@ -78,7 +78,14 @@ export const handleToolChange = (
         canvas.freeDrawingBrush.color = lineColor || "#000000";
       }
       disableSelection(canvas);
-      console.log("Drawing mode enabled");
+      // Change cursor to crosshair
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+      console.log("Drawing mode enabled: ", {
+        isDrawingMode: canvas.isDrawingMode,
+        brushWidth: canvas.freeDrawingBrush?.width,
+        brushColor: canvas.freeDrawingBrush?.color
+      });
       break;
     case "wall":
     case "room":
@@ -87,13 +94,15 @@ export const handleToolChange = (
       canvas.isDrawingMode = false;
       canvas.selection = false;
       canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
       disableSelection(canvas);
-      console.log(`Custom drawing mode: ${newTool}`);
+      console.log(`Custom drawing mode: ${newTool}, selection disabled`);
       break;
     case "select":
       canvas.isDrawingMode = false;
       canvas.selection = true;
       canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
       enableSelection(canvas);
       console.log("Selection mode enabled");
       break;
@@ -101,6 +110,7 @@ export const handleToolChange = (
       canvas.isDrawingMode = false;
       canvas.selection = false;
       canvas.defaultCursor = 'grab';
+      canvas.hoverCursor = 'grab';
       disableSelection(canvas);
       console.log("Hand/pan mode enabled");
       break;

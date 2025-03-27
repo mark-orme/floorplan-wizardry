@@ -8,6 +8,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
 import { DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
+import { disableSelection, enableSelection } from "@/utils/fabric/selection";
 
 /**
  * Constants for brush settings
@@ -73,23 +74,33 @@ export const useBrushSettings = ({
         fabricCanvas.freeDrawingBrush.width = lineThickness;
       }
       
-      // Enable drawing mode
+      // Enable drawing mode only for the draw tool
       fabricCanvas.isDrawingMode = tool === BRUSH_SETTINGS.DRAWING_TOOLS.DRAW;
       
       // For wall, room, and straight line we don't use the native drawing mode,
       // but we still need to disable selection for consistent behavior
       if (tool !== BRUSH_SETTINGS.DRAWING_TOOLS.DRAW) {
-        fabricCanvas.selection = false;
+        disableSelection(fabricCanvas);
         fabricCanvas.defaultCursor = 'crosshair';
+      } else {
+        // For the regular draw tool, we also disable selection
+        disableSelection(fabricCanvas);
       }
+      
+      console.log(`Brush settings updated for ${tool} tool: drawing mode = ${fabricCanvas.isDrawingMode}, color = ${lineColor}, thickness = ${lineThickness}`);
     } else {
       // Disable drawing mode for other tools
       fabricCanvas.isDrawingMode = BRUSH_SETTINGS.DEFAULT_DRAWING_MODE;
       
       // For selection tool, enable selection
       if (tool === 'select') {
-        fabricCanvas.selection = true;
+        enableSelection(fabricCanvas);
         fabricCanvas.defaultCursor = 'default';
+        console.log("Selection mode enabled");
+      } else {
+        // For other tools (like hand), disable selection
+        disableSelection(fabricCanvas);
+        console.log(`Other tool mode (${tool}) - selection disabled`);
       }
     }
     
