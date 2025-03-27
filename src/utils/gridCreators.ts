@@ -19,8 +19,8 @@ import {
 import { GRID_OFFSET_FACTOR } from "./grid/gridPositioningConstants";
 
 /**
- * Creates small grid lines
- * Creates a network of thin grid lines at SMALL_GRID intervals (typically 0.1m)
+ * Creates small grid lines (0.1m spacing)
+ * Creates a network of thin grid lines at SMALL_GRID intervals (0.1m)
  * These lines provide precise alignment guides for drawing
  * 
  * @param canvas - The Fabric canvas instance
@@ -34,7 +34,7 @@ export const createSmallGrid = (
   canvasHeight: number
 ): Line[] => {
   if (process.env.NODE_ENV === 'development') {
-    console.log("Creating small grid lines");
+    console.log("Creating small grid lines (0.1m)");
   }
   
   const smallGridObjects: Line[] = [];
@@ -47,7 +47,7 @@ export const createSmallGrid = (
     return smallGridObjects;
   }
   
-  // Only skip small grid if dimensions are EXTREMELY large
+  // Performance check for very large canvases
   if (shouldSkipSmallGrid(canvasWidth, canvasHeight)) {
     if (process.env.NODE_ENV === 'development') {
       console.log("Skipping small grid creation for performance - too many lines would be created");
@@ -55,6 +55,7 @@ export const createSmallGrid = (
     return smallGridObjects;
   }
   
+  // Use SMALL_GRID (10px = 0.1m) for small grid
   const smallGridStep = SMALL_GRID;
   let smallGridCount = 0;
   
@@ -71,7 +72,9 @@ export const createSmallGrid = (
   
   // Create vertical small grid lines
   for (let position = startX; position <= endX && smallGridCount < MAX_SMALL_GRID_LINES; position += smallGridStep) {
-    // Create more visible lines with increased opacity and slightly darker color
+    // Skip positions that would be created by large grid lines
+    if (Math.abs(position % LARGE_GRID) < 0.1) continue;
+    
     const smallGridLine = new Line([position, startY, position, endY], SMALL_GRID_LINE_OPTIONS);
     
     smallGridObjects.push(smallGridLine);
@@ -80,6 +83,9 @@ export const createSmallGrid = (
   
   // Create horizontal small grid lines
   for (let position = startY; position <= endY && smallGridCount < MAX_SMALL_GRID_LINES*2; position += smallGridStep) {
+    // Skip positions that would be created by large grid lines
+    if (Math.abs(position % LARGE_GRID) < 0.1) continue;
+    
     const smallGridLine = new Line([startX, position, endX, position], SMALL_GRID_LINE_OPTIONS);
     
     smallGridObjects.push(smallGridLine);
@@ -87,15 +93,15 @@ export const createSmallGrid = (
   }
   
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Created ${smallGridObjects.length} small grid lines`);
+    console.log(`Created ${smallGridObjects.length} small grid lines (0.1m spacing)`);
   }
   
   return smallGridObjects;
 };
 
 /**
- * Creates large grid lines
- * Creates a network of thicker grid lines at LARGE_GRID intervals (typically 1m)
+ * Creates large grid lines (1.0m spacing)
+ * Creates a network of thicker grid lines at LARGE_GRID intervals (1.0m)
  * These lines provide major alignment guides and improve distance perception
  * 
  * @param canvas - The Fabric canvas instance
@@ -109,7 +115,7 @@ export const createLargeGrid = (
   canvasHeight: number
 ): Line[] => {
   if (process.env.NODE_ENV === 'development') {
-    console.log("Creating large grid lines");
+    console.log("Creating large grid lines (1.0m)");
   }
   
   const largeGridObjects: Line[] = [];
@@ -122,6 +128,7 @@ export const createLargeGrid = (
     return largeGridObjects;
   }
   
+  // Use LARGE_GRID (100px = 1.0m) for large grid
   const largeGridStep = LARGE_GRID;
   let largeGridCount = 0;
   
@@ -131,21 +138,27 @@ export const createLargeGrid = (
   const extendedHeight = canvasHeight * extensionFactor;
   
   // Adjust grid offset to fill the canvas completely
-  const startX = -canvasWidth * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
-  const startY = -canvasHeight * GRID_OFFSET_FACTOR; // Using constant instead of magic 1/4
+  const startX = -canvasWidth * GRID_OFFSET_FACTOR;
+  const startY = -canvasHeight * GRID_OFFSET_FACTOR;
   const endX = extendedWidth;
   const endY = extendedHeight;
   
-  // Create vertical large grid lines
-  for (let position = startX; position <= endX && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+  // Create vertical large grid lines (1.0m spacing)
+  for (let position = Math.floor(startX / largeGridStep) * largeGridStep; 
+       position <= endX && largeGridCount < MAX_LARGE_GRID_LINES; 
+       position += largeGridStep) {
+    
     const largeGridLine = new Line([position, startY, position, endY], LARGE_GRID_LINE_OPTIONS);
     
     largeGridObjects.push(largeGridLine);
     largeGridCount++;
   }
   
-  // Create horizontal large grid lines
-  for (let position = startY; position <= endY && largeGridCount < MAX_LARGE_GRID_LINES; position += largeGridStep) {
+  // Create horizontal large grid lines (1.0m spacing)
+  for (let position = Math.floor(startY / largeGridStep) * largeGridStep; 
+       position <= endY && largeGridCount < MAX_LARGE_GRID_LINES; 
+       position += largeGridStep) {
+    
     const largeGridLine = new Line([startX, position, endX, position], LARGE_GRID_LINE_OPTIONS);
     
     largeGridObjects.push(largeGridLine);
@@ -153,7 +166,7 @@ export const createLargeGrid = (
   }
   
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Created ${largeGridObjects.length} large grid lines`);
+    console.log(`Created ${largeGridObjects.length} large grid lines (1.0m spacing)`);
   }
   
   return largeGridObjects;

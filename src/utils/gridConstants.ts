@@ -1,7 +1,6 @@
 
 /**
  * Grid constants module
- * Re-exports from central numerics module
  * Defines constants used for grid drawing and configuration
  * @module gridConstants
  */
@@ -10,8 +9,6 @@
 import {
   PIXELS_PER_METER,
   GRID_SPACING,
-  SMALL_GRID_LINE_WIDTH,
-  LARGE_GRID_LINE_WIDTH,
   MAX_SMALL_GRID_LINES,
   MAX_LARGE_GRID_LINES,
   GRID_EXTENSION_FACTOR
@@ -25,7 +22,7 @@ export interface GridDimensions {
 
 // Re-export constants for backward compatibility
 export const GRID_SCALE_FACTOR = PIXELS_PER_METER; // 100px = 1 meter
-export const SMALL_GRID_SPACING = GRID_SPACING; // 0.5 meter
+export const SMALL_GRID_SPACING = GRID_SPACING; // 0.1 meter
 export const LARGE_GRID_SPACING = 1.0; // 1.0 meter
 export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
 
@@ -33,12 +30,14 @@ export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
 export {
   PIXELS_PER_METER,
   GRID_SPACING,
-  SMALL_GRID_LINE_WIDTH,
-  LARGE_GRID_LINE_WIDTH,
   MAX_SMALL_GRID_LINES,
   MAX_LARGE_GRID_LINES,
   GRID_EXTENSION_FACTOR
 };
+
+// Updated line widths for improved grid appearance
+export const SMALL_GRID_LINE_WIDTH = 0.5;
+export const LARGE_GRID_LINE_WIDTH = 1.0;
 
 /**
  * Canvas size thresholds for grid performance optimizations
@@ -63,18 +62,18 @@ export const GRID_PERFORMANCE_THRESHOLDS = {
  * @constant {Object}
  */
 export const GRID_OPACITY = {
-  SMALL_GRID: 0.85,
-  LARGE_GRID: 0.95
+  SMALL_GRID: 0.6, // Reduced opacity for small grid lines
+  LARGE_GRID: 0.9  // Higher opacity for large grid lines
 };
 
 /**
- * Default grid colors
+ * Default grid colors - updated to match graph paper look
  * @constant {Object}
  */
 export const GRID_COLORS = {
-  SMALL_GRID: "#A0C5E0",
-  LARGE_GRID: "#4090CC",
-  MARKERS: "#555555"
+  SMALL_GRID: "#C5E7EC", // Light blue-green for small grid
+  LARGE_GRID: "#86C5CD", // Slightly darker blue-green for large grid
+  MARKERS: "#555555"     // Dark gray for markers
 };
 
 /**

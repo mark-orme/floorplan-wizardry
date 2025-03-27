@@ -61,7 +61,7 @@ export const createSmallScaleGrid = (
   width: number,
   height: number
 ): FabricObject[] => {
-  // Use the standard small grid spacing (typically 10px = 0.1m)
+  // Use the standard small grid spacing (10px = 0.1m)
   const gridSpacing = 10;
   
   // Validate canvas
@@ -89,7 +89,7 @@ export const createLargeScaleGrid = (
   width: number,
   height: number
 ): FabricObject[] => {
-  // Use the standard large grid spacing (typically 100px = 1m)
+  // Use the standard large grid spacing (100px = 1m)
   const gridSpacing = 100;
   
   // Validate canvas

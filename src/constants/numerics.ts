@@ -77,13 +77,13 @@ export const DEFAULT_CANVAS_HEIGHT = 600;
 export const PIXELS_PER_METER = 100;
 
 /**
- * Small grid size in pixels
+ * Small grid size in pixels (0.1m)
  * @constant {number}
  */
 export const SMALL_GRID = 10;
 
 /**
- * Large grid size in pixels
+ * Large grid size in pixels (1.0m)
  * @constant {number}
  */
 export const LARGE_GRID = 100;
