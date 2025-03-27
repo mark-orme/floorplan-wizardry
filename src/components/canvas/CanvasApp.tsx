@@ -4,7 +4,26 @@ import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 
 /**
+ * Zoom multiplier constants
+ * @constant {Object}
+ */
+const ZOOM_MULTIPLIERS = {
+  /**
+   * Zoom in multiplier value
+   * @constant {number}
+   */
+  IN: 1.2,
+  
+  /**
+   * Zoom out multiplier value
+   * @constant {number}
+   */
+  OUT: 0.8
+};
+
+/**
  * Zoom direction type
+ * @typedef {"in" | "out"} ZoomDirection
  */
 type ZoomDirection = "in" | "out";
 
@@ -44,7 +63,7 @@ export const CanvasApp = () => {
    */
   const handleZoomAdapter = (direction: ZoomDirection) => {
     // Convert direction to a zoom level adjustment
-    const zoomChange = direction === "in" ? 1.2 : 0.8;
+    const zoomChange = direction === "in" ? ZOOM_MULTIPLIERS.IN : ZOOM_MULTIPLIERS.OUT;
     handleZoom(zoomChange);
   };
 

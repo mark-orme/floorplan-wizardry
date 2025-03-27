@@ -10,6 +10,30 @@ import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { isTouchEvent, isMouseEvent } from '@/types/fabric';
 
 /**
+ * Touch gesture constants for event handling
+ */
+const TOUCH_CONSTANTS = {
+  /**
+   * Minimum radius for non-stylus touch
+   * Used for detecting Apple Pencil vs finger touch
+   * @constant {number}
+   */
+  MIN_STYLUS_RADIUS: 10,
+  
+  /**
+   * Minimal pressure multiplier to ensure visibility
+   * @constant {number}
+   */
+  MIN_PRESSURE_MULTIPLIER: 0.5,
+  
+  /**
+   * Default pressure value when not available
+   * @constant {number}
+   */
+  DEFAULT_FORCE: 1
+};
+
+/**
  * Type guard to check if a value is a Touch
  * @param value - Value to check
  * @returns True if the value is a Touch
@@ -58,7 +82,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     // Check if touch has Apple Pencil-specific properties
     return supportsApplePencil && 
           (touch as any).touchType === 'stylus' || 
-          (touch as any).radiusX < 10 || // Pencil has small radius
+          (touch as any).radiusX < TOUCH_CONSTANTS.MIN_STYLUS_RADIUS || // Pencil has small radius
           'force' in touch; // Pencil supports pressure (force)
   };
 
@@ -76,7 +100,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       
       // Set brush width based on pressure if available (for Apple Pencil)
       if (isPencil && 'force' in touch && canvas.freeDrawingBrush) {
-        const force = (touch as any).force || 1;
+        const force = (touch as any).force || TOUCH_CONSTANTS.DEFAULT_FORCE;
         const baseWidth = canvas.freeDrawingBrush.width || 2;
         canvas.freeDrawingBrush.width = baseWidth * force;
       }
@@ -125,9 +149,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       
       // Update brush width based on pressure if available (for Apple Pencil)
       if (isPencil && 'force' in touch && canvas.freeDrawingBrush) {
-        const force = (touch as any).force || 1;
+        const force = (touch as any).force || TOUCH_CONSTANTS.DEFAULT_FORCE;
         const baseWidth = canvas.freeDrawingBrush.width || 2;
-        canvas.freeDrawingBrush.width = baseWidth * Math.max(0.5, force);
+        canvas.freeDrawingBrush.width = baseWidth * Math.max(TOUCH_CONSTANTS.MIN_PRESSURE_MULTIPLIER, force);
       }
 
       // Create fabric-compatible event object with proper Point objects

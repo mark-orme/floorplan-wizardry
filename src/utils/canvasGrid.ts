@@ -2,6 +2,7 @@
 /**
  * Canvas grid creation module
  * Provides a visual reference for drawing to scale
+ * Handles the creation, validation, and error handling for grid elements
  * @module canvasGrid
  */
 import { Canvas, Object as FabricObject } from "fabric";
@@ -13,6 +14,36 @@ import { acquireGridLockWithSafety, cleanupGridResources } from "./grid/gridSafe
 import logger from "./logger";
 import { DebugInfoState } from "@/types/debugTypes";
 import { toast } from "sonner";
+
+/**
+ * Grid creation timing constants
+ * @constant {Object}
+ */
+const GRID_CREATION_CONSTANTS = {
+  /**
+   * Delay for logging in development mode (ms)
+   * @constant {number}
+   */
+  DEV_LOG_DELAY: 100
+};
+
+/**
+ * Toast message constants
+ * @constant {Object}
+ */
+const TOAST_MESSAGES = {
+  /**
+   * Error message for grid creation failure
+   * @constant {string}
+   */
+  GRID_CREATION_FAILED: "Grid creation failed - no objects could be created",
+  
+  /**
+   * Error message for all methods failing
+   * @constant {string}
+   */
+  ALL_METHODS_FAILED: "All grid creation methods failed"
+};
 
 /**
  * Create grid lines for the canvas
@@ -73,7 +104,7 @@ export const createGrid = (
       const fallbackGrid = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
       
       if (!fallbackGrid || fallbackGrid.length === 0) {
-        toast.error("Grid creation failed - no objects could be created");
+        toast.error(TOAST_MESSAGES.GRID_CREATION_FAILED);
         setHasError(true);
         setErrorMessage("Failed to create grid with both normal and fallback methods");
       }
@@ -101,7 +132,7 @@ export const createGrid = (
       return createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
     } catch (fallbackError) {
       logger.error("Even fallback grid creation failed:", fallbackError);
-      toast.error("All grid creation methods failed");
+      toast.error(TOAST_MESSAGES.ALL_METHODS_FAILED);
       return [];
     }
   }
