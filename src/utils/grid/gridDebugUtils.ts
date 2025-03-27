@@ -3,7 +3,7 @@
  * Grid debugging utilities
  * @module grid/gridDebugUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { DebugInfoState } from "@/types";
 
 /**
@@ -54,12 +54,14 @@ export const dumpGridState = (
 /**
  * Create a basic emergency grid when normal grid creation fails
  * @param {FabricCanvas} canvas - The canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects array
  * @param {number} [spacing=50] - The grid spacing
  * @param {string} [color="#FF0000"] - The grid color (red by default for emergency)
  * @returns {FabricObject[]} The created grid objects
  */
 export const createBasicEmergencyGrid = (
   canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
   spacing: number = 50,
   color: string = "#FF0000"
 ): FabricObject[] => {
@@ -75,7 +77,7 @@ export const createBasicEmergencyGrid = (
   try {
     // Create horizontal lines
     for (let y = 0; y <= height; y += spacing) {
-      const line = new fabric.Line([0, y, width, y], {
+      const line = new Line([0, y, width, y], {
         stroke: color,
         strokeWidth: 1,
         selectable: false,
@@ -94,7 +96,7 @@ export const createBasicEmergencyGrid = (
 
     // Create vertical lines
     for (let x = 0; x <= width; x += spacing) {
-      const line = new fabric.Line([x, 0, x, height], {
+      const line = new Line([x, 0, x, height], {
         stroke: color,
         strokeWidth: 1,
         selectable: false,
@@ -117,9 +119,54 @@ export const createBasicEmergencyGrid = (
       "lines. This is a fallback measure."
     );
 
+    // Update the grid layer reference
+    if (gridLayerRef && typeof gridLayerRef === 'object') {
+      gridLayerRef.current = gridObjects;
+    }
+
     return gridObjects;
   } catch (error) {
     console.error("Failed to create emergency grid:", error);
+    return [];
+  }
+};
+
+/**
+ * Force creation of a grid on the canvas
+ * @param {FabricCanvas} canvas - The canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject[]} The created grid objects
+ */
+export const forceCreateGrid = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  if (!canvas) {
+    console.error("Cannot force create grid: Canvas is null");
+    return [];
+  }
+
+  try {
+    // Remove any existing grid objects
+    if (gridLayerRef.current && gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    }
+
+    // Create a new emergency grid
+    const gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+    
+    // Force render
+    canvas.requestRenderAll();
+    
+    console.log(`Force created grid with ${gridObjects.length} objects`);
+    return gridObjects;
+  } catch (error) {
+    console.error("Error in forceCreateGrid:", error);
     return [];
   }
 };

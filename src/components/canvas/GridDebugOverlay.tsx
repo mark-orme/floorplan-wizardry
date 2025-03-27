@@ -1,4 +1,3 @@
-
 /**
  * Grid Debug Overlay Component
  * Provides debugging overlay for grid issues
@@ -106,7 +105,7 @@ export const GridDebugOverlay = ({
           
           // Dump grid state for debugging
           if (fabricCanvasRef.current) {
-            dumpGridState(fabricCanvasRef.current, gridLayerRef);
+            dumpGridState(fabricCanvasRef.current, gridLayerRef.current);
           }
         } catch (error) {
           console.error("Error in auto grid creation:", error);

@@ -81,4 +81,7 @@ export interface GridCreationState {
   creationLock: boolean;
   inProgress: boolean;
   attempts: number;
+  isCreated?: boolean;
+  lastAttemptTime?: number;
+  hasError?: boolean;
 }

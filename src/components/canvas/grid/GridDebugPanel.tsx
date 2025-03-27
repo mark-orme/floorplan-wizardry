@@ -104,7 +104,7 @@ export function GridDebugPanel({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    dumpGridState(canvas, gridLayerRef);
+    dumpGridState(canvas, gridLayerRef.current);
   };
   
   const gridHealth = gridStats.totalGridObjects > 0 &&

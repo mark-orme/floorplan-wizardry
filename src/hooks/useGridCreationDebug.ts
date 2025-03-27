@@ -41,7 +41,7 @@ export const useGridCreationDebug = (
       const canvas = fabricCanvasRef.current;
       if (canvas) {
         toast.info("Grid debug mode enabled");
-        dumpGridState(canvas, gridLayerRef);
+        dumpGridState(canvas, gridLayerRef.current);
       } else {
         toast.error("Canvas not available for debug");
       }
@@ -103,7 +103,11 @@ export const useGridCreationDebug = (
       if (Array.isArray(gridObjects)) {
         gridObjects.forEach(obj => {
           if (canvas.contains(obj)) {
-            canvas.remove(obj);
+            try {
+              canvas.remove(obj);
+            } catch (error) {
+              console.error("Error removing grid object:", error);
+            }
           }
         });
       }
@@ -112,12 +116,12 @@ export const useGridCreationDebug = (
       gridLayerRef.current = [];
       
       // Create new emergency grid
-      const result = createBasicEmergencyGrid(canvas, gridLayerRef);
+      const newGridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
       
       // Force render
       canvas.requestRenderAll();
       
-      return result;
+      return newGridObjects;
     } catch (error) {
       console.error("Error in forceGridCreation:", error);
       return false;
@@ -178,4 +182,3 @@ export const useGridCreationDebug = (
     isWaitingForCanvas
   };
 };
-
