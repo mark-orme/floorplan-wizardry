@@ -4,7 +4,7 @@
  * Handles canvas rendering and initialization
  */
 import { useState, useEffect, useRef } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric"; // Import both Canvas and Object
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric"; 
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { ReliableCanvasContainer } from "@/components/canvas/ReliableCanvasContainer";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";

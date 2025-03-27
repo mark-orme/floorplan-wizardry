@@ -117,9 +117,9 @@ declare global {
   }
 }
 
-// Fix HTMLCanvasElement extension to use any for _fabric to avoid type conflicts
+// Fix HTMLCanvasElement extension to use the right type
 declare global {
   interface HTMLCanvasElement {
-    _fabric?: any;
+    _fabric?: FabricCanvas;
   }
 }

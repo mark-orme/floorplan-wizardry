@@ -1,4 +1,3 @@
-
 /**
  * Grid creation utilities
  * Functions for creating and managing grid
@@ -59,7 +58,7 @@ export const createBasicEmergencyGrid = (
     
     // Make sure grid lines are behind other objects
     gridObjects.forEach(obj => {
-      canvas.sendToBack(obj);
+      obj.sendToBack();
     });
     
     console.log(`Created emergency grid with ${gridObjects.length} objects`);
@@ -70,6 +69,35 @@ export const createBasicEmergencyGrid = (
     console.error("Error creating emergency grid:", error);
     return [];
   }
+};
+
+/**
+ * Verify if grid exists and is attached to canvas
+ * 
+ * @param {Canvas | null} canvas - Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Whether grid exists and is valid
+ */
+export const verifyGridExists = (
+  canvas: Canvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas) {
+    return false;
+  }
+  
+  // Check if grid layer has objects
+  if (!gridLayerRef.current || gridLayerRef.current.length === 0) {
+    return false;
+  }
+  
+  // Check if objects are on canvas
+  const objectsOnCanvas = gridLayerRef.current.filter(obj => canvas.contains(obj));
+  
+  // If more than 50% of objects are on canvas, consider grid valid
+  const percentage = (objectsOnCanvas.length / gridLayerRef.current.length) * 100;
+  
+  return percentage >= 50;
 };
 
 /**

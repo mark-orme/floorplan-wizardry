@@ -1,10 +1,9 @@
-
 /**
  * Grid debug utilities
  * Tools for debugging and fixing grid-related issues
  * @module grid/gridDebugUtils
  */
-import { Canvas, Object as FabricObject } from "fabric";
+import { Canvas, Object as FabricObject, Line } from "fabric";
 
 /**
  * Options for grid recovery
@@ -105,7 +104,7 @@ const createFallbackGrid = (canvas: Canvas): FabricObject[] => {
   
   // Create horizontal lines
   for (let y = 0; y < height; y += 100) {
-    const line = new fabric.Line([0, y, width, y], {
+    const line = new Line([0, y, width, y], {
       stroke: '#cccccc',
       strokeWidth: 0.5,
       selectable: false,
@@ -117,7 +116,7 @@ const createFallbackGrid = (canvas: Canvas): FabricObject[] => {
   
   // Create vertical lines
   for (let x = 0; x < width; x += 100) {
-    const line = new fabric.Line([x, 0, x, height], {
+    const line = new Line([x, 0, x, height], {
       stroke: '#cccccc',
       strokeWidth: 0.5,
       selectable: false,
