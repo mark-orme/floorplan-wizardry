@@ -76,7 +76,7 @@ export const useFloorPlans = ({
     recalculateGIA  // Pass recalculateGIA to the drawing hook
   }), [fabricCanvasRef, gridLayerRef, createGrid, recalculateGIA]);
   
-  // Initialize floor plan drawing functionality
+  // Initialize floor plan drawing functionality - Get the drawFloorPlan function
   const { drawFloorPlan } = useFloorPlanDrawing();
   
   // Initialize floor plan management (add, select)
@@ -99,7 +99,9 @@ export const useFloorPlans = ({
     if (plans.length === 0 || floorIndex >= plans.length) return;
     
     const floorPlan = plans[floorIndex];
-    drawFloorPlan(fabricCanvasRef.current, floorPlan);
+    if (drawFloorPlan) {
+      drawFloorPlan(fabricCanvasRef.current, floorPlan);
+    }
     
     // Recalculate GIA after drawing
     setTimeout(recalculateGIA, 200);

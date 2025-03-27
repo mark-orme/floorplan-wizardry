@@ -5,7 +5,7 @@
  * @module drawingTypes
  */
 import { openDB } from 'idb';
-import type { FloorPlan, PaperSize, Point, Stroke } from '@/types/floorPlanTypes';
+import type { FloorPlan, Point, Stroke, PaperSize } from '@/types/floorPlanTypes';
 import { 
   GRID_SPACING,
   PIXELS_PER_METER,
@@ -14,7 +14,7 @@ import {
 } from "@/constants/numerics";
 
 // Re-export these types for backward compatibility
-export type { FloorPlan, PaperSize, Point, Stroke };
+export type { FloorPlan, Point, Stroke, PaperSize };
 
 // Re-export constants for backward compatibility
 export { GRID_SPACING, PIXELS_PER_METER, SMALL_GRID, LARGE_GRID };

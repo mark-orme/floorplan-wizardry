@@ -1,3 +1,4 @@
+
 /**
  * Drawing state type definitions
  * @module drawingTypes
@@ -149,5 +150,5 @@ export interface GridCreationState {
 // Re-export DebugInfoState from debugTypes
 export type { DebugInfoState } from './debugTypes';
 
-// Export FloorPlan for compatibility with existing imports
-export { FloorPlan } from './floorPlanTypes';
+// Export FloorPlan correctly with export type
+export type { FloorPlan } from './floorPlanTypes';

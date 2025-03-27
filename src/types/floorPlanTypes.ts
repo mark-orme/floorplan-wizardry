@@ -3,7 +3,11 @@
  * Floor Plan type definitions
  * @module floorPlanTypes
  */
-import type { Wall, Room, Point, Stroke, PaperSize } from './drawingTypes';
+import type { Point, Stroke } from './drawingTypes';
+
+// These are defined in drawingTypes.ts, so just importing them here
+export type { Wall, Room, PaperSize } from './drawingTypes';
+export type { Point, Stroke };
 
 /**
  * Floor Plan interface
@@ -22,7 +26,7 @@ export interface FloorPlan {
   /** Array of rooms in the floor plan */
   rooms?: Room[];
   /** Array of strokes (sequence of points) */
-  strokes?: Stroke[][];
+  strokes?: Stroke[];
   /** Gross Internal Area in square meters */
   gia?: number;
   /** Floor level number */
@@ -53,6 +57,3 @@ export interface FloorPlanStorageModel {
   /** Array of floor plans */
   data: FloorPlan[];
 }
-
-// Re-export types for backward compatibility
-export type { Wall, Room, Point, Stroke, PaperSize };

@@ -150,7 +150,7 @@ export const usePolylineCreation = ({
             updatedFloorPlan.strokes = [];
           }
           
-          // Add the new stroke
+          // Add the new stroke (finalPoints is already a Point[] which is a Stroke)
           const newStrokes = [...updatedFloorPlan.strokes];
           newStrokes.push(finalPoints);
           updatedFloorPlan.strokes = newStrokes;
