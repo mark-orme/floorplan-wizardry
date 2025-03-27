@@ -152,8 +152,7 @@ export const usePolylineCreation = ({
           
           // Add the new stroke
           const newStrokes = [...updatedFloorPlan.strokes];
-          // Create a properly formatted Point[][] array by wrapping finalPoints in another array
-          newStrokes.push(finalPoints); // Since Stroke = Point[], this should work now
+          newStrokes.push(finalPoints);
           updatedFloorPlan.strokes = newStrokes;
           
           // Update the floor plan in the array

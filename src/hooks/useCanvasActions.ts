@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for canvas actions (clear, save)
  * Provides high-level operations for canvas management
@@ -7,7 +6,8 @@
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { FloorPlan, saveFloorPlans } from "@/utils/drawing";
+import { FloorPlan } from '@/types/floorPlanTypes';
+import { saveFloorPlans } from "@/utils/drawing";
 import logger from "@/utils/logger";
 
 /**

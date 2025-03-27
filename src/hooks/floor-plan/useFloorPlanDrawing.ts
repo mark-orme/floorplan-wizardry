@@ -1,226 +1,235 @@
-
 /**
- * Hook for drawing floor plans on the canvas
- * Provides utilities for rendering floor plans with various styles
- * @module useFloorPlanDrawing
+ * Custom hook for floor plan drawing functionality
+ * Manages drawing operations and calculations for floor plans
+ * @module floor-plan/useFloorPlanDrawing
  */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Rect, Line, Polyline, Text } from "fabric";
-import { FloorPlan, Wall, Room, Point, Stroke } from "@/types/floorPlanTypes";
-import logger from "@/utils/logger";
+import { useCallback, useState } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { toast } from "sonner";
+import { FloorPlan, Point } from "@/types/floorPlanTypes";
+import { calculateGIA } from "@/utils/geometry";
 import { PIXELS_PER_METER } from "@/constants/numerics";
+import logger from "@/utils/logger";
 
 /**
- * Floor plan drawing constants
+ * Props for the useFloorPlanDrawing hook
+ * @interface UseFloorPlanDrawingProps
  */
-const DRAWING_CONSTANTS = {
-  /** Default wall color */
-  DEFAULT_WALL_COLOR: '#000000',
-  /** Default room fill color with opacity */
-  DEFAULT_ROOM_FILL: 'rgba(200, 200, 255, 0.2)',
-  /** Default wall thickness in pixels */
-  DEFAULT_WALL_THICKNESS: 2,
-  /** Default room label font size */
-  ROOM_LABEL_FONT_SIZE: 14,
-  /** Default scale factor */
-  DEFAULT_SCALE: 1
-};
-
-/**
- * Floor plan drawing options
- * @interface FloorPlanDrawingOptions
- */
-interface FloorPlanDrawingOptions {
-  /** Stroke color for walls */
-  wallColor?: string;
-  /** Fill color for rooms */
-  roomFillColor?: string;
-  /** Stroke width for walls */
-  wallThickness?: number;
-  /** Whether to show room labels */
-  showLabels?: boolean;
-  /** Whether to show dimensions */
-  showDimensions?: boolean;
-  /** Scale factor for display */
-  scale?: number;
+interface UseFloorPlanDrawingProps {
+  /** Reference to the Fabric.js canvas */
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  
+  /** Current floor plan */
+  floorPlan: FloorPlan;
+  
+  /** Function to update floor plan */
+  setFloorPlan: React.Dispatch<React.SetStateAction<FloorPlan>>;
+  
+  /** Function to update gross internal area */
+  setGia: React.Dispatch<React.SetStateAction<number>>;
 }
 
 /**
- * Default drawing options
+ * Result type for useFloorPlanDrawing hook
+ * @interface UseFloorPlanDrawingResult
  */
-const DEFAULT_OPTIONS: FloorPlanDrawingOptions = {
-  wallColor: DRAWING_CONSTANTS.DEFAULT_WALL_COLOR,
-  roomFillColor: DRAWING_CONSTANTS.DEFAULT_ROOM_FILL,
-  wallThickness: DRAWING_CONSTANTS.DEFAULT_WALL_THICKNESS,
-  showLabels: true,
-  showDimensions: true,
-  scale: DRAWING_CONSTANTS.DEFAULT_SCALE
-};
+interface UseFloorPlanDrawingResult {
+  /** Whether drawing is currently active */
+  isDrawing: boolean;
+  
+  /** Start drawing at a specific point */
+  startDrawing: (point: Point) => void;
+  
+  /** Continue drawing to a specific point */
+  continueDrawing: (point: Point) => void;
+  
+  /** End drawing at a specific point */
+  endDrawing: (point: Point) => void;
+  
+  /** Cancel the current drawing operation */
+  cancelDrawing: () => void;
+  
+  /** Calculate areas for the floor plan */
+  calculateAreas: () => number[];
+  
+  /** Current drawing points */
+  drawingPoints: Point[];
+}
 
 /**
- * Hook for drawing floor plans on a Fabric.js canvas
- * @returns Floor plan drawing utilities
+ * Hook for managing floor plan drawing operations
+ * Handles drawing state, point tracking, and area calculations
+ * 
+ * @param {UseFloorPlanDrawingProps} props - Hook properties
+ * @returns {UseFloorPlanDrawingResult} Drawing state and functions
  */
-export const useFloorPlanDrawing = () => {
+export const useFloorPlanDrawing = ({
+  fabricCanvasRef,
+  floorPlan,
+  setFloorPlan,
+  setGia
+}: UseFloorPlanDrawingProps): UseFloorPlanDrawingResult => {
+  // Drawing state
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingPoints, setDrawingPoints] = useState<Point[]>([]);
+  
   /**
-   * Draw a floor plan on the canvas
-   * @param {FabricCanvas} canvas - Fabric canvas instance
-   * @param {FloorPlan} floorPlan - Floor plan to draw
-   * @param {FloorPlanDrawingOptions} options - Drawing options
-   * @returns {Promise<void>} Promise that resolves when drawing is complete
+   * Start drawing at a specific point
+   * @param {Point} point - Starting point
    */
-  const drawFloorPlan = useCallback(async (
-    canvas: FabricCanvas,
-    floorPlan: FloorPlan,
-    options: FloorPlanDrawingOptions = DEFAULT_OPTIONS
-  ): Promise<void> => {
-    if (!canvas || !floorPlan) {
-      logger.error("Cannot draw floor plan: Canvas or plan is null");
-      return;
-    }
-    
-    try {
-      // Set options with defaults
-      const drawOptions = { ...DEFAULT_OPTIONS, ...options };
-      
-      // Draw walls if they exist
-      if (floorPlan.walls && floorPlan.walls.length > 0) {
-        drawWalls(canvas, floorPlan.walls, drawOptions);
-      } else {
-        logger.info("No walls to draw in floor plan");
-      }
-      
-      // Draw rooms if they exist
-      if (floorPlan.rooms && floorPlan.rooms.length > 0) {
-        drawRooms(canvas, floorPlan.rooms, drawOptions);
-      } else {
-        logger.info("No rooms to draw in floor plan");
-      }
-      
-      // Draw strokes if they exist (from drawing tools)
-      if (floorPlan.strokes && floorPlan.strokes.length > 0) {
-        // Here floorPlan.strokes is Stroke[][] which is Point[][][]
-        drawStrokes(canvas, floorPlan.strokes, drawOptions);
-      }
-      
-      // Render the canvas
-      canvas.requestRenderAll();
-      
-      logger.info("Floor plan drawn successfully");
-    } catch (error) {
-      logger.error("Error drawing floor plan:", error);
-    }
+  const startDrawing = useCallback((point: Point) => {
+    setIsDrawing(true);
+    setDrawingPoints([point]);
+    logger.debug("Started drawing at", point);
   }, []);
   
   /**
-   * Draw walls on the canvas
-   * @param {FabricCanvas} canvas - Fabric canvas instance
-   * @param {Wall[]} walls - Array of walls to draw
-   * @param {FloorPlanDrawingOptions} options - Drawing options
+   * Continue drawing to a specific point
+   * @param {Point} point - Next point in the drawing
    */
-  const drawWalls = (
-    canvas: FabricCanvas,
-    walls: Wall[],
-    options: FloorPlanDrawingOptions
-  ): void => {
-    walls.forEach(wall => {
-      const line = new Line([
-        wall.start.x * PIXELS_PER_METER,
-        wall.start.y * PIXELS_PER_METER,
-        wall.end.x * PIXELS_PER_METER,
-        wall.end.y * PIXELS_PER_METER
-      ], {
-        stroke: options.wallColor,
-        strokeWidth: wall.thickness || options.wallThickness || DRAWING_CONSTANTS.DEFAULT_WALL_THICKNESS,
-        selectable: false,
-        evented: false,
-        objectCaching: true
-      });
-      
-      canvas.add(line);
-    });
-  };
+  const continueDrawing = useCallback((point: Point) => {
+    if (!isDrawing) return;
+    
+    setDrawingPoints(prev => [...prev, point]);
+  }, [isDrawing]);
   
   /**
-   * Draw rooms on the canvas
-   * @param {FabricCanvas} canvas - Fabric canvas instance
-   * @param {Room[]} rooms - Array of rooms to draw
-   * @param {FloorPlanDrawingOptions} options - Drawing options
+   * End drawing at a specific point
+   * @param {Point} point - Final point in the drawing
    */
-  const drawRooms = (
-    canvas: FabricCanvas,
-    rooms: Room[],
-    options: FloorPlanDrawingOptions
-  ): void => {
-    rooms.forEach(room => {
-      // Create room rectangle
-      const rect = new Rect({
-        left: room.bounds.x * PIXELS_PER_METER,
-        top: room.bounds.y * PIXELS_PER_METER,
-        width: room.bounds.width * PIXELS_PER_METER,
-        height: room.bounds.height * PIXELS_PER_METER,
-        fill: options.roomFillColor,
-        stroke: options.wallColor,
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectCaching: true
+  const endDrawing = useCallback((point: Point) => {
+    if (!isDrawing) return;
+    
+    // Add the final point if it's different from the last one
+    const finalPoints = [...drawingPoints];
+    const lastPoint = finalPoints[finalPoints.length - 1];
+    
+    if (!lastPoint || lastPoint.x !== point.x || lastPoint.y !== point.y) {
+      finalPoints.push(point);
+    }
+    
+    // Only save if we have at least 2 points
+    if (finalPoints.length >= 2) {
+      // Update the floor plan with the new stroke
+      setFloorPlan(prev => {
+        const updatedPlan = { ...prev };
+        if (!updatedPlan.strokes) {
+          updatedPlan.strokes = [];
+        }
+        updatedPlan.strokes = [...updatedPlan.strokes, finalPoints];
+        return updatedPlan;
       });
       
-      canvas.add(rect);
+      // Calculate area if the shape is closed (first point = last point)
+      const firstPoint = finalPoints[0];
+      const lastPoint = finalPoints[finalPoints.length - 1];
       
-      // Add room label if enabled
-      if (options.showLabels && room.name) {
-        const text = new Text(room.name, {
-          left: (room.bounds.x + room.bounds.width / 2) * PIXELS_PER_METER,
-          top: (room.bounds.y + room.bounds.height / 2) * PIXELS_PER_METER,
-          fontSize: DRAWING_CONSTANTS.ROOM_LABEL_FONT_SIZE,
-          fill: DRAWING_CONSTANTS.DEFAULT_WALL_COLOR,
-          textAlign: 'center',
-          originX: 'center',
-          originY: 'center',
-          selectable: false,
-          evented: false
-        });
-        
-        canvas.add(text);
+      if (firstPoint && lastPoint && 
+          Math.abs(firstPoint.x - lastPoint.x) < 0.1 && 
+          Math.abs(firstPoint.y - lastPoint.y) < 0.1) {
+        // Calculate area for closed shape
+        const area = calculateGIA([finalPoints]);
+        setGia(prev => prev + area);
+        toast.success(`Area: ${area.toFixed(2)} m²`);
       }
-    });
-  };
+    }
+    
+    // Reset drawing state
+    setIsDrawing(false);
+    setDrawingPoints([]);
+    logger.debug("Ended drawing with", finalPoints.length, "points");
+  }, [isDrawing, drawingPoints, setFloorPlan, setGia]);
   
   /**
-   * Draw strokes on the canvas
-   * @param {FabricCanvas} canvas - Fabric canvas instance
-   * @param {Point[][]} strokes - Array of point arrays defining strokes
-   * @param {FloorPlanDrawingOptions} options - Drawing options
+   * Cancel the current drawing operation
    */
-  const drawStrokes = (
-    canvas: FabricCanvas,
-    strokes: Point[][],
-    options: FloorPlanDrawingOptions
-  ): void => {
-    strokes.forEach(stroke => {
-      if (stroke.length < 2) return;
-      
-      // Convert stroke points to pixel coordinates
-      const pixelPoints = stroke.map(point => ({
-        x: point.x * PIXELS_PER_METER,
-        y: point.y * PIXELS_PER_METER
-      }));
-      
-      // Create a polyline for the stroke
-      const polyline = new Polyline(pixelPoints, {
-        stroke: options.wallColor,
-        strokeWidth: options.wallThickness || DRAWING_CONSTANTS.DEFAULT_WALL_THICKNESS,
-        fill: 'transparent',
-        selectable: false,
-        evented: false,
-        objectCaching: true
-      });
-      
-      canvas.add(polyline);
-    });
-  };
+  const cancelDrawing = useCallback(() => {
+    setIsDrawing(false);
+    setDrawingPoints([]);
+    logger.debug("Drawing cancelled");
+  }, []);
   
-  return { drawFloorPlan };
+  /**
+   * Calculate areas for the floor plan
+   * @returns {number[]} Array of calculated areas
+   */
+  const calculateAreas = useCallback(() => {
+    return calculateFloorPlanAreas(floorPlan);
+  }, [floorPlan]);
+  
+  return {
+    isDrawing,
+    startDrawing,
+    continueDrawing,
+    endDrawing,
+    cancelDrawing,
+    calculateAreas,
+    drawingPoints
+  };
+};
+
+/**
+ * Calculate areas for all enclosed shapes in a floor plan
+ * @param {FloorPlan} floorPlan - The floor plan to calculate areas for
+ * @returns {number[]} Array of calculated areas
+ */
+export const calculateFloorPlanAreas = (floorPlan: FloorPlan): number[] => {
+  if (!floorPlan.strokes || floorPlan.strokes.length === 0) {
+    return [];
+  }
+  
+  // We need to ensure we're working with Point[][] rather than Stroke[][]
+  // Since Stroke = Point[], we can use the strokes directly
+  const areas = calculateGIA(floorPlan.strokes);
+  
+  return [areas];
+};
+
+/**
+ * Convert pixel coordinates to meter coordinates
+ * @param {Point} pixelPoint - Point in pixel coordinates
+ * @returns {Point} Point in meter coordinates
+ */
+export const pixelToMeterCoordinates = (pixelPoint: Point): Point => {
+  return {
+    x: pixelPoint.x / PIXELS_PER_METER,
+    y: pixelPoint.y / PIXELS_PER_METER
+  };
+};
+
+/**
+ * Convert meter coordinates to pixel coordinates
+ * @param {Point} meterPoint - Point in meter coordinates
+ * @returns {Point} Point in pixel coordinates
+ */
+export const meterToPixelCoordinates = (meterPoint: Point): Point => {
+  return {
+    x: meterPoint.x * PIXELS_PER_METER,
+    y: meterPoint.y * PIXELS_PER_METER
+  };
+};
+
+/**
+ * Check if a point is inside a polygon
+ * @param {Point} point - The point to check
+ * @param {Point[]} polygon - Array of points forming the polygon
+ * @returns {boolean} True if the point is inside the polygon
+ */
+export const isPointInPolygon = (point: Point, polygon: Point[]): boolean => {
+  if (polygon.length < 3) return false;
+  
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+    
+    const intersect = ((yi > point.y) !== (yj > point.y)) &&
+      (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+    
+    if (intersect) inside = !inside;
+  }
+  
+  return inside;
 };

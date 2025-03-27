@@ -1,10 +1,9 @@
-
 /**
  * Custom hook for centralized canvas state management
  * @module useCanvasState
  */
 import { useState, useEffect } from "react";
-import { FloorPlan } from "@/utils/drawing";
+import { FloorPlan } from '@/types/floorPlanTypes';
 import { CanvasDimensions } from "@/types/drawingTypes";
 
 /**

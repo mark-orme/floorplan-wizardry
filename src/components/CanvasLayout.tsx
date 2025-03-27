@@ -1,4 +1,3 @@
-
 /**
  * Layout component for the canvas and related controls
  * Organizes the UI elements for the floor plan editor
@@ -8,7 +7,7 @@ import { FloorPlanList } from "./FloorPlanList";
 import { CanvasContainer } from "./CanvasContainer";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { DebugInfoState } from "@/types/debugTypes";
-import { FloorPlan } from "@/utils/drawing";
+import { FloorPlan } from '@/types/floorPlanTypes';
 import { Button } from "./ui/button";
 import { HelpCircle } from "lucide-react";
 import { ReactNode } from "react";

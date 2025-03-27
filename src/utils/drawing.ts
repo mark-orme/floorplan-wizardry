@@ -1,10 +1,11 @@
-
 /**
- * Drawing utilities main module
- * Re-exports functionality from specialized drawing utility files
- * Provides constants for grid and drawing settings
+ * Drawing utilities
  * @module drawing
  */
+
+// Re-export types from floorPlanTypes for backwards compatibility
+export { FloorPlan } from '@/types/floorPlanTypes';
+export type { Wall, Room, Point, Stroke, PaperSize } from '@/types/floorPlanTypes';
 
 import { 
   PIXELS_PER_METER,
