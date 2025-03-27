@@ -1,3 +1,4 @@
+
 /**
  * Grid debug utilities tests
  */
@@ -17,8 +18,8 @@ describe('attemptGridRecovery', () => {
     // Mock custom grid creation function
     const createGridFn = vi.fn().mockReturnValue([{} as FabricObject]);
     
-    // Call function with all 3 required arguments
-    const result = attemptGridRecovery(canvas, gridLayerRef, createGridFn);
+    // Call function with all 3 required arguments - add the missing options argument
+    const result = attemptGridRecovery(canvas, gridLayerRef, createGridFn, { forceRecreation: true });
     
     expect(createGridFn).toHaveBeenCalledWith(canvas);
     expect(result).toBe(true);

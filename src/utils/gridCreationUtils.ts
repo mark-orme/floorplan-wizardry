@@ -1,139 +1,113 @@
 
 /**
  * Grid creation utilities
- * Functions for creating and verifying grid elements
+ * Functions for creating and managing grid
  * @module gridCreationUtils
  */
-import { Canvas, Object as FabricObject, Line } from "fabric";
+import { Canvas, Object as FabricObject } from "fabric";
 
 /**
- * Create an emergency grid with basic lines when other methods fail
- * @param {Canvas} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
- * @returns {FabricObject[]} The created grid objects
+ * Create a basic emergency grid
+ * Simple grid for fallback when normal grid creation fails
+ * 
+ * @param {Canvas} canvas - Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject[]} Created grid objects
  */
 export const createBasicEmergencyGrid = (
   canvas: Canvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] => {
-  console.log("Creating emergency basic grid...");
-  
-  // If we already have grid objects, don't recreate
-  if (gridLayerRef.current.length > 0) {
-    console.log("Grid already exists, not creating emergency grid");
-    return gridLayerRef.current;
-  }
-  
-  // Clear any existing grid objects (safety check)
   try {
-    gridLayerRef.current.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
-    });
+    console.log("Creating basic emergency grid");
+    
+    // Clear any existing grid objects from the ref
     gridLayerRef.current = [];
-  } catch (e) {
-    console.error("Error clearing existing grid:", e);
-  }
-  
-  // Get dimensions (with safety)
-  const width = canvas.width || 800;
-  const height = canvas.height || 600;
-  
-  const gridSize = 50; // Grid spacing in pixels
-  const gridObjects: FabricObject[] = [];
-  
-  // Create horizontal grid lines
-  for (let y = 0; y <= height; y += gridSize) {
-    const line = new Line([0, y, width, y], {
-      stroke: '#E0E0E0',
-      strokeWidth: 0.5,
-      selectable: false,
-      evented: false,
-      objectType: 'grid'
+    
+    // Get canvas dimensions
+    const width = canvas.width || 800;
+    const height = canvas.height || 600;
+    
+    const gridObjects: FabricObject[] = [];
+    
+    // Create horizontal lines
+    for (let y = 0; y < height; y += 50) {
+      const line = new fabric.Line([0, y, width, y], {
+        stroke: '#cccccc',
+        strokeWidth: y % 100 === 0 ? 1 : 0.5,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create vertical lines
+    for (let x = 0; x < width; x += 50) {
+      const line = new fabric.Line([x, 0, x, height], {
+        stroke: '#cccccc',
+        strokeWidth: x % 100 === 0 ? 1 : 0.5,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Store the created objects in the ref
+    gridLayerRef.current = gridObjects;
+    
+    // Make sure grid lines are behind other objects
+    gridObjects.forEach(obj => {
+      canvas.sendToBack(obj);
     });
-    canvas.add(line);
-    gridObjects.push(line);
+    
+    console.log(`Created emergency grid with ${gridObjects.length} objects`);
+    canvas.requestRenderAll();
+    
+    return gridObjects;
+  } catch (error) {
+    console.error("Error creating emergency grid:", error);
+    return [];
   }
-  
-  // Create vertical grid lines
-  for (let x = 0; x <= width; x += gridSize) {
-    const line = new Line([x, 0, x, height], {
-      stroke: '#E0E0E0',
-      strokeWidth: 0.5,
-      selectable: false,
-      evented: false,
-      objectType: 'grid'
-    });
-    canvas.add(line);
-    gridObjects.push(line);
-  }
-  
-  // Add main axis lines
-  const xAxis = new Line([0, height/2, width, height/2], {
-    stroke: '#CCCCCC',
-    strokeWidth: 1,
-    selectable: false,
-    evented: false,
-    objectType: 'grid'
-  });
-  canvas.add(xAxis);
-  gridObjects.push(xAxis);
-  
-  const yAxis = new Line([width/2, 0, width/2, height], {
-    stroke: '#CCCCCC',
-    strokeWidth: 1,
-    selectable: false,
-    evented: false,
-    objectType: 'grid'
-  });
-  canvas.add(yAxis);
-  gridObjects.push(yAxis);
-  
-  // Store the grid objects in the ref
-  gridLayerRef.current = gridObjects;
-  
-  // Make sure grid is sent to the back
-  gridObjects.forEach(obj => canvas.sendToBack(obj));
-  
-  // Force a render
-  canvas.renderAll();
-  
-  console.log(`Created emergency grid with ${gridObjects.length} objects`);
-  
-  return gridObjects;
 };
 
 /**
- * Verify that the grid exists and is valid
- * @param {Canvas} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @returns {boolean} Whether grid exists and is valid
+ * Retry with backoff
+ * Retry a function with exponential backoff
+ * 
+ * @param {Function} fn - Function to retry
+ * @param {number} maxAttempts - Maximum number of attempts
+ * @param {number} baseDelay - Base delay in ms
+ * @returns {Promise<any>} Promise resolving to function result
  */
-export const verifyGridExists = (
-  canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): boolean => {
-  // Check if we have grid objects
-  if (gridLayerRef.current.length === 0) {
-    return false;
+export const retryWithBackoff = async (
+  fn: () => Promise<any>,
+  maxAttempts: number = 3,
+  baseDelay: number = 300
+): Promise<any> => {
+  let attempts = 0;
+  let lastError: Error | null = null;
+  
+  while (attempts < maxAttempts) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        break;
+      }
+      
+      // Calculate delay with exponential backoff
+      const delay = baseDelay * Math.pow(1.5, attempts - 1);
+      console.log(`Retrying (${attempts}/${maxAttempts}) after ${delay}ms`);
+      
+      // Wait before next attempt
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
   
-  // Check if grid objects are on the canvas
-  const gridObjectsOnCanvas = gridLayerRef.current.filter(obj => canvas.contains(obj));
-  
-  return gridObjectsOnCanvas.length > 0;
-};
-
-/**
- * Get grid objects that are on the canvas
- * @param {Canvas} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @returns {FabricObject[]} Grid objects on canvas
- */
-export const getGridObjectsOnCanvas = (
-  canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
-  return gridLayerRef.current.filter(obj => canvas.contains(obj));
+  throw lastError || new Error("Function failed after retries");
 };

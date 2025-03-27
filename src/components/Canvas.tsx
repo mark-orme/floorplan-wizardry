@@ -110,16 +110,16 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
 };
 
-// Fix TypeScript global declarations to use the imported type
+// Define types for global extensions using the imported FabricCanvas type
 declare global {
   interface Window {
     fabricCanvasInstances?: FabricCanvas[];
   }
 }
 
-// Fix HTMLCanvasElement extension to use the same type
+// Fix HTMLCanvasElement extension to use any for _fabric to avoid type conflicts
 declare global {
   interface HTMLCanvasElement {
-    _fabric?: FabricCanvas;
+    _fabric?: any;
   }
 }

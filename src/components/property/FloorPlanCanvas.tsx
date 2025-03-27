@@ -4,7 +4,7 @@
  * Handles canvas rendering and initialization
  */
 import { useState, useEffect, useRef } from "react";
-import { Canvas } from "fabric"; // Import just the type
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric"; // Import both Canvas and Object
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { ReliableCanvasContainer } from "@/components/canvas/ReliableCanvasContainer";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
@@ -28,11 +28,11 @@ interface FloorPlanCanvasProps {
 export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   const [isReady, setIsReady] = useState(false);
   const [initAttempt, setInitAttempt] = useState(0);
-  const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [showDebug, setShowDebug] = useState(true); // Show debug panel by default
   const unmountedRef = useRef(false);
-  const fabricCanvasRef = useRef<Canvas | null>(null);
-  const gridLayerRef = useRef<Canvas["Object"][]>([]);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const gridLayerRef = useRef<FabricObject[]>([]);
   
   // Set ready state after a short delay to ensure DOM is fully rendered
   useEffect(() => {
@@ -90,7 +90,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   /**
    * Handle successful canvas initialization
    */
-  const handleCanvasReady = (canvas: Canvas) => {
+  const handleCanvasReady = (canvas: FabricCanvas) => {
     console.log('FloorPlanCanvas: Canvas ready callback received');
     setFabricCanvas(canvas);
     fabricCanvasRef.current = canvas;
