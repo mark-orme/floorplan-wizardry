@@ -1,3 +1,4 @@
+
 /**
  * Line operation utilities module
  * Functions for calculating and manipulating lines

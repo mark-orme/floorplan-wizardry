@@ -125,6 +125,7 @@ export const usePathProcessing = ({
     }
     
     logger.info(`Processing path for tool: ${tool}`);
+    console.log("Processing path for tool:", tool, path);
     
     // Performance tracking for path processing
     const startTime = performance.now();
@@ -140,7 +141,13 @@ export const usePathProcessing = ({
       case "straightLine": {
         // Process path points and create a straight polyline
         const { finalPoints, pixelPoints } = processPathPoints(path);
-        createPolyline(finalPoints, pixelPoints);
+        console.log("Processed straight line points:", finalPoints, pixelPoints);
+        
+        if (pixelPoints.length >= 2) {
+          createPolyline(finalPoints, pixelPoints);
+        } else {
+          console.warn("Not enough points to create a polyline");
+        }
         break;
       }
       
@@ -157,9 +164,13 @@ export const usePathProcessing = ({
           path.set({
             stroke: lineColor,
             strokeWidth: lineThickness,
-            fill: 'transparent'
+            fill: 'transparent',
+            strokeLineCap: 'round',
+            strokeLineJoin: 'round',
+            objectType: 'freehand'
           });
           fabricCanvasRef.current.add(path);
+          console.log("Added freehand path to canvas:", path);
         }
         break;
       }

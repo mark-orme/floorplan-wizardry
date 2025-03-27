@@ -134,6 +134,16 @@ export const usePolylineCreation = ({
       
       // Add the polyline to the canvas
       canvas.add(polyline);
+      console.log(`Added polyline to canvas: ${polyline.objectType}`);
+      
+      // Ensure grid stays in the background
+      if (gridLayerRef.current && gridLayerRef.current.length > 0) {
+        gridLayerRef.current.forEach(gridObj => {
+          if (canvas.contains(gridObj)) {
+            canvas.sendToBack(gridObj);
+          }
+        });
+      }
       
       // Calculate GIA if it's a room
       if (isEnclosed && polyline.objectType === 'room') {
@@ -154,7 +164,7 @@ export const usePolylineCreation = ({
       console.error("Failed to create polyline:", error);
       return false;
     }
-  }, [fabricCanvasRef, tool, lineColor, lineThickness, recalculateGIA]);
+  }, [fabricCanvasRef, gridLayerRef, tool, lineColor, lineThickness, recalculateGIA]);
   
   return { createPolyline };
 };

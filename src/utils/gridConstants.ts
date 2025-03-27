@@ -36,7 +36,7 @@ export {
 };
 
 // Updated line widths for improved grid appearance
-export const SMALL_GRID_LINE_WIDTH = 0.5;
+export const SMALL_GRID_LINE_WIDTH = 0.7; // Increased from 0.5 for better visibility
 export const LARGE_GRID_LINE_WIDTH = 1.0;
 
 /**
@@ -62,17 +62,17 @@ export const GRID_PERFORMANCE_THRESHOLDS = {
  * @constant {Object}
  */
 export const GRID_OPACITY = {
-  SMALL_GRID: 0.8, // Increased opacity for better visibility
+  SMALL_GRID: 0.9, // Increased opacity for better visibility (was 0.8)
   LARGE_GRID: 0.9  // Higher opacity for large grid lines
 };
 
 /**
- * Default grid colors - updated to match graph paper look with darker small grid
+ * Default grid colors - darkened small grid for better visibility
  * @constant {Object}
  */
 export const GRID_COLORS = {
-  SMALL_GRID: "#85B4BD", // Darker blue-green for better visibility (was #A6CDD3)
-  LARGE_GRID: "#5FA1A9", // Darker blue-green for large grid (was #86C5CD)
+  SMALL_GRID: "#6999A3", // Darkened further for better visibility (was #85B4BD)
+  LARGE_GRID: "#5FA1A9", // Darker blue-green for large grid
   MARKERS: "#555555"     // Dark gray for markers
 };
 

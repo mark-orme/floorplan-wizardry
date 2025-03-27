@@ -1,3 +1,4 @@
+
 /**
  * Canvas tool operations module
  * Provides functions for handling tool changes and canvas operations
@@ -168,12 +169,12 @@ export const handleToolChange = (
       break;
   }
   
-  // Ensure proper z-ordering of elements
+  // Send grid objects to back (ensure they're behind drawn objects)
   if (gridLayerRef && gridLayerRef.current && gridLayerRef.current.length > 0) {
     console.log(`Sending ${gridLayerRef.current.length} grid objects to back`);
     gridLayerRef.current.forEach(gridObj => {
       if (canvas.contains(gridObj)) {
-        canvas.sendObjectToBack(gridObj);
+        canvas.sendToBack(gridObj);
       }
     });
   }

@@ -254,7 +254,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         </button>
       </div>
       
-      {/* Distance tooltip for measurements - only show when actively drawing */}
+      {/* Distance tooltip for measurements - only show when actively drawing lines */}
       <DistanceTooltip
         startPoint={drawingState.startPoint}
         currentPoint={drawingState.currentPoint}

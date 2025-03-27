@@ -1,3 +1,4 @@
+
 /**
  * Canvas interactions hook
  * Manages mouse/touch interactions and drawing state for the canvas
@@ -56,7 +57,7 @@ export const useCanvasInteractions = ({
   });
 
   // Point processing utilities
-  const { processPoint } = usePointProcessing({ fabricCanvasRef });
+  const { processPoint } = usePointProcessing({ fabricCanvasRef, tool });
   
   // Grid snapping utilities
   const {
@@ -113,14 +114,16 @@ export const useCanvasInteractions = ({
    * @param e - Mouse or touch event
    */
   const handleMouseDown = useCallback((e: MouseEvent | TouchEvent) => {
-    if (tool === 'select') return;
+    if (tool === 'select' || tool === 'hand') return;
+    
+    console.log("Mouse down with tool:", tool);
     
     // Process point from event
     const point = processPoint(e);
     if (!point) return;
     
     // Snap point to grid if enabled
-    const snappedPoint = snapPointToGrid(point);
+    const snappedPoint = snapEnabled ? snapPointToGrid(point) : point;
     
     // Update drawing state
     setDrawingState(prev => ({
@@ -130,7 +133,9 @@ export const useCanvasInteractions = ({
       currentPoint: snappedPoint,
       midPoint: null
     }));
-  }, [tool, processPoint, snapPointToGrid]);
+    
+    console.log("Drawing started at:", snappedPoint);
+  }, [tool, processPoint, snapPointToGrid, snapEnabled]);
 
   /**
    * Handle mouse/touch move events
@@ -149,12 +154,12 @@ export const useCanvasInteractions = ({
     }));
     
     // Only update drawing points if actively drawing
-    if (!drawingState.isDrawing || tool === 'select') return;
+    if (!drawingState.isDrawing || tool === 'select' || tool === 'hand') return;
     
     // Apply grid snapping and angle constraints based on tool
     let processedPoint = point;
     
-    if (tool === 'straightLine' || tool === 'wall') {
+    if ((tool === 'straightLine' || tool === 'wall') && snapEnabled) {
       // For line tools, snap to grid first
       const snappedPoint = snapPointToGrid(point);
       
@@ -164,9 +169,11 @@ export const useCanvasInteractions = ({
       } else {
         processedPoint = snappedPoint;
       }
-    } else {
+    } else if (snapEnabled) {
       // For other tools, just snap to grid
       processedPoint = snapPointToGrid(point);
+    } else {
+      processedPoint = point;
     }
     
     // Calculate midpoint for tooltip positioning
@@ -180,7 +187,7 @@ export const useCanvasInteractions = ({
       currentPoint: processedPoint,
       midPoint
     }));
-  }, [drawingState.isDrawing, drawingState.startPoint, tool, processPoint, snapPointToGrid, snapLineToGrid]);
+  }, [drawingState.isDrawing, drawingState.startPoint, tool, processPoint, snapPointToGrid, snapLineToGrid, snapEnabled]);
 
   /**
    * Handle mouse/touch up events
@@ -188,40 +195,60 @@ export const useCanvasInteractions = ({
    * 
    * @param e - Mouse or touch event
    */
-  const handleMouseUp = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!drawingState.isDrawing || tool === 'select') return;
+  const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
+    if (!drawingState.isDrawing || tool === 'select' || tool === 'hand') return;
     
-    // Process final point
-    const point = processPoint(e);
-    if (!point) return;
+    console.log("Mouse up with tool:", tool);
     
-    // Apply final snapping if needed
-    let finalPoint = point;
+    // If no event is provided, use the existing current point
+    let finalPoint = drawingState.currentPoint;
     
-    if (tool === 'straightLine' || tool === 'wall') {
-      const snappedPoint = snapPointToGrid(point);
-      
-      if (drawingState.startPoint) {
-        finalPoint = snapLineToGrid(drawingState.startPoint, snappedPoint);
-      } else {
-        finalPoint = snappedPoint;
+    // If event is provided, process the final point
+    if (e) {
+      const point = processPoint(e);
+      if (point) {
+        // Apply final snapping if needed
+        if ((tool === 'straightLine' || tool === 'wall') && snapEnabled) {
+          const snappedPoint = snapPointToGrid(point);
+          
+          if (drawingState.startPoint) {
+            finalPoint = snapLineToGrid(drawingState.startPoint, snappedPoint);
+          } else {
+            finalPoint = snappedPoint;
+          }
+        } else if (snapEnabled) {
+          finalPoint = snapPointToGrid(point);
+        } else {
+          finalPoint = point;
+        }
       }
-    } else {
-      finalPoint = snapPointToGrid(point);
     }
     
-    // Calculate final midpoint
-    const midPoint = drawingState.startPoint 
-      ? calculateMidpoint(drawingState.startPoint, finalPoint)
-      : null;
-    
-    // Update drawing state with final point
-    setDrawingState(prev => ({
-      ...prev,
-      currentPoint: finalPoint,
-      midPoint,
-      isDrawing: false
-    }));
+    // Only proceed if we have both start and final points
+    if (drawingState.startPoint && finalPoint) {
+      // Calculate final midpoint
+      const midPoint = calculateMidpoint(drawingState.startPoint, finalPoint);
+      
+      // Update drawing state with final point
+      setDrawingState(prev => ({
+        ...prev,
+        currentPoint: finalPoint,
+        midPoint,
+        isDrawing: false
+      }));
+      
+      console.log("Drawing completed:", { 
+        start: drawingState.startPoint, 
+        end: finalPoint,
+        tool
+      });
+    } else {
+      // Reset drawing state if missing points
+      setDrawingState(prev => ({
+        ...prev,
+        isDrawing: false
+      }));
+    }
     
     // Clear drawing state after a delay
     if (timeoutRef.current) {
@@ -231,7 +258,7 @@ export const useCanvasInteractions = ({
     timeoutRef.current = setTimeout(() => {
       resetDrawingState();
     }, 500);
-  }, [drawingState.isDrawing, drawingState.startPoint, tool, processPoint, snapPointToGrid, snapLineToGrid, resetDrawingState]);
+  }, [drawingState.isDrawing, drawingState.startPoint, drawingState.currentPoint, tool, processPoint, snapPointToGrid, snapLineToGrid, resetDrawingState, snapEnabled]);
 
   /**
    * Clean up any pending timeouts when component unmounts
@@ -262,9 +289,9 @@ export const useCanvasInteractions = ({
    * @returns Boolean indicating if point is snapped
    */
   const isSnappedToGrid = useCallback((point: Point | null): boolean => {
-    if (!point) return false;
+    if (!point || !snapEnabled) return false;
     return checkIsSnappedToGrid(point, point);
-  }, [checkIsSnappedToGrid]);
+  }, [checkIsSnappedToGrid, snapEnabled]);
 
   /**
    * Check if a line is auto-straightened
@@ -275,9 +302,9 @@ export const useCanvasInteractions = ({
    * @returns Boolean indicating if line is straightened
    */
   const isLineAutoStraightened = useCallback((startPoint: Point | null, endPoint: Point | null): boolean => {
-    if (!startPoint || !endPoint) return false;
+    if (!startPoint || !endPoint || !snapEnabled) return false;
     return checkIsAutoStraightened(startPoint, endPoint, endPoint);
-  }, [checkIsAutoStraightened]);
+  }, [checkIsAutoStraightened, snapEnabled]);
 
   return {
     drawingState,
