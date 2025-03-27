@@ -4,7 +4,7 @@
  * @module useBrushSettings
  */
 import { useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
 import { DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
@@ -58,6 +58,12 @@ export const useBrushSettings = ({
     if (!fabricCanvasRef.current) return;
     
     const fabricCanvas = fabricCanvasRef.current;
+    
+    // Ensure PencilBrush is properly initialized
+    if (!fabricCanvas.freeDrawingBrush || !(fabricCanvas.freeDrawingBrush instanceof PencilBrush)) {
+      fabricCanvas.freeDrawingBrush = new PencilBrush(fabricCanvas);
+      console.log("Created new PencilBrush for canvas");
+    }
     
     // Check if the current tool is a drawing tool
     const isDrawingTool = 

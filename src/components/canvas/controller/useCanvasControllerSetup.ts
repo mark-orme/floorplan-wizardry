@@ -35,26 +35,6 @@ interface UseCanvasControllerSetupProps {
 }
 
 /**
- * Canvas controller validation constants
- */
-const CANVAS_VALIDATION = {
-  /**
-   * Maximum number of validation attempts
-   */
-  MAX_CHECK_ATTEMPTS: 10,
-  
-  /**
-   * Initial validation delay in milliseconds
-   */
-  VALIDATION_DELAY: 100,
-  
-  /**
-   * Minimum acceptable canvas dimension
-   */
-  MIN_DIMENSION: 1
-};
-
-/**
  * Hook for canvas controller setup
  * Handles initialization, validation, and error handling for canvas controller
  * 
@@ -171,4 +151,24 @@ export const useCanvasControllerSetup = ({
     fabricCanvasRef,
     historyRef
   };
+};
+
+/**
+ * Canvas validation constants
+ */
+const CANVAS_VALIDATION = {
+  /**
+   * Maximum number of validation attempts
+   */
+  MAX_CHECK_ATTEMPTS: 10,
+  
+  /**
+   * Initial validation delay in milliseconds
+   */
+  VALIDATION_DELAY: 100,
+  
+  /**
+   * Minimum acceptable canvas dimension
+   */
+  MIN_DIMENSION: 1
 };

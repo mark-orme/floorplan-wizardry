@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { toast } from 'sonner';
 import { useReliableGridInitialization } from '@/hooks/useReliableGridInitialization';
 import { initializeCanvasGestures } from '@/utils/fabric/gestures';
@@ -121,6 +121,14 @@ export const Canvas: React.FC<CanvasProps> = ({
       
       // Create the Fabric.js canvas instance
       const canvas = new FabricCanvas(canvasRef.current, canvasOptions);
+      
+      // Initialize the drawing brush
+      if (!canvas.freeDrawingBrush || !(canvas.freeDrawingBrush instanceof PencilBrush)) {
+        canvas.freeDrawingBrush = new PencilBrush(canvas);
+        canvas.freeDrawingBrush.color = '#000000';
+        canvas.freeDrawingBrush.width = 2;
+        console.log("Initialized default PencilBrush for canvas");
+      }
       
       // Initialize touch gestures for the canvas
       initializeCanvasGestures(canvas);
