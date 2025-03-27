@@ -1,31 +1,33 @@
 
 /**
- * Drawing state definition
+ * Drawing state type definition
  * @module core/DrawingState
  */
-import { Point } from './Point';
+
+import type { Point } from './Point';
 
 /**
- * Represents the current state of drawing
+ * Drawing state interface
+ * Tracks the current state of drawing operations
  * @interface DrawingState
  */
 export interface DrawingState {
   /** Whether the user is currently drawing */
   isDrawing: boolean;
-  /** The starting point of the drawing */
+  /** Starting point of the current drawing operation */
   startPoint: Point | null;
-  /** The current point of the drawing */
+  /** Current point of the drawing operation */
   currentPoint: Point | null;
-  /** The current cursor position */
+  /** Current cursor position */
   cursorPosition: Point | null;
-  /** The midpoint between start and current point */
+  /** Mid point between start and current points */
   midPoint: Point | null;
-  /** Whether a selection is active */
+  /** Whether selection is active */
   selectionActive: boolean;
-  /** Current zoom level for scaling display */
-  currentZoom?: number;
-  /** Array of all points in the current stroke */
-  points?: Point[];
-  /** Distance between startPoint and currentPoint */
-  distance?: number | null;
+  /** Current zoom level */
+  currentZoom: number;
+  /** Array of points for complex drawings */
+  points: Point[];
+  /** Distance between start and current points in current units */
+  distance: number | null;
 }

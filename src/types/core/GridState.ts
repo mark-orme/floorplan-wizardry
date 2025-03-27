@@ -84,4 +84,5 @@ export interface GridCreationState {
   isCreated?: boolean;
   lastAttemptTime?: number;
   hasError?: boolean;
+  errorMessage?: string;
 }

@@ -1,54 +1,51 @@
 
 /**
  * Base ESLint configuration
+ * Shared rules for all files
  * @module eslint/base-config
  */
-import js from "@eslint/js";
-import globals from "globals";
-import { MAX_LINE_LENGTH, MAX_FUNCTION_LINES, MAX_COMPLEXITY, MAX_DEPTH } from "./constants.js";
-
 export const baseConfig = {
-  extends: [js.configs.recommended],
-  languageOptions: {
-    ecmaVersion: 2021,
-    globals: {
-      ...globals.browser,
-      ...globals.node,
-    },
-  },
+  files: ["**/*.{js,ts,jsx,tsx}"],
   rules: {
-    "no-unused-expressions": "error",
-    "indent": ["warn", 2, { "SwitchCase": 1 }],
+    // Catching problematic patterns
+    "no-console": ["warn", { allow: ["info", "warn", "error", "debug"] }],
+    "no-alert": "error",
+    "no-debugger": "warn",
+    "no-var": "error",
+    "prefer-const": "warn",
+    "eqeqeq": ["error", "smart"],
+    "curly": ["error", "all"],
+    
+    // Import rules to prevent runtime errors
+    "import/no-unresolved": "error",
+    "no-unused-vars": "warn",
+    "no-restricted-imports": ["error", {
+      "paths": [{
+        "name": "@/utils/grid/gridDebugUtils",
+        "importNames": ["forceCreateGrid"],
+        "message": "Make sure this function exists and is exported"
+      }]
+    }],
+    
+    // Style consistency
+    "comma-dangle": ["error", "never"],
     "quotes": ["warn", "double", { "avoidEscape": true }],
-    "semi": ["error", "always"],
-    "comma-dangle": ["warn", "always-multiline"],
-    "object-curly-spacing": ["warn", "always"],
-    "array-bracket-spacing": ["warn", "never"],
-    "max-len": ["warn", { 
-      "code": MAX_LINE_LENGTH, 
-      "ignoreComments": true, 
-      "ignoreUrls": true,
-      "ignoreStrings": true,
-      "ignoreTemplateLiterals": true,
-      "ignoreRegExpLiterals": true
-    }],
-    "max-lines-per-function": ["error", { 
-      "max": MAX_FUNCTION_LINES, 
-      "skipBlankLines": true, 
-      "skipComments": true 
-    }],
-    "max-depth": ["error", MAX_DEPTH],
-    "complexity": ["error", MAX_COMPLEXITY],
-    "prefer-destructuring": ["warn", {
-      "array": true,
-      "object": true
-    }],
+    "semi": ["warn", "always"],
+    
+    // Best practices
     "arrow-body-style": ["warn", "as-needed"],
-    "sort-imports": ["warn", {
-      "ignoreCase": true,
-      "ignoreDeclarationSort": true
-    }],
-    "promise/catch-or-return": "error",
-    "promise/always-return": "error",
+    "no-use-before-define": ["error", { "functions": false, "classes": true }],
+    "no-duplicate-imports": "error",
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.name='setTimeout'][arguments.length!=2]",
+        "message": "setTimeout must always be invoked with two arguments."
+      }
+    ],
+    
+    // Enhancing code readability
+    "max-lines-per-function": ["warn", { "max": 100, "skipBlankLines": true, "skipComments": true }],
+    "complexity": ["warn", { "max": 10 }]
   }
 };

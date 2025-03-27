@@ -15,4 +15,10 @@ export * from './core/Fabric';
 // Constants
 export { DrawingMode } from '../constants/drawingModes';
 
+// Fabric types
+export type CanvasDimensions = {
+  width: number;
+  height: number;
+};
+
 // Export any other types that should be available throughout the application

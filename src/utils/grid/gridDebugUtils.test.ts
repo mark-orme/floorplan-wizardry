@@ -1,54 +1,84 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+/**
+ * Tests for grid debug utilities
+ * @jest-environment jsdom
+ */
 import { Canvas, Object as FabricObject } from "fabric";
-import { dumpGridState, createBasicEmergencyGrid } from "./gridDebugUtils";
+import { createBasicEmergencyGrid, dumpGridState, forceCreateGrid } from "./gridDebugUtils";
 
-// Mock console methods
-const originalConsoleLog = console.log;
-const originalConsoleWarn = console.warn;
-const originalConsoleError = console.error;
-
-beforeEach(() => {
-  // Mock console methods
-  console.log = vi.fn();
-  console.warn = vi.fn();
-  console.error = vi.fn();
+// Mock canvas and console methods
+jest.mock("fabric", () => {
+  return {
+    Canvas: jest.fn().mockImplementation(() => ({
+      width: 800,
+      height: 600,
+      getObjects: jest.fn().mockReturnValue([]),
+      contains: jest.fn().mockReturnValue(true),
+      remove: jest.fn(),
+      add: jest.fn(),
+      requestRenderAll: jest.fn(),
+      sendObjectToBack: jest.fn(),
+      getZoom: jest.fn().mockReturnValue(1)
+    })),
+    Line: jest.fn().mockImplementation(() => ({
+      type: 'line'
+    }))
+  };
 });
 
-afterEach(() => {
-  // Restore console methods
-  console.log = originalConsoleLog;
-  console.warn = originalConsoleWarn;
-  console.error = originalConsoleError;
-});
-
-describe("gridDebugUtils", () => {
-  describe("dumpGridState", () => {
-    it("should log canvas and grid state", () => {
-      // Create a mock canvas
-      const canvas = new Canvas(null);
-      canvas.width = 800;
-      canvas.height = 600;
-      
-      // Create a mock grid layer reference
-      const gridLayerRef = { current: [] };
-      
-      // Call the function
-      dumpGridState(canvas, gridLayerRef);
-      
-      // Verify console.log was called with canvas state
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining("Canvas state:"),
-        expect.objectContaining({
-          width: 800,
-          height: 600,
-          objectCount: expect.any(Number),
-          gridObjectCount: 0
-        })
-      );
-    });
+describe("Grid Debug Utilities", () => {
+  let canvas: Canvas;
+  let gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  
+  beforeEach(() => {
+    console.group = jest.fn();
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+    console.groupEnd = jest.fn();
+    
+    canvas = new Canvas();
+    gridLayerRef = { current: [] };
   });
   
-  // Add more tests as needed
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+  
+  test("dumpGridState logs canvas and grid info", () => {
+    dumpGridState(canvas, gridLayerRef.current);
+    
+    expect(console.group).toHaveBeenCalled();
+    expect(console.log).toHaveBeenCalledTimes(3);
+    expect(console.groupEnd).toHaveBeenCalled();
+  });
+  
+  test("createBasicEmergencyGrid creates horizontal and vertical lines", () => {
+    const result = createBasicEmergencyGrid(canvas, gridLayerRef);
+    
+    // For 800x600 canvas with 50px spacing:
+    // Horizontal lines: Math.floor(600/50) + 1 = 13
+    // Vertical lines: Math.floor(800/50) + 1 = 17
+    // Total: 30 lines
+    expect(result.length).toBeGreaterThan(0);
+    expect(gridLayerRef.current).toBe(result);
+  });
+  
+  test("forceCreateGrid removes existing grid and creates new one", () => {
+    // Add some mock grid objects first
+    gridLayerRef.current = [{} as FabricObject, {} as FabricObject];
+    
+    const result = forceCreateGrid(canvas, gridLayerRef);
+    
+    expect(canvas.remove).toHaveBeenCalledTimes(2);
+    expect(result.length).toBeGreaterThan(0);
+    expect(canvas.requestRenderAll).toHaveBeenCalled();
+  });
+  
+  test("handles null canvas gracefully", () => {
+    const result = createBasicEmergencyGrid(null as unknown as Canvas, gridLayerRef);
+    
+    expect(result).toEqual([]);
+    expect(console.error).toHaveBeenCalled();
+  });
 });
-

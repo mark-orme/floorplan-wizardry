@@ -86,11 +86,10 @@ export const createBasicEmergencyGrid = (
         opacity: 0.5
       });
       
-      if (line && typeof line.sendToBack === 'function') {
-        line.sendToBack();
-      }
-      
+      // Fix: sendToBack() doesn't exist on Line, use canvas methods instead
       canvas.add(line);
+      canvas.sendObjectToBack(line);
+      
       gridObjects.push(line);
     }
 
@@ -105,11 +104,10 @@ export const createBasicEmergencyGrid = (
         opacity: 0.5
       });
       
-      if (line && typeof line.sendToBack === 'function') {
-        line.sendToBack();
-      }
-      
+      // Fix: sendToBack() doesn't exist on Line, use canvas methods instead
       canvas.add(line);
+      canvas.sendObjectToBack(line);
+      
       gridObjects.push(line);
     }
 
