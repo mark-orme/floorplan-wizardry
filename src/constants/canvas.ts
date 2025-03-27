@@ -109,12 +109,14 @@ export const CANVAS_STYLES = {
 
 /**
  * Maximum number of grid creation attempts
+ * Used for preventing infinite creation loops
  * @constant {number}
  */
 export const MAX_GRID_CREATION_ATTEMPTS = 3;
 
 /**
  * Canvas event constants
+ * Timing and threshold values for event handling
  * @constant {Object}
  */
 export const CANVAS_EVENTS = {
@@ -139,14 +141,16 @@ export const CANVAS_EVENTS = {
 
 /**
  * Rendering and performance constants
+ * Timing values for rendering optimizations
  * @constant {Object}
  */
 export const RENDERING_CONSTANTS = {
   /**
-   * Throttle delay for canvas updates in ms
+   * Throttle delay for canvas updates in ms 
+   * (approx. 60fps time budget)
    * @constant {number}
    */
-  THROTTLE_DELAY: 16,  // ~60fps
+  THROTTLE_DELAY: 16,
   
   /**
    * Debounce delay for expensive operations in ms
@@ -166,8 +170,8 @@ export const RENDERING_CONSTANTS = {
 
 /**
  * Minimum canvas dimensions
+ * Prevents canvas from becoming too small to be usable
  * @constant {number}
  */
 export const MIN_CANVAS_WIDTH = 300;
 export const MIN_CANVAS_HEIGHT = 200;
-

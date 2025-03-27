@@ -14,6 +14,24 @@ import logger from "../logger";
 const MAX_LOCK_AGE = 10000; // 10 seconds
 
 /**
+ * Default lock ID for unlocked state
+ * @constant {number}
+ */
+const DEFAULT_LOCK_ID = 0;
+
+/**
+ * Default timestamp for unlocked state
+ * @constant {number}
+ */
+const DEFAULT_TIMESTAMP = 0;
+
+/**
+ * Probability factor for lock ID generation
+ * @constant {number}
+ */
+const LOCK_ID_FACTOR = 1000000;
+
+/**
  * Acquire lock for grid creation
  * Prevents multiple concurrent grid creation operations
  * 
@@ -37,8 +55,8 @@ export const acquireGridCreationLock = (): boolean => {
     }
   }
   
-  // Generate a new unique lock ID
-  const newLockId = Math.floor(Math.random() * 1000000);
+  // Generate a new unique lock ID (random number)
+  const newLockId = Math.floor(Math.random() * LOCK_ID_FACTOR);
   
   // Acquire the lock
   gridManager.creationLock = {
@@ -75,8 +93,8 @@ export const releaseGridCreationLock = (lockId: number): boolean => {
   
   // Release the lock
   gridManager.creationLock = {
-    id: 0,
-    timestamp: 0,
+    id: DEFAULT_LOCK_ID,
+    timestamp: DEFAULT_TIMESTAMP,
     isLocked: false
   };
   
@@ -89,6 +107,7 @@ export const releaseGridCreationLock = (lockId: number): boolean => {
 
 /**
  * Check if grid creation is currently locked
+ * Verifies lock status and age
  * 
  * @returns {boolean} Whether grid creation is locked
  */
@@ -106,6 +125,7 @@ export const isGridCreationLocked = (): boolean => {
 
 /**
  * Check if a specific lock is valid and active
+ * Validates lock ID, status and age
  * 
  * @param {number} lockId - ID of the lock to check
  * @returns {boolean} Whether the specified lock is valid
