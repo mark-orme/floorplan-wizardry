@@ -162,7 +162,6 @@ export const useGridCreationAttempt = (
           }
           fabricCanvasRef.current.requestRenderAll();
           updateAttemptStatus(markCreationSuccessful);
-          return true;
         }
       } catch (err) {
         if (process.env.NODE_ENV === 'development') {
@@ -173,13 +172,18 @@ export const useGridCreationAttempt = (
       // If we're here, grid creation failed
       if (!isMaxAttemptsReached(gridAttemptStatus)) {
         // Schedule next attempt with shorter exponential backoff
-        retryWithBackoff(
-          () => attemptGridCreation(
+        // Convert the function to async to match the required type
+        const asyncRetry = async (): Promise<any> => {
+          return attemptGridCreation(
             gridAttemptStatus,
             updateAttemptStatus,
             lastAttemptTime,
             updateLastAttemptTime
-          ), 
+          );
+        };
+        
+        retryWithBackoff(
+          asyncRetry, 
           gridAttemptStatus.count,
           gridAttemptStatus.maxAttempts
         );

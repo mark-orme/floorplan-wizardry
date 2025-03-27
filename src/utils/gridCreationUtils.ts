@@ -1,5 +1,5 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Circle } from 'fabric';
 import { toast } from 'sonner';
 
 /**
@@ -40,7 +40,7 @@ export const createBasicEmergencyGrid = (
     
     // Create horizontal major lines
     for (let y = 0; y <= height; y += majorStep) {
-      const line = new fabric.Line([0, y, width, y], {
+      const line = new Line([0, y, width, y], {
         stroke: '#666',
         strokeWidth: 1,
         selectable: false,
@@ -54,7 +54,7 @@ export const createBasicEmergencyGrid = (
     
     // Create vertical major lines
     for (let x = 0; x <= width; x += majorStep) {
-      const line = new fabric.Line([x, 0, x, height], {
+      const line = new Line([x, 0, x, height], {
         stroke: '#666',
         strokeWidth: 1,
         selectable: false,
@@ -69,7 +69,7 @@ export const createBasicEmergencyGrid = (
     // Create horizontal minor lines
     for (let y = 0; y <= height; y += minorStep) {
       if (y % majorStep !== 0) { // Skip major lines
-        const line = new fabric.Line([0, y, width, y], {
+        const line = new Line([0, y, width, y], {
           stroke: '#ddd',
           strokeWidth: 0.5,
           selectable: false,
@@ -85,7 +85,7 @@ export const createBasicEmergencyGrid = (
     // Create vertical minor lines
     for (let x = 0; x <= width; x += minorStep) {
       if (x % majorStep !== 0) { // Skip major lines
-        const line = new fabric.Line([x, 0, x, height], {
+        const line = new Line([x, 0, x, height], {
           stroke: '#ddd',
           strokeWidth: 0.5,
           selectable: false,
@@ -99,7 +99,7 @@ export const createBasicEmergencyGrid = (
     }
     
     // Add an origin marker
-    const originMarker = new fabric.Circle({
+    const originMarker = new Circle({
       left: 0,
       top: 0,
       radius: 5,
