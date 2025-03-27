@@ -126,7 +126,50 @@ export const isGridPoint = (value: any): value is GridPoint => {
   if (!isPoint(value)) return false;
   
   // Then check for GridPoint-specific properties
-  // Since we can't directly access .snapped on a Point, use a type assertion
-  // or check the property without direct access
-  return 'snapped' in value ? typeof value.snapped === 'boolean' || value.snapped === undefined : true;
+  // Return true even if GridPoint-specific props are missing
+  return true;
+};
+
+/**
+ * Creates a GridPoint from a regular Point
+ * @param {Point} point - Original point
+ * @param {boolean} [snapped=false] - Whether the point is snapped to grid
+ * @returns {GridPoint} A grid point with snapped indicator
+ */
+export const createGridPoint = (point: Point, snapped: boolean = false): GridPoint => {
+  return {
+    x: point.x,
+    y: point.y,
+    snapped: snapped,
+    original: snapped ? { ...point } : undefined
+  };
+};
+
+/**
+ * Snaps a point to the nearest grid point
+ * @param {Point} point - The point to snap
+ * @param {number} gridSize - The grid size to snap to
+ * @returns {GridPoint} A snapped grid point
+ */
+export const snapPointToGrid = (point: Point, gridSize: number = 10): GridPoint => {
+  // Ensure a valid grid size
+  const actualGridSize = gridSize > 0 ? gridSize : 10;
+  
+  // Calculate snapped coordinates
+  const snappedX = Math.round(point.x / actualGridSize) * actualGridSize;
+  const snappedY = Math.round(point.y / actualGridSize) * actualGridSize;
+  
+  // Calculate distance to nearest grid line
+  const distance = Math.sqrt(
+    Math.pow(point.x - snappedX, 2) + 
+    Math.pow(point.y - snappedY, 2)
+  );
+  
+  return {
+    x: snappedX,
+    y: snappedY,
+    snapped: true,
+    distance,
+    original: { ...point }
+  };
 };

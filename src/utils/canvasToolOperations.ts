@@ -1,4 +1,3 @@
-
 /**
  * Canvas tool operations module
  * Provides functions for handling tool changes and canvas operations
@@ -27,6 +26,8 @@ export const clearDrawings = (
 ): void => {
   if (!canvas) return;
   
+  console.log("Clearing drawings from canvas");
+  
   const { gridObjects, drawingObjects } = separateGridAndDrawingObjects(canvas);
   
   // Remove all drawing objects
@@ -36,9 +37,14 @@ export const clearDrawings = (
   
   // Reset grid if needed
   if (gridObjects.length === 0 && createGrid) {
-    const newGrid = createGrid(canvas);
-    if (newGrid && gridLayerRef) {
-      gridLayerRef.current = newGrid;
+    console.log("No grid objects found, recreating grid");
+    try {
+      const newGrid = createGrid(canvas);
+      if (newGrid && gridLayerRef) {
+        gridLayerRef.current = Array.isArray(newGrid) ? newGrid : [];
+      }
+    } catch (error) {
+      console.error("Error recreating grid after clearing drawings:", error);
     }
   }
   
@@ -61,13 +67,13 @@ const ensureBrushIsInitialized = (
 ): void => {
   // If the brush doesn't exist or isn't properly initialized, create a new one
   if (!canvas.freeDrawingBrush || !(canvas.freeDrawingBrush instanceof PencilBrush)) {
+    console.log("Creating new PencilBrush for canvas");
     canvas.freeDrawingBrush = new PencilBrush(canvas);
-    console.log("Created new PencilBrush for canvas");
   }
   
   // Set brush properties
-  canvas.freeDrawingBrush.color = lineColor;
-  canvas.freeDrawingBrush.width = lineThickness;
+  canvas.freeDrawingBrush.color = lineColor || "#000000";
+  canvas.freeDrawingBrush.width = lineThickness || DEFAULT_LINE_THICKNESS;
   
   console.log(`Brush initialized: color=${lineColor}, width=${lineThickness}`);
 };
@@ -89,7 +95,12 @@ export const handleToolChange = (
   lineColor: string,
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>
 ): void => {
-  if (!canvas) return;
+  if (!canvas) {
+    console.error("Cannot change tool: Canvas is null");
+    return;
+  }
+  
+  console.log(`Changing tool to: ${newTool}`);
   
   // Update the tool state
   setTool(newTool);
@@ -110,12 +121,14 @@ export const handleToolChange = (
       // Change cursor to crosshair
       canvas.defaultCursor = 'crosshair';
       canvas.hoverCursor = 'crosshair';
-      console.log("Drawing mode enabled: ", {
+      canvas.selection = false; // Disable object selection while drawing
+      console.log("Drawing mode enabled", {
         isDrawingMode: canvas.isDrawingMode,
         brushWidth: canvas.freeDrawingBrush?.width,
         brushColor: canvas.freeDrawingBrush?.color
       });
       break;
+      
     case "wall":
     case "room":
     case "straightLine":
@@ -127,14 +140,16 @@ export const handleToolChange = (
       disableSelection(canvas);
       console.log(`Custom drawing mode: ${newTool}, selection disabled`);
       break;
+      
     case "select":
       canvas.isDrawingMode = false;
-      canvas.selection = true;
+      canvas.selection = true; // Enable selection of objects
       canvas.defaultCursor = 'default';
       canvas.hoverCursor = 'move';
       enableSelection(canvas);
       console.log("Selection mode enabled");
       break;
+      
     case "hand":
       canvas.isDrawingMode = false;
       canvas.selection = false;
@@ -143,13 +158,19 @@ export const handleToolChange = (
       disableSelection(canvas);
       console.log("Hand/pan mode enabled");
       break;
+      
     default:
       canvas.isDrawingMode = false;
+      canvas.selection = true;
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'default';
+      console.log(`Unhandled tool type: ${newTool}, using default settings`);
       break;
   }
   
   // Ensure proper z-ordering of elements
-  if (gridLayerRef && gridLayerRef.current) {
+  if (gridLayerRef && gridLayerRef.current && gridLayerRef.current.length > 0) {
+    console.log(`Sending ${gridLayerRef.current.length} grid objects to back`);
     gridLayerRef.current.forEach(gridObj => {
       if (canvas.contains(gridObj)) {
         canvas.sendObjectToBack(gridObj);
@@ -160,8 +181,11 @@ export const handleToolChange = (
   // Request a render to update canvas
   canvas.requestRenderAll();
   
-  // Log the current tool change
-  console.log(`Tool changed to ${newTool}, drawing mode: ${canvas.isDrawingMode}, selection: ${canvas.selection}`);
+  console.log(`Tool changed to ${newTool}`, {
+    isDrawingMode: canvas.isDrawingMode,
+    selection: canvas.selection,
+    defaultCursor: canvas.defaultCursor
+  });
 };
 
 /**
@@ -236,4 +260,64 @@ export const setActiveTool = (
   
   // Request a render to update display
   canvas.requestRenderAll();
+};
+
+/**
+ * Determines if a canvas object is part of the grid
+ * @param {FabricObject} obj - The fabric object to check
+ * @returns {boolean} True if the object is a grid element
+ */
+export const isGridObject = (obj: FabricObject): boolean => {
+  return obj.objectType === 'grid';
+};
+
+/**
+ * Force refreshes all canvas tools and states
+ * Useful when canvas behavior becomes inconsistent
+ * @param {Canvas | null} canvas - The Fabric.js canvas instance
+ * @param {DrawingTool} currentTool - Current active tool
+ * @param {string} lineColor - Current line color 
+ * @param {number} lineThickness - Current line thickness
+ */
+export const refreshCanvasToolState = (
+  canvas: Canvas | null,
+  currentTool: DrawingTool,
+  lineColor: string,
+  lineThickness: number
+): void => {
+  if (!canvas) return;
+  
+  console.log("Forcing refresh of canvas tool state");
+  
+  // Re-initialize the brush
+  if (!canvas.freeDrawingBrush || !(canvas.freeDrawingBrush instanceof PencilBrush)) {
+    canvas.freeDrawingBrush = new PencilBrush(canvas);
+  }
+  
+  // Reset brush properties
+  canvas.freeDrawingBrush.color = lineColor || "#000000";
+  canvas.freeDrawingBrush.width = lineThickness || DEFAULT_LINE_THICKNESS;
+  
+  // Set drawing mode based on tool
+  canvas.isDrawingMode = currentTool === 'draw';
+  
+  // Reset selection state based on tool
+  if (currentTool === 'select') {
+    canvas.selection = true;
+    enableSelection(canvas);
+  } else {
+    canvas.selection = false;
+    disableSelection(canvas);
+  }
+  
+  // Force render
+  canvas.requestRenderAll();
+  
+  console.log("Canvas tool state refreshed:", {
+    tool: currentTool,
+    isDrawingMode: canvas.isDrawingMode,
+    selection: canvas.selection,
+    brushColor: canvas.freeDrawingBrush.color,
+    brushWidth: canvas.freeDrawingBrush.width
+  });
 };

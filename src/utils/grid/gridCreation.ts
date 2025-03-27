@@ -31,22 +31,46 @@ export const createBasicGrid = (
   if (!canvas || typeof width !== 'number' || typeof height !== 'number' || 
       width <= 0 || height <= 0 || typeof gridSpacing !== 'number' || gridSpacing <= 0) {
     logger.error("Invalid parameters for createBasicGrid");
+    console.error("Grid creation error: Invalid parameters", { width, height, gridSpacing });
     return gridObjects;
   }
   
-  // Create vertical lines
-  for (let x = 0; x <= width; x += gridSpacing) {
-    const line = new Line([x, 0, x, height], lineOptions);
-    gridObjects.push(line);
+  try {
+    // Create vertical lines
+    for (let x = 0; x <= width; x += gridSpacing) {
+      const line = new Line([x, 0, x, height], {
+        ...lineOptions,
+        objectType: 'grid', // Mark as grid object for easier identification
+      });
+      canvas.add(line); // Add to canvas immediately
+      gridObjects.push(line);
+    }
+    
+    // Create horizontal lines
+    for (let y = 0; y <= height; y += gridSpacing) {
+      const line = new Line([0, y, width, y], {
+        ...lineOptions,
+        objectType: 'grid', // Mark as grid object
+      });
+      canvas.add(line); // Add to canvas immediately
+      gridObjects.push(line);
+    }
+    
+    // Log success
+    console.log(`Created grid with ${gridObjects.length} lines (spacing: ${gridSpacing}px)`);
+    
+    // Send grid objects to back
+    gridObjects.forEach(obj => canvas.sendObjectToBack(obj));
+    
+    // Force a render
+    canvas.requestRenderAll();
+    
+    return gridObjects;
+  } catch (error) {
+    logger.error("Error creating grid:", error);
+    console.error("Grid creation error:", error);
+    return gridObjects;
   }
-  
-  // Create horizontal lines
-  for (let y = 0; y <= height; y += gridSpacing) {
-    const line = new Line([0, y, width, y], lineOptions);
-    gridObjects.push(line);
-  }
-  
-  return gridObjects;
 };
 
 /**
@@ -69,6 +93,8 @@ export const createSmallScaleGrid = (
     logger.error("Invalid canvas for createSmallScaleGrid");
     return [];
   }
+  
+  console.log("Creating small scale grid with spacing:", gridSpacing);
   
   // Validate dimensions
   const validWidth = typeof width === 'number' && width > 0 ? width : canvas.width || 800;
@@ -98,9 +124,48 @@ export const createLargeScaleGrid = (
     return [];
   }
   
+  console.log("Creating large scale grid with spacing:", gridSpacing);
+  
   // Validate dimensions
   const validWidth = typeof width === 'number' && width > 0 ? width : canvas.width || 800;
   const validHeight = typeof height === 'number' && height > 0 ? height : canvas.height || 600;
   
   return createBasicGrid(canvas, validWidth, validHeight, gridSpacing, LARGE_GRID_LINE_OPTIONS);
+};
+
+/**
+ * Creates a complete grid with both small and large scale lines
+ * @param {Canvas} canvas - The fabric canvas
+ * @param {number} width - Canvas width
+ * @param {number} height - Canvas height
+ * @returns {{smallGrid: FabricObject[], largeGrid: FabricObject[], allGrid: FabricObject[]}} Created grid objects
+ */
+export const createCompleteGrid = (
+  canvas: Canvas,
+  width: number,
+  height: number
+): {smallGrid: FabricObject[], largeGrid: FabricObject[], allGrid: FabricObject[]} => {
+  console.log("Creating complete grid system with dimensions:", { width, height });
+  
+  // Create small grid first (will be in the background)
+  const smallGrid = createSmallScaleGrid(canvas, width, height);
+  
+  // Create large grid on top
+  const largeGrid = createLargeScaleGrid(canvas, width, height);
+  
+  // Combine all grid objects
+  const allGrid = [...smallGrid, ...largeGrid];
+  
+  // Ensure grid objects are in the background
+  // Small grid goes furthest back, large grid on top of small grid
+  smallGrid.forEach(obj => canvas.sendObjectToBack(obj));
+  
+  // Force a render
+  canvas.requestRenderAll();
+  
+  return { 
+    smallGrid, 
+    largeGrid, 
+    allGrid 
+  };
 };
