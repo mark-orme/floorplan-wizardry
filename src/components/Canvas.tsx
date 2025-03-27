@@ -11,46 +11,7 @@ import { toast } from 'sonner';
 import { useReliableGridInitialization } from '@/hooks/useReliableGridInitialization';
 import { initializeCanvasGestures } from '@/utils/fabric/gestures';
 import { CanvasCreationOptions } from '@/types/fabric';
-
-/**
- * Default canvas styling constants
- */
-const CANVAS_STYLES = {
-  /**
-   * Default background color
-   */
-  BACKGROUND_COLOR: '#FFFFFF',
-  
-  /**
-   * Default border style
-   */
-  BORDER: '1px solid #eee',
-  
-  /**
-   * Default canvas wrapper class
-   */
-  WRAPPER_CLASS: 'canvas-container touch-none'
-};
-
-/**
- * Canvas scaling constants
- */
-const CANVAS_SCALING = {
-  /**
-   * Minimum zoom level
-   */
-  MIN_ZOOM: 0.1,
-  
-  /**
-   * Maximum zoom level
-   */
-  MAX_ZOOM: 10,
-  
-  /**
-   * Touch target tolerance for iOS (in pixels)
-   */
-  IOS_TOUCH_TOLERANCE: 15
-};
+import { CANVAS_STYLES, CANVAS_SCALING } from '@/constants/canvas';
 
 /**
  * Canvas component props interface
@@ -77,8 +38,8 @@ interface CanvasProps {
  */
 export const Canvas: React.FC<CanvasProps> = ({ 
   onError, 
-  width = 800,
-  height = 600,
+  width = CANVAS_SCALING.DEFAULT_WIDTH,
+  height = CANVAS_SCALING.DEFAULT_HEIGHT,
   onCanvasReady 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -155,7 +116,9 @@ export const Canvas: React.FC<CanvasProps> = ({
       window.fabricCanvasInstances.push(canvas);
       
       // Also store a reference on the canvas element itself for debugging
-      (canvasRef.current as any)._fabric = canvas;
+      if (canvasRef.current) {
+        (canvasRef.current as any)._fabric = canvas;
+      }
       
       console.log("Canvas: Fabric.js canvas created successfully");
       

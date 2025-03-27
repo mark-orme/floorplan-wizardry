@@ -14,30 +14,69 @@ import logger from "@/utils/logger";
 const DEFAULT_SAFETY_TIMEOUT = 5000; // 5 seconds
 
 /**
+ * Interface for grid creation lock state
+ * @interface GridCreationLock
+ */
+interface GridCreationLock {
+  /** Unique identifier for the lock */
+  id: number;
+  /** Whether the lock is currently held */
+  isLocked: boolean;
+  /** Timestamp when the lock was acquired */
+  timestamp: number;
+}
+
+/**
+ * Interface for safety lock acquisition result
+ * @interface SafetyLockResult
+ */
+interface SafetyLockResult {
+  /** Unique ID of the acquired lock */
+  lockId: number;
+  /** ID of the safety timeout */
+  safetyTimeoutId: number;
+}
+
+/**
+ * Interface for grid safety hook result
+ * @interface GridSafetyResult
+ */
+interface GridSafetyResult {
+  /** Function to acquire a safety lock */
+  acquireSafetyLock: (timeout?: number) => SafetyLockResult | null;
+  /** Function to release a safety lock */
+  releaseSafetyLock: (lockId: number) => boolean;
+  /** Function to check if safety lock is held */
+  isSafetyLockHeld: () => boolean;
+  /** Function to reset safety state */
+  resetSafetyState: () => void;
+}
+
+/**
  * Hook for managing grid creation safety
  * Implements lock mechanism and safety timeouts
  * 
- * @returns {Object} Safety management functions
+ * @returns {GridSafetyResult} Safety management functions
  */
-export const useGridSafety = () => {
+export const useGridSafety = (): GridSafetyResult => {
   // Safety state refs
   const safetyTimeoutRef = useRef<number | null>(null);
-  const creationLockRef = useRef<{
-    id: number;
-    isLocked: boolean;
-    timestamp: number;
-  }>({ id: 0, isLocked: false, timestamp: 0 });
+  const creationLockRef = useRef<GridCreationLock>({ 
+    id: 0, 
+    isLocked: false, 
+    timestamp: 0 
+  });
   
   /**
    * Acquire a safety lock for grid creation
    * Prevents concurrent grid creation operations
    * 
    * @param {number} [timeout] - Custom timeout duration
-   * @returns {Object|null} Lock information or null if couldn't acquire
+   * @returns {SafetyLockResult|null} Lock information or null if couldn't acquire
    */
   const acquireSafetyLock = useCallback((
     timeout: number = DEFAULT_SAFETY_TIMEOUT
-  ): { lockId: number; safetyTimeoutId: number } | null => {
+  ): SafetyLockResult | null => {
     // Check if lock is already held
     if (creationLockRef.current.isLocked) {
       logger.debug("Grid creation lock already held, can't acquire new lock");

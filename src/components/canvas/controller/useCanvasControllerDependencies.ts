@@ -1,3 +1,4 @@
+
 /**
  * Hook for initializing canvas dependencies
  * @module useCanvasControllerDependencies

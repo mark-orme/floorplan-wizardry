@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import type { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
-import { DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
+import { LINE_THICKNESS } from "@/constants/drawingConstants";
 import { disableSelection, enableSelection } from "@/utils/fabric/selection";
 
 /**
@@ -23,18 +23,30 @@ const BRUSH_SETTINGS = {
   
   /**
    * Valid drawing tool names
-   * @constant {Object}
+   * @constant {Record<string, string>}
    */
   DRAWING_TOOLS: {
     DRAW: 'draw',
     WALL: 'wall',
     ROOM: 'room',
     STRAIGHT_LINE: 'straightLine'
+  },
+  
+  /**
+   * Default cursor styles for different tools
+   * @constant {Record<string, string>}
+   */
+  CURSOR_STYLES: {
+    DEFAULT: 'default',
+    CROSSHAIR: 'crosshair',
+    GRAB: 'grab',
+    MOVE: 'move'
   }
 };
 
 /**
  * Props for the useBrushSettings hook
+ * @interface UseBrushSettingsProps
  */
 interface UseBrushSettingsProps extends BaseEventHandlerProps {
   /** Current line color */
@@ -45,6 +57,8 @@ interface UseBrushSettingsProps extends BaseEventHandlerProps {
 
 /**
  * Hook to set up brush settings for drawing tools
+ * Configures drawing brush properties and cursor styles based on the active tool
+ * 
  * @param {UseBrushSettingsProps} props - Hook properties
  * @returns {EventHandlerResult} Cleanup function
  */
@@ -52,7 +66,7 @@ export const useBrushSettings = ({
   fabricCanvasRef,
   tool,
   lineColor,
-  lineThickness = DEFAULT_LINE_THICKNESS
+  lineThickness = LINE_THICKNESS.DEFAULT
 }: UseBrushSettingsProps): EventHandlerResult => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
@@ -95,16 +109,16 @@ export const useBrushSettings = ({
       // but we still need to disable selection for consistent behavior
       if (tool !== BRUSH_SETTINGS.DRAWING_TOOLS.DRAW) {
         disableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = 'crosshair';
-        fabricCanvas.hoverCursor = 'crosshair';
+        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
+        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
         
         // Add detailed logging
         console.log(`Custom drawing tool (${tool}) enabled: selection disabled, cursor set to crosshair`);
       } else {
         // For the regular draw tool, we also disable selection
         disableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = 'crosshair';
-        fabricCanvas.hoverCursor = 'crosshair';
+        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
+        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
         
         // Add detailed logging
         console.log(`Draw tool enabled: isDrawingMode=${fabricCanvas.isDrawingMode}, selection disabled`);
@@ -118,14 +132,14 @@ export const useBrushSettings = ({
       // For selection tool, enable selection
       if (tool === 'select') {
         enableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = 'default';
-        fabricCanvas.hoverCursor = 'move';
+        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.DEFAULT;
+        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.MOVE;
         console.log("Selection mode enabled");
       } else if (tool === 'hand') {
         // For hand tool, disable selection but set appropriate cursor
         disableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = 'grab';
-        fabricCanvas.hoverCursor = 'grab';
+        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.GRAB;
+        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.GRAB;
         console.log("Hand tool mode enabled");
       } else {
         // For other tools, disable selection

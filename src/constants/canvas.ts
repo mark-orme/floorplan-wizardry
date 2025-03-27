@@ -63,3 +63,63 @@ export const CANVAS_READY_DELAY = 200;
  * @constant {number}
  */
 export const MAX_GRID_OBJECTS = 2000;
+
+/**
+ * Canvas styling constants for consistency across components
+ * @constant {Object}
+ */
+export const CANVAS_STYLES = {
+  /**
+   * Default background color
+   * @constant {string}
+   */
+  BACKGROUND_COLOR: '#FFFFFF',
+  
+  /**
+   * Default border style
+   * @constant {string}
+   */
+  BORDER: '1px solid #eee',
+  
+  /**
+   * Default canvas wrapper class
+   * @constant {string}
+   */
+  WRAPPER_CLASS: 'canvas-container touch-none'
+};
+
+/**
+ * Canvas scaling and interaction settings
+ * @constant {Object}
+ */
+export const CANVAS_SCALING = {
+  /**
+   * Minimum zoom level
+   * @constant {number}
+   */
+  MIN_ZOOM: 0.1,
+  
+  /**
+   * Maximum zoom level
+   * @constant {number}
+   */
+  MAX_ZOOM: 10,
+  
+  /**
+   * Touch target tolerance for iOS (in pixels)
+   * @constant {number}
+   */
+  IOS_TOUCH_TOLERANCE: 15,
+  
+  /**
+   * Default width for canvas
+   * @constant {number}
+   */
+  DEFAULT_WIDTH: 800,
+  
+  /**
+   * Default height for canvas
+   * @constant {number}
+   */
+  DEFAULT_HEIGHT: 600
+};

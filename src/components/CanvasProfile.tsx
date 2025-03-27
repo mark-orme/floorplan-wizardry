@@ -1,3 +1,4 @@
+
 /**
  * Canvas profiling component
  * Displays rendering metrics for canvas operations
@@ -11,8 +12,37 @@ import { Button } from '@/components/ui/button';
 import { PerformanceMeasurement } from '@/utils/performance';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Maximum number of measurements to store
+/**
+ * Maximum number of measurements to store in the profile history
+ * @constant {number}
+ */
 const MAX_MEASUREMENTS = 100;
+
+/**
+ * Type for average duration calculations
+ * @interface AverageDuration
+ */
+interface AverageDuration {
+  /** Operation name */
+  name: string;
+  /** Average duration in milliseconds */
+  avgDuration: number;
+  /** Number of samples collected */
+  count: number;
+}
+
+/**
+ * Type for chart data points
+ * @interface ChartDataPoint
+ */
+interface ChartDataPoint {
+  /** Index in the data array */
+  index: number;
+  /** Operation name */
+  name: string;
+  /** Operation duration in milliseconds */
+  duration: number;
+}
 
 /**
  * Canvas profiling panel component
@@ -24,7 +54,10 @@ export const CanvasProfile = () => {
   const [recording, setRecording] = useState(false);
   const [selectedTab, setSelectedTab] = useState("metrics");
   
-  // Toggle recording state
+  /**
+   * Toggle recording state
+   * Starts or stops the performance recording
+   */
   const toggleRecording = () => {
     setRecording(prev => !prev);
     
@@ -34,7 +67,10 @@ export const CanvasProfile = () => {
     }
   };
   
-  // Add a new measurement
+  /**
+   * Add a new measurement to the profile
+   * @param {PerformanceMeasurement} measurement - The performance measurement to add
+   */
   const addMeasurement = (measurement: PerformanceMeasurement) => {
     setMeasurements(prev => {
       const newMeasurements = [...prev, measurement];
@@ -43,8 +79,11 @@ export const CanvasProfile = () => {
     });
   };
   
-  // Calculate average duration by operation
-  const getAverageDurations = () => {
+  /**
+   * Calculate average duration by operation
+   * @returns {AverageDuration[]} Array of operation averages
+   */
+  const getAverageDurations = (): AverageDuration[] => {
     const operationMap = new Map<string, { total: number, count: number }>();
     
     measurements.forEach(m => {
@@ -62,8 +101,11 @@ export const CanvasProfile = () => {
     }));
   };
   
-  // Prepare chart data
-  const getChartData = () => {
+  /**
+   * Prepare chart data for visualization
+   * @returns {ChartDataPoint[]} Array of data points for the chart
+   */
+  const getChartData = (): ChartDataPoint[] => {
     return measurements.map((m, index) => ({
       index,
       name: m.name,
@@ -117,8 +159,8 @@ export const CanvasProfile = () => {
                     <XAxis dataKey="index" />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value: any) => [`${value}ms`, 'Duration']}
-                      labelFormatter={(index) => measurements[index]?.name || ''}
+                      formatter={(value: number) => [`${value}ms`, 'Duration']}
+                      labelFormatter={(index: number) => measurements[index]?.name || ''}
                     />
                     <Line 
                       type="monotone" 

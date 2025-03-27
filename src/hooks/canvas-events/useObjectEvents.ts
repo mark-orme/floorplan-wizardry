@@ -26,6 +26,10 @@ const OBJECT_EVENTS = {
   OBJECT_REMOVED: 'object:removed'
 };
 
+/**
+ * Interface for useObjectEvents props extending base handler props
+ * @interface UseObjectEventsProps
+ */
 interface UseObjectEventsProps extends BaseEventHandlerProps {
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
@@ -33,6 +37,7 @@ interface UseObjectEventsProps extends BaseEventHandlerProps {
 
 /**
  * Hook to handle object modification and removal events
+ * @param {UseObjectEventsProps} props - Hook properties
  * @returns {EventHandlerResult} Cleanup function
  */
 export const useObjectEvents = ({
@@ -46,6 +51,7 @@ export const useObjectEvents = ({
     
     /**
      * Handle object modified event
+     * Saves state when object is modified
      */
     const handleObjectModified = (): void => {
       // Save state when objects are modified
@@ -55,6 +61,7 @@ export const useObjectEvents = ({
     
     /**
      * Handle object removed event
+     * Saves state when object is removed
      */
     const handleObjectRemoved = (): void => {
       // Save state when objects are removed
@@ -62,15 +69,18 @@ export const useObjectEvents = ({
       saveCurrentState();
     };
     
-    // Use a proper type assertion that works with fabric's event system
-    // Cast the event name as any to bypass type checking, then the handler will be properly typed
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified);
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved);
+    // Use a typed approach to handle fabric's event system
+    // Type assertions needed due to fabric.js event system peculiarities
+    type FabricEventHandler = (e: unknown) => void;
+    
+    // Register event handlers with proper typing
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified as FabricEventHandler);
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved as FabricEventHandler);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified);
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified as FabricEventHandler);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved as FabricEventHandler);
       }
     };
   }, [fabricCanvasRef, saveCurrentState]);

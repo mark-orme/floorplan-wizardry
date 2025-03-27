@@ -10,6 +10,7 @@ import logger from "@/utils/logger";
 
 /**
  * Props for the useMouseEvents hook
+ * @interface UseMouseEventsProps
  */
 interface UseMouseEventsProps extends BaseEventHandlerProps {
   /** Function to handle mouse down event */
@@ -20,6 +21,33 @@ interface UseMouseEventsProps extends BaseEventHandlerProps {
   handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
+}
+
+/**
+ * Interface for source capabilities detection
+ * @interface SourceCapabilities
+ */
+interface SourceCapabilities {
+  firesTouchEvents: boolean;
+}
+
+/**
+ * Extended MouseEvent type that includes source capabilities
+ * @interface ExtendedMouseEvent
+ */
+interface ExtendedMouseEvent extends MouseEvent {
+  sourceCapabilities?: SourceCapabilities;
+}
+
+/**
+ * Extended PointerEvent type from fabric
+ * @interface ExtendedPointerEvent
+ */
+interface ExtendedPointerEvent {
+  pointerType?: string;
+  e?: {
+    type?: string;
+  };
 }
 
 /**
@@ -43,54 +71,57 @@ export const useMouseEvents = ({
     // Type for mouse event handlers that matches Fabric.js expectations
     type FabricEventHandler = (e: unknown) => void;
     
-    // Cast to Fabric event handler type
-    const fabricMouseDown = (e: unknown) => {
-      // Suppress mouse events if they originated from touch to prevent double-handling
-      const mouseEvent = e as MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } };
-      if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
-        return;
+    /**
+     * Checks if an event originated from touch to avoid double handling
+     * @param {unknown} e - Event to check
+     * @returns {boolean} True if event is from touch
+     */
+    const isFromTouchEvent = (e: unknown): boolean => {
+      // Check sourceCapabilities
+      const mouseEvent = e as ExtendedMouseEvent;
+      if (mouseEvent.sourceCapabilities?.firesTouchEvents) {
+        return true;
       }
       
       // Check for touch events in pointer/mouse event
-      const pointerEvent = e as any;
+      const pointerEvent = e as ExtendedPointerEvent;
       if (pointerEvent.pointerType === 'touch' || 
-          (pointerEvent.e && pointerEvent.e.type && pointerEvent.e.type.startsWith('touch'))) {
-        return;
+          (pointerEvent.e?.type && pointerEvent.e.type.startsWith('touch'))) {
+        return true;
       }
+      
+      return false;
+    };
+    
+    /**
+     * Handle mouse down event
+     * @param {unknown} e - Mouse down event
+     */
+    const fabricMouseDown = (e: unknown) => {
+      // Skip if from touch event
+      if (isFromTouchEvent(e)) return;
       
       handleMouseDown(e as MouseEvent);
     };
     
+    /**
+     * Handle mouse move event
+     * @param {unknown} e - Mouse move event
+     */
     const fabricMouseMove = (e: unknown) => {
-      // Suppress mouse events if they originated from touch to prevent double-handling
-      const mouseEvent = e as MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } };
-      if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
-        return;
-      }
-      
-      // Check for touch events in pointer/mouse event
-      const pointerEvent = e as any;
-      if (pointerEvent.pointerType === 'touch' || 
-          (pointerEvent.e && pointerEvent.e.type && pointerEvent.e.type.startsWith('touch'))) {
-        return;
-      }
+      // Skip if from touch event
+      if (isFromTouchEvent(e)) return;
       
       handleMouseMove(e as MouseEvent);
     };
     
+    /**
+     * Handle mouse up event
+     * @param {unknown} e - Mouse up event
+     */
     const fabricMouseUp = (e: unknown) => {
-      // Suppress mouse events if they originated from touch to prevent double-handling
-      const mouseEvent = e as MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } };
-      if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
-        return;
-      }
-      
-      // Check for touch events in pointer/mouse event
-      const pointerEvent = e as any;
-      if (pointerEvent.pointerType === 'touch' || 
-          (pointerEvent.e && pointerEvent.e.type && pointerEvent.e.type.startsWith('touch'))) {
-        return;
-      }
+      // Skip if from touch event
+      if (isFromTouchEvent(e)) return;
       
       handleMouseUp(e as MouseEvent);
     };
@@ -122,7 +153,6 @@ export const useMouseEvents = ({
                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
     // Register events - we're using Fabric.js events for mouse handling
-    // and direct DOM events for touch handling to avoid conflicts
     fabricCanvas.on('mouse:down', fabricMouseDown as FabricEventHandler);
     fabricCanvas.on('mouse:move', fabricMouseMove as FabricEventHandler);
     fabricCanvas.on('mouse:up', fabricMouseUp as FabricEventHandler);
