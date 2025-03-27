@@ -5,6 +5,7 @@ import { useZoomTracking } from '@/hooks/canvas-events/useZoomTracking';
 import { useCanvasHandlers } from '@/hooks/canvas-events/useCanvasHandlers';
 import { Canvas } from 'fabric';
 import { DrawingTool } from '@/hooks/useCanvasState';
+import { TEvent } from 'fabric/fabric-impl';
 
 /**
  * Tests for Canvas Zoom and Handlers functionality
@@ -12,7 +13,7 @@ import { DrawingTool } from '@/hooks/useCanvasState';
  */
 describe('Canvas Zoom and Handlers', () => {
   // Mock canvas and references
-  let mockCanvas: Canvas & { fire?: Function };
+  let mockCanvas: Partial<Canvas>;
   let fabricCanvasRef: { current: Canvas | null };
   let mockHandleUndo: ReturnType<typeof vi.fn>;
   let mockHandleRedo: ReturnType<typeof vi.fn>;
@@ -27,9 +28,9 @@ describe('Canvas Zoom and Handlers', () => {
       off: vi.fn(),
       getZoom: vi.fn().mockReturnValue(1),
       fire: vi.fn()
-    } as unknown as Canvas & { fire?: Function };
+    };
     
-    fabricCanvasRef = { current: mockCanvas };
+    fabricCanvasRef = { current: mockCanvas as Canvas };
     mockHandleUndo = vi.fn();
     mockHandleRedo = vi.fn();
     mockSaveCurrentState = vi.fn();
@@ -69,7 +70,7 @@ describe('Canvas Zoom and Handlers', () => {
       // When
       renderHook(() => useCanvasHandlers({
         fabricCanvasRef,
-        tool: defaultTool, // Add the required tool property
+        tool: defaultTool,
         handleUndo: mockHandleUndo,
         handleRedo: mockHandleRedo,
         saveCurrentState: mockSaveCurrentState,
@@ -88,7 +89,7 @@ describe('Canvas Zoom and Handlers', () => {
       // When
       const { unmount } = renderHook(() => useCanvasHandlers({
         fabricCanvasRef,
-        tool: defaultTool, // Add the required tool property
+        tool: defaultTool,
         handleUndo: mockHandleUndo,
         handleRedo: mockHandleRedo,
         saveCurrentState: mockSaveCurrentState,
@@ -103,6 +104,23 @@ describe('Canvas Zoom and Handlers', () => {
       expect(enhancedCanvas.handleRedo).toBeUndefined();
       expect(enhancedCanvas.saveCurrentState).toBeUndefined();
       expect(enhancedCanvas.deleteSelectedObjects).toBeUndefined();
+    });
+
+    test('should handle when fabricCanvasRef is null', () => {
+      // Given
+      fabricCanvasRef.current = null;
+      
+      // When/Then - should not throw an error
+      expect(() => {
+        renderHook(() => useCanvasHandlers({
+          fabricCanvasRef,
+          tool: defaultTool,
+          handleUndo: mockHandleUndo,
+          handleRedo: mockHandleRedo,
+          saveCurrentState: mockSaveCurrentState,
+          deleteSelectedObjects: mockDeleteSelectedObjects
+        }));
+      }).not.toThrow();
     });
   });
 });

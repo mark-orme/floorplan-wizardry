@@ -28,6 +28,9 @@ export interface ResizingState {
   initialResizeComplete: boolean;
   resizeInProgress: boolean;
   lastResizeTime: number;
+  minResizeInterval?: number;
+  resizeTimeoutId?: number | null;
+  requestId?: number | null;
 }
 
 /**
@@ -36,4 +39,29 @@ export interface ResizingState {
  */
 export interface CanvasResizingResult {
   updateCanvasDimensions: () => void;
+  resetResizeState?: () => void;
+  cancelResize?: () => void;
+}
+
+/**
+ * Configuration options for canvas resizing
+ * @interface ResizeConfig
+ */
+export interface ResizeConfig {
+  debounceTime?: number;
+  minDimensionChange?: number;
+  maxUpdatesPerSecond?: number;
+  safetyTimeout?: number;
+}
+
+/**
+ * Resize event details
+ * @interface ResizeEventDetails
+ */
+export interface ResizeEventDetails {
+  oldDimensions: CanvasDimensions;
+  newDimensions: CanvasDimensions;
+  timestamp: number;
+  success: boolean;
+  error?: Error;
 }

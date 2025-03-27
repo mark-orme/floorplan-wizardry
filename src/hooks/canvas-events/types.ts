@@ -6,6 +6,7 @@
  */
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, TEvent, TPointerEvent, TPointerEventInfo } from "fabric";
 import { DrawingTool } from "../useCanvasState";
+import { Point } from "@/types/geometryTypes";
 
 /**
  * Type for Canvas Events with target object
@@ -44,6 +45,10 @@ export interface EditableFabricObject extends Omit<FabricObject, 'type'> {
   isEditing?: boolean;
   /** Object type (from Fabric.js) */
   type: string;
+  /** Unique identifier for the object */
+  id?: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -57,4 +62,79 @@ export interface BaseEventHandlerProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current active drawing tool */
   tool: DrawingTool;
+}
+
+/**
+ * Mouse handler props
+ * Properties for mouse event handlers
+ * 
+ * @interface MouseHandlerProps
+ * @extends BaseEventHandlerProps
+ */
+export interface MouseHandlerProps extends BaseEventHandlerProps {
+  /** Called when mouse down event occurs */
+  onMouseDown?: (event: TargetEvent, pointer: Point) => void;
+  /** Called when mouse move event occurs */
+  onMouseMove?: (event: TargetEvent, pointer: Point) => void;
+  /** Called when mouse up event occurs */
+  onMouseUp?: (event: TargetEvent, pointer: Point) => void;
+}
+
+/**
+ * Object handler props
+ * Properties for object event handlers
+ * 
+ * @interface ObjectHandlerProps
+ * @extends BaseEventHandlerProps
+ */
+export interface ObjectHandlerProps extends BaseEventHandlerProps {
+  /** Called when an object is selected */
+  onObjectSelected?: (object: FabricObject) => void;
+  /** Called when an object is modified */
+  onObjectModified?: (object: FabricObject) => void;
+  /** Called when an object is added */
+  onObjectAdded?: (object: FabricObject) => void;
+  /** Called when an object is removed */
+  onObjectRemoved?: (object: FabricObject) => void;
+}
+
+/**
+ * Path handler props
+ * Properties for path event handlers
+ * 
+ * @interface PathHandlerProps
+ * @extends BaseEventHandlerProps
+ */
+export interface PathHandlerProps extends BaseEventHandlerProps {
+  /** Called when a path is created */
+  onPathCreated?: (event: PathCreatedEvent) => void;
+}
+
+/**
+ * Keyboard handler props
+ * Properties for keyboard event handlers
+ * 
+ * @interface KeyboardHandlerProps
+ * @extends BaseEventHandlerProps
+ */
+export interface KeyboardHandlerProps extends BaseEventHandlerProps {
+  /** Function to handle undo operation */
+  handleUndo: () => void;
+  /** Function to handle redo operation */
+  handleRedo: () => void;
+  /** Function to save current state */
+  saveCurrentState: () => void;
+  /** Function to delete selected objects */
+  deleteSelectedObjects: () => void;
+}
+
+/**
+ * Event registration result
+ * Return type for event registration functions
+ * 
+ * @interface EventRegistrationResult
+ */
+export interface EventRegistrationResult {
+  /** Function to clean up event listeners */
+  cleanup: () => void;
 }

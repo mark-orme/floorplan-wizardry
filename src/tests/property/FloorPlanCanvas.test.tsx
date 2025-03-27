@@ -1,5 +1,5 @@
 
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { FloorPlanCanvas } from '@/components/property/FloorPlanCanvas';
 
@@ -25,10 +25,15 @@ vi.mock('@/utils/errorHandling', () => ({
 }));
 
 describe('FloorPlanCanvas', () => {
+  let onCanvasError: ReturnType<typeof vi.fn>;
+  
+  beforeEach(() => {
+    onCanvasError = vi.fn();
+    // Reset any mocks between tests
+    vi.clearAllMocks();
+  });
+  
   test('initializes canvas after short delay', async () => {
-    // Given
-    const onCanvasError = vi.fn();
-    
     // When
     render(<FloorPlanCanvas onCanvasError={onCanvasError} />);
     
@@ -46,9 +51,6 @@ describe('FloorPlanCanvas', () => {
   });
   
   test('calls onCanvasError when canvas has an error', async () => {
-    // Given
-    const onCanvasError = vi.fn();
-    
     // When
     render(<FloorPlanCanvas onCanvasError={onCanvasError} />);
     
@@ -64,5 +66,39 @@ describe('FloorPlanCanvas', () => {
     
     // Then
     expect(onCanvasError).toHaveBeenCalled();
+  });
+  
+  test('resets initialization state on unmount', async () => {
+    const { unmount } = render(<FloorPlanCanvas onCanvasError={onCanvasError} />);
+    
+    // Wait for canvas to initialize
+    await waitFor(() => {
+      const wrapper = screen.getByTestId('floor-plan-wrapper');
+      expect(wrapper.getAttribute('data-canvas-ready')).toBe('true');
+    }, { timeout: 600 });
+    
+    // When component unmounts
+    unmount();
+    
+    // Then initialization state should be reset
+    expect(require('@/utils/canvas/safeCanvasInitialization').resetInitializationState).toHaveBeenCalled();
+  });
+  
+  test('initializes with correct class names', async () => {
+    // When
+    render(<FloorPlanCanvas onCanvasError={onCanvasError} />);
+    
+    // Wait for canvas to initialize
+    await waitFor(() => {
+      const wrapper = screen.getByTestId('floor-plan-wrapper');
+      expect(wrapper.getAttribute('data-canvas-ready')).toBe('true');
+    }, { timeout: 600 });
+    
+    // Then
+    const wrapper = screen.getByTestId('floor-plan-wrapper');
+    expect(wrapper.className).toContain('relative');
+    expect(wrapper.className).toContain('w-full');
+    expect(wrapper.className).toContain('h-full');
+    expect(wrapper.className).toContain('overflow-hidden');
   });
 });

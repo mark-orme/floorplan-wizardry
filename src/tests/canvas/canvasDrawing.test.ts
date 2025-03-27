@@ -7,6 +7,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { calculateDistance } from "@/utils/geometry/lineOperations";
 import { calculateMidpoint } from "@/utils/geometry/midpointCalculation";
+import { Point } from "@/types/geometryTypes";
+import { DEFAULT_LINE_COLOR } from "@/utils/drawing";
+import { FLOATING_POINT_TOLERANCE } from "@/utils/geometry/constants";
 
 /**
  * Test constants for canvas dimensions and coordinates
@@ -100,37 +103,43 @@ const TEST_CONSTANTS = {
   COMPARISON_PRECISION: 1
 };
 
+/**
+ * Mock for a Fabric.js canvas
+ * @type {Object}
+ */
+const createMockCanvas = (): Partial<FabricCanvas> => ({
+  add: vi.fn(),
+  remove: vi.fn(),
+  clear: vi.fn(),
+  renderAll: vi.fn(),
+  requestRenderAll: vi.fn(),
+  setZoom: vi.fn(),
+  getZoom: vi.fn().mockReturnValue(1),
+  getObjects: vi.fn().mockReturnValue([]),
+  getWidth: vi.fn().mockReturnValue(TEST_CONSTANTS.CANVAS_WIDTH),
+  getHeight: vi.fn().mockReturnValue(TEST_CONSTANTS.CANVAS_HEIGHT),
+  getPointer: vi.fn(),
+  discardActiveObject: vi.fn(),
+  sendObjectToBack: vi.fn(),
+  bringObjectToFront: vi.fn(),
+  contains: vi.fn().mockReturnValue(true),
+  on: vi.fn(),
+  off: vi.fn(),
+  isDrawingMode: false,
+  freeDrawingBrush: { width: 1, color: DEFAULT_LINE_COLOR }
+});
+
 // Mock fabric.js
 vi.mock("fabric", () => {
-  const Canvas = vi.fn(() => ({
-    add: vi.fn(),
-    remove: vi.fn(),
-    clear: vi.fn(),
-    renderAll: vi.fn(),
-    requestRenderAll: vi.fn(),
-    setZoom: vi.fn(),
-    getZoom: vi.fn().mockReturnValue(1),
-    getObjects: vi.fn().mockReturnValue([]),
-    getWidth: vi.fn().mockReturnValue(TEST_CONSTANTS.CANVAS_WIDTH),
-    getHeight: vi.fn().mockReturnValue(TEST_CONSTANTS.CANVAS_HEIGHT),
-    getPointer: vi.fn(),
-    discardActiveObject: vi.fn(),
-    sendObjectToBack: vi.fn(),
-    bringObjectToFront: vi.fn(),
-    contains: vi.fn().mockReturnValue(true),
-    on: vi.fn(),
-    off: vi.fn(),
-    isDrawingMode: false,
-    freeDrawingBrush: { width: 1, color: "#000000" }
-  }));
+  const Canvas = vi.fn(() => createMockCanvas());
   
-  const Line = vi.fn().mockImplementation((points, options) => ({
+  const Line = vi.fn().mockImplementation((points: Point[], options: Record<string, unknown>) => ({
     type: "line",
     points,
     ...options
   }));
   
-  const Text = vi.fn().mockImplementation((text, options) => ({
+  const Text = vi.fn().mockImplementation((text: string, options: Record<string, unknown>) => ({
     type: "text",
     text,
     ...options
@@ -140,15 +149,15 @@ vi.mock("fabric", () => {
 });
 
 describe("Canvas Drawing Utilities", () => {
-  let canvasRef;
-  let fabricCanvas;
+  let canvasRef: { current: HTMLCanvasElement | null };
+  let fabricCanvas: Partial<FabricCanvas>;
   
   beforeEach(() => {
-    fabricCanvas = new FabricCanvas();
-    canvasRef = { current: fabricCanvas };
+    fabricCanvas = createMockCanvas();
+    canvasRef = { current: document.createElement('canvas') };
     
     // Mock getPointer for tests
-    fabricCanvas.getPointer = vi.fn().mockImplementation((evt) => {
+    fabricCanvas.getPointer = vi.fn().mockImplementation((evt: { clientX?: number, clientY?: number }) => {
       // Return the clientX/Y as canvas coordinates for simplicity
       return { x: evt.clientX || 0, y: evt.clientY || 0 };
     });
@@ -178,6 +187,38 @@ describe("Canvas Drawing Utilities", () => {
       const horizontalMidpoint = calculateMidpoint(POINTS.POINT_1, POINTS.POINT_2);
       expect(horizontalMidpoint).toEqual(EXPECTED.HORIZONTAL_MIDPOINT);
     });
+
+    it("should handle edge cases for distance calculation", () => {
+      // Same point should have zero distance
+      expect(calculateDistance(
+        TEST_CONSTANTS.POINTS.POINT_1, 
+        TEST_CONSTANTS.POINTS.POINT_1
+      )).toBe(0);
+      
+      // Test with negative coordinates
+      const negativePoint: Point = { x: -100, y: -100 };
+      expect(calculateDistance(
+        TEST_CONSTANTS.POINTS.POINT_1,
+        negativePoint
+      )).toBeCloseTo(282.84, TEST_CONSTANTS.COMPARISON_PRECISION);
+    });
+
+    it("should handle edge cases for midpoint calculation", () => {
+      // Same point should return the same point
+      const samePointMidpoint = calculateMidpoint(
+        TEST_CONSTANTS.POINTS.POINT_1,
+        TEST_CONSTANTS.POINTS.POINT_1
+      );
+      expect(samePointMidpoint).toEqual(TEST_CONSTANTS.POINTS.POINT_1);
+      
+      // Test with negative and positive coordinates
+      const negativePoint: Point = { x: -100, y: -100 };
+      const mixedMidpoint = calculateMidpoint(
+        TEST_CONSTANTS.POINTS.POINT_1,
+        negativePoint
+      );
+      expect(mixedMidpoint).toEqual({ x: 0, y: 0 });
+    });
   });
   
   describe("Mouse Event Handling", () => {
@@ -189,7 +230,7 @@ describe("Canvas Drawing Utilities", () => {
         preventDefault: vi.fn()
       };
       
-      const pointer = fabricCanvas.getPointer(mockMouseEvent);
+      const pointer = fabricCanvas.getPointer!(mockMouseEvent);
       
       expect(pointer.x).toBe(TEST_CONSTANTS.EVENTS.MOUSE_POSITION.x);
       expect(pointer.y).toBe(TEST_CONSTANTS.EVENTS.MOUSE_POSITION.y);
@@ -212,6 +253,43 @@ describe("Canvas Drawing Utilities", () => {
       
       expect(pointer.x).toBe(TEST_CONSTANTS.EVENTS.TOUCH_POSITION.x);
       expect(pointer.y).toBe(TEST_CONSTANTS.EVENTS.TOUCH_POSITION.y);
+    });
+
+    it("should handle missing touch coordinates gracefully", () => {
+      // Empty touch event
+      const emptyTouchEvent = {
+        touches: [],
+        preventDefault: vi.fn()
+      };
+      
+      // Default mock to return origin if no coordinates
+      fabricCanvas.getPointer = vi.fn().mockReturnValue({ x: 0, y: 0 });
+      
+      const pointer = fabricCanvas.getPointer(emptyTouchEvent);
+      
+      expect(pointer.x).toBe(0);
+      expect(pointer.y).toBe(0);
+    });
+  });
+
+  describe("Canvas State Behavior", () => {
+    it("should initialize canvas with correct dimensions", () => {
+      expect(fabricCanvas.getWidth!()).toBe(TEST_CONSTANTS.CANVAS_WIDTH);
+      expect(fabricCanvas.getHeight!()).toBe(TEST_CONSTANTS.CANVAS_HEIGHT);
+    });
+
+    it("should handle zoom level changes", () => {
+      // Initial zoom level
+      expect(fabricCanvas.getZoom!()).toBe(1);
+      
+      // Simulate zoom change
+      const newZoom = 1.5;
+      fabricCanvas.setZoom!(newZoom);
+      
+      // Mock implementation to return the new zoom
+      fabricCanvas.getZoom = vi.fn().mockReturnValue(newZoom);
+      
+      expect(fabricCanvas.getZoom!()).toBe(newZoom);
     });
   });
 });

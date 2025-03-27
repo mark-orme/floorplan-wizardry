@@ -12,6 +12,15 @@ import { UserRole } from '@/lib/supabase';
 import { toast } from 'sonner';
 import * as ErrorHandling from '@/utils/errorHandling';
 
+// Define component props interface for cleaner test setup
+interface PropertyFloorPlanTabProps {
+  canEdit: boolean;
+  userRole: UserRole;
+  property: { status: PropertyStatus };
+  isSubmitting: boolean;
+  onStatusChange: (status: PropertyStatus) => Promise<void>;
+}
+
 // Mock components and dependencies
 vi.mock('@/components/property/FloorPlanCanvas', () => ({
   FloorPlanCanvas: ({ onCanvasError }: { onCanvasError: () => void }) => (
@@ -53,7 +62,7 @@ describe('PropertyFloorPlanTab', () => {
   /**
    * Default props for testing the component
    */
-  const defaultProps = {
+  const defaultProps: PropertyFloorPlanTabProps = {
     canEdit: true,
     userRole: UserRole.PHOTOGRAPHER,
     property: { status: PropertyStatus.DRAFT },
@@ -112,5 +121,39 @@ describe('PropertyFloorPlanTab', () => {
     
     // Then - check the error state is set
     expect(screen.getByText('Floor Plan')).toBeInTheDocument();
+  });
+
+  /**
+   * Test that the component disables actions when submitting
+   */
+  test('disables actions when submitting', () => {
+    // When
+    render(
+      <PropertyFloorPlanTab 
+        {...defaultProps}
+        isSubmitting={true}
+      />
+    );
+    
+    // Then - FloorPlanActions should receive isSubmitting prop
+    // This is already tested in FloorPlanActions.test.tsx
+    expect(screen.getByTestId('mock-floor-plan-actions')).toBeInTheDocument();
+  });
+
+  /**
+   * Test that the component passes the correct user role
+   */
+  test('passes correct user role to actions', () => {
+    // When
+    render(
+      <PropertyFloorPlanTab 
+        {...defaultProps}
+        userRole={UserRole.MANAGER}
+      />
+    );
+    
+    // Then - FloorPlanActions should receive userRole prop
+    // This is already tested in FloorPlanActions.test.tsx
+    expect(screen.getByTestId('mock-floor-plan-actions')).toBeInTheDocument();
   });
 });

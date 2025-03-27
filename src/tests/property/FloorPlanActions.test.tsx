@@ -7,6 +7,14 @@ import { UserRole } from '@/lib/supabase';
 import { toast } from 'sonner';
 import * as ErrorHandling from '@/utils/errorHandling';
 
+// Define component props interface for cleaner test setup
+interface FloorPlanActionsProps {
+  canEdit: boolean;
+  userRole: UserRole;
+  isSubmitting: boolean;
+  onStatusChange: (status: PropertyStatus) => Promise<void>;
+}
+
 // Mock dependencies
 vi.mock('sonner', () => ({
   toast: {
@@ -20,7 +28,7 @@ vi.mock('@/utils/errorHandling', () => ({
 }));
 
 describe('FloorPlanActions', () => {
-  const defaultProps = {
+  const defaultProps: FloorPlanActionsProps = {
     canEdit: true,
     userRole: UserRole.PHOTOGRAPHER,
     isSubmitting: false,
@@ -108,5 +116,18 @@ describe('FloorPlanActions', () => {
     await waitFor(() => {
       expect(ErrorHandling.handleError).toHaveBeenCalledWith(error, expect.any(Object));
     });
+  });
+  
+  test('shows submit button for managers', () => {
+    // When
+    render(
+      <FloorPlanActions 
+        {...defaultProps}
+        userRole={UserRole.MANAGER}
+      />
+    );
+    
+    // Then
+    expect(screen.getByText('Submit for Review')).toBeInTheDocument();
   });
 });
