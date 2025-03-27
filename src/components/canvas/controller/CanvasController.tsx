@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { FloorPlan } from '@/utils/drawing'; 
@@ -96,8 +95,16 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   const [lineThickness, setLineThickness] = useState<number>(INITIAL_LINE_THICKNESS);
   const [lineColor, setLineColor] = useState<string>(DEFAULT_LINE_COLOR);
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
-    canvasReady: false,
+    showDebugInfo: false,
+    canvasInitialized: false,
+    dimensionsSet: false,
     gridCreated: false,
+    brushInitialized: false,
+    canvasCreated: false,
+    canvasLoaded: false,
+    canvasReady: false,
+    canvasWidth: 0,
+    canvasHeight: 0,
     lastInitTime: 0,
     lastGridCreationTime: 0
   });

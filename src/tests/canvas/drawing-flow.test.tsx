@@ -1,4 +1,3 @@
-
 /**
  * Integration tests for canvas drawing workflows
  * @module tests/canvas/drawing-flow
@@ -70,14 +69,24 @@ describe('Canvas Drawing Flow', () => {
   });
   
   it('renders the canvas container correctly', () => {
+    const mockDebugInfo: DebugInfoState = {
+      showDebugInfo: true,
+      canvasInitialized: true,
+      dimensionsSet: true,
+      canvasReady: true,
+      gridCreated: true,
+      brushInitialized: true,
+      canvasCreated: true,
+      canvasLoaded: true,
+      canvasWidth: 800,
+      canvasHeight: 600,
+      lastInitTime: Date.now(),
+      lastGridCreationTime: Date.now()
+    };
+
     render(
       <CanvasContainer 
-        debugInfo={{
-          canvasReady: true,
-          gridCreated: true,
-          lastInitTime: 0,
-          lastGridCreationTime: 0 // Added missing required property
-        }}
+        debugInfo={mockDebugInfo}
       />
     );
     

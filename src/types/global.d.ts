@@ -6,6 +6,7 @@
 
 import { Canvas } from 'fabric';
 
+// Extend the Window interface with our custom properties
 interface Window {
   /**
    * Global registry for Fabric.js canvas instances
@@ -22,4 +23,12 @@ interface Window {
     errorState: boolean;
     version: string;
   };
+}
+
+// Extend HTMLCanvasElement with custom properties
+interface HTMLCanvasElement {
+  /**
+   * Reference to associated Fabric.js canvas instance
+   */
+  _fabric?: any;
 }

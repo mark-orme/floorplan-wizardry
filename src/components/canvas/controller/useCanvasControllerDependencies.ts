@@ -1,4 +1,3 @@
-
 /**
  * Hook for initializing canvas dependencies
  * @module useCanvasControllerDependencies
@@ -70,9 +69,10 @@ export const useCanvasControllerDependencies = ({
   const resolvedCanvasRef = canvasRef || defaultCanvasRef;
   const resolvedCanvasDimensions = canvasDimensions || { width: 800, height: 600 };
   const resolvedDebugInfo: DebugInfoState = debugInfo || { 
+    showDebugInfo: false,
     canvasInitialized: false, 
-    gridCreated: false,
     dimensionsSet: false,
+    gridCreated: false,
     brushInitialized: false,
     canvasCreated: false,
     canvasLoaded: false,

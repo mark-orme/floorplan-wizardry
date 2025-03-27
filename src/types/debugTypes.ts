@@ -33,9 +33,9 @@ export interface DebugInfoState {
   
   // Additional properties needed for debug info
   /** Whether grid has been created */
-  gridCreated?: boolean;
+  gridCreated: boolean;
   /** Whether brush has been initialized */
-  brushInitialized?: boolean;
+  brushInitialized: boolean;
   /** Number of grid objects */
   gridObjects?: number;
   /** Number of canvas objects */
@@ -51,15 +51,15 @@ export interface DebugInfoState {
   /** Timestamp of the last error */
   lastErrorTime?: number;
   /** Whether canvas is ready */
-  canvasReady?: boolean;
+  canvasReady: boolean;
   /** Whether canvas has been created */
-  canvasCreated?: boolean;
+  canvasCreated: boolean;
   /** Whether canvas has been loaded */
-  canvasLoaded?: boolean;
+  canvasLoaded: boolean;
   /** Last initialization time */
-  lastInitTime?: number;
+  lastInitTime: number;
   /** Last grid creation time */
-  lastGridCreationTime?: number;
+  lastGridCreationTime: number;
   /** Performance statistics */
   performanceStats?: {
     /** Frames per second */
