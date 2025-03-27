@@ -4,7 +4,7 @@
  * Provides multi-touch support for mobile devices
  * @module fabric/gestures
  */
-import { Canvas } from 'fabric';
+import { Canvas, PencilBrush } from 'fabric';
 import type { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
 
 /**
@@ -26,6 +26,13 @@ function isTouch(value: unknown): value is Touch {
  */
 export const initializeCanvasGestures = (canvas: Canvas): void => {
   let ongoingTouches: CustomFabricTouchEvent[] = [];
+  let isDrawing = false;
+  let isPencil = false;
+
+  // Detect if the device supports Apple Pencil
+  const supportsApplePencil = 
+    typeof navigator !== 'undefined' && 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   const getTouchPosition = (touch: Touch): { x: number; y: number } => {
     const rect = canvas.getElement().getBoundingClientRect();
@@ -35,10 +42,43 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     };
   };
 
+  // Function to detect Apple Pencil based on touch event properties
+  const isPencilTouch = (touch: Touch): boolean => {
+    // Check if touch has Apple Pencil-specific properties
+    return supportsApplePencil && 
+          (touch as any).touchType === 'stylus' || 
+          (touch as any).radiusX < 10 || // Pencil has small radius
+          'force' in touch; // Pencil supports pressure (force)
+  };
+
   const handleTouchStart = (e: TouchEvent) => {
     e.preventDefault();
     const customEvent = e as CustomTouchEvent;
     const touches = Array.from(customEvent.touches);
+
+    // If in drawing mode, start the drawing path
+    if (canvas.isDrawingMode && touches.length === 1) {
+      isDrawing = true;
+      const touch = touches[0];
+      isPencil = isPencilTouch(touch);
+      const touchPosition = getTouchPosition(touch);
+      
+      // Set brush width based on pressure if available (for Apple Pencil)
+      if (isPencil && 'force' in touch && canvas.freeDrawingBrush) {
+        const force = (touch as any).force || 1;
+        const baseWidth = canvas.freeDrawingBrush.width || 2;
+        canvas.freeDrawingBrush.width = baseWidth * force;
+      }
+
+      // Manually trigger mouse:down event on the canvas
+      canvas.fire('mouse:down', {
+        e: e,
+        pointer: touchPosition,
+        button: 1
+      });
+
+      console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
+    }
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
@@ -51,13 +91,32 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
 
     // Log touch start for debugging
-    console.log("Touch start event:", ongoingTouches.length, "touches");
+    console.log("Touch start event:", ongoingTouches.length, "touches", "isDrawingMode:", canvas.isDrawingMode);
   };
 
   const handleTouchMove = (e: TouchEvent) => {
     e.preventDefault();
     const customEvent = e as CustomTouchEvent;
     const touches = Array.from(customEvent.touches);
+
+    // If in drawing mode and already started drawing, continue the path
+    if (canvas.isDrawingMode && isDrawing && touches.length === 1) {
+      const touch = touches[0];
+      const touchPosition = getTouchPosition(touch);
+      
+      // Update brush width based on pressure if available (for Apple Pencil)
+      if (isPencil && 'force' in touch && canvas.freeDrawingBrush) {
+        const force = (touch as any).force || 1;
+        const baseWidth = canvas.freeDrawingBrush.width || 2;
+        canvas.freeDrawingBrush.width = baseWidth * Math.max(0.5, force);
+      }
+
+      // Manually trigger mouse:move event on the canvas
+      canvas.fire('mouse:move', {
+        e: e,
+        pointer: touchPosition
+      });
+    }
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
@@ -81,6 +140,28 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     const customEvent = e as CustomTouchEvent;
     const touches = Array.from(customEvent.changedTouches);
 
+    // If in drawing mode and finishing drawing, complete the path
+    if (canvas.isDrawingMode && isDrawing && touches.length > 0) {
+      isDrawing = false;
+      isPencil = false;
+      const touch = touches[0];
+      const touchPosition = getTouchPosition(touch);
+      
+      // Reset brush width to default if it was changed
+      if (canvas.freeDrawingBrush) {
+        const baseWidth = (canvas as any)._lineThickness || 2;
+        canvas.freeDrawingBrush.width = baseWidth;
+      }
+
+      // Manually trigger mouse:up event on the canvas
+      canvas.fire('mouse:up', {
+        e: e,
+        pointer: touchPosition
+      });
+
+      console.log("Drawing ended");
+    }
+
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
       ongoingTouches = ongoingTouches.filter(t => {
@@ -97,6 +178,23 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     const customEvent = e as CustomTouchEvent;
     const touches = Array.from(customEvent.changedTouches);
 
+    // If in drawing mode, complete the drawing path
+    if (canvas.isDrawingMode && isDrawing) {
+      isDrawing = false;
+      isPencil = false;
+      
+      // Reset brush width to default
+      if (canvas.freeDrawingBrush) {
+        const baseWidth = (canvas as any)._lineThickness || 2;
+        canvas.freeDrawingBrush.width = baseWidth;
+      }
+      
+      // Fire mouse:up to complete the path
+      canvas.fire('mouse:up', {
+        e: e
+      });
+    }
+
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
       ongoingTouches = ongoingTouches.filter(t => {
@@ -105,7 +203,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
-  // Add event listeners
+  // Add event listeners with passive: false for all touch events
   const canvasElement = canvas.getElement();
   canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
   canvasElement.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -113,5 +211,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
   canvasElement.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 
   // Log initialization
-  console.log("Touch gestures initialized for canvas");
+  console.log("Touch gestures initialized for canvas", 
+    supportsApplePencil ? "with Apple Pencil support" : "with standard touch support");
 };

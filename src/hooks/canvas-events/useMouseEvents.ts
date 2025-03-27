@@ -44,9 +44,32 @@ export const useMouseEvents = ({
     type FabricEventHandler = (e: unknown) => void;
     
     // Cast to Fabric event handler type
-    const fabricMouseDown = handleMouseDown as FabricEventHandler;
-    const fabricMouseMove = handleMouseMove as FabricEventHandler;
-    const fabricMouseUp = handleMouseUp as FabricEventHandler;
+    const fabricMouseDown = (e: unknown) => {
+      // Suppress mouse events if they originated from touch to prevent double-handling
+      const mouseEvent = e as MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } };
+      if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
+        return;
+      }
+      handleMouseDown(e as MouseEvent);
+    };
+    
+    const fabricMouseMove = (e: unknown) => {
+      // Suppress mouse events if they originated from touch to prevent double-handling
+      const mouseEvent = e as MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } };
+      if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
+        return;
+      }
+      handleMouseMove(e as MouseEvent);
+    };
+    
+    const fabricMouseUp = (e: unknown) => {
+      // Suppress mouse events if they originated from touch to prevent double-handling
+      const mouseEvent = e as MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } };
+      if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
+        return;
+      }
+      handleMouseUp(e as MouseEvent);
+    };
     
     /**
      * Handle double-click to enter edit mode for walls
@@ -70,63 +93,26 @@ export const useMouseEvents = ({
       }
     };
     
-    // Check if running on iOS
+    // Check if running on iOS or iPad
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
-    // For iOS, use the lower-level DOM events in addition to Fabric events
-    if (isIOS && fabricCanvas.upperCanvasEl) {
-      // Set touch-action to none to prevent browser gestures
-      fabricCanvas.upperCanvasEl.style.touchAction = 'none';
-      
-      // Directly attach DOM touch events with passive: false for iOS
-      const handleTouchStart = (e: TouchEvent) => {
-        e.preventDefault(); // Prevent default to avoid iOS Safari issues
-        fabricMouseDown(e);
-      };
-      
-      const handleTouchMove = (e: TouchEvent) => {
-        e.preventDefault(); // Prevent default to avoid iOS Safari issues
-        fabricMouseMove(e);
-      };
-      
-      const handleTouchEnd = (e: TouchEvent) => {
-        e.preventDefault(); // Prevent default to avoid iOS Safari issues
-        fabricMouseUp(e);
-      };
-      
-      fabricCanvas.upperCanvasEl.addEventListener('touchstart', handleTouchStart, { passive: false });
-      fabricCanvas.upperCanvasEl.addEventListener('touchmove', handleTouchMove, { passive: false });
-      fabricCanvas.upperCanvasEl.addEventListener('touchend', handleTouchEnd, { passive: false });
-      
-      // Clean up DOM event listeners
-      return () => {
-        if (fabricCanvas.upperCanvasEl) {
-          fabricCanvas.upperCanvasEl.removeEventListener('touchstart', handleTouchStart);
-          fabricCanvas.upperCanvasEl.removeEventListener('touchmove', handleTouchMove);
-          fabricCanvas.upperCanvasEl.removeEventListener('touchend', handleTouchEnd);
-        }
-        
-        if (fabricCanvas) {
-          fabricCanvas.off('mouse:down', fabricMouseDown);
-          fabricCanvas.off('mouse:move', fabricMouseMove);
-          fabricCanvas.off('mouse:up', fabricMouseUp);
-          fabricCanvas.off('mouse:dblclick', handleDoubleClick as FabricEventHandler);
-        }
-      };
-    }
-    
-    // For non-iOS, use fabric's standard events
-    fabricCanvas.on('mouse:down', fabricMouseDown);
-    fabricCanvas.on('mouse:move', fabricMouseMove);
-    fabricCanvas.on('mouse:up', fabricMouseUp);
+    // Register events - we're using Fabric.js events for mouse handling
+    // and direct DOM events for touch handling to avoid conflicts
+    fabricCanvas.on('mouse:down', fabricMouseDown as FabricEventHandler);
+    fabricCanvas.on('mouse:move', fabricMouseMove as FabricEventHandler);
+    fabricCanvas.on('mouse:up', fabricMouseUp as FabricEventHandler);
     fabricCanvas.on('mouse:dblclick', handleDoubleClick as FabricEventHandler);
     
+    // Log event registration
+    console.log("Mouse events registered:", isIOS ? "iOS optimized" : "standard");
+    
     return () => {
+      // Clean up all event handlers on unmount
       if (fabricCanvas) {
-        fabricCanvas.off('mouse:down', fabricMouseDown);
-        fabricCanvas.off('mouse:move', fabricMouseMove);
-        fabricCanvas.off('mouse:up', fabricMouseUp);
+        fabricCanvas.off('mouse:down', fabricMouseDown as FabricEventHandler);
+        fabricCanvas.off('mouse:move', fabricMouseMove as FabricEventHandler);
+        fabricCanvas.off('mouse:up', fabricMouseUp as FabricEventHandler);
         fabricCanvas.off('mouse:dblclick', handleDoubleClick as FabricEventHandler);
       }
     };

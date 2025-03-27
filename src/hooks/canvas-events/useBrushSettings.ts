@@ -79,6 +79,9 @@ export const useBrushSettings = ({
         fabricCanvas.freeDrawingBrush.color = lineColor;
         fabricCanvas.freeDrawingBrush.width = lineThickness;
         
+        // Store the line thickness on the canvas object for reference by pressure sensitivity
+        (fabricCanvas as any)._lineThickness = lineThickness;
+        
         // Add detailed logging
         console.log(`Brush configured: color=${lineColor}, width=${lineThickness}`);
       } else {
