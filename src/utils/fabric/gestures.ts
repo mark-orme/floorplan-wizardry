@@ -36,6 +36,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         e: touch
       });
     }
+
+    // Log touch start for debugging
+    console.log("Touch start event:", ongoingTouches.length, "touches");
   };
 
   const handleTouchMove = (e: TouchEvent) => {
@@ -67,6 +70,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       const touch = touches[i];
       ongoingTouches = ongoingTouches.filter(t => t.e.identifier !== touch.identifier);
     }
+
+    // Log touch end for debugging
+    console.log("Touch end event, remaining touches:", ongoingTouches.length);
   };
 
   const handleTouchCancel = (e: TouchEvent) => {
@@ -80,8 +86,13 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
-  canvas.getElement().addEventListener('touchstart', handleTouchStart, false);
-  canvas.getElement().addEventListener('touchmove', handleTouchMove, false);
-  canvas.getElement().addEventListener('touchend', handleTouchEnd, false);
-  canvas.getElement().addEventListener('touchcancel', handleTouchCancel, false);
+  // Add event listeners
+  const canvasElement = canvas.getElement();
+  canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+  canvasElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+  canvasElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+  canvasElement.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+
+  // Log initialization
+  console.log("Touch gestures initialized for canvas");
 };

@@ -72,6 +72,11 @@ export const useBrushSettings = ({
       if (fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = lineColor;
         fabricCanvas.freeDrawingBrush.width = lineThickness;
+        
+        // Add detailed logging
+        console.log(`Brush configured: color=${lineColor}, width=${lineThickness}`);
+      } else {
+        console.warn("freeDrawingBrush not available on canvas");
       }
       
       // Enable drawing mode only for the draw tool
@@ -83,11 +88,17 @@ export const useBrushSettings = ({
         disableSelection(fabricCanvas);
         fabricCanvas.defaultCursor = 'crosshair';
         fabricCanvas.hoverCursor = 'crosshair';
+        
+        // Add detailed logging
+        console.log(`Custom drawing tool (${tool}) enabled: selection disabled, cursor set to crosshair`);
       } else {
         // For the regular draw tool, we also disable selection
         disableSelection(fabricCanvas);
         fabricCanvas.defaultCursor = 'crosshair';
         fabricCanvas.hoverCursor = 'crosshair';
+        
+        // Add detailed logging
+        console.log(`Draw tool enabled: isDrawingMode=${fabricCanvas.isDrawingMode}, selection disabled`);
       }
       
       console.log(`Brush settings updated for ${tool} tool: drawing mode = ${fabricCanvas.isDrawingMode}, color = ${lineColor}, thickness = ${lineThickness}`);
@@ -113,6 +124,9 @@ export const useBrushSettings = ({
         console.log(`Other tool mode (${tool}) - selection disabled`);
       }
     }
+    
+    // Force render to apply changes
+    fabricCanvas.requestRenderAll();
     
     logger.debug(`Brush settings updated: tool=${tool}, color=${lineColor}, thickness=${lineThickness}, isDrawingTool=${isDrawingTool}`);
     

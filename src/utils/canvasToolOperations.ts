@@ -44,6 +44,32 @@ export const clearDrawings = (
   
   // Force a render to update the display
   canvas.requestRenderAll();
+  
+  console.log(`Cleared ${drawingObjects.length} drawing objects from canvas`);
+};
+
+/**
+ * Function to ensure brush is properly initialized
+ * @param {Canvas} canvas - The Fabric.js canvas instance
+ * @param {string} lineColor - Current line color
+ * @param {number} lineThickness - Current line thickness
+ */
+const ensureBrushIsInitialized = (
+  canvas: Canvas,
+  lineColor: string,
+  lineThickness: number
+): void => {
+  // If the brush doesn't exist or isn't properly initialized, create a new one
+  if (!canvas.freeDrawingBrush || !(canvas.freeDrawingBrush instanceof PencilBrush)) {
+    canvas.freeDrawingBrush = new PencilBrush(canvas);
+    console.log("Created new PencilBrush for canvas");
+  }
+  
+  // Set brush properties
+  canvas.freeDrawingBrush.color = lineColor;
+  canvas.freeDrawingBrush.width = lineThickness;
+  
+  console.log(`Brush initialized: color=${lineColor}, width=${lineThickness}`);
 };
 
 /**
@@ -67,6 +93,9 @@ export const handleToolChange = (
   
   // Update the tool state
   setTool(newTool);
+  
+  // Ensure brush is initialized
+  ensureBrushIsInitialized(canvas, lineColor, lineThickness);
   
   // Apply tool-specific settings
   switch (newTool) {
