@@ -1,4 +1,3 @@
-
 /**
  * Grid creation utilities
  * Reliable grid creation functions for canvas
@@ -175,4 +174,57 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
     console.error("Error creating simple grid:", error);
     return [];
   }
+};
+
+/**
+ * Verify if the grid exists on the canvas
+ * Checks if grid objects are present on the canvas
+ * 
+ * @param canvas Fabric.js canvas instance
+ * @param gridLayerRef Reference to grid objects
+ * @returns Whether grid exists on canvas
+ */
+export const verifyGridExists = (
+  canvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas || !gridLayerRef.current || gridLayerRef.current.length === 0) {
+    return false;
+  }
+
+  // Check if grid objects are on canvas
+  return gridLayerRef.current.some(obj => canvas.contains(obj));
+};
+
+/**
+ * Retry a function with exponential backoff
+ * Useful for operations that might fail temporarily
+ * 
+ * @param fn Function to retry
+ * @param attempt Current attempt number (starting at 0)
+ * @param maxAttempts Maximum number of attempts
+ * @returns Delay used for the retry or 0 if max attempts reached
+ */
+export const retryWithBackoff = (
+  fn: () => void,
+  attempt: number,
+  maxAttempts: number
+): number => {
+  // Check if we've exceeded maximum attempts
+  if (attempt >= maxAttempts) {
+    console.error(`Maximum retry attempts (${maxAttempts}) reached`);
+    return 0;
+  }
+
+  // Calculate delay with exponential backoff
+  // Base delay of 100ms, doubled for each attempt, with some randomness
+  const delay = Math.min(100 * Math.pow(2, attempt) + Math.random() * 100, 5000);
+  
+  // Schedule retry
+  setTimeout(() => {
+    console.log(`Retry attempt ${attempt + 1}/${maxAttempts} after ${delay.toFixed(0)}ms`);
+    fn();
+  }, delay);
+  
+  return delay;
 };

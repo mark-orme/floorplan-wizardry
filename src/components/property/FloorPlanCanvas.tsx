@@ -12,6 +12,7 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { handleError } from "@/utils/errorHandling";
+import { Canvas } from "@/components/Canvas"; // Add proper import
 
 // Constants for component
 const CANVAS_WIDTH = 800;
@@ -121,7 +122,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   
   return (
     <div 
-      className="h-[800px] w-full" 
+      className="h-[800px] w-full relative" 
       data-testid="floor-plan-wrapper"
       data-canvas-ready={isReady ? "true" : "false"}
       data-init-attempt={initAttempt}
