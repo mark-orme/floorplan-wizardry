@@ -55,15 +55,27 @@ export type PaperSize = 'A4' | 'A3' | 'A2' | 'A1' | 'A0' | 'Letter' | 'Legal' | 
  * Floor plan data
  */
 export interface FloorPlan {
+  /** Unique identifier */
   id: string;
+  /** Floor plan name */
   name: string;
+  /** Display label */
   label: string;
+  /** Gross internal area */
   gia: number;
+  /** Floor level */
+  level?: number;
+  /** Wall objects */
   walls: Wall[];
+  /** Room objects */
   rooms: Room[];
+  /** Drawing strokes */
   strokes: Stroke[];
+  /** Raw canvas data */
   canvasData?: any; // Will be improved in future updates
+  /** Creation timestamp */
   createdAt: string;
+  /** Last update timestamp */
   updatedAt: string;
 }
 

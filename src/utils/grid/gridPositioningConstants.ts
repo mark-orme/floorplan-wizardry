@@ -46,30 +46,41 @@ export const GRID_POSITIONING = {
 
 /**
  * Path processing constants
+ * Controls how drawing paths are processed
  */
 export const PATH_PROCESSING = {
   /**
    * Minimum distance for a valid path in pixels
+   * Drawing paths shorter than this are ignored
+   * @constant {number}
    */
   MIN_PATH_DISTANCE: 5,
   
   /**
    * Maximum angle variation for auto-straightening in degrees
+   * Lines within this threshold are straightened automatically
+   * @constant {number}
    */
   STRAIGHTEN_ANGLE_THRESHOLD: 10,
   
   /**
    * Extension factor for walls
+   * Amount to extend wall endpoints for better connections
+   * @constant {number}
    */
   WALL_EXTENSION_FACTOR: 0.05,
   
   /**
    * Minimum number of points to keep in a full path
+   * Ensures paths have enough detail after simplification
+   * @constant {number}
    */
   MIN_POINTS_THRESHOLD: 10,
   
   /**
    * Divisor for sampling when reducing path point count
+   * Controls how aggressively points are removed during simplification
+   * @constant {number}
    */
   SAMPLING_DIVISOR: 8
 };

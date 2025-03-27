@@ -10,6 +10,16 @@ import { DrawingState } from "@/types/drawingTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 
 /**
+ * Constants for initial state values
+ */
+const INITIAL_STATE_CONSTANTS = {
+  /** Initial GIA value */
+  INITIAL_GIA: 0,
+  /** Initial floor index */
+  INITIAL_FLOOR_INDEX: 0
+};
+
+/**
  * Hook that centralizes all state needed by the canvas controller
  * @returns All state variables and setters for the canvas controller
  */
@@ -17,18 +27,20 @@ export const useCanvasControllerState = () => {
   // Get all states from useCanvasState hook
   const canvasState = useCanvasState();
   
+  // Define missing state variables
+  const [gia, setGia] = useState(INITIAL_STATE_CONSTANTS.INITIAL_GIA);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
+  const [currentFloor, setCurrentFloor] = useState(INITIAL_STATE_CONSTANTS.INITIAL_FLOOR_INDEX);
+  const [isLoading, setIsLoading] = useState(false);
+  
   // Extract all properties from canvas state
   const {
     tool, setTool,
     zoomLevel, setZoomLevel,
-    gia, setGia,
-    floorPlans, setFloorPlans,
-    currentFloor, setCurrentFloor,
-    isLoading, setIsLoading,
-    canvasDimensions, setCanvasDimensions,
     lineThickness, setLineThickness,
     lineColor, setLineColor,
-    snapToGrid, setSnapToGrid
+    snapToGrid, setSnapToGrid,
+    canvasDimensions, setCanvasDimensions
   } = canvasState;
   
   // Debug and error state

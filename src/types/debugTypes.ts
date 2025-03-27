@@ -45,7 +45,7 @@ export interface DebugInfoState {
   /** Error message */
   errorMessage: string;
   /** Performance statistics */
-  performanceStats?: {
+  performanceStats: {
     fps?: number;
     frameTime?: number;
     objectCount?: number;

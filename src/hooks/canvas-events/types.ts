@@ -1,43 +1,56 @@
 
 /**
- * Shared types for canvas event hooks
+ * Canvas event handling type definitions
  * @module canvas-events/types
  */
-import { Canvas as FabricCanvas, Object as FabricObject, TPointerEvent, TEvent } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { Canvas as FabricCanvas } from "fabric";
 
 /**
- * Base props interface shared across all event handler hooks
+ * Canvas operation types
  */
-export interface BaseEventHandlerProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current active drawing tool (optional) */
-  tool?: DrawingTool;
+export type CanvasOperation = 'draw' | 'erase' | 'select' | 'move' | 'zoom' | 'measure' | 'text';
+
+/**
+ * Canvas events map
+ */
+export interface CanvasEvents {
+  'object:added': any;
+  'object:removed': any;
+  'object:modified': any;
+  'object:selected': any;
+  'selection:cleared': any;
+  'mouse:down': any;
+  'mouse:move': any;
+  'mouse:up': any;
+  'path:created': any;
+  'zoom:updated': any;
 }
 
 /**
- * Standard result interface for event handler hooks
+ * Zoom direction type
  */
-export interface EventHandlerResult {
-  /** Function to perform any necessary cleanup */
-  cleanup: () => void;
-}
+export type ZoomDirection = 'in' | 'out';
 
 /**
- * Target event from Fabric.js with target object
+ * Zoom level constants
  */
-export interface TargetEvent extends TEvent<TPointerEvent> {
-  /** The target object that was interacted with */
-  target?: FabricObject | null;
-}
+export const ZOOM_LEVEL_CONSTANTS = {
+  /** Minimum zoom level */
+  MIN_ZOOM: 0.1,
+  
+  /** Maximum zoom level */
+  MAX_ZOOM: 10.0,
+  
+  /** Default zoom level */
+  DEFAULT_ZOOM: 1.0,
+  
+  /** Zoom increment */
+  ZOOM_INCREMENT: 0.1
+};
 
 /**
- * Extended Fabric object with editing state
+ * Handler types for canvas event systems
  */
-export interface EditableFabricObject extends FabricObject {
-  /** Whether the object is currently being edited */
-  isEditing?: boolean;
-  /** Type of the object for specialized handling */
-  objectType?: string;
-}
+export type EventHandlerMap = {
+  [K in keyof CanvasEvents]: (e: CanvasEvents[K], canvas: FabricCanvas) => void;
+};

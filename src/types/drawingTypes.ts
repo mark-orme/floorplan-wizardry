@@ -85,19 +85,19 @@ export interface DrawingState {
   /** Whether shape creation is in progress */
   creatingShape: boolean;
   /** Current zoom level for compatibility */
-  currentZoom?: number;
+  currentZoom: number;
   /** Start point for compatibility */
-  startPoint?: Point | null;
+  startPoint: Point | null;
   /** Current point for compatibility */
-  currentPoint?: Point | null;
+  currentPoint: Point | null;
   /** Mid point for compatibility */
-  midPoint?: Point | null;
+  midPoint: Point | null;
   /** Whether selection is active for compatibility */
-  selectionActive?: boolean;
+  selectionActive: boolean;
   /** Points array for compatibility */
-  points?: Point[];
+  points: Point[];
   /** Distance for compatibility */
-  distance?: number | null;
+  distance: number | null;
 }
 
 /**

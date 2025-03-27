@@ -6,6 +6,17 @@
 import { FloorPlan } from "@/types/floorPlanTypes";
 
 /**
+ * Constants for floor plan creation
+ */
+export const FLOOR_PLAN_CONSTANTS = {
+  /** Default GIA value */
+  DEFAULT_GIA: 0,
+  
+  /** Default floor level */
+  DEFAULT_FLOOR_LEVEL: 0
+};
+
+/**
  * Creates a new floor plan with default values
  * 
  * @param {string} id - Floor plan unique identifier
@@ -19,7 +30,7 @@ export const createFloorPlan = (id: string, name: string): FloorPlan => {
     id,
     name,
     label: name,
-    gia: 0,
+    gia: FLOOR_PLAN_CONSTANTS.DEFAULT_GIA,
     walls: [],
     rooms: [],
     strokes: [],
