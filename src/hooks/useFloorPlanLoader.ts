@@ -30,6 +30,26 @@ interface UseFloorPlanLoaderProps {
 }
 
 /**
+ * Creates a default floor plan with all required properties
+ * @returns {FloorPlan} A new floor plan with default values
+ */
+const createDefaultFloorPlan = (id: string, name: string): FloorPlan => {
+  const timestamp = new Date().toISOString();
+  return {
+    id,
+    name,
+    label: name,
+    gia: 0,
+    strokes: [],
+    walls: [],
+    rooms: [],
+    canvasData: null,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  };
+};
+
+/**
  * Hook for loading floor plan data
  * Provides functionality to load floor plans from storage or create defaults
  * Includes error handling and loading state management
@@ -67,18 +87,10 @@ export const useFloorPlanLoader = ({
         // Create a default floor plan with all required properties
         const defaultId = `floor-${Date.now()}`;
         const defaultName = "Ground Floor";
-        const timestamp = new Date().toISOString();
         
-        const defaultPlan: FloorPlan[] = [{
-          id: defaultId,
-          name: defaultName,
-          gia: 0,
-          strokes: [],
-          label: defaultName,
-          canvasData: null,
-          createdAt: timestamp,
-          updatedAt: timestamp
-        }];
+        const defaultPlan: FloorPlan[] = [
+          createDefaultFloorPlan(defaultId, defaultName)
+        ];
         setFloorPlans(defaultPlan);
         console.log("Created default floor plan");
       }

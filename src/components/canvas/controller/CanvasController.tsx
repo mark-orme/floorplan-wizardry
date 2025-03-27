@@ -1,9 +1,9 @@
-
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { DebugInfoState } from '@/types/debugTypes';
 import { toast } from 'sonner';
+import { createFloorPlan } from '@/utils/floorPlanUtils';
 
 /**
  * Constants for canvas controller
@@ -79,18 +79,7 @@ const CanvasControllerContext = createContext<CanvasControllerContextValue | nul
  * @returns {FloorPlan} A complete FloorPlan object with default values
  */
 const createInitialFloorPlan = (): FloorPlan => {
-  return {
-    id: '0',
-    name: 'Ground Floor',
-    label: 'Ground Floor',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    gia: 0,
-    canvasData: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+  return createFloorPlan('0', 'Ground Floor', 0);
 };
 
 /**
@@ -203,18 +192,14 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     setFloorPlans(prev => {
       const newFloorPlans = [...prev];
       const newFloorIndex = newFloorPlans.length;
-      newFloorPlans.push({
-        id: `${newFloorIndex}`,
-        name: `Floor ${newFloorIndex + 1}`,
-        label: `Floor ${newFloorIndex + 1}`,
-        walls: [],
-        rooms: [],
-        strokes: [],
-        gia: 0,
-        canvasData: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+      
+      const newFloorPlan = createFloorPlan(
+        `${newFloorIndex}`,
+        `Floor ${newFloorIndex + 1}`,
+        newFloorIndex
+      );
+      
+      newFloorPlans.push(newFloorPlan);
       return newFloorPlans;
     });
     toast('New floor added');

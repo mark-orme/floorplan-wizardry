@@ -110,7 +110,7 @@ describe('gridUtils', () => {
     it('should return existing grid if it already exists', () => {
       // Mock hasExistingGrid to return true
       const mockObjects = [{ objectType: 'grid' }];
-      (canvas.getObjects as jest.Mock).mockReturnValue(mockObjects);
+      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue(mockObjects);
       
       const result = createCompleteGrid(canvas, 800, 600);
       
@@ -123,7 +123,7 @@ describe('gridUtils', () => {
     
     it('should create a new grid when one does not exist', () => {
       // Mock hasExistingGrid to return false
-      (canvas.getObjects as jest.Mock).mockReturnValue([]);
+      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue([]);
       
       const result = createCompleteGrid(canvas, 200, 150, 10);
       
@@ -144,7 +144,7 @@ describe('gridUtils', () => {
     
     it('should return true when grid objects exist', () => {
       // Mock objects with a grid object
-      (canvas.getObjects as jest.Mock).mockReturnValue([{ objectType: 'grid' }]);
+      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue([{ objectType: 'grid' }]);
       
       const result = hasExistingGrid(canvas);
       
@@ -153,7 +153,7 @@ describe('gridUtils', () => {
     
     it('should return false when no grid objects exist', () => {
       // Mock objects with no grid objects
-      (canvas.getObjects as jest.Mock).mockReturnValue([{ objectType: 'not-grid' }]);
+      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue([{ objectType: 'not-grid' }]);
       
       const result = hasExistingGrid(canvas);
       

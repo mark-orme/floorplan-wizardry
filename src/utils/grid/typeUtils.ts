@@ -125,4 +125,3 @@ export const isGridPoint = (value: any): value is GridPoint => {
   return isPoint(value) && 
     (value.snapped === undefined || typeof value.snapped === 'boolean');
 };
-
