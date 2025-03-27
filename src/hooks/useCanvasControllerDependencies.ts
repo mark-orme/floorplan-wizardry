@@ -6,14 +6,14 @@
 import { useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasDependencies } from "@/hooks/useCanvasDependencies";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types";
 
 /**
  * Props interface for useCanvasControllerDependencies hook
  * @interface UseCanvasControllerDependenciesProps
  */
 interface UseCanvasControllerDependenciesProps {
-  /** Reference to the fabric canvas */
+  /** Reference to the Fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Reference to the HTML canvas element */
   canvasRef: React.RefObject<HTMLCanvasElement>;

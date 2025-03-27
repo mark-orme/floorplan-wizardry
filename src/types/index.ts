@@ -1,24 +1,11 @@
 
-/**
- * Central type exports
- * @module types
- */
-
-// Core types
-export * from './core/Point';
-export * from './core/DrawingState';
-export * from './core/GridState';
+// Re-export all types from their respective modules
 export * from './core/DebugInfo';
-export * from './core/Performance';
-export * from './core/Fabric';
-
-// Constants
-export { DrawingMode } from '../constants/drawingModes';
-
-// Fabric types
-export type CanvasDimensions = {
-  width: number;
-  height: number;
-};
-
-// Export any other types that should be available throughout the application
+export * from './drawingTypes';
+export * from './floorPlanTypes';
+export * from './fabricTypes';
+export * from './propertyTypes';
+export * from './performanceTypes';
+export * from './gridTypes';
+export * from './core/Point';
+export * from './core/Geometry';

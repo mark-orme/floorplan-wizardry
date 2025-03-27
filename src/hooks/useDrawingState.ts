@@ -3,15 +3,14 @@ import { useState, useCallback } from 'react';
 import { DrawingState, Point } from '@/types';
 
 /**
- * Hook for managing drawing state
+ * Hook for managing drawing state in canvas
  * @returns Drawing state and update functions
  */
-const useDrawingState = () => {
+export const useDrawingState = () => {
   const [drawingState, setDrawingState] = useState<DrawingState>({
     isDrawing: false,
     startPoint: null,
     currentPoint: null,
-    cursorPosition: null,
     midPoint: null,
     selectionActive: false,
     currentZoom: 1,
@@ -20,8 +19,8 @@ const useDrawingState = () => {
   });
 
   /**
-   * Start drawing from a point
-   * @param point Starting point
+   * Start drawing at specified point
+   * @param point Starting point coordinates
    */
   const startDrawing = useCallback((point: Point) => {
     setDrawingState(prev => ({
@@ -29,47 +28,22 @@ const useDrawingState = () => {
       isDrawing: true,
       startPoint: point,
       currentPoint: point,
-      points: [point],
-      distance: 0
+      points: [point]
     }));
   }, []);
 
   /**
    * Update drawing with current point
-   * @param point Current point
+   * @param point Current point coordinates
+   * @param midPoint Optional midpoint for curves
    */
-  const updateDrawing = useCallback((point: Point) => {
-    setDrawingState(prev => {
-      // Only add points if we're actually drawing
-      if (!prev.isDrawing) {
-        return {
-          ...prev,
-          cursorPosition: point
-        };
-      }
-
-      const newPoints = prev.points ? [...prev.points, point] : [point];
-      
-      // Calculate distance if we have a start point
-      let distance = prev.distance;
-      if (prev.startPoint) {
-        const dx = prev.startPoint.x - point.x;
-        const dy = prev.startPoint.y - point.y;
-        distance = Math.sqrt(dx * dx + dy * dy);
-      }
-      
-      return {
-        ...prev,
-        currentPoint: point,
-        cursorPosition: point,
-        midPoint: prev.startPoint ? {
-          x: (prev.startPoint.x + point.x) / 2,
-          y: (prev.startPoint.y + point.y) / 2
-        } : null,
-        points: newPoints,
-        distance
-      };
-    });
+  const updateDrawing = useCallback((point: Point, midPoint: Point | null = null) => {
+    setDrawingState(prev => ({
+      ...prev,
+      currentPoint: point,
+      midPoint,
+      points: [...prev.points, point]
+    }));
   }, []);
 
   /**
@@ -78,8 +52,7 @@ const useDrawingState = () => {
   const endDrawing = useCallback(() => {
     setDrawingState(prev => ({
       ...prev,
-      isDrawing: false,
-      // Keep other properties for reference
+      isDrawing: false
     }));
   }, []);
 
@@ -91,7 +64,6 @@ const useDrawingState = () => {
       isDrawing: false,
       startPoint: null,
       currentPoint: null,
-      cursorPosition: null,
       midPoint: null,
       selectionActive: false,
       currentZoom: 1,
@@ -100,14 +72,24 @@ const useDrawingState = () => {
     });
   }, []);
 
+  /**
+   * Update distance measurement
+   * @param distance Distance value
+   */
+  const updateDistance = useCallback((distance: number | null) => {
+    setDrawingState(prev => ({
+      ...prev,
+      distance
+    }));
+  }, []);
+
   return {
     drawingState,
     setDrawingState,
     startDrawing,
     updateDrawing,
     endDrawing,
-    resetDrawing
+    resetDrawing,
+    updateDistance
   };
 };
-
-export default useDrawingState;

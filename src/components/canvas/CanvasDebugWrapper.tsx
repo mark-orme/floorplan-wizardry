@@ -5,7 +5,7 @@
  * @module canvas/CanvasDebugWrapper
  */
 import React from 'react';
-import { DebugInfoState } from '@/types/debugTypes';
+import { DebugInfoState } from '@/types';
 
 interface CanvasDebugWrapperProps {
   /** Debug information state */

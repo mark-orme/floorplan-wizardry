@@ -1,66 +1,108 @@
-
 /**
- * Drawing type definitions
- * Common types used for drawing operations
+ * Drawing information state type definitions
  * @module drawingTypes
  */
 
-/**
- * Point interface representing a 2D coordinate
- * @interface Point
- */
-export interface Point {
-  /** X coordinate */
-  x: number;
-  /** Y coordinate */
-  y: number;
-}
-
-/**
- * Canvas dimensions interface
- * @interface CanvasDimensions
- */
-export interface CanvasDimensions {
-  /** Canvas width */
-  width: number;
-  /** Canvas height */
-  height: number;
-}
+import { Point } from './core/Point';
+import { PerformanceStats } from './core/DebugInfo';
 
 /**
  * Drawing state interface
  * @interface DrawingState
  */
 export interface DrawingState {
-  /** Whether currently drawing */
+  /** Whether user is actively drawing */
   isDrawing: boolean;
-  /** Starting point of the drawing */
+  /** Starting point of drawing */
   startPoint: Point | null;
-  /** Current point of the drawing */
+  /** Current point being drawn to */
   currentPoint: Point | null;
-  /** Midpoint for calculations */
+  /** Midpoint for curved lines */
   midPoint: Point | null;
-  /** Current cursor position */
-  cursorPosition: Point | null;
-  /** Current zoom level */
-  currentZoom?: number;
-  /** Array of all points in the current stroke */
-  points: Point[];
-  /** Whether a selection is active */
+  /** Whether selection is active */
   selectionActive: boolean;
+  /** Current zoom level */
+  currentZoom: number;
+  /** Array of points in path */
+  points: Point[];
+  /** Calculated distance between points */
+  distance: number | null;
 }
 
 /**
- * Debug information state
+ * Drawing mode enumeration
+ */
+export enum DrawingMode {
+  /** Free drawing mode */
+  FREE = 'free',
+  /** Line drawing mode */
+  LINE = 'line',
+  /** Rectangle drawing mode */
+  RECTANGLE = 'rectangle',
+  /** Circle drawing mode */
+  CIRCLE = 'circle',
+  /** Text insertion mode */
+  TEXT = 'text',
+  /** Selection mode */
+  SELECT = 'select'
+}
+
+/**
+ * Debug information state interface
  * @interface DebugInfoState
  */
 export interface DebugInfoState {
-  /** Whether grid was created successfully */
+  /** Whether to show debug information */
+  showDebugInfo: boolean;
+  /** Whether canvas has been initialized */
+  canvasInitialized: boolean;
+  /** Whether dimensions have been set */
+  dimensionsSet: boolean;
+  /** Whether grid has been created */
   gridCreated: boolean;
+  /** Whether brush has been initialized */
+  brushInitialized: boolean;
+  /** Whether canvas is ready */
+  canvasReady: boolean;
+  /** Whether canvas has been created */
+  canvasCreated: boolean;
+  /** Whether canvas has been loaded */
+  canvasLoaded: boolean;
+  /** Last initialization time */
+  lastInitTime: number;
+  /** Last grid creation time */
+  lastGridCreationTime: number;
+  /** Grid initialization state */
+  gridInitialized?: boolean;
+  /** Custom debug messages */
+  messages?: string[];
+  /** Amount of objects on canvas */
+  objectCount?: number;
+  /** Canvas dimensions */
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  /** Current tool */
+  currentTool?: string;
+  /** Canvas initialization time */
+  initTime?: number;
+  /** Number of grid objects */
+  gridObjects?: number;
   /** Number of grid objects */
   gridObjectCount: number;
-  /** Timestamp of last grid creation */
-  lastGridCreationTime: number;
+  /** Number of canvas objects */
+  canvasObjects?: number;
+  /** Canvas width */
+  canvasWidth?: number;
+  /** Canvas height */
+  canvasHeight?: number;
+  /** Device pixel ratio */
+  devicePixelRatio?: number;
+  /** Last error that occurred */
+  lastError?: any;
+  /** Timestamp of the last error */
+  lastErrorTime?: number;
   /** Canvas dimensions */
   canvasDimensions: {
     width: number;
@@ -70,93 +112,8 @@ export interface DebugInfoState {
   hasError: boolean;
   /** Error message */
   errorMessage: string;
-  /** Whether canvas has been initialized */
-  canvasInitialized?: boolean;
-  /** Whether dimensions have been set */
-  dimensionsSet?: boolean;
-  /** Whether brush has been initialized */
-  brushInitialized?: boolean;
-  /** Whether canvas is ready */
-  canvasReady?: boolean;
-  /** Whether canvas has been created */
-  canvasCreated?: boolean;
-  /** Whether canvas has been loaded */
-  canvasLoaded?: boolean;
-  /** Last initialization time */
-  lastInitTime?: number;
-  /** Whether debug info should be shown */
-  showDebugInfo?: boolean;
+  /** Performance statistics */
+  performanceStats: PerformanceStats;
 }
 
-/**
- * Drawing operation mode
- * @type {DrawingMode}
- */
-export type DrawingMode = 
-  | 'draw'           // Free drawing
-  | 'line'           // Straight line
-  | 'rectangle'      // Rectangle
-  | 'circle'         // Circle
-  | 'polygon'        // Polygon
-  | 'wall'           // Wall (architectural)
-  | 'room'           // Room (architectural)
-  | 'text'           // Text annotation
-  | 'measure'        // Measurement
-  | 'select'         // Selection
-  | 'pan'            // Pan view
-  | 'erase';         // Erase elements
-
-/**
- * Operation result with status
- * @interface OperationResult
- */
-export interface OperationResult<T> {
-  /** Operation success status */
-  success: boolean;
-  /** Operation result data */
-  data?: T;
-  /** Error message if operation failed */
-  error?: string;
-}
-
-/**
- * Grid creation state
- * @interface GridCreationState
- */
-export interface GridCreationState {
-  /** Whether grid creation is in progress */
-  inProgress: boolean;
-  /** Whether grid has been created */
-  isCreated: boolean;
-  /** Number of attempts */
-  attempts: number;
-  /** Timestamp of last attempt */
-  lastAttemptTime: number;
-  /** Whether a creation error occurred */
-  hasError: boolean;
-  /** Error message if creation failed */
-  errorMessage: string;
-  /** Whether an operation is in progress */
-  isCreating?: boolean;
-  /** Whether an operation is already happening */
-  creationInProgress?: boolean;
-  /** Lock to prevent concurrent operations */
-  creationLock?: boolean;
-  /** Count of consecutive resets */
-  consecutiveResets?: number;
-  /** Maximum allowed consecutive resets */
-  maxConsecutiveResets?: number;
-  /** Whether the grid exists already */
-  exists?: boolean;
-  /** Last time a grid was created */
-  lastCreationTime?: number;
-  /** Minimum time between creation attempts */
-  throttleInterval?: number;
-  /** Total number of grid creations */
-  totalCreations?: number;
-  /** Maximum number of allowed recreations */
-  maxRecreations?: number;
-  /** Minimum interval between recreations */
-  minRecreationInterval?: number;
-}
-
+// Export other drawing related types here
