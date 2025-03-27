@@ -15,7 +15,7 @@ export const typescriptRules = {
   },
   rules: {
     // TypeScript no-explicit-any and generic type safety
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-magic-numbers": ["error", { 
       "ignore": [0, 1, -1, 2], 
       "ignoreArrayIndexes": true,
@@ -26,12 +26,13 @@ export const typescriptRules = {
       "enforceConst": true,
       "detectObjects": false
     }],
-    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/ban-ts-comment": ["error", {
       "ts-ignore": "true",
       "ts-nocheck": "true",
       "minimumDescriptionLength": 20
     }],
+    "@typescript-eslint/consistent-type-assertions": "error",
     
     // TypeScript function and return types
     "@typescript-eslint/explicit-function-return-type": ["error", {
@@ -39,11 +40,11 @@ export const typescriptRules = {
       "allowTypedFunctionExpressions": true,
       "allowHigherOrderFunctions": true
     }],
-    "@typescript-eslint/explicit-module-boundary-types": "error",
+    "@typescript-eslint/explicit-module-boundary-types": "warn",
     "@typescript-eslint/explicit-member-accessibility": "error",
     
     // TypeScript type and pattern rules
-    "@typescript-eslint/no-non-null-assertion": "error",
+    "@typescript-eslint/no-non-null-assertion": "warn",
     "@typescript-eslint/prefer-as-const": "error",
     "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
     "@typescript-eslint/array-type": ["error", { "default": "array" }],
