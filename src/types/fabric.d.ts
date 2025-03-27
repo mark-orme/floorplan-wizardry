@@ -88,3 +88,4 @@ export interface CustomFabricTouchEvent {
   /** Original Touch or Event object */
   e: Touch | Event;
 }
+

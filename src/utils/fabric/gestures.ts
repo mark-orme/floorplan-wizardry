@@ -4,7 +4,7 @@
  * Provides multi-touch support for mobile devices
  * @module fabric/gestures
  */
-import { Canvas, PencilBrush, Point } from 'fabric';
+import { Canvas, PencilBrush, Point, Object as FabricObject } from 'fabric';
 import type { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { isTouchEvent, isMouseEvent } from '@/types/fabric';
@@ -81,7 +81,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * force;
       }
 
-      // Manually trigger mouse:down event on the canvas
+      // Create event object with all required properties for Fabric v6
       canvas.fire('mouse:down', {
         e: e,
         pointer: touchPosition,
@@ -90,7 +90,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         isClick: true,
         target: null,
-        subTargets: []
+        subTargets: [],
+        currentSubTargets: [] // Required property for compatibility
       });
 
       console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
@@ -127,7 +128,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * Math.max(0.5, force);
       }
 
-      // Manually trigger mouse:move event on the canvas
+      // Create compatible event object for Fabric v6
       canvas.fire('mouse:move', {
         e: e,
         pointer: touchPosition,
@@ -135,7 +136,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
         target: null,
-        subTargets: []
+        subTargets: [],
+        currentSubTargets: [] // Required property for compatibility
       });
     }
 
@@ -174,7 +176,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth;
       }
 
-      // Manually trigger mouse:up event on the canvas
+      // Create compatible event object for Fabric v6
       canvas.fire('mouse:up', {
         e: e,
         pointer: touchPosition,
@@ -183,7 +185,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         isClick: true,
         target: null,
-        subTargets: []
+        subTargets: [],
+        currentSubTargets: [] // Required property for compatibility
       });
 
       console.log("Drawing ended");
@@ -221,7 +224,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         const touch = touches[0];
         const touchPosition = getTouchPosition(touch);
         
-        // Fire mouse:up to complete the path
+        // Create compatible event object for Fabric v6
         canvas.fire('mouse:up', {
           e: e,
           pointer: touchPosition,
@@ -230,7 +233,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           viewportPoint: touchPosition.clone(),
           isClick: false,
           target: null,
-          subTargets: []
+          subTargets: [],
+          currentSubTargets: [] // Required property for compatibility
         });
       }
     }
