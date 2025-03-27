@@ -1,146 +1,75 @@
 
 /**
- * Drawing constants used throughout the application
- * Defines parameters for line styling and path processing
- * @module constants/drawingConstants
+ * Constants for drawing operations and styles
+ * Used to maintain consistent drawing behaviors
  */
-
-/**
- * Line thickness constants
- * Defines standard line thickness values for drawing
- * @constant {Object}
- */
-export const LINE_THICKNESS = {
-  /**
-   * Default line thickness in pixels
-   * Standard thickness for new drawings
-   * @constant {number}
-   */
-  DEFAULT: 2,
+export const DRAWING_CONSTANTS = {
+  /** Default drawing mode (freehand, line, shape) */
+  DEFAULT_MODE: 'freehand',
   
-  /**
-   * Minimum allowed line thickness
-   * Prevents lines from being too thin to be visible
-   * @constant {number}
-   */
-  MIN: 1,
+  /** Default snap to grid distance threshold in pixels */
+  SNAP_THRESHOLD: 10,
   
-  /**
-   * Maximum allowed line thickness
-   * Prevents excessive line thickness that would obscure details
-   * @constant {number}
-   */
-  MAX: 10,
+  /** Default selection transparency */
+  SELECTION_OPACITY: 0.3,
   
-  /**
-   * Thin line thickness
-   * For detailed or fine drawings
-   * @constant {number}
-   */
-  THIN: 1,
+  /** Default distance for point proximity checks */
+  POINT_PROXIMITY: 5,
   
-  /**
-   * Medium line thickness
-   * Standard thickness for most drawings
-   * @constant {number}
-   */
-  MEDIUM: 2,
+  /** Default angle for angle snapping (in degrees) */
+  ANGLE_SNAP: 15,
   
-  /**
-   * Thick line thickness
-   * For emphasis or primary elements
-   * @constant {number}
-   */
-  THICK: 4,
+  /** Default grid size in pixels */
+  GRID_SIZE: 20,
   
-  /**
-   * Very thick line thickness
-   * For strong emphasis or high visibility
-   * @constant {number}
-   */
-  VERY_THICK: 6
+  /** Maximum number of undo operations */
+  MAX_UNDO_STEPS: 50
 };
 
 /**
- * Path processing constants
- * Parameters for handling and optimizing drawing paths
- * @constant {Object}
+ * Constants for polyline drawing styles
+ * Used for walls, rooms, and other line-based objects
  */
-export const PATH_PROCESSING = {
-  /**
-   * Minimum points required for a valid path
-   * A path needs at least two points to form a line
-   * @constant {number}
-   */
-  MIN_POINTS: 2,
+export const POLYLINE_STYLES = {
+  /** Default polyline stroke color */
+  DEFAULT_STROKE_COLOR: '#333333',
   
-  /**
-   * Default sampling interval for path points
-   * Controls how many points are kept when simplifying paths
-   * @constant {number}
-   */
-  SAMPLING_INTERVAL: 5,
+  /** Default polyline stroke width */
+  DEFAULT_STROKE_WIDTH: 2,
   
-  /**
-   * Maximum points allowed in a single path for performance
-   * Prevents excessive points that could impact rendering speed
-   * @constant {number}
-   */
-  MAX_POINTS: 1000,
+  /** Default polyline fill color */
+  DEFAULT_FILL: 'transparent',
   
-  /**
-   * Minimum distance between points for simplification
-   * Points closer than this are candidates for removal during simplification
-   * @constant {number}
-   */
-  MIN_DISTANCE: 5,
+  /** Default polyline opacity */
+  DEFAULT_OPACITY: 1.0,
   
-  /**
-   * Maximum processing time in milliseconds
-   * Limits how long path processing can take to maintain responsiveness
-   * @constant {number}
-   */
-  MAX_PROCESSING_TIME: 500
-};
-
-/**
- * Drawing state constants
- * Default values for the drawing environment
- * @constant {Object}
- */
-export const DRAWING_STATE = {
-  /**
-   * Initial zoom level
-   * Default zoom when first loading the canvas
-   * @constant {number}
-   */
-  INITIAL_ZOOM: 1,
+  /** Default line cap style */
+  DEFAULT_LINE_CAP: 'round',
   
-  /**
-   * Default tool selection
-   * Tool activated when first loading the application
-   * @constant {string}
-   */
-  DEFAULT_TOOL: "select" as const,
+  /** Default line join style */
+  DEFAULT_LINE_JOIN: 'round',
   
-  /**
-   * Default floor number
-   * Initial floor shown in multi-floor plans
-   * @constant {number}
-   */
-  DEFAULT_FLOOR: 0,
+  /** Wall-specific stroke color */
+  WALL_STROKE_COLOR: '#000000',
   
-  /**
-   * Maximum number of floors allowed
-   * Limits to prevent excessive memory usage with many floors
-   * @constant {number}
-   */
-  MAX_FLOORS: 20,
+  /** Wall-specific stroke width */
+  WALL_STROKE_WIDTH: 6,
   
-  /**
-   * Default color for new drawings
-   * Standard color used for new drawing operations
-   * @constant {string}
-   */
-  DEFAULT_COLOR: "#000000"
+  /** Wall-specific fill color */
+  WALL_FILL: 'transparent',
+  
+  /** Wall-specific opacity */
+  WALL_OPACITY: 1.0,
+  
+  /** Room-specific stroke color */
+  ROOM_STROKE_COLOR: '#666666',
+  
+  /** Room-specific stroke width */
+  ROOM_STROKE_WIDTH: 1,
+  
+  /** Room-specific fill color */
+  ROOM_FILL: 'rgba(200, 200, 200, 0.2)',
+  
+  /** Room-specific opacity */
+  ROOM_OPACITY: 0.8
 };

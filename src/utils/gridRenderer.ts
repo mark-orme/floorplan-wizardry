@@ -1,221 +1,130 @@
-import { GRID_COLORS } from '@/constants/gridConstants';
-import type { Canvas as FabricCanvas } from 'fabric';
-import type { FabricObject, FabricObjectProps, SerializedObjectProps, ObjectEvents } from 'fabric';
+
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 
 /**
- * Interface for grid rendering options
+ * Result of grid rendering operation
  */
-interface GridRenderOptions {
-  /** Color of small grid lines */
-  smallGridColor?: string;
-  /** Color of large grid lines */
-  largeGridColor?: string;
-  /** Width of small grid lines */
-  smallGridWidth?: number;
-  /** Width of large grid lines */
-  largeGridWidth?: number;
-  /** Color of grid text labels */
-  textColor?: string;
-  /** Font size for grid labels */
-  fontSize?: number;
-  /** Font family for grid labels */
-  fontFamily?: string;
-  /** Enable grid labels */
-  showLabels?: boolean;
-  /** Opacity of grid elements */
-  opacity?: number;
+export interface GridRenderResult {
+  /** All grid objects created */
+  gridObjects: fabric.Object[];
+  /** Major grid lines only */
+  majorLines: fabric.Line[];
+  /** Minor grid lines only */
+  minorLines: fabric.Line[];
 }
 
 /**
- * Default grid render options
- */
-const DEFAULT_GRID_OPTIONS: GridRenderOptions = {
-  smallGridColor: GRID_COLORS.SMALL_GRID_COLOR,
-  largeGridColor: GRID_COLORS.LARGE_GRID_COLOR,
-  smallGridWidth: 0.5,
-  largeGridWidth: 1,
-  textColor: GRID_COLORS.LABEL_COLOR,
-  fontSize: 10,
-  fontFamily: 'Arial',
-  showLabels: true,
-  opacity: 0.5
-};
-
-/**
- * Render a grid on the canvas with specified options
- * @param {FabricCanvas} canvas - The fabric canvas to render on
+ * Create a grid of lines on the canvas
+ * @param {FabricCanvas} canvas - The fabric canvas to draw on
  * @param {Object} options - Grid rendering options
- * @returns {Array} Array of rendered grid objects
+ * @returns {GridRenderResult} The created grid objects
  */
-export const renderGrid = (
+export function renderGridComponents(
   canvas: FabricCanvas,
-  options: GridRenderOptions = DEFAULT_GRID_OPTIONS
-): FabricObject[] => {
-  if (!canvas) {
-    console.error('Cannot render grid: Canvas is null');
-    return [];
+  options?: {
+    cellSize?: number;
+    majorLineFrequency?: number;
+    majorLineColor?: string;
+    minorLineColor?: string;
+    majorLineWidth?: number;
+    minorLineWidth?: number;
+    opacity?: number;
   }
-  
-  const mergedOptions = { ...DEFAULT_GRID_OPTIONS, ...options };
-  const gridObjects: FabricObject[] = [];
-  
-  try {
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
+): GridRenderResult {
+  const gridObjects: fabric.Object[] = [];
+  const majorLines: fabric.Line[] = [];
+  const minorLines: fabric.Line[] = [];
+
+  const cellSize = options?.cellSize || GRID_CONSTANTS.CELL_SIZE;
+  const majorLineFrequency = options?.majorLineFrequency || GRID_CONSTANTS.MAJOR_LINE_FREQUENCY;
+  const majorLineColor = options?.majorLineColor || GRID_CONSTANTS.MAJOR_LINE_COLOR;
+  const minorLineColor = options?.minorLineColor || GRID_CONSTANTS.MINOR_LINE_COLOR;
+  const majorLineWidth = options?.majorLineWidth || GRID_CONSTANTS.MAJOR_LINE_WIDTH;
+  const minorLineWidth = options?.minorLineWidth || GRID_CONSTANTS.MINOR_LINE_WIDTH;
+  const opacity = options?.opacity || GRID_CONSTANTS.GRID_OPACITY;
+
+  // Canvas dimensions
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
+
+  // Create horizontal lines
+  for (let i = 0; i <= height; i += cellSize) {
+    const isMajor = i % (cellSize * majorLineFrequency) === 0;
     
-    // Don't render if canvas dimensions are invalid
-    if (width <= 0 || height <= 0) {
-      console.warn('Cannot render grid: Invalid canvas dimensions');
-      return [];
+    const line = new Line([0, i, width, i], {
+      stroke: isMajor ? majorLineColor : minorLineColor,
+      strokeWidth: isMajor ? majorLineWidth : minorLineWidth,
+      selectable: false,
+      evented: false,
+      opacity: opacity,
+      excludeFromExport: true,
+      name: `grid-h-${i}`,
+      data: { gridLine: true, isMajor }
+    });
+
+    if (isMajor) {
+      majorLines.push(line);
+    } else {
+      minorLines.push(line);
     }
     
-    // Create grid lines
-    const smallGridSize = 20;
-    const largeGridSize = 100;
-    
-    // Render small grid lines
-    for (let i = 0; i < width; i += smallGridSize) {
-      const line = new fabric.Line([i, 0, i, height], {
-        stroke: mergedOptions.smallGridColor,
-        strokeWidth: mergedOptions.smallGridWidth,
-        selectable: false,
-        evented: false,
-        objectCaching: false
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    for (let i = 0; i < height; i += smallGridSize) {
-      const line = new fabric.Line([0, i, width, i], {
-        stroke: mergedOptions.smallGridColor,
-        strokeWidth: mergedOptions.smallGridWidth,
-        selectable: false,
-        evented: false,
-        objectCaching: false
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Render large grid lines
-    for (let i = 0; i < width; i += largeGridSize) {
-      const line = new fabric.Line([i, 0, i, height], {
-        stroke: mergedOptions.largeGridColor,
-        strokeWidth: mergedOptions.largeGridWidth,
-        selectable: false,
-        evented: false,
-        objectCaching: false
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    for (let i = 0; i < height; i += largeGridSize) {
-      const line = new fabric.Line([0, i, width, i], {
-        stroke: mergedOptions.largeGridColor,
-        strokeWidth: mergedOptions.largeGridWidth,
-        selectable: false,
-        evented: false,
-        objectCaching: false
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Add grid labels if enabled
-    if (mergedOptions.showLabels) {
-      // Add horizontal labels
-      for (let i = 0; i < width; i += largeGridSize) {
-        if (i === 0) continue; // Skip origin
-        
-        const text = new fabric.Text(`${i}`, {
-          left: i,
-          top: 5,
-          fontSize: mergedOptions.fontSize,
-          fontFamily: mergedOptions.fontFamily,
-          fill: mergedOptions.textColor,
-          selectable: false,
-          evented: false,
-          objectCaching: true
-        });
-        canvas.add(text);
-        gridObjects.push(text);
-      }
-      
-      // Add vertical labels
-      for (let i = 0; i < height; i += largeGridSize) {
-        if (i === 0) continue; // Skip origin
-        
-        const text = new fabric.Text(`${i}`, {
-          left: 5,
-          top: i,
-          fontSize: mergedOptions.fontSize,
-          fontFamily: mergedOptions.fontFamily,
-          fill: mergedOptions.textColor,
-          selectable: false,
-          evented: false,
-          objectCaching: true
-        });
-        canvas.add(text);
-        gridObjects.push(text);
-      }
-    }
-    
-    // Check if any objects were created
-    const removeAllGridObjects = () => {
-      gridObjects.forEach((obj: FabricObject) => {
-        canvas.remove(obj);
-      });
-    };
-    
-    // Store grid removal function on the canvas for easy cleanup
-    if (typeof canvas.removeGrid !== 'function') {
-      canvas.removeGrid = removeAllGridObjects;
-    }
-    
-    return gridObjects;
-  } catch (error) {
-    console.error('Error rendering grid:', error);
-    return [];
+    gridObjects.push(line);
+    canvas.add(line);
   }
-};
+
+  // Create vertical lines
+  for (let i = 0; i <= width; i += cellSize) {
+    const isMajor = i % (cellSize * majorLineFrequency) === 0;
+    
+    const line = new Line([i, 0, i, height], {
+      stroke: isMajor ? majorLineColor : minorLineColor,
+      strokeWidth: isMajor ? majorLineWidth : minorLineWidth,
+      selectable: false,
+      evented: false,
+      opacity: opacity,
+      excludeFromExport: true,
+      name: `grid-v-${i}`,
+      data: { gridLine: true, isMajor }
+    });
+
+    if (isMajor) {
+      majorLines.push(line);
+    } else {
+      minorLines.push(line);
+    }
+    
+    gridObjects.push(line);
+    canvas.add(line);
+  }
+
+  // Send all grid lines to back
+  gridObjects.forEach(obj => obj.sendToBack());
+
+  return { 
+    gridObjects, 
+    majorLines, 
+    minorLines 
+  };
+}
 
 /**
- * Remove all grid objects from the canvas
+ * Arrange grid objects in the correct z-order
  * @param {FabricCanvas} canvas - The fabric canvas
- * @param {Array} gridObjects - Array of grid objects to remove
- * @returns {void}
+ * @param {fabric.Object[]} gridObjects - The grid objects to arrange
  */
-export const removeGrid = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[]
-): void => {
-  if (!canvas) return;
-  
-  try {
-    // Use canvas's removeGrid method if available
-    if (typeof canvas.removeGrid === 'function') {
-      canvas.removeGrid();
-      return;
-    }
-    
-    // Otherwise, remove each grid object individually
-    gridObjects.forEach((obj: FabricObject) => {
-      if (obj && canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
-    });
-    
-    canvas.requestRenderAll();
-  } catch (error) {
-    console.error('Error removing grid:', error);
-  }
-};
+export function arrangeGridObjects(canvas: FabricCanvas, gridObjects: fabric.Object[]): void {
+  // Send all grid lines to back
+  gridObjects.forEach(obj => obj.sendToBack());
+  canvas.requestRenderAll();
+}
 
-// Extend fabric.Canvas type to include our grid removal function
-declare module 'fabric' {
-  interface Canvas {
-    removeGrid?: () => void;
-  }
+/**
+ * Remove grid objects from canvas
+ * @param {FabricCanvas} canvas - The fabric canvas
+ * @param {fabric.Object[]} gridObjects - The grid objects to remove
+ */
+export function removeGridObjects(canvas: FabricCanvas, gridObjects: fabric.Object[]): void {
+  gridObjects.forEach(obj => canvas.remove(obj));
+  canvas.requestRenderAll();
 }

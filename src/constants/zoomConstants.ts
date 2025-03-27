@@ -1,55 +1,52 @@
 
 /**
- * Zoom-related constants used throughout the application
- * Controls zoom behavior and limits for the canvas
- * @module constants/zoomConstants
+ * Constants for zoom operations
+ * Used to maintain consistent zoom behavior
  */
-
-/**
- * Zoom multiplier constants for zooming in and out
- * Controls the rate and limits of zoom operations
- * @constant {Object}
- */
-export const ZOOM_MULTIPLIERS = {
-  /**
-   * Zoom in multiplier value
-   * Each zoom-in operation multiplies the current zoom by this value
-   * @constant {number}
-   */
-  IN: 1.2,
+export const ZOOM_CONSTANTS = {
+  /** Default zoom level */
+  DEFAULT_ZOOM: 1.0,
   
-  /**
-   * Zoom out multiplier value
-   * Each zoom-out operation multiplies the current zoom by this value
-   * @constant {number}
-   */
-  OUT: 0.8,
+  /** Minimum zoom level allowed */
+  MIN_ZOOM: 0.25,
   
-  /**
-   * Minimum allowed zoom level
-   * Prevents zooming out too far where content becomes unreadable
-   * @constant {number}
-   */
-  MIN_ZOOM: 0.5,
-  
-  /**
-   * Maximum allowed zoom level
-   * Prevents excessive zooming that could cause performance issues
-   * @constant {number}
-   */
+  /** Maximum zoom level allowed */
   MAX_ZOOM: 5.0,
   
-  /**
-   * Default initial zoom level
-   * Standard 1:1 display ratio when canvas is first loaded
-   * @constant {number}
-   */
-  DEFAULT_ZOOM: 1.0
+  /** Zoom step for keyboard and button controls */
+  ZOOM_STEP: 0.1,
+  
+  /** Zoom multiplier for mouse wheel operations */
+  WHEEL_ZOOM_FACTOR: 0.02,
+  
+  /** Zoom multiplier for pinch gesture operations */
+  PINCH_ZOOM_FACTOR: 0.01,
+  
+  /** Default zoom transition duration in milliseconds */
+  TRANSITION_DURATION: 200,
+  
+  /** Maximum zoom change per interaction */
+  MAX_ZOOM_CHANGE: 0.5
 };
 
 /**
- * Zoom direction type definition
- * Represents the two possible zoom directions
- * @typedef {"in" | "out"} ZoomDirection
+ * Zoom directions for zoom operations
  */
-export type ZoomDirection = "in" | "out";
+export enum ZoomDirection {
+  /** Zoom in (increase scale) */
+  IN = "in",
+  
+  /** Zoom out (decrease scale) */
+  OUT = "out"
+}
+
+/**
+ * Zoom multipliers for different operations
+ */
+export const ZOOM_MULTIPLIERS = {
+  /** Zoom in multiplier */
+  IN: 1.1,
+  
+  /** Zoom out multiplier */
+  OUT: 0.9
+};

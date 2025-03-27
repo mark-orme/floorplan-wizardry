@@ -28,11 +28,6 @@ interface UsePathEventsProps extends BaseEventHandlerProps {
 }
 
 /**
- * Type for the Fabric event handler to satisfy Fabric.js API
- */
-type FabricEventHandler = (e: PathCreatedEvent) => void;
-
-/**
  * Hook to handle path creation events
  * @param {UsePathEventsProps} props - Hook properties
  * @returns {EventHandlerResult} Cleanup function
@@ -66,12 +61,12 @@ export const usePathEvents = ({
       handleMouseUp();
     };
     
-    // Register the event handler
-    fabricCanvas.on('path:created', handlePathCreated as FabricEventHandler);
+    // Register the event handler with typed casting
+    fabricCanvas.on('path:created', handlePathCreated as unknown as (e: TEvent) => void);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('path:created', handlePathCreated as FabricEventHandler);
+        fabricCanvas.off('path:created', handlePathCreated as unknown as (e: TEvent) => void);
       }
     };
   }, [fabricCanvasRef, processCreatedPath, handleMouseUp, saveCurrentState]);
