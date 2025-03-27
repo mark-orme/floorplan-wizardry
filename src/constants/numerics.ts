@@ -1,160 +1,59 @@
 
 /**
  * Numeric constants used throughout the application
- * Centralizes numeric values to avoid magic numbers
- * @module numerics
+ * @module constants/numerics
  */
 
 /**
- * Grid spacing in meters
- * Default grid size for the canvas grid system
+ * Grid spacing in pixels (represents 10cm in our scale)
  * @constant {number}
  */
-export const GRID_SPACING = 0.5;
+export const GRID_SPACING = 10;
 
 /**
- * Pixels per meter conversion ratio
- * Used to convert between real-world meters and pixels on screen
+ * Grid major spacing (1m in our scale) in pixels
  * @constant {number}
  */
-export const PIXELS_PER_METER = 100;
+export const GRID_MAJOR_SPACING = 100;
 
 /**
- * Small grid cell size in meters
- * Used for the smaller grid lines
+ * Canvas default width in pixels
  * @constant {number}
  */
-export const SMALL_GRID = 0.5;
+export const CANVAS_DEFAULT_WIDTH = 800;
 
 /**
- * Large grid cell size in meters
- * Used for the larger, more prominent grid lines
+ * Canvas default height in pixels
  * @constant {number}
  */
-export const LARGE_GRID = 1.0;
+export const CANVAS_DEFAULT_HEIGHT = 600;
 
 /**
- * Maximum number of history states to keep
- * For undo/redo functionality
+ * Canvas minimum width in pixels
  * @constant {number}
  */
-export const MAX_HISTORY_STATES = 100;
+export const CANVAS_MIN_WIDTH = 200;
 
 /**
- * Maximum number of objects allowed on a canvas
- * For performance considerations
+ * Canvas minimum height in pixels
  * @constant {number}
  */
-export const MAX_OBJECTS_PER_CANVAS = 5000;
+export const CANVAS_MIN_HEIGHT = 200;
 
 /**
- * Default line thickness in pixels
- * Used as the starting thickness for drawing tools
+ * Maximum grid creation attempts
  * @constant {number}
  */
-export const DEFAULT_LINE_THICKNESS = 2;
+export const MAX_GRID_CREATION_ATTEMPTS = 3;
 
 /**
- * Threshold in pixels to consider points as close
- * Used for snapping and selection
+ * Minimum grid creation interval (throttle) in ms
  * @constant {number}
  */
-export const CLOSE_POINT_THRESHOLD = 10;
+export const MIN_GRID_CREATION_INTERVAL = 500;
 
 /**
- * Threshold in pixels to consider a shape as closed
- * Used for polygon completion
+ * Precision for rounding measurements for display
  * @constant {number}
  */
-export const SHAPE_CLOSE_THRESHOLD = 15;
-
-/**
- * Tolerance for floating point comparisons
- * Used when checking equality of coordinates
- * @constant {number}
- */
-export const FLOATING_POINT_TOLERANCE = 0.0001;
-
-/**
- * Minimum line length in pixels to be considered valid
- * Prevents creation of tiny/accidental lines
- * @constant {number}
- */
-export const MIN_LINE_LENGTH = 5;
-
-/**
- * Minimum shape area in square pixels to be considered valid
- * Prevents creation of tiny/accidental shapes
- * @constant {number}
- */
-export const MIN_SHAPE_AREA = 100;
-
-/**
- * Threshold in degrees for angle snapping
- * Used to determine when to snap to preset angles
- * @constant {number}
- */
-export const ANGLE_SNAP_THRESHOLD = 5;
-
-/**
- * Width of large grid lines in pixels
- * Used for visual styling of the grid
- * @constant {number}
- */
-export const LARGE_GRID_LINE_WIDTH = 1;
-
-/**
- * Width of small grid lines in pixels
- * Used for visual styling of the grid
- * @constant {number}
- */
-export const SMALL_GRID_LINE_WIDTH = 0.5;
-
-/**
- * Precision for area calculations
- * Number of decimal places to round to
- * @constant {number}
- */
-export const AREA_PRECISION = 2;
-
-/**
- * Precision for distance measurements
- * Number of decimal places to round to
- * @constant {number}
- */
-export const DISTANCE_PRECISION = 2;
-
-/**
- * Default canvas width in pixels
- * Used when container dimensions are not available
- * @constant {number}
- */
-export const DEFAULT_CANVAS_WIDTH = 800;
-
-/**
- * Default canvas height in pixels
- * Used when container dimensions are not available
- * @constant {number}
- */
-export const DEFAULT_CANVAS_HEIGHT = 600;
-
-/**
- * Maximum number of small grid lines
- * For performance considerations
- * @constant {number}
- */
-export const MAX_SMALL_GRID_LINES = 300;
-
-/**
- * Maximum number of large grid lines
- * For performance considerations
- * @constant {number}
- */
-export const MAX_LARGE_GRID_LINES = 100;
-
-/**
- * Grid extension factor
- * How much to extend the grid beyond the canvas edges
- * @constant {number}
- */
-export const GRID_EXTENSION_FACTOR = 2;
+export const MEASUREMENT_PRECISION = 2;

@@ -8,6 +8,7 @@ import React, { useEffect, useRef } from 'react';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
+import { useReliableGridInitialization } from '@/hooks/useReliableGridInitialization';
 
 interface CanvasProps {
   onError?: () => void;
@@ -98,6 +99,16 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Use our hook for any additional initialization logic
   useCanvasInit({ onError });
   
+  // Use our new reliable grid initialization
+  const { isGridInitialized } = useReliableGridInitialization(fabricCanvasRef);
+  
+  // Log grid initialization status
+  useEffect(() => {
+    if (isGridInitialized) {
+      console.log("Canvas: Grid initialized successfully");
+    }
+  }, [isGridInitialized]);
+  
   return (
     <canvas 
       ref={canvasRef}
@@ -106,6 +117,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       className="w-full h-full border border-gray-200"
       style={{ border: '1px solid #eee' }}
       data-testid="fabric-canvas"
+      data-grid-initialized={isGridInitialized ? "true" : "false"}
     />
   );
 };
