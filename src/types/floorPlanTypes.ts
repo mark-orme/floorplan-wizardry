@@ -1,75 +1,23 @@
 
 /**
- * Type definitions for floor plans
+ * Floor Plan type definitions
  * @module floorPlanTypes
  */
 
-export interface Point {
-  x: number;
-  y: number;
-}
-
 /**
- * Wall definition in a floor plan
- * @interface Wall
- */
-export interface Wall {
-  id: string;
-  start: Point;
-  end: Point;
-  thickness?: number;
-  height?: number;
-  type?: 'interior' | 'exterior' | 'partition';
-}
-
-/**
- * Room definition in a floor plan
- * @interface Room
- */
-export interface Room {
-  id: string;
-  name: string;
-  bounds: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-  area?: number;
-  type?: string;
-}
-
-/**
- * Paper size for printing
- * @interface PaperSize
- */
-export type PaperSize = 'A4' | 'A3' | 'infinite';
-
-/**
- * Floor plan definition
+ * Floor Plan interface
+ * Represents a single floor plan with identifying information and data
  * @interface FloorPlan
  */
 export interface FloorPlan {
+  /** Unique identifier for the floor plan */
   id: string;
+  /** Display name of the floor plan */
   name: string;
-  walls?: Wall[];
-  rooms?: Room[];
-  level?: number;
-  gia?: number;
-  scale?: number;
-  updatedAt?: string;
-  meta?: {
-    [key: string]: any;
-  };
-  // Properties needed from drawingTypes.FloorPlan
-  label: string;
-  strokes: Point[][];
-  areas?: number[];
-  createdAt?: Date;
-}
-
-// Storage model for IndexedDB
-export interface FloorPlanStorageModel {
-  id: string;
-  data: FloorPlan[];
+  /** Serialized canvas data or null if none exists */
+  canvasData: any | null;
+  /** Creation timestamp */
+  createdAt: string;
+  /** Last update timestamp */
+  updatedAt: string;
 }
