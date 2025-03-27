@@ -5,6 +5,8 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import logger from "@/utils/logger";
+import { toast } from "sonner";
 
 /**
  * Props for the useCanvasUtilities hook
@@ -70,10 +72,70 @@ export const useCanvasUtilities = ({ fabricCanvasRef }: UseCanvasUtilitiesProps)
     }
   }, [fabricCanvasRef]);
   
+  /**
+   * Check if canvas is ready for operations
+   * @param canvas - Optional canvas to check, uses ref by default
+   * @returns Whether canvas is ready for operations
+   */
+  const isCanvasReady = useCallback((canvas?: FabricCanvas): boolean => {
+    const targetCanvas = canvas || fabricCanvasRef.current;
+    
+    if (!targetCanvas) {
+      return false;
+    }
+    
+    try {
+      // Check if the canvas has required methods
+      return (
+        typeof targetCanvas.getWidth === 'function' &&
+        typeof targetCanvas.getHeight === 'function' &&
+        typeof targetCanvas.add === 'function' &&
+        typeof targetCanvas.remove === 'function' &&
+        typeof targetCanvas.getObjects === 'function' &&
+        // Check if dimensions are valid (non-zero)
+        targetCanvas.getWidth() > 0 &&
+        targetCanvas.getHeight() > 0
+      );
+    } catch (error) {
+      logger.error('Error checking canvas readiness:', error);
+      return false;
+    }
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Safely perform an operation on the canvas with error handling
+   * @param canvas - Canvas to operate on
+   * @param operation - Operation to perform
+   * @param errorMessage - Optional error message on failure
+   * @returns Whether operation was successful
+   */
+  const safeCanvasOperation = useCallback((
+    canvas: FabricCanvas,
+    operation: () => void,
+    errorMessage: string = "Canvas operation failed"
+  ): boolean => {
+    if (!canvas) {
+      logger.warn("Cannot perform operation: Canvas is null");
+      return false;
+    }
+    
+    try {
+      operation();
+      return true;
+    } catch (error) {
+      logger.error(`${errorMessage}:`, error);
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+      return false;
+    }
+  }, []);
+  
   return {
     findObjectById,
     getZoomLevel,
     setZoomLevel,
-    centerCanvas
+    centerCanvas,
+    isCanvasReady,
+    safeCanvasOperation
   };
 };

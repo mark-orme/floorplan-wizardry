@@ -41,7 +41,7 @@ export const useCanvasGrid = ({
   const { scheduleRetry, cancelRetry, resetRetryState } = useGridRetry();
   
   // Use our new canvas utilities
-  const { safeCanvasOperation, isCanvasReady } = useCanvasUtilities();
+  const { safeCanvasOperation, isCanvasReady } = useCanvasUtilities({ fabricCanvasRef });
   
   /**
    * Create grid on the canvas with error handling
