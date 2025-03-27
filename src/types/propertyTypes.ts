@@ -8,7 +8,8 @@ import { UserRole } from '@/lib/supabase';
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING_REVIEW = 'pending_review',
-  COMPLETED = 'completed'
+  COMPLETED = 'completed',
+  ARCHIVED = 'archived'
 }
 
 /**

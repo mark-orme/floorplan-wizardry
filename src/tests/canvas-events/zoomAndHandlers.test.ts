@@ -5,7 +5,6 @@ import { useZoomTracking } from '@/hooks/canvas-events/useZoomTracking';
 import { useCanvasHandlers } from '@/hooks/canvas-events/useCanvasHandlers';
 import { Canvas } from 'fabric';
 import { DrawingTool } from '@/hooks/useCanvasState';
-import { TEvent } from 'fabric/fabric-impl';
 
 /**
  * Tests for Canvas Zoom and Handlers functionality

@@ -59,11 +59,11 @@ describe('PropertyHeader Component', () => {
     expect(screen.getByText('Completed')).toBeInTheDocument();
   });
   
-  test('renders correct badge for ARCHIVED status', () => {
+  test('renders correct badge for archived status', () => {
     // Given
     const property: Property = {
       order_id: 'ORD-12345',
-      status: PropertyStatus.ARCHIVED,
+      status: 'archived' as PropertyStatus, // Cast as PropertyStatus since it's not in the enum
       address: '123 Test Street, City'
     };
     
