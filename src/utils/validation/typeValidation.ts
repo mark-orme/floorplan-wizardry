@@ -43,6 +43,7 @@ export const performanceStatsSchema = z.object({
  * Debug info state schema for validation
  */
 export const debugInfoStateSchema = z.object({
+  // Required fields
   showDebugInfo: z.boolean(),
   canvasInitialized: z.boolean(),
   dimensionsSet: z.boolean(),
@@ -82,15 +83,18 @@ export const debugInfoStateSchema = z.object({
  * Drawing state schema for validation
  */
 export const drawingStateSchema = z.object({
+  // Required fields
   isDrawing: z.boolean(),
   startPoint: pointSchema.nullable(),
   currentPoint: pointSchema.nullable(),
-  cursorPosition: pointSchema.nullable().optional(),
   midPoint: pointSchema.nullable(),
   selectionActive: z.boolean(),
   currentZoom: z.number(),
   points: z.array(pointSchema),
-  distance: z.number().nullable()
+  distance: z.number().nullable(),
+  
+  // Optional fields
+  cursorPosition: pointSchema.nullable().optional()
 });
 
 /**
@@ -135,7 +139,9 @@ export function validateCanvasDimensions(dimensions: unknown): CanvasDimensions 
  * @returns A validator for partial debug info state
  */
 export function createPartialDebugInfoValidator() {
-  return debugInfoStateSchema.deepPartial();
+  // Use a different approach for partial validation that doesn't lose type information
+  const partialSchema = debugInfoStateSchema.deepPartial();
+  return (data: unknown) => partialSchema.parse(data) as Partial<DebugInfoState>;
 }
 
 /**
@@ -144,5 +150,7 @@ export function createPartialDebugInfoValidator() {
  * @returns A validator for partial drawing state
  */
 export function createPartialDrawingStateValidator() {
-  return drawingStateSchema.deepPartial();
+  // Use a different approach for partial validation that doesn't lose type information
+  const partialSchema = drawingStateSchema.deepPartial();
+  return (data: unknown) => partialSchema.parse(data) as Partial<DrawingState>;
 }
