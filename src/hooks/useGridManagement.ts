@@ -6,6 +6,9 @@
  * @deprecated Use the modular imports from @/hooks/grid-management instead
  */
 
-// Re-export everything from the new modular structure for backward compatibility
-export { useGridManagement } from './grid-management';
-export type { UseGridManagementProps, UseGridManagementResult } from './grid-management';
+// Re-export from the new modular structure for backward compatibility
+import { useGridManagement as useGridManagementHook } from './grid-management/useGridManagement';
+import type { UseGridManagementProps, UseGridManagementResult } from './grid-management/types';
+
+export const useGridManagement = useGridManagementHook;
+export type { UseGridManagementProps, UseGridManagementResult };

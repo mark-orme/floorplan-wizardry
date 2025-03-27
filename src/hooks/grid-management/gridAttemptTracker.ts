@@ -14,7 +14,8 @@ export const createGridAttemptTracker = (): GridAttemptTracker => ({
   initialAttempted: false,
   count: 0,
   maxAttempts: 5,
-  successful: false
+  successful: false,
+  lastAttemptTime: 0
 });
 
 /**
@@ -34,7 +35,8 @@ export const markInitialAttempted = (tracker: GridAttemptTracker): GridAttemptTr
  */
 export const incrementAttemptCount = (tracker: GridAttemptTracker): GridAttemptTracker => ({
   ...tracker,
-  count: tracker.count + 1
+  count: tracker.count + 1,
+  lastAttemptTime: Date.now()
 });
 
 /**

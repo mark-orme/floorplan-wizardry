@@ -5,6 +5,21 @@
  * @module grid-management
  */
 
+// Export types
+export type { GridAttemptTracker } from "./types";
+export type { UseGridManagementProps, UseGridManagementResult } from "./types";
+
+// Export hooks
+export { useGridManagement } from "./useGridManagement";
+
+// Export utilities
+export { 
+  incrementAttemptCount, 
+  markCreationSuccessful, 
+  isMaxAttemptsReached 
+} from "./gridAttemptTracker";
+
+// The original contents
 export interface GridAttemptTracker {
   count: number;
   maxAttempts: number;

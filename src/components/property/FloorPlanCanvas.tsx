@@ -4,7 +4,7 @@
  * Handles canvas rendering and initialization
  */
 import { useState, useEffect, useRef } from "react";
-import { Canvas } from "fabric"; // Import just the type, not as namespace
+import { Canvas } from "fabric"; // Import just the type
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { ReliableCanvasContainer } from "@/components/canvas/ReliableCanvasContainer";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
@@ -32,7 +32,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   const [showDebug, setShowDebug] = useState(true); // Show debug panel by default
   const unmountedRef = useRef(false);
   const fabricCanvasRef = useRef<Canvas | null>(null);
-  const gridLayerRef = useRef<Canvas.Object[]>([]);
+  const gridLayerRef = useRef<Canvas["Object"][]>([]);
   
   // Set ready state after a short delay to ensure DOM is fully rendered
   useEffect(() => {

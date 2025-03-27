@@ -20,6 +20,8 @@ export interface GridAttemptTracker {
   maxAttempts: number;
   /** Whether creation was successful */
   successful: boolean;
+  /** Timestamp of the last attempt */
+  lastAttemptTime: number;
 }
 
 /**
