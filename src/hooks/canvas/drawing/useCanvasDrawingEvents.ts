@@ -6,6 +6,7 @@
 import { useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath } from "fabric";
 import { DrawingTool } from "@/hooks/useCanvasState";
+import logger from "@/utils/logger";
 
 interface UseCanvasDrawingEventsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -39,10 +40,46 @@ export const useCanvasDrawingEvents = (props: UseCanvasDrawingEventsProps) => {
     deleteSelectedObjects
   } = props;
   
+  // Register path creation events
+  useEffect(() => {
+    console.log("Setting up path creation events for tool:", tool);
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Handler for path created event - this is crucial for drawing
+    const handlePathCreated = (e: any) => {
+      console.log("Path created event fired:", e);
+      if (e.path) {
+        processCreatedPath(e.path);
+      }
+    };
+    
+    // Add the path created listener
+    canvas.on('path:created', handlePathCreated);
+    
+    // Additional logging for debugging
+    canvas.on('mouse:down', () => console.log("Canvas mouse:down event fired"));
+    canvas.on('mouse:move', () => console.log("Canvas mouse:move event triggered"));
+    canvas.on('mouse:up', () => console.log("Canvas mouse:up event triggered"));
+    
+    console.log("Path creation event handlers registered");
+    
+    return () => {
+      if (canvas) {
+        canvas.off('path:created', handlePathCreated);
+        canvas.off('mouse:down');
+        canvas.off('mouse:move');
+        canvas.off('mouse:up');
+      }
+    };
+  }, [fabricCanvasRef, processCreatedPath, tool]);
+  
   // Register zoom tracking event listeners
   useEffect(() => {
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
+    
+    console.log("Setting up zoom tracking events");
     
     // Use type assertion to allow custom events
     const canvas = fabricCanvas as unknown as {
@@ -67,6 +104,29 @@ export const useCanvasDrawingEvents = (props: UseCanvasDrawingEventsProps) => {
     };
   }, [fabricCanvasRef, updateZoomLevel]);
   
+  // Register mouse and touch event handlers directly
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    console.log("Setting up mouse/touch event handlers for tool:", tool);
+    
+    if (tool === 'draw' || tool === 'straightLine' || tool === 'wall' || tool === 'room') {
+      // Set drawing mode based on the tool
+      canvas.isDrawingMode = tool === 'draw';
+      
+      if (canvas.isDrawingMode) {
+        console.log("Canvas drawing mode enabled");
+      } else {
+        console.log("Canvas drawing mode disabled (using managed interactions)");
+      }
+    }
+    
+    return () => {
+      // No cleanup needed here as the next effect run will update the drawing mode
+    };
+  }, [fabricCanvasRef, tool]);
+  
   // Register GIA recalculation event listeners
   useEffect(() => {
     if (!fabricCanvasRef.current || !recalculateGIA) return;
@@ -75,6 +135,7 @@ export const useCanvasDrawingEvents = (props: UseCanvasDrawingEventsProps) => {
     
     // Update GIA when objects are added, removed or modified
     const handleObjectChange = () => {
+      console.log("Object change detected, recalculating GIA");
       if (recalculateGIA && typeof recalculateGIA === 'function') {
         recalculateGIA();
       }

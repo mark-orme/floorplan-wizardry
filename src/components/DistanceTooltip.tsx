@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Point } from '@/types/drawingTypes';
+import { PIXELS_PER_METER } from '@/constants/numerics';
 
 interface DistanceTooltipProps {
   startPoint: Point | null;
@@ -21,25 +22,25 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
   isSnappedToGrid = false,
   isAutoStraightened = false
 }) => {
-  if (!isVisible || !midPoint) return null;
+  if (!isVisible || !midPoint || !startPoint || !currentPoint) return null;
 
   // Calculate distance in meters for display
   const calculateMetricDistance = (): string => {
-    if (!startPoint || !currentPoint) return '0.0m';
-    
     // Calculate distance in pixels
     const dx = currentPoint.x - startPoint.x;
     const dy = currentPoint.y - startPoint.y;
     const pixelDistance = Math.sqrt(dx * dx + dy * dy);
     
-    // Convert to meters (assuming 100 pixels = 1 meter)
-    const metersDistance = pixelDistance / 100;
+    // Convert to meters (assuming PIXELS_PER_METER is defined in constants)
+    // Default to 100 pixels = 1 meter if constant not available
+    const pixelsPerMeter = PIXELS_PER_METER || 100;
+    const metersDistance = pixelDistance / pixelsPerMeter;
     
-    // Format to 1 decimal place and add units
-    return `${metersDistance.toFixed(1)}m`;
+    // Format to 2 decimal places and add units
+    return `${metersDistance.toFixed(2)}m`;
   };
 
-  // Position tooltip at the midpoint of the line
+  // Position tooltip at the midpoint of the line, accounting for zoom
   const tooltipStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${midPoint.x}px`,
@@ -48,8 +49,8 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
     color: 'white',
     padding: '4px 8px',
     borderRadius: '4px',
-    fontSize: '12px',
-    transform: 'translate(-50%, -50%) scale(1)',
+    fontSize: `${Math.max(12, 12 / currentZoom)}px`, // Scale font for better visibility during zoom
+    transform: 'translate(-50%, -50%)',
     zIndex: 1000,
     pointerEvents: 'none', // Prevent tooltip from interfering with mouse events
     display: 'flex',
@@ -69,10 +70,10 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
     >
       <span>{calculateMetricDistance()}</span>
       {isSnappedToGrid && (
-        <span style={{ fontSize: '10px', opacity: 0.8 }}>Snapped to grid</span>
+        <span style={{ fontSize: `${Math.max(10, 10 / currentZoom)}px`, opacity: 0.8 }}>Snapped to grid</span>
       )}
       {isAutoStraightened && (
-        <span style={{ fontSize: '10px', opacity: 0.8 }}>Auto-straightened</span>
+        <span style={{ fontSize: `${Math.max(10, 10 / currentZoom)}px`, opacity: 0.8 }}>Auto-straightened</span>
       )}
     </div>
   );

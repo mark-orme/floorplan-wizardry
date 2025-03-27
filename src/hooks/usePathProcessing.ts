@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing paths drawn on the canvas
  * Handles the transformation of raw paths into proper shapes and objects
@@ -119,7 +118,10 @@ export const usePathProcessing = ({
    * @returns {void}
    */
   const processCreatedPath = useCallback((path: FabricPath): void => {
+    console.log("processCreatedPath called with path:", path);
+    
     if (!fabricCanvasRef.current || !processPathPoints) {
+      console.error("Cannot process path: canvas or path processor not available");
       logger.warn("Cannot process path: canvas or path processor not available");
       return;
     }
@@ -130,67 +132,87 @@ export const usePathProcessing = ({
     // Performance tracking for path processing
     const startTime = performance.now();
     
-    // Remove original path since we'll convert it
-    if (path) {
-      fabricCanvasRef.current.remove(path);
-    }
-    
-    // Process the path based on current tool
-    switch (tool) {
-      case "wall":
-      case "straightLine": {
-        // Process path points and create a straight polyline
-        const { finalPoints, pixelPoints } = processPathPoints(path);
-        console.log("Processed straight line points:", finalPoints, pixelPoints);
+    try {
+      // Remove original path since we'll convert it
+      if (path && fabricCanvasRef.current) {
+        fabricCanvasRef.current.remove(path);
+      }
+      
+      // Process the path based on current tool
+      switch (tool) {
+        case "wall":
+        case "straightLine": {
+          // Process path points and create a straight polyline
+          const { finalPoints, pixelPoints } = processPathPoints(path);
+          console.log("Processed straight line points:", finalPoints, pixelPoints);
+          
+          if (pixelPoints.length >= 2) {
+            const success = createPolyline(finalPoints, pixelPoints);
+            console.log("Straight line creation success:", success);
+            
+            if (!success) {
+              throw new Error("Failed to create polyline");
+            }
+          } else {
+            console.warn("Not enough points to create a polyline");
+          }
+          break;
+        }
         
-        if (pixelPoints.length >= 2) {
-          createPolyline(finalPoints, pixelPoints);
-        } else {
-          console.warn("Not enough points to create a polyline");
+        case "room": {
+          // Process path points and create an enclosed shape
+          const { finalPoints, pixelPoints } = processPathPoints(path, true);
+          const success = createPolyline(finalPoints, pixelPoints, true);
+          console.log("Room creation success:", success);
+          
+          if (!success) {
+            throw new Error("Failed to create room polyline");
+          }
+          break;
         }
-        break;
+        
+        case "draw": {
+          // For freehand drawing, we keep the original path style but apply our styling
+          if (path && fabricCanvasRef.current) {
+            const { finalPoints, pixelPoints } = processPathPoints(path);
+            console.log("Processed freehand points:", pixelPoints.length);
+            
+            if (pixelPoints.length >= 2) {
+              const success = createPolyline(finalPoints, pixelPoints, false, lineColor);
+              console.log("Freehand line creation success:", success);
+              
+              if (!success) {
+                throw new Error("Failed to create freehand polyline");
+              }
+            } else {
+              console.warn("Not enough points for freehand drawing");
+            }
+          }
+          break;
+        }
+        
+        default:
+          // For other tools, just keep the original path
+          if (path && fabricCanvasRef.current) {
+            fabricCanvasRef.current.add(path);
+          }
+          break;
       }
       
-      case "room": {
-        // Process path points and create an enclosed shape
-        const { finalPoints, pixelPoints } = processPathPoints(path, true);
-        createPolyline(finalPoints, pixelPoints, true);
-        break;
+      // Performance monitoring for path processing
+      const processingTime = performance.now() - startTime;
+      if (processingTime > PATH_PROCESSING.MAX_PROCESSING_TIME) {
+        logger.warn(`Path processing took ${processingTime.toFixed(1)}ms, which exceeds the recommended limit`);
       }
       
-      case "draw": {
-        // For freehand drawing, we keep the original path style
-        if (path) {
-          path.set({
-            stroke: lineColor,
-            strokeWidth: lineThickness,
-            fill: 'transparent',
-            strokeLineCap: 'round',
-            strokeLineJoin: 'round',
-            objectType: 'freehand'
-          });
-          fabricCanvasRef.current.add(path);
-          console.log("Added freehand path to canvas:", path);
-        }
-        break;
+      // Force canvas to render
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.requestRenderAll();
       }
-      
-      default:
-        // For other tools, just keep the original path
-        if (path) {
-          fabricCanvasRef.current.add(path);
-        }
-        break;
+    } catch (error) {
+      console.error("Error in processCreatedPath:", error);
+      logger.error("Error processing created path:", error);
     }
-    
-    // Performance monitoring for path processing
-    const processingTime = performance.now() - startTime;
-    if (processingTime > PATH_PROCESSING.MAX_PROCESSING_TIME) {
-      logger.warn(`Path processing took ${processingTime.toFixed(1)}ms, which exceeds the recommended limit`);
-    }
-    
-    // Force canvas to render
-    fabricCanvasRef.current.requestRenderAll();
     
   }, [fabricCanvasRef, tool, processPathPoints, createPolyline, lineThickness, lineColor]);
 

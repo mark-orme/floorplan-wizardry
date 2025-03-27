@@ -38,6 +38,10 @@ export interface UsePointProcessingReturn {
     finalPoints: Point[]; 
     pixelPoints: Point[] 
   };
+  /** Apply grid snapping to a point */
+  applyGridSnapping: (point: Point) => Point;
+  /** Straighten a line between two points */
+  applyStraightening: (startPoint: Point, currentPoint: Point) => Point;
 }
 
 /**
@@ -53,6 +57,41 @@ export const usePointProcessing = ({
   gridLayerRef
 }: UsePointProcessingProps): UsePointProcessingReturn => {
   /**
+   * Apply grid snapping to a point
+   */
+  const applyGridSnapping = useCallback((point: Point): Point => {
+    console.log("Applying grid snapping to point:", point);
+    // Use a smaller snap threshold for more precision
+    const snapThreshold = tool === 'draw' ? 3 : 5;
+    const snappedPoint = snapToGrid(point, snapThreshold);
+    console.log("Snapped point result:", snappedPoint);
+    return snappedPoint;
+  }, [tool]);
+
+  /**
+   * Apply straightening to a line between points
+   */
+  const applyStraightening = useCallback((startPoint: Point, currentPoint: Point): Point => {
+    console.log("Straightening line between:", startPoint, currentPoint);
+    
+    // Calculate angle and decide on horizontal or vertical line
+    const dx = currentPoint.x - startPoint.x;
+    const dy = currentPoint.y - startPoint.y;
+    
+    // Determine if line should be horizontal or vertical
+    const isHorizontal = Math.abs(dx) > Math.abs(dy);
+    
+    // Create straightened point
+    const straightenedPoint: Point = {
+      x: isHorizontal ? currentPoint.x : startPoint.x,
+      y: isHorizontal ? startPoint.y : currentPoint.y
+    };
+    
+    console.log("Straightened point result:", straightenedPoint);
+    return straightenedPoint;
+  }, []);
+
+  /**
    * Process point from mouse or touch event
    * Extracts canvas coordinates and applies appropriate transformations
    * 
@@ -61,7 +100,10 @@ export const usePointProcessing = ({
    */
   const processPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
     try {
-      if (!fabricCanvasRef.current) return null;
+      if (!fabricCanvasRef.current) {
+        console.warn("Cannot process point: canvas reference is null");
+        return null;
+      }
 
       // Use the utility function to extract coordinates safely
       const coords = extractClientCoordinates(e);
@@ -84,9 +126,12 @@ export const usePointProcessing = ({
         y: pointer.y
       };
       
+      console.log("Processed raw point from event:", point);
+      
       // Return the raw point - snapping will be applied in the interaction handlers
       return point;
     } catch (error) {
+      console.error("Error in processPoint:", error);
       handleError(error, {
         component: 'usePointProcessing',
         operation: 'process-point'
@@ -108,6 +153,8 @@ export const usePointProcessing = ({
     pixelPoints: Point[];
   } => {
     try {
+      console.log("Processing path points for path:", path);
+      
       // Extract points from path object if it exists
       const extractedPoints: Point[] = [];
       
@@ -136,13 +183,16 @@ export const usePointProcessing = ({
       if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
         // Apply straightening for these tools
         processedPoints = straightenStroke(extractedPoints);
+        console.log("After straightening:", processedPoints);
         
         // Also apply snapping to each point with reduced threshold for better precision
-        processedPoints = processedPoints.map(point => snapToGrid(point, 5));
+        processedPoints = processedPoints.map(point => applyGridSnapping(point));
+        console.log("After snapping (wall/straightLine):", processedPoints);
       } else if (tool === 'draw') {
         // For freehand drawing, we don't straighten but still snap to grid
         // Use a smaller snap threshold for freehand to maintain more natural drawing
-        processedPoints = processedPoints.map(point => snapToGrid(point, 3));
+        processedPoints = processedPoints.map(point => applyGridSnapping(point));
+        console.log("After snapping (freehand):", processedPoints);
       }
       
       return { 
@@ -150,6 +200,7 @@ export const usePointProcessing = ({
         pixelPoints: processedPoints 
       };
     } catch (error) {
+      console.error("Error in processPathPoints:", error);
       handleError(error, {
         component: 'usePointProcessing',
         operation: 'process-path-points'
@@ -158,10 +209,12 @@ export const usePointProcessing = ({
       // Return empty arrays on error
       return { finalPoints: [], pixelPoints: [] };
     }
-  }, [tool]);
+  }, [tool, applyGridSnapping]);
   
   return { 
     processPoint,
-    processPathPoints 
+    processPathPoints,
+    applyGridSnapping,
+    applyStraightening
   };
 };

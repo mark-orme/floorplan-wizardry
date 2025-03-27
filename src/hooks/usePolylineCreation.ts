@@ -101,12 +101,20 @@ export const usePolylineCreation = ({
     overrideColor?: string
   ): boolean => {
     try {
+      console.log("CreatePolyline called with", {
+        pointCount: pixelPoints?.length,
+        isEnclosed,
+        tool
+      });
+      
       if (!fabricCanvasRef.current) {
+        console.error("Cannot create polyline: canvas is not available");
         logger.error("Cannot create polyline: canvas is not available");
         return false;
       }
       
       if (!pixelPoints || pixelPoints.length < 2) {
+        console.warn("Cannot create polyline: not enough points", { pointCount: pixelPoints?.length });
         logger.warn("Cannot create polyline: not enough points", { pointCount: pixelPoints?.length });
         return false;
       }
@@ -156,6 +164,28 @@ export const usePolylineCreation = ({
         }
       }
       
+      // Add to floor plan model for persistence
+      setFloorPlans(prevFloorPlans => {
+        const updatedFloorPlans = [...prevFloorPlans];
+        const currentFloorPlan = updatedFloorPlans[currentFloor];
+        
+        if (!currentFloorPlan) return prevFloorPlans;
+        
+        // Create a new stroke object
+        const newStroke: Stroke = {
+          id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          points: finalPoints,
+          type: isEnclosed ? 'room' : (tool === 'wall' ? 'wall' : 'line'),
+          color: overrideColor || lineColor,
+          thickness: lineThickness
+        };
+        
+        // Add the stroke to the current floor plan
+        currentFloorPlan.strokes = [...(currentFloorPlan.strokes || []), newStroke];
+        
+        return updatedFloorPlans;
+      });
+      
       // Force the canvas to render
       canvas.requestRenderAll();
       
@@ -167,7 +197,7 @@ export const usePolylineCreation = ({
       console.error("Failed to create polyline:", error);
       return false;
     }
-  }, [fabricCanvasRef, gridLayerRef, tool, lineColor, lineThickness, recalculateGIA]);
+  }, [fabricCanvasRef, gridLayerRef, tool, lineColor, lineThickness, recalculateGIA, currentFloor, setFloorPlans]);
   
   return { createPolyline };
 };
