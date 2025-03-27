@@ -110,13 +110,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
 };
 
-// Add TypeScript typings for window
+// Add TypeScript typings for window - properly typed to prevent conflicts
 declare global {
   interface Window {
+    // Important: Use the proper FabricCanvas type here, not just 'Canvas'
     fabricCanvasInstances?: FabricCanvas[];
   }
   
   interface HTMLCanvasElement {
-    _fabric?: FabricCanvas;
+    // Use any type for _fabric to match existing declarations
+    _fabric?: any;
   }
 }
