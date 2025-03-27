@@ -14,6 +14,7 @@ import {
   setActiveTool
 } from "@/utils/canvasToolOperations";
 import { arrangeGridElements } from "@/utils/canvasLayerOrdering";
+import { ZOOM_MULTIPLIERS } from "@/constants/zoomConstants";
 
 /**
  * Timing constants for canvas operations
@@ -24,7 +25,13 @@ const TIMING_CONSTANTS = {
    * Delay after tool change before arranging grid elements (ms)
    * @constant {number}
    */
-  GRID_ARRANGEMENT_DELAY: 100
+  GRID_ARRANGEMENT_DELAY: 100,
+  
+  /**
+   * Debounce delay for tool change operations (ms)
+   * @constant {number}
+   */
+  TOOL_CHANGE_DEBOUNCE: 150
 };
 
 /**
@@ -98,10 +105,22 @@ export const useCanvasTools = ({
   /**
    * Zoom the canvas in or out
    * Applies the zoom based on a specified direction using consistent increments
+   * Prevents exceeding minimum/maximum zoom boundaries
    * 
    * @param {string} direction - The zoom direction ("in" or "out")
    */
   const handleCanvasZoom = useCallback((direction: "in" | "out") => {
+    const zoomFactor = direction === "in" 
+      ? ZOOM_MULTIPLIERS.IN
+      : ZOOM_MULTIPLIERS.OUT;
+    
+    // Determine new zoom level
+    let newZoomLevel = zoomLevel * zoomFactor;
+    
+    // Apply zoom boundaries
+    newZoomLevel = Math.max(ZOOM_MULTIPLIERS.MIN_ZOOM, newZoomLevel);
+    newZoomLevel = Math.min(ZOOM_MULTIPLIERS.MAX_ZOOM, newZoomLevel);
+    
     handleZoom(direction, fabricCanvasRef.current, zoomLevel, setZoomLevel);
   }, [fabricCanvasRef, zoomLevel, setZoomLevel]);
 

@@ -13,21 +13,33 @@ import { FloorPlan } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 
 /**
- * Default line style values when not specified
+ * Path processing constants
  * @constant {Object}
  */
-const DEFAULT_LINE_STYLE = {
+const PATH_PROCESSING = {
   /**
    * Default line thickness in pixels
    * @constant {number}
    */
-  THICKNESS: 2,
+  DEFAULT_THICKNESS: 2,
   
   /**
    * Default line color in hex format
    * @constant {string}
    */
-  COLOR: "#000000"
+  DEFAULT_COLOR: "#000000",
+  
+  /**
+   * Minimum path length in pixels for processing
+   * @constant {number}
+   */
+  MIN_PATH_LENGTH: 5,
+  
+  /**
+   * Maximum time allowed for path processing in ms
+   * @constant {number}
+   */
+  MAX_PROCESSING_TIME: 500
 };
 
 /**
@@ -72,8 +84,8 @@ export const usePathProcessing = ({
   currentFloor,
   setFloorPlans,
   setGia,
-  lineThickness = DEFAULT_LINE_STYLE.THICKNESS,
-  lineColor = DEFAULT_LINE_STYLE.COLOR,
+  lineThickness = PATH_PROCESSING.DEFAULT_THICKNESS,
+  lineColor = PATH_PROCESSING.DEFAULT_COLOR,
   recalculateGIA
 }: UsePathProcessingProps) => {
   // Initialize point processing hook with the proper props
@@ -107,9 +119,15 @@ export const usePathProcessing = ({
    * @returns {void}
    */
   const processCreatedPath = useCallback((path: FabricPath): void => {
-    if (!fabricCanvasRef.current || !processPathPoints) return;
+    if (!fabricCanvasRef.current || !processPathPoints) {
+      logger.warn("Cannot process path: canvas or path processor not available");
+      return;
+    }
     
     logger.info(`Processing path for tool: ${tool}`);
+    
+    // Performance tracking for path processing
+    const startTime = performance.now();
     
     // Remove original path since we'll convert it
     if (path) {
@@ -152,6 +170,12 @@ export const usePathProcessing = ({
           fabricCanvasRef.current.add(path);
         }
         break;
+    }
+    
+    // Performance monitoring for path processing
+    const processingTime = performance.now() - startTime;
+    if (processingTime > PATH_PROCESSING.MAX_PROCESSING_TIME) {
+      logger.warn(`Path processing took ${processingTime.toFixed(1)}ms, which exceeds the recommended limit`);
     }
     
     // Force canvas to render

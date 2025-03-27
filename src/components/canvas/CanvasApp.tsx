@@ -2,34 +2,17 @@
 import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
-
-/**
- * Zoom multiplier constants
- * @constant {Object}
- */
-const ZOOM_MULTIPLIERS = {
-  /**
-   * Zoom in multiplier value
-   * @constant {number}
-   */
-  IN: 1.2,
-  
-  /**
-   * Zoom out multiplier value
-   * @constant {number}
-   */
-  OUT: 0.8
-};
-
-/**
- * Zoom direction type
- * @typedef {"in" | "out"} ZoomDirection
- */
-type ZoomDirection = "in" | "out";
+import { ZOOM_MULTIPLIERS, ZoomDirection } from "@/constants/zoomConstants";
 
 /**
  * Canvas application component
  * Wraps the canvas with necessary controllers and UI
+ * 
+ * The Canvas app orchestrates the main drawing functionality by:
+ * 1. Managing drawing tools and state
+ * 2. Handling user interactions (zoom, undo/redo, save)
+ * 3. Providing UI controls through CanvasLayout
+ * 
  * @returns {JSX.Element} Rendered component
  */
 export const CanvasApp = () => {
@@ -59,10 +42,12 @@ export const CanvasApp = () => {
 
   /**
    * Adapter function to convert direction-based zoom to level-based zoom
+   * Maps "in"/"out" directions to appropriate zoom factors
+   * 
    * @param {ZoomDirection} direction - Zoom direction ("in" or "out")
    */
   const handleZoomAdapter = (direction: ZoomDirection) => {
-    // Convert direction to a zoom level adjustment
+    // Convert direction to a zoom level adjustment using constants
     const zoomChange = direction === "in" ? ZOOM_MULTIPLIERS.IN : ZOOM_MULTIPLIERS.OUT;
     handleZoom(zoomChange);
   };

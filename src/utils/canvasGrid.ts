@@ -24,7 +24,19 @@ const GRID_CREATION_CONSTANTS = {
    * Delay for logging in development mode (ms)
    * @constant {number}
    */
-  DEV_LOG_DELAY: 100
+  DEV_LOG_DELAY: 100,
+  
+  /**
+   * Maximum time allowed for grid creation in ms
+   * @constant {number}
+   */
+  MAX_CREATION_TIME: 2000,
+  
+  /**
+   * Delay between creation attempts in ms
+   * @constant {number}
+   */
+  RETRY_DELAY: 500
 };
 
 /**
@@ -42,7 +54,19 @@ const TOAST_MESSAGES = {
    * Error message for all methods failing
    * @constant {string}
    */
-  ALL_METHODS_FAILED: "All grid creation methods failed"
+  ALL_METHODS_FAILED: "All grid creation methods failed",
+  
+  /**
+   * Successful grid creation message
+   * @constant {string}
+   */
+  GRID_CREATED: "Grid created successfully",
+  
+  /**
+   * Fallback grid creation message
+   * @constant {string}
+   */
+  USING_FALLBACK_GRID: "Using fallback grid"
 };
 
 /**
@@ -76,6 +100,9 @@ export const createGrid = (
     });
   }
   
+  // Start time for performance tracking
+  const startTime = performance.now();
+  
   // Validate inputs first
   if (!validateCanvasForGrid(canvas, gridLayerRef, canvasDimensions)) {
     console.error("❌ Grid validation failed, cannot create grid");
@@ -107,9 +134,17 @@ export const createGrid = (
         toast.error(TOAST_MESSAGES.GRID_CREATION_FAILED);
         setHasError(true);
         setErrorMessage("Failed to create grid with both normal and fallback methods");
+      } else {
+        toast.info(TOAST_MESSAGES.USING_FALLBACK_GRID);
       }
       
       return fallbackGrid;
+    }
+    
+    // Check if creation took too long
+    const creationTime = performance.now() - startTime;
+    if (creationTime > GRID_CREATION_CONSTANTS.MAX_CREATION_TIME) {
+      logger.warn(`Grid creation took ${creationTime.toFixed(0)}ms, which exceeds the recommended limit`);
     }
     
     // Force a render

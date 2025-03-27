@@ -11,6 +11,7 @@ import { isTouchEvent, isMouseEvent } from '@/types/fabric';
 
 /**
  * Touch gesture constants for event handling
+ * @constant {Object}
  */
 const TOUCH_CONSTANTS = {
   /**
@@ -30,13 +31,70 @@ const TOUCH_CONSTANTS = {
    * Default pressure value when not available
    * @constant {number}
    */
-  DEFAULT_FORCE: 1
+  DEFAULT_FORCE: 1,
+  
+  /**
+   * Default brush width when not specified
+   * @constant {number}
+   */
+  DEFAULT_BRUSH_WIDTH: 2,
+  
+  /**
+   * Event logging interval in ms
+   * Used to throttle gesture debug logging
+   * @constant {number}
+   */
+  EVENT_LOG_INTERVAL: 1000,
+  
+  /**
+   * Touch start debug message
+   * @constant {string}
+   */
+  TOUCH_START_MSG: "Touch start event",
+  
+  /**
+   * Touch end debug message
+   * @constant {string}
+   */
+  TOUCH_END_MSG: "Touch end event, remaining touches",
+  
+  /**
+   * Drawing started debug message
+   * @constant {string}
+   */
+  DRAWING_STARTED_MSG: "Drawing started",
+  
+  /**
+   * Drawing ended debug message
+   * @constant {string}
+   */
+  DRAWING_ENDED_MSG: "Drawing ended",
+  
+  /**
+   * Apple Pencil support message
+   * @constant {string}
+   */
+  APPLE_PENCIL_MSG: "with Apple Pencil support",
+  
+  /**
+   * Standard touch support message
+   * @constant {string}
+   */
+  STANDARD_TOUCH_MSG: "with standard touch support",
+  
+  /**
+   * Touch gestures initialized message
+   * @constant {string}
+   */
+  GESTURES_INIT_MSG: "Touch gestures initialized for canvas"
 };
 
 /**
  * Type guard to check if a value is a Touch
- * @param value - Value to check
- * @returns True if the value is a Touch
+ * Validates that the object has the correct Touch interface properties
+ * 
+ * @param {unknown} value - Value to check
+ * @returns {boolean} True if the value is a Touch
  */
 function isTouch(value: unknown): value is Touch {
   return typeof value === 'object' && 
@@ -48,6 +106,8 @@ function isTouch(value: unknown): value is Touch {
 
 /**
  * Initialize touch gestures for the canvas
+ * Sets up event handlers for touch events including Apple Pencil support
+ * 
  * @param {Canvas} canvas - The Fabric.js canvas instance
  */
 export const initializeCanvasGestures = (canvas: Canvas): void => {
@@ -62,6 +122,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
 
   /**
    * Get touch position as Fabric Point
+   * Converts browser touch coordinates to canvas coordinates
+   * 
    * @param {Touch} touch - Touch event
    * @returns {Point} Fabric Point object
    */
@@ -75,6 +137,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
 
   /**
    * Function to detect Apple Pencil based on touch event properties
+   * Uses Apple-specific touch properties to identify stylus input
+   * 
    * @param {Touch} touch - Touch event
    * @returns {boolean} True if touch is from Apple Pencil
    */
@@ -86,6 +150,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           'force' in touch; // Pencil supports pressure (force)
   };
 
+  /**
+   * Handle touch start events
+   * Initiates drawing if in drawing mode
+   * 
+   * @param {TouchEvent} e - Touch event
+   */
   const handleTouchStart = (e: TouchEvent) => {
     e.preventDefault();
     const customEvent = e as CustomTouchEvent;
@@ -101,7 +171,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       // Set brush width based on pressure if available (for Apple Pencil)
       if (isPencil && 'force' in touch && canvas.freeDrawingBrush) {
         const force = (touch as any).force || TOUCH_CONSTANTS.DEFAULT_FORCE;
-        const baseWidth = canvas.freeDrawingBrush.width || 2;
+        const baseWidth = canvas.freeDrawingBrush.width || TOUCH_CONSTANTS.DEFAULT_BRUSH_WIDTH;
         canvas.freeDrawingBrush.width = baseWidth * force;
       }
 
@@ -120,7 +190,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       // Use the canvas.fire with the EventInfo
       canvas.fire('mouse:down', eventInfo);
 
-      console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
+      console.log(`${TOUCH_CONSTANTS.DRAWING_STARTED_MSG}:`, isPencil ? "Apple Pencil/Stylus" : "Touch");
     }
 
     for (let i = 0; i < touches.length; i++) {
@@ -134,9 +204,15 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
 
     // Log touch start for debugging
-    console.log("Touch start event:", ongoingTouches.length, "touches", "isDrawingMode:", canvas.isDrawingMode);
+    console.log(`${TOUCH_CONSTANTS.TOUCH_START_MSG}:`, ongoingTouches.length, "touches", "isDrawingMode:", canvas.isDrawingMode);
   };
 
+  /**
+   * Handle touch move events
+   * Continues drawing if in drawing mode
+   * 
+   * @param {TouchEvent} e - Touch event
+   */
   const handleTouchMove = (e: TouchEvent) => {
     e.preventDefault();
     const customEvent = e as CustomTouchEvent;
@@ -150,7 +226,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       // Update brush width based on pressure if available (for Apple Pencil)
       if (isPencil && 'force' in touch && canvas.freeDrawingBrush) {
         const force = (touch as any).force || TOUCH_CONSTANTS.DEFAULT_FORCE;
-        const baseWidth = canvas.freeDrawingBrush.width || 2;
+        const baseWidth = canvas.freeDrawingBrush.width || TOUCH_CONSTANTS.DEFAULT_BRUSH_WIDTH;
         canvas.freeDrawingBrush.width = baseWidth * Math.max(TOUCH_CONSTANTS.MIN_PRESSURE_MULTIPLIER, force);
       }
 
@@ -187,6 +263,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
+  /**
+   * Handle touch end events
+   * Completes drawing if in drawing mode
+   * 
+   * @param {TouchEvent} e - Touch event
+   */
   const handleTouchEnd = (e: TouchEvent) => {
     e.preventDefault();
     const customEvent = e as CustomTouchEvent;
@@ -201,7 +283,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       
       // Reset brush width to default if it was changed
       if (canvas.freeDrawingBrush) {
-        const baseWidth = (canvas as any)._lineThickness || 2;
+        const baseWidth = (canvas as any)._lineThickness || TOUCH_CONSTANTS.DEFAULT_BRUSH_WIDTH;
         canvas.freeDrawingBrush.width = baseWidth;
       }
 
@@ -220,7 +302,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       // Use the canvas.fire with the EventInfo
       canvas.fire('mouse:up', eventInfo);
 
-      console.log("Drawing ended");
+      console.log(TOUCH_CONSTANTS.DRAWING_ENDED_MSG);
     }
 
     for (let i = 0; i < touches.length; i++) {
@@ -231,9 +313,15 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
 
     // Log touch end for debugging
-    console.log("Touch end event, remaining touches:", ongoingTouches.length);
+    console.log(`${TOUCH_CONSTANTS.TOUCH_END_MSG}:`, ongoingTouches.length);
   };
 
+  /**
+   * Handle touch cancel events
+   * Ensures drawing is properly completed if interrupted
+   * 
+   * @param {TouchEvent} e - Touch event
+   */
   const handleTouchCancel = (e: TouchEvent) => {
     e.preventDefault();
     const customEvent = e as CustomTouchEvent;
@@ -246,7 +334,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       
       // Reset brush width to default
       if (canvas.freeDrawingBrush) {
-        const baseWidth = (canvas as any)._lineThickness || 2;
+        const baseWidth = (canvas as any)._lineThickness || TOUCH_CONSTANTS.DEFAULT_BRUSH_WIDTH;
         canvas.freeDrawingBrush.width = baseWidth;
       }
       
@@ -288,6 +376,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
   canvasElement.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 
   // Log initialization
-  console.log("Touch gestures initialized for canvas", 
-    supportsApplePencil ? "with Apple Pencil support" : "with standard touch support");
+  console.log(`${TOUCH_CONSTANTS.GESTURES_INIT_MSG}`, 
+    supportsApplePencil ? TOUCH_CONSTANTS.APPLE_PENCIL_MSG : TOUCH_CONSTANTS.STANDARD_TOUCH_MSG);
 };
