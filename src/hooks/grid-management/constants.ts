@@ -7,11 +7,13 @@
 
 /**
  * Timing constants for grid creation
+ * Controls how frequently grid creation attempts can occur
  */
 export const GRID_TIMING = {
   /**
    * Minimum interval between grid creation attempts in milliseconds
    * Prevents excessive grid creation operations that could impact performance
+   * Particularly important on lower-end devices
    * @constant {number}
    */
   MIN_ATTEMPT_INTERVAL: 300,
@@ -19,6 +21,7 @@ export const GRID_TIMING = {
   /**
    * Default delay between grid creation attempts in milliseconds
    * Provides a brief pause before retrying to allow system resources to recover
+   * Helps prevent cascading failures in grid creation
    * @constant {number}
    */
   DEFAULT_ATTEMPT_DELAY: 100
@@ -26,11 +29,13 @@ export const GRID_TIMING = {
 
 /**
  * Limit constants for grid creation
+ * Prevents excessive retries that could degrade performance
  */
 export const GRID_LIMITS = {
   /**
    * Maximum number of grid creation attempts
    * Prevents infinite retry loops if grid creation consistently fails
+   * After this many attempts, the system should fall back to a simpler approach
    * @constant {number}
    */
   MAX_ATTEMPTS: 5

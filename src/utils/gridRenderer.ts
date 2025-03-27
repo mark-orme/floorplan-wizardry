@@ -1,44 +1,41 @@
 
 /**
- * Grid rendering utilities
- * Handles the rendering of grid components on the canvas
+ * Grid renderer module
+ * Handles rendering of grid lines and markers on canvas
  * @module gridRenderer
  */
 import { Canvas, Object as FabricObject, Line, Text } from "fabric";
-import {
-  GRID_SCALE_FACTOR,
-  LARGE_GRID_SPACING,
-  SMALL_GRID_SPACING,
-  MARKER_INTERVAL,
+import logger from "./logger";
+import { 
   SMALL_GRID_LINE_OPTIONS,
   LARGE_GRID_LINE_OPTIONS,
   MARKER_TEXT_OPTIONS,
-  calculateGridDensity,
+  GRID_SCALE,
+  PIXELS_PER_METER,
+  GRID_SPACING,
   DISABLE_GRID_MARKERS
 } from "./gridConstants";
-import logger from "./logger";
-import { createSmallGrid, createLargeGrid } from "./gridCreators";
 
 /**
  * Result of grid rendering operation
  * @interface GridRenderResult
  */
 export interface GridRenderResult {
-  /** All grid objects combined */
+  /** All grid objects created */
   gridObjects: FabricObject[];
   /** Small grid lines only */
   smallGridLines: FabricObject[];
   /** Large grid lines only */
   largeGridLines: FabricObject[];
-  /** Text markers only */
+  /** Grid markers (text labels) */
   markers: FabricObject[];
 }
 
 /**
- * Render all grid components at once
- * Creates small/large grid lines and markers in a single batch
+ * Render grid components on canvas
+ * Creates small grid, large grid, and text markers
  * 
- * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {Canvas} canvas - Fabric canvas instance
  * @param {number} width - Canvas width
  * @param {number} height - Canvas height
  * @returns {GridRenderResult} Created grid objects
@@ -53,69 +50,104 @@ export const renderGridComponents = (
   const largeGridLines: FabricObject[] = [];
   const markers: FabricObject[] = [];
   
-  // Calculate grid density based on canvas size
-  const { smallGridVisible, smallGridInterval } = calculateGridDensity(width, height);
-  
   try {
-    // Use the dedicated grid creators
-    const smallGrid = createSmallGrid(canvas, width, height);
-    const largeGrid = createLargeGrid(canvas, width, height);
+    // Create small grid lines (0.1m spacing)
+    const smallGridSpacing = PIXELS_PER_METER * GRID_SCALE.SMALL_SPACING; // 10px = 0.1m
     
-    smallGridLines.push(...smallGrid);
-    largeGridLines.push(...largeGrid);
+    // Create small grid lines
+    for (let x = 0; x <= width; x += smallGridSpacing) {
+      const line = new Line([x, 0, x, height], SMALL_GRID_LINE_OPTIONS);
+      canvas.add(line);
+      smallGridLines.push(line);
+    }
     
-    // Add text markers at major grid intersections only if not disabled
+    for (let y = 0; y <= height; y += smallGridSpacing) {
+      const line = new Line([0, y, width, y], SMALL_GRID_LINE_OPTIONS);
+      canvas.add(line);
+      smallGridLines.push(line);
+    }
+    
+    // Create large grid lines (1m spacing)
+    const largeGridSpacing = PIXELS_PER_METER * GRID_SCALE.LARGE_SPACING; // 100px = 1m
+    
+    // Create large grid lines
+    for (let x = 0; x <= width; x += largeGridSpacing) {
+      const line = new Line([x, 0, x, height], LARGE_GRID_LINE_OPTIONS);
+      canvas.add(line);
+      largeGridLines.push(line);
+    }
+    
+    for (let y = 0; y <= height; y += largeGridSpacing) {
+      const line = new Line([0, y, width, y], LARGE_GRID_LINE_OPTIONS);
+      canvas.add(line);
+      largeGridLines.push(line);
+    }
+    
+    // Create text markers if enabled
     if (!DISABLE_GRID_MARKERS) {
-      const widthInMeters = Math.ceil(width / GRID_SCALE_FACTOR);
-      const heightInMeters = Math.ceil(height / GRID_SCALE_FACTOR);
+      // Add text markers at specified intervals
+      const markerInterval = PIXELS_PER_METER * GRID_SCALE.MARKER_INTERVAL; // Default: every 1m
       
-      // Create horizontal markers (along x-axis)
-      for (let i = LARGE_GRID_SPACING; i <= widthInMeters; i += MARKER_INTERVAL) {
-        const x = i * GRID_SCALE_FACTOR;
-        const marker = new Text(i.toString(), {
+      // Add X-axis markers (horizontal)
+      for (let x = markerInterval; x < width; x += markerInterval) {
+        const value = (x / PIXELS_PER_METER).toFixed(1);
+        const text = new Text(value, {
           ...MARKER_TEXT_OPTIONS,
-          left: x - 5,
+          left: x,
           top: 5
         });
-        markers.push(marker);
+        canvas.add(text);
+        markers.push(text);
       }
       
-      // Create vertical markers (along y-axis)
-      for (let i = LARGE_GRID_SPACING; i <= heightInMeters; i += MARKER_INTERVAL) {
-        const y = i * GRID_SCALE_FACTOR;
-        const marker = new Text(i.toString(), {
+      // Add Y-axis markers (vertical)
+      for (let y = markerInterval; y < height; y += markerInterval) {
+        const value = (y / PIXELS_PER_METER).toFixed(1);
+        const text = new Text(value, {
           ...MARKER_TEXT_OPTIONS,
           left: 5,
-          top: y - 10
+          top: y
         });
-        markers.push(marker);
+        canvas.add(text);
+        markers.push(text);
       }
     }
     
-    logger.debug(`Created ${smallGridLines.length} small grid lines, ${largeGridLines.length} large grid lines, and ${markers.length} markers`);
+    // Combine all grid objects
+    const gridObjects = [...smallGridLines, ...largeGridLines, ...markers];
+    
+    // Log creation information
+    logger.debug(`Grid rendered with ${gridObjects.length} objects (${smallGridLines.length} small, ${largeGridLines.length} large, ${markers.length} markers)`);
+    
+    return {
+      gridObjects,
+      smallGridLines,
+      largeGridLines,
+      markers
+    };
   } catch (error) {
-    logger.error("Error creating grid components:", error);
+    logger.error("Error rendering grid components:", error);
+    console.error("Error rendering grid components:", error);
+    
+    // Return whatever we managed to create
+    const gridObjects = [...smallGridLines, ...largeGridLines, ...markers];
+    return {
+      gridObjects,
+      smallGridLines,
+      largeGridLines,
+      markers
+    };
   }
-  
-  // Combine all grid objects
-  const gridObjects = [...smallGridLines, ...largeGridLines, ...markers];
-  
-  return {
-    gridObjects,
-    smallGridLines,
-    largeGridLines,
-    markers
-  };
 };
 
 /**
  * Arrange grid objects in correct z-order
- * Places small grid lines at the back, large grid lines in the middle, and markers at the front
+ * Ensures proper layering of grid elements
  * 
- * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {Canvas} canvas - Fabric canvas instance
  * @param {FabricObject[]} smallGridLines - Small grid lines
  * @param {FabricObject[]} largeGridLines - Large grid lines
- * @param {FabricObject[]} markers - Grid markers
+ * @param {FabricObject[]} markers - Text markers
  */
 export const arrangeGridObjects = (
   canvas: Canvas,
@@ -123,29 +155,27 @@ export const arrangeGridObjects = (
   largeGridLines: FabricObject[],
   markers: FabricObject[]
 ): void => {
-  // Add all objects to canvas if not already added
-  const allObjects = [...smallGridLines, ...largeGridLines, ...markers];
-  
-  allObjects.forEach(obj => {
-    if (!canvas.contains(obj)) {
-      canvas.add(obj);
-    }
-  });
-  
-  // Arrange z-order: small lines at back, large lines in middle, markers at front
-  smallGridLines.forEach(obj => canvas.sendObjectToBack(obj));
-  
-  // Use bringObjectToFront instead of bringForward for Fabric.js v6 compatibility
-  largeGridLines.forEach(obj => {
-    // First send to back, then bring forward so they're between small grid and markers
-    canvas.sendObjectToBack(obj);
-    canvas.bringObjectToFront(obj);
-    // Then send behind markers which will be brought to front next
-    smallGridLines.forEach(() => canvas.sendObjectBackwards(obj));
-  });
-  
-  markers.forEach(obj => canvas.bringObjectToFront(obj));
-  
-  // Request render
-  canvas.requestRenderAll();
+  try {
+    // Send small grid lines to the very back (bottom layer)
+    smallGridLines.forEach(line => {
+      canvas.sendObjectToBack(line);
+    });
+    
+    // Send large grid lines behind everything but small grid
+    largeGridLines.forEach(line => {
+      // Place large lines above small lines but below other objects
+      smallGridLines.forEach(smallLine => {
+        canvas.bringObjectForward(line, smallLine);
+      });
+    });
+    
+    // Ensure markers are above grid lines
+    markers.forEach(marker => {
+      canvas.bringObjectToFront(marker);
+    });
+  } catch (error) {
+    logger.error("Error arranging grid objects:", error);
+    console.error("Error arranging grid objects:", error);
+  }
 };
+

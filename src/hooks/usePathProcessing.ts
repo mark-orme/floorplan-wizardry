@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing paths drawn on the canvas
  * Handles the transformation of raw paths into proper shapes and objects
@@ -13,32 +14,43 @@ import logger from "@/utils/logger";
 
 /**
  * Path processing constants
- * @constant {Object}
+ * Defines thresholds and timing limits for processing drawn paths
  */
 const PATH_PROCESSING = {
   /**
    * Default line thickness in pixels
+   * Ensures consistent line appearance across the application
    * @constant {number}
    */
   DEFAULT_THICKNESS: 2,
   
   /**
    * Default line color in hex format
+   * Standard color for drawing operations
    * @constant {string}
    */
   DEFAULT_COLOR: "#000000",
   
   /**
    * Minimum path length in pixels for processing
+   * Prevents processing of very short accidental paths
    * @constant {number}
    */
   MIN_PATH_LENGTH: 5,
   
   /**
    * Maximum time allowed for path processing in ms
+   * Prevents long-running operations that could freeze the UI
    * @constant {number}
    */
-  MAX_PROCESSING_TIME: 500
+  MAX_PROCESSING_TIME: 500,
+  
+  /**
+   * Minimum points required for a valid path
+   * Ensures sufficient data for shape creation
+   * @constant {number}
+   */
+  MIN_POINTS_REQUIRED: 2
 };
 
 /**
@@ -146,7 +158,7 @@ export const usePathProcessing = ({
           const { finalPoints, pixelPoints } = processPathPoints(path);
           console.log("Processed straight line points:", finalPoints, pixelPoints);
           
-          if (pixelPoints.length >= 2) {
+          if (pixelPoints.length >= PATH_PROCESSING.MIN_POINTS_REQUIRED) {
             const success = createPolyline(finalPoints, pixelPoints);
             console.log("Straight line creation success:", success);
             
@@ -154,7 +166,7 @@ export const usePathProcessing = ({
               throw new Error("Failed to create polyline");
             }
           } else {
-            console.warn("Not enough points to create a polyline");
+            console.warn(`Not enough points to create a polyline (minimum ${PATH_PROCESSING.MIN_POINTS_REQUIRED} required)`);
           }
           break;
         }
@@ -177,7 +189,7 @@ export const usePathProcessing = ({
             const { finalPoints, pixelPoints } = processPathPoints(path);
             console.log("Processed freehand points:", pixelPoints.length);
             
-            if (pixelPoints.length >= 2) {
+            if (pixelPoints.length >= PATH_PROCESSING.MIN_POINTS_REQUIRED) {
               const success = createPolyline(finalPoints, pixelPoints, false, lineColor);
               console.log("Freehand line creation success:", success);
               
@@ -185,7 +197,7 @@ export const usePathProcessing = ({
                 throw new Error("Failed to create freehand polyline");
               }
             } else {
-              console.warn("Not enough points for freehand drawing");
+              console.warn(`Not enough points for freehand drawing (minimum ${PATH_PROCESSING.MIN_POINTS_REQUIRED} required)`);
             }
           }
           break;
@@ -202,7 +214,7 @@ export const usePathProcessing = ({
       // Performance monitoring for path processing
       const processingTime = performance.now() - startTime;
       if (processingTime > PATH_PROCESSING.MAX_PROCESSING_TIME) {
-        logger.warn(`Path processing took ${processingTime.toFixed(1)}ms, which exceeds the recommended limit`);
+        logger.warn(`Path processing took ${processingTime.toFixed(1)}ms, which exceeds the recommended limit of ${PATH_PROCESSING.MAX_PROCESSING_TIME}ms`);
       }
       
       // Force canvas to render
@@ -218,3 +230,4 @@ export const usePathProcessing = ({
 
   return { processCreatedPath };
 };
+

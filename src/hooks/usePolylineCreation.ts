@@ -14,6 +14,60 @@ import { FloorPlan, Point, Stroke } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 
 /**
+ * Polyline creation constants
+ * Controls the appearance and behavior of created polylines
+ */
+const POLYLINE_CREATION = {
+  /**
+   * Default fill opacity for enclosed shapes (rooms)
+   * Subtle transparency to view grid through rooms
+   * @constant {number}
+   */
+  ROOM_FILL_OPACITY: 0.1,
+  
+  /**
+   * Line join style for polylines
+   * Rounded corners look more professional
+   * @constant {string}
+   */
+  STROKE_LINE_JOIN: 'round',
+  
+  /**
+   * Line cap style for polylines
+   * Rounded ends for better appearance
+   * @constant {string}
+   */
+  STROKE_LINE_CAP: 'round',
+  
+  /**
+   * Default object selectable state
+   * Allow user interaction by default
+   * @constant {boolean}
+   */
+  DEFAULT_SELECTABLE: true,
+  
+  /**
+   * Maintain stroke width during scaling
+   * Ensures consistent appearance
+   * @constant {boolean}
+   */
+  UNIFORM_STROKE: true,
+  
+  /**
+   * Improves selection performance but makes selection less precise
+   * Useful for larger lines
+   * @constant {boolean}
+   */
+  PER_PIXEL_TARGET_FIND: false,
+  
+  /**
+   * Random ID length for generating unique IDs
+   * @constant {number}
+   */
+  RANDOM_ID_LENGTH: 7
+};
+
+/**
  * Props for the usePolylineCreation hook
  * @interface UsePolylineCreationProps
  */
@@ -132,14 +186,14 @@ export const usePolylineCreation = ({
       const polyline = new FabricPolyline(formattedPoints, {
         stroke: overrideColor || lineColor,
         strokeWidth: lineThickness,
-        fill: isEnclosed ? 'rgba(0, 0, 0, 0.1)' : 'transparent',
-        strokeLineCap: 'round',
-        strokeLineJoin: 'round',
+        fill: isEnclosed ? `rgba(0, 0, 0, ${POLYLINE_CREATION.ROOM_FILL_OPACITY})` : 'transparent',
+        strokeLineCap: POLYLINE_CREATION.STROKE_LINE_CAP,
+        strokeLineJoin: POLYLINE_CREATION.STROKE_LINE_JOIN,
         objectType: isEnclosed ? 'room' : (tool === 'wall' ? 'wall' : 'line'),
-        selectable: true, // Allow selection for editing
-        strokeUniform: true, // Maintain stroke width during scaling
+        selectable: POLYLINE_CREATION.DEFAULT_SELECTABLE, // Allow selection for editing
+        strokeUniform: POLYLINE_CREATION.UNIFORM_STROKE, // Maintain stroke width during scaling
         evented: true, // Ensure object receives events
-        perPixelTargetFind: false, // Improves performance and makes lines easier to select
+        perPixelTargetFind: POLYLINE_CREATION.PER_PIXEL_TARGET_FIND, // Improves performance and makes lines easier to select
       });
       
       // Add the polyline to the canvas
@@ -171,9 +225,12 @@ export const usePolylineCreation = ({
         
         if (!currentFloorPlan) return prevFloorPlans;
         
+        // Generate a unique ID with timestamp and random string for better uniqueness
+        const randomPart = Math.random().toString(36).substring(2, 2 + POLYLINE_CREATION.RANDOM_ID_LENGTH);
+        
         // Create a new stroke object
         const newStroke: Stroke = {
-          id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          id: `stroke-${Date.now()}-${randomPart}`,
           points: finalPoints,
           type: isEnclosed ? 'room' : (tool === 'wall' ? 'wall' : 'line'),
           color: overrideColor || lineColor,
@@ -205,3 +262,4 @@ export const usePolylineCreation = ({
   
   return { createPolyline };
 };
+

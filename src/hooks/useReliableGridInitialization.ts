@@ -15,9 +15,39 @@ import {
 import logger from "@/utils/logger";
 import { toast } from "sonner";
 
-// Track last attempt time to rate-limit grid creation
-const GRID_RETRY_DELAY = 500; // ms
-const MAX_GRID_ATTEMPTS = 3;
+/**
+ * Grid initialization constants
+ * Controls timing and retry behavior for grid creation
+ */
+const GRID_INITIALIZATION = {
+  /**
+   * Delay between grid creation retry attempts in ms
+   * Prevents excessive retries and allows time for canvas to settle
+   * @constant {number}
+   */
+  RETRY_DELAY: 500,
+  
+  /**
+   * Maximum number of grid initialization attempts
+   * Prevents infinite retry loops if grid creation fails repeatedly
+   * @constant {number}
+   */
+  MAX_ATTEMPTS: 3,
+  
+  /**
+   * Initial delay before first grid creation attempt in ms
+   * Allows canvas to fully initialize before adding grid
+   * @constant {number}
+   */
+  INITIAL_DELAY: 200,
+  
+  /**
+   * Delay multiplier for subsequent retries
+   * Increases delay for each retry attempt
+   * @constant {number}
+   */
+  RETRY_DELAY_MULTIPLIER: 1.5
+};
 
 /**
  * Hook for reliable grid initialization with retries and fallback
@@ -50,7 +80,7 @@ export const useReliableGridInitialization = (
     
     // Don't retry too frequently
     const now = Date.now();
-    if (now - lastAttemptTimeRef.current < GRID_RETRY_DELAY) {
+    if (now - lastAttemptTimeRef.current < GRID_INITIALIZATION.RETRY_DELAY) {
       logger.debug("Grid initialization throttled");
       return;
     }
@@ -62,8 +92,8 @@ export const useReliableGridInitialization = (
     }
     
     // Don't retry if we've exceeded max attempts
-    if (attemptCountRef.current >= MAX_GRID_ATTEMPTS) {
-      logger.warn(`Max grid initialization attempts (${MAX_GRID_ATTEMPTS}) reached`);
+    if (attemptCountRef.current >= GRID_INITIALIZATION.MAX_ATTEMPTS) {
+      logger.warn(`Max grid initialization attempts (${GRID_INITIALIZATION.MAX_ATTEMPTS}) reached`);
       return;
     }
     
@@ -72,8 +102,8 @@ export const useReliableGridInitialization = (
     lastAttemptTimeRef.current = now;
     attemptCountRef.current++;
     
-    logger.info(`Grid initialization attempt ${attemptCountRef.current}/${MAX_GRID_ATTEMPTS}`);
-    console.log(`🔄 Grid initialization attempt ${attemptCountRef.current}/${MAX_GRID_ATTEMPTS}`);
+    logger.info(`Grid initialization attempt ${attemptCountRef.current}/${GRID_INITIALIZATION.MAX_ATTEMPTS}`);
+    console.log(`🔄 Grid initialization attempt ${attemptCountRef.current}/${GRID_INITIALIZATION.MAX_ATTEMPTS}`);
     
     try {
       const canvas = fabricCanvasRef.current;
@@ -86,8 +116,11 @@ export const useReliableGridInitialization = (
         setIsInitializing(false);
         
         // Try again after delay if we haven't exceeded max attempts
-        if (attemptCountRef.current < MAX_GRID_ATTEMPTS) {
-          setTimeout(initializeGrid, GRID_RETRY_DELAY);
+        if (attemptCountRef.current < GRID_INITIALIZATION.MAX_ATTEMPTS) {
+          const retryDelay = GRID_INITIALIZATION.RETRY_DELAY * 
+            Math.pow(GRID_INITIALIZATION.RETRY_DELAY_MULTIPLIER, attemptCountRef.current - 1);
+            
+          setTimeout(initializeGrid, retryDelay);
         }
         
         return;
@@ -129,8 +162,11 @@ export const useReliableGridInitialization = (
         setIsInitializing(false);
         
         // Try again after delay if we haven't exceeded max attempts
-        if (attemptCountRef.current < MAX_GRID_ATTEMPTS) {
-          setTimeout(initializeGrid, GRID_RETRY_DELAY);
+        if (attemptCountRef.current < GRID_INITIALIZATION.MAX_ATTEMPTS) {
+          const retryDelay = GRID_INITIALIZATION.RETRY_DELAY * 
+            Math.pow(GRID_INITIALIZATION.RETRY_DELAY_MULTIPLIER, attemptCountRef.current - 1);
+            
+          setTimeout(initializeGrid, retryDelay);
         } else {
           // Show error toast on final failure
           toast.error("Grid initialization failed after multiple attempts");
@@ -143,8 +179,11 @@ export const useReliableGridInitialization = (
       setIsInitializing(false);
       
       // Try again after delay if we haven't exceeded max attempts
-      if (attemptCountRef.current < MAX_GRID_ATTEMPTS) {
-        setTimeout(initializeGrid, GRID_RETRY_DELAY);
+      if (attemptCountRef.current < GRID_INITIALIZATION.MAX_ATTEMPTS) {
+        const retryDelay = GRID_INITIALIZATION.RETRY_DELAY * 
+          Math.pow(GRID_INITIALIZATION.RETRY_DELAY_MULTIPLIER, attemptCountRef.current - 1);
+          
+        setTimeout(initializeGrid, retryDelay);
       } else {
         // Show error toast on final failure
         toast.error("Grid initialization failed due to an error");
@@ -195,7 +234,7 @@ export const useReliableGridInitialization = (
       // Give canvas a moment to fully initialize before creating grid
       const timer = setTimeout(() => {
         initializeGrid();
-      }, 200);
+      }, GRID_INITIALIZATION.INITIAL_DELAY);
       
       return () => clearTimeout(timer);
     }

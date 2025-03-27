@@ -9,7 +9,43 @@ import { calculateAngle } from './lineOperations';
 import { ANGLE_SNAP_THRESHOLD } from './constants';
 
 /**
+ * Straightening operation constants
+ * Defines thresholds and angles for straightening operations
+ */
+const STRAIGHTENING_CONSTANTS = {
+  /**
+   * Standard angle increment for snapping in degrees
+   * Lines will snap to multiples of this angle
+   * @constant {number}
+   */
+  STANDARD_ANGLE_INCREMENT: 45,
+  
+  /**
+   * Minimum angle difference in degrees to consider walls aligned
+   * Used for floor plan validation
+   * @constant {number}
+   */
+  ALIGNMENT_DIFFERENCE_THRESHOLD: 3,
+  
+  /**
+   * Orthogonal angle increment in degrees
+   * Used for horizontal/vertical snapping
+   * @constant {number}
+   */
+  ORTHOGONAL_INCREMENT: 90,
+  
+  /**
+   * Standard angles for snapping in degrees
+   * Common angles that lines will snap to
+   * @constant {number[]}
+   */
+  STANDARD_ANGLES: [0, 45, 90, 135, 180, 225, 270, 315]
+};
+
+/**
  * Straighten a line by aligning it to the nearest cardinal or 45° angle
+ * Critical for creating clean floor plans with consistent angles
+ * 
  * @param {Point} start - Start point of the line
  * @param {Point} end - End point of the line
  * @param {number} threshold - Angle threshold for snapping in degrees
@@ -31,7 +67,7 @@ export const straightenLine = (
   let angle = calculateAngle(start, end);
   
   // Find the nearest 45° increment
-  const snapIncrement = 45;
+  const snapIncrement = STRAIGHTENING_CONSTANTS.STANDARD_ANGLE_INCREMENT;
   const snapAngle = Math.round(angle / snapIncrement) * snapIncrement;
   
   // Check if we should snap
@@ -40,6 +76,7 @@ export const straightenLine = (
     const radians = snapAngle * (Math.PI / 180);
     
     // Calculate new end point along the snapped angle
+    // Using trigonometric functions to maintain the same distance from start
     return {
       x: start.x + distance * Math.cos(radians),
       y: start.y + distance * Math.sin(radians)
@@ -52,6 +89,8 @@ export const straightenLine = (
 
 /**
  * Straighten a polygon by aligning each segment to the nearest cardinal or 45° angle
+ * Creates cleaner room shapes with consistent angles
+ * 
  * @param {Point[]} points - Array of points forming the polygon
  * @param {number} threshold - Angle threshold for snapping in degrees
  * @returns {Point[]} New array of points for the straightened polygon
@@ -92,13 +131,14 @@ export const straightenPolygon = (
 /**
  * Check if a polygon has aligned walls (parallel to axes)
  * Used to validate floor plan geometry
+ * 
  * @param {Point[]} points - Array of points forming the polygon
  * @param {number} threshold - Angle threshold in degrees
  * @returns {boolean} Whether the polygon has aligned walls
  */
 export const hasAlignedWalls = (
   points: Point[], 
-  threshold: number = ANGLE_SNAP_THRESHOLD
+  threshold: number = STRAIGHTENING_CONSTANTS.ALIGNMENT_DIFFERENCE_THRESHOLD
 ): boolean => {
   if (!points || points.length < 3) return false;
   
@@ -108,10 +148,11 @@ export const hasAlignedWalls = (
     const j = (i + 1) % n;
     
     const angle = calculateAngle(points[i], points[j]);
-    const mod90 = angle % 90;
+    const mod90 = angle % STRAIGHTENING_CONSTANTS.ORTHOGONAL_INCREMENT;
     
     // Check if any wall is not aligned to 0°, 90°, 180°, 270°
-    if (Math.min(mod90, 90 - mod90) > threshold) {
+    // We check both mod90 and (90-mod90) to handle angles in any quadrant
+    if (Math.min(mod90, STRAIGHTENING_CONSTANTS.ORTHOGONAL_INCREMENT - mod90) > threshold) {
       return false;
     }
   }
@@ -121,6 +162,8 @@ export const hasAlignedWalls = (
 
 /**
  * Straighten a stroke (sequence of points) to create cleaner lines
+ * Simplifies free-hand drawing into straight line segments
+ * 
  * @param {Point[]} points - Array of points in the stroke
  * @param {number} threshold - Angle threshold for straightening
  * @returns {Point[]} Straightened points
@@ -149,14 +192,17 @@ export const straightenStroke = (
 };
 
 /**
- * Quantize an angle to the nearest 45° increment
+ * Quantize an angle to the nearest standard increment
  * Used for straightening lines during drawing
  * 
  * @param {number} angle - Angle in degrees
  * @param {number} increment - Angle increment for quantization (default: 45°)
  * @returns {number} Quantized angle in degrees
  */
-export const quantizeAngle = (angle: number, increment: number = 45): number => {
+export const quantizeAngle = (
+  angle: number, 
+  increment: number = STRAIGHTENING_CONSTANTS.STANDARD_ANGLE_INCREMENT
+): number => {
   // Normalize to 0-360 range
   while (angle < 0) angle += 360;
   angle = angle % 360;
@@ -168,6 +214,7 @@ export const quantizeAngle = (angle: number, increment: number = 45): number => 
 /**
  * Apply angle quantization to a line defined by two points
  * Creates a new end point that maintains distance but adjusts angle
+ * Essential for ensuring clean, professional-looking floor plans
  * 
  * @param {Point} start - Start point of the line
  * @param {Point} end - End point of the line
@@ -210,15 +257,16 @@ export const applyAngleQuantization = (
     quantizedAngle = closestAngle;
   } else {
     // Use increment-based quantization
-    quantizedAngle = quantizeAngle(angle, increment || 45);
+    quantizedAngle = quantizeAngle(angle, increment || STRAIGHTENING_CONSTANTS.STANDARD_ANGLE_INCREMENT);
   }
   
-  // Convert back to radians
+  // Convert back to radians for trigonometric calculations
   const radians = quantizedAngle * (Math.PI / 180);
   
-  // Return new end point
+  // Return new end point maintaining the original distance but with adjusted angle
   return {
     x: start.x + distance * Math.cos(radians),
     y: start.y + distance * Math.sin(radians)
   };
 };
+

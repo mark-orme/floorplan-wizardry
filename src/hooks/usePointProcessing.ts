@@ -14,6 +14,33 @@ import { straightenStroke } from "@/utils/geometry/straightening";
 import { handleError } from "@/utils/errorHandling";
 
 /**
+ * Point processing constants
+ * Defines thresholds and settings for point manipulation
+ */
+const POINT_PROCESSING = {
+  /**
+   * Default snap threshold for general drawing in pixels
+   * Higher values make it easier to snap to grid points
+   * @constant {number}
+   */
+  DEFAULT_SNAP_THRESHOLD: 5,
+  
+  /**
+   * Reduced snap threshold for freehand drawing in pixels
+   * Smaller value preserves more natural hand movements
+   * @constant {number}
+   */
+  FREEHAND_SNAP_THRESHOLD: 3,
+  
+  /**
+   * Point sampling interval for path simplification
+   * Used to reduce the number of points in complex paths
+   * @constant {number}
+   */
+  SAMPLING_INTERVAL: 5
+};
+
+/**
  * Props for the usePointProcessing hook
  * @interface UsePointProcessingProps
  */
@@ -58,11 +85,15 @@ export const usePointProcessing = ({
 }: UsePointProcessingProps): UsePointProcessingReturn => {
   /**
    * Apply grid snapping to a point
+   * Ensures drawings align cleanly with the grid
    */
   const applyGridSnapping = useCallback((point: Point): Point => {
     console.log("Applying grid snapping to point:", point);
-    // Use a smaller snap threshold for more precision
-    const snapThreshold = tool === 'draw' ? 3 : 5;
+    // Use appropriate snap threshold based on drawing tool
+    const snapThreshold = tool === 'draw' 
+      ? POINT_PROCESSING.FREEHAND_SNAP_THRESHOLD 
+      : POINT_PROCESSING.DEFAULT_SNAP_THRESHOLD;
+      
     const snappedPoint = snapToGrid(point, snapThreshold);
     console.log("Snapped point result:", snappedPoint);
     return snappedPoint;
@@ -70,15 +101,17 @@ export const usePointProcessing = ({
 
   /**
    * Apply straightening to a line between points
+   * Creates horizontal or vertical lines based on dominant direction
    */
   const applyStraightening = useCallback((startPoint: Point, currentPoint: Point): Point => {
     console.log("Straightening line between:", startPoint, currentPoint);
     
-    // Calculate angle and decide on horizontal or vertical line
+    // Calculate delta x and y to determine dominant direction
     const dx = currentPoint.x - startPoint.x;
     const dy = currentPoint.y - startPoint.y;
     
     // Determine if line should be horizontal or vertical
+    // If |dx| > |dy|, line is more horizontal than vertical
     const isHorizontal = Math.abs(dx) > Math.abs(dy);
     
     // Create straightened point
@@ -218,3 +251,4 @@ export const usePointProcessing = ({
     applyStraightening
   };
 };
+
