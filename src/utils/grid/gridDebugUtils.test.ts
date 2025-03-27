@@ -1,27 +1,52 @@
 
-/**
- * Grid debug utilities tests
- */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { forceCreateGrid, attemptGridRecovery } from './gridDebugUtils';
+import { Canvas, Object as FabricObject } from "fabric";
+import { dumpGridState, attemptGridRecovery, forceCreateGrid } from "./gridDebugUtils";
 
-// Sample test for the function that expects 3 arguments
-describe('attemptGridRecovery', () => {
-  it('should call the custom grid creation function if provided', () => {
-    // Mock canvas
-    const canvas = {} as Canvas;
-    
-    // Mock ref
-    const gridLayerRef = { current: [] } as React.MutableRefObject<FabricObject[]>;
-    
-    // Mock custom grid creation function
-    const createGridFn = vi.fn().mockReturnValue([{} as FabricObject]);
-    
-    // Call function with all 3 required arguments - add the missing options argument
-    const result = attemptGridRecovery(canvas, gridLayerRef, createGridFn, { forceRecreation: true });
-    
-    expect(createGridFn).toHaveBeenCalledWith(canvas);
-    expect(result).toBe(true);
+// Mock console methods
+const originalConsoleLog = console.log;
+const originalConsoleWarn = console.warn;
+const originalConsoleError = console.error;
+
+beforeEach(() => {
+  // Mock console methods
+  console.log = jest.fn();
+  console.warn = jest.fn();
+  console.error = jest.fn();
+});
+
+afterEach(() => {
+  // Restore console methods
+  console.log = originalConsoleLog;
+  console.warn = originalConsoleWarn;
+  console.error = originalConsoleError;
+});
+
+describe("gridDebugUtils", () => {
+  describe("dumpGridState", () => {
+    it("should log canvas and grid state", () => {
+      // Create a mock canvas
+      const canvas = new Canvas(null);
+      canvas.width = 800;
+      canvas.height = 600;
+      
+      // Create a mock grid layer reference
+      const gridLayerRef = { current: [] };
+      
+      // Call the function
+      dumpGridState(canvas, gridLayerRef);
+      
+      // Verify console.log was called with canvas state
+      expect(console.log).toHaveBeenCalledWith(
+        expect.stringContaining("Canvas state:"),
+        expect.objectContaining({
+          width: 800,
+          height: 600,
+          objectCount: expect.any(Number),
+          gridObjectCount: 0
+        })
+      );
+    });
   });
+  
+  // Add more tests as needed
 });

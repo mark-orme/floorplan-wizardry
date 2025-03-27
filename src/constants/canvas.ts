@@ -163,3 +163,10 @@ export const RENDERING_CONSTANTS = {
     HEIGHT: 3000
   }
 };
+
+/**
+ * Minimum canvas dimensions
+ * @constant {number}
+ */
+export const MIN_CANVAS_WIDTH = 300;
+export const MIN_CANVAS_HEIGHT = 200;

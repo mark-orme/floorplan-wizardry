@@ -1,167 +1,156 @@
 
 /**
- * Grid creation debug hook
- * Provides utilities for debugging and fixing grid issues
- * @module useGridCreationDebug
+ * Hook for grid creation debugging
+ * Provides utilities for diagnosing and fixing grid-related issues
  */
-import { useCallback, useState, useRef } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { createBasicEmergencyGrid, verifyGridExists } from '@/utils/gridCreationUtils';
-import { forceCreateGrid, dumpGridState, attemptGridRecovery } from '@/utils/grid/gridDebugUtils';
-import { toast } from 'sonner';
+import { useCallback, useState } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { toast } from "sonner";
+import { createBasicEmergencyGrid } from "@/utils/grid/gridDebugUtils";
+import { dumpGridState } from "@/utils/grid/gridDebugUtils";
+
+/**
+ * Interface for grid health information
+ */
+interface GridHealth {
+  exists: boolean;
+  size: number;
+  objectsOnCanvas: number;
+  missingObjects: number;
+}
 
 /**
  * Hook for debugging grid creation issues
- * 
- * @param {React.MutableRefObject<Canvas | null>} fabricCanvasRef - Reference to fabric canvas
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @returns {Object} Debug utilities
+ * @param fabricCanvasRef Reference to the fabric canvas
+ * @param gridLayerRef Reference to grid objects
+ * @returns Debugging utilities
  */
 export const useGridCreationDebug = (
-  fabricCanvasRef: React.MutableRefObject<Canvas | null>,
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ) => {
-  const [debugMode, setDebugMode] = useState(true);
-  const canvasCheckAttemptsRef = useRef(0);
-  
-  /**
-   * Check if we're waiting for canvas to initialize
-   * @returns {boolean} True if waiting for canvas
-   */
-  const isWaitingForCanvas = useCallback((): boolean => {
-    return !fabricCanvasRef.current && canvasCheckAttemptsRef.current < 10;
-  }, [fabricCanvasRef]);
-  
+  const [debugMode, setDebugMode] = useState(false);
+  const [isWaitingForCanvas, setIsWaitingForCanvas] = useState(false);
+
   /**
    * Toggle debug mode
    */
   const toggleDebugMode = useCallback(() => {
     setDebugMode(prev => !prev);
-  }, []);
-  
+    
+    if (!debugMode) {
+      toast.info("Grid debug mode enabled");
+      dumpGridState(fabricCanvasRef.current!, gridLayerRef);
+    } else {
+      toast.info("Grid debug mode disabled");
+    }
+  }, [debugMode, fabricCanvasRef, gridLayerRef]);
+
   /**
    * Check grid health
-   * @returns {Object | false} Grid health information or false if unavailable
+   * @returns Grid health information or false if canvas not available
    */
-  const checkGridHealth = useCallback(() => {
+  const checkGridHealth = useCallback((): GridHealth | false => {
     const canvas = fabricCanvasRef.current;
-    
     if (!canvas) {
-      canvasCheckAttemptsRef.current++;
-      console.log(`Canvas not ready, attempt ${canvasCheckAttemptsRef.current}/10`);
+      setIsWaitingForCanvas(true);
+      console.log("Canvas not available for grid health check");
       return false;
     }
     
-    // Reset attempts counter when canvas is available
-    canvasCheckAttemptsRef.current = 0;
+    setIsWaitingForCanvas(false);
     
-    try {
-      const gridObjects = gridLayerRef.current;
-      const exists = gridObjects.length > 0;
-      const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj)).length;
-      
-      return {
-        exists,
-        size: gridObjects.length,
-        objectsOnCanvas,
-        percentage: exists ? (objectsOnCanvas / gridObjects.length) * 100 : 0
-      };
-    } catch (error) {
-      console.error("Error checking grid health:", error);
-      return false;
-    }
+    const gridObjects = gridLayerRef.current;
+    const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+    
+    return {
+      exists: gridObjects.length > 0,
+      size: gridObjects.length,
+      objectsOnCanvas: gridOnCanvas.length,
+      missingObjects: gridObjects.length - gridOnCanvas.length
+    };
   }, [fabricCanvasRef, gridLayerRef]);
-  
+
   /**
    * Force grid creation
-   * @returns {FabricObject[] | false} Created grid objects or false if canvas not available
+   * @returns Array of created grid objects or false if canvas not available
    */
   const forceGridCreation = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    
     if (!canvas) {
-      canvasCheckAttemptsRef.current++;
-      console.log(`Canvas not ready for grid creation, attempt ${canvasCheckAttemptsRef.current}/10`);
+      setIsWaitingForCanvas(true);
       return false;
     }
     
-    // Reset attempts counter
-    canvasCheckAttemptsRef.current = 0;
-    
-    console.log("Forcing grid creation...");
+    setIsWaitingForCanvas(false);
     
     try {
-      // Use the specialized force create function
-      const grid = forceCreateGrid(canvas, gridLayerRef);
+      // Clear any existing grid objects
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
       
-      if (grid.length > 0) {
-        console.log(`Grid created with ${grid.length} objects`);
-        dumpGridState(canvas, gridLayerRef);
-        return grid;
-      } else {
-        // If that fails, try emergency grid directly
-        console.log("Force create failed, trying emergency grid directly");
-        return createBasicEmergencyGrid(canvas, gridLayerRef);
-      }
+      // Reset grid layer reference
+      gridLayerRef.current = [];
+      
+      // Create new emergency grid
+      const result = createBasicEmergencyGrid(canvas, gridLayerRef);
+      
+      // Force render
+      canvas.requestRenderAll();
+      
+      return result;
     } catch (error) {
-      console.error("Error during force grid creation:", error);
-      
-      // Last resort - try emergency grid directly
-      try {
-        console.log("Error in force creation, trying emergency grid as last resort");
-        return createBasicEmergencyGrid(canvas, gridLayerRef);
-      } catch (emergencyError) {
-        console.error("Even emergency grid creation failed:", emergencyError);
-        return false;
-      }
+      console.error("Error in forceGridCreation:", error);
+      return false;
     }
   }, [fabricCanvasRef, gridLayerRef]);
-  
+
   /**
    * Fix grid issues
-   * @returns {FabricObject[] | false} Fixed grid objects or false if canvas not available
+   * @returns Array of fixed grid objects or false if canvas not available
    */
   const fixGridIssues = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    
     if (!canvas) {
-      canvasCheckAttemptsRef.current++;
-      console.log(`Canvas not ready for grid fixes, attempt ${canvasCheckAttemptsRef.current}/10`);
+      setIsWaitingForCanvas(true);
       return false;
     }
     
-    // Reset attempts counter
-    canvasCheckAttemptsRef.current = 0;
-    
-    console.log("Attempting to fix grid issues...");
+    setIsWaitingForCanvas(false);
     
     try {
-      // Check if grid exists first
-      const gridExists = verifyGridExists(canvas, gridLayerRef);
+      const health = checkGridHealth();
+      if (!health) return false;
       
-      if (gridExists) {
-        console.log("Grid exists and is valid");
-        toast.success("Grid is already valid");
-        return gridLayerRef.current;
+      // If grid is completely missing, create new one
+      if (health.size === 0) {
+        return forceGridCreation();
       }
       
-      // Try recovery first
-      const recoverySuccess = attemptGridRecovery(canvas, gridLayerRef, null);
-      
-      if (recoverySuccess) {
-        console.log("Grid issues fixed with recovery");
-        return gridLayerRef.current;
+      // If some grid objects are missing from canvas, add them back
+      if (health.objectsOnCanvas < health.size) {
+        const gridObjects = gridLayerRef.current;
+        
+        gridObjects.forEach(obj => {
+          if (!canvas.contains(obj)) {
+            canvas.add(obj);
+          }
+        });
+        
+        canvas.requestRenderAll();
+        return gridObjects;
       }
       
-      // If recovery fails, try creating from scratch
-      console.log("Recovery failed, forcing grid creation");
-      return forceGridCreation();
+      return gridLayerRef.current;
     } catch (error) {
-      console.error("Error fixing grid issues:", error);
+      console.error("Error in fixGridIssues:", error);
       return false;
     }
-  }, [fabricCanvasRef, gridLayerRef, forceGridCreation]);
-  
+  }, [fabricCanvasRef, gridLayerRef, checkGridHealth, forceGridCreation]);
+
   return {
     debugMode,
     toggleDebugMode,

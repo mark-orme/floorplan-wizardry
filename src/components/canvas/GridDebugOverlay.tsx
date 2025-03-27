@@ -1,3 +1,4 @@
+
 /**
  * Grid Debug Overlay Component
  * Provides debugging overlay for grid issues
@@ -97,7 +98,11 @@ export const GridDebugOverlay = ({
         try {
           const result = forceGridCreation();
           forceGridAttemptRef.current = 1;
-          console.log("Auto grid creation result:", result && result.length ? `${result.length} objects created` : "Failed");
+          if (result && Array.isArray(result) && result.length > 0) {
+            console.log("Auto grid creation result:", `${result.length} objects created`);
+          } else {
+            console.log("Auto grid creation failed");
+          }
           
           // Dump grid state for debugging
           if (fabricCanvasRef.current) {
@@ -122,9 +127,8 @@ export const GridDebugOverlay = ({
     
     try {
       const grid = forceGridCreation();
-      console.log("Force grid created:", grid && grid.length);
-      
-      if (grid && grid.length > 0) {
+      if (grid && Array.isArray(grid) && grid.length > 0) {
+        console.log("Force grid created:", grid.length);
         toast.success(`Created ${grid.length} grid objects`);
       } else {
         console.error("Grid creation returned no objects");
@@ -163,9 +167,7 @@ export const GridDebugOverlay = ({
     
     try {
       const result = fixGridIssues();
-      const fixSuccess = result && result.length > 0;
-      
-      if (fixSuccess) {
+      if (result && Array.isArray(result) && result.length > 0) {
         toast.success(`Fixed grid: ${result.length} objects`);
       } else if (isWaitingForCanvas) {
         toast.info("Waiting for canvas to initialize...");
