@@ -8,6 +8,7 @@ import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import { useState } from "react";
 import { DrawingState } from "@/types/drawingTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
+import { CanvasDimensions } from "@/types/core/Geometry";
 
 /**
  * Constants for initial state values
@@ -16,7 +17,11 @@ const INITIAL_STATE_CONSTANTS = {
   /** Initial GIA value */
   INITIAL_GIA: 0,
   /** Initial floor index */
-  INITIAL_FLOOR_INDEX: 0
+  INITIAL_FLOOR_INDEX: 0,
+  /** Default canvas width */
+  DEFAULT_CANVAS_WIDTH: 800,
+  /** Default canvas height */
+  DEFAULT_CANVAS_HEIGHT: 600
 };
 
 /**
@@ -32,6 +37,10 @@ export const useCanvasControllerState = () => {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   const [currentFloor, setCurrentFloor] = useState(INITIAL_STATE_CONSTANTS.INITIAL_FLOOR_INDEX);
   const [isLoading, setIsLoading] = useState(false);
+  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
+    width: INITIAL_STATE_CONSTANTS.DEFAULT_CANVAS_WIDTH, 
+    height: INITIAL_STATE_CONSTANTS.DEFAULT_CANVAS_HEIGHT
+  });
   
   // Extract all properties from canvas state
   const {
@@ -39,8 +48,7 @@ export const useCanvasControllerState = () => {
     zoomLevel, setZoomLevel,
     lineThickness, setLineThickness,
     lineColor, setLineColor,
-    snapToGrid, setSnapToGrid,
-    canvasDimensions, setCanvasDimensions
+    snapToGrid, setSnapToGrid
   } = canvasState;
   
   // Debug and error state

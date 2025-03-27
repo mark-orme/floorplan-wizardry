@@ -1,187 +1,160 @@
 
 /**
  * Grid creation utilities
- * Functions for creating and managing grid lines
  * @module grid/gridCreation
  */
-import { Canvas as FabricCanvas, Line } from "fabric";
-import { GRID_COLORS, SMALL_GRID_LINE_OPTIONS, LARGE_GRID_LINE_OPTIONS } from "../gridConstants";
-import { GridRenderResult, GridLineOptions } from "./typeUtils";
+import { Canvas, Line } from 'fabric';
 import { 
-  GRID_EXTENSION_FACTOR, 
-  GRID_OFFSET_FACTOR,
-  GRID_POSITIONING 
-} from "./gridPositioningConstants";
-import { GRID_CONSTANTS } from "@/constants/gridConstants";
-import { GRID_PERFORMANCE_THRESHOLDS } from "@/utils/gridConstants";
+  GRID_SPACING, 
+  SMALL_GRID, 
+  LARGE_GRID 
+} from '@/constants/numerics';
+import { EXTENSION_FACTOR, EDGE_MARGIN } from './gridPositioningConstants';
+import { GridLineOptions } from './typeUtils';
 
 /**
  * Constants for grid creation
  */
-export const GRID_CREATION_CONSTANTS = {
-  /**
-   * Minimum canvas width for rendering full grid
-   * Below this width, grid density is reduced
-   * @constant {number}
-   */
-  MIN_FULL_GRID_WIDTH: 500,
-  
-  /**
-   * Minimum canvas height for rendering full grid
-   * Below this height, grid density is reduced
-   * @constant {number}
-   */
-  MIN_FULL_GRID_HEIGHT: 400,
-  
-  /**
-   * Default grid line opacity
-   * @constant {number}
-   */
-  DEFAULT_OPACITY: 0.9,
-  
-  /**
-   * Maximum number of grid lines to create on each axis
-   * Prevents excessive grid line creation that could impact performance
-   * @constant {number}
-   */
-  MAX_GRID_LINES_PER_AXIS: 200
+const GRID_CREATION_CONSTANTS = {
+  /** Default canvas width */
+  DEFAULT_CANVAS_WIDTH: 800,
+  /** Default canvas height */
+  DEFAULT_CANVAS_HEIGHT: 600,
+  /** Default small grid opacity */
+  SMALL_GRID_OPACITY: 0.3,
+  /** Default large grid opacity */
+  LARGE_GRID_OPACITY: 0.5,
+  /** Default small grid stroke width */
+  SMALL_GRID_STROKE_WIDTH: 0.5,
+  /** Default large grid stroke width */
+  LARGE_GRID_STROKE_WIDTH: 1,
+  /** Default small grid color */
+  SMALL_GRID_COLOR: '#DDDDDD',
+  /** Default large grid color */
+  LARGE_GRID_COLOR: '#AAAAAA'
 };
 
 /**
- * Creates grid lines for the canvas
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
- * @returns {GridRenderResult} The created grid objects
+ * Creates a grid of lines on the canvas
+ * 
+ * @param {Canvas} canvas - The Fabric.js canvas
+ * @param {object} options - Grid creation options
+ * @returns {Array} All created grid objects
  */
-export const createGrid = (canvas: FabricCanvas): GridRenderResult => {
+export const createGrid = (
+  canvas: Canvas, 
+  options: {
+    width?: number;
+    height?: number;
+    smallGridSize?: number;
+    largeGridSize?: number;
+  } = {}
+): FabricObject[] => {
   if (!canvas) {
-    console.error("Cannot create grid: Canvas is null or undefined");
-    return { smallGridLines: [], largeGridLines: [], markers: [], gridObjects: [] };
-  }
-
-  const width = canvas.getWidth();
-  const height = canvas.getHeight();
-  
-  if (!width || !height) {
-    console.error("Cannot create grid: Invalid canvas dimensions", { width, height });
-    return { smallGridLines: [], largeGridLines: [], markers: [], gridObjects: [] };
-  }
-
-  // Calculate grid dimensions based on canvas size
-  const extendedWidth = width * GRID_EXTENSION_FACTOR;
-  const extendedHeight = height * GRID_EXTENSION_FACTOR;
-  
-  // Set offsets for grid positioning
-  const offsetX = (extendedWidth - width) / 2;
-  const offsetY = (extendedHeight - height) / 2;
-  
-  // Performance optimization based on canvas size
-  const skipSmallGrid = width * height > GRID_PERFORMANCE_THRESHOLDS.SKIP_SMALL_GRID;
-  const reduceGridDensity = width * height > GRID_PERFORMANCE_THRESHOLDS.REDUCE_DENSITY_LEVEL_1;
-  
-  // Calculate step sizes based on canvas dimensions
-  let smallGridStep = GRID_CONSTANTS.SMALL_GRID;
-  let largeGridStep = GRID_CONSTANTS.LARGE_GRID;
-  
-  // Adjust grid density based on performance considerations
-  if (reduceGridDensity) {
-    smallGridStep *= 2;
+    console.error('Invalid canvas for grid creation');
+    return [];
   }
   
-  const smallGridLines: Line[] = [];
-  const largeGridLines: Line[] = [];
-  const markers: any[] = [];
+  // Use provided dimensions or default to canvas size
+  const width = options.width || GRID_CREATION_CONSTANTS.DEFAULT_CANVAS_WIDTH;
+  const height = options.height || GRID_CREATION_CONSTANTS.DEFAULT_CANVAS_HEIGHT;
   
-  // Create small grid lines (if not skipped for performance)
-  if (!skipSmallGrid) {
-    // Customize small grid options with objectType
-    const smallGridOptions: GridLineOptions = {
-      ...SMALL_GRID_LINE_OPTIONS,
-      objectType: 'smallGridLine' // Add required objectType
+  // Expanded dimensions to ensure grid extends beyond edges
+  const expandedWidth = width * EXTENSION_FACTOR;
+  const expandedHeight = height * EXTENSION_FACTOR;
+  
+  // Grid sizes
+  const smallGridSize = options.smallGridSize || SMALL_GRID;
+  const largeGridSize = options.largeGridSize || LARGE_GRID;
+  
+  const gridObjects: FabricObject[] = [];
+  
+  // Create small grid lines
+  const createSmallGridLines = (
+    gridSize: number, 
+    width: number, 
+    height: number
+  ): Line[] => {
+    const lines: Line[] = [];
+    const options: GridLineOptions = {
+      stroke: GRID_CREATION_CONSTANTS.SMALL_GRID_COLOR,
+      selectable: false,
+      evented: false,
+      strokeWidth: GRID_CREATION_CONSTANTS.SMALL_GRID_STROKE_WIDTH,
+      objectCaching: false,
+      hoverCursor: 'default',
+      opacity: GRID_CREATION_CONSTANTS.SMALL_GRID_OPACITY,
+      objectType: 'grid-small'
     };
     
-    // Horizontal small grid lines
-    const maxSmallHorizontalLines = Math.min(
-      Math.ceil(extendedHeight / smallGridStep),
-      GRID_CREATION_CONSTANTS.MAX_GRID_LINES_PER_AXIS
-    );
-    
-    for (let i = 0; i <= maxSmallHorizontalLines; i++) {
-      const y = i * smallGridStep - offsetY;
-      if (y < -GRID_POSITIONING.EDGE_MARGIN || y > height + GRID_POSITIONING.EDGE_MARGIN) continue;
-      
-      const line = new Line([0, y, width, y], smallGridOptions);
-      smallGridLines.push(line);
+    // Vertical lines
+    for (let i = 0; i <= expandedWidth; i += gridSize) {
+      const line = new Line([i, -EDGE_MARGIN, i, expandedHeight + EDGE_MARGIN], options);
+      lines.push(line);
+      canvas.add(line);
+      line.moveTo(-1); // Move to bottom layer
     }
     
-    // Vertical small grid lines
-    const maxSmallVerticalLines = Math.min(
-      Math.ceil(extendedWidth / smallGridStep),
-      GRID_CREATION_CONSTANTS.MAX_GRID_LINES_PER_AXIS
-    );
-    
-    for (let i = 0; i <= maxSmallVerticalLines; i++) {
-      const x = i * smallGridStep - offsetX;
-      if (x < -GRID_POSITIONING.EDGE_MARGIN || x > width + GRID_POSITIONING.EDGE_MARGIN) continue;
-      
-      const line = new Line([x, 0, x, height], smallGridOptions);
-      smallGridLines.push(line);
+    // Horizontal lines
+    for (let i = 0; i <= expandedHeight; i += gridSize) {
+      const line = new Line([-EDGE_MARGIN, i, expandedWidth + EDGE_MARGIN, i], options);
+      lines.push(line);
+      canvas.add(line);
+      line.moveTo(-1); // Move to bottom layer
     }
-  }
-  
-  // Customize large grid options with objectType
-  const largeGridOptions: GridLineOptions = {
-    ...LARGE_GRID_LINE_OPTIONS,
-    objectType: 'largeGridLine' // Add required objectType
+    
+    return lines;
   };
   
-  // Horizontal large grid lines
-  const maxLargeHorizontalLines = Math.min(
-    Math.ceil(extendedHeight / largeGridStep),
-    GRID_CREATION_CONSTANTS.MAX_GRID_LINES_PER_AXIS / 5
-  );
-  
-  for (let i = 0; i <= maxLargeHorizontalLines; i++) {
-    const y = i * largeGridStep - offsetY;
-    if (y < -GRID_POSITIONING.EDGE_MARGIN || y > height + GRID_POSITIONING.EDGE_MARGIN) continue;
+  // Create large grid lines
+  const createLargeGridLines = (
+    gridSize: number, 
+    width: number, 
+    height: number
+  ): Line[] => {
+    const lines: Line[] = [];
+    const options: GridLineOptions = {
+      stroke: GRID_CREATION_CONSTANTS.LARGE_GRID_COLOR,
+      selectable: false,
+      evented: false,
+      strokeWidth: GRID_CREATION_CONSTANTS.LARGE_GRID_STROKE_WIDTH,
+      objectCaching: false,
+      hoverCursor: 'default',
+      opacity: GRID_CREATION_CONSTANTS.LARGE_GRID_OPACITY,
+      objectType: 'grid-large'
+    };
     
-    const line = new Line([0, y, width, y], largeGridOptions);
-    largeGridLines.push(line);
-  }
-  
-  // Vertical large grid lines
-  const maxLargeVerticalLines = Math.min(
-    Math.ceil(extendedWidth / largeGridStep),
-    GRID_CREATION_CONSTANTS.MAX_GRID_LINES_PER_AXIS / 5
-  );
-  
-  for (let i = 0; i <= maxLargeVerticalLines; i++) {
-    const x = i * largeGridStep - offsetX;
-    if (x < -GRID_POSITIONING.EDGE_MARGIN || x > width + GRID_POSITIONING.EDGE_MARGIN) continue;
+    // Vertical lines
+    for (let i = 0; i <= expandedWidth; i += gridSize) {
+      const line = new Line([i, -EDGE_MARGIN, i, expandedHeight + EDGE_MARGIN], options);
+      lines.push(line);
+      canvas.add(line);
+      line.moveTo(0); // Above small grid lines
+    }
     
-    const line = new Line([x, 0, x, height], largeGridOptions);
-    largeGridLines.push(line);
-  }
-  
-  // Combine all grid objects
-  const gridObjects = [...smallGridLines, ...largeGridLines, ...markers];
-  
-  return {
-    smallGridLines,
-    largeGridLines,
-    markers,
-    gridObjects
+    // Horizontal lines
+    for (let i = 0; i <= expandedHeight; i += gridSize) {
+      const line = new Line([-EDGE_MARGIN, i, expandedWidth + EDGE_MARGIN, i], options);
+      lines.push(line);
+      canvas.add(line);
+      line.moveTo(0); // Above small grid lines
+    }
+    
+    return lines;
   };
+  
+  // Create the grid
+  const smallGridLines = createSmallGridLines(smallGridSize, width, height);
+  const largeGridLines = createLargeGridLines(largeGridSize, width, height);
+  
+  // Add all lines to the gridObjects array
+  gridObjects.push(...smallGridLines, ...largeGridLines);
+  
+  // Render the canvas
+  canvas.renderAll();
+  
+  return gridObjects;
 };
 
-/**
- * Exports for backward compatibility
- */
-export const createSmallScaleGrid = (canvas: FabricCanvas): Line[] => {
-  const { smallGridLines } = createGrid(canvas);
-  return smallGridLines;
-};
-
-export const createLargeScaleGrid = (canvas: FabricCanvas): Line[] => {
-  const { largeGridLines } = createGrid(canvas);
-  return largeGridLines;
-};
+// Type for fabric objects returned by createGrid
+type FabricObject = Line;

@@ -12,6 +12,8 @@ import { createFloorPlan } from '@/utils/floorPlanUtils';
 const INITIAL_LINE_THICKNESS = 2;
 const DEFAULT_LINE_COLOR = '#000000';
 const INITIAL_FLOOR_INDEX = 0;
+const DEFAULT_CANVAS_WIDTH = 800;
+const DEFAULT_CANVAS_HEIGHT = 600;
 
 /**
  * Context value interface for the Canvas Controller
@@ -103,11 +105,11 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     canvasInitialized: false,
     dimensionsSet: false,
     gridCreated: false,
-    brushInitialized: false,
     eventHandlersSet: false,
+    brushInitialized: false,
+    canvasReady: false,
     canvasCreated: false,
     canvasLoaded: false,
-    canvasReady: false,
     canvasEventsRegistered: false,
     gridRendered: false,
     toolsInitialized: false,
@@ -116,12 +118,13 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     gridObjectCount: 0,
     canvasDimensions: { width: 0, height: 0 },
     hasError: false,
-    errorMessage: ""
+    errorMessage: "",
+    performanceStats: {}
   });
   
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
-    width: 800,
-    height: 600
+    width: DEFAULT_CANVAS_WIDTH,
+    height: DEFAULT_CANVAS_HEIGHT
   });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);

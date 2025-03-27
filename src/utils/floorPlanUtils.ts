@@ -31,6 +31,7 @@ export const createFloorPlan = (id: string, name: string): FloorPlan => {
     name,
     label: name,
     gia: FLOOR_PLAN_CONSTANTS.DEFAULT_GIA,
+    level: FLOOR_PLAN_CONSTANTS.DEFAULT_FLOOR_LEVEL,
     walls: [],
     rooms: [],
     strokes: [],

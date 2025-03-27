@@ -1,36 +1,49 @@
 
 /**
- * Utility module for converting between Fabric.js points and application-specific points
+ * Utility functions for converting between different point formats
  * @module fabricPointConverter
  */
 import { Point as FabricPoint } from 'fabric';
-import { Point as CustomPoint } from './drawingTypes';
+import { Point } from '@/types/floorPlanTypes';
 
 /**
- * Converts our custom Point type to Fabric.js Point
- * @param {CustomPoint} point - Our custom point
- * @returns {FabricPoint} Fabric.js Point
+ * Converts a Point to a FabricPoint
+ * @param {Point} point - The point to convert
+ * @returns {FabricPoint} The FabricPoint
  */
-export const toFabricPoint = (point: CustomPoint): FabricPoint => {
+export const toFabricPoint = (point: Point): FabricPoint => {
   return new FabricPoint(point.x, point.y);
 };
 
 /**
- * Converts Fabric.js Point to our custom Point type
- * @param {FabricPoint} point - Fabric.js Point
- * @returns {CustomPoint} Our custom Point
+ * Converts a FabricPoint to a Point
+ * @param {FabricPoint} point - The fabric point to convert
+ * @returns {Point} The Point
  */
-export const toCustomPoint = (point: FabricPoint): CustomPoint => {
+export const fromFabricPoint = (point: FabricPoint): Point => {
   return { x: point.x, y: point.y };
 };
 
 /**
- * Creates a simple {x, y} object from values
- * (Used when we need a simple point object but not a full Fabric.js Point)
- * @param {number} x - X coordinate 
- * @param {number} y - Y coordinate
- * @returns {CustomPoint} Custom point object
+ * Creates a FabricPoint-compatible object
+ * For use when a full FabricPoint instance is not needed
+ * @param {Point} point - The point to convert
+ * @returns {object} A plain object with x,y coordinates
  */
-export const createSimplePoint = (x: number, y: number): CustomPoint => {
-  return { x, y };
+export const toFabricPointLike = (point: Point): {x: number, y: number} => {
+  return {x: point.x, y: point.y};
+};
+
+/**
+ * Safely ensures a value is a valid Point
+ * @param {any} value - The value to check and normalize
+ * @returns {Point} A valid Point
+ */
+export const normalizePoint = (value: any): Point => {
+  if (!value) return {x: 0, y: 0};
+  
+  return {
+    x: typeof value.x === 'number' ? value.x : 0,
+    y: typeof value.y === 'number' ? value.y : 0
+  };
 };

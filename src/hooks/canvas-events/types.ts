@@ -3,7 +3,8 @@
  * Canvas event handling type definitions
  * @module canvas-events/types
  */
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { DrawingTool } from "@/hooks/useCanvasState";
 
 /**
  * Canvas operation types
@@ -11,7 +12,23 @@ import { Canvas as FabricCanvas } from "fabric";
 export type CanvasOperation = 'draw' | 'erase' | 'select' | 'move' | 'zoom' | 'measure' | 'text';
 
 /**
- * Canvas events map
+ * Extended fabric object with additional properties
+ */
+export interface EditableFabricObject extends FabricObject {
+  id?: string;
+  objectType?: string;
+}
+
+/**
+ * Canvas event with target typing
+ */
+export interface TargetEvent {
+  target: EditableFabricObject | null;
+  e: Event;
+}
+
+/**
+ * Canvas events map for event handlers
  */
 export interface CanvasEvents {
   'object:added': any;
@@ -54,3 +71,73 @@ export const ZOOM_LEVEL_CONSTANTS = {
 export type EventHandlerMap = {
   [K in keyof CanvasEvents]: (e: CanvasEvents[K], canvas: FabricCanvas) => void;
 };
+
+/**
+ * Base props for all event handlers
+ */
+export interface BaseEventHandlerProps {
+  /** Reference to the fabric canvas instance */
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current tool selected */
+  tool?: DrawingTool;
+}
+
+/**
+ * Result interface for event handlers
+ */
+export interface EventHandlerResult {
+  /** Register event handlers */
+  register: () => void;
+  /** Remove event handlers */
+  unregister: () => void;
+  /** Clean up resources */
+  cleanup: () => void;
+}
+
+/**
+ * Props for useZoomTracking hook
+ */
+export interface UseZoomTrackingProps extends BaseEventHandlerProps {
+  /** Function to update zoom level in state */
+  updateZoomLevel: (zoomLevel: number) => void;
+}
+
+/**
+ * Result from useZoomTracking hook
+ */
+export interface UseZoomTrackingResult extends EventHandlerResult {
+  /** Current zoom level */
+  currentZoom: number;
+  /** Register zoom tracking specifically */
+  registerZoomTracking: () => void;
+}
+
+/**
+ * Props for usePathEvents hook
+ */
+export interface UsePathEventsProps extends BaseEventHandlerProps {}
+
+/**
+ * Props for useObjectEvents hook
+ */
+export interface UseObjectEventsProps extends BaseEventHandlerProps {}
+
+/**
+ * Props for useMouseEvents hook
+ */
+export interface UseMouseEventsProps extends BaseEventHandlerProps {}
+
+/**
+ * Props for useKeyboardEvents hook
+ */
+export interface UseKeyboardEventsProps extends BaseEventHandlerProps {}
+
+/**
+ * Props for useBrushSettings hook
+ */
+export interface UseBrushSettingsProps extends BaseEventHandlerProps {}
+
+/**
+ * Props for useCanvasHandlers hook
+ */
+export interface UseCanvasHandlersProps extends BaseEventHandlerProps {}

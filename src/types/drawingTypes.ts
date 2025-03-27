@@ -98,17 +98,19 @@ export interface DrawingState {
   points: Point[];
   /** Distance for compatibility */
   distance: number | null;
+  /** Cursor position for more accurate drawing */
+  cursorPosition?: Point | null;
 }
 
 /**
  * Drawing mode
  */
-export type DrawingMode = 'free' | 'straight' | 'polygon' | 'rectangle' | 'circle' | 'text';
+export type DrawingMode = 'free' | 'straight' | 'polygon' | 'rectangle' | 'circle' | 'text' | 'wall';
 
 /**
  * Canvas operation types
  */
-export type CanvasOperation = 'draw' | 'erase' | 'select' | 'move' | 'zoom' | 'measure' | 'text';
+export type CanvasOperation = 'draw' | 'erase' | 'select' | 'move' | 'zoom' | 'measure' | 'text' | 'wall';
 
 /**
  * Type for zoom direction values

@@ -59,7 +59,37 @@ export const PATH_PROCESSING = {
   /**
    * Extension factor for walls
    */
-  WALL_EXTENSION_FACTOR: 0.05
+  WALL_EXTENSION_FACTOR: 0.05,
+  
+  /**
+   * Minimum number of points to keep in a full path
+   */
+  MIN_POINTS_THRESHOLD: 10,
+  
+  /**
+   * Divisor for sampling when reducing path point count
+   */
+  SAMPLING_DIVISOR: 8
+};
+
+/**
+ * Grid positioning constants
+ */
+export const GRID_POSITIONING_CONSTANTS = {
+  /**
+   * Extension factor for grid
+   */
+  GRID_EXTENSION_FACTOR: 1.5,
+  
+  /**
+   * Edge margin for grid lines
+   */
+  EDGE_MARGIN: 20,
+  
+  /**
+   * Marker offset from edges
+   */
+  MARKER_OFFSET: 5
 };
 
 /**
