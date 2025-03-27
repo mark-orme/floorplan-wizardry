@@ -15,7 +15,7 @@ export const typescriptRules = {
   },
   rules: {
     // TypeScript no-explicit-any and generic type safety
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-magic-numbers": ["error", { 
       "ignore": [0, 1, -1, 2], 
       "ignoreArrayIndexes": true,
@@ -30,25 +30,29 @@ export const typescriptRules = {
     "@typescript-eslint/ban-ts-comment": ["error", {
       "ts-ignore": "true",
       "ts-nocheck": "true",
-      "minimumDescriptionLength": 10
+      "minimumDescriptionLength": 20
     }],
     
     // TypeScript function and return types
-    "@typescript-eslint/explicit-function-return-type": ["warn", {
+    "@typescript-eslint/explicit-function-return-type": ["error", {
       "allowExpressions": true,
       "allowTypedFunctionExpressions": true,
       "allowHigherOrderFunctions": true
     }],
-    "@typescript-eslint/explicit-module-boundary-types": "warn",
-    "@typescript-eslint/explicit-member-accessibility": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "error",
+    "@typescript-eslint/explicit-member-accessibility": "error",
     
     // TypeScript type and pattern rules
     "@typescript-eslint/no-non-null-assertion": "error",
     "@typescript-eslint/prefer-as-const": "error",
-    "@typescript-eslint/consistent-type-definitions": ["warn", "interface"],
-    "@typescript-eslint/array-type": ["warn", { "default": "array" }],
-    "@typescript-eslint/consistent-type-imports": "warn",
+    "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+    "@typescript-eslint/array-type": ["error", { "default": "array" }],
+    "@typescript-eslint/consistent-type-imports": "error",
     "@typescript-eslint/no-unnecessary-type-assertion": "error",
+    "@typescript-eslint/prefer-nullish-coalescing": "error",
+    "@typescript-eslint/prefer-optional-chain": "error",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/prefer-ts-expect-error": "error",
     
     // TypeScript banned types and naming
     "@typescript-eslint/ban-types": ["error", {

@@ -31,9 +31,9 @@ export {
   snapToAngle,
   snapLineToStandardAngles,
   getNearestGridIntersection,
+  distanceToNearestGridLine,
   getNearestPointOnGrid,
-  distanceToNearestGridLine
-  // Don't re-export distanceToNearestGridLine since it's also in measurements
+  snapWithThreshold
 } from './snapping';
 
 // Export safety utilities
