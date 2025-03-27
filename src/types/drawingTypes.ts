@@ -1,32 +1,71 @@
 
 /**
- * Drawing information state type definitions
- * @module drawingTypes
+ * Drawing-related type definitions
+ * @module types/drawingTypes
  */
-
-import { Point } from './core/Geometry';
-import { PerformanceStats } from './core/DebugInfo';
-import { DrawingState } from './core/DrawingState';
 
 /**
- * Drawing mode enumeration
+ * Canvas dimensions
  */
-export enum DrawingMode {
-  /** Free drawing mode */
-  FREE = 'free',
-  /** Line drawing mode */
-  LINE = 'line',
-  /** Rectangle drawing mode */
-  RECTANGLE = 'rectangle',
-  /** Circle drawing mode */
-  CIRCLE = 'circle',
-  /** Text insertion mode */
-  TEXT = 'text',
-  /** Selection mode */
-  SELECT = 'select'
+export interface CanvasDimensions {
+  /** Canvas width */
+  width: number;
+  /** Canvas height */
+  height: number;
 }
 
-// Export Point, DrawingState and other core types to make them available to importers of drawingTypes
-export type { Point, DrawingState, PerformanceStats };
-export type { DebugInfoState } from './core/DebugInfo';
-export type { CanvasDimensions } from './core/Geometry';
+/**
+ * Debug information state
+ */
+export interface DebugInfoState {
+  /** Whether canvas is initialized */
+  canvasInitialized: boolean;
+  /** Whether dimensions are set */
+  dimensionsSet: boolean;
+  /** Whether grid is created */
+  gridCreated: boolean;
+  /** Whether event handlers are set */
+  eventHandlersSet: boolean;
+  /** Whether brush is initialized */
+  brushInitialized: boolean;
+  /** Any additional debug info */
+  [key: string]: boolean | number | string;
+}
+
+/**
+ * Drawing state
+ */
+export interface DrawingState {
+  /** Whether currently drawing */
+  isDrawing: boolean;
+  /** Current zoom level */
+  zoomLevel: number;
+  /** Last X coordinate */
+  lastX: number;
+  /** Last Y coordinate */
+  lastY: number;
+  /** Start X coordinate */
+  startX: number;
+  /** Start Y coordinate */
+  startY: number;
+  /** Current path being drawn */
+  currentPath: any | null;
+  /** Whether to use pressure sensitivity */
+  usePressure: boolean;
+  /** Whether stylus is detected */
+  stylusDetected: boolean;
+  /** Whether path dragging is enabled */
+  pathDragging: boolean;
+  /** Whether shape creation is in progress */
+  creatingShape: boolean;
+}
+
+/**
+ * Drawing mode
+ */
+export type DrawingMode = 'free' | 'straight' | 'polygon' | 'rectangle' | 'circle' | 'text';
+
+/**
+ * Canvas operation types
+ */
+export type CanvasOperation = 'draw' | 'erase' | 'select' | 'move' | 'zoom' | 'measure' | 'text';

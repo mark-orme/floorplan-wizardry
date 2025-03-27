@@ -26,5 +26,21 @@ export const ZOOM_CONSTANTS = {
   ZOOM_STEPS: 20,
   
   /** Zoom sensitivity for mouse wheel */
-  WHEEL_SENSITIVITY: 0.001
+  WHEEL_SENSITIVITY: 0.001,
+  
+  /** Transition duration for zoom animations in ms */
+  TRANSITION_DURATION: 300
+};
+
+/**
+ * Zoom direction type for zoom operations
+ */
+export type ZoomDirection = 'in' | 'out';
+
+/**
+ * Zoom multipliers for consistent zoom operations
+ */
+export const ZOOM_MULTIPLIERS = {
+  IN: 1.1,
+  OUT: 0.9
 };

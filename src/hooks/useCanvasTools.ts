@@ -1,149 +1,118 @@
 
 /**
- * Custom hook for managing canvas tools and interactions
- * This hook provides the core functionality for tool switching, zooming, and canvas clearing
- * @module useCanvasTools
+ * Hook for canvas tool actions
+ * Provides functions for tool operations like zoom, clear, etc.
  */
-import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool } from "./useCanvasState";
-import { 
-  clearDrawings,
-  handleToolChange,
-  handleZoom,
-  setActiveTool
-} from "@/utils/canvasToolOperations";
-import { arrangeGridElements } from "@/utils/canvasLayerOrdering";
-import { ZOOM_MULTIPLIERS } from "@/constants/zoomConstants";
+import { useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingTool } from './useCanvasState';
+import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
+import logger from '@/utils/logger';
 
 /**
- * Timing constants for canvas operations
- * @constant {Object}
- */
-const TIMING_CONSTANTS = {
-  /**
-   * Delay after tool change before arranging grid elements (ms)
-   * @constant {number}
-   */
-  GRID_ARRANGEMENT_DELAY: 100,
-  
-  /**
-   * Debounce delay for tool change operations (ms)
-   * @constant {number}
-   */
-  TOOL_CHANGE_DEBOUNCE: 150
-};
-
-/**
- * Interface for useCanvasTools props
- * @interface UseCanvasToolsProps
+ * Props for useCanvasTools hook
  */
 interface UseCanvasToolsProps {
-  /** Reference to the Fabric.js canvas */
+  /** Reference to fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Current active drawing tool */
+  /** Current tool */
   tool: DrawingTool;
+  /** Function to set tool */
+  setTool: (tool: DrawingTool) => void;
   /** Current zoom level */
   zoomLevel: number;
-  /** Current line thickness value */
-  lineThickness: number;
-  /** Current line color value */
-  lineColor: string;
-  /** Function to update the current tool */
-  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
-  /** Function to update the zoom level */
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to create/recreate the grid */
-  createGrid: (canvas: FabricCanvas) => FabricObject[];
+  /** Function to set zoom level */
+  setZoomLevel: (zoom: number) => void;
 }
 
 /**
- * Hook for managing canvas tools and interactions
- * Provides functions for clearing the canvas, changing tools, and zooming
- * 
- * @param {UseCanvasToolsProps} props - Hook properties
- * @returns {Object} Canvas tool operations
+ * Hook for canvas tool operations like zoom, clear, etc.
+ * @param props The hook props
+ * @returns Tool operation functions
  */
-export const useCanvasTools = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  tool,
-  zoomLevel,
-  lineThickness,
-  lineColor,
-  setTool,
-  setZoomLevel,
-  createGrid
-}: UseCanvasToolsProps) => {
-  /**
-   * Clear all drawings from the canvas while preserving the grid
-   * Removes user-created content but keeps the grid layer intact
-   */
-  const clearCanvasDrawings = useCallback(() => {
-    clearDrawings(fabricCanvasRef.current, gridLayerRef, createGrid);
-  }, [fabricCanvasRef, gridLayerRef, createGrid]);
+export const useCanvasTools = (props: UseCanvasToolsProps) => {
+  const { fabricCanvasRef, tool, setTool, zoomLevel, setZoomLevel } = props;
   
   /**
-   * Change the current drawing tool
-   * Updates both the visual state and the functional behavior of the canvas
-   * 
-   * @param {DrawingTool} newTool - The tool to switch to
+   * Handle zoom level change
+   * @param factor Zoom factor to apply
    */
-  const handleCanvasToolChange = useCallback((newTool: DrawingTool) => {
-    handleToolChange(
-      newTool, 
-      fabricCanvasRef.current, 
-      gridLayerRef, 
-      lineThickness, 
-      lineColor, 
-      setTool
+  const handleZoom = useCallback((factor: number) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Calculate new zoom level within constraints
+    const newZoom = Math.min(
+      Math.max(zoomLevel * factor, ZOOM_CONSTANTS.MIN_ZOOM),
+      ZOOM_CONSTANTS.MAX_ZOOM
     );
-  }, [fabricCanvasRef, gridLayerRef, setTool, lineThickness, lineColor]);
-
-  /**
-   * Zoom the canvas in or out
-   * Applies the zoom based on a specified direction using consistent increments
-   * Prevents exceeding minimum/maximum zoom boundaries
-   * 
-   * @param {string} direction - The zoom direction ("in" or "out")
-   */
-  const handleCanvasZoom = useCallback((direction: "in" | "out") => {
-    const zoomFactor = direction === "in" 
-      ? ZOOM_MULTIPLIERS.IN
-      : ZOOM_MULTIPLIERS.OUT;
     
-    // Determine new zoom level
-    let newZoomLevel = zoomLevel * zoomFactor;
+    // Apply zoom centered on canvas center
+    const center = {
+      x: canvas.width! / 2,
+      y: canvas.height! / 2
+    };
     
-    // Apply zoom boundaries
-    newZoomLevel = Math.max(ZOOM_MULTIPLIERS.MIN_ZOOM, newZoomLevel);
-    newZoomLevel = Math.min(ZOOM_MULTIPLIERS.MAX_ZOOM, newZoomLevel);
+    canvas.zoomToPoint(center, newZoom);
+    setZoomLevel(newZoom);
     
-    handleZoom(direction, fabricCanvasRef.current, zoomLevel, setZoomLevel);
+    // Refresh canvas
+    canvas.requestRenderAll();
+    
+    logger.info(`Zoom level changed to ${newZoom.toFixed(2)}`);
   }, [fabricCanvasRef, zoomLevel, setZoomLevel]);
-
-  // Set up panning when hand tool is selected
-  useEffect(() => {
-    if (fabricCanvasRef.current) {
-      if (tool === "select" || tool === "hand") {
-        // Apply appropriate tool mode
-        handleCanvasToolChange(tool);
-      }
-      
-      // Ensure grid elements are in correct z-order after a short delay
-      setTimeout(() => {
-        if (fabricCanvasRef.current) {
-          arrangeGridElements(fabricCanvasRef.current, gridLayerRef);
-        }
-      }, TIMING_CONSTANTS.GRID_ARRANGEMENT_DELAY);
+  
+  /**
+   * Clear the canvas of all non-grid objects
+   */
+  const clearCanvas = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Get all objects
+    const objects = canvas.getObjects();
+    
+    // Filter out grid objects
+    const nonGridObjects = objects.filter(obj => {
+      const objectType = obj.objectType as string | undefined;
+      return !objectType || !objectType.includes('grid');
+    });
+    
+    // Remove non-grid objects
+    if (nonGridObjects.length > 0) {
+      canvas.remove(...nonGridObjects);
+      canvas.requestRenderAll();
+      logger.info(`Cleared ${nonGridObjects.length} objects from canvas`);
     }
-  }, [fabricCanvasRef, gridLayerRef, tool, handleCanvasToolChange]);
-
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Reset zoom level to default
+   */
+  const resetZoom = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    canvas.setZoom(ZOOM_CONSTANTS.DEFAULT_ZOOM);
+    canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
+    canvas.requestRenderAll();
+    
+    setZoomLevel(ZOOM_CONSTANTS.DEFAULT_ZOOM);
+    logger.info("Zoom reset to default");
+  }, [fabricCanvasRef, setZoomLevel]);
+  
+  /**
+   * Reset the entire canvas view
+   */
+  const resetView = useCallback(() => {
+    resetZoom();
+    // Don't clear objects - this just resets the view
+  }, [resetZoom]);
+  
   return {
-    clearDrawings: clearCanvasDrawings,
-    handleToolChange: handleCanvasToolChange,
-    handleZoom: handleCanvasZoom
+    handleZoom,
+    clearCanvas,
+    resetZoom,
+    resetView
   };
 };

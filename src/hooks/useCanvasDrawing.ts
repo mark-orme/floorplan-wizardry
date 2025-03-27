@@ -4,6 +4,7 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
+import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useCanvasHistory } from "./useCanvasHistory";
@@ -80,51 +81,48 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     setFloorPlans,
     setGia,
     lineThickness = 2,
-    lineColor = "#000000",
+    lineColor = '#000000',
     deleteSelectedObjects = () => {},
-    recalculateGIA
+    recalculateGIA = () => {}
   } = props;
+
+  // Drawing state
+  const { drawingState, setDrawingState } = useCanvasDrawingState();
   
-  // Use the drawing state hook to get all state-related functions
-  const {
-    drawingState,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    cleanupTimeouts,
-    updateZoomLevel
-  } = useCanvasDrawingState({
-    fabricCanvasRef,
-    tool
-  });
-  
-  // Use the improved history management hook
+  // Canvas history
   const { saveCurrentState, handleUndo, handleRedo } = useCanvasHistory({
     fabricCanvasRef,
     gridLayerRef,
-    historyRef,
-    recalculateGIA: () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Recalculating GIA after history operation");
-      }
-      if (recalculateGIA && typeof recalculateGIA === 'function') {
-        recalculateGIA();
-      }
-    }
+    historyRef
   });
   
-  // Use the path processing hook
+  // Path processing
   const { processCreatedPath } = usePathProcessing({
     fabricCanvasRef,
     gridLayerRef,
-    historyRef,
-    tool,
-    currentFloor,
     setFloorPlans,
-    setGia,
-    lineThickness,
-    lineColor,
-    recalculateGIA
+    currentFloor
+  });
+  
+  // Update zoom level function
+  const updateZoomLevel = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Update zoom level in drawing state
+    setDrawingState(prev => ({
+      ...prev,
+      zoomLevel: canvas.getZoom()
+    }));
+  }, [fabricCanvasRef, setDrawingState]);
+  
+  // Canvas drawing events
+  const { handleMouseDown, handleMouseMove, handleMouseUp, cleanupTimeouts } = useCanvasDrawingEvents({
+    fabricCanvasRef,
+    drawingState,
+    setDrawingState,
+    tool,
+    processCreatedPath
   });
   
   // Register event handlers
@@ -141,24 +139,10 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     handleMouseUp,
     processCreatedPath,
     cleanupTimeouts,
-    deleteSelectedObjects
+    deleteSelectedObjects,
+    updateZoomLevel
   });
   
-  // Register zoom and GIA event listeners
-  useCanvasDrawingEvents({
-    fabricCanvasRef,
-    tool,
-    saveCurrentState,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    processCreatedPath,
-    updateZoomLevel,
-    recalculateGIA,
-    deleteSelectedObjects
-  });
-  
-  // Return drawing state with current zoom level
   return {
     drawingState
   };
