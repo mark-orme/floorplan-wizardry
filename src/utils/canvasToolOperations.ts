@@ -11,6 +11,7 @@ import {
   LARGE_GRID, 
   SMALL_GRID
 } from "@/constants/numerics";
+import { disableSelection, enableSelection } from "./fabric/selection";
 
 /**
  * Function to clear all drawings from the canvas
@@ -69,25 +70,34 @@ export const handleToolChange = (
   // Apply tool-specific settings
   switch (newTool) {
     case "draw":
+      // Enable drawing mode
       canvas.isDrawingMode = true;
       if (canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush.width = lineThickness || DEFAULT_LINE_THICKNESS;
         canvas.freeDrawingBrush.color = lineColor || "#000000";
       }
+      disableSelection(canvas);
       break;
-    // Remove case "eraser" since it's not in the DrawingTool type
-    // If eraser needs to be handled, it should be added to DrawingTool type first
+    case "wall":
+    case "room":
     case "straightLine":
-      // Implement line tool logic
+      // Custom drawing modes - disable native drawing but also disable selection
       canvas.isDrawingMode = false;
+      canvas.selection = false;
+      canvas.defaultCursor = 'crosshair';
+      disableSelection(canvas);
       break;
     case "select":
       canvas.isDrawingMode = false;
       canvas.selection = true;
+      canvas.defaultCursor = 'default';
+      enableSelection(canvas);
       break;
     case "hand":
       canvas.isDrawingMode = false;
       canvas.selection = false;
+      canvas.defaultCursor = 'grab';
+      disableSelection(canvas);
       // Set panning mode
       break;
     default:
@@ -106,6 +116,9 @@ export const handleToolChange = (
   
   // Request a render to update canvas
   canvas.requestRenderAll();
+  
+  // Log the current tool change
+  console.log(`Tool changed to ${newTool}, drawing mode: ${canvas.isDrawingMode}, selection: ${canvas.selection}`);
 };
 
 /**

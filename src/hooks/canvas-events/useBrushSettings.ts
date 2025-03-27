@@ -21,10 +21,15 @@ const BRUSH_SETTINGS = {
   DEFAULT_DRAWING_MODE: false,
   
   /**
-   * Valid drawing tool name
-   * @constant {string}
+   * Valid drawing tool names
+   * @constant {Object}
    */
-  DRAWING_TOOL: 'draw'
+  DRAWING_TOOLS: {
+    DRAW: 'draw',
+    WALL: 'wall',
+    ROOM: 'room',
+    STRAIGHT_LINE: 'straightLine'
+  }
 };
 
 /**
@@ -53,8 +58,15 @@ export const useBrushSettings = ({
     
     const fabricCanvas = fabricCanvasRef.current;
     
+    // Check if the current tool is a drawing tool
+    const isDrawingTool = 
+      tool === BRUSH_SETTINGS.DRAWING_TOOLS.DRAW || 
+      tool === BRUSH_SETTINGS.DRAWING_TOOLS.WALL || 
+      tool === BRUSH_SETTINGS.DRAWING_TOOLS.ROOM || 
+      tool === BRUSH_SETTINGS.DRAWING_TOOLS.STRAIGHT_LINE;
+    
     // Set up brush settings based on tool
-    if (tool === BRUSH_SETTINGS.DRAWING_TOOL) {
+    if (isDrawingTool) {
       // Configure drawing brush
       if (fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = lineColor;
@@ -62,13 +74,26 @@ export const useBrushSettings = ({
       }
       
       // Enable drawing mode
-      fabricCanvas.isDrawingMode = true;
+      fabricCanvas.isDrawingMode = tool === BRUSH_SETTINGS.DRAWING_TOOLS.DRAW;
+      
+      // For wall, room, and straight line we don't use the native drawing mode,
+      // but we still need to disable selection for consistent behavior
+      if (tool !== BRUSH_SETTINGS.DRAWING_TOOLS.DRAW) {
+        fabricCanvas.selection = false;
+        fabricCanvas.defaultCursor = 'crosshair';
+      }
     } else {
       // Disable drawing mode for other tools
       fabricCanvas.isDrawingMode = BRUSH_SETTINGS.DEFAULT_DRAWING_MODE;
+      
+      // For selection tool, enable selection
+      if (tool === 'select') {
+        fabricCanvas.selection = true;
+        fabricCanvas.defaultCursor = 'default';
+      }
     }
     
-    logger.debug(`Brush settings updated: tool=${tool}, color=${lineColor}, thickness=${lineThickness}`);
+    logger.debug(`Brush settings updated: tool=${tool}, color=${lineColor}, thickness=${lineThickness}, isDrawingTool=${isDrawingTool}`);
     
   }, [fabricCanvasRef, tool, lineColor, lineThickness]);
 
