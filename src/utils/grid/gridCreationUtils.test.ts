@@ -1,6 +1,6 @@
 
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { createBasicEmergencyGrid, validateGrid } from '../gridCreationUtils';
+import { createBasicEmergencyGrid, validateGrid, verifyGridExists, retryWithBackoff } from '../gridCreationUtils';
 import { Canvas as FabricCanvas } from 'fabric';
 
 // Mock Fabric to avoid DOM dependencies in tests
@@ -62,6 +62,18 @@ describe('gridCreationUtils', () => {
     (canvas.contains as any).mockReturnValue(true);
     
     const result = validateGrid(canvas, gridLayerRef);
+    expect(result).toBe(true);
+  });
+
+  test('should verify grid exists', () => {
+    gridLayerRef.current = [
+      { type: 'line', visible: true },
+      { type: 'line', visible: true }
+    ];
+    
+    (canvas.contains as any).mockReturnValue(true);
+    
+    const result = verifyGridExists(canvas, gridLayerRef);
     expect(result).toBe(true);
   });
 });

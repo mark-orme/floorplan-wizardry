@@ -1,4 +1,3 @@
-
 /**
  * Grid creation utilities
  * Provides functions for creating and managing the grid on canvas
@@ -6,6 +5,130 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from 'fabric';
 import { GRID_SPACING, GRID_MAJOR_SPACING, CANVAS_DEFAULT_WIDTH, CANVAS_DEFAULT_HEIGHT, MAX_GRID_CREATION_ATTEMPTS, MIN_GRID_CREATION_INTERVAL } from '@/constants/numerics';
+
+/**
+ * Create a complete grid with all components
+ * Creates both normal and emergency grid elements
+ * 
+ * @param {FabricCanvas | null} canvas - The fabric canvas
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @returns {FabricObject[]} Array of created grid objects
+ */
+export const createCompleteGrid = (
+  canvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  if (!canvas) {
+    console.error("Cannot create complete grid: Canvas is null");
+    return [];
+  }
+  
+  try {
+    // Clear any existing grid objects from canvas
+    if (gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    }
+    
+    const gridObjects: FabricObject[] = [];
+    const canvasWidth = canvas.width || CANVAS_DEFAULT_WIDTH;
+    const canvasHeight = canvas.height || CANVAS_DEFAULT_HEIGHT;
+    
+    // Create major grid lines (every 100 pixels)
+    // Vertical lines
+    for (let x = 0; x <= canvasWidth; x += GRID_MAJOR_SPACING) {
+      const line = new Line([x, 0, x, canvasHeight], {
+        stroke: '#4090CC',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      }) as unknown as FabricObject;
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Horizontal lines
+    for (let y = 0; y <= canvasHeight; y += GRID_MAJOR_SPACING) {
+      const line = new Line([0, y, canvasWidth, y], {
+        stroke: '#4090CC',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      }) as unknown as FabricObject;
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create minor grid lines (every 10 pixels)
+    // Skip minor lines outside safe performance bounds
+    if (canvasWidth * canvasHeight < 4000000) {
+      // Vertical minor lines
+      for (let x = 0; x <= canvasWidth; x += GRID_SPACING) {
+        if (x % GRID_MAJOR_SPACING !== 0) { // Skip where major lines exist
+          const line = new Line([x, 0, x, canvasHeight], {
+            stroke: '#A0C5E0',
+            strokeWidth: 0.5,
+            selectable: false,
+            evented: false,
+            objectType: 'grid'
+          }) as unknown as FabricObject;
+          
+          canvas.add(line);
+          gridObjects.push(line);
+        }
+      }
+      
+      // Horizontal minor lines
+      for (let y = 0; y <= canvasHeight; y += GRID_SPACING) {
+        if (y % GRID_MAJOR_SPACING !== 0) { // Skip where major lines exist
+          const line = new Line([0, y, canvasWidth, y], {
+            stroke: '#A0C5E0',
+            strokeWidth: 0.5,
+            selectable: false,
+            evented: false,
+            objectType: 'grid'
+          }) as unknown as FabricObject;
+          
+          canvas.add(line);
+          gridObjects.push(line);
+        }
+      }
+    }
+    
+    // Add origin marker
+    const originMarker = new Text('0,0', {
+      left: 5,
+      top: 5,
+      fontSize: 12,
+      fill: '#555555',
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    }) as unknown as FabricObject;
+    
+    canvas.add(originMarker);
+    gridObjects.push(originMarker);
+    
+    // Force render the canvas
+    canvas.requestRenderAll();
+    
+    // Store grid objects in reference
+    gridLayerRef.current = gridObjects;
+    
+    return gridObjects;
+  } catch (error) {
+    console.error("Error creating complete grid:", error);
+    return [];
+  }
+};
 
 /**
  * Create a basic emergency grid on the canvas
@@ -204,14 +327,14 @@ export const reorderGridObjects = (
         obj.strokeWidth && 
         obj.strokeWidth === 1
       ) {
-        canvas.sendToFront(obj);
+        canvas.bringForward(obj);
       }
     });
     
     // Bring text labels to front
     gridLayerRef.current.forEach(obj => {
       if (obj.type === 'text') {
-        canvas.bringToFront(obj);
+        canvas.bringForward(obj);
       }
     });
     
