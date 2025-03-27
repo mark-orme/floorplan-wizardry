@@ -12,7 +12,8 @@ export type {
   GridDimensions,
   GridRenderResult,
   CustomTouchEvent,
-  CustomFabricTouchEvent
+  CustomFabricTouchEvent,
+  FabricPointerEvent
 } from './fabric.d';
 
 /**

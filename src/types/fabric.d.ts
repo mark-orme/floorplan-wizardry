@@ -4,6 +4,8 @@
  * @module types/fabric
  */
 
+import { Object as FabricObject } from 'fabric';
+
 /**
  * Options used when creating a Fabric.js canvas
  * @interface CanvasCreationOptions
@@ -87,4 +89,29 @@ export interface CustomFabricTouchEvent {
   }[];
   /** Original Touch or Event object */
   e: Touch | Event;
+}
+
+/**
+ * Extended Fabric pointer event type for compatibility with Fabric.js v6
+ * @interface FabricPointerEvent
+ */
+export interface FabricPointerEvent {
+  /** Original browser event */
+  e: MouseEvent | TouchEvent;
+  /** Pointer position */
+  pointer: { x: number; y: number };
+  /** Absolute pointer position */
+  absolutePointer: { x: number; y: number };
+  /** Scene point */
+  scenePoint: { x: number; y: number };
+  /** Viewport point */
+  viewportPoint: { x: number; y: number };
+  /** Target object */
+  target?: FabricObject | null;
+  /** Sub-targets */
+  subTargets?: FabricObject[];
+  /** Whether this is a click event */
+  isClick?: boolean;
+  /** Current sub-targets */
+  currentSubTargets?: FabricObject[];
 }

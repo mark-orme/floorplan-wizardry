@@ -5,25 +5,9 @@
  * @module fabric/gestures
  */
 import { Canvas, PencilBrush, Point, Object as FabricObject } from 'fabric';
-import type { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
+import type { CustomTouchEvent, CustomFabricTouchEvent, FabricPointerEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { isTouchEvent, isMouseEvent } from '@/types/fabric';
-
-/**
- * Type that represents the expected event structure for Fabric.js v6
- * This fixes TypeScript compatibility with Fabric.js event system
- */
-type FabricPointerEvent = {
-  e: MouseEvent | TouchEvent;
-  pointer: Point;
-  absolutePointer: Point;
-  scenePoint: Point;
-  viewportPoint: Point;
-  target?: FabricObject | null;
-  subTargets?: FabricObject[];
-  isClick?: boolean;
-  currentSubTargets?: FabricObject[];
-}
 
 /**
  * Type guard to check if a value is a Touch
@@ -106,11 +90,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         target: null,
         subTargets: [],
-        isClick: true,
+        isClick: true, // Required to be explicit here
         currentSubTargets: []
       };
       
-      canvas.fire('mouse:down', eventInfo);
+      // Use the canvas.fire with the EventInfo explicitly setting isClick to true
+      canvas.fire('mouse:down', {
+        ...eventInfo,
+        isClick: true,
+        currentSubTargets: []
+      });
 
       console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
     }
@@ -155,11 +144,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         target: null,
         subTargets: [],
-        isClick: false,
+        isClick: false, // Required to be explicit
         currentSubTargets: []
       };
       
-      canvas.fire('mouse:move', eventInfo);
+      // Use the canvas.fire with the EventInfo explicitly setting isClick to false
+      canvas.fire('mouse:move', {
+        ...eventInfo,
+        isClick: false,
+        currentSubTargets: []
+      });
     }
 
     for (let i = 0; i < touches.length; i++) {
@@ -206,11 +200,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         target: null,
         subTargets: [],
-        isClick: true,
+        isClick: true, // Required to be explicit
         currentSubTargets: []
       };
       
-      canvas.fire('mouse:up', eventInfo);
+      // Use the canvas.fire with the EventInfo explicitly setting isClick to true
+      canvas.fire('mouse:up', {
+        ...eventInfo,
+        isClick: true,
+        currentSubTargets: []
+      });
 
       console.log("Drawing ended");
     }
@@ -256,11 +255,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           viewportPoint: touchPosition.clone(),
           target: null,
           subTargets: [],
-          isClick: false,
+          isClick: false, // Not a click for cancel events
           currentSubTargets: []
         };
         
-        canvas.fire('mouse:up', eventInfo);
+        // Use the canvas.fire with the EventInfo explicitly setting isClick to false
+        canvas.fire('mouse:up', {
+          ...eventInfo,
+          isClick: false,
+          currentSubTargets: []
+        });
       }
     }
 
