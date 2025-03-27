@@ -5,7 +5,7 @@
  * @module useObjectEvents
  */
 import { useEffect } from "react";
-import type { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import type { Canvas as FabricCanvas, Object as FabricObject, TEvent } from "fabric";
 import logger from "@/utils/logger";
 import type { BaseEventHandlerProps, EventHandlerResult } from "./types";
 
@@ -44,11 +44,18 @@ interface IUseObjectEventsProps extends BaseEventHandlerProps {
 }
 
 /**
+ * Interface for events with target objects
+ */
+interface TargetEvent extends TEvent {
+  target?: FabricObject;
+}
+
+/**
  * Type for handling Fabric's event system
  * Fabric.js requires this type for event handlers
  * This helps with type safety when adding/removing event listeners
  */
-type FabricEventHandler = (e: unknown) => void;
+type FabricEventHandler = (e: TargetEvent) => void;
 
 /**
  * Hook to handle object modification and removal events
@@ -81,7 +88,7 @@ export const useObjectEvents = ({
      * - Rotating objects
      * - Changing object properties (color, opacity, etc.)
      */
-    const handleObjectModified = (): void => {
+    const handleObjectModified = (e: TargetEvent): void => {
       logger.info("Object modified, saving state");
       saveCurrentState();
     };
@@ -98,24 +105,21 @@ export const useObjectEvents = ({
      * Enables undo for object deletion operations, allowing
      * users to recover accidentally deleted objects
      */
-    const handleObjectRemoved = (): void => {
+    const handleObjectRemoved = (e: TargetEvent): void => {
       logger.info("Object removed, saving state");
       saveCurrentState();
     };
     
-    // Register event handlers with proper typing
-    // We need to use 'any' casting here due to Fabric.js event system limitations
-    // The 'as any' is necessary because Fabric's TypeScript definitions don't
-    // perfectly match the actual event system implementation
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified as FabricEventHandler);
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved as FabricEventHandler);
+    // Register event handlers
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED, handleObjectModified as FabricEventHandler);
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED, handleObjectRemoved as FabricEventHandler);
     
     // Clean up event handlers when component unmounts
     // This is crucial to prevent memory leaks and duplicate handlers
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified as FabricEventHandler);
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved as FabricEventHandler);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED, handleObjectModified as FabricEventHandler);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED, handleObjectRemoved as FabricEventHandler);
       }
     };
   }, [fabricCanvasRef, saveCurrentState]);

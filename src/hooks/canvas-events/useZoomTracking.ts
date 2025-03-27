@@ -1,96 +1,136 @@
 
 /**
- * Hook for tracking zoom changes in canvas
+ * Hook for tracking zoom changes on canvas
  * @module useZoomTracking
  */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { useCallback, useEffect } from "react";
+import type { Canvas as FabricCanvas, TEvent } from "fabric";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import { ZOOM_CONSTANTS } from "@/constants/zoomConstants";
 import logger from "@/utils/logger";
 
 /**
- * Canvas event name constants
- * @constant {Object}
+ * Interface for zoom change event
  */
-const CANVAS_EVENTS = {
-  /**
-   * Zoom changed event name
-   * @constant {string}
-   */
-  ZOOM_CHANGED: 'zoom:changed',
-  
-  /**
-   * Custom zoom changed event name
-   * @constant {string}
-   */
-  CUSTOM_ZOOM_CHANGED: 'custom:zoom-changed'
-};
+interface ZoomChangeEvent extends TEvent {
+  zoom?: number;
+  e?: MouseEvent | WheelEvent | TouchEvent;
+}
 
 /**
- * Props type for useZoomTracking
+ * Interface for viewport transform event
  */
-type UseZoomTrackingProps = Pick<BaseEventHandlerProps, 'fabricCanvasRef'>;
+interface ViewportTransformEvent extends TEvent {
+  transform?: number[];
+}
 
 /**
- * Result interface for useZoomTracking
+ * Props for the useZoomTracking hook
+ */
+interface UseZoomTrackingProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  onZoomChange?: (zoom: number) => void;
+}
+
+/**
+ * Result of the useZoomTracking hook
  */
 interface UseZoomTrackingResult extends EventHandlerResult {
-  /** Register zoom change tracking */
   registerZoomTracking: () => (() => void) | undefined;
 }
 
 /**
- * Custom event interface for zoom events
+ * Type for the Fabric event handler to satisfy Fabric.js API
  */
-interface ZoomChangedEvent {
-  zoom: number;
-}
+type FabricEventHandler<T extends TEvent> = (e: T) => void;
 
 /**
- * Extended Canvas type with custom events
- */
-interface ExtendedFabricCanvas extends FabricCanvas {
-  fire(eventName: string, data: unknown): void;
-}
-
-/**
- * Hook to handle zoom tracking
+ * Hook to track zoom changes on canvas
  * @param {UseZoomTrackingProps} props - Hook properties
- * @returns {UseZoomTrackingResult} Zoom tracking functions
+ * @returns {UseZoomTrackingResult} Zoom tracking functions and cleanup
  */
 export const useZoomTracking = ({
-  fabricCanvasRef
+  fabricCanvasRef,
+  onZoomChange
 }: UseZoomTrackingProps): UseZoomTrackingResult => {
   /**
-   * Register zoom change tracking
-   * Sets up event listeners for zoom changes
-   * @returns {Function} Cleanup function
+   * Calculate current zoom from canvas viewportTransform
+   */
+  const getCurrentZoom = useCallback((): number => {
+    if (!fabricCanvasRef.current) return ZOOM_CONSTANTS.DEFAULT_ZOOM;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Extract zoom from viewportTransform
+    const transform = canvas.viewportTransform;
+    if (!transform) return ZOOM_CONSTANTS.DEFAULT_ZOOM;
+    
+    // The zoom is in the first position of the transform matrix
+    return transform[0];
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Register event listeners for zoom changes
    */
   const registerZoomTracking = useCallback((): (() => void) | undefined => {
-    const updateZoomLevel = (): void => {
-      if (fabricCanvasRef.current) {
-        const zoom = fabricCanvasRef.current.getZoom();
-        // Type cast to access custom event type
-        const canvas = fabricCanvasRef.current as ExtendedFabricCanvas;
-        canvas.fire(CANVAS_EVENTS.CUSTOM_ZOOM_CHANGED, { zoom });
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    /**
+     * Handle zoom changed event
+     */
+    const handleZoomChange = (e: ZoomChangeEvent): void => {
+      const zoomLevel = e.zoom || getCurrentZoom();
+      logger.debug(`Zoom changed to: ${zoomLevel}`);
+      
+      if (onZoomChange) {
+        onZoomChange(zoomLevel);
       }
     };
     
-    const fabricCanvas = fabricCanvasRef.current;
-    if (fabricCanvas) {
-      // Cast to appropriate type for Fabric.js
-      const zoomChangedHandler = updateZoomLevel as (e: unknown) => void;
-      fabricCanvas.on(CANVAS_EVENTS.ZOOM_CHANGED as any, zoomChangedHandler);
+    /**
+     * Handle viewport transform event
+     */
+    const handleViewportTransform = (e: ViewportTransformEvent): void => {
+      const zoomLevel = getCurrentZoom();
+      logger.debug(`Viewport transform changed, zoom: ${zoomLevel}`);
       
-      return () => {
-        fabricCanvas.off(CANVAS_EVENTS.ZOOM_CHANGED as any, zoomChangedHandler);
-      };
+      if (onZoomChange) {
+        onZoomChange(zoomLevel);
+      }
+    };
+    
+    // Register event handlers
+    canvas.on('zoom:changed', handleZoomChange as FabricEventHandler<ZoomChangeEvent>);
+    canvas.on('viewport:transform', handleViewportTransform as FabricEventHandler<ViewportTransformEvent>);
+    
+    // Initial zoom check
+    const initialZoom = getCurrentZoom();
+    if (onZoomChange) {
+      onZoomChange(initialZoom);
     }
     
-    return undefined;
-  }, [fabricCanvasRef]);
-
-  return { 
+    // Return cleanup function
+    return () => {
+      if (canvas) {
+        canvas.off('zoom:changed', handleZoomChange as FabricEventHandler<ZoomChangeEvent>);
+        canvas.off('viewport:transform', handleViewportTransform as FabricEventHandler<ViewportTransformEvent>);
+      }
+    };
+  }, [fabricCanvasRef, getCurrentZoom, onZoomChange]);
+  
+  // Register zoom tracking on mount
+  useEffect(() => {
+    const cleanupFn = registerZoomTracking();
+    return () => {
+      if (cleanupFn) {
+        cleanupFn();
+      }
+    };
+  }, [registerZoomTracking]);
+  
+  return {
     registerZoomTracking,
     cleanup: () => {
       logger.debug("Zoom tracking cleanup");

@@ -4,9 +4,16 @@
  * @module usePathEvents
  */
 import { useEffect } from "react";
-import { Canvas as FabricCanvas, Path as FabricPath } from "fabric";
+import type { Canvas as FabricCanvas, Path as FabricPath, TEvent } from "fabric";
 import logger from "@/utils/logger";
-import { PathCreatedEvent, BaseEventHandlerProps, EventHandlerResult } from "./types";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+
+/**
+ * Event interface with path created
+ */
+interface PathCreatedEvent extends TEvent {
+  path: FabricPath;
+}
 
 /**
  * Props for the usePathEvents hook
@@ -19,6 +26,11 @@ interface UsePathEventsProps extends BaseEventHandlerProps {
   /** Function to handle mouse up event */
   handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
 }
+
+/**
+ * Type for the Fabric event handler to satisfy Fabric.js API
+ */
+type FabricEventHandler = (e: PathCreatedEvent) => void;
 
 /**
  * Hook to handle path creation events
@@ -54,14 +66,12 @@ export const usePathEvents = ({
       handleMouseUp();
     };
     
-    // Cast to fabric event handler type
-    const fabricPathCreated = handlePathCreated as (e: unknown) => void;
-    
-    fabricCanvas.on('path:created', fabricPathCreated);
+    // Register the event handler
+    fabricCanvas.on('path:created', handlePathCreated as FabricEventHandler);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('path:created', fabricPathCreated);
+        fabricCanvas.off('path:created', handlePathCreated as FabricEventHandler);
       }
     };
   }, [fabricCanvasRef, processCreatedPath, handleMouseUp, saveCurrentState]);
@@ -69,8 +79,6 @@ export const usePathEvents = ({
   return {
     cleanup: () => {
       if (fabricCanvasRef.current) {
-        const fabricCanvas = fabricCanvasRef.current;
-        // Additional cleanup if needed
         logger.debug("Path events cleanup");
       }
     }

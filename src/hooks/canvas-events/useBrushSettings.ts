@@ -1,52 +1,16 @@
-
 /**
- * Hook for managing brush settings for drawing tools
+ * Hook for managing canvas brush settings
  * @module useBrushSettings
  */
-import { useEffect } from "react";
-import { Canvas as FabricCanvas, PencilBrush } from "fabric";
-import type { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import { useEffect, useRef } from "react";
+import type { Canvas as FabricCanvas, TEvent, BaseBrush } from "fabric";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import { DrawingTool } from "@/hooks/useCanvasState";
 import logger from "@/utils/logger";
-import { LINE_THICKNESS } from "@/constants/drawingConstants";
-import { disableSelection, enableSelection } from "@/utils/fabric/selection";
-
-/**
- * Constants for brush settings
- * @constant {Object}
- */
-const BRUSH_SETTINGS = {
-  /**
-   * Default drawing mode state (disabled)
-   * @constant {boolean}
-   */
-  DEFAULT_DRAWING_MODE: false,
-  
-  /**
-   * Valid drawing tool names
-   * @constant {Record<string, string>}
-   */
-  DRAWING_TOOLS: {
-    DRAW: 'draw',
-    WALL: 'wall',
-    ROOM: 'room',
-    STRAIGHT_LINE: 'straightLine'
-  },
-  
-  /**
-   * Default cursor styles for different tools
-   * @constant {Record<string, string>}
-   */
-  CURSOR_STYLES: {
-    DEFAULT: 'default',
-    CROSSHAIR: 'crosshair',
-    GRAB: 'grab',
-    MOVE: 'move'
-  }
-};
+import { BRUSH_CONSTANTS } from "@/constants/brushConstants";
 
 /**
  * Props for the useBrushSettings hook
- * @interface UseBrushSettingsProps
  */
 interface UseBrushSettingsProps extends BaseEventHandlerProps {
   /** Current line color */
@@ -56,9 +20,23 @@ interface UseBrushSettingsProps extends BaseEventHandlerProps {
 }
 
 /**
- * Hook to set up brush settings for drawing tools
- * Configures drawing brush properties and cursor styles based on the active tool
- * 
+ * Interface for brush settings
+ */
+interface BrushSettings {
+  /** Brush color */
+  color: string;
+  /** Brush width */
+  width: number;
+  /** Brush opacity */
+  opacity?: number;
+  /** Brush shadow color */
+  shadowColor?: string;
+  /** Brush shadow blur */
+  shadowBlur?: number;
+}
+
+/**
+ * Hook to manage brush settings for drawing
  * @param {UseBrushSettingsProps} props - Hook properties
  * @returns {EventHandlerResult} Cleanup function
  */
@@ -66,100 +44,90 @@ export const useBrushSettings = ({
   fabricCanvasRef,
   tool,
   lineColor,
-  lineThickness = LINE_THICKNESS.DEFAULT
+  lineThickness
 }: UseBrushSettingsProps): EventHandlerResult => {
+  // Keep track of previous settings for optimization
+  const prevSettingsRef = useRef<{
+    color: string;
+    width: number;
+    tool: DrawingTool;
+  }>({
+    color: lineColor,
+    width: lineThickness,
+    tool: tool
+  });
+  
+  // Update brush settings when props change
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
-    const fabricCanvas = fabricCanvasRef.current;
+    const canvas = fabricCanvasRef.current;
+    const brush = canvas.freeDrawingBrush;
     
-    // Ensure PencilBrush is properly initialized
-    if (!fabricCanvas.freeDrawingBrush || !(fabricCanvas.freeDrawingBrush instanceof PencilBrush)) {
-      fabricCanvas.freeDrawingBrush = new PencilBrush(fabricCanvas);
-      console.log("Created new PencilBrush for canvas");
+    if (!brush) {
+      logger.warn("Cannot update brush settings: Brush not initialized");
+      return;
     }
     
-    // Check if the current tool is a drawing tool
-    const isDrawingTool = 
-      tool === BRUSH_SETTINGS.DRAWING_TOOLS.DRAW || 
-      tool === BRUSH_SETTINGS.DRAWING_TOOLS.WALL || 
-      tool === BRUSH_SETTINGS.DRAWING_TOOLS.ROOM || 
-      tool === BRUSH_SETTINGS.DRAWING_TOOLS.STRAIGHT_LINE;
+    const prevSettings = prevSettingsRef.current;
     
-    // Set up brush settings based on tool
-    if (isDrawingTool) {
-      // Configure drawing brush
-      if (fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.color = lineColor;
-        fabricCanvas.freeDrawingBrush.width = lineThickness;
+    // Only update if settings have changed
+    if (
+      prevSettings.color !== lineColor ||
+      prevSettings.width !== lineThickness ||
+      prevSettings.tool !== tool
+    ) {
+      logger.info("Updating brush settings:", { 
+        color: lineColor, 
+        width: lineThickness,
+        tool: tool
+      });
+      
+      // Update brush properties
+      brush.color = lineColor;
+      brush.width = lineThickness;
+      
+      // Update drawing mode based on tool
+      canvas.isDrawingMode = tool === 'draw';
+      
+      // Add customizations based on the tool
+      if (tool === 'draw') {
+        // Apply additional brush settings for freehand drawing
+        brush.opacity = BRUSH_CONSTANTS.DEFAULT_OPACITY;
         
-        // Store the line thickness on the canvas object for reference by pressure sensitivity
-        (fabricCanvas as any)._lineThickness = lineThickness;
+        // Add shadow if supported by the brush
+        if ('shadowColor' in brush) {
+          (brush as unknown as { shadowColor: string }).shadowColor = BRUSH_CONSTANTS.DEFAULT_SHADOW_COLOR;
+        }
         
-        // Add detailed logging
-        console.log(`Brush configured: color=${lineColor}, width=${lineThickness}`);
-      } else {
-        console.warn("freeDrawingBrush not available on canvas");
+        if ('shadowBlur' in brush) {
+          (brush as unknown as { shadowBlur: number }).shadowBlur = BRUSH_CONSTANTS.DEFAULT_SHADOW_BLUR;
+        }
       }
       
-      // Enable drawing mode only for the draw tool
-      fabricCanvas.isDrawingMode = tool === BRUSH_SETTINGS.DRAWING_TOOLS.DRAW;
-      
-      // For wall, room, and straight line we don't use the native drawing mode,
-      // but we still need to disable selection for consistent behavior
-      if (tool !== BRUSH_SETTINGS.DRAWING_TOOLS.DRAW) {
-        disableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
-        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
-        
-        // Add detailed logging
-        console.log(`Custom drawing tool (${tool}) enabled: selection disabled, cursor set to crosshair`);
-      } else {
-        // For the regular draw tool, we also disable selection
-        disableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
-        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.CROSSHAIR;
-        
-        // Add detailed logging
-        console.log(`Draw tool enabled: isDrawingMode=${fabricCanvas.isDrawingMode}, selection disabled`);
-      }
-      
-      console.log(`Brush settings updated for ${tool} tool: drawing mode = ${fabricCanvas.isDrawingMode}, color = ${lineColor}, thickness = ${lineThickness}`);
-    } else {
-      // Disable drawing mode for other tools
-      fabricCanvas.isDrawingMode = BRUSH_SETTINGS.DEFAULT_DRAWING_MODE;
-      
-      // For selection tool, enable selection
-      if (tool === 'select') {
-        enableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.DEFAULT;
-        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.MOVE;
-        console.log("Selection mode enabled");
-      } else if (tool === 'hand') {
-        // For hand tool, disable selection but set appropriate cursor
-        disableSelection(fabricCanvas);
-        fabricCanvas.defaultCursor = BRUSH_SETTINGS.CURSOR_STYLES.GRAB;
-        fabricCanvas.hoverCursor = BRUSH_SETTINGS.CURSOR_STYLES.GRAB;
-        console.log("Hand tool mode enabled");
-      } else {
-        // For other tools, disable selection
-        disableSelection(fabricCanvas);
-        console.log(`Other tool mode (${tool}) - selection disabled`);
-      }
+      // Save current settings as previous
+      prevSettingsRef.current = {
+        color: lineColor,
+        width: lineThickness,
+        tool: tool
+      };
     }
-    
-    // Force render to apply changes
-    fabricCanvas.requestRenderAll();
-    
-    logger.debug(`Brush settings updated: tool=${tool}, color=${lineColor}, thickness=${lineThickness}, isDrawingTool=${isDrawingTool}`);
-    
   }, [fabricCanvasRef, tool, lineColor, lineThickness]);
-
+  
   return {
     cleanup: () => {
-      if (fabricCanvasRef.current) {
-        logger.debug("Brush settings cleanup");
-      }
+      logger.debug("Brush settings cleanup");
     }
   };
 };
+
+/**
+ * Declare extension to Fabric module
+ */
+declare module 'fabric' {
+  interface BaseBrush {
+    color: string;
+    width: number;
+    opacity?: number;
+  }
+}
