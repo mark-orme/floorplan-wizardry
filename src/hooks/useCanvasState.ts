@@ -1,10 +1,11 @@
+
 /**
  * Custom hook for centralized canvas state management
  * @module useCanvasState
  */
 import { useState, useEffect } from "react";
-import { FloorPlan } from '@/types/floorPlanTypes';
-import { CanvasDimensions } from "@/types/drawingTypes";
+import type { FloorPlan } from '@/types/floorPlanTypes';
+import type { CanvasDimensions } from "@/types";
 
 /**
  * Type for drawing tools including the select tool
@@ -109,3 +110,4 @@ export const useCanvasState = (): CanvasStateReturn => {
     setLineColor
   };
 };
+

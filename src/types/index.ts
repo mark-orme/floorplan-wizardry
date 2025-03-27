@@ -5,11 +5,15 @@
  * @module types
  */
 
-// Export all types from drawingTypes
-export * from './drawingTypes';
+// Re-export types using named exports to avoid ambiguity
+export type { Point, CanvasDimensions, OperationResult, GridCreationState } from './drawingTypes';
+export type { DrawingState } from './drawingStateTypes';
+export type { DebugInfoState } from './debugTypes';
 
-// Export all types from debugTypes
-export * from './debugTypes';
+// Export additional types from specialized files
+export * from './geometryTypes';
+export * from './floorPlanTypes';
+export * from './gridTypes';
+export * from './fabricTypes';
+export * from './performanceTypes';
 
-// Export all types from drawingStateTypes
-export * from './drawingStateTypes';

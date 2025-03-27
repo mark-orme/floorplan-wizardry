@@ -1,6 +1,7 @@
 
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Canvas, Object as FabricObject } from "fabric";
-import { dumpGridState, attemptGridRecovery, forceCreateGrid } from "./gridDebugUtils";
+import { dumpGridState, createBasicEmergencyGrid } from "./gridDebugUtils";
 
 // Mock console methods
 const originalConsoleLog = console.log;
@@ -9,9 +10,9 @@ const originalConsoleError = console.error;
 
 beforeEach(() => {
   // Mock console methods
-  console.log = jest.fn();
-  console.warn = jest.fn();
-  console.error = jest.fn();
+  console.log = vi.fn();
+  console.warn = vi.fn();
+  console.error = vi.fn();
 });
 
 afterEach(() => {
@@ -50,3 +51,4 @@ describe("gridDebugUtils", () => {
   
   // Add more tests as needed
 });
+

@@ -8,8 +8,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { 
   createCompleteGrid,
-  createBasicEmergencyGrid, 
-  validateGrid, 
+  createBasicEmergencyGrid as emergencyCreate, 
+  validateGrid,
   ensureGrid 
 } from "@/utils/gridCreationUtils";
 import logger from "@/utils/logger";
@@ -104,7 +104,7 @@ export const useReliableGridInitialization = (
         
         // Try emergency grid as fallback
         try {
-          gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+          gridObjects = emergencyCreate(canvas, gridLayerRef);
         } catch (emergencyError) {
           logger.error("Emergency grid creation also failed:", emergencyError);
           console.error("❌ Emergency grid creation also failed:", emergencyError);
@@ -112,7 +112,7 @@ export const useReliableGridInitialization = (
       }
       
       // Check if grid was created successfully
-      if (gridObjects.length > 0) {
+      if (Array.isArray(gridObjects) && gridObjects.length > 0) {
         logger.info(`Grid initialized with ${gridObjects.length} objects`);
         console.log(`✅ Grid initialized with ${gridObjects.length} objects`);
         
@@ -228,3 +228,4 @@ export const useReliableGridInitialization = (
     getGridStatus
   };
 };
+

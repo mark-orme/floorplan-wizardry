@@ -1,122 +1,97 @@
 
-/**
- * Tests for grid creation utilities
- */
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { createBasicEmergencyGrid, validateGrid } from '../gridCreationUtils';
-import { Canvas as FabricCanvas } from 'fabric';
-
-// Mock Fabric to avoid DOM dependencies in tests
-vi.mock('fabric', () => {
-  // Create mock classes
-  const MockLine = vi.fn().mockImplementation(() => ({
-    type: 'line',
-    visible: true
-  }));
-  
-  const MockText = vi.fn().mockImplementation(() => ({
-    type: 'text',
-    visible: true
-  }));
-  
-  // Create mock canvas
-  const MockCanvas = vi.fn().mockImplementation(() => ({
-    width: 800,
-    height: 600,
-    add: vi.fn(),
-    remove: vi.fn(),
-    contains: vi.fn().mockReturnValue(true),
-    getObjects: vi.fn().mockReturnValue([]),
-    sendObjectToBack: vi.fn(),
-    bringObjectToFront: vi.fn(),
-    requestRenderAll: vi.fn()
-  }));
-  
-  return {
-    Canvas: MockCanvas,
-    Line: MockLine,
-    Text: MockText
-  };
-});
-
-// Mock console logs for cleaner test output
-console.log = vi.fn();
-console.error = vi.fn();
+import { describe, it, expect, vi } from 'vitest';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { 
+  verifyGridExists, 
+  retryWithBackoff, 
+  reorderGridObjects,
+  createCompleteGrid,
+  validateGrid,
+  ensureGrid
+} from '../gridCreationUtils';
 
 describe('gridCreationUtils', () => {
-  let canvas: FabricCanvas;
-  let gridLayerRef: { current: any[] };
-  
-  beforeEach(() => {
-    // Create a mock canvas
-    canvas = new FabricCanvas();
-    
-    // Create a mock grid layer ref
-    gridLayerRef = { current: [] };
-  });
-  
-  describe('createBasicEmergencyGrid', () => {
-    test('should create grid objects and add them to canvas', () => {
-      // Call the function
-      const result = createBasicEmergencyGrid(canvas, gridLayerRef);
-      
-      // Verify grid was created
-      expect(result.length).toBeGreaterThan(0);
-      expect(gridLayerRef.current.length).toBeGreaterThan(0);
-      
-      // Check that canvas.add was called for each object
-      expect(canvas.add).toHaveBeenCalled();
+  describe('verifyGridExists', () => {
+    it('should return false when canvas is null', () => {
+      const gridLayerRef = { current: [] };
+      const result = verifyGridExists(null, gridLayerRef);
+      expect(result).toBe(false);
     });
     
-    test('should handle errors gracefully', () => {
-      // Mock canvas.add to throw an error
-      (canvas.add as any).mockImplementation(() => {
-        throw new Error('Mock error');
+    it('should return false when grid objects array is empty', () => {
+      const canvas = new Canvas(null);
+      const gridLayerRef = { current: [] };
+      const result = verifyGridExists(canvas, gridLayerRef);
+      expect(result).toBe(false);
+    });
+    
+    it('should return false when grid objects are not on canvas', () => {
+      const canvas = new Canvas(null);
+      const mockObjects = [{ id: 'grid1' }, { id: 'grid2' }] as unknown as FabricObject[];
+      const gridLayerRef = { current: mockObjects };
+      
+      // Mock canvas.contains to return false
+      canvas.contains = vi.fn().mockReturnValue(false);
+      
+      const result = verifyGridExists(canvas, gridLayerRef);
+      expect(result).toBe(false);
+      expect(canvas.contains).toHaveBeenCalled();
+    });
+    
+    it('should return true when grid objects are on canvas', () => {
+      const canvas = new Canvas(null);
+      const mockObjects = [{ id: 'grid1' }, { id: 'grid2' }] as unknown as FabricObject[];
+      const gridLayerRef = { current: mockObjects };
+      
+      // Mock canvas.contains to return true
+      canvas.contains = vi.fn().mockReturnValue(true);
+      
+      const result = verifyGridExists(canvas, gridLayerRef);
+      expect(result).toBe(true);
+      expect(canvas.contains).toHaveBeenCalled();
+    });
+  });
+  
+  describe('retryWithBackoff', () => {
+    it('should return the result when operation succeeds on first try', async () => {
+      const operation = vi.fn().mockResolvedValue('success');
+      const result = await retryWithBackoff(operation);
+      expect(result).toBe('success');
+      expect(operation).toHaveBeenCalledTimes(1);
+    });
+    
+    it('should retry the operation when it fails', async () => {
+      // Mock a function that fails once then succeeds
+      const operation = vi.fn()
+        .mockRejectedValueOnce(new Error('Fail'))
+        .mockResolvedValueOnce('success');
+      
+      // Mock setTimeout to execute immediately
+      vi.spyOn(global, 'setTimeout').mockImplementation((callback) => {
+        callback();
+        return 0 as any;
       });
       
-      // Call the function
-      const result = createBasicEmergencyGrid(canvas, gridLayerRef);
+      const result = await retryWithBackoff(operation, 2);
+      expect(result).toBe('success');
+      expect(operation).toHaveBeenCalledTimes(2);
+    });
+    
+    it('should throw after maximum retries', async () => {
+      // Mock a function that always fails
+      const operation = vi.fn().mockRejectedValue(new Error('Always fail'));
       
-      // Verify it handled the error and returned empty array
-      expect(result).toEqual([]);
+      // Mock setTimeout to execute immediately
+      vi.spyOn(global, 'setTimeout').mockImplementation((callback) => {
+        callback();
+        return 0 as any;
+      });
+      
+      await expect(retryWithBackoff(operation, 3)).rejects.toThrow('Always fail');
+      expect(operation).toHaveBeenCalledTimes(3);
     });
   });
   
-  describe('validateGrid', () => {
-    test('should validate grid correctly when valid', () => {
-      // Create mock grid objects
-      gridLayerRef.current = [
-        { type: 'line', x1: 0, x2: 0, y1: 0, y2: 100 }, // vertical
-        { type: 'line', x1: 0, x2: 100, y1: 0, y2: 0 }  // horizontal
-      ];
-      
-      // Mock contains to return true
-      (canvas.contains as any).mockReturnValue(true);
-      
-      // Validate the grid
-      const isValid = validateGrid(canvas, gridLayerRef);
-      
-      // Should be valid
-      expect(isValid).toBe(true);
-    });
-    
-    test('should return false when no grid exists', () => {
-      // Empty grid
-      gridLayerRef.current = [];
-      
-      // Validate the grid
-      const isValid = validateGrid(canvas, gridLayerRef);
-      
-      // Should be invalid
-      expect(isValid).toBe(false);
-    });
-    
-    test('should return false when canvas is null', () => {
-      // Validate with null canvas
-      const isValid = validateGrid(null, gridLayerRef);
-      
-      // Should be invalid
-      expect(isValid).toBe(false);
-    });
-  });
+  // Add more tests as needed
 });
+

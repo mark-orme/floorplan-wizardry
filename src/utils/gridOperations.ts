@@ -1,278 +1,255 @@
+
 /**
- * Grid operation utilities
+ * Grid creation operations
+ * Provides utility functions for grid management
  * @module gridOperations
  */
-import { Canvas as FabricCanvas, Line } from "fabric";
-import { GridCreationState } from "@/types/drawingTypes";
-import logger from "./logger";
-
-// Current grid state
-const gridState: GridCreationState = {
-  isCreating: false,
-  attempts: 0,
-  success: false,
-  error: undefined,
-  creationInProgress: false,
-  consecutiveResets: 0,
-  maxConsecutiveResets: 5,
-  lastAttemptTime: 0,
-  lastCreationTime: 0,
-  throttleInterval: 1000,
-  exists: false,
-  safetyTimeout: null,
-  totalCreations: 0,
-  maxRecreations: 20,
-  minRecreationInterval: 5000,
-  lastDimensions: null,
-  creationLock: {
-    id: 0,
-    timestamp: 0,
-    isLocked: false
-  }
-};
+import { Canvas, Object as FabricObject } from "fabric";
+import type { GridCreationState } from "@/types";
 
 /**
- * Check if grid creation can be scheduled based on current state
- * @param {GridCreationState} state - Current grid state
- * @returns {boolean} True if creation can be scheduled
+ * Get initial grid creation state
+ * @returns {GridCreationState} Default grid state
  */
-export const canScheduleGridCreation = (state: GridCreationState = gridState): boolean => {
-  // If creation is already in progress, don't schedule another
-  if (state.creationInProgress) return false;
-  
-  // If we've had too many consecutive resets, throttle creation
-  if (state.consecutiveResets && state.maxConsecutiveResets && 
-      state.consecutiveResets > state.maxConsecutiveResets) return false;
-  
-  // If we've recently created a grid, throttle creation
-  if (state.lastCreationTime && state.throttleInterval && 
-      Date.now() - state.lastCreationTime < state.throttleInterval && 
-      state.exists) return false;
-  
-  return true;
-};
-
-/**
- * Get current grid state
- * @returns {GridCreationState} Current grid state
- */
-export const getCurrentGridState = (): GridCreationState => {
-  return gridState;
-};
-
-/**
- * Update grid state
- * @param {Partial<GridCreationState>} updates - Updates to apply to grid state
- */
-export const updateGridState = (updates: Partial<GridCreationState>): void => {
-  Object.assign(gridState, updates);
-};
-
-/**
- * Check if grid creation should be throttled
- * @returns {boolean} True if throttling is needed
- */
-export const shouldThrottleGridCreation = (): boolean => {
-  const state = getCurrentGridState();
-  
-  // Check if throttling is needed to prevent excessive grid creation
-  if (state.lastCreationTime && state.throttleInterval && 
-      Date.now() - state.lastCreationTime < state.throttleInterval && 
-      state.exists) {
-    return true;
-  }
-  
-  // Check if max recreations limit is exceeded
-  if (state.totalCreations && state.maxRecreations && state.minRecreationInterval && 
-      state.totalCreations > state.maxRecreations && 
-      state.lastCreationTime && 
-      Date.now() - state.lastCreationTime < state.minRecreationInterval) {
-    return true;
-  }
-  
-  return false;
-};
-
-/**
- * Attempt to create the grid on the canvas
- * @param {FabricCanvas} canvas - The fabric canvas instance
- * @param {number} width - Width of the canvas
- * @param {number} height - Height of the canvas
- * @param {React.Dispatch<React.SetStateAction<string | null>>} setErrorMessage - Error message setter
- * @param {React.Dispatch<React.SetStateAction<boolean>>} setHasError - Error state setter
- * @param {any} setDebugInfo - Debug info setter
- * @param {Function} gridCreationCallback - Callback after grid creation
- * @returns {FabricObject[]} Array of grid lines
- */
-export const tryCreateGrid = (
-  canvas: FabricCanvas,
-  width: number,
-  height: number,
-  setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>,
-  setHasError: React.Dispatch<React.SetStateAction<boolean>>,
-  setDebugInfo: any,
-  gridCreationCallback: any
-): any[] => {
-  const state = getCurrentGridState();
-  
-  if (!canScheduleGridCreation(state)) {
-    console.warn("Grid creation is throttled or locked.");
-    return [];
-  }
-  
-  // Acquire the grid creation lock
-  if (!acquireGridCreationLock("tryCreateGrid")) {
-    console.warn("Failed to acquire grid creation lock.");
-    return [];
-  }
-  
-  try {
-    // Update grid state to reflect the attempt
-    updateGridState({
-      isCreating: true,
-      attempts: (state.attempts || 0) + 1,
-      creationInProgress: true,
-      lastAttemptTime: Date.now(),
-      consecutiveResets: (state.consecutiveResets || 0) + 1
-    });
-    
-    // Create grid lines
-    const gridLines = createGridLines(canvas, width, height);
-    
-    // Update grid state on success
-    updateGridState({
-      isCreating: false,
-      success: true,
-      creationInProgress: false,
-      consecutiveResets: 0,
-      lastCreationTime: Date.now(),
-      exists: true,
-      totalCreations: (state.totalCreations || 0) + 1
-    });
-    
-    // Reset grid progress after successful creation
-    scheduleGridProgressReset("success");
-    
-    // Update debug info and execute callback
-    setDebugInfo((prevDebugInfo: any) => ({
-      ...prevDebugInfo,
-      gridCreationAttempts: prevDebugInfo.gridCreationAttempts + 1,
-      lastGridCreationTime: Date.now()
-    }));
-    
-    gridCreationCallback(true);
-    
-    return gridLines;
-  } catch (error: any) {
-    console.error("Grid creation failed:", error);
-    
-    updateGridState({
-      isCreating: false,
-      success: false,
-      error: error.message,
-      creationInProgress: false,
-      consecutiveResets: (state.consecutiveResets || 0) + 1
-    });
-    
-    setErrorMessage(`Grid creation failed: ${error.message}`);
-    setHasError(true);
-    
-    // Update debug info
-    setDebugInfo((prevDebugInfo: any) => ({
-      ...prevDebugInfo,
-      gridCreationFailures: prevDebugInfo.gridCreationFailures + 1,
-      lastError: error.message,
-      lastErrorTime: Date.now()
-    }));
-    
-    gridCreationCallback(false);
-    
-    return [];
-  } finally {
-    // Release the grid creation lock
-    releaseGridCreationLock("tryCreateGrid");
-  }
-};
-
-/**
- * Acquire grid creation lock
- */
-export const acquireGridCreationLock = (id: string): boolean => {
-  const state = getCurrentGridState();
-  if (state.creationLock && state.creationLock.isLocked) return false;
-  
-  updateGridState({
-    creationLock: {
-      id: Date.now(),
-      timestamp: Date.now(),
-      isLocked: true
-    }
-  });
-  return true;
-};
-
-/**
- * Release grid creation lock
- */
-export const releaseGridCreationLock = (id: string): void => {
-  updateGridState({
-    creationLock: {
-      id: 0,
-      timestamp: 0,
-      isLocked: false
-    }
-  });
-};
-
-/**
- * Schedule grid progress reset
- * @param {string} reason - Reason for reset
- * @returns {number} Timeout ID
- */
-export const scheduleGridProgressReset = (reason: string): number => {
-  const timeoutId = window.setTimeout(() => {
-    updateGridState({
-      creationInProgress: false
-    });
-  }, 5000);
-  return timeoutId;
-};
-
-/**
- * Create grid lines for the canvas
- * @param {FabricCanvas} canvas - The fabric canvas instance
- * @param {number} width - Width of the canvas
- * @param {number} height - Height of the canvas
- * @returns {FabricObject[]} Array of grid lines
- */
-export const createGridLines = (canvas: FabricCanvas, width: number, height: number): any[] => {
-  const gridSize = 20; // Define grid size
-  const gridLines: any[] = [];
-  
-  // Function to create a grid line
-  const createLine = (x1: number, y1: number, x2: number, y2: number) => {
-    return new Line([x1, y1, x2, y2], {
-      stroke: '#cccccc',
-      strokeWidth: 1,
-      selectable: false,
-      evented: false,
-      objectType: 'grid'
-    });
+export const getInitialGridState = (): GridCreationState => {
+  return {
+    inProgress: false,
+    isCreated: false,
+    attempts: 0,
+    lastAttemptTime: 0,
+    hasError: false,
+    errorMessage: "",
+    isCreating: false,
+    creationInProgress: false,
+    consecutiveResets: 0,
+    maxConsecutiveResets: 5,
+    exists: false,
+    lastCreationTime: 0,
+    throttleInterval: 500,
+    totalCreations: 0,
+    maxRecreations: 10,
+    minRecreationInterval: 1000,
+    creationLock: false
   };
-  
-  // Create vertical grid lines
-  for (let i = gridSize; i < width; i += gridSize) {
-    const line = createLine(i, 0, i, height);
-    gridLines.push(line);
-    canvas.add(line);
-  }
-  
-  // Create horizontal grid lines
-  for (let j = gridSize; j < height; j += gridSize) {
-    const line = createLine(0, j, width, j);
-    gridLines.push(line);
-    canvas.add(line);
-  }
-  
-  return gridLines;
 };
+
+/**
+ * Check if grid creation is allowed based on state
+ * @param state - Current grid creation state
+ * @returns {boolean} True if grid creation is allowed
+ */
+export const canCreateGrid = (state: GridCreationState): boolean => {
+  // Don't allow if creation is already in progress
+  if (state.creationInProgress) {
+    return false;
+  }
+  
+  // Don't allow if we've reset too many times in a row
+  if (state.consecutiveResets !== undefined && 
+      state.maxConsecutiveResets !== undefined && 
+      state.consecutiveResets >= state.maxConsecutiveResets) {
+    return false;
+  }
+  
+  // Don't allow if we've tried too recently
+  if (state.lastCreationTime !== undefined && 
+      state.throttleInterval !== undefined && 
+      Date.now() - state.lastCreationTime < state.throttleInterval) {
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Check if grid recreation is allowed based on state
+ * @param state - Current grid creation state
+ * @returns {boolean} True if grid recreation is allowed
+ */
+export const canRecreateGrid = (state: GridCreationState): boolean => {
+  // Don't allow if creation is already in progress
+  if (state.creationInProgress) {
+    return false;
+  }
+  
+  // Don't allow if we've tried too recently
+  if (state.lastCreationTime !== undefined && 
+      state.throttleInterval !== undefined && 
+      Date.now() - state.lastCreationTime < state.throttleInterval) {
+    return false;
+  }
+  
+  // Don't allow if grid exists and we've recreated too many times
+  if (state.exists && 
+      state.totalCreations !== undefined && 
+      state.maxRecreations !== undefined && 
+      state.minRecreationInterval !== undefined && 
+      state.totalCreations >= state.maxRecreations) {
+    return false;
+  }
+  
+  // Don't allow if grid exists and we've tried too recently
+  if (state.exists && 
+      state.lastCreationTime !== undefined && 
+      state.minRecreationInterval !== undefined && 
+      Date.now() - state.lastCreationTime < state.minRecreationInterval) {
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Update grid creation state with creation start
+ * @param state - Current grid creation state
+ * @returns {GridCreationState} Updated state
+ */
+export const startGridCreation = (state: GridCreationState): GridCreationState => {
+  return {
+    ...state,
+    inProgress: true,
+    isCreating: true,
+    attempts: state.attempts + 1,
+    lastAttemptTime: Date.now(),
+    hasError: false,
+    errorMessage: ""
+  };
+};
+
+/**
+ * Update grid creation state with successful creation
+ * @param state - Current grid creation state
+ * @returns {GridCreationState} Updated state
+ */
+export const completeGridCreation = (state: GridCreationState): GridCreationState => {
+  return {
+    ...state,
+    inProgress: false,
+    isCreating: false,
+    isCreated: true,
+    lastAttemptTime: Date.now(),
+    hasError: false,
+    consecutiveResets: 0,
+    exists: true,
+    lastCreationTime: Date.now(),
+    totalCreations: (state.totalCreations || 0) + 1
+  };
+};
+
+/**
+ * Update grid creation state with failed creation
+ * @param state - Current grid creation state
+ * @param error - Error message
+ * @returns {GridCreationState} Updated state
+ */
+export const failGridCreation = (state: GridCreationState, error: string): GridCreationState => {
+  return {
+    ...state,
+    inProgress: false,
+    isCreating: false,
+    hasError: true,
+    errorMessage: error,
+    consecutiveResets: (state.consecutiveResets || 0) + 1,
+    lastAttemptTime: Date.now()
+  };
+};
+
+/**
+ * Verify if grid creation was successful
+ * @param canvas - Canvas instance
+ * @param gridObjects - Created grid objects
+ * @returns {boolean} True if grid creation was successful
+ */
+export const verifyGridCreation = (
+  canvas: Canvas | null,
+  gridObjects: FabricObject[]
+): boolean => {
+  if (!canvas) return false;
+  
+  // Check if we have grid objects
+  if (!Array.isArray(gridObjects) || gridObjects.length === 0) {
+    return false;
+  }
+  
+  // Check if they're on the canvas
+  const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+  return objectsOnCanvas.length > 0;
+};
+
+/**
+ * Reset grid creation state for a fresh attempt
+ * @param state - Current grid creation state
+ * @returns {GridCreationState} Reset state
+ */
+export const resetGridCreationState = (state: GridCreationState): GridCreationState => {
+  return {
+    ...state,
+    inProgress: false,
+    isCreating: false,
+    hasError: false,
+    errorMessage: "",
+    consecutiveResets: (state.consecutiveResets || 0) + 1
+  };
+};
+
+/**
+ * Acquire a creation lock to prevent concurrent operations
+ * @param state - Current grid creation state
+ * @returns {boolean} True if lock was acquired
+ */
+export const acquireCreationLock = (state: GridCreationState): boolean => {
+  if (state.creationLock && state.creationLock === true) {
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Update state with creation lock acquisition
+ * @param state - Current grid creation state
+ * @returns {GridCreationState} Updated state with lock
+ */
+export const setCreationLock = (state: GridCreationState): GridCreationState => {
+  return {
+    ...state,
+    creationLock: true
+  };
+};
+
+/**
+ * Update state with creation lock release
+ * @param state - Current grid creation state
+ * @returns {GridCreationState} Updated state without lock
+ */
+export const releaseCreationLock = (state: GridCreationState): GridCreationState => {
+  return {
+    ...state,
+    creationLock: false
+  };
+};
+
+/**
+ * Update grid creation state with creation in progress
+ * @param state - Current grid creation state
+ * @returns {GridCreationState} Updated state
+ */
+export const setCreationInProgress = (state: GridCreationState): GridCreationState => {
+  return {
+    ...state,
+    creationInProgress: true
+  };
+};
+
+/**
+ * Update grid creation state with creation completed
+ * @param state - Current grid creation state
+ * @returns {GridCreationState} Updated state
+ */
+export const clearCreationInProgress = (state: GridCreationState): GridCreationState => {
+  return {
+    ...state,
+    creationInProgress: false
+  };
+};
+

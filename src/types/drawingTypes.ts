@@ -46,6 +46,8 @@ export interface DrawingState {
   currentZoom?: number;
   /** Array of all points in the current stroke */
   points: Point[];
+  /** Whether a selection is active */
+  selectionActive: boolean;
 }
 
 /**
@@ -134,4 +136,27 @@ export interface GridCreationState {
   hasError: boolean;
   /** Error message if creation failed */
   errorMessage: string;
+  /** Whether an operation is in progress */
+  isCreating?: boolean;
+  /** Whether an operation is already happening */
+  creationInProgress?: boolean;
+  /** Lock to prevent concurrent operations */
+  creationLock?: boolean;
+  /** Count of consecutive resets */
+  consecutiveResets?: number;
+  /** Maximum allowed consecutive resets */
+  maxConsecutiveResets?: number;
+  /** Whether the grid exists already */
+  exists?: boolean;
+  /** Last time a grid was created */
+  lastCreationTime?: number;
+  /** Minimum time between creation attempts */
+  throttleInterval?: number;
+  /** Total number of grid creations */
+  totalCreations?: number;
+  /** Maximum number of allowed recreations */
+  maxRecreations?: number;
+  /** Minimum interval between recreations */
+  minRecreationInterval?: number;
 }
+

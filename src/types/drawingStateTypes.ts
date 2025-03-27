@@ -34,4 +34,7 @@ export interface DrawingState {
   selectionActive: boolean;
   /** Current zoom level for scaling display */
   currentZoom?: number;
+  /** Array of all points in the current stroke */
+  points?: Point[];
 }
+

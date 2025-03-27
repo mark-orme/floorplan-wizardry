@@ -170,3 +170,4 @@ export const RENDERING_CONSTANTS = {
  */
 export const MIN_CANVAS_WIDTH = 300;
 export const MIN_CANVAS_HEIGHT = 200;
+

@@ -6,8 +6,7 @@
 import { useCallback, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { createBasicEmergencyGrid } from "@/utils/grid/gridDebugUtils";
-import { dumpGridState } from "@/utils/grid/gridDebugUtils";
+import { createBasicEmergencyGrid, dumpGridState } from "@/utils/grid/gridDebugUtils";
 
 /**
  * Interface for grid health information
@@ -39,8 +38,13 @@ export const useGridCreationDebug = (
     setDebugMode(prev => !prev);
     
     if (!debugMode) {
-      toast.info("Grid debug mode enabled");
-      dumpGridState(fabricCanvasRef.current!, gridLayerRef);
+      const canvas = fabricCanvasRef.current;
+      if (canvas) {
+        toast.info("Grid debug mode enabled");
+        dumpGridState(canvas, gridLayerRef);
+      } else {
+        toast.error("Canvas not available for debug");
+      }
     } else {
       toast.info("Grid debug mode disabled");
     }
@@ -61,6 +65,15 @@ export const useGridCreationDebug = (
     setIsWaitingForCanvas(false);
     
     const gridObjects = gridLayerRef.current;
+    if (!Array.isArray(gridObjects)) {
+      return {
+        exists: false,
+        size: 0,
+        objectsOnCanvas: 0,
+        missingObjects: 0
+      };
+    }
+    
     const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
     
     return {
@@ -86,11 +99,14 @@ export const useGridCreationDebug = (
     
     try {
       // Clear any existing grid objects
-      gridLayerRef.current.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.remove(obj);
-        }
-      });
+      const gridObjects = gridLayerRef.current;
+      if (Array.isArray(gridObjects)) {
+        gridObjects.forEach(obj => {
+          if (canvas.contains(obj)) {
+            canvas.remove(obj);
+          }
+        });
+      }
       
       // Reset grid layer reference
       gridLayerRef.current = [];
@@ -134,11 +150,13 @@ export const useGridCreationDebug = (
       if (health.objectsOnCanvas < health.size) {
         const gridObjects = gridLayerRef.current;
         
-        gridObjects.forEach(obj => {
-          if (!canvas.contains(obj)) {
-            canvas.add(obj);
-          }
-        });
+        if (Array.isArray(gridObjects)) {
+          gridObjects.forEach(obj => {
+            if (!canvas.contains(obj)) {
+              canvas.add(obj);
+            }
+          });
+        }
         
         canvas.requestRenderAll();
         return gridObjects;
@@ -160,3 +178,4 @@ export const useGridCreationDebug = (
     isWaitingForCanvas
   };
 };
+

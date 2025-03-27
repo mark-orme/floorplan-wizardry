@@ -15,6 +15,20 @@ export interface DebugInfoState {
   canvasInitialized: boolean;
   /** Whether dimensions have been set */
   dimensionsSet: boolean;
+  /** Whether grid has been created */
+  gridCreated: boolean;
+  /** Whether brush has been initialized */
+  brushInitialized: boolean;
+  /** Whether canvas is ready */
+  canvasReady: boolean;
+  /** Whether canvas has been created */
+  canvasCreated: boolean;
+  /** Whether canvas has been loaded */
+  canvasLoaded: boolean;
+  /** Last initialization time */
+  lastInitTime: number;
+  /** Last grid creation time */
+  lastGridCreationTime: number;
   /** Grid initialization state */
   gridInitialized?: boolean;
   /** Custom debug messages */
@@ -30,14 +44,10 @@ export interface DebugInfoState {
   currentTool?: string;
   /** Canvas initialization time */
   initTime?: number;
-  
-  // Additional properties needed for debug info
-  /** Whether grid has been created */
-  gridCreated: boolean;
-  /** Whether brush has been initialized */
-  brushInitialized: boolean;
   /** Number of grid objects */
   gridObjects?: number;
+  /** Number of grid objects */
+  gridObjectCount: number;
   /** Number of canvas objects */
   canvasObjects?: number;
   /** Canvas width */
@@ -50,16 +60,15 @@ export interface DebugInfoState {
   lastError?: any;
   /** Timestamp of the last error */
   lastErrorTime?: number;
-  /** Whether canvas is ready */
-  canvasReady: boolean;
-  /** Whether canvas has been created */
-  canvasCreated: boolean;
-  /** Whether canvas has been loaded */
-  canvasLoaded: boolean;
-  /** Last initialization time */
-  lastInitTime: number;
-  /** Last grid creation time */
-  lastGridCreationTime: number;
+  /** Canvas dimensions */
+  canvasDimensions: {
+    width: number;
+    height: number;
+  };
+  /** Error state */
+  hasError: boolean;
+  /** Error message */
+  errorMessage: string;
   /** Performance statistics */
   performanceStats?: {
     /** Frames per second */
@@ -80,3 +89,4 @@ export interface DebugInfoState {
     longFrames?: number;
   };
 }
+
