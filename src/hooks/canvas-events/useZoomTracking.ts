@@ -17,13 +17,13 @@ const CANVAS_EVENTS = {
    * Zoom changed event name
    * @constant {string}
    */
-  ZOOM_CHANGED: 'zoom:changed' as keyof fabric.CanvasEvents,
+  ZOOM_CHANGED: 'zoom:changed',
   
   /**
    * Custom zoom changed event name
    * @constant {string}
    */
-  CUSTOM_ZOOM_CHANGED: 'custom:zoom-changed' as keyof fabric.CanvasEvents
+  CUSTOM_ZOOM_CHANGED: 'custom:zoom-changed'
 };
 
 /**
@@ -80,10 +80,10 @@ export const useZoomTracking = ({
     if (fabricCanvas) {
       // Cast to appropriate type for Fabric.js
       const zoomChangedHandler = updateZoomLevel as (e: unknown) => void;
-      fabricCanvas.on(CANVAS_EVENTS.ZOOM_CHANGED, zoomChangedHandler);
+      fabricCanvas.on(CANVAS_EVENTS.ZOOM_CHANGED as unknown as keyof FabricCanvas["__eventListeners"], zoomChangedHandler);
       
       return () => {
-        fabricCanvas.off(CANVAS_EVENTS.ZOOM_CHANGED, zoomChangedHandler);
+        fabricCanvas.off(CANVAS_EVENTS.ZOOM_CHANGED as unknown as keyof FabricCanvas["__eventListeners"], zoomChangedHandler);
       };
     }
     

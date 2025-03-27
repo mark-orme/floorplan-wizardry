@@ -17,13 +17,13 @@ const OBJECT_EVENTS = {
    * Object modified event name
    * @constant {string}
    */
-  OBJECT_MODIFIED: 'object:modified' as keyof fabric.CanvasEvents,
+  OBJECT_MODIFIED: 'object:modified',
   
   /**
    * Object removed event name
    * @constant {string}
    */
-  OBJECT_REMOVED: 'object:removed' as keyof fabric.CanvasEvents
+  OBJECT_REMOVED: 'object:removed'
 };
 
 interface UseObjectEventsProps extends BaseEventHandlerProps {
@@ -62,13 +62,14 @@ export const useObjectEvents = ({
       saveCurrentState();
     };
     
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED, handleObjectModified);
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED, handleObjectRemoved);
+    // Use type assertions to ensure compatibility with Fabric.js event system
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectModified);
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectRemoved);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED, handleObjectModified);
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED, handleObjectRemoved);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectModified);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectRemoved);
       }
     };
   }, [fabricCanvasRef, saveCurrentState]);
