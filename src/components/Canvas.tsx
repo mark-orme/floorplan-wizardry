@@ -227,6 +227,6 @@ declare global {
   }
   
   interface Window {
-    fabricCanvasInstances?: FabricCanvas[]; // Use imported FabricCanvas type
+    fabricCanvasInstances?: Array<import('fabric').Canvas>; // Match the type with global declaration
   }
 }
