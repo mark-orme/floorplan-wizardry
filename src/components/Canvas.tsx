@@ -1,4 +1,3 @@
-
 /**
  * Canvas Component
  * Main drawing canvas for floor plan editor
@@ -51,6 +50,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   const gridLayerRef = useRef<FabricCanvas["getObjects"] extends () => infer T ? T : never[]>([]);
   const historyRef = useRef<{past: any[][], future: any[][]}>({ past: [], future: [] });
   const eventHandlersCleanupRef = useRef<(() => void) | null>(null);
+  const gridCreatedRef = useRef(false);
   
   // Debug state
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
@@ -61,9 +61,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   });
   
   // Grid debug state
-  const [showDebugOverlay, setShowDebugOverlay] = useState(
-    process.env.NODE_ENV === 'development'
-  );
+  const [showDebugOverlay, setShowDebugOverlay] = useState(true); // Always show debug overlay initially
   
   // Error state
   const [hasError, setHasError] = useState(false);
@@ -71,6 +69,14 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   
   // Use canvas cleanup hook for proper resource management
   const { cleanupCanvas } = useCanvasCleanup();
+
+  // Create a function to create grid that we'll pass to the initialization hook
+  const createGrid = useCallback((canvas: FabricCanvas) => {
+    console.log("Creating grid from Canvas component");
+    const grid = createBasicEmergencyGrid(canvas, gridLayerRef);
+    gridCreatedRef.current = true;
+    return grid;
+  }, [gridLayerRef]);
   
   // Initialize the canvas
   const { 
@@ -80,7 +86,6 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     historyRef: initHistoryRef,
     deleteSelectedObjects,
     recalculateGIA,
-    // Note: we removed the cleanup property to match the actual return type
   } = useCanvasInitialization({
     canvasDimensions,
     tool,
@@ -89,11 +94,8 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     setDebugInfo,
     setHasError,
     setErrorMessage,
-    // Pass our emergency grid creation function
-    createGrid: (canvas) => {
-      const grid = createBasicEmergencyGrid(canvas, gridLayerRef);
-      return grid;
-    }
+    // Pass our createGrid function
+    createGrid
   });
   
   // Sync refs from initialization
@@ -105,6 +107,27 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
       gridLayerRef.current = initGridLayerRef.current;
     }
   }, [initFabricCanvasRef.current, initGridLayerRef.current]);
+  
+  // Create the grid when canvas is ready
+  useEffect(() => {
+    // Only create grid once and if canvas is ready
+    if (fabricCanvasRef.current && !gridCreatedRef.current) {
+      console.log("Canvas ready, creating grid...");
+      const grid = createGrid(fabricCanvasRef.current);
+      console.log(`Created grid with ${grid.length} objects`);
+      
+      // If grid creation failed, try again in 500ms
+      if (grid.length === 0) {
+        setTimeout(() => {
+          if (fabricCanvasRef.current) {
+            console.log("Retrying grid creation...");
+            const grid = createGrid(fabricCanvasRef.current);
+            console.log(`Retry created grid with ${grid.length} objects`);
+          }
+        }, 500);
+      }
+    }
+  }, [fabricCanvasRef.current, createGrid]);
   
   // Get the cleanup function for canvas initialization
   const cleanupInitialization = useCallback(() => {

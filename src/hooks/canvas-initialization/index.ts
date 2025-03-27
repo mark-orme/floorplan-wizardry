@@ -10,8 +10,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "../useCanvasState";
 import { DebugInfoState } from "@/types/drawingTypes";
 
-// Mock implementation to match the return type expected by Canvas.tsx
-// Replace this with your actual implementation
+// Added createGrid to the props interface
 export interface UseCanvasInitializationProps {
   /** Canvas dimensions */
   canvasDimensions: { width: number; height: number };

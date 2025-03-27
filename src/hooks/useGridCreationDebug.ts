@@ -48,7 +48,8 @@ export const useGridCreationDebug = (
     resetGridProgress();
     console.log("🔄 Forcing grid creation");
     
-    return createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+    const grid = createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+    return grid;
   }, [fabricCanvasRef, gridLayerRef]);
   
   /**

@@ -50,6 +50,12 @@ export const GridDebugOverlay = ({
           exists: health.exists,
           size: health.size
         });
+      } else {
+        // Handle the case when checkGridHealth returns false
+        setGridStats({
+          exists: false,
+          size: 0
+        });
       }
     };
     
@@ -107,7 +113,10 @@ export const GridDebugOverlay = ({
               size="sm" 
               variant="outline" 
               className="h-6 text-xs px-2"
-              onClick={forceGridCreation}
+              onClick={() => {
+                const grid = forceGridCreation();
+                console.log("Force grid created:", grid);
+              }}
             >
               <RefreshCw className="h-3 w-3 mr-1" />
               Force Grid
