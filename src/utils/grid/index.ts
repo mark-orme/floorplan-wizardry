@@ -5,10 +5,21 @@
  * @module grid
  */
 
-// Export basic grid operations from core
+// Export basic grid operations from core except snapToGrid
+// to avoid duplicates with the one from snapping module
 export { 
-  snapToGrid,
-  // Export other available functions from core without referencing snapToGridPoints
+  // Don't export snapToGrid from core to avoid naming conflicts
+  pixelsToMeters,
+  metersToPixels,
+  pointToMeters,
+  pointToPixels,
+  distance,
+  angleBetweenPoints,
+  straightenLine,
+  approximatelyEqual,
+  isOnGridIntersection,
+  formatMeasurement,
+  calculateGridLines
 } from './core';
 
 // Export measurement functions 

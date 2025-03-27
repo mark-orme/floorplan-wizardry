@@ -223,10 +223,10 @@ export const Canvas: React.FC<CanvasProps> = ({
 // Fix global declarations to resolve typing conflicts
 declare global {
   interface HTMLCanvasElement {
-    _fabric?: any; // Use 'any' since this is also declared in fabric-extensions.d.ts
+    _fabric?: unknown; // Use unknown instead of any for type safety
   }
   
   interface Window {
-    fabricCanvasInstances?: any[]; // Use 'any[]' for compatibility
+    fabricCanvasInstances?: FabricCanvas[]; // Use proper FabricCanvas type
   }
 }

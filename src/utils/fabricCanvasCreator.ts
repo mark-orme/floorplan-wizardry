@@ -123,20 +123,24 @@ export const findExistingFabricCanvas = (): FabricCanvas | null => {
     const canvasElements = document.querySelectorAll('canvas');
     for (let i = 0; i < canvasElements.length; i++) {
       const canvasEl = canvasElements[i] as HTMLCanvasElement;
-      if (canvasEl._fabric && validateFabricCanvas(canvasEl._fabric)) {
-        return canvasEl._fabric;
+      if (canvasEl._fabric) {
+        // Type assertion needed because _fabric is unknown
+        const fabricCanvas = canvasEl._fabric as FabricCanvas;
+        if (validateFabricCanvas(fabricCanvas)) {
+          return fabricCanvas;
+        }
       }
     }
     
     // Strategy 3: Look for a canvas with specific ID or data attribute
     const canvasWithId = document.getElementById('fabric-canvas');
     if (canvasWithId instanceof HTMLCanvasElement && canvasWithId._fabric) {
-      return canvasWithId._fabric;
+      return canvasWithId._fabric as FabricCanvas;
     }
     
     const canvasWithTestId = document.querySelector('[data-testid="canvas-element"]');
     if (canvasWithTestId instanceof HTMLCanvasElement && canvasWithTestId._fabric) {
-      return canvasWithTestId._fabric;
+      return canvasWithTestId._fabric as FabricCanvas;
     }
     
     return null;
