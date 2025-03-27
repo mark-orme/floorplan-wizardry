@@ -140,7 +140,8 @@ export const usePolylineCreation = ({
       if (gridLayerRef.current && gridLayerRef.current.length > 0) {
         gridLayerRef.current.forEach(gridObj => {
           if (canvas.contains(gridObj)) {
-            canvas.sendToBack(gridObj);
+            // Fix: Use canvas.sendObjectToBack instead of sendToBack
+            canvas.sendObjectToBack(gridObj);
           }
         });
       }

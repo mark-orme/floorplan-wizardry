@@ -174,7 +174,8 @@ export const handleToolChange = (
     console.log(`Sending ${gridLayerRef.current.length} grid objects to back`);
     gridLayerRef.current.forEach(gridObj => {
       if (canvas.contains(gridObj)) {
-        canvas.sendToBack(gridObj);
+        // Fix: Use canvas.sendObjectToBack instead of sendToBack
+        canvas.sendObjectToBack(gridObj);
       }
     });
   }
