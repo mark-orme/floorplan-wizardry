@@ -147,9 +147,9 @@ export const useCanvasControllerSetup = ({
   }, [canvasRef, fabricCanvasRef, canvasDimensions, setDebugInfo, setHasError, setErrorMessage]);
 
   return {
-    canvasRef,
-    fabricCanvasRef,
-    historyRef
+    canvas: fabricCanvasRef.current,
+    canvasElement: canvasRef.current as HTMLCanvasElement,
+    container: canvasRef.current?.parentElement as HTMLElement
   };
 };
 

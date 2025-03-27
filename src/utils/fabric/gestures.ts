@@ -88,7 +88,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
-        currentSubTargets: []
+        isClick: true,
+        target: null,
+        subTargets: []
       });
 
       console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
@@ -132,7 +134,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
-        currentSubTargets: []
+        target: null,
+        subTargets: []
       });
     }
 
@@ -178,7 +181,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
-        currentSubTargets: []
+        isClick: true,
+        target: null,
+        subTargets: []
       });
 
       console.log("Drawing ended");
@@ -223,7 +228,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           absolutePointer: touchPosition.clone(),
           scenePoint: touchPosition,
           viewportPoint: touchPosition.clone(),
-          currentSubTargets: []
+          isClick: false,
+          target: null,
+          subTargets: []
         });
       }
     }

@@ -82,8 +82,10 @@ export const createCompleteGrid = (
   const objects = createGridLines(canvas, dimensions);
   
   return {
-    objects,
-    dimensions
+    gridObjects: objects,
+    smallGridLines: [],
+    largeGridLines: [],
+    markers: []
   };
 };
 
