@@ -4,6 +4,8 @@
  * @module debugTypes
  */
 
+import { PerformanceStats } from './core/DebugInfo';
+
 /**
  * Debug information state interface
  * @interface DebugInfoState
@@ -70,22 +72,5 @@ export interface DebugInfoState {
   /** Error message */
   errorMessage: string;
   /** Performance statistics */
-  performanceStats?: {
-    /** Frames per second */
-    fps?: number;
-    /** Rendering time */
-    renderTime?: number;
-    /** Grid creation time */
-    gridCreationTime?: number;
-    /** Object creation time */
-    objectCreationTime?: number;
-    /** Number of dropped frames */
-    droppedFrames?: number;
-    /** Average frame time */
-    frameTime?: number;
-    /** Maximum frame time */
-    maxFrameTime?: number;
-    /** Number of long frames */
-    longFrames?: number;
-  };
+  performanceStats: PerformanceStats;
 }

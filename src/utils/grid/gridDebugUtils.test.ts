@@ -3,24 +3,25 @@
  * Tests for grid debug utilities
  * @jest-environment jsdom
  */
+import { expect, describe, test, beforeEach, afterEach, vi } from "vitest";
 import { Canvas, Object as FabricObject } from "fabric";
 import { createBasicEmergencyGrid, dumpGridState, forceCreateGrid } from "./gridDebugUtils";
 
 // Mock canvas and console methods
-jest.mock("fabric", () => {
+vi.mock("fabric", () => {
   return {
-    Canvas: jest.fn().mockImplementation(() => ({
+    Canvas: vi.fn().mockImplementation(() => ({
       width: 800,
       height: 600,
-      getObjects: jest.fn().mockReturnValue([]),
-      contains: jest.fn().mockReturnValue(true),
-      remove: jest.fn(),
-      add: jest.fn(),
-      requestRenderAll: jest.fn(),
-      sendObjectToBack: jest.fn(),
-      getZoom: jest.fn().mockReturnValue(1)
+      getObjects: vi.fn().mockReturnValue([]),
+      contains: vi.fn().mockReturnValue(true),
+      remove: vi.fn(),
+      add: vi.fn(),
+      requestRenderAll: vi.fn(),
+      sendObjectToBack: vi.fn(),
+      getZoom: vi.fn().mockReturnValue(1)
     })),
-    Line: jest.fn().mockImplementation(() => ({
+    Line: vi.fn().mockImplementation(() => ({
       type: 'line'
     }))
   };
@@ -31,18 +32,18 @@ describe("Grid Debug Utilities", () => {
   let gridLayerRef: React.MutableRefObject<FabricObject[]>;
   
   beforeEach(() => {
-    console.group = jest.fn();
-    console.log = jest.fn();
-    console.warn = jest.fn();
-    console.error = jest.fn();
-    console.groupEnd = jest.fn();
+    console.group = vi.fn();
+    console.log = vi.fn();
+    console.warn = vi.fn();
+    console.error = vi.fn();
+    console.groupEnd = vi.fn();
     
     canvas = new Canvas();
     gridLayerRef = { current: [] };
   });
   
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   
   test("dumpGridState logs canvas and grid info", () => {

@@ -14,6 +14,7 @@ const useDrawingState = () => {
     cursorPosition: null,
     midPoint: null,
     selectionActive: false,
+    currentZoom: 1,
     points: [],
     distance: null
   });
@@ -93,6 +94,7 @@ const useDrawingState = () => {
       cursorPosition: null,
       midPoint: null,
       selectionActive: false,
+      currentZoom: 1,
       points: [],
       distance: null
     });

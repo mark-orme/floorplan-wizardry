@@ -17,9 +17,9 @@ import { Point } from './geometryTypes';
  * @property {Point | null} cursorPosition - The current cursor position
  * @property {Point | null} midPoint - The midpoint between start and current point
  * @property {boolean} selectionActive - Whether a selection is active
- * @property {number} [currentZoom] - Current zoom level for scaling display
- * @property {Point[]} [points] - Array of all points in the current stroke
- * @property {number} [distance] - Distance between startPoint and currentPoint
+ * @property {number} currentZoom - Current zoom level for scaling display
+ * @property {Point[]} points - Array of all points in the current stroke
+ * @property {number | null} distance - Distance between startPoint and currentPoint
  */
 export interface DrawingState {
   /** Whether the user is currently drawing */
@@ -35,9 +35,9 @@ export interface DrawingState {
   /** Whether a selection is active */
   selectionActive: boolean;
   /** Current zoom level for scaling display */
-  currentZoom?: number;
+  currentZoom: number;
   /** Array of all points in the current stroke */
-  points?: Point[];
+  points: Point[];
   /** Distance between startPoint and currentPoint */
-  distance?: number | null;
+  distance: number | null;
 }

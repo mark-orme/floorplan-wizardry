@@ -9,6 +9,13 @@
  */
 export interface PerformanceStats {
   gridCreationTime?: number;
+  fps?: number;
+  renderTime?: number;
+  objectCreationTime?: number;
+  droppedFrames?: number;
+  frameTime?: number;
+  maxFrameTime?: number;
+  longFrames?: number;
   [key: string]: number | undefined;
 }
 
