@@ -62,14 +62,15 @@ export const useObjectEvents = ({
       saveCurrentState();
     };
     
-    // Use type assertions to ensure compatibility with Fabric.js event system
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectModified);
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectRemoved);
+    // Type the event string for canvas with "as string", this masks the event string
+    // to be treated as a valid event key for the canvas's event system
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as string, handleObjectModified);
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as string, handleObjectRemoved);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectModified);
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as unknown as keyof FabricCanvas["__eventListeners"], handleObjectRemoved);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as string, handleObjectModified);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as string, handleObjectRemoved);
       }
     };
   }, [fabricCanvasRef, saveCurrentState]);
