@@ -24,3 +24,6 @@ export {
 
 // Re-export Point for use with floor plan types
 export type { Point } from './core/Point';
+
+// Export createFloorPlan utility function for tests
+export { createFloorPlan } from '@/utils/floorPlanUtils';

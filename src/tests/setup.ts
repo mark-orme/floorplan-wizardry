@@ -1,7 +1,6 @@
 
 // Vitest/Jest setup file
-import { vi } from 'vitest';
-import { expect } from 'vitest';
+import { vi, expect } from 'vitest';
 import '@testing-library/jest-dom'; // Add this import for DOM matchers
 
 // Mock window properties
@@ -64,11 +63,15 @@ const mockCanvasContext = {
   getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(4) }),
 };
 
-HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext);
+// Properly type the mock function
+HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation(() => {
+  return mockCanvasContext as unknown as CanvasRenderingContext2D;
+});
 
 // Add expect to globalThis for test
-if (!globalThis.expect) {
-  globalThis.expect = expect;
+if (typeof globalThis.expect === 'undefined') {
+  // Safe assignment that works with TypeScript
+  (globalThis as any).expect = expect;
 }
 
 // Mock local storage

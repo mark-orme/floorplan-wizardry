@@ -1,3 +1,4 @@
+
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react-hooks';
 import { useKeyboardEvents } from '@/hooks/canvas-events/useKeyboardEvents';
@@ -5,8 +6,8 @@ import { useKeyboardEvents } from '@/hooks/canvas-events/useKeyboardEvents';
 // Mock event listeners
 describe('useKeyboardEvents', () => {
   // Mock event listeners
-  let mockAddEventListener: jest.SpyInstance;
-  let mockRemoveEventListener: jest.SpyInstance;
+  let mockAddEventListener: any;
+  let mockRemoveEventListener: any;
   
   // Mock handlers
   const mockHandleUndo = vi.fn();
@@ -85,7 +86,7 @@ describe('useKeyboardEvents', () => {
       ctrlKey: true,
       metaKey: true
     });
-    mockAddEventListener.mockImplementation((event, cb) => {
+    mockAddEventListener.mockImplementation((event: string, cb: Function) => {
       if (event === 'keydown') {
         cb(event);
       }
@@ -114,7 +115,7 @@ describe('useKeyboardEvents', () => {
       metaKey: true,
       shiftKey: true
     });
-    mockAddEventListener.mockImplementation((event, cb) => {
+    mockAddEventListener.mockImplementation((event: string, cb: Function) => {
       if (event === 'keydown') {
         cb(event);
       }
@@ -140,7 +141,7 @@ describe('useKeyboardEvents', () => {
     const event = new KeyboardEvent('keydown', {
       key: 'Delete'
     });
-    mockAddEventListener.mockImplementation((event, cb) => {
+    mockAddEventListener.mockImplementation((event: string, cb: Function) => {
       if (event === 'keydown') {
         cb(event);
       }
@@ -166,7 +167,7 @@ describe('useKeyboardEvents', () => {
     const event = new KeyboardEvent('keydown', {
       key: 'Escape'
     });
-    mockAddEventListener.mockImplementation((event, cb) => {
+    mockAddEventListener.mockImplementation((event: string, cb: Function) => {
       if (event === 'keydown') {
         cb(event);
       }

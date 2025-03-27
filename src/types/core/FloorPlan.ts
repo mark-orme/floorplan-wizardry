@@ -153,3 +153,26 @@ export interface FloorPlan {
   /** Floor plan metadata */
   metadata?: FloorPlanMetadata;
 }
+
+// Create an export for createFloorPlan function to be used in tests
+export const createFloorPlan = (id: string, name: string, level: number = 0): FloorPlan => {
+  return {
+    id,
+    name,
+    label: name,
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasData: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    gia: 0,
+    level,
+    metadata: {
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      paperSize: PaperSize.A4,
+      level
+    }
+  };
+};

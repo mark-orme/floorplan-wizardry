@@ -1,222 +1,128 @@
 
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
-import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
-import { createPoint } from '@/types/core/Point';
-import { createFloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan, StrokeType } from '@/types/floorPlanTypes';
+import { createFloorPlan } from '@/utils/floorPlanUtils';
 
-// Mock FabricCanvas and FabricPath
-jest.mock('fabric', () => {
-  const mockCanvas = {
-    add: jest.fn(),
-    remove: jest.fn(),
-    clear: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    requestRenderAll: jest.fn(),
-    getZoom: jest.fn().mockReturnValue(1),
-    viewportTransform: [1, 0, 0, 1, 0, 0],
-    absolutePointer: jest.fn().mockReturnValue({ x: 0, y: 0 }),
-    relativePointer: jest.fn().mockReturnValue({ x: 0, y: 0 }),
-    getObjects: jest.fn().mockReturnValue([]),
-    toJSON: jest.fn().mockReturnValue({ objects: [] }),
-    loadFromJSON: jest.fn(),
-    getCenter: jest.fn().mockReturnValue({ x: 0, y: 0 }),
-    setViewportTransform: jest.fn(),
-    dispose: jest.fn(),
-    freeDrawingBrush: {
-      color: '#000000',
-      width: 2,
-    },
-  };
+// Mock canvas
+const mockCanvas = {
+  on: vi.fn(),
+  off: vi.fn(),
+  add: vi.fn(),
+  remove: vi.fn(),
+  getActiveObject: vi.fn(),
+  discardActiveObject: vi.fn(),
+  renderAll: vi.fn()
+};
 
-  const mockPath = {
-    toObject: jest.fn().mockReturnValue({ type: 'path' }),
-    toJSON: jest.fn().mockReturnValue({ type: 'path' }),
-  };
-
-  return {
-    Canvas: jest.fn(() => mockCanvas),
-    Path: jest.fn(() => mockPath),
-    __esModule: true,
-  };
-});
+// Mock gesture handler
+const mockGestureHandler = {
+  register: vi.fn(),
+  unregister: vi.fn()
+};
 
 describe('useFloorPlanDrawing', () => {
-  let fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  let setFloorPlan: jest.Mock;
-  let setGia: jest.Mock;
+  let mockCanvasRef: any;
+  let mockRefState: any;
 
   beforeEach(() => {
-    fabricCanvasRef = { current: new FabricCanvas() } as any;
-    setFloorPlan = jest.fn();
-    setGia = jest.fn();
+    mockCanvasRef = { current: mockCanvas };
+    mockRefState = { 
+      history: { past: [], future: [] },
+      currentFloor: 0
+    };
+    
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.resetAllMocks();
   });
 
-  it('should initialize without errors', () => {
-    const { result } = renderHook(() =>
-      useFloorPlanDrawing({
-        fabricCanvasRef,
-        setFloorPlan,
-        currentFloor: 0,
-        setGia,
-      })
-    );
+  it('should initialize drawing state', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      canvasRef: mockCanvasRef,
+      refState: mockRefState,
+      gestureHandler: mockGestureHandler
+    }));
 
-    expect(result.current).toBeDefined();
+    expect(result.current.isDrawing).toBe(false);
+    expect(result.current.currentTool).toBe('select');
   });
 
-  it('should process a created path and update floor plans', () => {
-    const { result } = renderHook(() =>
-      useFloorPlanDrawing({
-        fabricCanvasRef,
-        setFloorPlan,
-        currentFloor: 0,
-        setGia,
-      })
-    );
-
-    const mockPath = new FabricPath('M 0 0 L 10 10');
-    act(() => {
-      result.current.processCreatedPath(mockPath);
-    });
-
-    expect(setFloorPlan).toHaveBeenCalled();
-  });
-
-  it('should calculate GIA when processing a path', () => {
-    const { result } = renderHook(() =>
-      useFloorPlanDrawing({
-        fabricCanvasRef,
-        setFloorPlan,
-        currentFloor: 0,
-        setGia,
-      })
-    );
-
-    const mockPath = new FabricPath('M 0 0 L 10 10');
-    act(() => {
-      result.current.processCreatedPath(mockPath);
-    });
-
-    expect(setGia).toHaveBeenCalled();
-  });
-
-  it('should handle errors when processing a path', () => {
-    const { result } = renderHook(() =>
-      useFloorPlanDrawing({
-        fabricCanvasRef,
-        setFloorPlan,
-        currentFloor: 0,
-        setGia,
-      })
-    );
-
-    const mockPath = new FabricPath('M 0 0 L 10 10');
-    (mockPath.toObject as jest.Mock).mockImplementation(() => {
-      throw new Error('Test error');
-    });
+  it('should update drawing tool', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      canvasRef: mockCanvasRef,
+      refState: mockRefState,
+      gestureHandler: mockGestureHandler
+    }));
 
     act(() => {
-      result.current.processCreatedPath(mockPath);
+      result.current.setTool('wall');
     });
 
-    expect(setFloorPlan).not.toHaveBeenCalled();
+    expect(result.current.currentTool).toBe('wall');
   });
 
-  it('should update floor plans with new stroke data', () => {
-    const { result } = renderHook(() =>
-      useFloorPlanDrawing({
-        fabricCanvasRef,
-        setFloorPlan,
-        currentFloor: 0,
-        setGia,
-      })
-    );
-
-    const mockPath = new FabricPath('M 0 0 L 10 10');
-    act(() => {
-      result.current.processCreatedPath(mockPath);
-    });
-
-    expect(setFloorPlan).toHaveBeenCalledWith(expect.any(Function));
-  });
-
-  it('should handle floor plans with existing strokes', () => {
-    // Mock floor plan data
-    const testFloorPlan = {
-      id: "test-id",
-      name: "Test Floor Plan",
-      label: "Test Floor Plan",
-      walls: [] as undefined[],
-      rooms: [] as undefined[],
-      strokes: [] as undefined[],
-      canvasData: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      gia: 0, 
-      level: 0
-    };
-
-    const { result } = renderHook(() =>
-      useFloorPlanDrawing({
-        fabricCanvasRef,
-        floorPlan: testFloorPlan,
-        setFloorPlan,
-        currentFloor: 0,
-        setGia,
-      })
-    );
-
-    const mockPath = new FabricPath('M 0 0 L 10 10');
-    act(() => {
-      result.current.processCreatedPath(mockPath);
-    });
-
-    expect(setFloorPlan).toHaveBeenCalledWith(expect.any(Function));
-  });
-
-  it('should handle floor plans with existing strokes', () => {
-    // Mock floor plan data
-    const testFloorPlanWithStrokes = {
-      id: "test-id",
-      name: "Test Floor Plan",
-      label: "Test Floor Plan",
-      walls: [] as undefined[],
-      rooms: [] as undefined[],
-      strokes: [{
-        id: "stroke-1",
-        points: [{ x: 10, y: 10 }, { x: 20, y: 20 }],
-        type: "line",
-        color: "#000000",
-        thickness: 1
-      }],
+  it('should add stroke to floor plan', () => {
+    // Create a valid floor plan
+    const testFloorPlan: FloorPlan = {
+      id: 'test-floor-plan',
+      name: 'Test Floor Plan',
+      label: 'Ground Floor',
+      walls: [],
+      rooms: [],
+      strokes: [],
       canvasData: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       gia: 0,
       level: 0
     };
+    
+    mockRefState.floorPlans = [testFloorPlan];
+    mockRefState.setFloorPlans = vi.fn();
 
-    const { result } = renderHook(() =>
-      useFloorPlanDrawing({
-        fabricCanvasRef,
-        floorPlan: testFloorPlanWithStrokes,
-        setFloorPlan,
-        currentFloor: 0,
-        setGia,
-      })
-    );
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      canvasRef: mockCanvasRef,
+      refState: mockRefState,
+      gestureHandler: mockGestureHandler
+    }));
 
-    const mockPath = new FabricPath('M 0 0 L 10 10');
+    const stroke = {
+      id: 'test-stroke',
+      points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+      type: 'line' as StrokeType,
+      color: '#000000',
+      thickness: 2
+    };
+
     act(() => {
-      result.current.processCreatedPath(mockPath);
+      result.current.addStrokeToFloorPlan(stroke);
     });
 
-    expect(setFloorPlan).toHaveBeenCalledWith(expect.any(Function));
+    expect(mockRefState.setFloorPlans).toHaveBeenCalled();
+  });
+
+  it('should handle drawing start and end', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      canvasRef: mockCanvasRef,
+      refState: mockRefState,
+      gestureHandler: mockGestureHandler
+    }));
+
+    act(() => {
+      result.current.startDrawing({ x: 0, y: 0 });
+    });
+
+    expect(result.current.isDrawing).toBe(true);
+    expect(result.current.startPoint).toEqual({ x: 0, y: 0 });
+
+    act(() => {
+      result.current.endDrawing({ x: 100, y: 100 });
+    });
+
+    expect(result.current.isDrawing).toBe(false);
   });
 });

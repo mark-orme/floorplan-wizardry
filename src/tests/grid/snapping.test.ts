@@ -10,7 +10,7 @@ import {
   getNearestGridIntersection,
   distanceToNearestGridLine
 } from "@/utils/grid/snapping";
-import { GRID_SPACING } from "@/utils/drawing";
+import { SMALL_GRID_SPACING } from "@/constants/numerics"; // Import the numeric constant
 import { Point } from "@/types/geometryTypes";
 import { STANDARD_ANGLES } from "@/utils/geometry/constants";
 
@@ -56,9 +56,9 @@ describe("Grid Snapping Utilities", () => {
     });
 
     it("should use the default grid size when not specified", () => {
-      // Using the GRID_SPACING constant (likely 10)
+      // Using the SMALL_GRID_SPACING constant 
       expect(getNearestGridIntersection({ x: 23, y: 19 }))
-        .toEqual(snapToGrid({ x: 23, y: 19 }, GRID_SPACING));
+        .toEqual(snapToGrid({ x: 23, y: 19 }, SMALL_GRID_SPACING));
     });
   });
   

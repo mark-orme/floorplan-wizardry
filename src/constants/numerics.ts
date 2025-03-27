@@ -21,6 +21,10 @@ export const GRID_SPACING = {
   LARGE: 50
 };
 
+// Export individual grid spacing values for easier access
+export const SMALL_GRID_SPACING = GRID_SPACING.SMALL;
+export const LARGE_GRID_SPACING = GRID_SPACING.LARGE;
+
 /**
  * Grid line options
  * Define appearance for different grid lines
@@ -42,6 +46,12 @@ export const LARGE_GRID = {
   /** Large grid line thickness */
   WIDTH: 1
 };
+
+// Export individual grid constants for easier access
+export const SMALL_GRID_COLOR = SMALL_GRID.COLOR;
+export const SMALL_GRID_WIDTH = SMALL_GRID.WIDTH;
+export const LARGE_GRID_COLOR = LARGE_GRID.COLOR;
+export const LARGE_GRID_WIDTH = LARGE_GRID.WIDTH;
 
 /**
  * Zoom level constants

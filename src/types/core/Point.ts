@@ -42,3 +42,12 @@ export const createPoint = (x: number, y: number): Point => {
 export const toPoint = (obj: { x: number, y: number }): Point => {
   return { x: obj.x, y: obj.y };
 };
+
+/**
+ * Check if an object is a Point
+ * @param obj - Object to check
+ * @returns True if the object is a Point
+ */
+export const isPoint = (obj: any): obj is Point => {
+  return obj && typeof obj.x === 'number' && typeof obj.y === 'number';
+};

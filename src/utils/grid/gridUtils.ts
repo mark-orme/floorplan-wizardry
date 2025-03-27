@@ -1,88 +1,58 @@
 
 /**
- * Grid utility functions
- * @module grid/gridUtils
+ * Grid utilities to be used by other grid-related modules
+ * @module utils/grid/gridUtils
  */
-import { Canvas, Object as FabricObject } from "fabric";
+import { GRID_SPACING } from '@/constants/numerics';
 
 /**
- * Check if grid exists on canvas
- * @param canvas - The fabric canvas
- * @param gridLayerRef - Reference to grid objects
- * @returns Whether grid exists
+ * Get the small grid spacing value
+ * @returns small grid spacing in pixels
  */
-export const doesGridExist = (
-  canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): boolean => {
-  // Check if we have grid objects
-  if (!gridLayerRef.current || gridLayerRef.current.length === 0) {
-    return false;
-  }
-  
-  // Check if they're on the canvas
-  let gridObjectsOnCanvas = 0;
-  
-  gridLayerRef.current.forEach(obj => {
-    if (canvas.contains(obj)) {
-      gridObjectsOnCanvas++;
-    }
-  });
-  
-  // Return true if at least 50% of grid objects are on canvas
-  return gridObjectsOnCanvas > gridLayerRef.current.length / 2;
+export const getSmallGridSpacing = (): number => {
+  return GRID_SPACING.SMALL;
 };
 
 /**
- * Create empty grid wrapper
- * For when normal grid creation fails but we need a valid return value
- * @returns Empty array of fabric objects
+ * Get the large grid spacing value
+ * @returns large grid spacing in pixels
  */
-export const createEmptyGrid = (): FabricObject[] => {
-  return [];
+export const getLargeGridSpacing = (): number => {
+  return GRID_SPACING.LARGE;
 };
 
 /**
- * Ensure grid layer is initialized
- * @param gridLayerRef - Reference to grid layer
- * @returns Whether grid layer is initialized
+ * Convert object that may contain GRID_SPACING to actual number values
+ * @param value - Value which may be a GRID_SPACING object or a number
+ * @param defaultValue - Default value to return if conversion fails
+ * @returns A number value
  */
-export const ensureGridLayer = (
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): boolean => {
-  // Initialize grid layer if it's null or undefined
-  if (!gridLayerRef.current) {
-    gridLayerRef.current = [];
+export const ensureGridSpacingNumber = (value: any, defaultValue: number = 10): number => {
+  if (typeof value === 'number') {
+    return value;
   }
   
-  return true;
+  if (value && typeof value === 'object' && 'SMALL' in value) {
+    return value.SMALL;
+  }
+  
+  return defaultValue;
 };
 
 /**
- * Add grid objects to canvas
- * @param canvas - The fabric canvas
- * @param gridObjects - Grid objects to add
- * @returns Success status
+ * Convert grid spacing to meters
+ * @param pixels - Grid spacing in pixels
+ * @returns Grid spacing in meters
  */
-export const addGridToCanvas = (
-  canvas: Canvas,
-  gridObjects: FabricObject[]
-): boolean => {
-  if (!canvas || !gridObjects.length) {
-    return false;
-  }
-  
-  try {
-    // Add all grid objects to canvas
-    gridObjects.forEach(obj => {
-      if (!canvas.contains(obj)) {
-        canvas.add(obj);
-      }
-    });
-    
-    return true;
-  } catch (error) {
-    console.error("Error adding grid to canvas:", error);
-    return false;
-  }
+export const gridSpacingToMeters = (pixels: number): number => {
+  return pixels / GRID_SPACING.LARGE;
+};
+
+/**
+ * Convert meters to grid spacing
+ * @param meters - Distance in meters
+ * @returns Distance in pixels
+ */
+export const metersToGridSpacing = (meters: number): number => {
+  return meters * GRID_SPACING.LARGE;
 };

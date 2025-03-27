@@ -1,195 +1,171 @@
 
 /**
- * Grid snapping utility functions
- * Provides functions for snapping points and lines to grid
- * @module grid/snapping
+ * Grid snapping utilities
+ * @module utils/grid/snapping
  */
-import { Point } from '@/types/drawingTypes';
-import { GRID_SPACING } from '@/constants/numerics';
-import { applyAngleQuantization } from '../geometry/straightening';
+import { Point } from '@/types/core/Point';
+import { SMALL_GRID_SPACING, LARGE_GRID_SPACING } from '@/constants/numerics';
+import { ensureGridSpacingNumber } from './gridUtils';
+import { calculateDistance, calculateAngle } from '@/utils/geometry/lineOperations';
+import { ANGLE_SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
  * Snap a point to the nearest grid intersection
- * This function takes any point coordinates and rounds them to the nearest grid intersection
- * based on the provided grid size (or default GRID_SPACING).
- * 
- * @param {Point} point - Point to snap
- * @param {number} gridSize - Grid cell size in pixels
- * @returns {Point} Snapped point
+ * @param point - Point to snap
+ * @param gridSize - Grid size (optional, defaults to SMALL_GRID_SPACING)
+ * @returns Snapped point
  */
-export const snapToGrid = (point: Point, gridSize: number = GRID_SPACING): Point => {
-  if (!point) return { x: 0, y: 0 };
+export const snapToGrid = (point: Point, gridSize: number = SMALL_GRID_SPACING): Point => {
+  // Convert grid size to ensure it's a number
+  const gridSizeNumber = ensureGridSpacingNumber(gridSize);
   
-  return {
-    x: Math.round(point.x / gridSize) * gridSize,
-    y: Math.round(point.y / gridSize) * gridSize
-  };
-};
-
-/**
- * Snap an angle to the nearest standard angle
- * Useful for straightening lines to common angles like 0°, 45°, 90°, etc.
- * 
- * @param {number} angle - Angle in degrees
- * @param {number} snapIncrement - Angle increment for snapping in degrees
- * @returns {number} Snapped angle in degrees
- */
-export const snapToAngle = (angle: number, snapIncrement: number = 45): number => {
-  // Normalize angle to 0-360 range
-  while (angle < 0) angle += 360;
-  angle = angle % 360;
+  // Calculate rounded coordinates
+  const x = Math.round(point.x / gridSizeNumber) * gridSizeNumber;
+  const y = Math.round(point.y / gridSizeNumber) * gridSizeNumber;
   
-  // Snap to nearest increment
-  return Math.round(angle / snapIncrement) * snapIncrement;
-};
-
-/**
- * Snap a line to standard angles (0°, 45°, 90°, etc)
- * Maintains the original line length but adjusts the end point to align with standard angles
- * 
- * @param {Point} startPoint - Line start point
- * @param {Point} endPoint - Line end point
- * @param {number[] | number} snapIncrement - Angle increment for snapping in degrees or array of allowed angles
- * @returns {Point} New end point with snapped angle
- */
-export const snapLineToStandardAngles = (
-  startPoint: Point, 
-  endPoint: Point,
-  snapIncrement: number[] | number = 45
-): Point => {
-  if (!startPoint || !endPoint) return endPoint;
-  
-  return applyAngleQuantization(startPoint, endPoint, 
-    typeof snapIncrement === 'number' ? snapIncrement : undefined, 
-    Array.isArray(snapIncrement) ? snapIncrement : undefined);
-};
-
-/**
- * Calculate distance from point to nearest grid line
- * Useful for determining how close a point is to grid lines for highlighting or snapping
- * 
- * @param {Point} point - Point to measure from
- * @param {number} gridSize - Grid size in pixels
- * @returns {Object} Distance to nearest horizontal and vertical grid lines
- */
-export const distanceToNearestGridLine = (
-  point: Point,
-  gridSize: number = GRID_SPACING
-): { x: number, y: number } => {
-  if (!point) return { x: Infinity, y: Infinity };
-  
-  // Calculate distance to nearest horizontal and vertical grid lines
-  const xModGrid = point.x % gridSize;
-  const yModGrid = point.y % gridSize;
-  
-  const xDistance = Math.min(xModGrid, gridSize - xModGrid);
-  const yDistance = Math.min(yModGrid, gridSize - yModGrid);
-  
-  // Return the distances to nearest grid lines
-  return { x: xDistance, y: yDistance };
+  return { x, y };
 };
 
 /**
  * Find the nearest grid intersection to a point
- * Useful for snapping points precisely to grid intersections
- * 
- * @param {Point} point - Point to find nearest intersection for
- * @param {number} gridSize - Grid size in pixels
- * @returns {Point} Nearest grid intersection
+ * @param point - Point to find nearest intersection for
+ * @param gridSize - Grid size (optional, defaults to SMALL_GRID_SPACING)
+ * @returns Nearest grid intersection
  */
-export const getNearestGridIntersection = (
-  point: Point,
-  gridSize: number = GRID_SPACING
-): Point => {
+export const getNearestGridIntersection = (point: Point, gridSize: number = SMALL_GRID_SPACING): Point => {
   return snapToGrid(point, gridSize);
 };
 
 /**
- * Get the nearest point on grid
- * Enhanced version of snapToGrid that provides additional context about the snapping
- * 
- * @param {Point} point - Original point
- * @param {number} gridSize - Grid size in pixels
- * @returns {Object} Result with snapped point and snapping info
+ * Snap a line to standard angles (0, 45, 90, etc.)
+ * @param start - Line start point
+ * @param end - Line end point
+ * @param standardAngles - Standard angles to snap to (optional)
+ * @param threshold - Angle threshold for snapping (optional)
+ * @returns New end point for snapped line
  */
-export const getNearestPointOnGrid = (
-  point: Point,
-  gridSize: number = GRID_SPACING
-): {
-  point: Point;
-  onGridIntersection: boolean;
-  onGridLine: boolean;
-  distanceToGrid: number;
-} => {
-  if (!point) {
-    return {
-      point: { x: 0, y: 0 },
-      onGridIntersection: false,
-      onGridLine: false,
-      distanceToGrid: Infinity
-    };
+export const snapLineToStandardAngles = (
+  start: Point,
+  end: Point,
+  standardAngles: number[] = [0, 45, 90, 135, 180, 225, 270, 315],
+  threshold: number = ANGLE_SNAP_THRESHOLD
+): Point => {
+  const angle = calculateAngle(start, end);
+  const distance = calculateDistance(start, end);
+  
+  // Find the closest standard angle
+  let closest = standardAngles[0];
+  let minDiff = 360;
+  
+  for (const standardAngle of standardAngles) {
+    const diff = Math.min(
+      Math.abs(angle - standardAngle),
+      Math.abs(angle - standardAngle + 360),
+      Math.abs(angle - standardAngle - 360)
+    );
+    
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = standardAngle;
+    }
   }
   
-  // Snap point to grid
-  const snappedPoint = snapToGrid(point, gridSize);
+  // If the difference is within threshold, snap to that angle
+  if (minDiff <= threshold) {
+    // Convert angle to radians for Math functions
+    const radians = (closest * Math.PI) / 180;
+    
+    // Calculate new end point
+    const newX = start.x + distance * Math.cos(radians);
+    const newY = start.y + distance * Math.sin(radians);
+    
+    return { x: newX, y: newY };
+  }
   
-  // Check if original point is on a grid line
-  const distances = distanceToNearestGridLine(point, gridSize);
-  const onGridLine = distances.x <= 2 || distances.y <= 2;
-  
-  // Calculate distance to nearest grid intersection
-  const distanceToGrid = Math.sqrt(
-    Math.pow(point.x - snappedPoint.x, 2) +
-    Math.pow(point.y - snappedPoint.y, 2)
-  );
-  
-  // Check if point is on grid intersection
-  const onGridIntersection = distanceToGrid < 2;
-  
-  return {
-    point: snappedPoint,
-    onGridIntersection,
-    onGridLine,
-    distanceToGrid
-  };
+  // If angle difference exceeds threshold, return original end point
+  return end;
 };
 
 /**
- * Snap a point to grid with a threshold factor
- * Only snaps if the point is within the threshold distance of a grid line
- * 
- * @param {Point} point - Point to snap
- * @param {number} gridSize - Grid size in pixels
- * @param {number} thresholdFactor - Threshold as a factor of grid size (0-1)
- * @returns {Point} Snapped point or original if not within threshold
+ * Calculate distance to nearest grid line
+ * @param point - Point to check
+ * @param gridSize - Grid size (optional, defaults to SMALL_GRID_SPACING)
+ * @returns Distance to nearest grid line in both X and Y directions
  */
-export const snapWithThreshold = (
+export const distanceToNearestGridLine = (
+  point: Point, 
+  gridSize: number = SMALL_GRID_SPACING
+): { x: number, y: number } => {
+  // Convert grid size to ensure it's a number
+  const gridSizeNumber = ensureGridSpacingNumber(gridSize);
+  
+  // Calculate the closest grid line in the X direction
+  const xMod = point.x % gridSizeNumber;
+  const distanceX = Math.min(xMod, gridSizeNumber - xMod);
+  
+  // Calculate the closest grid line in the Y direction
+  const yMod = point.y % gridSizeNumber;
+  const distanceY = Math.min(yMod, gridSizeNumber - yMod);
+  
+  return { x: distanceX, y: distanceY };
+};
+
+/**
+ * Check if a point is near a grid line
+ * @param point - Point to check
+ * @param threshold - Distance threshold (optional, defaults to 5)
+ * @param gridSize - Grid size (optional, defaults to SMALL_GRID_SPACING)
+ * @returns Whether the point is near a grid line
+ */
+export const isNearGridLine = (
   point: Point,
-  gridSize: number = GRID_SPACING,
-  thresholdFactor: number = 0.3
+  threshold: number = 5,
+  gridSize: number = SMALL_GRID_SPACING
+): boolean => {
+  const { x, y } = distanceToNearestGridLine(point, gridSize);
+  return x < threshold || y < threshold;
+};
+
+/**
+ * Snap a point to the nearest grid line (not intersection)
+ * @param point - Point to snap
+ * @param gridSize - Grid size (optional, defaults to SMALL_GRID_SPACING)
+ * @returns Snapped point
+ */
+export const snapToGridLine = (
+  point: Point,
+  gridSize: number = SMALL_GRID_SPACING
 ): Point => {
-  if (!point) return { x: 0, y: 0 };
+  // Convert grid size to ensure it's a number
+  const gridSizeNumber = ensureGridSpacingNumber(gridSize);
   
-  const threshold = gridSize * thresholdFactor;
-  const result = { ...point };
+  // Find the closest grid lines
+  const xFloor = Math.floor(point.x / gridSizeNumber) * gridSizeNumber;
+  const xCeil = Math.ceil(point.x / gridSizeNumber) * gridSizeNumber;
+  const yFloor = Math.floor(point.y / gridSizeNumber) * gridSizeNumber;
+  const yCeil = Math.ceil(point.y / gridSizeNumber) * gridSizeNumber;
   
-  // Calculate distance to nearest grid line for x and y
-  const xMod = point.x % gridSize;
-  const yMod = point.y % gridSize;
+  // Calculate distances to nearest grid lines
+  const distX = Math.min(
+    Math.abs(point.x - xFloor),
+    Math.abs(point.x - xCeil)
+  );
   
-  // Snap x if within threshold
-  if (xMod <= threshold) {
-    result.x = Math.floor(point.x / gridSize) * gridSize;
-  } else if (gridSize - xMod <= threshold) {
-    result.x = Math.ceil(point.x / gridSize) * gridSize;
+  const distY = Math.min(
+    Math.abs(point.y - yFloor),
+    Math.abs(point.y - yCeil)
+  );
+  
+  // Snap to the nearest grid line
+  let snappedPoint = { ...point };
+  
+  if (distX < distY) {
+    // Snap to X grid line
+    snappedPoint.x = Math.abs(point.x - xFloor) < Math.abs(point.x - xCeil) ? xFloor : xCeil;
+  } else {
+    // Snap to Y grid line
+    snappedPoint.y = Math.abs(point.y - yFloor) < Math.abs(point.y - yCeil) ? yFloor : yCeil;
   }
   
-  // Snap y if within threshold
-  if (yMod <= threshold) {
-    result.y = Math.floor(point.y / gridSize) * gridSize;
-  } else if (gridSize - yMod <= threshold) {
-    result.y = Math.ceil(point.y / gridSize) * gridSize;
-  }
-  
-  return result;
+  return snappedPoint;
 };

@@ -55,7 +55,7 @@ export const useBrushSettings = ({
     if (!canvas) return;
 
     // Only set drawing mode when relevant tools are selected
-    canvas.isDrawingMode = tool === 'free' || tool === 'draw';
+    canvas.isDrawingMode = tool === 'draw'; // Fixed: removed 'free' which is not in DrawingTool
     
     // Initialize brush if it exists
     if (canvas.freeDrawingBrush) {
