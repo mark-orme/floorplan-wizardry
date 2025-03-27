@@ -79,4 +79,6 @@ export interface GridCreationState {
   maxRecreations: number;
   minRecreationInterval: number;
   creationLock: boolean;
+  inProgress: boolean;
+  attempts: number;
 }

@@ -1,189 +1,149 @@
 
 /**
- * Utilities for grid debugging
+ * Grid debugging utilities
  * @module grid/gridDebugUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
-import { toast } from "sonner";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { DebugInfoState } from "@/types";
 
 /**
- * Highlights grid lines for debugging
- * @param {FabricCanvas} canvas - Fabric canvas instance
- * @param {FabricObject[]} gridObjects - Grid objects to highlight
- * @returns {boolean} Success indicator
+ * Dump the current state of the grid to the console
+ * @param {FabricCanvas} canvas - The canvas instance
+ * @param {FabricObject[]} gridLayer - Array of grid objects
+ * @param {string} [message] - Optional message to prefix the dump
+ * @returns {void}
  */
-export const highlightGridLines = (canvas: FabricCanvas, gridObjects: FabricObject[]): boolean => {
-  if (!canvas || !Array.isArray(gridObjects) || gridObjects.length === 0) {
-    return false;
-  }
-  
-  try {
-    gridObjects.forEach(obj => {
-      // Change grid line properties temporarily to highlight them
-      if (obj.stroke) {
-        const originalStroke = obj.stroke;
-        obj.set({
-          stroke: 'red',
-          strokeWidth: 2,
-          opacity: 1
-        });
-        
-        // Revert after 2 seconds
-        setTimeout(() => {
-          obj.set({
-            stroke: originalStroke,
-            strokeWidth: 1,
-            opacity: 0.5
-          });
-          canvas.requestRenderAll();
-        }, 2000);
-      }
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  } catch (error) {
-    console.error('Error highlighting grid lines:', error);
-    return false;
-  }
-};
-
-/**
- * Creates debug axes on the canvas
- * @param {FabricCanvas} canvas - Fabric canvas instance
- * @param {number} width - Canvas width
- * @param {number} height - Canvas height
- * @returns {FabricObject[]} Created axis objects
- */
-export const createDebugAxes = (canvas: FabricCanvas, width: number, height: number): FabricObject[] => {
+export const dumpGridState = (
+  canvas: FabricCanvas,
+  gridLayer: FabricObject[],
+  message?: string
+): void => {
   if (!canvas) {
-    return [];
+    console.warn("Cannot dump grid state: Canvas is null");
+    return;
   }
-  
-  try {
-    const axes: FabricObject[] = [];
-    
-    // X-axis (horizontal)
-    const xAxis = new Line([0, height/2, width, height/2], {
-      stroke: 'blue',
-      strokeWidth: 2,
-      selectable: false,
-      evented: false
-    });
-    
-    // Y-axis (vertical)
-    const yAxis = new Line([width/2, 0, width/2, height], {
-      stroke: 'green',
-      strokeWidth: 2,
-      selectable: false,
-      evented: false
-    });
-    
-    canvas.add(xAxis, yAxis);
-    axes.push(xAxis, yAxis);
-    
-    // Send axes to back so they don't interfere with other elements
-    axes.forEach(axis => {
-      axis.sendToBack();
-    });
-    
-    canvas.requestRenderAll();
-    return axes;
-  } catch (error) {
-    console.error('Error creating debug axes:', error);
-    return [];
-  }
-};
 
-/**
- * Force creates a grid on the canvas for debugging
- * @param {FabricCanvas} canvas - Fabric canvas instance
- * @param {number} width - Canvas width
- * @param {number} height - Canvas height
- * @param {number} spacing - Grid spacing
- * @returns {FabricObject[]} Created grid objects
- */
-export const forceCreateGrid = (
-  canvas: FabricCanvas, 
-  width: number, 
-  height: number, 
-  spacing = 50
-): FabricObject[] => {
-  if (!canvas) {
-    toast.error("Canvas not available for debug grid creation");
-    return [];
-  }
+  console.group(message || "Grid State Dump");
   
-  try {
-    const gridLines: FabricObject[] = [];
-    const gridColor = "rgba(200, 200, 200, 0.5)";
-    
-    // Create vertical lines
-    for (let x = 0; x <= width; x += spacing) {
-      const line = new Line([x, 0, x, height], {
-        stroke: gridColor,
-        selectable: false,
-        evented: false,
-        strokeWidth: 1
-      });
-      gridLines.push(line);
-      canvas.add(line);
-    }
-    
-    // Create horizontal lines
-    for (let y = 0; y <= height; y += spacing) {
-      const line = new Line([0, y, width, y], {
-        stroke: gridColor,
-        selectable: false,
-        evented: false,
-        strokeWidth: 1
-      });
-      gridLines.push(line);
-      canvas.add(line);
-    }
-    
-    // Send all grid lines to back
-    gridLines.forEach(line => {
-      line.sendToBack();
-    });
-    
-    canvas.requestRenderAll();
-    toast.success(`Created debug grid with ${gridLines.length} lines`);
-    return gridLines;
-  } catch (error) {
-    console.error('Error creating debug grid:', error);
-    toast.error(`Failed to create debug grid: ${error instanceof Error ? error.message : String(error)}`);
-    return [];
-  }
-};
-
-/**
- * Counts and returns information about grid objects
- * @param {FabricObject[]} gridObjects - Grid objects to count
- * @returns {object} Grid object count information
- */
-export const countGridObjects = (gridObjects: FabricObject[] | null | undefined) => {
-  if (!Array.isArray(gridObjects)) {
-    return { total: 0, horizontal: 0, vertical: 0 };
-  }
-  
-  let horizontal = 0;
-  let vertical = 0;
-  
-  gridObjects.forEach(obj => {
-    // For fabric Lines, we can check if y1 === y2 to identify horizontal lines
-    if ('x1' in obj && 'y1' in obj && 'x2' in obj && 'y2' in obj) {
-      if (obj.y1 === obj.y2) {
-        horizontal++;
-      } else if (obj.x1 === obj.x2) {
-        vertical++;
-      }
-    }
+  // Canvas state
+  console.log("Canvas:", {
+    width: canvas.width,
+    height: canvas.height,
+    viewportTransform: canvas.viewportTransform,
+    zoom: canvas.getZoom(),
+    objects: canvas.getObjects().length
   });
   
+  // Grid layer state
+  console.log("Grid Layer:", {
+    objects: Array.isArray(gridLayer) ? gridLayer.length : "Not an array",
+    visible: Array.isArray(gridLayer) ? gridLayer.some(obj => obj.visible) : false
+  });
+  
+  // Object counts by type
+  const objectsByType: Record<string, number> = {};
+  canvas.getObjects().forEach(obj => {
+    const type = obj.type || "unknown";
+    objectsByType[type] = (objectsByType[type] || 0) + 1;
+  });
+  console.log("Objects by type:", objectsByType);
+  
+  console.groupEnd();
+};
+
+/**
+ * Create a basic emergency grid when normal grid creation fails
+ * @param {FabricCanvas} canvas - The canvas instance
+ * @param {number} [spacing=50] - The grid spacing
+ * @param {string} [color="#FF0000"] - The grid color (red by default for emergency)
+ * @returns {FabricObject[]} The created grid objects
+ */
+export const createBasicEmergencyGrid = (
+  canvas: FabricCanvas,
+  spacing: number = 50,
+  color: string = "#FF0000"
+): FabricObject[] => {
+  if (!canvas) {
+    console.error("Cannot create emergency grid: Canvas is null");
+    return [];
+  }
+
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
+  const gridObjects: FabricObject[] = [];
+
+  try {
+    // Create horizontal lines
+    for (let y = 0; y <= height; y += spacing) {
+      const line = new fabric.Line([0, y, width, y], {
+        stroke: color,
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        strokeDashArray: [5, 5],
+        opacity: 0.5
+      });
+      
+      if (line && typeof line.sendToBack === 'function') {
+        line.sendToBack();
+      }
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+
+    // Create vertical lines
+    for (let x = 0; x <= width; x += spacing) {
+      const line = new fabric.Line([x, 0, x, height], {
+        stroke: color,
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        strokeDashArray: [5, 5],
+        opacity: 0.5
+      });
+      
+      if (line && typeof line.sendToBack === 'function') {
+        line.sendToBack();
+      }
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+
+    console.warn(
+      "Emergency grid created with",
+      gridObjects.length,
+      "lines. This is a fallback measure."
+    );
+
+    return gridObjects;
+  } catch (error) {
+    console.error("Failed to create emergency grid:", error);
+    return [];
+  }
+};
+
+/**
+ * Update debug info with grid status
+ * @param {DebugInfoState} debugInfo - Current debug info state
+ * @param {FabricObject[]} gridLayer - Grid layer objects
+ * @param {boolean} success - Whether grid operation was successful
+ * @returns {DebugInfoState} Updated debug info
+ */
+export const updateGridDebugInfo = (
+  debugInfo: DebugInfoState,
+  gridLayer: FabricObject[],
+  success: boolean
+): DebugInfoState => {
   return {
-    total: gridObjects.length,
-    horizontal,
-    vertical
+    ...debugInfo,
+    gridCreated: success,
+    gridObjectCount: Array.isArray(gridLayer) ? gridLayer.length : 0,
+    lastGridCreationTime: Date.now(),
+    performanceStats: {
+      ...debugInfo.performanceStats,
+      gridCreationTime: Date.now() - (debugInfo.lastGridCreationTime || Date.now())
+    }
   };
 };
