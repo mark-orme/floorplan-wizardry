@@ -5,7 +5,7 @@
  * @module drawingTypes
  */
 import { openDB } from 'idb';
-import type { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
+import type { FloorPlan, PaperSize, Point, Stroke } from '@/types/floorPlanTypes';
 import { 
   GRID_SPACING,
   PIXELS_PER_METER,
@@ -14,21 +14,7 @@ import {
 } from "@/constants/numerics";
 
 // Re-export these types for backward compatibility
-export type { FloorPlan, PaperSize };
-
-/**
- * Represents a 2D point in the drawing
- * @typedef {Object} Point
- * @property {number} x - X coordinate
- * @property {number} y - Y coordinate
- */
-export type Point = { x: number; y: number };
-
-/**
- * Represents a stroke (sequence of points) in the drawing
- * @typedef {Array<Point>} Stroke
- */
-export type Stroke = Point[];
+export type { FloorPlan, PaperSize, Point, Stroke };
 
 // Re-export constants for backward compatibility
 export { GRID_SPACING, PIXELS_PER_METER, SMALL_GRID, LARGE_GRID };

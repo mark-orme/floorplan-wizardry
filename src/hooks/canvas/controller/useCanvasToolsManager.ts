@@ -160,9 +160,11 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     const newFloorPlan: FloorPlan = {
       id: `floor-${floorPlans.length + 1}`,
       name: `Floor ${floorPlans.length + 1}`,
+      label: `Floor ${floorPlans.length + 1}`,
       canvasData: null,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      strokes: []
     };
     
     // Add to floor plans array

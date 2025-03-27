@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { PlusCircle } from "lucide-react";
-import { FloorPlan } from "@/utils/drawing";
+import { FloorPlan } from "@/types/floorPlanTypes";
 
 interface FloorPlanListProps {
   floorPlans: FloorPlan[];
@@ -28,7 +28,7 @@ export const FloorPlanList = ({
             className="justify-start text-xs py-0 h-6 min-h-0 px-1" /* Smaller height, reduced padding */
             onClick={() => onSelect(index)}
           >
-            {plan.label}
+            {plan.label || plan.name}
           </Button>
         ))}
       </div>
