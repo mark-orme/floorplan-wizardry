@@ -101,3 +101,16 @@ export interface CustomFabricTouchEvent {
   touches: { x: number; y: number }[];
   e: Touch;
 }
+
+/**
+ * Global declarations for Fabric.js extensions
+ */
+declare global {
+  interface Window {
+    fabricCanvasInstances?: FabricCanvas[];
+  }
+  
+  interface HTMLCanvasElement {
+    _fabric?: unknown;
+  }
+}
