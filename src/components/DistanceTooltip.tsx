@@ -74,6 +74,8 @@ interface DistanceTooltipProps {
   position?: Point | null;
   zoomLevel?: number;
   currentZoom?: number;
+  isSnappedToGrid?: boolean;
+  isAutoStraightened?: boolean;
 }
 
 /**
@@ -89,7 +91,9 @@ export const DistanceTooltip = memo(({
   isVisible,
   position,
   zoomLevel = 1,
-  currentZoom = 1
+  currentZoom = 1,
+  isSnappedToGrid = false,
+  isAutoStraightened = false
 }: DistanceTooltipProps): React.ReactElement | null => {
   // Basic visibility check - if explicitly not visible, don't render
   if (!isVisible) {
@@ -140,10 +144,17 @@ export const DistanceTooltip = memo(({
         backgroundColor: TOOLTIP_STYLES.BACKGROUND_COLOR,
         boxShadow: `0 2px 6px rgba(0,0,0,${TOOLTIP_STYLES.SHADOW_OPACITY}), 0 0 0 1px rgba(255,255,255,${TOOLTIP_STYLES.BORDER_OPACITY})`
       }}
+      data-testid="distance-tooltip"
     >
       <div className={TOOLTIP_STYLES.CONTENT_CLASSES}>
-        <Ruler className={`w-${TOOLTIP_STYLES.ICON_SIZE} h-${TOOLTIP_STYLES.ICON_SIZE} flex-shrink-0`} />
+        <Ruler className="w-4 h-4 flex-shrink-0" />
         <span className="font-semibold">{formattedDistance}m</span>
+        {(isSnappedToGrid || isAutoStraightened) && (
+          <span className="ml-1 text-xs opacity-80">
+            {isSnappedToGrid && '📏'}
+            {isAutoStraightened && '📐'}
+          </span>
+        )}
       </div>
     </div>
   );

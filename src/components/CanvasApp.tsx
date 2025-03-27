@@ -7,6 +7,7 @@
 import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
+import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 
 /**
  * Zoom direction type
@@ -78,6 +79,7 @@ export const CanvasApp = () => {
       onShowMeasurementGuide={openMeasurementGuide}
     >
       <Canvas />
+      <DrawingToolbarModals />
     </CanvasLayout>
   );
 };
