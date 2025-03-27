@@ -211,18 +211,46 @@ export const useCanvasGridInitialization = ({
     // Reset attempt counter
     initAttemptRef.current = 0;
     
-    // Get canvas from ref in parent component
-    // We expect this to be provided by the component using this hook
-    const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+    // Find existing fabric canvas instance
+    // First try to find the canvas element
+    const canvasElement = document.querySelector('canvas') as HTMLCanvasElement | null;
     
-    if (!canvas || !canvas._fabric) {
-      console.error("Cannot force create grid: Canvas element or fabric instance not found");
-      toast.error("Canvas not initialized");
+    if (!canvasElement) {
+      console.error("Cannot force create grid: Canvas element not found in DOM");
+      toast.error("Canvas element not found");
+      return [];
+    }
+    
+    // Try to get the Fabric.js canvas instance
+    // Method 1: Look for a registered Fabric canvas instance
+    let fabricCanvas: FabricCanvas | null = null;
+    
+    try {
+      // Try to access Fabric.js instance from global registry if available
+      if (window.fabricCanvasInstances) {
+        fabricCanvas = window.fabricCanvasInstances[0] || null;
+      }
+    } catch (error) {
+      console.warn("Could not get fabric canvas from registry:", error);
+    }
+    
+    // Method 2: Try to access via custom property (needs type definition)
+    if (!fabricCanvas && canvasElement._fabric) {
+      try {
+        fabricCanvas = canvasElement._fabric as unknown as FabricCanvas;
+      } catch (error) {
+        console.warn("Could not get _fabric property from canvas element:", error);
+      }
+    }
+    
+    // Final fallback: try to create a new Fabric.js canvas
+    if (!fabricCanvas) {
+      console.error("Could not find existing Fabric canvas instance");
+      toast.error("Fabric canvas not available");
       return [];
     }
     
     console.log("Force grid creation requested by user");
-    const fabricCanvas = canvas._fabric as unknown as FabricCanvas;
     
     try {
       forceCreateGrid(fabricCanvas, gridLayerRef);
