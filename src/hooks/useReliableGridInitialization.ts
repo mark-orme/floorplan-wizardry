@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { 
-  createCompleteGrid, 
+  createCompleteGrid,
   createBasicEmergencyGrid, 
   validateGrid, 
   ensureGrid 

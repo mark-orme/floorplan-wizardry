@@ -327,14 +327,16 @@ export const reorderGridObjects = (
         obj.strokeWidth && 
         obj.strokeWidth === 1
       ) {
-        canvas.bringForward(obj);
+        // Use sendToFront instead of bringForward (which doesn't exist)
+        canvas.bringObjectToFront(obj);
       }
     });
     
     // Bring text labels to front
     gridLayerRef.current.forEach(obj => {
       if (obj.type === 'text') {
-        canvas.bringForward(obj);
+        // Use sendToFront instead of bringForward (which doesn't exist)
+        canvas.bringObjectToFront(obj);
       }
     });
     
@@ -391,3 +393,5 @@ export const verifyGridExists = (
 ): boolean => {
   return validateGrid(canvas, gridLayerRef);
 };
+
+export { verifyGridExists, retryWithBackoff };
