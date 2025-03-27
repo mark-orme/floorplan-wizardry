@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import logger from '@/utils/logger';
 import { resetGridProgress } from '@/utils/gridManager';
 import { createBasicEmergencyGrid, verifyGridExists } from '@/utils/gridCreationUtils';
+import { dumpGridState, attemptGridRecovery, forceCreateGrid } from '@/utils/grid/gridDebugUtils';
 
 interface GridHealthCheckResult {
   exists: boolean;
@@ -36,6 +37,7 @@ export const useGridCreationDebug = (
   const [lastGridSize, setLastGridSize] = useState(0);
   const retryTimeoutRef = useRef<number | null>(null);
   const retryAttemptsRef = useRef(0);
+  const lastAttemptTimeRef = useRef<number>(0);
   
   /**
    * Force grid creation
@@ -48,30 +50,61 @@ export const useGridCreationDebug = (
       return [];
     }
     
+    // Throttle attempts to avoid spamming
+    const now = Date.now();
+    if (now - lastAttemptTimeRef.current < 500) {
+      console.log("Throttling grid creation attempts");
+      toast.warning("Please wait before trying again");
+      return [];
+    }
+    lastAttemptTimeRef.current = now;
+    
     resetGridProgress();
     console.log("🔄 Forcing grid creation");
+    dumpGridState(fabricCanvasRef.current, gridLayerRef);
     
-    // Make sure we have a valid canvas with dimensions
+    // Get canvas details for logging
     const canvas = fabricCanvasRef.current;
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
+    const width = canvas.getWidth?.() || canvas.width || 0;
+    const height = canvas.getHeight?.() || canvas.height || 0;
     
-    if (!width || !height || width === 0 || height === 0) {
+    if (width === 0 || height === 0) {
       console.error("Cannot create grid on zero-dimension canvas:", { width, height });
-      toast.error("Grid creation failed: Canvas has invalid dimensions");
-      return [];
+      
+      // Try to force set dimensions
+      try {
+        console.log("Attempting to force set canvas dimensions to 800x600");
+        canvas.setWidth(800);
+        canvas.setHeight(600);
+        
+        // Verify dimensions were set
+        const newWidth = canvas.getWidth?.() || canvas.width || 0;
+        const newHeight = canvas.getHeight?.() || canvas.height || 0;
+        
+        if (newWidth === 0 || newHeight === 0) {
+          console.error("Failed to set canvas dimensions");
+          toast.error("Grid creation failed: Cannot set canvas dimensions");
+          return [];
+        } else {
+          console.log(`Successfully set canvas dimensions to ${newWidth}x${newHeight}`);
+        }
+      } catch (error) {
+        console.error("Error setting canvas dimensions:", error);
+        toast.error("Grid creation failed: Canvas has invalid dimensions");
+        return [];
+      }
     }
     
     try {
-      // Create emergency grid
-      const grid = createBasicEmergencyGrid(canvas, gridLayerRef);
+      // Use our enhanced force grid creation utility
+      const success = forceCreateGrid(canvas, gridLayerRef);
       
-      if (grid.length > 0) {
-        console.log(`✅ Grid creation successful: ${grid.length} objects created`);
+      if (success) {
+        console.log(`✅ Grid creation successful: ${gridLayerRef.current.length} objects created`);
         retryAttemptsRef.current = 0; // Reset retry counter on success
-        return grid;
+        return gridLayerRef.current;
       } else {
-        console.error("Grid creation returned empty array");
+        console.error("Grid creation failed: forceCreateGrid returned false");
         toast.error("Grid creation failed: No objects were created");
         
         // Schedule a retry if we haven't tried too many times
@@ -126,8 +159,17 @@ export const useGridCreationDebug = (
     
     try {
       const canvas = fabricCanvasRef.current;
-      const exists = verifyGridExists(canvas, gridLayerRef);
+      let exists = false;
+      
+      // More thorough existence check
+      if (gridLayerRef.current.length > 0) {
+        exists = gridLayerRef.current.some(obj => canvas.contains(obj));
+      } else {
+        exists = false;
+      }
+      
       const newGridSize = gridLayerRef.current.length;
+      const objectsOnCanvas = gridLayerRef.current.filter(obj => canvas.contains(obj)).length;
       
       // Track grid size changes
       if (newGridSize !== lastGridSize) {
@@ -138,10 +180,10 @@ export const useGridCreationDebug = (
       return {
         exists,
         size: newGridSize,
-        objectsOnCanvas: canvas.getObjects().length,
+        objectsOnCanvas,
         canvasDimensions: {
-          width: canvas.getWidth?.() || null,
-          height: canvas.getHeight?.() || null
+          width: canvas.getWidth?.() || canvas.width,
+          height: canvas.getHeight?.() || canvas.height
         }
       };
     } catch (error) {
@@ -155,6 +197,12 @@ export const useGridCreationDebug = (
    * Attempts to repair grid problems
    */
   const fixGridIssues = useCallback(() => {
+    if (!fabricCanvasRef.current) {
+      console.log("Cannot fix grid issues: Canvas is null");
+      toast.error("Grid fix failed: Canvas is not initialized");
+      return [];
+    }
+    
     const health = checkGridHealth();
     
     if (!health) {
@@ -162,13 +210,33 @@ export const useGridCreationDebug = (
       return forceGridCreation();
     }
     
-    if (!health.exists || health.size === 0) {
+    console.log("Current grid health:", health);
+    
+    if (!health.exists || health.size === 0 || health.objectsOnCanvas === 0) {
       toast.warning("Grid missing, attempting recovery");
       return forceGridCreation();
     }
     
+    // If grid exists but some objects are missing from canvas
+    if (health.objectsOnCanvas < health.size) {
+      console.log(`Grid partial issue: ${health.objectsOnCanvas}/${health.size} objects on canvas`);
+      toast.info(`Fixing partial grid (${health.objectsOnCanvas}/${health.size} objects on canvas)`);
+      
+      // Attempt recovery with existing grid objects
+      const success = attemptGridRecovery(fabricCanvasRef.current, gridLayerRef);
+      
+      if (success) {
+        return gridLayerRef.current;
+      } else {
+        // If recovery failed, try force creation
+        return forceGridCreation();
+      }
+    }
+    
+    // Grid appears to be fine
+    toast.success("Grid is already working correctly");
     return gridLayerRef.current;
-  }, [checkGridHealth, forceGridCreation, gridLayerRef]);
+  }, [checkGridHealth, forceGridCreation, fabricCanvasRef, gridLayerRef]);
   
   /**
    * Toggle debug mode
@@ -179,8 +247,25 @@ export const useGridCreationDebug = (
       console.log("🔍 Grid debug mode enabled");
       const health = checkGridHealth();
       console.log("Grid health:", health);
+      
+      if (fabricCanvasRef.current) {
+        dumpGridState(fabricCanvasRef.current, gridLayerRef);
+      }
     }
-  }, [debugMode, checkGridHealth]);
+  }, [debugMode, checkGridHealth, fabricCanvasRef, gridLayerRef]);
+  
+  // Auto check if grid needs to be created on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const health = checkGridHealth();
+      if (health && !health.exists && health.size === 0) {
+        console.log("Grid missing on initial health check, auto-attempting creation");
+        forceGridCreation();
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [checkGridHealth, forceGridCreation]);
   
   // Monitor grid health in debug mode
   useEffect(() => {

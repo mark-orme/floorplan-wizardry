@@ -5,6 +5,7 @@
  */
 import { Canvas, Object as FabricObject, Line } from "fabric";
 import logger from "./logger";
+import { toast } from "sonner";
 
 /**
  * Create a basic emergency grid when normal grid creation fails
@@ -17,6 +18,33 @@ export const createBasicEmergencyGrid = (
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] => {
   try {
+    // Log canvas dimensions for debugging
+    const width = canvas.getWidth?.() || canvas.width;
+    const height = canvas.getHeight?.() || canvas.height;
+    
+    console.log(`Creating emergency grid with dimensions: ${width}x${height}`);
+    
+    // Validate dimensions
+    if (!width || !height || width <= 0 || height <= 0) {
+      console.error("Cannot create emergency grid: Invalid canvas dimensions");
+      
+      // Set fallback dimensions
+      const fallbackWidth = 800;
+      const fallbackHeight = 600;
+      
+      console.log(`Using fallback dimensions: ${fallbackWidth}x${fallbackHeight}`);
+      
+      try {
+        canvas.setWidth(fallbackWidth);
+        canvas.setHeight(fallbackHeight);
+        console.log("Set canvas to fallback dimensions");
+      } catch (error) {
+        console.error("Failed to set canvas dimensions:", error);
+        toast.error("Failed to set canvas dimensions");
+        return [];
+      }
+    }
+    
     // Clear existing grid objects
     if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
@@ -27,10 +55,9 @@ export const createBasicEmergencyGrid = (
       gridLayerRef.current = [];
     }
     
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
-    
-    console.log(`Creating emergency grid with dimensions: ${width}x${height}`);
+    // Get updated dimensions after possible changes
+    const finalWidth = canvas.getWidth?.() || canvas.width || 800;
+    const finalHeight = canvas.getHeight?.() || canvas.height || 600;
     
     // Create a simple grid with hardcoded settings
     const smallGridSpacing = 10;
@@ -38,8 +65,8 @@ export const createBasicEmergencyGrid = (
     const gridObjects: FabricObject[] = [];
     
     // Create small grid lines
-    for (let x = 0; x <= width; x += smallGridSpacing) {
-      const line = new Line([x, 0, x, height], {
+    for (let x = 0; x <= finalWidth; x += smallGridSpacing) {
+      const line = new Line([x, 0, x, finalHeight], {
         stroke: '#e0e0e0',
         strokeWidth: 0.5,
         selectable: false,
@@ -51,8 +78,8 @@ export const createBasicEmergencyGrid = (
       canvas.add(line);
     }
     
-    for (let y = 0; y <= height; y += smallGridSpacing) {
-      const line = new Line([0, y, width, y], {
+    for (let y = 0; y <= finalHeight; y += smallGridSpacing) {
+      const line = new Line([0, y, finalWidth, y], {
         stroke: '#e0e0e0',
         strokeWidth: 0.5,
         selectable: false,
@@ -65,8 +92,8 @@ export const createBasicEmergencyGrid = (
     }
     
     // Create large grid lines
-    for (let x = 0; x <= width; x += largeGridSpacing) {
-      const line = new Line([x, 0, x, height], {
+    for (let x = 0; x <= finalWidth; x += largeGridSpacing) {
+      const line = new Line([x, 0, x, finalHeight], {
         stroke: '#d0d0d0',
         strokeWidth: 1,
         selectable: false,
@@ -78,8 +105,8 @@ export const createBasicEmergencyGrid = (
       canvas.add(line);
     }
     
-    for (let y = 0; y <= height; y += largeGridSpacing) {
-      const line = new Line([0, y, width, y], {
+    for (let y = 0; y <= finalHeight; y += largeGridSpacing) {
+      const line = new Line([0, y, finalWidth, y], {
         stroke: '#d0d0d0',
         strokeWidth: 1,
         selectable: false,
@@ -90,6 +117,11 @@ export const createBasicEmergencyGrid = (
       gridObjects.push(line);
       canvas.add(line);
     }
+    
+    // Ensure grid lines are sent to back
+    gridObjects.forEach(obj => {
+      canvas.sendToBack(obj);
+    });
     
     // Update the gridLayerRef
     gridLayerRef.current = gridObjects;
@@ -97,10 +129,12 @@ export const createBasicEmergencyGrid = (
     // Force a render
     canvas.requestRenderAll();
     
+    console.log(`Created emergency grid with ${gridObjects.length} objects`);
     return gridObjects;
   } catch (error) {
     logger.error("Error creating emergency grid:", error);
     console.error("Error creating emergency grid:", error);
+    toast.error("Failed to create emergency grid");
     return [];
   }
 };
@@ -153,6 +187,10 @@ export const retryWithBackoff = (
   const delay = Math.min(1000 * Math.pow(1.5, attempt), 5000);
   
   return window.setTimeout(() => {
-    fn();
+    try {
+      fn();
+    } catch (error) {
+      console.error("Error in retry function:", error);
+    }
   }, delay);
 };
