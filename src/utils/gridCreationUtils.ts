@@ -1,85 +1,38 @@
+
 /**
- * Simple grid creation utilities for direct grid creation
+ * Grid creation utilities
+ * Provides direct grid creation functions for emergency use
  * @module gridCreationUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
-import logger from "./logger";
-import { forceCleanCanvasElement } from "./fabric/canvasCleanup";
-
-// Add a counter to limit the number of creation attempts
-let creationAttemptCounter = 0;
-const MAX_CREATION_ATTEMPTS = 3;
-let lastAttemptTime = 0;
-const ATTEMPT_COOLDOWN_MS = 3000; // 3 second cooldown between attempts
+import { Canvas, Line, Object as FabricObject } from 'fabric';
+import { GRID_SPACING } from '@/constants/numerics';
+import { GRID_COLORS } from '@/constants/colorConstants';
+import logger from './logger';
+import { toast } from 'sonner';
 
 /**
- * Reset the creation attempt counter
- */
-export const resetCreationAttempts = () => {
-  creationAttemptCounter = 0;
-  lastAttemptTime = 0;
-  logger.debug("Creation attempt counter reset");
-};
-
-/**
- * Check if we should allow a new grid creation attempt
- * @returns {boolean} Whether to allow a new creation attempt
- */
-export const shouldAllowCreationAttempt = (): boolean => {
-  const now = Date.now();
-  
-  // If we're within the cooldown period, don't allow
-  if (now - lastAttemptTime < ATTEMPT_COOLDOWN_MS) {
-    logger.warn(`Creation attempt cooldown in effect, ${ATTEMPT_COOLDOWN_MS - (now - lastAttemptTime)}ms remaining`);
-    return false;
-  }
-  
-  // If we've reached the max attempts, don't allow more
-  if (creationAttemptCounter >= MAX_CREATION_ATTEMPTS) {
-    logger.warn(`Maximum creation attempts (${MAX_CREATION_ATTEMPTS}) reached`);
-    return false;
-  }
-  
-  // Update the attempt counter and time
-  creationAttemptCounter++;
-  lastAttemptTime = now;
-  
-  logger.info(`Creation attempt ${creationAttemptCounter}/${MAX_CREATION_ATTEMPTS} allowed`);
-  return true;
-};
-
-/**
- * Create a very basic emergency grid without complex dependencies
- * This is a last resort when all other grid creation methods fail
+ * Create a basic emergency grid with minimal operations
+ * Used when normal grid creation fails
  * 
- * @param {FabricCanvas} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
- * @returns {FabricObject[]} Created grid objects
+ * @param {Canvas} canvas - The canvas to create grid on
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Success status
  */
 export const createBasicEmergencyGrid = (
-  canvas: FabricCanvas,
-  gridLayerRef?: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas) {
+    logger.error("Cannot create emergency grid: Canvas is null");
+    console.error("⛔️ Emergency grid creation failed: Canvas is null");
+    return false;
+  }
+  
   try {
-    // Check if we should even attempt to create a grid
-    if (!shouldAllowCreationAttempt()) {
-      return gridLayerRef?.current || [];
-    }
+    console.log("🚨 Creating basic emergency grid");
     
-    console.log("Creating basic emergency grid as last resort");
-    
-    if (!canvas) {
-      console.error("Cannot create emergency grid: canvas is null");
-      return [];
-    }
-    
-    const gridObjects: FabricObject[] = [];
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
-    
-    // Clear any existing grid objects
-    if (gridLayerRef && gridLayerRef.current.length > 0) {
-      console.log(`Removing ${gridLayerRef.current.length} existing grid objects`);
+    // Clear any existing objects in the grid layer first
+    if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
         if (canvas.contains(obj)) {
           canvas.remove(obj);
@@ -88,278 +41,131 @@ export const createBasicEmergencyGrid = (
       gridLayerRef.current = [];
     }
     
-    // Create horizontal lines every 100px
-    for (let i = 0; i <= height; i += 100) {
-      const line = new Line([0, i, width, i], {
-        stroke: "#666666",
-        opacity: 0.5,
-        selectable: false,
-        evented: false
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-      
-      // Add label for y-position
-      if (i > 0) {
-        const text = new Text(`${i}px`, {
-          left: 5,
-          top: i - 15,
-          fontSize: 10,
-          fill: "#666666",
-          selectable: false,
-          evented: false
-        });
-        canvas.add(text);
-        gridObjects.push(text);
-      }
+    // Get canvas dimensions
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    
+    if (width <= 0 || height <= 0) {
+      logger.error("Cannot create emergency grid: Invalid canvas dimensions", { width, height });
+      console.error("⛔️ Emergency grid creation failed: Invalid canvas dimensions", { width, height });
+      return false;
     }
     
-    // Create vertical lines every 100px
-    for (let i = 0; i <= width; i += 100) {
+    console.log("📏 Creating emergency grid with dimensions:", { width, height });
+    
+    // Create a simple grid with minimal operations
+    const gridObjects: FabricObject[] = [];
+    const gridSpacing = GRID_SPACING;
+    
+    // Create vertical grid lines
+    for (let i = 0; i < width; i += gridSpacing) {
       const line = new Line([i, 0, i, height], {
-        stroke: "#666666",
-        opacity: 0.5,
+        stroke: GRID_COLORS.SMALL_GRID,
+        strokeWidth: 0.5,
         selectable: false,
-        evented: false
+        evented: false,
+        hoverCursor: 'default'
       });
       canvas.add(line);
       gridObjects.push(line);
-      
-      // Add label for x-position
-      if (i > 0) {
-        const text = new Text(`${i}px`, {
-          left: i,
-          top: 5,
-          fontSize: 10,
-          fill: "#666666",
-          selectable: false,
-          evented: false
-        });
-        canvas.add(text);
-        gridObjects.push(text);
-      }
     }
     
-    // Add a debugging marker in the center
-    const marker = new Text("EMERGENCY GRID", {
-      left: width / 2 - 50,
-      top: height / 2,
-      fontSize: 14,
-      fill: "red",
-      fontWeight: "bold",
-      selectable: false,
-      evented: false
-    });
-    canvas.add(marker);
-    gridObjects.push(marker);
+    // Create horizontal grid lines
+    for (let i = 0; i < height; i += gridSpacing) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_COLORS.SMALL_GRID,
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        hoverCursor: 'default'
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
     
-    console.log(`Created basic emergency grid with ${gridObjects.length} objects`);
+    // Add a few thicker lines for better orientation
+    for (let i = 0; i < width; i += gridSpacing * 10) {
+      const line = new Line([i, 0, i, height], {
+        stroke: GRID_COLORS.LARGE_GRID,
+        strokeWidth: 1.5,
+        selectable: false,
+        evented: false,
+        hoverCursor: 'default'
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
     
-    // Force render to ensure grid is visible
+    for (let i = 0; i < height; i += gridSpacing * 10) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_COLORS.LARGE_GRID,
+        strokeWidth: 1.5,
+        selectable: false,
+        evented: false,
+        hoverCursor: 'default'
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Update the grid layer reference
+    gridLayerRef.current = gridObjects;
+    
+    // Force canvas to render
     canvas.requestRenderAll();
     
-    // Update gridLayerRef if provided
-    if (gridLayerRef) {
-      gridLayerRef.current = gridObjects;
-    }
+    console.log("✅ Emergency grid created with", gridObjects.length, "lines");
+    logger.info(`Emergency grid created with ${gridObjects.length} lines`);
     
-    return gridObjects;
-  } catch (error) {
-    console.error("Failed to create basic emergency grid:", error);
-    return [];
-  }
-};
-
-/**
- * Check if the fabric canvas is in a usable state
- * 
- * @param {FabricCanvas} canvas - The fabric canvas instance to check
- * @returns {boolean} Whether the canvas is usable
- */
-export const isCanvasUsable = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) return false;
-  
-  try {
-    // Check that canvas has basic properties
-    if (!canvas.width || !canvas.height) return false;
+    // Optional: Notify user with toast
+    toast.success("Emergency grid created");
     
-    // Check that canvas element exists
-    const element = canvas.getElement();
-    if (!element || !(element instanceof HTMLCanvasElement)) return false;
-    
-    // Check if the canvas is marked as disposed
-    if ((canvas as any).disposed === true) return false;
-    
-    // Try to call a method to see if the canvas is functional
-    canvas.getZoom();
     return true;
   } catch (error) {
-    logger.error("Canvas failed usability check:", error);
-    return false;
-  }
-};
-
-/**
- * Retry a function with exponential backoff
- * 
- * @param {Function} fn - The function to retry
- * @param {number} attempt - Current attempt number (starting at 0)
- * @param {number} maxAttempts - Maximum number of attempts
- * @param {number} baseDelay - Base delay in ms (will be multiplied by backoff factor)
- * @param {number} backoffFactor - Factor to increase delay by for each attempt
- * @returns {number} Timeout ID for potential cancellation
- */
-export const retryWithBackoff = (
-  fn: () => boolean | void,
-  attempt: number = 0,
-  maxAttempts: number = 3,
-  baseDelay: number = 200,
-  backoffFactor: number = 1.5
-): number => {
-  // Calculate delay with exponential backoff
-  const delay = Math.min(
-    baseDelay * Math.pow(backoffFactor, attempt),
-    5000 // Maximum 5 second delay
-  );
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`Scheduling retry attempt #${attempt + 1} in ${delay}ms`);
-  }
-  
-  // Return the timeout ID
-  return window.setTimeout(() => {
-    if (attempt >= maxAttempts) {
-      console.warn(`Maximum retry attempts (${maxAttempts}) reached`);
-      return;
-    }
+    console.error("❌ Error creating emergency grid:", error);
+    logger.error("Error creating emergency grid:", error);
     
+    // Clear any partially created grid
     try {
-      const result = fn();
-      
-      // If function returns true, consider it successful
-      // If it returns false or undefined, retry
-      if (result !== true && attempt < maxAttempts - 1) {
-        retryWithBackoff(fn, attempt + 1, maxAttempts, baseDelay, backoffFactor);
-      }
-    } catch (error) {
-      console.error(`Error during retry attempt #${attempt + 1}:`, error);
-      
-      // Retry on error if we haven't reached max attempts
-      if (attempt < maxAttempts - 1) {
-        retryWithBackoff(fn, attempt + 1, maxAttempts, baseDelay, backoffFactor);
-      }
-    }
-  }, delay);
-};
-
-/**
- * Clear any pending retry timeouts
- * @param {number|null} timeoutId - The timeout ID to clear
- */
-export const clearRetryTimeout = (timeoutId: number | null): void => {
-  if (timeoutId !== null) {
-    window.clearTimeout(timeoutId);
-  }
-};
-
-/**
- * Forcibly reset a canvas element for reinitialization
- * @param {HTMLCanvasElement|null} element - Canvas element to reset
- * @returns {boolean} Success status
- */
-export const forceResetCanvasElement = (element: HTMLCanvasElement | null): boolean => {
-  if (!element) return false;
-  
-  try {
-    // First clean Fabric.js data attributes using existing utility
-    forceCleanCanvasElement(element);
-    
-    // Completely recreate the canvas by replacing it with a clone
-    const parent = element.parentNode;
-    if (parent) {
-      const clone = element.cloneNode(false) as HTMLCanvasElement;
-      
-      // Preserve ID and other important attributes
-      clone.id = element.id;
-      clone.className = element.className;
-      clone.style.cssText = element.style.cssText;
-      
-      // Remove any data attributes from the clone to ensure freshness
-      Array.from(clone.attributes)
-        .filter(attr => attr.name.startsWith('data-'))
-        .forEach(attr => {
-          clone.removeAttribute(attr.name);
-        });
-      
-      // Replace the original element with our clone
-      parent.replaceChild(clone, element);
-      
-      logger.info("Canvas element forcibly reset by replacement");
-      return true;
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    } catch (clearError) {
+      // Just log, don't throw
     }
     
-    // If we couldn't replace the element, at least try to reset its state
-    const width = element.width;
-    const height = element.height;
-    
-    // Reset dimensions to force canvas reinitialization
-    element.width = 1;
-    element.height = 1;
-    element.width = width;
-    element.height = height;
-    
-    logger.info("Canvas element partially reset");
-    return true;
-  } catch (error) {
-    logger.error("Failed to force reset canvas element:", error);
     return false;
   }
 };
 
 /**
- * Hard reset of a canvas element to completely remove Fabric.js initialization
- * This is more aggressive than forceResetCanvasElement
+ * Verify if grid exists on canvas
+ * Checks if grid objects are properly attached
  * 
- * @param {HTMLCanvasElement|null} element - Canvas element to reset
- * @returns {boolean} Success status
+ * @param {Canvas} canvas - The canvas to check
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Whether grid exists
  */
-export const hardResetCanvasElement = (element: HTMLCanvasElement | null): boolean => {
-  if (!element) return false;
-  
-  try {
-    logger.warn("Performing HARD RESET of canvas element");
-    
-    // First clean normally
-    forceCleanCanvasElement(element);
-    
-    // Clone and replace the canvas element
-    const parent = element.parentNode;
-    if (parent) {
-      // Create a completely new canvas element
-      const newCanvas = document.createElement('canvas');
-      
-      // Copy essential attributes
-      newCanvas.id = element.id;
-      newCanvas.className = element.className;
-      
-      // Copy dimensions
-      newCanvas.width = element.width || 800;
-      newCanvas.height = element.height || 600;
-      
-      // Set styles directly
-      newCanvas.style.width = `${newCanvas.width}px`;
-      newCanvas.style.height = `${newCanvas.height}px`;
-      
-      // Replace in DOM
-      parent.replaceChild(newCanvas, element);
-      
-      logger.info("Canvas element completely replaced with fresh element");
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    logger.error("Hard reset of canvas element failed:", error);
+export const verifyGridExists = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas || !gridLayerRef.current || gridLayerRef.current.length === 0) {
     return false;
   }
+  
+  // Check if at least 50% of grid objects are on canvas
+  const totalObjects = gridLayerRef.current.length;
+  let objectsOnCanvas = 0;
+  
+  gridLayerRef.current.forEach(obj => {
+    if (canvas.contains(obj)) {
+      objectsOnCanvas++;
+    }
+  });
+  
+  return objectsOnCanvas >= totalObjects * 0.5;
 };

@@ -12,9 +12,11 @@ import { useCanvasController } from "@/components/canvas/controller/CanvasContro
 import { DistanceTooltip } from "./DistanceTooltip";
 import { DebugInfoState } from "@/types/debugTypes";
 import { EmergencyCanvasProvider } from "./emergency/EmergencyCanvasProvider";
+import { GridDebugOverlay } from "./canvas/GridDebugOverlay";
 import logger from "@/utils/logger";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { useCanvasCleanup } from "@/hooks/useCanvasCleanup";
+import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 
 /**
  * Canvas component props
@@ -58,6 +60,11 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     lastGridCreationTime: 0
   });
   
+  // Grid debug state
+  const [showDebugOverlay, setShowDebugOverlay] = useState(
+    process.env.NODE_ENV === 'development'
+  );
+  
   // Error state
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -81,7 +88,12 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     setZoomLevel: (zoom) => console.log('Zoom changed:', zoom), // Placeholder for now
     setDebugInfo,
     setHasError,
-    setErrorMessage
+    setErrorMessage,
+    // Pass our emergency grid creation function
+    createGrid: (canvas) => {
+      const initialGridCreated = createBasicEmergencyGrid(canvas, gridLayerRef);
+      return gridLayerRef.current;
+    }
   });
   
   // Sync refs from initialization
@@ -159,6 +171,19 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     canvasElementRef.current = null;
   }, [setDebugInfo, setHasError, setErrorMessage]);
   
+  // Toggle debug overlay with keyboard shortcut
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ctrl+Alt+G to toggle grid debug overlay
+      if (e.ctrlKey && e.altKey && e.key === 'g') {
+        setShowDebugOverlay(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+  
   // Comprehensive cleanup when component unmounts
   useEffect(() => {
     return () => {
@@ -221,6 +246,13 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
         <CanvasContainer
           debugInfo={debugInfo}
           canvasElementRef={canvasElementRef}
+        />
+        
+        {/* Grid debugging overlay */}
+        <GridDebugOverlay 
+          fabricCanvasRef={fabricCanvasRef}
+          gridLayerRef={gridLayerRef}
+          isVisible={showDebugOverlay}
         />
         
         {/* Distance measurement tooltip */}
