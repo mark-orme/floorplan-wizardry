@@ -18,6 +18,7 @@ import { resetInitializationState } from "@/utils/canvas/safeCanvasInitializatio
 import { useCanvasCleanup } from "@/hooks/useCanvasCleanup";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 import { toast } from "sonner";
+import { dumpGridState, attemptGridRecovery } from "@/utils/grid/gridDebugUtils";
 
 /**
  * Canvas component props
@@ -54,6 +55,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   const eventHandlersCleanupRef = useRef<(() => void) | null>(null);
   const gridCreatedRef = useRef(false);
   const initAttemptCountRef = useRef(0);
+  const gridTimerRef = useRef<number | null>(null);
   
   // Debug state
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
@@ -76,9 +78,29 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   // Create a function to create grid that we'll pass to the initialization hook
   const createGrid = useCallback((canvas: FabricCanvas) => {
     console.log("Creating grid from Canvas component");
-    const grid = createBasicEmergencyGrid(canvas, gridLayerRef);
-    gridCreatedRef.current = true;
-    return grid;
+    try {
+      // Make sure canvas has dimensions
+      if (canvas.getWidth() === 0 || canvas.getHeight() === 0) {
+        console.error("Cannot create grid on zero-dimension canvas");
+        return [];
+      }
+      
+      // Create the grid
+      const grid = createBasicEmergencyGrid(canvas, gridLayerRef);
+      
+      // Only mark grid as created if we actually got some objects
+      if (grid.length > 0) {
+        gridCreatedRef.current = true;
+        console.log(`Created grid with ${grid.length} objects`);
+      } else {
+        console.error("Grid creation returned empty array");
+      }
+      
+      return grid;
+    } catch (error) {
+      console.error("Error creating grid:", error);
+      return [];
+    }
   }, [gridLayerRef]);
   
   // Initialize the canvas
@@ -118,12 +140,20 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     // Only create grid once and if canvas is ready
     if (fabricCanvasRef.current && !gridCreatedRef.current) {
       console.log("Canvas ready, creating grid...");
+      
+      // Dump current state for debugging
+      dumpGridState(fabricCanvasRef.current, gridLayerRef);
+      
       const grid = createGrid(fabricCanvasRef.current);
       console.log(`Created grid with ${grid.length} objects`);
       
       if (grid.length === 0) {
         // If grid creation failed, try again after a delay
-        const retryTimeout = setTimeout(() => {
+        if (gridTimerRef.current) {
+          window.clearTimeout(gridTimerRef.current);
+        }
+        
+        gridTimerRef.current = window.setTimeout(() => {
           if (fabricCanvasRef.current) {
             console.log("Retrying grid creation...");
             const grid = createGrid(fabricCanvasRef.current);
@@ -137,25 +167,36 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
                 initAttemptCountRef.current++;
                 console.log(`Will try again soon (attempt ${initAttemptCountRef.current})`);
                 
-                // Try once more after a longer delay
-                setTimeout(() => {
-                  if (fabricCanvasRef.current) {
-                    console.log(`Final grid creation attempt ${initAttemptCountRef.current}`);
-                    const grid = createGrid(fabricCanvasRef.current);
-                    console.log(`Final attempt result: ${grid.length} objects`);
-                  }
-                }, 1500);
+                // Try recovery
+                if (attemptGridRecovery(fabricCanvasRef.current, gridLayerRef, createGrid)) {
+                  toast.success("Grid successfully recovered");
+                } else {
+                  // Try once more after a longer delay
+                  gridTimerRef.current = window.setTimeout(() => {
+                    if (fabricCanvasRef.current) {
+                      console.log(`Final grid creation attempt ${initAttemptCountRef.current}`);
+                      const grid = createGrid(fabricCanvasRef.current);
+                      console.log(`Final attempt result: ${grid.length} objects`);
+                    }
+                  }, 1500);
+                }
               }
             }
           }
         }, 800);
-        
-        return () => clearTimeout(retryTimeout);
       } else {
         toast.success(`Created grid with ${grid.length} objects`);
       }
     }
-  }, [fabricCanvasRef.current, createGrid]);
+    
+    // Clean up on unmount
+    return () => {
+      if (gridTimerRef.current !== null) {
+        window.clearTimeout(gridTimerRef.current);
+        gridTimerRef.current = null;
+      }
+    };
+  }, [fabricCanvasRef.current, createGrid, gridLayerRef]);
   
   // Get the cleanup function for canvas initialization
   const cleanupInitialization = useCallback(() => {
@@ -218,6 +259,9 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
       lastInitTime: Date.now()
     }));
     
+    // Reset grid created flag
+    gridCreatedRef.current = false;
+    
     // Force a re-render
     canvasElementRef.current = null;
   }, [setDebugInfo, setHasError, setErrorMessage]);
@@ -244,6 +288,12 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
       if (eventHandlersCleanupRef.current) {
         logger.debug("Cleaning up event handlers");
         eventHandlersCleanupRef.current();
+      }
+      
+      // Clean up grid timer
+      if (gridTimerRef.current !== null) {
+        window.clearTimeout(gridTimerRef.current);
+        gridTimerRef.current = null;
       }
       
       // Call additional cleanup functions
@@ -299,11 +349,11 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
           canvasElementRef={canvasElementRef}
         />
         
-        {/* Grid debugging overlay */}
+        {/* Grid debugging overlay - always show on floor plan editor */}
         <GridDebugOverlay 
           fabricCanvasRef={fabricCanvasRef}
           gridLayerRef={gridLayerRef}
-          isVisible={showDebugOverlay}
+          isVisible={true} // Force to always be visible for floorplans route
         />
         
         {/* Distance measurement tooltip */}

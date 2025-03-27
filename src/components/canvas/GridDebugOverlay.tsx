@@ -1,9 +1,10 @@
+
 /**
  * Grid Debug Overlay Component
  * Provides debugging overlay for grid issues
  * @module GridDebugOverlay
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGridCreationDebug } from "@/hooks/useGridCreationDebug";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export const GridDebugOverlay = ({
 }: GridDebugOverlayProps) => {
   const [gridStats, setGridStats] = useState({ exists: false, size: 0 });
   const [expanded, setExpanded] = useState(true); // Start expanded to make debug info visible
+  const forceGridAttemptRef = useRef(0);
   
   const { 
     debugMode,
@@ -75,14 +77,14 @@ export const GridDebugOverlay = ({
       const timer = setTimeout(() => {
         console.log("Auto-attempting grid creation via debug overlay");
         const result = forceGridCreation();
-        console.log("Auto grid creation result:", result);
+        console.log("Auto grid creation result:", result && result.length ? `${result.length} objects created` : "Failed");
       }, 1000);
       
       return () => clearTimeout(timer);
     }
   }, [isVisible, fabricCanvasRef, gridStats.size, forceGridCreation]);
   
-  // Don't render if not visible
+  // Always render in floorplans route, but respect isVisible prop
   if (!isVisible) return null;
   
   return (
@@ -116,7 +118,7 @@ export const GridDebugOverlay = ({
               <span>Canvas dimensions:</span>
               <span className="font-mono">
                 {fabricCanvasRef.current ? 
-                  `${fabricCanvasRef.current.getWidth()}x${fabricCanvasRef.current.getHeight()}` : 
+                  `${fabricCanvasRef.current.getWidth() || 0}x${fabricCanvasRef.current.getHeight() || 0}` : 
                   'N/A'}
               </span>
             </div>
@@ -129,12 +131,32 @@ export const GridDebugOverlay = ({
               className="h-6 text-xs px-2"
               onClick={() => {
                 console.log("Force grid button clicked");
-                const grid = forceGridCreation();
-                console.log("Force grid created:", grid);
-                if (grid && grid.length > 0) {
-                  toast.success(`Created ${grid.length} grid objects`);
-                } else {
-                  toast.error("Failed to create grid");
+                forceGridAttemptRef.current += 1;
+                
+                try {
+                  const grid = forceGridCreation();
+                  console.log("Force grid created:", grid && grid.length);
+                  
+                  if (grid && grid.length > 0) {
+                    toast.success(`Created ${grid.length} grid objects`);
+                  } else {
+                    console.error("Grid creation returned no objects");
+                    toast.error("Failed to create grid objects");
+                    
+                    // If we've tried a few times and it's still not working, show more detailed error
+                    if (forceGridAttemptRef.current >= 3) {
+                      const canvasInfo = fabricCanvasRef.current ? {
+                        width: fabricCanvasRef.current.getWidth(),
+                        height: fabricCanvasRef.current.getHeight(),
+                        objectCount: fabricCanvasRef.current.getObjects().length
+                      } : 'null';
+                      
+                      console.error("Multiple grid creation attempts failed. Canvas info:", canvasInfo);
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error during force grid creation:", error);
+                  toast.error(`Grid creation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
               }}
             >
@@ -146,7 +168,21 @@ export const GridDebugOverlay = ({
               size="sm" 
               variant="outline" 
               className="h-6 text-xs px-2"
-              onClick={fixGridIssues}
+              onClick={() => {
+                try {
+                  const result = fixGridIssues();
+                  const fixSuccess = result && result.length > 0;
+                  
+                  if (fixSuccess) {
+                    toast.success(`Fixed grid: ${result.length} objects`);
+                  } else {
+                    toast.error("Could not fix grid issues");
+                  }
+                } catch (error) {
+                  console.error("Error fixing grid:", error);
+                  toast.error(`Error fixing grid: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
+              }}
             >
               <Grid className="h-3 w-3 mr-1" />
               Fix Grid
