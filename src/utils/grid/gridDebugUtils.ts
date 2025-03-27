@@ -1,4 +1,3 @@
-
 /**
  * Grid debugging utilities
  * Helps identify and resolve grid rendering issues
@@ -227,7 +226,8 @@ export const forceCreateGrid = (
         if (!canvas.contains(obj)) {
           canvas.add(obj);
         }
-        canvas.sendToBack(obj);
+        // Fix TypeScript error by using type casting
+        (canvas as any).sendToBack(obj);
       });
       
       // Force a render

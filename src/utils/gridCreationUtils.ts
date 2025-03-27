@@ -120,7 +120,8 @@ export const createBasicEmergencyGrid = (
     
     // Ensure grid lines are sent to back
     gridObjects.forEach(obj => {
-      canvas.sendToBack(obj);
+      // Use type casting to avoid TypeScript error
+      (canvas as any).sendToBack(obj);
     });
     
     // Update the gridLayerRef
