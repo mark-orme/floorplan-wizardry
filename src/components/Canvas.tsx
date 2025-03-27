@@ -15,6 +15,7 @@ import { CANVAS_STYLES, CANVAS_SCALING } from '@/constants/canvas';
 import { DistanceTooltip } from './DistanceTooltip';
 import { useCanvasInteractions } from '@/hooks/useCanvasInteractions';
 import { useCanvasController } from './canvas/controller/CanvasController';
+import { createCompleteGrid, setGridVisibility } from '@/utils/gridUtils';
 
 /**
  * Canvas component props interface
@@ -53,6 +54,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Reference to the Fabric.js canvas instance
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   
+  // Track if grid has been initialized
+  const gridInitializedRef = useRef<boolean>(false);
+  
   // Get current tool from canvas controller if available
   const { tool, lineThickness, lineColor } = useCanvasController();
   
@@ -75,6 +79,17 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Detect iOS devices to apply platform-specific optimizations
   // iOS requires special handling for touch events and performance
   const isIOS = isIOSPlatform();
+  
+  // Initialize grid once canvas is ready
+  const initializeGrid = (canvas: FabricCanvas) => {
+    if (!gridInitializedRef.current && canvas) {
+      console.log("Initializing grid on canvas");
+      const gridObjects = createCompleteGrid(canvas, width, height);
+      setGridVisibility(canvas, true);
+      gridInitializedRef.current = true;
+      console.log(`Grid created with ${gridObjects.gridObjects.length} objects`);
+    }
+  };
   
   // Initialize fabric.js canvas when the HTML canvas is available
   useEffect(() => {
@@ -112,8 +127,8 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Initialize the drawing brush (required for drawing mode)
       if (!canvas.freeDrawingBrush || !(canvas.freeDrawingBrush instanceof PencilBrush)) {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
-        canvas.freeDrawingBrush.color = '#000000';
-        canvas.freeDrawingBrush.width = 2;
+        canvas.freeDrawingBrush.color = lineColor || '#000000';
+        canvas.freeDrawingBrush.width = lineThickness || 2;
       }
       
       // Enable rendering now that initialization is complete
@@ -129,6 +144,9 @@ export const Canvas: React.FC<CanvasProps> = ({
       canvas.on('mouse:down', (e: any) => handleMouseDown(e.e));
       canvas.on('mouse:move', (e: any) => handleMouseMove(e.e));
       canvas.on('mouse:up', (e: any) => handleMouseUp(e.e));
+      
+      // Initialize grid after canvas is ready
+      initializeGrid(canvas);
       
       // Notify parent that canvas is ready
       if (onCanvasReady) {
@@ -146,6 +164,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           // Dispose canvas
           canvas.dispose();
           fabricCanvasRef.current = null;
+          gridInitializedRef.current = false;
         } catch (error) {
           console.error("Error disposing canvas:", error);
         }
@@ -161,7 +180,23 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Show error toast to the user
       toast.error("Failed to initialize canvas. Please refresh the page.");
     }
-  }, [width, height, isIOS, onCanvasReady, onError, handleMouseDown, handleMouseMove, handleMouseUp]);
+  }, [width, height, isIOS, onCanvasReady, onError, handleMouseDown, handleMouseMove, handleMouseUp, lineColor, lineThickness]);
+  
+  // Update brush settings when tool, color or thickness changes
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !fabricCanvasRef.current.freeDrawingBrush) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Set drawing mode based on tool
+    canvas.isDrawingMode = tool === 'draw';
+    
+    // Update brush color and width
+    canvas.freeDrawingBrush.color = lineColor || '#000000';
+    canvas.freeDrawingBrush.width = lineThickness || 2;
+    
+    console.log(`Tool changed to ${tool}, drawing mode: ${canvas.isDrawingMode}`);
+  }, [tool, lineColor, lineThickness]);
   
   return (
     <>

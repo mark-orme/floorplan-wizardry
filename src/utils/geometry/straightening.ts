@@ -1,3 +1,4 @@
+
 /**
  * Line straightening utilities module
  * Functions for straightening lines and shapes
@@ -145,4 +146,52 @@ export const straightenStroke = (
   
   // Create a new array with just the start and straightened end
   return [startPoint, straightEnd];
+};
+
+/**
+ * Quantize an angle to the nearest 45° increment
+ * Used for straightening lines during drawing
+ * 
+ * @param {number} angle - Angle in degrees
+ * @returns {number} Quantized angle in degrees
+ */
+export const quantizeAngle = (angle: number): number => {
+  // Normalize to 0-360 range
+  while (angle < 0) angle += 360;
+  angle = angle % 360;
+  
+  // Quantize to nearest 45° increment
+  return Math.round(angle / 45) * 45;
+};
+
+/**
+ * Apply angle quantization to a line defined by two points
+ * Creates a new end point that maintains distance but adjusts angle
+ * 
+ * @param {Point} start - Start point of the line
+ * @param {Point} end - End point of the line
+ * @returns {Point} New end point with quantized angle
+ */
+export const applyAngleQuantization = (start: Point, end: Point): Point => {
+  if (!start || !end) return end;
+  
+  // Calculate distance between points
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Calculate angle in degrees
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  
+  // Quantize the angle
+  const quantizedAngle = quantizeAngle(angle);
+  
+  // Convert back to radians
+  const radians = quantizedAngle * (Math.PI / 180);
+  
+  // Return new end point
+  return {
+    x: start.x + distance * Math.cos(radians),
+    y: start.y + distance * Math.sin(radians)
+  };
 };

@@ -6,6 +6,7 @@
  */
 import { Canvas, Object as FabricObject, Line } from 'fabric';
 import type { GridDimensions, GridRenderResult } from '@/types/fabric';
+import logger from '@/utils/logger';
 
 /**
  * Calculate grid dimensions based on canvas size
@@ -91,6 +92,19 @@ export const createCompleteGrid = (
   height: number,
   cellSize: number = 20
 ): GridRenderResult => {
+  // Check if grid already exists to prevent duplication
+  if (canvas && hasExistingGrid(canvas)) {
+    logger.info("Grid already exists - not recreating");
+    return {
+      gridObjects: filterGridObjects(canvas.getObjects()),
+      smallGridLines: [],
+      largeGridLines: [],
+      markers: []
+    };
+  }
+  
+  logger.info(`Creating grid with dimensions: ${width}x${height}, cell size: ${cellSize}`);
+  
   // Calculate appropriate dimensions based on inputs
   const dimensions = calculateGridDimensions(width, height, cellSize);
   
@@ -103,6 +117,9 @@ export const createCompleteGrid = (
   const largeGridLines: FabricObject[] = [];  // Major grid lines (not yet implemented)
   const markers: FabricObject[] = [];         // Grid markers/labels (not yet implemented)
   
+  // Force a render to ensure grid is displayed
+  canvas.requestRenderAll();
+  
   // Return categorized grid objects
   return {
     gridObjects,     // All grid objects
@@ -110,6 +127,17 @@ export const createCompleteGrid = (
     largeGridLines,  // Large/major grid lines subset
     markers          // Text markers/labels
   };
+};
+
+/**
+ * Check if grid already exists on canvas
+ * @param {Canvas} canvas - Fabric.js canvas instance
+ * @returns {boolean} Whether grid already exists
+ */
+export const hasExistingGrid = (canvas: Canvas): boolean => {
+  if (!canvas) return false;
+  const objects = canvas.getObjects();
+  return objects.some(obj => obj.objectType === 'grid');
 };
 
 /**
@@ -140,17 +168,25 @@ export const removeGrid = (
  * Update grid visibility
  * Shows or hides all grid objects without removing them
  * 
- * @param {FabricObject[]} gridObjects - Grid objects to update
+ * @param {Canvas} canvas - The fabric canvas instance
  * @param {boolean} visible - Whether grid should be visible
  */
 export const setGridVisibility = (
-  gridObjects: FabricObject[],
+  canvas: Canvas,
   visible: boolean
 ): void => {
+  if (!canvas) return;
+  
+  // Get all grid objects from canvas
+  const gridObjects = filterGridObjects(canvas.getObjects());
+  
   // Set visibility property on each grid object
   gridObjects.forEach(obj => {
     obj.visible = visible;
   });
+  
+  // Force canvas to render changes
+  canvas.requestRenderAll();
 };
 
 /**
@@ -174,3 +210,24 @@ export const isGridObject = (obj: FabricObject): boolean => {
 export const filterGridObjects = (objects: FabricObject[]): FabricObject[] => {
   return objects.filter(isGridObject);
 };
+
+/**
+ * Get the nearest grid point to a given point
+ * Used for snap-to-grid functionality
+ * 
+ * @param {Object} point - Point with x, y coordinates
+ * @param {number} cellSize - Grid cell size in pixels
+ * @returns {Object} Nearest grid point with snapped x, y coordinates
+ */
+export const getNearestGridPoint = (
+  point: { x: number; y: number },
+  cellSize: number = 20
+): { x: number; y: number } => {
+  if (!point) return { x: 0, y: 0 };
+  
+  return {
+    x: Math.round(point.x / cellSize) * cellSize,
+    y: Math.round(point.y / cellSize) * cellSize
+  };
+};
+

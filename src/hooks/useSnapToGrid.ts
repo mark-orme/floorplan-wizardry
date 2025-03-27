@@ -7,6 +7,7 @@
 import { useCallback, useState } from "react";
 import { Point } from "@/types/drawingTypes";
 import { snapToGrid, snapToAngle, snapLineToStandardAngles } from "@/utils/grid/snapping";
+import { getNearestGridPoint } from "@/utils/gridUtils";
 import { GRID_SPACING } from "@/constants/numerics";
 
 /**
@@ -43,7 +44,8 @@ export const useSnapToGrid = (): UseSnapToGridReturn => {
    */
   const toggleSnap = useCallback(() => {
     setSnapEnabled(prev => !prev);
-  }, []);
+    console.log(`Grid snapping ${!snapEnabled ? 'enabled' : 'disabled'}`);
+  }, [snapEnabled]);
   
   /**
    * Snap a point to the nearest grid intersection if snapping is enabled
@@ -52,8 +54,10 @@ export const useSnapToGrid = (): UseSnapToGridReturn => {
    * @returns {Point} Snapped point or original point if snapping disabled
    */
   const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return point;
-    return snapToGrid(point, GRID_SPACING);
+    if (!snapEnabled || !point) return point;
+    
+    // Use the utility function from gridUtils.ts
+    return getNearestGridPoint(point, GRID_SPACING);
   }, [snapEnabled]);
   
   /**
@@ -65,13 +69,30 @@ export const useSnapToGrid = (): UseSnapToGridReturn => {
    * @returns {Point} Snapped end point or original end point if snapping disabled
    */
   const snapLineToGrid = useCallback((startPoint: Point, endPoint: Point): Point => {
-    if (!snapEnabled) return endPoint;
+    if (!snapEnabled || !startPoint || !endPoint) return endPoint;
     
     // First snap the endpoint to grid
-    const snappedEnd = snapToGrid(endPoint, GRID_SPACING);
+    const snappedEnd = getNearestGridPoint(endPoint, GRID_SPACING);
     
-    // Then apply angle snapping
-    return snapLineToStandardAngles(startPoint, snappedEnd);
+    // Calculate the angle between points
+    const dx = snappedEnd.x - startPoint.x;
+    const dy = snappedEnd.y - startPoint.y;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    
+    // Quantize to nearest 45° angle
+    const quantizedAngle = Math.round(angle / 45) * 45;
+    
+    // Convert back to radians
+    const quantizedRad = quantizedAngle * (Math.PI / 180);
+    
+    // Calculate the distance between the points
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Return the new end point along the quantized angle
+    return {
+      x: startPoint.x + distance * Math.cos(quantizedRad),
+      y: startPoint.y + distance * Math.sin(quantizedRad)
+    };
   }, [snapEnabled]);
   
   /**
@@ -83,7 +104,7 @@ export const useSnapToGrid = (): UseSnapToGridReturn => {
    * @returns {boolean} True if point was snapped (modified)
    */
   const isSnappedToGrid = useCallback((snappedPoint: Point, originalPoint: Point): boolean => {
-    if (!snapEnabled) return false;
+    if (!snapEnabled || !snappedPoint || !originalPoint) return false;
     
     const threshold = 1.5; // Small threshold to account for rounding errors
     
@@ -104,10 +125,10 @@ export const useSnapToGrid = (): UseSnapToGridReturn => {
    */
   const isAutoStraightened = useCallback(
     (startPoint: Point, straightenedEnd: Point, originalEnd: Point): boolean => {
-      if (!snapEnabled) return false;
+      if (!snapEnabled || !startPoint || !straightenedEnd || !originalEnd) return false;
       
       // Check if original end point was snapped to grid first
-      const snappedOriginal = snapToGrid(originalEnd, GRID_SPACING);
+      const snappedOriginal = getNearestGridPoint(originalEnd, GRID_SPACING);
       
       // Calculate angles from start to both endpoints
       const originalAngle = Math.atan2(
