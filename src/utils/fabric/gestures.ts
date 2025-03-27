@@ -4,8 +4,9 @@
  * Provides multi-touch support for mobile devices
  * @module fabric/gestures
  */
-import { Canvas, PencilBrush } from 'fabric';
+import { Canvas, PencilBrush, Point } from 'fabric';
 import type { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
+import { toFabricPoint } from '@/utils/fabricPointConverter';
 
 /**
  * Type guard to check if a value is a Touch
@@ -34,15 +35,24 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     typeof navigator !== 'undefined' && 
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  const getTouchPosition = (touch: Touch): { x: number; y: number } => {
+  /**
+   * Get touch position as Fabric Point
+   * @param {Touch} touch - Touch event
+   * @returns {Point} Fabric Point object
+   */
+  const getTouchPosition = (touch: Touch): Point => {
     const rect = canvas.getElement().getBoundingClientRect();
-    return {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
-    };
+    return new Point(
+      touch.clientX - rect.left,
+      touch.clientY - rect.top
+    );
   };
 
-  // Function to detect Apple Pencil based on touch event properties
+  /**
+   * Function to detect Apple Pencil based on touch event properties
+   * @param {Touch} touch - Touch event
+   * @returns {boolean} True if touch is from Apple Pencil
+   */
   const isPencilTouch = (touch: Touch): boolean => {
     // Check if touch has Apple Pencil-specific properties
     return supportsApplePencil && 
@@ -74,7 +84,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       canvas.fire('mouse:down', {
         e: e,
         pointer: touchPosition,
-        button: 1
+        absolutePointer: touchPosition.clone(),
+        button: 1,
+        isClick: true,
+        scenePoint: touchPosition,
+        viewportPoint: touchPosition.clone(),
+        currentSubTargets: []
       });
 
       console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
@@ -85,7 +100,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       const touchPosition = getTouchPosition(touch);
 
       ongoingTouches.push({
-        touches: [touchPosition],
+        touches: [{ x: touchPosition.x, y: touchPosition.y }],
         e: touch
       });
     }
@@ -114,7 +129,13 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       // Manually trigger mouse:move event on the canvas
       canvas.fire('mouse:move', {
         e: e,
-        pointer: touchPosition
+        pointer: touchPosition,
+        absolutePointer: touchPosition.clone(),
+        button: 1,
+        isClick: false,
+        scenePoint: touchPosition,
+        viewportPoint: touchPosition.clone(),
+        currentSubTargets: []
       });
     }
 
@@ -128,7 +149,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
 
       if (ongoingTouchIndex !== -1) {
         ongoingTouches[ongoingTouchIndex] = {
-          touches: [touchPosition],
+          touches: [{ x: touchPosition.x, y: touchPosition.y }],
           e: touch
         };
       }
@@ -156,7 +177,13 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       // Manually trigger mouse:up event on the canvas
       canvas.fire('mouse:up', {
         e: e,
-        pointer: touchPosition
+        pointer: touchPosition,
+        absolutePointer: touchPosition.clone(),
+        button: 1,
+        isClick: true,
+        scenePoint: touchPosition,
+        viewportPoint: touchPosition.clone(),
+        currentSubTargets: []
       });
 
       console.log("Drawing ended");
@@ -189,10 +216,23 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth;
       }
       
-      // Fire mouse:up to complete the path
-      canvas.fire('mouse:up', {
-        e: e
-      });
+      // Get last touch if available
+      if (touches.length > 0) {
+        const touch = touches[0];
+        const touchPosition = getTouchPosition(touch);
+        
+        // Fire mouse:up to complete the path
+        canvas.fire('mouse:up', {
+          e: e,
+          pointer: touchPosition,
+          absolutePointer: touchPosition.clone(),
+          button: 1,
+          isClick: false,
+          scenePoint: touchPosition,
+          viewportPoint: touchPosition.clone(),
+          currentSubTargets: []
+        });
+      }
     }
 
     for (let i = 0; i < touches.length; i++) {

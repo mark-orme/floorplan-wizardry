@@ -50,6 +50,14 @@ export const useMouseEvents = ({
       if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
         return;
       }
+      
+      // Check for touch events in pointer/mouse event
+      const pointerEvent = e as any;
+      if (pointerEvent.pointerType === 'touch' || 
+          (pointerEvent.e && pointerEvent.e.type && pointerEvent.e.type.startsWith('touch'))) {
+        return;
+      }
+      
       handleMouseDown(e as MouseEvent);
     };
     
@@ -59,6 +67,14 @@ export const useMouseEvents = ({
       if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
         return;
       }
+      
+      // Check for touch events in pointer/mouse event
+      const pointerEvent = e as any;
+      if (pointerEvent.pointerType === 'touch' || 
+          (pointerEvent.e && pointerEvent.e.type && pointerEvent.e.type.startsWith('touch'))) {
+        return;
+      }
+      
       handleMouseMove(e as MouseEvent);
     };
     
@@ -68,6 +84,14 @@ export const useMouseEvents = ({
       if (mouseEvent.sourceCapabilities && mouseEvent.sourceCapabilities.firesTouchEvents) {
         return;
       }
+      
+      // Check for touch events in pointer/mouse event
+      const pointerEvent = e as any;
+      if (pointerEvent.pointerType === 'touch' || 
+          (pointerEvent.e && pointerEvent.e.type && pointerEvent.e.type.startsWith('touch'))) {
+        return;
+      }
+      
       handleMouseUp(e as MouseEvent);
     };
     
