@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas tools and operations
  * @module canvas/controller/useCanvasToolsManager
@@ -162,8 +161,8 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
       id: `floor-${floorPlans.length + 1}`,
       name: `Floor ${floorPlans.length + 1}`,
       canvasData: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     
     // Add to floor plans array
