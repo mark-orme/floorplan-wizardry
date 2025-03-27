@@ -1,71 +1,62 @@
 
 /**
- * Fabric.js selection management utilities
- * Provides functions for enabling and disabling object selection
+ * Utility functions for managing selection state in Fabric.js
  * @module fabric/selection
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import logger from "../logger";
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
 /**
- * Disable selection mode for objects on the canvas
- * Makes objects non-selectable for drawing modes
- * 
- * @param {FabricCanvas} canvas - The Fabric canvas instance
- * @returns {void}
- * 
- * @example
- * // Disable selection when switching to drawing mode
- * disableSelection(fabricCanvas);
+ * Disables selection for all objects on the canvas
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
  */
 export const disableSelection = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
+  
   // Disable canvas selection
   canvas.selection = false;
-  // Change cursor to crosshair for drawing
-  canvas.defaultCursor = 'crosshair';
-  canvas.hoverCursor = 'crosshair';
   
-  // Make objects non-selectable
-  canvas.getObjects().forEach(obj => {
+  // Make all objects non-selectable
+  canvas.forEachObject((obj: FabricObject) => {
     obj.selectable = false;
-    (obj as any).hoverCursor = 'crosshair';
+    obj.evented = false;
   });
   
-  // Clear any active selections
+  // Discard any active selections
   canvas.discardActiveObject();
   canvas.requestRenderAll();
-  logger.info("Selection mode disabled");
 };
 
 /**
- * Enable selection mode for objects on the canvas
- * Makes objects selectable for selection mode
- * 
- * @param {FabricCanvas} canvas - The Fabric canvas instance
- * @returns {void}
- * 
- * @example
- * // Enable selection when switching to select mode
- * enableSelection(fabricCanvas);
+ * Enables selection for all objects on the canvas
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
  */
 export const enableSelection = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
+  
   // Enable canvas selection
   canvas.selection = true;
-  // Change cursor to default for selection
-  canvas.defaultCursor = 'default';
-  canvas.hoverCursor = 'move';
   
-  // Make objects selectable
-  canvas.getObjects().forEach(obj => {
-    // Skip grid elements
-    const objectType = (obj as any).objectType;
-    if (!objectType || !objectType.includes('grid')) {
+  // Make all objects selectable except grid objects
+  canvas.forEachObject((obj: FabricObject) => {
+    // Don't make grid objects selectable
+    if (obj.objectType !== 'grid') {
       obj.selectable = true;
-      (obj as any).hoverCursor = 'pointer';
+      obj.evented = true;
     }
   });
   
-  // Render canvas to show selection changes
   canvas.requestRenderAll();
-  logger.info("Selection mode enabled");
+};
+
+/**
+ * Toggles selection state for all objects on the canvas
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @param {boolean} enable - Whether to enable or disable selection
+ */
+export const toggleSelection = (canvas: FabricCanvas, enable: boolean): void => {
+  if (enable) {
+    enableSelection(canvas);
+  } else {
+    disableSelection(canvas);
+  }
 };

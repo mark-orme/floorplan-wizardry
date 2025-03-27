@@ -1,3 +1,4 @@
+
 /**
  * Canvas tool operations module
  * Provides functions for handling tool changes and canvas operations
@@ -77,6 +78,7 @@ export const handleToolChange = (
         canvas.freeDrawingBrush.color = lineColor || "#000000";
       }
       disableSelection(canvas);
+      console.log("Drawing mode enabled");
       break;
     case "wall":
     case "room":
@@ -86,19 +88,21 @@ export const handleToolChange = (
       canvas.selection = false;
       canvas.defaultCursor = 'crosshair';
       disableSelection(canvas);
+      console.log(`Custom drawing mode: ${newTool}`);
       break;
     case "select":
       canvas.isDrawingMode = false;
       canvas.selection = true;
       canvas.defaultCursor = 'default';
       enableSelection(canvas);
+      console.log("Selection mode enabled");
       break;
     case "hand":
       canvas.isDrawingMode = false;
       canvas.selection = false;
       canvas.defaultCursor = 'grab';
       disableSelection(canvas);
-      // Set panning mode
+      console.log("Hand/pan mode enabled");
       break;
     default:
       canvas.isDrawingMode = false;
