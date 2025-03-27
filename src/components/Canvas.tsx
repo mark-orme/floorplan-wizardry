@@ -1,3 +1,4 @@
+
 /**
  * Canvas Component
  * Main drawing canvas for floor plan editor
@@ -16,6 +17,7 @@ import logger from "@/utils/logger";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { useCanvasCleanup } from "@/hooks/useCanvasCleanup";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
+import { toast } from "sonner";
 
 /**
  * Canvas component props
@@ -51,6 +53,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   const historyRef = useRef<{past: any[][], future: any[][]}>({ past: [], future: [] });
   const eventHandlersCleanupRef = useRef<(() => void) | null>(null);
   const gridCreatedRef = useRef(false);
+  const initAttemptCountRef = useRef(0);
   
   // Debug state
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
@@ -102,9 +105,11 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   useEffect(() => {
     if (initFabricCanvasRef.current && !fabricCanvasRef.current) {
       fabricCanvasRef.current = initFabricCanvasRef.current;
+      console.log("Canvas ref synced:", fabricCanvasRef.current);
     }
     if (initGridLayerRef.current.length && !gridLayerRef.current.length) {
       gridLayerRef.current = initGridLayerRef.current;
+      console.log("Grid layer ref synced with", initGridLayerRef.current.length, "objects");
     }
   }, [initFabricCanvasRef.current, initGridLayerRef.current]);
   
@@ -116,15 +121,38 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
       const grid = createGrid(fabricCanvasRef.current);
       console.log(`Created grid with ${grid.length} objects`);
       
-      // If grid creation failed, try again in 500ms
       if (grid.length === 0) {
-        setTimeout(() => {
+        // If grid creation failed, try again after a delay
+        const retryTimeout = setTimeout(() => {
           if (fabricCanvasRef.current) {
             console.log("Retrying grid creation...");
             const grid = createGrid(fabricCanvasRef.current);
-            console.log(`Retry created grid with ${grid.length} objects`);
+            
+            if (grid.length > 0) {
+              console.log(`Retry created grid with ${grid.length} objects`);
+              toast.success(`Created grid with ${grid.length} objects`);
+            } else {
+              console.error("Grid creation failed even after retry");
+              if (initAttemptCountRef.current < 3) {
+                initAttemptCountRef.current++;
+                console.log(`Will try again soon (attempt ${initAttemptCountRef.current})`);
+                
+                // Try once more after a longer delay
+                setTimeout(() => {
+                  if (fabricCanvasRef.current) {
+                    console.log(`Final grid creation attempt ${initAttemptCountRef.current}`);
+                    const grid = createGrid(fabricCanvasRef.current);
+                    console.log(`Final attempt result: ${grid.length} objects`);
+                  }
+                }, 1500);
+              }
+            }
           }
-        }, 500);
+        }, 800);
+        
+        return () => clearTimeout(retryTimeout);
+      } else {
+        toast.success(`Created grid with ${grid.length} objects`);
       }
     }
   }, [fabricCanvasRef.current, createGrid]);

@@ -30,6 +30,8 @@ export const createBasicEmergencyGrid = (
     const width = canvas.getWidth();
     const height = canvas.getHeight();
     
+    console.log(`Creating emergency grid with dimensions: ${width}x${height}`);
+    
     // Create a simple grid with hardcoded settings
     const smallGridSpacing = 10;
     const largeGridSpacing = 100;
@@ -98,6 +100,7 @@ export const createBasicEmergencyGrid = (
     return gridObjects;
   } catch (error) {
     logger.error("Error creating emergency grid:", error);
+    console.error("Error creating emergency grid:", error);
     return [];
   }
 };

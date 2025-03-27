@@ -1,4 +1,3 @@
-
 /**
  * Grid Debug Overlay Component
  * Provides debugging overlay for grid issues
@@ -9,6 +8,7 @@ import { useGridCreationDebug } from "@/hooks/useGridCreationDebug";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Bug, RefreshCw, Grid, EyeOff, Eye } from "lucide-react";
+import { toast } from "sonner";
 
 interface GridDebugOverlayProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -29,7 +29,7 @@ export const GridDebugOverlay = ({
   isVisible 
 }: GridDebugOverlayProps) => {
   const [gridStats, setGridStats] = useState({ exists: false, size: 0 });
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true); // Start expanded to make debug info visible
   
   const { 
     debugMode,
@@ -67,12 +67,26 @@ export const GridDebugOverlay = ({
     
     return () => clearInterval(interval);
   }, [isVisible, checkGridHealth]);
+
+  // Try creating grid automatically once on mount
+  useEffect(() => {
+    if (isVisible && fabricCanvasRef.current && gridStats.size === 0) {
+      // Wait a bit to make sure canvas is fully initialized
+      const timer = setTimeout(() => {
+        console.log("Auto-attempting grid creation via debug overlay");
+        const result = forceGridCreation();
+        console.log("Auto grid creation result:", result);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, fabricCanvasRef, gridStats.size, forceGridCreation]);
   
   // Don't render if not visible
   if (!isVisible) return null;
   
   return (
-    <div className="absolute top-2 right-2 z-50 bg-white/90 dark:bg-gray-800/90 rounded-md shadow-md p-2 border border-gray-200 dark:border-gray-700 text-xs">
+    <div className="absolute bottom-2 right-2 z-50 bg-white/90 dark:bg-gray-800/90 rounded-md shadow-md p-2 border border-gray-200 dark:border-gray-700 text-xs">
       <div className="flex items-center justify-between">
         <Button 
           size="sm" 
@@ -114,8 +128,14 @@ export const GridDebugOverlay = ({
               variant="outline" 
               className="h-6 text-xs px-2"
               onClick={() => {
+                console.log("Force grid button clicked");
                 const grid = forceGridCreation();
                 console.log("Force grid created:", grid);
+                if (grid && grid.length > 0) {
+                  toast.success(`Created ${grid.length} grid objects`);
+                } else {
+                  toast.error("Failed to create grid");
+                }
               }}
             >
               <RefreshCw className="h-3 w-3 mr-1" />
