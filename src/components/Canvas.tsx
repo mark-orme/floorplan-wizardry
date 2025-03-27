@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
-import { fabric } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { useReliableGridInitialization } from '@/hooks/useReliableGridInitialization';
 import { initializeCanvasGestures } from '@/utils/fabric/gestures';
@@ -67,7 +67,7 @@ interface CanvasProps {
   height?: number;
   
   /** Callback triggered when canvas is successfully initialized */
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
+  onCanvasReady?: (canvas: FabricCanvas) => void;
 }
 
 /**
@@ -82,7 +82,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onCanvasReady 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   
   // Detect iOS
   const isIOS = 
@@ -120,7 +120,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       }
       
       // Create the Fabric.js canvas instance
-      const canvas = new fabric.Canvas(canvasRef.current, canvasOptions);
+      const canvas = new FabricCanvas(canvasRef.current, canvasOptions);
       
       // Initialize touch gestures for the canvas
       initializeCanvasGestures(canvas);
