@@ -1,8 +1,9 @@
+
 /**
  * Grid utility functions
  * @module gridUtils
  */
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
 import { GridDimensions, GridRenderResult } from '@/types/fabric';
 
 /**
@@ -39,7 +40,7 @@ export const createGridLines = (
   
   // Create horizontal lines
   for (let i = 0; i <= height; i += cellSize) {
-    const line = new fabric.Line([0, i, width, i], {
+    const line = new Line([0, i, width, i], {
       stroke: '#ccc',
       selectable: false,
       evented: false,
@@ -51,7 +52,7 @@ export const createGridLines = (
   
   // Create vertical lines
   for (let i = 0; i <= width; i += cellSize) {
-    const line = new fabric.Line([i, 0, i, height], {
+    const line = new Line([i, 0, i, height], {
       stroke: '#ccc',
       selectable: false,
       evented: false,

@@ -94,5 +94,5 @@ export interface CustomTouchEvent extends TouchEvent {
  */
 export interface CustomFabricTouchEvent {
   touches: { x: number; y: number }[];
-  e: TouchEvent;
+  e: Touch;
 }

@@ -1,3 +1,4 @@
+
 /**
  * Utilities for handling touch gestures on Fabric.js canvas
  * Provides multi-touch support for mobile devices
@@ -21,9 +22,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     };
   };
 
-  const handleTouchStart = (e: CustomTouchEvent) => {
+  const handleTouchStart = (e: TouchEvent) => {
     e.preventDefault();
-    const touches = Array.from(e.touches);
+    const customEvent = e as CustomTouchEvent;
+    const touches = Array.from(customEvent.touches);
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
@@ -36,9 +38,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
-  const handleTouchMove = (e: CustomTouchEvent) => {
+  const handleTouchMove = (e: TouchEvent) => {
     e.preventDefault();
-    const touches = Array.from(e.touches);
+    const customEvent = e as CustomTouchEvent;
+    const touches = Array.from(customEvent.touches);
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
@@ -55,9 +58,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
-  const handleTouchEnd = (e: CustomTouchEvent) => {
+  const handleTouchEnd = (e: TouchEvent) => {
     e.preventDefault();
-    const touches = Array.from(e.changedTouches);
+    const customEvent = e as CustomTouchEvent;
+    const touches = Array.from(customEvent.changedTouches);
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
@@ -65,9 +69,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
-  const handleTouchCancel = (e: CustomTouchEvent) => {
+  const handleTouchCancel = (e: TouchEvent) => {
     e.preventDefault();
-    const touches = Array.from(e.changedTouches);
+    const customEvent = e as CustomTouchEvent;
+    const touches = Array.from(customEvent.changedTouches);
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
@@ -75,8 +80,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
-  canvas.getElement().addEventListener('touchstart', handleTouchStart as any, false);
-  canvas.getElement().addEventListener('touchmove', handleTouchMove as any, false);
-  canvas.getElement().addEventListener('touchend', handleTouchEnd as any, false);
-  canvas.getElement().addEventListener('touchcancel', handleTouchCancel as any, false);
+  canvas.getElement().addEventListener('touchstart', handleTouchStart, false);
+  canvas.getElement().addEventListener('touchmove', handleTouchMove, false);
+  canvas.getElement().addEventListener('touchend', handleTouchEnd, false);
+  canvas.getElement().addEventListener('touchcancel', handleTouchCancel, false);
 };
