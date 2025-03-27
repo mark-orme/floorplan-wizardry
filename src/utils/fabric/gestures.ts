@@ -89,7 +89,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
         target: null,
-        subTargets: [],
         isClick: true,
         currentSubTargets: []
       };
@@ -139,7 +138,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         scenePoint: touchPosition, 
         viewportPoint: touchPosition.clone(),
         target: null,
-        subTargets: [],
         isClick: false,
         currentSubTargets: []
       };
@@ -191,7 +189,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
         target: null,
-        subTargets: [],
         isClick: true,
         currentSubTargets: []
       };
@@ -242,7 +239,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           scenePoint: touchPosition,
           viewportPoint: touchPosition.clone(),
           target: null,
-          subTargets: [],
           isClick: false,
           currentSubTargets: []
         };

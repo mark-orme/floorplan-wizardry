@@ -4,9 +4,9 @@
  * @module types/fabric
  */
 
-// Define the exports directly instead of re-exporting from the same file
-// This fixes the circular reference issue
-export type { 
+// Import the types directly from their definition file
+// This avoids circular references
+import type { 
   CanvasCreationOptions,
   CanvasReferences,
   GridDimensions,
@@ -15,6 +15,17 @@ export type {
   CustomFabricTouchEvent,
   FabricPointerEvent
 } from './fabric.d';
+
+// Re-export the imported types
+export type {
+  CanvasCreationOptions,
+  CanvasReferences,
+  GridDimensions,
+  GridRenderResult,
+  CustomTouchEvent,
+  CustomFabricTouchEvent,
+  FabricPointerEvent
+};
 
 /**
  * Type guard to check if a value is a Touch event

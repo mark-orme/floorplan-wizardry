@@ -110,8 +110,8 @@ export interface FabricPointerEvent {
   target?: FabricObject | null;
   /** Sub-targets */
   subTargets?: FabricObject[];
-  /** Whether this is a click event */
-  isClick: boolean;  // Making this required, not optional
-  /** Current sub-targets */
-  currentSubTargets: FabricObject[];  // Making this required, not optional
+  /** Whether this is a click event - required by Fabric.js v6 */
+  isClick: boolean;  
+  /** Current sub-targets - required by Fabric.js v6 */
+  currentSubTargets: FabricObject[];  
 }
