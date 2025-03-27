@@ -16,10 +16,21 @@ export interface Point {
 }
 
 /**
- * Stroke type representing a sequence of points
- * @typedef {Point[]} Stroke
+ * Stroke interface representing a drawing stroke
+ * @interface Stroke
  */
-export type Stroke = Point[];
+export interface Stroke {
+  /** Unique identifier for the stroke */
+  id: string;
+  /** Array of points that make up the stroke */
+  points: Point[];
+  /** Type of stroke */
+  type: 'wall' | 'room' | 'line';
+  /** Stroke color in hex format */
+  color: string;
+  /** Stroke thickness in pixels */
+  thickness: number;
+}
 
 /**
  * Wall definition in a floor plan
@@ -84,7 +95,7 @@ export interface FloorPlan {
   walls: Wall[];
   /** Array of rooms in the floor plan */
   rooms: Room[];
-  /** Array of strokes (sequence of points) */
+  /** Array of strokes (drawing elements) */
   strokes: Stroke[];
   /** Gross Internal Area in square meters */
   gia?: number;
