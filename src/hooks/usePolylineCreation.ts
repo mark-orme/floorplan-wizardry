@@ -100,88 +100,64 @@ export const usePolylineCreation = ({
     isEnclosed: boolean = false,
     overrideColor?: string
   ): boolean => {
-    if (!fabricCanvasRef.current) return false;
-    const fabricCanvas = fabricCanvasRef.current;
-    
     try {
-      // Use override color if provided, otherwise use the current lineColor
-      const effectiveLineColor = overrideColor || lineColor || "#000000";
-      
-      // Create a polyline from the processed points
-      const polylineOptions = {
-        stroke: effectiveLineColor,
-        strokeWidth: lineThickness,
-        fill: isEnclosed ? `${effectiveLineColor}20` : 'transparent', // Semi-transparent fill for enclosed shapes
-        objectType: isEnclosed ? 'room' : 'line',
-        objectCaching: true,
-        perPixelTargetFind: false,
-        selectable: false,
-        hoverCursor: 'default'
-      };
-
-      // Create the polyline with pixel points
-      const polyline = new FabricPolyline(pixelPoints, polylineOptions);
-      
-      // Add the processed polyline to canvas
-      fabricCanvas.add(polyline);
-      
-      logger.debug("Polyline added to canvas successfully with color:", effectiveLineColor);
-      
-      // Ensure grid stays in the background
-      gridLayerRef.current.forEach(gridObj => {
-        if (fabricCanvas.contains(gridObj)) {
-          // Send grid object to back in the canvas (not using the object method)
-          fabricCanvas.sendObjectToBack(gridObj);
-        }
-      });
-      
-      // Force a render to ensure the polyline is displayed
-      fabricCanvas.requestRenderAll();
-      
-      // Update floor plans data
-      setFloorPlans(prev => {
-        const newFloorPlans = [...prev];
-        if (newFloorPlans[currentFloor]) {
-          // Create a clone of the current floor plan
-          const updatedFloorPlan = { ...newFloorPlans[currentFloor] };
-          
-          // Ensure strokes array exists
-          if (!updatedFloorPlan.strokes) {
-            updatedFloorPlan.strokes = [];
-          }
-          
-          // Add the new stroke (finalPoints is already a Point[] which is a Stroke)
-          const newStrokes = [...updatedFloorPlan.strokes];
-          newStrokes.push(finalPoints);
-          updatedFloorPlan.strokes = newStrokes;
-          
-          // Update the floor plan in the array
-          newFloorPlans[currentFloor] = updatedFloorPlan;
-          
-          // Calculate and update area for enclosed shapes
-          if (isEnclosed && finalPoints.length > 2) {
-            // The calculateGIA function expects Point[][], so we need to wrap finalPoints in an array
-            const area = calculateGIA([finalPoints]);
-            setGia(prev => prev + area);
-            toast.success(`Room shape enclosed: ${area.toFixed(2)} m²`);
-          }
-        }
-        return newFloorPlans;
-      });
-      
-      // Recalculate GIA after adding the polyline
-      if (recalculateGIA && typeof recalculateGIA === 'function') {
-        logger.info("Triggering GIA recalculation after polyline creation");
-        recalculateGIA();
+      if (!fabricCanvasRef.current) {
+        logger.error("Cannot create polyline: canvas is not available");
+        return false;
       }
-
+      
+      if (!pixelPoints || pixelPoints.length < 2) {
+        logger.warn("Cannot create polyline: not enough points", { pointCount: pixelPoints?.length });
+        return false;
+      }
+      
+      const canvas = fabricCanvasRef.current;
+      
+      // Log points for debugging
+      console.log("Creating polyline with points:", pixelPoints);
+      
+      // Prepare points for Fabric.js Polyline
+      // Fabric.js needs points in the format {x: number, y: number}
+      const formattedPoints = pixelPoints.map(point => ({ x: point.x, y: point.y }));
+      
+      // Create the polyline object
+      const polyline = new FabricPolyline(formattedPoints, {
+        stroke: overrideColor || lineColor,
+        strokeWidth: lineThickness,
+        fill: isEnclosed ? 'rgba(0, 0, 0, 0.1)' : 'transparent',
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round',
+        objectType: isEnclosed ? 'room' : (tool === 'wall' ? 'wall' : 'line'),
+        selectable: true, // Allow selection for editing
+        strokeUniform: true, // Maintain stroke width during scaling
+      });
+      
+      // Add the polyline to the canvas
+      canvas.add(polyline);
+      
+      // Calculate GIA if it's a room
+      if (isEnclosed && polyline.objectType === 'room') {
+        const area = calculateGIA([polyline]);
+        console.log("Room created with area:", area);
+        
+        // Update GIA if recalculation function is provided
+        if (recalculateGIA && typeof recalculateGIA === 'function') {
+          recalculateGIA();
+        }
+      }
+      
+      // Force the canvas to render
+      canvas.requestRenderAll();
+      
+      console.log(`${isEnclosed ? 'Room' : 'Line'} created successfully: ${polyline.objectType}`);
+      
       return true;
-    } catch (err) {
-      logger.error("Error creating polyline:", err);
-      toast.error("Failed to create line");
+    } catch (error) {
+      logger.error("Error creating polyline:", error);
+      console.error("Failed to create polyline:", error);
       return false;
     }
-  }, [fabricCanvasRef, gridLayerRef, tool, currentFloor, setFloorPlans, setGia, lineThickness, lineColor, recalculateGIA]);
-
+  }, [fabricCanvasRef, tool, lineColor, lineThickness, recalculateGIA]);
+  
   return { createPolyline };
 };

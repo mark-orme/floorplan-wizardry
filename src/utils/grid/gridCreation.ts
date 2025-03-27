@@ -41,6 +41,8 @@ export const createBasicGrid = (
       const line = new Line([x, 0, x, height], {
         ...lineOptions,
         objectType: 'grid', // Mark as grid object for easier identification
+        selectable: false,  // Ensure grid is not selectable
+        evented: false      // Ensure grid doesn't respond to events
       });
       canvas.add(line); // Add to canvas immediately
       gridObjects.push(line);
@@ -51,6 +53,8 @@ export const createBasicGrid = (
       const line = new Line([0, y, width, y], {
         ...lineOptions,
         objectType: 'grid', // Mark as grid object
+        selectable: false,  // Ensure grid is not selectable 
+        evented: false      // Ensure grid doesn't respond to events
       });
       canvas.add(line); // Add to canvas immediately
       gridObjects.push(line);

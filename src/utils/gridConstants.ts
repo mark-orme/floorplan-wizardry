@@ -62,16 +62,16 @@ export const GRID_PERFORMANCE_THRESHOLDS = {
  * @constant {Object}
  */
 export const GRID_OPACITY = {
-  SMALL_GRID: 0.6, // Reduced opacity for small grid lines
+  SMALL_GRID: 0.7, // Increased opacity for small grid lines (was 0.6)
   LARGE_GRID: 0.9  // Higher opacity for large grid lines
 };
 
 /**
- * Default grid colors - updated to match graph paper look
+ * Default grid colors - updated to match graph paper look with darker small grid
  * @constant {Object}
  */
 export const GRID_COLORS = {
-  SMALL_GRID: "#C5E7EC", // Light blue-green for small grid
+  SMALL_GRID: "#A6CDD3", // Darker blue-green for small grid (was #C5E7EC)
   LARGE_GRID: "#86C5CD", // Slightly darker blue-green for large grid
   MARKERS: "#555555"     // Dark gray for markers
 };

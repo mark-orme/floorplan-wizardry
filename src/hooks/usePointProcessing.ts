@@ -84,8 +84,11 @@ export const usePointProcessing = ({
         y: pointer.y
       };
       
-      // Do not apply grid snapping here - we now handle this in useSnapToGrid
-      // to give more control to the drawing logic
+      // For straight lines and wall tools, apply snapping directly here
+      if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
+        return snapToGrid(point, 10); // Use the default grid size of 10
+      }
+      
       return point;
     } catch (error) {
       handleError(error, {
@@ -94,7 +97,7 @@ export const usePointProcessing = ({
       });
       return null;
     }
-  }, [fabricCanvasRef]);
+  }, [fabricCanvasRef, tool]);
   
   /**
    * Process path points from a fabric path
@@ -129,12 +132,18 @@ export const usePointProcessing = ({
         }
       }
       
+      console.log("Extracted points from path:", extractedPoints);
+      
       // Apply grid snapping and straightening based on current tool
-      // Note: We make this compatible with our useSnapToGrid hook by doing minimal processing here
-      const processedPoints = 
-        (tool === 'wall' || tool === 'room' || tool === 'straightLine') 
-          ? straightenStroke(extractedPoints)
-          : extractedPoints;
+      let processedPoints = extractedPoints;
+      
+      if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
+        // Apply straightening for these tools
+        processedPoints = straightenStroke(extractedPoints);
+        
+        // Also apply snapping to each point
+        processedPoints = processedPoints.map(point => snapToGrid(point, 10));
+      }
       
       return { 
         finalPoints: processedPoints, 

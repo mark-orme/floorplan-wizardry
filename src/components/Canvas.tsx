@@ -109,7 +109,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         enableRetinaScaling: !isIOS, // Disable for iOS to improve performance
         stopContextMenu: true,        // Prevent context menu on right-click
         fireRightClick: false,        // Disable right-click events
-        renderOnAddRemove: true,      // CHANGED: Enable immediate rendering to fix grid visibility
+        renderOnAddRemove: true,      // Enable immediate rendering to fix grid visibility
       };
       
       // Add iOS-specific options to improve touch handling
@@ -153,7 +153,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       
       // Register mouse/touch event handlers for drawing
       canvas.on('mouse:down', (e: any) => {
-        console.log("Canvas mouse down event", { tool });
+        console.log("Canvas mouse down event", { tool, isDrawingMode: canvas.isDrawingMode });
         handleMouseDown(e.e);
       });
       
@@ -162,7 +162,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       });
       
       canvas.on('mouse:up', (e: any) => {
-        console.log("Canvas mouse up event", { tool });
+        console.log("Canvas mouse up event", { tool, isDrawingMode: canvas.isDrawingMode });
         handleMouseUp(e.e);
       });
       
