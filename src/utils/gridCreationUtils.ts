@@ -1,4 +1,3 @@
-
 /**
  * Grid creation utilities
  * Functions for creating and managing grid
@@ -59,7 +58,7 @@ export const createBasicEmergencyGrid = (
     
     // Make sure grid lines are behind other objects
     gridObjects.forEach(obj => {
-      canvas.sendToBack(obj);  // Using canvas method instead of object method
+      canvas.sendObjectToBack(obj);  // Using correct canvas method for sending objects to back
     });
     
     console.log(`Created emergency grid with ${gridObjects.length} objects`);
