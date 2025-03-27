@@ -1,3 +1,4 @@
+
 /**
  * Grid creation utilities
  * Provides functions for creating and managing the grid on canvas
@@ -394,4 +395,9 @@ export const verifyGridExists = (
   return validateGrid(canvas, gridLayerRef);
 };
 
-export { verifyGridExists, retryWithBackoff };
+// Export all functions from this module
+export {
+  // Functions are already exported above with 'export const'
+  // so we don't need to re-export them here
+};
+
