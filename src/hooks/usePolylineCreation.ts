@@ -181,7 +181,11 @@ export const usePolylineCreation = ({
         };
         
         // Add the stroke to the current floor plan
-        currentFloorPlan.strokes = [...(currentFloorPlan.strokes || []), newStroke];
+        if (!currentFloorPlan.strokes) {
+          currentFloorPlan.strokes = [];
+        }
+        
+        currentFloorPlan.strokes.push(newStroke);
         
         return updatedFloorPlans;
       });

@@ -1,5 +1,4 @@
 
-
 /**
  * Numeric constants for the application
  */
@@ -119,6 +118,18 @@ export const DEFAULT_CANVAS_WIDTH = 800;
 export const DEFAULT_CANVAS_HEIGHT = 600;
 
 /**
+ * Canvas default width for backward compatibility
+ * @type {number}
+ */
+export const CANVAS_DEFAULT_WIDTH = 800;
+
+/**
+ * Canvas default height for backward compatibility
+ * @type {number}
+ */
+export const CANVAS_DEFAULT_HEIGHT = 600;
+
+/**
  * Maximum number of small grid lines for performance
  * @type {number}
  */
@@ -153,4 +164,3 @@ export const MAX_GRID_CREATION_ATTEMPTS = 3;
  * @type {number}
  */
 export const MIN_GRID_CREATION_INTERVAL = 300;
-
