@@ -1,3 +1,4 @@
+
 /**
  * Grid debugging utilities
  * Helps identify and resolve grid rendering issues
@@ -198,9 +199,13 @@ export const forceCreateGrid = (
     // Make sure canvas has real dimensions
     if (width <= 0 || height <= 0) {
       console.error("Force grid creation failed: Canvas has zero dimensions");
-      canvas.setWidth(800);
-      canvas.setHeight(600);
-      console.log("Force set canvas dimensions to 800x600");
+      try {
+        canvas.setWidth(800);
+        canvas.setHeight(600);
+        console.log("Force set canvas dimensions to 800x600");
+      } catch (error) {
+        console.error("Error setting canvas dimensions:", error);
+      }
     }
     
     // Clear any existing grid

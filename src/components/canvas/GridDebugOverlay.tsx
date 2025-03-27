@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { useGridCreationDebug } from "@/hooks/useGridCreationDebug";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Button } from "@/components/ui/button";
-import { Bug, RefreshCw, Grid, EyeOff, Eye, Info } from "lucide-react";
+import { Bug, RefreshCw, Grid, EyeOff, Eye, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { dumpGridState } from "@/utils/grid/gridDebugUtils";
 
@@ -41,7 +41,8 @@ export const GridDebugOverlay = ({
     toggleDebugMode,
     forceGridCreation,
     checkGridHealth,
-    fixGridIssues
+    fixGridIssues,
+    isWaitingForCanvas
   } = useGridCreationDebug(fabricCanvasRef, gridLayerRef);
   
   // Update grid stats periodically
@@ -128,7 +129,11 @@ export const GridDebugOverlay = ({
         toast.success(`Created ${grid.length} grid objects`);
       } else {
         console.error("Grid creation returned no objects");
-        toast.error("Failed to create grid objects");
+        
+        // Don't show error toast if we're waiting for canvas
+        if (!isWaitingForCanvas) {
+          toast.error("Waiting for canvas to initialize...");
+        }
         
         // If we've tried a few times and it's still not working, show more detailed error
         if (forceGridAttemptRef.current >= 3) {
@@ -146,7 +151,9 @@ export const GridDebugOverlay = ({
       console.error("Error during force grid creation:", error);
       toast.error(`Grid creation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setIsWorking(false);
+      setTimeout(() => {
+        setIsWorking(false);
+      }, 1000);
     }
   };
   
@@ -161,6 +168,8 @@ export const GridDebugOverlay = ({
       
       if (fixSuccess) {
         toast.success(`Fixed grid: ${result.length} objects`);
+      } else if (isWaitingForCanvas) {
+        toast.info("Waiting for canvas to initialize...");
       } else {
         toast.error("Could not fix grid issues");
       }
@@ -168,7 +177,9 @@ export const GridDebugOverlay = ({
       console.error("Error fixing grid:", error);
       toast.error(`Error fixing grid: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setIsWorking(false);
+      setTimeout(() => {
+        setIsWorking(false);
+      }, 1000);
     }
   };
   
@@ -177,7 +188,11 @@ export const GridDebugOverlay = ({
   
   // Determine status display
   const getMissingStatus = () => {
-    if (gridStats.size === 0) {
+    if (fabricCanvasRef.current === null) {
+      return "Canvas Missing";
+    } else if (isWaitingForCanvas) {
+      return "Initializing...";
+    } else if (gridStats.size === 0) {
       return "Missing";
     } else if (gridStats.objectsOnCanvas === 0) {
       return "Not on canvas";
@@ -190,13 +205,29 @@ export const GridDebugOverlay = ({
   
   // Determine status color
   const getStatusColor = () => {
-    if (gridStats.size === 0 || gridStats.objectsOnCanvas === 0) {
+    if (fabricCanvasRef.current === null || isWaitingForCanvas) {
+      return 'bg-blue-500'; // Blue for initializing
+    } else if (gridStats.size === 0 || gridStats.objectsOnCanvas === 0) {
       return 'bg-red-500';
     } else if (gridStats.objectsOnCanvas < gridStats.size) {
       return 'bg-yellow-500';
     } else {
       return 'bg-green-500';
     }
+  };
+  
+  // Get canvas dimensions display
+  const getCanvasDimensions = () => {
+    if (!fabricCanvasRef.current) return 'No canvas';
+    
+    const width = fabricCanvasRef.current.getWidth?.() || fabricCanvasRef.current.width;
+    const height = fabricCanvasRef.current.getHeight?.() || fabricCanvasRef.current.height;
+    
+    if (!width || !height || width === 0 || height === 0) {
+      return 'Invalid (0x0)';
+    }
+    
+    return `${width}x${height}`;
   };
   
   return (
@@ -233,11 +264,12 @@ export const GridDebugOverlay = ({
             
             <div className="flex justify-between mb-1">
               <span>Canvas dimensions:</span>
-              <span className="font-mono">
-                {fabricCanvasRef.current ? 
-                  `${fabricCanvasRef.current.getWidth?.() || fabricCanvasRef.current.width || 0}x${fabricCanvasRef.current.getHeight?.() || fabricCanvasRef.current.height || 0}` : 
-                  'N/A'}
-              </span>
+              <span className="font-mono">{getCanvasDimensions()}</span>
+            </div>
+            
+            <div className="flex justify-between mb-1">
+              <span>Canvas initialized:</span>
+              <span className="font-mono">{fabricCanvasRef.current ? 'Yes' : 'No'}</span>
             </div>
           </div>
           
@@ -249,7 +281,11 @@ export const GridDebugOverlay = ({
               onClick={handleForceGrid}
               disabled={isWorking}
             >
-              <RefreshCw className={`h-3 w-3 mr-1 ${isWorking ? 'animate-spin' : ''}`} />
+              {isWorking && isWaitingForCanvas ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <RefreshCw className={`h-3 w-3 mr-1 ${isWorking ? 'animate-spin' : ''}`} />
+              )}
               Force Grid
             </Button>
             
@@ -279,10 +315,24 @@ export const GridDebugOverlay = ({
             </Button>
           </div>
           
-          {gridStats.size === 0 && (
+          {!fabricCanvasRef.current && (
+            <div className="bg-blue-100 p-2 rounded text-blue-800 text-xs mt-2">
+              <Info className="h-3 w-3 inline mr-1" />
+              Waiting for canvas to initialize...
+            </div>
+          )}
+          
+          {fabricCanvasRef.current && gridStats.size === 0 && (
             <div className="bg-red-100 p-2 rounded text-red-800 text-xs mt-2">
               <Info className="h-3 w-3 inline mr-1" />
               Failed to create grid. Try the "Force Grid" button or refresh the page.
+            </div>
+          )}
+          
+          {isWaitingForCanvas && (
+            <div className="bg-blue-100 p-2 rounded text-blue-800 text-xs mt-2">
+              <Loader2 className="h-3 w-3 inline mr-1 animate-spin" />
+              Waiting for canvas to initialize... This may take a moment.
             </div>
           )}
         </div>

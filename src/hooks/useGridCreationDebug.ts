@@ -38,6 +38,63 @@ export const useGridCreationDebug = (
   const retryTimeoutRef = useRef<number | null>(null);
   const retryAttemptsRef = useRef(0);
   const lastAttemptTimeRef = useRef<number>(0);
+  const canvasInitCheckTimerRef = useRef<number | null>(null);
+  const waitForCanvasTimeoutRef = useRef<number | null>(null);
+  const [isWaitingForCanvas, setIsWaitingForCanvas] = useState(false);
+  
+  /**
+   * Wait for canvas to initialize before trying to create grid
+   */
+  const waitForCanvasInitialization = useCallback((callback: () => void, maxWaitTime = 8000) => {
+    console.log("Waiting for canvas initialization...");
+    setIsWaitingForCanvas(true);
+    
+    // Clear any existing timers
+    if (waitForCanvasTimeoutRef.current !== null) {
+      window.clearTimeout(waitForCanvasTimeoutRef.current);
+    }
+    
+    let waitStart = Date.now();
+    let checkInterval = 250; // Start with checking every 250ms
+    let maxChecks = Math.ceil(maxWaitTime / checkInterval);
+    let checkCount = 0;
+    
+    // Function to check if canvas is ready
+    const checkCanvasReady = () => {
+      checkCount++;
+      
+      // If we have a canvas reference and it has dimensions, it's ready
+      if (fabricCanvasRef.current && 
+          fabricCanvasRef.current.width && 
+          fabricCanvasRef.current.height) {
+        console.log(`Canvas is ready after ${checkCount} checks (${Date.now() - waitStart}ms)`);
+        setIsWaitingForCanvas(false);
+        // Execute the callback
+        callback();
+        return;
+      }
+      
+      // Check if we've waited too long
+      if (Date.now() - waitStart > maxWaitTime) {
+        console.warn(`Canvas initialization timed out after ${maxWaitTime}ms`);
+        setIsWaitingForCanvas(false);
+        toast.error("Canvas initialization timed out");
+        return;
+      }
+      
+      // Increase check interval over time for exponential backoff
+      if (checkCount > 5) {
+        checkInterval = Math.min(checkInterval * 1.5, 1000);
+      }
+      
+      // Schedule next check
+      waitForCanvasTimeoutRef.current = window.setTimeout(checkCanvasReady, checkInterval);
+    };
+    
+    // Start checking
+    checkCanvasReady();
+    
+  }, [fabricCanvasRef]);
   
   /**
    * Force grid creation
@@ -46,7 +103,18 @@ export const useGridCreationDebug = (
   const forceGridCreation = useCallback(() => {
     if (!fabricCanvasRef.current) {
       console.error("Cannot force grid creation: Canvas is null");
-      toast.error("Grid creation failed: Canvas is not initialized");
+      
+      // Wait for canvas to initialize
+      waitForCanvasInitialization(() => {
+        console.log("Canvas is now ready, attempting force grid creation");
+        if (fabricCanvasRef.current) {
+          // Now the canvas should be ready
+          forceCreateGrid(fabricCanvasRef.current, gridLayerRef);
+        } else {
+          toast.error("Grid creation failed: Canvas is still not initialized");
+        }
+      });
+      
       return [];
     }
     
@@ -125,7 +193,7 @@ export const useGridCreationDebug = (
       
       return [];
     }
-  }, [fabricCanvasRef, gridLayerRef]);
+  }, [fabricCanvasRef, gridLayerRef, waitForCanvasInitialization]);
   
   /**
    * Schedule a retry for grid creation
@@ -199,7 +267,18 @@ export const useGridCreationDebug = (
   const fixGridIssues = useCallback(() => {
     if (!fabricCanvasRef.current) {
       console.log("Cannot fix grid issues: Canvas is null");
-      toast.error("Grid fix failed: Canvas is not initialized");
+      
+      // Wait for canvas to initialize
+      waitForCanvasInitialization(() => {
+        console.log("Canvas is now ready, attempting to fix grid issues");
+        if (fabricCanvasRef.current) {
+          // Now the canvas should be ready
+          attemptGridRecovery(fabricCanvasRef.current, gridLayerRef);
+        } else {
+          toast.error("Grid fix failed: Canvas is still not initialized");
+        }
+      });
+      
       return [];
     }
     
@@ -236,7 +315,7 @@ export const useGridCreationDebug = (
     // Grid appears to be fine
     toast.success("Grid is already working correctly");
     return gridLayerRef.current;
-  }, [checkGridHealth, forceGridCreation, fabricCanvasRef, gridLayerRef]);
+  }, [checkGridHealth, forceGridCreation, fabricCanvasRef, gridLayerRef, waitForCanvasInitialization]);
   
   /**
    * Toggle debug mode
@@ -253,6 +332,42 @@ export const useGridCreationDebug = (
       }
     }
   }, [debugMode, checkGridHealth, fabricCanvasRef, gridLayerRef]);
+  
+  // Check canvas initialization status periodically
+  useEffect(() => {
+    // Set up a timer to check if the canvas becomes available
+    canvasInitCheckTimerRef.current = window.setInterval(() => {
+      if (!fabricCanvasRef.current) {
+        return; // Still not available
+      }
+      
+      const canvas = fabricCanvasRef.current;
+      const width = canvas.getWidth?.() || canvas.width || 0;
+      const height = canvas.getHeight?.() || canvas.height || 0;
+      
+      if (width > 0 && height > 0) {
+        console.log("Canvas initialized with dimensions:", { width, height });
+        // If grid is empty, try creating it
+        if (gridLayerRef.current.length === 0) {
+          console.log("Grid is empty after canvas initialization, attempting to create");
+          forceGridCreation();
+        }
+        
+        // Clear the interval as we don't need to check anymore
+        if (canvasInitCheckTimerRef.current !== null) {
+          window.clearInterval(canvasInitCheckTimerRef.current);
+          canvasInitCheckTimerRef.current = null;
+        }
+      }
+    }, 1000);
+    
+    return () => {
+      if (canvasInitCheckTimerRef.current !== null) {
+        window.clearInterval(canvasInitCheckTimerRef.current);
+        canvasInitCheckTimerRef.current = null;
+      }
+    };
+  }, [fabricCanvasRef, gridLayerRef, forceGridCreation]);
   
   // Auto check if grid needs to be created on mount
   useEffect(() => {
@@ -288,6 +403,16 @@ export const useGridCreationDebug = (
         window.clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
+      
+      if (waitForCanvasTimeoutRef.current !== null) {
+        window.clearTimeout(waitForCanvasTimeoutRef.current);
+        waitForCanvasTimeoutRef.current = null;
+      }
+      
+      if (canvasInitCheckTimerRef.current !== null) {
+        window.clearInterval(canvasInitCheckTimerRef.current);
+        canvasInitCheckTimerRef.current = null;
+      }
     };
   }, []);
   
@@ -296,6 +421,7 @@ export const useGridCreationDebug = (
     toggleDebugMode,
     forceGridCreation,
     checkGridHealth,
-    fixGridIssues
+    fixGridIssues,
+    isWaitingForCanvas
   };
 };

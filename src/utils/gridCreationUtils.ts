@@ -18,6 +18,13 @@ export const createBasicEmergencyGrid = (
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] => {
   try {
+    // Validate canvas parameter
+    if (!canvas) {
+      console.error("Cannot create emergency grid: Canvas is null");
+      toast.error("Grid creation failed: Canvas is not available");
+      return [];
+    }
+    
     // Log canvas dimensions for debugging
     const width = canvas.getWidth?.() || canvas.width;
     const height = canvas.getHeight?.() || canvas.height;
@@ -150,6 +157,12 @@ export const verifyGridExists = (
   canvas: Canvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): boolean => {
+  // Check if canvas is valid
+  if (!canvas) {
+    console.warn("Cannot verify grid: Canvas is null");
+    return false;
+  }
+
   // Check if grid objects exist and are on canvas
   if (!gridLayerRef.current || gridLayerRef.current.length === 0) {
     return false;
@@ -195,3 +208,4 @@ export const retryWithBackoff = (
     }
   }, delay);
 };
+
