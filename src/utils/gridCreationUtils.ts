@@ -1,9 +1,10 @@
+
 /**
  * Grid creation utilities
  * Functions for creating and managing grid
  * @module gridCreationUtils
  */
-import { Canvas, Object as FabricObject } from "fabric";
+import { Canvas, Object as FabricObject, Line } from "fabric";
 
 /**
  * Create a basic emergency grid
@@ -31,7 +32,7 @@ export const createBasicEmergencyGrid = (
     
     // Create horizontal lines
     for (let y = 0; y < height; y += 50) {
-      const line = new fabric.Line([0, y, width, y], {
+      const line = new Line([0, y, width, y], {
         stroke: '#cccccc',
         strokeWidth: y % 100 === 0 ? 1 : 0.5,
         selectable: false,
@@ -43,7 +44,7 @@ export const createBasicEmergencyGrid = (
     
     // Create vertical lines
     for (let x = 0; x < width; x += 50) {
-      const line = new fabric.Line([x, 0, x, height], {
+      const line = new Line([x, 0, x, height], {
         stroke: '#cccccc',
         strokeWidth: x % 100 === 0 ? 1 : 0.5,
         selectable: false,
@@ -58,7 +59,7 @@ export const createBasicEmergencyGrid = (
     
     // Make sure grid lines are behind other objects
     gridObjects.forEach(obj => {
-      obj.sendToBack();
+      canvas.sendToBack(obj);
     });
     
     console.log(`Created emergency grid with ${gridObjects.length} objects`);
