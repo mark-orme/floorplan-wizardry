@@ -220,14 +220,13 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
 };
 
-// Fix HTMLCanvasElement extension to use FabricCanvas for _fabric to improve typing
+// Fix global declarations to resolve typing conflicts
 declare global {
   interface HTMLCanvasElement {
-    _fabric?: FabricCanvas;
+    _fabric?: any; // Use 'any' since this is also declared in fabric-extensions.d.ts
   }
   
-  // Global registry for canvas instances (debugging)
   interface Window {
-    fabricCanvasInstances?: FabricCanvas[];
+    fabricCanvasInstances?: any[]; // Use 'any[]' for compatibility
   }
 }

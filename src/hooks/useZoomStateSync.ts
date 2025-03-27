@@ -33,7 +33,11 @@ export const useZoomStateSync = ({
   useEffect(() => {
     if (fabricCanvasRef.current) {
       // Trigger custom zoom changed event when component mounts to ensure correct initial zoom
-      fabricCanvasRef.current.fire('custom:zoom-changed', { zoom: zoomLevel });
+      // Use type casting to allow custom events
+      const canvas = fabricCanvasRef.current as unknown as {
+        fire(event: string, data: unknown): void;
+      };
+      canvas.fire('custom:zoom-changed', { zoom: zoomLevel });
     }
   }, [fabricCanvasRef, zoomLevel]);
 

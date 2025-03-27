@@ -5,14 +5,14 @@
  * @module fabric-extensions
  */
 
-import { Canvas, CanvasEvents, Object as FabricObject, IObjectOptions } from 'fabric';
+import { Canvas, CanvasEvents as FabricCanvasEvents, Object as FabricObject, IObjectOptions } from 'fabric';
 
 declare module 'fabric' {
   /**
    * Extended canvas events interface with custom events
    * @interface CanvasEvents
    */
-  interface CanvasEvents {
+  interface CanvasEvents extends FabricCanvasEvents {
     /** Event fired when measurement should be shown */
     'measurement:show': { target: FabricObject };
     

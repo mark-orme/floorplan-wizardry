@@ -44,20 +44,26 @@ export const useCanvasDrawingEvents = (props: UseCanvasDrawingEventsProps) => {
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
     
+    // Use type assertion to allow custom events
+    const canvas = fabricCanvas as unknown as {
+      on(event: string, handler: Function): void;
+      off(event: string, handler: Function): void;
+    };
+    
     // Listen for both standard zoom events and our custom event
-    fabricCanvas.on('zoom:changed', updateZoomLevel);
-    fabricCanvas.on('custom:zoom-changed', updateZoomLevel);
+    canvas.on('zoom:changed', updateZoomLevel);
+    canvas.on('custom:zoom-changed', updateZoomLevel);
     
     // Also update on viewport transform changes
-    fabricCanvas.on('viewport:transform', updateZoomLevel);
+    canvas.on('viewport:transform', updateZoomLevel);
     
     // Initial update
     updateZoomLevel();
     
     return () => {
-      fabricCanvas.off('zoom:changed', updateZoomLevel);
-      fabricCanvas.off('custom:zoom-changed', updateZoomLevel);
-      fabricCanvas.off('viewport:transform', updateZoomLevel);
+      canvas.off('zoom:changed', updateZoomLevel);
+      canvas.off('custom:zoom-changed', updateZoomLevel);
+      canvas.off('viewport:transform', updateZoomLevel);
     };
   }, [fabricCanvasRef, updateZoomLevel]);
   

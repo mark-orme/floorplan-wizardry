@@ -8,7 +8,7 @@
 // Export basic grid operations from core
 export { 
   snapToGrid as snapPointToGrid,
-  snapToGridPoints as snapPointsToGrid
+  // Export other grid functions without referencing snapToGridPoints
 } from './core';
 
 // Export measurement functions 

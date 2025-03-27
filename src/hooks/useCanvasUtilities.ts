@@ -1,113 +1,79 @@
 
 /**
- * Canvas utilities hook
- * Provides reusable functions for canvas operations
+ * Canvas utilities hook for common canvas operations
  * @module useCanvasUtilities
  */
-import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import logger from '@/utils/logger';
-import { toast } from 'sonner';
+import { useCallback } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+
+/**
+ * Props for the useCanvasUtilities hook
+ */
+interface UseCanvasUtilitiesProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+}
 
 /**
  * Hook that provides utility functions for canvas operations
- * @returns Collection of canvas utility functions
+ * @param props - Hook properties
+ * @returns Object containing utility functions
  */
-export const useCanvasUtilities = () => {
+export const useCanvasUtilities = ({ fabricCanvasRef }: UseCanvasUtilitiesProps) => {
   /**
-   * Safely get all objects from canvas excluding grid elements
-   * @param {FabricCanvas | null} canvas - The fabric canvas
-   * @param {FabricObject[]} gridElements - Grid elements to exclude
-   * @returns {FabricObject[]} Canvas objects excluding grid
+   * Find a canvas object by its ID
+   * @param id - The ID of the object to find
+   * @returns The found object or null if not found
    */
-  const getCanvasObjectsExcludingGrid = useCallback(
-    (canvas: FabricCanvas | null, gridElements: FabricObject[]): FabricObject[] => {
-      if (!canvas) return [];
-      
-      const allObjects = canvas.getObjects();
-      
-      // Create a Set of grid object IDs for efficient lookups
-      // Use type-safe approach to check for id property
-      const gridIds = new Set(
-        gridElements
-          .filter(obj => 'id' in obj && obj.id !== undefined)
-          .map(obj => obj.id)
-      );
-      
-      // Filter out grid elements using type-safe approach
-      return allObjects.filter(obj => !('id' in obj) || !gridIds.has(obj.id));
-    },
-    []
-  );
+  const findObjectById = useCallback((id: string | number): FabricObject | null => {
+    if (!fabricCanvasRef.current) return null;
+    
+    const objects = fabricCanvasRef.current.getObjects();
+    // Use type assertion to access the id property
+    return objects.find(obj => (obj as unknown as { id?: string | number }).id === id) || null;
+  }, [fabricCanvasRef]);
   
   /**
-   * Safely execute a canvas operation with error handling
-   * @param {FabricCanvas | null} canvas - The fabric canvas
-   * @param {() => void} operation - The operation to execute
-   * @param {string} errorMessage - Error message if operation fails
-   * @returns {boolean} Whether the operation was successful
+   * Get the current zoom level of the canvas
+   * @returns The current zoom level or 1 if canvas is not available
    */
-  const safeCanvasOperation = useCallback(
-    (canvas: FabricCanvas | null, operation: () => void, errorMessage: string): boolean => {
-      if (!canvas) {
-        logger.warn(`Cannot perform canvas operation: ${errorMessage}`);
-        return false;
-      }
-      
-      try {
-        operation();
-        return true;
-      } catch (error) {
-        logger.error(`${errorMessage}:`, error);
-        toast.error(`Error: ${errorMessage}`);
-        return false;
-      }
-    },
-    []
-  );
+  const getZoomLevel = useCallback((): number => {
+    if (!fabricCanvasRef.current) return 1;
+    return fabricCanvasRef.current.getZoom();
+  }, [fabricCanvasRef]);
   
   /**
-   * Safely get canvas dimensions
-   * @param {FabricCanvas | null} canvas - The fabric canvas
-   * @returns {{ width: number, height: number }} Canvas dimensions
+   * Set the zoom level of the canvas
+   * @param zoom - The zoom level to set
    */
-  const getCanvasDimensions = useCallback(
-    (canvas: FabricCanvas | null): { width: number, height: number } => {
-      if (!canvas) return { width: 0, height: 0 };
-      
-      return {
-        width: canvas.getWidth() || 0,
-        height: canvas.getHeight() || 0
-      };
-    },
-    []
-  );
+  const setZoomLevel = useCallback((zoom: number): void => {
+    if (!fabricCanvasRef.current) return;
+    fabricCanvasRef.current.setZoom(zoom);
+    fabricCanvasRef.current.requestRenderAll();
+  }, [fabricCanvasRef]);
   
   /**
-   * Check if canvas is valid and ready
-   * @param {FabricCanvas | null} canvas - The fabric canvas
-   * @returns {boolean} Whether the canvas is valid and ready
+   * Center the canvas viewport
    */
-  const isCanvasReady = useCallback(
-    (canvas: FabricCanvas | null): boolean => {
-      if (!canvas) return false;
-      
-      // Check if key canvas properties exist
-      return (
-        typeof canvas.getWidth === 'function' &&
-        typeof canvas.getHeight === 'function' &&
-        typeof canvas.getObjects === 'function' &&
-        canvas.getWidth() > 0 &&
-        canvas.getHeight() > 0
-      );
-    },
-    []
-  );
+  const centerCanvas = useCallback((): void => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Get canvas dimensions
+    const width = fabricCanvasRef.current.getWidth();
+    const height = fabricCanvasRef.current.getHeight();
+    
+    // Set the viewport transform to center the canvas
+    const vpt = fabricCanvasRef.current.viewportTransform;
+    if (vpt) {
+      vpt[4] = width / 2;
+      vpt[5] = height / 2;
+      fabricCanvasRef.current.requestRenderAll();
+    }
+  }, [fabricCanvasRef]);
   
   return {
-    getCanvasObjectsExcludingGrid,
-    safeCanvasOperation,
-    getCanvasDimensions,
-    isCanvasReady
+    findObjectById,
+    getZoomLevel,
+    setZoomLevel,
+    centerCanvas
   };
 };

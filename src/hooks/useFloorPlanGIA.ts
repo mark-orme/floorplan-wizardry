@@ -46,8 +46,10 @@ export const useFloorPlanGIA = ({
       if (!fabricCanvasRef.current) return;
       
       let totalGIA = 0;
+      // Use type assertion to access custom property on FabricObject
       const rooms = fabricCanvasRef.current.getObjects().filter(
-        obj => obj.type === 'polyline' && (obj as FabricObject).objectType === 'room'
+        obj => obj.type === 'polyline' && 
+        (obj as unknown as { objectType?: string }).objectType === 'room'
       );
       
       // OPTIMIZATION: Limit processing to max 50 rooms for performance

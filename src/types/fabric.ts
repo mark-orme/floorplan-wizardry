@@ -8,10 +8,14 @@ import { Canvas as FabricCanvas, Object as FabricObject, Point as FabricPoint } 
 
 /**
  * Custom touch event with force information (for pressure sensitivity)
+ * Uses a custom interface to extend TouchEvent while preserving type safety
  */
-export interface CustomTouchEvent extends TouchEvent {
+export interface CustomTouchEvent {
   touches: (Touch & { force?: number })[];
   preventDefault: () => void;
+  stopPropagation: () => void;
+  cancelable?: boolean;
+  target: EventTarget | null;
 }
 
 /**

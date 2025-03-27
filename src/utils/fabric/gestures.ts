@@ -116,7 +116,9 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
           canvas.zoomToPoint(fabric_point, Math.min(Math.max(zoom, 0.1), 10));
           
           // Trigger custom event for zoom change tracking
-          canvas.fire('custom:zoom-changed', { zoom });
+          // Use type assertion to allow custom event
+          (canvas as unknown as { fire(event: string, data: unknown): void })
+            .fire('custom:zoom-changed', { zoom });
         }
         
         lastDistance = distance;
@@ -186,7 +188,9 @@ const setupMousewheelZoom = (canvas: FabricCanvas): void => {
     canvas.zoomToPoint(point, Math.min(Math.max(zoom, 0.1), 10));
     
     // Trigger custom event for zoom change tracking
-    canvas.fire('custom:zoom-changed', { zoom });
+    // Use type assertion to allow custom event
+    (canvas as unknown as { fire(event: string, data: unknown): void })
+      .fire('custom:zoom-changed', { zoom });
   });
 };
 
