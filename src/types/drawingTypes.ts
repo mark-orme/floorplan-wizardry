@@ -1,3 +1,4 @@
+
 /**
  * Drawing information state type definitions
  * @module drawingTypes
@@ -114,6 +115,17 @@ export interface DebugInfoState {
   errorMessage: string;
   /** Performance statistics */
   performanceStats: PerformanceStats;
+}
+
+// Export Point to make it available to importers of drawingTypes
+export type { Point };
+
+// Export CanvasDimensions for compatibility with imports
+export interface CanvasDimensions {
+  /** Canvas width in pixels */
+  width: number;
+  /** Canvas height in pixels */
+  height: number;
 }
 
 // Export other drawing related types here

@@ -58,7 +58,8 @@ export function sendGridToBack(
     // Send each grid object to back of canvas
     gridObjects.forEach(obj => {
       if (canvas.contains(obj)) {
-        canvas.sendToBack(obj);
+        // Fix: Using the correct sendObjectToBack method
+        canvas.sendObjectToBack(obj);
       }
     });
     

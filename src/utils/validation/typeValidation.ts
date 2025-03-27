@@ -5,7 +5,7 @@
  * @module validation/typeValidation
  */
 import { z } from 'zod';
-import { DebugInfoState, Point, DrawingState, CanvasDimensions } from '@/types';
+import { DebugInfoState, Point, DrawingState, CanvasDimensions, PerformanceStats } from '@/types';
 
 /**
  * Point schema for validation
@@ -135,7 +135,7 @@ export function validateCanvasDimensions(dimensions: unknown): CanvasDimensions 
  * @returns A validator for partial debug info state
  */
 export function createPartialDebugInfoValidator() {
-  return debugInfoStateSchema.partial();
+  return debugInfoStateSchema.deepPartial();
 }
 
 /**
@@ -144,5 +144,5 @@ export function createPartialDebugInfoValidator() {
  * @returns A validator for partial drawing state
  */
 export function createPartialDrawingStateValidator() {
-  return drawingStateSchema.partial();
+  return drawingStateSchema.deepPartial();
 }

@@ -6,9 +6,10 @@
  */
 
 // Re-export core types with explicit names to avoid conflicts
-export { DebugInfoState } from './core/DebugInfo';
-export { DrawingState } from './core/DrawingState';
-export { Point, CanvasDimensions, isPoint, isCanvasDimensions } from './core/Geometry';
+export type { DebugInfoState, PerformanceStats } from './core/DebugInfo';
+export type { DrawingState } from './core/DrawingState';
+export type { Point, CanvasDimensions } from './core/Geometry';
+export * from './core/Geometry'; // For the type guards
 
 // Re-export other types
 export * from './drawingTypes';
