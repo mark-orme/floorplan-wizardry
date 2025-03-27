@@ -1,45 +1,49 @@
 
 /**
- * Constants for grid rendering and configuration
- * Used to maintain consistent grid appearance and behavior
+ * Grid constants for consistent grid rendering and behavior
+ * @module constants/gridConstants
+ */
+
+/**
+ * Grid constants
  */
 export const GRID_CONSTANTS = {
-  /** Default major grid line color */
-  MAJOR_LINE_COLOR: '#cccccc',
+  /** Default small grid size in pixels */
+  SMALL_GRID_SIZE: 10,
   
-  /** Default minor grid line color */
-  MINOR_LINE_COLOR: '#eeeeee',
+  /** Default large grid size in pixels (5x small grid) */
+  LARGE_GRID_SIZE: 50,
   
-  /** Default major grid line width */
-  MAJOR_LINE_WIDTH: 1,
+  /** Pixels per meter for scale conversion */
+  PIXELS_PER_METER: 100,
   
-  /** Default minor grid line width */
-  MINOR_LINE_WIDTH: 0.5,
+  /** Small grid line color */
+  SMALL_GRID_COLOR: 'rgba(200, 200, 200, 0.4)',
   
-  /** Default grid cell size in pixels */
-  CELL_SIZE: 20,
+  /** Large grid line color */
+  LARGE_GRID_COLOR: 'rgba(150, 150, 150, 0.6)',
   
-  /** Default major grid line frequency (every X cells) */
-  MAJOR_LINE_FREQUENCY: 5,
+  /** Grid marker text color */
+  MARKER_COLOR: 'rgba(100, 100, 100, 0.8)',
   
-  /** Default grid opacity */
-  GRID_OPACITY: 0.7,
+  /** Small grid line width */
+  SMALL_GRID_WIDTH: 0.5,
   
-  /** Default snap tolerance in pixels */
-  SNAP_TOLERANCE: 10,
+  /** Large grid line width */
+  LARGE_GRID_WIDTH: 1,
   
-  /** The pixel padding around grid edges */
-  GRID_PADDING: 2,
+  /** Grid cell size in pixels */
+  GRID_SPACING: 10,
   
-  /** Default grid layer name */
-  GRID_LAYER_NAME: 'grid',
+  /** Small grid spacing */
+  SMALL_GRID: 10,
   
-  /** Maximum number of grid lines to render (performance) */
-  MAX_GRID_LINES: 1000,
+  /** Large grid spacing */
+  LARGE_GRID: 50,
   
-  /** Default spacing between minor grid lines */
-  MINOR_LINE_SPACING: 20,
+  /** Snap threshold in pixels */
+  SNAP_THRESHOLD: 10,
   
-  /** Default spacing between major grid lines */
-  MAJOR_LINE_SPACING: 100
+  /** Marker text size */
+  MARKER_TEXT_SIZE: 10
 };

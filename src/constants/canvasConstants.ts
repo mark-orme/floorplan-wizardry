@@ -1,48 +1,49 @@
 
 /**
- * Constants for canvas settings and configuration
- * Used to maintain consistent canvas dimensions and behaviors
+ * Canvas configuration constants
+ * @module constants/canvasConstants
+ */
+
+/**
+ * Canvas constants for consistent setup and behavior
  */
 export const CANVAS_CONSTANTS = {
-  /** Default width for canvas elements */
+  /** Default canvas width in pixels */
   DEFAULT_WIDTH: 800,
   
-  /** Default height for canvas elements */
+  /** Default canvas height in pixels */
   DEFAULT_HEIGHT: 600,
   
-  /** Default background color for canvas */
-  DEFAULT_BACKGROUND_COLOR: '#FFFFFF',
+  /** Default canvas background color */
+  DEFAULT_BACKGROUND_COLOR: '#ffffff',
   
-  /** Default drawing brush color */
+  /** Default brush color */
   DEFAULT_BRUSH_COLOR: '#000000',
   
-  /** Default drawing brush width in pixels */
+  /** Default brush width in pixels */
   DEFAULT_BRUSH_WIDTH: 2,
-  
-  /** Default opacity for newly created objects */
-  DEFAULT_OBJECT_OPACITY: 1.0,
   
   /** Default selection color */
   DEFAULT_SELECTION_COLOR: 'rgba(100, 100, 255, 0.3)',
   
-  /** Default corner size for selection controls */
-  DEFAULT_CORNER_SIZE: 12,
+  /** Default selection border color */
+  DEFAULT_SELECTION_BORDER_COLOR: 'rgba(100, 100, 255, 0.8)',
   
-  /** Default border color for selected objects */
-  DEFAULT_BORDER_COLOR: '#2B5797',
+  /** Default corner size for selection */
+  DEFAULT_CORNER_SIZE: 8,
   
-  /** Default stroke width for object borders */
-  DEFAULT_STROKE_WIDTH: 1,
+  /** Default selection padding */
+  DEFAULT_SELECTION_PADDING: 6,
   
-  /** Maximum zoom level for canvas */
-  MAX_ZOOM: 5,
+  /** Minimum canvas width */
+  MIN_WIDTH: 400,
   
-  /** Minimum zoom level for canvas */
-  MIN_ZOOM: 0.25,
+  /** Minimum canvas height */
+  MIN_HEIGHT: 300,
   
-  /** Default zoom step increment */
-  ZOOM_STEP: 0.1,
+  /** Canvas resize debounce delay in ms */
+  RESIZE_DEBOUNCE_DELAY: 250,
   
-  /** Default padding around objects when fitting to viewport */
-  VIEWPORT_PADDING: 40
+  /** Maximum objects allowed on canvas */
+  MAX_OBJECTS: 1000
 };

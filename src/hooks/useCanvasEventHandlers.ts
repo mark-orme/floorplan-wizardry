@@ -20,7 +20,7 @@ import { useBrushSettings } from "./canvas-events/useBrushSettings";
  * Props for the useCanvasEventHandlers hook
  * @interface UseCanvasEventHandlersProps
  */
-interface UseCanvasEventHandlersProps {
+export interface UseCanvasEventHandlersProps {
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current active drawing tool */

@@ -1,61 +1,95 @@
 
-import React, { createContext, useContext, useState } from 'react';
+/**
+ * Canvas context provider for sharing canvas instance across components
+ * @module contexts/CanvasContext
+ */
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 
 /**
- * Interface for the Canvas Context values
+ * Canvas context value interface
  */
 interface CanvasContextValue {
-  /** The current Fabric.js canvas instance */
+  /** Current Fabric.js canvas instance */
   canvas: FabricCanvas | null;
-  /** Function to set the current canvas instance */
+  /** Function to set the canvas reference */
   setCanvas: (canvas: FabricCanvas | null) => void;
+  /** Clear all objects from the canvas */
+  clearCanvas: () => void;
+  /** Refresh the canvas rendering */
+  refreshCanvas: () => void;
 }
 
-/**
- * Default context value with null canvas
- */
-const defaultContextValue: CanvasContextValue = {
+// Create context with default values
+const CanvasContext = createContext<CanvasContextValue>({
   canvas: null,
-  setCanvas: () => {}
-};
+  setCanvas: () => {},
+  clearCanvas: () => {},
+  refreshCanvas: () => {}
+});
 
 /**
- * Create the Canvas Context
+ * Hook to use the canvas context
+ * @returns {CanvasContextValue} Canvas context value
  */
-const CanvasContext = createContext<CanvasContextValue>(defaultContextValue);
+export const useCanvasContext = (): CanvasContextValue => useContext(CanvasContext);
 
 /**
- * Props for the CanvasProvider component
+ * Canvas context provider props
  */
 interface CanvasProviderProps {
+  /** Child components */
   children: React.ReactNode;
 }
 
 /**
- * Provider component for the Canvas Context
- * Manages the canvas instance state
+ * Canvas context provider component
+ * @param {CanvasProviderProps} props - Provider props
+ * @returns {JSX.Element} Provider component
  */
 export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
-
+  const [canvas, setCanvasState] = useState<FabricCanvas | null>(null);
+  
+  // Set canvas reference
+  const setCanvas = useCallback((newCanvas: FabricCanvas | null) => {
+    setCanvasState(newCanvas);
+  }, []);
+  
+  // Clear all objects from canvas
+  const clearCanvas = useCallback(() => {
+    if (canvas) {
+      // Preserve background color
+      const backgroundColor = canvas.backgroundColor;
+      
+      // Clear the canvas
+      canvas.clear();
+      
+      // Restore background color
+      canvas.backgroundColor = backgroundColor;
+      
+      // Render the canvas
+      canvas.renderAll();
+    }
+  }, [canvas]);
+  
+  // Refresh canvas rendering
+  const refreshCanvas = useCallback(() => {
+    if (canvas) {
+      canvas.requestRenderAll();
+    }
+  }, [canvas]);
+  
+  // Create context value
+  const value: CanvasContextValue = {
+    canvas,
+    setCanvas,
+    clearCanvas,
+    refreshCanvas
+  };
+  
   return (
-    <CanvasContext.Provider value={{ canvas, setCanvas }}>
+    <CanvasContext.Provider value={value}>
       {children}
     </CanvasContext.Provider>
   );
-};
-
-/**
- * Hook to access the Canvas Context
- * @returns The canvas context values
- */
-export const useCanvasContext = (): CanvasContextValue => {
-  const context = useContext(CanvasContext);
-  
-  if (!context) {
-    throw new Error('useCanvasContext must be used within a CanvasProvider');
-  }
-  
-  return context;
 };

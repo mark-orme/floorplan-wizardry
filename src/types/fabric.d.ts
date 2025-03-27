@@ -57,13 +57,13 @@ export interface GridDimensions {
  */
 export interface GridRenderResult {
   /** All grid-related objects */
-  gridObjects: any[];
+  gridObjects: FabricObject[];
   /** Small grid lines */
-  smallGridLines: any[];
+  smallGridLines: FabricObject[];
   /** Large grid lines */
-  largeGridLines: any[];
+  largeGridLines: FabricObject[];
   /** Grid markers (labels) */
-  markers: any[];
+  markers: FabricObject[];
 }
 
 /**

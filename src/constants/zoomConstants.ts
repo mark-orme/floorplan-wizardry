@@ -1,52 +1,30 @@
 
 /**
- * Constants for zoom operations
- * Used to maintain consistent zoom behavior
+ * Constants for zoom settings and behaviors
+ * Used to maintain consistent zooming across components
  */
 export const ZOOM_CONSTANTS = {
+  /** Zoom in factor */
+  IN: 1.1,
+  
+  /** Zoom out factor */
+  OUT: 0.9,
+  
+  /** Minimum zoom level */
+  MIN_ZOOM: 0.1,
+  
+  /** Maximum zoom level */
+  MAX_ZOOM: 10.0,
+  
   /** Default zoom level */
   DEFAULT_ZOOM: 1.0,
   
-  /** Minimum zoom level allowed */
-  MIN_ZOOM: 0.25,
+  /** Zoom increment for buttons and controls */
+  ZOOM_INCREMENT: 0.1,
   
-  /** Maximum zoom level allowed */
-  MAX_ZOOM: 5.0,
+  /** Number of zoom steps from min to max */
+  ZOOM_STEPS: 20,
   
-  /** Zoom step for keyboard and button controls */
-  ZOOM_STEP: 0.1,
-  
-  /** Zoom multiplier for mouse wheel operations */
-  WHEEL_ZOOM_FACTOR: 0.02,
-  
-  /** Zoom multiplier for pinch gesture operations */
-  PINCH_ZOOM_FACTOR: 0.01,
-  
-  /** Default zoom transition duration in milliseconds */
-  TRANSITION_DURATION: 200,
-  
-  /** Maximum zoom change per interaction */
-  MAX_ZOOM_CHANGE: 0.5
-};
-
-/**
- * Zoom directions for zoom operations
- */
-export enum ZoomDirection {
-  /** Zoom in (increase scale) */
-  IN = "in",
-  
-  /** Zoom out (decrease scale) */
-  OUT = "out"
-}
-
-/**
- * Zoom multipliers for different operations
- */
-export const ZOOM_MULTIPLIERS = {
-  /** Zoom in multiplier */
-  IN: 1.1,
-  
-  /** Zoom out multiplier */
-  OUT: 0.9
+  /** Zoom sensitivity for mouse wheel */
+  WHEEL_SENSITIVITY: 0.001
 };

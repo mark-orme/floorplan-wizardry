@@ -1,75 +1,95 @@
 
 /**
- * Constants for drawing operations and styles
- * Used to maintain consistent drawing behaviors
+ * Drawing constants for line styles and behaviors
+ * @module constants/drawingConstants
  */
-export const DRAWING_CONSTANTS = {
-  /** Default drawing mode (freehand, line, shape) */
-  DEFAULT_MODE: 'freehand',
-  
-  /** Default snap to grid distance threshold in pixels */
-  SNAP_THRESHOLD: 10,
-  
-  /** Default selection transparency */
-  SELECTION_OPACITY: 0.3,
-  
-  /** Default distance for point proximity checks */
-  POINT_PROXIMITY: 5,
-  
-  /** Default angle for angle snapping (in degrees) */
-  ANGLE_SNAP: 15,
-  
-  /** Default grid size in pixels */
-  GRID_SIZE: 20,
-  
-  /** Maximum number of undo operations */
-  MAX_UNDO_STEPS: 50
-};
 
 /**
- * Constants for polyline drawing styles
- * Used for walls, rooms, and other line-based objects
+ * Polyline style constants
  */
 export const POLYLINE_STYLES = {
-  /** Default polyline stroke color */
-  DEFAULT_STROKE_COLOR: '#333333',
+  /** Default stroke color */
+  DEFAULT_STROKE_COLOR: '#000000',
   
-  /** Default polyline stroke width */
+  /** Default stroke width */
   DEFAULT_STROKE_WIDTH: 2,
   
-  /** Default polyline fill color */
+  /** Default fill color */
   DEFAULT_FILL: 'transparent',
   
-  /** Default polyline opacity */
-  DEFAULT_OPACITY: 1.0,
+  /** Default opacity */
+  DEFAULT_OPACITY: 1,
+  
+  /** Wall stroke color */
+  WALL_STROKE_COLOR: '#333333',
+  
+  /** Wall stroke width */
+  WALL_STROKE_WIDTH: 4,
+  
+  /** Wall fill color */
+  WALL_FILL: 'rgba(200, 200, 200, 0.3)',
+  
+  /** Wall opacity */
+  WALL_OPACITY: 1,
+  
+  /** Room stroke color */
+  ROOM_STROKE_COLOR: '#666666',
+  
+  /** Room stroke width */
+  ROOM_STROKE_WIDTH: 2,
+  
+  /** Room fill color */
+  ROOM_FILL: 'rgba(230, 230, 255, 0.3)',
+  
+  /** Room opacity */
+  ROOM_OPACITY: 0.7,
   
   /** Default line cap style */
   DEFAULT_LINE_CAP: 'round',
   
   /** Default line join style */
-  DEFAULT_LINE_JOIN: 'round',
-  
-  /** Wall-specific stroke color */
-  WALL_STROKE_COLOR: '#000000',
-  
-  /** Wall-specific stroke width */
-  WALL_STROKE_WIDTH: 6,
-  
-  /** Wall-specific fill color */
-  WALL_FILL: 'transparent',
-  
-  /** Wall-specific opacity */
-  WALL_OPACITY: 1.0,
-  
-  /** Room-specific stroke color */
-  ROOM_STROKE_COLOR: '#666666',
-  
-  /** Room-specific stroke width */
-  ROOM_STROKE_WIDTH: 1,
-  
-  /** Room-specific fill color */
-  ROOM_FILL: 'rgba(200, 200, 200, 0.2)',
-  
-  /** Room-specific opacity */
-  ROOM_OPACITY: 0.8
+  DEFAULT_LINE_JOIN: 'round'
 };
+
+/**
+ * Line drawing constants
+ */
+export const LINE_CONSTANTS = {
+  /** Minimum length for a valid line */
+  MIN_LENGTH: 5,
+  
+  /** Snapping distance in pixels */
+  SNAP_DISTANCE: 10,
+  
+  /** Minimum angle change for corner detection */
+  CORNER_ANGLE_THRESHOLD: 20,
+  
+  /** Straightening threshold in degrees */
+  STRAIGHTEN_THRESHOLD: 5
+};
+
+/**
+ * Drawing mode enumeration
+ */
+export enum DrawingMode {
+  /** Free-hand drawing mode */
+  Freehand = "freehand",
+  /** Straight line drawing mode */
+  StraightLine = "straight-line",
+  /** Wall drawing mode */
+  Wall = "wall",
+  /** Room drawing mode */
+  Room = "room",
+  /** Selection mode */
+  Select = "select",
+  /** Hand/pan mode */
+  Hand = "hand",
+  /** Measurement mode */
+  Measure = "measure",
+  /** Text mode */
+  Text = "text",
+  /** Eraser mode */
+  Eraser = "eraser",
+  /** No drawing mode */
+  None = "none"
+}

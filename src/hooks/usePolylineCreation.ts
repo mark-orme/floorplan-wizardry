@@ -1,21 +1,16 @@
 
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline } from "fabric";
+import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
 import { POLYLINE_STYLES } from "@/constants/drawingConstants";
+import { Point } from "@/types/floorPlanTypes";
 
 // Defined types for line cap and join styles
 type CanvasLineCap = "butt" | "round" | "square";
 type CanvasLineJoin = "bevel" | "round" | "miter";
 
-// Type for Fabric objects with custom properties
-interface CustomFabricObject extends fabric.Object {
+// Type for custom Fabric objects with additional properties
+interface CustomFabricObject extends FabricObject {
   objectType?: string;
-}
-
-// Type for points used in polylines
-interface PolylinePoint {
-  x: number;
-  y: number;
 }
 
 /**
@@ -28,12 +23,12 @@ export const usePolylineCreation = (
 ) => {
   /**
    * Create a polyline from points with specified styles
-   * @param {Array<{x: number, y: number}>} points - Array of points
+   * @param {Point[]} points - Array of points
    * @param {Object} options - Style options
    * @returns {CustomFabricObject|null} Created polyline object or null if failed
    */
   const createPolyline = useCallback((
-    points: PolylinePoint[],
+    points: Point[],
     options?: {
       stroke?: string;
       strokeWidth?: number;
@@ -71,11 +66,11 @@ export const usePolylineCreation = (
       });
       
       // Add object type for identification
-      const customPolyline = polyline as CustomFabricObject;
+      const customPolyline = polyline as unknown as CustomFabricObject;
       customPolyline.objectType = 'line';
       
       // Add to canvas
-      canvas.add(customPolyline);
+      canvas.add(customPolyline as unknown as FabricObject);
       canvas.requestRenderAll();
       
       return customPolyline;
@@ -87,10 +82,10 @@ export const usePolylineCreation = (
   
   /**
    * Create a wall from points
-   * @param {Array<{x: number, y: number}>} points - Array of points
+   * @param {Point[]} points - Array of points
    * @returns {CustomFabricObject|null} Created wall polyline or null if failed
    */
-  const createWall = useCallback((points: PolylinePoint[]): CustomFabricObject | null => {
+  const createWall = useCallback((points: Point[]): CustomFabricObject | null => {
     return createPolyline(points, {
       stroke: POLYLINE_STYLES.WALL_STROKE_COLOR,
       strokeWidth: POLYLINE_STYLES.WALL_STROKE_WIDTH,
@@ -103,10 +98,10 @@ export const usePolylineCreation = (
   
   /**
    * Create a room outline from points
-   * @param {Array<{x: number, y: number}>} points - Array of points
+   * @param {Point[]} points - Array of points
    * @returns {CustomFabricObject|null} Created room polyline or null if failed
    */
-  const createRoom = useCallback((points: PolylinePoint[]): CustomFabricObject | null => {
+  const createRoom = useCallback((points: Point[]): CustomFabricObject | null => {
     const polyline = createPolyline(points, {
       stroke: POLYLINE_STYLES.ROOM_STROKE_COLOR,
       strokeWidth: POLYLINE_STYLES.ROOM_STROKE_WIDTH,

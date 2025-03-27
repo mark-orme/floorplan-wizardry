@@ -17,7 +17,7 @@ export const BRUSH_CONSTANTS = {
   DEFAULT_SHADOW_BLUR: 2,
   
   /** Default pencil brush width */
-  PENCIL_WIDTH: 2,
+  DEFAULT_PENCIL_WIDTH: 2,  // Renamed from PENCIL_WIDTH to match usage
   
   /** Default spray brush width */
   SPRAY_WIDTH: 10,
