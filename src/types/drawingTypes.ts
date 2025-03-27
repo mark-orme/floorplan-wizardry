@@ -1,95 +1,87 @@
 
 /**
- * Drawing state type definitions
+ * Drawing type definitions
+ * Common types used for drawing operations
  * @module drawingTypes
  */
 
-// Import types from floorPlanTypes.ts instead of redefining them
-import type { Point, Stroke, Wall, Room, PaperSize, FloorPlan } from './floorPlanTypes';
-
-// Export types from floorPlanTypes.ts for backward compatibility
-export type { Point, Stroke, Wall, Room, PaperSize, FloorPlan };
-
 /**
- * Canvas dimensions interface
- * @interface CanvasDimensions
+ * Point interface representing a 2D coordinate
+ * @interface Point
  */
-export interface CanvasDimensions {
-  width: number;
-  height: number;
+export interface Point {
+  /** X coordinate */
+  x: number;
+  /** Y coordinate */
+  y: number;
 }
 
 /**
- * Drawing state interface - represents the current state of drawing
+ * Drawing state interface
  * @interface DrawingState
  */
 export interface DrawingState {
-  /** Whether drawing is currently active */
+  /** Whether currently drawing */
   isDrawing: boolean;
-  /** Starting point of current drawing */
+  /** Starting point of the drawing */
   startPoint: Point | null;
-  /** Current point during drawing */
+  /** Current point of the drawing */
   currentPoint: Point | null;
-  /** Current cursor position for tooltips */
-  cursorPosition: Point | null;
-  /** Middle point of the line for tooltip placement */
+  /** Midpoint for calculations */
   midPoint: Point | null;
-  /** Whether selection is currently active */
-  selectionActive: boolean;
-  /** Current zoom level of the canvas */
-  currentZoom?: number;
-  /** Current distance between start and current points in meters */
-  distance?: number | null;
+  /** Array of all points in the current stroke */
+  points: Point[];
 }
 
 /**
- * Grid creation callback type
+ * Debug information state
+ * @interface DebugInfoState
  */
-export type GridCreationCallback = (canvas: any) => any[];
-
-/**
- * Grid creation state type
- */
-export interface GridCreationState {
-  /** Whether grid creation is in progress */
-  isCreating: boolean;
-  /** Number of creation attempts */
-  attempts: number; 
-  /** Whether creation was successful */
-  success: boolean;
-  /** Error message if creation failed */
-  error?: string;
-  /** Whether creation is currently in progress */
-  creationInProgress?: boolean;
-  /** Number of consecutive reset attempts */
-  consecutiveResets?: number;
-  /** Maximum allowed consecutive resets */
-  maxConsecutiveResets?: number;
-  /** Timestamp of last attempt */
-  lastAttemptTime?: number;
-  /** Timestamp of last successful creation */
-  lastCreationTime?: number;
-  /** Minimum interval between creation attempts */
-  throttleInterval?: number;
-  /** Whether grid already exists */
-  exists?: boolean;
-  /** Timeout ID for safety mechanism */
-  safetyTimeout?: number | null;
-  /** Total number of grid creations */
-  totalCreations?: number;
-  /** Maximum allowed recreations */
-  maxRecreations?: number;
-  /** Minimum interval between recreations */
-  minRecreationInterval?: number;
-  /** Last known canvas dimensions */
-  lastDimensions?: { width: number; height: number };
-  /** Creation lock mechanism */
-  creationLock?: {
-    id: number;
-    timestamp: number;
-    isLocked: boolean;
+export interface DebugInfoState {
+  /** Whether grid was created successfully */
+  gridCreated: boolean;
+  /** Number of grid objects */
+  gridObjectCount: number;
+  /** Timestamp of last grid creation */
+  lastGridCreationTime: number;
+  /** Canvas dimensions */
+  canvasDimensions: {
+    width: number;
+    height: number;
   };
+  /** Error state */
+  hasError: boolean;
+  /** Error message */
+  errorMessage: string;
 }
 
-// Re-export DebugInfoState from debugTypes
-export type { DebugInfoState } from './debugTypes';
+/**
+ * Drawing operation mode
+ * @type {DrawingMode}
+ */
+export type DrawingMode = 
+  | 'draw'           // Free drawing
+  | 'line'           // Straight line
+  | 'rectangle'      // Rectangle
+  | 'circle'         // Circle
+  | 'polygon'        // Polygon
+  | 'wall'           // Wall (architectural)
+  | 'room'           // Room (architectural)
+  | 'text'           // Text annotation
+  | 'measure'        // Measurement
+  | 'select'         // Selection
+  | 'pan'            // Pan view
+  | 'erase';         // Erase elements
+
+/**
+ * Operation result with status
+ * @interface OperationResult
+ */
+export interface OperationResult<T> {
+  /** Operation success status */
+  success: boolean;
+  /** Operation result data */
+  data?: T;
+  /** Error message if operation failed */
+  error?: string;
+}
