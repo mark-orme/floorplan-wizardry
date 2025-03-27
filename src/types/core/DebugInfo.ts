@@ -92,7 +92,7 @@ export interface DebugInfoState {
   lastError?: unknown;
   /** Last error time (optional) */
   lastErrorTime?: number;
-  /** Additional properties */
+  /** Any other additional properties */
   [key: string]: unknown;
 }
 

@@ -57,7 +57,7 @@ export const CanvasApp = () => {
   // Create a safe debug info object with required properties for type compatibility
   const safeDebugInfo: DebugInfoState = {
     ...DEFAULT_DEBUG_STATE,
-    ...debugInfo
+    ...(debugInfo as Partial<DebugInfoState>)
   };
 
   return (

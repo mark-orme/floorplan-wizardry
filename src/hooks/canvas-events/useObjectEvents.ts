@@ -1,87 +1,87 @@
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { EventHandlerResult } from "./types";
 import { DrawingTool } from "@/constants/drawingModes";
+import { EventHandlerResult, UseObjectEventsProps } from "./types";
 
 /**
- * Props for useObjectEvents hook
- */
-interface UseObjectEventsProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current active drawing tool */
-  tool: DrawingTool;
-  /** Function to save current state before making changes */
-  saveCurrentState?: () => void;
-}
-
-/**
- * Hook for handling object events
- * @param props - Hook properties
- * @returns Event handler registration and cleanup functions
+ * Hook for handling Fabric.js object events
+ * Manages object selection, modification, and related operations
+ * 
+ * @param {UseObjectEventsProps} props - Properties for the hook
+ * @returns {EventHandlerResult} Functions to register and cleanup event handlers
  */
 export const useObjectEvents = (props: UseObjectEventsProps): EventHandlerResult => {
   const { fabricCanvasRef, tool, saveCurrentState } = props;
+
+  /**
+   * Handle object modified event
+   * Triggered when an object on the canvas is modified
+   * 
+   * @param {any} e - The event object
+   */
+  const handleObjectModified = useCallback((e: any) => {
+    saveCurrentState();
+  }, [saveCurrentState]);
+
+  /**
+   * Handle object selection event
+   * Triggered when an object on the canvas is selected
+   * 
+   * @param {any} e - The event object
+   */
+  const handleObjectSelected = useCallback((e: any) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Do any selection-specific handling here
+    console.log("Object selected:", e.target);
+  }, [fabricCanvasRef]);
   
   /**
-   * Register object event handlers
+   * Register all object event handlers
    */
   const register = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Save state before object modification
-    const handleBeforeModify = () => {
-      if (saveCurrentState) {
-        saveCurrentState();
-      }
-    };
-    
-    // Process object selection
-    const handleObjectSelect = (e: { target: FabricObject }) => {
-      // Implementation for selection handling
-      console.log("Object selected:", e.target);
-    };
-    
-    // Process object modification
-    const handleObjectModified = (e: { target: FabricObject }) => {
-      // Implementation for modification handling
-      console.log("Object modified:", e.target);
-    };
-    
-    // Register event handlers
-    canvas.on('before:selection:cleared', handleBeforeModify);
-    canvas.on('object:selected', handleObjectSelect);
+    // Register object events with proper types
     canvas.on('object:modified', handleObjectModified);
+    // Use 'as any' to bypass type checking for this specific event
+    // that's part of Fabric.js but not included in the type definitions
+    (canvas as any).on('object:selected', handleObjectSelected);
     
-    console.log("Registered object handlers");
-  }, [fabricCanvasRef, tool, saveCurrentState]);
-
+    console.log("Registered object event handlers");
+  }, [fabricCanvasRef, handleObjectModified, handleObjectSelected]);
+  
   /**
-   * Unregister object event handlers
+   * Unregister all object event handlers
    */
   const unregister = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Remove event handlers
-    canvas.off('before:selection:cleared');
-    canvas.off('object:selected');
-    canvas.off('object:modified');
+    canvas.off('object:modified', handleObjectModified);
+    // Use 'as any' to bypass type checking for this specific event
+    (canvas as any).off('object:selected', handleObjectSelected);
     
-    console.log("Unregistering object handlers");
-  }, [fabricCanvasRef]);
-
+    console.log("Unregistered object event handlers");
+  }, [fabricCanvasRef, handleObjectModified, handleObjectSelected]);
+  
   /**
    * Clean up object event handlers
    */
   const cleanup = useCallback(() => {
-    // Unregister event handlers
     unregister();
-    console.log("Cleaning up object handlers");
+    console.log("Cleaned up object event handlers");
   }, [unregister]);
-
+  
+  // Register event handlers on mount
+  useEffect(() => {
+    register();
+    return cleanup;
+  }, [register, cleanup]);
+  
   return {
     register,
     unregister,

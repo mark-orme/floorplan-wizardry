@@ -1,3 +1,4 @@
+
 /**
  * Constants for drawing modes
  * @module constants/drawingModes

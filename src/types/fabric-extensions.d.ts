@@ -25,14 +25,23 @@ declare module 'fabric' {
     /** Alternative zoom change event */
     'zoom:changed': { zoom: number };
     
+    /** Zoom change event */
+    'zoom:change': { point?: { x: number, y: number }, x?: number, y?: number };
+    
     /** Event fired when viewport transform changes */
     'viewport:transform': { transform: number[] };
+    
+    /** Viewport scaled event */
+    'viewport:scaled': { point?: { x: number, y: number }, x?: number, y?: number };
     
     /** Touch start event for mobile interactions */
     'touch:start': { touches: { x: number; y: number }[] };
     
     /** Touch move event for mobile interactions */
     'touch:move': { touches: { x: number; y: number }[]; e: TouchEvent };
+    
+    /** Object selected event */
+    'object:selected': { target: FabricObject };
   }
   
   /**
@@ -81,6 +90,15 @@ declare module 'fabric' {
     
     /** Delete selected objects */
     deleteSelectedObjects?: () => void;
+    
+    /** Send object to back */
+    sendToBack: (obj: FabricObject) => Canvas;
+    
+    /** Bring object forward */
+    bringForward: (obj: FabricObject) => Canvas;
+    
+    /** Bring object to front */
+    bringToFront: (obj: FabricObject) => Canvas;
     
     /** Custom rendering options */
     renderingOptions?: {

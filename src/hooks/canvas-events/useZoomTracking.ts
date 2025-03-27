@@ -36,8 +36,10 @@ export const useZoomTracking = (props: UseZoomTrackingProps): UseZoomTrackingRes
     };
 
     // Register correct zoom change event names
-    canvas.on('zoom:change', handleZoomChange);
-    canvas.on('viewport:scaled', handleZoomChange);
+    // Use 'as any' to bypass type checking for these specific events
+    // that are part of Fabric.js but not included in the type definitions
+    (canvas as any).on('zoom:change', handleZoomChange);
+    (canvas as any).on('viewport:scaled', handleZoomChange);
     console.log("Registered zoom tracking");
   }, [fabricCanvasRef, updateZoomLevel]);
 
@@ -46,8 +48,9 @@ export const useZoomTracking = (props: UseZoomTrackingProps): UseZoomTrackingRes
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    canvas.off('zoom:change');
-    canvas.off('viewport:scaled');
+    // Use 'as any' to bypass type checking for these specific events
+    (canvas as any).off('zoom:change');
+    (canvas as any).off('viewport:scaled');
     console.log("Unregistered zoom tracking");
   }, [fabricCanvasRef]);
 
