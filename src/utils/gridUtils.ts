@@ -79,13 +79,18 @@ export const createCompleteGrid = (
   cellSize: number = 20
 ): GridRenderResult => {
   const dimensions = calculateGridDimensions(width, height, cellSize);
-  const objects = createGridLines(canvas, dimensions);
+  const gridObjects = createGridLines(canvas, dimensions);
+  
+  // Split grid objects into categories required by GridRenderResult interface
+  const smallGridLines: FabricObject[] = [];
+  const largeGridLines: FabricObject[] = [];
+  const markers: FabricObject[] = [];
   
   return {
-    gridObjects: objects,
-    smallGridLines: [],
-    largeGridLines: [],
-    markers: []
+    gridObjects,
+    smallGridLines,
+    largeGridLines,
+    markers
   };
 };
 
