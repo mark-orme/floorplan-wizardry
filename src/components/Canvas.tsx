@@ -113,8 +113,8 @@ export const Canvas: React.FC<CanvasProps> = ({
 // Define global extensions to match existing interfaces
 declare global {
   interface Window {
-    // Match the type exactly as it's declared elsewhere in the codebase
-    fabricCanvasInstances?: fabric.Canvas[];
+    // Use the imported FabricCanvas type to avoid referencing the 'fabric' namespace
+    fabricCanvasInstances?: FabricCanvas[];
   }
 }
 
