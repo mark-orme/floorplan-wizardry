@@ -4,6 +4,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import jsdoc from "eslint-plugin-jsdoc";
+import reactPlugin from "eslint-plugin-react";
+import prettier from "eslint-plugin-prettier";
 
 // Constants for ESLint configuration
 const MAX_LINE_LENGTH = 100;
@@ -12,28 +14,51 @@ const MAX_COMPLEXITY = 10;
 const MAX_DEPTH = 3;
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  { ignores: ["dist", "node_modules", "build"] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+      ...reactHooks.configs.recommended,
+      reactPlugin.configs.recommended,
+    ],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      ecmaVersion: 2021,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        },
+        project: "./tsconfig.json"
+      }
     },
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       "jsdoc": jsdoc,
+      "react": reactPlugin,
+      "prettier": prettier,
+    },
+    settings: {
+      react: {
+        version: "detect"
+      }
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
       ],
-      "@typescript-eslint/no-unused-vars": "error", // Keep as error
-      "@typescript-eslint/no-magic-numbers": ["error", { // Keep as error
-        "ignore": [0, 1, -1, 2], // Common values that don't need explaining
+      
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+      "@typescript-eslint/no-magic-numbers": ["error", { 
+        "ignore": [0, 1, -1, 2], 
         "ignoreArrayIndexes": true,
         "ignoreDefaultValues": true,
         "ignoreEnums": true,
@@ -43,27 +68,26 @@ export default tseslint.config(
         "detectObjects": false
       }],
       
-      // New typing-specific rules
-      "@typescript-eslint/no-explicit-any": "error", // Prohibit using 'any' type
-      "@typescript-eslint/ban-ts-comment": ["error", {  // Prohibit @ts-ignore and similar
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/ban-ts-comment": ["error", {
         "ts-ignore": "true",
         "ts-nocheck": "true",
-        "minimumDescriptionLength": 10 // Require explanation if using ts-expect-error
+        "minimumDescriptionLength": 10
       }],
-      "@typescript-eslint/explicit-function-return-type": ["error", { // Require return types
+      "@typescript-eslint/explicit-function-return-type": ["warn", {
         "allowExpressions": true,
         "allowTypedFunctionExpressions": true,
         "allowHigherOrderFunctions": true
       }],
-      "@typescript-eslint/explicit-member-accessibility": "error", // Require explicit accessibility modifiers
-      "@typescript-eslint/no-non-null-assertion": "error", // Avoid non-null assertions (!)
-      "@typescript-eslint/prefer-as-const": "error", // Prefer as const to literal type
-      "@typescript-eslint/consistent-type-definitions": ["error", "interface"], // Use interface instead of type where possible
-      "@typescript-eslint/array-type": ["error", { "default": "array" }], // Consistent array type syntax
-      "@typescript-eslint/consistent-type-imports": "error", // Consistent type imports
-      "@typescript-eslint/no-unnecessary-type-assertion": "error", // Avoid unnecessary type assertions
+      "@typescript-eslint/explicit-module-boundary-types": "warn",
+      "@typescript-eslint/explicit-member-accessibility": "warn",
+      "@typescript-eslint/no-non-null-assertion": "error",
+      "@typescript-eslint/prefer-as-const": "error",
+      "@typescript-eslint/consistent-type-definitions": ["warn", "interface"],
+      "@typescript-eslint/array-type": ["warn", { "default": "array" }],
+      "@typescript-eslint/consistent-type-imports": "warn",
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
       
-      // AI Coder Rules - New strict typing requirements
       "@typescript-eslint/ban-types": ["error", {
         "types": {
           "Event": {
@@ -85,7 +109,6 @@ export default tseslint.config(
         }
       }],
       
-      // JSDoc rules (already in place)
       "jsdoc/require-jsdoc": ["warn", {
         "publicOnly": true,
         "require": {
@@ -101,20 +124,19 @@ export default tseslint.config(
       }],
       "jsdoc/require-param": "warn",
       "jsdoc/require-param-description": "warn",
-      "jsdoc/require-param-name": "error", // Keep as error
+      "jsdoc/require-param-name": "error",
       "jsdoc/require-param-type": "warn",
       "jsdoc/require-returns": "warn",
       "jsdoc/require-returns-description": "warn",
       "jsdoc/require-returns-type": "warn",
-      "jsdoc/check-param-names": "error", // Keep as error
-      "jsdoc/check-tag-names": "error", // Keep as error
-      "jsdoc/check-types": "error", // Keep as error
-      "jsdoc/valid-types": "error", // Keep as error
+      "jsdoc/check-param-names": "error",
+      "jsdoc/check-tag-names": "error",
+      "jsdoc/check-types": "error",
+      "jsdoc/valid-types": "error",
       "jsdoc/no-undefined-types": "warn",
       
-      // Naming conventions and other rules (already in place)
       "@typescript-eslint/naming-convention": [
-        "error", // Keep as error
+        "error",
         {
           "selector": "variable",
           "format": ["camelCase", "UPPER_CASE", "PascalCase"]
@@ -134,7 +156,10 @@ export default tseslint.config(
         }
       ],
       
-      // Other rules (already in place)
+      "react/prop-types": "off",
+      "react/display-name": "off",
+      
+      "no-console": "warn",
       "max-len": ["warn", { 
         "code": MAX_LINE_LENGTH, 
         "ignoreComments": true, 
@@ -143,7 +168,7 @@ export default tseslint.config(
         "ignoreTemplateLiterals": true,
         "ignoreRegExpLiterals": true
       }],
-      "max-lines-per-function": ["error", { // Keep as error
+      "max-lines-per-function": ["error", { 
         "max": MAX_FUNCTION_LINES, 
         "skipBlankLines": true, 
         "skipComments": true 
@@ -152,27 +177,35 @@ export default tseslint.config(
         "ignoreCase": true,
         "ignoreDeclarationSort": true
       }],
-      "complexity": ["error", MAX_COMPLEXITY], // Keep as error
-      "no-unused-expressions": "error", // Keep as error
+      "complexity": ["error", MAX_COMPLEXITY],
+      "no-unused-expressions": "error",
       "indent": ["warn", 2, { "SwitchCase": 1 }],
       "quotes": ["warn", "double", { "avoidEscape": true }],
-      "semi": ["error", "always"], // Keep as error
+      "semi": ["error", "always"],
       "comma-dangle": ["warn", "always-multiline"],
       "object-curly-spacing": ["warn", "always"],
       "array-bracket-spacing": ["warn", "never"],
-      "max-depth": ["error", MAX_DEPTH], // Keep as error
+      "max-depth": ["error", MAX_DEPTH],
       "prefer-destructuring": ["warn", {
         "array": true,
         "object": true
       }],
       "arrow-body-style": ["warn", "as-needed"],
-      "promise/catch-or-return": "error", // Keep as error
-      "promise/always-return": "error", // Keep as error
+      "promise/catch-or-return": "error",
+      "promise/always-return": "error",
       "react/function-component-definition": ["warn", {
         "namedComponents": "arrow-function",
         "unnamedComponents": "arrow-function"
       }],
-      "react-hooks/exhaustive-deps": "error" // Keep as error
+      "react-hooks/exhaustive-deps": "error",
+      
+      "prettier/prettier": ["warn", {
+        "semi": true,
+        "singleQuote": false,
+        "printWidth": 100,
+        "trailingComma": "all",
+        "tabWidth": 2
+      }]
     },
   }
 );

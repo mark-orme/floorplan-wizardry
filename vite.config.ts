@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => ({
       // Auth tokens can be obtained from https://sentry.io/settings/account/api/auth-tokens/
       // and need to be set as environment variables
       authToken: process.env.SENTRY_AUTH_TOKEN,
-      telemetry: false, // Optional: Disable sentry-cli telemetry
+      telemetry: false, // Disable sentry-cli telemetry
     }),
   ].filter(Boolean),
   resolve: {
@@ -47,6 +47,5 @@ export default defineConfig(({ mode }) => ({
     // Preview server config
     port: 8080,
     host: "::"
-    // Note: HMR configuration belongs to the server section, not directly in preview
   }
 }));
