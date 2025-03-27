@@ -1,4 +1,3 @@
-
 import { useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DebugInfoState } from '@/types';
@@ -69,7 +68,8 @@ export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabr
     gridObjectCount: 0,
     canvasDimensions: { width: 0, height: 0 },
     hasError: false,
-    errorMessage: ""
+    errorMessage: "",
+    performanceStats: {}
   });
   
   /**

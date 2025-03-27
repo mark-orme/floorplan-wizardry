@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import { DebugInfoState } from '@/types/debugTypes';
+import { DebugInfoState } from '@/types';
 import { toast } from 'sonner';
 import { createFloorPlan } from '@/utils/floorPlanUtils';
 
@@ -113,7 +113,8 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     gridObjectCount: 0,
     canvasDimensions: { width: 0, height: 0 },
     hasError: false,
-    errorMessage: ""
+    errorMessage: "",
+    performanceStats: {}
   });
   
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({

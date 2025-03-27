@@ -1,11 +1,10 @@
-
 /**
  * Canvas interactions hook
  * Manages mouse/touch interactions and drawing state for the canvas
  */
 import { Canvas as FabricCanvas } from 'fabric';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DrawingState, Point } from '@/types/drawingTypes';
+import { DrawingState, Point } from '@/types';
 import { DrawingTool } from './useCanvasState';
 import { usePointProcessing } from './usePointProcessing';
 import { useSnapToGrid } from './useSnapToGrid';
@@ -55,6 +54,7 @@ export const useCanvasInteractions = ({
     midPoint: null,
     selectionActive: false,
     currentZoom: 1,
+    points: [],
     distance: null
   });
 
@@ -84,6 +84,7 @@ export const useCanvasInteractions = ({
       startPoint: null,
       currentPoint: null,
       midPoint: null,
+      points: [],
       distance: null
     }));
   }, []);

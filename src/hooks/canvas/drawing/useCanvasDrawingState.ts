@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for managing canvas drawing state
  * @module canvas/drawing/useCanvasDrawingState
@@ -5,7 +6,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingTool } from "@/hooks/useCanvasState";
-import { DrawingState, Point } from "@/types/drawingTypes";
+import { DrawingState, Point } from "@/types";
 import { usePointProcessing } from "@/hooks/usePointProcessing";
 import { PIXELS_PER_METER } from "@/constants/numerics";
 import logger from "@/utils/logger";

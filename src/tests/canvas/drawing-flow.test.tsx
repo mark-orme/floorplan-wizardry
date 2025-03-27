@@ -1,4 +1,3 @@
-
 /**
  * Integration tests for canvas drawing workflows
  * @module tests/canvas/drawing-flow
@@ -11,7 +10,7 @@ import { CanvasContainer } from '@/components/canvas/CanvasContainer';
 import { useCanvasDrawing } from '@/hooks/useCanvasDrawing';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
-import { DebugInfoState } from '@/types/debugTypes';
+import { DebugInfoState } from '@/types';
 
 // Mock fabric canvas
 vi.mock('fabric', () => {
@@ -83,7 +82,16 @@ describe('Canvas Drawing Flow', () => {
       canvasWidth: 800,
       canvasHeight: 600,
       lastInitTime: Date.now(),
-      lastGridCreationTime: Date.now()
+      lastGridCreationTime: Date.now(),
+      gridObjectCount: 0,
+      canvasDimensions: { width: 800, height: 600 },
+      hasError: false,
+      errorMessage: "",
+      performanceStats: {
+        fps: 60,
+        renderTime: 5,
+        droppedFrames: 0
+      }
     };
 
     render(
