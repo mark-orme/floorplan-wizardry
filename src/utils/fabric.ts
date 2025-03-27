@@ -60,11 +60,11 @@ export {
   CANVAS_DIMENSIONS
 } from './fabric/environment';
 
-// Brush-related utilities
-export { 
-  initializeDrawingBrush, 
-  addPressureSensitivity 
-} from './fabricBrush';
+// Selection mode utilities
+export {
+  enableSelection,
+  disableSelection
+} from './fabric/selection';
 
 // Event type checking utilities
 export {
@@ -77,13 +77,14 @@ export {
   applyIOSEventFixes
 } from './fabric/events';
 
-// Selection mode utilities
-export {
-  enableSelection,
-  disableSelection
-} from './fabric/selection';
-
 // Export touch/gesture event functions without internal implementation details
 export {
   initializeCanvasGestures
 } from './fabric/gestures';
+
+// Brush-related utilities
+export { 
+  initializeDrawingBrush, 
+  addPressureSensitivity 
+} from './fabricBrush';
+

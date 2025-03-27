@@ -1,4 +1,3 @@
-
 /**
  * Grid Debug Overlay Component
  * Provides debugging overlay for grid issues
@@ -220,14 +219,19 @@ export const GridDebugOverlay = ({
   const getCanvasDimensions = () => {
     if (!fabricCanvasRef.current) return 'No canvas';
     
-    const width = fabricCanvasRef.current.getWidth?.() || fabricCanvasRef.current.width;
-    const height = fabricCanvasRef.current.getHeight?.() || fabricCanvasRef.current.height;
-    
-    if (!width || !height || width === 0 || height === 0) {
-      return 'Invalid (0x0)';
+    try {
+      const width = fabricCanvasRef.current.getWidth?.() || fabricCanvasRef.current.width;
+      const height = fabricCanvasRef.current.getHeight?.() || fabricCanvasRef.current.height;
+      
+      if (!width || !height || width === 0 || height === 0) {
+        return 'Invalid (0x0)';
+      }
+      
+      return `${width}x${height}`;
+    } catch (error) {
+      console.error("Error getting canvas dimensions:", error);
+      return 'Error';
     }
-    
-    return `${width}x${height}`;
   };
   
   return (

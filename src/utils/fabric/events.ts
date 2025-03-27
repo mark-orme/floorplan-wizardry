@@ -92,10 +92,16 @@ export function getTouchCount(event: Event): number {
 /**
  * Detect if the current platform is iOS
  * Used to apply specific fixes for iOS devices
+ * Safely handles server-side rendering by checking for navigator
  * 
  * @returns {boolean} True if running on iOS platform
  */
 export function isIOSPlatform(): boolean {
+  // Check if we're in a browser environment
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  
   const userAgent = navigator.userAgent || '';
   return /iPad|iPhone|iPod/.test(userAgent) && 
          !(window as any).MSStream; // Exclude IE11
@@ -105,10 +111,11 @@ export function isIOSPlatform(): boolean {
  * Apply iOS-specific event fixes to a canvas element
  * iOS has various quirks with touch events that need special handling
  * 
- * @param {HTMLCanvasElement} canvasElement - The canvas element to apply fixes to
+ * @param {HTMLCanvasElement | null} canvasElement - The canvas element to apply fixes to
  */
-export function applyIOSEventFixes(canvasElement: HTMLCanvasElement): void {
-  if (!isIOSPlatform()) return;
+export function applyIOSEventFixes(canvasElement: HTMLCanvasElement | null): void {
+  // Check if canvasElement exists and if we're on iOS
+  if (!canvasElement || !isIOSPlatform()) return;
   
   // Prevent scrolling when interacting with canvas on iOS
   canvasElement.style.touchAction = 'none';

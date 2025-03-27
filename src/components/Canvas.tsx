@@ -9,7 +9,7 @@ import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { toast } from 'sonner';
 import { useReliableGridInitialization } from '@/hooks/useReliableGridInitialization';
-import { initializeCanvasGestures } from '@/utils/fabric/gestures';
+import { initializeCanvasGestures, isIOSPlatform } from '@/utils/fabric';
 import { CanvasCreationOptions } from '@/types/fabric';
 import { CANVAS_STYLES, CANVAS_SCALING } from '@/constants/canvas';
 
@@ -52,10 +52,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   
   // Detect iOS devices to apply platform-specific optimizations
   // iOS requires special handling for touch events and performance
-  const isIOS = 
-    typeof navigator !== 'undefined' && 
-    (/iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  const isIOS = isIOSPlatform();
   
   // Initialize fabric.js canvas when the HTML canvas is available
   useEffect(() => {
