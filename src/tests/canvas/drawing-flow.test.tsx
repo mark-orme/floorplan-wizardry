@@ -1,3 +1,4 @@
+
 /**
  * Integration tests for canvas drawing workflows
  * @module tests/canvas/drawing-flow
@@ -10,6 +11,7 @@ import { CanvasContainer } from '@/components/canvas/CanvasContainer';
 import { useCanvasDrawing } from '@/hooks/useCanvasDrawing';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
+import { DebugInfoState } from '@/types/debugTypes';
 
 // Mock fabric canvas
 vi.mock('fabric', () => {
