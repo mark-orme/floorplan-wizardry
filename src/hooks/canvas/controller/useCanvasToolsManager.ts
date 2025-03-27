@@ -11,6 +11,7 @@ import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
 import { usePusherConnection } from "@/hooks/usePusherConnection";
 import { useCanvasControllerTools } from "@/hooks/canvas/controller/useCanvasControllerTools";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
+import { createFloorPlan } from "@/utils/floorPlanUtils";
 
 /**
  * Props for the useCanvasToolsManager hook
@@ -157,15 +158,11 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
    */
   const handleAddFloor = useCallback(() => {
     // Create new floor plan
-    const newFloorPlan: FloorPlan = {
-      id: `floor-${floorPlans.length + 1}`,
-      name: `Floor ${floorPlans.length + 1}`,
-      label: `Floor ${floorPlans.length + 1}`,
-      canvasData: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      strokes: []
-    };
+    const newFloorPlan: FloorPlan = createFloorPlan(
+      `floor-${floorPlans.length + 1}`,
+      `Floor ${floorPlans.length + 1}`,
+      floorPlans.length
+    );
     
     // Add to floor plans array
     setFloorPlans(prev => [...prev, newFloorPlan]);
