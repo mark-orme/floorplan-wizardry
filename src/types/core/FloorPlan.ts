@@ -1,178 +1,177 @@
 
 /**
- * Floor plan types module
- * Defines core floor plan data structures
+ * FloorPlan type definitions
  * @module types/core/FloorPlan
  */
+
 import { Point } from './Point';
 
 /**
  * Paper size enum
- * Standard paper sizes for printing
  */
 export enum PaperSize {
-  A0 = 'A0',
-  A1 = 'A1',
-  A2 = 'A2',
-  A3 = 'A3',
-  A4 = 'A4'
+  A3 = "A3",
+  A4 = "A4",
+  A5 = "A5",
+  Letter = "Letter",
+  Legal = "Legal",
+  Tabloid = "Tabloid",
+  Custom = "Custom"
 }
 
 /**
  * Convert string to PaperSize enum
  * @param paperSizeString - String representation of paper size
- * @returns PaperSize enum value or default A4
+ * @returns PaperSize enum value
  */
 export const stringToPaperSize = (paperSizeString: string): PaperSize => {
+  // Check if the string is a valid PaperSize value
   if (Object.values(PaperSize).includes(paperSizeString as PaperSize)) {
     return paperSizeString as PaperSize;
   }
+  
+  // Default to A4 if not valid
   return PaperSize.A4;
 };
 
 /**
  * Floor plan metadata interface
- * Contains information about the floor plan document
  */
 export interface FloorPlanMetadata {
-  /** Creator user ID */
-  createdBy?: string;
-  /** Creation timestamp */
+  /** Date when the floor plan was created */
   createdAt: string;
-  /** Last update timestamp */
+  
+  /** Date when the floor plan was last updated */
   updatedAt: string;
+  
   /** Paper size for printing */
   paperSize: PaperSize;
-  /** Floor level (0 for ground floor, positive for upper floors, negative for basements) */
+  
+  /** Floor level (0 = ground floor) */
   level: number;
 }
 
 /**
- * Stroke type enumeration
- * Defines the type of stroke for drawings
+ * Wall interface for floor plan
  */
-export type StrokeType = 'line' | 'polyline' | 'bezier';
+export interface Wall {
+  /** Unique identifier */
+  id: string;
+  
+  /** Start point coordinates */
+  start: Point;
+  
+  /** End point coordinates */
+  end: Point;
+  
+  /** Wall thickness in pixels */
+  thickness: number;
+  
+  /** Wall color */
+  color: string;
+}
 
 /**
- * Room type enumeration
- * Defines the type of room for floor plan
+ * Room type enum
  */
-export type RoomType = 'living' | 'bedroom' | 'bathroom' | 'kitchen' | 'dining' | 'hallway' | 'other';
+export type RoomType = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
 
 /**
- * Stroke interface
- * Represents a drawing stroke on the floor plan
+ * Room interface for floor plan
+ */
+export interface Room {
+  /** Unique identifier */
+  id: string;
+  
+  /** Room name */
+  name: string;
+  
+  /** Room type */
+  type: RoomType;
+  
+  /** Room area in square meters */
+  area: number;
+  
+  /** Boundary points */
+  points: Point[];
+  
+  /** Fill color */
+  color: string;
+}
+
+/**
+ * Stroke type enum
+ */
+export type StrokeType = 'line' | 'wall' | 'room' | 'freehand' | 'polyline';
+
+/**
+ * Stroke interface for annotations
  */
 export interface Stroke {
   /** Unique identifier */
   id: string;
-  /** Array of points that define the stroke */
+  
+  /** Stroke points */
   points: Point[];
-  /** Type of stroke */
+  
+  /** Stroke type */
   type: StrokeType;
+  
   /** Stroke color */
   color: string;
+  
   /** Stroke thickness */
   thickness: number;
 }
 
 /**
- * Wall interface
- * Represents a wall on the floor plan
- */
-export interface Wall {
-  /** Unique identifier */
-  id: string;
-  /** Start point of the wall */
-  start: Point;
-  /** End point of the wall */
-  end: Point;
-  /** Wall thickness in pixels */
-  thickness: number;
-  /** Wall height in meters (optional) */
-  height?: number;
-}
-
-/**
- * Room interface
- * Represents a room on the floor plan
- */
-export interface Room {
-  /** Unique identifier */
-  id: string;
-  /** Room name */
-  name: string;
-  /** Room type */
-  type: RoomType;
-  /** Points defining the room shape */
-  points: Point[];
-  /** Room area in square meters */
-  area: number;
-}
-
-/**
- * Floor interface
- * Represents a floor in a building
+ * Floor interface representing a level
  */
 export interface Floor {
-  /** Floor level (0 for ground floor, positive for upper floors, negative for basements) */
+  /** Floor level (0 = ground floor) */
   level: number;
+  
   /** Floor name */
   name: string;
-  /** Floor height in meters */
-  height?: number;
 }
 
 /**
  * Floor plan interface
- * Represents a complete floor plan with all its elements
  */
 export interface FloorPlan {
   /** Unique identifier */
   id: string;
+  
   /** Floor plan name */
   name: string;
-  /** Floor plan display label */
+  
+  /** Display label */
   label: string;
-  /** Array of walls */
+  
+  /** Walls in the floor plan */
   walls: Wall[];
-  /** Array of rooms */
+  
+  /** Rooms in the floor plan */
   rooms: Room[];
-  /** Array of strokes */
+  
+  /** Annotations and drawings */
   strokes: Stroke[];
-  /** Serialized canvas data */
-  canvasData: any;
+  
+  /** Serialized canvas data (optional) */
+  canvasData: string | null;
+  
   /** Creation timestamp */
   createdAt: string;
+  
   /** Last update timestamp */
   updatedAt: string;
-  /** Gross Internal Area in square meters */
+  
+  /** Gross internal area in square meters */
   gia: number;
-  /** Floor level */
+  
+  /** Floor level (0 = ground floor) */
   level: number;
-  /** Floor plan metadata */
-  metadata?: FloorPlanMetadata;
+  
+  /** Metadata */
+  metadata: FloorPlanMetadata;
 }
-
-// Create an export for createFloorPlan function to be used in tests
-export const createFloorPlan = (id: string, name: string, level: number = 0): FloorPlan => {
-  return {
-    id,
-    name,
-    label: name,
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    gia: 0,
-    level,
-    metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      paperSize: PaperSize.A4,
-      level
-    }
-  };
-};

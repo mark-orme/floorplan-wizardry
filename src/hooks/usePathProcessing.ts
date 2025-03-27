@@ -1,3 +1,4 @@
+
 /**
  * Path processing hook
  * Handles processing of drawing paths
@@ -5,7 +6,7 @@
  */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from 'fabric';
-import { FloorPlan, Stroke } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, StrokeType } from '@/types/floorPlanTypes';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { Point } from '@/types/drawingTypes';
 import { v4 as uuidv4 } from 'uuid';
@@ -63,6 +64,30 @@ const extractPointsFromPath = (path: FabricPath): Point[] => {
 };
 
 /**
+ * Convert drawing tool to stroke type
+ * @param tool - The drawing tool
+ * @returns The corresponding stroke type
+ */
+const drawingToolToStrokeType = (tool?: DrawingTool): StrokeType => {
+  if (!tool) return 'line';
+  
+  // Map drawing tools to stroke types
+  switch (tool) {
+    case 'wall':
+      return 'wall';
+    case 'room':
+      return 'room';
+    case 'line':
+    case 'straightLine':
+      return 'line';
+    case 'draw':
+      return 'freehand';
+    default:
+      return 'line';
+  }
+};
+
+/**
  * Hook for processing drawing paths
  * 
  * @param props - Hook properties
@@ -97,11 +122,11 @@ export const usePathProcessing = ({
       return;
     }
     
-    // Create stroke data
+    // Create stroke data - using the conversion function
     const stroke: Stroke = {
       id: uuidv4(),
       points,
-      type: tool,
+      type: drawingToolToStrokeType(tool),
       color: path.stroke?.toString() || '#000000',
       thickness: path.strokeWidth || 1
     };

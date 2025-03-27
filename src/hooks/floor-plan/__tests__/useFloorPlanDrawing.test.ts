@@ -22,12 +22,19 @@ const mockGestureHandler = {
   unregister: vi.fn()
 };
 
+// Update interface to match actual implementation
+interface MockUseFloorPlanDrawingProps {
+  fabricCanvasRef: { current: any };
+  refState: any;
+  gestureHandler: any;
+}
+
 describe('useFloorPlanDrawing', () => {
-  let mockCanvasRef: any;
+  let mockFabricCanvasRef: any;
   let mockRefState: any;
 
   beforeEach(() => {
-    mockCanvasRef = { current: mockCanvas };
+    mockFabricCanvasRef = { current: mockCanvas };
     mockRefState = { 
       history: { past: [], future: [] },
       currentFloor: 0
@@ -42,53 +49,42 @@ describe('useFloorPlanDrawing', () => {
 
   it('should initialize drawing state', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvasRef: mockCanvasRef,
+      fabricCanvasRef: mockFabricCanvasRef,
       refState: mockRefState,
       gestureHandler: mockGestureHandler
-    }));
+    } as MockUseFloorPlanDrawingProps));
 
+    // Update these expectations to match the actual implementation
     expect(result.current.isDrawing).toBe(false);
-    expect(result.current.currentTool).toBe('select');
+    expect(result.current.activeTool).toBe('select');
   });
 
   it('should update drawing tool', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvasRef: mockCanvasRef,
+      fabricCanvasRef: mockFabricCanvasRef,
       refState: mockRefState,
       gestureHandler: mockGestureHandler
-    }));
+    } as MockUseFloorPlanDrawingProps));
 
     act(() => {
-      result.current.setTool('wall');
+      result.current.setActiveTool('wall');
     });
 
-    expect(result.current.currentTool).toBe('wall');
+    expect(result.current.activeTool).toBe('wall');
   });
 
   it('should add stroke to floor plan', () => {
     // Create a valid floor plan
-    const testFloorPlan: FloorPlan = {
-      id: 'test-floor-plan',
-      name: 'Test Floor Plan',
-      label: 'Ground Floor',
-      walls: [],
-      rooms: [],
-      strokes: [],
-      canvasData: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      gia: 0,
-      level: 0
-    };
+    const testFloorPlan: FloorPlan = createFloorPlan('test-floor-plan', 'Test Floor Plan', 0);
     
     mockRefState.floorPlans = [testFloorPlan];
     mockRefState.setFloorPlans = vi.fn();
 
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvasRef: mockCanvasRef,
+      fabricCanvasRef: mockFabricCanvasRef,
       refState: mockRefState,
       gestureHandler: mockGestureHandler
-    }));
+    } as MockUseFloorPlanDrawingProps));
 
     const stroke = {
       id: 'test-stroke',
@@ -99,7 +95,7 @@ describe('useFloorPlanDrawing', () => {
     };
 
     act(() => {
-      result.current.addStrokeToFloorPlan(stroke);
+      result.current.addStroke(stroke);
     });
 
     expect(mockRefState.setFloorPlans).toHaveBeenCalled();
@@ -107,17 +103,17 @@ describe('useFloorPlanDrawing', () => {
 
   it('should handle drawing start and end', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvasRef: mockCanvasRef,
+      fabricCanvasRef: mockFabricCanvasRef,
       refState: mockRefState,
       gestureHandler: mockGestureHandler
-    }));
+    } as MockUseFloorPlanDrawingProps));
 
     act(() => {
-      result.current.startDrawing({ x: 0, y: 0 });
+      result.current.startDrawingAt({ x: 0, y: 0 });
     });
 
     expect(result.current.isDrawing).toBe(true);
-    expect(result.current.startPoint).toEqual({ x: 0, y: 0 });
+    expect(result.current.currentPoint).toEqual({ x: 0, y: 0 });
 
     act(() => {
       result.current.endDrawing({ x: 100, y: 100 });

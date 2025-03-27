@@ -56,3 +56,66 @@ export const gridSpacingToMeters = (pixels: number): number => {
 export const metersToGridSpacing = (meters: number): number => {
   return meters * GRID_SPACING.LARGE;
 };
+
+/**
+ * Check if a grid exists on the canvas
+ * @param canvas - Fabric canvas
+ * @returns True if grid exists
+ */
+export const hasExistingGrid = (canvas: any): boolean => {
+  if (!canvas) return false;
+  
+  const objects = canvas.getObjects();
+  return objects.some((obj: any) => obj.objectType === 'grid');
+};
+
+/**
+ * Remove grid from canvas
+ * @param canvas - Fabric canvas
+ */
+export const removeGrid = (canvas: any): void => {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter((obj: any) => 
+    obj.objectType === 'grid');
+  
+  gridObjects.forEach((obj: any) => canvas.remove(obj));
+  canvas.renderAll();
+};
+
+/**
+ * Set visibility of grid objects
+ * @param canvas - Fabric canvas
+ * @param visible - Whether grid should be visible
+ */
+export const setGridVisibility = (canvas: any, visible: boolean): void => {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter((obj: any) => 
+    obj.objectType === 'grid');
+  
+  gridObjects.forEach((obj: any) => obj.set({ visible }));
+  canvas.renderAll();
+};
+
+/**
+ * Filter grid objects from canvas objects
+ * @param objects - Array of canvas objects
+ * @returns Non-grid objects
+ */
+export const filterGridObjects = (objects: any[]): any[] => {
+  return objects.filter(obj => !obj.objectType || obj.objectType !== 'grid');
+};
+
+/**
+ * Get the nearest grid point to a given point
+ * @param point - The reference point
+ * @param gridSize - Grid size to snap to
+ * @returns The nearest grid point
+ */
+export const getNearestGridPoint = (point: { x: number, y: number }, gridSize: number): { x: number, y: number } => {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
+};

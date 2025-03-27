@@ -6,6 +6,7 @@
 import { useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { EventHandlerResult, UseBrushSettingsProps } from './types';
+import { DrawingTool } from '@/constants/drawingModes';
 
 /**
  * Default brush width
@@ -55,7 +56,7 @@ export const useBrushSettings = ({
     if (!canvas) return;
 
     // Only set drawing mode when relevant tools are selected
-    canvas.isDrawingMode = tool === 'draw'; // Fixed: removed 'free' which is not in DrawingTool
+    canvas.isDrawingMode = tool === 'draw';
     
     // Initialize brush if it exists
     if (canvas.freeDrawingBrush) {

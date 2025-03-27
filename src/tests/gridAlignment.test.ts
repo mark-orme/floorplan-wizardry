@@ -20,12 +20,12 @@ describe('Grid Alignment', () => {
       ];
       
       // When we snap them to grid
-      const snappedPoints = testPoints.map(point => snapToGrid(point, GRID_SPACING));
+      const snappedPoints = testPoints.map(point => snapToGrid(point, GRID_SPACING.SMALL));
       
-      // Then all coordinates should be multiples of GRID_SPACING
+      // Then all coordinates should be multiples of GRID_SPACING.SMALL
       snappedPoints.forEach(point => {
-        expect(point.x % GRID_SPACING).toBe(0);
-        expect(point.y % GRID_SPACING).toBe(0);
+        expect(point.x % GRID_SPACING.SMALL).toBe(0);
+        expect(point.y % GRID_SPACING.SMALL).toBe(0);
       });
     });
     
@@ -38,7 +38,7 @@ describe('Grid Alignment', () => {
       ];
       
       // When we snap them to grid
-      const snappedPoints = gridPoints.map(point => snapToGrid(point, GRID_SPACING));
+      const snappedPoints = gridPoints.map(point => snapToGrid(point, GRID_SPACING.SMALL));
       
       // Then they should remain unchanged
       snappedPoints.forEach((point, index) => {
@@ -55,7 +55,7 @@ describe('Grid Alignment', () => {
       ];
       
       // When we snap them to grid
-      const snappedPoints = testPoints.map(point => snapToGrid(point, GRID_SPACING));
+      const snappedPoints = testPoints.map(point => snapToGrid(point, GRID_SPACING.SMALL));
       
       // Then they should be at 0.1m increments in our pixel scale
       // (where PIXELS_PER_METER defines how many pixels = 1 meter)
