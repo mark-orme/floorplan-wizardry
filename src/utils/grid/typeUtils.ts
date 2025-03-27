@@ -122,6 +122,10 @@ export const isPoint = (value: any): value is Point => {
  * @returns {boolean} True if the value is a valid GridPoint
  */
 export const isGridPoint = (value: any): value is GridPoint => {
-  return isPoint(value) && 
-    (value.snapped === undefined || typeof value.snapped === 'boolean');
+  // First check if it's a valid Point
+  if (!isPoint(value)) return false;
+  
+  // Then check for GridPoint-specific properties
+  // The snapped property is optional so we check if it's undefined or a boolean
+  return value.snapped === undefined || typeof value.snapped === 'boolean';
 };
