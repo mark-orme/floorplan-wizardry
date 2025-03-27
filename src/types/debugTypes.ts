@@ -32,8 +32,20 @@ export interface DebugInfoState {
   gridRendered: boolean;
   /** Whether tools are initialized */
   toolsInitialized: boolean;
+  /** Last initialization time */
+  lastInitTime: number;
+  /** Last grid creation time */
+  lastGridCreationTime: number;
+  /** Number of grid objects */
+  gridObjectCount: number;
+  /** Canvas dimensions */
+  canvasDimensions: { width: number; height: number };
+  /** Error state */
+  hasError: boolean;
+  /** Error message */
+  errorMessage: string;
   /** Any additional debug info */
-  [key: string]: boolean | number | string;
+  [key: string]: boolean | number | string | object;
 }
 
 /**

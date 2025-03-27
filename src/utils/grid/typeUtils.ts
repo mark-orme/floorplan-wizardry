@@ -1,100 +1,62 @@
 
 /**
- * Grid type utilities
- * Type definitions and utilities for grid operations
+ * Type utilities for grid operations
  * @module grid/typeUtils
  */
-import { Line as FabricLine, Object as FabricObject } from "fabric";
-import { Point } from "@/types/drawingTypes";
+import { Line } from "fabric";
 
 /**
- * Options for grid line creation
+ * Options for grid lines
  */
 export interface GridLineOptions {
-  /** Line stroke color */
+  /** Stroke color */
   stroke: string;
-  /** Line stroke width */
+  /** Stroke width */
   strokeWidth: number;
   /** Whether line is selectable */
   selectable: boolean;
   /** Whether line responds to events */
   evented: boolean;
-  /** Type identifier for the line */
+  /** Object type identifier */
   objectType: string;
-  /** Whether to cache the object */
-  objectCaching?: boolean;
-  /** Cursor when hovering over the line */
-  hoverCursor?: string;
-  /** Opacity of the line */
-  opacity?: number;
+  /** Whether to cache as image */
+  objectCaching: boolean;
+  /** Cursor when hovering */
+  hoverCursor: string;
+  /** Line opacity */
+  opacity: number;
 }
 
 /**
- * Grid extent dimensions
- */
-export interface GridExtent {
-  /** Number of rows */
-  rows: number;
-  /** Number of columns */
-  cols: number;
-}
-
-/**
- * Grid creation result
- */
-export interface GridCreationResult {
-  /** All grid objects */
-  gridObjects: FabricObject[];
-  /** Small grid lines */
-  smallGridLines: FabricLine[];
-  /** Large grid lines */
-  largeGridLines: FabricLine[];
-  /** Grid extent dimensions */
-  extent: GridExtent;
-}
-
-/**
- * Grid render result
+ * Result of grid rendering
  */
 export interface GridRenderResult {
-  /** Grid objects array */
-  gridObjects: FabricObject[];
-  /** Grid markers */
-  markers: FabricObject[];
-  /** Grid lines */
-  gridLines: FabricLine[];
   /** Small grid lines */
-  smallGridLines: FabricLine[];
+  smallGridLines: Line[];
   /** Large grid lines */
-  largeGridLines: FabricLine[];
+  largeGridLines: Line[];
+  /** Grid markers */
+  markers: any[];
+  /** All grid objects */
+  gridObjects: any[];
 }
 
 /**
- * Grid configuration options
+ * Path processing constants
  */
-export interface GridConfig {
-  /** Small grid size */
-  smallGridSize: number;
-  /** Large grid size */
-  largeGridSize: number;
-  /** Small grid color */
-  smallGridColor: string;
-  /** Large grid color */
-  largeGridColor: string;
-  /** Small grid line width */
-  smallGridWidth: number;
-  /** Large grid line width */
-  largeGridWidth: number;
-}
-
-/**
- * Normalize a point, ensuring numeric values
- * @param point - Point to normalize
- * @returns Normalized point with numeric coordinates
- */
-export const normalizePoint = (point: Point): Point => {
-  return {
-    x: typeof point.x === 'string' ? parseFloat(point.x) : point.x,
-    y: typeof point.y === 'string' ? parseFloat(point.y) : point.y
-  };
+export const PATH_PROCESSING = {
+  /**
+   * Minimum distance for a valid path in pixels
+   */
+  MIN_PATH_DISTANCE: 5,
+  
+  /**
+   * Maximum angle variation for auto-straightening in degrees
+   */
+  STRAIGHTEN_ANGLE_THRESHOLD: 10,
+  
+  /**
+   * Extension factor for walls
+   */
+  WALL_EXTENSION_FACTOR: 0.05
 };

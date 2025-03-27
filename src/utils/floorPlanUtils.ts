@@ -1,44 +1,25 @@
 
 /**
- * Floor plan utilities
- * Functions for creating and manipulating floor plans
- * @module utils/floorPlanUtils
+ * Floor plan utility functions
+ * @module floorPlanUtils
  */
-import { v4 as uuidv4 } from 'uuid';
-import { FloorPlan } from '@/types/floorPlanTypes';
-import { CANVAS_CONSTANTS } from '@/constants/canvasConstants';
+import { FloorPlan } from "@/types/floorPlanTypes";
 
 /**
- * Constants for floor plan creation
- */
-const FLOOR_PLAN_CONSTANTS = {
-  /** Default floor plan name */
-  DEFAULT_NAME: 'New Floor Plan',
-  
-  /** Default floor plan label */
-  DEFAULT_LABEL: 'Floor',
-  
-  /** Default GIA value */
-  DEFAULT_GIA: 0,
-  
-  /** Default floor index */
-  DEFAULT_FLOOR_INDEX: 0
-};
-
-/**
- * Creates an empty floor plan with default values
+ * Creates a new floor plan with default values
  * 
- * @param {number} [floorIndex=0] - Floor index (level)
+ * @param {string} id - Floor plan unique identifier
+ * @param {string} name - Floor plan name
  * @returns {FloorPlan} New floor plan object
  */
-export const createEmptyFloorPlan = (floorIndex: number = FLOOR_PLAN_CONSTANTS.DEFAULT_FLOOR_INDEX): FloorPlan => {
+export const createFloorPlan = (id: string, name: string): FloorPlan => {
   const timestamp = new Date().toISOString();
   
   return {
-    id: uuidv4(),
-    name: `${FLOOR_PLAN_CONSTANTS.DEFAULT_NAME} ${floorIndex + 1}`,
-    label: `${FLOOR_PLAN_CONSTANTS.DEFAULT_LABEL} ${floorIndex + 1}`,
-    gia: FLOOR_PLAN_CONSTANTS.DEFAULT_GIA,
+    id,
+    name,
+    label: name,
+    gia: 0,
     walls: [],
     rooms: [],
     strokes: [],
@@ -49,40 +30,46 @@ export const createEmptyFloorPlan = (floorIndex: number = FLOOR_PLAN_CONSTANTS.D
 };
 
 /**
- * Create a new floor plan
- * Alias for createEmptyFloorPlan for backward compatibility
+ * Gets a floor plan by id from an array of floor plans
  * 
- * @param {number} [floorIndex=0] - Floor index (level)
- * @returns {FloorPlan} New floor plan object
+ * @param {FloorPlan[]} floorPlans - Array of floor plans
+ * @param {string} id - Floor plan id
+ * @returns {FloorPlan|undefined} Found floor plan or undefined
  */
-export const createFloorPlan = createEmptyFloorPlan;
-
-/**
- * Update the GIA of a floor plan
- * 
- * @param {FloorPlan} floorPlan - Floor plan to update
- * @param {number} gia - New GIA value
- * @returns {FloorPlan} Updated floor plan
- */
-export const updateFloorPlanGIA = (floorPlan: FloorPlan, gia: number): FloorPlan => {
-  return {
-    ...floorPlan,
-    gia,
-    updatedAt: new Date().toISOString()
-  };
+export const getFloorPlanById = (floorPlans: FloorPlan[], id: string): FloorPlan | undefined => {
+  return floorPlans.find(floorPlan => floorPlan.id === id);
 };
 
 /**
- * Update floor plan metadata
+ * Gets the total GIA for all floor plans
  * 
- * @param {FloorPlan} floorPlan - Floor plan to update
- * @param {Partial<FloorPlan>} updates - Properties to update
- * @returns {FloorPlan} Updated floor plan
+ * @param {FloorPlan[]} floorPlans - Array of floor plans
+ * @returns {number} Total GIA
  */
-export const updateFloorPlan = (floorPlan: FloorPlan, updates: Partial<FloorPlan>): FloorPlan => {
-  return {
-    ...floorPlan,
-    ...updates,
-    updatedAt: new Date().toISOString()
-  };
+export const getTotalGIA = (floorPlans: FloorPlan[]): number => {
+  return floorPlans.reduce((total, floorPlan) => total + floorPlan.gia, 0);
+};
+
+/**
+ * Updates a floor plan in an array of floor plans
+ * 
+ * @param {FloorPlan[]} floorPlans - Array of floor plans
+ * @param {FloorPlan} updatedFloorPlan - Updated floor plan
+ * @returns {FloorPlan[]} New array with updated floor plan
+ */
+export const updateFloorPlan = (floorPlans: FloorPlan[], updatedFloorPlan: FloorPlan): FloorPlan[] => {
+  return floorPlans.map(floorPlan => 
+    floorPlan.id === updatedFloorPlan.id ? updatedFloorPlan : floorPlan
+  );
+};
+
+/**
+ * Deletes a floor plan from an array of floor plans
+ * 
+ * @param {FloorPlan[]} floorPlans - Array of floor plans
+ * @param {string} id - Floor plan id to delete
+ * @returns {FloorPlan[]} New array without the deleted floor plan
+ */
+export const deleteFloorPlan = (floorPlans: FloorPlan[], id: string): FloorPlan[] => {
+  return floorPlans.filter(floorPlan => floorPlan.id !== id);
 };

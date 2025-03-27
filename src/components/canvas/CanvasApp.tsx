@@ -3,6 +3,7 @@ import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { ZOOM_MULTIPLIERS, ZoomDirection } from "@/constants/zoomConstants";
+import { DebugInfoState } from "@/types/debugTypes";
 
 /**
  * Canvas application component
@@ -52,13 +53,35 @@ export const CanvasApp = () => {
     handleZoom(zoomChange);
   };
 
+  // Create a safe debug info object with required properties for type compatibility
+  const safeDebugInfo: DebugInfoState = {
+    canvasInitialized: debugInfo.canvasInitialized || false,
+    dimensionsSet: debugInfo.dimensionsSet || false,
+    gridCreated: debugInfo.gridCreated || false,
+    eventHandlersSet: debugInfo.eventHandlersSet || false,
+    brushInitialized: debugInfo.brushInitialized || false,
+    showDebugInfo: debugInfo.showDebugInfo || false,
+    canvasReady: debugInfo.canvasReady || false, 
+    canvasCreated: debugInfo.canvasCreated || false,
+    canvasLoaded: debugInfo.canvasLoaded || false,
+    canvasEventsRegistered: debugInfo.canvasEventsRegistered || false,
+    gridRendered: debugInfo.gridRendered || false,
+    toolsInitialized: debugInfo.toolsInitialized || false,
+    lastInitTime: debugInfo.lastInitTime || 0,
+    lastGridCreationTime: debugInfo.lastGridCreationTime || 0,
+    gridObjectCount: debugInfo.gridObjectCount || 0,
+    canvasDimensions: debugInfo.canvasDimensions || { width: 0, height: 0 },
+    hasError: debugInfo.hasError || false,
+    errorMessage: debugInfo.errorMessage || ""
+  };
+
   return (
     <CanvasLayout
       tool={tool}
       gia={gia}
       floorPlans={floorPlans}
       currentFloor={currentFloor}
-      debugInfo={debugInfo}
+      debugInfo={safeDebugInfo}
       canvasRef={canvasRef}
       lineThickness={lineThickness}
       lineColor={lineColor}

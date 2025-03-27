@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { FloorPlan } from '@/types/floorPlanTypes';
@@ -79,7 +80,7 @@ const CanvasControllerContext = createContext<CanvasControllerContextValue | nul
  * @returns {FloorPlan} A complete FloorPlan object with default values
  */
 const createInitialFloorPlan = (): FloorPlan => {
-  return createFloorPlan('0', 'Ground Floor', 0);
+  return createFloorPlan('floor-0', 'Ground Floor');
 };
 
 /**
@@ -103,18 +104,19 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     dimensionsSet: false,
     gridCreated: false,
     brushInitialized: false,
+    eventHandlersSet: false,
     canvasCreated: false,
     canvasLoaded: false,
     canvasReady: false,
-    canvasWidth: 0,
-    canvasHeight: 0,
+    canvasEventsRegistered: false,
+    gridRendered: false,
+    toolsInitialized: false,
     lastInitTime: 0,
     lastGridCreationTime: 0,
     gridObjectCount: 0,
     canvasDimensions: { width: 0, height: 0 },
     hasError: false,
-    errorMessage: "",
-    performanceStats: {}
+    errorMessage: ""
   });
   
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
@@ -199,9 +201,8 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
       const newFloorIndex = newFloorPlans.length;
       
       const newFloorPlan = createFloorPlan(
-        `${newFloorIndex}`,
-        `Floor ${newFloorIndex + 1}`,
-        newFloorIndex
+        `floor-${newFloorIndex}`,
+        `Floor ${newFloorIndex + 1}`
       );
       
       newFloorPlans.push(newFloorPlan);

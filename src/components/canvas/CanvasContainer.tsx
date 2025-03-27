@@ -15,7 +15,7 @@ import { CanvasDebugWrapper } from "./CanvasDebugWrapper";
 import { handleError } from "@/utils/errorHandling";
 
 interface CanvasContainerProps {
-  debugInfo: DebugInfoState;
+  debugInfo: Partial<DebugInfoState>;
   canvasElementRef?: React.RefObject<HTMLCanvasElement>;
 }
 
@@ -79,7 +79,7 @@ export const CanvasContainer = forwardRef<HTMLDivElement, CanvasContainerProps>(
           />
         </div>
         <CanvasDebugWrapper
-          debugInfo={debugInfo}
+          debugInfo={debugInfo as DebugInfoState}
           canvasReady={canvasReady}
           dimensionsSetupAttempt={dimensionsSetupAttempt}
           startTime={startTimeRef.current}

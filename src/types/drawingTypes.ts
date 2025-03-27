@@ -25,6 +25,34 @@ export interface Point {
 }
 
 /**
+ * Performance statistics
+ */
+export interface PerformanceStats {
+  /** Frames per second */
+  fps?: number;
+  /** Average frame time in milliseconds */
+  frameTime?: number;
+  /** Maximum frame time in milliseconds */
+  maxFrameTime?: number;
+  /** Number of frames that took too long to render */
+  longFrames?: number;
+  /** Number of dropped frames */
+  droppedFrames?: number;
+  /** Memory usage in MB */
+  memory?: number;
+  /** Number of canvas objects */
+  objectCount?: number;
+  /** Number of draw calls */
+  drawCalls?: number;
+  /** Render time in milliseconds */
+  renderTime?: number;
+  /** Event processing time in milliseconds */
+  eventTime?: number;
+  /** Custom performance metrics */
+  [key: string]: number | undefined;
+}
+
+/**
  * Debug information state
  * Importing from debugTypes to ensure consistency
  */
@@ -56,6 +84,20 @@ export interface DrawingState {
   pathDragging: boolean;
   /** Whether shape creation is in progress */
   creatingShape: boolean;
+  /** Current zoom level for compatibility */
+  currentZoom?: number;
+  /** Start point for compatibility */
+  startPoint?: Point | null;
+  /** Current point for compatibility */
+  currentPoint?: Point | null;
+  /** Mid point for compatibility */
+  midPoint?: Point | null;
+  /** Whether selection is active for compatibility */
+  selectionActive?: boolean;
+  /** Points array for compatibility */
+  points?: Point[];
+  /** Distance for compatibility */
+  distance?: number | null;
 }
 
 /**

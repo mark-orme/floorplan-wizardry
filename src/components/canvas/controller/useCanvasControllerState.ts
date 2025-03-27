@@ -23,7 +23,8 @@ export const useCanvasControllerState = () => {
     isLoading, setIsLoading,
     canvasDimensions, setCanvasDimensions,
     lineThickness, setLineThickness,
-    lineColor, setLineColor
+    lineColor, setLineColor,
+    snapToGrid, setSnapToGrid
   } = useCanvasState();
   
   // Debug and error state
@@ -63,6 +64,9 @@ export const useCanvasControllerState = () => {
     
     // Drawing state
     drawingState, setDrawingState,
+    
+    // Grid settings
+    snapToGrid, setSnapToGrid,
     
     // Debug state
     debugInfo, setDebugInfo,

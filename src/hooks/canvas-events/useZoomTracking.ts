@@ -1,126 +1,131 @@
 
 /**
- * Zoom tracking hook
- * Manages zoom level changes and tracking
+ * Hook for tracking canvas zoom events
  * @module canvas-events/useZoomTracking
  */
-import { useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, TEvent } from 'fabric';
-import { Point } from '@/types/drawingTypes';
-import { DrawingTool } from '@/hooks/useCanvasState';
-import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
+import { useEffect, useCallback } from "react";
+import { Canvas } from "fabric";
+import { DrawingTool } from "@/hooks/useCanvasState";
+import logger from "@/utils/logger";
 
 /**
- * Constants for zoom tracking
- */
-const ZOOM_TRACKING_CONSTANTS = {
-  /** Minimum time between zoom updates in ms */
-  ZOOM_THROTTLE: 16,
-  
-  /** Multiplier for zoom factor */
-  ZOOM_MULTIPLIER: 1.1,
-  
-  /** Minimum zoom value */
-  MIN_ZOOM: ZOOM_CONSTANTS.MIN_ZOOM,
-  
-  /** Maximum zoom value */
-  MAX_ZOOM: ZOOM_CONSTANTS.MAX_ZOOM
-};
-
-/**
- * Props for the zoom tracking hook
+ * Props for useZoomTracking hook
  */
 export interface UseZoomTrackingProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to the Fabric canvas instance */
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
   /** Function to update zoom level */
   updateZoomLevel: () => void;
-  /** Current drawing tool */
+  /** Current active tool */
   tool: DrawingTool;
 }
 
 /**
- * Result of the zoom tracking hook
+ * Result type for useZoomTracking hook
  */
 export interface UseZoomTrackingResult {
-  /** Function to clean up event handlers */
+  /** Function to clean up event listeners */
   cleanup: () => void;
 }
 
 /**
- * Hook for tracking zoom levels and applying constraints
- * @param props - Hook properties
- * @returns Result with cleanup function
+ * Hook for tracking zoom events and managing zoom state
+ * 
+ * @param {UseZoomTrackingProps} props - Props for the hook
+ * @returns {UseZoomTrackingResult} Hook result
  */
-export const useZoomTracking = ({ 
+export const useZoomTracking = ({
   fabricCanvasRef,
   updateZoomLevel,
   tool
 }: UseZoomTrackingProps): UseZoomTrackingResult => {
-  // Last tracked time for throttling
-  const lastZoomUpdateTimeRef = useRef<number>(0);
+  /**
+   * Handle zoom events from canvas
+   */
+  const handleZoom = useCallback(() => {
+    // Update zoom tracking state
+    updateZoomLevel();
+  }, [updateZoomLevel]);
   
   /**
-   * Handle zoom event
+   * Register zoom tracking event handlers
    */
-  const handleZoom = useCallback((event: TEvent) => {
-    // Throttle updates to avoid performance issues
-    const now = Date.now();
-    if (now - lastZoomUpdateTimeRef.current < ZOOM_TRACKING_CONSTANTS.ZOOM_THROTTLE) {
-      return;
-    }
-    
-    // Track zoom time
-    lastZoomUpdateTimeRef.current = now;
-    
-    // Update zoom level in state
-    updateZoomLevel();
-    
-    // Get canvas
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Apply zoom constraints
-    const zoom = canvas.getZoom();
-    
-    // Enforce min/max zoom
-    if (zoom < ZOOM_TRACKING_CONSTANTS.MIN_ZOOM) {
-      canvas.zoomToPoint({ x: 0, y: 0 } as Point, ZOOM_TRACKING_CONSTANTS.MIN_ZOOM);
-      updateZoomLevel();
-    } else if (zoom > ZOOM_TRACKING_CONSTANTS.MAX_ZOOM) {
-      canvas.zoomToPoint({ x: 0, y: 0 } as Point, ZOOM_TRACKING_CONSTANTS.MAX_ZOOM);
-      updateZoomLevel();
-    }
-  }, [fabricCanvasRef, updateZoomLevel]);
-  
-  // Register event handlers
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Add event handlers
-    canvas.on('zoom', handleZoom);
-    
-    // Set initial zoom if needed
-    updateZoomLevel();
-    
-    return () => {
-      // Clean up event handlers
-      if (canvas) {
-        canvas.off('zoom', handleZoom);
+    try {
+      // Add event listeners for zoom events
+      canvas.on('zoom:updated', handleZoom);
+      
+      // Create our own zoom event handler for mouse wheel
+      const handleMouseWheel = (e: WheelEvent) => {
+        if (tool !== 'zoom') return;
+        
+        e.preventDefault();
+        
+        const canvas = fabricCanvasRef.current;
+        if (!canvas) return;
+        
+        // Determine zoom direction
+        const delta = e.deltaY;
+        if (delta === 0) return;
+        
+        // Calculate point to zoom around (pointer position)
+        const pointer = {
+          x: e.offsetX,
+          y: e.offsetY
+        };
+        
+        // Calculate zoom factor based on delta
+        const zoomFactor = delta > 0 ? 0.95 : 1.05;
+        
+        // Apply zoom
+        canvas.zoomToPoint(pointer, canvas.getZoom() * zoomFactor);
+        
+        // Trigger zoom event
+        if (typeof canvas.fire === 'function') {
+          canvas.fire('zoom:updated');
+        }
+      };
+      
+      // Add event listener to canvas element
+      const canvasElement = canvas.getElement();
+      if (canvasElement) {
+        canvasElement.addEventListener('wheel', handleMouseWheel, { passive: false });
       }
-    };
-  }, [fabricCanvasRef, handleZoom, updateZoomLevel, tool]);
-  
-  /**
-   * Clean up function
-   */
-  const cleanup = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (canvas) {
-      canvas.off('zoom', handleZoom);
+      
+      // Cleanup function
+      return () => {
+        try {
+          if (canvas) {
+            canvas.off('zoom:updated', handleZoom);
+          }
+          
+          if (canvasElement) {
+            canvasElement.removeEventListener('wheel', handleMouseWheel);
+          }
+        } catch (error) {
+          logger.error('Error cleaning up zoom tracking:', error);
+        }
+      };
+    } catch (error) {
+      logger.error('Error setting up zoom tracking:', error);
+      return () => {};
     }
-  }, [fabricCanvasRef, handleZoom]);
+  }, [fabricCanvasRef, handleZoom, tool]);
   
-  return { cleanup };
+  // Return cleanup function
+  return {
+    cleanup: useCallback(() => {
+      try {
+        const canvas = fabricCanvasRef.current;
+        if (canvas) {
+          canvas.off('zoom:updated', handleZoom);
+        }
+      } catch (error) {
+        logger.error('Error in zoom tracking cleanup:', error);
+      }
+    }, [fabricCanvasRef, handleZoom])
+  };
 };
