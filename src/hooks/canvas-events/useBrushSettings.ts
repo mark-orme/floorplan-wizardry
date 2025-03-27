@@ -35,7 +35,8 @@ export const useBrushSettings = ({
     const fabricCanvas = fabricCanvasRef.current;
     
     // Set up brush settings based on tool
-    if (tool === 'pencil' || tool === 'brush') {
+    // Changed from 'pencil' and 'brush' to 'draw' which is a valid DrawingTool value
+    if (tool === 'draw') {
       // Configure drawing brush
       if (fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = lineColor;
