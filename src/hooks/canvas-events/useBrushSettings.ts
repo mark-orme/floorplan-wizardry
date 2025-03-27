@@ -7,6 +7,25 @@ import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
+import { DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
+
+/**
+ * Constants for brush settings
+ * @constant {Object}
+ */
+const BRUSH_SETTINGS = {
+  /**
+   * Default drawing mode state (disabled)
+   * @constant {boolean}
+   */
+  DEFAULT_DRAWING_MODE: false,
+  
+  /**
+   * Valid drawing tool name
+   * @constant {string}
+   */
+  DRAWING_TOOL: 'draw'
+};
 
 /**
  * Props for the useBrushSettings hook
@@ -27,7 +46,7 @@ export const useBrushSettings = ({
   fabricCanvasRef,
   tool,
   lineColor,
-  lineThickness
+  lineThickness = DEFAULT_LINE_THICKNESS
 }: UseBrushSettingsProps): EventHandlerResult => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
@@ -35,8 +54,7 @@ export const useBrushSettings = ({
     const fabricCanvas = fabricCanvasRef.current;
     
     // Set up brush settings based on tool
-    // Changed from 'pencil' and 'brush' to 'draw' which is a valid DrawingTool value
-    if (tool === 'draw') {
+    if (tool === BRUSH_SETTINGS.DRAWING_TOOL) {
       // Configure drawing brush
       if (fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = lineColor;
@@ -47,7 +65,7 @@ export const useBrushSettings = ({
       fabricCanvas.isDrawingMode = true;
     } else {
       // Disable drawing mode for other tools
-      fabricCanvas.isDrawingMode = false;
+      fabricCanvas.isDrawingMode = BRUSH_SETTINGS.DEFAULT_DRAWING_MODE;
     }
     
     logger.debug(`Brush settings updated: tool=${tool}, color=${lineColor}, thickness=${lineThickness}`);

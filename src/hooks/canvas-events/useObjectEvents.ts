@@ -8,6 +8,24 @@ import { Canvas as FabricCanvas } from "fabric";
 import logger from "@/utils/logger";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 
+/**
+ * Constants for object event names
+ * @constant {Object}
+ */
+const OBJECT_EVENTS = {
+  /**
+   * Object modified event name
+   * @constant {string}
+   */
+  OBJECT_MODIFIED: 'object:modified',
+  
+  /**
+   * Object removed event name
+   * @constant {string}
+   */
+  OBJECT_REMOVED: 'object:removed'
+};
+
 interface UseObjectEventsProps extends BaseEventHandlerProps {
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
@@ -44,13 +62,13 @@ export const useObjectEvents = ({
       saveCurrentState();
     };
     
-    fabricCanvas.on('object:modified', handleObjectModified);
-    fabricCanvas.on('object:removed', handleObjectRemoved);
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED, handleObjectModified);
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED, handleObjectRemoved);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('object:modified', handleObjectModified);
-        fabricCanvas.off('object:removed', handleObjectRemoved);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED, handleObjectModified);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED, handleObjectRemoved);
       }
     };
   }, [fabricCanvasRef, saveCurrentState]);

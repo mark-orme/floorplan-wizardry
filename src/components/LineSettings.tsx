@@ -26,16 +26,16 @@ const LINE_SETTINGS = {
   THICKNESS_STEP: 1,
   
   /**
-   * Color picker width in pixels
-   * @constant {number}
+   * Default CSS class for slider width
+   * @constant {string}
    */
-  COLOR_PICKER_SIZE: 8,
+  SLIDER_WIDTH_CLASS: "w-28",
   
   /**
-   * Slider width in rems
-   * @constant {number}
+   * Default CSS class for color picker
+   * @constant {string}
    */
-  SLIDER_WIDTH: 28
+  COLOR_PICKER_CLASS: "w-8 h-8 p-1 border rounded cursor-pointer"
 };
 
 export interface LineSettingsProps {
@@ -65,7 +65,7 @@ export const LineSettings = ({
           step={LINE_SETTINGS.THICKNESS_STEP}
           value={[thickness]}
           onValueChange={(values) => onThicknessChange(values[0])}
-          className={`w-${LINE_SETTINGS.SLIDER_WIDTH}`}
+          className={LINE_SETTINGS.SLIDER_WIDTH_CLASS}
         />
       </div>
       
@@ -76,7 +76,7 @@ export const LineSettings = ({
           type="color"
           value={color}
           onChange={(e) => onColorChange(e.target.value)}
-          className={`w-${LINE_SETTINGS.COLOR_PICKER_SIZE} h-${LINE_SETTINGS.COLOR_PICKER_SIZE} p-1 border rounded cursor-pointer`}
+          className={LINE_SETTINGS.COLOR_PICKER_CLASS}
         />
       </div>
     </div>

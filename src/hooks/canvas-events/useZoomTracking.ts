@@ -9,6 +9,24 @@ import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
 
 /**
+ * Canvas event name constants
+ * @constant {Object}
+ */
+const CANVAS_EVENTS = {
+  /**
+   * Zoom changed event name
+   * @constant {string}
+   */
+  ZOOM_CHANGED: 'zoom:changed',
+  
+  /**
+   * Custom zoom changed event name
+   * @constant {string}
+   */
+  CUSTOM_ZOOM_CHANGED: 'custom:zoom-changed'
+};
+
+/**
  * Props type for useZoomTracking
  */
 type UseZoomTrackingProps = Pick<BaseEventHandlerProps, 'fabricCanvasRef'>;
@@ -54,7 +72,7 @@ export const useZoomTracking = ({
         const zoom = fabricCanvasRef.current.getZoom();
         // Type cast to access custom event type
         const canvas = fabricCanvasRef.current as ExtendedFabricCanvas;
-        canvas.fire('custom:zoom-changed', { zoom });
+        canvas.fire(CANVAS_EVENTS.CUSTOM_ZOOM_CHANGED, { zoom });
       }
     };
     
@@ -62,10 +80,10 @@ export const useZoomTracking = ({
     if (fabricCanvas) {
       // Cast to appropriate type for Fabric.js
       const zoomChangedHandler = updateZoomLevel as (e: unknown) => void;
-      fabricCanvas.on('zoom:changed', zoomChangedHandler);
+      fabricCanvas.on(CANVAS_EVENTS.ZOOM_CHANGED, zoomChangedHandler);
       
       return () => {
-        fabricCanvas.off('zoom:changed', zoomChangedHandler);
+        fabricCanvas.off(CANVAS_EVENTS.ZOOM_CHANGED, zoomChangedHandler);
       };
     }
     

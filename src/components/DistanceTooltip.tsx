@@ -50,7 +50,19 @@ const TOOLTIP_STYLES = {
    * Line height multiplier
    * @constant {number}
    */
-  LINE_HEIGHT: 1.2
+  LINE_HEIGHT: 1.2,
+  
+  /**
+   * CSS classes for tooltip container
+   * @constant {string}
+   */
+  CONTAINER_CLASSES: "absolute pointer-events-none z-50 bg-black text-white px-2 py-1 rounded-md shadow-md text-xs inline-flex items-center",
+  
+  /**
+   * CSS classes for tooltip content
+   * @constant {string}
+   */
+  CONTENT_CLASSES: "flex items-center gap-2 whitespace-nowrap"
 };
 
 interface DistanceTooltipProps {
@@ -115,7 +127,7 @@ export const DistanceTooltip = memo(({
   
   return (
     <div 
-      className="absolute pointer-events-none z-50 bg-black text-white px-2 py-1 rounded-md shadow-md text-xs inline-flex items-center"
+      className={TOOLTIP_STYLES.CONTAINER_CLASSES}
       style={{ 
         left: `${pixelX}px`, 
         top: `${pixelY}px`,
@@ -128,7 +140,7 @@ export const DistanceTooltip = memo(({
         boxShadow: `0 2px 6px rgba(0,0,0,${TOOLTIP_STYLES.SHADOW_OPACITY}), 0 0 0 1px rgba(255,255,255,${TOOLTIP_STYLES.BORDER_OPACITY})`
       }}
     >
-      <div className="flex items-center gap-2 whitespace-nowrap">
+      <div className={TOOLTIP_STYLES.CONTENT_CLASSES}>
         <Ruler className={`w-${TOOLTIP_STYLES.ICON_SIZE} h-${TOOLTIP_STYLES.ICON_SIZE} flex-shrink-0`} />
         <span className="font-semibold">{formattedDistance}m</span>
       </div>
