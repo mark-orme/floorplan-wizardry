@@ -10,19 +10,19 @@ import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { isTouchEvent, isMouseEvent } from '@/types/fabric';
 
 /**
- * Extended pointer event type that includes properties required by Fabric.js v6
- * @interface ExtendedPointerEventInfo
+ * Type that represents the expected event structure for Fabric.js v6
+ * This fixes TypeScript compatibility with Fabric.js event system
  */
-interface ExtendedPointerEventInfo {
-  e: Event;
+type FabricPointerEvent = {
+  e: MouseEvent | TouchEvent;
   pointer: Point;
   absolutePointer: Point;
   scenePoint: Point;
   viewportPoint: Point;
-  isClick: boolean;
-  target: FabricObject | null;
-  subTargets: FabricObject[];
-  currentSubTargets: FabricObject[];
+  target?: FabricObject | null;
+  subTargets?: FabricObject[];
+  isClick?: boolean;
+  currentSubTargets?: FabricObject[];
 }
 
 /**
@@ -97,16 +97,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * force;
       }
 
-      // Create event object with all required properties for Fabric v6
-      const eventInfo: ExtendedPointerEventInfo = {
+      // Create fabric-compatible event object
+      const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
-        isClick: true,
         target: null,
         subTargets: [],
+        isClick: true,
         currentSubTargets: []
       };
       
@@ -146,16 +146,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * Math.max(0.5, force);
       }
 
-      // Create compatible event object for Fabric v6
-      const eventInfo: ExtendedPointerEventInfo = {
+      // Create fabric-compatible event object
+      const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
-        scenePoint: touchPosition,
+        scenePoint: touchPosition, 
         viewportPoint: touchPosition.clone(),
-        isClick: false,
         target: null,
         subTargets: [],
+        isClick: false,
         currentSubTargets: []
       };
       
@@ -197,16 +197,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth;
       }
 
-      // Create compatible event object for Fabric v6
-      const eventInfo: ExtendedPointerEventInfo = {
+      // Create fabric-compatible event object
+      const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
-        isClick: true,
         target: null,
         subTargets: [],
+        isClick: true,
         currentSubTargets: []
       };
       
@@ -247,16 +247,16 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         const touch = touches[0];
         const touchPosition = getTouchPosition(touch);
         
-        // Create compatible event object for Fabric v6
-        const eventInfo: ExtendedPointerEventInfo = {
+        // Create fabric-compatible event object
+        const eventInfo: FabricPointerEvent = {
           e: e,
           pointer: touchPosition,
           absolutePointer: touchPosition.clone(),
           scenePoint: touchPosition,
           viewportPoint: touchPosition.clone(),
-          isClick: false,
           target: null,
           subTargets: [],
+          isClick: false,
           currentSubTargets: []
         };
         
