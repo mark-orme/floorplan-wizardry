@@ -1,40 +1,40 @@
 
 /**
- * Canvas element component
- * Renders the actual canvas element with proper attributes
+ * Canvas Element Component
+ * Simple wrapper for the raw canvas HTML element
  * @module canvas/CanvasElement
  */
-import { forwardRef } from "react";
+import React from 'react';
 
 interface CanvasElementProps {
+  /** Whether the canvas is ready to render */
   canvasReady: boolean;
+  /** Number of dimension setup attempts */
   dimensionsSetupAttempt: number;
+  /** Reference to the canvas element */
   canvasReference: React.RefObject<HTMLCanvasElement>;
 }
 
 /**
- * Component for rendering the canvas element with proper attributes
+ * Canvas Element component
+ * Provides the actual canvas HTML element with proper attributes
  * @param {CanvasElementProps} props - Component properties
- * @returns {JSX.Element} Rendered canvas element
+ * @returns {JSX.Element} Rendered component
  */
-export const CanvasElement = forwardRef<HTMLCanvasElement, CanvasElementProps>(
-  ({ canvasReady, dimensionsSetupAttempt, canvasReference }, ref) => {
-    return (
-      <canvas 
-        ref={canvasReference} 
-        className="w-full h-full border border-gray-100 focus:outline-blue-500 focus:border-blue-500 rounded-md" 
-        tabIndex={0}
-        aria-label="Floor plan drawing canvas"
-        role="application"
-        style={{ display: "block" }}
-        data-testid="canvas-element"
-        id="fabric-canvas"
-        data-canvas-ready={canvasReady ? "true" : "false"}
-        data-dimension-attempts={dimensionsSetupAttempt}
-      />
-    );
-  }
-);
-
-// Add display name for debugging
-CanvasElement.displayName = "CanvasElement";
+export const CanvasElement: React.FC<CanvasElementProps> = ({
+  canvasReady,
+  dimensionsSetupAttempt,
+  canvasReference
+}) => {
+  return (
+    <canvas
+      ref={canvasReference}
+      id="fabric-canvas"
+      data-testid="canvas-element"
+      data-ready={canvasReady ? "true" : "false"}
+      data-attempt={dimensionsSetupAttempt}
+      className="w-full h-full border border-gray-200 touch-none"
+      style={{ touchAction: 'none' }}
+    />
+  );
+};
