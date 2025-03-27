@@ -62,104 +62,110 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
   
   // Prevent all default touch behaviors to avoid iOS Safari issues
   if (isIOS) {
-    canvas.upperCanvasEl.style.touchAction = 'none';
-    canvas.wrapperEl?.style.touchAction = 'none';
+    if (canvas.upperCanvasEl) {
+      canvas.upperCanvasEl.style.touchAction = 'none';
+    }
+    if (canvas.wrapperEl) {
+      canvas.wrapperEl.style.touchAction = 'none';
+    }
   }
   
   // Use native DOM event listeners for touch events
-  canvas.upperCanvasEl.addEventListener('touchstart', (e: TouchEvent) => {
-    // Always prevent default on iOS to avoid issues with Safari
-    if (isIOS) {
-      e.preventDefault();
-    }
-    
-    if (!e.touches) return;
-    
-    if (e.touches.length === 2) {
-      // Pinch start - calculate initial distance
-      isGesturing = true;
-      const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-      lastDistance = getDistance(point1, point2);
-    } else if (e.touches.length === 1) {
-      // Single touch - start dragging
-      isDragging = true;
-      lastPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-  }, { passive: false }); // passive: false is crucial for iOS
-  
-  canvas.upperCanvasEl.addEventListener('touchmove', (e: TouchEvent) => {
-    // Always prevent default on iOS to avoid issues with Safari
-    if (isIOS) {
-      e.preventDefault();
-    }
-    
-    if (!e.touches) return;
-    
-    if (e.touches.length === 2 && isGesturing) {
-      // Pinch move - handle zoom
-      const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-      const distance = getDistance(point1, point2);
-      
-      if (lastDistance > 0) {
-        const midpoint = {
-          x: (point1.x + point2.x) / 2,
-          y: (point1.y + point2.y) / 2
-        };
-        
-        // Calculate zoom ratio
-        const zoomRatio = distance / lastDistance;
-        const currentZoom = canvas.getZoom();
-        const zoom = currentZoom * zoomRatio;
-        
-        // Convert to fabric point for zooming
-        const fabric_point = new FabricPoint(midpoint.x, midpoint.y);
-        
-        // Apply zoom with limits
-        canvas.zoomToPoint(fabric_point, Math.min(Math.max(zoom, 0.1), 10));
-        
-        // Trigger custom event for zoom change tracking
-        canvas.fire('custom:zoom-changed', { zoom });
+  if (canvas.upperCanvasEl) {
+    canvas.upperCanvasEl.addEventListener('touchstart', (e: TouchEvent) => {
+      // Always prevent default on iOS to avoid issues with Safari
+      if (isIOS) {
+        e.preventDefault();
       }
       
-      lastDistance = distance;
-    } else if (e.touches.length === 1 && isDragging && lastPoint) {
-      // Single touch move - handle panning
-      const currentPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      const deltaX = currentPoint.x - lastPoint.x;
-      const deltaY = currentPoint.y - lastPoint.y;
+      if (!e.touches) return;
       
-      const vpt = canvas.viewportTransform!;
-      vpt[4] += deltaX;
-      vpt[5] += deltaY;
-      canvas.requestRenderAll();
-      
-      lastPoint = currentPoint;
-    }
-  }, { passive: false }); // passive: false is crucial for iOS
-  
-  canvas.upperCanvasEl.addEventListener('touchend', (e: TouchEvent) => {
-    // Reset state
-    lastDistance = 0;
-    isDragging = false;
-    isGesturing = false;
-    lastPoint = null;
+      if (e.touches.length === 2) {
+        // Pinch start - calculate initial distance
+        isGesturing = true;
+        const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+        lastDistance = getDistance(point1, point2);
+      } else if (e.touches.length === 1) {
+        // Single touch - start dragging
+        isDragging = true;
+        lastPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }, { passive: false }); // passive: false is crucial for iOS
     
-    // Prevent ghost clicks on iOS
-    if (isIOS && e.cancelable) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-  
-  // Add special handler for touchcancel (important for iOS)
-  canvas.upperCanvasEl.addEventListener('touchcancel', () => {
-    // Reset state
-    lastDistance = 0;
-    isDragging = false;
-    isGesturing = false;
-    lastPoint = null;
-  }, { passive: true });
+    canvas.upperCanvasEl.addEventListener('touchmove', (e: TouchEvent) => {
+      // Always prevent default on iOS to avoid issues with Safari
+      if (isIOS) {
+        e.preventDefault();
+      }
+      
+      if (!e.touches) return;
+      
+      if (e.touches.length === 2 && isGesturing) {
+        // Pinch move - handle zoom
+        const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+        const distance = getDistance(point1, point2);
+        
+        if (lastDistance > 0) {
+          const midpoint = {
+            x: (point1.x + point2.x) / 2,
+            y: (point1.y + point2.y) / 2
+          };
+          
+          // Calculate zoom ratio
+          const zoomRatio = distance / lastDistance;
+          const currentZoom = canvas.getZoom();
+          const zoom = currentZoom * zoomRatio;
+          
+          // Convert to fabric point for zooming
+          const fabric_point = new FabricPoint(midpoint.x, midpoint.y);
+          
+          // Apply zoom with limits
+          canvas.zoomToPoint(fabric_point, Math.min(Math.max(zoom, 0.1), 10));
+          
+          // Trigger custom event for zoom change tracking
+          canvas.fire('custom:zoom-changed', { zoom });
+        }
+        
+        lastDistance = distance;
+      } else if (e.touches.length === 1 && isDragging && lastPoint) {
+        // Single touch move - handle panning
+        const currentPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        const deltaX = currentPoint.x - lastPoint.x;
+        const deltaY = currentPoint.y - lastPoint.y;
+        
+        const vpt = canvas.viewportTransform!;
+        vpt[4] += deltaX;
+        vpt[5] += deltaY;
+        canvas.requestRenderAll();
+        
+        lastPoint = currentPoint;
+      }
+    }, { passive: false }); // passive: false is crucial for iOS
+    
+    canvas.upperCanvasEl.addEventListener('touchend', (e: TouchEvent) => {
+      // Reset state
+      lastDistance = 0;
+      isDragging = false;
+      isGesturing = false;
+      lastPoint = null;
+      
+      // Prevent ghost clicks on iOS
+      if (isIOS && e.cancelable) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+    
+    // Add special handler for touchcancel (important for iOS)
+    canvas.upperCanvasEl.addEventListener('touchcancel', () => {
+      // Reset state
+      lastDistance = 0;
+      isDragging = false;
+      isGesturing = false;
+      lastPoint = null;
+    }, { passive: true });
+  }
 };
 
 /**
