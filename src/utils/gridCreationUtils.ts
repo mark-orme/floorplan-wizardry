@@ -6,6 +6,7 @@
 import { Canvas, Object as FabricObject, Line } from "fabric";
 import logger from "./logger";
 import { toast } from "sonner";
+import { SMALL_GRID_LINE_WIDTH, LARGE_GRID_LINE_WIDTH, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from "@/constants/numerics";
 
 /**
  * Create a basic emergency grid when normal grid creation fails
@@ -26,8 +27,8 @@ export const createBasicEmergencyGrid = (
     }
     
     // Log canvas dimensions for debugging
-    const width = canvas.getWidth?.() || canvas.width;
-    const height = canvas.getHeight?.() || canvas.height;
+    const width = canvas.getWidth?.() || canvas.width || DEFAULT_CANVAS_WIDTH;
+    const height = canvas.getHeight?.() || canvas.height || DEFAULT_CANVAS_HEIGHT;
     
     console.log(`Creating emergency grid with dimensions: ${width}x${height}`);
     
@@ -36,8 +37,8 @@ export const createBasicEmergencyGrid = (
       console.error("Cannot create emergency grid: Invalid canvas dimensions");
       
       // Set fallback dimensions
-      const fallbackWidth = 800;
-      const fallbackHeight = 600;
+      const fallbackWidth = DEFAULT_CANVAS_WIDTH;
+      const fallbackHeight = DEFAULT_CANVAS_HEIGHT;
       
       console.log(`Using fallback dimensions: ${fallbackWidth}x${fallbackHeight}`);
       
@@ -63,19 +64,19 @@ export const createBasicEmergencyGrid = (
     }
     
     // Get updated dimensions after possible changes
-    const finalWidth = canvas.getWidth?.() || canvas.width || 800;
-    const finalHeight = canvas.getHeight?.() || canvas.height || 600;
+    const finalWidth = canvas.getWidth?.() || canvas.width || DEFAULT_CANVAS_WIDTH;
+    const finalHeight = canvas.getHeight?.() || canvas.height || DEFAULT_CANVAS_HEIGHT;
     
     // Create a simple grid with hardcoded settings
-    const smallGridSpacing = 10;
-    const largeGridSpacing = 100;
+    const smallGridSpacing = 10; // 0.1m at 100px per meter
+    const largeGridSpacing = 100; // 1m at 100px per meter
     const gridObjects: FabricObject[] = [];
     
     // Create small grid lines
     for (let x = 0; x <= finalWidth; x += smallGridSpacing) {
       const line = new Line([x, 0, x, finalHeight], {
         stroke: '#e0e0e0',
-        strokeWidth: 0.5,
+        strokeWidth: SMALL_GRID_LINE_WIDTH,
         selectable: false,
         evented: false,
         excludeFromExport: true,
@@ -88,7 +89,7 @@ export const createBasicEmergencyGrid = (
     for (let y = 0; y <= finalHeight; y += smallGridSpacing) {
       const line = new Line([0, y, finalWidth, y], {
         stroke: '#e0e0e0',
-        strokeWidth: 0.5,
+        strokeWidth: SMALL_GRID_LINE_WIDTH,
         selectable: false,
         evented: false,
         excludeFromExport: true,
@@ -102,7 +103,7 @@ export const createBasicEmergencyGrid = (
     for (let x = 0; x <= finalWidth; x += largeGridSpacing) {
       const line = new Line([x, 0, x, finalHeight], {
         stroke: '#d0d0d0',
-        strokeWidth: 1,
+        strokeWidth: LARGE_GRID_LINE_WIDTH,
         selectable: false,
         evented: false,
         excludeFromExport: true,
@@ -115,7 +116,7 @@ export const createBasicEmergencyGrid = (
     for (let y = 0; y <= finalHeight; y += largeGridSpacing) {
       const line = new Line([0, y, finalWidth, y], {
         stroke: '#d0d0d0',
-        strokeWidth: 1,
+        strokeWidth: LARGE_GRID_LINE_WIDTH,
         selectable: false,
         evented: false,
         excludeFromExport: true,
@@ -125,10 +126,14 @@ export const createBasicEmergencyGrid = (
       canvas.add(line);
     }
     
-    // Ensure grid lines are sent to back
+    // Ensure grid lines are sent to back - fix TypeScript error with casting
     gridObjects.forEach(obj => {
-      // Use type casting to avoid TypeScript error
-      (canvas as any).sendToBack(obj);
+      try {
+        // Use type casting to avoid TypeScript error
+        (canvas as any).sendToBack(obj);
+      } catch (error) {
+        console.error("Failed to send grid line to back:", error);
+      }
     });
     
     // Update the gridLayerRef
@@ -208,4 +213,3 @@ export const retryWithBackoff = (
     }
   }, delay);
 };
-

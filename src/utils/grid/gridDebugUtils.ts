@@ -8,6 +8,7 @@ import { Canvas, Object as FabricObject } from "fabric";
 import logger from "../logger";
 import { toast } from "sonner";
 import { createBasicEmergencyGrid } from "../gridCreationUtils";
+import { DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from "@/constants/numerics";
 
 /**
  * Dump grid state to console for debugging
@@ -193,16 +194,16 @@ export const forceCreateGrid = (
   
   try {
     // Ensure canvas has valid dimensions
-    const width = canvas.getWidth?.() || canvas.width || 800;
-    const height = canvas.getHeight?.() || canvas.height || 600;
+    const width = canvas.getWidth?.() || canvas.width || DEFAULT_CANVAS_WIDTH;
+    const height = canvas.getHeight?.() || canvas.height || DEFAULT_CANVAS_HEIGHT;
     
     // Make sure canvas has real dimensions
     if (width <= 0 || height <= 0) {
       console.error("Force grid creation failed: Canvas has zero dimensions");
       try {
-        canvas.setWidth(800);
-        canvas.setHeight(600);
-        console.log("Force set canvas dimensions to 800x600");
+        canvas.setWidth(DEFAULT_CANVAS_WIDTH);
+        canvas.setHeight(DEFAULT_CANVAS_HEIGHT);
+        console.log(`Force set canvas dimensions to ${DEFAULT_CANVAS_WIDTH}x${DEFAULT_CANVAS_HEIGHT}`);
       } catch (error) {
         console.error("Error setting canvas dimensions:", error);
       }
