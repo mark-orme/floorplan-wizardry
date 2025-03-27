@@ -7,6 +7,7 @@
 import { Canvas, PencilBrush, Point } from 'fabric';
 import type { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
+import { isTouchEvent, isMouseEvent } from '@/types/fabric';
 
 /**
  * Type guard to check if a value is a Touch
@@ -85,7 +86,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
-        isClick: true,
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
         currentSubTargets: []
@@ -130,7 +130,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
-        isClick: false,
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
         currentSubTargets: []
@@ -177,7 +176,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
-        isClick: true,
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
         currentSubTargets: []
@@ -223,7 +221,6 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           e: e,
           pointer: touchPosition,
           absolutePointer: touchPosition.clone(),
-          isClick: false,
           scenePoint: touchPosition,
           viewportPoint: touchPosition.clone(),
           currentSubTargets: []

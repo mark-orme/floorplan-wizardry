@@ -1,116 +1,90 @@
 
 /**
- * Fabric.js related type definitions
+ * Fabric.js type definitions
  * @module types/fabric
  */
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-
 /**
- * Canvas creation options for Fabric.js
+ * Options used when creating a Fabric.js canvas
  * @interface CanvasCreationOptions
  */
 export interface CanvasCreationOptions {
   /** Canvas width in pixels */
   width: number;
-  
   /** Canvas height in pixels */
   height: number;
-  
-  /** Background color of the canvas */
+  /** Canvas background color (optional) */
   backgroundColor?: string;
-  
-  /** Whether to enable retina scaling */
-  enableRetinaScaling?: boolean;
-  
-  /** Whether to stop context menu on right click */
-  stopContextMenu?: boolean;
-  
-  /** Whether to fire right click events */
-  fireRightClick?: boolean;
-  
-  /** Whether to render on add/remove operations */
-  renderOnAddRemove?: boolean;
-  
-  /** Whether to enable pointer events */
-  enablePointerEvents?: boolean;
-  
-  /** Whether to skip target finding */
-  skipTargetFind?: boolean;
-  
-  /** Whether to enable per-pixel target finding */
-  perPixelTargetFind?: boolean;
-  
-  /** Tolerance for target finding */
-  targetFindTolerance?: number;
-  
-  /** Whether the canvas is interactive */
-  interactive?: boolean;
+  /** Additional options supported by Fabric.js canvas */
+  [key: string]: unknown;
 }
 
 /**
- * References to canvas elements and objects
+ * Canvas and related objects references
  * @interface CanvasReferences
  */
 export interface CanvasReferences {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  historyRef: React.MutableRefObject<{
-    past: FabricObject[][];
-    future: FabricObject[][];
-  }>;
+  /** Reference to the Fabric canvas instance */
+  canvas: any;
+  /** Reference to the canvas DOM element */
+  canvasElement: HTMLCanvasElement;
+  /** Reference to the container DOM element */
+  container: HTMLElement;
 }
 
 /**
- * Grid dimensions interface
+ * Grid dimensions configuration
  * @interface GridDimensions
  */
 export interface GridDimensions {
+  /** Width of the grid in pixels */
   width: number;
+  /** Height of the grid in pixels */
   height: number;
+  /** Grid cell size in pixels */
   cellSize: number;
 }
 
 /**
- * Grid render result interface
+ * Result from grid rendering operations
  * @interface GridRenderResult
  */
 export interface GridRenderResult {
-  objects: FabricObject[];
-  dimensions: GridDimensions;
-  gridObjects?: FabricObject[];
-  smallGridLines?: FabricObject[];
-  largeGridLines?: FabricObject[];
-  markers?: FabricObject[];
+  /** All grid-related objects */
+  gridObjects: any[];
+  /** Small grid lines */
+  smallGridLines: any[];
+  /** Large grid lines */
+  largeGridLines: any[];
+  /** Grid markers (labels) */
+  markers: any[];
 }
 
 /**
- * Custom touch event interface
+ * Custom touch event extended from TouchEvent
  * @interface CustomTouchEvent
  */
 export interface CustomTouchEvent extends TouchEvent {
+  /** TouchList containing active touches */
   touches: TouchList;
+  /** TouchList containing touches that changed in this event */
   changedTouches: TouchList;
+  /** TouchList containing touches that started on the target element */
+  targetTouches: TouchList;
 }
 
 /**
- * Custom fabric touch event interface
+ * Fabric-specific touch event structure for multi-touch handling
  * @interface CustomFabricTouchEvent
  */
 export interface CustomFabricTouchEvent {
-  touches: { x: number; y: number }[];
-  e: Touch | unknown;
-}
-
-/**
- * Global declarations for Fabric.js extensions
- */
-declare global {
-  interface Window {
-    fabricCanvasInstances?: FabricCanvas[];
-  }
-  
-  interface HTMLCanvasElement {
-    _fabric?: unknown;
-  }
+  /** Array of touch points with coordinates */
+  touches: {
+    /** X coordinate of the touch point */
+    x: number;
+    /** Y coordinate of the touch point */
+    y: number;
+  }[];
+  /** Original Touch or Event object */
+  e: Touch | Event;
 }
