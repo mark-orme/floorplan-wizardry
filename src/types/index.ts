@@ -10,10 +10,43 @@ export type { Point, CanvasDimensions, OperationResult, GridCreationState } from
 export type { DrawingState } from './drawingStateTypes';
 export type { DebugInfoState } from './debugTypes';
 
-// Export additional types from specialized files
-export * from './geometryTypes';
-export * from './floorPlanTypes';
-export * from './gridTypes';
-export * from './fabricTypes';
-export * from './performanceTypes';
+// Re-export other types
+export type { 
+  Coordinates, 
+  Dimension, 
+  Rectangle, 
+  Size, 
+  Vector,
+  Bounds,
+  LineSegment
+} from './geometryTypes';
 
+export type {
+  Floor,
+  FloorOptions,
+  FloorMetadata,
+  FloorPlan,
+  PaperSize,
+  Stroke
+} from './floorPlanTypes';
+
+export type {
+  Grid,
+  GridConfig,
+  GridDimensions,
+  GridOptions,
+  GridParameters,
+  GridStyle
+} from './gridTypes';
+
+export type {
+  FabricCanvasOptions,
+  FabricObjectOptions,
+  FabricLineOptions
+} from './fabricTypes';
+
+export type {
+  PerformanceMetrics,
+  RenderStats,
+  TimingRecord
+} from './performanceTypes';

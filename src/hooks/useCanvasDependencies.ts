@@ -1,7 +1,7 @@
 
 import { useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DebugInfoState } from '@/types/debugTypes';
+import { DebugInfoState } from '@/types';
 
 /**
  * Props interface for the useCanvasDependencies hook
@@ -65,7 +65,11 @@ export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabr
     canvasWidth: 0,
     canvasHeight: 0,
     lastInitTime: 0,
-    lastGridCreationTime: 0
+    lastGridCreationTime: 0,
+    gridObjectCount: 0,
+    canvasDimensions: { width: 0, height: 0 },
+    hasError: false,
+    errorMessage: ""
   });
   
   /**

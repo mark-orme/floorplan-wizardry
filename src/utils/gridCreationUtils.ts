@@ -150,3 +150,5 @@ export const ensureGrid = (
   }
 };
 
+// Re-export the createBasicEmergencyGrid function from gridDebugUtils
+export { createBasicEmergencyGrid } from "./grid/gridDebugUtils";

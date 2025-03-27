@@ -109,7 +109,11 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     canvasWidth: 0,
     canvasHeight: 0,
     lastInitTime: 0,
-    lastGridCreationTime: 0
+    lastGridCreationTime: 0,
+    gridObjectCount: 0,
+    canvasDimensions: { width: 0, height: 0 },
+    hasError: false,
+    errorMessage: ""
   });
   
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({

@@ -1,195 +1,98 @@
-
-import { useState, useCallback, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { Point, DrawingState } from "@/types/drawingTypes";
-import { DrawingTool } from "./useCanvasState";
-import { calculateMidpoint } from "@/utils/geometry";
-import { snapToGrid, snapLineToStandardAngles } from "@/utils/grid/snapping";
-import { straightenStroke } from "@/utils/geometry/straightening";
-import { formatDistance } from "@/utils/geometry/lineOperations";
-import { isTouchEvent, extractClientCoordinates } from "@/utils/fabric";
-
-interface UseDrawingStateProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool: DrawingTool;
-}
+import { useState, useCallback } from 'react';
+import { DrawingState, Point } from '@/types';
 
 /**
- * Custom hook for managing drawing state on canvas
- * Handles point tracking, snapping, and event processing
- * 
- * @param {UseDrawingStateProps} props Hook properties
- * @returns Drawing state and handler functions
+ * Hook for managing drawing state
+ * @returns Drawing state and update functions
  */
-export const useDrawingState = ({ 
-  fabricCanvasRef, 
-  tool 
-}: UseDrawingStateProps) => {
-  // Drawing state
+const useDrawingState = () => {
   const [drawingState, setDrawingState] = useState<DrawingState>({
     isDrawing: false,
     startPoint: null,
     currentPoint: null,
     cursorPosition: null,
     midPoint: null,
-    selectionActive: false
+    selectionActive: false,
+    points: []
   });
-  
-  // Timeouts reference for cleanup
-  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
-  
-  // Process point with snapping based on current tool
-  const processPointWithSnapping = useCallback((point: Point): Point => {
-    if (!point) return point;
-    
-    // Apply grid snapping for wall and room tools
-    if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
-      return snapToGrid(point);
-    }
-    
-    return point;
-  }, [tool]);
-  
-  // Handle mouse down event - start drawing
-  const handleMouseDown = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Convert event to appropriate type
-    const canvas = fabricCanvasRef.current;
-    
-    // Get pointer position using the extractClientCoordinates utility
-    const coords = extractClientCoordinates(e);
-    if (!coords) return;
-    
-    const pointer = canvas.getPointer(coords as any);
-    if (!pointer) return;
-    
-    // Create point from pointer
-    const point = { x: pointer.x, y: pointer.y };
-    
-    // Apply grid snapping based on current tool
-    const snappedPoint = processPointWithSnapping(point);
-    
-    // Start drawing with snapped point
+
+  /**
+   * Start drawing from a point
+   * @param point Starting point
+   */
+  const startDrawing = useCallback((point: Point) => {
     setDrawingState(prev => ({
       ...prev,
       isDrawing: true,
-      startPoint: snappedPoint,
-      currentPoint: snappedPoint,
-      cursorPosition: point,
-      midPoint: snappedPoint
+      startPoint: point,
+      currentPoint: point,
+      points: [point]
     }));
-    
-  }, [fabricCanvasRef, processPointWithSnapping]);
-  
-  // Handle mouse move event - update current point
-  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Always update cursor position for hover effects
-    const canvas = fabricCanvasRef.current;
-    
-    // Get pointer position using the extractClientCoordinates utility
-    const coords = extractClientCoordinates(e);
-    if (!coords) return;
-    
-    const pointer = canvas.getPointer(coords as any);
-    if (!pointer) return;
-    
-    // Create point from pointer
-    const point = { x: pointer.x, y: pointer.y };
-    
-    // Just update cursor position if not drawing
-    if (!drawingState.isDrawing) {
-      setDrawingState(prev => ({
+  }, []);
+
+  /**
+   * Update drawing with current point
+   * @param point Current point
+   */
+  const updateDrawing = useCallback((point: Point) => {
+    setDrawingState(prev => {
+      // Only add points if we're actually drawing
+      if (!prev.isDrawing) {
+        return {
+          ...prev,
+          cursorPosition: point
+        };
+      }
+
+      const newPoints = prev.points ? [...prev.points, point] : [point];
+      
+      return {
         ...prev,
-        cursorPosition: point
-      }));
-      return;
-    }
-    
-    // Only proceed if we're drawing and have a start point
-    if (!drawingState.startPoint) return;
-    
-    // Apply appropriate snapping based on tool
-    let processedPoint = point;
-    
-    if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
-      // Apply angle snapping for walls and rooms
-      processedPoint = snapLineToStandardAngles(drawingState.startPoint, point);
-    } else {
-      // Just apply basic grid snapping for other tools
-      processedPoint = processPointWithSnapping(point);
-    }
-    
-    // Calculate midpoint for tooltip
-    const midPoint = calculateMidpoint(drawingState.startPoint, processedPoint);
-    
-    // Update drawing state with processed point
+        currentPoint: point,
+        cursorPosition: point,
+        midPoint: prev.startPoint ? {
+          x: (prev.startPoint.x + point.x) / 2,
+          y: (prev.startPoint.y + point.y) / 2
+        } : null,
+        points: newPoints
+      };
+    });
+  }, []);
+
+  /**
+   * End drawing
+   */
+  const endDrawing = useCallback(() => {
     setDrawingState(prev => ({
       ...prev,
-      currentPoint: processedPoint,
-      cursorPosition: point, // Keep original cursor position for reference
-      midPoint: midPoint
+      isDrawing: false,
+      // Keep other properties for reference
     }));
-    
-  }, [fabricCanvasRef, drawingState.isDrawing, drawingState.startPoint, processPointWithSnapping, tool]);
-  
-  // Handle mouse up event - end drawing
-  const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Only process if we're actually drawing
-    if (!drawingState.isDrawing) return;
-    
-    // Get final points
-    const { startPoint, currentPoint } = drawingState;
-    
-    // Only process if we have both points
-    if (startPoint && currentPoint) {
-      // Apply stroke straightening if needed
-      const processedPoints = straightenStroke([startPoint, currentPoint]);
-      
-      // Update with final processed points
-      setDrawingState(prev => ({
-        ...prev,
-        isDrawing: false,
-        startPoint: processedPoints[0],
-        currentPoint: processedPoints[1]
-      }));
-    } else {
-      // Simple reset if no valid points
-      setDrawingState(prev => ({
-        ...prev,
-        isDrawing: false
-      }));
-    }
-    
-    // Reset after a short delay to clear the measurement
-    const resetTimeout = setTimeout(() => {
-      setDrawingState(prev => ({
-        ...prev,
-        startPoint: null,
-        currentPoint: null,
-        midPoint: null
-      }));
-    }, 100);
-    
-    timeoutsRef.current.push(resetTimeout);
-    
-  }, [fabricCanvasRef, drawingState]);
-  
-  // Clean up timeouts on unmount
-  const cleanupTimeouts = useCallback(() => {
-    timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
-    timeoutsRef.current = [];
   }, []);
-  
+
+  /**
+   * Reset drawing state
+   */
+  const resetDrawing = useCallback(() => {
+    setDrawingState({
+      isDrawing: false,
+      startPoint: null,
+      currentPoint: null,
+      cursorPosition: null,
+      midPoint: null,
+      selectionActive: false,
+      points: []
+    });
+  }, []);
+
   return {
     drawingState,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    cleanupTimeouts
+    setDrawingState,
+    startDrawing,
+    updateDrawing,
+    endDrawing,
+    resetDrawing
   };
 };
+
+export default useDrawingState;

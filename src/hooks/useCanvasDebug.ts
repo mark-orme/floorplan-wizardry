@@ -1,9 +1,10 @@
+
 /**
  * Hook for managing canvas debug information
  * @module useCanvasDebug
  */
 import { useState, useCallback } from "react";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types";
 
 /**
  * Hook that provides debug information and related functions
@@ -23,11 +24,12 @@ export const useCanvasDebug = () => {
     canvasHeight: 0,
     lastInitTime: 0,
     lastGridCreationTime: 0,
+    gridObjectCount: 0,
+    canvasDimensions: { width: 0, height: 0 },
+    hasError: false,
+    errorMessage: "",
     performanceStats: {}
   });
-  
-  const [hasError, setHasError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
   
   /**
    * Resets load times in debug info
@@ -43,10 +45,10 @@ export const useCanvasDebug = () => {
   return {
     debugInfo,
     setDebugInfo,
-    hasError,
-    setHasError,
-    errorMessage,
-    setErrorMessage,
+    hasError: debugInfo.hasError,
+    setHasError: (hasError: boolean) => setDebugInfo(prev => ({ ...prev, hasError })),
+    errorMessage: debugInfo.errorMessage,
+    setErrorMessage: (errorMessage: string) => setDebugInfo(prev => ({ ...prev, errorMessage })),
     resetLoadTimes
   };
 };

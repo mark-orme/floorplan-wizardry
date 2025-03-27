@@ -89,4 +89,3 @@ export interface DebugInfoState {
     longFrames?: number;
   };
 }
-

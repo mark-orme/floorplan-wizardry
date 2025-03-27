@@ -6,7 +6,7 @@
 import { useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasDependencies } from "@/hooks/useCanvasDependencies";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types";
 
 /**
  * Props interface for useCanvasControllerDependencies hook
@@ -47,9 +47,6 @@ interface UseCanvasControllerDependenciesResult {
 /**
  * Hook that initializes canvas dependencies like grid, stylus detection, etc.
  * Manages integration of various canvas-related hooks and utilities
- * 
- * @param {UseCanvasControllerDependenciesProps} props - Hook properties
- * @returns {UseCanvasControllerDependenciesResult} Grid reference and creation function
  */
 export const useCanvasControllerDependencies = ({
   fabricCanvasRef,
@@ -64,41 +61,17 @@ export const useCanvasControllerDependencies = ({
 }: UseCanvasControllerDependenciesProps): UseCanvasControllerDependenciesResult => {
   // Create default refs for any undefined props
   const defaultCanvasRef = useRef<HTMLCanvasElement>(null);
-  const defaultGridLayerRef = useRef<FabricObject[]>([]);
-  
-  // Provide fallback values for required props
-  const resolvedCanvasRef = canvasRef || defaultCanvasRef;
-  const resolvedCanvasDimensions = canvasDimensions || { width: 800, height: 600 };
-  const resolvedDebugInfo: DebugInfoState = debugInfo || { 
-    showDebugInfo: false,
-    canvasInitialized: false, 
-    dimensionsSet: false,
-    gridCreated: false,
-    brushInitialized: false,
-    canvasCreated: false,
-    canvasLoaded: false,
-    canvasReady: false,
-    canvasWidth: 0,
-    canvasHeight: 0,
-    lastInitTime: 0,
-    lastGridCreationTime: 0
-  };
-  const resolvedSetDebugInfo = setDebugInfo || ((_: React.SetStateAction<DebugInfoState>) => {});
-  const resolvedSetHasError = setHasError || ((_: boolean) => {});
-  const resolvedSetErrorMessage = setErrorMessage || ((_: string) => {});
-  const resolvedZoomLevel = zoomLevel || 1;
   
   // Initialize canvas dependencies (grid, stylus, zoom sync)
   const canvasDeps = useCanvasDependencies({
-    canvasRef: resolvedCanvasRef,
-    fabricCanvasRef
+    canvasRef: canvasRef || defaultCanvasRef
   });
   
   // Extract the grid layer ref and create grid function
   const { gridLayerRef, createGrid } = canvasDeps;
   
   return {
-    gridLayerRef: gridLayerRef || defaultGridLayerRef,
+    gridLayerRef,
     createGrid
   };
 };

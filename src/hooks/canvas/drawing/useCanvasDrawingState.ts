@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing canvas drawing state
  * @module canvas/drawing/useCanvasDrawingState
@@ -55,6 +54,7 @@ export const useCanvasDrawingState = ({
     midPoint: null,
     selectionActive: false,
     currentZoom: 1,
+    points: [],
     distance: null
   });
   
@@ -114,7 +114,8 @@ export const useCanvasDrawingState = ({
       startPoint: snappedPoint,
       currentPoint: snappedPoint,
       midPoint: snappedPoint, // Initially same as start point
-      distance: 0
+      distance: 0,
+      points: [snappedPoint]
     }));
     
     console.log("Drawing started at:", snappedPoint);
@@ -224,7 +225,8 @@ export const useCanvasDrawingState = ({
       startPoint: null,
       currentPoint: null,
       midPoint: null,
-      distance: null
+      distance: null,
+      points: []
     }));
   }, [
     drawingState.isDrawing, 
