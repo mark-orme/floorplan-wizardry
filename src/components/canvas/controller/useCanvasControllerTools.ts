@@ -7,7 +7,7 @@
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useDrawingTools } from "@/hooks/useDrawingTools";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingTool } from "@/constants/drawingModes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 
@@ -64,7 +64,7 @@ interface UseCanvasControllerToolsResult {
   /** Function to clear the entire canvas */
   clearCanvas: () => void;
   /** Function to save the canvas state */
-  saveCanvas: () => boolean; // Changed to boolean return type
+  saveCanvas: () => boolean; 
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
 }
@@ -155,6 +155,17 @@ export const useCanvasControllerTools = (
     };
   }, [fabricCanvasRef, recalculateGIA]);
 
+  // Ensure saveCanvas returns a boolean
+  const enhancedSaveCanvas = useCallback((): boolean => {
+    try {
+      saveCanvas();
+      return true;
+    } catch (error) {
+      console.error('Error saving canvas:', error);
+      return false;
+    }
+  }, [saveCanvas]);
+
   return {
     clearDrawings,
     handleToolChange,
@@ -162,7 +173,7 @@ export const useCanvasControllerTools = (
     handleRedo,
     handleZoom,
     clearCanvas,
-    saveCanvas, // This now correctly returns a boolean
+    saveCanvas: enhancedSaveCanvas,
     saveCurrentState
   };
 };

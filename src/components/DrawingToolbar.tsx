@@ -2,7 +2,7 @@
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingTool } from "@/constants/drawingModes";
 import { LineSettings } from "./LineSettings";
 import { 
   MousePointerSquareDashed, Pencil, Grid2X2, 
@@ -71,7 +71,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === "hand" ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("hand")}
+                onClick={() => onToolChange("hand" as DrawingTool)}
               >
                 <Hand className="h-4 w-4" />
               </Button>
@@ -105,7 +105,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === "straightLine" ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("straightLine")}
+                onClick={() => onToolChange("straightLine" as DrawingTool)}
               >
                 <div className="h-4 w-4 border-b-2 border-current transform rotate-45" />
               </Button>

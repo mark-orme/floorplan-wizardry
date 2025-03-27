@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
-import { DrawingTool } from "./useCanvasState";
+import { DrawingTool } from "@/constants/drawingModes";
 import logger from "@/utils/logger";
 
 // Import types and event hooks
@@ -112,8 +112,8 @@ export const useCanvasEventHandlers = ({
   // Handle zoom tracking
   const { cleanup: cleanupZoomTracking } = useZoomTracking({
     fabricCanvasRef,
-    updateZoomLevel,
-    tool
+    tool,
+    updateZoomLevel
   });
   
   // Cleanup function to remove all event handlers

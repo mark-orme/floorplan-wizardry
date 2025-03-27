@@ -15,6 +15,16 @@ export interface Point {
 }
 
 /**
+ * Simple point interface for plain objects
+ */
+export interface PlainPoint {
+  /** X coordinate */
+  x: number;
+  /** Y coordinate */
+  y: number;
+}
+
+/**
  * Create a new point with x and y coordinates
  * @param x - X coordinate
  * @param y - Y coordinate
@@ -22,4 +32,13 @@ export interface Point {
  */
 export const createPoint = (x: number, y: number): Point => {
   return { x, y };
+};
+
+/**
+ * Convert a plain object with x/y properties to a Point
+ * @param obj - Object with x and y properties
+ * @returns Point object
+ */
+export const toPoint = (obj: { x: number, y: number }): Point => {
+  return { x: obj.x, y: obj.y };
 };

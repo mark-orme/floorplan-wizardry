@@ -16,11 +16,22 @@ export enum DrawingMode {
   Select = "select",
   Measure = "measure",
   Text = "text",
-  Line = "line"
+  Line = "line",
+  Hand = "hand",
+  StraightLine = "straightLine",
+  Draw = "draw"
 }
 
 /**
  * Drawing tool type
  * String literal type for drawing tools
  */
-export type DrawingTool = 'select' | 'draw' | 'wall' | 'room' | 'eraser' | 'text' | 'measure' | 'line';
+export type DrawingTool = 'select' | 'draw' | 'wall' | 'room' | 'eraser' | 'text' | 'measure' | 'line' | 'hand' | 'straightLine';
+
+/**
+ * Array of all drawing tool values
+ * Useful for validation and iteration
+ */
+export const DRAWING_TOOLS: DrawingTool[] = [
+  'select', 'draw', 'wall', 'room', 'eraser', 'text', 'measure', 'line', 'hand', 'straightLine'
+];

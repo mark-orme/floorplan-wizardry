@@ -57,3 +57,41 @@ export const ZOOM_LEVEL_CONSTANTS = {
   /** Zoom increment for each step */
   INCREMENT: 0.1
 };
+
+/**
+ * Drawing line thickness defaults
+ */
+export const DEFAULT_LINE_THICKNESS = 2;
+
+/**
+ * Canvas size defaults
+ */
+export const DEFAULT_CANVAS_WIDTH = 800;
+export const DEFAULT_CANVAS_HEIGHT = 600;
+
+/**
+ * History state limits
+ */
+export const MAX_HISTORY_STATES = 30;
+export const MAX_OBJECTS_PER_CANVAS = 1000;
+
+/**
+ * Grid performance constants
+ */
+export const MAX_SMALL_GRID_LINES = 1000;
+export const MAX_LARGE_GRID_LINES = 200;
+export const GRID_EXTENSION_FACTOR = 1.2;
+
+/**
+ * Geometry constants
+ */
+export const FLOATING_POINT_TOLERANCE = 0.0001;
+export const MIN_LINE_LENGTH = 5;
+export const MIN_SHAPE_AREA = 10;
+export const CLOSE_POINT_THRESHOLD = 10;
+export const SHAPE_CLOSE_THRESHOLD = 20;
+export const ANGLE_SNAP_THRESHOLD = 5;
+export const LARGE_GRID_LINE_WIDTH = 1;
+export const SMALL_GRID_LINE_WIDTH = 0.5;
+export const AREA_PRECISION = 2;
+export const DISTANCE_PRECISION = 2;

@@ -49,9 +49,13 @@ export interface UsePathEventsProps {
   /** Reference to fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current drawing tool */
-  tool: DrawingTool;
+  tool?: DrawingTool;
+  /** Function to save current state */
+  saveCurrentState: () => void;
   /** Function to handle created path */
-  handlePathCreated?: (path: FabricObject) => void;
+  processCreatedPath: (path: FabricObject) => void;
+  /** Function to handle mouse up event */
+  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
 }
 
 /**
@@ -62,6 +66,8 @@ export interface UseObjectEventsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current drawing tool */
   tool: DrawingTool;
+  /** Function to save current state */
+  saveCurrentState: () => void;
 }
 
 /**
@@ -70,6 +76,8 @@ export interface UseObjectEventsProps {
 export interface UseBrushSettingsProps {
   /** Reference to fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current drawing tool */
+  tool: DrawingTool;
   /** Current line thickness */
   lineThickness: number;
   /** Current line color */

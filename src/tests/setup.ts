@@ -2,7 +2,7 @@
 // Vitest/Jest setup file
 import { vi } from 'vitest';
 import { expect } from 'vitest';
-import { configureAxe } from 'jest-axe';
+import '@testing-library/jest-dom'; // Add this import for DOM matchers
 
 // Mock window properties
 Object.defineProperty(window, 'matchMedia', {
@@ -47,7 +47,7 @@ class ResizeObserver {
 window.ResizeObserver = ResizeObserver;
 
 // Mock canvas methods
-HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+const mockCanvasContext = {
   clearRect: vi.fn(),
   fillRect: vi.fn(),
   drawImage: vi.fn(),
@@ -62,44 +62,50 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
   measureText: vi.fn().mockReturnValue({ width: 10 }),
   setLineDash: vi.fn(),
   getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(4) }),
-}));
+};
+
+HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext);
 
 // Add expect to globalThis for test
 if (!globalThis.expect) {
   globalThis.expect = expect;
 }
 
-// Configure accessibility testing
-configureAxe({
-  rules: {
-    'color-contrast': { enabled: false },
-  },
-});
-
 // Mock local storage
 class MockLocalStorage {
+  private store: Record<string, string>;
+  
   constructor() {
     this.store = {};
   }
 
-  getItem(key) {
+  getItem(key: string) {
     return this.store[key] || null;
   }
 
-  setItem(key, value) {
+  setItem(key: string, value: string) {
     this.store[key] = String(value);
   }
 
-  removeItem(key) {
+  removeItem(key: string) {
     delete this.store[key];
   }
 
   clear() {
     this.store = {};
   }
+  
+  // Implement required Storage interface methods
+  key(index: number): string | null {
+    return Object.keys(this.store)[index] || null;
+  }
+  
+  get length(): number {
+    return Object.keys(this.store).length;
+  }
 }
 
-global.localStorage = new MockLocalStorage();
+global.localStorage = new MockLocalStorage() as unknown as Storage;
 
 // Export mock functions for test use
 export {
