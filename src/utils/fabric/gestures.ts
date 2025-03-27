@@ -6,17 +6,7 @@
  */
 import { Canvas as FabricCanvas, Point as FabricPoint } from "fabric";
 import logger from "@/utils/logger";
-
-// Custom interface for our touch events
-interface CustomTouchEvent {
-  touches: { clientX: number; clientY: number; force?: number }[];
-  preventDefault: () => void;
-}
-
-// Custom interface for fabric event with touches
-interface CustomFabricTouchEvent {
-  e: CustomTouchEvent;
-}
+import { CustomTouchEvent, CustomFabricTouchEvent } from "@/types/fabric";
 
 /**
  * Initialize touch and mouse gestures for canvas
@@ -62,6 +52,7 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
   
   // Prevent all default touch behaviors to avoid iOS Safari issues
   if (isIOS) {
+    // Safely set touch-action properties
     if (canvas.upperCanvasEl) {
       canvas.upperCanvasEl.style.touchAction = 'none';
     }
@@ -135,10 +126,12 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
         const deltaX = currentPoint.x - lastPoint.x;
         const deltaY = currentPoint.y - lastPoint.y;
         
-        const vpt = canvas.viewportTransform!;
-        vpt[4] += deltaX;
-        vpt[5] += deltaY;
-        canvas.requestRenderAll();
+        const vpt = canvas.viewportTransform;
+        if (vpt) {
+          vpt[4] += deltaX;
+          vpt[5] += deltaY;
+          canvas.requestRenderAll();
+        }
         
         lastPoint = currentPoint;
       }

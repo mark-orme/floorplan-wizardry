@@ -1,4 +1,9 @@
 
+/**
+ * Canvas Controller Setup Hook
+ * Handles initialization and setup of the canvas controller
+ * @module canvas/controller/useCanvasControllerSetup
+ */
 import { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useCanvasInitialization } from "@/hooks/canvas-initialization";
@@ -6,17 +11,56 @@ import { DebugInfoState } from "@/types/drawingTypes";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
+import { CanvasReferences } from "@/types/fabric";
 
+/**
+ * Canvas controller setup properties
+ * @interface UseCanvasControllerSetupProps
+ */
 interface UseCanvasControllerSetupProps {
+  /** Current canvas dimensions */
   canvasDimensions: { width: number; height: number };
+  /** Current drawing tool */
   tool: DrawingTool;
+  /** Current floor index */
   currentFloor: number;
+  /** Function to set zoom level */
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
+  /** Function to set debug info */
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  /** Function to set error state */
   setHasError: (value: boolean) => void;
+  /** Function to set error message */
   setErrorMessage: (value: string) => void;
 }
 
+/**
+ * Canvas controller validation constants
+ */
+const CANVAS_VALIDATION = {
+  /**
+   * Maximum number of validation attempts
+   */
+  MAX_CHECK_ATTEMPTS: 10,
+  
+  /**
+   * Initial validation delay in milliseconds
+   */
+  VALIDATION_DELAY: 100,
+  
+  /**
+   * Minimum acceptable canvas dimension
+   */
+  MIN_DIMENSION: 1
+};
+
+/**
+ * Hook for canvas controller setup
+ * Handles initialization, validation, and error handling for canvas controller
+ * 
+ * @param {UseCanvasControllerSetupProps} props - Hook properties
+ * @returns {CanvasReferences} Canvas references
+ */
 export const useCanvasControllerSetup = ({
   canvasDimensions,
   tool,
@@ -25,7 +69,7 @@ export const useCanvasControllerSetup = ({
   setDebugInfo,
   setHasError,
   setErrorMessage
-}: UseCanvasControllerSetupProps) => {
+}: UseCanvasControllerSetupProps): CanvasReferences => {
   // Initialize canvas and grid with improved error handling
   const { 
     canvasRef, 
@@ -46,11 +90,15 @@ export const useCanvasControllerSetup = ({
   useEffect(() => {
     let frameId: number;
     let checkAttempts = 0;
-    const MAX_CHECK_ATTEMPTS = 10;
     
+    /**
+     * Validate canvas references and initialization
+     * Uses requestAnimationFrame for proper timing
+     */
     const checkCanvasReferences = () => {
-      if (checkAttempts >= MAX_CHECK_ATTEMPTS) {
-        logger.warn(`Canvas validation abandoned after ${MAX_CHECK_ATTEMPTS} attempts`);
+      // Abort validation if we've exceeded maximum attempts
+      if (checkAttempts >= CANVAS_VALIDATION.MAX_CHECK_ATTEMPTS) {
+        logger.warn(`Canvas validation abandoned after ${CANVAS_VALIDATION.MAX_CHECK_ATTEMPTS} attempts`);
         return;
       }
       
@@ -69,8 +117,9 @@ export const useCanvasControllerSetup = ({
           console.log("🧮 Objects on canvas:", fabricCanvasRef.current.getObjects()?.length);
           
           // Check if the canvas has valid dimensions
-          if (fabricCanvasRef.current.width === 0 || fabricCanvasRef.current.height === 0) {
-            logger.warn("Fabric canvas has zero dimensions:", {
+          if (isDimensionInvalid(fabricCanvasRef.current.width) || 
+              isDimensionInvalid(fabricCanvasRef.current.height)) {
+            logger.warn("Fabric canvas has invalid dimensions:", {
               width: fabricCanvasRef.current.width,
               height: fabricCanvasRef.current.height
             });
@@ -94,11 +143,23 @@ export const useCanvasControllerSetup = ({
       frameId = requestAnimationFrame(checkCanvasReferences);
     };
     
-    // Start checking
-    frameId = requestAnimationFrame(checkCanvasReferences);
+    /**
+     * Check if a dimension is invalid (too small or not a number)
+     * @param dimension - The dimension to check
+     * @returns True if dimension is invalid
+     */
+    const isDimensionInvalid = (dimension: number): boolean => {
+      return !isFinite(dimension) || dimension < CANVAS_VALIDATION.MIN_DIMENSION;
+    };
     
-    // Clean up the animation frame on unmount
+    // Start checking after a short delay to allow DOM to initialize
+    const timeoutId = setTimeout(() => {
+      frameId = requestAnimationFrame(checkCanvasReferences);
+    }, CANVAS_VALIDATION.VALIDATION_DELAY);
+    
+    // Clean up animation frames and timeout on unmount
     return () => {
+      clearTimeout(timeoutId);
       if (frameId) {
         cancelAnimationFrame(frameId);
       }

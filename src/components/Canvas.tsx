@@ -10,11 +10,63 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { useReliableGridInitialization } from '@/hooks/useReliableGridInitialization';
 import { initializeCanvasGestures } from '@/utils/fabric/gestures';
+import { CanvasCreationOptions } from '@/types/fabric';
 
+/**
+ * Default canvas styling constants
+ */
+const CANVAS_STYLES = {
+  /**
+   * Default background color
+   */
+  BACKGROUND_COLOR: '#FFFFFF',
+  
+  /**
+   * Default border style
+   */
+  BORDER: '1px solid #eee',
+  
+  /**
+   * Default canvas wrapper class
+   */
+  WRAPPER_CLASS: 'canvas-container touch-none'
+};
+
+/**
+ * Canvas scaling constants
+ */
+const CANVAS_SCALING = {
+  /**
+   * Minimum zoom level
+   */
+  MIN_ZOOM: 0.1,
+  
+  /**
+   * Maximum zoom level
+   */
+  MAX_ZOOM: 10,
+  
+  /**
+   * Touch target tolerance for iOS (in pixels)
+   */
+  IOS_TOUCH_TOLERANCE: 15
+};
+
+/**
+ * Canvas component props interface
+ * @interface CanvasProps
+ */
 interface CanvasProps {
+  /** Callback triggered when canvas fails to initialize */
   onError?: () => void;
+  
+  /** Canvas width in pixels */
   width?: number;
+  
+  /** Canvas height in pixels */
   height?: number;
+  
+  /** Callback triggered when canvas is successfully initialized */
   onCanvasReady?: (canvas: FabricCanvas) => void;
 }
 
@@ -45,24 +97,30 @@ export const Canvas: React.FC<CanvasProps> = ({
     try {
       console.log("Canvas: Creating Fabric.js instance");
       
-      // Create the Fabric.js canvas instance with iOS-specific options
-      const canvas = new FabricCanvas(canvasRef.current, {
+      // Create canvas options with iOS-specific adjustments
+      const canvasOptions: CanvasCreationOptions = {
         width,
         height,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: CANVAS_STYLES.BACKGROUND_COLOR,
         enableRetinaScaling: !isIOS, // Disable for iOS to improve performance
         stopContextMenu: true,
         fireRightClick: false,
         renderOnAddRemove: false,
-        // Additional options for iOS performance
-        ...(isIOS ? {
+      };
+      
+      // Add iOS-specific options
+      if (isIOS) {
+        Object.assign(canvasOptions, {
           enablePointerEvents: true,
           skipTargetFind: false,
           perPixelTargetFind: false,
-          targetFindTolerance: 15, // Increased for easier touch interaction
+          targetFindTolerance: CANVAS_SCALING.IOS_TOUCH_TOLERANCE,
           interactive: true
-        } : {})
-      });
+        });
+      }
+      
+      // Create the Fabric.js canvas instance
+      const canvas = new FabricCanvas(canvasRef.current, canvasOptions);
       
       // Initialize touch gestures for the canvas
       initializeCanvasGestures(canvas);
@@ -71,6 +129,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       if (isIOS) {
         // Disable unnecessary event listeners to improve performance
         canvas.selection = false;
+        
         // Set wrapper element touch action to none
         if (canvas.wrapperEl) {
           canvas.wrapperEl.style.touchAction = 'none';
@@ -143,14 +202,14 @@ export const Canvas: React.FC<CanvasProps> = ({
   }, [isGridInitialized]);
   
   return (
-    <div className="canvas-container touch-none" style={{ touchAction: 'none' }}>
+    <div className={CANVAS_STYLES.WRAPPER_CLASS} style={{ touchAction: 'none' }}>
       <canvas 
         ref={canvasRef}
         width={width}
         height={height}
         className="w-full h-full border border-gray-200 touch-none"
         style={{ 
-          border: '1px solid #eee',
+          border: CANVAS_STYLES.BORDER,
           touchAction: 'none' // Critical for iOS
         }}
         data-testid="fabric-canvas"
@@ -161,12 +220,14 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
 };
 
-// Instead of declaring a global here, we will use the existing declaration
-// from types/global.d.ts to avoid type conflicts
-
-// Fix HTMLCanvasElement extension to use any for _fabric to avoid type conflicts
+// Fix HTMLCanvasElement extension to use FabricCanvas for _fabric to improve typing
 declare global {
   interface HTMLCanvasElement {
-    _fabric?: any;
+    _fabric?: FabricCanvas;
+  }
+  
+  // Global registry for canvas instances (debugging)
+  interface Window {
+    fabricCanvasInstances?: FabricCanvas[];
   }
 }
