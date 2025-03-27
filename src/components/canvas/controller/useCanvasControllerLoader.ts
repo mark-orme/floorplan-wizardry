@@ -18,7 +18,6 @@ import { FloorPlan } from "@/types/floorPlanTypes";
  * @property {() => Promise<unknown>} loadData - Function to load floor plan data
  */
 interface UseCanvasControllerLoaderProps {
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
@@ -44,32 +43,35 @@ interface UseCanvasControllerLoaderResult {
  */
 export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps): UseCanvasControllerLoaderResult => {
   const {
-    setIsLoading,
     setFloorPlans,
     setHasError,
     setErrorMessage,
     loadData
   } = props;
 
-  // Floor plan data loading - pass props object directly
+  // Floor plan data loading
   const floorPlanLoader = useFloorPlanLoader({
-    setIsLoading,
-    setFloorPlans,
-    setHasError,
-    setErrorMessage,
-    loadData
+    initialFloorPlans: [],
+    defaultFloorIndex: 0
   });
 
   /**
    * Load floor plans data from loader
-   * Uses the loader's loadFloorPlansData method
+   * Uses the loader's loadFloorPlans method
    * 
    * @returns {Promise<void>} Promise that resolves when data is loaded
    */
   const loadFloorPlansData = useCallback(async (): Promise<void> => {
-    await floorPlanLoader.loadFloorPlansData();
+    try {
+      const plans = await floorPlanLoader.loadFloorPlans();
+      setFloorPlans(plans);
+    } catch (error) {
+      console.error("Error loading floor plans", error);
+      setHasError(true);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to load floor plans");
+    }
     return;
-  }, [floorPlanLoader]);
+  }, [floorPlanLoader, setFloorPlans, setHasError, setErrorMessage]);
 
   // Load floor plans data on mount
   useEffect(() => {

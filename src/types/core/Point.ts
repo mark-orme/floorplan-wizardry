@@ -17,6 +17,14 @@ export interface Point {
 }
 
 /**
+ * Simple point type for plain object representation
+ */
+export interface PlainPoint {
+  x: number;
+  y: number;
+}
+
+/**
  * Create a new Point
  * @param x - X coordinate
  * @param y - Y coordinate
@@ -24,6 +32,15 @@ export interface Point {
  */
 export const createPoint = (x: number, y: number): Point => {
   return { x, y };
+};
+
+/**
+ * Convert a plain object to a Point
+ * @param obj Object with x,y properties
+ * @returns A Point object
+ */
+export const toPoint = (obj: { x: number; y: number }): Point => {
+  return { x: obj.x, y: obj.y };
 };
 
 /**
@@ -111,3 +128,23 @@ export const scalePoint = (p: Point, factor: number): Point => {
 export const midpoint = (p1: Point, p2: Point): Point => {
   return interpolate(p1, p2, 0.5);
 };
+
+// Add these methods for Fabric.js Point compatibility
+Point.prototype = {
+  add: function(point: Point): Point {
+    return addPoints(this, point);
+  },
+  addEquals: function(point: Point): Point {
+    this.x += point.x;
+    this.y += point.y;
+    return this;
+  },
+  scalarAdd: function(scalar: number): Point {
+    return { x: this.x + scalar, y: this.y + scalar };
+  },
+  scalarAddEquals: function(scalar: number): Point {
+    this.x += scalar;
+    this.y += scalar;
+    return this;
+  }
+} as any;

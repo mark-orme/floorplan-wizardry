@@ -1,261 +1,172 @@
 
-import { Canvas, Line, Text, Object as FabricObject } from "fabric";
-import { 
-  SMALL_GRID_SPACING, 
-  LARGE_GRID_SPACING, 
-  GRID_EXTENSION_FACTOR,
-  MAX_SMALL_GRID_LINES,
-  MAX_LARGE_GRID_LINES
-} from "@/constants/numerics";
-import { 
-  SMALL_GRID_LINE_OPTIONS,
-  LARGE_GRID_LINE_OPTIONS,
-  MARKER_TEXT_OPTIONS
-} from "@/utils/gridConstants";
+/**
+ * Grid utility functions
+ * @module utils/gridUtils
+ */
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { GRID_SPACING } from "@/constants/numerics";
+import { Point } from "@/types/core/Point";
 
 /**
- * Grid dimensions type
+ * Check if the canvas has an existing grid
+ * @param canvas - The Fabric canvas
+ * @returns Whether the canvas has a grid
  */
-export interface GridDimensions {
-  width: number;
-  height: number;
-  cellSize: number;
-}
-
-/**
- * Grid render result type
- */
-export interface GridRenderResult {
-  gridObjects: FabricObject[];
-  smallGridLines: Line[];
-  largeGridLines: Line[];
-  markers: Text[];
-}
-
-/**
- * Calculate grid dimensions based on canvas size
- * @param width Canvas width
- * @param height Canvas height
- * @param cellSize Cell size (optional, defaults to 20)
- * @returns Grid dimensions
- */
-export const calculateGridDimensions = (
-  width: number, 
-  height: number, 
-  cellSize: number = 20
-): GridDimensions => {
-  return { width, height, cellSize };
+export const hasExistingGrid = (canvas: FabricCanvas): boolean => {
+  if (!canvas) return false;
+  return canvas.getObjects().some((obj) => obj.data?.type === 'grid');
 };
 
 /**
- * Creates grid lines based on dimensions
- * @param canvas Fabric canvas instance
- * @param dimensions Grid dimensions
- * @returns Array of grid lines
+ * Remove all grid objects from the canvas
+ * @param canvas - The Fabric canvas
+ * @returns Array of removed grid objects
  */
-export const createGridLines = (
-  canvas: Canvas,
-  dimensions: GridDimensions
-): Line[] => {
-  const gridObjects: Line[] = [];
-  const { width, height, cellSize } = dimensions;
+export const removeGrid = (canvas: FabricCanvas): FabricObject[] => {
+  if (!canvas) return [];
   
-  // Create horizontal grid lines
-  for (let y = 0; y <= height; y += cellSize) {
-    const gridLine = new Line([0, y, width, y], {
-      stroke: "#DDDDDD",
-      selectable: false,
-      evented: false,
-      strokeWidth: 0.5,
-      objectType: 'grid'
-    });
-    gridObjects.push(gridLine);
-    canvas.add(gridLine);
-  }
+  const gridObjects = canvas.getObjects().filter((obj) => obj.data?.type === 'grid');
   
-  // Create vertical grid lines
-  for (let x = 0; x <= width; x += cellSize) {
-    const gridLine = new Line([x, 0, x, height], {
-      stroke: "#DDDDDD",
-      selectable: false,
-      evented: false,
-      strokeWidth: 0.5,
-      objectType: 'grid'
-    });
-    gridObjects.push(gridLine);
-    canvas.add(gridLine);
-  }
+  gridObjects.forEach(obj => {
+    canvas.remove(obj);
+  });
   
+  canvas.renderAll();
   return gridObjects;
 };
 
 /**
- * Creates small grid lines
- * @param canvas Fabric canvas instance
- * @param width Canvas width
- * @param height Canvas height
- * @returns Array of small grid lines
+ * Set the visibility of the grid
+ * @param canvas - The Fabric canvas
+ * @param visible - Whether the grid should be visible
  */
-export const createSmallGridLines = (
-  canvas: Canvas,
-  width: number,
-  height: number
-): Line[] => {
-  const smallGridLines: Line[] = [];
-  let gridCount = 0;
+export const setGridVisibility = (canvas: FabricCanvas, visible: boolean): void => {
+  if (!canvas) return;
   
-  // Create vertical small grid lines
-  for (let x = 0; x <= width && gridCount < MAX_SMALL_GRID_LINES; x += SMALL_GRID_SPACING) {
-    // Skip positions that would be created by large grid lines
-    if (x % LARGE_GRID_SPACING === 0) continue;
-    
-    const smallGridLine = new Line([x, 0, x, height], SMALL_GRID_LINE_OPTIONS);
-    smallGridLines.push(smallGridLine);
-    canvas.add(smallGridLine);
-    gridCount++;
-  }
+  const gridObjects = canvas.getObjects().filter((obj) => obj.data?.type === 'grid');
   
-  // Create horizontal small grid lines
-  for (let y = 0; y <= height && gridCount < MAX_SMALL_GRID_LINES * 2; y += SMALL_GRID_SPACING) {
-    // Skip positions that would be created by large grid lines
-    if (y % LARGE_GRID_SPACING === 0) continue;
-    
-    const smallGridLine = new Line([0, y, width, y], SMALL_GRID_LINE_OPTIONS);
-    smallGridLines.push(smallGridLine);
-    canvas.add(smallGridLine);
-    gridCount++;
-  }
+  gridObjects.forEach(obj => {
+    obj.visible = visible;
+  });
   
-  return smallGridLines;
+  canvas.renderAll();
 };
 
 /**
- * Creates large grid lines
- * @param canvas Fabric canvas instance
- * @param width Canvas width
- * @param height Canvas height
- * @returns Array of large grid lines
+ * Filter grid objects from an array of objects
+ * @param objects - Array of Fabric objects
+ * @returns Array of grid objects
  */
-export const createLargeGridLines = (
-  canvas: Canvas,
-  width: number,
-  height: number
-): Line[] => {
-  const largeGridLines: Line[] = [];
-  let gridCount = 0;
-  
-  // Create vertical large grid lines
-  for (let x = 0; x <= width && gridCount < MAX_LARGE_GRID_LINES; x += LARGE_GRID_SPACING) {
-    const largeGridLine = new Line([x, 0, x, height], LARGE_GRID_LINE_OPTIONS);
-    largeGridLines.push(largeGridLine);
-    canvas.add(largeGridLine);
-    gridCount++;
-  }
-  
-  // Create horizontal large grid lines
-  for (let y = 0; y <= height && gridCount < MAX_LARGE_GRID_LINES * 2; y += LARGE_GRID_SPACING) {
-    const largeGridLine = new Line([0, y, width, y], LARGE_GRID_LINE_OPTIONS);
-    largeGridLines.push(largeGridLine);
-    canvas.add(largeGridLine);
-    gridCount++;
-  }
-  
-  return largeGridLines;
+export const filterGridObjects = (objects: FabricObject[]): FabricObject[] => {
+  return objects.filter(obj => obj.data?.type === 'grid');
 };
 
 /**
- * Creates text markers for the grid
- * @param canvas Fabric canvas instance
- * @param width Canvas width
- * @param height Canvas height
- * @returns Array of marker text objects
+ * Get the nearest grid point to a given point
+ * @param point - The reference point
+ * @param gridSize - The grid size
+ * @returns The nearest grid point
  */
-export const createGridMarkers = (
-  canvas: Canvas,
-  width: number,
-  height: number
-): Text[] => {
-  const markers: Text[] = [];
-  
-  // Create X-axis markers
-  for (let x = LARGE_GRID_SPACING; x <= width; x += LARGE_GRID_SPACING) {
-    const text = new Text(`${x / LARGE_GRID_SPACING}m`, {
-      ...MARKER_TEXT_OPTIONS,
-      left: x,
-      top: 5
-    });
-    markers.push(text);
-    canvas.add(text);
-  }
-  
-  // Create Y-axis markers
-  for (let y = LARGE_GRID_SPACING; y <= height; y += LARGE_GRID_SPACING) {
-    const text = new Text(`${y / LARGE_GRID_SPACING}m`, {
-      ...MARKER_TEXT_OPTIONS,
-      left: 5,
-      top: y
-    });
-    markers.push(text);
-    canvas.add(text);
-  }
-  
-  return markers;
-};
-
-/**
- * Create a complete grid with small lines, large lines, and markers
- * @param canvas Fabric canvas instance
- * @param width Canvas width
- * @param height Canvas height
- * @param cellSize Cell size
- * @returns Grid render result
- */
-export const createCompleteGrid = (
-  canvas: Canvas,
-  width: number,
-  height: number,
-  cellSize: number = SMALL_GRID_SPACING
-): GridRenderResult => {
-  // Create small grid lines
-  const smallGridLines = createSmallGridLines(canvas, width, height);
-  
-  // Create large grid lines
-  const largeGridLines = createLargeGridLines(canvas, width, height);
-  
-  // Create grid markers
-  const markers = createGridMarkers(canvas, width, height);
-  
-  // Combine all grid objects
-  const gridObjects = [...smallGridLines, ...largeGridLines, ...markers];
-  
+export const getNearestGridPoint = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
   return {
-    gridObjects,
-    smallGridLines,
-    largeGridLines,
-    markers
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
   };
 };
 
 /**
- * Render grid components on canvas
- * @param canvas Fabric canvas instance
- * @param width Canvas width
- * @param height Canvas height
- * @returns Grid render result
+ * Get the nearest grid intersection
+ * @param point - The reference point
+ * @param gridSize - The grid size
+ * @returns The nearest grid intersection
  */
-export const renderGridComponents = (
-  canvas: Canvas,
-  width: number,
-  height: number
-): GridRenderResult => {
-  return createCompleteGrid(canvas, width, height);
+export const getNearestGridIntersection = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
+  return getNearestGridPoint(point, gridSize);
 };
 
 /**
- * Check if an object is a grid object
- * @param obj Fabric object
- * @returns True if the object is a grid object
+ * Calculate distance to nearest grid line
+ * @param point - The reference point
+ * @param gridSize - The grid size
+ * @returns Object with distances to nearest horizontal and vertical grid lines
  */
-export const isGridObject = (obj: FabricObject): boolean => {
-  return obj.objectType === 'grid';
+export const distanceToNearestGridLine = (point: Point, gridSize: number = GRID_SPACING.SMALL): { x: number, y: number } => {
+  const nearestX = Math.round(point.x / gridSize) * gridSize;
+  const nearestY = Math.round(point.y / gridSize) * gridSize;
+  
+  return {
+    x: Math.abs(point.x - nearestX),
+    y: Math.abs(point.y - nearestY)
+  };
+};
+
+/**
+ * Create a grid on the canvas
+ * @param canvas - The Fabric canvas
+ * @param config - Grid configuration
+ * @returns Created grid objects
+ */
+export const createGrid = (canvas: FabricCanvas, config: any = {}): FabricObject[] => {
+  if (!canvas) return [];
+  
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  
+  const smallGridSize = GRID_SPACING.SMALL;
+  const largeGridSize = GRID_SPACING.LARGE;
+  
+  const gridObjects: FabricObject[] = [];
+  
+  // Create small grid
+  for (let x = 0; x <= width; x += smallGridSize) {
+    const line = new fabric.Line([x, 0, x, height], {
+      stroke: '#e0e0e0',
+      strokeWidth: 0.5,
+      selectable: false,
+      evented: false,
+      data: { type: 'grid', size: 'small' }
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  for (let y = 0; y <= height; y += smallGridSize) {
+    const line = new fabric.Line([0, y, width, y], {
+      stroke: '#e0e0e0',
+      strokeWidth: 0.5,
+      selectable: false,
+      evented: false,
+      data: { type: 'grid', size: 'small' }
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  // Create large grid
+  for (let x = 0; x <= width; x += largeGridSize) {
+    const line = new fabric.Line([x, 0, x, height], {
+      stroke: '#b0b0b0',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      data: { type: 'grid', size: 'large' }
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  for (let y = 0; y <= height; y += largeGridSize) {
+    const line = new fabric.Line([0, y, width, y], {
+      stroke: '#b0b0b0',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      data: { type: 'grid', size: 'large' }
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  canvas.renderAll();
+  return gridObjects;
 };

@@ -5,7 +5,7 @@
  */
 import '@testing-library/jest-dom';
 
-// Create a mock for canvas API
+// Create a more complete mock for canvas API
 class CanvasRenderingContext2DMock {
   canvas: HTMLCanvasElement;
   fillStyle: string = '#000000';
@@ -69,18 +69,36 @@ class CanvasRenderingContext2DMock {
   isPointInStroke(x: number, y: number) { return false; }
   setLineDash(segments: number[]) {}
   getLineDash() { return []; }
+  
+  // Additional methods needed for CanvasRenderingContext2D
+  createImageData(width: number, height: number): ImageData {
+    return new ImageData(width, height);
+  }
+  getContextAttributes() { return {}; }
+  createConicGradient(startAngle: number, x: number, y: number) {
+    return { addColorStop: (offset: number, color: string) => {} };
+  }
+  
+  // Mock for new methods in the Canvas API
+  get filter() { return 'none'; }
+  set filter(value: string) {}
 }
 
-// Mock canvas implementation
-global.HTMLCanvasElement.prototype.getContext = function(contextType: string) {
-  if (contextType === '2d') {
-    return new CanvasRenderingContext2DMock(this);
+// Extend the mock prototype with any missing methods
+Object.defineProperty(global.HTMLCanvasElement.prototype, 'getContext', {
+  value: function(contextType: string) {
+    if (contextType === '2d') {
+      return new CanvasRenderingContext2DMock(this) as unknown as CanvasRenderingContext2D;
+    }
+    return null;
   }
-  return null;
-};
+});
+
+// Add global.expect for Jest matchers
+(global as any).expect = expect;
 
 // Set up global matchers for Jest
-if (typeof global.expect !== 'undefined') {
+if (typeof expect !== 'undefined') {
   expect.extend({
     toBeInTheDocument(received) {
       const pass = Boolean(received);

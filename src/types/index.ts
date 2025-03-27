@@ -1,33 +1,23 @@
 
 /**
- * Type definitions index
- * Re-exports all types from their respective modules
- * @module types
+ * Central type exports
+ * Re-exports all types for easier imports
  */
 
-// Re-export core types with explicit names to avoid conflicts
-export type { DebugInfoState, PerformanceStats } from './core/DebugInfo';
-export type { DrawingState } from './core/DrawingState';
-export type { Point, PlainPoint, createPoint, toPoint } from './core/Point';
-export type { CanvasDimensions } from './core/Geometry';
-export * from './core/Geometry'; // For the type guards
+// Core types
+export * from './core/Point';
+export * from './core/FloorPlan';
+export * from './core/Geometry';
+export * from './core/GridState';
+export * from './core/DebugInfo';
 
-// Re-export grid related types
-export type { 
-  GridConfig, 
-  GridDimensions, 
-  GridOptions, 
-  GridParameters, 
-  GridStyle,
-  Grid,
-  GridCreationState,
-  GridCreationLock // Added export for GridCreationLock
-} from './core/GridState';
+// Type shortcuts for backward compatibility
+export type { Point, PlainPoint } from './core/Point';
+export type { FloorPlan } from './core/FloorPlan';
 
-// Re-export other types
+// Drawing types
 export * from './drawingTypes';
 export * from './floorPlanTypes';
-export * from './fabricTypes';
-export * from './propertyTypes';
-export * from './performanceTypes';
+export * from './geometryTypes';
 export * from './gridTypes';
+export * from './debugTypes';
