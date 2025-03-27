@@ -6,6 +6,9 @@
 import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
 import { getDB, STORE_NAME } from '@/types/databaseTypes';
 
+const PAPER_SIZE_KEY = 'paperSize';
+const DEFAULT_PAPER_SIZE = 'infinite';
+
 /** 
  * Load floor plans from IndexedDB (with fallback to localStorage for migration)
  * Retrieves saved floor plans with fallback mechanisms for backward compatibility
@@ -151,3 +154,23 @@ function validatePaperSize(paperSize: string | undefined): PaperSize {
   // Default to 'infinite' for invalid values
   return 'infinite';
 }
+
+/**
+ * Get the saved paper size from localStorage
+ * @returns {PaperSize} The saved paper size or the default paper size
+ */
+const getSavedPaperSize = (): PaperSize => {
+  const savedPaperSize = localStorage.getItem(PAPER_SIZE_KEY);
+  
+  if (savedPaperSize) {
+    try {
+      // Use unknown as intermediary type for safer conversion
+      return JSON.parse(savedPaperSize) as unknown as PaperSize;
+    } catch (e) {
+      console.error('Error parsing paper size from localStorage', e);
+    }
+  }
+  
+  // Return default paper size if none found or error parsing
+  return DEFAULT_PAPER_SIZE;
+};

@@ -1,122 +1,81 @@
+/**
+ * Hook for loading and managing floor plans
+ * @module hooks/useFloorPlanLoader
+ */
+import { useState, useEffect, useCallback } from 'react';
+import { FloorPlan } from '@/types/floorPlanTypes';
 
 /**
- * Custom hook for loading floor plan data
- * Handles loading, error handling, and default floor plan creation
- * @module useFloorPlanLoader
+ * Interface for the return value of the useFloorPlanLoader hook
  */
-import { useCallback } from "react";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { captureError } from "@/utils/sentryUtils";
-
-/**
- * Interface for useFloorPlanLoader hook props
- * @interface UseFloorPlanLoaderProps
- */
-interface UseFloorPlanLoaderProps {
-  /** Function to set loading state */
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  
-  /** Function to set floor plans data */
+interface UseFloorPlanLoaderResult {
+  /** Array of floor plans */
+  floorPlans: FloorPlan[];
+  /** Function to set the floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  
-  /** Function to set error state */
-  setHasError: (value: boolean) => void;
-  
-  /** Function to set error message */
-  setErrorMessage: (value: string) => void;
-  
-  /** Function to load data from storage */
-  loadData: () => Promise<any>;
+  /** Function to add a new floor plan */
+  addFloorPlan: (name: string) => void;
+  /** Function to remove a floor plan */
+  removeFloorPlan: (id: string) => void;
 }
 
 /**
- * Creates a default floor plan with all required properties
- * @returns {FloorPlan} A new floor plan with default values
+ * Hook for managing floor plans
+ * @param initialFloorPlans - Initial floor plans to load
+ * @returns Floor plan state and management functions
  */
-const createDefaultFloorPlan = (id: string, name: string): FloorPlan => {
-  const timestamp = new Date().toISOString();
-  return {
-    id,
-    name,
-    label: name,
-    gia: 0,
-    strokes: [],
-    walls: [],
-    rooms: [],
-    canvasData: null,
-    createdAt: timestamp,
-    updatedAt: timestamp
-  };
-};
-
-/**
- * Hook for loading floor plan data
- * Provides functionality to load floor plans from storage or create defaults
- * Includes error handling and loading state management
- * 
- * @param {UseFloorPlanLoaderProps} props - Hook properties
- * @returns {Object} Floor plan loading utilities
- */
-export const useFloorPlanLoader = ({
-  setIsLoading,
-  setFloorPlans,
-  setErrorMessage,
-  setHasError,
-  loadData
-}: UseFloorPlanLoaderProps) => {
+export const useFloorPlanLoader = (initialFloorPlans: FloorPlan[] = []): UseFloorPlanLoaderResult => {
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
   
   /**
-   * Load floor plans data
-   * Attempts to load existing floor plans from storage
-   * Creates a default floor plan if none exist
-   * Handles errors and loading states
-   * 
-   * @returns {Promise<boolean>} Success state of the loading operation
+   * Add a new floor plan
+   * @param name Floor plan name
    */
-  const loadFloorPlansData = useCallback(async () => {
-    try {
-      console.log("Loading floor plans...");
-      setIsLoading(true);
-      const plans = await loadData();
-      
-      // If plans exist, load them, otherwise create a default
-      if (plans && plans.length > 0) {
-        setFloorPlans(plans);
-        console.log("Floor plans loaded:", plans);
-      } else {
-        // Create a default floor plan with all required properties
-        const defaultId = `floor-${Date.now()}`;
-        const defaultName = "Ground Floor";
-        
-        const defaultPlan: FloorPlan[] = [
-          createDefaultFloorPlan(defaultId, defaultName)
-        ];
-        setFloorPlans(defaultPlan);
-        console.log("Created default floor plan");
-      }
-      
-      setIsLoading(false);
-      setHasError(false);
-      return true;
-    } catch (error) {
-      console.error("Error loading floor plans:", error);
-      
-      // Report to Sentry
-      captureError(error, 'floor-plan-loading', {
-        tags: {
-          component: 'floor-plans',
-          operation: 'loading'
-        }
-      });
-      
-      setHasError(true);
-      setErrorMessage("Failed to load floor plans");
-      setIsLoading(false);
-      return false;
+  const addFloorPlan = useCallback((name: string) => {
+    const newFloorPlan = createDefaultFloorPlan(name);
+    setFloorPlans(prev => [...prev, newFloorPlan]);
+  }, []);
+  
+  /**
+   * Remove a floor plan
+   * @param id Floor plan ID
+   */
+  const removeFloorPlan = useCallback((id: string) => {
+    setFloorPlans(prev => prev.filter(floorPlan => floorPlan.id !== id));
+  }, []);
+  
+  /**
+   * Create a default floor plan
+   * @param name Floor plan name
+   * @returns Default floor plan
+   */
+  const createDefaultFloorPlan = (name: string): FloorPlan => {
+    return {
+      id: `default-${Date.now()}`,
+      name,
+      label: name,
+      level: 0, // Add missing level property
+      gia: 0,
+      strokes: [],
+      walls: [],
+      rooms: [],
+      canvasData: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  };
+  
+  // Load initial floor plans on mount
+  useEffect(() => {
+    if (initialFloorPlans.length > 0) {
+      setFloorPlans(initialFloorPlans);
     }
-  }, [loadData, setFloorPlans, setHasError, setErrorMessage, setIsLoading]);
-
+  }, [initialFloorPlans]);
+  
   return {
-    loadFloorPlansData
+    floorPlans,
+    setFloorPlans,
+    addFloorPlan,
+    removeFloorPlan
   };
 };

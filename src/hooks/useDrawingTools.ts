@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for drawing tools functionality
  * Orchestrates tool behavior, history, and canvas operations
@@ -8,7 +9,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useCanvasTools } from "./useCanvasTools";
 import { useCanvasActions } from "./useCanvasActions";
-import { DrawingTool } from "./useCanvasState";
+import { DrawingTool } from "@/constants/drawingModes";
 import logger from "@/utils/logger";
 
 /**
@@ -98,13 +99,8 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
   } = props;
   
   // Canvas tools (drawing, tool selection, zoom)
-  const {
-    clearDrawings,
-    handleToolChange,
-    handleZoom
-  } = useCanvasTools({
+  const canvasTools = useCanvasTools({
     fabricCanvasRef,
-    gridLayerRef,
     tool,
     zoomLevel,
     lineThickness,
@@ -149,20 +145,6 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
   }, [fabricCanvasRef]);
   
   /**
-   * Handle zoom operation
-   * @param {string} direction - "in" or "out" to zoom in or out
-   */
-  const handleZoom = useCallback((direction: "in" | "out") => {
-    const zoomFactor = direction === "in" ? 1.2 : 0.8;
-    if (fabricCanvasRef.current) {
-      const currentZoom = fabricCanvasRef.current.getZoom();
-      const newZoom = currentZoom * zoomFactor;
-      fabricCanvasRef.current.setZoom(newZoom);
-      setZoomLevel(newZoom);
-    }
-  }, [fabricCanvasRef, setZoomLevel]);
-  
-  /**
    * Save current state before changes
    * Captures the current canvas state for history tracking
    */
@@ -180,53 +162,30 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
   }, [fabricCanvasRef]);
   
   // Canvas actions (clear, save)
-  const {
-    clearCanvas,
-    saveCanvas: originalSaveCanvas
-  } = useCanvasActions({
+  const canvasActions = useCanvasActions({
     fabricCanvasRef,
     historyRef,
-    clearDrawings,
+    clearDrawings: canvasTools.clearDrawings, // Use the function from canvasTools
     floorPlans,
     currentFloor,
     setFloorPlans,
     setGia,
     saveCurrentState
   });
-  
+
   /**
-   * Clear all drawings from the canvas
+   * Change zoom level
+   * @param direction "in" or "out"
    */
-  const clearDrawings = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    const objects = canvas.getObjects().filter(obj => {
-      // Only remove drawing objects, not grid or other UI elements
-      return obj.type !== 'grid' && obj.type !== 'ui';
-    });
-    
-    objects.forEach(obj => canvas.remove(obj));
-    canvas.renderAll();
-  }, [fabricCanvasRef]);
-  
-  /**
-   * Change the current drawing tool
-   * @param {DrawingTool} newTool - New drawing tool to set
-   */
-  const handleToolChange = useCallback((newTool: DrawingTool) => {
-    setTool(newTool);
-    
-    // Apply tool-specific settings to canvas
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Set drawing mode based on tool
-    canvas.isDrawingMode = ['draw', 'free'].includes(newTool);
-    
-    // Set selection mode based on tool
-    canvas.selection = ['select', 'hand'].includes(newTool);
-  }, [fabricCanvasRef, setTool]);
+  const handleZoom = useCallback((direction: "in" | "out") => {
+    const zoomFactor = direction === "in" ? 1.2 : 0.8;
+    if (fabricCanvasRef.current) {
+      const currentZoom = fabricCanvasRef.current.getZoom();
+      const newZoom = currentZoom * zoomFactor;
+      fabricCanvasRef.current.setZoom(newZoom);
+      setZoomLevel(newZoom);
+    }
+  }, [fabricCanvasRef, setZoomLevel]);
   
   /**
    * Wrap saveCanvas to return a boolean value as required by the interface
@@ -234,18 +193,18 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
    */
   const saveCanvas = useCallback(() => {
     // Call the original saveCanvas function
-    originalSaveCanvas();
+    canvasActions.saveCanvas();
     // Return true to indicate success
     return true;
-  }, [originalSaveCanvas]);
+  }, [canvasActions]);
   
   return {
-    clearDrawings,
-    handleToolChange,
+    clearDrawings: canvasTools.clearDrawings,
+    handleToolChange: canvasTools.handleToolChange,
     handleUndo,
     handleRedo,
     handleZoom,
-    clearCanvas,
+    clearCanvas: canvasActions.clearCanvas,
     saveCanvas,
     saveCurrentState
   };

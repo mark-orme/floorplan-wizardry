@@ -7,21 +7,21 @@
 
 // Import and re-export types
 export type { 
-  EditableFabricObject,
-  TargetEvent,
-  CanvasEvents,
-  ZoomDirection,
-  EventHandlerMap,
-  BaseEventHandlerProps,
   EventHandlerResult,
-  // Re-export but with alias to avoid name conflicts
-  UseZoomTrackingProps as ZoomTrackingProps,
-  UseZoomTrackingResult as ZoomTrackingResult,
+  UseZoomTrackingProps,
+  UseZoomTrackingResult,
   UsePathEventsProps,
   UseObjectEventsProps,
-  UseMouseEventsProps,
-  UseKeyboardEventsProps,
   UseBrushSettingsProps,
+  UseKeyboardEventsProps,
+  ZoomOptions,
+  ZoomDirection,
+  CanvasEvents,
+  EventHandlerMap,
+  BaseEventHandlerProps,
+  EditableFabricObject,
+  TargetEvent,
+  UseMouseEventsProps,
   UseCanvasHandlersProps
 } from './types';
 
@@ -45,5 +45,5 @@ export {
   useZoomTracking
 };
 
-// Original types from the specific modules
+// Constants from the types module
 export { ZOOM_LEVEL_CONSTANTS } from './types';

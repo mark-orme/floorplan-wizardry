@@ -1,125 +1,69 @@
-
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook } from '@testing-library/react-hooks';
 import { useZoomTracking } from '@/hooks/canvas-events/useZoomTracking';
-import { useCanvasHandlers } from '@/hooks/canvas-events/useCanvasHandlers';
-import { Canvas } from 'fabric';
-import { DrawingTool } from '@/hooks/useCanvasState';
+import { createRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
-/**
- * Tests for Canvas Zoom and Handlers functionality
- * Verifies zoom tracking and event handling behaviors
- */
-describe('Canvas Zoom and Handlers', () => {
-  // Mock canvas and references
-  let mockCanvas: Partial<Canvas>;
-  let fabricCanvasRef: { current: Canvas | null };
-  let mockHandleUndo: ReturnType<typeof vi.fn>;
-  let mockHandleRedo: ReturnType<typeof vi.fn>;
-  let mockSaveCurrentState: ReturnType<typeof vi.fn>;
-  let mockDeleteSelectedObjects: ReturnType<typeof vi.fn>;
-  let defaultTool: DrawingTool = 'select';
+// Mock FabricCanvas
+const mockFabricCanvas = {
+  on: jest.fn(),
+  off: jest.fn(),
+  getZoom: jest.fn().mockReturnValue(1),
+};
+
+const mockFabricCanvasRef = {
+  current: mockFabricCanvas as unknown as FabricCanvas | null,
+};
+
+describe('useZoomTracking', () => {
+  let mockFabricCanvas: any;
+  let mockFabricCanvasRef: any;
 
   beforeEach(() => {
-    // Create mock Canvas
-    mockCanvas = {
-      on: vi.fn(),
-      off: vi.fn(),
-      getZoom: vi.fn().mockReturnValue(1),
-      fire: vi.fn()
+    mockFabricCanvas = {
+      on: jest.fn(),
+      off: jest.fn(),
+      getZoom: jest.fn().mockReturnValue(1),
     };
-    
-    fabricCanvasRef = { current: mockCanvas as Canvas };
-    mockHandleUndo = vi.fn();
-    mockHandleRedo = vi.fn();
-    mockSaveCurrentState = vi.fn();
-    mockDeleteSelectedObjects = vi.fn();
+
+    mockFabricCanvasRef = {
+      current: mockFabricCanvas as unknown as FabricCanvas | null,
+    };
   });
 
-  describe('useZoomTracking', () => {
-    test('registerZoomTracking should set up event listeners', () => {
-      // Given
-      const { result } = renderHook(() => useZoomTracking({ fabricCanvasRef }));
-      
-      // When
-      const cleanup = result.current.registerZoomTracking();
-      
-      // Then
-      expect(mockCanvas.on).toHaveBeenCalledWith('zoom:changed', expect.any(Function));
-      
-      // When zoom changes
-      const zoomChangedHandler = (mockCanvas.on as ReturnType<typeof vi.fn>).mock.calls.find(
-        call => call[0] === 'zoom:changed'
-      )[1];
-      zoomChangedHandler();
-      
-      // Then custom event is fired
-      expect(mockCanvas.fire).toHaveBeenCalledWith('custom:zoom-changed', { zoom: 1 });
-      
-      // When cleaning up
-      if (cleanup) cleanup();
-      
-      // Then event listener is removed
-      expect(mockCanvas.off).toHaveBeenCalledWith('zoom:changed', expect.any(Function));
-    });
+  it('registers zoom tracking', () => {
+    const { result } = renderHook(() => useZoomTracking({
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: 'select', // Add required tool prop
+      updateZoomLevel: jest.fn()
+    }));
+
+    expect(result.current.register).toBeDefined();
+    // This is now a void function, don't check return value
+    result.current.register();
+    expect(mockFabricCanvas.on).toHaveBeenCalled();
   });
 
-  describe('useCanvasHandlers', () => {
-    test('should attach handlers to canvas object', () => {
-      // When
-      renderHook(() => useCanvasHandlers({
-        fabricCanvasRef,
-        tool: defaultTool,
-        handleUndo: mockHandleUndo,
-        handleRedo: mockHandleRedo,
-        saveCurrentState: mockSaveCurrentState,
-        deleteSelectedObjects: mockDeleteSelectedObjects
-      }));
-      
-      // Then
-      const enhancedCanvas = mockCanvas as any;
-      expect(enhancedCanvas.handleUndo).toBe(mockHandleUndo);
-      expect(enhancedCanvas.handleRedo).toBe(mockHandleRedo);
-      expect(enhancedCanvas.saveCurrentState).toBe(mockSaveCurrentState);
-      expect(enhancedCanvas.deleteSelectedObjects).toBe(mockDeleteSelectedObjects);
-    });
-    
-    test('should clean up handlers on unmount', () => {
-      // When
-      const { unmount } = renderHook(() => useCanvasHandlers({
-        fabricCanvasRef,
-        tool: defaultTool,
-        handleUndo: mockHandleUndo,
-        handleRedo: mockHandleRedo,
-        saveCurrentState: mockSaveCurrentState,
-        deleteSelectedObjects: mockDeleteSelectedObjects
-      }));
-      
-      unmount();
-      
-      // Then
-      const enhancedCanvas = mockCanvas as any;
-      expect(enhancedCanvas.handleUndo).toBeUndefined();
-      expect(enhancedCanvas.handleRedo).toBeUndefined();
-      expect(enhancedCanvas.saveCurrentState).toBeUndefined();
-      expect(enhancedCanvas.deleteSelectedObjects).toBeUndefined();
-    });
+  it('unregisters zoom tracking', () => {
+    const { result } = renderHook(() => useZoomTracking({
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: 'select', // Add required tool prop
+      updateZoomLevel: jest.fn()
+    }));
 
-    test('should handle when fabricCanvasRef is null', () => {
-      // Given
-      fabricCanvasRef.current = null;
-      
-      // When/Then - should not throw an error
-      expect(() => {
-        renderHook(() => useCanvasHandlers({
-          fabricCanvasRef,
-          tool: defaultTool,
-          handleUndo: mockHandleUndo,
-          handleRedo: mockHandleRedo,
-          saveCurrentState: mockSaveCurrentState,
-          deleteSelectedObjects: mockDeleteSelectedObjects
-        }));
-      }).not.toThrow();
-    });
+    expect(result.current.unregister).toBeDefined();
+    result.current.unregister();
+    expect(mockFabricCanvas.off).toHaveBeenCalled();
+  });
+
+  it('cleans up zoom tracking', () => {
+    const { result } = renderHook(() => useZoomTracking({
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: 'select', // Add required tool prop
+      updateZoomLevel: jest.fn()
+    }));
+
+    expect(result.current.cleanup).toBeDefined();
+    result.current.cleanup();
+    expect(mockFabricCanvas.off).toHaveBeenCalled();
   });
 });

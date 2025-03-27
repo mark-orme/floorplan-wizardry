@@ -8,9 +8,9 @@ import { Canvas as FabricCanvas } from "fabric";
 import { Canvas } from '@/components/Canvas';
 import { CanvasContainer } from '@/components/canvas/CanvasContainer';
 import { useCanvasDrawing } from '@/hooks/useCanvasDrawing';
-import { DrawingTool } from '@/hooks/useCanvasState';
+import { DrawingTool } from '@/constants/drawingModes';
 import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
-import { DebugInfoState } from '@/types';
+import { DEFAULT_DEBUG_STATE } from '@/types/core/DebugInfo';
 
 // Mock fabric canvas
 vi.mock('fabric', () => {
@@ -70,7 +70,9 @@ describe('Canvas Drawing Flow', () => {
   });
   
   it('renders the canvas container correctly', () => {
-    const mockDebugInfo: DebugInfoState = {
+    // Use the complete debug state from DebugInfoState
+    const mockDebugInfo = {
+      ...DEFAULT_DEBUG_STATE,
       showDebugInfo: true,
       canvasInitialized: true,
       dimensionsSet: true,
@@ -82,11 +84,6 @@ describe('Canvas Drawing Flow', () => {
       canvasWidth: 800,
       canvasHeight: 600,
       lastInitTime: Date.now(),
-      lastGridCreationTime: Date.now(),
-      gridObjectCount: 0,
-      canvasDimensions: { width: 800, height: 600 },
-      hasError: false,
-      errorMessage: "",
       performanceStats: {
         fps: 60,
         renderTime: 5,

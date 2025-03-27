@@ -4,32 +4,14 @@
  * @module useCanvasDebug
  */
 import { useState, useCallback } from "react";
-import { DebugInfoState } from "@/types";
+import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 
 /**
  * Hook that provides debug information and related functions
  * @returns Debug information state and related functions
  */
 export const useCanvasDebug = () => {
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
-    showDebugInfo: false,
-    canvasInitialized: false,
-    dimensionsSet: false,
-    gridCreated: false,
-    brushInitialized: false,
-    canvasCreated: false,
-    canvasLoaded: false,
-    canvasReady: false,
-    canvasWidth: 0,
-    canvasHeight: 0,
-    lastInitTime: 0,
-    lastGridCreationTime: 0,
-    gridObjectCount: 0,
-    canvasDimensions: { width: 0, height: 0 },
-    hasError: false,
-    errorMessage: "",
-    performanceStats: {}
-  });
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
   
   /**
    * Resets load times in debug info

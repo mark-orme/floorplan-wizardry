@@ -120,3 +120,81 @@ export interface ZoomOptions {
   /** Zoom amount */
   zoom?: number;
 }
+
+/**
+ * Zoom direction type
+ */
+export type ZoomDirection = 'in' | 'out';
+
+/**
+ * Canvas events map for type-safe event handling
+ */
+export interface CanvasEvents {
+  'object:added': any;
+  'object:removed': any;
+  'object:modified': any;
+  'object:selected': any;
+  'selection:cleared': any;
+  'mouse:down': any;
+  'mouse:move': any;
+  'mouse:up': any;
+  'path:created': any;
+  'zoom:updated': any;
+}
+
+/**
+ * Event handler map type
+ */
+export interface EventHandlerMap {
+  [key: string]: (e: any) => void;
+}
+
+/**
+ * Base event handler props
+ */
+export interface BaseEventHandlerProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+}
+
+/**
+ * Editable fabric object type
+ */
+export interface EditableFabricObject extends FabricObject {
+  isEditing?: boolean;
+  editingBorderColor?: string;
+  editingBackgroundColor?: string;
+}
+
+/**
+ * Target event type
+ */
+export interface TargetEvent {
+  target: FabricObject | null;
+}
+
+/**
+ * Props for the useMouseEvents hook
+ */
+export interface UseMouseEventsProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  tool: DrawingTool;
+  saveCurrentState: () => void;
+}
+
+/**
+ * Props for the useCanvasHandlers hook
+ */
+export interface UseCanvasHandlersProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  tool: DrawingTool;
+}
+
+/**
+ * Zoom level constants
+ */
+export const ZOOM_LEVEL_CONSTANTS = {
+  MIN_ZOOM: 0.1,
+  MAX_ZOOM: 10,
+  DEFAULT_ZOOM: 1,
+  ZOOM_STEP: 0.1
+};

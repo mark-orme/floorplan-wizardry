@@ -120,3 +120,4 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   errorMessage: '',
   performanceStats: {}
 };
+

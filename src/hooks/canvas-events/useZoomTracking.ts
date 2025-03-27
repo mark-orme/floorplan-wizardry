@@ -31,7 +31,7 @@ export const useZoomTracking = (props: UseZoomTrackingProps): UseZoomTrackingRes
       // Update state
       setCurrentZoom(canvas.getZoom());
       if (updateZoomLevel) {
-        updateZoomLevel(canvas.getZoom());
+        updateZoomLevel();
       }
     };
 
