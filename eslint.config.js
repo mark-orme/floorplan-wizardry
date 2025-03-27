@@ -63,6 +63,28 @@ export default tseslint.config(
       "@typescript-eslint/consistent-type-imports": "error", // Consistent type imports
       "@typescript-eslint/no-unnecessary-type-assertion": "error", // Avoid unnecessary type assertions
       
+      // AI Coder Rules - New strict typing requirements
+      "@typescript-eslint/ban-types": ["error", {
+        "types": {
+          "Event": {
+            "message": "🛑 Never use `Event` alone — always use PointerEvent, MouseEvent, or TouchEvent",
+            "fixWith": "PointerEvent | MouseEvent | TouchEvent"
+          },
+          "any": {
+            "message": "🛑 Avoid `any` — strongly type every function",
+            "fixWith": "unknown"
+          },
+          "Object": {
+            "message": "Use a more specific type",
+            "fixWith": "Record<string, unknown>"
+          },
+          "Function": {
+            "message": "Use a more specific function type",
+            "fixWith": "(...args: unknown[]) => unknown"
+          }
+        }
+      }],
+      
       // JSDoc rules (already in place)
       "jsdoc/require-jsdoc": ["warn", {
         "publicOnly": true,
