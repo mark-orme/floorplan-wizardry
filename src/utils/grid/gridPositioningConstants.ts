@@ -5,15 +5,19 @@
  */
 
 /**
- * Grid offset factor for positioning calculations
- * This determines how far the grid extends beyond canvas edges
- * @constant {number}
+ * Grid positioning constants
  */
-export const GRID_OFFSET_FACTOR = 0.5;
+export const GRID_POSITIONING = {
+  /**
+   * Grid offset factor for positioning calculations
+   * This determines how far the grid extends beyond canvas edges
+   * @constant {number}
+   */
+  OFFSET_FACTOR: 0.5
+};
 
 /**
- * Constants for path processing
- * @constant {Object}
+ * Path processing thresholds and limits
  */
 export const PATH_PROCESSING = {
   /**
@@ -36,3 +40,6 @@ export const PATH_PROCESSING = {
    */
   MIN_DISTANCE: 5
 };
+
+// For backward compatibility
+export const GRID_OFFSET_FACTOR = GRID_POSITIONING.OFFSET_FACTOR;

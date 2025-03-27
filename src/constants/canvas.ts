@@ -125,12 +125,17 @@ export const CANVAS_STYLES = {
 };
 
 /**
- * Maximum number of grid creation attempts
- * Used for preventing infinite creation loops
- * Critical for maintaining application stability
- * @constant {number}
+ * Grid creation constants
  */
-export const MAX_GRID_CREATION_ATTEMPTS = 3;
+export const GRID_CREATION = {
+  /**
+   * Maximum number of grid creation attempts
+   * Used for preventing infinite creation loops
+   * Critical for maintaining application stability
+   * @constant {number}
+   */
+  MAX_ATTEMPTS: 3
+};
 
 /**
  * Canvas event constants
@@ -189,16 +194,42 @@ export const RENDERING_CONSTANTS = {
    * @constant {Object}
    */
   MAX_CANVAS_SIZE: {
+    /**
+     * Maximum width in pixels
+     * @constant {number}
+     */
     WIDTH: 3000,
+    
+    /**
+     * Maximum height in pixels
+     * @constant {number}
+     */
     HEIGHT: 3000
   }
 };
 
 /**
- * Minimum canvas dimensions
- * Prevents canvas from becoming too small to be usable
- * Essential for maintaining a minimum workable area
- * @constant {number}
+ * Canvas dimension limits
  */
-export const MIN_CANVAS_WIDTH = 300;
-export const MIN_CANVAS_HEIGHT = 200;
+export const CANVAS_LIMITS = {
+  /**
+   * Minimum canvas width in pixels
+   * Prevents canvas from becoming too small to be usable
+   * Essential for maintaining a minimum workable area
+   * @constant {number}
+   */
+  MIN_WIDTH: 300,
+  
+  /**
+   * Minimum canvas height in pixels
+   * Prevents canvas from becoming too small to be usable
+   * Essential for maintaining a minimum workable area
+   * @constant {number}
+   */
+  MIN_HEIGHT: 200
+};
+
+// For backward compatibility
+export const MAX_GRID_CREATION_ATTEMPTS = GRID_CREATION.MAX_ATTEMPTS;
+export const MIN_CANVAS_WIDTH = CANVAS_LIMITS.MIN_WIDTH;
+export const MIN_CANVAS_HEIGHT = CANVAS_LIMITS.MIN_HEIGHT;

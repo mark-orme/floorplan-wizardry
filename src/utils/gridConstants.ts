@@ -27,32 +27,37 @@ export interface GridDimensions {
 }
 
 /**
- * Conversion factor from pixels to meters
- * Critical for accurate scale representation
- * @constant {number}
+ * Grid scale constants
  */
-export const GRID_SCALE_FACTOR = PIXELS_PER_METER; // 100px = 1 meter
-
-/**
- * Small grid spacing in meters
- * Controls the density of minor grid lines
- * @constant {number}
- */
-export const SMALL_GRID_SPACING = GRID_SPACING; // 0.1 meter
-
-/**
- * Large grid spacing in meters
- * Controls the density of major grid lines
- * @constant {number}
- */
-export const LARGE_GRID_SPACING = 1.0; // 1.0 meter
-
-/**
- * Interval for text markers in meters
- * Determines how often measurement labels appear
- * @constant {number}
- */
-export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
+export const GRID_SCALE = {
+  /**
+   * Conversion factor from pixels to meters
+   * Critical for accurate scale representation
+   * @constant {number}
+   */
+  FACTOR: PIXELS_PER_METER, // 100px = 1 meter
+  
+  /**
+   * Small grid spacing in meters
+   * Controls the density of minor grid lines
+   * @constant {number}
+   */
+  SMALL_SPACING: 0.1, // 0.1 meter
+  
+  /**
+   * Large grid spacing in meters
+   * Controls the density of major grid lines
+   * @constant {number}
+   */
+  LARGE_SPACING: 1.0, // 1.0 meter
+  
+  /**
+   * Interval for text markers in meters
+   * Determines how often measurement labels appear
+   * @constant {number}
+   */
+  MARKER_INTERVAL: 1.0 // Text markers every 1 meter
+};
 
 // Re-export constants from numerics
 export {
@@ -64,23 +69,26 @@ export {
 };
 
 /**
- * Line width for small grid lines in pixels
- * Increased from 0.5 for better visibility
- * @constant {number}
+ * Grid line width constants
  */
-export const SMALL_GRID_LINE_WIDTH = 0.7;
+export const GRID_LINE_WIDTH = {
+  /**
+   * Line width for small grid lines in pixels
+   * Increased from 0.5 for better visibility
+   * @constant {number}
+   */
+  SMALL: 0.7,
+  
+  /**
+   * Line width for large grid lines in pixels
+   * Thicker than small grid lines for visual hierarchy
+   * @constant {number}
+   */
+  LARGE: 1.0
+};
 
 /**
- * Line width for large grid lines in pixels
- * Thicker than small grid lines for visual hierarchy
- * @constant {number}
- */
-export const LARGE_GRID_LINE_WIDTH = 1.0;
-
-/**
- * Canvas size thresholds for grid performance optimizations
- * Controls when to apply performance enhancement strategies
- * @constant {Object}
+ * Performance threshold constants
  */
 export const GRID_PERFORMANCE_THRESHOLDS = {
   /**
@@ -88,20 +96,18 @@ export const GRID_PERFORMANCE_THRESHOLDS = {
    * Above this canvas area, small grid lines are hidden
    * @constant {number}
    */
-  SKIP_SMALL_GRID: 8000000,
+  SKIP_SMALL_GRID: 8000000, // 8 million square pixels
   
   /**
    * Threshold for reducing grid density level 1 (square pixels)
    * Above this canvas area, grid density is reduced
    * @constant {number}
    */
-  REDUCE_DENSITY_LEVEL_1: 4000000
+  REDUCE_DENSITY_LEVEL_1: 4000000 // 4 million square pixels
 };
 
 /**
- * Default opacity values for grid elements
- * Controls visibility and prominence of grid lines
- * @constant {Object}
+ * Grid opacity constants
  */
 export const GRID_OPACITY = {
   /**
@@ -120,9 +126,7 @@ export const GRID_OPACITY = {
 };
 
 /**
- * Default grid colors
- * Defines the visual appearance of grid elements
- * @constant {Object}
+ * Grid color constants
  */
 export const GRID_COLORS = {
   /**
@@ -148,9 +152,7 @@ export const GRID_COLORS = {
 };
 
 /**
- * Grid text styling parameters
- * Controls the appearance of text labels
- * @constant {Object}
+ * Grid text styling constants
  */
 export const GRID_TEXT = {
   /**
@@ -175,7 +177,7 @@ export const SMALL_GRID_LINE_OPTIONS = {
   stroke: GRID_COLORS.SMALL_GRID,
   selectable: false,
   evented: false,
-  strokeWidth: SMALL_GRID_LINE_WIDTH,
+  strokeWidth: GRID_LINE_WIDTH.SMALL,
   objectCaching: true,
   hoverCursor: 'default',
   opacity: GRID_OPACITY.SMALL_GRID
@@ -190,7 +192,7 @@ export const LARGE_GRID_LINE_OPTIONS = {
   stroke: GRID_COLORS.LARGE_GRID,
   selectable: false,
   evented: false,
-  strokeWidth: LARGE_GRID_LINE_WIDTH,
+  strokeWidth: GRID_LINE_WIDTH.LARGE,
   objectCaching: true,
   hoverCursor: 'default',
   opacity: GRID_OPACITY.LARGE_GRID
@@ -211,11 +213,16 @@ export const MARKER_TEXT_OPTIONS = {
 };
 
 /**
- * Flag to disable grid markers
- * When true, grid measurements will not be displayed
- * @constant {boolean}
+ * Grid marker visibility constants
  */
-export const DISABLE_GRID_MARKERS = true;
+export const GRID_MARKER = {
+  /**
+   * Flag to disable grid markers
+   * When true, grid measurements will not be displayed
+   * @constant {boolean}
+   */
+  DISABLE: true
+};
 
 /**
  * Determines if small grid should be skipped based on canvas size
@@ -249,3 +256,8 @@ export const calculateGridDensity = (width: number, height: number) => {
     return { smallGridVisible: true, smallGridInterval: 1 };
   }
 };
+
+// For backward compatibility
+export const SMALL_GRID_LINE_WIDTH = GRID_LINE_WIDTH.SMALL;
+export const LARGE_GRID_LINE_WIDTH = GRID_LINE_WIDTH.LARGE;
+export const DISABLE_GRID_MARKERS = GRID_MARKER.DISABLE;

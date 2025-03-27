@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -6,6 +7,106 @@ import { RefreshCw, AlertCircle, Bug, Download } from 'lucide-react';
 import logger from '@/utils/logger';
 import { captureError } from '@/utils/sentryUtils';
 import { toast } from 'sonner';
+
+/**
+ * Emergency canvas constants
+ */
+const EMERGENCY_CANVAS = {
+  /**
+   * Default canvas width in pixels
+   */
+  DEFAULT_WIDTH: 800,
+  
+  /**
+   * Default canvas height in pixels
+   */
+  DEFAULT_HEIGHT: 600,
+  
+  /**
+   * Minimum display height for canvas container in pixels
+   */
+  MIN_HEIGHT: 600,
+  
+  /**
+   * Small grid spacing in pixels
+   */
+  SMALL_GRID_SPACING: 20,
+  
+  /**
+   * Large grid spacing in pixels
+   */
+  LARGE_GRID_SPACING: 100,
+  
+  /**
+   * Small grid line width in pixels
+   */
+  SMALL_GRID_LINE_WIDTH: 0.5,
+  
+  /**
+   * Large grid line width in pixels
+   */
+  LARGE_GRID_LINE_WIDTH: 1,
+  
+  /**
+   * Small grid line color
+   */
+  SMALL_GRID_COLOR: '#dddddd',
+  
+  /**
+   * Large grid line color
+   */
+  LARGE_GRID_COLOR: '#aaaaaa',
+  
+  /**
+   * Label font size in pixels
+   */
+  LABEL_FONT_SIZE: 10,
+  
+  /**
+   * Label color
+   */
+  LABEL_COLOR: '#666666',
+  
+  /**
+   * Canvas background color
+   */
+  BACKGROUND_COLOR: '#f8f9fa',
+  
+  /**
+   * Alert message font size in pixels
+   */
+  ALERT_FONT_SIZE: 20,
+  
+  /**
+   * Alert message color with transparency
+   */
+  ALERT_COLOR: 'rgba(220, 53, 69, 0.9)',
+  
+  /**
+   * Sub-text font size in pixels
+   */
+  SUB_TEXT_FONT_SIZE: 14,
+  
+  /**
+   * Sub-text color with transparency
+   */
+  SUB_TEXT_COLOR: 'rgba(0, 0, 0, 0.8)',
+  
+  /**
+   * Diagnostic text font size in pixels
+   */
+  DIAGNOSTIC_FONT_SIZE: 12,
+  
+  /**
+   * Diagnostic text color with transparency
+   */
+  DIAGNOSTIC_COLOR: 'rgba(0, 0, 0, 0.6)',
+  
+  /**
+   * Vertical spacing between text elements in pixels
+   */
+  TEXT_VERTICAL_SPACING: 15
+};
 
 interface EmergencyCanvasProps {
   onRetry?: () => void;
@@ -22,8 +123,8 @@ interface EmergencyCanvasProps {
  */
 export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({ 
   onRetry,
-  width = 800,
-  height = 600,
+  width = EMERGENCY_CANVAS.DEFAULT_WIDTH,
+  height = EMERGENCY_CANVAS.DEFAULT_HEIGHT,
   diagnosticData = {},
   forceDisableRetry = false
 }) => {
@@ -83,23 +184,23 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
       }
       
       // Clear canvas and set background
-      ctx.fillStyle = '#f8f9fa';
+      ctx.fillStyle = EMERGENCY_CANVAS.BACKGROUND_COLOR;
       ctx.fillRect(0, 0, width, height);
       
       // Draw grid lines
-      ctx.strokeStyle = '#dddddd';
-      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = EMERGENCY_CANVAS.SMALL_GRID_COLOR;
+      ctx.lineWidth = EMERGENCY_CANVAS.SMALL_GRID_LINE_WIDTH;
       
-      // Draw vertical lines every 20px
-      for (let x = 0; x <= width; x += 20) {
+      // Draw vertical lines every SMALL_GRID_SPACING pixels
+      for (let x = 0; x <= width; x += EMERGENCY_CANVAS.SMALL_GRID_SPACING) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, height);
         ctx.stroke();
       }
       
-      // Draw horizontal lines every 20px
-      for (let y = 0; y <= height; y += 20) {
+      // Draw horizontal lines every SMALL_GRID_SPACING pixels
+      for (let y = 0; y <= height; y += EMERGENCY_CANVAS.SMALL_GRID_SPACING) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
@@ -107,11 +208,11 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
       }
       
       // Draw major grid lines
-      ctx.strokeStyle = '#aaaaaa';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = EMERGENCY_CANVAS.LARGE_GRID_COLOR;
+      ctx.lineWidth = EMERGENCY_CANVAS.LARGE_GRID_LINE_WIDTH;
       
-      // Draw vertical lines every 100px
-      for (let x = 0; x <= width; x += 100) {
+      // Draw vertical lines every LARGE_GRID_SPACING pixels
+      for (let x = 0; x <= width; x += EMERGENCY_CANVAS.LARGE_GRID_SPACING) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, height);
@@ -119,14 +220,14 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
         
         // Add labels
         if (x > 0) {
-          ctx.fillStyle = '#666666';
-          ctx.font = '10px sans-serif';
-          ctx.fillText(`${x}px`, x + 2, 10);
+          ctx.fillStyle = EMERGENCY_CANVAS.LABEL_COLOR;
+          ctx.font = `${EMERGENCY_CANVAS.LABEL_FONT_SIZE}px sans-serif`;
+          ctx.fillText(`${x}px`, x + 2, EMERGENCY_CANVAS.LABEL_FONT_SIZE);
         }
       }
       
-      // Draw horizontal lines every 100px
-      for (let y = 0; y <= height; y += 100) {
+      // Draw horizontal lines every LARGE_GRID_SPACING pixels
+      for (let y = 0; y <= height; y += EMERGENCY_CANVAS.LARGE_GRID_SPACING) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
@@ -134,22 +235,22 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
         
         // Add labels
         if (y > 0) {
-          ctx.fillStyle = '#666666';
-          ctx.font = '10px sans-serif';
+          ctx.fillStyle = EMERGENCY_CANVAS.LABEL_COLOR;
+          ctx.font = `${EMERGENCY_CANVAS.LABEL_FONT_SIZE}px sans-serif`;
           ctx.fillText(`${y}px`, 2, y - 2);
         }
       }
       
       // Add emergency mode message
-      ctx.fillStyle = 'rgba(220, 53, 69, 0.9)';
-      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = EMERGENCY_CANVAS.ALERT_COLOR;
+      ctx.font = `bold ${EMERGENCY_CANVAS.ALERT_FONT_SIZE}px sans-serif`;
       const mainText = 'EMERGENCY MODE';
       const textWidth = ctx.measureText(mainText).width;
-      ctx.fillText(mainText, (width - textWidth) / 2, height / 2 - 15);
+      ctx.fillText(mainText, (width - textWidth) / 2, height / 2 - EMERGENCY_CANVAS.TEXT_VERTICAL_SPACING);
       
       // Add explanation
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.font = '14px sans-serif';
+      ctx.fillStyle = EMERGENCY_CANVAS.SUB_TEXT_COLOR;
+      ctx.font = `${EMERGENCY_CANVAS.SUB_TEXT_FONT_SIZE}px sans-serif`;
       
       // Choose the appropriate message based on retry availability
       const subText = canRetry 
@@ -157,14 +258,14 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
         : 'Canvas blocked. Please refresh the page.';
       
       const subTextWidth = ctx.measureText(subText).width;
-      ctx.fillText(subText, (width - subTextWidth) / 2, height / 2 + 15);
+      ctx.fillText(subText, (width - subTextWidth) / 2, height / 2 + EMERGENCY_CANVAS.TEXT_VERTICAL_SPACING);
       
       // Add diagnostic message
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      ctx.font = '12px sans-serif';
+      ctx.fillStyle = EMERGENCY_CANVAS.DIAGNOSTIC_COLOR;
+      ctx.font = `${EMERGENCY_CANVAS.DIAGNOSTIC_FONT_SIZE}px sans-serif`;
       const diagText = 'Click "Debug Info" for details.';
       const diagWidth = ctx.measureText(diagText).width;
-      ctx.fillText(diagText, (width - diagWidth) / 2, height / 2 + 40);
+      ctx.fillText(diagText, (width - diagWidth) / 2, height / 2 + (EMERGENCY_CANVAS.TEXT_VERTICAL_SPACING * 2));
       
       // Mark as rendered successfully
       setIsGridRendered(true);
@@ -205,7 +306,7 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
   return (
     <div className="relative">
       <Card className="p-0 bg-white shadow-md rounded-lg overflow-visible">
-        <div className="w-full h-full relative" style={{ minHeight: '600px' }}>
+        <div className="w-full h-full relative" style={{ minHeight: `${EMERGENCY_CANVAS.MIN_HEIGHT}px` }}>
           <canvas 
             ref={canvasRef} 
             className="w-full h-full border border-gray-100 rounded-md"

@@ -6,34 +6,44 @@
  */
 
 /**
- * Maximum line length in characters
- * Prevents excessively long lines that harm readability
- * @constant {number}
+ * Code style limits for readability
  */
-export const MAX_LINE_LENGTH = 100;
+export const CODE_STYLE_LIMITS = {
+  /**
+   * Maximum line length in characters
+   * Prevents excessively long lines that harm readability
+   * @constant {number}
+   */
+  MAX_LINE_LENGTH: 100,
+  
+  /**
+   * Maximum number of lines per function
+   * Encourages breaking down large functions for maintainability
+   * @constant {number}
+   */
+  MAX_FUNCTION_LINES: 50
+};
 
 /**
- * Maximum number of lines per function
- * Encourages breaking down large functions for maintainability
- * @constant {number}
+ * Complexity limits for maintainability
  */
-export const MAX_FUNCTION_LINES = 50;
-
-/**
- * Maximum cyclomatic complexity
- * Limits the number of logical paths through a function
- * Prevents overly complex code that's hard to understand and test
- * @constant {number}
- */
-export const MAX_COMPLEXITY = 10;
-
-/**
- * Maximum nesting depth
- * Limits how deeply control structures can be nested
- * Prevents code that's difficult to understand and maintain
- * @constant {number}
- */
-export const MAX_DEPTH = 3;
+export const COMPLEXITY_LIMITS = {
+  /**
+   * Maximum cyclomatic complexity
+   * Limits the number of logical paths through a function
+   * Prevents overly complex code that's hard to understand and test
+   * @constant {number}
+   */
+  MAX_COMPLEXITY: 10,
+  
+  /**
+   * Maximum nesting depth
+   * Limits how deeply control structures can be nested
+   * Prevents code that's difficult to understand and maintain
+   * @constant {number}
+   */
+  MAX_DEPTH: 3
+};
 
 /**
  * Prettier formatting options
@@ -71,3 +81,9 @@ export const PRETTIER_OPTIONS = {
    */
   tabWidth: 2
 };
+
+// For backward compatibility
+export const MAX_LINE_LENGTH = CODE_STYLE_LIMITS.MAX_LINE_LENGTH;
+export const MAX_FUNCTION_LINES = CODE_STYLE_LIMITS.MAX_FUNCTION_LINES;
+export const MAX_COMPLEXITY = COMPLEXITY_LIMITS.MAX_COMPLEXITY;
+export const MAX_DEPTH = COMPLEXITY_LIMITS.MAX_DEPTH;

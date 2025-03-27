@@ -12,13 +12,47 @@ import { DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from "@/constants/numeric
  * Canvas dimensions constants
  */
 export const CANVAS_DIMENSIONS = {
+  /**
+   * Default width in pixels
+   * @constant {number}
+   */
   DEFAULT_WIDTH: DEFAULT_CANVAS_WIDTH,
+  
+  /**
+   * Default height in pixels
+   * @constant {number}
+   */
   DEFAULT_HEIGHT: DEFAULT_CANVAS_HEIGHT,
+  
+  /**
+   * Minimum width in pixels
+   * @constant {number}
+   */
   MIN_WIDTH: 400,
+  
+  /**
+   * Minimum height in pixels
+   * @constant {number}
+   */
   MIN_HEIGHT: 300,
-  DIMENSION_CHANGE_TOLERANCE: 5, // Minimum pixel difference to trigger resize
-  RESIZE_DEBOUNCE_MS: 500, // Debounce time for resize events
-  STROKE_WIDTH: 1 // Default stroke width for canvas elements
+  
+  /**
+   * Minimum pixel difference to trigger resize
+   * @constant {number}
+   */
+  DIMENSION_CHANGE_TOLERANCE: 5,
+  
+  /**
+   * Debounce time for resize events in milliseconds
+   * @constant {number}
+   */
+  RESIZE_DEBOUNCE_MS: 500,
+  
+  /**
+   * Default stroke width for canvas elements in pixels
+   * @constant {number}
+   */
+  STROKE_WIDTH: 1
 };
 
 /**

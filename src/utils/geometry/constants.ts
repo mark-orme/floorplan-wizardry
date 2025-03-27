@@ -36,27 +36,110 @@ export {
   GRID_SPACING
 };
 
-// Angular constants
-export const DEGREES_TO_RADIANS = Math.PI / 180;
-export const RADIANS_TO_DEGREES = 180 / Math.PI;
+/**
+ * Angular conversion constants
+ */
+export const ANGLE_CONVERSION = {
+  /**
+   * Conversion factor from degrees to radians
+   * @constant {number}
+   */
+  DEGREES_TO_RADIANS: Math.PI / 180,
+  
+  /**
+   * Conversion factor from radians to degrees
+   * @constant {number}
+   */
+  RADIANS_TO_DEGREES: 180 / Math.PI
+};
 
-// Standard angles for snapping (in degrees)
-export const STANDARD_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+/**
+ * Angle constants
+ */
+export const ANGLES = {
+  /**
+   * Standard angles for snapping (in degrees)
+   * @constant {number[]}
+   */
+  STANDARD: [0, 45, 90, 135, 180, 225, 270, 315]
+};
 
-// Precision constants
-export const COORDINATE_PRECISION = 3; // Decimal places for coordinate display
-export const ANGLE_PRECISION = 1; // Decimal places for angle display
+/**
+ * Precision constants
+ */
+export const PRECISION = {
+  /**
+   * Decimal places for coordinate display
+   * @constant {number}
+   */
+  COORDINATE: 3,
+  
+  /**
+   * Decimal places for angle display
+   * @constant {number}
+   */
+  ANGLE: 1
+};
 
-// Distance-related constants
-export const MIN_VISIBLE_DISTANCE = 0.05; // Minimum distance to show measurement tooltip (in meters)
-export const DEFAULT_TOOLTIP_MAX_WIDTH = 120; // Default max width for tooltips in pixels
+/**
+ * Distance constants
+ */
+export const DISTANCE = {
+  /**
+   * Minimum distance to show measurement tooltip (in meters)
+   * @constant {number}
+   */
+  MIN_VISIBLE: 0.05,
+  
+  /**
+   * Default max width for tooltips in pixels
+   * @constant {number}
+   */
+  DEFAULT_TOOLTIP_MAX_WIDTH: 120
+};
 
-// Straightening constants
-export const DEFAULT_STRAIGHTENING_THRESHOLD = 5; // Default threshold for line straightening (in degrees)
-export const WALL_ALIGNMENT_THRESHOLD = 3; // Threshold for detecting aligned walls (in degrees)
+/**
+ * Straightening constants
+ */
+export const STRAIGHTENING = {
+  /**
+   * Default threshold for line straightening (in degrees)
+   * @constant {number}
+   */
+  DEFAULT_THRESHOLD: 5,
+  
+  /**
+   * Threshold for detecting aligned walls (in degrees)
+   * @constant {number}
+   */
+  WALL_ALIGNMENT_THRESHOLD: 3
+};
 
-// Origin point
+/**
+ * Origin point
+ * @constant {Object}
+ */
 export const ORIGIN_POINT = { x: 0, y: 0 };
 
-// Rounding constants
-export const ROUNDING_FACTOR = 100; // Used for consistent rounding in area calculations
+/**
+ * Rounding constants
+ */
+export const ROUNDING = {
+  /**
+   * Factor used for consistent rounding in area calculations
+   * @constant {number}
+   */
+  FACTOR: 100
+};
+
+// For backward compatibility
+export const DEGREES_TO_RADIANS = ANGLE_CONVERSION.DEGREES_TO_RADIANS;
+export const RADIANS_TO_DEGREES = ANGLE_CONVERSION.RADIANS_TO_DEGREES;
+export const STANDARD_ANGLES = ANGLES.STANDARD;
+export const COORDINATE_PRECISION = PRECISION.COORDINATE;
+export const ANGLE_PRECISION = PRECISION.ANGLE;
+export const MIN_VISIBLE_DISTANCE = DISTANCE.MIN_VISIBLE;
+export const DEFAULT_TOOLTIP_MAX_WIDTH = DISTANCE.DEFAULT_TOOLTIP_MAX_WIDTH;
+export const DEFAULT_STRAIGHTENING_THRESHOLD = STRAIGHTENING.DEFAULT_THRESHOLD;
+export const WALL_ALIGNMENT_THRESHOLD = STRAIGHTENING.WALL_ALIGNMENT_THRESHOLD;
+export const ROUNDING_FACTOR = ROUNDING.FACTOR;
