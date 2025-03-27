@@ -7,13 +7,20 @@ import { calculateMidpoint } from "@/utils/geometry";
 import { snapToGrid, snapLineToStandardAngles } from "@/utils/grid/snapping";
 import { straightenStroke } from "@/utils/geometry/straightening";
 import { formatDistance } from "@/utils/geometry/lineOperations";
-import { isTouchEvent } from "@/utils/fabric";
+import { isTouchEvent, extractClientCoordinates } from "@/utils/fabric"; // Fixed import
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool: DrawingTool;
 }
 
+/**
+ * Custom hook for managing drawing state on canvas
+ * Handles point tracking, snapping, and event processing
+ * 
+ * @param {UseDrawingStateProps} props Hook properties
+ * @returns Drawing state and handler functions
+ */
 export const useDrawingState = ({ 
   fabricCanvasRef, 
   tool 
@@ -50,19 +57,11 @@ export const useDrawingState = ({
     // Convert event to appropriate type
     const canvas = fabricCanvasRef.current;
     
-    // Get pointer position
-    let pointer;
+    // Get pointer position using the extractClientCoordinates utility
+    const coords = extractClientCoordinates(e);
+    if (!coords) return;
     
-    if (isTouchEvent(e)) {
-      if (e.touches && e.touches[0]) {
-        pointer = canvas.getPointer({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY } as any);
-      } else {
-        return; // No valid touch data
-      }
-    } else {
-      pointer = canvas.getPointer(e as any);
-    }
-    
+    const pointer = canvas.getPointer(coords as any);
     if (!pointer) return;
     
     // Create point from pointer
@@ -90,19 +89,11 @@ export const useDrawingState = ({
     // Always update cursor position for hover effects
     const canvas = fabricCanvasRef.current;
     
-    // Get pointer position
-    let pointer;
+    // Get pointer position using the extractClientCoordinates utility
+    const coords = extractClientCoordinates(e);
+    if (!coords) return;
     
-    if (isTouchEvent(e)) {
-      if (e.touches && e.touches[0]) {
-        pointer = canvas.getPointer({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY } as any);
-      } else {
-        return; // No valid touch data
-      }
-    } else {
-      pointer = canvas.getPointer(e as any);
-    }
-    
+    const pointer = canvas.getPointer(coords as any);
     if (!pointer) return;
     
     // Create point from pointer

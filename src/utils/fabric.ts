@@ -35,7 +35,7 @@ export {
   forceCleanCanvasElement,
   resetCanvasStateTracker,
   isCanvasElementInitialized,
-  markCanvasInitialized,
+  markCanvasAsInitialized, // Fixed the name to match export
   isCanvasElementInDOM
 } from './fabric/canvasCleanup';
 
@@ -65,6 +65,21 @@ export {
   initializeDrawingBrush, 
   addPressureSensitivity 
 } from './fabricBrush';
+
+// Event type checking utilities
+export {
+  isTouchEvent,
+  isMouseEvent,
+  isKeyboardEvent,
+  extractClientCoordinates,
+  getTouchCount
+} from './fabric/events';
+
+// Selection mode utilities
+export {
+  enableSelection,
+  disableSelection
+} from './fabric/selection';
 
 // Export touch/gesture event functions without internal implementation details
 export {

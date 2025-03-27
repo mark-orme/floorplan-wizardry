@@ -1,11 +1,10 @@
-
 /**
  * Grid rendering tests
  * Validates that grid components render correctly under various conditions
  * @module tests/grid/gridRendering
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Canvas, Line } from 'fabric';
+import { Canvas, Line, Object as FabricObject } from 'fabric';
 import { createGridLines, calculateGridDimensions, createCompleteGrid, isGridObject } from '@/utils/gridUtils';
 import { renderGridComponents } from '@/utils/gridRenderer';
 

@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for processing points in drawing operations
  * Handles point transformation and grid snapping
@@ -8,7 +7,7 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
-import { isTouchEvent } from "@/utils/fabric";
+import { isTouchEvent, extractClientCoordinates } from "@/utils/fabric"; // Fixed import
 import { snapToGrid } from "@/utils/grid/core"; // Import from core directly
 import { straightenStroke } from "@/utils/geometry/straightening";
 import { handleError } from "@/utils/errorHandling";
@@ -63,24 +62,15 @@ export const usePointProcessing = ({
     try {
       if (!fabricCanvasRef.current) return null;
 
-      let clientX: number;
-      let clientY: number;
-
-      if (isTouchEvent(e)) {
-        clientX = e.touches[0]?.clientX || 0;
-        clientY = e.touches[0]?.clientY || 0;
-      } else {
-        clientX = (e as MouseEvent).clientX;
-        clientY = (e as MouseEvent).clientY;
-      }
-
-      if (clientX === undefined || clientY === undefined) {
-        console.warn("ClientX or ClientY is undefined. Touch event might be incomplete.");
+      // Use the utility function to extract coordinates safely
+      const coords = extractClientCoordinates(e);
+      if (!coords) {
+        console.warn("Could not extract coordinates from event");
         return null;
       }
 
       // Create a pointer event-like object that Fabric.js can process
-      const pointer = fabricCanvasRef.current.getPointer({ clientX, clientY } as any);
+      const pointer = fabricCanvasRef.current.getPointer(coords as any);
 
       if (!pointer || pointer.x === undefined || pointer.y === undefined) {
         console.warn("Pointer or pointer coordinates are undefined.");
