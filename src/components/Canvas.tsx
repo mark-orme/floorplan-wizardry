@@ -227,6 +227,6 @@ declare global {
   }
   
   interface Window {
-    fabricCanvasInstances?: fabric.Canvas[]; // Use fabric.Canvas[] to match global.d.ts
+    fabricCanvasInstances?: FabricCanvas[]; // Use imported FabricCanvas type
   }
 }
