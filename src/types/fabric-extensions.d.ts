@@ -91,3 +91,14 @@ declare module 'fabric' {
     };
   }
 }
+
+// Add global type extensions for the fabric canvas instances
+declare global {
+  interface Window {
+    fabricCanvasInstances?: fabric.Canvas[];
+  }
+  
+  interface HTMLCanvasElement {
+    _fabric?: unknown;
+  }
+}
