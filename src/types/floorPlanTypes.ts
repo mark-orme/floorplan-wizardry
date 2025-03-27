@@ -3,11 +3,10 @@
  * Floor Plan type definitions
  * @module floorPlanTypes
  */
-import type { Point, Stroke } from './drawingTypes';
+import type { Point, Stroke, Wall, Room, PaperSize } from './drawingTypes';
 
-// These are defined in drawingTypes.ts, so just importing them here
-export type { Wall, Room, PaperSize } from './drawingTypes';
-export type { Point, Stroke };
+// Export these types for backwards compatibility
+export type { Point, Stroke, Wall, Room, PaperSize };
 
 /**
  * Floor Plan interface

@@ -1,4 +1,3 @@
-
 /**
  * Drawing state type definitions
  * @module drawingTypes
