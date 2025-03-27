@@ -5,7 +5,8 @@
  * @module drawingTypes
  */
 import { openDB } from 'idb';
-import type { FloorPlan, Point, Stroke, PaperSize } from '@/types/floorPlanTypes';
+import type { FloorPlan, Stroke, PaperSize } from '@/types/floorPlanTypes';
+import type { Point } from '@/types/core/Point';
 import { 
   GRID_SPACING,
   PIXELS_PER_METER,

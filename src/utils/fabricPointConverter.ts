@@ -4,7 +4,7 @@
  * @module fabricPointConverter
  */
 import { Point as FabricPoint } from 'fabric';
-import { Point } from '@/types/floorPlanTypes';
+import { Point } from '@/types/core/Point';
 
 /**
  * Converts a Point to a FabricPoint

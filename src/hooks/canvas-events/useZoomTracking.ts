@@ -70,6 +70,8 @@ export const useZoomTracking = (props: UseZoomTrackingProps): UseZoomTrackingRes
     currentZoom,
     register,
     unregister,
-    cleanup
+    cleanup,
+    // Add registerZoomTracking alias for compatibility with tests
+    registerZoomTracking: register
   };
 };

@@ -5,7 +5,8 @@
  */
 
 // Re-export types from floorPlanTypes.ts using export type for TypeScript isolatedModules compatibility
-export type { FloorPlan, Wall, Room, Point, Stroke, PaperSize } from '@/types/floorPlanTypes';
+export type { FloorPlan, Wall, Room, Stroke, PaperSize } from '@/types/floorPlanTypes';
+export type { Point } from '@/types/core/Point';
 
 import { 
   PIXELS_PER_METER,

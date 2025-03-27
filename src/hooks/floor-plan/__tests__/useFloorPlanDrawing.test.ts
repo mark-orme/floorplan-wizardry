@@ -1,3 +1,4 @@
+
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
 import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
@@ -43,12 +44,12 @@ jest.mock('fabric', () => {
 
 describe('useFloorPlanDrawing', () => {
   let fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  let setFloorPlans: jest.Mock;
+  let setFloorPlan: jest.Mock;
   let setGia: jest.Mock;
 
   beforeEach(() => {
     fabricCanvasRef = { current: new FabricCanvas() } as any;
-    setFloorPlans = jest.fn();
+    setFloorPlan = jest.fn();
     setGia = jest.fn();
   });
 
@@ -60,7 +61,7 @@ describe('useFloorPlanDrawing', () => {
     const { result } = renderHook(() =>
       useFloorPlanDrawing({
         fabricCanvasRef,
-        setFloorPlans,
+        setFloorPlan,
         currentFloor: 0,
         setGia,
       })
@@ -73,7 +74,7 @@ describe('useFloorPlanDrawing', () => {
     const { result } = renderHook(() =>
       useFloorPlanDrawing({
         fabricCanvasRef,
-        setFloorPlans,
+        setFloorPlan,
         currentFloor: 0,
         setGia,
       })
@@ -84,14 +85,14 @@ describe('useFloorPlanDrawing', () => {
       result.current.processCreatedPath(mockPath);
     });
 
-    expect(setFloorPlans).toHaveBeenCalled();
+    expect(setFloorPlan).toHaveBeenCalled();
   });
 
   it('should calculate GIA when processing a path', () => {
     const { result } = renderHook(() =>
       useFloorPlanDrawing({
         fabricCanvasRef,
-        setFloorPlans,
+        setFloorPlan,
         currentFloor: 0,
         setGia,
       })
@@ -109,7 +110,7 @@ describe('useFloorPlanDrawing', () => {
     const { result } = renderHook(() =>
       useFloorPlanDrawing({
         fabricCanvasRef,
-        setFloorPlans,
+        setFloorPlan,
         currentFloor: 0,
         setGia,
       })
@@ -124,14 +125,14 @@ describe('useFloorPlanDrawing', () => {
       result.current.processCreatedPath(mockPath);
     });
 
-    expect(setFloorPlans).not.toHaveBeenCalled();
+    expect(setFloorPlan).not.toHaveBeenCalled();
   });
 
   it('should update floor plans with new stroke data', () => {
     const { result } = renderHook(() =>
       useFloorPlanDrawing({
         fabricCanvasRef,
-        setFloorPlans,
+        setFloorPlan,
         currentFloor: 0,
         setGia,
       })
@@ -142,7 +143,7 @@ describe('useFloorPlanDrawing', () => {
       result.current.processCreatedPath(mockPath);
     });
 
-    expect(setFloorPlans).toHaveBeenCalledWith(expect.any(Function));
+    expect(setFloorPlan).toHaveBeenCalledWith(expect.any(Function));
   });
 
   it('should handle floor plans with existing strokes', () => {
@@ -157,17 +158,17 @@ describe('useFloorPlanDrawing', () => {
       canvasData: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      gia: 0, // Add the missing gia property
+      gia: 0, 
       level: 0
     };
 
     const { result } = renderHook(() =>
       useFloorPlanDrawing({
         fabricCanvasRef,
-        setFloorPlans,
+        floorPlan: testFloorPlan,
+        setFloorPlan,
         currentFloor: 0,
         setGia,
-        floorPlans: [testFloorPlan]
       })
     );
 
@@ -176,7 +177,7 @@ describe('useFloorPlanDrawing', () => {
       result.current.processCreatedPath(mockPath);
     });
 
-    expect(setFloorPlans).toHaveBeenCalledWith(expect.any(Function));
+    expect(setFloorPlan).toHaveBeenCalledWith(expect.any(Function));
   });
 
   it('should handle floor plans with existing strokes', () => {
@@ -197,17 +198,17 @@ describe('useFloorPlanDrawing', () => {
       canvasData: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      gia: 0, // Add the missing gia property
+      gia: 0,
       level: 0
     };
 
     const { result } = renderHook(() =>
       useFloorPlanDrawing({
         fabricCanvasRef,
-        setFloorPlans,
+        floorPlan: testFloorPlanWithStrokes,
+        setFloorPlan,
         currentFloor: 0,
         setGia,
-        floorPlans: [testFloorPlanWithStrokes]
       })
     );
 
@@ -216,6 +217,6 @@ describe('useFloorPlanDrawing', () => {
       result.current.processCreatedPath(mockPath);
     });
 
-    expect(setFloorPlans).toHaveBeenCalledWith(expect.any(Function));
+    expect(setFloorPlan).toHaveBeenCalledWith(expect.any(Function));
   });
 });

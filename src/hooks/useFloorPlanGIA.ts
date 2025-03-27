@@ -1,13 +1,12 @@
-
 /**
- * Custom hook for calculating Gross Internal Area (GIA)
+ * Hook for calculating Gross Internal Area (GIA) for floor plans
  * @module useFloorPlanGIA
  */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline as FabricPolyline, Object as FabricObject } from "fabric";
-import { PIXELS_PER_METER } from "@/utils/drawing";
-import { Point } from "@/types/floorPlanTypes";
-import { calculateGIA } from "@/utils/drawing";
+import { useCallback } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { FloorPlan } from '@/types/floorPlanTypes';
+import { Point } from '@/types/core/Point';
+import { calculateGIA } from '@/utils/geometry';
 
 interface UseFloorPlanGIAProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;

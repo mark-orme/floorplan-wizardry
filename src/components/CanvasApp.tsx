@@ -8,7 +8,8 @@ import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
-import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import { DebugInfoState } from "@/types/debugTypes";
 import { ZoomDirection } from "@/types/drawingTypes";
 import { DrawingTool } from "@/constants/drawingModes";
 
@@ -55,7 +56,7 @@ export const CanvasApp = () => {
   // Create a safe debug info object with required properties for type compatibility
   const safeDebugInfo: DebugInfoState = {
     ...DEFAULT_DEBUG_STATE,
-    ...(debugInfo as Partial<DebugInfoState>)
+    ...(debugInfo || {})
   };
 
   return (

@@ -9,6 +9,9 @@ import { BRUSH_CONSTANTS } from '@/constants/brushConstants';
 import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
 import { DrawingTool } from '@/constants/drawingModes';
 
+// Export DrawingTool for backward compatibility
+export type { DrawingTool };
+
 /**
  * Canvas state interface
  */

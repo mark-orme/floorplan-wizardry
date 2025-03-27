@@ -4,6 +4,9 @@
  * @module types/floorPlanTypes
  */
 
+// Re-export Point from core/Point
+export type { Point } from './core/Point';
+
 export type {
   Floor,
   FloorOptions,
