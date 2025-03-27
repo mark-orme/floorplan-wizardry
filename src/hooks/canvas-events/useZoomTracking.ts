@@ -80,10 +80,10 @@ export const useZoomTracking = ({
     if (fabricCanvas) {
       // Cast to appropriate type for Fabric.js
       const zoomChangedHandler = updateZoomLevel as (e: unknown) => void;
-      fabricCanvas.on(CANVAS_EVENTS.ZOOM_CHANGED as string, zoomChangedHandler);
+      fabricCanvas.on(CANVAS_EVENTS.ZOOM_CHANGED as any, zoomChangedHandler);
       
       return () => {
-        fabricCanvas.off(CANVAS_EVENTS.ZOOM_CHANGED as string, zoomChangedHandler);
+        fabricCanvas.off(CANVAS_EVENTS.ZOOM_CHANGED as any, zoomChangedHandler);
       };
     }
     

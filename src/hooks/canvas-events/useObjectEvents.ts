@@ -4,7 +4,7 @@
  * @module useObjectEvents
  */
 import { useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, TPointerEventInfo } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import logger from "@/utils/logger";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 
@@ -62,15 +62,15 @@ export const useObjectEvents = ({
       saveCurrentState();
     };
     
-    // Type the event string for canvas with "as string", this masks the event string
-    // to be treated as a valid event key for the canvas's event system
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as string, handleObjectModified);
-    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as string, handleObjectRemoved);
+    // Use a proper type assertion that works with fabric's event system
+    // Cast the event name as any to bypass type checking, then the handler will be properly typed
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified);
+    fabricCanvas.on(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as string, handleObjectModified);
-        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as string, handleObjectRemoved);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_MODIFIED as any, handleObjectModified);
+        fabricCanvas.off(OBJECT_EVENTS.OBJECT_REMOVED as any, handleObjectRemoved);
       }
     };
   }, [fabricCanvasRef, saveCurrentState]);
