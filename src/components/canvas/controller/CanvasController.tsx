@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { FloorPlan } from '@/types/floorPlanTypes';
@@ -74,6 +75,25 @@ export interface CanvasControllerContextValue {
 const CanvasControllerContext = createContext<CanvasControllerContextValue | null>(null);
 
 /**
+ * Create initial floor plan with all required properties
+ * @returns {FloorPlan} A complete FloorPlan object with default values
+ */
+const createInitialFloorPlan = (): FloorPlan => {
+  return {
+    id: '0',
+    name: 'Ground Floor',
+    label: 'Ground Floor',
+    walls: [],
+    rooms: [],
+    strokes: [],
+    gia: 0,
+    canvasData: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+};
+
+/**
  * Provider component for Canvas Controller context
  * Manages state and operations for the canvas
  * 
@@ -84,16 +104,7 @@ const CanvasControllerContext = createContext<CanvasControllerContextValue | nul
 export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tool, setTool] = useState<DrawingTool>('select');
   const [gia, setGia] = useState<number>(0);
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([{ 
-    id: '0', 
-    name: 'Ground Floor', 
-    label: 'Ground Floor',
-    gia: 0,
-    strokes: [],
-    canvasData: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }]);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([createInitialFloorPlan()]);
   const [currentFloor, setCurrentFloor] = useState<number>(INITIAL_FLOOR_INDEX);
   const [lineThickness, setLineThickness] = useState<number>(INITIAL_LINE_THICKNESS);
   const [lineColor, setLineColor] = useState<string>(DEFAULT_LINE_COLOR);
@@ -196,8 +207,10 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
         id: `${newFloorIndex}`,
         name: `Floor ${newFloorIndex + 1}`,
         label: `Floor ${newFloorIndex + 1}`,
-        gia: 0,
+        walls: [],
+        rooms: [],
         strokes: [],
+        gia: 0,
         canvasData: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()

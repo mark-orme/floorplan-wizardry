@@ -90,3 +90,39 @@ export interface GridCreationContext {
   /** Grid offset factor */
   offsetFactor: number;
 }
+
+/**
+ * Normalize a point to ensure it has valid x and y coordinates
+ * @param {Point | null | undefined} point - The point to normalize
+ * @returns {Point} A valid point object with x and y coordinates
+ */
+export const normalizePoint = (point?: Point | null): Point => {
+  if (!point) return { x: 0, y: 0 };
+  return {
+    x: typeof point.x === 'number' ? point.x : 0,
+    y: typeof point.y === 'number' ? point.y : 0
+  };
+};
+
+/**
+ * Type guard to check if a value is a valid Point
+ * @param {any} value - The value to check
+ * @returns {boolean} True if the value is a valid Point
+ */
+export const isPoint = (value: any): value is Point => {
+  return value && 
+    typeof value === 'object' && 
+    typeof value.x === 'number' && 
+    typeof value.y === 'number';
+};
+
+/**
+ * Type guard to check if a value is a valid GridPoint
+ * @param {any} value - The value to check
+ * @returns {boolean} True if the value is a valid GridPoint
+ */
+export const isGridPoint = (value: any): value is GridPoint => {
+  return isPoint(value) && 
+    (value.snapped === undefined || typeof value.snapped === 'boolean');
+};
+
