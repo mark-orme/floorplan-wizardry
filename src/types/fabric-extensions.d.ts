@@ -10,6 +10,5 @@ interface HTMLCanvasElement {
    * Reference to the Fabric.js canvas instance attached to this element
    * Added by Fabric.js at runtime but not included in standard TypeScript definitions
    */
-  _fabric?: any;
+  _fabric?: unknown;
 }
-

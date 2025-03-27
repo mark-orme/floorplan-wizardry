@@ -1,4 +1,3 @@
-
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -33,7 +32,7 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "error", // Keep as error
-      "@typescript-eslint/no-magic-numbers": ["error", { // Changed to error
+      "@typescript-eslint/no-magic-numbers": ["error", { // Keep as error
         "ignore": [0, 1, -1, 2], // Common values that don't need explaining
         "ignoreArrayIndexes": true,
         "ignoreDefaultValues": true,
@@ -43,6 +42,26 @@ export default tseslint.config(
         "enforceConst": true,
         "detectObjects": false
       }],
+      
+      // New typing-specific rules
+      "@typescript-eslint/no-explicit-any": "error", // Prohibit using 'any' type
+      "@typescript-eslint/ban-ts-comment": ["error", {  // Prohibit @ts-ignore and similar
+        "ts-ignore": "true",
+        "ts-nocheck": "true",
+        "minimumDescriptionLength": 10 // Require explanation if using ts-expect-error
+      }],
+      "@typescript-eslint/explicit-function-return-type": ["error", { // Require return types
+        "allowExpressions": true,
+        "allowTypedFunctionExpressions": true,
+        "allowHigherOrderFunctions": true
+      }],
+      "@typescript-eslint/explicit-member-accessibility": "error", // Require explicit accessibility modifiers
+      "@typescript-eslint/no-non-null-assertion": "error", // Avoid non-null assertions (!)
+      "@typescript-eslint/prefer-as-const": "error", // Prefer as const to literal type
+      "@typescript-eslint/consistent-type-definitions": ["error", "interface"], // Use interface instead of type where possible
+      "@typescript-eslint/array-type": ["error", { "default": "array" }], // Consistent array type syntax
+      "@typescript-eslint/consistent-type-imports": "error", // Consistent type imports
+      "@typescript-eslint/no-unnecessary-type-assertion": "error", // Avoid unnecessary type assertions
       
       // JSDoc rules (already in place)
       "jsdoc/require-jsdoc": ["warn", {
@@ -60,22 +79,20 @@ export default tseslint.config(
       }],
       "jsdoc/require-param": "warn",
       "jsdoc/require-param-description": "warn",
-      "jsdoc/require-param-name": "error", // Changed to error
+      "jsdoc/require-param-name": "error", // Keep as error
       "jsdoc/require-param-type": "warn",
       "jsdoc/require-returns": "warn",
       "jsdoc/require-returns-description": "warn",
       "jsdoc/require-returns-type": "warn",
-      "jsdoc/check-param-names": "error", // Changed to error
-      "jsdoc/check-tag-names": "error", // Changed to error
-      "jsdoc/check-types": "error", // Changed to error
-      "jsdoc/valid-types": "error", // Changed to error
+      "jsdoc/check-param-names": "error", // Keep as error
+      "jsdoc/check-tag-names": "error", // Keep as error
+      "jsdoc/check-types": "error", // Keep as error
+      "jsdoc/valid-types": "error", // Keep as error
       "jsdoc/no-undefined-types": "warn",
       
-      // New rules for code quality
-      
-      // Naming conventions
+      // Naming conventions and other rules (already in place)
       "@typescript-eslint/naming-convention": [
-        "error", // Changed to error
+        "error", // Keep as error
         {
           "selector": "variable",
           "format": ["camelCase", "UPPER_CASE", "PascalCase"]
@@ -95,7 +112,7 @@ export default tseslint.config(
         }
       ],
       
-      // Maximum line length
+      // Other rules (already in place)
       "max-len": ["warn", { 
         "code": MAX_LINE_LENGTH, 
         "ignoreComments": true, 
@@ -104,58 +121,36 @@ export default tseslint.config(
         "ignoreTemplateLiterals": true,
         "ignoreRegExpLiterals": true
       }],
-      
-      // Maximum function length
-      "max-lines-per-function": ["error", { // Changed to error
+      "max-lines-per-function": ["error", { // Keep as error
         "max": MAX_FUNCTION_LINES, 
         "skipBlankLines": true, 
         "skipComments": true 
       }],
-      
-      // Import order
       "sort-imports": ["warn", {
         "ignoreCase": true,
         "ignoreDeclarationSort": true
       }],
-      
-      // Complexity limits
-      "complexity": ["error", MAX_COMPLEXITY], // Changed to error
-      
-      // Unused variables and imports (typescript-eslint handles no-unused-vars)
+      "complexity": ["error", MAX_COMPLEXITY], // Keep as error
       "no-unused-expressions": "error", // Keep as error
-      
-      // Consistent spacing and formatting
       "indent": ["warn", 2, { "SwitchCase": 1 }],
       "quotes": ["warn", "double", { "avoidEscape": true }],
-      "semi": ["error", "always"], // Changed to error
+      "semi": ["error", "always"], // Keep as error
       "comma-dangle": ["warn", "always-multiline"],
       "object-curly-spacing": ["warn", "always"],
       "array-bracket-spacing": ["warn", "never"],
-      
-      // Prevent deeply nested code
-      "max-depth": ["error", MAX_DEPTH], // Changed to error
-      
-      // Encourage consistent use of destructuring
+      "max-depth": ["error", MAX_DEPTH], // Keep as error
       "prefer-destructuring": ["warn", {
         "array": true,
         "object": true
       }],
-      
-      // Enforce consistent arrow function syntax
       "arrow-body-style": ["warn", "as-needed"],
-      
-      // Enforce consistent use of promise methods
-      "promise/catch-or-return": "error", // Changed to error
-      "promise/always-return": "error", // Changed to error
-      
-      // Enforce consistent React component definitions
+      "promise/catch-or-return": "error", // Keep as error
+      "promise/always-return": "error", // Keep as error
       "react/function-component-definition": ["warn", {
         "namedComponents": "arrow-function",
         "unnamedComponents": "arrow-function"
       }],
-      
-      // Enforce consistent React Hook usage
-      "react-hooks/exhaustive-deps": "error" // Changed to error
+      "react-hooks/exhaustive-deps": "error" // Keep as error
     },
   }
 );
