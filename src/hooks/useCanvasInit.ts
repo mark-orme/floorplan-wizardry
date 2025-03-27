@@ -1,11 +1,10 @@
 
 /**
  * Canvas initialization hook
- * Handles the initialization of the Fabric.js canvas
+ * Handles additional canvas initialization logic
  * @module useCanvasInit
  */
 import { useEffect } from 'react';
-import { useCanvasController } from '@/components/canvas/controller/CanvasController';
 import { toast } from 'sonner';
 
 interface UseCanvasInitProps {
@@ -13,37 +12,33 @@ interface UseCanvasInitProps {
 }
 
 /**
- * Hook for initializing the canvas with proper error handling
+ * Hook for canvas initialization
+ * Performs additional setup and error handling
+ * 
  * @param {UseCanvasInitProps} props - Hook properties
+ * @returns {void}
  */
-export const useCanvasInit = ({ onError }: UseCanvasInitProps) => {
-  // Get canvas controller context
-  const canvasController = useCanvasController();
-
-  // Handle any initialization errors
+export const useCanvasInit = ({ onError }: UseCanvasInitProps): void => {
+  // Listen for canvas initialization errors
   useEffect(() => {
-    const handleInitError = (error: Error) => {
-      console.error("Canvas initialization error:", error);
-      
-      // Show error toast
-      toast.error("Canvas initialization failed. Please try refreshing the page.");
+    const handleCanvasInitError = (event: CustomEvent) => {
+      console.error("Canvas initialization error:", event.detail);
       
       if (onError) {
         onError();
       }
     };
-
-    // Set up error handler for canvas initialization errors
-    const listener = (e: any) => {
-      handleInitError(e.detail || new Error('Unknown canvas error'));
-    };
     
-    window.addEventListener('canvas-init-error', listener);
-
+    // Add event listener
+    window.addEventListener('canvas-init-error', handleCanvasInitError as EventListener);
+    
+    console.log("Canvas initialization hook attached");
+    
+    // Cleanup function
     return () => {
-      window.removeEventListener('canvas-init-error', listener);
+      window.removeEventListener('canvas-init-error', handleCanvasInitError as EventListener);
     };
   }, [onError]);
-
-  return null;
+  
+  return;
 };

@@ -1,20 +1,27 @@
 
 /**
- * Grid management hooks module
- * Re-exports all grid management functionality
+ * Grid management module
+ * Exports grid management related types and utilities
  * @module grid-management
  */
 
-// Export types
-export * from "./types";
+export interface GridAttemptTracker {
+  count: number;
+  maxAttempts: number;
+  successful: boolean;
+  lastAttemptTime: number;
+}
 
-// Export grid attempt tracker
-export * from "./gridAttemptTracker";
+export const incrementAttemptCount = (status: GridAttemptTracker): GridAttemptTracker => ({
+  ...status,
+  count: status.count + 1,
+  lastAttemptTime: Date.now()
+});
 
-// Export constants
-export * from "./constants";
+export const markCreationSuccessful = (status: GridAttemptTracker): GridAttemptTracker => ({
+  ...status,
+  successful: true
+});
 
-// Export hooks
-export * from "./useGridCreationAttempt";
-export * from "./useDimensionChangeHandler";
-export * from "./useGridManagement";
+export const isMaxAttemptsReached = (status: GridAttemptTracker): boolean => 
+  status.count >= status.maxAttempts;

@@ -1,17 +1,17 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject, Line, Circle } from 'fabric';
+import { Canvas, Object as FabricObject, Line, Circle } from 'fabric';
 import { toast } from 'sonner';
 
 /**
  * Creates a basic emergency grid for debugging and recovery purposes
  * Used when normal grid creation fails
  * 
- * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {Canvas} canvas - The fabric canvas instance
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
  * @returns {FabricObject[]} The created grid objects
  */
 export const createBasicEmergencyGrid = (
-  canvas: FabricCanvas, 
+  canvas: Canvas, 
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] => {
   if (!canvas) {
@@ -121,6 +121,8 @@ export const createBasicEmergencyGrid = (
     // Force render to show grid
     canvas.renderAll();
     
+    console.log(`Emergency grid created with ${gridObjects.length} objects`);
+    
     return gridObjects;
   } catch (error) {
     console.error("Error creating emergency grid:", error);
@@ -131,12 +133,12 @@ export const createBasicEmergencyGrid = (
 /**
  * Verify if grid exists on the canvas
  * 
- * @param {FabricCanvas | null} canvas - Fabric canvas instance
+ * @param {Canvas | null} canvas - Fabric canvas instance
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @returns {boolean} True if grid exists and is attached to canvas
  */
 export const verifyGridExists = (
-  canvas: FabricCanvas | null,
+  canvas: Canvas | null,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): boolean => {
   if (!canvas) {

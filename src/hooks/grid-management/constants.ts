@@ -1,42 +1,24 @@
 
 /**
  * Grid management constants
- * Constants for grid management functionality
  * @module grid-management/constants
  */
 
 /**
- * Minimum time between grid creation attempts (ms)
+ * Minimum interval between grid creation attempts in milliseconds
  * @constant {number}
  */
-export const MIN_ATTEMPT_INTERVAL = 1000;
+export const MIN_ATTEMPT_INTERVAL = 300;
 
 /**
- * Maximum number of retry attempts
+ * Maximum number of grid creation attempts
  * @constant {number}
  */
-export const MAX_RETRY_ATTEMPTS = 5;
+export const MAX_ATTEMPTS = 5;
 
 /**
- * Base delay for exponential backoff (ms)
+ * Default delay between grid creation attempts in milliseconds
  * @constant {number}
  */
-export const BASE_RETRY_DELAY = 200;
+export const DEFAULT_ATTEMPT_DELAY = 100;
 
-/**
- * Maximum delay for retries (ms)
- * @constant {number}
- */
-export const MAX_RETRY_DELAY = 2000;
-
-/**
- * Initial retry delay (ms)
- * @constant {number}
- */
-export const INITIAL_RETRY_DELAY = 100;
-
-/**
- * Periodic check interval (ms)
- * @constant {number}
- */
-export const PERIODIC_CHECK_INTERVAL = 1000;
