@@ -6,7 +6,7 @@
 import { useCallback, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { createBasicEmergencyGrid, dumpGridState } from "@/utils/grid/gridDebugUtils";
+import { createBasicEmergencyGrid, dumpGridState, forceCreateGrid } from "@/utils/grid/gridDebugUtils";
 
 /**
  * Interface for grid health information
