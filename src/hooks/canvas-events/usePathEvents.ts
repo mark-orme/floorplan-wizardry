@@ -4,14 +4,14 @@
  * @module usePathEvents
  */
 import { useEffect } from "react";
-import type { Canvas as FabricCanvas, Path as FabricPath, TEvent } from "fabric";
+import { Canvas as FabricCanvas, Path as FabricPath, TEvent, TPointerEvent } from "fabric";
 import logger from "@/utils/logger";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 
 /**
  * Event interface with path created
  */
-interface PathCreatedEvent extends TEvent {
+interface PathCreatedEvent extends Partial<TEvent<TPointerEvent>> {
   path: FabricPath;
 }
 
@@ -62,11 +62,11 @@ export const usePathEvents = ({
     };
     
     // Register the event handler with typed casting
-    fabricCanvas.on('path:created', handlePathCreated as unknown as (e: TEvent) => void);
+    fabricCanvas.on('path:created', handlePathCreated as any);
     
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('path:created', handlePathCreated as unknown as (e: TEvent) => void);
+        fabricCanvas.off('path:created', handlePathCreated as any);
       }
     };
   }, [fabricCanvasRef, processCreatedPath, handleMouseUp, saveCurrentState]);

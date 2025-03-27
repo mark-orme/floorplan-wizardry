@@ -1,38 +1,24 @@
+
 /**
- * Hook for managing canvas brush settings
+ * Hook for managing brush settings on the canvas
  * @module useBrushSettings
  */
-import { useEffect, useRef } from "react";
-import type { Canvas as FabricCanvas, TEvent, BaseBrush } from "fabric";
-import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import { useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
 import { DrawingTool } from "@/hooks/useCanvasState";
-import logger from "@/utils/logger";
+import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import { BRUSH_CONSTANTS } from "@/constants/brushConstants";
 
 /**
  * Props for the useBrushSettings hook
  */
 interface UseBrushSettingsProps extends BaseEventHandlerProps {
-  /** Current line color */
+  /** Current drawing tool */
+  tool: DrawingTool;
+  /** Line color for drawing */
   lineColor: string;
-  /** Current line thickness */
+  /** Line thickness for drawing */
   lineThickness: number;
-}
-
-/**
- * Interface for brush settings
- */
-interface BrushSettings {
-  /** Brush color */
-  color: string;
-  /** Brush width */
-  width: number;
-  /** Brush opacity */
-  opacity?: number;
-  /** Brush shadow color */
-  shadowColor?: string;
-  /** Brush shadow blur */
-  shadowBlur?: number;
 }
 
 /**
@@ -43,91 +29,37 @@ interface BrushSettings {
 export const useBrushSettings = ({
   fabricCanvasRef,
   tool,
-  lineColor,
-  lineThickness
+  lineColor = BRUSH_CONSTANTS.DEFAULT_PENCIL_COLOR,
+  lineThickness = BRUSH_CONSTANTS.DEFAULT_PENCIL_WIDTH
 }: UseBrushSettingsProps): EventHandlerResult => {
-  // Keep track of previous settings for optimization
-  const prevSettingsRef = useRef<{
-    color: string;
-    width: number;
-    tool: DrawingTool;
-  }>({
-    color: lineColor,
-    width: lineThickness,
-    tool: tool
-  });
-  
-  // Update brush settings when props change
+  // Update brush settings when tool, color, or thickness changes
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
     const canvas = fabricCanvasRef.current;
-    const brush = canvas.freeDrawingBrush;
     
-    if (!brush) {
-      logger.warn("Cannot update brush settings: Brush not initialized");
-      return;
-    }
+    // Set drawing mode based on tool
+    canvas.isDrawingMode = tool === 'draw';
     
-    const prevSettings = prevSettingsRef.current;
-    
-    // Only update if settings have changed
-    if (
-      prevSettings.color !== lineColor ||
-      prevSettings.width !== lineThickness ||
-      prevSettings.tool !== tool
-    ) {
-      logger.info("Updating brush settings:", { 
-        color: lineColor, 
-        width: lineThickness,
-        tool: tool
-      });
+    // Configure brush properties when drawing is enabled
+    if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
+      // Set brush color and width
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
       
-      // Update brush properties
-      brush.color = lineColor;
-      brush.width = lineThickness;
-      
-      // Update drawing mode based on tool
-      canvas.isDrawingMode = tool === 'draw';
-      
-      // Add customizations based on the tool
-      if (tool === 'draw') {
-        // Apply additional brush settings for freehand drawing
-        brush.opacity = BRUSH_CONSTANTS.DEFAULT_OPACITY;
-        
-        // Add shadow if supported by the brush
-        if ('shadowColor' in brush) {
-          (brush as unknown as { shadowColor: string }).shadowColor = BRUSH_CONSTANTS.DEFAULT_SHADOW_COLOR;
-        }
-        
-        if ('shadowBlur' in brush) {
-          (brush as unknown as { shadowBlur: number }).shadowBlur = BRUSH_CONSTANTS.DEFAULT_SHADOW_BLUR;
-        }
-      }
-      
-      // Save current settings as previous
-      prevSettingsRef.current = {
-        color: lineColor,
-        width: lineThickness,
-        tool: tool
-      };
+      // Set brush shadow for better visibility
+      canvas.freeDrawingBrush.shadow = new (canvas.freeDrawingBrush.constructor as any).Shadow(
+        BRUSH_CONSTANTS.DEFAULT_SHADOW_COLOR,
+        0,
+        0,
+        BRUSH_CONSTANTS.DEFAULT_SHADOW_BLUR
+      );
     }
   }, [fabricCanvasRef, tool, lineColor, lineThickness]);
-  
+
   return {
     cleanup: () => {
-      logger.debug("Brush settings cleanup");
+      // No special cleanup needed
     }
   };
 };
-
-/**
- * Declare extension to Fabric module
- */
-declare module 'fabric' {
-  interface BaseBrush {
-    color: string;
-    width: number;
-    opacity?: number;
-  }
-}

@@ -7,6 +7,9 @@ export const BRUSH_CONSTANTS = {
   /** Default brush opacity */
   DEFAULT_OPACITY: 0.7,
   
+  /** Default pencil color */
+  DEFAULT_PENCIL_COLOR: "#000000",
+  
   /** Default shadow color for drawing brushes */
   DEFAULT_SHADOW_COLOR: 'rgba(0, 0, 0, 0.2)',
   

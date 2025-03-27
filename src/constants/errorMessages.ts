@@ -1,45 +1,38 @@
 
 /**
- * Standardized error messages for canvas operations
- * Provides consistent messaging for error handling
+ * Error messages for consistent error handling
  */
 export const ERROR_MESSAGES = {
-  /** Error when canvas element is not found in DOM */
-  CANVAS_ELEMENT_NOT_FOUND: 'Canvas element not found in the DOM',
+  /** Canvas element not found error */
+  CANVAS_ELEMENT_NOT_FOUND: 'Canvas element not found. Please ensure the canvas element is properly rendered.',
   
-  /** Error when canvas initialization fails */
-  CANVAS_INIT_FAILED: 'Failed to initialize canvas',
+  /** Canvas initialization failed error */
+  CANVAS_INIT_FAILED: 'Canvas initialization failed. Please try again.',
   
-  /** Error when loading saved canvas data */
-  CANVAS_LOAD_FAILED: 'Failed to load canvas data',
+  /** Canvas rendering error */
+  CANVAS_RENDER_ERROR: 'Error rendering canvas. Please refresh the page and try again.',
   
-  /** Error when saving canvas data */
-  CANVAS_SAVE_FAILED: 'Failed to save canvas data',
+  /** Grid creation error */
+  GRID_CREATION_ERROR: 'Error creating grid. Please try reloading the page.',
   
-  /** Error when adding an object to canvas */
-  OBJECT_ADD_FAILED: 'Failed to add object to canvas',
+  /** Invalid dimensions error */
+  INVALID_DIMENSIONS: 'Invalid canvas dimensions provided. Please check your configuration.',
   
-  /** Error when removing an object from canvas */
-  OBJECT_REMOVE_FAILED: 'Failed to remove object from canvas',
+  /** Object creation error */
+  OBJECT_CREATION_ERROR: 'Error creating object. Please try again.',
   
-  /** Error when modifying an object */
-  OBJECT_MODIFY_FAILED: 'Failed to modify object',
+  /** State update error */
+  STATE_UPDATE_ERROR: 'Error updating application state. Please reload the application.',
   
-  /** Error when grid creation fails */
-  GRID_CREATION_FAILED: 'Failed to create grid',
+  /** Drawing tool error */
+  DRAWING_TOOL_ERROR: 'Error with selected drawing tool. Please try a different tool.',
   
-  /** Error when path conversion fails */
-  PATH_CONVERSION_FAILED: 'Failed to convert path',
+  /** Path processing error */
+  PATH_PROCESSING_ERROR: 'Error processing drawing path. Please try again.',
   
-  /** Error when brush initialization fails */
-  BRUSH_INIT_FAILED: 'Failed to initialize brush',
+  /** Floor plan loading error */
+  FLOOR_PLAN_LOAD_ERROR: 'Error loading floor plan data. Please check your connection and try again.',
   
-  /** Error when no canvas is available for an operation */
-  NO_CANVAS_AVAILABLE: 'No canvas available for this operation',
-  
-  /** Error when an operation times out */
-  OPERATION_TIMEOUT: 'Operation timed out',
-  
-  /** Error when canvas dimensions are invalid */
-  INVALID_DIMENSIONS: 'Invalid canvas dimensions'
+  /** Authentication error */
+  AUTH_ERROR: 'Authentication error. Please sign in again.'
 };

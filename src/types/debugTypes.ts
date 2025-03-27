@@ -1,17 +1,55 @@
 
 /**
- * Debug information state type definitions
- * @module debugTypes
+ * Types related to debugging and diagnostics
+ * @module types/debugTypes
  */
-
-import { PerformanceStats } from './core/DebugInfo';
 
 /**
- * Debug information state interface
- * @interface DebugInfoState
+ * Canvas dimensions structure
+ */
+export interface CanvasDimensions {
+  /** Width in pixels */
+  width: number;
+  /** Height in pixels */
+  height: number;
+}
+
+/**
+ * Performance statistics for tracking canvas performance
+ */
+export interface PerformanceStats {
+  /** Frames per second */
+  fps?: number;
+  /** Average frame time in milliseconds */
+  frameTime?: number;
+  /** Maximum frame time in milliseconds */
+  maxFrameTime?: number;
+  /** Count of frames taking longer than target */
+  longFrames?: number;
+  /** Count of dropped frames */
+  droppedFrames?: number;
+  /** Memory usage in MB */
+  memory?: number;
+  /** Count of objects on canvas */
+  objectCount?: number;
+  /** Count of draw calls per frame */
+  drawCalls?: number;
+  /** Time spent rendering in milliseconds */
+  renderTime?: number;
+  /** Time spent processing events in milliseconds */
+  eventTime?: number;
+  /** Count of errors encountered */
+  errorCount?: number;
+  /** Count of retry attempts */
+  retryCount?: number;
+  [key: string]: number | undefined;
+}
+
+/**
+ * Debug information state
  */
 export interface DebugInfoState {
-  /** Whether to show debug information */
+  /** Whether debug info is displayed */
   showDebugInfo: boolean;
   /** Whether canvas has been initialized */
   canvasInitialized: boolean;
@@ -21,56 +59,87 @@ export interface DebugInfoState {
   gridCreated: boolean;
   /** Whether brush has been initialized */
   brushInitialized: boolean;
-  /** Whether canvas is ready */
+  /** Whether canvas is ready for interaction */
   canvasReady: boolean;
   /** Whether canvas has been created */
   canvasCreated: boolean;
   /** Whether canvas has been loaded */
   canvasLoaded: boolean;
-  /** Last initialization time */
+  /** Time of last initialization in ms since epoch */
   lastInitTime: number;
-  /** Last grid creation time */
+  /** Time of last grid creation in ms since epoch */
   lastGridCreationTime: number;
-  /** Grid initialization state */
-  gridInitialized?: boolean;
-  /** Custom debug messages */
-  messages?: string[];
-  /** Amount of objects on canvas */
-  objectCount?: number;
+  /** Count of grid objects */
+  gridObjectCount: number;
   /** Canvas dimensions */
+  canvasDimensions: CanvasDimensions;
+  /** Whether an error has occurred */
+  hasError: boolean;
+  /** Error message if an error occurred */
+  errorMessage: string;
+  /** Performance statistics */
+  performanceStats: PerformanceStats;
+  /** Whether grid has been initialized (optional) */
+  gridInitialized?: boolean;
+  /** Debug messages (optional) */
+  messages?: string[];
+  /** Count of objects on canvas (optional) */
+  objectCount?: number;
+  /** Canvas dimensions (optional) */
   dimensions?: {
     width: number;
     height: number;
   };
-  /** Current tool */
+  /** Currently active tool (optional) */
   currentTool?: string;
-  /** Canvas initialization time */
+  /** Time taken for initialization in ms (optional) */
   initTime?: number;
-  /** Number of grid objects */
+  /** Count of grid objects (optional) */
   gridObjects?: number;
-  /** Number of grid objects */
-  gridObjectCount: number;
-  /** Number of canvas objects */
+  /** Count of canvas objects (optional) */
   canvasObjects?: number;
-  /** Canvas width */
+  /** Canvas width (optional) */
   canvasWidth?: number;
-  /** Canvas height */
+  /** Canvas height (optional) */
   canvasHeight?: number;
-  /** Device pixel ratio */
+  /** Device pixel ratio (optional) */
   devicePixelRatio?: number;
-  /** Last error that occurred */
+  /** Last error (optional) */
   lastError?: any;
-  /** Timestamp of the last error */
+  /** Time of last error in ms since epoch (optional) */
   lastErrorTime?: number;
-  /** Canvas dimensions */
-  canvasDimensions: {
-    width: number;
-    height: number;
-  };
-  /** Error state */
-  hasError: boolean;
-  /** Error message */
-  errorMessage: string;
-  /** Performance statistics */
-  performanceStats: PerformanceStats;
+}
+
+/**
+ * Point coordinate definition
+ */
+export interface Point {
+  /** X coordinate */
+  x: number;
+  /** Y coordinate */
+  y: number;
+}
+
+/**
+ * Drawing state information
+ */
+export interface DrawingState {
+  /** Whether drawing is in progress */
+  isDrawing: boolean;
+  /** Starting point of the drawing operation */
+  startPoint: Point | null;
+  /** Current point of the drawing operation */
+  currentPoint: Point | null;
+  /** Middle point for operations requiring it */
+  midPoint: Point | null;
+  /** Whether a selection is currently active */
+  selectionActive: boolean;
+  /** Current zoom level */
+  currentZoom: number;
+  /** Collection of points for the current drawing operation */
+  points: Point[];
+  /** Distance measurement (if applicable) */
+  distance: number | null;
+  /** Current cursor position (optional) */
+  cursorPosition?: Point | null;
 }

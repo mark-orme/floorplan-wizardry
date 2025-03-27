@@ -4,9 +4,24 @@
  * @module useObjectEvents
  */
 import { useEffect } from "react";
-import type { Canvas as FabricCanvas, TEvent, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, TPointerEvent, TEvent } from "fabric";
 import logger from "@/utils/logger";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+
+// Imported from the fabric definitions
+interface SelectionEvent extends Partial<TEvent<TPointerEvent>> {
+  selected?: FabricObject[];
+  deselected?: FabricObject[];
+  target?: FabricObject;
+}
+
+interface ModifiedEvent extends Partial<TEvent<TPointerEvent>> {
+  target?: FabricObject;
+}
+
+interface ObjectEvent extends Partial<TEvent<TPointerEvent>> {
+  target?: FabricObject;
+}
 
 /**
  * Props for the useObjectEvents hook
@@ -22,18 +37,8 @@ interface UseObjectEventsProps extends BaseEventHandlerProps {
   onObjectAdded?: (object: FabricObject) => void;
   /** Callback for object removal */
   onObjectRemoved?: (object: FabricObject) => void;
-}
-
-/**
- * Interface mapping event names to their handlers
- */
-interface CanvasEvents {
-  'selection:created': (e: TEvent) => void;
-  'selection:updated': (e: TEvent) => void;
-  'selection:cleared': (e: TEvent) => void;
-  'object:modified': (e: TEvent) => void;
-  'object:added': (e: TEvent) => void;
-  'object:removed': (e: TEvent) => void;
+  /** Function to save current state before making changes (optional) */
+  saveCurrentState?: () => void;
 }
 
 /**
@@ -47,7 +52,8 @@ export const useObjectEvents = ({
   onObjectSelected,
   onObjectModified,
   onObjectAdded,
-  onObjectRemoved
+  onObjectRemoved,
+  saveCurrentState
 }: UseObjectEventsProps): EventHandlerResult => {
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
@@ -60,9 +66,9 @@ export const useObjectEvents = ({
     /**
      * Handle selection events
      * Calls provided callback with selected objects
-     * @param {TEvent} e - Selection event
+     * @param {SelectionEvent} e - Selection event
      */
-    const handleSelectionEvent = (e: TEvent): void => {
+    const handleSelectionEvent = (e: SelectionEvent): void => {
       if (!onObjectSelected) return;
       
       try {
@@ -70,7 +76,7 @@ export const useObjectEvents = ({
         if (e.selected && Array.isArray(e.selected)) {
           onObjectSelected(e.selected);
         } else if (e.target) {
-          onObjectSelected([e.target as FabricObject]);
+          onObjectSelected([e.target]);
         } else {
           onObjectSelected([]);
         }
@@ -82,67 +88,67 @@ export const useObjectEvents = ({
     /**
      * Handle object modification
      * Calls provided callback with modified object
-     * @param {TEvent} e - Modification event
+     * @param {ModifiedEvent} e - Modification event
      */
-    const handleObjectModified = (e: TEvent): void => {
+    const handleObjectModified = (e: ModifiedEvent): void => {
       if (!onObjectModified || !e.target) return;
-      onObjectModified(e.target as FabricObject);
+      onObjectModified(e.target);
     };
     
     /**
      * Handle object added
      * Calls provided callback with added object
-     * @param {TEvent} e - Object added event
+     * @param {ObjectEvent} e - Object added event
      */
-    const handleObjectAdded = (e: TEvent): void => {
+    const handleObjectAdded = (e: ObjectEvent): void => {
       if (!onObjectAdded || !e.target) return;
-      onObjectAdded(e.target as FabricObject);
+      onObjectAdded(e.target);
     };
     
     /**
      * Handle object removed
      * Calls provided callback with removed object
-     * @param {TEvent} e - Object removed event
+     * @param {ObjectEvent} e - Object removed event
      */
-    const handleObjectRemoved = (e: TEvent): void => {
+    const handleObjectRemoved = (e: ObjectEvent): void => {
       if (!onObjectRemoved || !e.target) return;
-      onObjectRemoved(e.target as FabricObject);
+      onObjectRemoved(e.target);
     };
     
-    // Register event handlers
-    fabricCanvas.on('selection:created', handleSelectionEvent as CanvasEvents['selection:created']);
-    fabricCanvas.on('selection:updated', handleSelectionEvent as CanvasEvents['selection:updated']);
-    fabricCanvas.on('selection:cleared', handleSelectionEvent as CanvasEvents['selection:cleared']);
+    // Register event handlers - using proper type casting
+    fabricCanvas.on('selection:created', handleSelectionEvent as any);
+    fabricCanvas.on('selection:updated', handleSelectionEvent as any);
+    fabricCanvas.on('selection:cleared', handleSelectionEvent as any);
     
     if (onObjectModified) {
-      fabricCanvas.on('object:modified', handleObjectModified as CanvasEvents['object:modified']);
+      fabricCanvas.on('object:modified', handleObjectModified as any);
     }
     
     if (onObjectAdded) {
-      fabricCanvas.on('object:added', handleObjectAdded as CanvasEvents['object:added']);
+      fabricCanvas.on('object:added', handleObjectAdded as any);
     }
     
     if (onObjectRemoved) {
-      fabricCanvas.on('object:removed', handleObjectRemoved as CanvasEvents['object:removed']);
+      fabricCanvas.on('object:removed', handleObjectRemoved as any);
     }
     
     // Cleanup: Remove event handlers
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.off('selection:created', handleSelectionEvent as CanvasEvents['selection:created']);
-        fabricCanvas.off('selection:updated', handleSelectionEvent as CanvasEvents['selection:updated']);
-        fabricCanvas.off('selection:cleared', handleSelectionEvent as CanvasEvents['selection:cleared']);
+        fabricCanvas.off('selection:created', handleSelectionEvent as any);
+        fabricCanvas.off('selection:updated', handleSelectionEvent as any);
+        fabricCanvas.off('selection:cleared', handleSelectionEvent as any);
         
         if (onObjectModified) {
-          fabricCanvas.off('object:modified', handleObjectModified as CanvasEvents['object:modified']);
+          fabricCanvas.off('object:modified', handleObjectModified as any);
         }
         
         if (onObjectAdded) {
-          fabricCanvas.off('object:added', handleObjectAdded as CanvasEvents['object:added']);
+          fabricCanvas.off('object:added', handleObjectAdded as any);
         }
         
         if (onObjectRemoved) {
-          fabricCanvas.off('object:removed', handleObjectRemoved as CanvasEvents['object:removed']);
+          fabricCanvas.off('object:removed', handleObjectRemoved as any);
         }
       }
     };
@@ -152,7 +158,8 @@ export const useObjectEvents = ({
     onObjectSelected,
     onObjectModified,
     onObjectAdded,
-    onObjectRemoved
+    onObjectRemoved,
+    saveCurrentState
   ]);
   
   return {

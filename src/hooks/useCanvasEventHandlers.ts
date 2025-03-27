@@ -8,15 +8,13 @@ import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
 import { DrawingTool } from "./useCanvasState";
 import logger from "@/utils/logger";
-import {
-  usePathEvents,
-  useObjectEvents,
-  useMouseEvents,
-  useKeyboardEvents,
-  useZoomTracking,
-  useBrushSettings,
-  useCanvasHandlers
-} from "./canvas-events";
+
+// Import types and event hooks
+import { EventHandlerResult } from "./canvas-events/types";
+import { usePathEvents } from "./canvas-events/usePathEvents";
+import { useObjectEvents } from "./canvas-events/useObjectEvents";
+import { useZoomTracking } from "./canvas-events/useZoomTracking";
+import { useBrushSettings } from "./canvas-events/useBrushSettings";
 
 /**
  * Props for the useCanvasEventHandlers hook
@@ -49,6 +47,8 @@ interface UseCanvasEventHandlersProps {
   cleanupTimeouts: () => void;
   /** Function to delete selected objects */
   deleteSelectedObjects: () => void;
+  /** Function to update zoom level */
+  updateZoomLevel: () => void;
 }
 
 /**
@@ -56,8 +56,6 @@ interface UseCanvasEventHandlersProps {
  * @interface UseCanvasEventHandlersResult
  */
 interface UseCanvasEventHandlersResult {
-  /** Register zoom change tracking */
-  registerZoomTracking: () => (() => void) | undefined;
   /** Cleanup all event handlers */
   cleanupAllEventHandlers: () => void;
 }
@@ -82,7 +80,8 @@ export const useCanvasEventHandlers = ({
   handleMouseUp,
   processCreatedPath,
   cleanupTimeouts,
-  deleteSelectedObjects
+  deleteSelectedObjects,
+  updateZoomLevel
 }: UseCanvasEventHandlersProps): UseCanvasEventHandlersResult => {
   
   // Set up all individual event handlers using the dedicated hooks
@@ -90,7 +89,6 @@ export const useCanvasEventHandlers = ({
   // Handle path creation events
   const { cleanup: cleanupPathEvents } = usePathEvents({
     fabricCanvasRef,
-    tool,
     saveCurrentState,
     processCreatedPath,
     handleMouseUp
@@ -103,25 +101,6 @@ export const useCanvasEventHandlers = ({
     saveCurrentState
   });
   
-  // Handle mouse events
-  const { cleanup: cleanupMouseEvents } = useMouseEvents({
-    fabricCanvasRef,
-    tool,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    saveCurrentState
-  });
-  
-  // Handle keyboard events
-  const { cleanup: cleanupKeyboardEvents } = useKeyboardEvents({
-    fabricCanvasRef,
-    tool,
-    handleUndo,
-    handleRedo,
-    deleteSelectedObjects
-  });
-  
   // Handle brush settings
   const { cleanup: cleanupBrushSettings } = useBrushSettings({
     fabricCanvasRef,
@@ -130,31 +109,20 @@ export const useCanvasEventHandlers = ({
     lineThickness
   });
   
-  // Register global canvas handlers
-  const { cleanup: cleanupCanvasHandlers } = useCanvasHandlers({
+  // Handle zoom tracking
+  const { cleanup: cleanupZoomTracking } = useZoomTracking({
     fabricCanvasRef,
-    tool,
-    handleUndo,
-    handleRedo,
-    saveCurrentState,
-    deleteSelectedObjects
+    updateZoomLevel,
+    tool
   });
   
-  // Get the zoom tracking function from its dedicated hook
-  const { registerZoomTracking, cleanup: cleanupZoomTracking } = useZoomTracking({
-    fabricCanvasRef
-  });
-
   // Cleanup function to remove all event handlers
   const cleanupAllEventHandlers = useCallback(() => {
     logger.info("Cleaning up all canvas event handlers");
     
     if (cleanupPathEvents) cleanupPathEvents();
     if (cleanupObjectEvents) cleanupObjectEvents();
-    if (cleanupMouseEvents) cleanupMouseEvents();
-    if (cleanupKeyboardEvents) cleanupKeyboardEvents();
     if (cleanupBrushSettings) cleanupBrushSettings();
-    if (cleanupCanvasHandlers) cleanupCanvasHandlers();
     if (cleanupZoomTracking) cleanupZoomTracking();
     
     // Also clean up any timeouts
@@ -162,10 +130,7 @@ export const useCanvasEventHandlers = ({
   }, [
     cleanupPathEvents,
     cleanupObjectEvents,
-    cleanupMouseEvents,
-    cleanupKeyboardEvents, 
     cleanupBrushSettings,
-    cleanupCanvasHandlers,
     cleanupZoomTracking,
     cleanupTimeouts
   ]);
@@ -178,7 +143,6 @@ export const useCanvasEventHandlers = ({
   }, [cleanupAllEventHandlers]);
 
   return {
-    registerZoomTracking,
     cleanupAllEventHandlers
   };
 };
