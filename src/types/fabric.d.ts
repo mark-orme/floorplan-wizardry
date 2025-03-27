@@ -78,6 +78,10 @@ export interface GridDimensions {
 export interface GridRenderResult {
   objects: FabricObject[];
   dimensions: GridDimensions;
+  gridObjects?: FabricObject[];
+  smallGridLines?: FabricObject[];
+  largeGridLines?: FabricObject[];
+  markers?: FabricObject[];
 }
 
 /**
@@ -86,6 +90,7 @@ export interface GridRenderResult {
  */
 export interface CustomTouchEvent extends TouchEvent {
   touches: TouchList;
+  changedTouches: TouchList;
 }
 
 /**

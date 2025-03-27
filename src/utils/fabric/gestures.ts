@@ -34,7 +34,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       ongoingTouches.push({
         touches: [touchPosition],
         e: touch
-      } as CustomFabricTouchEvent);
+      });
     }
   };
 
@@ -53,7 +53,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         ongoingTouches[ongoingTouchIndex] = {
           touches: [touchPosition],
           e: touch
-        } as CustomFabricTouchEvent;
+        };
       }
     }
   };

@@ -1,4 +1,3 @@
-
 /**
  * Grid utility functions
  * @module gridUtils
