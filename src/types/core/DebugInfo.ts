@@ -4,7 +4,39 @@
  * @module core/DebugInfo
  */
 import { CanvasDimensions } from './Geometry';
-import { PerformanceStats } from '../performanceTypes';
+
+/**
+ * Performance statistics interface
+ * Tracks performance-related metrics
+ */
+export interface PerformanceStats {
+  /** Frames per second */
+  fps?: number;
+  /** Average frame time in milliseconds */
+  frameTime?: number;
+  /** Maximum frame time in milliseconds */
+  maxFrameTime?: number;
+  /** Number of frames that took too long to render */
+  longFrames?: number;
+  /** Number of dropped frames */
+  droppedFrames?: number;
+  /** Memory usage in MB */
+  memory?: number;
+  /** Number of canvas objects */
+  objectCount?: number;
+  /** Number of draw calls */
+  drawCalls?: number;
+  /** Render time in milliseconds */
+  renderTime?: number;
+  /** Event processing time in milliseconds */
+  eventTime?: number;
+  /** Error count */
+  errorCount?: number;
+  /** Retry count */
+  retryCount?: number;
+  /** Index signature for additional metrics */
+  [key: string]: number | undefined;
+}
 
 /**
  * Debug info state interface
@@ -50,8 +82,18 @@ export interface DebugInfoState {
   errorMessage: string;
   /** Performance stats */
   performanceStats: PerformanceStats;
+  /** Canvas width (optional) */
+  canvasWidth?: number;
+  /** Canvas height (optional) */
+  canvasHeight?: number;
+  /** Device pixel ratio (optional) */
+  devicePixelRatio?: number;
+  /** Last error object (optional) */
+  lastError?: unknown;
+  /** Last error time (optional) */
+  lastErrorTime?: number;
   /** Additional properties */
-  [key: string]: boolean | number | string | object;
+  [key: string]: unknown;
 }
 
 /**

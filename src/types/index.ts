@@ -8,7 +8,8 @@
 // Re-export core types with explicit names to avoid conflicts
 export type { DebugInfoState, PerformanceStats } from './core/DebugInfo';
 export type { DrawingState } from './core/DrawingState';
-export type { Point, CanvasDimensions } from './core/Geometry';
+export type { Point, PlainPoint, createPoint, toPoint } from './core/Point';
+export type { CanvasDimensions } from './core/Geometry';
 export * from './core/Geometry'; // For the type guards
 
 // Re-export grid related types

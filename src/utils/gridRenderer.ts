@@ -1,267 +1,182 @@
 
 /**
- * Grid rendering utilities
- * Provides functions for creating and managing grid elements
+ * Grid renderer module
+ * Provides functions for rendering grid components on canvas
  * @module gridRenderer
  */
-import { Canvas, Line, Text } from 'fabric';
-import { GridLineOptions, GridRenderResult } from './grid/typeUtils';
+import { Canvas, Object as FabricObject, Line, Text } from "fabric";
 
 /**
- * Constants for grid rendering
+ * Grid render result interface
  */
-const GRID_RENDER_CONSTANTS = {
-  /** Default opacity for small grid lines */
-  SMALL_GRID_OPACITY: 0.3,
-  /** Default opacity for large grid lines */
-  LARGE_GRID_OPACITY: 0.5,
-  /** Default opacity for axis lines */
-  AXIS_OPACITY: 0.7,
-  /** Default stroke width for small grid lines */
-  SMALL_GRID_STROKE_WIDTH: 0.5,
-  /** Default stroke width for large grid lines */
-  LARGE_GRID_STROKE_WIDTH: 1,
-  /** Default stroke width for axis lines */
-  AXIS_STROKE_WIDTH: 1.5,
-  /** Default color for small grid lines */
-  SMALL_GRID_COLOR: '#DDDDDD',
-  /** Default color for large grid lines */
-  LARGE_GRID_COLOR: '#AAAAAA',
-  /** Default color for axis lines */
-  AXIS_COLOR: '#888888',
-  /** Default color for grid markers */
-  MARKER_COLOR: '#666666',
-  /** Default size for grid markers */
-  MARKER_FONT_SIZE: 10
-};
+export interface GridRenderResult {
+  /** All grid-related objects */
+  gridObjects: FabricObject[];
+  /** Small grid lines */
+  smallGridLines: FabricObject[];
+  /** Large grid lines */
+  largeGridLines: FabricObject[];
+  /** Grid markers (labels) */
+  markers: FabricObject[];
+}
 
 /**
- * Creates a grid line with specified options
- * 
- * @param {number[]} coords - Array of coordinates [x1, y1, x2, y2]
- * @param {GridLineOptions} options - Options for the line
- * @returns {Line} Fabric.js Line object
+ * Render all grid components on the canvas
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {number} width - Canvas width
+ * @param {number} height - Canvas height
+ * @returns {GridRenderResult} Created grid objects
  */
-export const createGridLine = (
-  coords: [number, number, number, number],
-  options: GridLineOptions
-): Line => {
-  const [x1, y1, x2, y2] = coords;
-  
-  const line = new Line([x1, y1, x2, y2], {
-    stroke: options.stroke,
-    strokeWidth: options.strokeWidth,
-    selectable: options.selectable,
-    evented: options.evented,
-    objectType: options.objectType,
-    objectCaching: options.objectCaching,
-    hoverCursor: options.hoverCursor,
-    opacity: options.opacity
-  });
-  
-  // Try to set the line to the back
-  // In newer Fabric.js versions, this might need to be called after the line is added to the canvas
-  try {
-    (line as any).sendToBack?.();
-  } catch (err) {
-    console.warn('Could not send grid line to back:', err);
-  }
-  
-  return line;
-};
-
-/**
- * Creates a grid marker (text)
- * 
- * @param {string} text - Text content for the marker
- * @param {number} x - X coordinate
- * @param {number} y - Y coordinate
- * @returns {Text} Fabric.js Text object
- */
-export const createGridMarker = (text: string, x: number, y: number): Text => {
-  return new Text(text, {
-    left: x,
-    top: y,
-    fontSize: GRID_RENDER_CONSTANTS.MARKER_FONT_SIZE,
-    fill: GRID_RENDER_CONSTANTS.MARKER_COLOR,
-    selectable: false,
-    evented: false,
-    objectType: 'grid-marker',
-    objectCaching: true
-  });
-};
-
-/**
- * Renders the grid components on the canvas
- * 
- * @param {Canvas} canvas - Fabric.js canvas object
- * @param {object} options - Grid rendering options
- * @returns {GridRenderResult} Object containing the rendered grid elements
- */
-export const renderGridComponents = (
+export function renderGridComponents(
   canvas: Canvas,
-  options: {
-    width: number;
-    height: number;
-    smallGridSize: number;
-    largeGridSize: number;
-    showMarkers?: boolean;
-  }
-): GridRenderResult => {
-  const { width, height, smallGridSize, largeGridSize, showMarkers = true } = options;
+  width: number,
+  height: number
+): GridRenderResult {
+  // Initialize result containers
+  const smallGridLines: FabricObject[] = [];
+  const largeGridLines: FabricObject[] = [];
+  const markers: FabricObject[] = [];
   
-  const smallGridLines: Line[] = [];
-  const largeGridLines: Line[] = [];
-  const markers: Text[] = [];
-  const allGridObjects: (Line | Text)[] = [];
+  // Grid configuration
+  const smallGridSpacing = 10;
+  const largeGridSpacing = 50;
+  const smallGridColor = "#E0E0E0";
+  const largeGridColor = "#C0C0C0";
+  const axisColor = "#A0A0A0";
   
-  // Common line options for small grid lines
-  const smallGridOptions: GridLineOptions = {
-    stroke: GRID_RENDER_CONSTANTS.SMALL_GRID_COLOR,
-    strokeWidth: GRID_RENDER_CONSTANTS.SMALL_GRID_STROKE_WIDTH,
-    selectable: false,
-    evented: false,
-    objectType: 'grid-small',
-    objectCaching: true,
-    hoverCursor: 'default',
-    opacity: GRID_RENDER_CONSTANTS.SMALL_GRID_OPACITY
-  };
-  
-  // Common line options for large grid lines
-  const largeGridOptions: GridLineOptions = {
-    stroke: GRID_RENDER_CONSTANTS.LARGE_GRID_COLOR,
-    strokeWidth: GRID_RENDER_CONSTANTS.LARGE_GRID_STROKE_WIDTH,
-    selectable: false,
-    evented: false,
-    objectType: 'grid-large',
-    objectCaching: true,
-    hoverCursor: 'default',
-    opacity: GRID_RENDER_CONSTANTS.LARGE_GRID_OPACITY
-  };
-  
-  // Create small grid lines
-  for (let i = 0; i <= width; i += smallGridSize) {
-    const line = createGridLine([i, 0, i, height], smallGridOptions);
-    smallGridLines.push(line);
-    allGridObjects.push(line);
-    canvas.add(line);
-    try {
-      (line as any).sendToBack?.();
-    } catch (err) {
-      console.warn('Could not send small grid line to back:', err);
-    }
-  }
-  
-  for (let i = 0; i <= height; i += smallGridSize) {
-    const line = createGridLine([0, i, width, i], smallGridOptions);
-    smallGridLines.push(line);
-    allGridObjects.push(line);
-    canvas.add(line);
-    try {
-      (line as any).sendToBack?.();
-    } catch (err) {
-      console.warn('Could not send small grid line to back:', err);
-    }
-  }
-  
-  // Create large grid lines
-  for (let i = 0; i <= width; i += largeGridSize) {
-    const line = createGridLine([i, 0, i, height], largeGridOptions);
-    largeGridLines.push(line);
-    allGridObjects.push(line);
-    canvas.add(line);
-    try {
-      (line as any).sendToBack?.();
-    } catch (err) {
-      console.warn('Could not send large grid line to back:', err);
-    }
-  }
-  
-  for (let i = 0; i <= height; i += largeGridSize) {
-    const line = createGridLine([0, i, width, i], largeGridOptions);
-    largeGridLines.push(line);
-    allGridObjects.push(line);
-    canvas.add(line);
-    try {
-      (line as any).sendToBack?.();
-    } catch (err) {
-      console.warn('Could not send large grid line to back:', err);
-    }
-  }
-  
-  // Add markers if enabled
-  if (showMarkers) {
-    // Add horizontal markers
-    for (let i = 0; i <= width; i += largeGridSize) {
-      const marker = createGridMarker(`${i}`, i, height - 20);
-      markers.push(marker);
-      allGridObjects.push(marker);
-      canvas.add(marker);
+  try {
+    // Create small grid lines
+    for (let x = 0; x <= width; x += smallGridSpacing) {
+      const line = new Line([x, 0, x, height], {
+        stroke: smallGridColor,
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      smallGridLines.push(line);
+      canvas.add(line);
     }
     
-    // Add vertical markers
-    for (let i = 0; i <= height; i += largeGridSize) {
-      const marker = createGridMarker(`${i}`, 10, i);
-      markers.push(marker);
-      allGridObjects.push(marker);
-      canvas.add(marker);
+    for (let y = 0; y <= height; y += smallGridSpacing) {
+      const line = new Line([0, y, width, y], {
+        stroke: smallGridColor,
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      smallGridLines.push(line);
+      canvas.add(line);
     }
+    
+    // Create large grid lines
+    for (let x = 0; x <= width; x += largeGridSpacing) {
+      const line = new Line([x, 0, x, height], {
+        stroke: largeGridColor,
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      largeGridLines.push(line);
+      canvas.add(line);
+    }
+    
+    for (let y = 0; y <= height; y += largeGridSpacing) {
+      const line = new Line([0, y, width, y], {
+        stroke: largeGridColor,
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      largeGridLines.push(line);
+      canvas.add(line);
+    }
+    
+    // Add markers
+    for (let x = largeGridSpacing; x < width; x += largeGridSpacing) {
+      const text = new Text(String(x), {
+        left: x,
+        top: 5,
+        fontSize: 8,
+        fill: axisColor,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      markers.push(text);
+      canvas.add(text);
+    }
+    
+    for (let y = largeGridSpacing; y < height; y += largeGridSpacing) {
+      const text = new Text(String(y), {
+        left: 5,
+        top: y,
+        fontSize: 8,
+        fill: axisColor,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      markers.push(text);
+      canvas.add(text);
+    }
+    
+  } catch (error) {
+    console.error("Error rendering grid components:", error);
   }
   
-  // Send all grid objects to the back
-  try {
-    allGridObjects.forEach(obj => (obj as any).sendToBack?.());
-    (canvas as any).sendToBack?.();
-  } catch (err) {
-    console.warn('Could not send all grid objects to back:', err);
-  }
+  // Combine all grid objects
+  const gridObjects = [...smallGridLines, ...largeGridLines, ...markers];
   
   return {
+    gridObjects,
     smallGridLines,
     largeGridLines,
-    markers,
-    gridObjects: allGridObjects
+    markers
   };
-};
+}
 
 /**
- * Arranges grid objects in the correct z-order
- * 
- * @param {Canvas} canvas - Fabric.js canvas object
- * @param {GridRenderResult} gridResult - Result from renderGridComponents
- * @returns {boolean} True if successful
+ * Arrange grid objects in correct z-order
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {FabricObject[]} smallGridLines - Small grid lines
+ * @param {FabricObject[]} largeGridLines - Large grid lines
+ * @param {FabricObject[]} markers - Grid markers
  */
-export const arrangeGridObjects = (
+export function arrangeGridObjects(
   canvas: Canvas,
-  gridResult: GridRenderResult
-): boolean => {
+  smallGridLines: FabricObject[],
+  largeGridLines: FabricObject[],
+  markers: FabricObject[]
+): void {
   try {
-    // First render all small grid lines
-    gridResult.smallGridLines.forEach(line => {
-      try {
-        (line as any).sendToBack?.();
-      } catch (e) {
-        // Ignore errors with sendToBack
-        console.warn('Error sending small grid line to back:', e);
-      }
+    // Send small grid lines to back
+    smallGridLines.forEach(line => {
+      canvas.sendToBack(line);
     });
     
-    // Then render all large grid lines
-    gridResult.largeGridLines.forEach(line => {
-      try {
-        (line as any).sendToBack?.();
-      } catch (e) {
-        // Ignore errors with sendToBack
-        console.warn('Error sending large grid line to back:', e);
-      }
+    // Bring large grid lines above small grid lines
+    largeGridLines.forEach(line => {
+      smallGridLines.forEach(smallLine => {
+        canvas.bringForward(line);
+      });
     });
     
-    // Then render markers on top of grid lines
-    gridResult.markers.forEach(marker => canvas.bringForward(marker));
+    // Bring markers to front
+    markers.forEach(marker => {
+      canvas.bringToFront(marker);
+    });
     
-    return true;
   } catch (error) {
-    console.error('Error arranging grid objects:', error);
-    return false;
+    console.error("Error arranging grid objects:", error);
   }
-};
+}

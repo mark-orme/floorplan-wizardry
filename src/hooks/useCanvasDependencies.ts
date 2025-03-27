@@ -1,6 +1,7 @@
+
 import { useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DebugInfoState } from '@/types';
+import { DebugInfoState, DEFAULT_DEBUG_STATE } from '@/types/core/DebugInfo';
 
 /**
  * Props interface for the useCanvasDependencies hook
@@ -11,16 +12,6 @@ interface CanvasDependenciesProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   /** Optional external reference to the Fabric canvas instance */
   fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-}
-
-/**
- * Enhanced DebugInfoState with index signature support
- * @interface EnhancedDebugInfoState
- * @extends DebugInfoState
- */
-interface EnhancedDebugInfoState extends DebugInfoState {
-  /** Index signature for dynamic property access */
-  [key: string]: unknown;
 }
 
 /**
@@ -52,24 +43,10 @@ export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabr
   });
   
   // State initialization
-  const [debugInfo, setDebugInfo] = useState<EnhancedDebugInfoState>({
-    showDebugInfo: false,
-    canvasInitialized: false,
-    dimensionsSet: false,
-    gridCreated: false,
-    brushInitialized: false,
-    canvasCreated: false,
-    canvasLoaded: false,
-    canvasReady: false,
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
+    ...DEFAULT_DEBUG_STATE,
     canvasWidth: 0,
-    canvasHeight: 0,
-    lastInitTime: 0,
-    lastGridCreationTime: 0,
-    gridObjectCount: 0,
-    canvasDimensions: { width: 0, height: 0 },
-    hasError: false,
-    errorMessage: "",
-    performanceStats: {}
+    canvasHeight: 0
   });
   
   /**

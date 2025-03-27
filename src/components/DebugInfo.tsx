@@ -16,6 +16,13 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
     return <></>;
   }
 
+  // Helper to safely display debug values
+  const formatDebugValue = (value: unknown): string => {
+    if (value === undefined || value === null) return 'N/A';
+    if (typeof value === 'object') return '[Object]';
+    return String(value);
+  };
+
   return (
     <div className="mt-4 p-2 text-xs bg-gray-100 rounded-md overflow-auto max-h-32">
       <div className="grid grid-cols-2 gap-2">
@@ -26,10 +33,10 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
           <p>Dimensions Set: {debugInfo.dimensionsSet ? "✅" : "❌"}</p>
           <p>Brush Initialized: {debugInfo.brushInitialized ? "✅" : "❌"}</p>
           <p>
-            Grid Objects: {debugInfo.gridObjectCount ?? 'N/A'} / Canvas Objects: {debugInfo.objectCount ?? 'N/A'}
+            Grid Objects: {formatDebugValue(debugInfo.gridObjectCount)} / Canvas Objects: {formatDebugValue(debugInfo.objectCount)}
           </p>
           <p>
-            Canvas Size: {debugInfo.canvasWidth ?? 'N/A'}x{debugInfo.canvasHeight ?? 'N/A'} (DPR: {debugInfo.devicePixelRatio ?? 'N/A'})
+            Canvas Size: {formatDebugValue(debugInfo.canvasWidth)}x{formatDebugValue(debugInfo.canvasHeight)} (DPR: {formatDebugValue(debugInfo.devicePixelRatio)})
           </p>
         </div>
         
@@ -42,7 +49,7 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
           <p>Long Frames: {debugInfo.performanceStats?.longFrames || 0}</p>
           {debugInfo.lastError && (
             <p className="text-red-500">
-              Error: {String(debugInfo.lastError)} ({new Date(debugInfo.lastErrorTime || 0).toLocaleTimeString()})
+              Error: {String(debugInfo.lastError)} ({new Date(typeof debugInfo.lastErrorTime === 'number' ? debugInfo.lastErrorTime : 0).toLocaleTimeString()})
             </p>
           )}
         </div>
