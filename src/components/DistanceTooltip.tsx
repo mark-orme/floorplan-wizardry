@@ -10,6 +10,7 @@ import { Ruler } from "lucide-react";
 import { calculateDistance, formatDistance } from "@/utils/geometry/lineOperations";
 import { PIXELS_PER_METER } from "@/constants/numerics";
 import { MIN_VISIBLE_DISTANCE, DEFAULT_TOOLTIP_MAX_WIDTH } from "@/utils/geometry/constants";
+import { UI_SIZES } from "@/constants/uiConstants";
 
 /**
  * Tooltip style constants
@@ -38,7 +39,7 @@ const TOOLTIP_STYLES = {
    * Icon size in pixels
    * @constant {number}
    */
-  ICON_SIZE: 3,
+  ICON_SIZE: UI_SIZES.SMALL_ICON_SIZE / 4,
   
   /**
    * Border width in pixels

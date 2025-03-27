@@ -1,6 +1,7 @@
 
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { LINE_COLORS } from "@/constants/colorConstants";
 
 /**
  * Line settings constants
@@ -35,7 +36,25 @@ const LINE_SETTINGS = {
    * Default CSS class for color picker
    * @constant {string}
    */
-  COLOR_PICKER_CLASS: "w-8 h-8 p-1 border rounded cursor-pointer"
+  COLOR_PICKER_CLASS: "w-8 h-8 p-1 border rounded cursor-pointer",
+  
+  /**
+   * Container background CSS class
+   * @constant {string}
+   */
+  CONTAINER_CLASS: "flex items-center gap-4 bg-gray-50 dark:bg-gray-800 p-2 rounded border",
+  
+  /**
+   * Group wrapper CSS class
+   * @constant {string}
+   */
+  GROUP_CLASS: "flex flex-col gap-1",
+  
+  /**
+   * Label CSS class
+   * @constant {string}
+   */
+  LABEL_CLASS: "text-xs font-medium"
 };
 
 export interface LineSettingsProps {
@@ -55,9 +74,9 @@ export const LineSettings = ({
   onColorChange
 }: LineSettingsProps) => {
   return (
-    <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800 p-2 rounded border">
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="thickness" className="text-xs font-medium">Thickness: {thickness}px</Label>
+    <div className={LINE_SETTINGS.CONTAINER_CLASS}>
+      <div className={LINE_SETTINGS.GROUP_CLASS}>
+        <Label htmlFor="thickness" className={LINE_SETTINGS.LABEL_CLASS}>Thickness: {thickness}px</Label>
         <Slider
           id="thickness"
           min={LINE_SETTINGS.MIN_THICKNESS}
@@ -69,8 +88,8 @@ export const LineSettings = ({
         />
       </div>
       
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="color" className="text-xs font-medium">Color</Label>
+      <div className={LINE_SETTINGS.GROUP_CLASS}>
+        <Label htmlFor="color" className={LINE_SETTINGS.LABEL_CLASS}>Color</Label>
         <input
           id="color"
           type="color"
