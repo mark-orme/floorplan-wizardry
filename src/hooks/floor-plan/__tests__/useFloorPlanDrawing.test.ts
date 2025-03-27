@@ -13,7 +13,7 @@ import {
   meterToPixelCoordinates,
   isPointInPolygon 
 } from '../useFloorPlanDrawing';
-import { FloorPlan, Point } from '@/types/floorPlanTypes';
+import { FloorPlan, Point, Stroke } from '@/types/floorPlanTypes';
 import { PIXELS_PER_METER } from '@/constants/numerics';
 
 // Mock dependencies
@@ -195,7 +195,13 @@ describe('calculateFloorPlanAreas', () => {
       walls: [],
       rooms: [],
       strokes: [
-        [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }, { x: 0, y: 0 }]
+        {
+          id: 'stroke-1',
+          points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }, { x: 0, y: 0 }],
+          type: 'room',
+          color: '#000000',
+          thickness: 2
+        }
       ],
       canvasData: null,
       createdAt: '2023-01-01',

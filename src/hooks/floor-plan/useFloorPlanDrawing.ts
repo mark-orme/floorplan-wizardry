@@ -118,8 +118,17 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
         if (!updatedPlan.strokes) {
           updatedPlan.strokes = [];
         }
-        // Fix type issue - finalPoints is a Point[] which is a Stroke
-        updatedPlan.strokes = [...updatedPlan.strokes, finalPoints];
+        
+        // Create a new stroke object with the updated Stroke interface
+        const newStroke: Stroke = {
+          id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          points: finalPoints,
+          type: 'line', // Default type
+          color: '#000000', // Default color
+          thickness: 2 // Default thickness
+        };
+        
+        updatedPlan.strokes = [...updatedPlan.strokes, newStroke];
         return updatedPlan;
       });
       
@@ -131,8 +140,10 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
           Math.abs(firstPoint.x - lastPoint.x) < 0.1 && 
           Math.abs(firstPoint.y - lastPoint.y) < 0.1 && 
           setGia) {
-        // Calculate area for closed shape - Point[][] is compatible with the expected type
-        const area = calculateGIA([finalPoints]);
+        // Calculate area for closed shape
+        // We need to extract just the points for the GIA calculation
+        const pointArrays = [[...finalPoints]];
+        const area = calculateGIA(pointArrays);
         setGia(prev => prev + area);
         toast.success(`Area: ${area.toFixed(2)} m²`);
       }
@@ -205,9 +216,9 @@ export const calculateFloorPlanAreas = (floorPlan: FloorPlan): number[] => {
     return [];
   }
   
-  // We need to ensure we're working with Point[][] for calculateGIA
-  // Since Stroke = Point[], we can use the strokes directly as Point[][]
-  const areas = calculateGIA(floorPlan.strokes);
+  // Extract just the points arrays from each stroke for calculateGIA
+  const pointArrays = floorPlan.strokes.map(stroke => stroke.points);
+  const areas = calculateGIA(pointArrays);
   
   return [areas];
 };
