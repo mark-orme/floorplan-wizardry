@@ -13,7 +13,48 @@ export interface Point {
   x: number;
   /** Y coordinate */
   y: number;
+  
+  // Add required methods to satisfy fabric.js Point compatibility
+  add?: (point: Point) => Point;
+  addEquals?: (point: Point) => Point;
+  scalarAdd?: (scalar: number) => Point;
+  scalarAddEquals?: (scalar: number) => Point;
+  subtract?: (point: Point) => Point;
+  subtractEquals?: (point: Point) => Point;
+  scalarSubtract?: (scalar: number) => Point;
+  scalarSubtractEquals?: (scalar: number) => Point;
+  multiply?: (scalar: number) => Point;
+  multiplyEquals?: (scalar: number) => Point;
+  divide?: (scalar: number) => Point;
+  divideEquals?: (scalar: number) => Point;
+  eq?: (point: Point) => boolean;
+  lt?: (point: Point) => boolean;
+  gt?: (point: Point) => boolean;
+  lte?: (point: Point) => boolean;
+  gte?: (point: Point) => boolean;
+  lerp?: (point: Point, t: number) => Point;
+  distanceFrom?: (point: Point) => number;
+  midPointFrom?: (point: Point) => Point;
+  min?: (point: Point) => Point;
+  max?: (point: Point) => Point;
+  toString?: () => string;
+  setXY?: (x: number, y: number) => Point;
+  setX?: (x: number) => Point;
+  setY?: (y: number) => Point;
+  setFromPoint?: (point: Point) => Point;
+  swap?: (point: Point) => Point;
+  clone?: () => Point;
 }
+
+/**
+ * Create a simple Point object
+ * Helper function to create points without all the extra methods
+ * 
+ * @param x - X coordinate
+ * @param y - Y coordinate
+ * @returns A simple Point object
+ */
+export const createPoint = (x: number, y: number): Point => ({ x, y });
 
 /**
  * Canvas dimensions type

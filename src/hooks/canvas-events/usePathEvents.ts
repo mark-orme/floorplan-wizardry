@@ -14,7 +14,10 @@ import { EventHandlerResult, UsePathEventsProps } from './types';
  */
 export const usePathEvents = ({ 
   fabricCanvasRef, 
-  tool 
+  tool,
+  saveCurrentState,
+  processCreatedPath,
+  handleMouseUp
 }: UsePathEventsProps): EventHandlerResult => {
   
   /**
@@ -32,8 +35,20 @@ export const usePathEvents = ({
           id: `path-${Date.now()}`
         });
         
-        // Optionally set other properties on the path
-        // path.set({ fill: null, evented: true, selectable: true });
+        // Save state before processing the path if function provided
+        if (saveCurrentState) {
+          saveCurrentState();
+        }
+        
+        // Process the created path if function provided
+        if (processCreatedPath) {
+          processCreatedPath(path);
+        }
+        
+        // Handle mouse up if function provided (completes drawing operation)
+        if (handleMouseUp) {
+          handleMouseUp();
+        }
         
         // Make sure the canvas renders the updated path
         canvas.renderAll();
@@ -41,7 +56,7 @@ export const usePathEvents = ({
     } catch (error) {
       console.error('Error in path created handler:', error);
     }
-  }, [fabricCanvasRef]);
+  }, [fabricCanvasRef, saveCurrentState, processCreatedPath, handleMouseUp]);
 
   /**
    * Set up path events

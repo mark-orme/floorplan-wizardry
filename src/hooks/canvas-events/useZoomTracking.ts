@@ -1,143 +1,163 @@
 
 /**
- * Hook for tracking and managing zoom in the canvas
+ * Hook for tracking zoom events in canvas
  * @module canvas-events/useZoomTracking
  */
-import { useCallback, useEffect, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import { ZOOM_CONSTANTS, ZoomDirection } from "@/constants/zoomConstants";
-import { createFabricPoint } from "@/utils/grid/fabricPointConverters";
-import { Point } from "@/types/drawingTypes";
+import { useCallback, useEffect, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { UseZoomTrackingProps, UseZoomTrackingResult, ZOOM_LEVEL_CONSTANTS } from './types';
+import { createPoint } from '@/types/geometryTypes';
 
 /**
- * Props for useZoomTracking hook
+ * Default initial zoom level
  */
-export interface UseZoomTrackingProps {
-  /** Reference to the Fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Function to update zoom level */
-  updateZoomLevel: (zoomLevel: number) => void;
-  /** Current tool */
-  tool: DrawingMode;
-}
+const DEFAULT_ZOOM = ZOOM_LEVEL_CONSTANTS.DEFAULT_ZOOM;
 
 /**
- * Result of useZoomTracking hook
+ * Hook for tracking zoom level changes in the canvas
+ * 
+ * @param {UseZoomTrackingProps} props - Properties for the hook
+ * @returns {UseZoomTrackingResult} - Zoom tracking result with current zoom level
  */
-export interface UseZoomTrackingResult {
-  /** Function to handle zoom in */
-  zoomIn: () => void;
-  /** Function to handle zoom out */
-  zoomOut: () => void;
-  /** Function to reset zoom to default */
-  resetZoom: () => void;
-  /** Function to handle zoom by a factor */
-  handleZoom: (factor: number) => void;
-  /** Function to handle zoom to a specific level */
-  zoomToLevel: (level: number) => void;
-  /** Current zoom level */
-  currentZoom: number;
-}
-
-/**
- * Constants for zoom tracking
- */
-const ZOOM_TRACKING = {
-  /** Maximum number of listeners to register */
-  MAX_LISTENERS: 10,
+export const useZoomTracking = ({
+  fabricCanvasRef,
+  updateZoomLevel,
+  tool
+}: UseZoomTrackingProps): UseZoomTrackingResult => {
+  const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
   
-  /** Minimum zoom change to trigger update */
-  MIN_ZOOM_CHANGE: 0.0001,
+  /**
+   * Update zoom level in the component state
+   */
+  const handleZoomChange = useCallback((zoom: number) => {
+    setCurrentZoom(zoom);
+    if (updateZoomLevel) {
+      updateZoomLevel(zoom);
+    }
+  }, [updateZoomLevel]);
   
-  /** Default zoom center X-coordinate */
-  DEFAULT_CENTER_X: 0.5,
-  
-  /** Default zoom center Y-coordinate */
-  DEFAULT_CENTER_Y: 0.5
-};
-
-/**
- * Hook for tracking and managing zoom in the canvas
- * @param {UseZoomTrackingProps} props - Hook properties
- * @returns {UseZoomTrackingResult} Zoom tracking methods and state
- */
-export const useZoomTracking = (
-  props: UseZoomTrackingProps
-): UseZoomTrackingResult => {
-  const { fabricCanvasRef, updateZoomLevel, tool } = props;
-  const zoomRef = useRef<number>(ZOOM_CONSTANTS.DEFAULT_ZOOM);
-
-  // Handler to apply zoom with proper center point
-  const applyZoom = useCallback((newZoom: number, center?: Point) => {
+  /**
+   * Handle wheel events for zooming
+   */
+  const handleMouseWheel = useCallback((e: WheelEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-
-    // Constrain zoom level within bounds
-    const constrainedZoom = Math.max(
-      ZOOM_CONSTANTS.MIN_ZOOM, 
-      Math.min(newZoom, ZOOM_CONSTANTS.MAX_ZOOM)
-    );
     
-    const zoomDiff = Math.abs(constrainedZoom - zoomRef.current);
-    if (zoomDiff < ZOOM_TRACKING.MIN_ZOOM_CHANGE) return;
+    // Only zoom when tool is set to hand or select
+    if (tool !== 'hand' && tool !== 'select') return;
     
-    zoomRef.current = constrainedZoom;
-    updateZoomLevel(constrainedZoom);
+    // Prevent default browser behavior
+    e.preventDefault();
     
-    // If hand tool is active, allow zooming
-    if (tool === DrawingMode.Hand || center) {
-      try {
-        const zoomPoint = center 
-          ? { x: center.x, y: center.y }
-          : { 
-              x: canvas.getWidth() * ZOOM_TRACKING.DEFAULT_CENTER_X, 
-              y: canvas.getHeight() * ZOOM_TRACKING.DEFAULT_CENTER_Y
-            };
-            
-        // Apply zoom factor to canvas
-        canvas.zoomToPoint(zoomPoint, constrainedZoom);
-        canvas.fire('zoom:updated', { zoom: constrainedZoom, center: zoomPoint });
-      } catch (error) {
-        console.error('Error applying zoom:', error);
-      }
-    } else {
-      // Just update the state without changing canvas zoom
-      canvas.fire('zoom:updated', { zoom: constrainedZoom });
+    try {
+      // Calculate new zoom level based on wheel direction
+      const delta = e.deltaY;
+      const zoom = canvas.getZoom();
+      const newZoom = delta > 0 ? 
+        Math.max(ZOOM_LEVEL_CONSTANTS.MIN_ZOOM, zoom * 0.95) : 
+        Math.min(ZOOM_LEVEL_CONSTANTS.MAX_ZOOM, zoom * 1.05);
+      
+      // Get point under cursor as zoom center
+      const point = {
+        x: e.offsetX,
+        y: e.offsetY
+      };
+      
+      // Zoom to point
+      canvas.zoomToPoint(point, newZoom);
+      
+      // Fire custom zoom event
+      canvas.fire('custom:zoom-changed', { zoom: newZoom });
+      
+      // Update state
+      handleZoomChange(newZoom);
+    } catch (error) {
+      console.error('Error in wheel zoom handler:', error);
     }
-  }, [fabricCanvasRef, updateZoomLevel, tool]);
-
-  // Zoom in handler
-  const zoomIn = useCallback(() => {
-    applyZoom(zoomRef.current * ZOOM_CONSTANTS.IN);
-  }, [applyZoom]);
-
-  // Zoom out handler
-  const zoomOut = useCallback(() => {
-    applyZoom(zoomRef.current * ZOOM_CONSTANTS.OUT);
-  }, [applyZoom]);
-
-  // Reset zoom handler
-  const resetZoom = useCallback(() => {
-    applyZoom(ZOOM_CONSTANTS.DEFAULT_ZOOM);
-  }, [applyZoom]);
-
-  // Handle zoom by a factor
-  const handleZoom = useCallback((factor: number) => {
-    applyZoom(zoomRef.current * factor);
-  }, [applyZoom]);
-
-  // Zoom to a specific level
-  const zoomToLevel = useCallback((level: number) => {
-    applyZoom(level);
-  }, [applyZoom]);
-
+  }, [fabricCanvasRef, handleZoomChange, tool]);
+  
+  /**
+   * Register zoom tracking
+   */
+  const registerZoomTracking = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Set initial zoom level
+    const zoom = canvas.getZoom();
+    handleZoomChange(zoom);
+    
+    // Attach wheel event to canvas element
+    const canvasElement = canvas.getElement();
+    if (canvasElement) {
+      canvasElement.addEventListener('wheel', handleMouseWheel);
+    }
+    
+    // Listen for custom zoom events
+    canvas.on('custom:zoom-changed', (e: any) => {
+      if (e.zoom !== undefined) {
+        handleZoomChange(e.zoom);
+      }
+    });
+  }, [fabricCanvasRef, handleMouseWheel, handleZoomChange]);
+  
+  /**
+   * Effect to register zoom tracking on mount
+   */
+  useEffect(() => {
+    registerZoomTracking();
+    
+    return () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      // Remove wheel event from canvas element
+      const canvasElement = canvas.getElement();
+      if (canvasElement) {
+        canvasElement.removeEventListener('wheel', handleMouseWheel);
+      }
+      
+      // Remove custom zoom event listener
+      canvas.off('custom:zoom-changed');
+    };
+  }, [fabricCanvasRef, registerZoomTracking, handleMouseWheel]);
+  
+  /**
+   * Register handlers (for useEventHandlers hook)
+   */
+  const register = useCallback(() => {
+    registerZoomTracking();
+  }, [registerZoomTracking]);
+  
+  /**
+   * Unregister handlers (for useEventHandlers hook)
+   */
+  const unregister = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Remove wheel event from canvas element
+    const canvasElement = canvas.getElement();
+    if (canvasElement) {
+      canvasElement.removeEventListener('wheel', handleMouseWheel);
+    }
+    
+    // Remove custom zoom event listener
+    canvas.off('custom:zoom-changed');
+  }, [fabricCanvasRef, handleMouseWheel]);
+  
+  /**
+   * Clean up resources
+   */
+  const cleanup = useCallback(() => {
+    unregister();
+  }, [unregister]);
+  
   return {
-    zoomIn,
-    zoomOut,
-    resetZoom,
-    handleZoom,
-    zoomToLevel,
-    currentZoom: zoomRef.current
+    currentZoom,
+    register,
+    unregister,
+    cleanup,
+    registerZoomTracking
   };
 };

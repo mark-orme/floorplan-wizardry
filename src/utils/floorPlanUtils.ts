@@ -1,88 +1,78 @@
 
 /**
- * Floor plan utility functions
- * @module floorPlanUtils
+ * Utilities for floor plan creation and manipulation
+ * @module utils/floorPlanUtils
  */
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { v4 as uuidv4 } from 'uuid';
+import { FloorPlan } from '@/types/floorPlanTypes';
 
 /**
- * Constants for floor plan creation
- */
-export const FLOOR_PLAN_CONSTANTS = {
-  /** Default GIA value */
-  DEFAULT_GIA: 0,
-  
-  /** Default floor level */
-  DEFAULT_FLOOR_LEVEL: 0
-};
-
-/**
- * Creates a new floor plan with default values
+ * Create a new empty floor plan with default values
  * 
- * @param {string} id - Floor plan unique identifier
- * @param {string} name - Floor plan name
- * @param {number} [level] - Optional floor level
- * @returns {FloorPlan} New floor plan object
+ * @param {string} id - Optional ID for the floor plan (generates UUID if not provided)
+ * @param {string} name - Name of the floor plan
+ * @param {number} level - Floor level (optional, defaults to 0)
+ * @returns {FloorPlan} A new floor plan object with default values
  */
-export const createFloorPlan = (id: string, name: string, level?: number): FloorPlan => {
-  const timestamp = new Date().toISOString();
+export const createFloorPlan = (
+  id?: string,
+  name?: string,
+  level?: number
+): FloorPlan => {
+  const now = new Date().toISOString();
   
   return {
-    id,
-    name,
-    label: name,
-    gia: FLOOR_PLAN_CONSTANTS.DEFAULT_GIA,
-    level: level !== undefined ? level : FLOOR_PLAN_CONSTANTS.DEFAULT_FLOOR_LEVEL,
+    id: id || uuidv4(),
+    name: name || 'New Floor Plan',
+    label: name || 'New Floor Plan',
+    level: level || 0,
+    gia: 0, // Initialize with 0 gross internal area
     walls: [],
     rooms: [],
     strokes: [],
     canvasData: null,
-    createdAt: timestamp,
-    updatedAt: timestamp
+    createdAt: now,
+    updatedAt: now
   };
 };
 
 /**
- * Gets a floor plan by id from an array of floor plans
+ * Clone an existing floor plan with a new ID
  * 
- * @param {FloorPlan[]} floorPlans - Array of floor plans
- * @param {string} id - Floor plan id
- * @returns {FloorPlan|undefined} Found floor plan or undefined
+ * @param {FloorPlan} floorPlan - The floor plan to clone
+ * @param {string} newName - Optional new name for the cloned floor plan
+ * @returns {FloorPlan} A clone of the floor plan with a new ID
  */
-export const getFloorPlanById = (floorPlans: FloorPlan[], id: string): FloorPlan | undefined => {
-  return floorPlans.find(floorPlan => floorPlan.id === id);
+export const cloneFloorPlan = (
+  floorPlan: FloorPlan,
+  newName?: string
+): FloorPlan => {
+  const now = new Date().toISOString();
+  
+  return {
+    ...floorPlan,
+    id: uuidv4(),
+    name: newName || `${floorPlan.name} (Copy)`,
+    label: newName || `${floorPlan.name} (Copy)`,
+    createdAt: now,
+    updatedAt: now
+  };
 };
 
 /**
- * Gets the total GIA for all floor plans
+ * Update a floor plan with new data
  * 
- * @param {FloorPlan[]} floorPlans - Array of floor plans
- * @returns {number} Total GIA
+ * @param {FloorPlan} floorPlan - The floor plan to update
+ * @param {Partial<FloorPlan>} updates - The updates to apply
+ * @returns {FloorPlan} The updated floor plan
  */
-export const getTotalGIA = (floorPlans: FloorPlan[]): number => {
-  return floorPlans.reduce((total, floorPlan) => total + floorPlan.gia, 0);
-};
-
-/**
- * Updates a floor plan in an array of floor plans
- * 
- * @param {FloorPlan[]} floorPlans - Array of floor plans
- * @param {FloorPlan} updatedFloorPlan - Updated floor plan
- * @returns {FloorPlan[]} New array with updated floor plan
- */
-export const updateFloorPlan = (floorPlans: FloorPlan[], updatedFloorPlan: FloorPlan): FloorPlan[] => {
-  return floorPlans.map(floorPlan => 
-    floorPlan.id === updatedFloorPlan.id ? updatedFloorPlan : floorPlan
-  );
-};
-
-/**
- * Deletes a floor plan from an array of floor plans
- * 
- * @param {FloorPlan[]} floorPlans - Array of floor plans
- * @param {string} id - Floor plan id to delete
- * @returns {FloorPlan[]} New array without the deleted floor plan
- */
-export const deleteFloorPlan = (floorPlans: FloorPlan[], id: string): FloorPlan[] => {
-  return floorPlans.filter(floorPlan => floorPlan.id !== id);
+export const updateFloorPlan = (
+  floorPlan: FloorPlan,
+  updates: Partial<FloorPlan>
+): FloorPlan => {
+  return {
+    ...floorPlan,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
 };

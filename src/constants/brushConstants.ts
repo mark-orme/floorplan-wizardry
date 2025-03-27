@@ -1,48 +1,50 @@
 
 /**
- * Constants for brush settings and parameters
- * Used to maintain consistent brush behaviors across components
+ * Constants for brush settings
+ * @module constants/brushConstants
+ */
+
+/**
+ * Brush constants
  */
 export const BRUSH_CONSTANTS = {
-  /** Default brush opacity */
-  DEFAULT_OPACITY: 0.7,
+  /** Default pencil width */
+  DEFAULT_PENCIL_WIDTH: 2,
   
   /** Default pencil color */
-  DEFAULT_PENCIL_COLOR: "#000000",
+  DEFAULT_PENCIL_COLOR: '#000000',
   
-  /** Default shadow color for drawing brushes */
-  DEFAULT_SHADOW_COLOR: 'rgba(0, 0, 0, 0.2)',
-  
-  /** Default shadow blur amount for drawing brushes */
-  DEFAULT_SHADOW_BLUR: 2,
-  
-  /** Default pencil brush width */
-  DEFAULT_PENCIL_WIDTH: 2,  // Renamed from PENCIL_WIDTH to match usage
-  
-  /** Default spray brush width */
-  SPRAY_WIDTH: 10,
-  
-  /** Default spray brush density */
-  SPRAY_DENSITY: 20,
-  
-  /** Default spray brush randomness factor */
-  SPRAY_RANDOMNESS: 0.2,
-  
-  /** Minimum brush width allowed */
+  /** Minimum brush width */
   MIN_BRUSH_WIDTH: 0.5,
   
-  /** Maximum brush width allowed */
+  /** Maximum brush width */
   MAX_BRUSH_WIDTH: 50,
   
-  /** Pressure sensitivity multiplier for stylus input */
-  PRESSURE_MULTIPLIER: 2.5,
+  /** Default pressure sensitivity */
+  DEFAULT_PRESSURE: false,
   
-  /** Default line cap for brush strokes */
-  DEFAULT_LINE_CAP: 'round',
-  
-  /** Default line join for brush strokes */
-  DEFAULT_LINE_JOIN: 'round',
-  
-  /** Decimation level for path simplification */
-  PATH_DECIMATION: 2
+  /** Default brush opacity */
+  DEFAULT_OPACITY: 1.0
 };
+
+/**
+ * Line style constants
+ */
+export const LINE_STYLES = {
+  /** Solid line */
+  SOLID: [],
+  
+  /** Dashed line */
+  DASHED: [5, 5],
+  
+  /** Dotted line */
+  DOTTED: [2, 2],
+  
+  /** Dash dot line */
+  DASH_DOT: [10, 5, 2, 5]
+};
+
+/**
+ * Brush types
+ */
+export type BrushType = 'pencil' | 'marker' | 'highlighter' | 'pen' | 'eraser';

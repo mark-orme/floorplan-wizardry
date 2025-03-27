@@ -5,6 +5,9 @@
  */
 import { Point } from './geometryTypes';
 
+// Re-export Point for compatibility
+export type { Point };
+
 /**
  * Canvas dimensions
  */

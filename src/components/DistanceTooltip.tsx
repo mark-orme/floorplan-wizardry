@@ -5,7 +5,7 @@
  * @module components/DistanceTooltip
  */
 import React from 'react';
-import { Point } from '@/types/drawingTypes';
+import { Point } from '@/types/geometryTypes';
 
 /**
  * Constants for distance tooltip
@@ -38,9 +38,9 @@ const TOOLTIP_CONSTANTS = {
  */
 interface DistanceTooltipProps {
   /** Start point of the measurement */
-  startPoint: { x: number; y: number };
+  startPoint: Point;
   /** End point of the measurement */
-  endPoint: { x: number; y: number };
+  endPoint: Point;
   /** Distance in real-world units */
   distance: number;
   /** Unit of measurement */

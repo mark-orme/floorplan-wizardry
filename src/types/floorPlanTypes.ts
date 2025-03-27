@@ -1,16 +1,11 @@
-
 /**
  * Floor plan type definitions
  * @module types/floorPlanTypes
  */
+import { Point } from './geometryTypes';
 
-/**
- * Point coordinates
- */
-export interface Point {
-  x: number;
-  y: number;
-}
+// Re-export Point type
+export type { Point };
 
 /**
  * Stroke data for drawing paths

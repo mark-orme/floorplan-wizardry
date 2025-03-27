@@ -8,8 +8,9 @@ import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types/core/DebugInfo";
 import { ZoomDirection } from "@/types/drawingTypes";
+import { DrawingTool } from "@/constants/drawingModes";
 
 /**
  * Canvas application component
@@ -53,6 +54,8 @@ export const CanvasApp = () => {
 
   // Create a safe debug info object with required properties for type compatibility
   const safeDebugInfo: DebugInfoState = {
+    // Include all required properties to ensure type safety
+    ...debugInfo,
     canvasInitialized: debugInfo.canvasInitialized || false,
     dimensionsSet: debugInfo.dimensionsSet || false,
     gridCreated: debugInfo.gridCreated || false,
@@ -76,7 +79,7 @@ export const CanvasApp = () => {
 
   return (
     <CanvasLayout
-      tool={tool}
+      tool={tool as DrawingTool}
       gia={gia}
       floorPlans={floorPlans}
       currentFloor={currentFloor}
@@ -84,7 +87,7 @@ export const CanvasApp = () => {
       canvasRef={canvasRef}
       lineThickness={lineThickness}
       lineColor={lineColor}
-      onToolChange={handleToolChange}
+      onToolChange={handleToolChange as (tool: DrawingTool) => void}
       onUndo={handleUndo}
       onRedo={handleRedo}
       onZoom={handleZoomAdapter}

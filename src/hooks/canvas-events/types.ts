@@ -5,6 +5,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode, DrawingTool } from "@/constants/drawingModes";
+import { Point } from "@/types/geometryTypes";
 
 /**
  * Canvas operation types
@@ -41,6 +42,7 @@ export interface CanvasEvents {
   'mouse:up': any;
   'path:created': any;
   'zoom:updated': any;
+  'custom:zoom-changed': any;
 }
 
 /**
@@ -80,6 +82,16 @@ export interface BaseEventHandlerProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current tool selected */
   tool?: DrawingTool;
+  /** Save current state before making changes */
+  saveCurrentState?: () => void;
+  /** Process created path */
+  processCreatedPath?: (path: any) => void;
+  /** Handle mouse up event */
+  handleMouseUp?: (e?: any) => void;
+  /** Line color */
+  lineColor?: string;
+  /** Line thickness */
+  lineThickness?: number;
 }
 
 /**
@@ -109,7 +121,7 @@ export interface UseZoomTrackingResult extends EventHandlerResult {
   /** Current zoom level */
   currentZoom: number;
   /** Register zoom tracking specifically */
-  registerZoomTracking: () => void;
+  registerZoomTracking?: () => void;
 }
 
 /**

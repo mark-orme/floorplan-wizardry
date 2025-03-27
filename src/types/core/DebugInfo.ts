@@ -108,7 +108,7 @@ export interface DebugInfoState {
   devicePixelRatio?: number;
   /** Last error that occurred */
   lastError?: any;
-  /** Timestamp of the last error */
+  /** Last error time */
   lastErrorTime?: number;
   /** Any additional debug info */
   [key: string]: boolean | number | string | object | undefined;

@@ -25,7 +25,9 @@ const DEFAULT_BRUSH_COLOR = '#000000';
  */
 export const useBrushSettings = ({ 
   fabricCanvasRef, 
-  tool 
+  tool,
+  lineColor = DEFAULT_BRUSH_COLOR,
+  lineThickness = DEFAULT_BRUSH_WIDTH
 }: UseBrushSettingsProps): EventHandlerResult => {
   
   /**
@@ -37,13 +39,13 @@ export const useBrushSettings = ({
 
     try {
       if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.width = DEFAULT_BRUSH_WIDTH;
-        canvas.freeDrawingBrush.color = DEFAULT_BRUSH_COLOR;
+        canvas.freeDrawingBrush.width = lineThickness || DEFAULT_BRUSH_WIDTH;
+        canvas.freeDrawingBrush.color = lineColor || DEFAULT_BRUSH_COLOR;
       }
     } catch (error) {
       console.error('Error initializing brush:', error);
     }
-  }, [fabricCanvasRef]);
+  }, [fabricCanvasRef, lineColor, lineThickness]);
 
   /**
    * Update brush settings when the tool changes

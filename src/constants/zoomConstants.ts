@@ -5,14 +5,9 @@
  */
 
 /**
- * Type for zoom direction
- */
-export type ZoomDirection = 'in' | 'out';
-
-/**
  * Zoom level constants
  */
-export const ZOOM_LEVEL_CONSTANTS = {
+export const ZOOM_CONSTANTS = {
   /** Minimum zoom level */
   MIN_ZOOM: 0.1,
   
@@ -22,12 +17,20 @@ export const ZOOM_LEVEL_CONSTANTS = {
   /** Default zoom level */
   DEFAULT_ZOOM: 1.0,
   
-  /** Zoom increment */
-  ZOOM_INCREMENT: 0.1
+  /** Zoom increment for keyboard operations */
+  ZOOM_INCREMENT: 0.1,
+  
+  /** Zoom increment for wheel operations */
+  WHEEL_ZOOM_FACTOR: 0.05
 };
 
 /**
- * Zoom multiplier constants
+ * Zoom direction type
+ */
+export type ZoomDirection = 'in' | 'out';
+
+/**
+ * Zoom multipliers for different operations
  */
 export const ZOOM_MULTIPLIERS = {
   /** Zoom in multiplier */
@@ -36,26 +39,9 @@ export const ZOOM_MULTIPLIERS = {
   /** Zoom out multiplier */
   OUT: 0.8,
   
-  /** Reset zoom level */
-  RESET: 1.0
-};
-
-/**
- * Constants for zoom behaviors
- */
-export const ZOOM_CONSTANTS = {
-  /** Default zoom level */
-  DEFAULT_ZOOM: 1.0,
+  /** Small zoom in step */
+  SMALL_IN: 1.05,
   
-  /** Zoom in factor */
-  IN: 1.2,
-  
-  /** Zoom out factor */
-  OUT: 0.8,
-  
-  /** Minimum zoom level */
-  MIN_ZOOM: 0.1,
-  
-  /** Maximum zoom level */
-  MAX_ZOOM: 10.0
+  /** Small zoom out step */
+  SMALL_OUT: 0.95
 };

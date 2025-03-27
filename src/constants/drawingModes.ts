@@ -79,4 +79,20 @@ export const DRAWING_TOOL_GROUPS = {
  * Type alias for DrawingMode to use in various hooks
  * This ensures compatibility between DrawingMode and DrawingTool
  */
-export type DrawingTool = DrawingMode | 'draw' | 'text' | 'select' | 'hand' | 'erase';
+export type DrawingTool = 
+  | DrawingMode 
+  | 'draw' 
+  | 'text' 
+  | 'select' 
+  | 'hand' 
+  | 'erase' 
+  | 'wall' 
+  | 'free' 
+  | 'straight' 
+  | 'polygon'
+  | 'rectangle' 
+  | 'circle' 
+  | 'measure'
+  | 'eraser'
+  | 'straightLine'
+  | 'room';
