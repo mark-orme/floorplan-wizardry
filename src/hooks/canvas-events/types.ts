@@ -4,7 +4,7 @@
  * Provides types for canvas events and handler properties
  * @module canvasEventTypes
  */
-import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, IEvent, TPointerEventInfo, TPointerEvent } from "fabric";
+import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, TEvent, TPointerEventInfo, TPointerEvent } from "fabric";
 import { DrawingTool } from "../useCanvasState";
 import { Point } from "@/types/geometryTypes";
 
