@@ -4,21 +4,12 @@
  * @module useCanvasControllerErrorHandling
  */
 import { useCallback } from "react";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types";
 
 interface UseCanvasControllerErrorHandlingProps {
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
   updateDebugInfo: (info: Partial<DebugInfoState>) => void;
-}
-
-// Extend DebugInfoState to include our needed properties
-declare module '@/types/debugTypes' {
-  interface DebugInfoState {
-    errorCount?: number;
-    lastRetryTime?: string;
-    retryCount?: number;
-  }
 }
 
 interface UpdateDebugInfoObject {

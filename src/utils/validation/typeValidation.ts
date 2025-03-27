@@ -139,9 +139,8 @@ export function validateCanvasDimensions(dimensions: unknown): CanvasDimensions 
  * @returns A validator for partial debug info state
  */
 export function createPartialDebugInfoValidator() {
-  // Use a different approach for partial validation that doesn't lose type information
-  const partialSchema = debugInfoStateSchema.deepPartial();
-  return (data: unknown) => partialSchema.parse(data) as Partial<DebugInfoState>;
+  const partialSchema = debugInfoStateSchema.partial();
+  return (data: unknown): Partial<DebugInfoState> => partialSchema.parse(data) as Partial<DebugInfoState>;
 }
 
 /**
@@ -150,7 +149,6 @@ export function createPartialDebugInfoValidator() {
  * @returns A validator for partial drawing state
  */
 export function createPartialDrawingStateValidator() {
-  // Use a different approach for partial validation that doesn't lose type information
-  const partialSchema = drawingStateSchema.deepPartial();
-  return (data: unknown) => partialSchema.parse(data) as Partial<DrawingState>;
+  const partialSchema = drawingStateSchema.partial();
+  return (data: unknown): Partial<DrawingState> => partialSchema.parse(data) as Partial<DrawingState>;
 }
