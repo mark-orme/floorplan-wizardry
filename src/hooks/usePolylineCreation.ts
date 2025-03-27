@@ -137,10 +137,7 @@ export const usePolylineCreation = ({
       
       // Calculate GIA if it's a room
       if (isEnclosed && polyline.objectType === 'room') {
-        const area = calculateGIA([polyline]);
-        console.log("Room created with area:", area);
-        
-        // Update GIA if recalculation function is provided
+        // This is now properly typed with objectType
         if (recalculateGIA && typeof recalculateGIA === 'function') {
           recalculateGIA();
         }

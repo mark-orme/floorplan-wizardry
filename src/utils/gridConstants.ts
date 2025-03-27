@@ -62,7 +62,7 @@ export const GRID_PERFORMANCE_THRESHOLDS = {
  * @constant {Object}
  */
 export const GRID_OPACITY = {
-  SMALL_GRID: 0.7, // Increased opacity for small grid lines (was 0.6)
+  SMALL_GRID: 0.8, // Increased opacity for better visibility
   LARGE_GRID: 0.9  // Higher opacity for large grid lines
 };
 
@@ -71,8 +71,8 @@ export const GRID_OPACITY = {
  * @constant {Object}
  */
 export const GRID_COLORS = {
-  SMALL_GRID: "#A6CDD3", // Darker blue-green for small grid (was #C5E7EC)
-  LARGE_GRID: "#86C5CD", // Slightly darker blue-green for large grid
+  SMALL_GRID: "#85B4BD", // Darker blue-green for better visibility (was #A6CDD3)
+  LARGE_GRID: "#5FA1A9", // Darker blue-green for large grid (was #86C5CD)
   MARKERS: "#555555"     // Dark gray for markers
 };
 

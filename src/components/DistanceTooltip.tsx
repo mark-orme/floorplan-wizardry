@@ -102,18 +102,18 @@ export const DistanceTooltip = memo(({
   
   // Required points check
   if (!startPoint || !currentPoint) {
-    console.log("Missing required points for distance tooltip");
     return null;
   }
   
-  // Calculate distance in meters
-  const distance = calculateDistance(startPoint, currentPoint);
+  // Calculate distance in meters - divide by PIXELS_PER_METER for proper unit conversion
+  const distanceInPixels = calculateDistance(startPoint, currentPoint);
+  const distanceInMeters = distanceInPixels / PIXELS_PER_METER;
   
-  // Format distance to 2 decimal places
-  const formattedDistance = formatDistance(distance);
+  // Format distance for display - already in meters
+  const formattedDistance = formatDistance(distanceInMeters);
   
   // Only show if distance is meaningful (avoid tiny movements)
-  if (distance < MIN_VISIBLE_DISTANCE) {
+  if (distanceInMeters < MIN_VISIBLE_DISTANCE) {
     return null;
   }
   
@@ -148,7 +148,7 @@ export const DistanceTooltip = memo(({
     >
       <div className={TOOLTIP_STYLES.CONTENT_CLASSES}>
         <Ruler className="w-4 h-4 flex-shrink-0" />
-        <span className="font-semibold">{formattedDistance}m</span>
+        <span className="font-semibold">{formattedDistance}</span>
         {(isSnappedToGrid || isAutoStraightened) && (
           <span className="ml-1 text-xs opacity-80">
             {isSnappedToGrid && '📏'}

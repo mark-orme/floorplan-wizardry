@@ -1,4 +1,3 @@
-
 /**
  * Line operation utilities module
  * Functions for calculating and manipulating lines
@@ -37,21 +36,17 @@ export const calculatePreciseDistance = (p1: Point, p2: Point): number => {
 
 /**
  * Format a distance measurement for display
- * @param {number} distance - Distance value to format
+ * Always show in meters for consistency (input should already be in meters)
+ * 
+ * @param {number} distance - Distance value in meters to format
  * @param {number} precision - Number of decimal places
- * @returns {string} Formatted distance string with units
+ * @returns {string} Formatted distance string (e.g., "3.0m")
  */
 export const formatDistance = (distance: number, precision: number = DISTANCE_PRECISION): string => {
   if (distance === null || distance === undefined || isNaN(distance)) return "0m";
   
-  // Format based on size
-  if (distance < 0.1) {
-    // Convert to cm for very small distances
-    return `${(distance * 100).toFixed(0)}cm`;
-  } else {
-    // Use meters with appropriate precision
-    return `${distance.toFixed(precision)}m`;
-  }
+  // Format consistently in meters with 1 decimal place
+  return `${distance.toFixed(1)}m`;
 };
 
 /**

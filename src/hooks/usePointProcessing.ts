@@ -84,9 +84,10 @@ export const usePointProcessing = ({
         y: pointer.y
       };
       
-      // For straight lines and wall tools, apply snapping directly here
+      // For drawing tools that need snapping, apply it directly
       if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
-        return snapToGrid(point, 10); // Use the default grid size of 10
+        // Apply grid snapping with a reasonable snap threshold (10px)
+        return snapToGrid(point, 10);
       }
       
       return point;

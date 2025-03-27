@@ -7,7 +7,7 @@ import { calculateMidpoint } from "@/utils/geometry";
 import { snapToGrid, snapLineToStandardAngles } from "@/utils/grid/snapping";
 import { straightenStroke } from "@/utils/geometry/straightening";
 import { formatDistance } from "@/utils/geometry/lineOperations";
-import { isTouchEvent, extractClientCoordinates } from "@/utils/fabric"; // Fixed import
+import { isTouchEvent, extractClientCoordinates } from "@/utils/fabric";
 
 interface UseDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -137,7 +137,10 @@ export const useDrawingState = ({
   
   // Handle mouse up event - end drawing
   const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
-    if (!fabricCanvasRef.current || !drawingState.isDrawing) return;
+    if (!fabricCanvasRef.current) return;
+    
+    // Only process if we're actually drawing
+    if (!drawingState.isDrawing) return;
     
     // Get final points
     const { startPoint, currentPoint } = drawingState;
@@ -154,18 +157,6 @@ export const useDrawingState = ({
         startPoint: processedPoints[0],
         currentPoint: processedPoints[1]
       }));
-      
-      // Reset after a short delay
-      const resetTimeout = setTimeout(() => {
-        setDrawingState(prev => ({
-          ...prev,
-          startPoint: null,
-          currentPoint: null,
-          midPoint: null
-        }));
-      }, 200);
-      
-      timeoutsRef.current.push(resetTimeout);
     } else {
       // Simple reset if no valid points
       setDrawingState(prev => ({
@@ -173,6 +164,18 @@ export const useDrawingState = ({
         isDrawing: false
       }));
     }
+    
+    // Reset after a short delay to clear the measurement
+    const resetTimeout = setTimeout(() => {
+      setDrawingState(prev => ({
+        ...prev,
+        startPoint: null,
+        currentPoint: null,
+        midPoint: null
+      }));
+    }, 100);
+    
+    timeoutsRef.current.push(resetTimeout);
     
   }, [fabricCanvasRef, drawingState]);
   

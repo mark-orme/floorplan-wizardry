@@ -129,13 +129,16 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Initialize the drawing brush (required for drawing mode)
       if (!canvas.freeDrawingBrush || !(canvas.freeDrawingBrush instanceof PencilBrush)) {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
-        canvas.freeDrawingBrush.color = lineColor || '#000000';
-        canvas.freeDrawingBrush.width = lineThickness || 2;
-        console.log("Drawing brush initialized:", {
-          color: canvas.freeDrawingBrush.color,
-          width: canvas.freeDrawingBrush.width
-        });
       }
+      
+      // Set brush properties
+      canvas.freeDrawingBrush.color = lineColor || '#000000';
+      canvas.freeDrawingBrush.width = lineThickness || 2;
+      
+      console.log("Drawing brush initialized:", {
+        color: canvas.freeDrawingBrush.color,
+        width: canvas.freeDrawingBrush.width
+      });
       
       // Initialize multi-touch gestures support
       initializeCanvasGestures(canvas);
@@ -251,15 +254,15 @@ export const Canvas: React.FC<CanvasProps> = ({
         </button>
       </div>
       
-      {/* Distance tooltip for measurements */}
+      {/* Distance tooltip for measurements - only show when actively drawing */}
       <DistanceTooltip
         startPoint={drawingState.startPoint}
         currentPoint={drawingState.currentPoint}
         midPoint={drawingState.midPoint}
-        isVisible={Boolean(drawingState.startPoint && drawingState.currentPoint && (tool === 'straightLine' || tool === 'wall'))}
+        isVisible={Boolean(drawingState.isDrawing && drawingState.startPoint && drawingState.currentPoint && (tool === 'straightLine' || tool === 'wall'))}
         currentZoom={currentZoom}
-        isSnappedToGrid={isSnappedToGrid(drawingState.currentPoint)}
-        isAutoStraightened={isLineAutoStraightened(drawingState.startPoint, drawingState.currentPoint)}
+        isSnappedToGrid={drawingState.startPoint && isSnappedToGrid(drawingState.startPoint)}
+        isAutoStraightened={drawingState.startPoint && drawingState.currentPoint && isLineAutoStraightened(drawingState.startPoint, drawingState.currentPoint)}
       />
     </>
   );
