@@ -328,7 +328,6 @@ export const reorderGridObjects = (
         obj.strokeWidth && 
         obj.strokeWidth === 1
       ) {
-        // Use sendToFront instead of bringForward (which doesn't exist)
         canvas.bringObjectToFront(obj);
       }
     });
@@ -336,7 +335,6 @@ export const reorderGridObjects = (
     // Bring text labels to front
     gridLayerRef.current.forEach(obj => {
       if (obj.type === 'text') {
-        // Use sendToFront instead of bringForward (which doesn't exist)
         canvas.bringObjectToFront(obj);
       }
     });
@@ -395,9 +393,4 @@ export const verifyGridExists = (
   return validateGrid(canvas, gridLayerRef);
 };
 
-// Export all functions from this module
-export {
-  // Functions are already exported above with 'export const'
-  // so we don't need to re-export them here
-};
-
+// Note: All functions are already exported with their declarations above

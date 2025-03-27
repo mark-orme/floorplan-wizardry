@@ -1,6 +1,6 @@
 
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { createBasicEmergencyGrid, validateGrid, verifyGridExists, retryWithBackoff, createCompleteGrid } from '../gridCreationUtils';
+import { createBasicEmergencyGrid, validateGrid, verifyGridExists, retryWithBackoff, createCompleteGrid, ensureGrid, reorderGridObjects } from '../gridCreationUtils';
 import { Canvas as FabricCanvas } from 'fabric';
 
 // Mock Fabric to avoid DOM dependencies in tests
