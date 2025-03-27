@@ -4,11 +4,12 @@
  * Manages canvas resizing with event handlers and state tracking
  * @module canvas-resizing/useCanvasResizing
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { CanvasDimensions } from "@/types/drawingTypes";
 import { UseCanvasResizingProps, CanvasResizingResult } from "./types";
 import { resizingState } from "./state";
 import { useResizeLogic } from "./useResizeLogic";
+import { throttle } from "@/utils/throttleUtils";
 import {
   RESIZE_DEBOUNCE_DELAY,
   INITIAL_RESIZE_DELAY
@@ -37,6 +38,7 @@ export const useCanvasResizing = ({
   const initialResizeTimerRef = useRef<number | null>(null);
   const resizeCountRef = useRef<number>(0);
   const lastResizeTimeRef = useRef<number>(resizingState.lastResizeTime);
+  const eventCleanupRef = useRef<(() => void) | null>(null);
 
   // Use the resize logic hook
   const { updateCanvasDimensions } = useResizeLogic({
@@ -54,20 +56,25 @@ export const useCanvasResizing = ({
     resizeCountRef
   });
 
+  // Create throttled resize handler
+  const throttledResizeHandler = useCallback(
+    throttle(() => {
+      if (!resizeInProgressRef.current) {
+        updateCanvasDimensions();
+      }
+    }, RESIZE_DEBOUNCE_DELAY),
+    [updateCanvasDimensions]
+  );
+
   // Set up event listeners for window resize
   useEffect(() => {
-    const debouncedResizeHandler = () => {
-      if (resizeTimeoutRef.current !== null) {
-        window.clearTimeout(resizeTimeoutRef.current);
-      }
-      
-      resizeTimeoutRef.current = window.setTimeout(() => {
-        updateCanvasDimensions();
-        resizeTimeoutRef.current = null;
-      }, RESIZE_DEBOUNCE_DELAY);
+    // Add event listener for resize
+    window.addEventListener('resize', throttledResizeHandler);
+    
+    // Store cleanup function
+    eventCleanupRef.current = () => {
+      window.removeEventListener('resize', throttledResizeHandler);
     };
-
-    window.addEventListener('resize', debouncedResizeHandler);
     
     // Initial update with a delay to ensure DOM is ready
     // Only run this once per component lifecycle
@@ -79,16 +86,35 @@ export const useCanvasResizing = ({
     }
     
     return () => {
-      window.removeEventListener('resize', debouncedResizeHandler);
+      // Remove resize event listener
+      if (eventCleanupRef.current) {
+        eventCleanupRef.current();
+      }
+      
+      // Clear any pending timeouts
       if (resizeTimeoutRef.current !== null) {
         window.clearTimeout(resizeTimeoutRef.current);
+        resizeTimeoutRef.current = null;
       }
       if (initialResizeTimerRef.current !== null) {
         clearTimeout(initialResizeTimerRef.current);
         initialResizeTimerRef.current = null;
       }
     };
-  }, [updateCanvasDimensions]);
+  }, [updateCanvasDimensions, throttledResizeHandler]);
 
-  return { updateCanvasDimensions };
+  // Cancel resize function
+  const cancelResize = useCallback(() => {
+    if (resizeTimeoutRef.current !== null) {
+      window.clearTimeout(resizeTimeoutRef.current);
+      resizeTimeoutRef.current = null;
+    }
+    resizeInProgressRef.current = false;
+    resizingState.resizeInProgress = false;
+  }, []);
+
+  return { 
+    updateCanvasDimensions,
+    cancelResize
+  };
 };

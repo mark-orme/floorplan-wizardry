@@ -3,7 +3,7 @@
  * Floor Plan Canvas component
  * Handles canvas rendering and initialization
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Canvas } from "@/components/Canvas";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
@@ -20,6 +20,7 @@ interface FloorPlanCanvasProps {
 export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   const [isReady, setIsReady] = useState(false);
   const [initAttempt, setInitAttempt] = useState(0);
+  const unmountedRef = useRef(false);
   
   // Set ready state after a short delay to ensure DOM is fully rendered
   useEffect(() => {
@@ -30,10 +31,15 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
     setIsReady(false);
     
     const timer = setTimeout(() => {
-      setIsReady(true);
+      if (!unmountedRef.current) {
+        setIsReady(true);
+      }
     }, 500);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      unmountedRef.current = true;
+    };
   }, [initAttempt]);
   
   /**
@@ -50,7 +56,9 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
       
       // Try to re-initialize after a delay
       setTimeout(() => {
-        setIsReady(true);
+        if (!unmountedRef.current) {
+          setIsReady(true);
+        }
       }, 800);
     } catch (error) {
       handleError(error, {
@@ -59,6 +67,14 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
       });
     }
   };
+  
+  // Clean up resources when component unmounts
+  useEffect(() => {
+    return () => {
+      unmountedRef.current = true;
+      resetInitializationState();
+    };
+  }, []);
   
   return (
     <div 

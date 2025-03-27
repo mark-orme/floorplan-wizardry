@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasContainer } from "./CanvasContainer";
 import { useCanvasInitialization } from "@/hooks/canvas-initialization";
@@ -9,6 +10,7 @@ import { DebugInfoState } from "@/types/debugTypes";
 import { EmergencyCanvasProvider } from "./emergency/EmergencyCanvasProvider";
 import logger from "@/utils/logger";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
+import { useCanvasCleanup } from "@/hooks/useCanvasCleanup";
 
 /**
  * Canvas component props
@@ -42,6 +44,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricCanvas["getObjects"] extends () => infer T ? T : never[]>([]);
   const historyRef = useRef<{past: any[][], future: any[][]}>({ past: [], future: [] });
+  const eventHandlersCleanupRef = useRef<(() => void) | null>(null);
   
   // Debug state
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
@@ -55,6 +58,9 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   
+  // Use canvas cleanup hook for proper resource management
+  const { cleanupCanvas } = useCanvasCleanup();
+  
   // Initialize the canvas
   const { 
     canvasRef,
@@ -62,7 +68,8 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     gridLayerRef: initGridLayerRef,
     historyRef: initHistoryRef,
     deleteSelectedObjects,
-    recalculateGIA
+    recalculateGIA,
+    cleanup: cleanupInitialization
   } = useCanvasInitialization({
     canvasDimensions,
     tool,
@@ -84,7 +91,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
   }, [initFabricCanvasRef.current, initGridLayerRef.current]);
   
   // Set up drawing on the canvas
-  const { drawingState } = useCanvasDrawing({
+  const { drawingState, cleanup: cleanupDrawing } = useCanvasDrawing({
     fabricCanvasRef,
     gridLayerRef,
     historyRef: initHistoryRef, // Use the history from initialization
@@ -115,8 +122,18 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     currentZoom 
   } = drawingState;
   
+  // Store cleanup function from drawing
+  useEffect(() => {
+    if (cleanupDrawing) {
+      eventHandlersCleanupRef.current = cleanupDrawing;
+    }
+    return () => {
+      // No need to call cleanup here, it will be called in the main cleanup effect
+    };
+  }, [cleanupDrawing]);
+  
   // Handle canvas retry
-  const handleCanvasRetry = () => {
+  const handleCanvasRetry = useCallback(() => {
     // Reset error state
     setHasError(false);
     setErrorMessage("");
@@ -134,7 +151,39 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     
     // Force a re-render
     canvasElementRef.current = null;
-  };
+  }, [setDebugInfo, setHasError, setErrorMessage]);
+  
+  // Comprehensive cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      logger.info("Canvas component unmounting, performing cleanup");
+      
+      // Call event handlers cleanup if available
+      if (eventHandlersCleanupRef.current) {
+        logger.debug("Cleaning up event handlers");
+        eventHandlersCleanupRef.current();
+      }
+      
+      // Call drawing cleanup if available
+      if (cleanupDrawing) {
+        logger.debug("Cleaning up drawing");
+        cleanupDrawing();
+      }
+      
+      // Call initialization cleanup if available
+      if (cleanupInitialization) {
+        logger.debug("Cleaning up initialization");
+        cleanupInitialization();
+      }
+      
+      // Clean up the Fabric canvas instance
+      if (fabricCanvasRef.current) {
+        logger.debug("Cleaning up Fabric canvas");
+        cleanupCanvas(fabricCanvasRef.current);
+        fabricCanvasRef.current = null;
+      }
+    };
+  }, [cleanupCanvas, cleanupDrawing, cleanupInitialization]);
   
   // Add error handling to the canvas
   useEffect(() => {
@@ -147,11 +196,18 @@ export const Canvas: React.FC<CanvasProps> = ({ onError }: CanvasProps = {}) => 
     };
     
     // Attach error handler to canvas element if needed
+    const canvasElement = canvasRef.current;
+    if (canvasElement) {
+      canvasElement.addEventListener('error', handleError);
+    }
     
     return () => {
       // Clean up error handler
+      if (canvasElement) {
+        canvasElement.removeEventListener('error', handleError);
+      }
     };
-  }, [onError]);
+  }, [onError, canvasRef]);
   
   // Render the canvas and UI components
   return (
