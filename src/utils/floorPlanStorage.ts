@@ -1,4 +1,3 @@
-
 /**
  * Utilities for floor plan storage and persistence
  * Manages saving and loading floor plans to/from IndexedDB and localStorage
@@ -65,7 +64,10 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
     strokes: [],
     walls: [],
     rooms: [],
-    level: 0
+    level: 0,
+    canvasData: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }];
 };
 
@@ -115,6 +117,8 @@ function ensureRequiredFields(floorPlans: unknown[]): FloorPlan[] {
     return [];
   }
   
+  const timestamp = new Date().toISOString();
+  
   return floorPlans.map((plan: any) => ({
     ...plan,
     paperSize: validatePaperSize(plan.paperSize),
@@ -126,7 +130,10 @@ function ensureRequiredFields(floorPlans: unknown[]): FloorPlan[] {
     strokes: Array.isArray(plan.strokes) ? plan.strokes : [],
     walls: Array.isArray(plan.walls) ? plan.walls : [],
     rooms: Array.isArray(plan.rooms) ? plan.rooms : [],
-    level: typeof plan.level === 'number' ? plan.level : 0
+    level: typeof plan.level === 'number' ? plan.level : 0,
+    canvasData: plan.canvasData || null,
+    createdAt: plan.createdAt || timestamp,
+    updatedAt: plan.updatedAt || timestamp
   }));
 }
 

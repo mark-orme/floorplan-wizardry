@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { FloorPlan } from '@/utils/drawing'; 
@@ -89,7 +90,10 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     name: 'Ground Floor', 
     label: 'Ground Floor',
     gia: 0,
-    strokes: [] 
+    strokes: [],
+    canvasData: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }]);
   const [currentFloor, setCurrentFloor] = useState<number>(INITIAL_FLOOR_INDEX);
   const [lineThickness, setLineThickness] = useState<number>(INITIAL_LINE_THICKNESS);
@@ -194,7 +198,10 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
         name: `Floor ${newFloorIndex + 1}`,
         label: `Floor ${newFloorIndex + 1}`,
         gia: 0,
-        strokes: []
+        strokes: [],
+        canvasData: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
       return newFloorPlans;
     });

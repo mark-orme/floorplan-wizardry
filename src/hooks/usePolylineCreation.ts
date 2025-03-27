@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { PIXELS_PER_METER, DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
 import { calculateGIA } from "@/utils/geometry";
 import { DrawingTool } from "./useCanvasState";
-import { FloorPlan, Point } from "@/types/floorPlanTypes";
+import { FloorPlan, Point, Stroke } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 
 /**
@@ -153,7 +153,7 @@ export const usePolylineCreation = ({
           // Add the new stroke
           const newStrokes = [...updatedFloorPlan.strokes];
           // Create a properly formatted Point[][] array by wrapping finalPoints in another array
-          newStrokes.push([...finalPoints]); // Each stroke is an array of points
+          newStrokes.push(finalPoints); // Since Stroke = Point[], this should work now
           updatedFloorPlan.strokes = newStrokes;
           
           // Update the floor plan in the array
@@ -162,7 +162,7 @@ export const usePolylineCreation = ({
           // Calculate and update area for enclosed shapes
           if (isEnclosed && finalPoints.length > 2) {
             // The calculateGIA function expects Point[][], so we need to wrap finalPoints in an array
-            const area = calculateGIA([[...finalPoints]]);
+            const area = calculateGIA([finalPoints]);
             setGia(prev => prev + area);
             toast.success(`Room shape enclosed: ${area.toFixed(2)} m²`);
           }

@@ -6,7 +6,7 @@
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Rect, Line, Polyline, Text } from "fabric";
-import { FloorPlan, Wall, Room, Point } from "@/types/floorPlanTypes";
+import { FloorPlan, Wall, Room, Point, Stroke } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
 import { PIXELS_PER_METER } from "@/constants/numerics";
 
@@ -99,6 +99,7 @@ export const useFloorPlanDrawing = () => {
       
       // Draw strokes if they exist (from drawing tools)
       if (floorPlan.strokes && floorPlan.strokes.length > 0) {
+        // Here floorPlan.strokes is Stroke[][] which is Point[][][]
         drawStrokes(canvas, floorPlan.strokes, drawOptions);
       }
       

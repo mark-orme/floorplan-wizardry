@@ -67,13 +67,17 @@ export const useFloorPlanLoader = ({
         // Create a default floor plan with all required properties
         const defaultId = `floor-${Date.now()}`;
         const defaultName = "Ground Floor";
+        const timestamp = new Date().toISOString();
         
         const defaultPlan: FloorPlan[] = [{
           id: defaultId,
           name: defaultName,
           gia: 0,
           strokes: [],
-          label: defaultName
+          label: defaultName,
+          canvasData: null,
+          createdAt: timestamp,
+          updatedAt: timestamp
         }];
         setFloorPlans(defaultPlan);
         console.log("Created default floor plan");

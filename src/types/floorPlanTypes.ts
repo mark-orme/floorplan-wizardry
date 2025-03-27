@@ -3,70 +3,7 @@
  * Floor Plan type definitions
  * @module floorPlanTypes
  */
-
-/**
- * Point interface representing a 2D coordinate
- * @interface Point
- */
-export interface Point {
-  /** X coordinate */
-  x: number;
-  /** Y coordinate */
-  y: number;
-}
-
-/**
- * Stroke type representing a sequence of points
- * @typedef {Point[]} Stroke
- */
-export type Stroke = Point[];
-
-/**
- * Wall definition in a floor plan
- * @interface Wall
- */
-export interface Wall {
-  /** Unique identifier for the wall */
-  id: string;
-  /** Starting point of the wall */
-  start: Point;
-  /** Ending point of the wall */
-  end: Point;
-  /** Wall thickness in pixels */
-  thickness?: number;
-  /** Wall height in meters */
-  height?: number;
-  /** Type of wall */
-  type?: 'interior' | 'exterior' | 'partition';
-}
-
-/**
- * Room definition in a floor plan
- * @interface Room
- */
-export interface Room {
-  /** Unique identifier for the room */
-  id: string;
-  /** Room name */
-  name: string;
-  /** Room bounds */
-  bounds: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-  /** Room area in square meters */
-  area?: number;
-  /** Room type */
-  type?: string;
-}
-
-/**
- * Paper size for printing
- * @type {PaperSize}
- */
-export type PaperSize = 'A4' | 'A3' | 'infinite';
+import type { Wall, Room, Point, Stroke, PaperSize } from './drawingTypes';
 
 /**
  * Floor Plan interface
@@ -116,3 +53,6 @@ export interface FloorPlanStorageModel {
   /** Array of floor plans */
   data: FloorPlan[];
 }
+
+// Re-export types for backward compatibility
+export type { Wall, Room, Point, Stroke, PaperSize };
