@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for floor plan drawing functionality
  * Manages drawing operations and calculations for floor plans
@@ -7,9 +8,10 @@ import { useCallback, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { type Point } from "@/types/core/Point";
-import { FloorPlan, Stroke } from "@/types/floorPlanTypes";
+import { FloorPlan, Stroke, StrokeType } from "@/types/floorPlanTypes";
 import { calculateGIA } from "@/utils/geometry";
 import { PIXELS_PER_METER } from "@/constants/numerics";
+import { DrawingTool } from "@/constants/drawingModes";
 import logger from "@/utils/logger";
 
 /**
@@ -37,6 +39,12 @@ interface UseFloorPlanDrawingProps {
   
   /** Function to update floor plans (used in tests) */
   setFloorPlans?: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  
+  /** Reference state - used in tests */
+  refState?: any;
+  
+  /** Gesture handler - used in tests */
+  gestureHandler?: any;
 }
 
 /**
@@ -47,8 +55,17 @@ interface UseFloorPlanDrawingResult {
   /** Whether drawing is currently active */
   isDrawing: boolean;
   
+  /** Current active tool */
+  activeTool?: DrawingTool;
+  
+  /** Set active tool function */
+  setActiveTool?: (tool: DrawingTool) => void;
+  
   /** Start drawing at a specific point */
   startDrawing: (point: Point) => void;
+  
+  /** Start drawing at a specific point (alias for startDrawing used in tests) */
+  startDrawingAt: (point: Point) => void;
   
   /** Continue drawing to a specific point */
   continueDrawing: (point: Point) => void;
@@ -59,13 +76,19 @@ interface UseFloorPlanDrawingResult {
   /** Cancel the current drawing operation */
   cancelDrawing: () => void;
   
+  /** Add a stroke to the floor plan */
+  addStroke: (stroke: Stroke) => void;
+  
   /** Calculate areas for the floor plan */
   calculateAreas: () => number[];
   
   /** Current drawing points */
   drawingPoints: Point[];
   
-  /** Draw a floor plan on the canvas - Added to fix missing method error */
+  /** Current point being drawn */
+  currentPoint?: Point | null;
+  
+  /** Draw a floor plan on the canvas */
   drawFloorPlan: (canvas: FabricCanvas, floorPlan: FloorPlan) => void;
   
   /** Process created path (for test compatibility) */
@@ -86,6 +109,8 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingPoints, setDrawingPoints] = useState<Point[]>([]);
+  const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
+  const [activeTool, setActiveTool] = useState<DrawingTool>('select');
   
   /**
    * Start drawing at a specific point
@@ -94,6 +119,7 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
   const startDrawing = useCallback((point: Point) => {
     setIsDrawing(true);
     setDrawingPoints([point]);
+    setCurrentPoint(point);
     logger.debug("Started drawing at", point);
   }, []);
   
@@ -105,6 +131,7 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
     if (!isDrawing) return;
     
     setDrawingPoints(prev => [...prev, point]);
+    setCurrentPoint(point);
   }, [isDrawing]);
   
   /**
@@ -188,6 +215,7 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
     // Reset drawing state
     setIsDrawing(false);
     setDrawingPoints([]);
+    setCurrentPoint(null);
     logger.debug("Ended drawing with", finalPoints.length, "points");
   }, [isDrawing, drawingPoints, setFloorPlan, setGia, setFloorPlans, currentFloor]);
   
@@ -197,8 +225,31 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
   const cancelDrawing = useCallback(() => {
     setIsDrawing(false);
     setDrawingPoints([]);
+    setCurrentPoint(null);
     logger.debug("Drawing cancelled");
   }, []);
+  
+  /**
+   * Add a stroke directly to the floor plan
+   * @param {Stroke} stroke - The stroke to add
+   */
+  const addStroke = useCallback((stroke: Stroke) => {
+    if (setFloorPlans && typeof currentFloor === 'number') {
+      setFloorPlans(prev => {
+        const updatedFloorPlans = [...prev];
+        const currentFloorPlan = { ...updatedFloorPlans[currentFloor] };
+        
+        if (!currentFloorPlan.strokes) {
+          currentFloorPlan.strokes = [];
+        }
+        
+        currentFloorPlan.strokes = [...currentFloorPlan.strokes, stroke];
+        updatedFloorPlans[currentFloor] = currentFloorPlan;
+        
+        return updatedFloorPlans;
+      });
+    }
+  }, [setFloorPlans, currentFloor]);
   
   /**
    * Calculate areas for the floor plan
@@ -250,7 +301,7 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
         const newStroke: Stroke = {
           id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           points: [{x: 0, y: 0}, {x: 10, y: 10}], // Dummy points for test
-          type: 'line',
+          type: 'line' as StrokeType,
           color: '#000000',
           thickness: 2
         };
@@ -270,12 +321,17 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
   
   return {
     isDrawing,
+    activeTool,
+    setActiveTool,
     startDrawing,
+    startDrawingAt: startDrawing, // Alias for test compatibility
     continueDrawing,
     endDrawing,
     cancelDrawing,
+    addStroke,
     calculateAreas,
     drawingPoints,
+    currentPoint,
     drawFloorPlan,
     processCreatedPath
   };

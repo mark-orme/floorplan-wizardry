@@ -175,3 +175,42 @@ export interface FloorPlan {
   /** Metadata */
   metadata: FloorPlanMetadata;
 }
+
+/**
+ * Create a default floor plan metadata object
+ * @returns Default floor plan metadata
+ */
+export const createDefaultMetadata = (level: number = 0): FloorPlanMetadata => {
+  const now = new Date().toISOString();
+  return {
+    createdAt: now,
+    updatedAt: now,
+    paperSize: PaperSize.A4,
+    level
+  };
+};
+
+/**
+ * Create a new floor plan with default values
+ * @param id - Floor plan ID
+ * @param name - Floor plan name
+ * @param level - Floor level
+ * @returns New floor plan object
+ */
+export const createFloorPlan = (id: string, name: string, level: number = 0): FloorPlan => {
+  const now = new Date().toISOString();
+  return {
+    id,
+    name,
+    label: name,
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasData: null,
+    createdAt: now,
+    updatedAt: now,
+    gia: 0,
+    level,
+    metadata: createDefaultMetadata(level)
+  };
+};

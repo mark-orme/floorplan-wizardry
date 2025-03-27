@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
 import { FloorPlan, StrokeType } from '@/types/floorPlanTypes';
-import { createFloorPlan } from '@/utils/floorPlanUtils';
+import { createFloorPlan } from '@/types/core/FloorPlan';
 
 // Mock canvas
 const mockCanvas = {
@@ -67,7 +67,7 @@ describe('useFloorPlanDrawing', () => {
     } as MockUseFloorPlanDrawingProps));
 
     act(() => {
-      result.current.setActiveTool('wall');
+      result.current.setActiveTool?.('wall');
     });
 
     expect(result.current.activeTool).toBe('wall');

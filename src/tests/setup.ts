@@ -1,117 +1,93 @@
 
-// Vitest/Jest setup file
-import { vi, expect } from 'vitest';
-import '@testing-library/jest-dom'; // Add this import for DOM matchers
+/**
+ * Test setup file
+ * Configures the testing environment
+ */
+import '@testing-library/jest-dom';
 
-// Mock window properties
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
-
-// Configure intersection observer
-const mockIntersectionObserver = vi.fn();
-mockIntersectionObserver.mockImplementation((callback) => {
-  return {
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  };
-});
-window.IntersectionObserver = mockIntersectionObserver;
-
-// Configure global fetch
-global.fetch = vi.fn().mockResolvedValue({
-  ok: true,
-  json: vi.fn().mockResolvedValue({}),
-  text: vi.fn().mockResolvedValue(''),
-});
-
-// Configure canvas mock
-class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+// Create a mock for canvas API
+class CanvasRenderingContext2DMock {
+  canvas: HTMLCanvasElement;
+  fillStyle: string = '#000000';
+  strokeStyle: string = '#000000';
+  lineWidth: number = 1;
+  font: string = '10px sans-serif';
+  textAlign: CanvasTextAlign = 'start';
+  textBaseline: CanvasTextBaseline = 'alphabetic';
+  lineCap: CanvasLineCap = 'butt';
+  lineJoin: CanvasLineJoin = 'miter';
+  miterLimit: number = 10;
+  shadowBlur: number = 0;
+  shadowColor: string = 'rgba(0, 0, 0, 0)';
+  shadowOffsetX: number = 0;
+  shadowOffsetY: number = 0;
+  globalAlpha: number = 1;
+  globalCompositeOperation: GlobalCompositeOperation = 'source-over';
+  
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+  }
+  
+  beginPath() { return this; }
+  closePath() { return this; }
+  moveTo(x: number, y: number) { return this; }
+  lineTo(x: number, y: number) { return this; }
+  stroke() { return this; }
+  fill() { return this; }
+  rect(x: number, y: number, width: number, height: number) { return this; }
+  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean) { return this; }
+  clearRect(x: number, y: number, width: number, height: number) { return this; }
+  fillRect(x: number, y: number, width: number, height: number) { return this; }
+  strokeRect(x: number, y: number, width: number, height: number) { return this; }
+  fillText(text: string, x: number, y: number, maxWidth?: number) { return this; }
+  strokeText(text: string, x: number, y: number, maxWidth?: number) { return this; }
+  measureText(text: string) { return { width: text.length * 5, height: 10 }; }
+  getImageData(sx: number, sy: number, sw: number, sh: number) { 
+    return { data: new Uint8ClampedArray(sw * sh * 4) };
+  }
+  putImageData(imagedata: ImageData, dx: number, dy: number) { return this; }
+  drawImage(image: CanvasImageSource, dx: number, dy: number) { return this; }
+  clip() { return this; }
+  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) { return this; }
+  bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) { return this; }
+  save() { return this; }
+  restore() { return this; }
+  scale(x: number, y: number) { return this; }
+  rotate(angle: number) { return this; }
+  translate(x: number, y: number) { return this; }
+  transform(a: number, b: number, c: number, d: number, e: number, f: number) { return this; }
+  setTransform(a: number, b: number, c: number, d: number, e: number, f: number) { return this; }
+  resetTransform() { return this; }
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number) { 
+    return { addColorStop: (offset: number, color: string) => {} };
+  }
+  createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) { 
+    return { addColorStop: (offset: number, color: string) => {} };
+  }
+  createPattern(image: CanvasImageSource, repetition: string | null) { return null; }
+  isPointInPath(x: number, y: number) { return false; }
+  isPointInStroke(x: number, y: number) { return false; }
+  setLineDash(segments: number[]) {}
+  getLineDash() { return []; }
 }
 
-window.ResizeObserver = ResizeObserver;
-
-// Mock canvas methods
-const mockCanvasContext = {
-  clearRect: vi.fn(),
-  fillRect: vi.fn(),
-  drawImage: vi.fn(),
-  beginPath: vi.fn(),
-  moveTo: vi.fn(),
-  lineTo: vi.fn(),
-  stroke: vi.fn(),
-  fill: vi.fn(),
-  arc: vi.fn(),
-  setTransform: vi.fn(),
-  fillText: vi.fn(),
-  measureText: vi.fn().mockReturnValue({ width: 10 }),
-  setLineDash: vi.fn(),
-  getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(4) }),
+// Mock canvas implementation
+global.HTMLCanvasElement.prototype.getContext = function(contextType: string) {
+  if (contextType === '2d') {
+    return new CanvasRenderingContext2DMock(this);
+  }
+  return null;
 };
 
-// Properly type the mock function
-HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation(() => {
-  return mockCanvasContext as unknown as CanvasRenderingContext2D;
-});
-
-// Add expect to globalThis for test
-if (typeof globalThis.expect === 'undefined') {
-  // Safe assignment that works with TypeScript
-  (globalThis as any).expect = expect;
+// Set up global matchers for Jest
+if (typeof global.expect !== 'undefined') {
+  expect.extend({
+    toBeInTheDocument(received) {
+      const pass = Boolean(received);
+      return {
+        message: () => `expected ${received} to be in the document`,
+        pass
+      };
+    }
+  });
 }
-
-// Mock local storage
-class MockLocalStorage {
-  private store: Record<string, string>;
-  
-  constructor() {
-    this.store = {};
-  }
-
-  getItem(key: string) {
-    return this.store[key] || null;
-  }
-
-  setItem(key: string, value: string) {
-    this.store[key] = String(value);
-  }
-
-  removeItem(key: string) {
-    delete this.store[key];
-  }
-
-  clear() {
-    this.store = {};
-  }
-  
-  // Implement required Storage interface methods
-  key(index: number): string | null {
-    return Object.keys(this.store)[index] || null;
-  }
-  
-  get length(): number {
-    return Object.keys(this.store).length;
-  }
-}
-
-global.localStorage = new MockLocalStorage() as unknown as Storage;
-
-// Export mock functions for test use
-export {
-  expect,
-  MockLocalStorage,
-};

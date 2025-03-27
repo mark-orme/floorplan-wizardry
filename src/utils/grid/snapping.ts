@@ -42,6 +42,38 @@ export const getNearestPointOnGrid = (point: Point, gridSpacing: number): Point 
 };
 
 /**
+ * Get the nearest grid intersection to a point
+ * 
+ * @param point - Reference point
+ * @param gridSpacing - Grid spacing
+ * @returns Nearest grid intersection
+ */
+export const getNearestGridIntersection = (point: Point, gridSpacing: number): Point => {
+  return snapToGrid(point, gridSpacing);
+};
+
+/**
+ * Calculate distance to the nearest grid line
+ * 
+ * @param point - Reference point
+ * @param gridSpacing - Grid spacing
+ * @returns Distance to the nearest grid line
+ */
+export const distanceToNearestGridLine = (point: Point, gridSpacing: number): number => {
+  const spacing = typeof gridSpacing === 'number' 
+    ? gridSpacing 
+    : getSmallGridSpacing();
+  
+  const xDist = point.x % spacing;
+  const yDist = point.y % spacing;
+  
+  const xDistToLine = Math.min(xDist, spacing - xDist);
+  const yDistToLine = Math.min(yDist, spacing - yDist);
+  
+  return Math.min(xDistToLine, yDistToLine);
+};
+
+/**
  * Snap an angle to the nearest standard angle
  * 
  * @param angle - Angle in degrees
@@ -115,4 +147,35 @@ export const isPointAlignedWithGrid = (
   
   return (xDiff < tolerance || xDiff > spacing - tolerance) && 
          (yDiff < tolerance || yDiff > spacing - tolerance);
+};
+
+/**
+ * Snap a line to grid
+ * 
+ * @param startPoint - Line start point
+ * @param endPoint - Line end point
+ * @param gridSpacing - Grid spacing
+ * @returns New end point that creates a snapped line
+ */
+export const snapLineToGrid = (
+  startPoint: Point,
+  endPoint: Point,
+  gridSpacing: number
+): Point => {
+  // First snap to standard angles
+  const angleSnappedPoint = snapLineToStandardAngles(startPoint, endPoint);
+  
+  // Then snap to grid
+  return snapToGrid(angleSnappedPoint, gridSpacing);
+};
+
+/**
+ * Check if a point is snapped to grid
+ * 
+ * @param point - Point to check
+ * @param gridSpacing - Grid spacing
+ * @returns Whether the point is snapped to grid
+ */
+export const isSnappedToGrid = (point: Point, gridSpacing: number): boolean => {
+  return isPointAlignedWithGrid(point, gridSpacing);
 };

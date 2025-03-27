@@ -4,6 +4,7 @@
  * @module utils/grid/gridUtils
  */
 import { GRID_SPACING } from '@/constants/numerics';
+import { Point } from '@/types/core/Point';
 
 /**
  * Get the small grid spacing value
@@ -45,7 +46,7 @@ export const ensureGridSpacingNumber = (value: any, defaultValue: number = 10): 
  * @returns Grid spacing in meters
  */
 export const gridSpacingToMeters = (pixels: number): number => {
-  return pixels / GRID_SPACING.LARGE;
+  return pixels / getLargeGridSpacing();
 };
 
 /**
@@ -54,7 +55,7 @@ export const gridSpacingToMeters = (pixels: number): number => {
  * @returns Distance in pixels
  */
 export const metersToGridSpacing = (meters: number): number => {
-  return meters * GRID_SPACING.LARGE;
+  return meters * getLargeGridSpacing();
 };
 
 /**
@@ -118,4 +119,30 @@ export const getNearestGridPoint = (point: { x: number, y: number }, gridSize: n
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
   };
+};
+
+/**
+ * Get the nearest grid intersection to a point
+ * @param point - The reference point
+ * @param gridSize - Grid size to snap to
+ * @returns The nearest grid intersection point
+ */
+export const getNearestGridIntersection = (point: { x: number, y: number }, gridSize: number): { x: number, y: number } => {
+  return getNearestGridPoint(point, gridSize);
+};
+
+/**
+ * Calculate distance to the nearest grid line
+ * @param point - The reference point
+ * @param gridSize - Grid size
+ * @returns Distance to the nearest grid line
+ */
+export const distanceToNearestGridLine = (point: { x: number, y: number }, gridSize: number): number => {
+  const xDist = point.x % gridSize;
+  const yDist = point.y % gridSize;
+  
+  const xDistToLine = Math.min(xDist, gridSize - xDist);
+  const yDistToLine = Math.min(yDist, gridSize - yDist);
+  
+  return Math.min(xDistToLine, yDistToLine);
 };

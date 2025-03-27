@@ -72,6 +72,9 @@ declare module 'fabric' {
     
     /** Associated measurement object */
     measurementLabel?: FabricObject;
+    
+    /** For active selection objects, iterate through child objects */
+    forEachObject?: (callback: (obj: FabricObject) => void) => void;
   }
   
   /**
