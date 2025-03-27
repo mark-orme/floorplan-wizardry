@@ -9,6 +9,7 @@ import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { useReliableGridInitialization } from '@/hooks/useReliableGridInitialization';
+import { initializeCanvasGestures } from '@/utils/fabric/gestures';
 
 interface CanvasProps {
   onError?: () => void;
@@ -31,6 +32,12 @@ export const Canvas: React.FC<CanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   
+  // Detect iOS
+  const isIOS = 
+    typeof navigator !== 'undefined' && 
+    (/iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  
   // Initialize fabric.js canvas when the HTML canvas is available
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -38,12 +45,38 @@ export const Canvas: React.FC<CanvasProps> = ({
     try {
       console.log("Canvas: Creating Fabric.js instance");
       
-      // Create the Fabric.js canvas instance
+      // Create the Fabric.js canvas instance with iOS-specific options
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
-        backgroundColor: '#FFFFFF'
+        backgroundColor: '#FFFFFF',
+        enableRetinaScaling: !isIOS, // Disable for iOS to improve performance
+        stopContextMenu: true,
+        fireRightClick: false,
+        renderOnAddRemove: false,
+        // Additional options for iOS performance
+        ...(isIOS ? {
+          enablePointerEvents: true,
+          skipTargetFind: false,
+          perPixelTargetFind: false,
+          targetFindTolerance: 15, // Increased for easier touch interaction
+          interactive: true
+        } : {})
       });
+      
+      // Initialize touch gestures for the canvas
+      initializeCanvasGestures(canvas);
+      
+      // Apply iOS-specific canvas optimizations
+      if (isIOS) {
+        // Disable unnecessary event listeners to improve performance
+        canvas.selection = false;
+        // Set wrapper element touch action to none
+        if (canvas.wrapperEl) {
+          canvas.wrapperEl.style.touchAction = 'none';
+        }
+        console.log("Canvas: Applying iOS-specific optimizations");
+      }
       
       // Store the canvas reference
       fabricCanvasRef.current = canvas;
@@ -94,7 +127,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         fabricCanvasRef.current = null;
       }
     };
-  }, [width, height, onCanvasReady, onError]);
+  }, [width, height, onCanvasReady, onError, isIOS]);
   
   // Use our hook for any additional initialization logic
   useCanvasInit({ onError });
@@ -110,15 +143,21 @@ export const Canvas: React.FC<CanvasProps> = ({
   }, [isGridInitialized]);
   
   return (
-    <canvas 
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className="w-full h-full border border-gray-200"
-      style={{ border: '1px solid #eee' }}
-      data-testid="fabric-canvas"
-      data-grid-initialized={isGridInitialized ? "true" : "false"}
-    />
+    <div className="canvas-container touch-none" style={{ touchAction: 'none' }}>
+      <canvas 
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="w-full h-full border border-gray-200 touch-none"
+        style={{ 
+          border: '1px solid #eee',
+          touchAction: 'none' // Critical for iOS
+        }}
+        data-testid="fabric-canvas"
+        data-grid-initialized={isGridInitialized ? "true" : "false"}
+        data-ios-optimized={isIOS ? "true" : "false"}
+      />
+    </div>
   );
 };
 

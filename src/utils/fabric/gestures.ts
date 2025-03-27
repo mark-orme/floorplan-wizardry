@@ -35,6 +35,9 @@ export const initializeCanvasGestures = (canvas: FabricCanvas): void => {
     // Set up mouse wheel zoom
     setupMousewheelZoom(canvas);
     
+    // Additional setup for iOS
+    setupIOSSpecificHandlers(canvas);
+    
     logger.info("Canvas gestures initialized successfully");
   } catch (error) {
     logger.error("Error initializing canvas gestures:", error);
@@ -51,13 +54,30 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
   let lastDistance = 0;
   let isDragging = false;
   let lastPoint: { x: number, y: number } | null = null;
+  let isGesturing = false;
   
-  // Use native DOM event listeners instead of fabric events for touch
+  // Detect iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  // Prevent all default touch behaviors to avoid iOS Safari issues
+  if (isIOS) {
+    canvas.upperCanvasEl.style.touchAction = 'none';
+    canvas.wrapperEl?.style.touchAction = 'none';
+  }
+  
+  // Use native DOM event listeners for touch events
   canvas.upperCanvasEl.addEventListener('touchstart', (e: TouchEvent) => {
+    // Always prevent default on iOS to avoid issues with Safari
+    if (isIOS) {
+      e.preventDefault();
+    }
+    
     if (!e.touches) return;
     
     if (e.touches.length === 2) {
       // Pinch start - calculate initial distance
+      isGesturing = true;
       const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
       lastDistance = getDistance(point1, point2);
@@ -66,14 +86,18 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
       isDragging = true;
       lastPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
-  });
+  }, { passive: false }); // passive: false is crucial for iOS
   
   canvas.upperCanvasEl.addEventListener('touchmove', (e: TouchEvent) => {
+    // Always prevent default on iOS to avoid issues with Safari
+    if (isIOS) {
+      e.preventDefault();
+    }
+    
     if (!e.touches) return;
     
-    if (e.touches.length === 2) {
+    if (e.touches.length === 2 && isGesturing) {
       // Pinch move - handle zoom
-      e.preventDefault();
       const point1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       const point2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
       const distance = getDistance(point1, point2);
@@ -113,14 +137,29 @@ const setupPinchZoom = (canvas: FabricCanvas): void => {
       
       lastPoint = currentPoint;
     }
-  });
+  }, { passive: false }); // passive: false is crucial for iOS
   
-  canvas.upperCanvasEl.addEventListener('touchend', () => {
+  canvas.upperCanvasEl.addEventListener('touchend', (e: TouchEvent) => {
     // Reset state
     lastDistance = 0;
     isDragging = false;
+    isGesturing = false;
     lastPoint = null;
-  });
+    
+    // Prevent ghost clicks on iOS
+    if (isIOS && e.cancelable) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+  
+  // Add special handler for touchcancel (important for iOS)
+  canvas.upperCanvasEl.addEventListener('touchcancel', () => {
+    // Reset state
+    lastDistance = 0;
+    isDragging = false;
+    isGesturing = false;
+    lastPoint = null;
+  }, { passive: true });
 };
 
 /**
@@ -150,6 +189,54 @@ const setupMousewheelZoom = (canvas: FabricCanvas): void => {
     // Trigger custom event for zoom change tracking
     canvas.fire('custom:zoom-changed', { zoom });
   });
+};
+
+/**
+ * Setup iOS-specific event handlers and fixes
+ * @param canvas - Fabric canvas to set up
+ */
+const setupIOSSpecificHandlers = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
+  
+  // Detect iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  if (!isIOS) return;
+  
+  // Fix for iOS not recognizing touch events correctly by disabling viewport scaling
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (meta) {
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+  } else {
+    const newMeta = document.createElement('meta');
+    newMeta.name = 'viewport';
+    newMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    document.getElementsByTagName('head')[0].appendChild(newMeta);
+  }
+  
+  // Prevent all default gestures on iOS
+  document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+  
+  document.addEventListener('gesturechange', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+  
+  document.addEventListener('gestureend', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+  
+  // Prevent double-tap to zoom
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function(e) {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
 };
 
 /**
