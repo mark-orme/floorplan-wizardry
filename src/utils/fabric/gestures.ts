@@ -8,6 +8,19 @@ import { Canvas } from 'fabric';
 import type { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
 
 /**
+ * Type guard to check if a value is a Touch
+ * @param value - Value to check
+ * @returns True if the value is a Touch
+ */
+function isTouch(value: unknown): value is Touch {
+  return typeof value === 'object' && 
+         value !== null && 
+         'identifier' in value && 
+         'clientX' in value && 
+         'clientY' in value;
+}
+
+/**
  * Initialize touch gestures for the canvas
  * @param {Canvas} canvas - The Fabric.js canvas instance
  */
@@ -50,7 +63,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       const touch = touches[i];
       const touchPosition = getTouchPosition(touch);
 
-      const ongoingTouchIndex = ongoingTouches.findIndex(t => (t.e as Touch).identifier === touch.identifier);
+      const ongoingTouchIndex = ongoingTouches.findIndex(t => {
+        return isTouch(t.e) && t.e.identifier === touch.identifier;
+      });
 
       if (ongoingTouchIndex !== -1) {
         ongoingTouches[ongoingTouchIndex] = {
@@ -68,7 +83,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      ongoingTouches = ongoingTouches.filter(t => (t.e as Touch).identifier !== touch.identifier);
+      ongoingTouches = ongoingTouches.filter(t => {
+        return !isTouch(t.e) || t.e.identifier !== touch.identifier;
+      });
     }
 
     // Log touch end for debugging
@@ -82,7 +99,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      ongoingTouches = ongoingTouches.filter(t => (t.e as Touch).identifier !== touch.identifier);
+      ongoingTouches = ongoingTouches.filter(t => {
+        return !isTouch(t.e) || t.e.identifier !== touch.identifier;
+      });
     }
   };
 
