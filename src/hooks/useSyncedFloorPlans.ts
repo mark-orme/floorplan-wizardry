@@ -8,7 +8,13 @@ import { toast } from 'sonner';
 import { Channel } from 'pusher-js';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { loadFloorPlans, saveFloorPlans } from '@/utils/floorPlanStorage';
-import { subscribeSyncChannel, broadcastFloorPlanUpdate, isUpdateFromThisDevice } from '@/utils/syncService';
+import { 
+  subscribeSyncChannel, 
+  broadcastFloorPlanUpdate, 
+  isUpdateFromThisDevice,
+  SYNC_CHANNEL,
+  UPDATE_EVENT
+} from '@/utils/syncService';
 import { useSupabaseFloorPlans } from './useSupabaseFloorPlans';
 import logger from '@/utils/logger';
 

@@ -1,4 +1,3 @@
-
 /**
  * Synchronization service for floor plan data
  * Uses Pusher for real-time data synchronization
@@ -9,9 +8,9 @@ import logger from './logger';
 import { FloorPlan } from '@/types/floorPlanTypes';
 
 // Constants
-const SYNC_CHANNEL = 'floorplan-sync';
-const SAVE_EVENT = 'save-floorplan';
-const UPDATE_EVENT = 'update-floorplan';
+export const SYNC_CHANNEL = 'floorplan-sync';
+export const SAVE_EVENT = 'save-floorplan';
+export const UPDATE_EVENT = 'update-floorplan';
 
 /**
  * Generate a unique device ID to identify this client
