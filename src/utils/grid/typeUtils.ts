@@ -5,7 +5,7 @@
  * @module grid/typeUtils
  */
 import { Line as FabricLine, Object as FabricObject } from "fabric";
-import { Point } from "@/types/floorPlanTypes";
+import { Point } from "@/types/drawingTypes";
 
 /**
  * Options for grid line creation
@@ -21,6 +21,12 @@ export interface GridLineOptions {
   evented: boolean;
   /** Type identifier for the line */
   objectType: string;
+  /** Whether to cache the object */
+  objectCaching?: boolean;
+  /** Cursor when hovering over the line */
+  hoverCursor?: string;
+  /** Opacity of the line */
+  opacity?: number;
 }
 
 /**
@@ -45,6 +51,22 @@ export interface GridCreationResult {
   largeGridLines: FabricLine[];
   /** Grid extent dimensions */
   extent: GridExtent;
+}
+
+/**
+ * Grid render result
+ */
+export interface GridRenderResult {
+  /** Grid objects array */
+  gridObjects: FabricObject[];
+  /** Grid markers */
+  markers: FabricObject[];
+  /** Grid lines */
+  gridLines: FabricLine[];
+  /** Small grid lines */
+  smallGridLines: FabricLine[];
+  /** Large grid lines */
+  largeGridLines: FabricLine[];
 }
 
 /**

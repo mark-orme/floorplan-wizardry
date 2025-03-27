@@ -1,158 +1,248 @@
-
 /**
  * Custom hook for handling canvas drawing events
  * @module canvas/drawing/useCanvasDrawingEvents
  */
-import { useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
-import logger from "@/utils/logger";
+import { useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
+import { DrawingState } from '@/types/drawingTypes';
+import { DrawingTool } from '@/hooks/useCanvasState';
 
+/**
+ * Constants for drawing events
+ */
+const DRAWING_EVENT_CONSTANTS = {
+  /** Timeout for cleanup operations in ms */
+  CLEANUP_TIMEOUT: 500,
+  
+  /** Default tolerance value for path operations */
+  DEFAULT_TOLERANCE: 10,
+  
+  /** Delay for starting drag operations in ms */
+  DRAG_START_DELAY: 150
+};
+
+/**
+ * Props for the drawing events hook
+ */
 interface UseCanvasDrawingEventsProps {
+  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current drawing state */
+  drawingState: DrawingState;
+  /** Function to update drawing state */
+  setDrawingState: React.Dispatch<React.SetStateAction<DrawingState>>;
+  /** Current drawing tool */
   tool: DrawingTool;
-  saveCurrentState: () => void;
-  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
-  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
+  /** Function to process created path */
   processCreatedPath: (path: FabricPath) => void;
-  updateZoomLevel: () => void;
-  recalculateGIA?: () => void;
-  deleteSelectedObjects?: () => void;
 }
 
 /**
- * Hook for registering canvas drawing event handlers
- * @param {UseCanvasDrawingEventsProps} props - Hook properties
- * @returns Event registration and cleanup functions
+ * Return type for the drawing events hook
  */
-export const useCanvasDrawingEvents = (props: UseCanvasDrawingEventsProps) => {
-  const {
-    fabricCanvasRef,
-    tool,
-    saveCurrentState,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    processCreatedPath,
-    updateZoomLevel,
-    recalculateGIA,
-    deleteSelectedObjects
-  } = props;
+interface UseCanvasDrawingEventsReturn {
+  /** Mouse down event handler */
+  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
+  /** Mouse move event handler */
+  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
+  /** Mouse up event handler */
+  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
+  /** Clean up timeouts and event state */
+  cleanupTimeouts: () => void;
+}
+
+/**
+ * Hook for handling canvas drawing events
+ * 
+ * @param props - Hook properties
+ * @returns Event handlers for drawing operations
+ */
+export const useCanvasDrawingEvents = ({
+  fabricCanvasRef,
+  drawingState,
+  setDrawingState,
+  tool,
+  processCreatedPath
+}: UseCanvasDrawingEventsProps): UseCanvasDrawingEventsReturn => {
+  // Timeout references
+  const timeoutsRef = useRef<number[]>([]);
   
-  // Register path creation events
-  useEffect(() => {
-    console.log("Setting up path creation events for tool:", tool);
+  /**
+   * Clean up timeouts
+   */
+  const cleanupTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach(timeout => window.clearTimeout(timeout));
+    timeoutsRef.current = [];
+  }, []);
+  
+  /**
+   * Handle mouse down event
+   */
+  const handleMouseDown = useCallback((e: MouseEvent | TouchEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Handler for path created event - this is crucial for drawing
-    const handlePathCreated = (e: any) => {
-      console.log("Path created event fired:", e);
-      if (e.path) {
-        processCreatedPath(e.path);
-      }
-    };
+    // Get coordinates based on event type
+    let clientX: number, clientY: number;
     
-    // Add the path created listener
-    canvas.on('path:created', handlePathCreated);
+    if ('touches' in e) {
+      // Touch event
+      if (e.touches.length === 0) return;
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      // Mouse event
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
     
-    // Additional logging for debugging
-    canvas.on('mouse:down', () => console.log("Canvas mouse:down event fired"));
-    canvas.on('mouse:move', () => console.log("Canvas mouse:move event triggered"));
-    canvas.on('mouse:up', () => console.log("Canvas mouse:up event triggered"));
+    // Convert client coordinates to canvas coordinates
+    const canvasElement = canvas.getElement();
+    const rect = canvasElement.getBoundingClientRect();
+    const x = (clientX - rect.left) / canvas.getZoom();
+    const y = (clientY - rect.top) / canvas.getZoom();
     
-    console.log("Path creation event handlers registered");
+    // Update drawing state
+    setDrawingState(prev => ({
+      ...prev,
+      isDrawing: true,
+      lastX: x,
+      lastY: y,
+      startX: x,
+      startY: y
+    }));
     
-    return () => {
-      if (canvas) {
-        canvas.off('path:created', handlePathCreated);
-        canvas.off('mouse:down');
-        canvas.off('mouse:move');
-        canvas.off('mouse:up');
-      }
-    };
-  }, [fabricCanvasRef, processCreatedPath, tool]);
-  
-  // Register zoom tracking event listeners
-  useEffect(() => {
-    const fabricCanvas = fabricCanvasRef.current;
-    if (!fabricCanvas) return;
-    
-    console.log("Setting up zoom tracking events");
-    
-    // Use type assertion to allow custom events
-    const canvas = fabricCanvas as unknown as {
-      on(event: string, handler: Function): void;
-      off(event: string, handler: Function): void;
-    };
-    
-    // Listen for both standard zoom events and our custom event
-    canvas.on('zoom:changed', updateZoomLevel);
-    canvas.on('custom:zoom-changed', updateZoomLevel);
-    
-    // Also update on viewport transform changes
-    canvas.on('viewport:transform', updateZoomLevel);
-    
-    // Initial update
-    updateZoomLevel();
-    
-    return () => {
-      canvas.off('zoom:changed', updateZoomLevel);
-      canvas.off('custom:zoom-changed', updateZoomLevel);
-      canvas.off('viewport:transform', updateZoomLevel);
-    };
-  }, [fabricCanvasRef, updateZoomLevel]);
-  
-  // Register mouse and touch event handlers directly
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    console.log("Setting up mouse/touch event handlers for tool:", tool);
-    
-    if (tool === 'draw' || tool === 'straightLine' || tool === 'wall' || tool === 'room') {
-      // Set drawing mode based on the tool
-      canvas.isDrawingMode = tool === 'draw';
+    // Handle different tools
+    if (tool === 'draw') {
+      // For freehand drawing, let fabric.js handle it
+      // The path:created event will be triggered
+    } else if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
+      // For straight lines and shapes, we'll handle the drawing manually
+      // Start a new path
+      const newPath = new FabricPath(`M ${x} ${y}`, {
+        stroke: drawingState.currentPath?.stroke || '#000000',
+        strokeWidth: drawingState.currentPath?.strokeWidth || 2,
+        fill: 'transparent',
+        selectable: false
+      });
       
-      if (canvas.isDrawingMode) {
-        console.log("Canvas drawing mode enabled");
-      } else {
-        console.log("Canvas drawing mode disabled (using managed interactions)");
+      canvas.add(newPath);
+      
+      // Store the path in state
+      setDrawingState(prev => ({
+        ...prev,
+        currentPath: newPath
+      }));
+    }
+  }, [fabricCanvasRef, setDrawingState, tool, drawingState.currentPath]);
+  
+  /**
+   * Handle mouse move event
+   */
+  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !drawingState.isDrawing) return;
+    
+    // Get coordinates based on event type
+    let clientX: number, clientY: number;
+    
+    if ('touches' in e) {
+      // Touch event
+      if (e.touches.length === 0) return;
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      // Mouse event
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    // Convert client coordinates to canvas coordinates
+    const canvasElement = canvas.getElement();
+    const rect = canvasElement.getBoundingClientRect();
+    const x = (clientX - rect.left) / canvas.getZoom();
+    const y = (clientY - rect.top) / canvas.getZoom();
+    
+    // Handle different tools
+    if (tool === 'draw') {
+      // For freehand drawing, let fabric.js handle it
+    } else if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
+      // For straight lines and shapes, update the path
+      if (drawingState.currentPath) {
+        const path = drawingState.currentPath as FabricPath;
+        
+        // Update the path data for a straight line
+        if (tool === 'straightLine') {
+          path.set({
+            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${x} ${y}`]
+          });
+        } else if (tool === 'wall') {
+          // For walls, we might want to snap to angles
+          path.set({
+            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${x} ${y}`],
+            strokeWidth: 4 // Walls are thicker
+          });
+        } else if (tool === 'room') {
+          // For rooms, we might want to create a polygon
+          // This is a simplified version - in reality, you'd track multiple points
+          path.set({
+            path: [
+              `M ${drawingState.startX} ${drawingState.startY}`,
+              `L ${x} ${drawingState.startY}`,
+              `L ${x} ${y}`,
+              `L ${drawingState.startX} ${y}`,
+              `L ${drawingState.startX} ${drawingState.startY}`
+            ],
+            fill: 'rgba(200, 200, 255, 0.2)'
+          });
+        }
+        
+        canvas.renderAll();
       }
     }
     
-    return () => {
-      // No cleanup needed here as the next effect run will update the drawing mode
-    };
-  }, [fabricCanvasRef, tool]);
+    // Update last position
+    setDrawingState(prev => ({
+      ...prev,
+      lastX: x,
+      lastY: y
+    }));
+  }, [fabricCanvasRef, drawingState, setDrawingState, tool]);
   
-  // Register GIA recalculation event listeners
-  useEffect(() => {
-    if (!fabricCanvasRef.current || !recalculateGIA) return;
-    
+  /**
+   * Handle mouse up event
+   */
+  const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
     const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
     
-    // Update GIA when objects are added, removed or modified
-    const handleObjectChange = () => {
-      console.log("Object change detected, recalculating GIA");
-      if (recalculateGIA && typeof recalculateGIA === 'function') {
-        recalculateGIA();
+    // Process the path if we have one
+    if (drawingState.currentPath) {
+      processCreatedPath(drawingState.currentPath as FabricPath);
+    }
+    
+    // Reset drawing state
+    setDrawingState(prev => ({
+      ...prev,
+      isDrawing: false,
+      currentPath: null
+    }));
+    
+    // Schedule cleanup
+    const timeoutId = window.setTimeout(() => {
+      // Perform any additional cleanup
+      if (canvas && tool !== 'draw') {
+        canvas.renderAll();
       }
-    };
+    }, DRAWING_EVENT_CONSTANTS.CLEANUP_TIMEOUT);
     
-    canvas.on('object:added', handleObjectChange);
-    canvas.on('object:removed', handleObjectChange);
-    canvas.on('object:modified', handleObjectChange);
-    
-    return () => {
-      canvas.off('object:added', handleObjectChange);
-      canvas.off('object:removed', handleObjectChange);
-      canvas.off('object:modified', handleObjectChange);
-    };
-  }, [fabricCanvasRef, recalculateGIA]);
+    timeoutsRef.current.push(timeoutId);
+  }, [fabricCanvasRef, drawingState.currentPath, processCreatedPath, setDrawingState, tool]);
   
   return {
-    updateZoomLevel
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    cleanupTimeouts
   };
 };

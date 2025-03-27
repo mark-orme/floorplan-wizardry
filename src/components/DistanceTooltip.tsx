@@ -1,80 +1,100 @@
 
+/**
+ * Distance tooltip component
+ * Displays measurement tooltips on the canvas
+ * @module components/DistanceTooltip
+ */
 import React from 'react';
 import { Point } from '@/types/drawingTypes';
-import { PIXELS_PER_METER } from '@/constants/numerics';
 
+/**
+ * Constants for distance tooltip
+ */
+const TOOLTIP_CONSTANTS = {
+  /** Tooltip background color */
+  BACKGROUND_COLOR: 'rgba(255, 255, 255, 0.9)',
+  
+  /** Tooltip border color */
+  BORDER_COLOR: 'rgba(0, 0, 0, 0.2)',
+  
+  /** Tooltip text color */
+  TEXT_COLOR: '#333333',
+  
+  /** Tooltip font size */
+  FONT_SIZE: 12,
+  
+  /** Tooltip padding */
+  PADDING: 5,
+  
+  /** Tooltip border radius */
+  BORDER_RADIUS: 4,
+  
+  /** Tooltip offset from line */
+  OFFSET: 10
+};
+
+/**
+ * Props for the DistanceTooltip component
+ */
 interface DistanceTooltipProps {
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  midPoint: Point | null;
-  isVisible: boolean;
-  currentZoom: number;
-  isSnappedToGrid?: boolean;
-  isAutoStraightened?: boolean;
+  /** Start point of the measurement */
+  startPoint: { x: number; y: number };
+  /** End point of the measurement */
+  endPoint: { x: number; y: number };
+  /** Distance in real-world units */
+  distance: number;
+  /** Unit of measurement */
+  unit?: string;
+  /** Whether tooltip is visible */
+  visible?: boolean;
+  /** Position adjustment factor */
+  positionAdjust?: number;
 }
 
+/**
+ * Distance tooltip component
+ * Displays measurement information on the canvas
+ * 
+ * @param props - Component props
+ * @returns Rendered component
+ */
 export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
   startPoint,
-  currentPoint,
-  midPoint,
-  isVisible,
-  currentZoom,
-  isSnappedToGrid = false,
-  isAutoStraightened = false
+  endPoint,
+  distance,
+  unit = 'm',
+  visible = true,
+  positionAdjust = TOOLTIP_CONSTANTS.OFFSET
 }) => {
-  if (!isVisible || !midPoint || !startPoint || !currentPoint) return null;
-
-  // Calculate distance in meters for display
-  const calculateMetricDistance = (): string => {
-    // Calculate distance in pixels
-    const dx = currentPoint.x - startPoint.x;
-    const dy = currentPoint.y - startPoint.y;
-    const pixelDistance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Convert to meters (assuming PIXELS_PER_METER is defined in constants)
-    // Default to 100 pixels = 1 meter if constant not available
-    const pixelsPerMeter = PIXELS_PER_METER || 100;
-    const metersDistance = pixelDistance / pixelsPerMeter;
-    
-    // Format to 2 decimal places and add units
-    return `${metersDistance.toFixed(2)}m`;
-  };
-
-  // Position tooltip at the midpoint of the line, accounting for zoom
+  if (!visible) return null;
+  
+  // Calculate midpoint for tooltip position
+  const midX = (startPoint.x + endPoint.x) / 2;
+  const midY = (startPoint.y + endPoint.y) / 2;
+  
+  // Format the distance
+  const formattedDistance = distance.toFixed(2);
+  
+  // Calculate style for tooltip
   const tooltipStyle: React.CSSProperties = {
     position: 'absolute',
-    left: `${midPoint.x}px`,
-    top: `${midPoint.y - 28}px`, // Position above the line
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    color: 'white',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: `${Math.max(12, 12 / currentZoom)}px`, // Scale font for better visibility during zoom
-    transform: 'translate(-50%, -50%)',
+    left: `${midX}px`,
+    top: `${midY - positionAdjust}px`,
+    transform: 'translate(-50%, -100%)',
+    backgroundColor: TOOLTIP_CONSTANTS.BACKGROUND_COLOR,
+    border: `1px solid ${TOOLTIP_CONSTANTS.BORDER_COLOR}`,
+    borderRadius: `${TOOLTIP_CONSTANTS.BORDER_RADIUS}px`,
+    padding: `${TOOLTIP_CONSTANTS.PADDING}px`,
+    fontSize: `${TOOLTIP_CONSTANTS.FONT_SIZE}px`,
+    color: TOOLTIP_CONSTANTS.TEXT_COLOR,
+    pointerEvents: 'none',
     zIndex: 1000,
-    pointerEvents: 'none', // Prevent tooltip from interfering with mouse events
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-    fontFamily: 'sans-serif',
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
   };
-
+  
   return (
-    <div 
-      className="distance-tooltip" 
-      style={tooltipStyle}
-      data-testid="distance-tooltip"
-    >
-      <span>{calculateMetricDistance()}</span>
-      {isSnappedToGrid && (
-        <span style={{ fontSize: `${Math.max(10, 10 / currentZoom)}px`, opacity: 0.8 }}>Snapped to grid</span>
-      )}
-      {isAutoStraightened && (
-        <span style={{ fontSize: `${Math.max(10, 10 / currentZoom)}px`, opacity: 0.8 }}>Auto-straightened</span>
-      )}
+    <div className="distance-tooltip" style={tooltipStyle} data-testid="distance-tooltip">
+      {formattedDistance} {unit}
     </div>
   );
 };

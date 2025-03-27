@@ -1,11 +1,15 @@
 
 /**
- * Canvas state hook types and utilities
+ * Canvas state hook
+ * Manages the core state for canvas operations
  * @module hooks/useCanvasState
  */
+import { useState } from 'react';
+import { BRUSH_CONSTANTS } from '@/constants/brushConstants';
+import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
 
 /**
- * Drawing tool types
+ * Drawing tool types for canvas operations
  */
 export type DrawingTool = 
   | 'draw' 
@@ -15,35 +19,89 @@ export type DrawingTool =
   | 'straightLine' 
   | 'text' 
   | 'measure' 
-  | 'select'
-  | 'hand';  // Added 'hand' as a valid drawing tool
+  | 'hand' 
+  | 'select';
 
 /**
  * Canvas state interface
  */
 export interface CanvasState {
-  /** Currently active drawing tool */
+  /** Active drawing tool */
   tool: DrawingTool;
-  /** Current zoom level (1.0 = 100%) */
+  /** Current zoom level */
   zoomLevel: number;
-  /** Whether grid snapping is enabled */
-  snapToGrid: boolean;
-  /** Current line thickness for drawing */
+  /** Line thickness */
   lineThickness: number;
-  /** Current line color for drawing (hex) */
+  /** Line color */
   lineColor: string;
-  /** Whether the canvas is in read-only mode */
-  readonly: boolean;
+  /** Whether to snap to grid */
+  snapToGrid: boolean;
 }
 
 /**
- * Default canvas state
+ * Default canvas state values
  */
 export const DEFAULT_CANVAS_STATE: CanvasState = {
   tool: 'select',
-  zoomLevel: 1.0,
-  snapToGrid: true,
-  lineThickness: 2,
-  lineColor: '#000000',
-  readonly: false
+  zoomLevel: ZOOM_CONSTANTS.DEFAULT_ZOOM,
+  lineThickness: BRUSH_CONSTANTS.DEFAULT_PENCIL_WIDTH,
+  lineColor: BRUSH_CONSTANTS.DEFAULT_PENCIL_COLOR,
+  snapToGrid: true
+};
+
+/**
+ * Hook for managing canvas state
+ * @returns Canvas state and setter functions
+ */
+export const useCanvasState = () => {
+  const [state, setState] = useState<CanvasState>(DEFAULT_CANVAS_STATE);
+  
+  /**
+   * Set active drawing tool
+   * @param tool - Drawing tool to set
+   */
+  const setTool = (tool: DrawingTool) => {
+    setState(prev => ({ ...prev, tool }));
+  };
+  
+  /**
+   * Set zoom level
+   * @param zoomLevel - Zoom level to set
+   */
+  const setZoomLevel = (zoomLevel: number) => {
+    setState(prev => ({ ...prev, zoomLevel }));
+  };
+  
+  /**
+   * Set line thickness
+   * @param lineThickness - Line thickness to set
+   */
+  const setLineThickness = (lineThickness: number) => {
+    setState(prev => ({ ...prev, lineThickness }));
+  };
+  
+  /**
+   * Set line color
+   * @param lineColor - Line color to set
+   */
+  const setLineColor = (lineColor: string) => {
+    setState(prev => ({ ...prev, lineColor }));
+  };
+  
+  /**
+   * Set snap to grid
+   * @param snapToGrid - Whether to snap to grid
+   */
+  const setSnapToGrid = (snapToGrid: boolean) => {
+    setState(prev => ({ ...prev, snapToGrid }));
+  };
+  
+  return {
+    ...state,
+    setTool,
+    setZoomLevel,
+    setLineThickness,
+    setLineColor,
+    setSnapToGrid
+  };
 };

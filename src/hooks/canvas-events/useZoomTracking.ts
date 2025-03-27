@@ -1,118 +1,126 @@
 
 /**
- * Hook for tracking zoom level in canvas
+ * Zoom tracking hook
+ * Manages zoom level changes and tracking
  * @module canvas-events/useZoomTracking
  */
-import { useEffect, useCallback } from "react";
-import { Canvas as FabricCanvas, IEvent } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
-import { ZOOM_CONSTANTS } from "@/constants/zoomConstants";
-import logger from "@/utils/logger";
+import { useCallback, useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas, TEvent } from 'fabric';
+import { Point } from '@/types/drawingTypes';
+import { DrawingTool } from '@/hooks/useCanvasState';
+import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
 
 /**
- * Props for the useZoomTracking hook
+ * Constants for zoom tracking
+ */
+const ZOOM_TRACKING_CONSTANTS = {
+  /** Minimum time between zoom updates in ms */
+  ZOOM_THROTTLE: 16,
+  
+  /** Multiplier for zoom factor */
+  ZOOM_MULTIPLIER: 1.1,
+  
+  /** Minimum zoom value */
+  MIN_ZOOM: ZOOM_CONSTANTS.MIN_ZOOM,
+  
+  /** Maximum zoom value */
+  MAX_ZOOM: ZOOM_CONSTANTS.MAX_ZOOM
+};
+
+/**
+ * Props for the zoom tracking hook
  */
 export interface UseZoomTrackingProps {
   /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Function to update zoom level state */
+  /** Function to update zoom level */
   updateZoomLevel: () => void;
-  /** Current active tool */
+  /** Current drawing tool */
   tool: DrawingTool;
 }
 
 /**
- * Hook to track and maintain zoom level
- * @param props The hook props
- * @returns Object with cleanup function
+ * Result of the zoom tracking hook
+ */
+export interface UseZoomTrackingResult {
+  /** Function to clean up event handlers */
+  cleanup: () => void;
+}
+
+/**
+ * Hook for tracking zoom levels and applying constraints
+ * @param props - Hook properties
+ * @returns Result with cleanup function
  */
 export const useZoomTracking = ({ 
-  fabricCanvasRef, 
+  fabricCanvasRef,
   updateZoomLevel,
   tool
-}: UseZoomTrackingProps) => {
-  /**
-   * Handle mouse wheel events for zooming
-   */
-  const handleMouseWheel = useCallback((opt: IEvent) => {
-    // Skip if not using hand tool
-    if (tool !== 'hand') return;
+}: UseZoomTrackingProps): UseZoomTrackingResult => {
+  // Last tracked time for throttling
+  const lastZoomUpdateTimeRef = useRef<number>(0);
   
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  /**
+   * Handle zoom event
+   */
+  const handleZoom = useCallback((event: TEvent) => {
+    // Throttle updates to avoid performance issues
+    const now = Date.now();
+    if (now - lastZoomUpdateTimeRef.current < ZOOM_TRACKING_CONSTANTS.ZOOM_THROTTLE) {
+      return;
+    }
     
-    // Get wheel delta
-    const e = opt.e as WheelEvent;
-    const delta = e.deltaY;
-    
-    // Calculate zoom based on wheel direction
-    const zoomFactor = delta > 0 ? ZOOM_CONSTANTS.OUT : ZOOM_CONSTANTS.IN;
-    
-    // Get current zoom
-    const zoom = canvas.getZoom();
-    
-    // Calculate new zoom level within constraints
-    const newZoom = Math.min(
-      Math.max(zoom * zoomFactor, ZOOM_CONSTANTS.MIN_ZOOM), 
-      ZOOM_CONSTANTS.MAX_ZOOM
-    );
-    
-    // Apply new zoom centered at mouse position
-    canvas.zoomToPoint(
-      { x: e.offsetX, y: e.offsetY },
-      newZoom
-    );
-    
-    // Prevent page scrolling
-    e.preventDefault();
-    e.stopPropagation();
+    // Track zoom time
+    lastZoomUpdateTimeRef.current = now;
     
     // Update zoom level in state
-    if (updateZoomLevel) {
-      updateZoomLevel();
-    }
-  }, [fabricCanvasRef, updateZoomLevel, tool]);
-
-  /**
-   * Apply transition to canvas for smooth zooming
-   */
-  const applyTransition = useCallback(() => {
+    updateZoomLevel();
+    
+    // Get canvas
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    const transitionDuration = 300; // in milliseconds
-    canvas.wrapperEl.style.transition = `transform ${transitionDuration}ms ease-in-out`;
+    // Apply zoom constraints
+    const zoom = canvas.getZoom();
     
-    // Clear transition after animation completes
-    setTimeout(() => {
-      if (canvas.wrapperEl) {
-        canvas.wrapperEl.style.transition = '';
-      }
-    }, transitionDuration);
-  }, [fabricCanvasRef]);
-
-  /**
-   * Set up event listeners when component mounts
-   */
+    // Enforce min/max zoom
+    if (zoom < ZOOM_TRACKING_CONSTANTS.MIN_ZOOM) {
+      canvas.zoomToPoint({ x: 0, y: 0 } as Point, ZOOM_TRACKING_CONSTANTS.MIN_ZOOM);
+      updateZoomLevel();
+    } else if (zoom > ZOOM_TRACKING_CONSTANTS.MAX_ZOOM) {
+      canvas.zoomToPoint({ x: 0, y: 0 } as Point, ZOOM_TRACKING_CONSTANTS.MAX_ZOOM);
+      updateZoomLevel();
+    }
+  }, [fabricCanvasRef, updateZoomLevel]);
+  
+  // Register event handlers
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Add mouse wheel event listener
-    canvas.on('mouse:wheel', handleMouseWheel);
+    // Add event handlers
+    canvas.on('zoom', handleZoom);
     
-    // Cleanup function
+    // Set initial zoom if needed
+    updateZoomLevel();
+    
     return () => {
-      canvas.off('mouse:wheel', handleMouseWheel);
-    };
-  }, [fabricCanvasRef, handleMouseWheel]);
-
-  return {
-    cleanup: () => {
-      const canvas = fabricCanvasRef.current;
+      // Clean up event handlers
       if (canvas) {
-        canvas.off('mouse:wheel', handleMouseWheel);
+        canvas.off('zoom', handleZoom);
       }
+    };
+  }, [fabricCanvasRef, handleZoom, updateZoomLevel, tool]);
+  
+  /**
+   * Clean up function
+   */
+  const cleanup = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      canvas.off('zoom', handleZoom);
     }
-  };
+  }, [fabricCanvasRef, handleZoom]);
+  
+  return { cleanup };
 };

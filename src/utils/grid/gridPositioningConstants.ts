@@ -1,51 +1,51 @@
 
 /**
- * Constants for grid positioning and path processing
+ * Grid positioning constants
+ * Defines constants for grid positioning and layout
  * @module grid/gridPositioningConstants
  */
 
 /**
+ * Grid offset factor for extending grid beyond canvas edges
+ */
+export const GRID_OFFSET_FACTOR = 1.5;
+
+/**
  * Grid positioning constants
- * Controls how grid extends beyond visible canvas area
+ * Values for determining grid placement and alignment
  */
 export const GRID_POSITIONING = {
   /**
-   * Grid offset factor for positioning calculations
-   * This determines how far the grid extends beyond canvas edges
-   * Higher values create larger grid margins
+   * Extension factor for grid
+   * Multiplier for how far grid extends beyond canvas edges
    * @constant {number}
    */
-  OFFSET_FACTOR: 0.5
-};
-
-/**
- * Path processing thresholds and limits
- * Controls how complex paths are simplified for better performance
- */
-export const PATH_PROCESSING = {
-  /**
-   * Minimum number of points threshold before sampling
-   * Paths with fewer points than this won't be simplified
-   * @constant {number}
-   */
-  MIN_POINTS_THRESHOLD: 10,
+  EXTENSION_FACTOR: 1.5,
   
   /**
-   * Divisor used for point sampling
-   * Controls how many points are kept when simplifying paths
-   * Higher values result in more aggressive simplification
+   * Margin for grid from canvas edge
+   * Pixels to leave as margin between grid and canvas edge
    * @constant {number}
    */
-  SAMPLING_DIVISOR: 5,
+  EDGE_MARGIN: 20,
   
   /**
-   * Minimum distance between points in pixels
-   * Points closer than this may be merged during simplification
-   * Helps reduce redundant points in paths
+   * Marker offset from canvas edge
+   * Pixels to offset markers from canvas edge
    * @constant {number}
    */
-  MIN_DISTANCE: 5
+  MARKER_OFFSET: 5,
+  
+  /**
+   * Marker font size
+   * Font size in pixels for grid markers
+   * @constant {number}
+   */
+  MARKER_FONT_SIZE: 10
 };
 
 // For backward compatibility
-export const GRID_OFFSET_FACTOR = GRID_POSITIONING.OFFSET_FACTOR;
+export const EXTENSION_FACTOR = GRID_POSITIONING.EXTENSION_FACTOR;
+export const EDGE_MARGIN = GRID_POSITIONING.EDGE_MARGIN;
+export const MARKER_OFFSET = GRID_POSITIONING.MARKER_OFFSET;
+export const MARKER_FONT_SIZE = GRID_POSITIONING.MARKER_FONT_SIZE;

@@ -15,22 +15,20 @@ export interface CanvasDimensions {
 }
 
 /**
- * Debug information state
+ * Point coordinates
  */
-export interface DebugInfoState {
-  /** Whether canvas is initialized */
-  canvasInitialized: boolean;
-  /** Whether dimensions are set */
-  dimensionsSet: boolean;
-  /** Whether grid is created */
-  gridCreated: boolean;
-  /** Whether event handlers are set */
-  eventHandlersSet: boolean;
-  /** Whether brush is initialized */
-  brushInitialized: boolean;
-  /** Any additional debug info */
-  [key: string]: boolean | number | string;
+export interface Point {
+  /** X coordinate */
+  x: number;
+  /** Y coordinate */
+  y: number;
 }
+
+/**
+ * Debug information state
+ * Importing from debugTypes to ensure consistency
+ */
+export type { DebugInfoState } from './debugTypes';
 
 /**
  * Drawing state
@@ -69,3 +67,8 @@ export type DrawingMode = 'free' | 'straight' | 'polygon' | 'rectangle' | 'circl
  * Canvas operation types
  */
 export type CanvasOperation = 'draw' | 'erase' | 'select' | 'move' | 'zoom' | 'measure' | 'text';
+
+/**
+ * Type for zoom direction values
+ */
+export type ZoomDirection = 'in' | 'out';
