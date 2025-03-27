@@ -11,6 +11,7 @@ export const useDrawingState = () => {
     isDrawing: false,
     startPoint: null,
     currentPoint: null,
+    cursorPosition: null,
     midPoint: null,
     selectionActive: false,
     currentZoom: 1,
@@ -64,6 +65,7 @@ export const useDrawingState = () => {
       isDrawing: false,
       startPoint: null,
       currentPoint: null,
+      cursorPosition: null,
       midPoint: null,
       selectionActive: false,
       currentZoom: 1,
@@ -83,6 +85,17 @@ export const useDrawingState = () => {
     }));
   }, []);
 
+  /**
+   * Update cursor position
+   * @param position Current cursor position
+   */
+  const updateCursorPosition = useCallback((position: Point | null) => {
+    setDrawingState(prev => ({
+      ...prev,
+      cursorPosition: position
+    }));
+  }, []);
+
   return {
     drawingState,
     setDrawingState,
@@ -90,6 +103,7 @@ export const useDrawingState = () => {
     updateDrawing,
     endDrawing,
     resetDrawing,
-    updateDistance
+    updateDistance,
+    updateCursorPosition
   };
 };

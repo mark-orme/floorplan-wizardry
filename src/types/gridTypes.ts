@@ -1,72 +1,70 @@
 
 /**
- * Type definitions for grid functionality
+ * Grid management types
+ * Type definitions for grid management hooks and utilities
  * @module gridTypes
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { CanvasDimensions } from './geometryTypes';
 
 /**
- * Grid creation callback type
- * @typedef {Function} GridCreationCallback
- * @param {FabricCanvas} canvas - The Fabric canvas instance
- * @returns {FabricObject[]} - Array of created grid objects
+ * Grid attempt tracker interface
+ * Tracks grid creation attempts and status
+ * @interface GridAttemptTracker
  */
-export type GridCreationCallback = (canvas: FabricCanvas) => FabricObject[];
+export interface GridAttemptTracker {
+  /** Whether initial grid creation has been attempted */
+  initialAttempted: boolean;
+  /** Number of attempts made to create grid */
+  count: number;
+  /** Maximum number of attempts allowed */
+  maxAttempts: number;
+  /** Whether creation was successful */
+  successful: boolean;
+  /** Timestamp of the last attempt */
+  lastAttemptTime: number;
+}
 
 /**
- * Grid creation state type
- * @typedef {Object} GridCreationState
+ * Grid creation state interface
+ * Tracks the state of grid creation process
+ * @interface GridCreationState
  */
 export interface GridCreationState {
-  /** Whether grid creation is currently in progress */
-  creationInProgress: boolean;
-  /** Count of consecutive failed creation attempts */
-  consecutiveResets: number;
-  /** Maximum allowed consecutive reset attempts */
-  maxConsecutiveResets: number;
-  /** Timestamp of last grid creation attempt */
+  /** Whether grid creation is in progress */
+  inProgress: boolean;
+  /** Whether grid has been created successfully */
+  isCreated: boolean;
+  /** Number of creation attempts */
+  attempts: number;
+  /** Timestamp of last attempt */
   lastAttemptTime: number;
-  /** Timestamp of last successful grid creation */
-  lastCreationTime: number;
-  /** Whether grid exists on canvas */
+  /** Whether there was an error during creation */
+  hasError: boolean;
+  /** Error message if creation failed */
+  errorMessage: string;
+  /** Whether currently creating grid */
+  isCreating?: boolean;
+  /** Whether creation is currently in progress */
+  creationInProgress: boolean;
+  /** Count of consecutive reset attempts */
+  consecutiveResets: number;
+  /** Maximum allowed consecutive resets */
+  maxConsecutiveResets: number;
+  /** Whether grid exists */
   exists: boolean;
-  /** Timeout ID for safety check (to prevent stuck creation) */
-  safetyTimeout: number | null;
-  /** Minimum time between creation attempts in ms */
+  /** Timestamp of last creation */
+  lastCreationTime: number;
+  /** Minimum time between creation attempts */
   throttleInterval: number;
-  /** Minimum time between recreations in ms */
-  minRecreationInterval: number;
-  /** Maximum number of recreations allowed per session */
-  maxRecreations: number;
-  /** Total grid creation attempts made */
+  /** Total number of grid creations */
   totalCreations: number;
-  /** Last dimensions used for grid creation */
-  lastDimensions: CanvasDimensions | null;
-  /** Lock mechanism to prevent concurrent creation attempts */
+  /** Maximum number of allowed recreations */
+  maxRecreations: number;
+  /** Minimum time between recreation attempts */
+  minRecreationInterval: number;
+  /** Creation lock to prevent concurrent operations */
   creationLock: {
-    /** Unique identifier for the lock */
     id: number;
-    /** Timestamp when lock was acquired */
     timestamp: number;
-    /** Whether lock is currently held */
     isLocked: boolean;
   };
-  /** Health check information */
-  health?: {
-    /** Last verification timestamp */
-    lastCheck: number;
-    /** Whether grid was verified as existing */
-    verified: boolean;
-    /** Number of grid objects at last check */
-    objectCount: number;
-    /** Number of failures detected */
-    failures: number;
-  };
-  
-  // Deprecated properties (kept for backward compatibility)
-  inProgress?: boolean;
-  startTime?: number;
-  attempts?: number;
-  complete?: boolean;
 }

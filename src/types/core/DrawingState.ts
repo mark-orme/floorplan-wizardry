@@ -4,7 +4,7 @@
  * @module core/DrawingState
  */
 
-import type { Point } from './Point';
+import type { Point } from './Geometry';
 
 /**
  * Drawing state interface
@@ -19,7 +19,7 @@ export interface DrawingState {
   /** Current point of the drawing operation */
   currentPoint: Point | null;
   /** Current cursor position */
-  cursorPosition: Point | null;
+  cursorPosition?: Point | null;
   /** Mid point between start and current points */
   midPoint: Point | null;
   /** Whether selection is active */

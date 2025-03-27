@@ -1,60 +1,76 @@
 
 /**
- * Debug information state type
+ * Debug information state type definitions
  * @module core/DebugInfo
  */
-
-/**
- * Performance statistics for debugging
- */
-export interface PerformanceStats {
-  gridCreationTime?: number;
-  fps?: number;
-  renderTime?: number;
-  objectCreationTime?: number;
-  droppedFrames?: number;
-  frameTime?: number;
-  maxFrameTime?: number;
-  longFrames?: number;
-  [key: string]: number | undefined;
-}
+import { PerformanceStats } from '../performanceTypes';
+import { CanvasDimensions } from './Geometry';
 
 /**
  * Debug information state interface
+ * Core debug information for canvas state
+ * @interface DebugInfoState
  */
 export interface DebugInfoState {
   /** Whether to show debug information */
   showDebugInfo: boolean;
-  /** Whether the canvas has been initialized */
+  /** Whether canvas has been initialized */
   canvasInitialized: boolean;
-  /** Whether canvas dimensions have been set */
+  /** Whether dimensions have been set */
   dimensionsSet: boolean;
-  /** Whether the grid has been created */
+  /** Whether grid has been created */
   gridCreated: boolean;
-  /** Whether the brush has been initialized */
+  /** Whether brush has been initialized */
   brushInitialized: boolean;
-  /** Whether the canvas has been created */
-  canvasCreated: boolean;
-  /** Whether the canvas has been loaded */
-  canvasLoaded: boolean;
-  /** Whether the canvas is ready for drawing */
+  /** Whether canvas is ready */
   canvasReady: boolean;
-  /** Canvas width */
-  canvasWidth: number;
-  /** Canvas height */
-  canvasHeight: number;
-  /** Time of last initialization */
+  /** Whether canvas has been created */
+  canvasCreated: boolean;
+  /** Whether canvas has been loaded */
+  canvasLoaded: boolean;
+  /** Last initialization time */
   lastInitTime: number;
-  /** Time of last grid creation */
+  /** Last grid creation time */
   lastGridCreationTime: number;
-  /** Count of grid objects */
+  /** Number of grid objects */
   gridObjectCount: number;
   /** Canvas dimensions */
-  canvasDimensions: { width: number; height: number };
-  /** Whether there is an error */
+  canvasDimensions: CanvasDimensions;
+  /** Error state */
   hasError: boolean;
   /** Error message */
   errorMessage: string;
   /** Performance statistics */
   performanceStats: PerformanceStats;
+  
+  // Optional debug fields
+  /** Grid initialization state */
+  gridInitialized?: boolean;
+  /** Custom debug messages */
+  messages?: string[];
+  /** Amount of objects on canvas */
+  objectCount?: number;
+  /** Canvas dimensions */
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  /** Current tool */
+  currentTool?: string;
+  /** Canvas initialization time */
+  initTime?: number;
+  /** Number of grid objects */
+  gridObjects?: number;
+  /** Number of canvas objects */
+  canvasObjects?: number;
+  /** Canvas width */
+  canvasWidth?: number;
+  /** Canvas height */
+  canvasHeight?: number;
+  /** Device pixel ratio */
+  devicePixelRatio?: number;
+  /** Last error that occurred */
+  lastError?: any;
+  /** Timestamp of the last error */
+  lastErrorTime?: number;
 }

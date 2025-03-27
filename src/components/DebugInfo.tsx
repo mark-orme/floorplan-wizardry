@@ -26,7 +26,7 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
           <p>Dimensions Set: {debugInfo.dimensionsSet ? "✅" : "❌"}</p>
           <p>Brush Initialized: {debugInfo.brushInitialized ? "✅" : "❌"}</p>
           <p>
-            Grid Objects: {debugInfo.gridObjects ?? 'N/A'} / Canvas Objects: {debugInfo.canvasObjects ?? 'N/A'}
+            Grid Objects: {debugInfo.gridObjectCount ?? 'N/A'} / Canvas Objects: {debugInfo.objectCount ?? 'N/A'}
           </p>
           <p>
             Canvas Size: {debugInfo.canvasWidth ?? 'N/A'}x{debugInfo.canvasHeight ?? 'N/A'} (DPR: {debugInfo.devicePixelRatio ?? 'N/A'})

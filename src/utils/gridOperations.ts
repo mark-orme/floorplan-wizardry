@@ -19,7 +19,6 @@ export const getInitialGridState = (): GridCreationState => {
     lastAttemptTime: 0,
     hasError: false,
     errorMessage: "",
-    isCreating: false,
     creationInProgress: false,
     consecutiveResets: 0,
     maxConsecutiveResets: 5,
@@ -29,7 +28,11 @@ export const getInitialGridState = (): GridCreationState => {
     totalCreations: 0,
     maxRecreations: 10,
     minRecreationInterval: 1000,
-    creationLock: false
+    creationLock: {
+      id: 0,
+      timestamp: 0,
+      isLocked: false
+    }
   };
 };
 
@@ -108,7 +111,6 @@ export const startGridCreation = (state: GridCreationState): GridCreationState =
   return {
     ...state,
     inProgress: true,
-    isCreating: true,
     attempts: state.attempts + 1,
     lastAttemptTime: Date.now(),
     hasError: false,
@@ -125,7 +127,6 @@ export const completeGridCreation = (state: GridCreationState): GridCreationStat
   return {
     ...state,
     inProgress: false,
-    isCreating: false,
     isCreated: true,
     lastAttemptTime: Date.now(),
     hasError: false,
@@ -146,7 +147,6 @@ export const failGridCreation = (state: GridCreationState, error: string): GridC
   return {
     ...state,
     inProgress: false,
-    isCreating: false,
     hasError: true,
     errorMessage: error,
     consecutiveResets: (state.consecutiveResets || 0) + 1,
@@ -198,7 +198,7 @@ export const resetGridCreationState = (state: GridCreationState): GridCreationSt
  * @returns {boolean} True if lock was acquired
  */
 export const acquireCreationLock = (state: GridCreationState): boolean => {
-  if (state.creationLock && state.creationLock === true) {
+  if (state.creationLock && state.creationLock.isLocked === true) {
     return false;
   }
   
@@ -213,7 +213,11 @@ export const acquireCreationLock = (state: GridCreationState): boolean => {
 export const setCreationLock = (state: GridCreationState): GridCreationState => {
   return {
     ...state,
-    creationLock: true
+    creationLock: {
+      id: Date.now(),
+      timestamp: Date.now(),
+      isLocked: true
+    }
   };
 };
 
@@ -225,7 +229,11 @@ export const setCreationLock = (state: GridCreationState): GridCreationState => 
 export const releaseCreationLock = (state: GridCreationState): GridCreationState => {
   return {
     ...state,
-    creationLock: false
+    creationLock: {
+      id: 0,
+      timestamp: 0,
+      isLocked: false
+    }
   };
 };
 
@@ -252,4 +260,3 @@ export const clearCreationInProgress = (state: GridCreationState): GridCreationS
     creationInProgress: false
   };
 };
-
