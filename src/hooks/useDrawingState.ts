@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { DrawingState, Point } from '@/types';
 
@@ -13,7 +14,8 @@ const useDrawingState = () => {
     cursorPosition: null,
     midPoint: null,
     selectionActive: false,
-    points: []
+    points: [],
+    distance: null
   });
 
   /**
@@ -26,7 +28,8 @@ const useDrawingState = () => {
       isDrawing: true,
       startPoint: point,
       currentPoint: point,
-      points: [point]
+      points: [point],
+      distance: 0
     }));
   }, []);
 
@@ -46,6 +49,14 @@ const useDrawingState = () => {
 
       const newPoints = prev.points ? [...prev.points, point] : [point];
       
+      // Calculate distance if we have a start point
+      let distance = prev.distance;
+      if (prev.startPoint) {
+        const dx = prev.startPoint.x - point.x;
+        const dy = prev.startPoint.y - point.y;
+        distance = Math.sqrt(dx * dx + dy * dy);
+      }
+      
       return {
         ...prev,
         currentPoint: point,
@@ -54,7 +65,8 @@ const useDrawingState = () => {
           x: (prev.startPoint.x + point.x) / 2,
           y: (prev.startPoint.y + point.y) / 2
         } : null,
-        points: newPoints
+        points: newPoints,
+        distance
       };
     });
   }, []);
@@ -81,7 +93,8 @@ const useDrawingState = () => {
       cursorPosition: null,
       midPoint: null,
       selectionActive: false,
-      points: []
+      points: [],
+      distance: null
     });
   }, []);
 

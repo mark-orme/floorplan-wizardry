@@ -6,21 +6,24 @@
  */
 
 // Re-export types using named exports to avoid ambiguity
-export type { Point, CanvasDimensions, OperationResult, GridCreationState } from './drawingTypes';
-export type { DrawingState } from './drawingStateTypes';
-export type { DebugInfoState } from './debugTypes';
+export type { Point } from './core/Point';
+export type { DrawingState } from './core/DrawingState';
+export type { DebugInfoState } from './core/DebugInfo';
+export type { GridCreationState } from './core/GridState';
+export type { CanvasDimensions, OperationResult } from './core/Geometry';
 
-// Re-export other types
+// Re-export geometry types
 export type { 
-  Coordinates, 
-  Dimension, 
-  Rectangle, 
-  Size, 
+  Coordinates,
+  Dimension,
+  Rectangle,
+  Size,
   Vector,
   Bounds,
   LineSegment
-} from './geometryTypes';
+} from './core/Geometry';
 
+// Re-export floor plan types
 export type {
   Floor,
   FloorOptions,
@@ -28,8 +31,9 @@ export type {
   FloorPlan,
   PaperSize,
   Stroke
-} from './floorPlanTypes';
+} from './core/FloorPlan';
 
+// Re-export grid types
 export type {
   Grid,
   GridConfig,
@@ -37,16 +41,18 @@ export type {
   GridOptions,
   GridParameters,
   GridStyle
-} from './gridTypes';
+} from './core/GridState';
 
+// Re-export fabric types
 export type {
   FabricCanvasOptions,
   FabricObjectOptions,
   FabricLineOptions
-} from './fabricTypes';
+} from './core/Fabric';
 
+// Re-export performance types
 export type {
   PerformanceMetrics,
   RenderStats,
   TimingRecord
-} from './performanceTypes';
+} from './core/Performance';
