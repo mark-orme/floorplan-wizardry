@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useLineSettings } from './useLineSettings';
 import { toast } from 'sonner';
 import { trackLineThickness } from "@/utils/fabricBrush";
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
