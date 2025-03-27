@@ -49,6 +49,8 @@ export interface DebugInfoState {
   dimensionsSet: boolean;
   /** Whether grid has been created */
   gridCreated: boolean;
+  /** Whether event handlers are set */
+  eventHandlersSet: boolean;
   /** Whether brush has been initialized */
   brushInitialized: boolean;
   /** Whether canvas is ready */
@@ -57,6 +59,12 @@ export interface DebugInfoState {
   canvasCreated: boolean;
   /** Whether canvas has been loaded */
   canvasLoaded: boolean;
+  /** Whether canvas events are registered */
+  canvasEventsRegistered: boolean;
+  /** Whether grid is rendered */
+  gridRendered: boolean;
+  /** Whether tools are initialized */
+  toolsInitialized: boolean;
   /** Last initialization time */
   lastInitTime: number;
   /** Last grid creation time */
@@ -102,4 +110,6 @@ export interface DebugInfoState {
   lastError?: any;
   /** Timestamp of the last error */
   lastErrorTime?: number;
+  /** Any additional debug info */
+  [key: string]: boolean | number | string | object | undefined;
 }

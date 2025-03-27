@@ -4,7 +4,7 @@
  * @module canvas-events/types
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingMode } from "@/types/drawingTypes";
 
 /**
  * Canvas operation types
@@ -79,7 +79,7 @@ export interface BaseEventHandlerProps {
   /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current tool selected */
-  tool?: DrawingTool;
+  tool?: DrawingMode;
 }
 
 /**

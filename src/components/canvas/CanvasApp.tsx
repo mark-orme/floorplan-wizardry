@@ -72,7 +72,8 @@ export const CanvasApp = () => {
     gridObjectCount: debugInfo.gridObjectCount || 0,
     canvasDimensions: debugInfo.canvasDimensions || { width: 0, height: 0 },
     hasError: debugInfo.hasError || false,
-    errorMessage: debugInfo.errorMessage || ""
+    errorMessage: debugInfo.errorMessage || "",
+    performanceStats: debugInfo.performanceStats || {}
   };
 
   return (

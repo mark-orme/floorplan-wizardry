@@ -1,15 +1,18 @@
 
 /**
- * Constants for zoom settings and behaviors
- * Used to maintain consistent zooming across components
+ * Constants for zoom operations
+ * @module constants/zoomConstants
  */
-export const ZOOM_CONSTANTS = {
-  /** Zoom in factor */
-  IN: 1.1,
-  
-  /** Zoom out factor */
-  OUT: 0.9,
-  
+
+/**
+ * Type for zoom direction
+ */
+export type ZoomDirection = 'in' | 'out';
+
+/**
+ * Zoom level constants
+ */
+export const ZOOM_LEVEL_CONSTANTS = {
   /** Minimum zoom level */
   MIN_ZOOM: 0.1,
   
@@ -19,28 +22,40 @@ export const ZOOM_CONSTANTS = {
   /** Default zoom level */
   DEFAULT_ZOOM: 1.0,
   
-  /** Zoom increment for buttons and controls */
-  ZOOM_INCREMENT: 0.1,
-  
-  /** Number of zoom steps from min to max */
-  ZOOM_STEPS: 20,
-  
-  /** Zoom sensitivity for mouse wheel */
-  WHEEL_SENSITIVITY: 0.001,
-  
-  /** Transition duration for zoom animations in ms */
-  TRANSITION_DURATION: 300
+  /** Zoom increment */
+  ZOOM_INCREMENT: 0.1
 };
 
 /**
- * Zoom direction type for zoom operations
- */
-export type ZoomDirection = 'in' | 'out';
-
-/**
- * Zoom multipliers for consistent zoom operations
+ * Zoom multiplier constants
  */
 export const ZOOM_MULTIPLIERS = {
-  IN: 1.1,
-  OUT: 0.9
+  /** Zoom in multiplier */
+  IN: 1.2,
+  
+  /** Zoom out multiplier */
+  OUT: 0.8,
+  
+  /** Reset zoom level */
+  RESET: 1.0
+};
+
+/**
+ * Constants for zoom behaviors
+ */
+export const ZOOM_CONSTANTS = {
+  /** Default zoom level */
+  DEFAULT_ZOOM: 1.0,
+  
+  /** Zoom in factor */
+  IN: 1.2,
+  
+  /** Zoom out factor */
+  OUT: 0.8,
+  
+  /** Minimum zoom level */
+  MIN_ZOOM: 0.1,
+  
+  /** Maximum zoom level */
+  MAX_ZOOM: 10.0
 };

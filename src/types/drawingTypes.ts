@@ -105,7 +105,7 @@ export interface DrawingState {
 /**
  * Drawing mode
  */
-export type DrawingMode = 'free' | 'straight' | 'polygon' | 'rectangle' | 'circle' | 'text' | 'wall';
+export type DrawingMode = 'free' | 'straight' | 'polygon' | 'rectangle' | 'circle' | 'text' | 'wall' | 'hand';
 
 /**
  * Canvas operation types
