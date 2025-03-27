@@ -17,13 +17,13 @@ const CANVAS_EVENTS = {
    * Zoom changed event name
    * @constant {string}
    */
-  ZOOM_CHANGED: 'zoom:changed',
+  ZOOM_CHANGED: 'zoom:changed' as keyof fabric.CanvasEvents,
   
   /**
    * Custom zoom changed event name
    * @constant {string}
    */
-  CUSTOM_ZOOM_CHANGED: 'custom:zoom-changed'
+  CUSTOM_ZOOM_CHANGED: 'custom:zoom-changed' as keyof fabric.CanvasEvents
 };
 
 /**

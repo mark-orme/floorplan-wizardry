@@ -4,7 +4,7 @@
  * @module useObjectEvents
  */
 import { useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, TPointerEventInfo } from "fabric";
 import logger from "@/utils/logger";
 import { BaseEventHandlerProps, EventHandlerResult } from "./types";
 
@@ -17,13 +17,13 @@ const OBJECT_EVENTS = {
    * Object modified event name
    * @constant {string}
    */
-  OBJECT_MODIFIED: 'object:modified',
+  OBJECT_MODIFIED: 'object:modified' as keyof fabric.CanvasEvents,
   
   /**
    * Object removed event name
    * @constant {string}
    */
-  OBJECT_REMOVED: 'object:removed'
+  OBJECT_REMOVED: 'object:removed' as keyof fabric.CanvasEvents
 };
 
 interface UseObjectEventsProps extends BaseEventHandlerProps {
