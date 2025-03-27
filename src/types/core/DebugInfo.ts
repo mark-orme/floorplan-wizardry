@@ -1,123 +1,48 @@
 
 /**
- * Debug information state type definition
- * @module core/DebugInfo
+ * Debug information state types
+ * @module types/core/DebugInfo
  */
-import { CanvasDimensions } from './Geometry';
 
 /**
- * Performance statistics interface
- * Tracks performance-related metrics
- */
-export interface PerformanceStats {
-  /** Frames per second */
-  fps?: number;
-  /** Average frame time in milliseconds */
-  frameTime?: number;
-  /** Maximum frame time in milliseconds */
-  maxFrameTime?: number;
-  /** Number of frames that took too long to render */
-  longFrames?: number;
-  /** Number of dropped frames */
-  droppedFrames?: number;
-  /** Memory usage in MB */
-  memory?: number;
-  /** Number of canvas objects */
-  objectCount?: number;
-  /** Number of draw calls */
-  drawCalls?: number;
-  /** Render time in milliseconds */
-  renderTime?: number;
-  /** Event processing time in milliseconds */
-  eventTime?: number;
-  /** Error count */
-  errorCount?: number;
-  /** Retry count */
-  retryCount?: number;
-  /** Index signature for additional metrics */
-  [key: string]: number | undefined;
-}
-
-/**
- * Debug info state interface
- * Tracks debug and performance information
- * @interface DebugInfoState
+ * Debug information state interface
+ * Contains properties for tracking debug state
  */
 export interface DebugInfoState {
-  /** Whether to show debug info */
-  showDebugInfo: boolean;
-  /** Whether canvas is initialized */
-  canvasInitialized: boolean;
-  /** Whether dimensions are set */
-  dimensionsSet: boolean;
-  /** Whether grid is created */
-  gridCreated: boolean;
-  /** Whether brush is initialized */
-  brushInitialized: boolean;
-  /** Whether canvas is ready */
-  canvasReady: boolean;
-  /** Whether canvas is created */
-  canvasCreated: boolean;
-  /** Whether canvas is loaded */
-  canvasLoaded: boolean;
-  /** Whether event handlers are set */
+  /** Whether the application has an error */
+  hasError: boolean;
+  /** Error message if an error occurred */
+  errorMessage: string;
+  /** Time taken for last initialization */
+  lastInitTime: number;
+  /** Time taken for last grid creation */
+  lastGridCreationTime: number;
+  /** Whether event handlers have been set */
   eventHandlersSet: boolean;
   /** Whether canvas events are registered */
   canvasEventsRegistered: boolean;
-  /** Whether grid is rendered */
+  /** Whether the grid has been rendered */
   gridRendered: boolean;
-  /** Whether tools are initialized */
+  /** Whether drawing tools have been initialized */
   toolsInitialized: boolean;
-  /** Last initialization time */
-  lastInitTime: number;
-  /** Last grid creation time */
-  lastGridCreationTime: number;
-  /** Grid object count */
-  gridObjectCount: number;
-  /** Canvas dimensions */
-  canvasDimensions: CanvasDimensions;
-  /** Whether there's an error */
-  hasError: boolean;
-  /** Error message */
-  errorMessage: string;
-  /** Performance stats */
-  performanceStats: PerformanceStats;
-  /** Canvas width (optional) */
-  canvasWidth?: number;
-  /** Canvas height (optional) */
-  canvasHeight?: number;
-  /** Device pixel ratio (optional) */
-  devicePixelRatio?: number;
-  /** Last error object (optional) */
-  lastError?: unknown;
-  /** Last error time (optional) */
-  lastErrorTime?: number;
-  /** Any other additional properties */
-  [key: string]: unknown;
+  /** Whether the grid has been created */
+  gridCreated: boolean;
+  /** Additional debug properties */
+  [key: string]: string | number | boolean | object;
 }
 
 /**
- * Default debug state with all required properties
+ * Default debug state
+ * Initialize with default values
  */
 export const DEFAULT_DEBUG_STATE: DebugInfoState = {
-  showDebugInfo: false,
-  canvasInitialized: false,
-  dimensionsSet: false,
-  gridCreated: false,
-  brushInitialized: false,
-  canvasReady: false,
-  canvasCreated: false,
-  canvasLoaded: false,
+  hasError: false,
+  errorMessage: '',
+  lastInitTime: 0,
+  lastGridCreationTime: 0,
   eventHandlersSet: false,
   canvasEventsRegistered: false,
   gridRendered: false,
   toolsInitialized: false,
-  lastInitTime: 0,
-  lastGridCreationTime: 0,
-  gridObjectCount: 0,
-  canvasDimensions: { width: 0, height: 0 },
-  hasError: false,
-  errorMessage: '',
-  performanceStats: {}
+  gridCreated: false
 };
-

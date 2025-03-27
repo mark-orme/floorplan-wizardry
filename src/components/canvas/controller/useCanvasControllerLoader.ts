@@ -3,7 +3,7 @@
  * Hook for loading floor plan data in the canvas controller
  * @module useCanvasControllerLoader
  */
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
 import { FloorPlan } from "@/types/floorPlanTypes";
 
@@ -51,10 +51,8 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
     loadData
   } = props;
 
-  // Floor plan data loading
-  const { 
-    loadFloorPlansData: originalLoadFloorPlansData
-  } = useFloorPlanLoader({
+  // Floor plan data loading - pass props object directly
+  const floorPlanLoader = useFloorPlanLoader({
     setIsLoading,
     setFloorPlans,
     setHasError,
@@ -63,18 +61,17 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
   });
 
   /**
-   * Wrapper function to convert Promise<boolean> to Promise<void>
-   * Loads floor plan data and ensures consistent return type
+   * Load floor plans data from loader
+   * Uses the loader's loadFloorPlansData method
    * 
    * @returns {Promise<void>} Promise that resolves when data is loaded
    */
-  const loadFloorPlansData = async (): Promise<void> => {
-    await originalLoadFloorPlansData();
-    // Return void explicitly
+  const loadFloorPlansData = useCallback(async (): Promise<void> => {
+    await floorPlanLoader.loadFloorPlansData();
     return;
-  };
+  }, [floorPlanLoader]);
 
-  // Load floor plans data
+  // Load floor plans data on mount
   useEffect(() => {
     loadFloorPlansData();
   }, [loadFloorPlansData]);

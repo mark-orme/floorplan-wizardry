@@ -1,12 +1,11 @@
 
 /**
- * Point type definitions
- * @module core/Point
+ * Point data type for 2D coordinates
+ * @module types/core/Point
  */
 
 /**
- * Point interface with basic 2D coordinates
- * @interface Point
+ * Basic point interface for 2D coordinates
  */
 export interface Point {
   /** X coordinate */
@@ -16,31 +15,11 @@ export interface Point {
 }
 
 /**
- * Plain point type without methods for simpler structures
- */
-export type PlainPoint = {
-  x: number;
-  y: number;
-};
-
-/**
- * Create a point object
- * Helper function to create points
- * 
+ * Create a new point with x and y coordinates
  * @param x - X coordinate
  * @param y - Y coordinate
- * @returns A Point object
+ * @returns New Point object
  */
-export function createPoint(x: number, y: number): Point {
+export const createPoint = (x: number, y: number): Point => {
   return { x, y };
-}
-
-/**
- * Convert plain object to Point
- * 
- * @param obj - Object with x and y properties
- * @returns A Point object
- */
-export function toPoint(obj: { x: number; y: number }): Point {
-  return { x: obj.x, y: obj.y };
-}
+};

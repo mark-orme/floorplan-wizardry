@@ -1,22 +1,24 @@
+
 /**
  * Hook for calculating Gross Internal Area (GIA) for floor plans
  * @module useFloorPlanGIA
  */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { FloorPlan } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Point';
 import { calculateGIA } from '@/utils/geometry';
+import { PIXELS_PER_METER } from '@/constants/numerics';
+
+/**
+ * Extended fabric polyline type for typescript
+ */
+interface FabricPolyline extends FabricObject {
+  points?: { x: number, y: number }[];
+}
 
 interface UseFloorPlanGIAProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
-}
-
-// Define a type for coordinates to avoid type errors
-interface RoomCoordinates {
-  x: number;
-  y: number;
 }
 
 /**
@@ -65,8 +67,9 @@ export const useFloorPlanGIA = ({
             y: p.y / PIXELS_PER_METER 
           }));
           
-          // Calculate GIA for this room
-          const roomGIA = calculateGIA(points as Point[]);
+          // Calculate GIA for this room - convert points array to a points array within an array
+          // to match the expected format for calculateGIA
+          const roomGIA = calculateGIA([points as Point[]]);
           totalGIA += roomGIA;
           
           // For debugging

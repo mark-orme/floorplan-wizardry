@@ -1,142 +1,108 @@
-/**
- * Test Setup File
- * Configures the test environment and global mocks
- * @module tests/setup
- */
-import '@testing-library/jest-dom';
-import { vi, expect as vitestExpect } from 'vitest';
 
-// Define types for mocked timers with __promisify__ property
-interface MockedSetTimeout extends Function {
-  __promisify__: Function;
-}
+// Vitest/Jest setup file
+import { vi } from 'vitest';
+import { expect } from 'vitest';
+import { configureAxe } from 'jest-axe';
 
-// Mock setTimeout globally
-const mockedSetTimeout = vi.fn().mockImplementation((cb, ms) => {
-  if (typeof cb === 'function') cb();
-  return 123 as unknown as NodeJS.Timeout;
+// Mock window properties
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
 });
 
-// Add required __promisify__ property to the mock function
-(mockedSetTimeout as unknown as MockedSetTimeout).__promisify__ = vi.fn();
+// Configure intersection observer
+const mockIntersectionObserver = vi.fn();
+mockIntersectionObserver.mockImplementation((callback) => {
+  return {
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  };
+});
+window.IntersectionObserver = mockIntersectionObserver;
 
-// Apply the mock
-window.setTimeout = mockedSetTimeout as unknown as typeof window.setTimeout;
+// Configure global fetch
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: vi.fn().mockResolvedValue({}),
+  text: vi.fn().mockResolvedValue(''),
+});
 
-// Mock canvas
-window.HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+// Configure canvas mock
+class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+window.ResizeObserver = ResizeObserver;
+
+// Mock canvas methods
+HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
   clearRect: vi.fn(),
   fillRect: vi.fn(),
+  drawImage: vi.fn(),
   beginPath: vi.fn(),
   moveTo: vi.fn(),
   lineTo: vi.fn(),
   stroke: vi.fn(),
-  arc: vi.fn(),
   fill: vi.fn(),
-  strokeRect: vi.fn(),
-  translate: vi.fn(),
-  scale: vi.fn(),
-  save: vi.fn(),
-  restore: vi.fn(),
+  arc: vi.fn(),
   setTransform: vi.fn(),
-  drawImage: vi.fn(),
-  putImageData: vi.fn(),
-  getImageData: vi.fn().mockReturnValue({
-    data: new Uint8ClampedArray(4)
-  }),
   fillText: vi.fn(),
+  measureText: vi.fn().mockReturnValue({ width: 10 }),
   setLineDash: vi.fn(),
-  createLinearGradient: vi.fn().mockReturnValue({
-    addColorStop: vi.fn()
-  }),
-  createPattern: vi.fn()
+  getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(4) }),
+}));
+
+// Add expect to globalThis for test
+if (!globalThis.expect) {
+  globalThis.expect = expect;
+}
+
+// Configure accessibility testing
+configureAxe({
+  rules: {
+    'color-contrast': { enabled: false },
+  },
 });
 
-// Mock MutationObserver if not available
-if (!global.MutationObserver) {
-  global.MutationObserver = class MutationObserver {
-    constructor(callback: Function) {}
-    disconnect() {}
-    observe(element: Node, initObject: MutationObserverInit) {}
-    takeRecords() { return []; } // Add the missing takeRecords method
-  } as unknown as typeof MutationObserver;
+// Mock local storage
+class MockLocalStorage {
+  constructor() {
+    this.store = {};
+  }
+
+  getItem(key) {
+    return this.store[key] || null;
+  }
+
+  setItem(key, value) {
+    this.store[key] = String(value);
+  }
+
+  removeItem(key) {
+    delete this.store[key];
+  }
+
+  clear() {
+    this.store = {};
+  }
 }
 
-// Mock ResizeObserver if not available
-if (!global.ResizeObserver) {
-  global.ResizeObserver = class ResizeObserver {
-    constructor(callback: Function) {}
-    disconnect() {}
-    observe(element: Element, options?: ResizeObserverOptions) {}
-    unobserve(element: Element) {}
-  };
-}
+global.localStorage = new MockLocalStorage();
 
-// Mock IntersectionObserver if not available
-if (!global.IntersectionObserver) {
-  global.IntersectionObserver = class IntersectionObserver {
-    constructor(callback: Function, options?: IntersectionObserverInit) {}
-    disconnect() {}
-    observe(element: Element) {}
-    unobserve(element: Element) {}
-    root = null;
-    rootMargin = '';
-    thresholds: number[] = [];
-    takeRecords() { return []; }
-  };
-}
-
-// Mock performance.now if not available
-if (!window.performance || !window.performance.now) {
-  window.performance = {
-    ...window.performance,
-    now: () => Date.now()
-  };
-}
-
-// Define global.expect for test extensions if it doesn't exist
-if (typeof global.expect === 'undefined') {
-  // This is a fallback if expect is not available in the global scope
-  // In a real setup, you'd be using jest.expect or another test framework
-  global.expect = (actual: any) => ({
-    toBe: (expected: any) => actual === expected,
-    toEqual: (expected: any) => JSON.stringify(actual) === JSON.stringify(expected),
-    // Add other matchers as needed
-  });
-} else {
-  // Extension methods for existing expect
-  vitestExpect.extend({
-    toBeInTheDocument(received) {
-      const pass = Boolean(received);
-      return {
-        message: () => `expected ${received} ${pass ? 'not ' : ''}to be in the document`,
-        pass
-      };
-    },
-    toHaveAttribute(received, name, value) {
-      const hasAttribute = received.hasAttribute(name);
-      const attributeValue = received.getAttribute(name);
-      const pass = value === undefined 
-        ? hasAttribute 
-        : hasAttribute && attributeValue === value;
-      
-      return {
-        message: () => {
-          if (value === undefined) {
-            return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}"`;
-          }
-          return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}" with value "${value}"`;
-        },
-        pass
-      };
-    }
-  });
-}
-
-// Make Vitest's expect available globally
-global.expect = vitestExpect;
-
-// Setup global test utilities
-global.afterEach(() => {
-  vi.clearAllMocks();
-});
+// Export mock functions for test use
+export {
+  expect,
+  MockLocalStorage,
+};

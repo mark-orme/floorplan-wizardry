@@ -88,9 +88,20 @@ export const useCanvasGrid = ({
         const width = canvasDimensions.width;
         const height = canvasDimensions.height;
         
-        // Create small and large grid lines
-        const smallGridObjects = createSmallScaleGrid(canvas, width, height);
-        const largeGridObjects = createLargeScaleGrid(canvas, width, height);
+        // Create small and large grid lines - using only 2 arguments now
+        const smallGridObjects = createSmallScaleGrid(canvas, {
+          color: '#e0e0e0',
+          width: 0.5,
+          selectable: false,
+          type: 'small'
+        });
+        
+        const largeGridObjects = createLargeScaleGrid(canvas, {
+          color: '#b0b0b0',
+          width: 1,
+          selectable: false,
+          type: 'large'
+        });
         
         // Add all objects to the grid layer reference
         gridLayerRef.current = [...smallGridObjects, ...largeGridObjects];

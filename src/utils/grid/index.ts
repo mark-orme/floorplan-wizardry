@@ -1,50 +1,39 @@
 
 /**
- * Grid utilities module
- * Re-exports grid functionality from specialized modules
- * @module grid
+ * Grid utilities index
+ * Re-exports all grid-related functions and types for easier imports
+ * @module utils/grid
  */
 
-// Export basic grid operations from core except snapToGrid
-// to avoid duplicates with the one from snapping module
-export { 
-  // Don't export snapToGrid from core to avoid naming conflicts
-  pixelsToMeters,
-  metersToPixels,
-  pointToMeters,
-  pointToPixels,
-  distance,
-  angleBetweenPoints,
-  straightenLine,
-  approximatelyEqual,
-  isOnGridIntersection,
-  formatMeasurement,
-  calculateGridLines
-} from './core';
+// Re-export types from gridCreation
+export type { 
+  GridLineOptions,
+  GridRenderResult
+} from './gridCreation';
 
-// Export measurement functions 
-export * from './measurements';
-
-// Export snapping utilities - explicitly export to avoid ambiguity
+// Re-export functions from gridCreation
 export {
-  snapToGrid,
-  snapToAngle,
-  snapLineToStandardAngles,
-  getNearestGridIntersection,
-  distanceToNearestGridLine,
-  getNearestPointOnGrid,
-  snapWithThreshold
-} from './snapping';
+  createSmallScaleGrid,
+  createLargeScaleGrid,
+  createGridMarkers
+} from './gridCreation';
 
-// Export safety utilities
-export * from './gridSafety';
+// Re-export utility functions
+export { 
+  validateCanvasForGrid 
+} from './gridValidation';
 
-// Export error handling and validation
-export * from './gridErrorHandling';
-export * from './gridValidation';
+export {
+  createGridLayer,
+  createFallbackGrid
+} from './gridCreator';
 
-// Export grid creation utilities
-export * from './gridCreation';
+export {
+  handleGridCreationError,
+  scheduleGridRetry
+} from './gridErrorHandling';
 
-// Export type utilities
-export * from './typeUtils';
+export {
+  acquireGridLockWithSafety,
+  cleanupGridResources
+} from './gridSafety';

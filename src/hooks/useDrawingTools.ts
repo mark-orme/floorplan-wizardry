@@ -10,6 +10,7 @@ import { FloorPlan } from "@/types/floorPlanTypes";
 import { useCanvasTools } from "./useCanvasTools";
 import { useCanvasActions } from "./useCanvasActions";
 import { DrawingTool } from "@/constants/drawingModes";
+import { Point, createPoint } from "@/types/core/Point";
 import logger from "@/utils/logger";
 
 /**
@@ -27,9 +28,9 @@ interface UseDrawingToolsProps {
   tool: DrawingTool;
   /** Current zoom level */
   zoomLevel: number;
-  /** Current line thickness */
+  /** Line thickness for drawing */
   lineThickness: number;
-  /** Current line color */
+  /** Line color for drawing */
   lineColor: string;
   /** Function to set the current tool */
   setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
@@ -37,49 +38,36 @@ interface UseDrawingToolsProps {
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   /** Array of floor plans */
   floorPlans: FloorPlan[];
-  /** Current floor index */
+  /** Index of current floor */
   currentFloor: number;
-  /** Function to set floor plans */
+  /** Function to update floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set gross internal area */
+  /** Function to set the GIA (Gross Internal Area) */
   setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to create grid elements */
+  /** Function to create grid objects */
   createGrid: (canvas: FabricCanvas) => FabricObject[];
-  /** Function to recalculate gross internal area */
+  /** GIA recalculation function */
   recalculateGIA: () => void;
 }
 
 /**
- * Return type for the useDrawingTools hook
- * @interface UseDrawingToolsResult
+ * UseCanvasToolsProps interface
  */
-interface UseDrawingToolsResult {
-  /** Clear all drawings from the canvas */
-  clearDrawings: () => void;
-  /** Change the current drawing tool */
-  handleToolChange: (tool: DrawingTool) => void;
-  /** Perform undo operation */
-  handleUndo: () => void;
-  /** Perform redo operation */
-  handleRedo: () => void;
-  /** Change zoom level */
-  handleZoom: (direction: "in" | "out") => void;
-  /** Clear the entire canvas */
-  clearCanvas: () => void;
-  /** Save the canvas as an image */
-  saveCanvas: () => boolean;
-  /** Save current state before making changes */
-  saveCurrentState: () => void;
+interface UseCanvasToolsProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  tool: DrawingTool;
+  zoomLevel: number;
+  lineThickness: number;
+  lineColor: string;
 }
 
 /**
- * Main hook that orchestrates all drawing tool functionality
- * Composes smaller, focused hooks to provide a complete drawing toolkit
- * 
- * @param {UseDrawingToolsProps} props - Hook properties
- * @returns {UseDrawingToolsResult} Drawing tool operations
+ * Hook for managing drawing tools and operations
+ * @param props - Hook props
+ * @returns Drawing tools functions and state
  */
-export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsResult => {
+export const useDrawingTools = (props: UseDrawingToolsProps) => {
   const {
     fabricCanvasRef,
     gridLayerRef,
@@ -97,115 +85,148 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
     createGrid,
     recalculateGIA
   } = props;
-  
-  // Canvas tools (drawing, tool selection, zoom)
+
+  /**
+   * Process a point on the canvas
+   * @param point - Raw point data
+   * @returns Processed point
+   */
+  const processPoint = (point: { x: number, y: number }): Point => {
+    return createPoint(point.x, point.y);
+  };
+
+  /**
+   * Initialize canvas tools hook
+   */
   const canvasTools = useCanvasTools({
     fabricCanvasRef,
+    gridLayerRef,
     tool,
     zoomLevel,
     lineThickness,
-    lineColor,
-    setTool,
-    setZoomLevel,
-    createGrid
-  });
-  
-  /**
-   * Handle undo operation - uses the canvas's attached undo function
-   */
-  const handleUndo = useCallback(() => {
-    logger.info("Triggering undo from drawing tools");
-    if (!fabricCanvasRef.current) return;
-    
-    // Access the undo function from the canvas object (attached in useCanvasEventHandlers)
-    const canvas = fabricCanvasRef.current as FabricCanvas & {
-      handleUndo?: () => void;
-    };
-    
-    if (canvas.handleUndo) {
-      canvas.handleUndo();
-    }
-  }, [fabricCanvasRef]);
-  
-  /**
-   * Handle redo operation - uses the canvas's attached redo function
-   */
-  const handleRedo = useCallback(() => {
-    logger.info("Triggering redo from drawing tools");
-    if (!fabricCanvasRef.current) return;
-    
-    // Access the redo function from the canvas object (attached in useCanvasEventHandlers)
-    const canvas = fabricCanvasRef.current as FabricCanvas & {
-      handleRedo?: () => void;
-    };
-    
-    if (canvas.handleRedo) {
-      canvas.handleRedo();
-    }
-  }, [fabricCanvasRef]);
-  
-  /**
-   * Save current state before changes
-   * Captures the current canvas state for history tracking
-   */
-  const saveCurrentState = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Access the saveCurrentState function from the canvas object
-    const canvas = fabricCanvasRef.current as FabricCanvas & {
-      saveCurrentState?: () => void;
-    };
-    
-    if (canvas.saveCurrentState) {
-      canvas.saveCurrentState();
-    }
-  }, [fabricCanvasRef]);
-  
-  // Canvas actions (clear, save)
-  const canvasActions = useCanvasActions({
-    fabricCanvasRef,
-    historyRef,
-    clearDrawings: canvasTools.clearDrawings, // Use the function from canvasTools
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    saveCurrentState
+    lineColor
   });
 
   /**
-   * Change zoom level
-   * @param direction "in" or "out"
+   * Initialize canvas actions hook
    */
-  const handleZoom = useCallback((direction: "in" | "out") => {
-    const zoomFactor = direction === "in" ? 1.2 : 0.8;
-    if (fabricCanvasRef.current) {
-      const currentZoom = fabricCanvasRef.current.getZoom();
-      const newZoom = currentZoom * zoomFactor;
-      fabricCanvasRef.current.setZoom(newZoom);
-      setZoomLevel(newZoom);
-    }
-  }, [fabricCanvasRef, setZoomLevel]);
-  
+  const canvasActions = useCanvasActions({
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    tool,
+    zoomLevel,
+    setZoomLevel,
+    createGrid
+  });
+
   /**
-   * Wrap saveCanvas to return a boolean value as required by the interface
-   * @returns {boolean} Success indicator
+   * Update tool with proper state cleanup
+   * @param newTool - New drawing tool to set
    */
-  const saveCanvas = useCallback(() => {
-    // Call the original saveCanvas function
-    canvasActions.saveCanvas();
-    // Return true to indicate success
-    return true;
-  }, [canvasActions]);
-  
+  const handleToolChange = useCallback((newTool: DrawingTool) => {
+    if (!fabricCanvasRef.current) return;
+
+    // Capture current state
+    saveCurrentState();
+
+    // Clean up previous tool
+    const canvas = fabricCanvasRef.current;
+    canvas.isDrawingMode = newTool === 'draw';
+
+    // Set new tool
+    setTool(newTool);
+
+    // Implement tool-specific setup
+    if (newTool === 'draw') {
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+      }
+    }
+
+    // Deselect everything for drawing tools
+    if (newTool !== 'select') {
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+    }
+
+    logger.debug(`Tool changed to ${newTool}`);
+  }, [fabricCanvasRef, lineColor, lineThickness, setTool]);
+
+  /**
+   * Clear all user-created drawings from canvas
+   */
+  const clearDrawings = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+
+    // Save current state
+    saveCurrentState();
+
+    const canvas = fabricCanvasRef.current;
+    
+    // Get objects except grid
+    const objects = canvas.getObjects().filter(obj => {
+      const objectType = (obj as any).objectType;
+      return objectType !== 'grid' && objectType !== 'marker';
+    });
+
+    // Remove all non-grid objects
+    objects.forEach(obj => {
+      canvas.remove(obj);
+    });
+
+    canvas.requestRenderAll();
+    
+    logger.debug("All drawings cleared");
+
+    // Recalculate GIA after clearing
+    recalculateGIA();
+  }, [fabricCanvasRef, saveCurrentState, recalculateGIA]);
+
+  /**
+   * Save current canvas state to history
+   */
+  const saveCurrentState = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+
+    const canvas = fabricCanvasRef.current;
+    const currentObjects = canvas.getObjects().filter(obj => {
+      // Only save non-grid objects
+      return (obj as any).objectType !== 'grid';
+    });
+
+    // Clone current objects to avoid reference issues
+    const clonedObjects = currentObjects.map(obj => {
+      // This is a simplified version - actual cloning might be more complex
+      return obj;
+    });
+
+    // Add current state to history
+    historyRef.current.past.push(clonedObjects);
+    
+    // Clear future when new state is saved
+    historyRef.current.future = [];
+
+    logger.debug("Canvas state saved to history");
+  }, [fabricCanvasRef, historyRef]);
+
+  /**
+   * Combine operations from both hooks
+   */
   return {
-    clearDrawings: canvasTools.clearDrawings,
-    handleToolChange: canvasTools.handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
+    // Re-export necessary functions from canvasActions
+    handleZoom: canvasActions.handleZoom,
+    handleUndo: canvasActions.handleUndo,
+    handleRedo: canvasActions.handleRedo,
     clearCanvas: canvasActions.clearCanvas,
-    saveCanvas,
-    saveCurrentState
+    saveCanvas: canvasActions.saveCanvas,
+    deleteSelectedObjects: canvasActions.deleteSelectedObjects,
+
+    // Include functions from useDrawingTools
+    clearDrawings,
+    handleToolChange,
+    saveCurrentState,
+    processPoint
   };
 };

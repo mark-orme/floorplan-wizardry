@@ -1,124 +1,169 @@
 
 /**
- * Floor plan type definitions
- * @module core/FloorPlan
+ * Floor plan types
+ * @module types/core/FloorPlan
  */
+import { Point } from './Point';
 
 /**
- * Floor interface
+ * Paper size enum
  */
-export interface Floor {
-  id: string;
-  name: string;
-  level: number;
+export enum PaperSize {
+  A4 = 'A4',
+  A3 = 'A3',
+  A2 = 'A2',
+  A1 = 'A1',
+  A0 = 'A0',
+  CUSTOM = 'CUSTOM'
 }
 
 /**
  * Floor options interface
  */
 export interface FloorOptions {
+  /** Floor ID */
   id?: string;
+  /** Floor name */
   name?: string;
+  /** Floor level (0 = ground floor) */
   level?: number;
+  /** Floor label for display */
+  label?: string;
+  /** Floor GIA (Gross Internal Area) in m² */
+  gia?: number;
+}
+
+/**
+ * Stroke object representing a drawn path
+ */
+export interface Stroke {
+  /** Stroke ID */
+  id: string;
+  /** Array of points making up the stroke */
+  points: Point[];
+  /** Stroke type */
+  type: 'line' | 'polyline' | 'bezier';
+  /** Stroke color */
+  color: string;
+  /** Stroke thickness */
+  thickness: number;
+}
+
+/**
+ * Wall object representing a wall element
+ */
+export interface Wall {
+  /** Wall ID */
+  id: string;
+  /** Start point */
+  start: Point;
+  /** End point */
+  end: Point;
+  /** Wall thickness in meters */
+  thickness: number;
+  /** Wall type */
+  type?: string;
+}
+
+/**
+ * Room object representing a room
+ */
+export interface Room {
+  /** Room ID */
+  id: string;
+  /** Room name */
+  name: string;
+  /** Room type */
+  type: string;
+  /** Room area in m² */
+  area: number;
+  /** Room perimeter in meters */
+  perimeter: number;
+  /** Array of points defining the room boundary */
+  points: Point[];
 }
 
 /**
  * Floor metadata interface
  */
 export interface FloorMetadata {
-  createdAt?: string;
-  updatedAt?: string;
-  version?: number;
+  /** Paper size */
+  paperSize: PaperSize;
+  /** Paper width in mm */
+  paperWidth: number;
+  /** Paper height in mm */
+  paperHeight: number;
+  /** Scale (e.g., 1:50) */
+  scale: number;
+  /** Last modified timestamp */
+  lastModified: string;
+  /** Created timestamp */
+  created: string;
+  /** Grid spacing in meters */
+  gridSpacing: number;
 }
 
 /**
  * Floor plan interface
  */
-export interface FloorPlan extends Floor, FloorMetadata {
+export interface FloorPlan {
+  /** Floor plan ID */
   id: string;
+  /** Floor plan name */
   name: string;
+  /** Floor plan label for display */
+  label: string;
+  /** Floor level (0 = ground floor) */
   level: number;
-  /** Gross Internal Area in square meters */
+  /** Gross Internal Area in m² */
   gia: number;
-  /** Label for the floor plan (optional) */
-  label?: string;
-  /** Collection of objects in the floor plan */
-  objects?: Record<string, any>;
-  /** Serialized JSON representation */
-  json?: string;
-  /** Array of strokes/paths */
-  strokes?: Stroke[];
-  /** Collection of walls */
-  walls?: Wall[];
-  /** Collection of rooms */
-  rooms?: Room[];
+  /** Array of strokes */
+  strokes: Stroke[];
+  /** Array of walls */
+  walls: Wall[];
+  /** Array of rooms */
+  rooms: Room[];
   /** Serialized canvas data */
-  canvasData?: string | null;
+  canvasData: string | null;
+  /** Created timestamp */
+  createdAt: string;
+  /** Updated timestamp */
+  updatedAt: string;
+  /** Floor metadata */
+  metadata?: FloorMetadata;
 }
 
 /**
- * Paper size interface
+ * Create a new floor plan
+ * @param options Floor options
+ * @returns New floor plan object
  */
-export interface PaperSize {
-  width: number;
-  height: number;
-  name: string;
-}
-
-/**
- * Stroke interface
- */
-export interface Stroke {
-  id: string;
-  points: { x: number; y: number }[];
-  type: string;
-  color: string;
-  thickness: number;
-}
-
-/**
- * Wall interface
- */
-export interface Wall {
-  id: string;
-  startPoint: { x: number; y: number };
-  endPoint: { x: number; y: number };
-  thickness: number;
-  height?: number;
-  color?: string;
-  type?: string;
-}
-
-/**
- * Room interface
- */
-export interface Room {
-  id: string;
-  points: { x: number; y: number }[];
-  name?: string;
-  area?: number;
-  color?: string;
-  type?: string;
-}
-
-/**
- * Create a new floor plan with default values
- * @param {string} id - Floor plan ID
- * @param {string} name - Floor plan name
- * @param {number} level - Floor level
- * @returns {FloorPlan} A new floor plan
- */
-export function createFloorPlan(id: string, name: string, level: number): FloorPlan {
+export const createFloorPlan = (options: FloorOptions = {}): FloorPlan => {
+  const now = new Date().toISOString();
   return {
-    id,
-    name,
-    level,
-    gia: 0,
+    id: options.id || `floor-${Date.now()}`,
+    name: options.name || 'New Floor Plan',
+    label: options.label || 'New Floor Plan',
+    level: options.level !== undefined ? options.level : 0,
+    gia: options.gia || 0,
+    strokes: [],
     walls: [],
     rooms: [],
-    strokes: [],
     canvasData: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: now,
+    updatedAt: now
   };
-}
+};
+
+/**
+ * Convert string to PaperSize enum
+ * @param value String value to convert
+ * @returns Corresponding PaperSize or CUSTOM if not matched
+ */
+export const stringToPaperSize = (value: string): PaperSize => {
+  // Check if the value is a valid PaperSize
+  if (Object.values(PaperSize).includes(value as PaperSize)) {
+    return value as PaperSize;
+  }
+  return PaperSize.CUSTOM;
+};

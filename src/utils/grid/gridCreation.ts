@@ -4,7 +4,7 @@
  * @module gridCreation
  */
 import { Canvas, Object as FabricObject, Line as FabricLine, Text as FabricText } from "fabric";
-import { Point, createPoint } from "@/types/core/Point";
+import { Point } from "@/types/core/Point";
 
 /**
  * Options for grid creation
@@ -18,6 +18,20 @@ export interface GridLineOptions {
   selectable: boolean;
   /** Grid line type (small, large, axis) */
   type: 'small' | 'large' | 'axis' | 'marker';
+}
+
+/**
+ * Grid render result type
+ */
+export interface GridRenderResult {
+  /** All grid objects */
+  gridObjects: FabricObject[];
+  /** Small grid lines */
+  smallGridLines: FabricObject[];
+  /** Large grid lines */
+  largeGridLines: FabricObject[];
+  /** Grid markers */
+  markers: FabricObject[];
 }
 
 /**
@@ -110,7 +124,7 @@ export function createLargeScaleGrid(
 
 /**
  * Create grid markers
- * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {Canvas} canvas - Fabric canvas instance
  * @param {GridLineOptions} options - Grid marker options
  * @returns {FabricObject[]} Created grid markers
  */
@@ -155,7 +169,3 @@ export function createGridMarkers(
   
   return markers;
 }
-
-// Re-export types properly
-export type { Point } from '@/types/core/Point';
-export type { GridRenderResult } from '../gridRenderer';

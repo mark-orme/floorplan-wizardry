@@ -1,176 +1,54 @@
+import { FloorPlan, PaperSize, stringToPaperSize } from "@/types/core/FloorPlan";
+
 /**
- * Utilities for floor plan storage and persistence
- * Manages saving and loading floor plans to/from IndexedDB and localStorage
- * @module floorPlanStorage
- */
-import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
-import { getDB, STORE_NAME } from '@/types/databaseTypes';
-
-const PAPER_SIZE_KEY = 'paperSize';
-const DEFAULT_PAPER_SIZE = 'infinite';
-
-/** 
- * Load floor plans from IndexedDB (with fallback to localStorage for migration)
- * Retrieves saved floor plans with fallback mechanisms for backward compatibility
- * 
- * @returns {Promise<FloorPlan[]>} Floor plans loaded from storage
+ * Load floor plans from storage
+ * @returns Promise resolving to floor plans
  */
 export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
   try {
-    // Try IndexedDB first
-    const db = await getDB();
-    const result = await db.get(STORE_NAME, 'current');
-    
-    if (result?.data) {
-      return ensureRequiredFields(Array.isArray(result.data) ? result.data : []);
+    const storedData = localStorage.getItem('floorPlans');
+    if (!storedData) {
+      return [];
     }
     
-    // Fallback to localStorage for existing user data migration
-    const saved = localStorage.getItem('floorPlans');
-    if (saved) {
-      try {
-        const parsedData = JSON.parse(saved) as unknown[];
-        // Validate and ensure all required fields are present
-        const validData = ensureRequiredFields(Array.isArray(parsedData) ? parsedData : []);
-        // Immediately save to IndexedDB for future use
-        await saveFloorPlans(validData);
-        return validData;
-      } catch (parseError) {
-        console.error('Failed to parse floor plans from localStorage:', parseError);
+    const floorPlans = JSON.parse(storedData);
+    
+    // Process data for any missing or outdated properties
+    return floorPlans.map((plan: any) => {
+      // Ensure paperSize is properly typed
+      if (plan.metadata && plan.metadata.paperSize) {
+        plan.metadata.paperSize = stringToPaperSize(plan.metadata.paperSize);
       }
-    }
-  } catch (e) {
-    console.error('Failed to load floor plans from IndexedDB:', e);
-    
-    // Final fallback to localStorage
-    try {
-      const saved = localStorage.getItem('floorPlans');
-      if (saved) {
-        try {
-          const parsedData = JSON.parse(saved) as unknown[];
-          return ensureRequiredFields(Array.isArray(parsedData) ? parsedData : []);
-        } catch (parseError) {
-          console.error('Failed to parse floor plans from localStorage:', parseError);
-        }
-      }
-    } catch (localError) {
-      console.error('Failed to load floor plans from localStorage:', localError);
-    }
-  }
-  
-  // Default floor plan if none exists
-  return [{
-    id: `floor-${Date.now()}`, 
-    name: 'Ground Floor',
-    label: 'Ground Floor',
-    gia: 0,
-    strokes: [],
-    walls: [],
-    rooms: [],
-    level: 0,
-    canvasData: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }];
-};
-
-/** 
- * Save floor plans to IndexedDB (and localStorage as fallback)
- * Persists floor plan data with validation and multiple storage options
- * 
- * @param {FloorPlan[]} floorPlans - Floor plans to save
- * @returns {Promise<boolean>} Success indicator
- */
-export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<boolean> => {
-  try {
-    // Ensure all required fields and valid paperSize values
-    const validatedFloorPlans = ensureRequiredFields(floorPlans);
-    
-    // Save to IndexedDB
-    const db = await getDB();
-    await db.put(STORE_NAME, { id: 'current', data: validatedFloorPlans });
-    
-    // Also save to localStorage as fallback/migration path
-    localStorage.setItem('floorPlans', JSON.stringify(validatedFloorPlans));
-    return true;
-  } catch (e) {
-    console.error('Failed to save floor plans to IndexedDB:', e);
-    
-    // Fallback to just localStorage
-    try {
-      localStorage.setItem('floorPlans', JSON.stringify(ensureRequiredFields(floorPlans)));
-      return true;
-    } catch (localError) {
-      console.error('Failed to save floor plans to localStorage:', localError);
-      return false;
-    }
-  }
-};
-
-/**
- * Helper function to ensure all required fields are present in FloorPlan objects
- * Validates and normalizes floor plan data for storage
- * 
- * @param {unknown[]} floorPlans - Array of floor plans to validate
- * @returns {FloorPlan[]} Validated floor plans with all required fields
- */
-function ensureRequiredFields(floorPlans: unknown[]): FloorPlan[] {
-  if (!Array.isArray(floorPlans)) {
-    console.warn("Floor plans data is not an array, creating new empty array");
+      
+      return plan;
+    });
+  } catch (error) {
+    console.error('Error loading floor plans:', error);
     return [];
   }
-  
-  const timestamp = new Date().toISOString();
-  
-  return floorPlans.map((plan: any) => ({
-    ...plan,
-    paperSize: validatePaperSize(plan.paperSize),
-    // Ensure required fields from both type systems
-    id: plan.id || `floor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    name: plan.name || plan.label || 'Unnamed Floor',
-    label: plan.label || plan.name || 'Unnamed Floor',
-    gia: typeof plan.gia === 'number' ? plan.gia : 0,
-    strokes: Array.isArray(plan.strokes) ? plan.strokes : [],
-    walls: Array.isArray(plan.walls) ? plan.walls : [],
-    rooms: Array.isArray(plan.rooms) ? plan.rooms : [],
-    level: typeof plan.level === 'number' ? plan.level : 0,
-    canvasData: plan.canvasData || null,
-    createdAt: plan.createdAt || timestamp,
-    updatedAt: plan.updatedAt || timestamp
-  }));
-}
+};
 
 /**
- * Validate and correct paperSize values to ensure they match the PaperSize type
- * Normalizes paper size values for consistency
- * 
- * @param {string | undefined} paperSize - The paper size to validate
- * @returns {PaperSize} A valid paper size
+ * Save floor plans to storage
+ * @param floorPlans Floor plans to save
+ * @returns Promise resolving to void
  */
-function validatePaperSize(paperSize: string | undefined): PaperSize {
-  if (paperSize === 'A4' || paperSize === 'A3' || paperSize === 'infinite') {
-    return paperSize as PaperSize;
+export const saveFloorPlans = async (floorPlans: FloorPlan[]): Promise<void> => {
+  try {
+    localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+  } catch (error) {
+    console.error('Error saving floor plans:', error);
   }
-  // Default to 'infinite' for invalid values
-  return 'infinite';
-}
+};
 
 /**
- * Get the saved paper size from localStorage
- * @returns {PaperSize} The saved paper size or the default paper size
+ * Save last saved timestamp to local storage
+ * @param date Date to save
  */
-const getSavedPaperSize = (): PaperSize => {
-  const savedPaperSize = localStorage.getItem(PAPER_SIZE_KEY);
-  
-  if (savedPaperSize) {
-    try {
-      // Use unknown as intermediary type for safer conversion
-      return JSON.parse(savedPaperSize) as unknown as PaperSize;
-    } catch (e) {
-      console.error('Error parsing paper size from localStorage', e);
-    }
+export const saveLastSavedTimestamp = (date: Date): void => {
+  try {
+    localStorage.setItem('floorPlansLastSaved', JSON.stringify(date.toISOString()));
+  } catch (e) {
+    console.error("Error saving last saved timestamp:", e);
   }
-  
-  // Return default paper size if none found or error parsing
-  return DEFAULT_PAPER_SIZE;
 };

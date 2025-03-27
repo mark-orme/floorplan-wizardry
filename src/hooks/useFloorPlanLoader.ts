@@ -1,3 +1,4 @@
+
 /**
  * Hook for loading and managing floor plans
  * @module hooks/useFloorPlanLoader
@@ -17,6 +18,24 @@ interface UseFloorPlanLoaderResult {
   addFloorPlan: (name: string) => void;
   /** Function to remove a floor plan */
   removeFloorPlan: (id: string) => void;
+  /** Function to load floor plans data */
+  loadFloorPlansData: () => Promise<void>;
+}
+
+/**
+ * Props for useFloorPlanLoader hook with loader extensions
+ */
+interface UseFloorPlanLoaderProps {
+  /** Function to set loading state */
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Function to set floor plans */
+  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  /** Function to set error state */
+  setHasError: (value: boolean) => void;
+  /** Function to set error message */
+  setErrorMessage: (value: string) => void;
+  /** Function to load data */
+  loadData: () => Promise<unknown>;
 }
 
 /**
@@ -24,8 +43,18 @@ interface UseFloorPlanLoaderResult {
  * @param initialFloorPlans - Initial floor plans to load
  * @returns Floor plan state and management functions
  */
-export const useFloorPlanLoader = (initialFloorPlans: FloorPlan[] = []): UseFloorPlanLoaderResult => {
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
+export const useFloorPlanLoader = (
+  initialFloorPlans: FloorPlan[] | UseFloorPlanLoaderProps = []
+): UseFloorPlanLoaderResult => {
+  // Check if we're using the props interface or just initial floor plans
+  const isPropsObject = !Array.isArray(initialFloorPlans) && 
+    typeof initialFloorPlans === 'object' && 
+    'setIsLoading' in initialFloorPlans;
+
+  // Initialize state with either the array or empty array
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(
+    Array.isArray(initialFloorPlans) ? initialFloorPlans : []
+  );
   
   /**
    * Add a new floor plan
@@ -54,7 +83,7 @@ export const useFloorPlanLoader = (initialFloorPlans: FloorPlan[] = []): UseFloo
       id: `default-${Date.now()}`,
       name,
       label: name,
-      level: 0, // Add missing level property
+      level: 0,
       gia: 0,
       strokes: [],
       walls: [],
@@ -64,10 +93,38 @@ export const useFloorPlanLoader = (initialFloorPlans: FloorPlan[] = []): UseFloo
       updatedAt: new Date().toISOString()
     };
   };
+
+  /**
+   * Load floor plans data
+   * For the props interface version
+   */
+  const loadFloorPlansData = useCallback(async (): Promise<void> => {
+    if (isPropsObject) {
+      const props = initialFloorPlans as UseFloorPlanLoaderProps;
+      props.setIsLoading(true);
+      props.setHasError(false);
+      props.setErrorMessage('');
+      
+      try {
+        const data = await props.loadData();
+        if (Array.isArray(data)) {
+          props.setFloorPlans(data);
+        }
+      } catch (error) {
+        props.setHasError(true);
+        props.setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+      } finally {
+        props.setIsLoading(false);
+      }
+    }
+    
+    // Always return void for consistency
+    return;
+  }, [initialFloorPlans, isPropsObject]);
   
-  // Load initial floor plans on mount
+  // Load initial floor plans on mount for array version
   useEffect(() => {
-    if (initialFloorPlans.length > 0) {
+    if (Array.isArray(initialFloorPlans) && initialFloorPlans.length > 0) {
       setFloorPlans(initialFloorPlans);
     }
   }, [initialFloorPlans]);
@@ -76,6 +133,7 @@ export const useFloorPlanLoader = (initialFloorPlans: FloorPlan[] = []): UseFloo
     floorPlans,
     setFloorPlans,
     addFloorPlan,
-    removeFloorPlan
+    removeFloorPlan,
+    loadFloorPlansData
   };
 };

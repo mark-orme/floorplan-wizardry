@@ -14,6 +14,8 @@ interface UseKeyboardEventsProps {
   handleDelete?: () => void;
   /** Function to handle escape key */
   handleEscape?: () => void;
+  /** Function to delete selected objects */
+  deleteSelectedObjects?: () => void;
 }
 
 /**
@@ -22,7 +24,7 @@ interface UseKeyboardEventsProps {
  * @returns Event handler registration and cleanup functions
  */
 export const useKeyboardEvents = (props: UseKeyboardEventsProps): EventHandlerResult => {
-  const { handleUndo, handleRedo, handleDelete, handleEscape } = props;
+  const { handleUndo, handleRedo, handleDelete, handleEscape, deleteSelectedObjects } = props;
   
   /**
    * Handle keyboard events
@@ -45,12 +47,18 @@ export const useKeyboardEvents = (props: UseKeyboardEventsProps): EventHandlerRe
     }
     
     // Handle delete/backspace
-    if ((e.key === 'Delete' || e.key === 'Backspace') && handleDelete) {
+    if ((e.key === 'Delete' || e.key === 'Backspace')) {
       // Only prevent default if we're not in an input element
       if (!(e.target instanceof HTMLInputElement) && 
           !(e.target instanceof HTMLTextAreaElement)) {
         e.preventDefault();
-        handleDelete();
+        
+        // Use either handleDelete or deleteSelectedObjects based on availability
+        if (deleteSelectedObjects) {
+          deleteSelectedObjects();
+        } else if (handleDelete) {
+          handleDelete();
+        }
       }
     }
     
@@ -59,7 +67,7 @@ export const useKeyboardEvents = (props: UseKeyboardEventsProps): EventHandlerRe
       e.preventDefault();
       handleEscape();
     }
-  }, [handleUndo, handleRedo, handleDelete, handleEscape]);
+  }, [handleUndo, handleRedo, handleDelete, handleEscape, deleteSelectedObjects]);
   
   /**
    * Register keyboard event handlers
