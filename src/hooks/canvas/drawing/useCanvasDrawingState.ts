@@ -9,6 +9,13 @@ import { useDrawingState } from "@/hooks/useDrawingState";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { DrawingState } from "@/types/drawingTypes";
 
+/**
+ * Props for the useCanvasDrawingState hook
+ * 
+ * @interface UseCanvasDrawingStateProps
+ * @property {React.MutableRefObject<FabricCanvas | null>} fabricCanvasRef - Reference to the Fabric.js canvas instance
+ * @property {DrawingTool} tool - Currently selected drawing tool
+ */
 interface UseCanvasDrawingStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool: DrawingTool;
@@ -16,8 +23,10 @@ interface UseCanvasDrawingStateProps {
 
 /**
  * Hook for managing drawing state and zoom level
+ * Provides drawing state and event handlers with zoom awareness
+ * 
  * @param {UseCanvasDrawingStateProps} props - Hook properties
- * @returns Drawing state with current zoom level
+ * @returns {Object} Drawing state with current zoom level and handlers
  */
 export const useCanvasDrawingState = (props: UseCanvasDrawingStateProps) => {
   const { fabricCanvasRef, tool } = props;
@@ -37,7 +46,10 @@ export const useCanvasDrawingState = (props: UseCanvasDrawingStateProps) => {
     tool
   });
   
-  // Update zoom level callback
+  /**
+   * Update zoom level from canvas
+   * Gets current zoom level from canvas for tooltip positioning
+   */
   const updateZoomLevel = useCallback(() => {
     if (fabricCanvasRef.current) {
       const zoom = fabricCanvasRef.current.getZoom();

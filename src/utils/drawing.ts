@@ -34,13 +34,16 @@ export {
 export const GRID_SIZE = GRID_SPACING;
 
 /**
- * Drawing constants
+ * Default line color for drawing
+ * @constant {string}
  */
 export const DEFAULT_LINE_COLOR = "#000000"; // Default line color (black)
 
 /**
  * Calculate GIA (Gross Internal Area) from points
- * @param {Point[]} points - Array of points defining the polygon
+ * Uses the Shoelace formula (Gauss's area formula) to calculate polygon area
+ * 
+ * @param {Array<{x: number, y: number}>} points - Array of points defining the polygon
  * @returns {number} Calculated area in square meters
  */
 export const calculateGIA = (points: Array<{x: number, y: number}>): number => {

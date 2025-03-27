@@ -1,5 +1,6 @@
 
 /**
+ * Property management hooks module
  * Re-exports all property management hooks for a unified API
  * @module property
  */
@@ -17,6 +18,8 @@ import { usePropertyFloorPlan } from './usePropertyFloorPlan';
  * Main hook that combines all property management functionality
  * This maintains the same API as the original usePropertyManagement hook
  * but with better internal organization
+ * 
+ * @returns {Object} Combined property management state and handlers
  */
 export const usePropertyManagement = () => {
   // Initialize all the specialized hooks - always at the top level

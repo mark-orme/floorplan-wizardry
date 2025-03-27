@@ -1,4 +1,9 @@
 
+/**
+ * Property page hooks module
+ * Provides hooks for property page management
+ * @module property-page
+ */
 import { usePropertyPageAuth } from './usePropertyPageAuth';
 import { usePropertyPageData } from './usePropertyPageData';
 import { usePropertyPageActions } from './usePropertyPageActions';
@@ -7,6 +12,8 @@ import { usePropertyManagement } from '@/hooks/usePropertyManagement';
 /**
  * Main hook that combines all property page functionality
  * This maintains the same API as the original usePropertyPage hook
+ * 
+ * @returns {Object} Combined property page state and handlers
  */
 export const usePropertyPage = () => {
   // Initialize all the specialized hooks - always at the top level in a consistent order

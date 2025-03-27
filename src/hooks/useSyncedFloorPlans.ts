@@ -25,12 +25,33 @@ import logger from '@/utils/logger';
  * @returns {Object} Synchronized floor plans state and operations
  */
 export const useSyncedFloorPlans = () => {
+  /**
+   * State for floor plans data
+   */
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
+  /**
+   * Loading state indicator
+   */
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  /**
+   * Pusher sync channel instance
+   */
   const [syncChannel, setSyncChannel] = useState<Channel | null>(null);
+  /**
+   * Reference to track last sync timestamp
+   */
   const lastSyncTimeRef = useRef<number>(0);
+  /**
+   * Reference to track if currently saving
+   */
   const isSavingRef = useRef<boolean>(false);
+  /**
+   * Reference to track save timeout
+   */
   const saveTimeoutRef = useRef<number | null>(null);
+  /**
+   * Reference to track Supabase save timeout
+   */
   const supabaseSaveTimeoutRef = useRef<number | null>(null);
 
   // Initialize Supabase floor plans
