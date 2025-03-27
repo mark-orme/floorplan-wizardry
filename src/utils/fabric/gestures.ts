@@ -10,6 +10,22 @@ import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { isTouchEvent, isMouseEvent } from '@/types/fabric';
 
 /**
+ * Extended pointer event type that includes properties required by Fabric.js v6
+ * @interface ExtendedPointerEventInfo
+ */
+interface ExtendedPointerEventInfo {
+  e: Event;
+  pointer: Point;
+  absolutePointer: Point;
+  scenePoint: Point;
+  viewportPoint: Point;
+  isClick: boolean;
+  target: FabricObject | null;
+  subTargets: FabricObject[];
+  currentSubTargets: FabricObject[];
+}
+
+/**
  * Type guard to check if a value is a Touch
  * @param value - Value to check
  * @returns True if the value is a Touch
@@ -82,7 +98,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
 
       // Create event object with all required properties for Fabric v6
-      canvas.fire('mouse:down', {
+      const eventInfo: ExtendedPointerEventInfo = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
@@ -91,8 +107,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         isClick: true,
         target: null,
         subTargets: [],
-        currentSubTargets: [] // Required property for compatibility
-      });
+        currentSubTargets: []
+      };
+      
+      canvas.fire('mouse:down', eventInfo);
 
       console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
     }
@@ -129,16 +147,19 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
 
       // Create compatible event object for Fabric v6
-      canvas.fire('mouse:move', {
+      const eventInfo: ExtendedPointerEventInfo = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
+        isClick: false,
         target: null,
         subTargets: [],
-        currentSubTargets: [] // Required property for compatibility
-      });
+        currentSubTargets: []
+      };
+      
+      canvas.fire('mouse:move', eventInfo);
     }
 
     for (let i = 0; i < touches.length; i++) {
@@ -177,7 +198,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
 
       // Create compatible event object for Fabric v6
-      canvas.fire('mouse:up', {
+      const eventInfo: ExtendedPointerEventInfo = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
@@ -186,8 +207,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         isClick: true,
         target: null,
         subTargets: [],
-        currentSubTargets: [] // Required property for compatibility
-      });
+        currentSubTargets: []
+      };
+      
+      canvas.fire('mouse:up', eventInfo);
 
       console.log("Drawing ended");
     }
@@ -225,7 +248,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         const touchPosition = getTouchPosition(touch);
         
         // Create compatible event object for Fabric v6
-        canvas.fire('mouse:up', {
+        const eventInfo: ExtendedPointerEventInfo = {
           e: e,
           pointer: touchPosition,
           absolutePointer: touchPosition.clone(),
@@ -234,8 +257,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           isClick: false,
           target: null,
           subTargets: [],
-          currentSubTargets: [] // Required property for compatibility
-        });
+          currentSubTargets: []
+        };
+        
+        canvas.fire('mouse:up', eventInfo);
       }
     }
 
