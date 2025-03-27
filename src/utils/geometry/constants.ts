@@ -54,3 +54,9 @@ export const DEFAULT_TOOLTIP_MAX_WIDTH = 120; // Default max width for tooltips 
 // Straightening constants
 export const DEFAULT_STRAIGHTENING_THRESHOLD = 5; // Default threshold for line straightening (in degrees)
 export const WALL_ALIGNMENT_THRESHOLD = 3; // Threshold for detecting aligned walls (in degrees)
+
+// Origin point
+export const ORIGIN_POINT = { x: 0, y: 0 };
+
+// Rounding constants
+export const ROUNDING_FACTOR = 100; // Used for consistent rounding in area calculations

@@ -13,7 +13,8 @@ import {
   LARGE_GRID,
   MAX_HISTORY_STATES,
   MAX_OBJECTS_PER_CANVAS,
-  DEFAULT_LINE_THICKNESS
+  DEFAULT_LINE_THICKNESS,
+  AREA_PRECISION
 } from '@/constants/numerics';
 
 // Re-export constants for backward compatibility
@@ -61,7 +62,9 @@ export const calculateGIA = (points: Array<{x: number, y: number}>): number => {
   // Take the absolute value and divide by 2
   area = Math.abs(area) / 2;
   
-  return area;
+  // Round to specified precision
+  const roundFactor = Math.pow(10, AREA_PRECISION);
+  return Math.round(area * roundFactor) / roundFactor;
 };
 
 /**

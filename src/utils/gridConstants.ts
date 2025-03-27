@@ -25,7 +25,7 @@ export interface GridDimensions {
 
 // Re-export constants for backward compatibility
 export const GRID_SCALE_FACTOR = PIXELS_PER_METER; // 100px = 1 meter
-export const SMALL_GRID_SPACING = GRID_SPACING; // 0.1 meter
+export const SMALL_GRID_SPACING = GRID_SPACING; // 0.5 meter
 export const LARGE_GRID_SPACING = 1.0; // 1.0 meter
 export const MARKER_INTERVAL = 1.0; // Text markers every 1 meter
 
@@ -58,31 +58,59 @@ export const GRID_PERFORMANCE_THRESHOLDS = {
   REDUCE_DENSITY_LEVEL_1: 4000000
 };
 
+/**
+ * Default opacity values for grid elements
+ * @constant {Object}
+ */
+export const GRID_OPACITY = {
+  SMALL_GRID: 0.85,
+  LARGE_GRID: 0.95
+};
+
+/**
+ * Default grid colors
+ * @constant {Object}
+ */
+export const GRID_COLORS = {
+  SMALL_GRID: "#A0C5E0",
+  LARGE_GRID: "#4090CC",
+  MARKERS: "#555555"
+};
+
+/**
+ * Grid text styling
+ * @constant {Object}
+ */
+export const GRID_TEXT = {
+  FONT_SIZE: 12,
+  FONT_FAMILY: 'Arial'
+};
+
 // Style options for grid lines
 export const SMALL_GRID_LINE_OPTIONS = {
-  stroke: "#A0C5E0",
+  stroke: GRID_COLORS.SMALL_GRID,
   selectable: false,
   evented: false,
   strokeWidth: SMALL_GRID_LINE_WIDTH,
   objectCaching: true,
   hoverCursor: 'default',
-  opacity: 0.85
+  opacity: GRID_OPACITY.SMALL_GRID
 };
 
 export const LARGE_GRID_LINE_OPTIONS = {
-  stroke: "#4090CC",
+  stroke: GRID_COLORS.LARGE_GRID,
   selectable: false,
   evented: false,
   strokeWidth: LARGE_GRID_LINE_WIDTH,
   objectCaching: true,
   hoverCursor: 'default',
-  opacity: 0.95
+  opacity: GRID_OPACITY.LARGE_GRID
 };
 
 export const MARKER_TEXT_OPTIONS = {
-  fontSize: 12,
-  fontFamily: 'Arial',
-  fill: '#555555',
+  fontSize: GRID_TEXT.FONT_SIZE,
+  fontFamily: GRID_TEXT.FONT_FAMILY,
+  fill: GRID_COLORS.MARKERS,
   selectable: false,
   evented: false,
   objectCaching: true

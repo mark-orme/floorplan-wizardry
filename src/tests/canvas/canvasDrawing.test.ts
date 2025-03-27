@@ -214,8 +214,4 @@ describe("Canvas Drawing Utilities", () => {
       expect(pointer.y).toBe(TEST_CONSTANTS.EVENTS.TOUCH_POSITION.y);
     });
   });
-  
-  // These tests validate that our utility functions work correctly
-  // In a real-world scenario, you would also test the drawing state hooks
-  // but those require more complex React testing setup
 });
