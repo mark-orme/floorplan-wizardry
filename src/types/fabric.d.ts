@@ -1,93 +1,98 @@
 
 /**
- * Type definitions to extend the Fabric.js library
- * Adds custom properties and events specific to our application
- * @module fabric-extensions
+ * Fabric.js related type definitions
+ * @module types/fabric
  */
 
-import { Canvas, CanvasEvents as FabricCanvasEvents, Object as FabricObject, IObjectOptions } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
-declare module 'fabric' {
-  /**
-   * Extended canvas events interface with custom events
-   * @interface CanvasEvents
-   */
-  interface CanvasEvents extends FabricCanvasEvents {
-    /** Event fired when measurement should be shown */
-    'measurement:show': { target: FabricObject };
-    
-    /** Event fired when measurement should be hidden */
-    'measurement:hide': {};
-    
-    /** Event fired when zoom level changes */
-    'custom:zoom-changed': { zoom: number };
-    
-    /** Alternative zoom change event */
-    'zoom:changed': { zoom: number };
-    
-    /** Event fired when viewport transform changes */
-    'viewport:transform': { transform: number[] };
-    
-    /** Touch start event for mobile interactions */
-    'touch:start': { touches: { x: number; y: number }[] };
-    
-    /** Touch move event for mobile interactions */
-    'touch:move': { touches: { x: number; y: number }[]; e: TouchEvent };
-  }
+/**
+ * Canvas creation options for Fabric.js
+ * @interface CanvasCreationOptions
+ */
+export interface CanvasCreationOptions {
+  /** Canvas width in pixels */
+  width: number;
   
-  /**
-   * Extended FabricObject interface with custom properties
-   * @interface Object
-   */
-  interface Object {
-    /** Unique identifier for the object */
-    id?: string | number;
-    
-    /** Type of object for specialized handling */
-    objectType?: 'line' | 'room' | 'grid' | 'wall' | 'measurement' | 'furniture' | 'text' | string;
-    
-    /** Whether the object is currently being edited */
-    isEditing?: boolean;
-    
-    /** Tolerance for target finding (hit detection) */
-    targetFindTolerance?: number;
-    
-    /** Whether to use pixel-perfect target finding */
-    perPixelTargetFind?: boolean;
-    
-    /** Length of a line in meters (for measurements) */
-    lengthInMeters?: number;
-    
-    /** Original points before transformation */
-    originalPoints?: { x: number; y: number }[];
-    
-    /** Associated measurement object */
-    measurementLabel?: FabricObject;
-  }
+  /** Canvas height in pixels */
+  height: number;
   
-  /**
-   * Extended Canvas interface with custom methods for history operations 
-   * @interface Canvas
-   */
-  interface Canvas {
-    /** Handle undo operation */
-    handleUndo?: () => void;
-    
-    /** Handle redo operation */
-    handleRedo?: () => void;
-    
-    /** Save current state before making changes */
-    saveCurrentState?: () => void;
-    
-    /** Delete selected objects */
-    deleteSelectedObjects?: () => void;
-    
-    /** Custom rendering options */
-    renderingOptions?: {
-      /** Whether to enable fast rendering for large canvases */
-      fastRender?: boolean;
-      /** Whether to skip offscreen objects during rendering */
-      skipOffscreen?: boolean;
-    };
-  }
+  /** Background color of the canvas */
+  backgroundColor?: string;
+  
+  /** Whether to enable retina scaling */
+  enableRetinaScaling?: boolean;
+  
+  /** Whether to stop context menu on right click */
+  stopContextMenu?: boolean;
+  
+  /** Whether to fire right click events */
+  fireRightClick?: boolean;
+  
+  /** Whether to render on add/remove operations */
+  renderOnAddRemove?: boolean;
+  
+  /** Whether to enable pointer events */
+  enablePointerEvents?: boolean;
+  
+  /** Whether to skip target finding */
+  skipTargetFind?: boolean;
+  
+  /** Whether to enable per-pixel target finding */
+  perPixelTargetFind?: boolean;
+  
+  /** Tolerance for target finding */
+  targetFindTolerance?: number;
+  
+  /** Whether the canvas is interactive */
+  interactive?: boolean;
+}
+
+/**
+ * References to canvas elements and objects
+ * @interface CanvasReferences
+ */
+export interface CanvasReferences {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  historyRef: React.MutableRefObject<{
+    past: FabricObject[][];
+    future: FabricObject[][];
+  }>;
+}
+
+/**
+ * Grid dimensions interface
+ * @interface GridDimensions
+ */
+export interface GridDimensions {
+  width: number;
+  height: number;
+  cellSize: number;
+}
+
+/**
+ * Grid render result interface
+ * @interface GridRenderResult
+ */
+export interface GridRenderResult {
+  objects: FabricObject[];
+  dimensions: GridDimensions;
+}
+
+/**
+ * Custom touch event interface
+ * @interface CustomTouchEvent
+ */
+export interface CustomTouchEvent extends TouchEvent {
+  touches: TouchList;
+}
+
+/**
+ * Custom fabric touch event interface
+ * @interface CustomFabricTouchEvent
+ */
+export interface CustomFabricTouchEvent {
+  touches: { x: number; y: number }[];
+  e: TouchEvent;
 }

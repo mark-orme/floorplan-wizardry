@@ -54,9 +54,10 @@ export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabr
   
   // State initialization
   const [debugInfo, setDebugInfo] = useState<EnhancedDebugInfoState>({
+    showDebugInfo: false,
     canvasInitialized: false,
-    gridCreated: false,
     dimensionsSet: false,
+    gridCreated: false,
     brushInitialized: false,
     canvasCreated: false,
     canvasLoaded: false,
