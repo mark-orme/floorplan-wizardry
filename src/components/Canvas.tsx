@@ -33,6 +33,8 @@ interface CanvasProps {
 
 /**
  * Canvas component that handles fabric.js canvas rendering
+ * Provides a responsive drawing surface with touch capabilities
+ * 
  * @param {CanvasProps} props - Component properties
  * @returns {JSX.Element} Rendered component
  */
@@ -42,10 +44,14 @@ export const Canvas: React.FC<CanvasProps> = ({
   height = CANVAS_SCALING.DEFAULT_HEIGHT,
   onCanvasReady 
 }) => {
+  // Reference to the HTML canvas element
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Reference to the Fabric.js canvas instance
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   
-  // Detect iOS
+  // Detect iOS devices to apply platform-specific optimizations
+  // iOS requires special handling for touch events and performance
   const isIOS = 
     typeof navigator !== 'undefined' && 
     (/iPad|iPhone|iPod/.test(navigator.userAgent) || 
@@ -59,134 +65,80 @@ export const Canvas: React.FC<CanvasProps> = ({
       console.log("Canvas: Creating Fabric.js instance");
       
       // Create canvas options with iOS-specific adjustments
+      // iOS devices need special touch handling and performance optimizations
       const canvasOptions: CanvasCreationOptions = {
         width,
         height,
         backgroundColor: CANVAS_STYLES.BACKGROUND_COLOR,
         enableRetinaScaling: !isIOS, // Disable for iOS to improve performance
-        stopContextMenu: true,
-        fireRightClick: false,
-        renderOnAddRemove: false,
+        stopContextMenu: true,        // Prevent context menu on right-click
+        fireRightClick: false,        // Disable right-click events
+        renderOnAddRemove: false,     // Defer rendering until explicitly requested
       };
       
-      // Add iOS-specific options
+      // Add iOS-specific options to improve touch handling
       if (isIOS) {
         Object.assign(canvasOptions, {
-          enablePointerEvents: true,
-          skipTargetFind: false,
-          perPixelTargetFind: false,
-          targetFindTolerance: CANVAS_SCALING.IOS_TOUCH_TOLERANCE,
-          interactive: true
+          enablePointerEvents: true,              // Enable pointer events on iOS
+          skipTargetFind: false,                  // Don't skip target finding
+          perPixelTargetFind: false,              // Disable per-pixel target finding (performance)
+          targetFindTolerance: CANVAS_SCALING.IOS_TOUCH_TOLERANCE, // Larger hit areas for fingers
+          interactive: true                       // Ensure interactions work
         });
       }
       
       // Create the Fabric.js canvas instance
       const canvas = new FabricCanvas(canvasRef.current, canvasOptions);
       
-      // Initialize the drawing brush
+      // Initialize the drawing brush (required for drawing mode)
       if (!canvas.freeDrawingBrush || !(canvas.freeDrawingBrush instanceof PencilBrush)) {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = '#000000';
         canvas.freeDrawingBrush.width = 2;
-        console.log("Initialized default PencilBrush for canvas");
       }
       
-      // Initialize touch gestures for the canvas
+      // Enable rendering now that initialization is complete
+      canvas.renderOnAddRemove = true;
+      
+      // Initialize multi-touch gestures support
       initializeCanvasGestures(canvas);
       
-      // Apply iOS-specific canvas optimizations
-      if (isIOS) {
-        // Disable unnecessary event listeners to improve performance
-        canvas.selection = false;
-        
-        // Set wrapper element touch action to none
-        if (canvas.wrapperEl) {
-          canvas.wrapperEl.style.touchAction = 'none';
-        }
-        console.log("Canvas: Applying iOS-specific optimizations");
-      }
-      
-      // Store the canvas reference
+      // Store reference to the canvas
       fabricCanvasRef.current = canvas;
       
-      // Store it in a global registry for debugging/recovery
-      if (!window.fabricCanvasInstances) {
-        window.fabricCanvasInstances = [];
-      }
-      window.fabricCanvasInstances.push(canvas);
-      
-      // Also store a reference on the canvas element itself for debugging
-      if (canvasRef.current) {
-        (canvasRef.current as any)._fabric = canvas;
-      }
-      
-      console.log("Canvas: Fabric.js canvas created successfully");
-      
-      // Call the onCanvasReady callback if provided
+      // Notify parent that canvas is ready
       if (onCanvasReady) {
         onCanvasReady(canvas);
       }
       
+      // Cleanup function to dispose canvas on unmount
+      return () => {
+        try {
+          canvas.dispose();
+          fabricCanvasRef.current = null;
+        } catch (error) {
+          console.error("Error disposing canvas:", error);
+        }
+      };
     } catch (error) {
-      console.error("Canvas: Error creating Fabric.js canvas", error);
+      console.error("Failed to initialize canvas:", error);
       
-      // Show error toast
-      toast.error("Error initializing canvas");
-      
-      // Call onError callback if provided
+      // Notify parent of initialization failure
       if (onError) {
         onError();
       }
       
-      // Dispatch canvas-init-error event
-      window.dispatchEvent(new CustomEvent('canvas-init-error', { 
-        detail: error instanceof Error ? error : new Error('Canvas initialization failed') 
-      }));
+      // Show error toast to the user
+      toast.error("Failed to initialize canvas. Please refresh the page.");
     }
-    
-    // Cleanup function
-    return () => {
-      if (fabricCanvasRef.current) {
-        try {
-          fabricCanvasRef.current.dispose();
-          console.log("Canvas: Fabric.js canvas disposed");
-        } catch (error) {
-          console.error("Canvas: Error disposing canvas", error);
-        }
-        
-        fabricCanvasRef.current = null;
-      }
-    };
-  }, [width, height, onCanvasReady, onError, isIOS]);
-  
-  // Use our hook for any additional initialization logic
-  useCanvasInit({ onError });
-  
-  // Use our new reliable grid initialization
-  const { isGridInitialized } = useReliableGridInitialization(fabricCanvasRef);
-  
-  // Log grid initialization status
-  useEffect(() => {
-    if (isGridInitialized) {
-      console.log("Canvas: Grid initialized successfully");
-    }
-  }, [isGridInitialized]);
+  }, [width, height, isIOS, onCanvasReady, onError]);
   
   return (
-    <div className={CANVAS_STYLES.WRAPPER_CLASS} style={{ touchAction: 'none' }}>
-      <canvas 
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className="w-full h-full border border-gray-200 touch-none"
-        style={{ 
-          border: CANVAS_STYLES.BORDER,
-          touchAction: 'none' // Critical for iOS
-        }}
-        data-testid="fabric-canvas"
-        data-grid-initialized={isGridInitialized ? "true" : "false"}
-        data-ios-optimized={isIOS ? "true" : "false"}
-      />
-    </div>
+    <canvas 
+      ref={canvasRef}
+      data-testid="canvas-element"
+      className={CANVAS_STYLES.WRAPPER_CLASS}
+      style={{ border: CANVAS_STYLES.BORDER }}
+    />
   );
 };

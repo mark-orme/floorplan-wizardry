@@ -95,10 +95,18 @@ declare module 'fabric' {
 // Add global type extensions for the fabric canvas instances
 declare global {
   interface Window {
+    /**
+     * Global registry of fabric canvas instances for recovery
+     * Used for emergency recovery of lost canvas references
+     */
     fabricCanvasInstances?: fabric.Canvas[];
   }
   
   interface HTMLCanvasElement {
+    /**
+     * Reference to the Fabric.js canvas instance
+     * Stored on the canvas element for recovery purposes
+     */
     _fabric?: unknown;
   }
 }

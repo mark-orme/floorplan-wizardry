@@ -51,10 +51,11 @@ export const useCanvasControllerSetup = ({
   setErrorMessage
 }: UseCanvasControllerSetupProps): CanvasReferences => {
   // Initialize canvas and grid with improved error handling
+  // useCanvasInitialization handles the core setup of the canvas and its components
   const { 
-    canvasRef, 
-    fabricCanvasRef, 
-    historyRef 
+    canvasRef,         // Reference to the HTML canvas element
+    fabricCanvasRef,   // Reference to the Fabric.js canvas instance
+    historyRef         // Reference to the history state for undo/redo
   } = useCanvasInitialization({
     canvasDimensions,
     tool,
@@ -66,22 +67,28 @@ export const useCanvasControllerSetup = ({
   });
 
   // Add a check to verify that canvas references are valid using requestAnimationFrame
-  // to ensure DOM has been rendered
+  // This ensures DOM has been rendered before we try to access canvas properties
   useEffect(() => {
+    // Track animation frame ID for cleanup
     let frameId: number;
+    
+    // Track number of validation attempts to avoid infinite loops
     let checkAttempts = 0;
     
     /**
      * Validate canvas references and initialization
-     * Uses requestAnimationFrame for proper timing
+     * Uses requestAnimationFrame for proper timing with the rendering cycle
+     * This ensures we check after browser has had a chance to render
      */
     const checkCanvasReferences = () => {
       // Abort validation if we've exceeded maximum attempts
+      // This prevents infinite loops if canvas never initializes properly
       if (checkAttempts >= CANVAS_VALIDATION.MAX_CHECK_ATTEMPTS) {
         logger.warn(`Canvas validation abandoned after ${CANVAS_VALIDATION.MAX_CHECK_ATTEMPTS} attempts`);
         return;
       }
       
+      // Increment attempt counter
       checkAttempts++;
       
       // If canvas element exists and is in DOM, log success
@@ -97,16 +104,19 @@ export const useCanvasControllerSetup = ({
           console.log("🧮 Objects on canvas:", fabricCanvasRef.current.getObjects()?.length);
           
           // Check if the canvas has valid dimensions
+          // Invalid dimensions will cause rendering issues
           if (isDimensionInvalid(fabricCanvasRef.current.width) || 
               isDimensionInvalid(fabricCanvasRef.current.height)) {
             logger.warn("Fabric canvas has invalid dimensions:", {
               width: fabricCanvasRef.current.width,
               height: fabricCanvasRef.current.height
             });
+            
+            // Report error to UI
             setHasError(true);
             setErrorMessage("Canvas has invalid dimensions. Please refresh the page and try again.");
           } else {
-            // Everything looks good!
+            // Everything looks good! Update debug info
             setDebugInfo(prev => ({
               ...prev,
               dimensionsSet: true,
@@ -120,6 +130,7 @@ export const useCanvasControllerSetup = ({
       }
       
       // Canvas element or Fabric canvas not ready yet, try again in next frame
+      // This creates a polling mechanism that waits for canvas to be ready
       frameId = requestAnimationFrame(checkCanvasReferences);
     };
     
@@ -133,6 +144,7 @@ export const useCanvasControllerSetup = ({
     };
     
     // Start checking after a short delay to allow DOM to initialize
+    // This gives the browser time to render the canvas element
     const timeoutId = setTimeout(() => {
       frameId = requestAnimationFrame(checkCanvasReferences);
     }, CANVAS_VALIDATION.VALIDATION_DELAY);
@@ -146,6 +158,7 @@ export const useCanvasControllerSetup = ({
     };
   }, [canvasRef, fabricCanvasRef, canvasDimensions, setDebugInfo, setHasError, setErrorMessage]);
 
+  // Return the canvas references for the controller to use
   return {
     canvas: fabricCanvasRef.current,
     canvasElement: canvasRef.current as HTMLCanvasElement,
@@ -155,20 +168,24 @@ export const useCanvasControllerSetup = ({
 
 /**
  * Canvas validation constants
+ * These control the validation process timing and limits
  */
 const CANVAS_VALIDATION = {
   /**
    * Maximum number of validation attempts
+   * Prevents infinite loops if canvas never initializes
    */
   MAX_CHECK_ATTEMPTS: 10,
   
   /**
    * Initial validation delay in milliseconds
+   * Gives DOM time to render before checking
    */
   VALIDATION_DELAY: 100,
   
   /**
    * Minimum acceptable canvas dimension
+   * Dimensions less than this are considered invalid
    */
   MIN_DIMENSION: 1
 };

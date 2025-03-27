@@ -1,22 +1,21 @@
 
 /**
- * Re-exports all Fabric.js utilities
+ * Fabric.js utilities module
+ * Provides a clean API for working with Fabric.js canvas and objects
  * @module fabric
  */
 
-// Export from fabricBrush
-export { initializeDrawingBrush, addPressureSensitivity } from './fabricBrush';
+// Re-export only needed functionality from sub-modules
+// This pattern prevents alias confusion and circular references
 
-// Export from fabric modules directory
-export * from './fabric/index';
-
-// Individual exports for backward compatibility
-export { 
+// Core canvas dimension utilities
+export {
   setCanvasDimensions,
   getCanvasDimensions,
   resizeCanvasToContainer
 } from './fabric/canvasDimensions';
 
+// Canvas validation utilities
 export {
   isCanvasValid,
   safeGetObjectById,
@@ -27,6 +26,7 @@ export {
   isCanvasDisposed
 } from './fabric/canvasValidation';
 
+// Canvas cleanup utilities
 export {
   clearCanvas,
   disposeCanvas,
@@ -35,10 +35,11 @@ export {
   forceCleanCanvasElement,
   resetCanvasStateTracker,
   isCanvasElementInitialized,
-  markCanvasAsInitialized,
+  markCanvasInitialized,
   isCanvasElementInDOM
 } from './fabric/canvasCleanup';
 
+// Object manipulation utilities
 export {
   clearCanvasObjects,
   canvasMoveTo,
@@ -46,13 +47,26 @@ export {
   sendObjectToBack
 } from './fabric/objects';
 
+// Canvas registry functions
 export {
   registerCanvasElement,
   isCanvasRegistered,
   getCanvasRegistration
 } from './fabric/registry';
 
+// Environment variables and constants
 export {
   getEnvVars,
   CANVAS_DIMENSIONS
 } from './fabric/environment';
+
+// Brush-related utilities
+export { 
+  initializeDrawingBrush, 
+  addPressureSensitivity 
+} from './fabricBrush';
+
+// Export touch/gesture event functions without internal implementation details
+export {
+  initializeCanvasGestures
+} from './fabric/gestures';
