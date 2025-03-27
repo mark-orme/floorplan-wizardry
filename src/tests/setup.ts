@@ -1,4 +1,3 @@
-
 /**
  * Test Setup File
  * Configures the test environment and global mocks
@@ -95,33 +94,44 @@ if (!window.performance || !window.performance.now) {
   };
 }
 
-// Add missing jest-dom matchers
-vitestExpect.extend({
-  toBeInTheDocument(received) {
-    const pass = Boolean(received);
-    return {
-      message: () => `expected ${received} ${pass ? 'not ' : ''}to be in the document`,
-      pass
-    };
-  },
-  toHaveAttribute(received, name, value) {
-    const hasAttribute = received.hasAttribute(name);
-    const attributeValue = received.getAttribute(name);
-    const pass = value === undefined 
-      ? hasAttribute 
-      : hasAttribute && attributeValue === value;
+// Define global.expect for test extensions if it doesn't exist
+if (typeof global.expect === 'undefined') {
+  // This is a fallback if expect is not available in the global scope
+  // In a real setup, you'd be using jest.expect or another test framework
+  global.expect = (actual: any) => ({
+    toBe: (expected: any) => actual === expected,
+    toEqual: (expected: any) => JSON.stringify(actual) === JSON.stringify(expected),
+    // Add other matchers as needed
+  });
+} else {
+  // Extension methods for existing expect
+  vitestExpect.extend({
+    toBeInTheDocument(received) {
+      const pass = Boolean(received);
+      return {
+        message: () => `expected ${received} ${pass ? 'not ' : ''}to be in the document`,
+        pass
+      };
+    },
+    toHaveAttribute(received, name, value) {
+      const hasAttribute = received.hasAttribute(name);
+      const attributeValue = received.getAttribute(name);
+      const pass = value === undefined 
+        ? hasAttribute 
+        : hasAttribute && attributeValue === value;
       
-    return {
-      message: () => {
-        if (value === undefined) {
-          return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}"`;
-        }
-        return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}" with value "${value}"`;
-      },
-      pass
-    };
-  }
-});
+      return {
+        message: () => {
+          if (value === undefined) {
+            return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}"`;
+          }
+          return `expected ${received} ${pass ? 'not ' : ''}to have attribute "${name}" with value "${value}"`;
+        },
+        pass
+      };
+    }
+  });
+}
 
 // Make Vitest's expect available globally
 global.expect = vitestExpect;

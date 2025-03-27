@@ -1,4 +1,3 @@
-
 /**
  * Path processing hook
  * Handles processing of drawing paths
@@ -24,16 +23,16 @@ export interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to the history object */
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
-  /** Current drawing tool */
-  tool: DrawingTool;
+  /** Reference to the history object (optional) */
+  historyRef?: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  /** Current drawing tool (optional) */
+  tool?: DrawingTool;
   /** Function to set floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   /** Current floor index */
   currentFloor: number;
-  /** Function to set gross internal area */
-  setGia: React.Dispatch<React.SetStateAction<number>>;
+  /** Function to set gross internal area (optional) */
+  setGia?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 /**

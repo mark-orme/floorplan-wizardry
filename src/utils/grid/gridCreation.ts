@@ -1,11 +1,31 @@
-
 /**
  * Utility functions for grid creation
  * @module grid/gridCreation
  */
-import { Canvas as FabricCanvas, Line } from "fabric";
-import { Point } from "@/types/floorPlanTypes";
-import { GridLineOptions } from "./typeUtils";
+import { Line } from 'fabric';
+
+// Instead of using moveTo which doesn't exist on Line, we'll create a utility
+const moveLineToPosition = (line: Line, x1: number, y1: number, x2: number, y2: number) => {
+  line.set({
+    x1,
+    y1,
+    x2,
+    y2
+  });
+  return line;
+};
+
+// Instead of using sendToBack which may not exist on Line, we'll create a utility
+const sendObjectToBack = (canvas: any, object: any) => {
+  if (canvas && object) {
+    if (typeof object.sendToBack === 'function') {
+      object.sendToBack();
+    } else {
+      // Alternative method to send to back
+      canvas.sendToBack(object);
+    }
+  }
+};
 
 /**
  * Constants for grid styling and behavior
@@ -68,7 +88,7 @@ export const createSmallScaleGrid = (canvas: FabricCanvas, width: number, height
     const line = new Line([x, 0, x, height], options);
     gridLines.push(line);
     canvas.add(line);
-    line.sendToBack();
+    sendObjectToBack(canvas, line);
   }
 
   // Create horizontal lines
@@ -76,7 +96,7 @@ export const createSmallScaleGrid = (canvas: FabricCanvas, width: number, height
     const line = new Line([0, y, width, y], options);
     gridLines.push(line);
     canvas.add(line);
-    line.sendToBack();
+    sendObjectToBack(canvas, line);
   }
 
   return gridLines;
@@ -99,7 +119,7 @@ export const createLargeScaleGrid = (canvas: FabricCanvas, width: number, height
     const line = new Line([x, 0, x, height], options);
     gridLines.push(line);
     canvas.add(line);
-    line.sendToBack();
+    sendObjectToBack(canvas, line);
   }
 
   // Create horizontal lines
@@ -107,7 +127,7 @@ export const createLargeScaleGrid = (canvas: FabricCanvas, width: number, height
     const line = new Line([0, y, width, y], options);
     gridLines.push(line);
     canvas.add(line);
-    line.sendToBack();
+    sendObjectToBack(canvas, line);
   }
 
   return gridLines;
@@ -117,3 +137,5 @@ export const createLargeScaleGrid = (canvas: FabricCanvas, width: number, height
  * Export GridRenderResult type from grid/typeUtils for external use
  */
 export { GridRenderResult } from "./typeUtils";
+
+export type { GridConfig, GridDimensions } from './gridTypes';

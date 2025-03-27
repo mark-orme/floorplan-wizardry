@@ -8,7 +8,7 @@ import { Canvas } from "@/components/Canvas";
 import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
-import { DebugInfoState } from "@/types/core/DebugInfo";
+import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 import { ZoomDirection } from "@/types/drawingTypes";
 import { DrawingTool } from "@/constants/drawingModes";
 
@@ -54,27 +54,8 @@ export const CanvasApp = () => {
 
   // Create a safe debug info object with required properties for type compatibility
   const safeDebugInfo: DebugInfoState = {
-    // Include all required properties to ensure type safety
+    ...DEFAULT_DEBUG_STATE,
     ...debugInfo,
-    canvasInitialized: debugInfo.canvasInitialized || false,
-    dimensionsSet: debugInfo.dimensionsSet || false,
-    gridCreated: debugInfo.gridCreated || false,
-    eventHandlersSet: debugInfo.eventHandlersSet || false,
-    brushInitialized: debugInfo.brushInitialized || false,
-    showDebugInfo: debugInfo.showDebugInfo || false,
-    canvasReady: debugInfo.canvasReady || false, 
-    canvasCreated: debugInfo.canvasCreated || false,
-    canvasLoaded: debugInfo.canvasLoaded || false,
-    canvasEventsRegistered: debugInfo.canvasEventsRegistered || false,
-    gridRendered: debugInfo.gridRendered || false,
-    toolsInitialized: debugInfo.toolsInitialized || false,
-    lastInitTime: debugInfo.lastInitTime || 0,
-    lastGridCreationTime: debugInfo.lastGridCreationTime || 0,
-    gridObjectCount: debugInfo.gridObjectCount || 0,
-    canvasDimensions: debugInfo.canvasDimensions || { width: 0, height: 0 },
-    hasError: debugInfo.hasError || false,
-    errorMessage: debugInfo.errorMessage || "",
-    performanceStats: debugInfo.performanceStats || {}
   };
 
   return (

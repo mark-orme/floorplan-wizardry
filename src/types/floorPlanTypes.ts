@@ -1,3 +1,4 @@
+
 /**
  * Floor plan type definitions
  * @module types/floorPlanTypes
@@ -100,3 +101,25 @@ export interface FloorPlanMetadata {
   floorLevel: number;
   isTemplate: boolean;
 }
+
+/**
+ * Create a default FloorPlan object with required properties
+ * @param id - Optional ID for the floor plan
+ * @param name - Optional name for the floor plan
+ * @returns A new FloorPlan object with default values
+ */
+export const createDefaultFloorPlan = (id?: string, name?: string): FloorPlan => {
+  const now = new Date().toISOString();
+  return {
+    id: id || Math.random().toString(36).substring(2, 9),
+    name: name || 'New Floor Plan',
+    label: name || 'New Floor Plan',
+    gia: 0,
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasData: null,
+    createdAt: now,
+    updatedAt: now
+  };
+};

@@ -1,4 +1,3 @@
-
 /**
  * Unit tests for useFloorPlanDrawing hook
  * @module floor-plan/__tests__/useFloorPlanDrawing
@@ -15,6 +14,7 @@ import {
 } from '../useFloorPlanDrawing';
 import { FloorPlan, Point, Stroke } from '@/types/floorPlanTypes';
 import { PIXELS_PER_METER } from '@/constants/numerics';
+import { createDefaultFloorPlan } from '@/types/floorPlanTypes';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -39,17 +39,7 @@ vi.mock('@/utils/logger', () => ({
 
 describe('useFloorPlanDrawing', () => {
   // Mock FloorPlan and canvas refs
-  const mockFloorPlan: FloorPlan = {
-    id: '1',
-    name: 'Test Floor',
-    label: 'Test Floor',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    createdAt: '2023-01-01',
-    updatedAt: '2023-01-01'
-  };
+  const mockFloorPlan: FloorPlan = createDefaultFloorPlan('1', 'Test Floor Plan');
   
   const mockSetFloorPlan = vi.fn();
   const mockSetGia = vi.fn();

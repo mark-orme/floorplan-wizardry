@@ -7,20 +7,7 @@
 import { useState } from 'react';
 import { BRUSH_CONSTANTS } from '@/constants/brushConstants';
 import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
-
-/**
- * Drawing tool types for canvas operations
- */
-export type DrawingTool = 
-  | 'draw' 
-  | 'eraser' 
-  | 'wall' 
-  | 'room' 
-  | 'straightLine' 
-  | 'text' 
-  | 'measure' 
-  | 'hand' 
-  | 'select';
+import { DrawingTool } from '@/constants/drawingModes';
 
 /**
  * Canvas state interface
@@ -42,7 +29,7 @@ export interface CanvasState {
  * Default canvas state values
  */
 export const DEFAULT_CANVAS_STATE: CanvasState = {
-  tool: 'select',
+  tool: 'select' as DrawingTool,
   zoomLevel: ZOOM_CONSTANTS.DEFAULT_ZOOM,
   lineThickness: BRUSH_CONSTANTS.DEFAULT_PENCIL_WIDTH,
   lineColor: BRUSH_CONSTANTS.DEFAULT_PENCIL_COLOR,

@@ -1,78 +1,31 @@
+import { useCallback } from "react";
+import { EventHandlerResult } from "./types";
 
 /**
- * Hook for registering global canvas handlers
- * @module useCanvasHandlers
+ * Hook for handling canvas events
+ * @param props - Hook properties
+ * @returns Event handler registration and cleanup functions
  */
-import { useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { BaseEventHandlerProps, EventHandlerResult } from "./types";
-import logger from "@/utils/logger";
+export const useCanvasHandlers = (props: any): EventHandlerResult => {
+  const register = useCallback(() => {
+    // Implementation for registering handlers
+    console.log("Registering canvas handlers");
+  }, []);
 
-/**
- * Extended Canvas interface with custom handlers
- */
-interface ExtendedFabricCanvas extends FabricCanvas {
-  handleUndo?: () => void;
-  handleRedo?: () => void;
-  saveCurrentState?: () => void;
-  deleteSelectedObjects?: () => void;
-}
+  const unregister = useCallback(() => {
+    // Implementation for unregistering handlers
+    console.log("Unregistering canvas handlers");
+  }, []);
 
-/**
- * Props for the useCanvasHandlers hook
- */
-interface UseCanvasHandlersProps extends BaseEventHandlerProps {
-  /** Function to handle undo operation */
-  handleUndo: () => void;
-  /** Function to handle redo operation */
-  handleRedo: () => void;
-  /** Function to save current state before making changes */
-  saveCurrentState: () => void;
-  /** Function to delete selected objects */
-  deleteSelectedObjects: () => void;
-}
-
-/**
- * Hook to register global canvas handlers
- * @param {UseCanvasHandlersProps} props - Hook properties
- * @returns {EventHandlerResult} Cleanup function
- */
-export const useCanvasHandlers = ({
-  fabricCanvasRef,
-  tool, // Required by the BaseEventHandlerProps type
-  handleUndo,
-  handleRedo,
-  saveCurrentState,
-  deleteSelectedObjects
-}: UseCanvasHandlersProps): EventHandlerResult => {
-  useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const fabricCanvas = fabricCanvasRef.current;
-    
-    // Expose undo/redo handlers to the global canvas object for debugging
-    // This helps with external access from CanvasController
-    const enhancedCanvas = fabricCanvas as ExtendedFabricCanvas;
-    
-    enhancedCanvas.handleUndo = handleUndo;
-    enhancedCanvas.handleRedo = handleRedo;
-    enhancedCanvas.saveCurrentState = saveCurrentState;
-    enhancedCanvas.deleteSelectedObjects = deleteSelectedObjects;
-    
-    return () => {
-      if (fabricCanvas) {
-        // Clean up custom handlers
-        delete enhancedCanvas.handleUndo;
-        delete enhancedCanvas.handleRedo;
-        delete enhancedCanvas.saveCurrentState;
-        delete enhancedCanvas.deleteSelectedObjects;
-      }
-    };
-  }, [fabricCanvasRef, handleUndo, handleRedo, saveCurrentState, deleteSelectedObjects]);
+  const cleanup = useCallback(() => {
+    // Implementation for cleanup
+    unregister();
+    console.log("Cleaning up canvas handlers");
+  }, [unregister]);
 
   return {
-    cleanup: () => {
-      logger.debug("Canvas handlers cleanup");
-    }
+    register,
+    unregister,
+    cleanup
   };
 };

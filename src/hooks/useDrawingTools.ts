@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for drawing tools functionality
  * Orchestrates tool behavior, history, and canvas operations
@@ -150,6 +149,20 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
   }, [fabricCanvasRef]);
   
   /**
+   * Handle zoom operation
+   * @param {string} direction - "in" or "out" to zoom in or out
+   */
+  const handleZoom = useCallback((direction: "in" | "out") => {
+    const zoomFactor = direction === "in" ? 1.2 : 0.8;
+    if (fabricCanvasRef.current) {
+      const currentZoom = fabricCanvasRef.current.getZoom();
+      const newZoom = currentZoom * zoomFactor;
+      fabricCanvasRef.current.setZoom(newZoom);
+      setZoomLevel(newZoom);
+    }
+  }, [fabricCanvasRef, setZoomLevel]);
+  
+  /**
    * Save current state before changes
    * Captures the current canvas state for history tracking
    */
@@ -180,6 +193,40 @@ export const useDrawingTools = (props: UseDrawingToolsProps): UseDrawingToolsRes
     setGia,
     saveCurrentState
   });
+  
+  /**
+   * Clear all drawings from the canvas
+   */
+  const clearDrawings = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    const objects = canvas.getObjects().filter(obj => {
+      // Only remove drawing objects, not grid or other UI elements
+      return obj.type !== 'grid' && obj.type !== 'ui';
+    });
+    
+    objects.forEach(obj => canvas.remove(obj));
+    canvas.renderAll();
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Change the current drawing tool
+   * @param {DrawingTool} newTool - New drawing tool to set
+   */
+  const handleToolChange = useCallback((newTool: DrawingTool) => {
+    setTool(newTool);
+    
+    // Apply tool-specific settings to canvas
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Set drawing mode based on tool
+    canvas.isDrawingMode = ['draw', 'free'].includes(newTool);
+    
+    // Set selection mode based on tool
+    canvas.selection = ['select', 'hand'].includes(newTool);
+  }, [fabricCanvasRef, setTool]);
   
   /**
    * Wrap saveCanvas to return a boolean value as required by the interface

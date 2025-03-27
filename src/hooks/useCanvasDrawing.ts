@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -96,12 +95,15 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     historyRef
   });
   
-  // Path processing
+  // Path processing - pass all required props
   const { processCreatedPath } = usePathProcessing({
     fabricCanvasRef,
     gridLayerRef,
+    historyRef,
+    tool,
     setFloorPlans,
-    currentFloor
+    currentFloor,
+    setGia
   });
   
   // Update zoom level function
