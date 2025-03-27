@@ -153,15 +153,16 @@ export const straightenStroke = (
  * Used for straightening lines during drawing
  * 
  * @param {number} angle - Angle in degrees
+ * @param {number} increment - Angle increment for quantization (default: 45°)
  * @returns {number} Quantized angle in degrees
  */
-export const quantizeAngle = (angle: number): number => {
+export const quantizeAngle = (angle: number, increment: number = 45): number => {
   // Normalize to 0-360 range
   while (angle < 0) angle += 360;
   angle = angle % 360;
   
-  // Quantize to nearest 45° increment
-  return Math.round(angle / 45) * 45;
+  // Quantize to nearest increment
+  return Math.round(angle / increment) * increment;
 };
 
 /**
@@ -170,9 +171,16 @@ export const quantizeAngle = (angle: number): number => {
  * 
  * @param {Point} start - Start point of the line
  * @param {Point} end - End point of the line
+ * @param {number} [increment] - Angle increment for quantization (default: 45°)
+ * @param {number[]} [allowedAngles] - Array of allowed angles for snapping
  * @returns {Point} New end point with quantized angle
  */
-export const applyAngleQuantization = (start: Point, end: Point): Point => {
+export const applyAngleQuantization = (
+  start: Point, 
+  end: Point, 
+  increment?: number,
+  allowedAngles?: number[]
+): Point => {
   if (!start || !end) return end;
   
   // Calculate distance between points
@@ -183,8 +191,27 @@ export const applyAngleQuantization = (start: Point, end: Point): Point => {
   // Calculate angle in degrees
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
   
-  // Quantize the angle
-  const quantizedAngle = quantizeAngle(angle);
+  // Quantize the angle - either to specific allowed angles or to increments
+  let quantizedAngle: number;
+  
+  if (allowedAngles && allowedAngles.length > 0) {
+    // Find closest allowed angle
+    let closestAngle = allowedAngles[0];
+    let minDiff = Math.abs(angle - closestAngle);
+    
+    for (const allowed of allowedAngles) {
+      const diff = Math.abs(angle - allowed);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestAngle = allowed;
+      }
+    }
+    
+    quantizedAngle = closestAngle;
+  } else {
+    // Use increment-based quantization
+    quantizedAngle = quantizeAngle(angle, increment || 45);
+  }
   
   // Convert back to radians
   const radians = quantizedAngle * (Math.PI / 180);

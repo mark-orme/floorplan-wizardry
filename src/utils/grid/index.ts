@@ -29,9 +29,10 @@ export * from './measurements';
 export {
   snapToGrid,
   snapToAngle,
-  snapWithThreshold,
-  getNearestGridIntersection,
   snapLineToStandardAngles,
+  getNearestGridIntersection,
+  getNearestPointOnGrid,
+  distanceToNearestGridLine
   // Don't re-export distanceToNearestGridLine since it's also in measurements
 } from './snapping';
 

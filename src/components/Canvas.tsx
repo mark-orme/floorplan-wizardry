@@ -214,8 +214,8 @@ export const Canvas: React.FC<CanvasProps> = ({
         midPoint={drawingState.midPoint}
         isVisible={Boolean(drawingState.startPoint && drawingState.currentPoint && (tool === 'straightLine' || tool === 'wall'))}
         currentZoom={currentZoom}
-        isSnappedToGrid={isSnappedToGrid}
-        isAutoStraightened={isAutoStraightened}
+        isSnappedToGrid={isSnappedToGrid()}
+        isAutoStraightened={isAutoStraightened()}
       />
     </>
   );

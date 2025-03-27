@@ -1,11 +1,10 @@
-
 /**
  * Hook for handling canvas drawing interactions
  * Manages mouse/touch interactions for drawing operations
  * @module useCanvasInteractions
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 import { DrawingState, Point } from '@/types/drawingTypes';
 import { DrawingTool } from './useCanvasState';
 import { useSnapToGrid } from './useSnapToGrid';
@@ -178,7 +177,7 @@ export const useCanvasInteractions = ({
           endPoint = applyAngleQuantization(startPoint, endPoint);
           
           // Create the line on the canvas
-          const line = new fabric.Line(
+          const line = new Line(
             [startPoint.x, startPoint.y, endPoint.x, endPoint.y],
             {
               stroke: lineColor,
@@ -225,7 +224,7 @@ export const useCanvasInteractions = ({
   }, []);
   
   // Calculate whether current point is snapped to grid
-  const isPointSnappedToGrid = useCallback(() => {
+  const isSnappedToGrid = useCallback(() => {
     if (!drawingState.currentPoint || !originalPointRef.current) return false;
     
     return isSnappedToGrid(drawingState.currentPoint, originalPointRef.current);
@@ -283,7 +282,7 @@ export const useCanvasInteractions = ({
     updateZoomLevel,
     toggleSnap,
     snapEnabled,
-    isSnappedToGrid: isPointSnappedToGrid,
-    isAutoStraightened: isLineAutoStraightened
+    isSnappedToGrid,
+    isLineAutoStraightened
   };
 };

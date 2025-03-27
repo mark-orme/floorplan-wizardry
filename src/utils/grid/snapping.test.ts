@@ -7,10 +7,10 @@ import { describe, it, expect } from 'vitest';
 import { 
   snapToGrid, 
   snapToAngle, 
-  snapWithThreshold, 
-  getNearestGridIntersection,
   snapLineToStandardAngles,
-  distanceToNearestGridLine
+  getNearestGridIntersection,
+  distanceToNearestGridLine,
+  getNearestPointOnGrid
 } from './snapping';
 import { GRID_SPACING } from '@/constants/numerics';
 
@@ -99,14 +99,14 @@ describe('Grid Snapping Utils', () => {
   
   // Test remaining functions
   describe('other snapping functions', () => {
-    it('snapWithThreshold applies threshold-based snapping', () => {
+    it('getNearestGridIntersection finds correct grid point', () => {
       // Test implementation
       const point = { x: 44, y: 48 };
-      const result = snapWithThreshold(point, 10, 0.5);
+      const result = getNearestGridIntersection(point, 10);
       
-      // Points should snap when they are within threshold
-      expect(result.x).toBe(40); // 44 is not close enough to 50 with threshold 0.5
-      expect(result.y).toBe(50); // 48 is close enough to 50 with threshold 0.5
+      // Points should snap to nearest grid intersection
+      expect(result.x).toBe(40);
+      expect(result.y).toBe(50);
     });
     
     it('snapLineToStandardAngles aligns lines to standard angles', () => {

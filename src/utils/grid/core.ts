@@ -1,4 +1,3 @@
-
 /**
  * Grid core utilities
  * Provides core grid functionality used across the application
@@ -11,7 +10,7 @@ import {
   ANGLE_SNAP_THRESHOLD,
   FLOATING_POINT_TOLERANCE 
 } from '@/constants/numerics';
-import { snapToGrid, snapToAngle, snapLineToStandardAngles } from './snapping';
+import { snapToGrid, snapToAngle } from './snapping';
 
 /**
  * Constants for grid core operations
@@ -130,6 +129,8 @@ export const straightenLine = (start: Point, end: Point): Point => {
     return end;
   }
   
+  // Import this directly to avoid circular dependencies
+  const { snapLineToStandardAngles } = require('./snapping');
   return snapLineToStandardAngles(start, end, GRID_CORE.STANDARD_ANGLES);
 };
 
@@ -209,4 +210,4 @@ export const calculateGridLines = (
 };
 
 // Re-export snapping functions for convenience
-export { snapToGrid, snapToAngle, snapLineToStandardAngles };
+export { snapToGrid, snapToAngle };
