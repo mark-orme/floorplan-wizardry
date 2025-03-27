@@ -1,4 +1,3 @@
-
 /**
  * Canvas interactions hook
  * Manages mouse/touch interactions and drawing state for the canvas
@@ -28,6 +27,8 @@ interface UseCanvasInteractionsResult {
   updateCurrentPoint: (point: Point | null) => void;
   isSnappedToGrid: (point: Point | null) => boolean;
   isLineAutoStraightened: (startPoint: Point | null, endPoint: Point | null) => boolean;
+  toggleSnap: () => void;
+  snapEnabled: boolean;
 }
 
 /**
@@ -60,6 +61,7 @@ export const useCanvasInteractions = ({
   // Grid snapping utilities
   const {
     snapEnabled,
+    toggleSnap,
     snapPointToGrid,
     snapLineToGrid,
     isSnappedToGrid: checkIsSnappedToGrid,
@@ -286,6 +288,8 @@ export const useCanvasInteractions = ({
     resetDrawingState,
     updateCurrentPoint,
     isSnappedToGrid,
-    isLineAutoStraightened
+    isLineAutoStraightened,
+    toggleSnap,
+    snapEnabled
   };
 };
