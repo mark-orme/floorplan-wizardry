@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for processing points in drawing operations
  * Handles point transformation and grid snapping
@@ -7,8 +8,8 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Point } from "@/types/drawingTypes";
 import { DrawingTool } from "./useCanvasState";
-import { isTouchEvent, extractClientCoordinates } from "@/utils/fabric"; // Fixed import
-import { snapToGrid } from "@/utils/grid/core"; // Import from core directly
+import { isTouchEvent, extractClientCoordinates } from "@/utils/fabric";
+import { snapToGrid } from "@/utils/grid/snapping"; // Import from snapping directly
 import { straightenStroke } from "@/utils/geometry/straightening";
 import { handleError } from "@/utils/errorHandling";
 
@@ -83,11 +84,8 @@ export const usePointProcessing = ({
         y: pointer.y
       };
       
-      // Apply grid snapping based on current tool
-      if (tool === 'wall' || tool === 'room' || tool === 'straightLine') {
-        return snapToGrid(point);
-      }
-
+      // Do not apply grid snapping here - we now handle this in useSnapToGrid
+      // to give more control to the drawing logic
       return point;
     } catch (error) {
       handleError(error, {
@@ -96,7 +94,7 @@ export const usePointProcessing = ({
       });
       return null;
     }
-  }, [fabricCanvasRef, tool]);
+  }, [fabricCanvasRef]);
   
   /**
    * Process path points from a fabric path
@@ -132,9 +130,10 @@ export const usePointProcessing = ({
       }
       
       // Apply grid snapping and straightening based on current tool
+      // Note: We make this compatible with our useSnapToGrid hook by doing minimal processing here
       const processedPoints = 
         (tool === 'wall' || tool === 'room' || tool === 'straightLine') 
-          ? straightenStroke(extractedPoints.map(pt => snapToGrid(pt)))
+          ? straightenStroke(extractedPoints)
           : extractedPoints;
       
       return { 

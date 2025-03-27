@@ -4,7 +4,7 @@
  * Primary canvas component for fabric.js rendering
  * @module Canvas
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { toast } from 'sonner';
@@ -12,6 +12,9 @@ import { useReliableGridInitialization } from '@/hooks/useReliableGridInitializa
 import { initializeCanvasGestures, isIOSPlatform } from '@/utils/fabric';
 import { CanvasCreationOptions } from '@/types/fabric';
 import { CANVAS_STYLES, CANVAS_SCALING } from '@/constants/canvas';
+import { DistanceTooltip } from './DistanceTooltip';
+import { useCanvasInteractions } from '@/hooks/useCanvasInteractions';
+import { useCanvasController } from './canvas/controller/CanvasController';
 
 /**
  * Canvas component props interface
@@ -49,6 +52,25 @@ export const Canvas: React.FC<CanvasProps> = ({
   
   // Reference to the Fabric.js canvas instance
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  
+  // Get current tool from canvas controller if available
+  const { tool, lineThickness, lineColor } = useCanvasController();
+  
+  // Initialize canvas interactions for drawing
+  const {
+    drawingState,
+    currentZoom,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    isSnappedToGrid,
+    isAutoStraightened
+  } = useCanvasInteractions({
+    fabricCanvasRef,
+    tool,
+    lineThickness,
+    lineColor
+  });
   
   // Detect iOS devices to apply platform-specific optimizations
   // iOS requires special handling for touch events and performance
@@ -103,6 +125,11 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Store reference to the canvas
       fabricCanvasRef.current = canvas;
       
+      // Register mouse/touch event handlers for drawing
+      canvas.on('mouse:down', (e: any) => handleMouseDown(e.e));
+      canvas.on('mouse:move', (e: any) => handleMouseMove(e.e));
+      canvas.on('mouse:up', (e: any) => handleMouseUp(e.e));
+      
       // Notify parent that canvas is ready
       if (onCanvasReady) {
         onCanvasReady(canvas);
@@ -111,6 +138,12 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Cleanup function to dispose canvas on unmount
       return () => {
         try {
+          // Remove event listeners
+          canvas.off('mouse:down');
+          canvas.off('mouse:move');
+          canvas.off('mouse:up');
+          
+          // Dispose canvas
           canvas.dispose();
           fabricCanvasRef.current = null;
         } catch (error) {
@@ -128,14 +161,27 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Show error toast to the user
       toast.error("Failed to initialize canvas. Please refresh the page.");
     }
-  }, [width, height, isIOS, onCanvasReady, onError]);
+  }, [width, height, isIOS, onCanvasReady, onError, handleMouseDown, handleMouseMove, handleMouseUp]);
   
   return (
-    <canvas 
-      ref={canvasRef}
-      data-testid="canvas-element"
-      className={CANVAS_STYLES.WRAPPER_CLASS}
-      style={{ border: CANVAS_STYLES.BORDER }}
-    />
+    <>
+      <canvas 
+        ref={canvasRef}
+        data-testid="canvas-element"
+        className={CANVAS_STYLES.WRAPPER_CLASS}
+        style={{ border: CANVAS_STYLES.BORDER }}
+      />
+      
+      {/* Distance tooltip for measurements */}
+      <DistanceTooltip
+        startPoint={drawingState.startPoint}
+        currentPoint={drawingState.currentPoint}
+        midPoint={drawingState.midPoint}
+        isVisible={Boolean(drawingState.startPoint && drawingState.currentPoint && (tool === 'straightLine' || tool === 'wall'))}
+        currentZoom={currentZoom}
+        isSnappedToGrid={isSnappedToGrid}
+        isAutoStraightened={isAutoStraightened}
+      />
+    </>
   );
 };
