@@ -82,9 +82,12 @@ export const useBrushSettings = ({
       if (tool !== BRUSH_SETTINGS.DRAWING_TOOLS.DRAW) {
         disableSelection(fabricCanvas);
         fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
       } else {
         // For the regular draw tool, we also disable selection
         disableSelection(fabricCanvas);
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
       }
       
       console.log(`Brush settings updated for ${tool} tool: drawing mode = ${fabricCanvas.isDrawingMode}, color = ${lineColor}, thickness = ${lineThickness}`);
@@ -96,9 +99,16 @@ export const useBrushSettings = ({
       if (tool === 'select') {
         enableSelection(fabricCanvas);
         fabricCanvas.defaultCursor = 'default';
+        fabricCanvas.hoverCursor = 'move';
         console.log("Selection mode enabled");
+      } else if (tool === 'hand') {
+        // For hand tool, disable selection but set appropriate cursor
+        disableSelection(fabricCanvas);
+        fabricCanvas.defaultCursor = 'grab';
+        fabricCanvas.hoverCursor = 'grab';
+        console.log("Hand tool mode enabled");
       } else {
-        // For other tools (like hand), disable selection
+        // For other tools, disable selection
         disableSelection(fabricCanvas);
         console.log(`Other tool mode (${tool}) - selection disabled`);
       }
