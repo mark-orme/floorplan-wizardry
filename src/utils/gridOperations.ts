@@ -189,7 +189,7 @@ export const resetGridCreationState = (state: GridCreationState): GridCreationSt
   return {
     ...state,
     inProgress: false,
-    isCreating: false,
+    creationInProgress: false, // Fixed property name from isCreating to creationInProgress
     hasError: false,
     errorMessage: "",
     consecutiveResets: (state.consecutiveResets || 0) + 1

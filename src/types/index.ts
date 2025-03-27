@@ -19,7 +19,8 @@ export type {
   GridParameters, 
   GridStyle,
   Grid,
-  GridCreationState
+  GridCreationState,
+  GridCreationLock // Added export for GridCreationLock
 } from './core/GridState';
 
 // Re-export other types

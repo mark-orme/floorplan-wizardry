@@ -32,6 +32,36 @@ const DEFAULT_TIMESTAMP = 0;
 const LOCK_ID_FACTOR = 1000000;
 
 /**
+ * Log message constants for consistent messaging
+ * @constant {Object}
+ */
+const LOG_MESSAGES = {
+  /**
+   * Message when breaking a stale lock
+   * @constant {string}
+   */
+  STALE_LOCK_BREAK: "Breaking stale grid creation lock",
+  
+  /**
+   * Message when lock is acquired
+   * @constant {string}
+   */
+  LOCK_ACQUIRED: "Grid creation lock acquired",
+  
+  /**
+   * Message when lock release is attempted with wrong ID
+   * @constant {string}
+   */
+  WRONG_LOCK_ID: "Attempted to release grid lock with incorrect ID",
+  
+  /**
+   * Message when lock is successfully released
+   * @constant {string}
+   */
+  LOCK_RELEASED: "Grid creation lock released"
+};
+
+/**
  * Acquire lock for grid creation
  * Prevents multiple concurrent grid creation operations
  * 
@@ -45,7 +75,7 @@ export const acquireGridCreationLock = (): boolean => {
     // Check if the lock is stale (too old)
     if (now - gridManager.creationLock.timestamp > MAX_LOCK_AGE) {
       if (process.env.NODE_ENV === 'development') {
-        logger.warn("Breaking stale grid creation lock", gridManager.creationLock);
+        logger.warn(LOG_MESSAGES.STALE_LOCK_BREAK, gridManager.creationLock);
       }
       // Break the stale lock
       releaseGridCreationLock(gridManager.creationLock.id);
@@ -66,7 +96,7 @@ export const acquireGridCreationLock = (): boolean => {
   };
   
   if (process.env.NODE_ENV === 'development') {
-    logger.debug("Grid creation lock acquired", gridManager.creationLock);
+    logger.debug(LOG_MESSAGES.LOCK_ACQUIRED, gridManager.creationLock);
   }
   
   return true;
@@ -83,7 +113,7 @@ export const releaseGridCreationLock = (lockId: number): boolean => {
   // Verify lock ID matches
   if (gridManager.creationLock.id !== lockId) {
     if (process.env.NODE_ENV === 'development') {
-      logger.warn("Attempted to release grid lock with incorrect ID", {
+      logger.warn(LOG_MESSAGES.WRONG_LOCK_ID, {
         actual: gridManager.creationLock.id,
         attempted: lockId
       });
@@ -99,7 +129,7 @@ export const releaseGridCreationLock = (lockId: number): boolean => {
   };
   
   if (process.env.NODE_ENV === 'development') {
-    logger.debug("Grid creation lock released");
+    logger.debug(LOG_MESSAGES.LOCK_RELEASED);
   }
   
   return true;
