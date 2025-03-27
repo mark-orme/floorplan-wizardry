@@ -5,7 +5,7 @@
  */
 import { useEffect } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
-import { BaseEventHandlerProps, EventHandlerResult } from "./types";
+import type { BaseEventHandlerProps, EventHandlerResult } from "./types";
 import logger from "@/utils/logger";
 import { DEFAULT_LINE_THICKNESS } from "@/constants/numerics";
 import { disableSelection, enableSelection } from "@/utils/fabric/selection";

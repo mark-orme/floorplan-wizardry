@@ -11,7 +11,7 @@ import { DebugInfoState } from "@/types/drawingTypes";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
-import { CanvasReferences } from "@/types/fabric";
+import type { CanvasReferences } from "@/types/fabric";
 
 /**
  * Canvas controller setup properties

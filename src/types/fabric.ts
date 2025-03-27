@@ -4,4 +4,11 @@
  * @module types/fabric
  */
 
-export * from './fabric.d.ts';
+export type { 
+  CanvasCreationOptions,
+  CanvasReferences,
+  GridDimensions,
+  GridRenderResult,
+  CustomTouchEvent,
+  CustomFabricTouchEvent
+} from './fabric.d.ts';

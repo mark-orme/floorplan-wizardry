@@ -5,7 +5,7 @@
  * @module fabric/gestures
  */
 import { Canvas } from 'fabric';
-import { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
+import type { CustomTouchEvent, CustomFabricTouchEvent } from '@/types/fabric';
 
 /**
  * Initialize touch gestures for the canvas
@@ -50,7 +50,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       const touch = touches[i];
       const touchPosition = getTouchPosition(touch);
 
-      const ongoingTouchIndex = ongoingTouches.findIndex(t => t.e.identifier === touch.identifier);
+      const ongoingTouchIndex = ongoingTouches.findIndex(t => (t.e as Touch).identifier === touch.identifier);
 
       if (ongoingTouchIndex !== -1) {
         ongoingTouches[ongoingTouchIndex] = {
@@ -68,7 +68,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      ongoingTouches = ongoingTouches.filter(t => t.e.identifier !== touch.identifier);
+      ongoingTouches = ongoingTouches.filter(t => (t.e as Touch).identifier !== touch.identifier);
     }
 
     // Log touch end for debugging
@@ -82,7 +82,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
-      ongoingTouches = ongoingTouches.filter(t => t.e.identifier !== touch.identifier);
+      ongoingTouches = ongoingTouches.filter(t => (t.e as Touch).identifier !== touch.identifier);
     }
   };
 

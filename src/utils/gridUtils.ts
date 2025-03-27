@@ -1,10 +1,9 @@
-
 /**
  * Grid utility functions
  * @module gridUtils
  */
 import { Canvas, Object as FabricObject, Line } from 'fabric';
-import { GridDimensions, GridRenderResult } from '@/types/fabric';
+import type { GridDimensions, GridRenderResult } from '@/types/fabric';
 
 /**
  * Calculate grid dimensions based on canvas size
