@@ -9,12 +9,10 @@ import { createRootElement } from './utils/domUtils.ts'
 // Check if browser profiling is supported in this environment
 const isProfilingSupported = () => {
   try {
-    // Using a feature detection approach - avoid direct Window.Profiler check
+    // Using a feature detection approach instead of direct Profiler access
     return typeof window !== 'undefined' && 
            typeof window.performance !== 'undefined' && 
-           typeof window.performance.mark === 'function' &&
-           // Check for profiling API without direct property access
-           typeof performance.getEntriesByType === 'function';
+           typeof window.performance.mark === 'function';
   } catch (e) {
     return false;
   }
@@ -25,18 +23,6 @@ const sentryIntegrations = [
   Sentry.browserTracingIntegration(),
   Sentry.replayIntegration(),
 ];
-
-// Only add profiling integration if it's supported
-// Use try/catch to handle potential integration issues
-try {
-  if (isProfilingSupported()) {
-    // @ts-ignore - Skip type checking for this integration 
-    // as the TypeScript definitions may not match the runtime behavior
-    sentryIntegrations.push(new Sentry.BrowserProfilingIntegration());
-  }
-} catch (e) {
-  console.warn("Sentry profiling integration failed to initialize:", e);
-}
 
 // Initialize Sentry for error tracking and monitoring
 Sentry.init({
@@ -56,8 +42,8 @@ Sentry.init({
   replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%
   replaysOnErrorSampleRate: 1.0, // 100% when sampling sessions where errors occur
   
-  // Performance profiling - only applied when integration is added
-  profilesSampleRate: isProfilingSupported() ? 0.1 : 0, // Capture 10% of profiles when supported
+  // Disable performance profiling to avoid document policy violations
+  profilesSampleRate: 0, 
   
   // Ensure we capture breadcrumbs for better debugging context
   beforeBreadcrumb(breadcrumb) {
