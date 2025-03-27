@@ -36,7 +36,9 @@ export const performanceStatsSchema = z.object({
   objectCount: z.number().optional(),
   drawCalls: z.number().optional(),
   renderTime: z.number().optional(),
-  eventTime: z.number().optional()
+  eventTime: z.number().optional(),
+  errorCount: z.number().optional(),
+  retryCount: z.number().optional()
 }).catchall(z.number().optional());
 
 /**
@@ -99,43 +101,60 @@ export const drawingStateSchema = z.object({
 
 /**
  * Validate a debug info state object
- * @param debugInfo - The debug info state to validate
- * @returns The validated debug info state or throws an error
+ * Use proper type assertion to ensure TypeScript knows the result matches the interface
+ * 
+ * @param {unknown} debugInfo - The debug info state to validate
+ * @returns {DebugInfoState} The validated debug info state or throws an error
  */
 export function validateDebugInfoState(debugInfo: unknown): DebugInfoState {
-  return debugInfoStateSchema.parse(debugInfo);
+  const validatedData = debugInfoStateSchema.parse(debugInfo);
+  // Use type assertion with required fields to ensure TypeScript recognizes this as DebugInfoState
+  return validatedData as DebugInfoState;
 }
 
 /**
  * Validate a point object
- * @param point - The point to validate
- * @returns The validated point or throws an error
+ * Use proper type assertion to ensure TypeScript knows the result matches the interface
+ * 
+ * @param {unknown} point - The point to validate
+ * @returns {Point} The validated point or throws an error
  */
 export function validatePoint(point: unknown): Point {
-  return pointSchema.parse(point);
+  const validatedData = pointSchema.parse(point);
+  // Use type assertion with required fields to ensure TypeScript recognizes this as Point
+  return validatedData as Point;
 }
 
 /**
  * Validate a drawing state object
- * @param drawingState - The drawing state to validate
- * @returns The validated drawing state or throws an error
+ * Use proper type assertion to ensure TypeScript knows the result matches the interface
+ * 
+ * @param {unknown} drawingState - The drawing state to validate
+ * @returns {DrawingState} The validated drawing state or throws an error
  */
 export function validateDrawingState(drawingState: unknown): DrawingState {
-  return drawingStateSchema.parse(drawingState);
+  const validatedData = drawingStateSchema.parse(drawingState);
+  // Use type assertion with required fields to ensure TypeScript recognizes this as DrawingState
+  return validatedData as DrawingState;
 }
 
 /**
  * Validate canvas dimensions object
- * @param dimensions - The dimensions to validate
- * @returns The validated dimensions or throws an error
+ * Use proper type assertion to ensure TypeScript knows the result matches the interface
+ * 
+ * @param {unknown} dimensions - The dimensions to validate
+ * @returns {CanvasDimensions} The validated dimensions or throws an error
  */
 export function validateCanvasDimensions(dimensions: unknown): CanvasDimensions {
-  return canvasDimensionsSchema.parse(dimensions);
+  const validatedData = canvasDimensionsSchema.parse(dimensions);
+  // Use type assertion with required fields to ensure TypeScript recognizes this as CanvasDimensions
+  return validatedData as CanvasDimensions;
 }
 
 /**
  * Create a partial validator for debug info state
  * Useful for validating partial updates
+ * 
  * @returns A validator for partial debug info state
  */
 export function createPartialDebugInfoValidator() {
@@ -146,6 +165,7 @@ export function createPartialDebugInfoValidator() {
 /**
  * Create a partial validator for drawing state
  * Useful for validating partial updates
+ * 
  * @returns A validator for partial drawing state
  */
 export function createPartialDrawingStateValidator() {

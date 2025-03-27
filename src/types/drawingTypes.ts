@@ -26,7 +26,7 @@ export enum DrawingMode {
   SELECT = 'select'
 }
 
-// Export Point to make it available to importers of drawingTypes
-export type { Point, DrawingState };
-
-// Export other drawing related types here
+// Export Point, DrawingState and other core types to make them available to importers of drawingTypes
+export type { Point, DrawingState, PerformanceStats };
+export type { DebugInfoState } from './core/DebugInfo';
+export type { CanvasDimensions } from './core/Geometry';

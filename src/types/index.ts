@@ -11,6 +11,17 @@ export type { DrawingState } from './core/DrawingState';
 export type { Point, CanvasDimensions } from './core/Geometry';
 export * from './core/Geometry'; // For the type guards
 
+// Re-export grid related types
+export type { 
+  GridConfig, 
+  GridDimensions, 
+  GridOptions, 
+  GridParameters, 
+  GridStyle,
+  Grid,
+  GridCreationState
+} from './core/GridState';
+
 // Re-export other types
 export * from './drawingTypes';
 export * from './floorPlanTypes';

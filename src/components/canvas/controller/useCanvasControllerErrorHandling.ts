@@ -12,12 +12,6 @@ interface UseCanvasControllerErrorHandlingProps {
   updateDebugInfo: (info: Partial<DebugInfoState>) => void;
 }
 
-interface UpdateDebugInfoObject {
-  errorCount?: number;
-  lastRetryTime?: string;
-  retryCount?: number;
-}
-
 /**
  * Hook that handles errors in the canvas controller
  * @returns Error handling functions
@@ -35,12 +29,15 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     setHasError(true);
     setErrorMessage(error.message);
     
-    // Create a proper update object
-    const updateObject: UpdateDebugInfoObject = { 
-      errorCount: 1 // Default to 1 if not previously set
-    };
-    
-    updateDebugInfo(updateObject);
+    // Create a proper update object that conforms to Partial<DebugInfoState>
+    updateDebugInfo({
+      hasError: true,
+      errorMessage: error.message,
+      performanceStats: {
+        // This is optional in DebugInfoState, so we can safely increment it
+        errorCount: 1 // Default to 1 if not previously set
+      }
+    });
   }, [setHasError, setErrorMessage, updateDebugInfo]);
 
   // Handle retry attempt
@@ -48,13 +45,16 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     setHasError(false);
     setErrorMessage("");
     
-    // Create a proper update object
-    const updateObject: UpdateDebugInfoObject = { 
-      lastRetryTime: new Date().toISOString(),
-      retryCount: 1 // Default to 1 if not previously set
-    };
-    
-    updateDebugInfo(updateObject);
+    // Create a proper update object that conforms to Partial<DebugInfoState>
+    updateDebugInfo({
+      hasError: false,
+      errorMessage: "",
+      performanceStats: {
+        // These are optional in DebugInfoState, so we can safely update them
+        retryCount: 1 // Default to 1 if not previously set
+      },
+      lastInitTime: Date.now()
+    });
   }, [setHasError, setErrorMessage, updateDebugInfo]);
 
   return {
