@@ -1,35 +1,35 @@
 
 /**
  * Tests for grid creation utilities
- * @jest-environment jsdom
  */
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { createBasicEmergencyGrid, validateGrid } from '../gridCreationUtils';
 import { Canvas as FabricCanvas } from 'fabric';
 
 // Mock Fabric to avoid DOM dependencies in tests
-jest.mock('fabric', () => {
+vi.mock('fabric', () => {
   // Create mock classes
-  const MockLine = jest.fn().mockImplementation(() => ({
+  const MockLine = vi.fn().mockImplementation(() => ({
     type: 'line',
     visible: true
   }));
   
-  const MockText = jest.fn().mockImplementation(() => ({
+  const MockText = vi.fn().mockImplementation(() => ({
     type: 'text',
     visible: true
   }));
   
   // Create mock canvas
-  const MockCanvas = jest.fn().mockImplementation(() => ({
+  const MockCanvas = vi.fn().mockImplementation(() => ({
     width: 800,
     height: 600,
-    add: jest.fn(),
-    remove: jest.fn(),
-    contains: jest.fn().mockReturnValue(true),
-    getObjects: jest.fn().mockReturnValue([]),
-    sendObjectToBack: jest.fn(),
-    bringObjectToFront: jest.fn(),
-    requestRenderAll: jest.fn()
+    add: vi.fn(),
+    remove: vi.fn(),
+    contains: vi.fn().mockReturnValue(true),
+    getObjects: vi.fn().mockReturnValue([]),
+    sendObjectToBack: vi.fn(),
+    bringObjectToFront: vi.fn(),
+    requestRenderAll: vi.fn()
   }));
   
   return {
@@ -40,8 +40,8 @@ jest.mock('fabric', () => {
 });
 
 // Mock console logs for cleaner test output
-console.log = jest.fn();
-console.error = jest.fn();
+console.log = vi.fn();
+console.error = vi.fn();
 
 describe('gridCreationUtils', () => {
   let canvas: FabricCanvas;
@@ -56,7 +56,7 @@ describe('gridCreationUtils', () => {
   });
   
   describe('createBasicEmergencyGrid', () => {
-    it('should create grid objects and add them to canvas', () => {
+    test('should create grid objects and add them to canvas', () => {
       // Call the function
       const result = createBasicEmergencyGrid(canvas, gridLayerRef);
       
@@ -68,9 +68,9 @@ describe('gridCreationUtils', () => {
       expect(canvas.add).toHaveBeenCalled();
     });
     
-    it('should handle errors gracefully', () => {
+    test('should handle errors gracefully', () => {
       // Mock canvas.add to throw an error
-      (canvas.add as jest.Mock).mockImplementation(() => {
+      (canvas.add as any).mockImplementation(() => {
         throw new Error('Mock error');
       });
       
@@ -83,7 +83,7 @@ describe('gridCreationUtils', () => {
   });
   
   describe('validateGrid', () => {
-    it('should validate grid correctly when valid', () => {
+    test('should validate grid correctly when valid', () => {
       // Create mock grid objects
       gridLayerRef.current = [
         { type: 'line', x1: 0, x2: 0, y1: 0, y2: 100 }, // vertical
@@ -91,7 +91,7 @@ describe('gridCreationUtils', () => {
       ];
       
       // Mock contains to return true
-      (canvas.contains as jest.Mock).mockReturnValue(true);
+      (canvas.contains as any).mockReturnValue(true);
       
       // Validate the grid
       const isValid = validateGrid(canvas, gridLayerRef);
@@ -100,7 +100,7 @@ describe('gridCreationUtils', () => {
       expect(isValid).toBe(true);
     });
     
-    it('should return false when no grid exists', () => {
+    test('should return false when no grid exists', () => {
       // Empty grid
       gridLayerRef.current = [];
       
@@ -111,7 +111,7 @@ describe('gridCreationUtils', () => {
       expect(isValid).toBe(false);
     });
     
-    it('should return false when canvas is null', () => {
+    test('should return false when canvas is null', () => {
       // Validate with null canvas
       const isValid = validateGrid(null, gridLayerRef);
       
