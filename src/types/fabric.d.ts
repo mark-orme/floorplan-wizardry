@@ -4,7 +4,7 @@
  * @module types/fabric
  */
 
-import { Object as FabricObject } from 'fabric';
+import { Object as FabricObject, Point } from 'fabric';
 
 /**
  * Options used when creating a Fabric.js canvas
@@ -99,19 +99,19 @@ export interface FabricPointerEvent {
   /** Original browser event */
   e: MouseEvent | TouchEvent;
   /** Pointer position */
-  pointer: { x: number; y: number };
+  pointer: Point;
   /** Absolute pointer position */
-  absolutePointer: { x: number; y: number };
+  absolutePointer: Point;
   /** Scene point */
-  scenePoint: { x: number; y: number };
+  scenePoint: Point;
   /** Viewport point */
-  viewportPoint: { x: number; y: number };
+  viewportPoint: Point;
   /** Target object */
   target?: FabricObject | null;
   /** Sub-targets */
   subTargets?: FabricObject[];
   /** Whether this is a click event */
-  isClick?: boolean;
+  isClick: boolean;  // Making this required, not optional
   /** Current sub-targets */
-  currentSubTargets?: FabricObject[];
+  currentSubTargets: FabricObject[];  // Making this required, not optional
 }

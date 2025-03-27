@@ -81,7 +81,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * force;
       }
 
-      // Create fabric-compatible event object
+      // Create fabric-compatible event object with proper Point objects
       const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
@@ -90,16 +90,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         target: null,
         subTargets: [],
-        isClick: true, // Required to be explicit here
+        isClick: true,
         currentSubTargets: []
       };
       
-      // Use the canvas.fire with the EventInfo explicitly setting isClick to true
-      canvas.fire('mouse:down', {
-        ...eventInfo,
-        isClick: true,
-        currentSubTargets: []
-      });
+      // Use the canvas.fire with the EventInfo
+      canvas.fire('mouse:down', eventInfo);
 
       console.log("Drawing started:", isPencil ? "Apple Pencil/Stylus" : "Touch");
     }
@@ -135,7 +131,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * Math.max(0.5, force);
       }
 
-      // Create fabric-compatible event object
+      // Create fabric-compatible event object with proper Point objects
       const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
@@ -144,16 +140,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         target: null,
         subTargets: [],
-        isClick: false, // Required to be explicit
+        isClick: false,
         currentSubTargets: []
       };
       
-      // Use the canvas.fire with the EventInfo explicitly setting isClick to false
-      canvas.fire('mouse:move', {
-        ...eventInfo,
-        isClick: false,
-        currentSubTargets: []
-      });
+      // Use the canvas.fire with the EventInfo
+      canvas.fire('mouse:move', eventInfo);
     }
 
     for (let i = 0; i < touches.length; i++) {
@@ -191,7 +183,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth;
       }
 
-      // Create fabric-compatible event object
+      // Create fabric-compatible event object with proper Point objects
       const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
@@ -200,16 +192,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         viewportPoint: touchPosition.clone(),
         target: null,
         subTargets: [],
-        isClick: true, // Required to be explicit
+        isClick: true,
         currentSubTargets: []
       };
       
-      // Use the canvas.fire with the EventInfo explicitly setting isClick to true
-      canvas.fire('mouse:up', {
-        ...eventInfo,
-        isClick: true,
-        currentSubTargets: []
-      });
+      // Use the canvas.fire with the EventInfo
+      canvas.fire('mouse:up', eventInfo);
 
       console.log("Drawing ended");
     }
@@ -246,7 +234,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         const touch = touches[0];
         const touchPosition = getTouchPosition(touch);
         
-        // Create fabric-compatible event object
+        // Create fabric-compatible event object with proper Point objects
         const eventInfo: FabricPointerEvent = {
           e: e,
           pointer: touchPosition,
@@ -255,16 +243,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
           viewportPoint: touchPosition.clone(),
           target: null,
           subTargets: [],
-          isClick: false, // Not a click for cancel events
+          isClick: false,
           currentSubTargets: []
         };
         
-        // Use the canvas.fire with the EventInfo explicitly setting isClick to false
-        canvas.fire('mouse:up', {
-          ...eventInfo,
-          isClick: false,
-          currentSubTargets: []
-        });
+        // Use the canvas.fire with the EventInfo
+        canvas.fire('mouse:up', eventInfo);
       }
     }
 

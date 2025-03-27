@@ -42,7 +42,7 @@ export function isFabricTouchEvent(value: unknown): value is CustomFabricTouchEv
 /**
  * Type guard to check if a value is a pointer/mouse event
  * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a pointer/mouse event
+ * @returns {boolean} True if the value is a pointer event
  */
 export function isPointerEvent(value: unknown): value is PointerEvent {
   return typeof value === 'object' && 
