@@ -26,7 +26,7 @@ export const typescriptRules = {
       "enforceConst": true,
       "detectObjects": false
     }],
-    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/ban-ts-comment": ["error", {
       "ts-ignore": "true",
       "ts-nocheck": "true",
@@ -40,7 +40,7 @@ export const typescriptRules = {
       "allowTypedFunctionExpressions": true,
       "allowHigherOrderFunctions": true
     }],
-    "@typescript-eslint/explicit-module-boundary-types": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "error",
     "@typescript-eslint/explicit-member-accessibility": "error",
     
     // TypeScript type and pattern rules

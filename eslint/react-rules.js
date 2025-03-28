@@ -26,6 +26,10 @@ export const reactRules = {
     // React general rules
     "react/prop-types": "off",
     "react/display-name": "off",
+    "react/jsx-uses-react": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/no-unused-prop-types": "warn",
+    "react/jsx-no-useless-fragment": "error",
     
     // React function component definition style
     "react/function-component-definition": ["warn", {
