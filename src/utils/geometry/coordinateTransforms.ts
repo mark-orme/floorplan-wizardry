@@ -54,7 +54,9 @@ export const meterPointToPixelPoint = (point: Point): Point => {
  * @returns Value in grid units
  */
 export const pixelsToGridUnits = (pixels: number): number => {
-  return pixels / GRID_SPACING;
+  // Ensure GRID_SPACING is treated as a number
+  const gridSpacing = typeof GRID_SPACING === 'number' ? GRID_SPACING : 10;
+  return pixels / gridSpacing;
 };
 
 /**
@@ -63,7 +65,9 @@ export const pixelsToGridUnits = (pixels: number): number => {
  * @returns Value in pixels
  */
 export const gridUnitsToPixels = (gridUnits: number): number => {
-  return gridUnits * GRID_SPACING;
+  // Ensure GRID_SPACING is treated as a number
+  const gridSpacing = typeof GRID_SPACING === 'number' ? GRID_SPACING : 10;
+  return gridUnits * gridSpacing;
 };
 
 /**

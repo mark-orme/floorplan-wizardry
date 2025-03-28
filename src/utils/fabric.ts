@@ -1,24 +1,17 @@
 
 /**
- * Fabric.js utilities module
- * Provides a clean API for working with Fabric.js canvas and objects
- * @module fabric
+ * Fabric.js utilities
+ * Central export for all fabric-related utility functions
+ * @module utils/fabric
  */
 
-// Re-export only needed functionality from sub-modules
-// This pattern prevents alias confusion and circular references
-
-// Core canvas dimension utilities
+// Export all canvas validation utilities
 export {
-  setCanvasDimensions,
-  getCanvasDimensions,
-  resizeCanvasToContainer
-} from './fabric/canvasDimensions';
-
-// Canvas validation utilities
-export {
-  isCanvasValid,
+  isValidObjectId,
+  doesObjectExist,
+  getObjectById,
   safeGetObjectById,
+  isCanvasValid,
   safeCanvasContains,
   isCanvasEmpty,
   verifyCanvasConfiguration,
@@ -26,65 +19,12 @@ export {
   isCanvasDisposed
 } from './fabric/canvasValidation';
 
-// Canvas cleanup utilities
-export {
-  clearCanvas,
-  disposeCanvas,
-  removeObjectsFromCanvas,
-  resetCanvasTransform,
-  forceCleanCanvasElement,
-  resetCanvasStateTracker,
-  isCanvasElementInitialized,
-  markCanvasAsInitialized, // Fixed the name to match export
-  isCanvasElementInDOM
-} from './fabric/canvasCleanup';
+// Export object utilities
+export * from './fabric/objects';
 
-// Object manipulation utilities
-export {
-  clearCanvasObjects,
-  canvasMoveTo,
-  bringObjectToFront,
-  sendObjectToBack
-} from './fabric/objects';
+// Export cleanup utilities
+export * from './fabric/canvasCleanup';
 
-// Canvas registry functions
-export {
-  registerCanvasElement,
-  isCanvasRegistered,
-  getCanvasRegistration
-} from './fabric/registry';
-
-// Environment variables and constants
-export {
-  getEnvVars,
-  CANVAS_DIMENSIONS
-} from './fabric/environment';
-
-// Selection mode utilities
-export {
-  enableSelection,
-  disableSelection
-} from './fabric/selection';
-
-// Event type checking utilities
-export {
-  isTouchEvent,
-  isMouseEvent,
-  isKeyboardEvent,
-  extractClientCoordinates,
-  getTouchCount,
-  isIOSPlatform,
-  applyIOSEventFixes
-} from './fabric/events';
-
-// Export touch/gesture event functions without internal implementation details
-export {
-  initializeCanvasGestures
-} from './fabric/gestures';
-
-// Brush-related utilities
-export { 
-  initializeDrawingBrush, 
-  addPressureSensitivity 
-} from './fabricBrush';
-
+// Re-export any additional fabric utilities
+export * from './fabric/canvasObjectUtils';
+export * from './fabric/canvasSerializationUtils';

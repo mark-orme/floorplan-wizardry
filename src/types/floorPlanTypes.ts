@@ -1,12 +1,13 @@
 
 /**
- * Floor plan related types
- * @module types/floorPlanTypes
+ * Floor plan type definitions
+ * @module floorPlanTypes
  */
 import { Point } from './geometryTypes';
 
 /**
- * Paper size options
+ * Paper size enumeration
+ * Standard paper sizes used in floor plans
  */
 export enum PaperSize {
   A0 = 'A0',
@@ -14,14 +15,86 @@ export enum PaperSize {
   A2 = 'A2',
   A3 = 'A3',
   A4 = 'A4',
-  LETTER = 'Letter',
-  LEGAL = 'Legal',
-  TABLOID = 'Tabloid',
-  CUSTOM = 'Custom'
+  CUSTOM = 'CUSTOM'
+}
+
+/**
+ * Stroke type enumeration
+ * Types of strokes that can be drawn
+ */
+export enum StrokeType {
+  LINE = 'line',
+  POLYLINE = 'polyline',
+  CIRCLE = 'circle',
+  RECTANGLE = 'rectangle',
+  TEXT = 'text',
+  PATH = 'path'
+}
+
+/**
+ * Wall definition
+ * Represents a wall in a floor plan
+ */
+export interface Wall {
+  /** Unique identifier */
+  id: string;
+  /** Start point of the wall */
+  startPoint: Point;
+  /** End point of the wall */
+  endPoint: Point;
+  /** Wall thickness in mm */
+  thickness: number;
+  /** Wall height in mm */
+  height?: number;
+  /** Wall color */
+  color?: string;
+  /** Associated room IDs */
+  roomIds?: string[];
+}
+
+/**
+ * Room definition
+ * Represents a room in a floor plan
+ */
+export interface Room {
+  /** Unique identifier */
+  id: string;
+  /** Room name */
+  name: string;
+  /** Room type */
+  type?: string;
+  /** Points defining the room boundary */
+  points: Point[];
+  /** Room color */
+  color?: string;
+  /** Floor level */
+  level?: number;
+  /** Room area in square meters */
+  area?: number;
+}
+
+/**
+ * Stroke definition
+ * Represents a drawing stroke on the canvas
+ */
+export interface Stroke {
+  /** Unique identifier */
+  id: string;
+  /** Array of points defining the stroke */
+  points: Point[];
+  /** Type of stroke */
+  type: StrokeType;
+  /** Stroke color */
+  color: string;
+  /** Stroke thickness in pixels */
+  thickness: number;
+  /** Stroke width in pixels (equivalent to thickness for API compatibility) */
+  width: number;
 }
 
 /**
  * Floor plan metadata
+ * Contains additional information about a floor plan
  */
 export interface FloorPlanMetadata {
   /** Creation timestamp */
@@ -30,130 +103,44 @@ export interface FloorPlanMetadata {
   updatedAt: number;
   /** Paper size */
   paperSize: PaperSize;
-  /** Floor level (e.g. 1, 2, -1) */
+  /** Floor level */
   level: number;
 }
 
 /**
- * Wall representation in floor plan
- */
-export interface Wall {
-  /** Wall ID */
-  id: string;
-  /** Start point */
-  startPoint: Point;
-  /** End point */
-  endPoint: Point;
-  /** Wall thickness in pixels */
-  thickness: number;
-  /** Wall height in meters */
-  height?: number;
-  /** Wall properties */
-  properties?: Record<string, any>;
-}
-
-/**
- * Room representation in floor plan
- */
-export interface Room {
-  /** Room ID */
-  id: string;
-  /** Room name */
-  name: string;
-  /** Room type */
-  type: string;
-  /** Room points forming polygon */
-  points: Point[];
-  /** Room area in square meters */
-  area?: number;
-  /** Room properties */
-  properties?: Record<string, any>;
-}
-
-/**
- * Stroke type enum
- */
-export type StrokeType = 'line' | 'wall' | 'room' | 'freehand' | 'polyline';
-
-/**
- * Stroke in a drawing
- */
-export interface Stroke {
-  /** Unique stroke ID */
-  id?: string;
-  /** Points making up the stroke */
-  points: Point[];
-  /** Stroke color */
-  color: string;
-  /** Stroke width (required for compatibility with tests and other components) */
-  width: number;
-  /** Stroke thickness (alias for width for compatibility) */
-  thickness?: number;
-  /** Stroke type */
-  type?: StrokeType;
-  /** Stroke properties */
-  properties?: Record<string, any>;
-}
-
-/**
- * Floor plan interface
+ * Floor plan definition
+ * Represents a complete floor plan with all its elements
  */
 export interface FloorPlan {
-  /** Floor plan ID */
+  /** Unique identifier */
   id: string;
   /** Floor plan name */
   name: string;
   /** Floor plan display label */
   label?: string;
-  /** Floor plan walls */
+  /** Array of drawing strokes */
+  strokes: Stroke[];
+  /** Array of walls */
   walls?: Wall[];
-  /** Floor plan rooms */
+  /** Array of rooms */
   rooms?: Room[];
   /** Floor plan metadata */
-  metadata: FloorPlanMetadata;
-  /** Floor plan index (required for backwards compatibility) */
+  metadata?: FloorPlanMetadata;
+  /** Floor index for multi-story buildings */
   index: number;
-  /** Serialized canvas JSON */
+  /** Serialized canvas state */
   canvasJson?: string;
-  /** Alternative for canvasJson in some implementations */
-  canvasData?: string | null;
-  /** Free-form strokes */
-  strokes: Stroke[];
   /** Gross internal area in square meters */
   gia?: number;
+  /** Canvas data for storage */
+  canvasData?: any;
   /** Creation timestamp */
   createdAt?: string;
   /** Last update timestamp */
   updatedAt?: string;
-  /** Floor level (synchronizes with metadata.level) */
+  /** Floor level */
   level?: number;
 }
 
-/**
- * Create default metadata
- */
-export const createDefaultMetadata = (): FloorPlanMetadata => ({
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-  paperSize: PaperSize.A3,
-  level: 1
-});
-
-/**
- * Create a new floor plan with default values
- */
-export const createFloorPlan = (id: string, name: string, index: number): FloorPlan => {
-  return {
-    id,
-    name,
-    label: name,
-    walls: [],
-    rooms: [],
-    metadata: createDefaultMetadata(),
-    index,
-    strokes: []
-  };
-};
-
-// Export Point type for other modules to use
-export { Point };
+// Re-export using export type for isolatedModules compatibility
+export type { Point } from './geometryTypes';

@@ -63,14 +63,37 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
   const loadFloorPlansData = useCallback(async (): Promise<void> => {
     try {
       const plans = await floorPlanLoader.loadFloorPlans();
-      // Ensure we're setting floor plans with the correct type by mapping if needed
-      const typedPlans = plans.map(plan => {
-        // Ensure plan has the required 'index' property
-        if (!('index' in plan)) {
-          return { ...plan, index: plan.metadata?.level || 0 };
-        }
-        return plan;
-      }) as FloorPlan[];
+      
+      // Convert each plan to the required FloorPlan type with all required properties
+      const typedPlans: FloorPlan[] = plans.map(plan => {
+        // Create a properly typed FloorPlan with all required fields
+        const typedPlan: FloorPlan = {
+          id: plan.id || '',
+          name: plan.name || '',
+          label: plan.label || plan.name || '',
+          index: typeof plan.index !== 'undefined' ? Number(plan.index) : (plan.metadata?.level || 0),
+          strokes: Array.isArray(plan.strokes) ? plan.strokes.map(stroke => ({
+            ...stroke,
+            width: stroke.width || stroke.thickness || 1
+          })) : [],
+          walls: plan.walls || [],
+          rooms: plan.rooms || [],
+          metadata: plan.metadata || {
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            paperSize: plan.paperSize || 'CUSTOM',
+            level: plan.level || 0
+          },
+          canvasJson: plan.canvasJson || '',
+          gia: plan.gia || 0,
+          level: plan.level || 0,
+          canvasData: plan.canvasData || null,
+          createdAt: plan.createdAt || new Date().toISOString(),
+          updatedAt: plan.updatedAt || new Date().toISOString()
+        };
+        
+        return typedPlan;
+      });
       
       setFloorPlans(typedPlans);
     } catch (error) {

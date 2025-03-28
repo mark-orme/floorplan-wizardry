@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas drawing tools
  * Centralizes tool operations and state changes
@@ -108,7 +109,12 @@ export const useCanvasControllerTools = (
     zoomLevel,
     setZoomLevel,
     lineThickness,
-    historyRef
+    lineColor,        // Pass lineColor
+    historyRef,
+    floorPlans,       // Pass floorPlans
+    currentFloor,     // Pass currentFloor
+    setFloorPlans,    // Pass setFloorPlans
+    setGia            // Pass setGia
   });
 
   // Add canvas event listeners to trigger GIA calculation when objects change
@@ -151,14 +157,14 @@ export const useCanvasControllerTools = (
 
   return {
     clearDrawings: toolFunctions.clearCanvas,
-    handleToolChange: toolFunctions.setActiveTool,
-    handleUndo: toolFunctions.handleUndo,
-    handleRedo: toolFunctions.handleRedo,
+    handleToolChange: toolFunctions.handleToolChange,
+    handleUndo: toolFunctions.undo,
+    handleRedo: toolFunctions.redo,
     handleZoom: (direction: "in" | "out") => {
       if (direction === "in") {
-        toolFunctions.zoomIn();
+        toolFunctions.handleZoom(1.2);
       } else {
-        toolFunctions.zoomOut();
+        toolFunctions.handleZoom(0.8);
       }
     },
     clearCanvas: toolFunctions.clearCanvas,

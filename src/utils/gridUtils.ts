@@ -7,13 +7,10 @@
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
 import { Point } from '@/types/geometryTypes';
 import { GRID_SPACING, SMALL_GRID, LARGE_GRID } from '@/constants/numerics';
+import { GridLineType } from '@/types/fabricTypes';
 
 // Grid line type enum
-export enum GridLineType {
-  SMALL = 'small',
-  LARGE = 'large',
-  AXIS = 'axis'
-}
+export { GridLineType } from '@/types/fabricTypes';
 
 /**
  * Create a grid on the canvas
@@ -119,6 +116,49 @@ export const createGrid = (
 };
 
 /**
+ * Create complete grid with all elements
+ * @param canvas Fabric canvas
+ * @returns Grid objects
+ */
+export const createCompleteGrid = (
+  canvas: FabricCanvas,
+  width?: number,
+  height?: number
+): FabricObject[] => {
+  if (!canvas) return [];
+  
+  const canvasWidth = width || canvas.getWidth();
+  const canvasHeight = height || canvas.getHeight();
+  
+  return createGrid(canvas, canvasWidth, canvasHeight);
+};
+
+/**
+ * Calculate grid dimensions based on canvas
+ * @param canvas Fabric canvas
+ * @returns Grid dimensions object
+ */
+export const calculateGridDimensions = (canvas: FabricCanvas) => {
+  if (!canvas) {
+    return {
+      width: 0,
+      height: 0,
+      smallGridSize: SMALL_GRID,
+      largeGridSize: LARGE_GRID,
+      cellSize: GRID_SPACING
+    };
+  }
+  
+  return {
+    width: canvas.getWidth(),
+    height: canvas.getHeight(),
+    smallGridSize: SMALL_GRID,
+    largeGridSize: LARGE_GRID,
+    cellSize: GRID_SPACING
+  };
+};
+
+/**
  * Get grid cell size from grid type
  * @param gridType Grid type (small, large)
  * @returns Grid cell size in pixels
@@ -147,6 +187,104 @@ export const getGridDimensions = (canvas: FabricCanvas) => {
     height: canvas.getHeight(),
     smallGridSize: SMALL_GRID,
     largeGridSize: LARGE_GRID
+  };
+};
+
+/**
+ * Create grid lines only
+ * @param canvas Fabric canvas
+ * @param width Canvas width
+ * @param height Canvas height
+ * @returns Grid objects
+ */
+export const createGridLines = (
+  canvas: FabricCanvas,
+  width: number,
+  height: number
+): FabricObject[] => {
+  return createGrid(canvas, width, height);
+};
+
+/**
+ * Check if grid already exists on canvas
+ * @param canvas Fabric canvas
+ * @returns Whether grid exists
+ */
+export const hasExistingGrid = (canvas: FabricCanvas): boolean => {
+  if (!canvas) return false;
+  
+  const objects = canvas.getObjects();
+  return objects.some(obj => (obj as any).isGrid === true);
+};
+
+/**
+ * Remove grid from canvas
+ * @param canvas Fabric canvas
+ * @param gridObjects Grid objects to remove
+ */
+export const removeGrid = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): void => {
+  if (!canvas) return;
+  
+  gridObjects.forEach(obj => {
+    if (canvas.contains(obj)) {
+      canvas.remove(obj);
+    }
+  });
+  
+  canvas.renderAll();
+};
+
+/**
+ * Set grid visibility
+ * @param canvas Fabric canvas
+ * @param gridObjects Grid objects
+ * @param visible Visibility flag
+ */
+export const setGridVisibility = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[],
+  visible: boolean
+): void => {
+  if (!canvas) return;
+  
+  gridObjects.forEach(obj => {
+    obj.visible = visible;
+  });
+  
+  canvas.renderAll();
+};
+
+/**
+ * Check if an object is a grid object
+ * @param obj Fabric object
+ * @returns Whether object is a grid element
+ */
+export const isGridObject = (obj: FabricObject): boolean => {
+  return (obj as any).isGrid === true;
+};
+
+/**
+ * Filter grid objects from array
+ * @param objects Array of fabric objects
+ * @returns Filtered grid objects
+ */
+export const filterGridObjects = (objects: FabricObject[]): FabricObject[] => {
+  return objects.filter(isGridObject);
+};
+
+/**
+ * Get nearest grid point to given point
+ * @param point Input point
+ * @param gridSize Grid size
+ * @returns Snapped point
+ */
+export const getNearestGridPoint = (point: Point, gridSize: number = GRID_SPACING): Point => {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
   };
 };
 

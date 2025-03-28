@@ -1,57 +1,61 @@
 
 /**
- * Hook for calculating Gross Internal Area (GIA) for floor plans
+ * Floor Plan GIA Calculation Hook
  * @module useFloorPlanGIA
  */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { separateGridAndDrawingObjects } from "@/utils/canvasLayerOrdering";
-import { extractPolygonsFromObjects } from "@/utils/pathProcessingUtils";
-import { calculateTotalAreaInPixels } from "@/utils/areaCalculation";
-import { pixelsToSquareMeters } from "@/utils/geometry/conversion";
-import { PIXELS_PER_METER } from "@/constants/numerics";
+
+import { useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { extractPolygonsFromObjects } from '@/utils/pathProcessingUtils';
+import { calculatePolygonArea, calculateTotalAreaInPixels, pixelsToSquareMeters } from '@/utils/areaCalculation';
 
 /**
- * Hook that handles GIA calculations for floor plans
+ * Props for useFloorPlanGIA hook
+ * @interface UseFloorPlanGIAProps
  */
-export const useFloorPlanGIA = ({
-  fabricCanvasRef,
-  setGia
-}: {
+interface UseFloorPlanGIAProps {
+  /** Reference to fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Function to set GIA value */
   setGia: React.Dispatch<React.SetStateAction<number>>;
-}) => {
+}
+
+/**
+ * Hook for calculating Gross Internal Area (GIA) of a floor plan
+ * @param props Hook properties
+ * @returns GIA calculation utilities
+ */
+export const useFloorPlanGIA = (props: UseFloorPlanGIAProps) => {
+  const { fabricCanvasRef, setGia } = props;
+
   /**
-   * Recalculate GIA based on canvas objects
+   * Recalculate Gross Internal Area based on canvas objects
    */
   const recalculateGIA = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
+
+    // Get all objects except grid
+    const objects = canvas.getObjects().filter((obj: any) => !obj.isGrid);
     
-    try {
-      // Get only the drawing objects (exclude grid)
-      const { drawingObjects } = separateGridAndDrawingObjects(canvas);
-      
-      // Extract polygons from the drawing objects
-      const polygons = extractPolygonsFromObjects(drawingObjects);
-      
-      // For each polygon, extract its points
-      const allPoints = polygons.map(poly => poly.points);
-      
-      // Calculate the area in pixels
-      const areaInPixels = calculateTotalAreaInPixels(allPoints);
-      
-      // Convert to square meters
-      const areaInSqMeters = pixelsToSquareMeters(areaInPixels, PIXELS_PER_METER);
-      
-      // Update the GIA
-      setGia(areaInSqMeters);
-      
-    } catch (error) {
-      console.error("Error calculating GIA:", error);
+    // Extract polygons from objects
+    const polygons = extractPolygonsFromObjects(objects);
+    
+    if (polygons.length === 0) {
+      setGia(0);
+      return;
     }
+    
+    // Calculate total area in pixels
+    const areaInPixels = calculateTotalAreaInPixels(polygons);
+    
+    // Convert to square meters
+    const areaInSquareMeters = pixelsToSquareMeters(areaInPixels);
+    
+    // Update state
+    setGia(areaInSquareMeters);
   }, [fabricCanvasRef, setGia]);
-  
+
   return {
     recalculateGIA
   };

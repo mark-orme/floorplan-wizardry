@@ -27,6 +27,19 @@ export const calculatePolygonArea = (points: Point[]): number => {
 };
 
 /**
+ * Calculate total area of multiple polygons
+ * @param polygons Array of arrays of points defining polygons
+ * @returns Total area in square pixels
+ */
+export const calculateTotalAreaInPixels = (polygons: Point[][]): number => {
+  if (!polygons || polygons.length === 0) return 0;
+  
+  return polygons.reduce((total, polygon) => {
+    return total + calculatePolygonArea(polygon);
+  }, 0);
+};
+
+/**
  * Convert area from square pixels to square meters
  * @param areaInPixels Area in square pixels
  * @returns Area in square meters

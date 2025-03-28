@@ -1,83 +1,95 @@
 
 /**
- * Fabric.js object manipulation utilities
- * @module fabric/objects
+ * Fabric object utilities
+ * @module utils/fabric/objects
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+
+import { Canvas, Object as FabricObject, Point as FabricPoint } from 'fabric';
+import { Point } from '@/types/geometryTypes';
 import { isCanvasValid } from './canvasValidation';
-import logger from '@/utils/logger';
 
 /**
- * Clear all objects from canvas
- * @param canvas - Canvas to clear
- * @returns Number of objects removed
+ * Create a point object from coordinates
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns Fabric point
  */
-export const clearCanvasObjects = (canvas: FabricCanvas | null): number => {
-  if (!isCanvasValid(canvas)) return 0;
-  
-  try {
-    const objectCount = canvas!.getObjects().length;
-    canvas!.clear();
-    canvas!.requestRenderAll();
-    return objectCount;
-  } catch (error) {
-    logger.error('Error clearing canvas objects:', error);
-    return 0;
-  }
-};
+export function createFabricPoint(x: number, y: number): FabricPoint {
+  return new FabricPoint(x, y);
+}
 
 /**
- * Move canvas to a specific point
- * @param canvas - Canvas to move
- * @param x - X coordinate
- * @param y - Y coordinate
+ * Convert a regular point to a Fabric point
+ * @param point Regular point
+ * @returns Fabric point
  */
-export const canvasMoveTo = (canvas: FabricCanvas | null, x: number, y: number): void => {
-  if (!isCanvasValid(canvas)) return;
-  
-  try {
-    const vpt = canvas!.viewportTransform;
-    if (vpt && vpt.length >= 6) {
-      // Set translation components of the transform matrix
-      vpt[4] = x;
-      vpt[5] = y;
-      canvas!.requestRenderAll();
-    }
-  } catch (error) {
-    logger.error('Error moving canvas:', error);
-  }
-};
+export function toFabricPoint(point: Point): FabricPoint {
+  return new FabricPoint(point.x, point.y);
+}
 
 /**
- * Move object to front of canvas
- * @param canvas - Canvas containing object
- * @param obj - Object to move
+ * Convert a Fabric point to a regular point
+ * @param point Fabric point
+ * @returns Regular point
  */
-export const bringObjectToFront = (canvas: FabricCanvas | null, obj: FabricObject): void => {
-  if (!isCanvasValid(canvas) || !obj) return;
-  
-  try {
-    // Use canvas method to bring object to front
-    canvas!.bringObjectToFront(obj);
-    canvas!.requestRenderAll();
-  } catch (error) {
-    logger.error('Error bringing object to front:', error);
-  }
-};
+export function fromFabricPoint(point: FabricPoint): Point {
+  return { x: point.x, y: point.y };
+}
 
 /**
- * Move object to back of canvas
- * @param canvas - Canvas containing object
- * @param obj - Object to move
+ * Check if an object is selectable
+ * @param obj Fabric object
+ * @returns True if object is selectable
  */
-export const sendObjectToBack = (canvas: FabricCanvas | null, obj: FabricObject): void => {
-  if (!isCanvasValid(canvas) || !obj) return;
+export function isObjectSelectable(obj: FabricObject): boolean {
+  return obj.selectable || false;
+}
+
+/**
+ * Set object selectability
+ * @param obj Fabric object
+ * @param selectable Selectable flag
+ */
+export function setObjectSelectable(obj: FabricObject, selectable: boolean): void {
+  obj.selectable = selectable;
+}
+
+/**
+ * Get all selectable objects from canvas
+ * @param canvas Fabric canvas
+ * @returns Array of selectable objects
+ */
+export function getSelectableObjects(canvas: Canvas | null): FabricObject[] {
+  if (!isCanvasValid(canvas)) return [];
   
-  try {
-    // Use canvas method to send object to back
-    canvas!.sendObjectToBack(obj);
-    canvas!.requestRenderAll();
-  } catch (error) {
-    logger.error('Error sending object to back:', error);
-  }
-};
+  return canvas!.getObjects().filter(isObjectSelectable);
+}
+
+/**
+ * Set multiple objects' selectability
+ * @param objects Array of Fabric objects
+ * @param selectable Selectable flag
+ */
+export function setObjectsSelectable(objects: FabricObject[], selectable: boolean): void {
+  objects.forEach(obj => setObjectSelectable(obj, selectable));
+}
+
+/**
+ * Check if an object is a grid object
+ * @param obj Fabric object
+ * @returns True if object is a grid object
+ */
+export function isGridObject(obj: FabricObject): boolean {
+  return (obj as any).isGrid === true;
+}
+
+/**
+ * Get non-grid objects from canvas
+ * @param canvas Fabric canvas
+ * @returns Array of non-grid objects
+ */
+export function getNonGridObjects(canvas: Canvas | null): FabricObject[] {
+  if (!isCanvasValid(canvas)) return [];
+  
+  return canvas!.getObjects().filter(obj => !isGridObject(obj));
+}

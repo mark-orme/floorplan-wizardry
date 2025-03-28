@@ -1,3 +1,4 @@
+
 // Add type guards and make the interface compatible
 // Fix the issue at line 10 and other property access issues
 
@@ -8,6 +9,12 @@ import { Point } from '@/types/geometryTypes';
 export const hasPoints = (obj: FabricObject): boolean => {
   return 'points' in obj && Array.isArray((obj as any).points);
 };
+
+// Interface for objects with points
+interface PolygonObject extends FabricObject {
+  points?: Array<{x: number, y: number}>;
+  type?: string;
+}
 
 // Check if an object has path data
 export const hasPath = (obj: FabricObject): boolean => {
@@ -45,5 +52,3 @@ export const extractPolygonsFromObjects = (objects: FabricObject[]): Point[][] =
   
   return polygons;
 };
-
-// ... keep existing code with proper type guards
