@@ -1,9 +1,10 @@
+
 /**
  * Floor plan type definitions
  * @module floorPlanTypes
  */
 import { Point } from './geometryTypes';
-import { Wall as CoreWall } from './core/FloorPlan';
+import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom } from './core/FloorPlan';
 
 /**
  * Paper size enumeration
@@ -42,63 +43,33 @@ export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehan
  * Represents a wall in a floor plan
  * Compatible with CoreWall from core/FloorPlan
  */
-export interface Wall {
-  /** Unique identifier */
-  id: string;
+export interface Wall extends Omit<CoreWall, 'start' | 'end'> {
   /** Start point of the wall - maps to 'start' in CoreWall */
   startPoint: Point;
   /** End point of the wall - maps to 'end' in CoreWall */
   endPoint: Point;
-  /** Wall thickness in mm */
-  thickness: number;
-  /** Wall height in mm */
-  height?: number;
-  /** Wall color */
-  color?: string;
-  /** Associated room IDs */
-  roomIds?: string[];
   /** Start point for CoreWall compatibility */
-  start?: Point;
+  start: Point;
   /** End point for CoreWall compatibility */
-  end?: Point;
+  end: Point;
 }
 
 /**
  * Room definition
  * Represents a room in a floor plan
  */
-export interface Room {
-  /** Unique identifier */
-  id: string;
-  /** Room name */
-  name: string;
-  /** Room type */
-  type?: string;
-  /** Points defining the room boundary */
-  points: Point[];
-  /** Room color */
-  color?: string;
-  /** Floor level */
+export interface Room extends CoreRoom {
+  /** Room level */
   level?: number;
-  /** Room area in square meters */
-  area?: number;
 }
 
 /**
  * Stroke definition
  * Represents a drawing stroke on the canvas
  */
-export interface Stroke {
-  /** Unique identifier */
-  id: string;
-  /** Array of points defining the stroke */
-  points: Point[];
+export interface Stroke extends Omit<CoreStroke, 'type' | 'width'> {
   /** Type of stroke */
   type: StrokeType | StrokeTypeLiteral;
-  /** Stroke color */
-  color: string;
-  /** Stroke thickness in pixels */
-  thickness: number;
   /** Stroke width in pixels (equivalent to thickness for API compatibility) */
   width: number;
 }
@@ -122,11 +93,7 @@ export interface FloorPlanMetadata {
  * Floor plan definition
  * Represents a complete floor plan with all its elements
  */
-export interface FloorPlan {
-  /** Unique identifier */
-  id: string;
-  /** Floor plan name */
-  name: string;
+export interface FloorPlan extends Omit<CoreFloorPlan, 'walls' | 'rooms' | 'strokes' | 'metadata'> {
   /** Floor plan display label - now required to match core FloorPlan */
   label: string;
   /** Array of drawing strokes */
@@ -137,18 +104,12 @@ export interface FloorPlan {
   rooms?: Room[];
   /** Floor plan metadata */
   metadata?: FloorPlanMetadata;
-  /** Floor index for multi-story buildings */
-  index: number;
   /** Serialized canvas state */
   canvasJson?: string;
   /** Gross internal area in square meters */
   gia?: number;
   /** Canvas data for storage */
   canvasData?: any;
-  /** Creation timestamp */
-  createdAt?: string;
-  /** Last update timestamp */
-  updatedAt?: string;
   /** Floor level */
   level?: number;
   /** Paper size */

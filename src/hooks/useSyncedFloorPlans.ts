@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -108,7 +109,7 @@ export const useSyncedFloorPlans = () => {
       isSavingRef.current = true;
       // Convert received app floor plans to core format for storage
       // Ensure all plans have a label
-      const plansWithLabels = data.floorPlans.map((plan: FloorPlan) => ({
+      const plansWithLabels = data.floorPlans.map((plan: AppFloorPlan) => ({
         ...plan,
         label: plan.label || plan.name || ''
       }));
@@ -122,12 +123,7 @@ export const useSyncedFloorPlans = () => {
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        // Create a properly typed array for Supabase with ensured labels
-        const supabasePlans = plansWithLabels.map(plan => ({
-          ...plan,
-          label: plan.label || plan.name || ''
-        }));
-        saveToSupabase(supabasePlans);
+        saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
       }
 
       toast.info('Floor plans synchronized from another device');
@@ -192,10 +188,6 @@ export const useSyncedFloorPlans = () => {
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
-        // Convert app floor plans to core floor plans with ensured labels
-        // Explicitly cast to CoreFloorPlan[] after ensuring all required fields are present
-        const corePlans = appToCoreFloorPlans(plansWithLabels);
-        
         await saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
       }
       
@@ -207,7 +199,7 @@ export const useSyncedFloorPlans = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoggedIn, loadFromSupabase]);
+  }, [isLoggedIn, loadFromSupabase, saveToSupabase]);
 
   /**
    * Save floor plans with debouncing and multi-device synchronization
@@ -260,12 +252,8 @@ export const useSyncedFloorPlans = () => {
     if (isLoggedIn) {
       supabaseSaveTimeoutRef.current = window.setTimeout(async () => {
         try {
-          // Convert to core floor plans with required labels before saving to Supabase
-          const corePlans = appToCoreFloorPlans(plansWithLabels);
-          const success = await saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
-          if (success) {
-            logger.info('Floor plans saved to Supabase');
-          }
+          await saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
+          logger.info('Floor plans saved to Supabase');
         } catch (error) {
           logger.error('Error saving floor plans to Supabase:', error);
         } finally {
