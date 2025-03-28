@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useDrawingTools } from "@/hooks/useDrawingTools";
+import { useDrawingTools, UseDrawingToolsResult } from "@/hooks/useDrawingTools";
 import { DrawingTool } from "@/constants/drawingModes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
@@ -109,12 +109,13 @@ export const useCanvasControllerTools = (
     zoomLevel,
     setZoomLevel,
     lineThickness,
-    lineColor,        // Pass lineColor
+    lineColor,
     historyRef,
-    floorPlans,       // Pass floorPlans
-    currentFloor,     // Pass currentFloor
-    setFloorPlans,    // Pass setFloorPlans
-    setGia            // Pass setGia
+    floorPlans,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    createGrid
   });
 
   // Add canvas event listeners to trigger GIA calculation when objects change

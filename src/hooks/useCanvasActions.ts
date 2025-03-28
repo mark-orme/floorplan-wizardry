@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for canvas actions (clear, save)
  * Provides high-level operations for canvas management
@@ -7,6 +8,7 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { FloorPlan } from '@/types/floorPlanTypes';
+import { appToCoreFloorPlans } from '@/utils/floorPlanAdapter';
 import { saveFloorPlans } from "@/utils/drawing";
 import logger from "@/utils/logger";
 
@@ -118,8 +120,11 @@ export const useCanvasActions = ({
     if (!fabricCanvasRef.current) return;
     
     try {
+      // Convert app floor plans to core format for storage
+      const corePlans = appToCoreFloorPlans(floorPlans);
+      
       // First save to storage
-      saveFloorPlans(floorPlans)
+      saveFloorPlans(corePlans)
         .then(() => {
           toast.success("Floor plans saved to offline storage");
           
