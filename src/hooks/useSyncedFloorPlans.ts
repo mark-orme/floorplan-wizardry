@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -183,6 +184,7 @@ export const useSyncedFloorPlans = () => {
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
+        // Ensure we're passing data with proper labels before saving to Supabase
         await saveToSupabase(plansWithLabels);
       }
       

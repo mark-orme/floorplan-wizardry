@@ -115,7 +115,6 @@ export const useCanvasInteractions = (
     const newZoom = Math.max(0.5, Math.min(5, currentZoom + zoomDelta));
     
     // Apply zoom to the canvas
-    // Using fabric's built-in zoomToPoint method instead of constructing a Point
     canvas.zoomToPoint({ x: pointer.x, y: pointer.y }, newZoom);
     
     // Update zoom level in state

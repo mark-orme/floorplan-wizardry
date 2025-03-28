@@ -1,4 +1,3 @@
-
 /**
  * Test helpers for grid utilities
  * Provides compatibility functions for test files using older signatures
@@ -36,7 +35,7 @@ export function snapLineToAngleLegacy(start: Point, end: Point, snapAngle?: numb
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
   
   // Convert the number parameter to angle for the function
-  const snappedAngle = typeof snapAngle === 'number' ? snapAngle : 45;
+  const snappedAngle = snapToAngle(angle, snapAngle || 45);
   
   // Calculate the distance between points
   const distance = Math.sqrt(dx * dx + dy * dy);
