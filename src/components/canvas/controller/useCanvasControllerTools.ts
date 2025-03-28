@@ -10,6 +10,7 @@ import { useDrawingTools, UseDrawingToolsResult } from "@/hooks/useDrawingTools"
 import { DrawingTool } from "@/constants/drawingModes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
+import { ZoomDirection } from "@/types/drawingTypes";
 
 /**
  * Props for useCanvasControllerTools hook
@@ -60,7 +61,7 @@ interface UseCanvasControllerToolsResult {
   /** Function to redo previously undone action */
   handleRedo: () => void;
   /** Function to zoom in or out */
-  handleZoom: (direction: "in" | "out") => void;
+  handleZoom: (direction: ZoomDirection) => void;
   /** Function to clear the entire canvas */
   clearCanvas: () => void;
   /** Function to save the canvas state */
@@ -156,18 +157,21 @@ export const useCanvasControllerTools = (
     }
   }, [toolFunctions]);
 
+  // Modified handleZoom to accept string direction
+  const handleZoom = useCallback((direction: ZoomDirection): void => {
+    if (direction === "in") {
+      toolFunctions.handleZoom(1.2);
+    } else {
+      toolFunctions.handleZoom(0.8);
+    }
+  }, [toolFunctions]);
+
   return {
     clearDrawings: toolFunctions.clearCanvas,
     handleToolChange: toolFunctions.handleToolChange,
     handleUndo: toolFunctions.undo,
     handleRedo: toolFunctions.redo,
-    handleZoom: (direction: "in" | "out") => {
-      if (direction === "in") {
-        toolFunctions.handleZoom(1.2);
-      } else {
-        toolFunctions.handleZoom(0.8);
-      }
-    },
+    handleZoom,
     clearCanvas: toolFunctions.clearCanvas,
     saveCanvas: enhancedSaveCanvas,
     saveCurrentState: toolFunctions.saveCurrentState

@@ -18,7 +18,7 @@ import { DrawingTool } from "@/constants/drawingModes";
  * Wraps the canvas with necessary controllers and UI
  * @returns {JSX.Element} Rendered component
  */
-export const CanvasApp = () => {
+export const CanvasApp = (): JSX.Element => {
   // Use the canvas controller hook to get all the necessary props
   const {
     tool,
@@ -47,10 +47,9 @@ export const CanvasApp = () => {
    * Adapter function to convert direction-based zoom to level-based zoom
    * @param {ZoomDirection} direction - Zoom direction ("in" or "out")
    */
-  const handleZoomAdapter = (direction: ZoomDirection) => {
+  const handleZoomAdapter = (direction: ZoomDirection): void => {
     // Convert direction to a zoom level adjustment
-    const zoomChange = direction === "in" ? 1.2 : 0.8;
-    handleZoom(zoomChange);
+    handleZoom(direction);
   };
 
   // Create a safe debug info object with required properties for type compatibility
