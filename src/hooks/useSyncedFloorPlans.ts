@@ -195,7 +195,13 @@ export const useSyncedFloorPlans = () => {
    * @param {FloorPlan[]} newFloorPlans - The floor plans to save
    */
   const saveFloorPlansWithSync = useCallback((newFloorPlans: FloorPlan[]) => {
-    setFloorPlans(newFloorPlans);
+    // Ensure all plans have a label before any operations
+    const plansWithLabels = newFloorPlans.map(plan => ({
+      ...plan,
+      label: plan.label || plan.name // Ensure label is always set
+    }));
+    
+    setFloorPlans(plansWithLabels);
 
     // Clear any existing save timeout
     if (saveTimeoutRef.current !== null) {
@@ -209,17 +215,11 @@ export const useSyncedFloorPlans = () => {
       }
 
       try {
-        // Ensure all plans have a label before saving
-        const processedPlans = newFloorPlans.map(plan => ({
-          ...plan,
-          label: plan.label || plan.name // Ensure label is set
-        }));
-        
-        // Now convert to core floor plans with required labels
-        const corePlans = appToCoreFloorPlans(processedPlans);
+        // Convert to core floor plans with required labels
+        const corePlans = appToCoreFloorPlans(plansWithLabels);
         
         await saveFloorPlans(corePlans);
-        broadcastFloorPlanUpdate(processedPlans);
+        broadcastFloorPlanUpdate(plansWithLabels);
         lastSyncTimeRef.current = Date.now();
         logger.info('Floor plans saved locally and synced via Pusher');
       } catch (error) {
@@ -239,13 +239,7 @@ export const useSyncedFloorPlans = () => {
     if (isLoggedIn) {
       supabaseSaveTimeoutRef.current = window.setTimeout(async () => {
         try {
-          // Ensure label is set for each floor plan before saving
-          const processedPlans = newFloorPlans.map(plan => ({
-            ...plan,
-            label: plan.label || plan.name // Ensure label is set
-          }));
-          
-          const success = await saveToSupabase(processedPlans);
+          const success = await saveToSupabase(plansWithLabels);
           if (success) {
             logger.info('Floor plans saved to Supabase');
           }

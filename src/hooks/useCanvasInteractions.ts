@@ -9,7 +9,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { useCanvasState } from "./useCanvasState";
 import { useZoom } from "./useZoom";
 import { ZoomOptions } from "@/types";
-import { Point } from "@/types/core/Point";
+import { Point, toPoint } from "@/types/core/Point";
 import { DrawingState } from "@/types/core/DrawingState";
 
 /**
@@ -42,7 +42,7 @@ interface UseCanvasInteractionsResult {
 // Extend fabric Canvas with our custom properties
 interface ExtendedCanvas extends FabricCanvas {
   isPanning?: boolean;
-  lastPanPosition?: { x: number; y: number } | null;
+  lastPanPosition?: Point | null;
 }
 
 /**
@@ -144,8 +144,8 @@ export const useCanvasInteractions = (
     // Get the pointer coordinates
     const { x, y } = canvas.getPointer(event.e);
     
-    // Store the initial coordinates
-    canvas.lastPanPosition = { x, y };
+    // Store the initial coordinates as a Point
+    canvas.lastPanPosition = toPoint({ x, y });
   }, [fabricCanvasRef, tool]);
   
   /**
@@ -168,7 +168,7 @@ export const useCanvasInteractions = (
     canvas.relativePan({ x: deltaX, y: deltaY });
     
     // Update the last pan position
-    canvas.lastPanPosition = { x, y };
+    canvas.lastPanPosition = toPoint({ x, y });
   }, [fabricCanvasRef, tool]);
   
   /**
@@ -274,4 +274,3 @@ export const useCanvasInteractions = (
     drawingState: undefined // Placeholder, should be populated with actual drawing state
   };
 };
-
