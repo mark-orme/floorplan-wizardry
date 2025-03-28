@@ -1,4 +1,5 @@
 
+
 /**
  * Central type exports
  * Re-exports all types for easier imports
@@ -39,9 +40,8 @@ export type { default as GridCreationLock } from './grid/GridCreationLock';
 export type { FloorPlan as AppFloorPlan } from './floorPlanTypes';
 export type { StrokeType, PaperSize, Wall, Room } from './floorPlanTypes';
 export type { Point as GeometryPoint } from './geometryTypes';
-export type { GridDimensions, GridRenderResult } from './gridTypes';
-export type { DebugMode, DebugLevel } from './debugTypes';
 
 // Export zoom constants and types
 export { ZOOM_CONSTRAINTS } from './zoomTypes';
 export type { ZoomDirection as ZoomDirectionType } from './zoomTypes';
+

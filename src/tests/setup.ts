@@ -1,4 +1,5 @@
 
+
 import '@testing-library/jest-dom';  // Import jest-dom for toBeInTheDocument
 import { expect } from 'vitest';
 import { vi } from 'vitest';
@@ -196,3 +197,4 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   },
   configurable: true
 });
+

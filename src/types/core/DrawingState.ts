@@ -26,9 +26,9 @@ export interface DrawingState {
   /** Start Y coordinate */
   startY: number;
   /** End X coordinate */
-  endX?: number;
+  endX: number;
   /** End Y coordinate */
-  endY?: number;
+  endY: number;
   /** Current path being drawn */
   currentPath?: FabricPath | null;
   /** Whether to use pressure sensitivity */
