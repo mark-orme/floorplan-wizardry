@@ -8,6 +8,49 @@ import { Canvas, Object as FabricObject, Line } from "fabric";
 import logger from "../logger";
 
 /**
+ * Dumps the current state of the grid for debugging
+ * Logs canvas dimensions and grid object information to the console
+ * 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Array of grid objects
+ * @returns {void}
+ */
+export const dumpGridState = (
+  canvas: Canvas,
+  gridObjects: FabricObject[]
+): void => {
+  if (!canvas) {
+    console.error("Cannot dump grid state: Canvas is null");
+    return;
+  }
+  
+  console.group("Grid Debug Information");
+  
+  // Log canvas info
+  console.log("Canvas dimensions:", {
+    width: canvas.width,
+    height: canvas.height,
+    zoom: canvas.getZoom?.() || 1
+  });
+  
+  // Log grid objects
+  console.log("Grid objects:", {
+    total: gridObjects.length,
+    onCanvas: gridObjects.filter(obj => canvas.contains(obj)).length,
+    missing: gridObjects.filter(obj => !canvas.contains(obj)).length
+  });
+  
+  // Log canvas objects
+  const allObjects = canvas.getObjects();
+  console.log("All canvas objects:", {
+    total: allObjects.length,
+    gridObjects: allObjects.filter(obj => obj.objectType === 'grid').length
+  });
+  
+  console.groupEnd();
+};
+
+/**
  * Create a basic emergency grid
  * Used as a last resort when all other grid creation methods fail
  * Creates a simple grid with minimal styling
@@ -91,17 +134,18 @@ export const createBasicEmergencyGrid = (
  * 
  * @param {Canvas} canvas - The Fabric canvas instance
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
- * @returns {boolean} True if grid was created successfully
+ * @returns {FabricObject[]} Array of created grid objects
  */
 export const forceCreateGrid = (
   canvas: Canvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
-): boolean => {
+): FabricObject[] => {
   try {
-    createBasicEmergencyGrid(canvas, gridLayerRef);
-    return gridLayerRef.current.length > 0;
+    const gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+    return gridObjects;
   } catch (error) {
     logger.error("Force grid creation failed:", error);
-    return false;
+    return [];
   }
 };
+

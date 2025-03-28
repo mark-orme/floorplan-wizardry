@@ -12,6 +12,17 @@ interface GridManagerState {
   gridCreationInProgress: boolean;
   createAttempt: number;
   safetyTimeout: number | null;
+  
+  // Add missing properties needed by gridLocking.ts and gridThrottling.ts
+  lastAttemptTime: number;
+  throttleInterval: number;
+  lastCreationTime: number;
+  consecutiveResets: number;
+  creationLock: {
+    id: number;
+    timestamp: number;
+    isLocked: boolean;
+  };
 }
 
 // Initialize grid manager state
@@ -19,7 +30,18 @@ export const gridManager: GridManagerState = {
   lastGridCreationTime: 0,
   gridCreationInProgress: false,
   createAttempt: 0,
-  safetyTimeout: null
+  safetyTimeout: null,
+  
+  // Initialize the added properties
+  lastAttemptTime: 0,
+  throttleInterval: 1000, // Default throttle interval in ms
+  lastCreationTime: 0,
+  consecutiveResets: 0,
+  creationLock: {
+    id: 0,
+    timestamp: 0,
+    isLocked: false
+  }
 };
 
 /**
@@ -49,3 +71,4 @@ export const resetGridProgress = (): void => {
     gridManager.safetyTimeout = null;
   }
 };
+
