@@ -55,6 +55,10 @@ export const typescriptRules = {
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/prefer-ts-expect-error": "error",
     
+    // Additional strict rules requested
+    "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/strict-boolean-expressions": "warn",
+    
     // TypeScript banned types and naming
     "@typescript-eslint/ban-types": ["error", {
       "types": {
