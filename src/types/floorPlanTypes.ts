@@ -27,6 +27,12 @@ export enum PaperSize {
 }
 
 /**
+ * String literal type for stroke types
+ * Types of strokes that can be drawn
+ */
+export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
+
+/**
  * Stroke type enumeration
  * Types of strokes that can be drawn
  */
@@ -41,9 +47,6 @@ export enum StrokeType {
   ROOM = 'room',
   FREEHAND = 'freehand'
 }
-
-// String literal type for compatibility with core StrokeType
-export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
 
 /**
  * Wall definition

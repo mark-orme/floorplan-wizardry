@@ -6,7 +6,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
-import { FloorPlan, Stroke, StrokeType, PaperSize } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Point';
 
 describe('useFloorPlanDrawing', () => {
@@ -25,8 +25,8 @@ describe('useFloorPlanDrawing', () => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     metadata: {
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       paperSize: PaperSize.A4,
       level: 0
     }
@@ -138,7 +138,7 @@ describe('useFloorPlanDrawing', () => {
     const newStroke = {
       id: "test-stroke-1",
       points: [{ x: 10, y: 10 }, { x: 20, y: 20 }],
-      type: "line" as StrokeType,
+      type: "line" as StrokeTypeLiteral,
       color: "#000000",
       thickness: 2,
       width: 2 // Add width property
@@ -173,7 +173,7 @@ describe('useFloorPlanDrawing', () => {
       strokes: [{
         id: "test-stroke-1",
         points: [{ x: 10, y: 10 }, { x: 20, y: 20 }],
-        type: "line" as StrokeType,
+        type: "line" as StrokeTypeLiteral,
         color: "#000000",
         thickness: 2,
         width: 2 // Add width property

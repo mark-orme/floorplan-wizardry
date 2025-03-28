@@ -6,7 +6,7 @@
  */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from 'fabric';
-import { FloorPlan, Stroke, StrokeType } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, StrokeType, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 import { DrawingTool } from '@/hooks/useCanvasState';
 import { Point } from '@/types/drawingTypes';
 import { v4 as uuidv4 } from 'uuid';
@@ -68,22 +68,22 @@ const extractPointsFromPath = (path: FabricPath): Point[] => {
  * @param tool - The drawing tool
  * @returns The corresponding stroke type
  */
-const drawingToolToStrokeType = (tool?: DrawingTool): StrokeType => {
-  if (!tool) return StrokeType.LINE;
+const drawingToolToStrokeType = (tool?: DrawingTool): StrokeTypeLiteral => {
+  if (!tool) return 'line';
   
   // Map drawing tools to stroke types
   switch (tool) {
     case 'wall':
-      return StrokeType.WALL;
+      return 'wall';
     case 'room':
-      return StrokeType.ROOM;
+      return 'room';
     case 'line':
     case 'straightLine':
-      return StrokeType.LINE;
+      return 'line';
     case 'draw':
-      return StrokeType.FREEHAND;
+      return 'freehand';
     default:
-      return StrokeType.LINE;
+      return 'line';
   }
 };
 
