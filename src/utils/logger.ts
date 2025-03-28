@@ -26,8 +26,8 @@ enum LogLevel {
  */
 let currentLogLevel: LogLevel = 
   process.env.NODE_ENV === 'production' 
-    ? LogLevel.WARN    // Default to warnings and errors in production
-    : LogLevel.DEBUG;  // Full logging in development
+    ? LogLevel.ERROR    // Only errors in production (reduced from WARN)
+    : LogLevel.INFO;    // Reduced from DEBUG to INFO in development
 
 /**
  * Check if a specific log level is currently enabled
@@ -60,7 +60,7 @@ const setLogLevel = (level: LogLevel | string): void => {
   }
   
   // Log the level change (except in NONE mode)
-  if (currentLogLevel > LogLevel.NONE) {
+  if (currentLogLevel > LogLevel.NONE && process.env.NODE_ENV === 'development') {
     console.log(`[Logger] Log level set to: ${LogLevel[currentLogLevel]}`);
   }
 };

@@ -103,7 +103,9 @@ export const createGridLayer = (
     
     return gridObjects;
   } catch (error) {
-    logger.error("Error creating grid layer:", error);
+    if (process.env.NODE_ENV === 'development') {
+      logger.error("Error creating grid layer:", error);
+    }
     return [];
   }
 };
@@ -171,10 +173,14 @@ export const createFallbackGrid = (
     // Store the created grid objects in the ref
     gridLayerRef.current = gridObjects;
     
-    logger.info(`Fallback grid created with ${gridObjects.length} objects`);
+    if (process.env.NODE_ENV === 'development') {
+      logger.info(`Fallback grid created with ${gridObjects.length} objects`);
+    }
     return gridObjects;
   } catch (error) {
-    logger.error("Error creating fallback grid:", error);
+    if (process.env.NODE_ENV === 'development') {
+      logger.error("Error creating fallback grid:", error);
+    }
     return [];
   }
 };

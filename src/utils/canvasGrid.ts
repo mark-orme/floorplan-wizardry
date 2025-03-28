@@ -96,8 +96,8 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ): FabricObject[] => {
-  if (process.env.NODE_ENV === 'development') {
-    logger.debug("createGrid called with dimensions:", canvasDimensions);
+  // Only log detailed information in development mode, and only once per creation
+  if (process.env.NODE_ENV === 'development' && !gridCreationInProgress) {
     console.log("🌐 createGrid called with canvas dimensions:", {
       width: canvas?.width,
       height: canvas?.height,
@@ -109,21 +109,20 @@ export const createGrid = (
   
   // Check if another grid creation is in progress, if so return current grid
   if (gridCreationInProgress) {
-    logger.info("Grid creation already in progress, skipping");
     return gridLayerRef.current;
   }
   
   // Prevent excessive creation attempts with cooldown
   const now = Date.now();
   if (now - lastGridCreationTime < GRID_CREATION_COOLDOWN) {
-    logger.info(`Grid creation throttled. Last creation: ${lastGridCreationTime}, cooldown: ${GRID_CREATION_COOLDOWN}ms`);
     return gridLayerRef.current;
   }
   
   // Check if we've exceeded max attempts
   if (createAttempt >= MAX_CREATE_ATTEMPTS) {
-    logger.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
-    console.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
+    }
     toast.error("Grid creation abandoned. Please refresh the page.");
     return gridLayerRef.current;
   }
@@ -148,10 +147,6 @@ export const createGrid = (
     
     // Check if we should throttle
     if (shouldThrottleCreation()) {
-      if (process.env.NODE_ENV === 'development') {
-        logger.warn("Throttling grid creation due to too many recent attempts");
-      }
-      
       gridCreationInProgress = false;
       return gridLayerRef.current;
     }
@@ -167,7 +162,9 @@ export const createGrid = (
     }
     
     // Create the grid layer directly - immediate mode for better reliability
-    logger.info("Creating grid - implementation starting");
+    if (process.env.NODE_ENV === 'development') {
+      logger.info("Creating grid - implementation starting");
+    }
     
     // ACTUAL IMPLEMENTATION INSTEAD OF PLACEHOLDER
     const createGridLines = () => {
@@ -243,8 +240,9 @@ export const createGrid = (
     const gridObjects = createGridLines();
     
     if (!gridObjects || gridObjects.length === 0) {
-      logger.error("⚠️ createGridLayer returned empty array, trying fallback");
-      console.error("⚠️ Grid creation failed: createGridLayer returned no objects");
+      if (process.env.NODE_ENV === 'development') {
+        console.error("⚠️ Grid creation failed: createGridLayer returned no objects");
+      }
       
       // Try fallback grid immediately
       const fallbackGrid = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
@@ -267,13 +265,15 @@ export const createGrid = (
     
     // Check if creation took too long
     const creationTime = performance.now() - startTime;
-    if (creationTime > GRID_CREATION_CONSTANTS.MAX_CREATION_TIME) {
+    if (creationTime > GRID_CREATION_CONSTANTS.MAX_CREATION_TIME && process.env.NODE_ENV === 'development') {
       logger.warn(`Grid creation took ${creationTime.toFixed(0)}ms, which exceeds the recommended limit`);
     }
     
     // Force a render
     canvas.requestRenderAll();
-    logger.info("Grid creation completed successfully");
+    if (process.env.NODE_ENV === 'development') {
+      logger.info("Grid creation completed successfully");
+    }
     createAttempt = 0; // Reset attempt counter on success
     toast.success(TOAST_MESSAGES.GRID_CREATED);
     
@@ -298,12 +298,16 @@ export const createGrid = (
     
     // Try fallback grid on error
     try {
-      logger.info("Attempting fallback grid after error");
+      if (process.env.NODE_ENV === 'development') {
+        logger.info("Attempting fallback grid after error");
+      }
       const fallbackResult = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
       gridCreationInProgress = false;
       return fallbackResult;
     } catch (fallbackError) {
-      logger.error("Even fallback grid creation failed:", fallbackError);
+      if (process.env.NODE_ENV === 'development') {
+        logger.error("Even fallback grid creation failed:", fallbackError);
+      }
       toast.error(TOAST_MESSAGES.ALL_METHODS_FAILED);
       gridCreationInProgress = false;
       return [];
