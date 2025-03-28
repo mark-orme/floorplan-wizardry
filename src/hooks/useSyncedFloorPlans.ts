@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -18,9 +19,10 @@ import {
 import { useSupabaseFloorPlans } from './useSupabaseFloorPlans';
 import logger from '@/utils/logger';
 import { 
-  appToCoreFloorPlans
+  appToCoreFloorPlans,
+  coreToAppFloorPlans
 } from '@/utils/floorPlanAdapter';
-import { adaptFloorPlans, coreToAppFloorPlans } from '@/utils/typeAdapters';
+import { adaptFloorPlans } from '@/utils/typeAdapters';
 
 /**
  * Hook for managing floor plans with real-time sync across devices
@@ -126,8 +128,8 @@ export const useSyncedFloorPlans = () => {
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
-        // No need for conversion as saveToSupabase expects CoreFloorPlan[]
-        await saveToSupabase(localData);
+        // Use adapter to convert before sending to Supabase
+        await saveToSupabase(coreToAppFloorPlans(localData));
       }
       
       return plansWithLabels;
@@ -193,7 +195,8 @@ export const useSyncedFloorPlans = () => {
         try {
           // Convert to core floor plans with required labels using our adapter
           const corePlans = appToCoreFloorPlans(plansWithLabels);
-          await saveToSupabase(corePlans);
+          // Use adapter to convert before sending to Supabase
+          await saveToSupabase(coreToAppFloorPlans(corePlans));
           logger.info('Floor plans saved to Supabase');
         } catch (error) {
           logger.error('Error saving floor plans to Supabase:', error);
@@ -253,8 +256,8 @@ export const useSyncedFloorPlans = () => {
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        // Use the corePlans which are already converted
-        saveToSupabase(corePlans);
+        // Use adapter to convert before sending to Supabase
+        saveToSupabase(coreToAppFloorPlans(corePlans));
       }
 
       toast.info('Floor plans synchronized from another device');
