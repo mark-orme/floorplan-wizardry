@@ -1,12 +1,11 @@
 
 /**
- * Canvas event handling hooks index
- * Re-exports all canvas event hooks for easier imports
+ * Canvas events module
  * @module canvas-events
  */
 
-// Import and re-export types
-export type { 
+// Export all types from types.ts
+export type {
   EventHandlerResult,
   UseZoomTrackingProps,
   UseZoomTrackingResult,
@@ -14,8 +13,8 @@ export type {
   UseObjectEventsProps,
   UseBrushSettingsProps,
   UseKeyboardEventsProps,
-  ZoomOptions,
   ZoomDirection,
+  ZoomOptions,
   CanvasEvents,
   EventHandlerMap,
   BaseEventHandlerProps,
@@ -25,25 +24,13 @@ export type {
   UseCanvasHandlersProps
 } from './types';
 
-// Import all event hooks
-import { useBrushSettings } from './useBrushSettings';
-import { useCanvasHandlers } from './useCanvasHandlers';
-import { useKeyboardEvents } from './useKeyboardEvents';
-import { useMouseEvents } from './useMouseEvents';
-import { useObjectEvents } from './useObjectEvents';
-import { usePathEvents } from './usePathEvents';
-import { useZoomTracking } from './useZoomTracking';
-
-// Re-export all hooks
-export {
-  useBrushSettings,
-  useCanvasHandlers,
-  useKeyboardEvents,
-  useMouseEvents,
-  useObjectEvents,
-  usePathEvents,
-  useZoomTracking
-};
-
-// Constants from the types module
+// Export constants
 export { ZOOM_LEVEL_CONSTANTS } from './types';
+
+// Export hooks
+export { useCanvasHandlers } from './useCanvasHandlers';
+export { useZoomTracking } from './useZoomTracking';
+export { usePathEvents } from './usePathEvents';
+export { useObjectEvents } from './useObjectEvents';
+export { useBrushSettings } from './useBrushSettings';
+export { useKeyboardEvents } from './useKeyboardEvents';

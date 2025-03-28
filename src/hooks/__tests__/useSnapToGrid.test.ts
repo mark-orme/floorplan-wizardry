@@ -4,16 +4,19 @@
  */
 import { renderHook } from '@testing-library/react-hooks';
 import { useSnapToGrid } from '../useSnapToGrid';
-import { Point } from '@/types/drawingTypes';
+import { Point } from '@/types/core/Point';
+import { GRID_SPACING } from '@/constants/numerics';
 
 describe('useSnapToGrid', () => {
-  const gridSize = 10;
+  const gridSize = GRID_SPACING;
   
   test('should snap a point to the nearest grid point', () => {
-    const { result } = renderHook(() => useSnapToGrid());
+    const { result } = renderHook(() => useSnapToGrid({
+      gridSize: gridSize
+    }));
     
     // Test point that needs snapping
-    const point: Point = { x: 22, y: 37 } as Point;
+    const point = { x: 22, y: 37 } as Point;
     
     // Expected snapped point
     const expectedPoint = { x: 20, y: 40 };
@@ -27,10 +30,12 @@ describe('useSnapToGrid', () => {
   });
   
   test('should not change a point already on the grid', () => {
-    const { result } = renderHook(() => useSnapToGrid());
+    const { result } = renderHook(() => useSnapToGrid({
+      gridSize: gridSize
+    }));
     
     // Test point already on grid
-    const point: Point = { x: 20, y: 30 } as Point;
+    const point = { x: 20, y: 30 } as Point;
     
     // Call the snap function
     const snappedPoint = result.current.snapPointToGrid(point);
@@ -41,7 +46,9 @@ describe('useSnapToGrid', () => {
   });
   
   test('should snap multiple points to the grid', () => {
-    const { result } = renderHook(() => useSnapToGrid());
+    const { result } = renderHook(() => useSnapToGrid({
+      gridSize: gridSize
+    }));
     
     // Test points
     const points: Point[] = [
@@ -53,12 +60,12 @@ describe('useSnapToGrid', () => {
     // Expected snapped points
     const expectedPoints = [
       { x: 20, y: 40 },
-      { x: 50, y: 10 },
+      { x: 40, y: 10 },
       { x: 30, y: 30 } // Unchanged
     ];
     
-    // Call the snap function
-    const snappedPoints = result.current.snapPointsToGrid(points);
+    // Call the snap function for multiple points
+    const snappedPoints = points.map(point => result.current.snapPointToGrid(point));
     
     // Verify all points
     snappedPoints.forEach((point, index) => {

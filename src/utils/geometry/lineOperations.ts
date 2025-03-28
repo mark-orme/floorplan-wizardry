@@ -3,7 +3,7 @@
  * Line operation utilities
  * @module geometry/lineOperations
  */
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types';
 import { PIXELS_PER_METER } from '@/constants/numerics';
 
 /**
@@ -62,7 +62,12 @@ export const isExactGridMultiple = (value: number, gridSize: number): boolean =>
   return Math.abs(value % gridSize) < 0.001;
 };
 
-// Fix for line operations calculation on line 95
+/**
+ * Correct an angle calculation by snapping to the nearest multiple of the step
+ * @param angle - The angle in radians
+ * @param step - The step size in radians
+ * @returns The corrected angle
+ */
 export const correctAngleCalculation = (angle: number, step: number): number => {
   return Math.round(angle / step) * step;
 };

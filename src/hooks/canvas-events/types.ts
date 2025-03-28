@@ -6,7 +6,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject, Point as FabricPoint } from "fabric";
 import { DrawingTool } from "@/constants/drawingModes";
-import { ZOOM_CONSTRAINTS } from "@/constants/numerics";
+import { ZOOM_CONSTRAINTS } from "@/types/zoomTypes";
 
 /**
  * Result of an event handler registration
@@ -133,6 +133,7 @@ export interface CanvasEvents {
   'mouse:up': any;
   'path:created': any;
   'zoom:updated': any;
+  'zoom:changed': any;
   [key: string]: any; // Allow string indexing
 }
 

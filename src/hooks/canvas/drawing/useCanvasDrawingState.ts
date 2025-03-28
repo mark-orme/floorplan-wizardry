@@ -4,8 +4,9 @@
  * @module canvas/drawing/useCanvasDrawingState
  */
 import { useState } from 'react';
-import { DrawingState } from '@/types/drawingTypes';
-import { createPoint } from '@/types/geometryTypes';
+import { DrawingState } from '@/types';
+import { createPoint } from '@/types/core/Point';
+import { Path as FabricPath } from 'fabric';
 
 /**
  * Default drawing state with all required properties
@@ -17,6 +18,8 @@ const DEFAULT_DRAWING_STATE: DrawingState = {
   lastY: 0,
   startX: 0,
   startY: 0,
+  endX: 0,
+  endY: 0,
   currentPath: null,
   usePressure: false,
   stylusDetected: false,
@@ -29,7 +32,11 @@ const DEFAULT_DRAWING_STATE: DrawingState = {
   selectionActive: false,
   points: [],
   distance: null,
-  cursorPosition: null
+  cursorPosition: null,
+  snapToGrid: true,
+  toolType: 'line',
+  width: 2,
+  color: '#000000'
 };
 
 /**

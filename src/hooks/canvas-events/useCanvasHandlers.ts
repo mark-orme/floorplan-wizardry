@@ -5,7 +5,12 @@
  */
 import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { EventHandlerResult, UseCanvasHandlersProps, EventHandlerMap, CanvasEvents } from './types';
+import { EventHandlerResult, UseCanvasHandlersProps } from './types';
+
+// Define a type that allows string indexing for any event
+type GenericEventMap = {
+  [key: string]: any;
+};
 
 /**
  * Hook for managing generic canvas event handlers
@@ -27,8 +32,9 @@ export const useCanvasHandlers = ({
     
     // Register each handler
     Object.entries(handlers).forEach(([eventName, handler]) => {
-      // Type assertion to satisfy TypeScript
-      canvas.on(eventName as keyof CanvasEvents, handler);
+      // Use type assertion with string index to allow any event name
+      (canvas as unknown as { on: (event: string, handler: any) => void })
+        .on(eventName, handler);
     });
   }, [fabricCanvasRef, handlers]);
   
@@ -41,8 +47,9 @@ export const useCanvasHandlers = ({
     
     // Unregister each handler
     Object.entries(handlers).forEach(([eventName, handler]) => {
-      // Type assertion to satisfy TypeScript
-      canvas.off(eventName as keyof CanvasEvents, handler);
+      // Use type assertion with string index to allow any event name
+      (canvas as unknown as { off: (event: string, handler: any) => void })
+        .off(eventName, handler);
     });
   }, [fabricCanvasRef, handlers]);
   

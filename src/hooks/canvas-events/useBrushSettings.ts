@@ -1,100 +1,76 @@
 
 /**
- * Hook for canvas brush settings
+ * Hook for managing brush settings
  * @module canvas-events/useBrushSettings
  */
-import { useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { EventHandlerResult, UseBrushSettingsProps } from './types';
-import { DrawingTool } from '@/constants/drawingModes';
+import { useCallback, useEffect } from 'react';
+import { UseBrushSettingsProps, EventHandlerResult } from './types';
 
 /**
- * Default brush width
- */
-const DEFAULT_BRUSH_WIDTH = 2;
-
-/**
- * Default brush color
- */
-const DEFAULT_BRUSH_COLOR = '#000000';
-
-/**
- * Hook for managing brush settings in the canvas
+ * Hook for managing brush settings on the canvas
  * 
  * @param {UseBrushSettingsProps} props - Properties for the hook
- * @returns {EventHandlerResult} - Event handler result with cleanup function
+ * @returns {EventHandlerResult} - Event handler result
  */
-export const useBrushSettings = ({ 
-  fabricCanvasRef, 
+export const useBrushSettings = ({
+  fabricCanvasRef,
   tool,
-  lineColor = DEFAULT_BRUSH_COLOR,
-  lineThickness = DEFAULT_BRUSH_WIDTH
+  lineColor = '#000000',
+  lineThickness = 2
 }: UseBrushSettingsProps): EventHandlerResult => {
   
   /**
-   * Initialize brush settings
+   * Update brush settings based on current tool and preferences
    */
-  const initializeBrush = useCallback(() => {
+  const updateBrushSettings = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-
-    try {
+    
+    // Only update brush settings if in drawing mode
+    if (tool === 'draw' || tool === 'straightLine') {
       if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.width = lineThickness || DEFAULT_BRUSH_WIDTH;
-        canvas.freeDrawingBrush.color = lineColor || DEFAULT_BRUSH_COLOR;
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
       }
-    } catch (error) {
-      console.error('Error initializing brush:', error);
     }
-  }, [fabricCanvasRef, lineColor, lineThickness]);
-
-  /**
-   * Update brush settings when the tool changes
-   */
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    // Only set drawing mode when relevant tools are selected
+    
+    // Set drawing mode based on tool
     canvas.isDrawingMode = tool === 'draw';
     
-    // Initialize brush if it exists
-    if (canvas.freeDrawingBrush) {
-      initializeBrush();
+    // Enable/disable selection based on tool
+    if (tool === 'select') {
+      canvas.selection = true;
+    } else {
+      canvas.selection = false;
     }
-
-    return () => {
-      // Clean up
-      if (canvas && canvas.freeDrawingBrush) {
-        canvas.isDrawingMode = false;
-      }
-    };
-  }, [fabricCanvasRef, tool, initializeBrush]);
-
+  }, [fabricCanvasRef, tool, lineColor, lineThickness]);
+  
   /**
    * Register event handlers
    */
   const register = useCallback(() => {
-    initializeBrush();
-  }, [initializeBrush]);
-
+    updateBrushSettings();
+  }, [updateBrushSettings]);
+  
   /**
    * Unregister event handlers
    */
   const unregister = useCallback(() => {
-    // Nothing to unregister for brush settings
+    // No event handlers to remove
   }, []);
-
+  
   /**
    * Clean up resources
    */
   const cleanup = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (canvas && canvas.freeDrawingBrush) {
-      canvas.isDrawingMode = false;
-    }
-  }, [fabricCanvasRef]);
-
+    unregister();
+  }, [unregister]);
+  
+  // Update brush settings when tool or settings change
+  useEffect(() => {
+    updateBrushSettings();
+  }, [tool, lineColor, lineThickness, updateBrushSettings]);
+  
   return {
     register,
     unregister,
