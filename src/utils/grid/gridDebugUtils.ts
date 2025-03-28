@@ -15,10 +15,10 @@ import logger from "../logger";
  * @param {FabricObject[]} gridObjects - Array of grid objects
  * @returns {void}
  */
-export const dumpGridState = (
+export function dumpGridState(
   canvas: Canvas,
   gridObjects: FabricObject[]
-): void => {
+): void {
   if (!canvas) {
     console.error("Cannot dump grid state: Canvas is null");
     return;
@@ -48,7 +48,7 @@ export const dumpGridState = (
   });
   
   console.groupEnd();
-};
+}
 
 /**
  * Create a basic emergency grid
@@ -59,10 +59,10 @@ export const dumpGridState = (
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
  * @returns {FabricObject[]} Array of created grid objects
  */
-export const createBasicEmergencyGrid = (
+export function createBasicEmergencyGrid(
   canvas: Canvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
+): FabricObject[] {
   try {
     if (process.env.NODE_ENV === 'development') {
       logger.info("Creating basic emergency grid");
@@ -126,7 +126,7 @@ export const createBasicEmergencyGrid = (
     logger.error("Error creating emergency grid:", error);
     return [];
   }
-};
+}
 
 /**
  * Force creation of a grid for debugging purposes
@@ -136,10 +136,10 @@ export const createBasicEmergencyGrid = (
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
  * @returns {FabricObject[]} Array of created grid objects
  */
-export const forceCreateGrid = (
+export function forceCreateGrid(
   canvas: Canvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
+): FabricObject[] {
   try {
     const gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
     return gridObjects;
@@ -147,5 +147,4 @@ export const forceCreateGrid = (
     logger.error("Force grid creation failed:", error);
     return [];
   }
-};
-
+}

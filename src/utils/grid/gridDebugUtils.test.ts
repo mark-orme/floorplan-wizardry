@@ -57,10 +57,7 @@ describe("Grid Debug Utilities", () => {
   test("createBasicEmergencyGrid creates horizontal and vertical lines", () => {
     const result = createBasicEmergencyGrid(canvas, gridLayerRef);
     
-    // For 800x600 canvas with 50px spacing:
-    // Horizontal lines: Math.floor(600/50) + 1 = 13
-    // Vertical lines: Math.floor(800/50) + 1 = 17
-    // Total: 30 lines
+    // For a real canvas with appropriate dimensions, we'd expect grid objects to be created
     expect(result.length).toBeGreaterThan(0);
     expect(gridLayerRef.current).toBe(result);
   });
@@ -83,4 +80,3 @@ describe("Grid Debug Utilities", () => {
     expect(console.error).toHaveBeenCalled();
   });
 });
-
