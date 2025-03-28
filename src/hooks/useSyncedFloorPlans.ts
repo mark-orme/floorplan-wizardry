@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -93,7 +92,7 @@ export const useSyncedFloorPlans = () => {
           logger.info('Loaded floor plans from Supabase');
           
           // Convert core floor plans to app floor plans using our adapter
-          const appData = coreToAppFloorPlans(supabaseData);
+          const appData = adaptFloorPlans(supabaseData);
           
           // Ensure all plans have labels
           const plansWithLabels = appData.map(plan => ({
@@ -115,7 +114,7 @@ export const useSyncedFloorPlans = () => {
       const localData = await loadFloorPlans();
       
       // Convert core floor plans to app floor plans using our adapter
-      const appData = coreToAppFloorPlans(localData);
+      const appData = adaptFloorPlans(localData);
       
       // Ensure all plans have labels
       const plansWithLabels = appData.map(plan => ({
@@ -254,7 +253,7 @@ export const useSyncedFloorPlans = () => {
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        // Convert to proper type using our adapter
+        // Use the corePlans which are already converted
         saveToSupabase(corePlans);
       }
 
