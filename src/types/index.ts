@@ -30,7 +30,7 @@ export type {
 export { createPoint } from './geometryTypes';
 export type { PerformanceStats } from './core/DebugInfo';
 export { createDefaultDrawingState } from './core/DrawingState';
-export type { createFloorPlan } from './core/FloorPlan';
+export { createFloorPlan } from './core/FloorPlan';
 
 // Drawing types
 export type { default as GridCreationLock } from './grid/GridCreationLock';

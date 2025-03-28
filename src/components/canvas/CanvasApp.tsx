@@ -1,90 +1,72 @@
 
-import { Canvas } from "@/components/Canvas";
-import { CanvasLayout } from "@/components/CanvasLayout";
-import { useCanvasController } from "@/components/canvas/controller/CanvasController";
-import { ZOOM_MULTIPLIERS, ZoomDirection } from "@/constants/zoomConstants";
-import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
-import { DebugInfoState } from "@/types/debugTypes";
-import { DrawingTool } from "@/constants/drawingModes";
+import React from 'react';
+import { useCanvasController } from './controller/CanvasController';
+import { Toolbar } from './Toolbar';
+import { Sidebar } from './Sidebar';
+import { DebugPanel } from './debug/DebugPanel';
 
 /**
- * Canvas application component
- * Wraps the canvas with necessary controllers and UI
- * 
- * The Canvas app orchestrates the main drawing functionality by:
- * 1. Managing drawing tools and state
- * 2. Handling user interactions (zoom, undo/redo, save)
- * 3. Providing UI controls through CanvasLayout
- * 
+ * Main canvas application component
+ * Handles layout and integration of canvas components
  * @returns {JSX.Element} Rendered component
  */
-export const CanvasApp = () => {
-  // Use the canvas controller hook to get all the necessary props
+export const CanvasApp: React.FC = (): JSX.Element => {
   const {
-    tool,
-    gia,
-    floorPlans,
-    currentFloor,
     debugInfo,
-    lineThickness,
-    lineColor,
-    canvasRef,
+    tool,
     handleToolChange,
     handleUndo,
     handleRedo,
-    handleZoom,
     clearCanvas,
     saveCanvas,
     deleteSelectedObjects,
-    handleFloorSelect,
-    handleAddFloor,
+    lineThickness,
+    lineColor,
     handleLineThicknessChange,
     handleLineColorChange,
-    openMeasurementGuide
+    floorPlans,
+    currentFloor,
+    handleFloorSelect,
+    handleAddFloor,
+    gia
   } = useCanvasController();
 
-  /**
-   * Adapter function to convert direction-based zoom to level-based zoom
-   * Maps "in"/"out" directions to appropriate zoom factors
-   * 
-   * @param {ZoomDirection} direction - Zoom direction ("in" or "out")
-   */
-  const handleZoomAdapter = (direction: ZoomDirection) => {
-    // Convert direction to a zoom level adjustment using constants
-    const zoomChange = direction === "in" ? ZOOM_MULTIPLIERS.IN : ZOOM_MULTIPLIERS.OUT;
-    handleZoom(zoomChange);
-  };
-
-  // Create a safe debug info object with required properties for type compatibility
-  const safeDebugInfo: DebugInfoState = {
-    ...DEFAULT_DEBUG_STATE,
-    ...(debugInfo || {})
-  };
-
   return (
-    <CanvasLayout
-      tool={tool as DrawingTool}
-      gia={gia}
-      floorPlans={floorPlans}
-      currentFloor={currentFloor}
-      debugInfo={safeDebugInfo}
-      canvasRef={canvasRef}
-      lineThickness={lineThickness}
-      lineColor={lineColor}
-      onToolChange={handleToolChange as (tool: DrawingTool) => void}
-      onUndo={handleUndo}
-      onRedo={handleRedo}
-      onZoom={handleZoomAdapter}
-      onClear={clearCanvas}
-      onSave={saveCanvas}
-      onDelete={deleteSelectedObjects}
-      onFloorSelect={handleFloorSelect}
-      onAddFloor={handleAddFloor}
-      onLineThicknessChange={handleLineThicknessChange}
-      onLineColorChange={handleLineColorChange}
-      onShowMeasurementGuide={openMeasurementGuide}
-    >
-      <Canvas />
-    </CanvasLayout>
+    <div className="flex h-full">
+      {/* Sidebar */}
+      <Sidebar 
+        floorPlans={floorPlans}
+        currentFloor={currentFloor}
+        onFloorSelect={handleFloorSelect}
+        onAddFloor={handleAddFloor}
+        gia={gia}
+      />
+      
+      {/* Main content */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Toolbar */}
+        <Toolbar 
+          activeTool={tool}
+          onToolChange={handleToolChange}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onClear={clearCanvas}
+          onSave={saveCanvas}
+          onDelete={deleteSelectedObjects}
+          lineThickness={lineThickness}
+          lineColor={lineColor}
+          onLineThicknessChange={handleLineThicknessChange}
+          onLineColorChange={handleLineColorChange}
+        />
+        
+        {/* Canvas is now rendered directly inside CanvasController */}
+        <div className="flex-1 overflow-hidden p-4 bg-gray-50">
+          {/* The canvas element is now rendered directly in the CanvasController */}
+        </div>
+      </div>
+      
+      {/* Debug panel */}
+      {debugInfo.showDebugInfo && <DebugPanel debugInfo={debugInfo} />}
+    </div>
   );
 };

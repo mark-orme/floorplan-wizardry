@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useState, useRef } from 'react';
-import { DrawingMode, DrawingTool } from '@/constants/drawingModes';
+
+import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { DrawingTool } from '@/constants/drawingModes';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 import { toast } from 'sonner';
 import { createFloorPlan } from '@/utils/floorPlanUtils';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useCanvasControllerSetup } from './useCanvasControllerSetup';
+import { useCanvasControllerDependencies } from '@/hooks/useCanvasControllerDependencies';
+import { useCanvasControllerState } from './useCanvasControllerState';
+import { useCanvasControllerTools } from './useCanvasControllerTools';
+import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
 
 /**
  * Constants for canvas controller
@@ -68,6 +75,8 @@ export interface CanvasControllerContextValue {
   handleLineColorChange: (color: string) => void;
   /** Handler to open measurement guide */
   openMeasurementGuide: () => void;
+  /** Fabric canvas reference */
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
 }
 
 /**
@@ -93,12 +102,24 @@ const createInitialFloorPlan = (): FloorPlan => {
  * @returns {JSX.Element} Provider component
  */
 export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Canvas state
   const [tool, setTool] = useState<DrawingTool>('select');
   const [gia, setGia] = useState<number>(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([createInitialFloorPlan()]);
   const [currentFloor, setCurrentFloor] = useState<number>(INITIAL_FLOOR_INDEX);
   const [lineThickness, setLineThickness] = useState<number>(INITIAL_LINE_THICKNESS);
   const [lineColor, setLineColor] = useState<string>(DEFAULT_LINE_COLOR);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
+    width: DEFAULT_CANVAS_WIDTH,
+    height: DEFAULT_CANVAS_HEIGHT
+  });
+  
+  // References
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+
+  // Debug state
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
     showDebugInfo: false,
     canvasInitialized: false,
@@ -121,119 +142,218 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     performanceStats: {}
   });
   
-  const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
-    width: DEFAULT_CANVAS_WIDTH,
-    height: DEFAULT_CANVAS_HEIGHT
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // Initialize the canvas controller setup
+  const { historyRef } = useCanvasControllerSetup({
+    canvasDimensions: dimensions,
+    tool,
+    currentFloor,
+    setZoomLevel,
+    setDebugInfo,
+    setHasError,
+    setErrorMessage
   });
-  
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  /**
-   * Handles changing the active drawing tool
-   * @param {DrawingTool} newTool - The tool to switch to
-   */
-  const handleToolChange = (newTool: DrawingTool) => {
-    setTool(newTool);
-    toast(`Tool changed to ${newTool}`);
-  };
-  
-  /**
-   * Handles undo operation
-   */
-  const handleUndo = () => {
-    console.log('Undo action');
-    toast('Undo action');
-  };
-  
-  /**
-   * Handles redo operation
-   */
-  const handleRedo = () => {
-    console.log('Redo action');
-    toast('Redo action');
-  };
-  
-  /**
-   * Handles zoom level changes
-   * @param {number} zoomLevel - The zoom level to apply
-   */
-  const handleZoom = (zoomLevel: number) => {
-    console.log('Zoom level changed to', zoomLevel);
-  };
-  
-  /**
-   * Clears the canvas content
-   */
-  const clearCanvas = () => {
-    console.log('Canvas cleared');
-    toast('Canvas cleared');
-  };
-  
-  /**
-   * Saves the canvas content
-   */
-  const saveCanvas = () => {
-    console.log('Canvas saved');
-    toast('Canvas saved');
-  };
-  
-  /**
-   * Deletes selected objects from the canvas
-   */
-  const deleteSelectedObjects = () => {
-    console.log('Selected objects deleted');
-    toast('Selected objects deleted');
-  };
-  
-  /**
-   * Handles floor selection
-   * @param {number} floorIndex - Index of the floor to select
-   */
-  const handleFloorSelect = (floorIndex: number) => {
-    setCurrentFloor(floorIndex);
-    toast(`Floor ${floorIndex + 1} selected`);
-  };
-  
-  /**
-   * Handles adding a new floor
-   */
-  const handleAddFloor = () => {
-    setFloorPlans(prev => {
-      const newFloorPlans = [...prev];
-      const newFloorIndex = newFloorPlans.length;
-      
-      const newFloorPlan = createFloorPlan(
-        `floor-${newFloorIndex}`,
-        `Floor ${newFloorIndex + 1}`
-      );
-      
-      newFloorPlans.push(newFloorPlan);
-      return newFloorPlans;
+
+  // Initialize dependencies like grid, etc.
+  const { gridLayerRef, createGrid } = useCanvasControllerDependencies({
+    fabricCanvasRef,
+    canvasRef,
+    canvasDimensions: dimensions,
+    debugInfo,
+    setDebugInfo,
+    setHasError,
+    setErrorMessage,
+    zoomLevel
+  });
+
+  // Initialize drawing state
+  useCanvasControllerDrawingState({
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    tool,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    lineThickness,
+    lineColor,
+    deleteSelectedObjects: () => {
+      if (fabricCanvasRef.current) {
+        const canvas = fabricCanvasRef.current;
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length > 0) {
+          canvas.remove(...activeObjects);
+          canvas.discardActiveObject();
+          canvas.requestRenderAll();
+          toast('Selected objects deleted');
+        }
+      }
+    },
+    setDrawingState: () => {},
+    recalculateGIA: () => {
+      // Recalculate GIA implementation
+      console.log("Recalculating GIA");
+    }
+  });
+
+  // Initialize tools
+  const {
+    handleToolChange: toolChange,
+    handleUndo: undo,
+    handleRedo: redo,
+    handleZoom: zoom,
+    clearCanvas: clear,
+    saveCanvas: save,
+    deleteSelectedObjects: deleteSelected,
+    handleFloorSelect: selectFloor,
+    handleAddFloor: addFloor,
+    handleLineThicknessChange: changeLineThickness,
+    handleLineColorChange: changeLineColor,
+    openMeasurementGuide: showMeasurementGuide
+  } = useCanvasControllerTools({
+    fabricCanvasRef,
+    gridLayerRef,
+    historyRef,
+    tool,
+    zoomLevel,
+    lineThickness,
+    lineColor,
+    setTool,
+    setZoomLevel,
+    floorPlans,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    createGrid
+  });
+
+  // Initialize Fabric.js canvas when the component mounts
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    // Clean up any existing canvas
+    if (fabricCanvasRef.current) {
+      fabricCanvasRef.current.dispose();
+    }
+    
+    // Create a new Fabric.js canvas
+    const canvas = new FabricCanvas(canvasRef.current, {
+      width: dimensions.width,
+      height: dimensions.height,
+      selection: true,
+      preserveObjectStacking: true
     });
-    toast('New floor added');
-  };
+    
+    // Set fabric canvas reference
+    fabricCanvasRef.current = canvas;
+    
+    // Initialize free drawing brush
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+    }
+    
+    // Create grid
+    createGrid(canvas);
+    
+    // Initialize tool mode
+    if (tool === 'draw') {
+      canvas.isDrawingMode = true;
+    } else {
+      canvas.isDrawingMode = false;
+    }
+    
+    // Update debug info
+    setDebugInfo(prev => ({
+      ...prev,
+      canvasInitialized: true,
+      canvasCreated: true,
+      dimensionsSet: true
+    }));
+    
+    // Clean up function
+    return () => {
+      canvas.dispose();
+      fabricCanvasRef.current = null;
+    };
+  }, [dimensions.width, dimensions.height, createGrid]);
+
+  // Update drawing mode when tool changes
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Set drawing mode based on the selected tool
+    if (tool === 'draw') {
+      canvas.isDrawingMode = true;
+    } else {
+      canvas.isDrawingMode = false;
+    }
+    
+    canvas.requestRenderAll();
+  }, [tool]);
+
+  // Update brush properties when lineColor or lineThickness changes
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !fabricCanvasRef.current.freeDrawingBrush) return;
+    
+    const brush = fabricCanvasRef.current.freeDrawingBrush;
+    brush.color = lineColor;
+    brush.width = lineThickness;
+  }, [lineColor, lineThickness]);
   
   /**
-   * Handles changing line thickness
-   * @param {number} thickness - The new thickness to apply
+   * Handler functions that connect to the tool implementations
    */
-  const handleLineThicknessChange = (thickness: number) => {
-    setLineThickness(thickness);
+  const handleToolChange = (newTool: DrawingTool): void => {
+    toolChange(newTool);
   };
   
-  /**
-   * Handles changing line color
-   * @param {string} color - The new color to apply
-   */
-  const handleLineColorChange = (color: string) => {
-    setLineColor(color);
+  const handleUndo = (): void => {
+    undo();
   };
   
-  /**
-   * Opens the measurement guide
-   */
-  const openMeasurementGuide = () => {
-    toast('Measurement guide opened');
+  const handleRedo = (): void => {
+    redo();
+  };
+  
+  const handleZoom = (newZoomLevel: number): void => {
+    zoom(newZoomLevel > 1 ? "in" : "out");
+  };
+  
+  const clearCanvas = (): void => {
+    clear();
+  };
+  
+  const saveCanvas = (): void => {
+    save();
+  };
+  
+  const deleteSelectedObjects = (): void => {
+    deleteSelected();
+  };
+  
+  const handleFloorSelect = (floorIndex: number): void => {
+    selectFloor(floorIndex);
+  };
+  
+  const handleAddFloor = (): void => {
+    addFloor();
+  };
+  
+  const handleLineThicknessChange = (thickness: number): void => {
+    changeLineThickness(thickness);
+  };
+  
+  const handleLineColorChange = (color: string): void => {
+    changeLineColor(color);
+  };
+  
+  const openMeasurementGuide = (): void => {
+    showMeasurementGuide();
   };
   
   const contextValue: CanvasControllerContextValue = {
@@ -248,6 +368,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     lineThickness,
     lineColor,
     canvasRef,
+    fabricCanvasRef,
     debugInfo,
     handleToolChange,
     handleUndo,
@@ -266,6 +387,21 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   return (
     <CanvasControllerContext.Provider value={contextValue}>
       {children}
+      <div className="canvas-container" style={{ position: 'relative', width: dimensions.width, height: dimensions.height }}>
+        <canvas 
+          ref={canvasRef} 
+          width={dimensions.width} 
+          height={dimensions.height}
+          className="border border-gray-200 rounded shadow-sm"
+        />
+        {hasError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-red-100/50">
+            <p className="text-red-500 font-semibold p-4 bg-white rounded shadow">
+              {errorMessage || "An error occurred with the canvas"}
+            </p>
+          </div>
+        )}
+      </div>
     </CanvasControllerContext.Provider>
   );
 };
@@ -275,7 +411,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
  * @returns {CanvasControllerContextValue} Canvas controller context value
  * @throws {Error} If used outside of a CanvasControllerProvider
  */
-export const useCanvasController = () => {
+export const useCanvasController = (): CanvasControllerContextValue => {
   const context = useContext(CanvasControllerContext);
   if (!context) {
     throw new Error('useCanvasController must be used within a CanvasControllerProvider');
