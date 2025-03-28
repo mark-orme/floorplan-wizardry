@@ -1,16 +1,16 @@
-/**
- * Hook for handling path creation events
- * @module canvas-events/usePathEvents
- */
-import { useCallback } from 'react';
-import { useCanvasHandlers } from './useCanvasHandlers';
-import { UsePathEventsProps, EventHandlerResult } from './types';
 
 /**
  * Hook for handling path-related canvas events
- * 
- * @param {UsePathEventsProps} props - Properties for the hook
- * @returns {EventHandlerResult} - Event handler result
+ * @module canvas-events/usePathEvents
+ */
+import { useCallback, useEffect } from 'react';
+import { Path as FabricPath } from 'fabric';
+import { EventHandlerResult, UsePathEventsProps } from './types';
+
+/**
+ * Hook for handling path-related events on canvas
+ * @param {UsePathEventsProps} props Path event props
+ * @returns {EventHandlerResult} Path event handler result
  */
 export const usePathEvents = ({
   fabricCanvasRef,
@@ -18,51 +18,65 @@ export const usePathEvents = ({
   processCreatedPath,
   handleMouseUp
 }: UsePathEventsProps): EventHandlerResult => {
-  
   /**
-   * Handle path created event
+   * Handler for path creation completed event
+   * @param {object} e Event object containing the created path
    */
   const handlePathCreated = useCallback((e: any) => {
-    const path = e.path;
-    if (path) {
+    if (!fabricCanvasRef.current) return;
+    
+    // Save current state before making changes
+    saveCurrentState();
+    
+    const path = e.path as FabricPath;
+    
+    // Pass path to processing function if provided
+    if (processCreatedPath) {
       processCreatedPath(path);
     }
     
-    // Save state after path is created and processed
-    saveCurrentState();
-  }, [processCreatedPath, saveCurrentState]);
-  
-  /**
-   * Handle mouse down event
-   */
-  const handleMouseDown = useCallback((e: any) => {
-    // Custom mouse down handling for path creation
-  }, []);
-  
-  /**
-   * Handle mouse move event
-   */
-  const handleMouseMove = useCallback((e: any) => {
-    // Custom mouse move handling for path creation
-  }, []);
-  
-  /**
-   * Handle mouse up event
-   */
-  const onMouseUp = useCallback((e: any) => {
+    // Handle mouse up if provided (some tools need this)
     if (handleMouseUp) {
-      handleMouseUp(e);
+      handleMouseUp();
     }
-  }, [handleMouseUp]);
+  }, [fabricCanvasRef, saveCurrentState, processCreatedPath, handleMouseUp]);
   
-  // Set up handlers with useCanvasHandlers
-  return useCanvasHandlers({
-    fabricCanvasRef,
-    handlers: {
-      'path:created': handlePathCreated,
-      'mouse:down': handleMouseDown,
-      'mouse:move': handleMouseMove,
-      'mouse:up': onMouseUp
-    }
-  });
+  /**
+   * Register path event handlers
+   */
+  const register = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Add path created event listener
+    fabricCanvasRef.current.on('path:created', handlePathCreated);
+  }, [fabricCanvasRef, handlePathCreated]);
+  
+  /**
+   * Unregister path event handlers
+   */
+  const unregister = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Remove path created event listener
+    fabricCanvasRef.current.off('path:created', handlePathCreated);
+  }, [fabricCanvasRef, handlePathCreated]);
+  
+  /**
+   * Clean up resources
+   */
+  const cleanup = useCallback(() => {
+    unregister();
+  }, [unregister]);
+  
+  // Register path event handlers when component mounts
+  useEffect(() => {
+    register();
+    return cleanup;
+  }, [register, cleanup]);
+  
+  return {
+    register,
+    unregister,
+    cleanup
+  };
 };

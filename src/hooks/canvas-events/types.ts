@@ -4,9 +4,9 @@
  * @module canvas-events/types
  */
 import type { MutableRefObject } from 'react';
-import type { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import type { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath } from 'fabric';
 import type { DrawingMode } from '@/constants/drawingModes';
-import type { ZoomDirection, ZoomOptions } from '@/types/drawingTypes';
+import type { Point } from '@/types/drawingTypes';
 
 /**
  * Zoom level constants
@@ -17,6 +17,21 @@ export const ZOOM_LEVEL_CONSTANTS = {
   DEFAULT_ZOOM: 1.0,
   ZOOM_STEP: 0.1
 };
+
+/**
+ * Zoom direction type
+ */
+export type ZoomDirection = 'in' | 'out';
+
+/**
+ * Zoom options interface
+ */
+export interface ZoomOptions {
+  level: number;
+  centerX?: number;
+  centerY?: number;
+  skipRender?: boolean;
+}
 
 /**
  * Base props interface for event handlers
@@ -118,6 +133,25 @@ export interface UseZoomEventsProps extends BaseEventProps {
 }
 
 /**
+ * Props for zoom tracking
+ */
+export interface UseZoomTrackingProps extends BaseEventProps {
+  /** Function to update zoom level */
+  updateZoomLevel: () => void;
+}
+
+/**
+ * Result for zoom tracking
+ */
+export interface UseZoomTrackingResult extends EventHandlerResult {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+  setZoom: (level: number) => void;
+  currentZoom?: number;
+}
+
+/**
  * Props for mouse events
  * @interface UseMouseEventsProps
  */
@@ -161,23 +195,8 @@ export interface UseKeyboardEventsProps extends BaseEventProps {
 export interface UsePathEventsProps extends BaseEventProps {
   /** Function to save current state before changes */
   saveCurrentState: () => void;
-}
-
-/**
- * Props for zoom tracking
- */
-export interface UseZoomTrackingProps {
-  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
-  zoomLevel: number;
-  setZoomLevel: (level: number) => void;
-}
-
-/**
- * Result for zoom tracking
- */
-export interface UseZoomTrackingResult {
-  zoomIn: () => void;
-  zoomOut: () => void;
-  resetZoom: () => void;
-  setZoom: (level: number) => void;
+  /** Function to process created path */
+  processCreatedPath?: (path: FabricPath) => void;
+  /** Handle mouse up event */
+  handleMouseUp?: (e?: any) => void;
 }

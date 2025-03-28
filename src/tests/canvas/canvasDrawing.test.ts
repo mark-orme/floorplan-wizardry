@@ -1,4 +1,3 @@
-
 /**
  * Tests for canvas drawing functionality
  * @module tests/canvas/canvasDrawing
@@ -6,7 +5,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useCanvasDrawing } from '@/hooks/useCanvasDrawing';
-import { DrawingTool } from '@/hooks/useCanvasState';
+import { DrawingMode } from '@/constants/drawingModes';
 
 // Define more specific types for our mocks
 interface MockCanvas {
@@ -99,7 +98,7 @@ describe('Canvas Drawing Tests', () => {
       fabricCanvasRef: { current: null },
       gridLayerRef: { current: [] },
       historyRef: { current: { past: [], future: [] } },
-      tool: 'draw' as DrawingTool,
+      tool: DrawingMode.DRAW,
       currentFloor: 0,
       setFloorPlans: vi.fn(),
       setGia: vi.fn()
@@ -128,7 +127,7 @@ describe('Canvas Drawing Tests', () => {
       fabricCanvasRef: { current: null },
       gridLayerRef: { current: [] },
       historyRef: { current: { past: [], future: [] } },
-      tool: 'draw' as DrawingTool,
+      tool: DrawingMode.DRAW,
       currentFloor: 0,
       setFloorPlans: vi.fn(),
       setGia: vi.fn()
@@ -142,7 +141,7 @@ describe('Canvas Drawing Tests', () => {
   
   test('handles tool changes correctly', () => {
     // We can test with different tools
-    const tools: DrawingTool[] = ['select', 'draw', 'wall', 'room'];
+    const tools: DrawingMode[] = [DrawingMode.SELECT, DrawingMode.DRAW, DrawingMode.WALL, DrawingMode.ROOM];
     
     tools.forEach(tool => {
       // When calling the hook with a specific tool

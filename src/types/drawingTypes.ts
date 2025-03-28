@@ -4,7 +4,8 @@
  * @module types/drawingTypes
  */
 import { DrawingMode } from '@/constants/drawingModes';
-import { createDefaultDrawingState as originalCreateDefaultDrawingState } from '@/types/core/DrawingState';
+import { DebugInfoState as CoreDebugInfoState, DEFAULT_DEBUG_STATE } from '@/types/core/DebugInfo';
+import { DrawingState as CoreDrawingState, createDefaultDrawingState as originalCreateDefaultDrawingState } from '@/types/core/DrawingState';
 
 /**
  * Point representation
@@ -29,72 +30,19 @@ export interface CanvasDimensions {
 }
 
 /**
- * Debug information state for canvas
- * @interface DebugInfoState
+ * Re-export DebugInfoState from core
  */
-export interface DebugInfoState {
-  /** Whether to display debug information */
-  showDebugInfo: boolean;
-  /** Whether canvas was initialized */
-  canvasInitialized: boolean;
-  /** Whether dimensions were set */
-  dimensionsSet: boolean;
-  /** Whether grid was created */
-  gridCreated: boolean;
-  /** Whether event handlers were set */
-  eventHandlersSet: boolean;
-  /** Whether brush was initialized */
-  brushInitialized: boolean;
-  /** Whether canvas is ready */
-  canvasReady: boolean;
-  /** Whether canvas was created */
-  canvasCreated: boolean;
-  /** Whether canvas was loaded */
-  canvasLoaded: boolean;
-  /** Whether canvas events were registered */
-  canvasEventsRegistered: boolean;
-  /** Whether grid was rendered */
-  gridRendered: boolean;
-  /** Whether tools were initialized */
-  toolsInitialized: boolean;
-  /** Last initialization time */
-  lastInitTime: number;
-  /** Last grid creation time */
-  lastGridCreationTime: number;
-  /** Grid object count */
-  gridObjectCount: number;
-  /** Canvas dimensions */
-  canvasDimensions: CanvasDimensions;
-  /** Whether an error occurred */
-  hasError: boolean;
-  /** Error message */
-  errorMessage: string;
-  /** Performance statistics */
-  performanceStats: Record<string, unknown>;
-}
+export type DebugInfoState = CoreDebugInfoState;
 
 /**
- * Drawing state
- * @interface DrawingState
+ * Re-export DrawingState from core
  */
-export interface DrawingState {
-  /** Current drawing tool */
-  tool: DrawingMode;
-  /** Line thickness */
-  lineThickness: number;
-  /** Line color */
-  lineColor: string;
-  /** Current floor */
-  currentFloor: number;
-  /** Whether drawing is in progress */
-  isDrawing: boolean;
-  /** Whether the drawing has been modified */
-  isDirty: boolean;
-  /** Zoom level */
-  zoomLevel: number;
-  /** Last saved timestamp */
-  lastSaved: number;
-}
+export type DrawingState = CoreDrawingState;
+
+/**
+ * Re-export DEFAULT_DEBUG_STATE from core
+ */
+export { DEFAULT_DEBUG_STATE };
 
 /**
  * Zoom direction enum
@@ -122,19 +70,6 @@ export interface ZoomOptions {
  * Re-exports the function from core/DrawingState.ts for backward compatibility
  * @returns {DrawingState} A default drawing state
  */
-export const createDefaultDrawingState = (): DrawingState => {
-  // Start with the core drawing state
-  const coreState = originalCreateDefaultDrawingState();
-  
-  // Convert to the simpler DrawingState interface used in this file
-  return {
-    tool: DrawingMode.SELECT,
-    lineThickness: 2,
-    lineColor: '#000000',
-    currentFloor: 0,
-    isDrawing: false,
-    isDirty: false,
-    zoomLevel: 1,
-    lastSaved: Date.now()
-  };
+export const createDefaultDrawingState = (): CoreDrawingState => {
+  return originalCreateDefaultDrawingState();
 };

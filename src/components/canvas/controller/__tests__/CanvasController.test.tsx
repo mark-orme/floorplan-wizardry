@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CanvasControllerProvider, useCanvasController } from '../CanvasController';
 import { toast } from 'sonner';
-import { DrawingTool } from '@/hooks/useCanvasState';
+import { DrawingMode } from '@/constants/drawingModes';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -39,7 +39,7 @@ const TestComponent = () => {
       
       <button 
         data-testid="change-tool"
-        onClick={() => handleToolChange('wall')}
+        onClick={() => handleToolChange(DrawingMode.WALL)}
       >
         Change Tool
       </button>

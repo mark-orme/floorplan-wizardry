@@ -4,7 +4,8 @@
  * @module canvas/drawing/useCanvasDrawingState
  */
 import { useState } from 'react';
-import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
+import { DrawingState } from '@/types/core/DrawingState';
+import { createDefaultDrawingState } from '@/types/core/DrawingState';
 
 /**
  * Hook for managing the drawing state in canvas operations

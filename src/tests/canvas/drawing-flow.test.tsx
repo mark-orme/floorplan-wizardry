@@ -8,7 +8,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { Canvas } from '@/components/Canvas';
 import { CanvasContainer } from '@/components/canvas/CanvasContainer';
 import { useCanvasDrawing } from '@/hooks/useCanvasDrawing';
-import { DrawingTool } from '@/constants/drawingModes';
+import { DrawingMode } from '@/constants/drawingModes';
 import { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
 import { DEFAULT_DEBUG_STATE } from '@/types/core/DebugInfo';
 
@@ -49,7 +49,7 @@ vi.mock('@/hooks/useCanvasDrawing', () => ({
 
 vi.mock('@/components/canvas/controller/CanvasController', () => ({
   useCanvasController: vi.fn().mockReturnValue({
-    tool: 'wall',
+    tool: DrawingMode.WALL,
     currentFloor: 0,
     lineThickness: 2,
     lineColor: '#000000',
@@ -59,6 +59,38 @@ vi.mock('@/components/canvas/controller/CanvasController', () => ({
   }),
   CanvasControllerProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }));
+
+it('handles tool changes correctly', () => {
+  const mockHandleToolChange = vi.fn();
+  
+  // Create a controlled test component
+  const TestComponent = () => {
+    const tools: DrawingMode[] = [DrawingMode.SELECT, DrawingMode.DRAW, DrawingMode.WALL, DrawingMode.ROOM];
+    
+    return (
+      <div>
+        {tools.map(tool => (
+          <button 
+            key={tool}
+            data-testid={`tool-${tool}`}
+            onClick={() => mockHandleToolChange(tool)}
+          >
+            {tool}
+          </button>
+        ))}
+      </div>
+    );
+  };
+  
+  render(<TestComponent />);
+  
+  // Simulate clicking different tools
+  fireEvent.click(screen.getByTestId(`tool-${DrawingMode.WALL}`));
+  expect(mockHandleToolChange).toHaveBeenCalledWith(DrawingMode.WALL);
+  
+  fireEvent.click(screen.getByTestId(`tool-${DrawingMode.DRAW}`));
+  expect(mockHandleToolChange).toHaveBeenCalledWith(DrawingMode.DRAW);
+});
 
 describe('Canvas Drawing Flow', () => {
   beforeEach(() => {
@@ -124,37 +156,5 @@ describe('Canvas Drawing Flow', () => {
     // With the mocked drawing state, we should see a distance tooltip
     const distanceTooltip = screen.queryByTestId('distance-tooltip');
     expect(distanceTooltip).toBeDefined();
-  });
-  
-  it('handles tool changes correctly', () => {
-    const mockHandleToolChange = vi.fn();
-    
-    // Create a controlled test component
-    const TestComponent = () => {
-      const tools: DrawingTool[] = ['select', 'draw', 'wall', 'room'];
-      
-      return (
-        <div>
-          {tools.map(tool => (
-            <button 
-              key={tool}
-              data-testid={`tool-${tool}`}
-              onClick={() => mockHandleToolChange(tool)}
-            >
-              {tool}
-            </button>
-          ))}
-        </div>
-      );
-    };
-    
-    render(<TestComponent />);
-    
-    // Simulate clicking different tools
-    fireEvent.click(screen.getByTestId('tool-wall'));
-    expect(mockHandleToolChange).toHaveBeenCalledWith('wall');
-    
-    fireEvent.click(screen.getByTestId('tool-draw'));
-    expect(mockHandleToolChange).toHaveBeenCalledWith('draw');
   });
 });
