@@ -4,7 +4,7 @@
  * Provides compatibility functions for test files using older signatures
  * @module utils/grid/testHelpers
  */
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Point as FabricPoint } from 'fabric';
 import { Point, createPoint } from '@/types/core/Point';
 import { snapToGrid, snapToAngle, snapPointToGrid, isPointOnGrid, distanceToGridLine } from './snapping';
 import { createGridLines, calculateGridDimensions, createCompleteGrid, isGridObject } from '@/utils/gridUtils';

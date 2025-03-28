@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { snapToGrid, snapToAngle, snapLineToStandardAngles } from '@/utils/grid/snapping';
 import { GRID_SPACING, PIXELS_PER_METER } from '@/constants/numerics';
 import { Point, createPoint } from '@/types/core/Point';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 
 describe('Grid Alignment', () => {
   describe('Wall endpoints snapping', () => {

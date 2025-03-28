@@ -13,6 +13,8 @@ import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
  * @returns A new FloorPlan object
  */
 export const createFloorPlan = (id: string, name: string, level: number = 0): FloorPlan => {
+  const now = new Date().toISOString();
+  
   return {
     id,
     name,
@@ -22,14 +24,14 @@ export const createFloorPlan = (id: string, name: string, level: number = 0): Fl
     strokes: [],
     canvasJson: null,
     canvasData: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
     gia: 0,
     level,
     index: level, // Use level as the index to maintain compatibility
     metadata: {
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
       paperSize: PaperSize.A4,
       level
     }

@@ -58,6 +58,10 @@ export interface Wall extends CoreWall {
   startPoint: Point;
   /** End point of the wall - maps to 'end' in CoreWall */
   endPoint: Point;
+  /** Start point of the wall (alias for compatibility) */
+  start: Point;
+  /** End point of the wall (alias for compatibility) */
+  end: Point;
 }
 
 /**
