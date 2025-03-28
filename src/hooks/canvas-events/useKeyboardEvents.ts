@@ -1,104 +1,105 @@
 
-import { useCallback, useEffect } from "react";
-import { EventHandlerResult } from "./types";
+/**
+ * Hook for canvas keyboard events
+ * @module canvas-events/useKeyboardEvents
+ */
+import { useCallback, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { EventHandlerResult, UseKeyboardEventsProps } from './types';
 
 /**
- * Props for useKeyboardEvents hook
+ * Hook for handling keyboard events for canvas operations
+ * 
+ * @param {UseKeyboardEventsProps} props - Properties for the hook
+ * @returns {EventHandlerResult} - Event handler result with register/unregister functions
  */
-interface UseKeyboardEventsProps {
-  /** Function to handle undo operation */
-  handleUndo?: () => void;
-  /** Function to handle redo operation */
-  handleRedo?: () => void;
-  /** Function to handle delete operation */
-  handleDelete?: () => void;
-  /** Function to handle escape key */
-  handleEscape?: () => void;
-  /** Function to delete selected objects */
-  deleteSelectedObjects?: () => void;
-}
-
-/**
- * Hook for handling keyboard events
- * @param props - Hook properties
- * @returns Event handler registration and cleanup functions
- */
-export const useKeyboardEvents = (props: UseKeyboardEventsProps): EventHandlerResult => {
-  const { handleUndo, handleRedo, handleDelete, handleEscape, deleteSelectedObjects } = props;
+export const useKeyboardEvents = ({
+  fabricCanvasRef,
+  handleUndo,
+  handleRedo,
+  deleteSelectedObjects
+}: UseKeyboardEventsProps): EventHandlerResult => {
   
   /**
    * Handle keyboard events
+   * @param {KeyboardEvent} e - Keyboard event
    */
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Check modifiers for Mac/Windows compatibility
-    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+    // Only handle if canvas is available
+    if (!fabricCanvasRef.current) return;
     
-    // Handle undo: Ctrl/Cmd + Z
-    if (isCtrlOrCmd && e.key === 'z' && !e.shiftKey && handleUndo) {
-      e.preventDefault();
-      handleUndo();
+    // Check if target is an input or textarea to avoid capturing when typing
+    const target = e.target as HTMLElement;
+    if (target && (
+      target.tagName === 'INPUT' || 
+      target.tagName === 'TEXTAREA' || 
+      target.isContentEditable
+    )) {
+      return;
     }
     
-    // Handle redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
-    if ((isCtrlOrCmd && e.key === 'z' && e.shiftKey) || 
-        (isCtrlOrCmd && e.key === 'y')) {
-      e.preventDefault();
-      if (handleRedo) handleRedo();
-    }
-    
-    // Handle delete/backspace
-    if ((e.key === 'Delete' || e.key === 'Backspace')) {
-      // Only prevent default if we're not in an input element
-      if (!(e.target instanceof HTMLInputElement) && 
-          !(e.target instanceof HTMLTextAreaElement)) {
-        e.preventDefault();
+    // Handle keyboard shortcuts
+    switch (e.key) {
+      case 'Delete':
+      case 'Backspace':
+        // Delete selected objects
+        deleteSelectedObjects();
+        break;
         
-        // Use either handleDelete or deleteSelectedObjects based on availability
-        if (deleteSelectedObjects) {
-          deleteSelectedObjects();
-        } else if (handleDelete) {
-          handleDelete();
+      case 'z':
+        // Undo if Ctrl/Cmd+Z
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+          e.preventDefault();
+          handleUndo();
         }
-      }
+        break;
+        
+      case 'y':
+        // Redo if Ctrl/Cmd+Y
+        if ((e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleRedo();
+        }
+        break;
+        
+      case 'Z':
+      case 'z':
+        // Redo if Ctrl/Cmd+Shift+Z
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          handleRedo();
+        }
+        break;
     }
-    
-    // Handle escape
-    if (e.key === 'Escape' && handleEscape) {
-      e.preventDefault();
-      handleEscape();
-    }
-  }, [handleUndo, handleRedo, handleDelete, handleEscape, deleteSelectedObjects]);
+  }, [fabricCanvasRef, handleUndo, handleRedo, deleteSelectedObjects]);
   
   /**
-   * Register keyboard event handlers
+   * Register event handlers
    */
   const register = useCallback(() => {
     window.addEventListener('keydown', handleKeyDown);
-    console.log("Registering keyboard handlers");
   }, [handleKeyDown]);
-
+  
   /**
-   * Unregister keyboard event handlers
+   * Unregister event handlers
    */
   const unregister = useCallback(() => {
     window.removeEventListener('keydown', handleKeyDown);
-    console.log("Unregistering keyboard handlers");
   }, [handleKeyDown]);
-
+  
   /**
-   * Clean up keyboard event handlers
+   * Clean up resources
    */
   const cleanup = useCallback(() => {
     unregister();
-    console.log("Cleaning up keyboard handlers");
   }, [unregister]);
   
-  // Automatically register event handlers on hook initialization
+  // Register and cleanup on mount/unmount
   useEffect(() => {
     register();
     return cleanup;
   }, [register, cleanup]);
-
+  
   return {
     register,
     unregister,

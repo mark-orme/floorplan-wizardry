@@ -1,213 +1,145 @@
+
 /**
- * Grid core utilities
- * Provides core grid functionality used across the application
+ * Core grid management utilities
  * @module grid/core
  */
-import { Point } from '@/types/drawingTypes';
-import { 
-  PIXELS_PER_METER, 
-  GRID_SPACING, 
-  ANGLE_SNAP_THRESHOLD,
-  FLOATING_POINT_TOLERANCE 
-} from '@/constants/numerics';
-import { snapToGrid, snapToAngle } from './snapping';
+import { Canvas, Object as FabricObject, Line, Text } from "fabric";
+import { Point } from "@/types/core/Point";
+import { GRID_SPACING, SNAP_THRESHOLD } from "@/constants/numerics";
 
 /**
- * Constants for grid core operations
+ * Check if an object is a grid element
+ * @param obj - Object to check
+ * @returns Whether object is a grid element
  */
-const GRID_CORE = {
-  /**
-   * Conversion factor for radians to degrees
-   */
-  RAD_TO_DEG: 180 / Math.PI,
+export const isGridObject = (obj: FabricObject): boolean => {
+  return obj.objectType === 'grid';
+};
+
+/**
+ * Filter grid objects from an array
+ * @param objects - Array of objects
+ * @returns Array of grid objects
+ */
+export const filterGridObjects = (objects: FabricObject[]): FabricObject[] => {
+  return objects.filter(isGridObject);
+};
+
+/**
+ * Hide all grid objects on canvas
+ * @param canvas - Canvas to hide grid on
+ */
+export const hideGrid = (canvas: Canvas): void => {
+  if (!canvas) return;
   
-  /**
-   * Conversion factor for degrees to radians
-   */
-  DEG_TO_RAD: Math.PI / 180,
+  const gridObjects = canvas.getObjects().filter(isGridObject);
   
-  /**
-   * Standard angles for snapping (in degrees)
-   */
-  STANDARD_ANGLES: [0, 45, 90, 135, 180, 225, 270, 315],
+  gridObjects.forEach(obj => {
+    obj.visible = false;
+  });
   
-  /**
-   * Minimum distance threshold for straightening (in pixels)
-   */
-  MIN_STRAIGHTEN_DISTANCE: 10,
+  canvas.requestRenderAll();
+};
+
+/**
+ * Show all grid objects on canvas
+ * @param canvas - Canvas to show grid on
+ */
+export const showGrid = (canvas: Canvas): void => {
+  if (!canvas) return;
   
-  /**
-   * Default step size for grid (in pixels)
-   */
-  DEFAULT_GRID_STEP: GRID_SPACING
-};
-
-/**
- * Convert from pixels to meters
- * @param pixels - Value in pixels
- * @returns Value in meters
- */
-export const pixelsToMeters = (pixels: number): number => {
-  return pixels / PIXELS_PER_METER;
-};
-
-/**
- * Convert from meters to pixels
- * @param meters - Value in meters
- * @returns Value in pixels
- */
-export const metersToPixels = (meters: number): number => {
-  return meters * PIXELS_PER_METER;
-};
-
-/**
- * Convert a point from pixels to meters
- * @param point - Point in pixel coordinates
- * @returns Point in meter coordinates
- */
-export const pointToMeters = (point: Point): Point => {
-  return {
-    x: pixelsToMeters(point.x),
-    y: pixelsToMeters(point.y)
-  };
-};
-
-/**
- * Convert a point from meters to pixels
- * @param point - Point in meter coordinates
- * @returns Point in pixel coordinates
- */
-export const pointToPixels = (point: Point): Point => {
-  return {
-    x: metersToPixels(point.x),
-    y: metersToPixels(point.y)
-  };
-};
-
-/**
- * Calculate distance between two points
- * @param p1 - First point
- * @param p2 - Second point
- * @returns Distance in the same units as input points
- */
-export const distance = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
-/**
- * Calculate angle between two points in degrees
- * @param p1 - First point (start)
- * @param p2 - Second point (end)
- * @returns Angle in degrees (0-360)
- */
-export const angleBetweenPoints = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
+  const gridObjects = canvas.getObjects().filter(isGridObject);
   
-  // Calculate angle in radians, then convert to degrees
-  let angle = Math.atan2(dy, dx) * GRID_CORE.RAD_TO_DEG;
+  gridObjects.forEach(obj => {
+    obj.visible = true;
+  });
   
-  // Normalize to 0-360 range
-  if (angle < 0) {
-    angle += 360;
-  }
-  
-  return angle;
+  canvas.requestRenderAll();
 };
 
 /**
- * Straighten a line to the nearest standard angle
- * @param start - Start point
- * @param end - End point
- * @returns Adjusted end point that creates a straight line
- */
-export const straightenLine = (start: Point, end: Point): Point => {
-  // Don't straighten if line is too short
-  if (distance(start, end) < GRID_CORE.MIN_STRAIGHTEN_DISTANCE) {
-    return end;
-  }
-  
-  // Import this directly to avoid circular dependencies
-  const { snapLineToStandardAngles } = require('./snapping');
-  return snapLineToStandardAngles(start, end, GRID_CORE.STANDARD_ANGLES);
-};
-
-/**
- * Check if two values are approximately equal
- * @param a - First value
- * @param b - Second value
- * @param tolerance - Tolerance for comparison
- * @returns True if values are approximately equal
- */
-export const approximatelyEqual = (
-  a: number, 
-  b: number, 
-  tolerance: number = FLOATING_POINT_TOLERANCE
-): boolean => {
-  return Math.abs(a - b) <= tolerance;
-};
-
-/**
- * Check if a point is on a grid intersection
- * @param point - The point to check
- * @param gridSize - Grid size in the same units as the point
- * @returns True if the point is on a grid intersection
- */
-export const isOnGridIntersection = (
-  point: Point, 
-  gridSize: number = GRID_SPACING
-): boolean => {
-  // Point is on grid intersection if its coordinates are multiples of grid size
-  return approximatelyEqual(point.x % gridSize, 0) && 
-         approximatelyEqual(point.y % gridSize, 0);
-};
-
-/**
- * Format a measurement in meters with appropriate precision
- * @param value - Value in meters
- * @param precision - Decimal precision (default: 2)
- * @returns Formatted string with m suffix
- */
-export const formatMeasurement = (value: number, precision: number = 2): string => {
-  return `${value.toFixed(precision)}m`;
-};
-
-/**
- * Calculate grid line positions for rendering
- * @param origin - Origin point for grid
- * @param width - Width of visible area
- * @param height - Height of visible area
+ * Snap a point to grid
+ * @param point - Point to snap
  * @param gridSize - Grid size
- * @returns Array of line positions
+ * @returns Snapped point
  */
-export const calculateGridLines = (
-  origin: Point, 
-  width: number, 
-  height: number, 
-  gridSize: number = GRID_SPACING
-): number[] => {
-  const positions: number[] = [];
-  
-  // Calculate start and end positions
-  const startX = Math.floor(origin.x / gridSize) * gridSize;
-  const startY = Math.floor(origin.y / gridSize) * gridSize;
-  const endX = startX + width;
-  const endY = startY + height;
-  
-  // Add vertical line positions
-  for (let x = startX; x <= endX; x += gridSize) {
-    positions.push(x);
-  }
-  
-  // Add horizontal line positions
-  for (let y = startY; y <= endY; y += gridSize) {
-    positions.push(y);
-  }
-  
-  return positions;
+export const snapToGrid = (point: Point, gridSize: number): Point => {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
 };
 
-// Re-export snapping functions for convenience
-export { snapToGrid, snapToAngle };
+/**
+ * Find nearest grid point
+ * @param point - Reference point
+ * @param gridSize - Grid size
+ * @returns Nearest grid point
+ */
+export const findNearestGridPoint = (point: Point, gridSize: number): Point => {
+  return snapToGrid(point, gridSize);
+};
+
+/**
+ * Check if point is near a grid intersection
+ * @param point - Point to check
+ * @param gridSize - Grid size
+ * @param threshold - Proximity threshold
+ * @returns Whether point is near grid intersection
+ */
+export const isNearGridIntersection = (
+  point: Point,
+  gridSize: number,
+  threshold: number = SNAP_THRESHOLD
+): boolean => {
+  const nearestPoint = findNearestGridPoint(point, gridSize);
+  const dx = Math.abs(point.x - nearestPoint.x);
+  const dy = Math.abs(point.y - nearestPoint.y);
+  
+  return dx <= threshold && dy <= threshold;
+};
+
+/**
+ * Snap object to grid
+ * @param obj - Object to snap
+ * @param gridSize - Grid size
+ */
+export const snapObjectToGrid = (obj: FabricObject, gridSize: number): void => {
+  if (!obj) return;
+  
+  // Get current position
+  const x = obj.left || 0;
+  const y = obj.top || 0;
+  
+  // Snap to nearest grid point
+  const snapped = snapToGrid({ x, y }, gridSize);
+  
+  // Update position
+  obj.set({
+    left: snapped.x,
+    top: snapped.y
+  });
+  
+  // Update coordinates
+  obj.setCoords();
+};
+
+/**
+ * Calculate grid dimensions
+ * @param width - Canvas width
+ * @param height - Canvas height
+ * @returns Grid dimensions
+ */
+export const calculateGridDimensions = (width: number, height: number): {
+  width: number;
+  height: number;
+  smallGridSize: number;
+  largeGridSize: number;
+} => {
+  return {
+    width,
+    height,
+    smallGridSize: GRID_SPACING.SMALL,
+    largeGridSize: GRID_SPACING.LARGE
+  };
+};

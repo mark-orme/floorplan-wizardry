@@ -14,6 +14,12 @@ export interface Point {
   
   /** Y coordinate */
   y: number;
+  
+  // Method declarations for compatibility
+  add?: (point: Point) => Point;
+  addEquals?: (point: Point) => Point;
+  scalarAdd?: (scalar: number) => Point;
+  scalarAddEquals?: (scalar: number) => Point;
 }
 
 /**
@@ -129,22 +135,38 @@ export const midpoint = (p1: Point, p2: Point): Point => {
   return interpolate(p1, p2, 0.5);
 };
 
-// Add these methods for Fabric.js Point compatibility
-Point.prototype = {
-  add: function(point: Point): Point {
+// Create a Point class for prototype methods
+export class PointClass implements Point {
+  x: number;
+  y: number;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  add(point: Point): Point {
     return addPoints(this, point);
-  },
-  addEquals: function(point: Point): Point {
+  }
+
+  addEquals(point: Point): Point {
     this.x += point.x;
     this.y += point.y;
     return this;
-  },
-  scalarAdd: function(scalar: number): Point {
+  }
+
+  scalarAdd(scalar: number): Point {
     return { x: this.x + scalar, y: this.y + scalar };
-  },
-  scalarAddEquals: function(scalar: number): Point {
+  }
+
+  scalarAddEquals(scalar: number): Point {
     this.x += scalar;
     this.y += scalar;
     return this;
   }
-} as any;
+}
+
+// Helper function to create a full Point with methods
+export const createFullPoint = (x: number, y: number): Point => {
+  return new PointClass(x, y);
+};

@@ -1,145 +1,80 @@
 
 /**
  * Grid measurement utilities
- * Provides functions for measuring distances and areas on the grid
  * @module grid/measurements
  */
-import { Point } from '@/types/drawingTypes';
-import { GRID_SPACING, PIXELS_PER_METER } from '../gridConstants';
-import { normalizePoint } from './typeUtils';
+import { Point } from '@/types/core/Point';
+import { GRID_SPACING, PIXELS_PER_METER } from '@/constants/numerics';
 
 /**
- * Calculate distance to nearest grid line
- * Useful for determining when to snap to grid
- * 
- * @param {Point} point - Point to check
- * @param {number} gridSize - Grid size
- * @returns {{x: number, y: number}} Distance to nearest grid line in x and y directions
+ * Calculate distance between two points
+ * @param p1 - First point
+ * @param p2 - Second point
+ * @returns Distance in pixels
  */
-export const distanceToNearestGridLine = (
-  point: Point,
-  gridSize: number = GRID_SPACING
-): {x: number, y: number} => {
-  const validPoint = normalizePoint(point);
-  const validGridSize = gridSize > 0 ? gridSize : GRID_SPACING;
-  
-  // Calculate remainder when divided by grid size
-  const remainderX = Math.abs(validPoint.x % validGridSize);
-  const remainderY = Math.abs(validPoint.y % validGridSize);
-  
-  // Find shorter distance to grid line
-  const distanceX = Math.min(
-    remainderX,
-    validGridSize - remainderX
-  );
-  
-  const distanceY = Math.min(
-    remainderY, 
-    validGridSize - remainderY
-  );
-  
-  return { x: distanceX, y: distanceY };
-};
-
-/**
- * Calculate distance between two points in grid units
- * 
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @returns {number} Distance in grid units
- */
-export const calculateDistance = (point1: Point, point2: Point): number => {
-  const validPoint1 = normalizePoint(point1);
-  const validPoint2 = normalizePoint(point2);
-  
-  const dx = validPoint2.x - validPoint1.x;
-  const dy = validPoint2.y - validPoint1.y;
-  
+export const pixelDistance = (p1: Point, p2: Point): number => {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
   return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
- * Convert pixel distance to metric (meters)
- * 
- * @param {number} pixelDistance - Distance in pixels
- * @returns {number} Distance in meters
+ * Convert distance in pixels to meters
+ * @param pixelDist - Distance in pixels
+ * @returns Distance in meters
  */
-export const pixelsToMeters = (pixelDistance: number): number => {
-  const validPixelDistance = isNaN(pixelDistance) ? 0 : pixelDistance;
-  const validPixelsPerMeter = PIXELS_PER_METER > 0 ? PIXELS_PER_METER : 100;
-  
-  return validPixelDistance / validPixelsPerMeter;
+export const pixelsToMeters = (pixelDist: number): number => {
+  return pixelDist / PIXELS_PER_METER;
 };
 
 /**
- * Convert metric distance (meters) to pixels
- * 
- * @param {number} meterDistance - Distance in meters
- * @returns {number} Distance in pixels
+ * Calculate grid cell size in meters
+ * @returns Grid cell size in meters
  */
-export const metersToPixels = (meterDistance: number): number => {
-  const validMeterDistance = isNaN(meterDistance) ? 0 : meterDistance;
-  const validPixelsPerMeter = PIXELS_PER_METER > 0 ? PIXELS_PER_METER : 100;
-  
-  return validMeterDistance * validPixelsPerMeter;
+export const gridCellSizeInMeters = (): number => {
+  // Use small grid spacing directly
+  return GRID_SPACING.SMALL / PIXELS_PER_METER;
 };
 
 /**
- * Calculate area of a polygon in square meters
- * 
- * @param {Point[]} points - Array of polygon vertices
- * @returns {number} Area in square meters
+ * Calculate number of grid cells between two points
+ * @param p1 - First point
+ * @param p2 - Second point
+ * @returns Number of grid cells
  */
-export const calculatePolygonArea = (points: Point[]): number => {
-  if (!points || points.length < 3) return 0;
+export const gridCellsBetween = (p1: Point, p2: Point): { x: number, y: number } => {
+  // Calculate number of cells in each dimension
+  const smallGridSize = GRID_SPACING.SMALL;
   
-  // Validate all points and filter out invalid ones
-  const validPoints = points.map(point => normalizePoint(point)).filter(point => 
-    point.x !== undefined && point.y !== undefined
-  );
+  const dx = Math.abs(p2.x - p1.x);
+  const dy = Math.abs(p2.y - p1.y);
   
-  if (validPoints.length < 3) return 0;
-  
-  let area = 0;
-  const n = validPoints.length;
+  return {
+    x: Math.round(dx / smallGridSize),
+    y: Math.round(dy / smallGridSize)
+  };
+};
+
+/**
+ * Calculate area in square meters
+ * @param points - Array of points forming a polygon
+ * @returns Area in square meters
+ */
+export const calculateAreaInSquareMeters = (points: Point[]): number => {
+  if (points.length < 3) return 0;
   
   // Calculate area using Shoelace formula
+  let area = 0;
+  const n = points.length;
+  
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;
-    area += validPoints[i].x * validPoints[j].y;
-    area -= validPoints[j].x * validPoints[i].y;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
   }
   
   area = Math.abs(area) / 2;
   
-  // Convert area from square pixels to square meters
-  return pixelsToMeters(area) * pixelsToMeters(1);
-};
-
-/**
- * Calculate perimeter of a polygon in meters
- * 
- * @param {Point[]} points - Array of polygon vertices
- * @returns {number} Perimeter in meters
- */
-export const calculatePolygonPerimeter = (points: Point[]): number => {
-  if (!points || points.length < 2) return 0;
-  
-  // Validate all points and filter out invalid ones
-  const validPoints = points.map(point => normalizePoint(point)).filter(point => 
-    point.x !== undefined && point.y !== undefined
-  );
-  
-  if (validPoints.length < 2) return 0;
-  
-  let perimeter = 0;
-  const n = validPoints.length;
-  
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    perimeter += calculateDistance(validPoints[i], validPoints[j]);
-  }
-  
-  // Convert perimeter from pixels to meters
-  return pixelsToMeters(perimeter);
+  // Convert to square meters
+  return area / (PIXELS_PER_METER * PIXELS_PER_METER);
 };

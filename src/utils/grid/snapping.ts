@@ -1,181 +1,100 @@
 
 /**
- * Grid snapping utilities for alignment and straightening
- * @module utils/grid/snapping
+ * Grid snapping utilities
+ * Functions for snapping points and lines to grid
+ * @module grid/snapping
  */
 import { Point } from '@/types/core/Point';
-import { getSmallGridSpacing, getLargeGridSpacing } from './gridUtils';
+import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
- * Standard angle increments for snapping (in degrees)
- */
-export const STANDARD_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-
-/**
- * Snap a point to the nearest grid intersection
- * 
+ * Snap point to nearest grid position
  * @param point - Point to snap
- * @param gridSpacing - Grid spacing (can be a number or an object with SMALL property)
+ * @param gridSize - Grid size
  * @returns Snapped point
  */
-export const snapToGrid = (point: Point, gridSpacing: number): Point => {
-  // Ensure we have a numeric grid spacing
-  const spacing = typeof gridSpacing === 'number' 
-    ? gridSpacing 
-    : getSmallGridSpacing();
-  
+export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
   return {
-    x: Math.round(point.x / spacing) * spacing,
-    y: Math.round(point.y / spacing) * spacing
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
   };
 };
 
 /**
- * Get the nearest point on the grid
- * 
- * @param point - Reference point
- * @param gridSpacing - Grid spacing
- * @returns Nearest grid point
+ * Check if point is already on grid
+ * @param point - Point to check
+ * @param gridSize - Grid size
+ * @returns Whether point is on grid
  */
-export const getNearestPointOnGrid = (point: Point, gridSpacing: number): Point => {
-  return snapToGrid(point, gridSpacing);
+export const isPointOnGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): boolean => {
+  const snappedPoint = snapPointToGrid(point, gridSize);
+  const dx = Math.abs(point.x - snappedPoint.x);
+  const dy = Math.abs(point.y - snappedPoint.y);
+  
+  return dx < 0.001 && dy < 0.001;
 };
 
 /**
- * Get the nearest grid intersection to a point
- * 
- * @param point - Reference point
- * @param gridSpacing - Grid spacing
- * @returns Nearest grid intersection
+ * Calculate distance from point to nearest grid line
+ * @param point - Point to check
+ * @param gridSize - Grid size
+ * @returns Object with x and y distances
  */
-export const getNearestGridIntersection = (point: Point, gridSpacing: number): Point => {
-  return snapToGrid(point, gridSpacing);
+export const distanceToGridLine = (point: Point, gridSize: number = GRID_SPACING.SMALL): { x: number, y: number } => {
+  const xMod = point.x % gridSize;
+  const yMod = point.y % gridSize;
+  
+  const xDist = Math.min(xMod, gridSize - xMod);
+  const yDist = Math.min(yMod, gridSize - yMod);
+  
+  return { x: xDist, y: yDist };
 };
 
 /**
- * Calculate distance to the nearest grid line
- * 
- * @param point - Reference point
- * @param gridSpacing - Grid spacing
- * @returns Distance to the nearest grid line
- */
-export const distanceToNearestGridLine = (point: Point, gridSpacing: number): number => {
-  const spacing = typeof gridSpacing === 'number' 
-    ? gridSpacing 
-    : getSmallGridSpacing();
-  
-  const xDist = point.x % spacing;
-  const yDist = point.y % spacing;
-  
-  const xDistToLine = Math.min(xDist, spacing - xDist);
-  const yDistToLine = Math.min(yDist, spacing - yDist);
-  
-  return Math.min(xDistToLine, yDistToLine);
-};
-
-/**
- * Snap an angle to the nearest standard angle
- * 
- * @param angle - Angle in degrees
- * @param increment - Angle increment for snapping
- * @returns Snapped angle
- */
-export const snapToAngle = (angle: number, increment: number = 45): number => {
-  // Normalize angle to 0-360 range
-  while (angle < 0) angle += 360;
-  angle = angle % 360;
-  
-  // Find closest standard angle
-  return STANDARD_ANGLES.reduce((closest, current) => {
-    const currentDiff = Math.abs(angle - current);
-    const closestDiff = Math.abs(angle - closest);
-    return currentDiff < closestDiff ? current : closest;
-  }, STANDARD_ANGLES[0]);
-};
-
-/**
- * Snap a line to standard angles (0, 45, 90, etc.)
- * 
+ * Snap line to standard angles (0, 45, 90, etc.)
  * @param startPoint - Line start point
  * @param endPoint - Line end point
- * @param angleIncrement - Angle increment for snapping (default: 45°)
- * @returns New end point that creates a snapped line
+ * @returns Adjusted end point for snapped line
  */
-export const snapLineToStandardAngles = (
-  startPoint: Point, 
-  endPoint: Point,
-  angleIncrement: number = 45
-): Point => {
-  // Calculate current angle and distance
+export const snapLineToStandardAngles = (startPoint: Point, endPoint: Point): Point => {
   const dx = endPoint.x - startPoint.x;
   const dy = endPoint.y - startPoint.y;
-  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const angle = Math.atan2(dy, dx);
+  
+  // Snap to 0, 45, 90, 135, 180, 225, 270, 315 degrees
+  const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+  
   const distance = Math.sqrt(dx * dx + dy * dy);
   
-  // Snap angle to nearest standard angle
-  const snappedAngle = snapToAngle(angle, angleIncrement);
-  
-  // Convert back to radians
-  const snappedRadians = snappedAngle * (Math.PI / 180);
-  
-  // Calculate new end point
   return {
-    x: startPoint.x + distance * Math.cos(snappedRadians),
-    y: startPoint.y + distance * Math.sin(snappedRadians)
+    x: startPoint.x + distance * Math.cos(snapAngle),
+    y: startPoint.y + distance * Math.sin(snapAngle)
   };
 };
 
 /**
- * Check if a point is aligned with the grid
- * 
- * @param point - Point to check
- * @param gridSpacing - Grid spacing
- * @param tolerance - Tolerance in pixels
- * @returns Whether the point is aligned with the grid
+ * Check if two lines would form a standard angle
+ * @param line1Start - First line start point
+ * @param line1End - First line end point
+ * @param line2End - Second line end point (sharing line1End)
+ * @param tolerance - Angle tolerance in degrees
+ * @returns Whether the lines form a standard angle
  */
-export const isPointAlignedWithGrid = (
-  point: Point, 
-  gridSpacing: number,
-  tolerance: number = 0.001
+export const linesFormStandardAngle = (
+  line1Start: Point,
+  line1End: Point,
+  line2End: Point,
+  tolerance: number = 5
 ): boolean => {
-  const spacing = typeof gridSpacing === 'number' 
-    ? gridSpacing 
-    : getSmallGridSpacing();
+  // Calculate angles
+  const angle1 = Math.atan2(line1End.y - line1Start.y, line1End.x - line1Start.x);
+  const angle2 = Math.atan2(line2End.y - line1End.y, line2End.x - line1End.x);
   
-  const xDiff = Math.abs(point.x % spacing);
-  const yDiff = Math.abs(point.y % spacing);
+  // Calculate difference in degrees
+  let angleDiff = Math.abs((angle2 - angle1) * 180 / Math.PI) % 360;
+  if (angleDiff > 180) angleDiff = 360 - angleDiff;
   
-  return (xDiff < tolerance || xDiff > spacing - tolerance) && 
-         (yDiff < tolerance || yDiff > spacing - tolerance);
-};
-
-/**
- * Snap a line to grid
- * 
- * @param startPoint - Line start point
- * @param endPoint - Line end point
- * @param gridSpacing - Grid spacing
- * @returns New end point that creates a snapped line
- */
-export const snapLineToGrid = (
-  startPoint: Point,
-  endPoint: Point,
-  gridSpacing: number
-): Point => {
-  // First snap to standard angles
-  const angleSnappedPoint = snapLineToStandardAngles(startPoint, endPoint);
-  
-  // Then snap to grid
-  return snapToGrid(angleSnappedPoint, gridSpacing);
-};
-
-/**
- * Check if a point is snapped to grid
- * 
- * @param point - Point to check
- * @param gridSpacing - Grid spacing
- * @returns Whether the point is snapped to grid
- */
-export const isSnappedToGrid = (point: Point, gridSpacing: number): boolean => {
-  return isPointAlignedWithGrid(point, gridSpacing);
+  // Check if angle is close to 0, 45, 90, 135, 180
+  const standardAngles = [0, 45, 90, 135, 180];
+  return standardAngles.some(std => Math.abs(angleDiff - std) <= tolerance);
 };

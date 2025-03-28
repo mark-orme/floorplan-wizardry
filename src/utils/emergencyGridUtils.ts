@@ -1,82 +1,123 @@
 
 /**
- * Emergency grid utilities for when standard initialization fails
+ * Emergency grid utilities
+ * Fallback grid rendering when normal grid creation fails
  * @module emergencyGridUtils
  */
-import { Canvas as FabricCanvas, Line } from 'fabric';
-import logger from '@/utils/logger';
-import { GRID_SPACING } from '@/constants/numerics';
-import { disposeCanvas } from './fabric/canvasCleanup';
+import { Canvas, Object as FabricObject, Line } from "fabric";
+import { GRID_SPACING } from "@/constants/numerics";
 
 /**
- * Clean up canvas element forcefully
- * @param element - Canvas element to clean
+ * Create a minimalist grid as fallback
+ * @param canvas - The Fabric canvas
+ * @returns Array of created grid objects
  */
-export const forceCleanCanvasElement = (element: HTMLCanvasElement | null): void => {
-  if (!element) return;
+export const createMinimalistGrid = (canvas: Canvas): FabricObject[] => {
+  if (!canvas) return [];
   
-  try {
-    // Clone and replace the element to remove all listeners
-    const clone = element.cloneNode(false) as HTMLCanvasElement;
-    if (element.parentNode) {
-      element.parentNode.replaceChild(clone, element);
-    }
-    logger.info("Canvas element forcefully cleaned");
-  } catch (error) {
-    logger.error("Error force cleaning canvas element:", error);
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
+  const gridObjects: FabricObject[] = [];
+  
+  // Create horizontal lines
+  for (let y = 0; y <= height; y += 100) {
+    const line = new Line([0, y, width, y], {
+      stroke: '#e0e0e0',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    gridObjects.push(line);
+    canvas.add(line);
   }
+  
+  // Create vertical lines
+  for (let x = 0; x <= width; x += 100) {
+    const line = new Line([x, 0, x, height], {
+      stroke: '#e0e0e0',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    gridObjects.push(line);
+    canvas.add(line);
+  }
+  
+  canvas.renderAll();
+  return gridObjects;
 };
 
 /**
- * Create an emergency grid when normal grid creation fails
- * @param canvas - Canvas to create grid on
- * @returns Success status
+ * Create a basic emergency grid with small and large lines
+ * Uses simplified approach for robustness
+ * @param canvas - The canvas instance
+ * @returns Array of created grid objects
  */
-export const createEmergencyGrid = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) {
-    logger.error("Cannot create emergency grid on null canvas");
-    return false;
+export const createBasicEmergencyGrid = (canvas: Canvas): FabricObject[] => {
+  if (!canvas) return [];
+  
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
+  const gridObjects: FabricObject[] = [];
+  
+  // Use small grid spacing constant directly instead of the object
+  const smallSpacing = GRID_SPACING.SMALL;
+  
+  // Create small grid lines
+  for (let y = 0; y <= height; y += smallSpacing) {
+    const line = new Line([0, y, width, y], {
+      stroke: '#f0f0f0',
+      strokeWidth: 0.5,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    gridObjects.push(line);
+    canvas.add(line);
   }
   
-  try {
-    // Clear any existing objects
-    canvas.clear();
-    
-    // Create a simple grid with minimal operations
-    const gridSpacing = GRID_SPACING;
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
-    
-    for (let i = 0; i < width; i += gridSpacing) {
-      canvas.add(new Line([i, 0, i, height], {
-        stroke: '#eeeeee',
-        selectable: false,
-        evented: false
-      }));
-    }
-    
-    for (let i = 0; i < height; i += gridSpacing) {
-      canvas.add(new Line([0, i, width, i], {
-        stroke: '#eeeeee',
-        selectable: false,
-        evented: false
-      }));
-    }
-    
-    canvas.renderAll();
-    logger.info("Emergency grid created");
-    return true;
-  } catch (error) {
-    logger.error("Error creating emergency grid:", error);
-    
-    // If this fails, try to clean up
-    try {
-      disposeCanvas(canvas);
-    } catch (e) {
-      // Just log, don't throw
-      logger.error("Error disposing canvas after emergency grid failure:", e);
-    }
-    
-    return false;
+  for (let x = 0; x <= width; x += smallSpacing) {
+    const line = new Line([x, 0, x, height], {
+      stroke: '#f0f0f0',
+      strokeWidth: 0.5,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    gridObjects.push(line);
+    canvas.add(line);
   }
+  
+  // Use large grid spacing constant directly
+  const largeSpacing = GRID_SPACING.LARGE;
+  
+  // Create large grid lines
+  for (let y = 0; y <= height; y += largeSpacing) {
+    const line = new Line([0, y, width, y], {
+      stroke: '#d0d0d0',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    gridObjects.push(line);
+    canvas.add(line);
+  }
+  
+  for (let x = 0; x <= width; x += largeSpacing) {
+    const line = new Line([x, 0, x, height], {
+      stroke: '#d0d0d0',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    gridObjects.push(line);
+    canvas.add(line);
+  }
+  
+  canvas.renderAll();
+  return gridObjects;
 };

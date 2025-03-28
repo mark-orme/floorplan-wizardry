@@ -97,6 +97,31 @@ export interface DrawingState {
 }
 
 /**
+ * Create default drawing state
+ */
+export const createDefaultDrawingState = (): DrawingState => ({
+  isDrawing: false,
+  zoomLevel: 1,
+  lastX: 0,
+  lastY: 0,
+  startX: 0,
+  startY: 0,
+  currentPath: null,
+  usePressure: false,
+  stylusDetected: false,
+  pathDragging: false,
+  creatingShape: false,
+  currentZoom: 1,
+  startPoint: null,
+  currentPoint: null,
+  midPoint: null,
+  selectionActive: false,
+  points: [],
+  distance: null,
+  cursorPosition: null
+});
+
+/**
  * Drawing mode - re-export from drawingModes.ts to ensure consistent usage
  */
 export type { DrawingMode, DrawingTool } from '@/constants/drawingModes';

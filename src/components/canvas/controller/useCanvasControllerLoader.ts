@@ -11,7 +11,6 @@ import { FloorPlan } from "@/types/floorPlanTypes";
  * Props for the useCanvasControllerLoader hook
  * 
  * @interface UseCanvasControllerLoaderProps
- * @property {React.Dispatch<React.SetStateAction<boolean>>} setIsLoading - Function to update loading state
  * @property {React.Dispatch<React.SetStateAction<FloorPlan[]>>} setFloorPlans - Function to update floor plans state
  * @property {(value: boolean) => void} setHasError - Function to update error state
  * @property {(value: string) => void} setErrorMessage - Function to update error message

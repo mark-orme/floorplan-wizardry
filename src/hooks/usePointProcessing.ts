@@ -1,168 +1,128 @@
 
 /**
- * Point processing hook
- * Handles operations on points and coordinates
- * @module hooks/usePointProcessing
+ * Hook for point processing operations
+ * Handles point transformation, validation, and processing
+ * @module usePointProcessing
  */
 import { useCallback } from 'react';
-import { Point } from '@/types/drawingTypes';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Point, createPoint } from '@/types/core/Point';
+import { getNearestGridPoint } from '@/utils/gridUtils';
+import { GRID_SPACING } from '@/constants/numerics';
 
 /**
- * Constants for point processing
+ * Props for usePointProcessing hook
  */
-const POINT_PROCESSING_CONSTANTS = {
-  /** Default tolerance for point proximity checks */
-  DEFAULT_TOLERANCE: 5,
-  
-  /** Minimum distance for point filtering */
-  MIN_POINT_DISTANCE: 2,
-  
-  /** Default distance for point smoothing */
-  SMOOTHING_DISTANCE: 3
-};
-
-/**
- * Result type for point processing hook
- */
-interface UsePointProcessingResult {
-  /** Calculate distance between two points */
-  calculateDistance: (point1: Point, point2: Point) => number;
-  /** Check if two points are close to each other */
-  arePointsClose: (point1: Point, point2: Point, tolerance?: number) => boolean;
-  /** Filter points by minimum distance */
-  filterPoints: (points: Point[], minDistance?: number) => Point[];
-  /** Calculate midpoint between two points */
-  calculateMidpoint: (point1: Point, point2: Point) => Point;
-  /** Simplify a path by removing redundant points */
-  simplifyPath: (points: Point[], tolerance?: number) => Point[];
+interface UsePointProcessingProps {
+  /** Reference to fabric canvas */
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
 }
 
 /**
- * Hook for point-related operations
- * @returns Functions for point processing
+ * Result of usePointProcessing hook
  */
-export const usePointProcessing = (): UsePointProcessingResult => {
-  /**
-   * Calculate the Euclidean distance between two points
-   * 
-   * @param point1 - First point
-   * @param point2 - Second point
-   * @returns Distance between the points
-   */
-  const calculateDistance = useCallback((point1: Point, point2: Point): number => {
-    const dx = point2.x - point1.x;
-    const dy = point2.y - point1.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }, []);
+export interface UsePointProcessingResult {
+  /** Process a point with transformations */
+  processPoint: (point: Point) => Point;
+  /** Validate a point is within canvas bounds */
+  validatePoint: (point: Point) => boolean;
+  /** Convert screen coordinates to canvas coordinates */
+  screenToCanvasPoint: (x: number, y: number) => Point;
+  /** Convert canvas coordinates to screen coordinates */
+  canvasToScreenPoint: (point: Point) => Point;
+}
+
+/**
+ * Hook for processing points in canvas operations
+ * 
+ * @param {UsePointProcessingProps} props - Hook properties
+ * @returns {UsePointProcessingResult} Point processing functions
+ */
+export const usePointProcessing = ({ 
+  fabricCanvasRef 
+}: UsePointProcessingProps): UsePointProcessingResult => {
   
   /**
-   * Check if two points are close to each other
-   * 
-   * @param point1 - First point
-   * @param point2 - Second point
-   * @param tolerance - Distance threshold
-   * @returns Whether points are within tolerance
+   * Process a point with any needed transformations
+   * @param {Point} point - Point to process
+   * @returns {Point} Processed point
    */
-  const arePointsClose = useCallback((
-    point1: Point,
-    point2: Point,
-    tolerance: number = POINT_PROCESSING_CONSTANTS.DEFAULT_TOLERANCE
-  ): boolean => {
-    return calculateDistance(point1, point2) <= tolerance;
-  }, [calculateDistance]);
+  const processPoint = useCallback((point: Point): Point => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return point;
+    
+    // Apply any transformations (zoom, pan, etc.)
+    const zoom = canvas.getZoom();
+    const vpt = canvas.viewportTransform;
+    
+    if (!vpt) return point;
+    
+    // Create a new point to avoid mutating the original
+    return createPoint(point.x, point.y);
+  }, [fabricCanvasRef]);
   
   /**
-   * Filter an array of points to remove points that are too close
-   * 
-   * @param points - Array of points to filter
-   * @param minDistance - Minimum distance between points
-   * @returns Filtered array of points
+   * Validate a point is within canvas bounds
+   * @param {Point} point - Point to validate
+   * @returns {boolean} Whether point is valid
    */
-  const filterPoints = useCallback((
-    points: Point[],
-    minDistance: number = POINT_PROCESSING_CONSTANTS.MIN_POINT_DISTANCE
-  ): Point[] => {
-    if (points.length <= 1) return points;
+  const validatePoint = useCallback((point: Point): boolean => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return false;
     
-    const result: Point[] = [points[0]];
+    const width = canvas.width || 0;
+    const height = canvas.height || 0;
     
-    for (let i = 1; i < points.length; i++) {
-      const lastPoint = result[result.length - 1];
-      
-      // Only add point if it's far enough from the last added point
-      if (!arePointsClose(lastPoint, points[i], minDistance)) {
-        result.push(points[i]);
-      }
-    }
-    
-    return result;
-  }, [arePointsClose]);
+    return point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height;
+  }, [fabricCanvasRef]);
   
   /**
-   * Calculate the midpoint between two points
-   * 
-   * @param point1 - First point
-   * @param point2 - Second point
-   * @returns Midpoint
+   * Convert screen coordinates to canvas coordinates
+   * @param {number} x - Screen X coordinate
+   * @param {number} y - Screen Y coordinate
+   * @returns {Point} Canvas coordinates
    */
-  const calculateMidpoint = useCallback((point1: Point, point2: Point): Point => {
-    return {
-      x: (point1.x + point2.x) / 2,
-      y: (point1.y + point2.y) / 2
-    };
-  }, []);
+  const screenToCanvasPoint = useCallback((x: number, y: number): Point => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return createPoint(x, y);
+    
+    const zoom = canvas.getZoom();
+    const vpt = canvas.viewportTransform;
+    
+    if (!vpt) return createPoint(x, y);
+    
+    // Transform point from screen to canvas coordinates
+    return createPoint(
+      (x - vpt[4]) / zoom,
+      (y - vpt[5]) / zoom
+    );
+  }, [fabricCanvasRef]);
   
   /**
-   * Simplify a path by removing redundant points
-   * Basic implementation of the Ramer-Douglas-Peucker algorithm
-   * 
-   * @param points - Array of points to simplify
-   * @param tolerance - Tolerance for simplification
-   * @returns Simplified array of points
+   * Convert canvas coordinates to screen coordinates
+   * @param {Point} point - Canvas coordinates
+   * @returns {Point} Screen coordinates
    */
-  const simplifyPath = useCallback((
-    points: Point[],
-    tolerance: number = POINT_PROCESSING_CONSTANTS.DEFAULT_TOLERANCE
-  ): Point[] => {
-    if (points.length <= 2) return points;
+  const canvasToScreenPoint = useCallback((point: Point): Point => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return point;
     
-    // Implementation of path simplification algorithm
-    // This is a simplified version
-    let maxDistance = 0;
-    let index = 0;
+    const zoom = canvas.getZoom();
+    const vpt = canvas.viewportTransform;
     
-    // Find point with maximum distance
-    for (let i = 1; i < points.length - 1; i++) {
-      const distance = calculateDistance(
-        calculateMidpoint(points[0], points[points.length - 1]),
-        points[i]
-      );
-      
-      if (distance > maxDistance) {
-        maxDistance = distance;
-        index = i;
-      }
-    }
+    if (!vpt) return point;
     
-    // If max distance is greater than tolerance, recursively simplify
-    if (maxDistance > tolerance) {
-      // Recursive simplification
-      const firstSegment = simplifyPath(points.slice(0, index + 1), tolerance);
-      const secondSegment = simplifyPath(points.slice(index), tolerance);
-      
-      // Combine segments (remove duplicate point)
-      return [...firstSegment.slice(0, -1), ...secondSegment];
-    }
-    
-    // If max distance is less than tolerance, use only endpoints
-    return [points[0], points[points.length - 1]];
-  }, [calculateDistance, calculateMidpoint]);
+    // Transform point from canvas to screen coordinates
+    return createPoint(
+      point.x * zoom + vpt[4],
+      point.y * zoom + vpt[5]
+    );
+  }, [fabricCanvasRef]);
   
   return {
-    calculateDistance,
-    arePointsClose,
-    filterPoints,
-    calculateMidpoint,
-    simplifyPath
+    processPoint,
+    validatePoint,
+    screenToCanvasPoint,
+    canvasToScreenPoint
   };
 };

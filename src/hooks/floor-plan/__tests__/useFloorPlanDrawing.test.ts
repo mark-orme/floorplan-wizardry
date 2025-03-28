@@ -1,144 +1,122 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
-import { FloorPlan } from '@/types/core/FloorPlan';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Mock canvas
-const mockCanvas = {
-  on: vi.fn(),
-  off: vi.fn(),
-  add: vi.fn(),
-  remove: vi.fn(),
-  getActiveObject: vi.fn(),
-  discardActiveObject: vi.fn(),
-  renderAll: vi.fn()
+// Mock data for testing
+const mockFloorPlan = {
+  id: 'floor-1',
+  name: 'First Floor',
+  strokes: [],
+  level: 0,
+  gia: 0
 };
-
-// Mock gesture handler
-const mockGestureHandler = {
-  register: vi.fn(),
-  unregister: vi.fn()
-};
-
-// Update interface to match actual implementation
-interface MockUseFloorPlanDrawingProps {
-  fabricCanvasRef: { current: any };
-  refState: any;
-  gestureHandler: any;
-}
 
 describe('useFloorPlanDrawing', () => {
-  let mockFabricCanvasRef: any;
-  let mockRefState: any;
-
-  beforeEach(() => {
-    mockFabricCanvasRef = { current: mockCanvas };
-    mockRefState = { 
-      history: { past: [], future: [] },
-      currentFloor: 0
-    };
+  // Create a clean hook for each test
+  const setup = () => {
+    const updateFloorPlanMock = vi.fn();
+    const setActiveStrokeMock = vi.fn();
     
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
-  // We're mocking these properties to match what the test expects
-  const mockResult = {
-    isDrawing: false,
-    activeTool: 'select',
-    setActiveTool: vi.fn(),
-    addStroke: vi.fn(),
-    startDrawingAt: vi.fn(),
-    currentPoint: { x: 0, y: 0 }
+    const result = renderHook(() => useFloorPlanDrawing({
+      floorPlan: mockFloorPlan,
+      updateFloorPlan: updateFloorPlanMock,
+      setActiveStroke: setActiveStrokeMock
+    }));
+    
+    return {
+      result,
+      updateFloorPlanMock,
+      setActiveStrokeMock
+    };
   };
-
-  // Mock the implementation of useFloorPlanDrawing to return our mocked result
-  vi.mock('../useFloorPlanDrawing', () => ({
-    useFloorPlanDrawing: vi.fn().mockImplementation(() => mockResult)
-  }));
-
-  it('should initialize drawing state', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: mockFabricCanvasRef,
-      refState: mockRefState,
-      gestureHandler: mockGestureHandler
-    } as MockUseFloorPlanDrawingProps));
-
-    // Test against our mocked result
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.activeTool).toBe('select');
-  });
-
-  it('should update drawing tool', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: mockFabricCanvasRef,
-      refState: mockRefState,
-      gestureHandler: mockGestureHandler
-    } as MockUseFloorPlanDrawingProps));
-
-    act(() => {
-      result.current.setActiveTool?.('wall');
+  
+  describe('initialization', () => {
+    it('should initialize with default drawing tool', () => {
+      const { result } = setup();
+      expect(result.current.activeTool).toBeDefined();
     });
-
-    expect(result.current.activeTool).toBe('wall');
-  });
-
-  it('should add stroke to floor plan', () => {
-    // Create a valid floor plan
-    const testFloorPlan = {
-      id: 'test-floor-plan',
-      name: 'Test Floor Plan',
-      level: 0,
-      metadata: {}
-    };
     
-    mockRefState.floorPlans = [testFloorPlan];
-    mockRefState.setFloorPlans = vi.fn();
-
-    const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: mockFabricCanvasRef,
-      refState: mockRefState,
-      gestureHandler: mockGestureHandler
-    } as MockUseFloorPlanDrawingProps));
-
-    const stroke = {
-      id: 'test-stroke',
-      points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-      type: 'line',
-      color: '#000000',
-      thickness: 2
-    };
-
-    act(() => {
-      result.current.addStroke(stroke);
+    it('should initialize with empty stroke collection', () => {
+      const { result } = setup();
+      expect(result.current.strokes).toEqual([]);
     });
-
-    expect(mockRefState.setFloorPlans).toHaveBeenCalled();
   });
-
-  it('should handle drawing start and end', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: mockFabricCanvasRef,
-      refState: mockRefState,
-      gestureHandler: mockGestureHandler
-    } as MockUseFloorPlanDrawingProps));
-
-    act(() => {
-      result.current.startDrawingAt({ x: 0, y: 0 });
+  
+  describe('tool selection', () => {
+    it('should change active tool', () => {
+      const { result } = setup();
+      
+      act(() => {
+        result.current.setActiveTool('line');
+      });
+      
+      expect(result.current.activeTool).toBe('line');
+      
+      act(() => {
+        result.current.setActiveTool('select');
+      });
+      
+      expect(result.current.activeTool).toBe('select');
     });
-
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.currentPoint).toEqual({ x: 0, y: 0 });
-
-    act(() => {
-      // Assuming endDrawing is available and accepts a point
-      (result.current as any).endDrawing({ x: 100, y: 100 });
+  });
+  
+  describe('stroke management', () => {
+    it('should add a stroke', () => {
+      const { result, updateFloorPlanMock } = setup();
+      
+      const newStroke = {
+        id: 'stroke-1',
+        points: [{ x: 10, y: 10 }, { x: 20, y: 20 }],
+        type: 'line',
+        color: '#000000',
+        thickness: 2
+      };
+      
+      act(() => {
+        result.current.addStroke(newStroke);
+      });
+      
+      // Check that updateFloorPlan was called with the new stroke
+      expect(updateFloorPlanMock).toHaveBeenCalledWith(expect.objectContaining({
+        strokes: [newStroke]
+      }));
     });
-
-    expect(result.current.isDrawing).toBe(false);
+  });
+  
+  describe('drawing operations', () => {
+    it('should start drawing at a point', () => {
+      const { result } = setup();
+      
+      act(() => {
+        result.current.startDrawing({ x: 10, y: 10 });
+      });
+      
+      expect(result.current.currentPoint).toEqual({ x: 10, y: 10 });
+    });
+    
+    it('should update current point when drawing', () => {
+      const { result } = setup();
+      
+      act(() => {
+        result.current.startDrawing({ x: 10, y: 10 });
+        result.current.continueDrawing({ x: 20, y: 20 });
+      });
+      
+      expect(result.current.currentPoint).toEqual({ x: 20, y: 20 });
+    });
+    
+    it('should complete drawing and add a stroke', () => {
+      const { result, updateFloorPlanMock } = setup();
+      
+      act(() => {
+        result.current.startDrawing({ x: 10, y: 10 });
+        result.current.continueDrawing({ x: 20, y: 20 });
+        result.current.endDrawing();
+      });
+      
+      // Check that updateFloorPlan was called with a new stroke
+      expect(updateFloorPlanMock).toHaveBeenCalled();
+    });
   });
 });

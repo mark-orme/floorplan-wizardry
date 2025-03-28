@@ -1,28 +1,62 @@
-import { useCallback } from "react";
-import { EventHandlerResult } from "./types";
 
 /**
- * Hook for handling canvas events
- * @param props - Hook properties
- * @returns Event handler registration and cleanup functions
+ * Hook for registering canvas event handlers
+ * @module canvas-events/useCanvasHandlers
  */
-export const useCanvasHandlers = (props: any): EventHandlerResult => {
+import { useCallback, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { EventHandlerResult, UseCanvasHandlersProps, EventHandlerMap } from './types';
+
+/**
+ * Hook for managing generic canvas event handlers
+ * 
+ * @param {UseCanvasHandlersProps} props - Properties for the hook
+ * @returns {EventHandlerResult} - Event handler result with register/unregister functions
+ */
+export const useCanvasHandlers = ({
+  fabricCanvasRef,
+  handlers
+}: UseCanvasHandlersProps): EventHandlerResult => {
+  
+  /**
+   * Register all event handlers
+   */
   const register = useCallback(() => {
-    // Implementation for registering handlers
-    console.log("Registering canvas handlers");
-  }, []);
-
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Register each handler
+    Object.entries(handlers).forEach(([eventName, handler]) => {
+      canvas.on(eventName, handler);
+    });
+  }, [fabricCanvasRef, handlers]);
+  
+  /**
+   * Unregister all event handlers
+   */
   const unregister = useCallback(() => {
-    // Implementation for unregistering handlers
-    console.log("Unregistering canvas handlers");
-  }, []);
-
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Unregister each handler
+    Object.entries(handlers).forEach(([eventName, handler]) => {
+      canvas.off(eventName, handler);
+    });
+  }, [fabricCanvasRef, handlers]);
+  
+  /**
+   * Clean up resources
+   */
   const cleanup = useCallback(() => {
-    // Implementation for cleanup
     unregister();
-    console.log("Cleaning up canvas handlers");
   }, [unregister]);
-
+  
+  // Register and cleanup on mount/unmount
+  useEffect(() => {
+    register();
+    return cleanup;
+  }, [register, cleanup]);
+  
   return {
     register,
     unregister,

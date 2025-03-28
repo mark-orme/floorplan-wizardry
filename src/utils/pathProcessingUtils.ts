@@ -1,151 +1,147 @@
+
 /**
  * Path processing utilities
- * Functions for processing and transforming paths drawn on canvas
  * @module pathProcessingUtils
  */
-import { Path as FabricPath } from "fabric";
-import { Point } from "@/types/drawingTypes";
-import { snapToGrid } from "@/utils/grid/snapping";
-import logger from "@/utils/logger";
-import { PATH_PROCESSING } from "./grid/gridPositioningConstants";
+import { Object as FabricObject, Path as FabricPath } from "fabric";
+import { Point } from "@/types/core/Point";
+import { distanceToGridLine, snapPointToGrid } from "./grid/snapping";
+import { GRID_SPACING, SNAP_THRESHOLD } from "@/constants/numerics";
 
 /**
- * Type for path command
+ * Calculate path bounding box
+ * @param path - Fabric path object
+ * @returns Bounding box coordinates
  */
-type PathCommand = (string | number)[];
-
-/**
- * Extract points from a Fabric.js path
- * @param {FabricPath} path - The fabric path object
- * @returns {Point[]} Array of points extracted from the path
- */
-export const extractPointsFromPath = (path: FabricPath): Point[] => {
-  if (!path || !path.path) {
-    logger.warn("Invalid path provided to extractPointsFromPath");
-    return [];
-  }
-
-  try {
-    const pathArray = path.path as PathCommand[];
-    const points: Point[] = [];
-    
-    // Extract all points from the path array
-    for (let i = 0; i < pathArray.length; i++) {
-      const pathCmd = pathArray[i];
-      
-      // Skip 'M' (move) commands without coordinates
-      if (pathCmd[0] === 'M' && pathCmd.length > 2) {
-        // Ensure numeric values for coordinates
-        const x = Number(pathCmd[1]);
-        const y = Number(pathCmd[2]);
-        if (!isNaN(x) && !isNaN(y)) {
-          points.push({ x, y });
-        }
-      }
-      
-      // Add line points from 'L' (line) commands
-      if (pathCmd[0] === 'L' && pathCmd.length > 2) {
-        // Ensure numeric values for coordinates
-        const x = Number(pathCmd[1]);
-        const y = Number(pathCmd[2]);
-        if (!isNaN(x) && !isNaN(y)) {
-          points.push({ x, y });
-        }
-      }
-      
-      // Add curve points from 'Q' (quadratic) and 'C' (cubic) commands
-      if ((pathCmd[0] === 'Q' || pathCmd[0] === 'C') && pathCmd.length > 4) {
-        // Add the end point of the curve (last two coordinates)
-        const endX = Number(pathCmd[pathCmd.length - 2]);
-        const endY = Number(pathCmd[pathCmd.length - 1]);
-        
-        if (!isNaN(endX) && !isNaN(endY)) {
-          points.push({ x: endX, y: endY });
-        }
-      }
-    }
-    
-    return points;
-  } catch (error) {
-    logger.error("Error extracting points from path:", error);
-    return [];
-  }
+export const getPathBoundingBox = (path: FabricObject): {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+} => {
+  if (!path) return { left: 0, top: 0, right: 0, bottom: 0 };
+  
+  // Get dimensions
+  const width = path.width || 0;
+  const height = path.height || 0;
+  const left = path.left || 0;
+  const top = path.top || 0;
+  
+  // Calculate right and bottom
+  const right = left + width;
+  const bottom = top + height;
+  
+  return { left, top, right, bottom };
 };
 
 /**
- * Process points from a path for drawing tools
- * @param {Point[]} points - Raw points from path
- * @param {boolean} close - Whether to close the path
- * @returns {{ finalPoints: Point[], pixelPoints: Point[] }} Processed points
+ * Extract points from a path
+ * @param path - Fabric path object
+ * @returns Array of points
  */
-export const processPathPoints = (
-  points: Point[],
-  close: boolean = false
-): { finalPoints: Point[], pixelPoints: Point[] } => {
-  if (!points || points.length === 0) {
-    return { finalPoints: [], pixelPoints: [] };
-  }
-
-  try {
-    // Keep first and last points, filter mid-points if too many
-    let filteredPoints: Point[] = [];
-
-    if (points.length <= PATH_PROCESSING.MIN_POINTS_THRESHOLD) {
-      // If there are few points, keep them all
-      filteredPoints = [...points];
-    } else {
-      // Always keep the first and last points
-      filteredPoints = [points[0]];
+export const extractPathPoints = (path: FabricPath): Point[] => {
+  if (!path) return [];
+  
+  // Access path's path array which contains drawing commands
+  const pathData = path.path;
+  if (!pathData || !Array.isArray(pathData)) return [];
+  
+  const points: Point[] = [];
+  
+  // Process path commands
+  pathData.forEach(cmd => {
+    if (Array.isArray(cmd)) {
+      const command = cmd[0];
       
-      // Sample mid-points if there are too many
-      const step = Math.max(1, Math.floor(points.length / PATH_PROCESSING.SAMPLING_DIVISOR));
-      for (let i = step; i < points.length - 1; i += step) {
-        filteredPoints.push(points[i]);
+      // Move to or line to commands add points
+      if (command === 'M' || command === 'L') {
+        points.push({ x: cmd[1], y: cmd[2] });
       }
-      
-      // Add the last point
-      filteredPoints.push(points[points.length - 1]);
-    }
-    
-    // Always snap points to grid for consistency
-    const snappedPoints = filteredPoints.map(point => snapToGrid(point));
-    
-    // If closing the path, add the first point to the end if needed
-    if (close && snappedPoints.length > 2) {
-      const firstPoint = snappedPoints[0];
-      const lastPoint = snappedPoints[snappedPoints.length - 1];
-      
-      // Only add if the last point isn't already the same as the first
-      if (firstPoint.x !== lastPoint.x || firstPoint.y !== lastPoint.y) {
-        snappedPoints.push({ ...firstPoint });
+      // Cubic bezier adds control points and end point
+      else if (command === 'C') {
+        // Control points (not adding)
+        // points.push({ x: cmd[1], y: cmd[2] });
+        // points.push({ x: cmd[3], y: cmd[4] });
+        // End point
+        points.push({ x: cmd[5], y: cmd[6] });
+      }
+      // Quadratic bezier adds control point and end point
+      else if (command === 'Q') {
+        // Control point (not adding)
+        // points.push({ x: cmd[1], y: cmd[2] });
+        // End point
+        points.push({ x: cmd[3], y: cmd[4] });
       }
     }
-    
-    return {
-      finalPoints: snappedPoints,
-      pixelPoints: filteredPoints
-    };
-  } catch (error) {
-    logger.error("Error processing path points:", error);
-    return { finalPoints: [], pixelPoints: [] };
-  }
+  });
+  
+  return points;
 };
 
 /**
- * Convert Fabric.js path to polyline points
- * @param {FabricPath} path - The fabric path object
- * @param {boolean} close - Whether to close the path
- * @returns {{ finalPoints: Point[], pixelPoints: Point[] }} Processed points
+ * Create a simple path from points
+ * @param points - Array of points
+ * @param options - Path options
+ * @returns Path object in Fabric.js format
  */
-export const convertPathToPolylinePoints = (
-  path: FabricPath,
-  close: boolean = false
-): { finalPoints: Point[], pixelPoints: Point[] } => {
-  try {
-    const rawPoints = extractPointsFromPath(path);
-    return processPathPoints(rawPoints, close);
-  } catch (error) {
-    logger.error("Error converting path to polyline points:", error);
-    return { finalPoints: [], pixelPoints: [] };
+export const createPathFromPoints = (points: Point[], options: any = {}): FabricPath => {
+  if (!points || points.length < 2) return new FabricPath('M 0 0', options);
+  
+  // Build SVG path string
+  let pathString = `M ${points[0].x} ${points[0].y}`;
+  
+  // Add line segments
+  for (let i = 1; i < points.length; i++) {
+    pathString += ` L ${points[i].x} ${points[i].y}`;
   }
+  
+  return new FabricPath(pathString, options);
+};
+
+/**
+ * Snap a path's points to grid
+ * @param path - Fabric path object
+ * @param gridSize - Grid size
+ * @returns New path with snapped points
+ */
+export const snapPathToGrid = (path: FabricPath, gridSize: number = GRID_SPACING.SMALL): FabricPath => {
+  // Extract points
+  const points = extractPathPoints(path);
+  if (points.length === 0) return path;
+  
+  // Snap points to grid
+  const snappedPoints = points.map(p => snapPointToGrid(p, gridSize));
+  
+  // Create new path with snapped points
+  const options = {
+    stroke: path.stroke,
+    strokeWidth: path.strokeWidth,
+    fill: path.fill,
+    opacity: path.opacity
+  };
+  
+  return createPathFromPoints(snappedPoints, options);
+};
+
+/**
+ * Check if a path should be snapped to grid
+ * @param path - Fabric path object to check
+ * @returns Whether path should be snapped
+ */
+export const shouldSnapPathToGrid = (path: FabricPath): boolean => {
+  if (!path) return false;
+  
+  // Extract points
+  const points = extractPathPoints(path);
+  if (points.length === 0) return false;
+  
+  // Check if any point is close to a grid line
+  for (const point of points) {
+    const dist = distanceToGridLine(point, GRID_SPACING.SMALL);
+    if (dist.x <= SNAP_THRESHOLD || dist.y <= SNAP_THRESHOLD) {
+      return true;
+    }
+  }
+  
+  return false;
 };

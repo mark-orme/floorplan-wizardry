@@ -1,109 +1,92 @@
 
+/**
+ * Hook for managing drawing state
+ * @module useDrawingState
+ */
 import { useState, useCallback } from 'react';
-import { DrawingState, Point } from '@/types';
+import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
+import { Point, createPoint } from '@/types/core/Point';
 
 /**
- * Hook for managing drawing state in canvas
- * @returns Drawing state and update functions
+ * Hook for managing drawing state
+ * @returns Drawing state management functions
  */
 export const useDrawingState = () => {
-  const [drawingState, setDrawingState] = useState<DrawingState>({
-    isDrawing: false,
-    startPoint: null,
-    currentPoint: null,
-    cursorPosition: null,
-    midPoint: null,
-    selectionActive: false,
-    currentZoom: 1,
-    points: [],
-    distance: null
-  });
-
+  // Initialize with default state
+  const [drawingState, setDrawingState] = useState<DrawingState>(createDefaultDrawingState());
+  
   /**
-   * Start drawing at specified point
-   * @param point Starting point coordinates
+   * Start drawing operation
+   * @param x - Starting X coordinate
+   * @param y - Starting Y coordinate
    */
-  const startDrawing = useCallback((point: Point) => {
+  const startDrawing = useCallback((x: number, y: number) => {
     setDrawingState(prev => ({
       ...prev,
       isDrawing: true,
-      startPoint: point,
-      currentPoint: point,
-      points: [point]
+      startX: x,
+      startY: y,
+      lastX: x,
+      lastY: y,
+      startPoint: createPoint(x, y),
+      currentPoint: createPoint(x, y),
+      points: [createPoint(x, y)]
     }));
   }, []);
-
+  
   /**
-   * Update drawing with current point
-   * @param point Current point coordinates
-   * @param midPoint Optional midpoint for curves
+   * Update drawing with current position
+   * @param x - Current X coordinate
+   * @param y - Current Y coordinate
    */
-  const updateDrawing = useCallback((point: Point, midPoint: Point | null = null) => {
-    setDrawingState(prev => ({
-      ...prev,
-      currentPoint: point,
-      midPoint,
-      points: [...prev.points, point]
-    }));
-  }, []);
-
-  /**
-   * End drawing
-   */
-  const endDrawing = useCallback(() => {
-    setDrawingState(prev => ({
-      ...prev,
-      isDrawing: false
-    }));
-  }, []);
-
-  /**
-   * Reset drawing state
-   */
-  const resetDrawing = useCallback(() => {
-    setDrawingState({
-      isDrawing: false,
-      startPoint: null,
-      currentPoint: null,
-      cursorPosition: null,
-      midPoint: null,
-      selectionActive: false,
-      currentZoom: 1,
-      points: [],
-      distance: null
+  const updateDrawing = useCallback((x: number, y: number) => {
+    setDrawingState(prev => {
+      const newPoint = createPoint(x, y);
+      return {
+        ...prev,
+        lastX: x,
+        lastY: y,
+        currentPoint: newPoint,
+        points: [...prev.points, newPoint]
+      };
     });
   }, []);
-
+  
   /**
-   * Update distance measurement
-   * @param distance Distance value
+   * End drawing operation
+   * @param x - Ending X coordinate
+   * @param y - Ending Y coordinate
    */
-  const updateDistance = useCallback((distance: number | null) => {
-    setDrawingState(prev => ({
-      ...prev,
-      distance
-    }));
+  const endDrawing = useCallback((x?: number, y?: number) => {
+    setDrawingState(prev => {
+      const updatedPoints = x !== undefined && y !== undefined 
+        ? [...prev.points, createPoint(x, y)] 
+        : prev.points;
+        
+      return {
+        ...prev,
+        isDrawing: false,
+        lastX: x !== undefined ? x : prev.lastX,
+        lastY: y !== undefined ? y : prev.lastY,
+        currentPoint: x !== undefined && y !== undefined ? createPoint(x, y) : prev.currentPoint,
+        points: updatedPoints
+      };
+    });
   }, []);
-
+  
   /**
-   * Update cursor position
-   * @param position Current cursor position
+   * Reset drawing state to initial values
    */
-  const updateCursorPosition = useCallback((position: Point | null) => {
-    setDrawingState(prev => ({
-      ...prev,
-      cursorPosition: position
-    }));
+  const resetDrawing = useCallback(() => {
+    setDrawingState(createDefaultDrawingState());
   }, []);
-
+  
   return {
     drawingState,
     setDrawingState,
     startDrawing,
     updateDrawing,
     endDrawing,
-    resetDrawing,
-    updateDistance,
-    updateCursorPosition
+    resetDrawing
   };
 };
