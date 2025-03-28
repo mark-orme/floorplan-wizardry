@@ -23,12 +23,8 @@ export function coreToAppFloorPlan(plan: CoreFloorPlan): AppFloorPlan {
     walls: Array.isArray(plan.walls) ? plan.walls.map(coreToAppWall) : [],
     rooms: Array.isArray(plan.rooms) ? plan.rooms.map(coreToAppRoom) : [],
     metadata: {
-      createdAt: typeof plan.metadata?.createdAt === 'string' 
-        ? new Date(plan.metadata.createdAt).getTime() 
-        : Date.now(),
-      updatedAt: typeof plan.metadata?.updatedAt === 'string' 
-        ? new Date(plan.metadata.updatedAt).getTime() 
-        : Date.now(),
+      createdAt: plan.metadata?.createdAt || new Date().toISOString(),
+      updatedAt: plan.metadata?.updatedAt || new Date().toISOString(),
       paperSize: plan.metadata?.paperSize || 'A4',
       level: plan.metadata?.level || 0
     },
@@ -61,8 +57,12 @@ export function appToCoreFloorPlan(plan: AppFloorPlan): CoreFloorPlan {
     gia: plan.gia || 0,
     level: plan.level || plan.index || 0,
     metadata: {
-      createdAt: plan.metadata?.createdAt ? new Date(plan.metadata.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: plan.metadata?.updatedAt ? new Date(plan.metadata.updatedAt).toISOString() : new Date().toISOString(),
+      createdAt: typeof plan.metadata?.createdAt === 'string'
+        ? plan.metadata.createdAt
+        : new Date().toISOString(),
+      updatedAt: typeof plan.metadata?.updatedAt === 'string'
+        ? plan.metadata.updatedAt
+        : new Date().toISOString(),
       paperSize: plan.metadata?.paperSize || 'A4',
       level: plan.metadata?.level || 0
     },
@@ -76,7 +76,7 @@ export function appToCoreFloorPlan(plan: AppFloorPlan): CoreFloorPlan {
  * Convert core stroke to app stroke
  */
 export function coreToAppStroke(stroke: CoreStroke): AppStroke {
-  // Convert string type to enum or literal
+  // Convert string type to valid StrokeTypeLiteral
   let appStrokeType: StrokeTypeLiteral;
   
   switch (stroke.type) {
@@ -115,44 +115,7 @@ export function coreToAppStroke(stroke: CoreStroke): AppStroke {
  */
 export function appToCoreStroke(stroke: AppStroke): CoreStroke {
   // Convert enum or literal to core string type
-  let coreStrokeType: CoreStrokeType;
-  
-  if (typeof stroke.type === 'string') {
-    switch (stroke.type.toLowerCase()) {
-      case 'line':
-      case 'polyline':
-      case 'wall':
-      case 'room':
-      case 'freehand':
-        coreStrokeType = stroke.type.toLowerCase() as CoreStrokeType;
-        break;
-      default:
-        coreStrokeType = 'line';
-        break;
-    }
-  } else {
-    // Handle enum values
-    switch (stroke.type) {
-      case AppStrokeType.LINE:
-        coreStrokeType = 'line';
-        break;
-      case AppStrokeType.POLYLINE:
-        coreStrokeType = 'polyline';
-        break;
-      case AppStrokeType.WALL:
-        coreStrokeType = 'wall';
-        break;
-      case AppStrokeType.ROOM:
-        coreStrokeType = 'room';
-        break;
-      case AppStrokeType.FREEHAND:
-        coreStrokeType = 'freehand';
-        break;
-      default:
-        coreStrokeType = 'line';
-        break;
-    }
-  }
+  let coreStrokeType: CoreStrokeType = stroke.type as CoreStrokeType;
 
   return {
     id: stroke.id,

@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { type Point } from "@/types/core/Point";
-import { FloorPlan, Stroke, StrokeType } from "@/types/floorPlanTypes";
+import { FloorPlan, Stroke, StrokeTypeLiteral } from "@/types/floorPlanTypes";
 import { calculateGIA } from "@/utils/geometry";
 import { PIXELS_PER_METER } from "@/constants/numerics";
 import { DrawingTool } from "@/constants/drawingModes";
@@ -161,10 +161,10 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
         const newStroke: Stroke = {
           id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           points: finalPoints,
-          type: 'line', // Default type
-          color: '#000000', // Default color
-          thickness: 2, // Default thickness
-          width: 2 // Add required width property
+          type: 'line' as StrokeTypeLiteral,
+          color: '#000000',
+          thickness: 2,
+          width: 2
         };
         
         updatedPlan.strokes = [...updatedPlan.strokes, newStroke];
@@ -199,10 +199,10 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
         const newStroke: Stroke = {
           id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           points: finalPoints,
-          type: 'line', // Default type
-          color: '#000000', // Default color
-          thickness: 2, // Default thickness
-          width: 2 // Add required width property
+          type: 'line' as StrokeTypeLiteral,
+          color: '#000000',
+          thickness: 2,
+          width: 2
         };
         
         currentFloorPlan.strokes = [...currentFloorPlan.strokes, newStroke];
@@ -300,11 +300,11 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
         // Create a new stroke object (simplified)
         const newStroke: Stroke = {
           id: `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          points: [{x: 0, y: 0}, {x: 10, y: 10}], // Dummy points for test
-          type: 'line' as StrokeType,
+          points: [{x: 0, y: 0}, {x: 10, y: 10}],
+          type: 'line' as StrokeTypeLiteral,
           color: '#000000',
           thickness: 2,
-          width: 2 // Add required width property
+          width: 2
         };
         
         currentFloorPlan.strokes = [...currentFloorPlan.strokes, newStroke];
@@ -315,7 +315,7 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
       
       if (setGia) {
         // Update GIA for tests
-        setGia(prev => prev + 1); // Just increment by 1 for testing
+        setGia(prev => prev + 1);
       }
     }
   }, [setFloorPlans, currentFloor, floorPlans, setGia]);
@@ -325,7 +325,7 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
     activeTool,
     setActiveTool,
     startDrawing,
-    startDrawingAt: startDrawing, // Alias for test compatibility
+    startDrawingAt: startDrawing,
     continueDrawing,
     endDrawing,
     cancelDrawing,

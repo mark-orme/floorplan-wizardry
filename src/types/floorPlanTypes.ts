@@ -31,15 +31,15 @@ export enum PaperSize {
  * Types of strokes that can be drawn
  */
 export enum StrokeType {
-  LINE = 'LINE',
-  POLYLINE = 'POLYLINE',
-  CIRCLE = 'CIRCLE',
-  RECTANGLE = 'RECTANGLE',
-  TEXT = 'TEXT',
-  PATH = 'PATH',
-  WALL = 'WALL',
-  ROOM = 'ROOM',
-  FREEHAND = 'FREEHAND'
+  LINE = 'line',
+  POLYLINE = 'polyline',
+  CIRCLE = 'circle',
+  RECTANGLE = 'rectangle',
+  TEXT = 'text',
+  PATH = 'path',
+  WALL = 'wall',
+  ROOM = 'room',
+  FREEHAND = 'freehand'
 }
 
 // String literal type for compatibility with core StrokeType
@@ -72,7 +72,7 @@ export interface Room extends CoreRoom {
  */
 export interface Stroke extends Omit<CoreStroke, 'type' | 'width'> {
   /** Type of stroke */
-  type: StrokeTypeLiteral | CoreStrokeType;
+  type: StrokeTypeLiteral;
   /** Stroke width in pixels (equivalent to thickness for API compatibility) */
   width?: number; // Changed to optional to match core
 }
@@ -82,10 +82,10 @@ export interface Stroke extends Omit<CoreStroke, 'type' | 'width'> {
  * Contains additional information about a floor plan
  */
 export interface FloorPlanMetadata extends Omit<CoreFloorPlanMetadata, 'createdAt' | 'updatedAt'> {
-  /** Creation timestamp */
-  createdAt: number;
-  /** Last update timestamp */
-  updatedAt: number;
+  /** Creation timestamp as string to match CoreFloorPlanMetadata */
+  createdAt: string;
+  /** Last update timestamp as string to match CoreFloorPlanMetadata */
+  updatedAt: string;
   /** Paper size */
   paperSize: PaperSize | string;
   /** Floor level */

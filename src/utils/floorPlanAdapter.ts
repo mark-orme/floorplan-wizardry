@@ -28,39 +28,8 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
   // Convert strokes and ensure each has width property
   const strokes = Array.isArray(appPlan.strokes) 
     ? appPlan.strokes.map(stroke => {
-        // Convert enum to string type
-        let strokeType: CoreStrokeType;
-        if (typeof stroke.type === 'string') {
-          // If it's already a string literal, use it directly if it matches our core types
-          const lowerType = stroke.type.toLowerCase();
-          if (['line', 'polyline', 'wall', 'room', 'freehand'].includes(lowerType)) {
-            strokeType = lowerType as CoreStrokeType;
-          } else {
-            // Default to 'line' if unknown type
-            strokeType = 'line';
-          }
-        } else {
-          // Handle enum values
-          switch (stroke.type) {
-            case StrokeType.LINE:
-              strokeType = 'line';
-              break;
-            case StrokeType.POLYLINE:
-              strokeType = 'polyline';
-              break;
-            case StrokeType.WALL:
-              strokeType = 'wall';
-              break;
-            case StrokeType.ROOM:
-              strokeType = 'room';
-              break; 
-            case StrokeType.FREEHAND:
-              strokeType = 'freehand';
-              break;
-            default:
-              strokeType = 'line';
-          }
-        }
+        // Convert string literal to core type directly
+        const strokeType: CoreStrokeType = stroke.type as CoreStrokeType;
 
         return {
           id: stroke.id,
@@ -94,8 +63,12 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
     level: appPlan.level || appPlan.index || 0,
     index: appPlan.index || 0, // Ensure index is always set
     metadata: {
-      createdAt: appPlan.metadata?.createdAt ? new Date(appPlan.metadata.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: appPlan.metadata?.updatedAt ? new Date(appPlan.metadata.updatedAt).toISOString() : new Date().toISOString(),
+      createdAt: typeof appPlan.metadata?.createdAt === 'string' 
+        ? appPlan.metadata.createdAt 
+        : new Date().toISOString(),
+      updatedAt: typeof appPlan.metadata?.updatedAt === 'string' 
+        ? appPlan.metadata.updatedAt 
+        : new Date().toISOString(),
       paperSize: appPlan.metadata?.paperSize || 'A4',
       level: appPlan.metadata?.level || 0
     },
@@ -125,19 +98,11 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       } as AppWall))
     : [];
     
-  // Convert strokes and ensure each has required width
+  // Convert strokes ensuring type is valid StrokeTypeLiteral
   const strokes = Array.isArray(corePlan.strokes)
     ? corePlan.strokes.map(stroke => {
-        // Convert string stroke type to enum
-        let strokeType: StrokeTypeLiteral;
-        switch(stroke.type.toLowerCase()) {
-          case 'line': strokeType = 'line'; break;
-          case 'polyline': strokeType = 'polyline'; break;
-          case 'wall': strokeType = 'wall'; break;
-          case 'room': strokeType = 'room'; break;
-          case 'freehand': strokeType = 'freehand'; break;
-          default: strokeType = 'line';
-        }
+        // Convert string stroke type to StrokeTypeLiteral
+        const strokeType: StrokeTypeLiteral = validateStrokeType(stroke.type);
         
         return {
           id: stroke.id,
@@ -166,18 +131,30 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     } as AppRoom)) : [],
     index: corePlan.index || 0,
     metadata: {
-      createdAt: typeof corePlan.metadata?.createdAt === 'string' 
-        ? new Date(corePlan.metadata.createdAt).getTime() 
-        : Date.now(),
-      updatedAt: typeof corePlan.metadata?.updatedAt === 'string' 
-        ? new Date(corePlan.metadata.updatedAt).getTime() 
-        : Date.now(),
+      createdAt: corePlan.metadata?.createdAt || new Date().toISOString(),
+      updatedAt: corePlan.metadata?.updatedAt || new Date().toISOString(),
       paperSize: corePlan.metadata?.paperSize || 'A4',
       level: corePlan.metadata?.level || 0
     },
     gia: corePlan.gia || 0,
     canvasData: corePlan.canvasData || null
   };
+}
+
+/**
+ * Validate and convert a string to a valid StrokeTypeLiteral
+ * @param type The string type to validate
+ * @returns A valid StrokeTypeLiteral
+ */
+function validateStrokeType(type: string): StrokeTypeLiteral {
+  switch(type.toLowerCase()) {
+    case 'line': return 'line';
+    case 'polyline': return 'polyline';
+    case 'wall': return 'wall';
+    case 'room': return 'room';
+    case 'freehand': return 'freehand';
+    default: return 'line'; // Default to line if unknown type
+  }
 }
 
 /**

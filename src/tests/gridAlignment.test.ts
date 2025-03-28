@@ -1,3 +1,4 @@
+
 /**
  * Grid alignment and snapping tests
  * Validates that the grid snapping functionality works as expected
@@ -7,6 +8,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { snapToGrid, snapToAngle, snapLineToStandardAngles } from '@/utils/grid/snapping';
 import { GRID_SPACING, PIXELS_PER_METER } from '@/constants/numerics';
 import { Point, createPoint } from '@/types/core/Point';
+import { fabric } from 'fabric';
 
 describe('Grid Alignment', () => {
   describe('Wall endpoints snapping', () => {
@@ -94,7 +96,7 @@ describe('Grid Alignment', () => {
       
       testAngles.forEach((angle, index) => {
         // Create a Point object from the angle value
-        const snapped = snapToAngle(createPoint(angle, 0), 45);
+        const snapped = snapToAngle(createPoint(angle, 0), new fabric.Point(45, 0));
         expect(snapped.x).toBe(expectedSnaps[index]);
       });
     });
