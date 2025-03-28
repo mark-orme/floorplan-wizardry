@@ -3,8 +3,13 @@ import '@testing-library/jest-dom';  // Import jest-dom for toBeInTheDocument
 import { expect } from 'vitest';
 import { vi } from 'vitest';
 
-// Set up jest-dom
-import { jest } from '@jest/globals';
+// Define a mock requestAnimationFrame timeout type
+declare global {
+  interface Window {
+    requestAnimationFrame: (callback: FrameRequestCallback) => number;
+    cancelAnimationFrame: (handle: number) => void;
+  }
+}
 
 // Extend expect with jest-dom matchers
 expect.extend({
@@ -111,9 +116,12 @@ class HTMLCanvasElementMock {
   height: number = 150;
   style: Partial<CSSStyleDeclaration> = {};
   
-  getContext(contextId: string): CanvasRenderingContext2D | null {
+  getContext(contextId: string): CanvasRenderingContext2D | ImageBitmapRenderingContext | null {
     if (contextId === '2d') {
       return new CanvasRenderingContext2DMock(this as unknown as HTMLCanvasElement) as unknown as CanvasRenderingContext2D;
+    }
+    if (contextId === 'bitmaprenderer') {
+      return new ImageBitmapRenderingContextMock(this as unknown as HTMLCanvasElement) as unknown as ImageBitmapRenderingContext;
     }
     return null;
   }
@@ -130,26 +138,22 @@ class ImageBitmapRenderingContextMock {
   transferFromImageBitmap(bitmap: ImageBitmap): void {}
 }
 
-// Extend HTMLCanvasElement mock to support required context types
-Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
-  value: function(contextId: string, options?: any) {
-    if (contextId === '2d') {
-      return new CanvasRenderingContext2DMock(this) as unknown as CanvasRenderingContext2D;
-    } else if (contextId === 'bitmaprenderer') {
-      return new ImageBitmapRenderingContextMock(this) as unknown as ImageBitmapRenderingContext;
-    }
-    return null;
-  },
-  configurable: true
-});
+// Define contextId overloads for canvas getContext
+interface HTMLCanvasElementWithContexts extends HTMLCanvasElement {
+  getContext(contextId: '2d', options?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D | null;
+  getContext(contextId: 'bitmaprenderer', options?: ImageBitmapRenderingContextSettings): ImageBitmapRenderingContext | null;
+  getContext(contextId: 'webgl', options?: WebGLContextAttributes): WebGLRenderingContext | null;
+  getContext(contextId: 'webgl2', options?: WebGLContextAttributes): WebGL2RenderingContext | null;
+  getContext(contextId: string, options?: any): RenderingContext | null;
+}
 
-// Mock the requestAnimationFrame and cancelAnimationFrame
+// Mock requestAnimationFrame and cancelAnimationFrame
 global.requestAnimationFrame = (callback: FrameRequestCallback): number => {
-  return setTimeout(() => callback(Date.now()), 0);
+  return setTimeout(() => callback(Date.now()), 0) as unknown as number;
 };
 
 global.cancelAnimationFrame = (handle: number): void => {
-  clearTimeout(handle);
+  clearTimeout(handle as unknown as NodeJS.Timeout);
 };
 
 // Mock the ResizeObserver
@@ -180,10 +184,15 @@ Element.prototype.getBoundingClientRect = vi.fn(() => ({
   toJSON: () => ({})
 }));
 
-// Prepare canvas mock
-window.HTMLCanvasElement.prototype.getContext = function(contextId: string) {
-  if (contextId === '2d') {
-    return new CanvasRenderingContext2DMock(this) as unknown as CanvasRenderingContext2D;
-  }
-  return null;
-};
+// Override canvas getContext with a function that handles all context types
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+  value: function(contextId: string, options?: any): RenderingContext | null {
+    if (contextId === '2d') {
+      return new CanvasRenderingContext2DMock(this) as unknown as CanvasRenderingContext2D;
+    } else if (contextId === 'bitmaprenderer') {
+      return new ImageBitmapRenderingContextMock(this) as unknown as ImageBitmapRenderingContext;
+    }
+    return null;
+  },
+  configurable: true
+});

@@ -36,11 +36,11 @@ export { createDefaultDrawingState } from './core/DrawingState';
 export type { default as GridCreationLock } from './grid/GridCreationLock';
 
 // Use export type for isolatedModules compatibility
-export type * from './drawingTypes';
-export type * from './floorPlanTypes';
-export type * from './geometryTypes';
-export type * from './gridTypes';
-export type * from './debugTypes';
+export type { FloorPlan as AppFloorPlan } from './floorPlanTypes';
+export type { StrokeType, PaperSize, Wall, Room } from './floorPlanTypes';
+export type { Point as GeometryPoint } from './geometryTypes';
+export type { GridDimensions, GridRenderResult } from './gridTypes';
+export type { DebugMode, DebugLevel } from './debugTypes';
 
 // Export zoom constants and types
 export { ZOOM_CONSTRAINTS } from './zoomTypes';
