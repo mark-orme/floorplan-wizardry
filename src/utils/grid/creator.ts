@@ -1,80 +1,84 @@
 
 /**
- * Grid creator module
- * Handles the actual creation of grid elements
+ * Grid creator utility
+ * Handles the actual creation of grid lines
  * @module grid/creator
  */
 import { Canvas, Object as FabricObject, Line } from "fabric";
-import logger from "../logger";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { throttledLog } from "./consoleThrottling";
 
 /**
- * Create grid lines for the canvas
- * Directly creates small (0.1m) and large (1m) grid lines
+ * Create a grid on the canvas efficiently
+ * Smart implementation that limits grid lines for better performance
  * 
- * @param {Canvas} canvas - The Fabric canvas instance 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {Object} options - Grid creation options
  * @returns {FabricObject[]} Array of created grid objects
  */
-export const createGridLines = (canvas: Canvas): FabricObject[] => {
-  const width = canvas.width || 0;
-  const height = canvas.height || 0;
+export function createGrid(
+  canvas: Canvas,
+  options: {
+    color?: string;
+    width?: number;
+    selectable?: boolean;
+    type?: string;
+  } = {}
+): FabricObject[] {
+  if (!canvas || !canvas.width || !canvas.height) {
+    return [];
+  }
+  
   const gridObjects: FabricObject[] = [];
+  const width = canvas.width;
+  const height = canvas.height;
   
-  // Parameters for grid
-  const smallGridSpacing = 10; // 10px for small grid (0.1m)
-  const largeGridSpacing = 100; // 100px for large grid (1m)
-  const smallGridColor = '#f0f0f0';
-  const largeGridColor = '#d0d0d0';
+  // Default grid options
+  const color = options.color || GRID_CONSTANTS.SMALL_GRID_COLOR;
+  const lineWidth = options.width || GRID_CONSTANTS.SMALL_GRID_WIDTH;
+  const selectable = options.selectable || false;
+  const gridType = options.type || 'small';
   
-  // Create horizontal small grid lines
-  for (let y = 0; y <= height; y += smallGridSpacing) {
+  // Determine spacing based on grid type
+  const spacing = gridType === 'small' ? 
+    GRID_CONSTANTS.SMALL_GRID : 
+    GRID_CONSTANTS.LARGE_GRID;
+  
+  // Limit number of grid lines for performance (max 100 lines in each direction)
+  const maxLines = 100;
+  const skipFactor = Math.max(1, Math.ceil((width + height) / (spacing * maxLines)));
+  
+  // If we're skipping lines, log it for debugging
+  if (skipFactor > 1 && process.env.NODE_ENV === 'development') {
+    throttledLog(`Grid optimization: Rendering every ${skipFactor}th line for better performance`);
+  }
+  
+  // Create horizontal grid lines
+  for (let y = 0; y <= height; y += spacing * skipFactor) {
     const line = new Line([0, y, width, y], {
-      stroke: smallGridColor,
-      selectable: false,
+      stroke: color,
+      selectable: selectable,
       evented: false,
-      strokeWidth: 0.5,
-      hoverCursor: 'default'
+      strokeWidth: lineWidth,
+      hoverCursor: 'default',
+      objectType: 'grid',
+      gridType: gridType
     });
     
     gridObjects.push(line);
     canvas.add(line);
   }
   
-  // Create vertical small grid lines
-  for (let x = 0; x <= width; x += smallGridSpacing) {
+  // Create vertical grid lines
+  for (let x = 0; x <= width; x += spacing * skipFactor) {
     const line = new Line([x, 0, x, height], {
-      stroke: smallGridColor,
-      selectable: false,
+      stroke: color,
+      selectable: selectable,
       evented: false,
-      strokeWidth: 0.5,
-      hoverCursor: 'default'
-    });
-    
-    gridObjects.push(line);
-    canvas.add(line);
-  }
-  
-  // Create horizontal large grid lines
-  for (let y = 0; y <= height; y += largeGridSpacing) {
-    const line = new Line([0, y, width, y], {
-      stroke: largeGridColor,
-      selectable: false,
-      evented: false,
-      strokeWidth: 1,
-      hoverCursor: 'default'
-    });
-    
-    gridObjects.push(line);
-    canvas.add(line);
-  }
-  
-  // Create vertical large grid lines
-  for (let x = 0; x <= width; x += largeGridSpacing) {
-    const line = new Line([x, 0, x, height], {
-      stroke: largeGridColor,
-      selectable: false,
-      evented: false,
-      strokeWidth: 1,
-      hoverCursor: 'default'
+      strokeWidth: lineWidth,
+      hoverCursor: 'default',
+      objectType: 'grid',
+      gridType: gridType
     });
     
     gridObjects.push(line);
@@ -82,131 +86,52 @@ export const createGridLines = (canvas: Canvas): FabricObject[] => {
   }
   
   return gridObjects;
-};
+}
 
 /**
- * Create a fallback grid with simplified styling
- * Used when the primary grid creation method fails
+ * Create small scale grid (fine grid)
  * 
  * @param {Canvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @param {React.Dispatch<React.SetStateAction<any>>} setDebugInfo - Debug info setter
+ * @param {Object} options - Grid options
  * @returns {FabricObject[]} Array of created grid objects
  */
-export const createFallbackGrid = (
+export function createSmallScaleGrid(
   canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>,
-  setDebugInfo?: React.Dispatch<React.SetStateAction<any>>
-): FabricObject[] => {
-  try {
-    if (process.env.NODE_ENV === 'development') {
-      logger.info("Creating fallback grid");
-    }
-    
-    // Create simplified grid with only large lines
-    const width = canvas.width || 0;
-    const height = canvas.height || 0;
-    const gridObjects: FabricObject[] = [];
-    const gridSpacing = 50; // 50px for emergency grid
-    
-    // Create horizontal grid lines
-    for (let y = 0; y <= height; y += gridSpacing) {
-      const line = new Line([0, y, width, y], {
-        stroke: '#e0e0e0',
-        selectable: false,
-        evented: false,
-        strokeWidth: 1,
-        hoverCursor: 'default'
-      });
-      
-      gridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    // Create vertical grid lines
-    for (let x = 0; x <= width; x += gridSpacing) {
-      const line = new Line([x, 0, x, height], {
-        stroke: '#e0e0e0',
-        selectable: false,
-        evented: false,
-        strokeWidth: 1,
-        hoverCursor: 'default'
-      });
-      
-      gridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    // Store created grid objects in the reference
-    gridLayerRef.current = gridObjects;
-    
-    // Update debug info if available
-    if (setDebugInfo) {
-      setDebugInfo(prev => ({
-        ...prev,
-        gridCreated: true,
-        gridObjectCount: gridObjects.length,
-        fallbackGridUsed: true
-      }));
-    }
-    
-    // Force a render
-    canvas.requestRenderAll();
-    
-    return gridObjects;
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.error("Error creating fallback grid:", error);
-    }
-    return [];
-  }
-};
+  options: {
+    color?: string;
+    width?: number;
+    selectable?: boolean;
+    type?: string;
+  } = {}
+): FabricObject[] {
+  return createGrid(canvas, {
+    color: options.color || GRID_CONSTANTS.SMALL_GRID_COLOR,
+    width: options.width || GRID_CONSTANTS.SMALL_GRID_WIDTH,
+    selectable: options.selectable || false,
+    type: 'small'
+  });
+}
 
 /**
- * Create grid layer with all components
- * Main grid creation function that handles error checking
+ * Create large scale grid (coarse grid)
  * 
  * @param {Canvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @param {React.Dispatch<React.SetStateAction<any>>} setDebugInfo - Debug info setter
+ * @param {Object} options - Grid options
  * @returns {FabricObject[]} Array of created grid objects
  */
-export const createGridLayer = (
+export function createLargeScaleGrid(
   canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>,
-  setDebugInfo?: React.Dispatch<React.SetStateAction<any>>
-): FabricObject[] => {
-  try {
-    // Attempt to create grid lines
-    const gridObjects = createGridLines(canvas);
-    
-    // Check if grid was created successfully
-    if (!gridObjects || gridObjects.length === 0) {
-      throw new Error("Failed to create grid lines");
-    }
-    
-    // Store created grid objects in the reference
-    gridLayerRef.current = gridObjects;
-    
-    // Update debug info if available
-    if (setDebugInfo) {
-      setDebugInfo(prev => ({
-        ...prev,
-        gridCreated: true,
-        gridObjectCount: gridObjects.length
-      }));
-    }
-    
-    // Force a render
-    canvas.requestRenderAll();
-    
-    return gridObjects;
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.error("Error creating grid layer:", error);
-    }
-    
-    // Try fallback grid on error
-    return createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
-  }
-};
+  options: {
+    color?: string;
+    width?: number;
+    selectable?: boolean;
+    type?: string;
+  } = {}
+): FabricObject[] {
+  return createGrid(canvas, {
+    color: options.color || GRID_CONSTANTS.LARGE_GRID_COLOR,
+    width: options.width || GRID_CONSTANTS.LARGE_GRID_WIDTH,
+    selectable: options.selectable || false,
+    type: 'large'
+  });
+}

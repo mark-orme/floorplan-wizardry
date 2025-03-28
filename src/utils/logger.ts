@@ -27,11 +27,15 @@ enum LogLevel {
 let currentLogLevel: LogLevel = 
   process.env.NODE_ENV === 'production' 
     ? LogLevel.ERROR    // Only errors in production
-    : LogLevel.INFO;    // INFO level in development (reduced from DEBUG)
+    : LogLevel.WARN;    // WARN level in development (reduced from INFO)
 
 // Track seen messages to avoid duplicates
 const seenMessages = new Set<string>();
 const MAX_SEEN_MESSAGES = 1000;
+const MESSAGE_CACHE_LIFETIME = 5000; // 5 seconds
+
+// Store timestamps for throttled messages
+const messageTimestamps = new Map<string, number>();
 
 /**
  * Check if a specific log level is currently enabled
@@ -74,6 +78,7 @@ const setLogLevel = (level: LogLevel | string): void => {
  */
 const clearSeenMessages = (): void => {
   seenMessages.clear();
+  messageTimestamps.clear();
 };
 
 /**
@@ -91,24 +96,52 @@ const formatLog = (level: string, message: string, args: any[]): [string, ...any
 };
 
 /**
- * Check if message has been seen before to avoid duplicates
+ * Check if message has been seen recently to avoid duplicates
  * @param {string} level - Log level
  * @param {string} message - Message to check
  * @returns {boolean} Whether the message is a duplicate
  */
 const isDuplicateMessage = (level: string, message: string): boolean => {
   const key = `${level}:${message}`;
-  if (seenMessages.has(key)) {
+  const now = Date.now();
+  const lastTime = messageTimestamps.get(key) || 0;
+  
+  // Check if we've seen this message recently
+  if (seenMessages.has(key) && now - lastTime < MESSAGE_CACHE_LIFETIME) {
     return true;
   }
   
   // Add to seen messages, manage cache size
   seenMessages.add(key);
+  messageTimestamps.set(key, now);
+  
   if (seenMessages.size > MAX_SEEN_MESSAGES) {
-    // Remove oldest entries when we exceed the limit
-    const iterator = seenMessages.values();
-    for (let i = 0; i < 100; i++) {
-      seenMessages.delete(iterator.next().value);
+    // Clean up old entries
+    const keysToDelete: string[] = [];
+    
+    messageTimestamps.forEach((timestamp, msgKey) => {
+      if (now - timestamp > MESSAGE_CACHE_LIFETIME) {
+        keysToDelete.push(msgKey);
+      }
+    });
+    
+    // Delete old entries
+    keysToDelete.forEach(key => {
+      seenMessages.delete(key);
+      messageTimestamps.delete(key);
+    });
+    
+    // If we still have too many entries, remove the oldest ones
+    if (seenMessages.size > MAX_SEEN_MESSAGES) {
+      const oldestKeys = [...messageTimestamps.entries()]
+        .sort((a, b) => a[1] - b[1])
+        .slice(0, 100)
+        .map(entry => entry[0]);
+        
+      oldestKeys.forEach(key => {
+        seenMessages.delete(key);
+        messageTimestamps.delete(key);
+      });
     }
   }
   

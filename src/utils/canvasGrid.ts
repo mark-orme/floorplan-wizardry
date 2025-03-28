@@ -6,10 +6,11 @@
  * @module canvasGrid
  */
 import { Canvas, Object as FabricObject } from "fabric";
-import { shouldThrottleCreation } from "./gridManager";
+import { shouldThrottleCreation, logGridStatus } from "./gridManager";
 import { toast } from "sonner";
 import logger from "./logger";
 import { DebugInfoState } from "@/types/debugTypes";
+import { throttledLog, throttledError } from "./grid/consoleThrottling";
 
 // Import all grid utilities
 import {
@@ -29,6 +30,7 @@ import {
 let lastGridCreationTime = 0;
 let gridCreationInProgress = false;
 let createAttempt = 0;
+let lastConsoleLogTime = 0;
 
 /**
  * Create grid lines for the canvas
@@ -50,15 +52,22 @@ export const createGrid = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ): FabricObject[] => {
-  // Only log detailed information in development mode, and only once per creation
-  if (process.env.NODE_ENV === 'development' && !gridCreationInProgress) {
-    logger.debug("createGrid called with canvas dimensions:", {
+  // Throttle console logging to reduce spam
+  const now = Date.now();
+  const shouldLog = now - lastConsoleLogTime > 2000;
+  
+  if (shouldLog && process.env.NODE_ENV === 'development' && !gridCreationInProgress) {
+    lastConsoleLogTime = now;
+    throttledLog("createGrid called with canvas dimensions:", {
       width: canvas?.width,
       height: canvas?.height,
-      getWidth: canvas?.getWidth?.(),
-      getHeight: canvas?.getHeight?.(),
       provided: canvasDimensions
     });
+  }
+  
+  // If grid already exists with sufficient objects, return current grid
+  if (gridLayerRef.current.length > 10) {
+    return gridLayerRef.current;
   }
   
   // Check if another grid creation is in progress, if so return current grid
@@ -67,17 +76,15 @@ export const createGrid = (
   }
   
   // Prevent excessive creation attempts with cooldown
-  const now = Date.now();
   if (now - lastGridCreationTime < GRID_CREATION_COOLDOWN) {
     return gridLayerRef.current;
   }
   
   // Check if we've exceeded max attempts
   if (createAttempt >= MAX_CREATE_ATTEMPTS) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
+    if (shouldLog && process.env.NODE_ENV === 'development') {
+      throttledLog(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
     }
-    toast.error("Grid creation abandoned. Please refresh the page.");
     return gridLayerRef.current;
   }
   
@@ -94,7 +101,7 @@ export const createGrid = (
   try {
     // Validate inputs first
     if (!validateCanvasForGrid(canvas, gridLayerRef, canvasDimensions)) {
-      logger.error("Grid validation failed, cannot create grid");
+      throttledError("Grid validation failed, cannot create grid");
       gridCreationInProgress = false;
       return gridLayerRef.current;
     }
@@ -116,16 +123,16 @@ export const createGrid = (
     }
     
     // Create the grid layer directly - immediate mode for better reliability
-    if (process.env.NODE_ENV === 'development') {
-      logger.info("Creating grid - implementation starting");
+    if (shouldLog && process.env.NODE_ENV === 'development') {
+      throttledLog("Creating grid - implementation starting");
     }
     
     // Create grid
     const gridObjects = createGridLayer(canvas, gridLayerRef, setDebugInfo);
     
     if (!gridObjects || gridObjects.length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        logger.error("Grid creation failed: createGridLayer returned no objects");
+      if (shouldLog && process.env.NODE_ENV === 'development') {
+        throttledError("Grid creation failed: createGridLayer returned no objects");
       }
       
       // Try fallback grid immediately
@@ -149,17 +156,18 @@ export const createGrid = (
     
     // Check if creation took too long
     const creationTime = performance.now() - startTime;
-    if (creationTime > GRID_CREATION_CONSTANTS.MAX_CREATION_TIME && process.env.NODE_ENV === 'development') {
-      logger.warn(`Grid creation took ${creationTime.toFixed(0)}ms, which exceeds the recommended limit`);
+    if (shouldLog && creationTime > GRID_CREATION_CONSTANTS.MAX_CREATION_TIME && process.env.NODE_ENV === 'development') {
+      throttledLog(`Grid creation took ${creationTime.toFixed(0)}ms, which exceeds the recommended limit`);
     }
     
     // Force a render
     canvas.requestRenderAll();
-    if (process.env.NODE_ENV === 'development') {
-      logger.info("Grid creation completed successfully");
+    
+    if (shouldLog && process.env.NODE_ENV === 'development') {
+      throttledLog("Grid creation completed successfully");
     }
+    
     createAttempt = 0; // Reset attempt counter on success
-    toast.success(TOAST_MESSAGES.GRID_CREATED);
     
     // Update debug info
     setDebugInfo(prev => ({
@@ -174,25 +182,24 @@ export const createGrid = (
     // Handle errors
     if (error instanceof Error) {
       handleGridCreationError(error, setHasError, setErrorMessage);
-      logger.error("Grid creation error:", error.message);
+      throttledError("Grid creation error:", error.message);
     } else {
       handleGridCreationError(new Error('Unknown error during grid creation'), setHasError, setErrorMessage);
-      logger.error("Unknown grid creation error");
+      throttledError("Unknown grid creation error");
     }
     
     // Try fallback grid on error
     try {
-      if (process.env.NODE_ENV === 'development') {
-        logger.info("Attempting fallback grid after error");
+      if (shouldLog && process.env.NODE_ENV === 'development') {
+        throttledLog("Attempting fallback grid after error");
       }
       const fallbackResult = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
       gridCreationInProgress = false;
       return fallbackResult;
     } catch (fallbackError) {
-      if (process.env.NODE_ENV === 'development') {
-        logger.error("Even fallback grid creation failed:", fallbackError);
+      if (shouldLog && process.env.NODE_ENV === 'development') {
+        throttledError("Even fallback grid creation failed:", fallbackError);
       }
-      toast.error(TOAST_MESSAGES.ALL_METHODS_FAILED);
       gridCreationInProgress = false;
       return [];
     }

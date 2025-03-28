@@ -13,7 +13,7 @@ interface GridManagerState {
   createAttempt: number;
   safetyTimeout: number | null;
   
-  // Add missing properties needed by gridLocking.ts and gridThrottling.ts
+  // Required properties for grid management
   lastAttemptTime: number;
   throttleInterval: number;
   lastCreationTime: number;
@@ -32,7 +32,7 @@ export const gridManager: GridManagerState = {
   createAttempt: 0,
   safetyTimeout: null,
   
-  // Initialize the added properties
+  // Initialize with default values
   lastAttemptTime: 0,
   throttleInterval: 1000, // Default throttle interval in ms
   lastCreationTime: 0,
@@ -70,5 +70,25 @@ export const resetGridProgress = (): void => {
     clearTimeout(gridManager.safetyTimeout);
     gridManager.safetyTimeout = null;
   }
+  
+  // Increment consecutive resets counter
+  gridManager.consecutiveResets += 1;
 };
 
+/**
+ * Log grid creation status
+ * Only logs in development mode and throttles messages to reduce console spam
+ * 
+ * @param {string} message - Message to log
+ * @param {any} data - Additional data to log
+ */
+export const logGridStatus = (message: string, data?: any): void => {
+  // Only log in development and limit frequency to reduce spam
+  if (process.env.NODE_ENV !== 'development') return;
+  
+  const now = Date.now();
+  if (now - gridManager.lastAttemptTime < 2000) return; // Only log once every 2 seconds
+  
+  gridManager.lastAttemptTime = now;
+  console.log(`[Grid] ${message}`, data || '');
+};
