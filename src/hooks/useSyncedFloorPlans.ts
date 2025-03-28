@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -16,6 +17,7 @@ import {
 } from '@/utils/syncService';
 import { useSupabaseFloorPlans } from './useSupabaseFloorPlans';
 import logger from '@/utils/logger';
+import { appToCoreFloorPlans, coreToAppFloorPlans } from '@/utils/floorPlanAdapter';
 
 /**
  * Convert between FloorPlan types to ensure compatibility
@@ -120,7 +122,7 @@ export const useSyncedFloorPlans = () => {
       
       // Save to local storage without broadcasting
       isSavingRef.current = true;
-      saveFloorPlans(data.floorPlans).finally(() => {
+      saveFloorPlans(appToCoreFloorPlans(data.floorPlans)).finally(() => {
         isSavingRef.current = false;
       });
 
@@ -155,25 +157,32 @@ export const useSyncedFloorPlans = () => {
         data = await loadFromSupabase();
         if (data) {
           logger.info('Loaded floor plans from Supabase');
-          setFloorPlans(convertFloorPlanTypes(data));
+          
+          // Convert core floor plans to app floor plans
+          const appData = coreToAppFloorPlans(data);
+          setFloorPlans(appData);
+          
           // Also save to local storage for offline access
-          await saveFloorPlans(convertFloorPlanTypes(data));
+          await saveFloorPlans(data);
           setIsLoading(false);
-          return data;
+          return appData;
         }
       }
       
       // If not logged in or no Supabase data, fall back to local storage
       logger.info('Falling back to local storage for floor plans');
       data = await loadFloorPlans();
-      setFloorPlans(convertFloorPlanTypes(data));
+      
+      // Convert core floor plans to app floor plans
+      const appData = coreToAppFloorPlans(data);
+      setFloorPlans(appData);
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && data && data.length > 0) {
-        await saveToSupabase(convertFloorPlanTypes(data));
+        await saveToSupabase(appData);
       }
       
-      return data;
+      return appData;
     } catch (error) {
       logger.error('Error loading floor plans:', error);
       toast.error('Failed to load floor plans');
@@ -204,7 +213,10 @@ export const useSyncedFloorPlans = () => {
       }
 
       try {
-        await saveFloorPlans(newFloorPlans);
+        // Convert app floor plans to core floor plans for storage
+        const corePlans = appToCoreFloorPlans(newFloorPlans);
+        
+        await saveFloorPlans(corePlans);
         broadcastFloorPlanUpdate(newFloorPlans);
         lastSyncTimeRef.current = Date.now();
         logger.info('Floor plans saved locally and synced via Pusher');
@@ -225,7 +237,7 @@ export const useSyncedFloorPlans = () => {
     if (isLoggedIn) {
       supabaseSaveTimeoutRef.current = window.setTimeout(async () => {
         try {
-          const success = await saveToSupabase(convertFloorPlanTypes(newFloorPlans));
+          const success = await saveToSupabase(newFloorPlans);
           if (success) {
             logger.info('Floor plans saved to Supabase');
           }

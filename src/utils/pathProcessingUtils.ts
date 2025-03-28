@@ -2,7 +2,7 @@
 // Add type guards and make the interface compatible
 // Fix the issue at line 10 and other property access issues
 
-import { FabricObject } from 'fabric';
+import { FabricObject, Object as FabricObjectBase } from 'fabric';
 import { Point } from '@/types/geometryTypes';
 
 // Check if an object has points
@@ -11,9 +11,9 @@ export const hasPoints = (obj: FabricObject): boolean => {
 };
 
 // Interface for objects with points
-interface PolygonObject extends FabricObject {
+interface PolygonObject extends Omit<FabricObject, 'type'> {
+  type: string; // Make type explicitly required
   points?: Array<{x: number, y: number}>;
-  type?: string;
 }
 
 // Check if an object has path data

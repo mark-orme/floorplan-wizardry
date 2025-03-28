@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for canvas actions (clear, save)
  * Provides high-level operations for canvas management
@@ -128,7 +127,7 @@ export const useCanvasActions = ({
         .then(() => {
           toast.success("Floor plans saved to offline storage");
           
-          // Then export as image
+          // Then export as image with required multiplier property
           const dataUrl = fabricCanvasRef.current!.toDataURL({
             format: 'png',
             quality: 1,

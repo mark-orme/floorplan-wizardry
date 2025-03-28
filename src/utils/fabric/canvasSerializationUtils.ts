@@ -1,84 +1,106 @@
 
 /**
- * Canvas serialization utilities
+ * Canvas Serialization Utilities
+ * Functions for serializing and deserializing canvas state
  * @module utils/fabric/canvasSerializationUtils
  */
-
-import { Canvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import logger from '@/utils/logger';
 
 /**
- * Serialize canvas to JSON
- * @param canvas The canvas to serialize
- * @returns JSON string or null if failed
+ * Options for toDataURL
  */
-export function serializeCanvas(canvas: Canvas | null): string | null {
-  if (!canvas) return null;
+interface TDataUrlOptions {
+  format?: 'jpeg' | 'png';
+  quality?: number;
+  multiplier: number; // Required property
+  enableRetinaScaling?: boolean;
+}
+
+/**
+ * Serialize canvas to JSON string
+ * @param canvas Fabric canvas instance
+ * @returns JSON string of canvas state
+ */
+export function serializeCanvas(canvas: FabricCanvas): string {
+  if (!canvas) {
+    logger.warn('Cannot serialize null canvas');
+    return '';
+  }
   
   try {
     return JSON.stringify(canvas.toJSON());
-  } catch (e) {
-    console.error('Error serializing canvas:', e);
-    return null;
+  } catch (error) {
+    logger.error('Error serializing canvas:', error);
+    return '';
   }
 }
 
 /**
- * Deserialize JSON to canvas
- * @param canvas The canvas to load into
- * @param json JSON string to deserialize
- * @returns True if successful
+ * Deserialize canvas from JSON string
+ * @param canvas Fabric canvas instance
+ * @param json JSON string of canvas state
+ * @returns Success status
  */
-export function deserializeCanvas(canvas: Canvas | null, json: string): boolean {
-  if (!canvas || !json) return false;
+export function deserializeCanvas(canvas: FabricCanvas, json: string): boolean {
+  if (!canvas) {
+    logger.warn('Cannot deserialize to null canvas');
+    return false;
+  }
   
   try {
-    canvas.loadFromJSON(json, () => {
-      canvas.renderAll();
-    });
+    canvas.loadFromJSON(json, canvas.renderAll.bind(canvas));
     return true;
-  } catch (e) {
-    console.error('Error deserializing canvas:', e);
+  } catch (error) {
+    logger.error('Error deserializing canvas:', error);
     return false;
   }
 }
 
 /**
- * Export canvas as SVG
- * @param canvas The canvas to export
- * @returns SVG string or null if failed
+ * Export canvas as image
+ * @param canvas Fabric canvas instance
+ * @param format Image format (png or jpeg)
+ * @param quality Image quality (0-1)
+ * @returns Data URL of image
  */
-export function exportCanvasAsSVG(canvas: Canvas | null): string | null {
-  if (!canvas) return null;
+export function exportCanvasAsImage(
+  canvas: FabricCanvas,
+  format: 'png' | 'jpeg' = 'png',
+  quality: number = 1
+): string {
+  if (!canvas) {
+    logger.warn('Cannot export null canvas as image');
+    return '';
+  }
   
   try {
-    return canvas.toSVG();
-  } catch (e) {
-    console.error('Error exporting canvas as SVG:', e);
-    return null;
+    // Include required multiplier property
+    const options: TDataUrlOptions = {
+      format,
+      quality,
+      multiplier: 1
+    };
+    
+    return canvas.toDataURL(options);
+  } catch (error) {
+    logger.error('Error exporting canvas as image:', error);
+    return '';
   }
 }
 
 /**
- * Export canvas as DataURL
- * @param canvas The canvas to export
- * @param format Image format (png, jpeg)
- * @param quality Image quality for jpeg (0-1)
- * @returns DataURL string or null if failed
+ * Get canvas dimensions
+ * @param canvas Fabric canvas instance
+ * @returns Object with width and height
  */
-export function exportCanvasAsDataURL(
-  canvas: Canvas | null, 
-  format: 'png' | 'jpeg' = 'png',
-  quality: number = 1
-): string | null {
-  if (!canvas) return null;
-  
-  try {
-    return canvas.toDataURL({
-      format,
-      quality
-    });
-  } catch (e) {
-    console.error('Error exporting canvas as DataURL:', e);
-    return null;
+export function getCanvasDimensions(canvas: FabricCanvas): { width: number; height: number } {
+  if (!canvas) {
+    return { width: 0, height: 0 };
   }
+  
+  return {
+    width: canvas.getWidth(),
+    height: canvas.getHeight()
+  };
 }
