@@ -13,7 +13,7 @@ describe('Canvas Cleanup Tests', () => {
       renderAll: vi.fn()
     };
     
-    // Fix line 92: Only pass the canvas argument
+    // Only pass the canvas argument
     canvas.remove();
     canvas.renderAll();
     
@@ -27,7 +27,7 @@ describe('Canvas Cleanup Tests', () => {
       renderAll: vi.fn()
     };
     
-    // Fix line 126: Only pass the canvas argument
+    // Only pass the canvas argument
     canvas.renderAll();
     
     // Assertions
