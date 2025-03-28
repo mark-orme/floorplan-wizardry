@@ -5,15 +5,15 @@
 import { useCallback } from 'react';
 import { useCanvasTools } from './useCanvasTools';
 import { useCanvasActions } from './useCanvasActions';
-import { DrawingTool } from './useCanvasState';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { DrawingTool } from '@/constants/drawingModes';
+import { Canvas, Object as FabricObject } from 'fabric';
 
 /**
  * Props for useDrawingTools hook
  */
 interface UseDrawingToolsProps {
   /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
   /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   /** Current tool */
@@ -62,17 +62,6 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
   }, []);
   
   /**
-   * Toggle pen tool
-   */
-  const togglePen = useCallback(() => {
-    if (tool === 'pen') {
-      setTool('select');
-    } else {
-      setTool('pen');
-    }
-  }, [tool, setTool]);
-  
-  /**
    * Toggle line tool
    */
   const toggleLine = useCallback(() => {
@@ -84,13 +73,25 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
   }, [tool, setTool]);
   
   /**
-   * Toggle rectangle tool
+   * Toggle draw tool
+   * Note: Changed from 'pen' to 'draw' to match DrawingTool type
    */
-  const toggleRectangle = useCallback(() => {
-    if (tool === 'rectangle') {
+  const togglePen = useCallback(() => {
+    if (tool === 'draw') {
       setTool('select');
     } else {
-      setTool('rectangle');
+      setTool('draw');
+    }
+  }, [tool, setTool]);
+  
+  /**
+   * Toggle wall tool
+   */
+  const toggleRectangle = useCallback(() => {
+    if (tool === 'wall') {
+      setTool('select');
+    } else {
+      setTool('wall');
     }
   }, [tool, setTool]);
   
@@ -124,14 +125,13 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     lineThickness
   });
   
-  // Import canvas actions
+  // Import canvas actions (using updated parameters for compatibility)
   const {
     deleteSelectedObjects,
     undo,
     redo
   } = useCanvasActions({
-    fabricCanvasRef,
-    gridLayerRef
+    fabricCanvasRef
   });
   
   return {
@@ -160,7 +160,6 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     handleRedo: redo,
     handleZoom,
     saveCanvas: () => console.log('Save canvas called'),
-    saveCurrentState: () => console.log('Save current state called'),
-    clearDrawings: clearCanvas
+    saveCurrentState: () => console.log('Save current state called')
   };
 };

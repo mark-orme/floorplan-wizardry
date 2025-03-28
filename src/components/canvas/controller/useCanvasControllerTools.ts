@@ -151,10 +151,10 @@ export const useCanvasControllerTools = (
   }, [toolFunctions]);
 
   return {
-    clearDrawings: toolFunctions.clearDrawings,
-    handleToolChange: toolFunctions.handleToolChange,
-    handleUndo: toolFunctions.handleUndo,
-    handleRedo: toolFunctions.handleRedo,
+    clearDrawings: toolFunctions.clearCanvas,
+    handleToolChange: toolFunctions.setActiveTool,
+    handleUndo: toolFunctions.undo,
+    handleRedo: toolFunctions.redo,
     handleZoom: (direction: "in" | "out") => {
       if (direction === "in") {
         toolFunctions.zoomIn();
@@ -164,6 +164,6 @@ export const useCanvasControllerTools = (
     },
     clearCanvas: toolFunctions.clearCanvas,
     saveCanvas: enhancedSaveCanvas,
-    saveCurrentState: toolFunctions.saveCurrentState
+    saveCurrentState: () => console.log('Save current state called')
   };
 };

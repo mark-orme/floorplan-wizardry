@@ -25,6 +25,29 @@ export interface TypedFabricObject extends Object {
 }
 
 /**
+ * Object ID type for fabric objects
+ */
+export type ObjectId = string;
+
+/**
+ * Grid line type enum
+ */
+export enum GridLineType {
+  SMALL = 'small',
+  LARGE = 'large',
+  AXIS = 'axis'
+}
+
+/**
+ * Validate if a string is a valid object ID
+ * @param id The ID to validate
+ * @returns True if valid
+ */
+export const isValidObjectId = (id: string): boolean => {
+  return typeof id === 'string' && id.length > 0;
+};
+
+/**
  * Drawing path options
  */
 export interface PathOptions {

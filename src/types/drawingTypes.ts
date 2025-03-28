@@ -91,6 +91,7 @@ export interface DebugInfoState {
 
 /**
  * State for drawing operations
+ * Make all properties required for proper type checking
  */
 export interface DrawingState {
   /** Whether the user is currently drawing */
@@ -112,13 +113,13 @@ export interface DrawingState {
   /** Current path being drawn */
   currentPath: FabricPath | null;
   /** Whether pressure sensitivity is enabled */
-  usePressure?: boolean;
+  usePressure: boolean;
   /** Whether stylus is detected */
-  stylusDetected?: boolean;
+  stylusDetected: boolean;
   /** Whether path dragging is enabled */
-  pathDragging?: boolean;
+  pathDragging: boolean;
   /** Whether shape creation is in progress */
-  creatingShape?: boolean;
+  creatingShape: boolean;
   /** Starting point of the current drawing operation */
   startPoint: Point | null;
   /** Current point of the drawing operation */
@@ -136,13 +137,13 @@ export interface DrawingState {
   /** Distance between start and current points in current units */
   distance: number | null;
   /** Whether to snap to grid */
-  snapToGrid?: boolean;
+  snapToGrid: boolean;
   /** Tool type being used */
-  toolType?: string;
+  toolType: string;
   /** Line width */
-  width?: number;
+  width: number;
   /** Line color */
-  color?: string;
+  color: string;
 }
 
 /**

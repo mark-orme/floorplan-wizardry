@@ -33,6 +33,9 @@ export { PerformanceStats } from './core/DebugInfo';
 export { createDefaultDrawingState } from './core/DrawingState';
 
 // Drawing types
+export type { default as GridCreationLock } from './grid/GridCreationLock';
+
+// Use export type for isolatedModules compatibility
 export type * from './drawingTypes';
 export type * from './floorPlanTypes';
 export type * from './geometryTypes';

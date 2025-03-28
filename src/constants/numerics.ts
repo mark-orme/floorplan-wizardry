@@ -30,9 +30,18 @@ export const GRID_EXTENSION_FACTOR = 1.5;
 export const LARGE_GRID_LINE_WIDTH = 1.0;
 export const SMALL_GRID_LINE_WIDTH = 0.5;
 
+// Grid type aliases for backward compatibility
+export const SMALL_GRID = GRID_SPACING.SMALL;
+export const LARGE_GRID = GRID_SPACING.LARGE;
+
 // Snapping thresholds
 export const SNAP_THRESHOLD = 5;
 export const ANGLE_SNAP_THRESHOLD = 5;
+
+// Drawing constants
+export const DEFAULT_LINE_THICKNESS = 2;
+export const PIXELS_PER_METER = 100;
+export const MAX_OBJECTS_PER_CANVAS = 1000;
 
 // Precision settings
 export const FLOATING_POINT_TOLERANCE = 0.001;
