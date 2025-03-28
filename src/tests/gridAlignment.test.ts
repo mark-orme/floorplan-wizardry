@@ -1,4 +1,3 @@
-
 /**
  * Grid alignment and snapping tests
  * Validates that the grid snapping functionality works as expected
@@ -8,7 +7,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { snapToGrid, snapToAngle, snapLineToStandardAngles } from '@/utils/grid/snapping';
 import { GRID_SPACING, PIXELS_PER_METER } from '@/constants/numerics';
 import { Point, createPoint } from '@/types/core/Point';
-import * as fabric from 'fabric';
 
 describe('Grid Alignment', () => {
   describe('Wall endpoints snapping', () => {
