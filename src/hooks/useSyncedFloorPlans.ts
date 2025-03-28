@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -199,10 +200,17 @@ export const useSyncedFloorPlans = () => {
 
       try {
         // Convert app floor plans to core floor plans for storage
-        const corePlans = appToCoreFloorPlans(newFloorPlans);
+        // Ensure label is set for each floor plan
+        const processedPlans = newFloorPlans.map(plan => ({
+          ...plan,
+          label: plan.label || plan.name // Ensure label is set
+        }));
+        
+        // Now convert to core floor plans
+        const corePlans = appToCoreFloorPlans(processedPlans);
         
         await saveFloorPlans(corePlans);
-        broadcastFloorPlanUpdate(newFloorPlans);
+        broadcastFloorPlanUpdate(processedPlans);
         lastSyncTimeRef.current = Date.now();
         logger.info('Floor plans saved locally and synced via Pusher');
       } catch (error) {
@@ -222,7 +230,13 @@ export const useSyncedFloorPlans = () => {
     if (isLoggedIn) {
       supabaseSaveTimeoutRef.current = window.setTimeout(async () => {
         try {
-          const success = await saveToSupabase(newFloorPlans);
+          // Ensure label is set for each floor plan before saving
+          const processedPlans = newFloorPlans.map(plan => ({
+            ...plan,
+            label: plan.label || plan.name // Ensure label is set
+          }));
+          
+          const success = await saveToSupabase(processedPlans);
           if (success) {
             logger.info('Floor plans saved to Supabase');
           }

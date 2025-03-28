@@ -149,8 +149,83 @@ export function renderGridComponents(
   width: number,
   height: number
 ) {
-  // Use GRID_SPACING.DEFAULT as the cell size
-  const cellSize = GRID_SPACING;
+  // Use GRID_SPACING as the cell size
+  const cellSize = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
   
   return createCompleteGrid(canvas, width, height, cellSize);
+}
+
+/**
+ * Check if a grid exists on the canvas
+ * @param canvas The canvas
+ * @returns True if grid exists
+ */
+export function hasExistingGrid(canvas: Canvas): boolean {
+  if (!canvas) return false;
+  
+  const objects = canvas.getObjects();
+  return objects.some((obj: FabricObject) => (obj as any).objectType === 'grid');
+}
+
+/**
+ * Remove grid objects from canvas
+ * @param canvas The canvas
+ * @param gridObjects Optional array of grid objects to remove
+ */
+export function removeGrid(canvas: Canvas, gridObjects?: FabricObject[]): void {
+  if (!canvas) return;
+  
+  const objectsToRemove = gridObjects || 
+    canvas.getObjects().filter((obj: FabricObject) => isGridObject(obj));
+  
+  objectsToRemove.forEach((obj: FabricObject) => {
+    canvas.remove(obj);
+  });
+  
+  canvas.requestRenderAll();
+}
+
+/**
+ * Set visibility of grid objects
+ * @param canvas The canvas
+ * @param visible Whether grid should be visible
+ */
+export function setGridVisibility(canvas: Canvas, visible: boolean): void {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter((obj: FabricObject) => 
+    isGridObject(obj));
+  
+  gridObjects.forEach((obj: FabricObject) => {
+    obj.set({ visible });
+  });
+  
+  canvas.requestRenderAll();
+}
+
+/**
+ * Filter grid objects from canvas objects
+ * @param objects Array of canvas objects
+ * @returns Non-grid objects
+ */
+export function filterGridObjects(objects: FabricObject[]): FabricObject[] {
+  return objects.filter(obj => !isGridObject(obj));
+}
+
+/**
+ * Get the nearest grid point to a given point
+ * @param point The reference point
+ * @param gridSize Grid size to snap to
+ * @returns The nearest grid point
+ */
+export function getNearestGridPoint(
+  point: { x: number, y: number } | null, 
+  gridSize: number
+): { x: number, y: number } {
+  if (!point) return { x: 0, y: 0 };
+  
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
 }

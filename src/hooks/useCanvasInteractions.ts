@@ -1,271 +1,231 @@
-
 /**
  * Custom hook for handling canvas interactions
- * Manages drawing events, path creation, and shape processing
+ * Manages zooming, panning, and keyboard shortcuts
  * @module useCanvasInteractions
  */
-import { useState, useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath, Polyline } from "fabric";
-import { DrawingTool } from "./useCanvasState";
-import { Point } from '@/types/geometryTypes';
-import { GRID_SPACING } from "@/constants/numerics";
-import { isExactGridMultiple } from "@/utils/geometry/pointOperations";
+import { useCallback, useEffect, useRef } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { useCanvasState } from "./useCanvasState";
+import { useZoom } from "./useZoom";
+import { ZoomOptions } from "@/types";
 
 /**
- * Props for the useCanvasInteractions hook
- * @interface UseCanvasInteractionsProps
- */
-interface UseCanvasInteractionsProps {
-  /** Reference to the Fabric canvas instance */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current active drawing tool */
-  tool: DrawingTool;
-  /** Current line thickness */
-  lineThickness?: number;
-  /** Current line color */
-  lineColor?: string;
-}
-
-/**
- * Result type for the useCanvasInteractions hook
+ * Interface for the return value of the useCanvasInteractions hook.
  * @interface UseCanvasInteractionsResult
  */
 interface UseCanvasInteractionsResult {
-  /** Current drawing state */
-  drawingState: any;
-  /** Current zoom level */
-  currentZoom: number;
-  /** Function to toggle snap to grid */
-  toggleSnap: () => void;
-  /** Whether snap to grid is enabled */
-  snapEnabled: boolean;
+  /**
+   * Function to reset the viewport transform of the canvas.
+   */
+  resetViewport: () => void;
 }
 
 /**
- * Hook for managing canvas interactions like drawing, selecting, and grid snapping
- * 
- * @param {UseCanvasInteractionsProps} props - Hook properties
- * @returns {UseCanvasInteractionsResult} Drawing state and handlers
+ * Custom hook for managing canvas interactions such as zooming, panning, and handling keyboard shortcuts.
+ *
+ * @param {React.MutableRefObject<FabricCanvas | null>} fabricCanvasRef - Reference to the Fabric.js canvas instance.
+ * @returns {UseCanvasInteractionsResult} - An object containing the resetViewport function.
  */
-export const useCanvasInteractions = (props: UseCanvasInteractionsProps): UseCanvasInteractionsResult => {
-  const {
-    fabricCanvasRef,
-    tool,
-    lineThickness = 2,
-    lineColor = '#000000'
-  } = props;
-
-  const [snapEnabled, setSnapEnabled] = useState(true);
-  const [currentZoom, setCurrentZoom] = useState(1);
-  const [drawingState, setDrawingState] = useState({
-    isDrawing: false,
-    points: [],
-    currentPath: null,
-    startX: 0,
-    startY: 0
-  });
-
+export const useCanvasInteractions = (
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>
+): UseCanvasInteractionsResult => {
+  const { tool } = useCanvasState();
+  const { updateZoomState } = useZoom();
+  
   /**
-   * Toggle snap to grid
+   * Resets the viewport transform of the canvas to its initial state.
    */
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
-
-  /**
-   * Snap a coordinate to the grid
-   * @param {number} value - The coordinate value
-   * @returns {number} Snapped coordinate value
-   */
-  const snapToGrid = useCallback((value: number): number => {
-    if (!snapEnabled) return value;
-
-    const gridSize = GRID_SPACING;
-    const snappedValue = Math.round(value / gridSize) * gridSize;
-    return snappedValue;
-  }, [snapEnabled]);
-
-  /**
-   * Snap a point to the grid
-   * @param {Point} point - The point to snap
-   * @returns {Point} Snapped point
-   */
-  const snapPointToGrid = useCallback((point: Point): Point => {
-    return {
-      x: snapToGrid(point.x),
-      y: snapToGrid(point.y)
-    };
-  }, [snapToGrid]);
-
-  /**
-   * Check if a point is on the grid
-   * @param {Point} point - The point to check
-   * @returns {boolean} True if the point is on the grid
-   */
-  const isPointOnGrid = useCallback((point: Point): boolean => {
-    return isExactGridMultiple(point.x) && isExactGridMultiple(point.y);
-  }, []);
-
-  /**
-   * Find the closest point on a polyline to a given point
-   * @param {Point} point - The point to find the closest point to
-   * @param {Polyline} polyline - The polyline to find the closest point on
-   * @returns {Point | null} The closest point on the polyline, or null if the polyline has no points
-   */
-  const findClosestPointOnPolyline = useCallback((point: Point, polyline: Polyline): Point | null => {
-    if (!polyline.points || polyline.points.length === 0) {
-      return null;
-    }
-
-    let closestPoint: Point | null = null;
-    let minDistance = Infinity;
-
-    for (let i = 0; i < polyline.points.length - 1; i++) {
-      const start = polyline.points[i];
-      const end = polyline.points[i + 1];
-
-      // Calculate distance from point to line segment
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
-
-      const length = dx * dx + dy * dy;
-      let t = ((point.x - start.x) * dx + (point.y - start.y) * dy) / length;
-
-      t = Math.max(0, Math.min(1, t));
-
-      const closestX = start.x + t * dx;
-      const closestY = start.y + t * dy;
-
-      const distance = Math.sqrt((point.x - closestX) ** 2 + (point.y - closestY) ** 2);
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestPoint = { x: closestX, y: closestY };
-      }
-    }
-
-    return closestPoint;
-  }, []);
-
-  /**
-   * Create a point from a line object
-   * @param line The line object
-   * @returns The created point
-   */
-  const createPointFromLine = (line: { start: Point; end: Point }): Point => {
-    return {
-      x: (line.start.x + line.end.x) / 2,
-      y: (line.start.y + line.end.y) / 2
-    };
-  };
-
-  /**
-   * Handle mouse down event on the canvas
-   * @param {Point} point - The point where the mouse was pressed
-   */
-  const handleMouseDown = useCallback((point: Point) => {
-    if (!fabricCanvasRef.current) return;
-
-    const snappedPoint = snapPointToGrid(point);
-
-    setDrawingState(prevState => ({
-      ...prevState,
-      isDrawing: true,
-      points: [snappedPoint],
-      startX: snappedPoint.x,
-      startY: snappedPoint.y
-    }));
-
-    // Start drawing path
-    const path = new FabricPath(`M ${snappedPoint.x} ${snappedPoint.y} L ${snappedPoint.x} ${snappedPoint.y}`, {
-      stroke: lineColor,
-      strokeWidth: lineThickness,
-      fill: null,
-      objectCaching: false
-    });
-
-    fabricCanvasRef.current.add(path);
-    fabricCanvasRef.current.setActiveObject(path);
-
-    setDrawingState(prevState => ({
-      ...prevState,
-      currentPath: path
-    }));
-  }, [snapPointToGrid, lineColor, lineThickness, fabricCanvasRef]);
-
-  /**
-   * Handle mouse move event on the canvas
-   * @param {Point} point - The current mouse position
-   */
-  const handleMouseMove = useCallback((point: Point) => {
-    if (!fabricCanvasRef.current || !drawingState.isDrawing) return;
-
-    const snappedPoint = snapPointToGrid(point);
-
-    // Extend the current path
-    const currentPath = drawingState.currentPath;
-    if (currentPath) {
-      const newPathData = currentPath.path;
-      newPathData.push(['L', snappedPoint.x, snappedPoint.y]);
-      currentPath.set({ path: newPathData });
-      fabricCanvasRef.current.requestRenderAll();
-    }
-
-    setDrawingState(prevState => ({
-      ...prevState,
-      points: [...prevState.points, snappedPoint]
-    }));
-  }, [snapPointToGrid, drawingState, fabricCanvasRef]);
-
-  /**
-   * Handle mouse up event on the canvas
-   */
-  const handleMouseUp = useCallback(() => {
-    setDrawingState(prevState => ({
-      ...prevState,
-      isDrawing: false,
-      currentPath: null
-    }));
-  }, []);
-
-  /**
-   * Handle object selection event on the canvas
-   */
-  const handleObjectSelected = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    setCurrentZoom(fabricCanvasRef.current.getZoom());
+  const resetViewport = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    canvas.renderAll();
   }, [fabricCanvasRef]);
-
+  
   /**
-   * Handle canvas zoom event
+   * Handles zoom events on the canvas.
+   * @param {any} e - The event object.
    */
-  const handleZoom = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    setCurrentZoom(fabricCanvasRef.current.getZoom());
+  const handleZoom = useCallback((e: any) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const event = e.e;
+    
+    // Prevent default behavior to avoid browser zoom
+    if (event.preventDefault) {
+      event.preventDefault();
+    }
+    
+    // Get the zoom point in canvas coordinates
+    const pointer = canvas.getPointer(event);
+    
+    // Determine zoom direction from the event
+    let deltaY;
+    
+    if (event.deltaY !== undefined) {
+      deltaY = event.deltaY;
+    } else if (event.wheelDelta !== undefined) {
+      // Convert wheelDelta to deltaY (they go in opposite directions)
+      deltaY = -event.wheelDelta;
+    } else {
+      // Default if no delta information is available
+      deltaY = 0;
+    }
+    
+    // Calculate new zoom level
+    // Make sure we're working with numbers for the arithmetic operations
+    const currentZoom = Number(canvas.getZoom() || 1);
+    const zoomDelta = Number(deltaY < 0 ? 0.05 : -0.05); // Invert for natural scrolling
+    const newZoom = Math.max(0.5, Math.min(5, currentZoom + zoomDelta));
+    
+    // Apply zoom to the canvas
+    canvas.zoomToPoint({ x: pointer.x, y: pointer.y }, newZoom);
+    
+    // Update zoom level in state
+    updateZoomState(newZoom);
+    
+    // Re-render the canvas
+    canvas.requestRenderAll();
+  }, [fabricCanvasRef, updateZoomState]);
+  
+  /**
+   * Handles panning the canvas.
+   * @param {any} event - The event object.
+   */
+  const handlePan = useCallback((event: any) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || tool !== 'pan') return;
+    
+    // Set panning to true on mouse down
+    canvas.isPanning = true;
+    
+    // Get the pointer coordinates
+    const { x, y } = canvas.getPointer(event.e);
+    
+    // Store the initial coordinates
+    canvas.lastPanPosition = { x, y };
+  }, [fabricCanvasRef, tool]);
+  
+  /**
+   * Handles mouse move events for panning.
+   * @param {any} event - The event object.
+   */
+  const handlePanMove = useCallback((event: any) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || tool !== 'pan' || !canvas.isPanning || !canvas.lastPanPosition) return;
+    
+    // Get the pointer coordinates
+    const { x, y } = canvas.getPointer(event.e);
+    
+    // Calculate delta
+    const deltaX = (typeof x === 'number' && typeof canvas.lastPanPosition.x === 'number') ? x - canvas.lastPanPosition.x : 0;
+    const deltaY = (typeof y === 'number' && typeof canvas.lastPanPosition.y === 'number') ? y - canvas.lastPanPosition.y : 0;
+    
+    // Update the viewport transform
+    canvas.relativePan({ x: deltaX, y: deltaY });
+    
+    // Update the last pan position
+    canvas.lastPanPosition = { x, y };
+  }, [fabricCanvasRef, tool]);
+  
+  /**
+   * Handles mouse up events for panning.
+   */
+  const handlePanEnd = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Set panning to false on mouse up
+    canvas.isPanning = false;
+    canvas.lastPanPosition = null;
   }, [fabricCanvasRef]);
-
-  // Add type for fabric.js events
-  type FabricEventName = 'object:selected' | 'zoom:changed';
-
-  useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-
-    // Fixed: correct event binding with proper event names
-    fabricCanvasRef.current.on('object:selected', handleObjectSelected);
-    fabricCanvasRef.current.on('zoom:changed', handleZoom);
-
+  
+  /**
+   * Handles keyboard shortcuts.
+   * @param {KeyboardEvent} e - The keyboard event.
+   */
+  const handleShortcut = useCallback((e: KeyboardEvent) => {
+    // Check for Ctrl/Cmd + Z for Undo
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault(); // Prevent browser's default undo
+      //handleUndo(); // Call the undo function
+    }
+    
+    // Check for Ctrl/Cmd + Shift + Z for Redo
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Z') {
+      e.preventDefault(); // Prevent browser's default redo
+      //handleRedo(); // Call the redo function
+    }
+  }, []);
+  
+  /**
+   * Registers event listeners for zoom and pan.
+   */
+  const registerZoomEvents = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Use string event names directly rather than enum values
+    canvas.on('mouse:wheel', handleZoom);
+    
     return () => {
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.off('object:selected', handleObjectSelected);
-        fabricCanvasRef.current.off('zoom:changed', handleZoom);
+      if (canvas) {
+        canvas.off('mouse:wheel', handleZoom);
       }
     };
-  }, [fabricCanvasRef, handleObjectSelected, handleZoom]);
-
+  }, [fabricCanvasRef, handleZoom]);
+  
+  /**
+   * Registers event listeners for pan.
+   */
+  const registerPanEvents = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    canvas.on('mouse:down', handlePan);
+    canvas.on('mouse:move', handlePanMove);
+    canvas.on('mouse:up', handlePanEnd);
+    canvas.on('mouse:out', handlePanEnd);
+    
+    return () => {
+      if (canvas) {
+        canvas.off('mouse:down', handlePan);
+        canvas.off('mouse:move', handlePanMove);
+        canvas.off('mouse:up', handlePanEnd);
+        canvas.off('mouse:out', handlePanEnd);
+      }
+    };
+  }, [fabricCanvasRef, handlePan, handlePanMove, handlePanEnd]);
+  
+  /**
+   * Registers event listeners for keyboard shortcuts.
+   */
+  const registerKeyboardEvents = useCallback(() => {
+    document.addEventListener('keydown', handleShortcut);
+    
+    return () => {
+      document.removeEventListener('keydown', handleShortcut);
+    };
+  }, [handleShortcut]);
+  
+  /**
+   * Registers all event listeners.
+   */
+  useEffect(() => {
+    const unregisterZoom = registerZoomEvents();
+    const unregisterPan = registerPanEvents();
+    const unregisterKeyboard = registerKeyboardEvents();
+    
+    return () => {
+      unregisterZoom();
+      unregisterPan();
+      unregisterKeyboard();
+    };
+  }, [registerZoomEvents, registerPanEvents, registerKeyboardEvents]);
+  
   return {
-    drawingState,
-    currentZoom,
-    toggleSnap,
-    snapEnabled
+    resetViewport
   };
 };

@@ -1,147 +1,133 @@
 
 /**
  * Grid snapping utilities
- * @module grid/snapping
+ * @module utils/grid/snapping
  */
-
-import { Point } from '@/types/geometryTypes';
-import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
-
-/**
- * Snaps a value to the nearest grid coordinate
- * @param {number} value - The value to snap
- * @param {number} gridSize - The grid size to snap to (defaults to small grid)
- * @returns {number} The snapped value
- */
-export const snapToGrid = (value: number, gridSize: number = GRID_SPACING.SMALL): number => {
-  return Math.round(value / gridSize) * gridSize;
-};
+import { GRID_SPACING } from '@/constants/numerics';
+import { Point } from '@/types/core/Point';
 
 /**
- * Snaps a point to the nearest grid intersection
- * @param {Point} point - The point to snap
- * @param {number} gridSize - The grid size to snap to (defaults to small grid)
- * @returns {Point} The snapped point
+ * Snap a point to the grid
+ * @param point The point to snap
+ * @param gridSize Optional grid size
+ * @returns Snapped point
  */
-export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
+export function snapToGrid(point: Point | { x: number, y: number }, gridSize: number = GRID_SPACING.SMALL): Point {
   return {
-    x: snapToGrid(point.x, gridSize),
-    y: snapToGrid(point.y, gridSize)
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  } as Point;
+}
+
+/**
+ * Snap a specific coordinate to grid
+ * @param value Coordinate value
+ * @param gridSize Grid size
+ * @returns Snapped coordinate
+ */
+export function snapCoordinateToGrid(value: number, gridSize: number = GRID_SPACING.SMALL): number {
+  return Math.round(value / gridSize) * gridSize;
+}
+
+/**
+ * Snap a point to grid
+ * @param point The point to snap
+ * @param gridSize Optional grid size
+ * @returns Snapped point
+ */
+export function snapPointToGrid(point: Point | { x: number, y: number }, gridSize: number = GRID_SPACING.SMALL): Point {
+  return snapToGrid(point, gridSize);
+}
+
+/**
+ * Check if a point lies on a grid intersection
+ * @param point The point to check
+ * @param gridSize Optional grid size
+ * @param tolerance Optional tolerance
+ * @returns True if point is on grid
+ */
+export function isPointOnGrid(point: Point | { x: number, y: number }, gridSize: number = GRID_SPACING.SMALL, tolerance: number = 0.001): boolean {
+  const dx = Math.abs(Math.round(point.x / gridSize) * gridSize - point.x);
+  const dy = Math.abs(Math.round(point.y / gridSize) * gridSize - point.y);
+  return dx <= tolerance && dy <= tolerance;
+}
+
+/**
+ * Calculate distance from point to nearest grid line
+ * @param point The point to check
+ * @param gridSize Optional grid size
+ * @returns Distance to nearest grid line
+ */
+export function distanceToGridLine(point: Point | { x: number, y: number }, gridSize: number = GRID_SPACING.SMALL): { x: number, y: number } {
+  const xDist = point.x % gridSize;
+  const yDist = point.y % gridSize;
+  
+  return {
+    x: Math.min(xDist, gridSize - xDist),
+    y: Math.min(yDist, gridSize - yDist)
   };
-};
+}
 
 /**
- * Snaps an angle to the nearest standard angle (0, 45, 90, 135, etc.)
- * @param {number} angle - The angle in degrees to snap
- * @param {number} step - The angular step size to snap to (default 45 degrees)
- * @returns {number} The snapped angle
+ * Snap an angle to the nearest standard angle
+ * @param angle Angle in degrees
+ * @param snap Angle snap increment
+ * @returns Snapped angle
  */
-export const snapToAngle = (angle: number, step: number = 45): number => {
-  return Math.round(angle / step) * step;
-};
+export function snapToAngle(angle: number, snap: number = 45): number {
+  return Math.round(angle / snap) * snap;
+}
 
 /**
- * Straightens a line to standard angles
- * @param {Point} start - Start point of the line
- * @param {Point} end - End point of the line
- * @returns {Point} End point adjusted to standard angle
+ * Snap a line defined by start and end points to standard angles
+ * @param start Start point
+ * @param end End point
+ * @param snapAngle Optional angle to snap to
+ * @returns Snapped end point
  */
-export const snapLineToStandardAngles = (start: Point, end: Point): Point => {
-  // Calculate the angle and distance
+export function snapLineToStandardAngles(
+  start: Point | { x: number, y: number }, 
+  end: Point | { x: number, y: number }, 
+  snapAngle: number = 45
+): Point {
+  // Calculate the angle between the two points
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  
+  // Calculate the distance between the points
   const distance = Math.sqrt(dx * dx + dy * dy);
   
-  // Snap the angle to the nearest 45-degree increment
-  const snappedAngle = snapToAngle(angle);
+  // Snap the angle to the nearest interval
+  const snappedAngle = snapToAngle(angle, snapAngle);
   
-  // Convert back to radians for calculation
-  const snappedRadians = snappedAngle * (Math.PI / 180);
+  // Convert back to radians
+  const radians = snappedAngle * (Math.PI / 180);
   
-  // Calculate the new end point
+  // Calculate new end point using the snapped angle and original distance
   return {
-    x: start.x + Math.cos(snappedRadians) * distance,
-    y: start.y + Math.sin(snappedRadians) * distance
-  };
-};
+    x: start.x + distance * Math.cos(radians),
+    y: start.y + distance * Math.sin(radians)
+  } as Point;
+}
 
 /**
- * Snap both points of a line to grid
- * @param {Point} start - Start point of the line
- * @param {Point} end - End point of the line
- * @returns {Point} End point snapped to grid and adjusted for standard angles
+ * Compatibility function to allow grid-related functions with both separate coordinates and point objects
+ * @param x X-coordinate or point object
+ * @param y Y-coordinate (optional if x is a point)
+ * @param gridSize Grid size
+ * @returns Snapped point
  */
-export const snapLineToGrid = (start: Point, end: Point): Point => {
-  // First snap both points to grid
-  const snappedStart = snapPointToGrid(start);
-  const snappedEnd = snapPointToGrid(end);
-  
-  // Then snap to standard angles
-  return snapLineToStandardAngles(snappedStart, snappedEnd);
-};
-
-/**
- * Check if a point is within the snapping threshold of a grid line
- * @param {number} value - The value to check
- * @param {number} gridSize - The grid size
- * @param {number} threshold - The snapping threshold
- * @returns {boolean} True if within threshold
- */
-export const isNearGridLine = (
-  value: number, 
-  gridSize: number = GRID_SPACING.SMALL,
-  threshold: number = SNAP_THRESHOLD
-): boolean => {
-  const nearestGridLine = snapToGrid(value, gridSize);
-  return Math.abs(value - nearestGridLine) <= threshold;
-};
-
-/**
- * Check if a point is exactly on a grid intersection
- * @param {Point} point - The point to check
- * @param {number} gridSize - The grid size
- * @returns {boolean} True if on grid intersection
- */
-export const isPointOnGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): boolean => {
-  return (
-    Math.abs(point.x - snapToGrid(point.x, gridSize)) < 0.001 &&
-    Math.abs(point.y - snapToGrid(point.y, gridSize)) < 0.001
-  );
-};
-
-/**
- * Calculate distance from a point to nearest grid line
- * @param {Point} point - The point to check
- * @param {number} gridSize - The grid size
- * @returns {number} Distance to nearest grid line
- */
-export const distanceToGridLine = (point: Point, gridSize: number = GRID_SPACING.SMALL): number => {
-  const xDist = Math.min(
-    Math.abs(point.x - snapToGrid(point.x, gridSize)),
-    Math.abs(point.x - (snapToGrid(point.x, gridSize) + gridSize))
-  );
-  const yDist = Math.min(
-    Math.abs(point.y - snapToGrid(point.y, gridSize)),
-    Math.abs(point.y - (snapToGrid(point.y, gridSize) + gridSize))
-  );
-  return Math.min(xDist, yDist);
-};
-
-/**
- * Check if two points are on the same grid line
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @param {number} gridSize - Grid size
- * @returns {boolean} True if on same grid line
- */
-export const arePointsOnSameGridLine = (
-  point1: Point, 
-  point2: Point, 
+export function snapToGridUnified(
+  x: number | Point | { x: number, y: number }, 
+  y?: number, 
   gridSize: number = GRID_SPACING.SMALL
-): boolean => {
-  return (
-    snapToGrid(point1.x, gridSize) === snapToGrid(point2.x, gridSize) ||
-    snapToGrid(point1.y, gridSize) === snapToGrid(point2.y, gridSize)
-  );
-};
+): Point {
+  if (typeof x === 'object') {
+    // x is a Point or {x,y} object
+    return snapToGrid(x, gridSize);
+  } else {
+    // x and y are separate coordinates
+    return snapToGrid({ x, y: y || 0 }, gridSize);
+  }
+}

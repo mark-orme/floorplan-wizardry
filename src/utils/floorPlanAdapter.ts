@@ -42,7 +42,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
   return {
     id: appPlan.id,
     name: appPlan.name,
-    label: appPlan.label || appPlan.name, // Ensure label is set
+    label: appPlan.label || appPlan.name, // Ensure label is always set
     walls: walls,
     rooms: Array.isArray(appPlan.rooms) ? appPlan.rooms.map(room => ({
       id: room.id,
@@ -120,6 +120,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
   
   return {
     ...corePlan,
+    label: corePlan.label, // Ensure label is preserved
     strokes: strokes,
     walls: walls,
     rooms: Array.isArray(corePlan.rooms) ? corePlan.rooms.map(room => ({
@@ -131,8 +132,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       area: room.area || 0,
       level: corePlan.level || 0
     } as AppRoom)) : [],
-    label: corePlan.label,
-    index: corePlan.index || 0, // Ensure index is always set
+    index: corePlan.index || 0,
     metadata: {
       createdAt: typeof corePlan.metadata?.createdAt === 'string' 
         ? new Date(corePlan.metadata.createdAt).getTime() 
