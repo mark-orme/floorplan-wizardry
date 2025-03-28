@@ -19,6 +19,8 @@ import { toast } from "sonner";
 let lastGridCreationTime = 0;
 const GRID_CREATION_COOLDOWN = 5000; // 5 seconds between attempts
 let gridCreationInProgress = false;
+let createAttempt = 0;
+const MAX_CREATE_ATTEMPTS = 5;
 
 /**
  * Grid creation timing constants
@@ -118,6 +120,17 @@ export const createGrid = (
     return gridLayerRef.current;
   }
   
+  // Check if we've exceeded max attempts
+  if (createAttempt >= MAX_CREATE_ATTEMPTS) {
+    logger.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
+    console.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
+    toast.error("Grid creation abandoned. Please refresh the page.");
+    return gridLayerRef.current;
+  }
+  
+  // Increment attempt counter
+  createAttempt++;
+  
   // Set creation flags
   gridCreationInProgress = true;
   lastGridCreationTime = now;
@@ -156,7 +169,78 @@ export const createGrid = (
     // Create the grid layer directly - immediate mode for better reliability
     logger.info("Creating grid - implementation starting");
     
-    const gridObjects = createGridLayer(canvas, gridLayerRef, canvasDimensions, setDebugInfo);
+    // ACTUAL IMPLEMENTATION INSTEAD OF PLACEHOLDER
+    const createGridLines = () => {
+      const width = canvas.width || canvasDimensions.width;
+      const height = canvas.height || canvasDimensions.height;
+      const gridObjects: FabricObject[] = [];
+      
+      // Parameters for grid
+      const smallGridSpacing = 10; // 10px for small grid (0.1m)
+      const largeGridSpacing = 100; // 100px for large grid (1m)
+      const smallGridColor = '#f0f0f0';
+      const largeGridColor = '#d0d0d0';
+      
+      // Create horizontal small grid lines
+      for (let y = 0; y <= height; y += smallGridSpacing) {
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: smallGridColor,
+          selectable: false,
+          evented: false,
+          strokeWidth: 0.5,
+          hoverCursor: 'default'
+        });
+        
+        gridObjects.push(line);
+        canvas.add(line);
+      }
+      
+      // Create vertical small grid lines
+      for (let x = 0; x <= width; x += smallGridSpacing) {
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: smallGridColor,
+          selectable: false,
+          evented: false,
+          strokeWidth: 0.5,
+          hoverCursor: 'default'
+        });
+        
+        gridObjects.push(line);
+        canvas.add(line);
+      }
+      
+      // Create horizontal large grid lines
+      for (let y = 0; y <= height; y += largeGridSpacing) {
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: largeGridColor,
+          selectable: false,
+          evented: false,
+          strokeWidth: 1,
+          hoverCursor: 'default'
+        });
+        
+        gridObjects.push(line);
+        canvas.add(line);
+      }
+      
+      // Create vertical large grid lines
+      for (let x = 0; x <= width; x += largeGridSpacing) {
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: largeGridColor,
+          selectable: false,
+          evented: false,
+          strokeWidth: 1,
+          hoverCursor: 'default'
+        });
+        
+        gridObjects.push(line);
+        canvas.add(line);
+      }
+      
+      return gridObjects;
+    };
+    
+    const gridObjects = createGridLines();
     
     if (!gridObjects || gridObjects.length === 0) {
       logger.error("⚠️ createGridLayer returned empty array, trying fallback");
@@ -174,8 +258,12 @@ export const createGrid = (
       }
       
       gridCreationInProgress = false;
+      createAttempt = 0; // Reset attempt counter on success
       return fallbackGrid;
     }
+    
+    // Store the created grid objects
+    gridLayerRef.current = gridObjects;
     
     // Check if creation took too long
     const creationTime = performance.now() - startTime;
@@ -186,6 +274,15 @@ export const createGrid = (
     // Force a render
     canvas.requestRenderAll();
     logger.info("Grid creation completed successfully");
+    createAttempt = 0; // Reset attempt counter on success
+    toast.success(TOAST_MESSAGES.GRID_CREATED);
+    
+    // Update debug info
+    setDebugInfo(prev => ({
+      ...prev,
+      gridCreated: true,
+      gridObjectCount: gridObjects.length
+    }));
     
     gridCreationInProgress = false;
     return gridObjects;

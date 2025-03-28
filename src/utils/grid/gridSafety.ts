@@ -1,82 +1,78 @@
 
 /**
  * Grid safety module
- * Handles safety mechanisms for grid creation process
- * @module gridSafety
+ * Manages safety timeouts and cleanup for grid operations
+ * @module grid/gridSafety
  */
-import { gridManager, resetGridProgress, acquireGridCreationLock, releaseGridCreationLock } from "../gridManager";
+import { Canvas, Object as FabricObject } from "fabric";
 import logger from "../logger";
 
+// Safety timeout reference
+let safetyTimeout: number | null = null;
+
 /**
- * Setup safety reset timeout for grid creation
- * Ensures grid creation doesn't get stuck
- * 
- * @param {number} timeoutDuration - Timeout duration in milliseconds
- * @returns {number} Timeout ID
+ * Maximum allowed time for grid creation in milliseconds
+ * Used to prevent freezing or hanging during grid creation
  */
-export const setupGridSafetyTimeout = (
-  timeoutDuration: number = 5000
-): number => {
-  // Schedule a safety timeout to reset the flag after specified duration
-  return window.setTimeout(() => {
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug("Grid safety timeout triggered - resetting creation state");
-    }
-    resetGridProgress();
-  }, timeoutDuration);
+const MAX_GRID_CREATION_TIME = 10000; // 10 seconds
+
+/**
+ * Acquire a safety lock for grid creation with timeout
+ * Sets a timeout to release lock if grid creation takes too long
+ * 
+ * @param {() => void} releaseCallback - Function to call when lock is released
+ * @returns {boolean} True if lock acquired successfully
+ */
+export const acquireGridLockWithSafety = (releaseCallback: () => void): boolean => {
+  // Clear existing timeout if any
+  if (safetyTimeout !== null) {
+    window.clearTimeout(safetyTimeout);
+    safetyTimeout = null;
+  }
+  
+  // Set new safety timeout
+  safetyTimeout = window.setTimeout(() => {
+    logger.warn(`Grid creation took more than ${MAX_GRID_CREATION_TIME}ms, forcing release of lock`);
+    releaseCallback();
+    safetyTimeout = null;
+  }, MAX_GRID_CREATION_TIME);
+  
+  return true;
 };
 
 /**
- * Acquire lock with safety timeout
- * Gets lock for grid creation and sets up safety timeout
+ * Clean up grid resources and release locks
+ * Called when grid creation completes or component unmounts
  * 
- * @returns {{ lockId: number, safetyTimeoutId: number | null } | null} Lock info or null if couldn't acquire
- */
-export const acquireGridLockWithSafety = (): { lockId: number, safetyTimeoutId: number | null } | null => {
-  // CRITICAL: Force reset any existing grid lock before trying to acquire one
-  resetGridProgress();
-  
-  // Attempt to acquire a lock for grid creation
-  if (!acquireGridCreationLock()) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug("Grid creation already in progress (locked), skipping");
-    }
-    return null;
-  }
-  
-  // Generate a unique lock ID for this creation attempt
-  const lockId = gridManager.creationLock.id;
-  
-  // Schedule a safety timeout to reset the flag after 5 seconds
-  const safetyTimeoutId = setupGridSafetyTimeout(gridManager.safetyTimeout);
-  
-  if (process.env.NODE_ENV === 'development') {
-    logger.debug("Starting grid creation with lock ID:", lockId);
-  }
-  
-  return { lockId, safetyTimeoutId };
-};
-
-/**
- * Clean up grid creation resources
- * Clears timeouts and releases locks
- * 
- * @param {number} lockId - The lock ID to release
- * @param {number | null} safetyTimeoutId - The safety timeout ID to clear
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @param {Canvas} canvas - The fabric canvas instance
  */
 export const cleanupGridResources = (
-  lockId: number,
-  safetyTimeoutId: number | null
+  gridLayerRef: React.MutableRefObject<FabricObject[]>,
+  canvas: Canvas | null
 ): void => {
-  // Clear the safety timeout
-  if (safetyTimeoutId !== null) {
-    clearTimeout(safetyTimeoutId);
+  // Clear safety timeout
+  if (safetyTimeout !== null) {
+    window.clearTimeout(safetyTimeout);
+    safetyTimeout = null;
   }
   
-  // Release the lock
-  releaseGridCreationLock(lockId);
-  
-  if (process.env.NODE_ENV === 'development') {
-    logger.debug("Grid resources cleaned up, lock released:", lockId);
+  // Remove existing grid objects if canvas exists
+  if (canvas && gridLayerRef.current.length > 0) {
+    try {
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      
+      // Clear grid layer reference
+      gridLayerRef.current = [];
+      
+      // Render canvas
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error cleaning up grid resources:", error);
+    }
   }
 };
