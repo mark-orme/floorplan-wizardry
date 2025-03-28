@@ -115,7 +115,7 @@ export const useSyncedFloorPlans = () => {
       }));
       
       // Explicitly convert to CoreFloorPlan[] by ensuring all required fields
-      const corePlans: CoreFloorPlan[] = appToCoreFloorPlans(plansWithLabels);
+      const corePlans = appToCoreFloorPlans(plansWithLabels);
       
       saveFloorPlans(corePlans).finally(() => {
         isSavingRef.current = false;
@@ -123,7 +123,12 @@ export const useSyncedFloorPlans = () => {
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        saveToSupabase(plansWithLabels);
+        // Create a properly typed array for Supabase with ensured labels
+        const supabasePlans = plansWithLabels.map(plan => ({
+          ...plan,
+          label: plan.label || plan.name || ''
+        }));
+        saveToSupabase(supabasePlans);
       }
 
       toast.info('Floor plans synchronized from another device');
@@ -188,9 +193,12 @@ export const useSyncedFloorPlans = () => {
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
-        // Create properly typed CoreFloorPlan array for Supabase
-        const corePlans: CoreFloorPlan[] = appToCoreFloorPlans(plansWithLabels);
-        await saveToSupabase(plansWithLabels);
+        // Create properly typed CoreFloorPlan array for Supabase with ensured labels
+        const supabasePlans = plansWithLabels.map(plan => ({
+          ...plan,
+          label: plan.label || plan.name || ''
+        }));
+        await saveToSupabase(supabasePlans);
       }
       
       return plansWithLabels;
@@ -231,7 +239,7 @@ export const useSyncedFloorPlans = () => {
 
       try {
         // Convert to core floor plans with required labels
-        const corePlans: CoreFloorPlan[] = appToCoreFloorPlans(plansWithLabels);
+        const corePlans = appToCoreFloorPlans(plansWithLabels);
         
         await saveFloorPlans(corePlans);
         broadcastFloorPlanUpdate(plansWithLabels);
