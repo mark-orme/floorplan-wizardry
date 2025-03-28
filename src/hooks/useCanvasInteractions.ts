@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas interactions
  * Manages zooming, panning, and keyboard shortcuts
@@ -9,7 +8,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { useCanvasState } from "./useCanvasState";
 import { useZoom } from "./useZoom";
 import { ZoomOptions } from "@/types";
-import { Point, toPoint } from "@/types/core/Point";
+import { Point, toPoint, createPoint } from "@/types/core/Point";
 import { DrawingState } from "@/types/core/DrawingState";
 
 /**
@@ -46,13 +45,9 @@ interface ExtendedCanvas extends FabricCanvas {
 }
 
 /**
- * Custom hook for managing canvas interactions such as zooming, panning, and handling keyboard shortcuts.
- *
- * @param {React.MutableRefObject<FabricCanvas | null>} fabricCanvasRef - Reference to the Fabric.js canvas instance.
- * @param {string} tool - Current selected drawing tool
- * @param {number} lineThickness - Line thickness for drawing
- * @param {string} lineColor - Line color for drawing
- * @returns {UseCanvasInteractionsResult} - An object containing the resetViewport function.
+ * Hook that provides canvas interaction options and object selection capabilities
+ * @param {UseCanvasInteractionProps} props - Hook properties
+ * @returns {UseCanvasInteractionResult} Canvas interaction functions
  */
 export const useCanvasInteractions = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
@@ -145,7 +140,7 @@ export const useCanvasInteractions = (
     const { x, y } = canvas.getPointer(event.e);
     
     // Store the initial coordinates as a Point
-    canvas.lastPanPosition = toPoint({ x, y });
+    canvas.lastPanPosition = createPoint(x, y);
   }, [fabricCanvasRef, tool]);
   
   /**
@@ -168,7 +163,7 @@ export const useCanvasInteractions = (
     canvas.relativePan({ x: deltaX, y: deltaY });
     
     // Update the last pan position
-    canvas.lastPanPosition = toPoint({ x, y });
+    canvas.lastPanPosition = createPoint(x, y);
   }, [fabricCanvasRef, tool]);
   
   /**
