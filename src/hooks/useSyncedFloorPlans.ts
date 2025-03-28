@@ -107,14 +107,19 @@ export const useSyncedFloorPlans = () => {
       // Save to local storage without broadcasting
       isSavingRef.current = true;
       // Convert received app floor plans to core format for storage
-      const corePlans = appToCoreFloorPlans(data.floorPlans);
+      // Ensure all plans have a label
+      const plansWithLabels = data.floorPlans.map((plan: FloorPlan) => ({
+        ...plan,
+        label: plan.label || plan.name
+      }));
+      const corePlans = appToCoreFloorPlans(plansWithLabels);
       saveFloorPlans(corePlans).finally(() => {
         isSavingRef.current = false;
       });
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        saveToSupabase(data.floorPlans);
+        saveToSupabase(plansWithLabels);
       }
 
       toast.info('Floor plans synchronized from another device');
