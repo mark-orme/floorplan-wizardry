@@ -72,7 +72,7 @@ export interface Room extends CoreRoom {
  */
 export interface Stroke extends Omit<CoreStroke, 'type' | 'width'> {
   /** Type of stroke */
-  type: StrokeType | StrokeTypeLiteral;
+  type: StrokeTypeLiteral | CoreStrokeType;
   /** Stroke width in pixels (equivalent to thickness for API compatibility) */
   width?: number; // Changed to optional to match core
 }

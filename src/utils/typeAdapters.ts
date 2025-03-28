@@ -5,7 +5,7 @@
  * @module utils/typeAdapters
  */
 import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, StrokeType as CoreStrokeType, Room as CoreRoom, RoomType as CoreRoomType } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, StrokeType as AppStrokeType, Room as AppRoom, PaperSize } from '@/types/floorPlanTypes';
+import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, StrokeType as AppStrokeType, Room as AppRoom, PaperSize, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 import { Point } from '@/types/geometryTypes';
 
 /**
@@ -76,27 +76,27 @@ export function appToCoreFloorPlan(plan: AppFloorPlan): CoreFloorPlan {
  * Convert core stroke to app stroke
  */
 export function coreToAppStroke(stroke: CoreStroke): AppStroke {
-  // Convert string type to enum
-  let appStrokeType: AppStrokeType;
+  // Convert string type to enum or literal
+  let appStrokeType: StrokeTypeLiteral;
   
   switch (stroke.type) {
     case 'line':
-      appStrokeType = AppStrokeType.LINE;
+      appStrokeType = 'line';
       break;
     case 'polyline':
-      appStrokeType = AppStrokeType.POLYLINE;
+      appStrokeType = 'polyline';
       break;
     case 'wall':
-      appStrokeType = AppStrokeType.WALL;
+      appStrokeType = 'wall';
       break;
     case 'room':
-      appStrokeType = AppStrokeType.ROOM;
+      appStrokeType = 'room';
       break;
     case 'freehand':
-      appStrokeType = AppStrokeType.FREEHAND;
+      appStrokeType = 'freehand';
       break;
     default:
-      appStrokeType = AppStrokeType.LINE;
+      appStrokeType = 'line';
       break;
   }
 
@@ -114,16 +114,16 @@ export function coreToAppStroke(stroke: CoreStroke): AppStroke {
  * Convert app stroke to core stroke
  */
 export function appToCoreStroke(stroke: AppStroke): CoreStroke {
-  // Convert enum to string type
+  // Convert enum or literal to core string type
   let coreStrokeType: CoreStrokeType;
   
   if (typeof stroke.type === 'string') {
-    switch (stroke.type.toUpperCase()) {
-      case 'LINE':
-      case 'POLYLINE':
-      case 'WALL':
-      case 'ROOM':
-      case 'FREEHAND':
+    switch (stroke.type.toLowerCase()) {
+      case 'line':
+      case 'polyline':
+      case 'wall':
+      case 'room':
+      case 'freehand':
         coreStrokeType = stroke.type.toLowerCase() as CoreStrokeType;
         break;
       default:

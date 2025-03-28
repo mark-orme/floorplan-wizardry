@@ -3,8 +3,8 @@
  * Adapter utilities for converting between core.FloorPlan and floorPlanTypes.FloorPlan
  * @module utils/floorPlanAdapter
  */
-import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeType } from '@/types/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom, StrokeType as CoreStrokeType } from '@/types/core/FloorPlan';
+import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeType, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 
 /**
  * Convert from app FloorPlan type to core FloorPlan type
@@ -29,9 +29,16 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
   const strokes = Array.isArray(appPlan.strokes) 
     ? appPlan.strokes.map(stroke => {
         // Convert enum to string type
-        let strokeType: CoreStroke['type'];
+        let strokeType: CoreStrokeType;
         if (typeof stroke.type === 'string') {
-          strokeType = stroke.type.toLowerCase() as CoreStroke['type'];
+          // If it's already a string literal, use it directly if it matches our core types
+          const lowerType = stroke.type.toLowerCase();
+          if (['line', 'polyline', 'wall', 'room', 'freehand'].includes(lowerType)) {
+            strokeType = lowerType as CoreStrokeType;
+          } else {
+            // Default to 'line' if unknown type
+            strokeType = 'line';
+          }
         } else {
           // Handle enum values
           switch (stroke.type) {
@@ -122,18 +129,14 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
   const strokes = Array.isArray(corePlan.strokes)
     ? corePlan.strokes.map(stroke => {
         // Convert string stroke type to enum
-        let strokeType: StrokeType;
+        let strokeType: StrokeTypeLiteral;
         switch(stroke.type.toLowerCase()) {
-          case 'line': strokeType = StrokeType.LINE; break;
-          case 'polyline': strokeType = StrokeType.POLYLINE; break;
-          case 'wall': strokeType = StrokeType.WALL; break;
-          case 'room': strokeType = StrokeType.ROOM; break;
-          case 'freehand': strokeType = StrokeType.FREEHAND; break;
-          case 'path': strokeType = StrokeType.PATH; break;
-          case 'circle': strokeType = StrokeType.CIRCLE; break;
-          case 'rectangle': strokeType = StrokeType.RECTANGLE; break;
-          case 'text': strokeType = StrokeType.TEXT; break;
-          default: strokeType = StrokeType.LINE;
+          case 'line': strokeType = 'line'; break;
+          case 'polyline': strokeType = 'polyline'; break;
+          case 'wall': strokeType = 'wall'; break;
+          case 'room': strokeType = 'room'; break;
+          case 'freehand': strokeType = 'freehand'; break;
+          default: strokeType = 'line';
         }
         
         return {

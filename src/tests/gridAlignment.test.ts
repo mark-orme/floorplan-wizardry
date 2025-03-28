@@ -69,28 +69,6 @@ describe('Grid Alignment', () => {
         expect(Math.abs(Math.round(meterY * 10) - meterY * 10)).toBeLessThan(0.001);
       });
     });
-  });
-  
-  describe('Line straightening', () => {
-    it('should straighten lines to standard angles', () => {
-      // Given start and end points that form approximately 43° angle
-      const startPoint = { x: 100, y: 100 };
-      const endPoint = { x: 150, y: 140 }; // ~43° angle
-      
-      // When we snap to standard angles
-      const snappedEndPoint = snapLineToStandardAngles(startPoint, endPoint);
-      
-      // Calculate the angle of the snapped line
-      const dx = snappedEndPoint.x - startPoint.x;
-      const dy = snappedEndPoint.y - startPoint.y;
-      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-      
-      // Round to nearest whole degree for comparison
-      const roundedAngle = Math.round(angle);
-      
-      // Then the angle should be snapped to 45°
-      expect(roundedAngle).toBe(45);
-    });
     
     it('should preserve horizontal and vertical lines', () => {
       // Given perfectly horizontal and vertical lines
@@ -119,6 +97,28 @@ describe('Grid Alignment', () => {
         const snapped = snapToAngle(createPoint(angle, 0), 45);
         expect(snapped.x).toBe(expectedSnaps[index]);
       });
+    });
+  });
+  
+  describe('Line straightening', () => {
+    it('should straighten lines to standard angles', () => {
+      // Given start and end points that form approximately 43° angle
+      const startPoint = { x: 100, y: 100 };
+      const endPoint = { x: 150, y: 140 }; // ~43° angle
+      
+      // When we snap to standard angles
+      const snappedEndPoint = snapLineToStandardAngles(startPoint, endPoint);
+      
+      // Calculate the angle of the snapped line
+      const dx = snappedEndPoint.x - startPoint.x;
+      const dy = snappedEndPoint.y - startPoint.y;
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      
+      // Round to nearest whole degree for comparison
+      const roundedAngle = Math.round(angle);
+      
+      // Then the angle should be snapped to 45°
+      expect(roundedAngle).toBe(45);
     });
   });
 });
