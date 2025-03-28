@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { Channel } from 'pusher-js';
 import { FloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan } from '@/types/core/FloorPlan';
 import { loadFloorPlans, saveFloorPlans } from '@/utils/floorPlanStorage';
 import { 
   subscribeSyncChannel, 
@@ -110,7 +111,7 @@ export const useSyncedFloorPlans = () => {
       // Ensure all plans have a label
       const plansWithLabels = data.floorPlans.map((plan: FloorPlan) => ({
         ...plan,
-        label: plan.label || plan.name
+        label: plan.label || plan.name || ''
       }));
       const corePlans = appToCoreFloorPlans(plansWithLabels);
       saveFloorPlans(corePlans).finally(() => {
@@ -155,7 +156,7 @@ export const useSyncedFloorPlans = () => {
           // Ensure all plans have labels
           const plansWithLabels = appData.map(plan => ({
             ...plan,
-            label: plan.label || plan.name
+            label: plan.label || plan.name || ''
           }));
           
           setFloorPlans(plansWithLabels);
@@ -177,7 +178,7 @@ export const useSyncedFloorPlans = () => {
       // Ensure all plans have labels
       const plansWithLabels = appData.map(plan => ({
         ...plan,
-        label: plan.label || plan.name
+        label: plan.label || plan.name || ''
       }));
       
       setFloorPlans(plansWithLabels);
@@ -208,7 +209,7 @@ export const useSyncedFloorPlans = () => {
     // Ensure all plans have a label before any operations
     const plansWithLabels = newFloorPlans.map(plan => ({
       ...plan,
-      label: plan.label || plan.name // Ensure label is always set
+      label: plan.label || plan.name || ''
     }));
     
     setFloorPlans(plansWithLabels);
