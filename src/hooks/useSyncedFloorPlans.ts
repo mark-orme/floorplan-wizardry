@@ -232,14 +232,15 @@ export const useSyncedFloorPlans = () => {
       lastSyncTimeRef.current = data.timestamp;
 
       // Update floor plans and save to local storage
-      setFloorPlans(data.floorPlans);
+      // Make sure we're working with AppFloorPlan[] type
+      const receivedFloorPlans = data.floorPlans as AppFloorPlan[];
+      setFloorPlans(receivedFloorPlans);
       
       // Save to local storage without broadcasting
       isSavingRef.current = true;
       
-      // Convert received app floor plans to core format for storage using adapter
-      // First ensure all plans have a label
-      const plansWithLabels = data.floorPlans.map((plan: AppFloorPlan) => ({
+      // Ensure all plans have a label
+      const plansWithLabels = receivedFloorPlans.map((plan: AppFloorPlan) => ({
         ...plan,
         label: plan.label || plan.name || ''
       }));
