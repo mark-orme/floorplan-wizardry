@@ -22,6 +22,7 @@ import {
   appToCoreFloorPlans, 
   coreToAppFloorPlans
 } from '@/utils/floorPlanAdapter';
+import { adaptFloorPlans } from '@/utils/typeAdapters';
 import { convertCoreToFloorPlanType, convertCoreArrayToFloorPlanType } from '@/utils/adapters/convertCoreFloorPlan';
 
 /**
@@ -157,7 +158,7 @@ export const useSyncedFloorPlans = () => {
           logger.info('Loaded floor plans from Supabase');
           
           // Convert core floor plans to app floor plans using our adapter
-          const appData = coreToAppFloorPlans(supabaseData);
+          const appData = adaptFloorPlans(supabaseData);
           
           // Ensure all plans have labels
           const plansWithLabels = appData.map(plan => ({
@@ -179,7 +180,7 @@ export const useSyncedFloorPlans = () => {
       const localData = await loadFloorPlans();
       
       // Convert core floor plans to app floor plans using our adapter
-      const appData = convertCoreArrayToFloorPlanType(localData);
+      const appData = adaptFloorPlans(localData);
       
       // Ensure all plans have labels
       const plansWithLabels = appData.map(plan => ({
