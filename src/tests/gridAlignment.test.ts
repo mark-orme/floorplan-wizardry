@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { snapToGrid, snapToAngle, snapLineToStandardAngles } from '@/utils/grid/snapping';
 import { GRID_SPACING, PIXELS_PER_METER } from '@/constants/numerics';
+import { Point, createPoint } from '@/types/core/Point';
 
 describe('Grid Alignment', () => {
   describe('Wall endpoints snapping', () => {
@@ -115,7 +116,7 @@ describe('Grid Alignment', () => {
       const expectedSnaps = [0, 45, 90, 90, 180, 180, 270, 315, 0];
       
       testAngles.forEach((angle, index) => {
-        // Fix: Pass angle as angle, not as Point
+        // Fix: Pass angle directly as number
         const snapped = snapToAngle(angle, 45);
         expect(snapped).toBe(expectedSnaps[index]);
       });

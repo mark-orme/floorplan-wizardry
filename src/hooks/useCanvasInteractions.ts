@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas interactions
  * Manages zooming, panning, and keyboard shortcuts
@@ -159,8 +160,8 @@ export const useCanvasInteractions = (
     const deltaY = (typeof y === 'number' && typeof canvas.lastPanPosition.y === 'number') ? y - canvas.lastPanPosition.y : 0;
     
     // Update the viewport transform
-    // Use fabric's relativePan method with simple object passing x, y
-    canvas.relativePan({ x: deltaX, y: deltaY });
+    // Use fabric's relativePan method with a proper Point object
+    canvas.relativePan(createPoint(deltaX, deltaY));
     
     // Update the last pan position
     canvas.lastPanPosition = createPoint(x, y);

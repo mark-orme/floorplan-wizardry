@@ -5,7 +5,7 @@
  * @module utils/grid/testHelpers
  */
 import { Canvas, Object as FabricObject } from 'fabric';
-import { Point } from '@/types/geometryTypes';
+import { Point, createPoint } from '@/types/core/Point';
 import { snapToGrid, snapToAngle, snapPointToGrid, isPointOnGrid, distanceToGridLine } from './snapping';
 import { createGridLines, calculateGridDimensions, createCompleteGrid, isGridObject } from '@/utils/gridUtils';
 
@@ -17,7 +17,7 @@ import { createGridLines, calculateGridDimensions, createCompleteGrid, isGridObj
  */
 export function snapPointLegacy(point: Point, gridSize?: number): Point {
   if (!point) {
-    return { x: 0, y: 0 };
+    return createPoint(0, 0);
   }
   return snapPointToGrid(point, gridSize);
 }
@@ -46,7 +46,7 @@ export function snapLineToAngleLegacy(start: Point, end: Point, snapAngle?: numb
   const newX = start.x + distance * Math.cos(radAngle);
   const newY = start.y + distance * Math.sin(radAngle);
   
-  return { x: newX, y: newY };
+  return createPoint(newX, newY);
 }
 
 /**
