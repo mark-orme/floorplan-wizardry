@@ -36,7 +36,10 @@ export function snapLineToAngleLegacy(start: Point, end: Point, snapAngle?: numb
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
   
   // Convert the number parameter to angle for the function
-  const snappedAngle = snapToAngle(angle, snapAngle || 45);
+  // Create a Point object for the angle since snapToAngle expects a Point now
+  const anglePoint = createPoint(angle, 0);
+  const snappedAnglePoint = snapToAngle(anglePoint, snapAngle || 45);
+  const snappedAngle = snappedAnglePoint.x; // Use the x value as the angle
   
   // Calculate the distance between points
   const distance = Math.sqrt(dx * dx + dy * dy);
