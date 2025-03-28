@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -193,7 +194,10 @@ export const useSyncedFloorPlans = () => {
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
         // Convert app floor plans to core floor plans with ensured labels
-        const plansCoreFormat = appToCoreFloorPlans(plansWithLabels);
+        const plansCoreFormat = appToCoreFloorPlans(plansWithLabels.map(plan => ({
+          ...plan,
+          label: plan.label || plan.name || '' // Ensure label is set
+        })));
         await saveToSupabase(plansWithLabels);
       }
       
@@ -235,7 +239,10 @@ export const useSyncedFloorPlans = () => {
 
       try {
         // Convert to core floor plans with required labels
-        const corePlans = appToCoreFloorPlans(plansWithLabels);
+        const corePlans = appToCoreFloorPlans(plansWithLabels.map(plan => ({
+          ...plan,
+          label: plan.label || plan.name || '' // Ensure label is set
+        })));
         
         await saveFloorPlans(corePlans);
         broadcastFloorPlanUpdate(plansWithLabels);
