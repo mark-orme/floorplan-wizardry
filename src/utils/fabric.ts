@@ -5,7 +5,7 @@
  * @module utils/fabric
  */
 
-// Export all canvas validation utilities
+// Export canvas validation utilities
 export {
   isValidObjectId,
   doesObjectExist,
@@ -23,7 +23,29 @@ export {
 export * from './fabric/objects';
 
 // Export cleanup utilities
-export * from './fabric/canvasCleanup';
+export {
+  clearCanvas,
+  disposeCanvas,
+  removeObjectsFromCanvas,
+  resetCanvasTransform,
+  isCanvasElementInitialized,
+  markCanvasAsInitialized,
+  isCanvasElementInDOM
+} from './fabric/canvasCleanup';
+
+// Export dimension utilities
+export {
+  setCanvasDimensions,
+  resizeCanvasToContainer,
+  zoomCanvas,
+  getCanvasDimensions
+} from './fabric/canvasDimensions';
+
+// Export selection utilities
+export {
+  enableSelection,
+  disableSelection
+} from './fabric/selection';
 
 // Re-export any additional fabric utilities
 export * from './fabric/canvasObjectUtils';

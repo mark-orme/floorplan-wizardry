@@ -23,13 +23,16 @@ export enum PaperSize {
  * Types of strokes that can be drawn
  */
 export enum StrokeType {
-  LINE = 'line',
-  POLYLINE = 'polyline',
-  CIRCLE = 'circle',
-  RECTANGLE = 'rectangle',
-  TEXT = 'text',
-  PATH = 'path'
+  LINE = 'LINE',
+  POLYLINE = 'POLYLINE',
+  CIRCLE = 'CIRCLE',
+  RECTANGLE = 'RECTANGLE',
+  TEXT = 'TEXT',
+  PATH = 'PATH'
 }
+
+// String literal type for compatibility with core StrokeType
+export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
 
 /**
  * Wall definition
@@ -83,7 +86,7 @@ export interface Stroke {
   /** Array of points defining the stroke */
   points: Point[];
   /** Type of stroke */
-  type: StrokeType;
+  type: StrokeType | StrokeTypeLiteral;
   /** Stroke color */
   color: string;
   /** Stroke thickness in pixels */
@@ -102,7 +105,7 @@ export interface FloorPlanMetadata {
   /** Last update timestamp */
   updatedAt: number;
   /** Paper size */
-  paperSize: PaperSize;
+  paperSize: PaperSize | string;
   /** Floor level */
   level: number;
 }
@@ -142,5 +145,5 @@ export interface FloorPlan {
   level?: number;
 }
 
-// Re-export using export type for isolatedModules compatibility
+// Use export type for isolatedModules compatibility
 export type { Point } from './geometryTypes';

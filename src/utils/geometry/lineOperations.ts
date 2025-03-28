@@ -1,125 +1,77 @@
 
 /**
- * Line operations utilities
+ * Line operation utilities
+ * Functions for calculations with lines
  * @module utils/geometry/lineOperations
  */
+
 import { Point } from '@/types/geometryTypes';
+import { GRID_SPACING } from '@/constants/numerics';
 
 /**
- * Calculate angle between two points in radians
+ * Calculate distance between two points
  * @param p1 First point
  * @param p2 Second point
- * @returns Angle in radians
+ * @returns Distance in pixels
  */
-export const calculateAngle = (p1: Point, p2: Point): number => {
-  return Math.atan2(p2.y - p1.y, p2.x - p1.x);
-};
+export function calculateDistance(p1: Point, p2: Point): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
 /**
- * Calculate angle between two points in degrees
+ * Calculate midpoint between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Midpoint
+ */
+export function calculateMidpoint(p1: Point, p2: Point): Point {
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
+  };
+}
+
+/**
+ * Calculate angle between two points
  * @param p1 First point
  * @param p2 Second point
  * @returns Angle in degrees
  */
-export const calculateAngleDegrees = (p1: Point, p2: Point): number => {
-  return (calculateAngle(p1, p2) * 180) / Math.PI;
-};
+export function calculateAngle(p1: Point, p2: Point): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.atan2(dy, dx) * (180 / Math.PI);
+}
 
 /**
- * Calculate if a line is horizontal (or close to it)
- * @param p1 First point
- * @param p2 Second point
- * @param tolerance Angle tolerance in degrees
- * @returns True if the line is horizontal
+ * Format distance with units
+ * @param distance Distance in pixels
+ * @param precision Number of decimal places
+ * @returns Formatted distance string
  */
-export const isHorizontalLine = (p1: Point, p2: Point, tolerance: number = 5): boolean => {
-  const angle = Math.abs(calculateAngleDegrees(p1, p2));
-  return (angle < tolerance || Math.abs(angle - 180) < tolerance);
-};
+export function formatDistance(distance: number, precision: number = 2): string {
+  return `${distance.toFixed(precision)} px`;
+}
 
 /**
- * Calculate if a line is vertical (or close to it)
- * @param p1 First point
- * @param p2 Second point
- * @param tolerance Angle tolerance in degrees
- * @returns True if the line is vertical
+ * Check if a value is an exact multiple of grid spacing
+ * @param value Value to check
+ * @param tolerance Tolerance threshold
+ * @returns True if value is multiple of grid
  */
-export const isVerticalLine = (p1: Point, p2: Point, tolerance: number = 5): boolean => {
-  const angle = Math.abs(calculateAngleDegrees(p1, p2));
-  return (Math.abs(angle - 90) < tolerance || Math.abs(angle - 270) < tolerance);
-};
+export function isExactGridMultiple(value: number, tolerance: number = 0.1): boolean {
+  const remainder = value % GRID_SPACING;
+  return remainder <= tolerance || (GRID_SPACING - remainder) <= tolerance;
+}
 
 /**
- * Calculate the perpendicular distance from a point to a line
- * @param lineStart Start point of the line
- * @param lineEnd End point of the line
- * @param point Point to calculate distance from
- * @returns Perpendicular distance
+ * Snaps a given value to the nearest multiple of a grid size
+ * @param value The value to snap
+ * @param gridSize The grid size
+ * @returns Snapped value
  */
-export const perpendicularDistance = (lineStart: Point, lineEnd: Point, point: Point): number => {
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
-  
-  // Line length
-  const length = Math.sqrt(dx * dx + dy * dy);
-  
-  if (length === 0) return 0;
-  
-  // Calculate perpendicular distance
-  return Math.abs((dy * point.x - dx * point.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x) / length);
-};
-
-/**
- * Calculate the closest point on a line to a given point
- * @param lineStart Start point of the line
- * @param lineEnd End point of the line
- * @param point Point to find closest point to
- * @returns Closest point on the line
- */
-export const closestPointOnLine = (lineStart: Point, lineEnd: Point, point: Point): Point => {
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
-  
-  // Line length squared
-  const lengthSquared = dx * dx + dy * dy;
-  
-  if (lengthSquared === 0) return lineStart; // Line is actually a point
-  
-  // Calculate projection of point onto line
-  const t = Math.max(0, Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lengthSquared));
-  
-  return {
-    x: lineStart.x + t * dx,
-    y: lineStart.y + t * dy
-  };
-};
-
-/**
- * Check if a point is on a line segment
- * @param lineStart Start point of the line
- * @param lineEnd End point of the line
- * @param point Point to check
- * @param tolerance Maximum distance to be considered "on" the line
- * @returns True if the point is on the line segment
- */
-export const isPointOnLine = (lineStart: Point, lineEnd: Point, point: Point, tolerance: number = 1): boolean => {
-  // Calculate perpendicular distance
-  const distance = perpendicularDistance(lineStart, lineEnd, point);
-  
-  if (distance > tolerance) return false;
-  
-  // Check if point is within the bounds of the line segment
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
-  
-  // Line length squared
-  const lengthSquared = dx * dx + dy * dy;
-  
-  if (lengthSquared === 0) return false; // Line is actually a point
-  
-  // Calculate projection of point onto line
-  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lengthSquared;
-  
-  // Check if projection is within [0, 1]
-  return t >= 0 && t <= 1;
-};
+export function snapToGrid(value: number, gridSize: number = GRID_SPACING): number {
+  return Math.round(value / gridSize) * gridSize;
+}

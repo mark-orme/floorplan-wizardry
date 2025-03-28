@@ -1,154 +1,115 @@
 
 /**
- * Canvas dimensions utilities
- * @module fabric/canvasDimensions
+ * Canvas dimension utilities
+ * Functions for setting and managing canvas dimensions
+ * @module utils/fabric/canvasDimensions
  */
-import { Canvas as FabricCanvas } from "fabric";
-import logger from "@/utils/logger";
-import { CanvasDimensions } from "@/types/drawingTypes";
-import { DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT } from "@/constants/numerics";
-
-/**
- * Canvas dimensions constants
- */
-export const CANVAS_DIMENSIONS = {
-  /**
-   * Default width in pixels
-   * @constant {number}
-   */
-  DEFAULT_WIDTH: DEFAULT_CANVAS_WIDTH,
-  
-  /**
-   * Default height in pixels
-   * @constant {number}
-   */
-  DEFAULT_HEIGHT: DEFAULT_CANVAS_HEIGHT,
-  
-  /**
-   * Minimum width in pixels
-   * @constant {number}
-   */
-  MIN_WIDTH: 400,
-  
-  /**
-   * Minimum height in pixels
-   * @constant {number}
-   */
-  MIN_HEIGHT: 300,
-  
-  /**
-   * Minimum pixel difference to trigger resize
-   * @constant {number}
-   */
-  DIMENSION_CHANGE_TOLERANCE: 5,
-  
-  /**
-   * Debounce time for resize events in milliseconds
-   * @constant {number}
-   */
-  RESIZE_DEBOUNCE_MS: 500,
-  
-  /**
-   * Default stroke width for canvas elements in pixels
-   * @constant {number}
-   */
-  STROKE_WIDTH: 1
-};
+import { Canvas as FabricCanvas } from 'fabric';
 
 /**
  * Set canvas dimensions
- * Updates both element dimensions and fabric object dimensions
- * @param {FabricCanvas} canvas - Fabric canvas instance
- * @param {number} width - New width
- * @param {number} height - New height
- * @param {Object} options - Additional options
- * @returns {boolean} True if dimensions were set successfully
+ * @param canvas Canvas to resize
+ * @param width New width
+ * @param height New height
+ * @param resetTransform Whether to reset the transform
+ * @returns True if successful
  */
-export const setCanvasDimensions = (
-  canvas: FabricCanvas,
-  width: number = CANVAS_DIMENSIONS.DEFAULT_WIDTH,
-  height: number = CANVAS_DIMENSIONS.DEFAULT_HEIGHT,
-  options = { cssOnly: false }
-): boolean => {
+export function setCanvasDimensions(
+  canvas: FabricCanvas | null, 
+  width: number, 
+  height: number,
+  resetTransform: boolean = false
+): boolean {
   if (!canvas) return false;
   
   try {
-    // Log dimensions change
-    logger.debug(`Setting canvas dimensions to ${width}x${height}`);
-    
-    // Update fabric canvas dimensions
     canvas.setWidth(width);
     canvas.setHeight(height);
     
-    // Also update CSS dimensions when not in cssOnly mode
-    if (!options.cssOnly) {
-      const htmlCanvas = canvas.getElement() as HTMLCanvasElement;
-      htmlCanvas.style.width = `${width}px`;
-      htmlCanvas.style.height = `${height}px`;
+    if (resetTransform) {
+      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     }
     
-    // Render to ensure changes take effect
+    canvas.renderAll();
+    return true;
+  } catch (e) {
+    console.error('Error setting canvas dimensions:', e);
+    return false;
+  }
+}
+
+/**
+ * Resize canvas to fit container
+ * @param canvas Canvas to resize
+ * @param container Container element
+ * @returns True if successful
+ */
+export function resizeCanvasToContainer(
+  canvas: FabricCanvas | null,
+  container: HTMLElement | null
+): boolean {
+  if (!canvas || !container) return false;
+  
+  try {
+    const rect = container.getBoundingClientRect();
+    return setCanvasDimensions(canvas, rect.width, rect.height);
+  } catch (e) {
+    console.error('Error resizing canvas to container:', e);
+    return false;
+  }
+}
+
+/**
+ * Zoom canvas to specific level
+ * @param canvas Canvas to zoom
+ * @param zoomLevel Zoom level factor
+ * @param point Center point for zoom
+ * @returns True if successful
+ */
+export function zoomCanvas(
+  canvas: FabricCanvas | null,
+  zoomLevel: number,
+  point?: { x: number, y: number }
+): boolean {
+  if (!canvas) return false;
+  
+  try {
+    // Get current position
+    const vpTransform = canvas.viewportTransform;
+    if (!vpTransform) return false;
+    
+    // Default to center if no point provided
+    const center = point || {
+      x: canvas.getWidth() / 2,
+      y: canvas.getHeight() / 2
+    };
+    
+    // Apply zoom
+    canvas.setZoom(zoomLevel);
     canvas.renderAll();
     
     return true;
-  } catch (error) {
-    logger.error("Error setting canvas dimensions:", error);
+  } catch (e) {
+    console.error('Error zooming canvas:', e);
     return false;
   }
-};
+}
 
 /**
- * Get current canvas dimensions
- * @param {FabricCanvas} canvas - Fabric canvas
- * @returns {CanvasDimensions} Canvas dimensions
+ * Get canvas dimensions
+ * @param canvas Canvas to get dimensions from
+ * @returns Dimensions object or null
  */
-export const getCanvasDimensions = (canvas: FabricCanvas | null): CanvasDimensions => {
-  if (!canvas) {
-    return {
-      width: CANVAS_DIMENSIONS.DEFAULT_WIDTH,
-      height: CANVAS_DIMENSIONS.DEFAULT_HEIGHT
-    };
-  }
+export function getCanvasDimensions(canvas: FabricCanvas | null): { width: number, height: number } | null {
+  if (!canvas) return null;
   
   try {
     return {
       width: canvas.getWidth(),
       height: canvas.getHeight()
     };
-  } catch (error) {
-    logger.error("Error getting canvas dimensions:", error);
-    return {
-      width: CANVAS_DIMENSIONS.DEFAULT_WIDTH, 
-      height: CANVAS_DIMENSIONS.DEFAULT_HEIGHT
-    };
+  } catch (e) {
+    console.error('Error getting canvas dimensions:', e);
+    return null;
   }
-};
-
-/**
- * Resize canvas to fit parent container
- * @param {FabricCanvas} canvas - Fabric canvas
- * @param {HTMLElement} container - Container element
- * @returns {boolean} True if resize was successful
- */
-export const resizeCanvasToContainer = (
-  canvas: FabricCanvas,
-  container: HTMLElement
-): boolean => {
-  if (!canvas || !container) return false;
-  
-  try {
-    const { width, height } = container.getBoundingClientRect();
-    
-    // Only proceed if we have valid dimensions
-    if (width <= 0 || height <= 0) {
-      logger.warn("Invalid container dimensions for canvas resize");
-      return false;
-    }
-    
-    // Set the canvas dimensions, updating both CSS and fabric instance
-    return setCanvasDimensions(canvas, width, height);
-  } catch (error) {
-    logger.error("Error resizing canvas to container:", error);
-    return false;
-  }
-};
+}

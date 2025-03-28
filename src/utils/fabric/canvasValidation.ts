@@ -1,12 +1,14 @@
 
 /**
  * Canvas validation utilities
+ * Functions to safely check and access canvas objects
  * @module utils/fabric/canvasValidation
  */
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
-import { Canvas, FabricObject } from 'fabric';
-
-// Type for object IDs
+/**
+ * ObjectId type for fabric objects
+ */
 export type ObjectId = string;
 
 /**
@@ -14,116 +16,130 @@ export type ObjectId = string;
  * @param id The ID to validate
  * @returns True if the ID is valid
  */
-export function isValidObjectId(id: string): boolean {
+export function isValidObjectId(id: string | undefined): boolean {
   return typeof id === 'string' && id.length > 0;
 }
 
 /**
- * Check if an object exists in the canvas
- * @param canvas The fabric canvas
- * @param id Object ID to check
- * @returns True if the object exists
+ * Check if an object exists in canvas by ID
+ * @param canvas Canvas to check
+ * @param id Object ID
+ * @returns True if object exists
  */
-export function doesObjectExist(canvas: Canvas, id: ObjectId): boolean {
-  if (!canvas || !id) return false;
-  const obj = canvas.getObjects().find((o: any) => o.id === id);
-  return !!obj;
+export function doesObjectExist(canvas: FabricCanvas | null, id: ObjectId): boolean {
+  if (!canvas) return false;
+  return getObjectById(canvas, id) !== null;
 }
 
 /**
- * Get an object by ID from the canvas
- * @param canvas The fabric canvas
- * @param id Object ID to find
- * @returns The found object or null
+ * Get an object by ID
+ * @param canvas Canvas to search
+ * @param id Object ID
+ * @returns Object or null if not found
  */
-export function getObjectById(canvas: Canvas, id: ObjectId): FabricObject | null {
+export function getObjectById(canvas: FabricCanvas | null, id: ObjectId): FabricObject | null {
   if (!canvas || !id) return null;
-  const obj = canvas.getObjects().find((o: any) => o.id === id);
-  return obj || null;
+  
+  const objects = canvas.getObjects();
+  return objects.find(obj => (obj as any).id === id) || null;
 }
 
 /**
- * Safely get an object by ID from the canvas with type checking
- * @param canvas The fabric canvas
- * @param id Object ID to find
- * @returns The found object or null
+ * Safely get object by ID with checks
+ * @param canvas Canvas to search
+ * @param id Object ID
+ * @returns Object or null if not found or invalid
  */
-export function safeGetObjectById(canvas: Canvas, id: ObjectId): FabricObject | null {
+export function safeGetObjectById(canvas: FabricCanvas | null, id: ObjectId): FabricObject | null {
+  if (!canvas || !isValidObjectId(id)) return null;
   return getObjectById(canvas, id);
 }
 
 /**
- * Validates if a canvas is valid and ready for operations
- * @param canvas The canvas to validate
- * @returns True if the canvas is valid
+ * Check if canvas is valid
+ * @param canvas Canvas to check
+ * @returns True if canvas is valid and initialized
  */
-export function isCanvasValid(canvas: Canvas | null): boolean {
-  return !!canvas && !!(canvas as any)._objects;
+export function isCanvasValid(canvas: FabricCanvas | null): boolean {
+  return Boolean(canvas && !canvas.disposed && canvas.getContext());
 }
 
 /**
  * Safely check if canvas contains an object
- * @param canvas The canvas
- * @param obj The object to check
- * @returns True if canvas contains the object
+ * @param canvas Canvas to check
+ * @param obj Object to check for
+ * @returns True if canvas contains object
  */
-export function safeCanvasContains(canvas: Canvas | null, obj: FabricObject): boolean {
-  if (!isCanvasValid(canvas) || !obj) return false;
-  return canvas!.contains(obj);
+export function safeCanvasContains(canvas: FabricCanvas | null, obj: FabricObject | null): boolean {
+  if (!canvas || !obj) return false;
+  
+  try {
+    return canvas.contains(obj);
+  } catch (e) {
+    console.error('Error checking if canvas contains object:', e);
+    return false;
+  }
 }
 
 /**
- * Check if canvas is empty (no objects)
- * @param canvas The canvas to check
- * @returns True if canvas is empty
+ * Check if canvas is empty
+ * @param canvas Canvas to check
+ * @returns True if canvas has no objects
  */
-export function isCanvasEmpty(canvas: Canvas | null): boolean {
+export function isCanvasEmpty(canvas: FabricCanvas | null): boolean {
   if (!isCanvasValid(canvas)) return true;
-  return canvas!.getObjects().length === 0;
+  return canvas.getObjects().length === 0;
 }
 
 /**
  * Verify canvas configuration
- * @param canvas The canvas to verify
- * @returns True if canvas configuration is valid
+ * @param canvas Canvas to verify
+ * @returns True if canvas has valid configuration
  */
-export function verifyCanvasConfiguration(canvas: Canvas | null): boolean {
-  if (!isCanvasValid(canvas)) return false;
+export function verifyCanvasConfiguration(canvas: FabricCanvas | null): boolean {
+  if (!canvas) return false;
   
-  const width = canvas!.getWidth();
-  const height = canvas!.getHeight();
-  
-  // Check basic dimensions
-  if (!width || !height || width < 10 || height < 10) {
+  try {
+    return Boolean(
+      canvas.width &&
+      canvas.height &&
+      canvas.getContext() &&
+      !canvas.disposed
+    );
+  } catch (e) {
+    console.error('Error verifying canvas configuration:', e);
     return false;
   }
-  
-  return true;
 }
 
 /**
- * Safely get canvas element
- * @param canvas The fabric canvas
- * @returns The HTML canvas element or null
+ * Safely get canvas HTML element
+ * @param canvas Canvas to get element from
+ * @returns Canvas element or null
  */
-export function safelyGetCanvasElement(canvas: Canvas | null): HTMLCanvasElement | null {
-  if (!isCanvasValid(canvas)) return null;
-  return canvas!.getElement() as HTMLCanvasElement;
+export function safelyGetCanvasElement(canvas: FabricCanvas | null): HTMLCanvasElement | null {
+  if (!canvas) return null;
+  
+  try {
+    return canvas.getElement() as HTMLCanvasElement;
+  } catch (e) {
+    console.error('Error getting canvas element:', e);
+    return null;
+  }
 }
 
 /**
  * Check if canvas is disposed
- * @param canvas The canvas to check
+ * @param canvas Canvas to check
  * @returns True if canvas is disposed
  */
-export function isCanvasDisposed(canvas: Canvas | null): boolean {
+export function isCanvasDisposed(canvas: FabricCanvas | null): boolean {
   if (!canvas) return true;
   
   try {
-    // Try to access a property that should always exist
-    const objects = canvas.getObjects();
-    return false; // If we get here, canvas is not disposed
+    return Boolean(canvas.disposed);
   } catch (e) {
-    return true; // Error means canvas is likely disposed
+    console.error('Error checking if canvas is disposed:', e);
+    return true;
   }
 }
