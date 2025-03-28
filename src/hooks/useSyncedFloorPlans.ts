@@ -151,12 +151,19 @@ export const useSyncedFloorPlans = () => {
           
           // Convert core floor plans to app floor plans
           const appData = coreToAppFloorPlans(supabaseData);
-          setFloorPlans(appData);
+          
+          // Ensure all plans have labels
+          const plansWithLabels = appData.map(plan => ({
+            ...plan,
+            label: plan.label || plan.name
+          }));
+          
+          setFloorPlans(plansWithLabels);
           
           // Also save to local storage for offline access
           await saveFloorPlans(supabaseData);
           setIsLoading(false);
-          return appData;
+          return plansWithLabels;
         }
       }
       
@@ -166,19 +173,21 @@ export const useSyncedFloorPlans = () => {
       
       // Convert core floor plans to app floor plans
       const appData = coreToAppFloorPlans(localData);
-      setFloorPlans(appData);
+      
+      // Ensure all plans have labels
+      const plansWithLabels = appData.map(plan => ({
+        ...plan,
+        label: plan.label || plan.name
+      }));
+      
+      setFloorPlans(plansWithLabels);
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
-        // Ensure all plans have a label before saving to Supabase
-        const processedData = appData.map(plan => ({
-          ...plan,
-          label: plan.label || plan.name // Ensure label is set
-        }));
-        await saveToSupabase(processedData);
+        await saveToSupabase(plansWithLabels);
       }
       
-      return appData;
+      return plansWithLabels;
     } catch (error) {
       logger.error('Error loading floor plans:', error);
       toast.error('Failed to load floor plans');

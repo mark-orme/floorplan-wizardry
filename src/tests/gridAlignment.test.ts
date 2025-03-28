@@ -1,3 +1,4 @@
+
 /**
  * Grid alignment and snapping tests
  * Validates that the grid snapping functionality works as expected
@@ -114,6 +115,7 @@ describe('Grid Alignment', () => {
       const expectedSnaps = [0, 45, 90, 90, 180, 180, 270, 315, 0];
       
       testAngles.forEach((angle, index) => {
+        // Fix: Pass angle as angle, not as Point
         const snapped = snapToAngle(angle, 45);
         expect(snapped).toBe(expectedSnaps[index]);
       });
