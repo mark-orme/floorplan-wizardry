@@ -1,122 +1,191 @@
 
+/**
+ * Tests for the useFloorPlanDrawing hook
+ * @module hooks/floor-plan/__tests__/useFloorPlanDrawing.test
+ */
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-
-// Mock data for testing
-const mockFloorPlan = {
-  id: 'floor-1',
-  name: 'First Floor',
-  strokes: [],
-  level: 0,
-  gia: 0
-};
+import { FloorPlan, Stroke, StrokeType } from '@/types/floorPlanTypes';
+import { Point } from '@/types/core/Point';
 
 describe('useFloorPlanDrawing', () => {
-  // Create a clean hook for each test
-  const setup = () => {
-    const updateFloorPlanMock = vi.fn();
-    const setActiveStrokeMock = vi.fn();
-    
-    const result = renderHook(() => useFloorPlanDrawing({
-      floorPlan: mockFloorPlan,
-      updateFloorPlan: updateFloorPlanMock,
-      setActiveStroke: setActiveStrokeMock
-    }));
-    
-    return {
-      result,
-      updateFloorPlanMock,
-      setActiveStrokeMock
-    };
+  // Mock FloorPlan type for testing
+  const mockFloorPlan: FloorPlan = {
+    id: '1',
+    name: 'Floor 1',
+    label: 'First Floor', 
+    strokes: [],
+    walls: [],
+    rooms: [],
+    level: 0,
+    gia: 0,
+    canvasData: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    metadata: {}
   };
   
-  describe('initialization', () => {
-    it('should initialize with default drawing tool', () => {
-      const { result } = setup();
-      expect(result.current.activeTool).toBeDefined();
-    });
+  // Mock setFloorPlan for testing
+  const mockSetFloorPlan = vi.fn();
+  const mockSetGia = vi.fn();
+  
+  it('initializes with the correct state', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlan: mockFloorPlan,
+      setFloorPlan: mockSetFloorPlan,
+      setGia: mockSetGia
+    }));
     
-    it('should initialize with empty stroke collection', () => {
-      const { result } = setup();
-      expect(result.current.strokes).toEqual([]);
-    });
+    expect(result.current.isDrawing).toBe(false);
+    expect(result.current.drawingPoints).toEqual([]);
+    expect(result.current.currentPoint).toBeNull();
   });
   
-  describe('tool selection', () => {
-    it('should change active tool', () => {
-      const { result } = setup();
-      
-      act(() => {
-        result.current.setActiveTool('line');
-      });
-      
-      expect(result.current.activeTool).toBe('line');
-      
-      act(() => {
-        result.current.setActiveTool('select');
-      });
-      
-      expect(result.current.activeTool).toBe('select');
-    });
-  });
-  
-  describe('stroke management', () => {
-    it('should add a stroke', () => {
-      const { result, updateFloorPlanMock } = setup();
-      
-      const newStroke = {
-        id: 'stroke-1',
-        points: [{ x: 10, y: 10 }, { x: 20, y: 20 }],
-        type: 'line',
-        color: '#000000',
-        thickness: 2
-      };
-      
-      act(() => {
-        result.current.addStroke(newStroke);
-      });
-      
-      // Check that updateFloorPlan was called with the new stroke
-      expect(updateFloorPlanMock).toHaveBeenCalledWith(expect.objectContaining({
-        strokes: [newStroke]
-      }));
-    });
-  });
-  
-  describe('drawing operations', () => {
-    it('should start drawing at a point', () => {
-      const { result } = setup();
-      
-      act(() => {
-        result.current.startDrawing({ x: 10, y: 10 });
-      });
-      
-      expect(result.current.currentPoint).toEqual({ x: 10, y: 10 });
+  it('updates state when starting drawing', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlan: mockFloorPlan,
+      setFloorPlan: mockSetFloorPlan,
+      setGia: mockSetGia
+    }));
+    
+    const testPoint: Point = { x: 100, y: 100 } as Point;
+    
+    act(() => {
+      result.current.startDrawing(testPoint);
     });
     
-    it('should update current point when drawing', () => {
-      const { result } = setup();
-      
-      act(() => {
-        result.current.startDrawing({ x: 10, y: 10 });
-        result.current.continueDrawing({ x: 20, y: 20 });
-      });
-      
-      expect(result.current.currentPoint).toEqual({ x: 20, y: 20 });
+    expect(result.current.isDrawing).toBe(true);
+    expect(result.current.drawingPoints).toContainEqual(testPoint);
+    expect(result.current.currentPoint).toEqual(testPoint);
+  });
+  
+  it('continues drawing by adding points', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlan: mockFloorPlan,
+      setFloorPlan: mockSetFloorPlan,
+      setGia: mockSetGia
+    }));
+    
+    const startPoint: Point = { x: 100, y: 100 } as Point;
+    const nextPoint: Point = { x: 150, y: 150 } as Point;
+    
+    act(() => {
+      result.current.startDrawing(startPoint);
+      result.current.continueDrawing(nextPoint);
     });
     
-    it('should complete drawing and add a stroke', () => {
-      const { result, updateFloorPlanMock } = setup();
-      
-      act(() => {
-        result.current.startDrawing({ x: 10, y: 10 });
-        result.current.continueDrawing({ x: 20, y: 20 });
-        result.current.endDrawing();
-      });
-      
-      // Check that updateFloorPlan was called with a new stroke
-      expect(updateFloorPlanMock).toHaveBeenCalled();
+    expect(result.current.isDrawing).toBe(true);
+    expect(result.current.drawingPoints.length).toBe(2);
+    expect(result.current.currentPoint).toEqual(nextPoint);
+  });
+  
+  it('ends drawing and updates the floor plan', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlan: mockFloorPlan,
+      setFloorPlan: mockSetFloorPlan,
+      setGia: mockSetGia
+    }));
+    
+    const startPoint: Point = { x: 100, y: 100 } as Point;
+    const endPoint: Point = { x: 200, y: 200 } as Point;
+    
+    act(() => {
+      result.current.startDrawing(startPoint);
+      result.current.endDrawing(endPoint);
     });
+    
+    expect(result.current.isDrawing).toBe(false);
+    expect(mockSetFloorPlan).toHaveBeenCalled();
+  });
+  
+  it('cancels drawing correctly', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlan: mockFloorPlan,
+      setFloorPlan: mockSetFloorPlan,
+      setGia: mockSetGia
+    }));
+    
+    const testPoint: Point = { x: 100, y: 100 } as Point;
+    
+    act(() => {
+      result.current.startDrawing(testPoint);
+      result.current.cancelDrawing();
+    });
+    
+    expect(result.current.isDrawing).toBe(false);
+    expect(result.current.drawingPoints).toEqual([]);
+    expect(result.current.currentPoint).toBeNull();
+  });
+  
+  it('can add strokes directly', () => {
+    // Setup mock floor plans array
+    const mockFloorPlans = [mockFloorPlan];
+    const mockSetFloorPlans = vi.fn();
+    
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlans: mockFloorPlans,
+      currentFloor: 0,
+      setFloorPlans: mockSetFloorPlans
+    }));
+    
+    const testStroke: Stroke = {
+      id: 'test-stroke',
+      points: [{ x: 10, y: 10 } as Point, { x: 20, y: 20 } as Point],
+      type: 'line' as StrokeType,
+      color: '#000000',
+      thickness: 2
+    };
+    
+    act(() => {
+      result.current.addStroke(testStroke);
+    });
+    
+    expect(mockSetFloorPlans).toHaveBeenCalled();
+  });
+  
+  it('can start drawing at a point (alias method)', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlan: mockFloorPlan,
+      setFloorPlan: mockSetFloorPlan
+    }));
+    
+    const testPoint: Point = { x: 100, y: 100 } as Point;
+    
+    act(() => {
+      result.current.startDrawingAt(testPoint);
+    });
+    
+    expect(result.current.isDrawing).toBe(true);
+    expect(result.current.currentPoint).toEqual(testPoint);
+  });
+  
+  it('can calculate areas for the floor plan', () => {
+    const floorPlanWithStrokes = {
+      ...mockFloorPlan,
+      strokes: [
+        {
+          id: 'stroke-1',
+          points: [
+            { x: 0, y: 0 } as Point,
+            { x: 100, y: 0 } as Point,
+            { x: 100, y: 100 } as Point,
+            { x: 0, y: 100 } as Point,
+            { x: 0, y: 0 } as Point
+          ],
+          type: 'line' as StrokeType,
+          color: '#000000',
+          thickness: 2
+        }
+      ]
+    };
+    
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      floorPlan: floorPlanWithStrokes,
+      setFloorPlan: mockSetFloorPlan
+    }));
+    
+    const areas = result.current.calculateAreas();
+    expect(areas.length).toBeGreaterThan(0);
   });
 });

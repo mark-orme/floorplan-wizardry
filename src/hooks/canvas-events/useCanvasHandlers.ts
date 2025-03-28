@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { EventHandlerResult, UseCanvasHandlersProps, EventHandlerMap } from './types';
+import { EventHandlerResult, UseCanvasHandlersProps, EventHandlerMap, CanvasEvents } from './types';
 
 /**
  * Hook for managing generic canvas event handlers
@@ -27,7 +27,8 @@ export const useCanvasHandlers = ({
     
     // Register each handler
     Object.entries(handlers).forEach(([eventName, handler]) => {
-      canvas.on(eventName, handler);
+      // Type assertion to satisfy TypeScript
+      canvas.on(eventName as keyof CanvasEvents, handler);
     });
   }, [fabricCanvasRef, handlers]);
   
@@ -40,7 +41,8 @@ export const useCanvasHandlers = ({
     
     // Unregister each handler
     Object.entries(handlers).forEach(([eventName, handler]) => {
-      canvas.off(eventName, handler);
+      // Type assertion to satisfy TypeScript
+      canvas.off(eventName as keyof CanvasEvents, handler);
     });
   }, [fabricCanvasRef, handlers]);
   

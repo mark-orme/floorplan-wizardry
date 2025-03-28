@@ -1,150 +1,160 @@
 
 /**
- * Unit tests for grid snapping utilities
+ * Grid snapping tests
  * @module tests/grid/snapping
  */
-import { describe, it, expect } from "vitest";
-import { 
-  snapToGrid, 
-  snapLineToStandardAngles,
-  getNearestGridIntersection,
-  distanceToNearestGridLine
-} from "@/utils/gridUtils";
-import { GRID_SPACING } from "@/constants/numerics"; // Use the correct import
-import { Point } from "@/types/geometryTypes";
-import { STANDARD_ANGLES } from "@/utils/geometry/constants";
+import { describe, test, expect } from 'vitest';
+import { Point } from '@/types/core/Point';
+import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
+import { snapToGrid, snapToAngle } from '@/utils/grid/snapping';
 
-describe("Grid Snapping Utilities", () => {
-  describe("snapToGrid", () => {
-    it("should snap points to the nearest grid intersection", () => {
-      // Test basic snapping
-      expect(snapToGrid({ x: 23, y: 19 }, GRID_SPACING.SMALL)).toEqual({ x: 20, y: 20 });
-      expect(snapToGrid({ x: 17, y: 22 }, GRID_SPACING.SMALL)).toEqual({ x: 20, y: 20 });
+// Constants for testing
+const SMALL_GRID = GRID_SPACING.SMALL;
+
+describe('Grid Snapping', () => {
+  describe('snapToGrid', () => {
+    test('should snap a point to the nearest grid point', () => {
+      // Points near grid points
+      const point1: Point = { x: 9.9, y: 10.1 } as Point;
+      const point2: Point = { x: 20.3, y: 19.7 } as Point;
       
-      // Test with custom grid size
-      expect(snapToGrid({ x: 23, y: 19 }, 10)).toEqual({ x: 20, y: 20 });
-      expect(snapToGrid({ x: 46, y: 42 }, 10)).toEqual({ x: 50, y: 40 });
+      // Expected results
+      const expected1: Point = { x: 10, y: 10 } as Point;
+      const expected2: Point = { x: 20, y: 20 } as Point;
+      
+      // Perform snapping
+      const result1 = snapToGrid(point1);
+      const result2 = snapToGrid(point2);
+      
+      // Assertions
+      expect(result1.x).toBe(expected1.x);
+      expect(result1.y).toBe(expected1.y);
+      expect(result2.x).toBe(expected2.x);
+      expect(result2.y).toBe(expected2.y);
     });
     
-    it("should handle edge cases gracefully", () => {
-      // Test with zero values
-      expect(snapToGrid({ x: 0, y: 0 }, GRID_SPACING.SMALL)).toEqual({ x: 0, y: 0 });
+    test('should not change a point that is already on a grid point', () => {
+      // Point exactly on grid
+      const point: Point = { x: 20, y: 20 } as Point;
       
-      // Test with negative coordinates
-      expect(snapToGrid({ x: -23, y: -19 }, GRID_SPACING.SMALL)).toEqual({ x: -20, y: -20 });
+      // Expected result
+      const expected: Point = { x: 20, y: 20 } as Point;
       
-      // Test exactly on grid point
-      expect(snapToGrid({ x: 20, y: 20 }, GRID_SPACING.SMALL)).toEqual({ x: 20, y: 20 });
-    });
-
-    it("should correctly snap points with different grid sizes", () => {
-      // Test with larger grid size
-      expect(snapToGrid({ x: 42, y: 37 }, 20)).toEqual({ x: 40, y: 40 });
+      // Perform snapping
+      const result = snapToGrid(point);
       
-      // Test with smaller grid size
-      expect(snapToGrid({ x: 11, y: 9 }, 5)).toEqual({ x: 10, y: 10 });
-      
-      // Test with odd grid size
-      expect(snapToGrid({ x: 16, y: 14 }, 7)).toEqual({ x: 14, y: 14 });
-    });
-  });
-  
-  describe("getNearestGridIntersection", () => {
-    it("should find the closest grid intersection", () => {
-      expect(getNearestGridIntersection({ x: 23, y: 19 }, GRID_SPACING.SMALL)).toEqual({ x: 20, y: 20 });
-      expect(getNearestGridIntersection({ x: 46, y: 42 }, 10)).toEqual({ x: 50, y: 40 });
-    });
-
-    it("should use the default grid size when not specified", () => {
-      // Using the GRID_SPACING constant
-      expect(getNearestGridIntersection({ x: 23, y: 19 }, GRID_SPACING.SMALL))
-        .toEqual(snapToGrid({ x: 23, y: 19 }, GRID_SPACING.SMALL));
-    });
-  });
-  
-  describe("snapLineToStandardAngles", () => {
-    it("should straighten lines to standard angles", () => {
-      const start: Point = { x: 100, y: 100 };
-      
-      // Almost horizontal
-      expect(snapLineToStandardAngles(
-        start, 
-        { x: 200, y: 105 },
-        [0, 45, 90, 135, 180, 225, 270, 315]
-      )).toEqual({ x: 200, y: 100 });
-      
-      // Almost 45 degrees
-      expect(snapLineToStandardAngles(
-        start, 
-        { x: 200, y: 195 },
-        [0, 45, 90, 135, 180, 225, 270, 315]
-      )).toEqual({ x: 200, y: 200 });
+      // Assertions
+      expect(result.x).toBe(expected.x);
+      expect(result.y).toBe(expected.y);
     });
     
-    it("should honor custom angles", () => {
-      const start: Point = { x: 100, y: 100 };
+    test('should handle negative coordinates', () => {
+      // Points with negative coordinates
+      const point1: Point = { x: -9.9, y: -10.1 } as Point;
+      const point2: Point = { x: -20.3, y: -19.7 } as Point;
       
-      // Only allow horizontal/vertical (0, 90, 180, 270)
-      expect(snapLineToStandardAngles(
-        start,
-        { x: 150, y: 150 },
-        [0, 90, 180, 270]
-      )).toEqual({ x: 150, y: 100 }); // Should snap to horizontal
+      // Expected results
+      const expected1: Point = { x: -10, y: -10 } as Point;
+      const expected2: Point = { x: -20, y: -20 } as Point;
+      
+      // Perform snapping
+      const result1 = snapToGrid(point1);
+      const result2 = snapToGrid(point2);
+      
+      // Assertions
+      expect(result1.x).toBe(expected1.x);
+      expect(result1.y).toBe(expected1.y);
+      expect(result2.x).toBe(expected2.x);
+      expect(result2.y).toBe(expected2.y);
     });
-
-    it("should not modify lines already aligned with standard angles", () => {
-      const start: Point = { x: 100, y: 100 };
+    
+    test('should handle zero coordinates', () => {
+      // Point at origin
+      const point: Point = { x: 0.1, y: -0.1 } as Point;
       
-      // Exactly horizontal
-      const horizontalEnd: Point = { x: 200, y: 100 };
-      expect(snapLineToStandardAngles(
-        start, 
-        horizontalEnd,
-        [0, 45, 90, 135, 180, 225, 270, 315]
-      )).toEqual(horizontalEnd);
+      // Expected result
+      const expected: Point = { x: 0, y: 0 } as Point;
       
-      // Exactly 45 degrees
-      const diagonalEnd: Point = { x: 200, y: 200 };
-      expect(snapLineToStandardAngles(
-        start, 
-        diagonalEnd,
-        [0, 45, 90, 135, 180, 225, 270, 315]
-      )).toEqual(diagonalEnd);
+      // Perform snapping
+      const result = snapToGrid(point);
+      
+      // Assertions
+      expect(result.x).toBe(expected.x);
+      expect(result.y).toBe(expected.y);
+    });
+    
+    test('should handle custom grid sizes', () => {
+      // Point
+      const point: Point = { x: 24, y: 26 } as Point;
+      
+      // Expected result with grid size 5
+      const expected: Point = { x: 25, y: 25 } as Point;
+      
+      // Perform snapping with custom grid size
+      const result = snapToGrid(point, 5);
+      
+      // Assertions
+      expect(result.x).toBe(expected.x);
+      expect(result.y).toBe(expected.y);
     });
   });
   
-  describe("distanceToNearestGridLine", () => {
-    it("should calculate correct distances to grid lines", () => {
-      // Point at (15, 25) with grid size 10:
-      // - Distance to horizontal lines: min(5, 5) = 5
-      // - Distance to vertical lines: min(5, 5) = 5
-      const distancesA = distanceToNearestGridLine({ x: 15, y: 25 }, 10);
-      expect(distancesA.x).toBe(5);
-      expect(distancesA.y).toBe(5);
+  describe('snapToAngle', () => {
+    test('should snap lines to horizontal angles', () => {
+      // Start point
+      const start: Point = { x: 100, y: 100 } as Point;
       
-      // Point at (12, 18) with grid size 10:
-      // - Distance to horizontal lines: min(2, 8) = 2
-      // - Distance to vertical lines: min(2, 8) = 2
-      const distancesB = distanceToNearestGridLine({ x: 12, y: 18 }, 10);
-      expect(distancesB.x).toBe(2);
-      expect(distancesB.y).toBe(2);
+      // End points close to horizontal
+      const end1: Point = { x: 150, y: 103 } as Point; // Nearly horizontal
+      const end2: Point = { x: 50, y: 97 } as Point;  // Nearly horizontal in opposite direction
+      
+      // Snap to horizontal (0 degrees)
+      const result1 = snapToAngle(start, end1);
+      const result2 = snapToAngle(start, end2);
+      
+      // Both should be snapped to horizontal
+      expect(result1.y).toBeCloseTo(start.y);
+      expect(result2.y).toBeCloseTo(start.y);
     });
-
-    it("should handle points exactly on grid lines", () => {
-      // Point exactly on vertical grid line
-      const distancesA = distanceToNearestGridLine({ x: 20, y: 15 }, 10);
-      expect(distancesA.x).toBe(0);
-      expect(distancesA.y).toBe(5);
+    
+    test('should snap lines to vertical angles', () => {
+      // Start point
+      const start: Point = { x: 100, y: 100 } as Point;
       
-      // Point exactly on horizontal grid line
-      const distancesB = distanceToNearestGridLine({ x: 15, y: 20 }, 10);
-      expect(distancesB.x).toBe(5);
-      expect(distancesB.y).toBe(0);
+      // End points close to vertical
+      const end1: Point = { x: 103, y: 150 } as Point; // Nearly vertical
+      const end2: Point = { x: 97, y: 50 } as Point;  // Nearly vertical in opposite direction
       
-      // Point exactly on grid intersection
-      const distancesC = distanceToNearestGridLine({ x: 20, y: 20 }, 10);
-      expect(distancesC.x).toBe(0);
-      expect(distancesC.y).toBe(0);
+      // Snap to vertical (90 degrees)
+      const result1 = snapToAngle(start, end1);
+      const result2 = snapToAngle(start, end2);
+      
+      // Both should be snapped to vertical
+      expect(result1.x).toBeCloseTo(start.x);
+      expect(result2.x).toBeCloseTo(start.x);
+    });
+    
+    test('should snap lines to 45 degree angles', () => {
+      // Start point
+      const start: Point = { x: 100, y: 100 } as Point;
+      
+      // End points close to 45 degrees
+      const end1: Point = { x: 150, y: 155 } as Point; // Nearly 45 degrees
+      const end2: Point = { x: 50, y: 45 } as Point;  // Nearly 45 degrees in opposite direction
+      
+      // Snap to 45 degrees
+      const result1 = snapToAngle(start, end1);
+      const result2 = snapToAngle(start, end2);
+      
+      // Calculate distances for validation
+      const dx1 = result1.x - start.x;
+      const dy1 = result1.y - start.y;
+      const dx2 = result2.x - start.x;
+      const dy2 = result2.y - start.y;
+      
+      // For 45 degrees, dx and dy should be equal in magnitude
+      expect(Math.abs(dx1)).toBeCloseTo(Math.abs(dy1));
+      expect(Math.abs(dx2)).toBeCloseTo(Math.abs(dy2));
     });
   });
 });

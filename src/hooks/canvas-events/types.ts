@@ -29,7 +29,7 @@ export interface UseZoomTrackingProps {
   /** Current drawing tool */
   tool: DrawingTool;
   /** Function to update zoom level */
-  updateZoomLevel?: () => void;
+  updateZoomLevel?: (zoom: number) => void;
 }
 
 /**
@@ -89,13 +89,17 @@ export interface UseBrushSettingsProps {
  */
 export interface UseKeyboardEventsProps {
   /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
   /** Function to handle undo operation */
   handleUndo: () => void;
-  /** Function to handle redo operation */
+  /** Function to redo operation */
   handleRedo: () => void;
   /** Function to delete selected objects */
   deleteSelectedObjects: () => void;
+  /** Function to handle escape key */
+  handleEscape?: () => void;
+  /** Function to handle delete key */
+  handleDelete?: () => void;
 }
 
 /**
@@ -129,6 +133,7 @@ export interface CanvasEvents {
   'mouse:up': any;
   'path:created': any;
   'zoom:updated': any;
+  [key: string]: any; // Allow string indexing
 }
 
 /**
@@ -178,8 +183,6 @@ export interface UseMouseEventsProps extends BaseEventHandlerProps {
  * Props for useCanvasHandlers hook
  */
 export interface UseCanvasHandlersProps extends BaseEventHandlerProps {
-  /** Current drawing tool */
-  tool: DrawingTool;
   /** Event handlers to register */
   handlers: EventHandlerMap;
 }

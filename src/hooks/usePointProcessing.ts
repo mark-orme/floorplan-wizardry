@@ -1,128 +1,75 @@
 
 /**
- * Hook for point processing operations
- * Handles point transformation, validation, and processing
+ * Hook for processing mouse/touch events into Points
  * @module usePointProcessing
  */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { Point, createPoint } from '@/types/core/Point';
-import { getNearestGridPoint } from '@/utils/gridUtils';
-import { GRID_SPACING } from '@/constants/numerics';
+import { Point } from '@/types/core/Point';
+import { DrawingTool } from '@/constants/drawingModes';
 
-/**
- * Props for usePointProcessing hook
- */
-interface UsePointProcessingProps {
-  /** Reference to fabric canvas */
+export interface UsePointProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  tool?: DrawingTool;
 }
 
-/**
- * Result of usePointProcessing hook
- */
 export interface UsePointProcessingResult {
-  /** Process a point with transformations */
-  processPoint: (point: Point) => Point;
-  /** Validate a point is within canvas bounds */
-  validatePoint: (point: Point) => boolean;
-  /** Convert screen coordinates to canvas coordinates */
-  screenToCanvasPoint: (x: number, y: number) => Point;
-  /** Convert canvas coordinates to screen coordinates */
-  canvasToScreenPoint: (point: Point) => Point;
+  processPoint: (e: MouseEvent | TouchEvent) => Point | null;
 }
 
 /**
- * Hook for processing points in canvas operations
- * 
- * @param {UsePointProcessingProps} props - Hook properties
- * @returns {UsePointProcessingResult} Point processing functions
+ * Hook for processing DOM events into canvas points
+ * @param props - Hook configuration
+ * @returns Functions for processing points
  */
 export const usePointProcessing = ({ 
-  fabricCanvasRef 
+  fabricCanvasRef
 }: UsePointProcessingProps): UsePointProcessingResult => {
   
   /**
-   * Process a point with any needed transformations
-   * @param {Point} point - Point to process
-   * @returns {Point} Processed point
+   * Process a mouse or touch event into a canvas point
+   * @param e - Mouse or touch event
+   * @returns Processed point or null if invalid
    */
-  const processPoint = useCallback((point: Point): Point => {
+  const processPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return point;
+    if (!canvas) return null;
     
-    // Apply any transformations (zoom, pan, etc.)
-    const zoom = canvas.getZoom();
-    const vpt = canvas.viewportTransform;
+    // Extract coordinates from event
+    let clientX: number;
+    let clientY: number;
     
-    if (!vpt) return point;
+    if ('touches' in e) {
+      // Touch event
+      if (e.touches.length === 0) {
+        // Use changedTouches for touchend events
+        if (!e.changedTouches || e.changedTouches.length === 0) {
+          return null;
+        }
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      } else {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+    } else {
+      // Mouse event
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
     
-    // Create a new point to avoid mutating the original
-    return createPoint(point.x, point.y);
+    // Convert to canvas coordinates
+    const canvasElement = canvas.getElement();
+    const rect = canvasElement.getBoundingClientRect();
+    
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    
+    // Apply canvas transformations
+    const point = canvas.getPointer({ clientX, clientY } as MouseEvent);
+    
+    return { x: point.x, y: point.y } as Point;
   }, [fabricCanvasRef]);
   
-  /**
-   * Validate a point is within canvas bounds
-   * @param {Point} point - Point to validate
-   * @returns {boolean} Whether point is valid
-   */
-  const validatePoint = useCallback((point: Point): boolean => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return false;
-    
-    const width = canvas.width || 0;
-    const height = canvas.height || 0;
-    
-    return point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height;
-  }, [fabricCanvasRef]);
-  
-  /**
-   * Convert screen coordinates to canvas coordinates
-   * @param {number} x - Screen X coordinate
-   * @param {number} y - Screen Y coordinate
-   * @returns {Point} Canvas coordinates
-   */
-  const screenToCanvasPoint = useCallback((x: number, y: number): Point => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return createPoint(x, y);
-    
-    const zoom = canvas.getZoom();
-    const vpt = canvas.viewportTransform;
-    
-    if (!vpt) return createPoint(x, y);
-    
-    // Transform point from screen to canvas coordinates
-    return createPoint(
-      (x - vpt[4]) / zoom,
-      (y - vpt[5]) / zoom
-    );
-  }, [fabricCanvasRef]);
-  
-  /**
-   * Convert canvas coordinates to screen coordinates
-   * @param {Point} point - Canvas coordinates
-   * @returns {Point} Screen coordinates
-   */
-  const canvasToScreenPoint = useCallback((point: Point): Point => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return point;
-    
-    const zoom = canvas.getZoom();
-    const vpt = canvas.viewportTransform;
-    
-    if (!vpt) return point;
-    
-    // Transform point from canvas to screen coordinates
-    return createPoint(
-      point.x * zoom + vpt[4],
-      point.y * zoom + vpt[5]
-    );
-  }, [fabricCanvasRef]);
-  
-  return {
-    processPoint,
-    validatePoint,
-    screenToCanvasPoint,
-    canvasToScreenPoint
-  };
+  return { processPoint };
 };

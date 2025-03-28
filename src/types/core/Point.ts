@@ -5,7 +5,7 @@
  */
 
 /**
- * Point interface representing coordinates in 2D space
+ * Interface for a 2D point with x and y coordinates
  * @interface Point
  */
 export interface Point {
@@ -15,15 +15,107 @@ export interface Point {
   /** Y coordinate */
   y: number;
   
-  // Method declarations for compatibility
+  /** For fabric compatibility - add operation */
   add?: (point: Point) => Point;
+  
+  /** For fabric compatibility - add in place */
   addEquals?: (point: Point) => Point;
+  
+  /** For fabric compatibility - scalar add */
   scalarAdd?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - scalar add in place */
   scalarAddEquals?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - subtract operation */
+  subtract?: (point: Point) => Point;
+  
+  /** For fabric compatibility - subtract in place */
+  subtractEquals?: (point: Point) => Point;
+  
+  /** For fabric compatibility - scalar subtract */
+  scalarSubtract?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - scalar subtract in place */
+  scalarSubtractEquals?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - multiply operation */
+  multiply?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - multiply in place */
+  multiplyEquals?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - divide operation */
+  divide?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - divide in place */
+  divideEquals?: (scalar: number) => Point;
+  
+  /** For fabric compatibility - get distance to another point */
+  distanceFrom?: (point: Point) => number;
+  
+  /** For fabric compatibility - get midpoint between this point and another */
+  midPointFrom?: (point: Point) => Point;
+  
+  /** For fabric compatibility - set values */
+  setXY?: (x: number, y: number) => Point;
+  
+  /** For fabric compatibility - set x value */
+  setX?: (x: number) => Point;
+  
+  /** For fabric compatibility - set y value */
+  setY?: (y: number) => Point;
+  
+  /** For fabric compatibility - clone point */
+  clone?: () => Point;
+  
+  /** For fabric compatibility - get point coordinates as array */
+  toArray?: () => number[];
+  
+  /** For fabric compatibility - rotate point around origin */
+  rotate?: (radians: number) => Point;
+  
+  /** For fabric compatibility - rotate point around another point */
+  rotateAround?: (radians: number, origin: Point) => Point;
+  
+  /** For fabric compatibility - flip point around x-axis */
+  flipX?: () => Point;
+  
+  /** For fabric compatibility - flip point around y-axis */
+  flipY?: () => Point;
+  
+  /** For fabric compatibility - convert to string */
+  toString?: () => string;
+  
+  /** For fabric compatibility - equals method */
+  eq?: (point: Point) => boolean;
+  
+  /** For fabric compatibility - greater than comparison */
+  gt?: (point: Point) => boolean;
+  
+  /** For fabric compatibility - less than comparison */
+  lt?: (point: Point) => boolean;
+  
+  /** For fabric compatibility - greater than or equal comparison */
+  gte?: (point: Point) => boolean;
+  
+  /** For fabric compatibility - less than or equal comparison */
+  lte?: (point: Point) => boolean;
 }
 
 /**
- * Simple point type for plain object representation
+ * Create a new Point object
+ * @param x - X coordinate
+ * @param y - Y coordinate
+ * @returns Point object
+ */
+export const createPoint = (x: number, y: number): Point => {
+  return { x, y };
+};
+
+/**
+ * Plain point type without fabric methods
+ * Used for simpler type signatures
  */
 export interface PlainPoint {
   x: number;
@@ -31,142 +123,10 @@ export interface PlainPoint {
 }
 
 /**
- * Create a new Point
- * @param x - X coordinate
- * @param y - Y coordinate
- * @returns A new Point object
- */
-export const createPoint = (x: number, y: number): Point => {
-  return { x, y };
-};
-
-/**
  * Convert a plain object to a Point
- * @param obj Object with x,y properties
- * @returns A Point object
+ * @param obj - Object with x and y properties
+ * @returns Point object
  */
-export const toPoint = (obj: { x: number; y: number }): Point => {
+export function toPoint(obj: { x: number; y: number }): Point {
   return { x: obj.x, y: obj.y };
-};
-
-/**
- * Calculate distance between two points
- * @param p1 - First point
- * @param p2 - Second point
- * @returns Distance between points
- */
-export const distance = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
-/**
- * Check if two points are equal within a tolerance
- * @param p1 - First point
- * @param p2 - Second point
- * @param tolerance - Distance tolerance
- * @returns Whether points are equal
- */
-export const pointsEqual = (p1: Point, p2: Point, tolerance: number = 0.001): boolean => {
-  return distance(p1, p2) <= tolerance;
-};
-
-/**
- * Interpolate between two points
- * @param p1 - Start point
- * @param p2 - End point
- * @param t - Interpolation factor (0-1)
- * @returns Interpolated point
- */
-export const interpolate = (p1: Point, p2: Point, t: number): Point => {
-  return {
-    x: p1.x + (p2.x - p1.x) * t,
-    y: p1.y + (p2.y - p1.y) * t
-  };
-};
-
-/**
- * Add two points
- * @param p1 - First point
- * @param p2 - Second point
- * @returns Sum of points
- */
-export const addPoints = (p1: Point, p2: Point): Point => {
-  return {
-    x: p1.x + p2.x,
-    y: p1.y + p2.y
-  };
-};
-
-/**
- * Subtract second point from first
- * @param p1 - First point
- * @param p2 - Second point
- * @returns Difference of points
- */
-export const subtractPoints = (p1: Point, p2: Point): Point => {
-  return {
-    x: p1.x - p2.x,
-    y: p1.y - p2.y
-  };
-};
-
-/**
- * Scale a point by a factor
- * @param p - Point to scale
- * @param factor - Scale factor
- * @returns Scaled point
- */
-export const scalePoint = (p: Point, factor: number): Point => {
-  return {
-    x: p.x * factor,
-    y: p.y * factor
-  };
-};
-
-/**
- * Calculate midpoint between two points
- * @param p1 - First point
- * @param p2 - Second point
- * @returns Midpoint
- */
-export const midpoint = (p1: Point, p2: Point): Point => {
-  return interpolate(p1, p2, 0.5);
-};
-
-// Create a Point class for prototype methods
-export class PointClass implements Point {
-  x: number;
-  y: number;
-
-  constructor(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-  }
-
-  add(point: Point): Point {
-    return addPoints(this, point);
-  }
-
-  addEquals(point: Point): Point {
-    this.x += point.x;
-    this.y += point.y;
-    return this;
-  }
-
-  scalarAdd(scalar: number): Point {
-    return { x: this.x + scalar, y: this.y + scalar };
-  }
-
-  scalarAddEquals(scalar: number): Point {
-    this.x += scalar;
-    this.y += scalar;
-    return this;
-  }
 }
-
-// Helper function to create a full Point with methods
-export const createFullPoint = (x: number, y: number): Point => {
-  return new PointClass(x, y);
-};

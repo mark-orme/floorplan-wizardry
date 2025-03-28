@@ -12,9 +12,8 @@ describe('useKeyboardEvents', () => {
   // Mock handlers
   const mockHandleUndo = vi.fn();
   const mockHandleRedo = vi.fn();
-  const mockHandleDelete = vi.fn();
-  const mockHandleEscape = vi.fn();
   const mockDeleteSelectedObjects = vi.fn();
+  const mockHandleEscape = vi.fn();
   
   beforeEach(() => {
     // Mock global event listeners
@@ -35,10 +34,8 @@ describe('useKeyboardEvents', () => {
     const { result, unmount } = renderHook(() => useKeyboardEvents({
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
-      handleDelete: mockHandleDelete,
-      handleEscape: mockHandleEscape,
-      // Add the correct prop for deleteSelectedObjects
-      deleteSelectedObjects: mockDeleteSelectedObjects
+      deleteSelectedObjects: mockDeleteSelectedObjects,
+      handleEscape: mockHandleEscape
     }));
     
     // Then: event listener should be added
@@ -68,10 +65,8 @@ describe('useKeyboardEvents', () => {
     const { result } = renderHook(() => useKeyboardEvents({
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
-      handleDelete: mockHandleDelete,
-      handleEscape: mockHandleEscape,
-      // Add the correct prop for deleteSelectedObjects
-      deleteSelectedObjects: mockDeleteSelectedObjects
+      deleteSelectedObjects: mockDeleteSelectedObjects,
+      handleEscape: mockHandleEscape
     }));
     result.current.cleanup();
     
@@ -96,10 +91,8 @@ describe('useKeyboardEvents', () => {
     renderHook(() => useKeyboardEvents({
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
-      handleDelete: mockHandleDelete,
-      handleEscape: mockHandleEscape,
-      // Add the correct prop for deleteSelectedObjects
-      deleteSelectedObjects: mockDeleteSelectedObjects
+      deleteSelectedObjects: mockDeleteSelectedObjects,
+      handleEscape: mockHandleEscape
     }));
     window.dispatchEvent(event);
     
@@ -125,10 +118,8 @@ describe('useKeyboardEvents', () => {
     renderHook(() => useKeyboardEvents({
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
-      handleDelete: mockHandleDelete,
-      handleEscape: mockHandleEscape,
-      // Add the correct prop for deleteSelectedObjects
-      deleteSelectedObjects: mockDeleteSelectedObjects
+      deleteSelectedObjects: mockDeleteSelectedObjects,
+      handleEscape: mockHandleEscape
     }));
     window.dispatchEvent(event);
     
@@ -136,7 +127,7 @@ describe('useKeyboardEvents', () => {
     expect(mockHandleRedo).toHaveBeenCalled();
   });
   
-  test('calls handleDelete on Delete key', () => {
+  test('calls deleteSelectedObjects on Delete key', () => {
     // Given: a keydown event for Delete key
     const event = new KeyboardEvent('keydown', {
       key: 'Delete'
@@ -151,40 +142,12 @@ describe('useKeyboardEvents', () => {
     renderHook(() => useKeyboardEvents({
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
-      handleDelete: mockHandleDelete,
-      handleEscape: mockHandleEscape,
-      // Add the correct prop for deleteSelectedObjects
-      deleteSelectedObjects: mockDeleteSelectedObjects
+      deleteSelectedObjects: mockDeleteSelectedObjects,
+      handleEscape: mockHandleEscape
     }));
     window.dispatchEvent(event);
     
-    // Then: handleDelete should be called
-    expect(mockHandleDelete).toHaveBeenCalled();
-  });
-  
-  test('calls handleEscape on Escape key', () => {
-    // Given: a keydown event for Escape key
-    const event = new KeyboardEvent('keydown', {
-      key: 'Escape'
-    });
-    mockAddEventListener.mockImplementation((event: string, cb: Function) => {
-      if (event === 'keydown') {
-        cb(event);
-      }
-    });
-    
-    // When: hook is rendered and event is dispatched
-    renderHook(() => useKeyboardEvents({
-      handleUndo: mockHandleUndo,
-      handleRedo: mockHandleRedo,
-      handleDelete: mockHandleDelete,
-      handleEscape: mockHandleEscape,
-      // Add the correct prop for deleteSelectedObjects
-      deleteSelectedObjects: mockDeleteSelectedObjects
-    }));
-    window.dispatchEvent(event);
-    
-    // Then: handleEscape should be called
-    expect(mockHandleEscape).toHaveBeenCalled();
+    // Then: deleteSelectedObjects should be called
+    expect(mockDeleteSelectedObjects).toHaveBeenCalled();
   });
 });

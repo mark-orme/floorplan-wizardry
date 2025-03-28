@@ -13,13 +13,13 @@ describe('useSnapToGrid', () => {
     const { result } = renderHook(() => useSnapToGrid());
     
     // Test point that needs snapping
-    const point: { x: number; y: number } = { x: 22, y: 37 };
+    const point: Point = { x: 22, y: 37 } as Point;
     
     // Expected snapped point
     const expectedPoint = { x: 20, y: 40 };
     
     // Call the snap function
-    const snappedPoint = result.current.snapPointToGrid(point, gridSize);
+    const snappedPoint = result.current.snapPointToGrid(point);
     
     // Verify snapping
     expect(snappedPoint.x).toBe(expectedPoint.x);
@@ -30,10 +30,10 @@ describe('useSnapToGrid', () => {
     const { result } = renderHook(() => useSnapToGrid());
     
     // Test point already on grid
-    const point: { x: number; y: number } = { x: 20, y: 30 };
+    const point: Point = { x: 20, y: 30 } as Point;
     
     // Call the snap function
-    const snappedPoint = result.current.snapPointToGrid(point, gridSize);
+    const snappedPoint = result.current.snapPointToGrid(point);
     
     // Verify point is unchanged
     expect(snappedPoint.x).toBe(point.x);
@@ -44,10 +44,10 @@ describe('useSnapToGrid', () => {
     const { result } = renderHook(() => useSnapToGrid());
     
     // Test points
-    const points: { x: number; y: number }[] = [
-      { x: 22, y: 37 },
-      { x: 45, y: 12 },
-      { x: 30, y: 30 } // Already on grid
+    const points: Point[] = [
+      { x: 22, y: 37 } as Point,
+      { x: 45, y: 12 } as Point,
+      { x: 30, y: 30 } as Point // Already on grid
     ];
     
     // Expected snapped points
@@ -58,7 +58,7 @@ describe('useSnapToGrid', () => {
     ];
     
     // Call the snap function
-    const snappedPoints = result.current.snapPointsToGrid(points, gridSize);
+    const snappedPoints = result.current.snapPointsToGrid(points);
     
     // Verify all points
     snappedPoints.forEach((point, index) => {

@@ -1,11 +1,13 @@
+
 /**
  * Canvas interactions hook
  * Manages mouse/touch interactions and drawing state for the canvas
  */
 import { Canvas as FabricCanvas } from 'fabric';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DrawingState, Point } from '@/types';
-import { DrawingTool } from './useCanvasState';
+import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
+import { Point } from '@/types/core/Point';
+import { DrawingTool } from '@/constants/drawingModes';
 import { usePointProcessing } from './usePointProcessing';
 import { useSnapToGrid } from './useSnapToGrid';
 import { calculateMidpoint, calculateDistance, formatDistance } from '@/utils/geometry';
@@ -23,7 +25,7 @@ interface UseCanvasInteractionsResult {
   currentZoom: number;
   handleMouseDown: (e: MouseEvent | TouchEvent) => void;
   handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
+  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
   resetDrawingState: () => void;
   updateCurrentPoint: (point: Point | null) => void;
   isSnappedToGrid: (point: Point | null) => boolean;
@@ -31,6 +33,37 @@ interface UseCanvasInteractionsResult {
   toggleSnap: () => void;
   snapEnabled: boolean;
 }
+
+/**
+ * Extract point from event
+ * @param e Event object
+ * @returns Point object or null
+ */
+const extractPointFromEvent = (e: MouseEvent | TouchEvent): { x: number, y: number } | null => {
+  if ('touches' in e) {
+    // Touch event
+    if (e.touches.length === 0) {
+      // Use changedTouches for touchend events
+      if (!e.changedTouches || e.changedTouches.length === 0) {
+        return null;
+      }
+      return { 
+        x: e.changedTouches[0].clientX, 
+        y: e.changedTouches[0].clientY 
+      };
+    }
+    return { 
+      x: e.touches[0].clientX, 
+      y: e.touches[0].clientY 
+    };
+  } else {
+    // Mouse event
+    return { 
+      x: e.clientX, 
+      y: e.clientY 
+    };
+  }
+};
 
 /**
  * Hook for managing canvas drawing interactions
@@ -46,20 +79,10 @@ export const useCanvasInteractions = ({
   lineColor = '#000000'
 }: UseCanvasInteractionsProps): UseCanvasInteractionsResult => {
   // Initialize drawing state
-  const [drawingState, setDrawingState] = useState<DrawingState>({
-    isDrawing: false,
-    startPoint: null,
-    currentPoint: null,
-    cursorPosition: null,
-    midPoint: null,
-    selectionActive: false,
-    currentZoom: 1,
-    points: [],
-    distance: null
-  });
+  const [drawingState, setDrawingState] = useState<DrawingState>(createDefaultDrawingState());
 
   // Point processing utilities
-  const { processPoint } = usePointProcessing({ fabricCanvasRef, tool });
+  const { processPoint } = usePointProcessing({ fabricCanvasRef });
   
   // Grid snapping utilities
   const {
@@ -120,6 +143,30 @@ export const useCanvasInteractions = ({
   }, []);
 
   /**
+   * Process point from event
+   * Helper function to handle the event processing
+   */
+  const processEventPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return null;
+    
+    const eventPoint = extractPointFromEvent(e);
+    if (!eventPoint) return null;
+    
+    // Convert to canvas coordinates
+    const canvasElement = canvas.getElement();
+    const rect = canvasElement.getBoundingClientRect();
+    
+    const x = eventPoint.x - rect.left;
+    const y = eventPoint.y - rect.top;
+    
+    // Apply canvas transformations
+    const point = canvas.getPointer({ clientX: eventPoint.x, clientY: eventPoint.y } as MouseEvent);
+    
+    return { x: point.x, y: point.y } as Point;
+  }, [fabricCanvasRef]);
+
+  /**
    * Handle mouse/touch down events
    * Starts drawing process and sets initial point
    * 
@@ -131,7 +178,7 @@ export const useCanvasInteractions = ({
     console.log("Mouse down with tool:", tool);
     
     // Process point from event
-    const point = processPoint(e);
+    const point = processEventPoint(e);
     if (!point) return;
     
     // Snap point to grid if enabled
@@ -148,7 +195,7 @@ export const useCanvasInteractions = ({
     }));
     
     console.log("Drawing started at:", snappedPoint);
-  }, [tool, processPoint, snapPointToGrid, snapEnabled]);
+  }, [tool, processEventPoint, snapPointToGrid, snapEnabled]);
 
   /**
    * Handle mouse/touch move events
@@ -158,7 +205,7 @@ export const useCanvasInteractions = ({
    */
   const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
     // Always update cursor position regardless of drawing state
-    const point = processPoint(e);
+    const point = processEventPoint(e);
     if (!point) return;
     
     setDrawingState(prev => ({
@@ -208,7 +255,7 @@ export const useCanvasInteractions = ({
       midPoint,
       distance
     }));
-  }, [drawingState.isDrawing, drawingState.startPoint, tool, processPoint, snapPointToGrid, snapLineToGrid, snapEnabled]);
+  }, [drawingState.isDrawing, drawingState.startPoint, tool, processEventPoint, snapPointToGrid, snapLineToGrid, snapEnabled]);
 
   /**
    * Handle mouse/touch up events
@@ -226,7 +273,7 @@ export const useCanvasInteractions = ({
     
     // If event is provided, process the final point
     if (e) {
-      const point = processPoint(e);
+      const point = processEventPoint(e);
       if (point) {
         // Apply final snapping if needed
         if ((tool === 'straightLine' || tool === 'wall') && snapEnabled) {
@@ -285,7 +332,7 @@ export const useCanvasInteractions = ({
     timeoutRef.current = setTimeout(() => {
       resetDrawingState();
     }, 500);
-  }, [drawingState.isDrawing, drawingState.startPoint, drawingState.currentPoint, tool, processPoint, snapPointToGrid, snapLineToGrid, resetDrawingState, snapEnabled]);
+  }, [drawingState.isDrawing, drawingState.startPoint, drawingState.currentPoint, tool, processEventPoint, snapPointToGrid, snapLineToGrid, resetDrawingState, snapEnabled]);
 
   /**
    * Clean up any pending timeouts when component unmounts
@@ -296,16 +343,6 @@ export const useCanvasInteractions = ({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, []);
-
-  /**
-   * Update zoom level from canvas
-   */
-  const updateZoomLevel = useCallback((zoom: number) => {
-    setDrawingState(prev => ({
-      ...prev,
-      currentZoom: zoom
-    }));
   }, []);
 
   /**

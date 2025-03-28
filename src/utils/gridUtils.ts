@@ -3,304 +3,216 @@
  * Grid utility functions
  * @module utils/gridUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
-import { GRID_SPACING } from "@/constants/numerics";
-import { Point } from "@/types/core/Point";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
+import { GRID_SPACING } from '@/constants/numerics';
+import { Point } from '@/types/core/Point';
+import { GridLineType } from '@/types/fabricTypes';
 
 /**
  * Check if the canvas has an existing grid
- * @param canvas - The Fabric canvas
+ * @param canvas Fabric canvas
  * @returns Whether the canvas has a grid
  */
 export const hasExistingGrid = (canvas: FabricCanvas): boolean => {
   if (!canvas) return false;
-  return canvas.getObjects().some((obj) => obj.objectType === 'grid');
+  return canvas.getObjects().some(obj => 
+    obj.get('objectType') === 'grid'
+  );
 };
 
 /**
- * Remove all grid objects from the canvas
- * @param canvas - The Fabric canvas
- * @returns Array of removed grid objects
+ * Remove grid from canvas
+ * @param canvas Fabric canvas
  */
-export const removeGrid = (canvas: FabricCanvas): FabricObject[] => {
-  if (!canvas) return [];
+export const removeGrid = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
   
-  const gridObjects = canvas.getObjects().filter((obj) => obj.objectType === 'grid');
+  const gridObjects = canvas.getObjects().filter(obj => 
+    obj.get('objectType') === 'grid'
+  );
   
-  gridObjects.forEach(obj => {
-    canvas.remove(obj);
-  });
-  
-  canvas.renderAll();
-  return gridObjects;
+  gridObjects.forEach(obj => canvas.remove(obj));
+  canvas.requestRenderAll();
 };
 
 /**
- * Set the visibility of the grid
- * @param canvas - The Fabric canvas
- * @param visible - Whether the grid should be visible
+ * Set grid visibility
+ * @param canvas Fabric canvas
+ * @param visible Whether grid should be visible
  */
 export const setGridVisibility = (canvas: FabricCanvas, visible: boolean): void => {
   if (!canvas) return;
   
-  const gridObjects = canvas.getObjects().filter((obj) => obj.objectType === 'grid');
+  const gridObjects = canvas.getObjects().filter(obj => 
+    obj.get('objectType') === 'grid'
+  );
   
   gridObjects.forEach(obj => {
-    obj.visible = visible;
+    obj.set('visible', visible);
   });
   
-  canvas.renderAll();
+  canvas.requestRenderAll();
 };
 
 /**
- * Filter grid objects from an array of objects
- * @param objects - Array of Fabric objects
- * @returns Array of grid objects
+ * Create grid on canvas
+ * @param canvas Fabric canvas
+ * @param width Canvas width
+ * @param height Canvas height
+ * @returns Grid objects
  */
-export const filterGridObjects = (objects: FabricObject[]): FabricObject[] => {
-  return objects.filter(obj => obj.objectType === 'grid');
-};
-
-/**
- * Get the nearest grid point to a given point
- * @param point - The reference point
- * @param gridSize - The grid size
- * @returns The nearest grid point
- */
-export const getNearestGridPoint = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
-  return {
-    x: Math.round(point.x / gridSize) * gridSize,
-    y: Math.round(point.y / gridSize) * gridSize
-  };
-};
-
-/**
- * Get the nearest grid intersection
- * @param point - The reference point
- * @param gridSize - The grid size
- * @returns The nearest grid intersection
- */
-export const getNearestGridIntersection = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
-  return getNearestGridPoint(point, gridSize);
-};
-
-/**
- * Calculate distance to nearest grid line
- * @param point - The reference point
- * @param gridSize - The grid size
- * @returns Object with distances to nearest horizontal and vertical grid lines
- */
-export const distanceToNearestGridLine = (point: Point, gridSize: number = GRID_SPACING.SMALL): { x: number, y: number } => {
-  const nearestX = Math.round(point.x / gridSize) * gridSize;
-  const nearestY = Math.round(point.y / gridSize) * gridSize;
+export const createGrid = (canvas: FabricCanvas, width?: number, height?: number): FabricObject[] => {
+  if (!canvas) return [];
   
-  return {
-    x: Math.abs(point.x - nearestX),
-    y: Math.abs(point.y - nearestY)
-  };
+  const canvasWidth = width || canvas.getWidth();
+  const canvasHeight = height || canvas.getHeight();
+  
+  // Calculate grid dimensions
+  const dimensions = calculateGridDimensions(canvasWidth, canvasHeight);
+  
+  // Create grid lines
+  const gridLines = createGridLines(dimensions);
+  
+  // Add grid lines to canvas
+  gridLines.forEach(line => {
+    canvas.add(line);
+    canvas.sendToBack(line);
+  });
+  
+  canvas.requestRenderAll();
+  return gridLines;
 };
 
 /**
  * Calculate grid dimensions
- * @param width - Canvas width
- * @param height - Canvas height
- * @param cellSize - Optional cell size
- * @returns Grid dimensions object
+ * @param width Canvas width
+ * @param height Canvas height
+ * @returns Grid dimensions
  */
-export const calculateGridDimensions = (width: number, height: number, cellSize: number = 20) => {
+export const calculateGridDimensions = (width: number, height: number) => {
   return {
     width,
     height,
-    cellSize
+    smallGridSize: GRID_SPACING.SMALL,
+    largeGridSize: GRID_SPACING.LARGE
   };
 };
 
 /**
  * Create grid lines
- * @param canvas - The Fabric canvas
- * @param dimensions - Grid dimensions
- * @returns Created grid objects
+ * @param dimensions Grid dimensions
+ * @returns Array of grid line objects
  */
-export const createGridLines = (canvas: FabricCanvas, dimensions: { width: number, height: number, cellSize: number }): FabricObject[] => {
-  const { width, height, cellSize } = dimensions;
-  const gridObjects: FabricObject[] = [];
+export const createGridLines = (dimensions: any): FabricObject[] => {
+  const { width, height, smallGridSize, largeGridSize } = dimensions;
   
-  // Create vertical lines
-  for (let x = 0; x <= width; x += cellSize) {
-    const line = new Line([x, 0, x, height], {
-      stroke: '#e0e0e0',
-      strokeWidth: 0.5,
-      selectable: false,
-      evented: false,
-      objectType: 'grid'
-    });
-    canvas.add(line);
-    gridObjects.push(line);
-  }
-  
-  // Create horizontal lines
-  for (let y = 0; y <= height; y += cellSize) {
-    const line = new Line([0, y, width, y], {
-      stroke: '#e0e0e0',
-      strokeWidth: 0.5,
-      selectable: false,
-      evented: false,
-      objectType: 'grid'
-    });
-    canvas.add(line);
-    gridObjects.push(line);
-  }
-  
-  return gridObjects;
-};
-
-/**
- * Create a complete grid on the canvas
- * @param canvas - The Fabric canvas
- * @param width - Grid width
- * @param height - Grid height
- * @param cellSize - Grid cell size
- * @returns Grid render result
- */
-export const createCompleteGrid = (canvas: FabricCanvas, width: number = 800, height: number = 600, cellSize: number = 20) => {
+  // Create small grid lines
   const smallGridLines: FabricObject[] = [];
-  const largeGridLines: FabricObject[] = [];
-  const markers: FabricObject[] = [];
   
-  // Create small grid (cellSize)
-  for (let x = 0; x <= width; x += cellSize) {
+  // Vertical small grid lines
+  for (let x = 0; x <= width; x += smallGridSize) {
     const line = new Line([x, 0, x, height], {
-      stroke: '#e0e0e0',
+      stroke: '#eeeeee',
       strokeWidth: 0.5,
       selectable: false,
       evented: false,
-      objectType: 'grid'
+      objectType: 'grid',
+      hoverCursor: 'default',
+      originX: 'center',
+      originY: 'center'
     });
-    canvas.add(line);
     smallGridLines.push(line);
   }
   
-  for (let y = 0; y <= height; y += cellSize) {
+  // Horizontal small grid lines
+  for (let y = 0; y <= height; y += smallGridSize) {
     const line = new Line([0, y, width, y], {
-      stroke: '#e0e0e0',
+      stroke: '#eeeeee',
       strokeWidth: 0.5,
       selectable: false,
       evented: false,
-      objectType: 'grid'
+      objectType: 'grid',
+      hoverCursor: 'default',
+      originX: 'center',
+      originY: 'center'
     });
-    canvas.add(line);
     smallGridLines.push(line);
   }
   
-  // Create large grid (5x cellSize)
-  const largeGridSize = cellSize * 5;
+  // Create large grid lines
+  const largeGridLines: FabricObject[] = [];
+  
+  // Vertical large grid lines
   for (let x = 0; x <= width; x += largeGridSize) {
     const line = new Line([x, 0, x, height], {
-      stroke: '#b0b0b0',
+      stroke: '#dddddd',
       strokeWidth: 1,
       selectable: false,
       evented: false,
-      objectType: 'grid'
+      objectType: 'grid',
+      hoverCursor: 'default',
+      originX: 'center',
+      originY: 'center'
     });
-    canvas.add(line);
     largeGridLines.push(line);
   }
   
+  // Horizontal large grid lines
   for (let y = 0; y <= height; y += largeGridSize) {
     const line = new Line([0, y, width, y], {
-      stroke: '#b0b0b0',
+      stroke: '#dddddd',
       strokeWidth: 1,
       selectable: false,
       evented: false,
-      objectType: 'grid'
+      objectType: 'grid',
+      hoverCursor: 'default',
+      originX: 'center',
+      originY: 'center'
     });
-    canvas.add(line);
     largeGridLines.push(line);
   }
   
-  // Create grid markers
-  for (let x = largeGridSize; x < width; x += largeGridSize) {
-    const text = new Text(String(x), {
-      left: x,
-      top: 5,
-      fontSize: 10,
-      fill: '#808080',
-      selectable: false,
-      evented: false,
-      objectType: 'grid'
-    });
-    canvas.add(text);
-    markers.push(text);
-  }
-  
-  for (let y = largeGridSize; y < height; y += largeGridSize) {
-    const text = new Text(String(y), {
-      left: 5,
-      top: y,
-      fontSize: 10,
-      fill: '#808080',
-      selectable: false,
-      evented: false,
-      objectType: 'grid'
-    });
-    canvas.add(text);
-    markers.push(text);
-  }
-  
-  // Combine all grid objects
-  const gridObjects = [...smallGridLines, ...largeGridLines, ...markers];
-  
-  // Render all changes
-  canvas.renderAll();
-  
-  return {
-    gridObjects,
-    smallGridLines,
-    largeGridLines,
-    markers
-  };
+  return [...smallGridLines, ...largeGridLines];
 };
 
 /**
- * Check if an object is a grid element
- * @param obj - Fabric object to check
- * @returns Whether the object is a grid element
+ * Create a complete grid with small and large lines
+ * @param canvas Fabric canvas
+ * @returns Grid objects
+ */
+export const createCompleteGrid = (canvas: FabricCanvas): FabricObject[] => {
+  if (!canvas) return [];
+  
+  removeGrid(canvas);
+  return createGrid(canvas);
+};
+
+/**
+ * Filter grid objects from a list of objects
+ * @param objects Array of Fabric objects
+ * @returns Non-grid objects
+ */
+export const filterGridObjects = (objects: FabricObject[]): FabricObject[] => {
+  return objects.filter(obj => obj.get('objectType') !== 'grid');
+};
+
+/**
+ * Check if an object is a grid object
+ * @param obj Fabric object
+ * @returns Whether the object is a grid object
  */
 export const isGridObject = (obj: FabricObject): boolean => {
-  return obj.objectType === 'grid';
+  return obj.get('objectType') === 'grid';
 };
 
 /**
- * Snap a point to the nearest grid position
- * @param point - Point to snap
- * @param gridSize - Grid size
+ * Get the nearest grid point to a given point
+ * @param point Point to snap
+ * @param gridSize Grid size
  * @returns Snapped point
  */
-export const snapToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
-  return {
-    x: Math.round(point.x / gridSize) * gridSize,
-    y: Math.round(point.y / gridSize) * gridSize
-  };
-};
-
-/**
- * Snap a line to standard angles (0, 45, 90, etc.)
- * @param startPoint - Line start point
- * @param endPoint - Line end point
- * @returns Adjusted end point for snapped line
- */
-export const snapLineToStandardAngles = (startPoint: Point, endPoint: Point): Point => {
-  const dx = endPoint.x - startPoint.x;
-  const dy = endPoint.y - startPoint.y;
-  const angle = Math.atan2(dy, dx);
-  
-  // Snap to 0, 45, 90, 135, 180, 225, 270, 315 degrees
-  const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-  
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  return {
-    x: startPoint.x + distance * Math.cos(snapAngle),
-    y: startPoint.y + distance * Math.sin(snapAngle)
-  };
+export const getNearestGridPoint = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
+  const x = Math.round(point.x / gridSize) * gridSize;
+  const y = Math.round(point.y / gridSize) * gridSize;
+  return { x, y } as Point;
 };

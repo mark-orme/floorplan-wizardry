@@ -81,12 +81,36 @@ export const useDrawingState = () => {
     setDrawingState(createDefaultDrawingState());
   }, []);
   
+  /**
+   * Update distance measurement
+   * @param distance - Distance in meters
+   */
+  const updateDistance = useCallback((distance: number) => {
+    setDrawingState(prev => ({
+      ...prev,
+      distance
+    }));
+  }, []);
+  
+  /**
+   * Update cursor position
+   * @param point - Current cursor position
+   */
+  const updateCursorPosition = useCallback((point: Point) => {
+    setDrawingState(prev => ({
+      ...prev,
+      cursorPosition: point
+    }));
+  }, []);
+  
   return {
     drawingState,
     setDrawingState,
     startDrawing,
     updateDrawing,
     endDrawing,
-    resetDrawing
+    resetDrawing,
+    updateDistance,
+    updateCursorPosition
   };
 };

@@ -1,70 +1,80 @@
 
 /**
- * Geometry utilities for floor plan drawing
- * Provides coordinate transformation, snapping, and measurement functions
- * Re-exports all geometry utilities from the modular structure
- * @module geometry
+ * Central exports for geometry utilities
+ * @module utils/geometry
  */
+import { Point } from '@/types/core/Point';
+import { calculateArea, calculateGIA } from './geometry/areaCalculation';
+import { rotatePoint, translatePoint, scalePoint } from './geometry/transformations';
+import { validatePolygon, isPolygonClosed } from './geometry/validation';
+import { getBoundingBox, getMidpoint } from './geometry/boundingBox';
+import { pixelsToMeters, metersToPixels } from './geometry/conversion';
+import { simplifyPath, smoothPath } from './geometry/pathProcessing';
+import { snapToGrid, snapToAngle } from './grid/snapping';
 
-// Explicitly import the functions we need from different modules to avoid conflicts
-import { calculateGIA } from './geometry/areaCalculations';
-import { 
-  GRID_SPACING, 
-  CLOSE_POINT_THRESHOLD, 
-  FLOATING_POINT_TOLERANCE,
-  AREA_PRECISION,
-  DISTANCE_PRECISION 
-} from './geometry/constants';
-import { screenToCanvasCoordinates } from './geometry/coordinateTransforms';
-import { snapToGrid } from './grid/core';
-import { 
-  calculateDistance, 
-  formatDistance, 
-  isExactGridMultiple as lineIsExactGridMultiple 
-} from './geometry/lineOperations';
-import { calculateMidpoint } from './geometry/midpointCalculation';
-import { straightenStroke } from './geometry/straightening';
-
-// Re-export specific functions with non-conflicting names
-export {
-  // From areaCalculations
-  calculateGIA,
-  
-  // From constants
-  GRID_SPACING,
-  AREA_PRECISION,
-  DISTANCE_PRECISION,
-  CLOSE_POINT_THRESHOLD,
-  FLOATING_POINT_TOLERANCE,
-  
-  // From coordinateTransforms
-  screenToCanvasCoordinates,
-  
-  // From gridOperations (now in grid/core)
-  snapToGrid,
-  
-  // From lineOperations (with renamed export to avoid conflict)
+// Import line operations
+import {
   calculateDistance,
   formatDistance,
-  lineIsExactGridMultiple,
-  
-  // From midpointCalculation
+  isExactGridMultiple,
   calculateMidpoint,
+  calculateAngle
+} from './geometry/lineOperations';
+
+// Re-export all geometry functions
+export {
+  // Area calculations
+  calculateArea,
+  calculateGIA,
   
-  // From straightening
-  straightenStroke
+  // Transformations
+  rotatePoint,
+  translatePoint,
+  scalePoint,
+  
+  // Validation
+  validatePolygon,
+  isPolygonClosed,
+  
+  // Bounding box operations
+  getBoundingBox,
+  getMidpoint,
+  
+  // Conversion utilities
+  pixelsToMeters,
+  metersToPixels,
+  
+  // Path processing
+  simplifyPath,
+  smoothPath,
+  
+  // Line operations
+  calculateDistance,
+  formatDistance,
+  isExactGridMultiple,
+  calculateMidpoint,
+  calculateAngle,
+  
+  // Grid operations
+  snapToGrid,
+  snapToAngle
 };
 
 /**
- * This module serves as a centralized export point for all geometry-related
- * functionality in the application. It does not contain any direct implementation
- * but instead re-exports from specialized modules for better code organization.
- * 
- * Key categories of geometry utilities:
- * - Constants: Fundamental measurement and tolerance values
- * - Grid Operations: Functions for snapping and aligning to the grid
- * - Line Operations: Functions for line manipulation and straightening
- * - Area Calculations: Functions for calculating areas of polygons
- * - Coordinate Transforms: Functions for converting between coordinate systems
- * - Midpoint Calculation: Functions for finding midpoints of lines
+ * Calculate straight-line distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance in pixels
  */
+export const getDistance = (p1: Point, p2: Point): number => {
+  return calculateDistance(p1, p2);
+};
+
+/**
+ * Format a distance for display
+ * @param pixels Distance in pixels
+ * @returns Formatted distance string with units
+ */
+export const formatDisplayDistance = (pixels: number): string => {
+  return formatDistance(pixels);
+};

@@ -4,7 +4,7 @@
  * Re-exports all types for easier imports
  */
 
-// Core types
+// Core types - direct exports
 export * from './core/Point';
 export * from './core/FloorPlan';
 export * from './core/Geometry';
@@ -22,4 +22,9 @@ export * from './geometryTypes';
 export * from './gridTypes';
 export * from './debugTypes';
 
-// Make sure not to re-export duplicate types
+// Export specific named exports to avoid ambiguity
+export { createPoint } from './core/Point';
+export { createFloorPlan } from './core/FloorPlan';
+export { GridCreationState } from './core/GridState';
+export { PerformanceStats } from './core/DebugInfo';
+export { CanvasDimensions } from './core/Geometry';
