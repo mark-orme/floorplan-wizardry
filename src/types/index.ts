@@ -1,5 +1,4 @@
 
-
 /**
  * Central type exports
  * Re-exports all types for easier imports
@@ -44,4 +43,3 @@ export type { Point as GeometryPoint } from './geometryTypes';
 // Export zoom constants and types
 export { ZOOM_CONSTRAINTS } from './zoomTypes';
 export type { ZoomDirection as ZoomDirectionType } from './zoomTypes';
-

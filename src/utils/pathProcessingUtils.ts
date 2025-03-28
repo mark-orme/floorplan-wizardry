@@ -11,7 +11,7 @@ export const hasPoints = (obj: FabricObject): boolean => {
 };
 
 // Interface for objects with points
-interface PolygonObject extends Omit<FabricObject, 'type'> {
+interface PolygonObject extends FabricObject {
   type: string; // Make type explicitly required
   points?: Array<{x: number, y: number}>;
 }

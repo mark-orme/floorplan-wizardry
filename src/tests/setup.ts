@@ -1,5 +1,3 @@
-
-
 import '@testing-library/jest-dom';  // Import jest-dom for toBeInTheDocument
 import { expect } from 'vitest';
 import { vi } from 'vitest';
@@ -109,6 +107,7 @@ class CanvasRenderingContext2DMock {
   strokeText(text: string, x: number, y: number, maxWidth?: number) {}
   save() {}
   restore() {}
+  transferFromImageBitmap(bitmap: ImageBitmap): void {}
 }
 
 // Mock for the canvas element
@@ -197,4 +196,3 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   },
   configurable: true
 });
-
