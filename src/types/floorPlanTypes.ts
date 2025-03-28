@@ -9,7 +9,8 @@ import {
   Wall as CoreWall, 
   Stroke as CoreStroke, 
   Room as CoreRoom, 
-  FloorPlanMetadata as CoreFloorPlanMetadata 
+  FloorPlanMetadata as CoreFloorPlanMetadata,
+  StrokeType as CoreStrokeType
 } from './core/FloorPlan';
 
 /**
@@ -49,15 +50,11 @@ export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehan
  * Represents a wall in a floor plan
  * Compatible with CoreWall from core/FloorPlan
  */
-export interface Wall extends Omit<CoreWall, 'start' | 'end'> {
+export interface Wall extends CoreWall {
   /** Start point of the wall - maps to 'start' in CoreWall */
   startPoint: Point;
   /** End point of the wall - maps to 'end' in CoreWall */
   endPoint: Point;
-  /** Start point for CoreWall compatibility */
-  start: Point;
-  /** End point for CoreWall compatibility */
-  end: Point;
 }
 
 /**
@@ -117,7 +114,7 @@ export interface FloorPlan extends Omit<CoreFloorPlan, 'walls' | 'rooms' | 'stro
   /** Canvas data for storage */
   canvasData: any;
   /** Floor level */
-  level?: number;
+  level: number;
   /** Paper size */
   paperSize?: string | PaperSize;
 }
