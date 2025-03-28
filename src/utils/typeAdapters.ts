@@ -106,7 +106,7 @@ export function coreToAppStroke(stroke: CoreStroke): AppStroke {
     type: appStrokeType,
     color: stroke.color,
     thickness: stroke.thickness,
-    width: stroke.thickness // Ensure width is set
+    width: stroke.width || stroke.thickness // Ensure width is set
   };
 }
 
@@ -210,6 +210,8 @@ export function coreToAppWall(wall: CoreWall): AppWall {
     id: wall.id,
     startPoint: wall.start,
     endPoint: wall.end,
+    start: wall.start, // Ensure start is included
+    end: wall.end,     // Ensure end is included
     thickness: wall.thickness,
     height: wall.height || 0,
     color: wall.color,
@@ -223,8 +225,8 @@ export function coreToAppWall(wall: CoreWall): AppWall {
 export function appToCoreWall(wall: AppWall): CoreWall {
   return {
     id: wall.id,
-    start: wall.startPoint,
-    end: wall.endPoint,
+    start: wall.startPoint || wall.start, // Use either startPoint or start
+    end: wall.endPoint || wall.end,      // Use either endPoint or end
     thickness: wall.thickness,
     color: wall.color || '#000000',
     height: wall.height,

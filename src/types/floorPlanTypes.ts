@@ -4,7 +4,13 @@
  * @module floorPlanTypes
  */
 import { Point } from './geometryTypes';
-import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom } from './core/FloorPlan';
+import { 
+  FloorPlan as CoreFloorPlan, 
+  Wall as CoreWall, 
+  Stroke as CoreStroke, 
+  Room as CoreRoom, 
+  FloorPlanMetadata as CoreFloorPlanMetadata 
+} from './core/FloorPlan';
 
 /**
  * Paper size enumeration
@@ -71,14 +77,14 @@ export interface Stroke extends Omit<CoreStroke, 'type' | 'width'> {
   /** Type of stroke */
   type: StrokeType | StrokeTypeLiteral;
   /** Stroke width in pixels (equivalent to thickness for API compatibility) */
-  width: number;
+  width?: number; // Changed to optional to match core
 }
 
 /**
  * Floor plan metadata
  * Contains additional information about a floor plan
  */
-export interface FloorPlanMetadata {
+export interface FloorPlanMetadata extends CoreFloorPlanMetadata {
   /** Creation timestamp */
   createdAt: number;
   /** Last update timestamp */
@@ -93,23 +99,23 @@ export interface FloorPlanMetadata {
  * Floor plan definition
  * Represents a complete floor plan with all its elements
  */
-export interface FloorPlan extends Omit<CoreFloorPlan, 'walls' | 'rooms' | 'strokes' | 'metadata'> {
+export interface FloorPlan extends Omit<CoreFloorPlan, 'walls' | 'rooms' | 'strokes' | 'metadata' | 'canvasData'> {
   /** Floor plan display label - now required to match core FloorPlan */
   label: string;
   /** Array of drawing strokes */
   strokes: Stroke[];
   /** Array of walls */
-  walls?: Wall[];
+  walls: Wall[];
   /** Array of rooms */
-  rooms?: Room[];
+  rooms: Room[];
   /** Floor plan metadata */
-  metadata?: FloorPlanMetadata;
+  metadata: FloorPlanMetadata;
   /** Serialized canvas state */
   canvasJson?: string;
   /** Gross internal area in square meters */
   gia?: number;
   /** Canvas data for storage */
-  canvasData?: any;
+  canvasData: any;
   /** Floor level */
   level?: number;
   /** Paper size */
