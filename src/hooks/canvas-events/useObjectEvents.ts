@@ -57,9 +57,20 @@ export const useObjectEvents = ({
     // Handle selection clearing if needed
   }, []);
   
+  // Define event types to listen for
+  const eventTypes = [
+    'object:modified',
+    'object:added',
+    'object:removed',
+    'object:selected',
+    'selection:cleared'
+  ];
+  
   // Set up handlers with useCanvasHandlers
   return useCanvasHandlers({
     fabricCanvasRef,
+    tool,
+    eventTypes,
     handlers: {
       'object:modified': handleObjectModified,
       'object:added': handleObjectAdded,

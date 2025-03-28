@@ -127,6 +127,11 @@ export const typescriptRules = {
             "name": "@/hooks/useCanvasState",
             "importNames": ["DrawingTool"],
             "message": "Use DrawingTool from @/types/core/DrawingTool instead."
+          },
+          {
+            "name": "fabric",
+            "importNames": ["fabric"],
+            "message": "Use default import for fabric: import fabric from 'fabric';"
           }
         ]
       }

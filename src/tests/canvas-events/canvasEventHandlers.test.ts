@@ -1,8 +1,8 @@
-
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react-hooks';
 import { useKeyboardEvents } from '@/hooks/canvas-events/useKeyboardEvents';
 import { DrawingMode } from '@/constants/drawingModes';
+import type { Canvas } from 'fabric';
 
 // Mock event listeners
 describe('useKeyboardEvents', () => {

@@ -3,7 +3,7 @@
  * Types for canvas event handlers
  * @module canvas-events/types
  */
-import { fabric } from 'fabric';
+import fabric from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**

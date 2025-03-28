@@ -3,7 +3,7 @@
  * Canvas events exports
  * @module canvas-events
  */
-import { fabric } from 'fabric';
+import fabric from 'fabric';
 
 // Export hooks
 export { useCanvasHandlers } from './useCanvasHandlers';

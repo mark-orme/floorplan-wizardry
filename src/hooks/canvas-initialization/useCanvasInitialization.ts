@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useCanvasCreation } from "../useCanvasCreation";
 import { useCanvasBrush } from "../useCanvasBrush";
 import { useCanvasCleanup } from "../useCanvasCleanup";
-import { DrawingTool } from "../useCanvasState";
+import { DrawingMode } from "@/constants/drawingModes";
 import { DebugInfoState, CanvasDimensions } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
@@ -22,7 +22,7 @@ import { resetInitializationState } from "@/utils/canvas/safeCanvasInitializatio
 // Type definition for the props to ensure they're all required
 interface UseCanvasInitializationProps {
   canvasDimensions: CanvasDimensions;
-  tool?: DrawingTool;
+  tool?: DrawingMode;
   currentFloor?: number;
   setZoomLevel?: React.Dispatch<React.SetStateAction<number>>;
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
@@ -42,7 +42,7 @@ let initialToastShown = false;
  */
 export const useCanvasInitialization = ({
   canvasDimensions,
-  tool = 'select',
+  tool = DrawingMode.SELECT,  // Use enum value instead of string
   currentFloor = 0,
   setZoomLevel = () => {},
   setDebugInfo,

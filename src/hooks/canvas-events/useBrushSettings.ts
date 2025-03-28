@@ -4,7 +4,7 @@
  * @module canvas-events/useBrushSettings
  */
 import { useCallback, useEffect } from 'react';
-import { fabric } from 'fabric';
+import fabric from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { EventHandlerResult, UseBrushSettingsProps } from './types';
 

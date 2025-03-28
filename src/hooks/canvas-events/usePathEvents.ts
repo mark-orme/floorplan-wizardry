@@ -1,9 +1,10 @@
+
 /**
  * Hook for handling path-related canvas events
  * @module canvas-events/usePathEvents
  */
 import { useCallback, useEffect } from 'react';
-import { fabric } from 'fabric';
+import fabric from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { EventHandlerResult, UsePathEventsProps } from './types';
 
