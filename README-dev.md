@@ -1,3 +1,4 @@
+
 # FloorPlan Designer - Developer Guide
 
 This document provides comprehensive technical details and development guidelines for the FloorPlan Designer application. It's intended for developers working on the codebase.
@@ -100,17 +101,17 @@ src/
 
 1. **TypeScript**:
    - Use strict typing with proper interfaces and type definitions
-   - Avoid `any` types and `@ts-ignore` directives
+   - Never use `any` types or `@ts-ignore` directives
    - Create dedicated type files for complex interfaces
    - Prefix interfaces with 'I' (e.g., IUserData)
    - Always include explicit function return types
    - Handle all promises properly (await or .catch())
-   - Use strict boolean expressions
+   - Use strict boolean expressions, avoiding implicit conversions
 
 2. **React Best Practices**:
    - Use functional components with hooks
    - Implement proper memo/useMemo for performance optimization
-   - Split large components into smaller, reusable ones
+   - Split large components into smaller, reusable ones (max 200 lines)
    - Avoid unnecessary re-renders
 
 3. **Documentation**:
@@ -321,3 +322,23 @@ The project enforces strict type safety through ESLint rules:
    - Build production assets
    - Deploy to staging environment first
    - Verify functionality before production deployment
+
+## Code Audit Tools
+
+Regular code quality audits are performed using:
+
+1. **ESLint**: 
+   - Run `npm run lint` to check for code quality issues
+   - Custom rules enforce TypeScript best practices
+
+2. **Depcheck**:
+   - Run `npx depcheck` to identify unused dependencies
+   - Keep dependencies minimal and up-to-date
+
+3. **Type Coverage**:
+   - Ensure complete type coverage across the codebase
+   - No implicit 'any' types allowed
+
+4. **Bundle Analysis**:
+   - Monitor bundle size impacts of new dependencies
+   - Optimize code splitting and lazy loading

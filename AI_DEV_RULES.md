@@ -22,6 +22,7 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Use optional chaining** for potentially undefined properties: `obj?.prop`
 - **Check object existence** before accessing properties: `if (obj && 'prop' in obj)`
 - **Use nullish coalescing** for default values: `const value = obj.value ?? defaultValue`
+- **Use array methods with type guards** when filtering or mapping union types
 
 ## Module Organization
 
@@ -30,6 +31,7 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Keep files focused and small** (under 200 lines) - create more files rather than growing existing ones
 - **Export only what's needed** from a module - avoid `export *` where possible
 - **Use barrel exports** for related functionality to simplify imports
+- **Split large components** into smaller, focused components with clear responsibilities
 
 ## Code Quality
 
@@ -39,6 +41,8 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Write tests** that verify type contracts and behavior
 - **Avoid magic numbers** - extract constants with meaningful names
 - **Use pre-commit hooks** to enforce linting rules before committing
+- **Handle all promises** explicitly with await or .catch()
+- **Use strict boolean expressions** instead of relying on JavaScript's truthy/falsy behavior
 
 ## Debugging
 
@@ -46,6 +50,8 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Add explicit error handling** for async operations and complex logic
 - **Include helpful error messages** that indicate where the error occurred
 - **Use performance monitoring** for complex canvas operations
+- **Implement appropriate fallback mechanisms** for error recovery
+- **Add retry logic** for operations that might fail transiently
 
 ## Git and Pre-commit
 
@@ -53,6 +59,7 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Lint staged files** ensures only clean code is committed
 - **Follow commit message conventions** for clear history
 - **Keep PRs focused** on single concerns for easier review
+- **Include comprehensive test coverage** for new functionality
 
 ## Performance Considerations
 
@@ -60,3 +67,22 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Use batching** when creating multiple canvas objects
 - **Implement proper cleanup** to prevent memory leaks
 - **Be aware of rendering cycles** in React components
+- **Leverage memoization** for expensive computations
+- **Consider code splitting** for large feature sets
+
+## Working with the Fabric.js Canvas
+
+- **Use appropriate event types** - never use generic Event types
+- **Clean up event listeners** when components unmount
+- **Batch canvas operations** when possible for better performance
+- **Handle canvas errors gracefully** with fallback mechanisms
+- **Implement proper coordinate transformation** between different coordinate systems
+- **Document assumptions** about coordinate spaces in function JSDoc comments
+
+## Project-Specific Conventions
+
+- **Floor plan coordinates** are always in meters (real-world units)
+- **Canvas coordinates** are in pixels based on the current zoom level
+- **Grid lines** follow a consistent naming convention for reliable selection
+- **Drawing tools** should implement a consistent interface
+- **State management** follows established patterns with context providers and hooks

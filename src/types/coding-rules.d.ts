@@ -89,5 +89,45 @@
 //   return user && user.isActive; // Error: Implicitly converts to boolean
 // }
 
+/**
+ * Example of proper error handling
+ */
+// GOOD: Explicit error handling
+// async function fetchUserData(userId: string): Promise<IUser | null> {
+//   try {
+//     const response = await api.get(`/users/${userId}`);
+//     return response.data;
+//   } catch (error) {
+//     console.error('Failed to fetch user data:', error);
+//     return null;
+//   }
+// }
+
+// BAD: No error handling
+// async function fetchUserData(userId: string): Promise<IUser> {
+//   const response = await api.get(`/users/${userId}`);
+//   return response.data;
+// }
+
+/**
+ * Example of proper file size management
+ */
+// GOOD: Split large components into smaller ones
+// // UserProfile.tsx
+// export function UserProfile({ userId }: { userId: string }): React.ReactElement {
+//   return (
+//     <div>
+//       <UserHeader userId={userId} />
+//       <UserDetails userId={userId} />
+//       <UserActions userId={userId} />
+//     </div>
+//   );
+// }
+// 
+// // UserHeader.tsx, UserDetails.tsx, UserActions.tsx in separate files
+
+// BAD: Everything in one large file
+// // UserProfile.tsx with 500+ lines of code containing all logic and UI
+
 // Note: These examples are commented out to prevent them from being included in 
 // your actual type definitions. They serve as documentation only.
