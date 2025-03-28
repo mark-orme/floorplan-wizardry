@@ -3,18 +3,113 @@
  * Types for canvas event handlers
  * @module canvas-events/types
  */
-import type { MutableRefObject } from 'react';
-import type { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath } from 'fabric';
-import type { DrawingMode } from '@/constants/drawingModes';
-import type { Point } from '@/types/drawingTypes';
+import { DrawingMode } from '@/constants/drawingModes';
+
+/**
+ * Base event props interface
+ */
+export interface BaseEventProps {
+  /** Reference to fabric canvas */
+  fabricCanvasRef: React.MutableRefObject<fabric.Canvas | null>;
+  /** Current drawing tool */
+  tool: DrawingMode;
+}
+
+/**
+ * Keyboard event props
+ */
+export interface UseKeyboardEventsProps extends BaseEventProps {
+  /** Handle undo operation */
+  handleUndo: () => void;
+  /** Handle redo operation */
+  handleRedo: () => void;
+  /** Delete selected objects */
+  deleteSelectedObjects: () => void;
+  /** Handle escape key */
+  handleEscape?: () => void;
+  /** Handle delete key */
+  handleDelete?: () => void;
+}
+
+/**
+ * Mouse event props
+ */
+export interface UseMouseEventsProps extends BaseEventProps {
+  /** Handle mouse down event */
+  handleMouseDown?: (e: MouseEvent | TouchEvent) => void;
+  /** Handle mouse move event */
+  handleMouseMove?: (e: MouseEvent | TouchEvent) => void;
+  /** Handle mouse up event */
+  handleMouseUp?: (e?: MouseEvent | TouchEvent) => void;
+}
+
+/**
+ * Path events props
+ */
+export interface UsePathEventsProps extends BaseEventProps {
+  /** Save current canvas state */
+  saveCurrentState: () => void;
+  /** Process a newly created path */
+  processCreatedPath?: (path: fabric.Path) => void;
+  /** Handle mouse up event */
+  handleMouseUp?: (e?: MouseEvent | TouchEvent) => void;
+}
+
+/**
+ * Zoom tracking props
+ */
+export interface UseZoomTrackingProps extends BaseEventProps {
+  /** Update zoom level callback */
+  updateZoomLevel?: () => void;
+}
+
+/**
+ * Zoom tracking results
+ */
+export interface UseZoomTrackingResult extends EventHandlerResult {
+  /** Zoom in function */
+  zoomIn: () => void;
+  /** Zoom out function */
+  zoomOut: () => void;
+  /** Reset zoom function */
+  resetZoom: () => void;
+  /** Set zoom to specific level */
+  setZoom: (level: number) => void;
+  /** Current zoom level */
+  currentZoom: number;
+}
+
+/**
+ * Object events props
+ */
+export interface UseObjectEventsProps extends BaseEventProps {
+  /** Save current canvas state */
+  saveCurrentState: () => void;
+}
+
+/**
+ * Generic event handler result
+ */
+export interface EventHandlerResult {
+  /** Register event handlers */
+  register: () => void;
+  /** Unregister event handlers */
+  unregister: () => void;
+  /** Clean up resources */
+  cleanup: () => void;
+}
 
 /**
  * Zoom level constants
  */
 export const ZOOM_LEVEL_CONSTANTS = {
+  /** Default zoom level */
+  DEFAULT_ZOOM: 1,
+  /** Minimum zoom level */
   MIN_ZOOM: 0.1,
-  MAX_ZOOM: 5.0,
-  DEFAULT_ZOOM: 1.0,
+  /** Maximum zoom level */
+  MAX_ZOOM: 5,
+  /** Zoom step */
   ZOOM_STEP: 0.1
 };
 
@@ -27,176 +122,51 @@ export type ZoomDirection = 'in' | 'out';
  * Zoom options interface
  */
 export interface ZoomOptions {
+  /** Zoom level */
   level: number;
+  /** Center X coordinate */
   centerX?: number;
+  /** Center Y coordinate */
   centerY?: number;
+  /** Skip rendering */
   skipRender?: boolean;
 }
 
 /**
- * Base props interface for event handlers
- * @interface BaseEventProps
+ * Canvas events enum
  */
-export interface BaseEventProps {
-  /** Reference to the Fabric canvas instance */
-  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
-  /** Current drawing tool */
-  tool: DrawingMode;
+export enum CanvasEvents {
+  /** Object added event */
+  OBJECT_ADDED = 'object:added',
+  /** Object modified event */
+  OBJECT_MODIFIED = 'object:modified',
+  /** Object removed event */
+  OBJECT_REMOVED = 'object:removed',
+  /** Selection created event */
+  SELECTION_CREATED = 'selection:created',
+  /** Selection cleared event */
+  SELECTION_CLEARED = 'selection:cleared',
+  /** Path created event */
+  PATH_CREATED = 'path:created'
 }
-
-/**
- * Result of event handler hooks
- * @interface EventHandlerResult
- */
-export interface EventHandlerResult {
-  /** Register all event handlers */
-  register: () => void;
-  /** Unregister all event handlers */
-  unregister: () => void;
-  /** Clean up resources */
-  cleanup: () => void;
-}
-
-/**
- * Props for canvas event handlers
- * @interface UseCanvasHandlersProps
- */
-export interface UseCanvasHandlersProps {
-  /** Reference to the Fabric canvas instance */
-  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
-  /** Event handlers map */
-  handlers: Record<string, (event?: unknown) => void>;
-}
-
-/**
- * Canvas events type
- */
-export type CanvasEvents = 'object:added' | 'object:modified' | 'object:removed' | 'object:selected' | 'selection:cleared';
 
 /**
  * Event handler map type
  */
-export type EventHandlerMap = Record<string, (event?: unknown) => void>;
+export type EventHandlerMap = Record<string, (e: any) => void>;
 
 /**
- * Base event handler props
+ * Editable fabric object interface
  */
-export interface BaseEventHandlerProps {
-  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
-}
-
-/**
- * Target event with target property
- */
-export interface TargetEvent {
-  target: FabricObject;
-}
-
-/**
- * Editable Fabric object
- */
-export interface EditableFabricObject extends FabricObject {
+export interface EditableFabricObject extends fabric.Object {
+  /** Whether the object is being edited */
   isEditing?: boolean;
 }
 
 /**
- * Props for object events
- * @interface UseObjectEventsProps
+ * Target event interface
  */
-export interface UseObjectEventsProps extends BaseEventProps {
-  /** Save current state function */
-  saveCurrentState: () => void;
-}
-
-/**
- * Props for brush settings
- * @interface UseBrushSettingsProps
- */
-export interface UseBrushSettingsProps extends BaseEventProps {
-  /** Line color */
-  lineColor?: string;
-  /** Line thickness */
-  lineThickness?: number;
-}
-
-/**
- * Props for zoom events
- * @interface UseZoomEventsProps
- */
-export interface UseZoomEventsProps extends BaseEventProps {
-  /** Function to handle zoom changes */
-  handleZoom: (direction: ZoomDirection) => void;
-  /** Current zoom level */
-  zoomLevel: number;
-  /** Function to set zoom level */
-  setZoomLevel: (level: number) => void;
-}
-
-/**
- * Props for zoom tracking
- */
-export interface UseZoomTrackingProps extends BaseEventProps {
-  /** Function to update zoom level */
-  updateZoomLevel: () => void;
-}
-
-/**
- * Result for zoom tracking
- */
-export interface UseZoomTrackingResult extends EventHandlerResult {
-  zoomIn: () => void;
-  zoomOut: () => void;
-  resetZoom: () => void;
-  setZoom: (level: number) => void;
-  currentZoom?: number;
-}
-
-/**
- * Props for mouse events
- * @interface UseMouseEventsProps
- */
-export interface UseMouseEventsProps extends BaseEventProps {
-  /** Function to save current state before changes */
-  saveCurrentState: () => void;
-  /** Grid layer objects reference */
-  gridLayerRef?: MutableRefObject<FabricObject[]>;
-  /** Line thickness */
-  lineThickness?: number;
-  /** Line color */
-  lineColor?: string;
-  /** Handle mouse down event */
-  handleMouseDown?: (e: any) => void;
-  /** Handle mouse move event */
-  handleMouseMove?: (e: any) => void;
-  /** Handle mouse up event */
-  handleMouseUp?: (e: any) => void;
-}
-
-/**
- * Props for keyboard events
- * @interface UseKeyboardEventsProps
- */
-export interface UseKeyboardEventsProps extends BaseEventProps {
-  /** Function to handle undo operation */
-  handleUndo: () => void;
-  /** Function to handle redo operation */
-  handleRedo: () => void;
-  /** Function to delete selected objects */
-  deleteSelectedObjects: () => void;
-  /** Handle escape key press */
-  handleEscape?: () => void;
-  /** Handle delete key press */
-  handleDelete?: () => void;
-}
-
-/**
- * Props for path events
- */
-export interface UsePathEventsProps extends BaseEventProps {
-  /** Function to save current state before changes */
-  saveCurrentState: () => void;
-  /** Function to process created path */
-  processCreatedPath?: (path: FabricPath) => void;
-  /** Handle mouse up event */
-  handleMouseUp?: (e?: any) => void;
+export interface TargetEvent {
+  /** Target object */
+  target: fabric.Object;
 }

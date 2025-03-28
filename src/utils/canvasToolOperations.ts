@@ -5,7 +5,7 @@
  * @module canvasToolOperations
  */
 import { Canvas, Object as FabricObject, Line, PencilBrush } from "fabric";
-import { DrawingTool } from "@/constants/drawingModes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { separateGridAndDrawingObjects } from "./canvasLayerOrdering";
 import { 
   DEFAULT_LINE_THICKNESS,
@@ -81,20 +81,20 @@ const ensureBrushIsInitialized = (
 
 /**
  * Function to handle tool changes
- * @param {DrawingTool} newTool - The tool to switch to
+ * @param {DrawingMode} newTool - The tool to switch to
  * @param {Canvas | null} canvas - The Fabric.js canvas instance
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @param {number} lineThickness - Current line thickness
  * @param {string} lineColor - Current line color
- * @param {React.Dispatch<React.SetStateAction<DrawingTool>>} setTool - Function to update tool state
+ * @param {React.Dispatch<React.SetStateAction<DrawingMode>>} setTool - Function to update tool state
  */
 export const handleToolChange = (
-  newTool: DrawingTool,
+  newTool: DrawingMode,
   canvas: Canvas | null,
   gridLayerRef: React.MutableRefObject<FabricObject[]>,
   lineThickness: number,
   lineColor: string,
-  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>
 ): void => {
   if (!canvas) {
     console.error("Cannot change tool: Canvas is null");
@@ -111,7 +111,7 @@ export const handleToolChange = (
   
   // Apply tool-specific settings
   switch (newTool) {
-    case "draw":
+    case DrawingMode.DRAW:
       // Enable drawing mode
       canvas.isDrawingMode = true;
       if (canvas.freeDrawingBrush) {
@@ -130,9 +130,9 @@ export const handleToolChange = (
       });
       break;
       
-    case "wall":
-    case "room":
-    case "line":
+    case DrawingMode.WALL:
+    case DrawingMode.ROOM:
+    case DrawingMode.LINE:
       // Custom drawing modes - disable native drawing but also disable selection
       canvas.isDrawingMode = false;
       canvas.selection = false;
@@ -142,7 +142,7 @@ export const handleToolChange = (
       console.log(`Custom drawing mode: ${newTool}, selection disabled`);
       break;
       
-    case "select":
+    case DrawingMode.SELECT:
       canvas.isDrawingMode = false;
       canvas.selection = true; // Enable selection of objects
       canvas.defaultCursor = 'default';
@@ -151,7 +151,7 @@ export const handleToolChange = (
       console.log("Selection mode enabled");
       break;
       
-    case "eraser":
+    case DrawingMode.ERASER:
       canvas.isDrawingMode = false;
       canvas.selection = true;
       canvas.defaultCursor = 'cell';
@@ -232,24 +232,24 @@ export const handleZoom = (
 /**
  * Set the active tool on the canvas
  * @param {Canvas | null} canvas - The Fabric.js canvas instance
- * @param {DrawingTool} tool - The tool to set
+ * @param {DrawingMode} tool - The tool to set
  */
 export const setActiveTool = (
   canvas: Canvas | null,
-  tool: DrawingTool
+  tool: DrawingMode
 ): void => {
   if (!canvas) return;
   
   // Apply tool-specific settings
   switch (tool) {
-    case "draw":
+    case DrawingMode.DRAW:
       canvas.isDrawingMode = true;
       break;
-    case "select":
+    case DrawingMode.SELECT:
       canvas.isDrawingMode = false;
       canvas.selection = true;
       break;
-    case "eraser":
+    case DrawingMode.ERASER:
       canvas.isDrawingMode = false;
       canvas.selection = true;
       break;
@@ -275,13 +275,13 @@ export const isGridObject = (obj: FabricObject): boolean => {
  * Force refreshes all canvas tools and states
  * Useful when canvas behavior becomes inconsistent
  * @param {Canvas | null} canvas - The Fabric.js canvas instance
- * @param {DrawingTool} currentTool - Current active tool
+ * @param {DrawingMode} currentTool - Current active tool
  * @param {string} lineColor - Current line color 
  * @param {number} lineThickness - Current line thickness
  */
 export const refreshCanvasToolState = (
   canvas: Canvas | null,
-  currentTool: DrawingTool,
+  currentTool: DrawingMode,
   lineColor: string,
   lineThickness: number
 ): void => {
@@ -299,10 +299,10 @@ export const refreshCanvasToolState = (
   canvas.freeDrawingBrush.width = lineThickness || DEFAULT_LINE_THICKNESS;
   
   // Set drawing mode based on tool
-  canvas.isDrawingMode = currentTool === 'draw';
+  canvas.isDrawingMode = currentTool === DrawingMode.DRAW;
   
   // Reset selection state based on tool
-  if (currentTool === 'select') {
+  if (currentTool === DrawingMode.SELECT) {
     canvas.selection = true;
     enableSelection(canvas);
   } else {

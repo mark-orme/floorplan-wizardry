@@ -7,17 +7,14 @@
 import { useState } from 'react';
 import { BRUSH_CONSTANTS } from '@/constants/brushConstants';
 import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
-import { DrawingTool } from '@/constants/drawingModes';
-
-// Export DrawingTool for backward compatibility
-export type { DrawingTool };
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Canvas state interface
  */
 export interface CanvasState {
   /** Active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current zoom level */
   zoomLevel: number;
   /** Line thickness */
@@ -32,7 +29,7 @@ export interface CanvasState {
  * Default canvas state values
  */
 export const DEFAULT_CANVAS_STATE: CanvasState = {
-  tool: 'select' as DrawingTool,
+  tool: DrawingMode.SELECT,
   zoomLevel: ZOOM_CONSTANTS.DEFAULT_ZOOM,
   lineThickness: BRUSH_CONSTANTS.DEFAULT_PENCIL_WIDTH,
   lineColor: BRUSH_CONSTANTS.DEFAULT_PENCIL_COLOR,
@@ -50,7 +47,7 @@ export const useCanvasState = () => {
    * Set active drawing tool
    * @param tool - Drawing tool to set
    */
-  const setTool = (tool: DrawingTool) => {
+  const setTool = (tool: DrawingMode) => {
     setState(prev => ({ ...prev, tool }));
   };
   

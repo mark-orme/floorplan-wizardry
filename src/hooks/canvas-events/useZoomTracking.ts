@@ -4,8 +4,7 @@
  * @module canvas-events/useZoomTracking
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EventHandlerResult, UseZoomTrackingProps, UseZoomTrackingResult } from './types';
-import { ZOOM_LEVEL_CONSTANTS } from './types';
+import { EventHandlerResult, UseZoomTrackingProps, UseZoomTrackingResult, ZOOM_LEVEL_CONSTANTS } from './types';
 
 /**
  * Hook for tracking and managing canvas zoom operations

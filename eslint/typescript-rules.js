@@ -54,9 +54,14 @@ export const typescriptRules = {
     "@typescript-eslint/prefer-optional-chain": "error",
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/prefer-ts-expect-error": "error",
+    "@typescript-eslint/no-duplicate-imports": "error",
     
     // Additional strict rules requested
-    "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/no-misused-promises": ["error", { 
+      "checksVoidReturn": { 
+        "attributes": false 
+      } 
+    }],
     "@typescript-eslint/strict-boolean-expressions": "warn",
     "@typescript-eslint/no-redundant-type-constituents": "error",
     

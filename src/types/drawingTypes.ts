@@ -73,3 +73,6 @@ export interface ZoomOptions {
 export const createDefaultDrawingState = (): CoreDrawingState => {
   return originalCreateDefaultDrawingState();
 };
+
+// Re-export the DrawingMode enum for backwards compatibility
+export { DrawingMode };

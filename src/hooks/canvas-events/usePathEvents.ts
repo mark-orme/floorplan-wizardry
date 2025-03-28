@@ -5,7 +5,24 @@
  */
 import { useCallback, useEffect } from 'react';
 import { Path as FabricPath } from 'fabric';
-import { EventHandlerResult, UsePathEventsProps } from './types';
+import { DrawingMode } from '@/constants/drawingModes';
+import { EventHandlerResult } from './types';
+
+/**
+ * Props for path events hook
+ */
+export interface UsePathEventsProps {
+  /** Reference to fabric canvas */
+  fabricCanvasRef: React.MutableRefObject<fabric.Canvas | null>;
+  /** Current drawing tool */
+  tool: DrawingMode;
+  /** Save current canvas state */
+  saveCurrentState: () => void;
+  /** Process a newly created path */
+  processCreatedPath?: (path: FabricPath) => void;
+  /** Handle mouse up event */
+  handleMouseUp?: (e?: MouseEvent | TouchEvent) => void;
+}
 
 /**
  * Hook for handling path-related events on canvas
@@ -14,6 +31,7 @@ import { EventHandlerResult, UsePathEventsProps } from './types';
  */
 export const usePathEvents = ({
   fabricCanvasRef,
+  tool,
   saveCurrentState,
   processCreatedPath,
   handleMouseUp
