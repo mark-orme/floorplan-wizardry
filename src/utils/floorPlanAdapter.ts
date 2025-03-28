@@ -58,7 +58,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
     updatedAt: appPlan.updatedAt || new Date().toISOString(),
     gia: appPlan.gia || 0,
     level: appPlan.level || appPlan.index || 0,
-    index: appPlan.index,
+    index: appPlan.index || 0, // Ensure index is always set
     metadata: {
       createdAt: appPlan.metadata?.createdAt ? new Date(appPlan.metadata.createdAt).toISOString() : new Date().toISOString(),
       updatedAt: appPlan.metadata?.updatedAt ? new Date(appPlan.metadata.updatedAt).toISOString() : new Date().toISOString(),
@@ -132,6 +132,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       level: corePlan.level || 0
     } as AppRoom)) : [],
     label: corePlan.label,
+    index: corePlan.index || 0, // Ensure index is always set
     metadata: {
       createdAt: typeof corePlan.metadata?.createdAt === 'string' 
         ? new Date(corePlan.metadata.createdAt).getTime() 

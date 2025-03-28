@@ -36,7 +36,23 @@ export function sendToBack(canvas: Canvas, obj: FabricObject): void {
 export function centerObject(canvas: Canvas, obj: FabricObject): void {
   if (!canvas || !obj) return;
   
-  obj.center();
+  // Check if the center method exists on the object
+  if (typeof (obj as any).centerH === 'function' && typeof (obj as any).centerV === 'function') {
+    (obj as any).centerH();
+    (obj as any).centerV();
+  } else {
+    // Fall back to manually centering the object
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+    
+    obj.set({
+      left: canvasWidth / 2,
+      top: canvasHeight / 2,
+      originX: 'center',
+      originY: 'center'
+    });
+  }
+  
   canvas.renderAll();
 }
 
