@@ -1,11 +1,10 @@
-
 /**
  * Custom hook for handling canvas interactions
  * Manages zooming, panning, and keyboard shortcuts
  * @module useCanvasInteractions
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Point as FabricPoint } from "fabric";
 import { useCanvasState } from "./useCanvasState";
 import { useZoom } from "./useZoom";
 import { ZoomOptions } from "@/types";
@@ -160,8 +159,8 @@ export const useCanvasInteractions = (
     const deltaY = (typeof y === 'number' && typeof canvas.lastPanPosition.y === 'number') ? y - canvas.lastPanPosition.y : 0;
     
     // Update the viewport transform
-    // Use fabric's relativePan method with a proper Point object
-    canvas.relativePan(createPoint(deltaX, deltaY));
+    // Use fabric's relativePan method with a proper FabricPoint object
+    canvas.relativePan(new FabricPoint(deltaX, deltaY));
     
     // Update the last pan position
     canvas.lastPanPosition = createPoint(x, y);
