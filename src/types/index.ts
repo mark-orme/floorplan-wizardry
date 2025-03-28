@@ -28,7 +28,7 @@ export type {
 
 // Export createX functions separately to avoid ambiguity
 export { createPoint } from './geometryTypes';
-export { PerformanceStats } from './core/DebugInfo';
+export type { PerformanceStats } from './core/DebugInfo';
 export { createDefaultDrawingState } from './core/DrawingState';
 export type { createFloorPlan } from './core/FloorPlan';
 
