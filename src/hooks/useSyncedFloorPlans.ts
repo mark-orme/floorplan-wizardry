@@ -6,7 +6,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { Channel } from 'pusher-js';
-import { FloorPlan } from '@/types/core/FloorPlan';
+import { FloorPlan as CoreFloorPlan } from '@/types/core/FloorPlan';
 import { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
 import { loadFloorPlans, saveFloorPlans } from '@/utils/floorPlanStorage';
 import { 
@@ -172,7 +172,7 @@ export const useSyncedFloorPlans = () => {
         const corePlans = appToCoreFloorPlans(plansWithLabels);
         
         await saveFloorPlans(corePlans);
-        broadcastFloorPlanUpdate(coreToAppFloorPlans(corePlans));
+        broadcastFloorPlanUpdate(plansWithLabels);
         lastSyncTimeRef.current = Date.now();
         logger.info('Floor plans saved locally and synced via Pusher');
       } catch (error: any) {

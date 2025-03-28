@@ -40,3 +40,4 @@ export function adaptFloorPlans(corePlans: CoreFloorPlan[]): AppFloorPlan[] {
  * @returns Array of app floor plans
  */
 export const coreToAppFloorPlans = adaptFloorPlans;
+
