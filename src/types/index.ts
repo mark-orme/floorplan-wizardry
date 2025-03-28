@@ -28,9 +28,9 @@ export type {
 
 // Export createX functions separately to avoid ambiguity
 export { createPoint } from './geometryTypes';
-export { createFloorPlan } from './core/FloorPlan';
 export { PerformanceStats } from './core/DebugInfo';
 export { createDefaultDrawingState } from './core/DrawingState';
+export type { createFloorPlan } from './core/FloorPlan';
 
 // Drawing types
 export type { default as GridCreationLock } from './grid/GridCreationLock';
