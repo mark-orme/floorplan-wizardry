@@ -5,7 +5,7 @@
  * Handles the creation, validation, and error handling for grid elements
  * @module canvasGrid
  */
-import { Canvas, Object as FabricObject } from "fabric";
+import { Canvas, Object as FabricObject, Line } from "fabric";
 import { shouldThrottleCreation } from "./gridManager";
 import { validateCanvasForGrid } from "./grid/gridValidation";
 import { createGridLayer, createFallbackGrid } from "./grid/gridCreator";
@@ -183,7 +183,7 @@ export const createGrid = (
       
       // Create horizontal small grid lines
       for (let y = 0; y <= height; y += smallGridSpacing) {
-        const line = new fabric.Line([0, y, width, y], {
+        const line = new Line([0, y, width, y], {
           stroke: smallGridColor,
           selectable: false,
           evented: false,
@@ -197,7 +197,7 @@ export const createGrid = (
       
       // Create vertical small grid lines
       for (let x = 0; x <= width; x += smallGridSpacing) {
-        const line = new fabric.Line([x, 0, x, height], {
+        const line = new Line([x, 0, x, height], {
           stroke: smallGridColor,
           selectable: false,
           evented: false,
@@ -211,7 +211,7 @@ export const createGrid = (
       
       // Create horizontal large grid lines
       for (let y = 0; y <= height; y += largeGridSpacing) {
-        const line = new fabric.Line([0, y, width, y], {
+        const line = new Line([0, y, width, y], {
           stroke: largeGridColor,
           selectable: false,
           evented: false,
@@ -225,7 +225,7 @@ export const createGrid = (
       
       // Create vertical large grid lines
       for (let x = 0; x <= width; x += largeGridSpacing) {
-        const line = new fabric.Line([x, 0, x, height], {
+        const line = new Line([x, 0, x, height], {
           stroke: largeGridColor,
           selectable: false,
           evented: false,
