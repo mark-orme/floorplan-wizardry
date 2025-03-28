@@ -3,7 +3,7 @@
  * Hook for registering multiple canvas event handlers
  * @module canvas-events/useCanvasHandlers
  */
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { EventHandlerResult, UseCanvasHandlersProps } from './types';
 
 /**
@@ -17,6 +17,9 @@ export const useCanvasHandlers = ({
   eventTypes,
   handlers
 }: UseCanvasHandlersProps): EventHandlerResult => {
+  // Use a ref to track registered handlers to prevent unnecessary re-registrations
+  const registeredHandlersRef = useRef<Record<string, boolean>>({});
+  
   /**
    * Register event handlers
    */
@@ -29,8 +32,16 @@ export const useCanvasHandlers = ({
     eventTypes.forEach(eventType => {
       const handler = handlers[eventType];
       if (handler) {
-        // Use type assertion to handle string event types
+        // Skip if handler is already registered for this event type
+        if (registeredHandlersRef.current[eventType]) {
+          return;
+        }
+        
+        // Register the handler
         canvas.on(eventType as any, handler);
+        
+        // Mark as registered
+        registeredHandlersRef.current[eventType] = true;
       }
     });
   }, [fabricCanvasRef, eventTypes, handlers]);
@@ -46,9 +57,12 @@ export const useCanvasHandlers = ({
     // Unregister each event handler
     eventTypes.forEach(eventType => {
       const handler = handlers[eventType];
-      if (handler) {
-        // Use type assertion to handle string event types
+      if (handler && registeredHandlersRef.current[eventType]) {
+        // Unregister the handler
         canvas.off(eventType as any, handler);
+        
+        // Mark as unregistered
+        registeredHandlersRef.current[eventType] = false;
       }
     });
   }, [fabricCanvasRef, eventTypes, handlers]);
@@ -60,11 +74,11 @@ export const useCanvasHandlers = ({
     unregister();
   }, [unregister]);
   
-  // Register events when component mounts
+  // Register events when component mounts or dependencies change
   useEffect(() => {
     register();
     return cleanup;
-  }, [register, cleanup]);
+  }, [register, cleanup, tool]); // Added tool as dependency to re-register on tool change
   
   return {
     register,

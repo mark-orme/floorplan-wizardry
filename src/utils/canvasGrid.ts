@@ -15,6 +15,11 @@ import logger from "./logger";
 import { DebugInfoState } from "@/types/debugTypes";
 import { toast } from "sonner";
 
+// Store last grid creation time to prevent excessive creation attempts
+let lastGridCreationTime = 0;
+const GRID_CREATION_COOLDOWN = 5000; // 5 seconds between attempts
+let gridCreationInProgress = false;
+
 /**
  * Grid creation timing constants
  * @constant {Object}
@@ -100,27 +105,57 @@ export const createGrid = (
     });
   }
   
+  // Check if another grid creation is in progress, if so return current grid
+  if (gridCreationInProgress) {
+    logger.info("Grid creation already in progress, skipping");
+    return gridLayerRef.current;
+  }
+  
+  // Prevent excessive creation attempts with cooldown
+  const now = Date.now();
+  if (now - lastGridCreationTime < GRID_CREATION_COOLDOWN) {
+    logger.info(`Grid creation throttled. Last creation: ${lastGridCreationTime}, cooldown: ${GRID_CREATION_COOLDOWN}ms`);
+    return gridLayerRef.current;
+  }
+  
+  // Set creation flags
+  gridCreationInProgress = true;
+  lastGridCreationTime = now;
+  
   // Start time for performance tracking
   const startTime = performance.now();
   
-  // Validate inputs first
-  if (!validateCanvasForGrid(canvas, gridLayerRef, canvasDimensions)) {
-    console.error("❌ Grid validation failed, cannot create grid");
-    return gridLayerRef.current;
-  }
-  
-  // Check if we should throttle
-  if (shouldThrottleCreation()) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.warn("Throttling grid creation due to too many recent attempts");
+  try {
+    // Validate inputs first
+    if (!validateCanvasForGrid(canvas, gridLayerRef, canvasDimensions)) {
+      console.error("❌ Grid validation failed, cannot create grid");
+      gridCreationInProgress = false;
+      return gridLayerRef.current;
     }
     
-    // Return current grid without creating a new one
-    return gridLayerRef.current;
-  }
-  
-  try {
+    // Check if we should throttle
+    if (shouldThrottleCreation()) {
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn("Throttling grid creation due to too many recent attempts");
+      }
+      
+      gridCreationInProgress = false;
+      return gridLayerRef.current;
+    }
+    
+    // Remove previous grid objects first
+    if (gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    }
+    
     // Create the grid layer directly - immediate mode for better reliability
+    logger.info("Creating grid - implementation starting");
+    
     const gridObjects = createGridLayer(canvas, gridLayerRef, canvasDimensions, setDebugInfo);
     
     if (!gridObjects || gridObjects.length === 0) {
@@ -138,6 +173,7 @@ export const createGrid = (
         toast.info(TOAST_MESSAGES.USING_FALLBACK_GRID);
       }
       
+      gridCreationInProgress = false;
       return fallbackGrid;
     }
     
@@ -149,7 +185,9 @@ export const createGrid = (
     
     // Force a render
     canvas.requestRenderAll();
+    logger.info("Grid creation completed successfully");
     
+    gridCreationInProgress = false;
     return gridObjects;
   } catch (error) {
     // Handle errors
@@ -164,10 +202,13 @@ export const createGrid = (
     // Try fallback grid on error
     try {
       logger.info("Attempting fallback grid after error");
-      return createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
+      const fallbackResult = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
+      gridCreationInProgress = false;
+      return fallbackResult;
     } catch (fallbackError) {
       logger.error("Even fallback grid creation failed:", fallbackError);
       toast.error(TOAST_MESSAGES.ALL_METHODS_FAILED);
+      gridCreationInProgress = false;
       return [];
     }
   }
