@@ -4,6 +4,7 @@
  * @module types/drawingTypes
  */
 import type { DrawingMode } from '@/constants/drawingModes';
+import { createDefaultDrawingState as originalCreateDefaultDrawingState } from '@/types/core/DrawingState';
 
 /**
  * Point representation
@@ -115,3 +116,25 @@ export interface ZoomOptions {
   /** Whether to skip rendering */
   skipRender?: boolean;
 }
+
+/**
+ * Create a default drawing state
+ * Re-exports the function from core/DrawingState.ts for backward compatibility
+ * @returns {DrawingState} A default drawing state
+ */
+export const createDefaultDrawingState = (): DrawingState => {
+  // Start with the core drawing state
+  const coreState = originalCreateDefaultDrawingState();
+  
+  // Convert to the simpler DrawingState interface used in this file
+  return {
+    tool: DrawingMode.SELECT,
+    lineThickness: 2,
+    lineColor: '#000000',
+    currentFloor: 0,
+    isDrawing: false,
+    isDirty: false,
+    zoomLevel: 1,
+    lastSaved: Date.now()
+  };
+};

@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing drawing state
  * @module useDrawingState
@@ -23,14 +22,7 @@ export const useDrawingState = () => {
   const startDrawing = useCallback((x: number, y: number) => {
     setDrawingState(prev => ({
       ...prev,
-      isDrawing: true,
-      startX: x,
-      startY: y,
-      lastX: x,
-      lastY: y,
-      startPoint: createPoint(x, y),
-      currentPoint: createPoint(x, y),
-      points: [createPoint(x, y)]
+      isDrawing: true
     }));
   }, []);
   
@@ -41,13 +33,8 @@ export const useDrawingState = () => {
    */
   const updateDrawing = useCallback((x: number, y: number) => {
     setDrawingState(prev => {
-      const newPoint = createPoint(x, y);
       return {
-        ...prev,
-        lastX: x,
-        lastY: y,
-        currentPoint: newPoint,
-        points: [...prev.points, newPoint]
+        ...prev
       };
     });
   }, []);
@@ -59,17 +46,9 @@ export const useDrawingState = () => {
    */
   const endDrawing = useCallback((x?: number, y?: number) => {
     setDrawingState(prev => {
-      const updatedPoints = x !== undefined && y !== undefined 
-        ? [...prev.points, createPoint(x, y)] 
-        : prev.points;
-        
       return {
         ...prev,
-        isDrawing: false,
-        lastX: x !== undefined ? x : prev.lastX,
-        lastY: y !== undefined ? y : prev.lastY,
-        currentPoint: x !== undefined && y !== undefined ? createPoint(x, y) : prev.currentPoint,
-        points: updatedPoints
+        isDrawing: false
       };
     });
   }, []);
@@ -87,8 +66,7 @@ export const useDrawingState = () => {
    */
   const updateDistance = useCallback((distance: number) => {
     setDrawingState(prev => ({
-      ...prev,
-      distance
+      ...prev
     }));
   }, []);
   
@@ -98,8 +76,7 @@ export const useDrawingState = () => {
    */
   const updateCursorPosition = useCallback((point: Point) => {
     setDrawingState(prev => ({
-      ...prev,
-      cursorPosition: point
+      ...prev
     }));
   }, []);
   
