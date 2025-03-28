@@ -4,6 +4,12 @@
  * @module drawingTypes
  */
 import { Path as FabricPath } from 'fabric';
+import { Point as GeometryPoint } from './geometryTypes';
+
+/**
+ * Re-export Point type from geometryTypes for consistency
+ */
+export type Point = GeometryPoint;
 
 /**
  * Canvas dimensions interface
@@ -13,16 +19,6 @@ export interface CanvasDimensions {
   width: number;
   /** Canvas height in pixels */
   height: number;
-}
-
-/**
- * Point interface with x and y coordinates
- */
-export interface Point {
-  /** X coordinate */
-  x: number;
-  /** Y coordinate */
-  y: number;
 }
 
 /**
@@ -80,6 +76,8 @@ export interface DebugInfoState {
   errorMessage: string;
   /** Performance statistics */
   performanceStats: Record<string, number>;
+  /** Event handlers set flag */
+  eventHandlersSet: boolean;
   /** Optional grid initialization state */
   gridInitialized?: boolean;
   /** Optional debug messages */

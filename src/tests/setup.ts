@@ -1,159 +1,215 @@
 
 /**
- * Test setup file
- * Configures the testing environment
+ * Test setup and configuration
+ * Sets up test environment with mocks for fabric, canvas, and other dependencies
  */
-import { afterEach, vi, beforeAll, afterAll } from 'vitest';
-import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import matchers from '@testing-library/jest-dom/matchers';
-import { expect } from 'vitest';
 
-// Extend Vitest's expect with Testing Library's matchers
+// Extend Vitest's expect with testing-library matchers
+vi.stubGlobal('expect', expect);
 expect.extend(matchers);
 
-// Clean up after each test
-afterEach(() => {
-  cleanup();
-});
-
-// Mock canvas
-class CanvasRenderingContext2DMock {
-  canvas: HTMLCanvasElement;
-  fillStyle: string = '#000000';
-  strokeStyle: string = '#000000';
-  lineWidth: number = 1;
-  lineCap: string = 'butt';
-  lineJoin: string = 'miter';
-  miterLimit: number = 10;
-  font: string = '10px sans-serif';
-  textAlign: string = 'start';
-  textBaseline: string = 'alphabetic';
-  direction: string = 'inherit';
-  imageSmoothingEnabled: boolean = true;
-
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-  }
-
-  // Basic drawing methods
-  beginPath() {}
-  closePath() {}
-  moveTo(x: number, y: number) {}
-  lineTo(x: number, y: number) {}
-  bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {}
-  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {}
-  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean) {}
-  arcTo(x1: number, y1: number, x2: number, y2: number, radius: number) {}
-  ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean) {}
-  rect(x: number, y: number, width: number, height: number) {}
-  
-  // Drawing operations
-  fill() {}
-  stroke() {}
-  drawImage(image: CanvasImageSource, dx: number, dy: number) {}
-  fillRect(x: number, y: number, width: number, height: number) {}
-  strokeRect(x: number, y: number, width: number, height: number) {}
-  clearRect(x: number, y: number, width: number, height: number) {}
-  
-  // Pixel manipulation
-  createImageData(width: number, height: number): ImageData {
-    return { width, height, data: new Uint8ClampedArray(width * height * 4) };
-  }
-  getImageData(sx: number, sy: number, sw: number, sh: number): ImageData {
-    return { width: sw, height: sh, data: new Uint8ClampedArray(sw * sh * 4) };
-  }
-  putImageData(imagedata: ImageData, dx: number, dy: number) {}
-  
-  // Transformations
-  scale(x: number, y: number) {}
-  rotate(angle: number) {}
-  translate(x: number, y: number) {}
-  transform(a: number, b: number, c: number, d: number, e: number, f: number) {}
-  setTransform(a: number, b: number, c: number, d: number, e: number, f: number) {}
-  resetTransform() {}
-  
-  // Text
-  fillText(text: string, x: number, y: number, maxWidth?: number) {}
-  strokeText(text: string, x: number, y: number, maxWidth?: number) {}
-  measureText(text: string): TextMetrics {
-    return { width: text.length * 10 } as TextMetrics;
-  }
-  
-  // Gradients and patterns
-  createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradient {
-    return {
-      addColorStop: () => {}
-    };
-  }
-  createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient {
-    return {
-      addColorStop: () => {}
-    };
-  }
-  createPattern(image: CanvasImageSource, repetition: string | null): CanvasPattern | null {
-    return {
-      setTransform: () => {}
-    };
-  }
-  
-  // Path methods
-  clip() {}
-  isPointInPath(x: number, y: number): boolean {
-    return false;
-  }
-  isPointInStroke(x: number, y: number): boolean {
-    return false;
-  }
-  
-  // Shadow
-  save() {}
-  restore() {}
+// Mock for Canvas RenderingContext
+interface CanvasRenderingContext2DMock {
+  fillRect: ReturnType<typeof vi.fn>;
+  clearRect: ReturnType<typeof vi.fn>;
+  getImageData: ReturnType<typeof vi.fn>;
+  putImageData: ReturnType<typeof vi.fn>;
+  createImageData: ReturnType<typeof vi.fn>;
+  setTransform: ReturnType<typeof vi.fn>;
+  drawImage: ReturnType<typeof vi.fn>;
+  beginPath: ReturnType<typeof vi.fn>;
+  moveTo: ReturnType<typeof vi.fn>;
+  lineTo: ReturnType<typeof vi.fn>;
+  stroke: ReturnType<typeof vi.fn>;
+  fill: ReturnType<typeof vi.fn>;
+  closePath: ReturnType<typeof vi.fn>;
+  arc: ReturnType<typeof vi.fn>;
+  measureText: ReturnType<typeof vi.fn>;
+  [key: string]: any;
 }
 
-// Mock canvas element
-class HTMLCanvasElementMock extends HTMLElement {
-  width: number = 300;
-  height: number = 150;
+// Create Canvas Context Mock
+const createCanvasContextMock = () => {
+  const mock: CanvasRenderingContext2DMock = {
+    fillRect: vi.fn(),
+    clearRect: vi.fn(),
+    getImageData: vi.fn(() => ({
+      width: 0,
+      height: 0,
+      data: new Uint8ClampedArray(),
+      colorSpace: 'srgb'
+    })),
+    putImageData: vi.fn(),
+    createImageData: vi.fn(() => ({
+      width: 0,
+      height: 0,
+      data: new Uint8ClampedArray(),
+      colorSpace: 'srgb'
+    })),
+    setTransform: vi.fn(),
+    drawImage: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+    fill: vi.fn(),
+    closePath: vi.fn(),
+    arc: vi.fn(),
+    measureText: vi.fn(() => ({ width: 0 })),
+    canvas: {
+      width: 100,
+      height: 100
+    },
+    save: vi.fn(),
+    restore: vi.fn(),
+    translate: vi.fn(),
+    rotate: vi.fn(),
+    scale: vi.fn(),
+    strokeRect: vi.fn(),
+    fillText: vi.fn(),
+    strokeText: vi.fn(),
+    createLinearGradient: vi.fn(() => ({
+      addColorStop: vi.fn()
+    })),
+    createRadialGradient: vi.fn(() => ({
+      addColorStop: vi.fn()
+    })),
+    createPattern: vi.fn(),
+    createConicGradient: vi.fn(() => ({
+      addColorStop: vi.fn()
+    })),
+    getTransform: vi.fn(),
+    resetTransform: vi.fn(),
+    drawFocusIfNeeded: vi.fn(),
+    getContextAttributes: vi.fn(),
+    getLineDash: vi.fn(() => []),
+    setLineDash: vi.fn(),
+    clip: vi.fn(),
+    isPointInPath: vi.fn(),
+    isPointInStroke: vi.fn()
+  };
+
+  // Add additional properties with default mock implementations
+  Object.defineProperties(mock, {
+    fillStyle: { get: vi.fn(), set: vi.fn() },
+    strokeStyle: { get: vi.fn(), set: vi.fn() },
+    lineWidth: { get: vi.fn(), set: vi.fn() },
+    lineCap: { get: vi.fn(), set: vi.fn() },
+    lineJoin: { get: vi.fn(), set: vi.fn() },
+    miterLimit: { get: vi.fn(), set: vi.fn() },
+    font: { get: vi.fn(), set: vi.fn() },
+    textAlign: { get: vi.fn(), set: vi.fn() },
+    textBaseline: { get: vi.fn(), set: vi.fn() },
+    direction: { get: vi.fn(), set: vi.fn() },
+    globalAlpha: { get: vi.fn(), set: vi.fn() },
+    globalCompositeOperation: { get: vi.fn(), set: vi.fn() },
+    imageSmoothingEnabled: { get: vi.fn(), set: vi.fn() },
+    imageSmoothingQuality: { get: vi.fn(), set: vi.fn() }
+  });
+
+  return mock;
+};
+
+// Mock HTMLCanvasElement
+class HTMLCanvasElementMock {
+  width = 100;
+  height = 100;
   
-  getContext(contextId: string): CanvasRenderingContext2DMock | null {
-    return new CanvasRenderingContext2DMock(this);
+  getContext(contextType: string) {
+    return createCanvasContextMock();
   }
   
-  toDataURL(type?: string, quality?: any): string {
+  toDataURL() {
     return '';
   }
   
-  toBlob(callback: (blob: Blob | null) => void, type?: string, quality?: any): void {
-    callback(null);
+  toBlob(callback: (blob: Blob | null) => void) {
+    callback(new Blob());
+  }
+  
+  transferControlToOffscreen() {
+    throw new Error('Not implemented in mock');
+  }
+  
+  captureStream() {
+    throw new Error('Not implemented in mock');
   }
 }
 
-// Setup mocks before any tests run
-beforeAll(() => {
-  // Mock HTMLCanvasElement
-  global.HTMLCanvasElement = HTMLCanvasElementMock as any;
-  
-  // Mock getContext method
-  global.HTMLCanvasElement.prototype.getContext = function(contextType: string) {
-    return new CanvasRenderingContext2DMock(this as any);
-  };
-  
-  // Add extra matchers
-  expect.extend({
-    toHaveCanvasSize(canvas, width, height) {
-      const hasWidth = canvas.width === width;
-      const hasHeight = canvas.height === height;
-      
+// Add our custom implementations to the global object
+const getContext = HTMLCanvasElement.prototype.getContext;
+HTMLCanvasElement.prototype.getContext = function mockGetContext(contextId: string) {
+  if (contextId === '2d') {
+    return createCanvasContextMock();
+  }
+  // Fall back to original implementation for other context types
+  return getContext.call(this, contextId);
+};
+
+// Mock ResizeObserver
+class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+// Mock IntersectionObserver
+class IntersectionObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+// Add custom matchers
+expect.extend({
+  toHaveCanvasSize(received: HTMLCanvasElement, width: number, height: number) {
+    const pass = received.width === width && received.height === height;
+    if (pass) {
       return {
-        pass: hasWidth && hasHeight,
-        message: () => `expected canvas to have size ${width}x${height}, but got ${canvas.width}x${canvas.height}`
+        message: () =>
+          `expected canvas not to have dimensions ${width}x${height}`,
+        pass: true,
+      };
+    } else {
+      return {
+        message: () =>
+          `expected canvas to have dimensions ${width}x${height}, but got ${received.width}x${received.height}`,
+        pass: false,
       };
     }
-  });
+  }
 });
 
-// Clean up mocks after all tests are done
-afterAll(() => {
-  // Restore any global mocks or cleanup needed
+// Extend global mocks
+global.ResizeObserver = ResizeObserverMock as any;
+global.IntersectionObserver = IntersectionObserverMock as any;
+
+// Define a global requestAnimationFrame mock
+global.requestAnimationFrame = (callback: FrameRequestCallback) => {
+  return setTimeout(() => callback(Date.now()), 0);
+};
+
+global.cancelAnimationFrame = (handle: number) => {
+  clearTimeout(handle);
+};
+
+// Mock media queries
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
 });
+
+// Make sure tests import this file to get the extensions
+export {};

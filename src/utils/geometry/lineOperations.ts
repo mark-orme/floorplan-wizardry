@@ -3,7 +3,7 @@
  * Line operation utilities
  * @module geometry/lineOperations
  */
-import { Point } from '@/types';
+import { Point } from '@/types/geometryTypes';
 import { GRID_SPACING } from '@/constants/numerics';
 
 /**
@@ -66,7 +66,7 @@ export const calculateAngle = (p1: Point, p2: Point): number => {
  * @param {number} [gridSpacing] - Grid spacing to use
  * @returns {boolean} Whether the value is an exact grid multiple
  */
-export const isExactGridMultiple = (value: number, gridSpacing: number = GRID_SPACING): boolean => {
+export const isExactGridMultiple = (value: number, gridSpacing = GRID_SPACING.SMALL): boolean => {
   return Math.abs(value % gridSpacing) < 0.001;
 };
 

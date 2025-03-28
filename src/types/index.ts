@@ -5,17 +5,21 @@
  */
 
 // Core types - direct exports using export type for isolatedModules compatibility
-export type { Point } from './core/Point';
+export type { Point } from './geometryTypes';
 export type { FloorPlan } from './core/FloorPlan';
 export type { CanvasDimensions } from './core/Geometry';
 export type { DebugInfoState } from './core/DebugInfo';
 export type { DrawingState } from './core/DrawingState';
-export type { GridState, GridCreationState } from './core/GridState';
+export type { GridCreationState } from './core/GridState';
 
 // Re-export drawing-related types
 export type {
   ZoomDirection,
-  ZoomOptions,
+  ZoomOptions
+} from './zoomTypes';
+
+// Re-export from drawingTypes
+export type {
   Point as DrawingPoint,
   CanvasDimensions as DrawingCanvasDimensions,
   DebugInfoState as DrawingDebugInfoState,
@@ -23,17 +27,17 @@ export type {
 } from './drawingTypes';
 
 // Export createX functions separately to avoid ambiguity
-export { createPoint } from './core/Point';
+export { createPoint } from './geometryTypes';
 export { createFloorPlan } from './core/FloorPlan';
 export { PerformanceStats } from './core/DebugInfo';
 export { createDefaultDrawingState } from './core/DrawingState';
 
 // Drawing types
-export * from './drawingTypes';
-export * from './floorPlanTypes';
-export * from './geometryTypes';
-export * from './gridTypes';
-export * from './debugTypes';
+export type * from './drawingTypes';
+export type * from './floorPlanTypes';
+export type * from './geometryTypes';
+export type * from './gridTypes';
+export type * from './debugTypes';
 
 // Export zoom constants and types
 export { ZOOM_CONSTRAINTS } from './zoomTypes';

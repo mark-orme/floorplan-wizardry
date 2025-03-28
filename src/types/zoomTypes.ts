@@ -1,6 +1,6 @@
 
 /**
- * Zoom-related type definitions
+ * Zoom related type definitions
  * @module zoomTypes
  */
 
@@ -19,12 +19,17 @@ export const ZOOM_CONSTRAINTS = {
 };
 
 /**
- * Zoom multipliers for zooming in and out
+ * Zoom multipliers
  */
 export const ZOOM_MULTIPLIERS = {
   IN: 1.2,
   OUT: 0.8
 };
+
+/**
+ * Zoom level steps for discrete zooming
+ */
+export const ZOOM_LEVEL_STEPS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 5, 10];
 
 /**
  * Zoom options configuration

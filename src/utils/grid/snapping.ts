@@ -3,7 +3,7 @@
  * Grid snapping utilities
  * @module grid/snapping
  */
-import { Point } from '@/types';
+import { Point } from '@/types/geometryTypes';
 import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
@@ -13,7 +13,7 @@ import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
  * @param {number} [gridSpacing] - Grid spacing to use
  * @returns {Point} Snapped point
  */
-export const snapToGrid = (point: Point, gridSpacing: number = GRID_SPACING): Point => {
+export const snapToGrid = (point: Point, gridSpacing = GRID_SPACING.SMALL): Point => {
   return {
     x: Math.round(point.x / gridSpacing) * gridSpacing,
     y: Math.round(point.y / gridSpacing) * gridSpacing
@@ -35,8 +35,8 @@ export const snapPointToGrid = snapToGrid;
  */
 export const isPointOnGrid = (
   point: Point, 
-  threshold: number = SNAP_THRESHOLD, 
-  gridSpacing: number = GRID_SPACING
+  threshold = SNAP_THRESHOLD, 
+  gridSpacing = GRID_SPACING.SMALL
 ): boolean => {
   const snapX = Math.round(point.x / gridSpacing) * gridSpacing;
   const snapY = Math.round(point.y / gridSpacing) * gridSpacing;
@@ -56,7 +56,7 @@ export const isPointOnGrid = (
  */
 export const distanceToGridLine = (
   point: Point,
-  gridSpacing: number = GRID_SPACING
+  gridSpacing = GRID_SPACING.SMALL
 ): number => {
   // Distance to nearest horizontal grid line
   const distY = Math.min(
@@ -85,7 +85,7 @@ export const distanceToGridLine = (
 export const snapToAngle = (
   start: Point, 
   end: Point, 
-  angleStep: number = 45
+  angleStep = 45
 ): Point => {
   // Calculate angle
   const dx = end.x - start.x;
@@ -117,7 +117,7 @@ export const snapToAngle = (
 export const snapLineToGrid = (
   start: Point, 
   end: Point, 
-  gridSpacing: number = GRID_SPACING
+  gridSpacing = GRID_SPACING.SMALL
 ): { start: Point; end: Point } => {
   return {
     start: snapToGrid(start, gridSpacing),
@@ -136,7 +136,7 @@ export const snapLineToGrid = (
 export const snapLineToStandardAngles = (
   start: Point, 
   end: Point, 
-  angleStep: number = 45
+  angleStep = 45
 ): { start: Point; end: Point } => {
   return {
     start,

@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 import matchers from '@testing-library/jest-dom/matchers';
 
 // Only extend if not already extended
-if (!global.expect.toBeInTheDocument) {
+if (typeof expect.toBeInTheDocument === 'undefined') {
   expect.extend(matchers);
 }
 
