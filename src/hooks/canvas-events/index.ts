@@ -3,6 +3,7 @@
  * Canvas events exports
  * @module canvas-events
  */
+import { fabric } from 'fabric';
 
 // Export hooks
 export { useCanvasHandlers } from './useCanvasHandlers';
@@ -27,7 +28,9 @@ export type {
   CanvasEvents,
   EventHandlerMap,
   EditableFabricObject,
-  TargetEvent
+  TargetEvent,
+  UseCanvasHandlersProps,
+  UseBrushSettingsProps
 } from './types';
 
 // Export constants

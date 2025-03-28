@@ -1,7 +1,9 @@
+
 import { renderHook } from '@testing-library/react-hooks';
 import { useZoomTracking } from '@/hooks/canvas-events/useZoomTracking';
 import { createRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 
 // Mock FabricCanvas
 const mockFabricCanvas = {
@@ -33,7 +35,7 @@ describe('useZoomTracking', () => {
   it('registers zoom tracking', () => {
     const { result } = renderHook(() => useZoomTracking({
       fabricCanvasRef: mockFabricCanvasRef,
-      tool: 'select', // Add required tool prop
+      tool: DrawingMode.SELECT, // Use enum instead of string literal
       updateZoomLevel: jest.fn()
     }));
 
@@ -46,7 +48,7 @@ describe('useZoomTracking', () => {
   it('unregisters zoom tracking', () => {
     const { result } = renderHook(() => useZoomTracking({
       fabricCanvasRef: mockFabricCanvasRef,
-      tool: 'select', // Add required tool prop
+      tool: DrawingMode.SELECT, // Use enum instead of string literal
       updateZoomLevel: jest.fn()
     }));
 
@@ -58,7 +60,7 @@ describe('useZoomTracking', () => {
   it('cleans up zoom tracking', () => {
     const { result } = renderHook(() => useZoomTracking({
       fabricCanvasRef: mockFabricCanvasRef,
-      tool: 'select', // Add required tool prop
+      tool: DrawingMode.SELECT, // Use enum instead of string literal
       updateZoomLevel: jest.fn()
     }));
 

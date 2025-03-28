@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas event registration and cleanup
  * Centralizes all event handler management for canvas operations
@@ -6,7 +5,7 @@
  */
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
-import { DrawingTool } from "@/constants/drawingModes";
+import { DrawingMode } from "@/constants/drawingModes";
 import logger from "@/utils/logger";
 
 // Import types and event hooks
@@ -24,7 +23,7 @@ export interface UseCanvasEventHandlersProps {
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current line color */
   lineColor: string;
   /** Current line thickness */
@@ -89,6 +88,7 @@ export const useCanvasEventHandlers = ({
   // Handle path creation events
   const { cleanup: cleanupPathEvents } = usePathEvents({
     fabricCanvasRef,
+    tool,
     saveCurrentState,
     processCreatedPath,
     handleMouseUp

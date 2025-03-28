@@ -107,6 +107,29 @@ export const typescriptRules = {
         "format": ["PascalCase"],
         "prefix": ["I"]
       }
+    ],
+    
+    // ✅ Prevent importing missing exports
+    "import/named": "error",
+    
+    // ✅ Disallow unused imports
+    "@typescript-eslint/no-unused-vars": ["warn"],
+    
+    // ✅ Prevent fabric, lodash, etc. usage without import
+    "no-undef": "error",
+    
+    // ✅ Ensure all enum usage is from correct import
+    "@typescript-eslint/no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/hooks/useCanvasState",
+            "importNames": ["DrawingTool"],
+            "message": "Use DrawingTool from @/types/core/DrawingTool instead."
+          }
+        ]
+      }
     ]
   }
 };

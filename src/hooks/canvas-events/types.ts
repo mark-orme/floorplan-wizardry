@@ -3,6 +3,7 @@
  * Types for canvas event handlers
  * @module canvas-events/types
  */
+import { fabric } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
@@ -53,6 +54,26 @@ export interface UsePathEventsProps extends BaseEventProps {
   processCreatedPath?: (path: fabric.Path) => void;
   /** Handle mouse up event */
   handleMouseUp?: (e?: MouseEvent | TouchEvent) => void;
+}
+
+/**
+ * Brush settings props
+ */
+export interface UseBrushSettingsProps extends BaseEventProps {
+  /** Current line color */
+  lineColor: string;
+  /** Current line thickness */
+  lineThickness: number;
+}
+
+/**
+ * Canvas handlers props
+ */
+export interface UseCanvasHandlersProps extends BaseEventProps {
+  /** List of event types to register */
+  eventTypes: string[];
+  /** Map of event handlers */
+  handlers: EventHandlerMap;
 }
 
 /**

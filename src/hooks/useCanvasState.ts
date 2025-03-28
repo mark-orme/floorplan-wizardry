@@ -10,6 +10,11 @@ import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
+ * Re-export DrawingMode as DrawingTool for backward compatibility
+ */
+export type DrawingTool = DrawingMode;
+
+/**
  * Canvas state interface
  */
 export interface CanvasState {

@@ -1,57 +1,55 @@
 
 /**
- * Hook for registering canvas event handlers
+ * Hook for registering multiple canvas event handlers
  * @module canvas-events/useCanvasHandlers
  */
 import { useCallback, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
 import { EventHandlerResult, UseCanvasHandlersProps } from './types';
 
-// Define a type that allows string indexing for any event
-type GenericEventMap = {
-  [key: string]: any;
-};
-
 /**
- * Hook for managing generic canvas event handlers
- * 
- * @param {UseCanvasHandlersProps} props - Properties for the hook
- * @returns {EventHandlerResult} - Event handler result with register/unregister functions
+ * Hook for registering multiple canvas event handlers
+ * @param {UseCanvasHandlersProps} props Canvas handlers props
+ * @returns {EventHandlerResult} Event handler result
  */
 export const useCanvasHandlers = ({
   fabricCanvasRef,
+  tool,
+  eventTypes,
   handlers
 }: UseCanvasHandlersProps): EventHandlerResult => {
-  
   /**
-   * Register all event handlers
+   * Register event handlers
    */
   const register = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!fabricCanvasRef.current) return;
     
-    // Register each handler
-    Object.entries(handlers).forEach(([eventName, handler]) => {
-      // Use type assertion with string index to allow any event name
-      (canvas as unknown as { on: (event: string, handler: any) => void })
-        .on(eventName, handler);
+    const canvas = fabricCanvasRef.current;
+    
+    // Register each event handler
+    eventTypes.forEach(eventType => {
+      const handler = handlers[eventType];
+      if (handler) {
+        canvas.on(eventType, handler);
+      }
     });
-  }, [fabricCanvasRef, handlers]);
+  }, [fabricCanvasRef, eventTypes, handlers]);
   
   /**
-   * Unregister all event handlers
+   * Unregister event handlers
    */
   const unregister = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!fabricCanvasRef.current) return;
     
-    // Unregister each handler
-    Object.entries(handlers).forEach(([eventName, handler]) => {
-      // Use type assertion with string index to allow any event name
-      (canvas as unknown as { off: (event: string, handler: any) => void })
-        .off(eventName, handler);
+    const canvas = fabricCanvasRef.current;
+    
+    // Unregister each event handler
+    eventTypes.forEach(eventType => {
+      const handler = handlers[eventType];
+      if (handler) {
+        canvas.off(eventType, handler);
+      }
     });
-  }, [fabricCanvasRef, handlers]);
+  }, [fabricCanvasRef, eventTypes, handlers]);
   
   /**
    * Clean up resources
@@ -60,7 +58,7 @@ export const useCanvasHandlers = ({
     unregister();
   }, [unregister]);
   
-  // Register and cleanup on mount/unmount
+  // Register events when component mounts
   useEffect(() => {
     register();
     return cleanup;

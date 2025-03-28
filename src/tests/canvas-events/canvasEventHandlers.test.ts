@@ -2,6 +2,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react-hooks';
 import { useKeyboardEvents } from '@/hooks/canvas-events/useKeyboardEvents';
+import { DrawingMode } from '@/constants/drawingModes';
 
 // Mock event listeners
 describe('useKeyboardEvents', () => {
@@ -14,6 +15,11 @@ describe('useKeyboardEvents', () => {
   const mockHandleRedo = vi.fn();
   const mockDeleteSelectedObjects = vi.fn();
   const mockHandleEscape = vi.fn();
+  
+  // Mock fabric canvas ref
+  const mockFabricCanvasRef = {
+    current: {} as fabric.Canvas
+  };
   
   beforeEach(() => {
     // Mock global event listeners
@@ -35,7 +41,9 @@ describe('useKeyboardEvents', () => {
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
       deleteSelectedObjects: mockDeleteSelectedObjects,
-      handleEscape: mockHandleEscape
+      handleEscape: mockHandleEscape,
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: DrawingMode.SELECT
     }));
     
     // Then: event listener should be added
@@ -66,7 +74,9 @@ describe('useKeyboardEvents', () => {
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
       deleteSelectedObjects: mockDeleteSelectedObjects,
-      handleEscape: mockHandleEscape
+      handleEscape: mockHandleEscape,
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: DrawingMode.SELECT
     }));
     result.current.cleanup();
     
@@ -92,7 +102,9 @@ describe('useKeyboardEvents', () => {
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
       deleteSelectedObjects: mockDeleteSelectedObjects,
-      handleEscape: mockHandleEscape
+      handleEscape: mockHandleEscape,
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: DrawingMode.SELECT
     }));
     window.dispatchEvent(event);
     
@@ -119,7 +131,9 @@ describe('useKeyboardEvents', () => {
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
       deleteSelectedObjects: mockDeleteSelectedObjects,
-      handleEscape: mockHandleEscape
+      handleEscape: mockHandleEscape,
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: DrawingMode.SELECT
     }));
     window.dispatchEvent(event);
     
@@ -143,7 +157,9 @@ describe('useKeyboardEvents', () => {
       handleUndo: mockHandleUndo,
       handleRedo: mockHandleRedo,
       deleteSelectedObjects: mockDeleteSelectedObjects,
-      handleEscape: mockHandleEscape
+      handleEscape: mockHandleEscape,
+      fabricCanvasRef: mockFabricCanvasRef,
+      tool: DrawingMode.SELECT
     }));
     window.dispatchEvent(event);
     

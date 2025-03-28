@@ -1,76 +1,83 @@
 
 /**
- * Hook for managing brush settings
+ * Hook for handling brush settings on canvas
  * @module canvas-events/useBrushSettings
  */
 import { useCallback, useEffect } from 'react';
-import { UseBrushSettingsProps, EventHandlerResult } from './types';
+import { fabric } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { EventHandlerResult, UseBrushSettingsProps } from './types';
 
 /**
- * Hook for managing brush settings on the canvas
- * 
- * @param {UseBrushSettingsProps} props - Properties for the hook
- * @returns {EventHandlerResult} - Event handler result
+ * Hook for handling brush settings on canvas
+ * @param {UseBrushSettingsProps} props Brush settings props
+ * @returns {EventHandlerResult} Event handler result
  */
 export const useBrushSettings = ({
   fabricCanvasRef,
   tool,
-  lineColor = '#000000',
-  lineThickness = 2
+  lineColor,
+  lineThickness
 }: UseBrushSettingsProps): EventHandlerResult => {
+  /**
+   * Update brush settings
+   */
+  const updateBrushSettings = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+    }
+  }, [fabricCanvasRef, lineColor, lineThickness]);
   
   /**
-   * Update brush settings based on current tool and preferences
+   * Update drawing mode based on tool
    */
-  const updateBrushSettings = useCallback((): void => {
+  const updateDrawingMode = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Only update brush settings if in drawing mode
-    if (tool === DrawingMode.DRAW || tool === DrawingMode.LINE) {
-      if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.color = lineColor;
-        canvas.freeDrawingBrush.width = lineThickness;
-      }
-    }
-    
-    // Set drawing mode based on tool
     canvas.isDrawingMode = tool === DrawingMode.DRAW;
     
-    // Enable/disable selection based on tool
-    if (tool === DrawingMode.SELECT) {
-      canvas.selection = true;
-    } else {
-      canvas.selection = false;
+    // Update brush settings if in drawing mode
+    if (canvas.isDrawingMode) {
+      updateBrushSettings();
     }
-  }, [fabricCanvasRef, tool, lineColor, lineThickness]);
+  }, [fabricCanvasRef, tool, updateBrushSettings]);
   
   /**
-   * Register event handlers
+   * Register brush events
    */
-  const register = useCallback((): void => {
+  const register = useCallback(() => {
+    updateDrawingMode();
     updateBrushSettings();
-  }, [updateBrushSettings]);
+  }, [updateDrawingMode, updateBrushSettings]);
   
   /**
-   * Unregister event handlers
+   * Unregister brush events
    */
-  const unregister = useCallback((): void => {
-    // No event handlers to remove
+  const unregister = useCallback(() => {
+    // Nothing to unregister for brush settings
   }, []);
   
   /**
    * Clean up resources
    */
-  const cleanup = useCallback((): void => {
+  const cleanup = useCallback(() => {
     unregister();
   }, [unregister]);
   
-  // Update brush settings when tool or settings change
+  // Update brush settings when props change
   useEffect(() => {
     updateBrushSettings();
-  }, [tool, lineColor, lineThickness, updateBrushSettings]);
+  }, [updateBrushSettings]);
+  
+  // Update drawing mode when tool changes
+  useEffect(() => {
+    updateDrawingMode();
+  }, [updateDrawingMode]);
   
   return {
     register,
