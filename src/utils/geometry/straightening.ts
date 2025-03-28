@@ -5,141 +5,79 @@
  */
 import { Point } from '@/types/geometryTypes';
 import { calculateAngle } from './lineOperations';
+import { snapToAngle } from '../grid/snapping';
+import { ANGLE_SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
- * Straighten a line to the nearest cardinal or ordinal direction
- * 
+ * Check if a line is horizontal, vertical, or diagonal
  * @param {Point} start - Start point
  * @param {Point} end - End point
- * @returns {Point} New end point for straightened line
+ * @returns {boolean} Whether the line is at a standard angle
  */
-export const straightenLine = (start: Point, end: Point): Point => {
-  // Calculate angle and distance
+export const isStandardAngle = (start: Point, end: Point): boolean => {
   const angle = calculateAngle(start, end);
-  const distance = Math.sqrt(
-    Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-  );
-  
-  // Snap to nearest 45 degree angle
-  const snapAngle = Math.round(angle / 45) * 45;
-  const snapAngleRadians = (snapAngle * Math.PI) / 180;
-  
-  // Calculate new endpoint
-  return {
-    x: start.x + Math.cos(snapAngleRadians) * distance,
-    y: start.y + Math.sin(snapAngleRadians) * distance
-  };
+  const snappedAngle = snapToAngle(angle);
+  return Math.abs(angle - snappedAngle) < ANGLE_SNAP_THRESHOLD;
 };
 
 /**
- * Straighten a polygon (array of points) to the nearest cardinal or ordinal directions
- * 
- * @param {Point[]} points - Points defining the polygon
+ * Straighten a line to the nearest standard angle
+ * @param {Point} start - Start point
+ * @param {Point} end - End point
+ * @returns {Object} Straightened line
+ */
+export const straightenLine = (
+  start: Point, 
+  end: Point
+): { start: Point; end: Point } => {
+  const angle = calculateAngle(start, end);
+  const snappedAngle = snapToAngle(angle);
+  
+  // If already at a standard angle, return original
+  if (Math.abs(angle - snappedAngle) < ANGLE_SNAP_THRESHOLD) {
+    return { start, end };
+  }
+  
+  // Calculate distance between points
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  // Convert snapped angle to radians
+  const snappedRad = snappedAngle * (Math.PI / 180);
+  
+  // Calculate new end point
+  const newEnd = {
+    x: start.x + Math.cos(snappedRad) * length,
+    y: start.y + Math.sin(snappedRad) * length
+  };
+  
+  return { start, end: newEnd };
+};
+
+/**
+ * Straighten a polyline (multiple connected points)
+ * @param {Point[]} points - Array of points
  * @returns {Point[]} Straightened points
  */
-export const straightenPolygon = (points: Point[]): Point[] => {
-  if (points.length < 2) return [...points];
+export const straightenPolyline = (points: Point[]): Point[] => {
+  if (points.length < 2) return points;
   
-  const result: Point[] = [points[0]]; // Keep the first point as is
+  const result: Point[] = [points[0]];
   
-  // Straighten each segment
   for (let i = 1; i < points.length; i++) {
-    const start = result[i - 1];
-    const end = points[i];
-    const straightened = straightenLine(start, end);
-    result.push(straightened);
+    const { end } = straightenLine(result[result.length - 1], points[i]);
+    result.push(end);
   }
   
   return result;
 };
 
 /**
- * Check if a line is already straightened
- * 
- * @param {Point} start - Start point
- * @param {Point} end - End point
- * @param {number} [tolerance=5] - Angle tolerance in degrees
- * @returns {boolean} Whether the line is already straightened
+ * Auto-straighten a path when close to a standard angle
+ * @param {Point[]} points - Path points
+ * @returns {Point[]} Straightened path points
  */
-export const isLineStraight = (
-  start: Point,
-  end: Point,
-  tolerance = 5
-): boolean => {
-  const angle = calculateAngle(start, end);
-  const snapAngle = Math.round(angle / 45) * 45;
-  
-  return Math.abs(angle - snapAngle) <= tolerance;
-};
-
-/**
- * Get the nearest straight angle for a line
- * 
- * @param {Point} start - Start point
- * @param {Point} end - End point
- * @returns {number} Nearest standard angle in degrees
- */
-export const getNearestStraightAngle = (start: Point, end: Point): number => {
-  const angle = calculateAngle(start, end);
-  return Math.round(angle / 45) * 45;
-};
-
-/**
- * Determines whether the given angle is close to horizontal or vertical
- * 
- * @param {number} angle - Angle in degrees
- * @param {number} [tolerance=10] - Tolerance in degrees
- * @returns {boolean} Whether the angle is close to horizontal or vertical
- */
-export const isHorizontalOrVertical = (angle: number, tolerance = 10): boolean => {
-  // Normalize angle to 0-360
-  const normalizedAngle = ((angle % 360) + 360) % 360;
-  
-  // Check if close to 0, 90, 180, or 270 degrees
-  return (
-    Math.abs(normalizedAngle) <= tolerance ||
-    Math.abs(normalizedAngle - 90) <= tolerance ||
-    Math.abs(normalizedAngle - 180) <= tolerance ||
-    Math.abs(normalizedAngle - 270) <= tolerance ||
-    Math.abs(normalizedAngle - 360) <= tolerance
-  );
-};
-
-/**
- * Straighten a stroke (array of points) while maintaining relative positions
- * 
- * @param {Point[]} points - Points defining the stroke
- * @returns {Point[]} Straightened points
- */
-export const straightenStroke = (points: Point[]): Point[] => {
-  if (points.length < 2) return [...points];
-  
-  return straightenPolygon(points);
-};
-
-/**
- * Check if walls are aligned (parallel or perpendicular)
- * 
- * @param {Point[]} strokeA - First wall stroke
- * @param {Point[]} strokeB - Second wall stroke
- * @param {number} [tolerance=3] - Angle tolerance in degrees
- * @returns {boolean} Whether the walls are aligned
- */
-export const hasAlignedWalls = (
-  strokeA: Point[],
-  strokeB: Point[],
-  tolerance = 3
-): boolean => {
-  if (strokeA.length < 2 || strokeB.length < 2) return false;
-  
-  // Get the main directions of the strokes
-  const angleA = calculateAngle(strokeA[0], strokeA[strokeA.length - 1]);
-  const angleB = calculateAngle(strokeB[0], strokeB[strokeB.length - 1]);
-  
-  // Normalize angles to 0-90 degrees (treating perpendicular as aligned)
-  const normA = angleA % 90;
-  const normB = angleB % 90;
-  
-  // Check if angles are within tolerance
-  return Math.abs(normA - normB) <= tolerance;
+export const autoStraightenPath = (points: Point[]): Point[] => {
+  return straightenPolyline(points);
 };

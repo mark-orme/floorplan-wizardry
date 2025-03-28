@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 import matchers from '@testing-library/jest-dom/matchers';
 
 // Only extend if not already extended
-if (typeof expect.toBeInTheDocument === 'undefined') {
+if (typeof (expect as any).toBeInTheDocument === 'undefined') {
   expect.extend(matchers);
 }
 
@@ -82,8 +82,8 @@ expect.extend({
   }
 });
 
-// Ensure the global 'expect' is extended with custom matchers
-if (typeof global !== 'undefined' && typeof global.expect === 'undefined') {
+// Ensure the global expect is properly typed
+if (typeof global !== 'undefined') {
   (global as any).expect = expect;
 }
 

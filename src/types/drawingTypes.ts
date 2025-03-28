@@ -85,6 +85,8 @@ export interface DebugInfoState {
   gridRendered: boolean;
   /** Tools initialized flag */
   toolsInitialized: boolean;
+  /** Index signature for extension properties */
+  [key: string]: any;
 }
 
 /**

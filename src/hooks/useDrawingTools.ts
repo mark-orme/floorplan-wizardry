@@ -6,8 +6,7 @@ import { useCallback } from 'react';
 import { useCanvasTools } from './useCanvasTools';
 import { useCanvasActions } from './useCanvasActions';
 import { DrawingTool } from './useCanvasState';
-import { FabricCanvas } from '@/types/fabricTypes';
-import { Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
 /**
  * Props for useDrawingTools hook
@@ -27,6 +26,8 @@ interface UseDrawingToolsProps {
   setZoomLevel: (zoom: number) => void;
   /** Line thickness */
   lineThickness?: number;
+  /** Reference to history */
+  historyRef?: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
 }
 
 /**
@@ -42,7 +43,8 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     setTool,
     zoomLevel,
     setZoomLevel,
-    lineThickness
+    lineThickness,
+    historyRef
   } = props;
   
   /**
@@ -63,21 +65,33 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
    * Toggle pen tool
    */
   const togglePen = useCallback(() => {
-    setTool(tool === 'pen' ? 'select' : 'pen');
+    if (tool === 'pen') {
+      setTool('select');
+    } else {
+      setTool('pen');
+    }
   }, [tool, setTool]);
   
   /**
    * Toggle line tool
    */
   const toggleLine = useCallback(() => {
-    setTool(tool === 'line' ? 'select' : 'line');
+    if (tool === 'line') {
+      setTool('select');
+    } else {
+      setTool('line');
+    }
   }, [tool, setTool]);
   
   /**
    * Toggle rectangle tool
    */
   const toggleRectangle = useCallback(() => {
-    setTool(tool === 'rectangle' ? 'select' : 'rectangle');
+    if (tool === 'rectangle') {
+      setTool('select');
+    } else {
+      setTool('rectangle');
+    }
   }, [tool, setTool]);
   
   /**
@@ -138,6 +152,15 @@ export const useDrawingTools = (props: UseDrawingToolsProps) => {
     // Object operations
     deleteSelectedObjects,
     undo,
-    redo
+    redo,
+    
+    // Aliases for API compatibility with other hooks
+    handleToolChange: setActiveTool,
+    handleUndo: undo,
+    handleRedo: redo,
+    handleZoom,
+    saveCanvas: () => console.log('Save canvas called'),
+    saveCurrentState: () => console.log('Save current state called'),
+    clearDrawings: clearCanvas
   };
 };

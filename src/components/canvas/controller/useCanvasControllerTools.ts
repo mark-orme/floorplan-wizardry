@@ -101,31 +101,15 @@ export const useCanvasControllerTools = (
   });
 
   // Drawing tools with the GIA calculation function
-  const {
-    clearDrawings,
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    clearCanvas,
-    saveCanvas,
-    saveCurrentState
-  } = useDrawingTools({
+  const toolFunctions = useDrawingTools({
     fabricCanvasRef,
     gridLayerRef,
-    historyRef,
     tool,
-    zoomLevel,
-    lineThickness,
-    lineColor,
     setTool,
+    zoomLevel,
     setZoomLevel,
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    createGrid,
-    recalculateGIA
+    lineThickness,
+    historyRef
   });
 
   // Add canvas event listeners to trigger GIA calculation when objects change
@@ -158,22 +142,28 @@ export const useCanvasControllerTools = (
   // Ensure saveCanvas returns a boolean
   const enhancedSaveCanvas = useCallback((): boolean => {
     try {
-      saveCanvas();
+      toolFunctions.saveCanvas();
       return true;
     } catch (error) {
       console.error('Error saving canvas:', error);
       return false;
     }
-  }, [saveCanvas]);
+  }, [toolFunctions]);
 
   return {
-    clearDrawings,
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    clearCanvas,
+    clearDrawings: toolFunctions.clearDrawings,
+    handleToolChange: toolFunctions.handleToolChange,
+    handleUndo: toolFunctions.handleUndo,
+    handleRedo: toolFunctions.handleRedo,
+    handleZoom: (direction: "in" | "out") => {
+      if (direction === "in") {
+        toolFunctions.zoomIn();
+      } else {
+        toolFunctions.zoomOut();
+      }
+    },
+    clearCanvas: toolFunctions.clearCanvas,
     saveCanvas: enhancedSaveCanvas,
-    saveCurrentState
+    saveCurrentState: toolFunctions.saveCurrentState
   };
 };

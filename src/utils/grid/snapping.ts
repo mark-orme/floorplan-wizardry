@@ -4,7 +4,7 @@
  * @module grid/snapping
  */
 import { Point } from '@/types/geometryTypes';
-import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
+import { GRID_SPACING, SNAP_THRESHOLD, ANGLE_SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
  * Snap a point to the grid
@@ -18,6 +18,11 @@ export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.SM
     y: Math.round(point.y / gridSize) * gridSize
   };
 };
+
+/**
+ * Snap to grid (alias for snapPointToGrid for backward compatibility)
+ */
+export const snapToGrid = snapPointToGrid;
 
 /**
  * Check if a point is already on a grid line
@@ -71,6 +76,69 @@ export const snapLineToGrid = (
   return {
     start: snapPointToGrid(start, gridSize),
     end: snapPointToGrid(end, gridSize)
+  };
+};
+
+/**
+ * Snap an angle to standard angles (0, 45, 90, etc.)
+ * @param {number} angle - Angle in degrees
+ * @param {number} threshold - Snap threshold in degrees
+ * @returns {number} Snapped angle
+ */
+export const snapToAngle = (
+  angle: number, 
+  threshold: number = ANGLE_SNAP_THRESHOLD
+): number => {
+  // Standard angles (0, 45, 90, 135, 180, 225, 270, 315)
+  const standardAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+  
+  // Find the closest standard angle
+  let closestAngle = angle;
+  let minDiff = threshold + 1; // Initialize higher than threshold to ensure we only snap if necessary
+  
+  for (const standardAngle of standardAngles) {
+    const diff = Math.abs(angle - standardAngle);
+    const wrappedDiff = Math.min(diff, 360 - diff); // Handle wrapping around 360
+    
+    if (wrappedDiff < minDiff && wrappedDiff <= threshold) {
+      minDiff = wrappedDiff;
+      closestAngle = standardAngle;
+    }
+  }
+  
+  return closestAngle === 360 ? 0 : closestAngle; // Normalize 360 to 0
+};
+
+/**
+ * Snap a line to standard angles
+ * @param {Point} start - Line start point
+ * @param {Point} end - Line end point
+ * @returns {Object} Line with preserved start point and angle-snapped end point
+ */
+export const snapLineToStandardAngles = (
+  start: Point, 
+  end: Point
+): { start: Point; end: Point } => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  
+  // Calculate current angle and length
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  // Snap the angle
+  const snappedAngle = snapToAngle(angle);
+  
+  // Convert back to radians
+  const snappedRad = snappedAngle * (Math.PI / 180);
+  
+  // Calculate new end point
+  const newEndX = start.x + Math.cos(snappedRad) * length;
+  const newEndY = start.y + Math.sin(snappedRad) * length;
+  
+  return {
+    start,
+    end: { x: newEndX, y: newEndY }
   };
 };
 
