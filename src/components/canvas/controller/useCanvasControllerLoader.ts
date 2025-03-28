@@ -63,7 +63,16 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
   const loadFloorPlansData = useCallback(async (): Promise<void> => {
     try {
       const plans = await floorPlanLoader.loadFloorPlans();
-      setFloorPlans(plans);
+      // Ensure we're setting floor plans with the correct type by mapping if needed
+      const typedPlans = plans.map(plan => {
+        // Ensure plan has the required 'index' property
+        if (!('index' in plan)) {
+          return { ...plan, index: plan.metadata?.level || 0 };
+        }
+        return plan;
+      }) as FloorPlan[];
+      
+      setFloorPlans(typedPlans);
     } catch (error) {
       console.error("Error loading floor plans", error);
       setHasError(true);

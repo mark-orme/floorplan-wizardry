@@ -85,7 +85,7 @@ export interface Stroke {
   points: Point[];
   /** Stroke color */
   color: string;
-  /** Stroke width */
+  /** Stroke width (required for compatibility with tests and other components) */
   width: number;
   /** Stroke thickness (alias for width for compatibility) */
   thickness?: number;
@@ -111,7 +111,7 @@ export interface FloorPlan {
   rooms?: Room[];
   /** Floor plan metadata */
   metadata: FloorPlanMetadata;
-  /** Floor plan index */
+  /** Floor plan index (required for backwards compatibility) */
   index: number;
   /** Serialized canvas JSON */
   canvasJson?: string;
@@ -154,3 +154,6 @@ export const createFloorPlan = (id: string, name: string, index: number): FloorP
     strokes: []
   };
 };
+
+// Export Point type for other modules to use
+export { Point };

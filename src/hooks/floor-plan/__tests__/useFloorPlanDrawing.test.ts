@@ -1,4 +1,3 @@
-
 /**
  * Tests for the useFloorPlanDrawing hook
  * @module hooks/floor-plan/__tests__/useFloorPlanDrawing.test
@@ -23,7 +22,12 @@ describe('useFloorPlanDrawing', () => {
     canvasData: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    metadata: {}
+    metadata: {
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      paperSize: PaperSize.A4,
+      level: 0
+    }
   };
   
   // Mock setFloorPlan for testing
@@ -129,16 +133,17 @@ describe('useFloorPlanDrawing', () => {
       setFloorPlans: mockSetFloorPlans
     }));
     
-    const testStroke: Stroke = {
-      id: 'test-stroke',
-      points: [{ x: 10, y: 10 } as Point, { x: 20, y: 20 } as Point],
-      type: 'line' as StrokeType,
-      color: '#000000',
-      thickness: 2
+    const newStroke = {
+      id: "test-stroke-1",
+      points: [{ x: 10, y: 10 }, { x: 20, y: 20 }],
+      type: "line" as StrokeType,
+      color: "#000000",
+      thickness: 2,
+      width: 2 // Add width property
     };
     
     act(() => {
-      result.current.addStroke(testStroke);
+      result.current.addStroke(newStroke);
     });
     
     expect(mockSetFloorPlans).toHaveBeenCalled();
@@ -163,21 +168,14 @@ describe('useFloorPlanDrawing', () => {
   it('can calculate areas for the floor plan', () => {
     const floorPlanWithStrokes = {
       ...mockFloorPlan,
-      strokes: [
-        {
-          id: 'stroke-1',
-          points: [
-            { x: 0, y: 0 } as Point,
-            { x: 100, y: 0 } as Point,
-            { x: 100, y: 100 } as Point,
-            { x: 0, y: 100 } as Point,
-            { x: 0, y: 0 } as Point
-          ],
-          type: 'line' as StrokeType,
-          color: '#000000',
-          thickness: 2
-        }
-      ]
+      strokes: [{
+        id: "test-stroke-1",
+        points: [{ x: 10, y: 10 }, { x: 20, y: 20 }],
+        type: "line" as StrokeType,
+        color: "#000000",
+        thickness: 2,
+        width: 2 // Add width property
+      }]
     };
     
     const { result } = renderHook(() => useFloorPlanDrawing({

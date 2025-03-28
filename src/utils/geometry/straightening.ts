@@ -1,83 +1,55 @@
+
 /**
- * Path straightening utilities
+ * Line and shape straightening utilities
  * @module utils/geometry/straightening
  */
-import { Point } from '@/types/geometryTypes';
-import { calculateDistance, calculateAngle } from './lineOperations';
 
-// Constants for angle snapping (in radians)
-const HORIZONTAL_ANGLE = 0; // or Math.PI
-const VERTICAL_ANGLE = Math.PI / 2; // or -Math.PI / 2
-const DIAGONAL_ANGLE_POS = Math.PI / 4; // or 5 * Math.PI / 4
-const DIAGONAL_ANGLE_NEG = -Math.PI / 4; // or 3 * Math.PI / 4
-const ANGLE_TOLERANCE = 0.15; // ~8.6 degrees
+import { Point } from '@/types/geometryTypes';
+import { distance } from './pointOperations';
 
 /**
- * Check if two points are aligned to standard angles
+ * Tolerance for angle snapping in degrees
+ */
+const ANGLE_TOLERANCE = 5;
+
+/**
+ * Standard angles for snapping in degrees
+ */
+const STANDARD_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+/**
+ * Calculate the angle between a line and the horizontal
  * @param p1 First point
  * @param p2 Second point
- * @returns True if points are aligned to standard angles
+ * @returns Angle in degrees
  */
-export const arePointsAligned = (p1: Point, p2: Point): boolean => {
-  const angle = calculateAngle(p1, p2);
-  return isStandardAngle(angle);
+export const calculateAngleDegrees = (p1: Point, p2: Point): number => {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  
+  // Normalize angle to 0-360 range
+  if (angle < 0) {
+    angle += 360;
+  }
+  
+  return angle;
 };
 
 /**
- * Check if an angle is close to a standard angle
- * @param angle Angle in radians
- * @returns True if angle is close to a standard angle
+ * Find the closest standard angle to a given angle
+ * @param angle Angle in degrees
+ * @returns Closest standard angle
  */
-export const isStandardAngle = (angle: number): boolean => {
-  const normalizedAngle = normalizeAngle(angle);
+export const findClosestStandardAngle = (angle: number): number => {
+  let closestAngle = STANDARD_ANGLES[0];
+  let minDiff = Math.abs(angle - closestAngle);
   
-  return (
-    Math.abs(normalizedAngle - HORIZONTAL_ANGLE) <= ANGLE_TOLERANCE ||
-    Math.abs(normalizedAngle - VERTICAL_ANGLE) <= ANGLE_TOLERANCE ||
-    Math.abs(normalizedAngle - DIAGONAL_ANGLE_POS) <= ANGLE_TOLERANCE ||
-    Math.abs(normalizedAngle - DIAGONAL_ANGLE_NEG) <= ANGLE_TOLERANCE ||
-    Math.abs(Math.abs(normalizedAngle) - Math.PI) <= ANGLE_TOLERANCE // opposite of horizontal
-  );
-};
-
-/**
- * Normalize angle to range between -PI and PI
- * @param angle Angle in radians
- * @returns Normalized angle
- */
-const normalizeAngle = (angle: number): number => {
-  let normalized = angle;
-  while (normalized > Math.PI) normalized -= 2 * Math.PI;
-  while (normalized < -Math.PI) normalized += 2 * Math.PI;
-  return normalized;
-};
-
-/**
- * Snap an angle to the nearest standard angle
- * @param angle Angle in radians
- * @returns Snapped angle
- */
-export const snapToStandardAngle = (angle: number): number => {
-  const normalized = normalizeAngle(angle);
-  
-  // Find closest standard angle
-  const angles = [
-    HORIZONTAL_ANGLE,
-    VERTICAL_ANGLE,
-    DIAGONAL_ANGLE_POS,
-    DIAGONAL_ANGLE_NEG,
-    Math.PI, // opposite of horizontal
-    -VERTICAL_ANGLE // opposite of vertical
-  ];
-  
-  let closestAngle = angles[0];
-  let minDiff = Math.abs(normalized - angles[0]);
-  
-  for (let i = 1; i < angles.length; i++) {
-    const diff = Math.abs(normalized - angles[i]);
+  for (let i = 1; i < STANDARD_ANGLES.length; i++) {
+    const diff = Math.abs(angle - STANDARD_ANGLES[i]);
     if (diff < minDiff) {
       minDiff = diff;
-      closestAngle = angles[i];
+      closestAngle = STANDARD_ANGLES[i];
     }
   }
   
@@ -85,72 +57,64 @@ export const snapToStandardAngle = (angle: number): number => {
 };
 
 /**
- * Straighten a polyline by snapping points to standard angles
- * @param points Polyline points
- * @returns Straightened polyline points
+ * Check if an angle is close to a standard angle
+ * @param angle Angle to check
+ * @returns True if angle is within tolerance of a standard angle
+ */
+export const isNearStandardAngle = (angle: number): boolean => {
+  const closestAngle = findClosestStandardAngle(angle);
+  return Math.abs(angle - closestAngle) <= ANGLE_TOLERANCE;
+};
+
+/**
+ * Straighten a polyline to align with standard angles
+ * @param points Array of points making up the polyline
+ * @returns Straightened array of points
  */
 export const straightenPolyline = (points: Point[]): Point[] => {
-  if (points.length < 2) return [...points];
+  if (!points || points.length < 2) return points;
   
-  const result: Point[] = [{ ...points[0] }]; // Start with first point
+  const result: Point[] = [{ ...points[0] }]; // Copy first point
   
   for (let i = 1; i < points.length; i++) {
-    const prevPoint = result[result.length - 1];
+    const prevPoint = result[i - 1];
     const currentPoint = points[i];
     
-    // Skip points that are too close to previous point
-    if (calculateDistance(prevPoint, currentPoint) < 5) continue;
+    // Calculate angle between points
+    const angle = calculateAngleDegrees(prevPoint, currentPoint);
     
-    // Get angle between previous and current point
-    const angle = calculateAngle(prevPoint, currentPoint);
-    const distance = calculateDistance(prevPoint, currentPoint);
+    // Find closest standard angle
+    const standardAngle = findClosestStandardAngle(angle);
     
-    // If angle is close to a standard angle, straighten it
-    if (Math.abs(angle - HORIZONTAL_ANGLE) <= ANGLE_TOLERANCE || 
-        Math.abs(Math.abs(angle) - Math.PI) <= ANGLE_TOLERANCE) {
-      // Horizontal line
-      result.push({ x: currentPoint.x, y: prevPoint.y });
-    } else if (Math.abs(Math.abs(angle) - VERTICAL_ANGLE) <= ANGLE_TOLERANCE) {
-      // Vertical line
-      result.push({ x: prevPoint.x, y: currentPoint.y });
-    } else if (Math.abs(angle - DIAGONAL_ANGLE_POS) <= ANGLE_TOLERANCE || 
-               Math.abs(angle - DIAGONAL_ANGLE_NEG) <= ANGLE_TOLERANCE) {
-      // Diagonal line (45 degrees)
-      const dx = currentPoint.x - prevPoint.x;
-      const avgDelta = (Math.abs(dx) + Math.abs(currentPoint.y - prevPoint.y)) / 2;
-      const signY = angle > 0 ? 1 : -1;
-      result.push({ 
-        x: prevPoint.x + (dx > 0 ? avgDelta : -avgDelta), 
-        y: prevPoint.y + signY * avgDelta 
-      });
-    } else {
-      // Keep original point for non-standard angles
-      result.push({ ...currentPoint });
-    }
+    // Calculate new point position at the standard angle
+    const dist = distance(prevPoint, currentPoint);
+    const radians = standardAngle * Math.PI / 180;
+    
+    const newPoint: Point = {
+      x: prevPoint.x + dist * Math.cos(radians),
+      y: prevPoint.y + dist * Math.sin(radians)
+    };
+    
+    result.push(newPoint);
   }
   
   return result;
 };
 
 /**
- * Also export as straightenLine for backward compatibility
- */
-export const straightenLine = straightenPolyline;
-
-/**
- * Check if a polygon has aligned walls (uses straightening internally)
- * @param points Polygon points
- * @returns True if polygon has aligned walls
+ * Check if a polygon has walls aligned to standard angles
+ * @param points Array of points making up the polygon
+ * @returns True if all walls are aligned to standard angles
  */
 export const hasAlignedWalls = (points: Point[]): boolean => {
-  if (points.length < 3) return false;
+  if (!points || points.length < 3) return false;
   
-  // Check each segment
   for (let i = 0; i < points.length; i++) {
     const p1 = points[i];
     const p2 = points[(i + 1) % points.length];
+    const angle = calculateAngleDegrees(p1, p2);
     
-    if (!arePointsAligned(p1, p2)) {
+    if (!isNearStandardAngle(angle)) {
       return false;
     }
   }
@@ -159,13 +123,46 @@ export const hasAlignedWalls = (points: Point[]): boolean => {
 };
 
 /**
- * Straighten a stroke (same as polyline but with alias for compatibility)
- * @param points Stroke points
- * @returns Straightened stroke points
+ * Straighten a polygon to align with standard angles
+ * @param points Array of points making up the polygon
+ * @returns Straightened array of points
  */
-export const straightenStroke = straightenPolyline;
+export const straightenPolygon = (points: Point[]): Point[] => {
+  // Similar to straightenPolyline but ensures the polygon is closed
+  if (!points || points.length < 3) return points;
+  
+  const straightenedPoints = straightenPolyline(points);
+  
+  // Ensure the polygon is closed
+  const firstPoint = straightenedPoints[0];
+  const lastPoint = straightenedPoints[straightenedPoints.length - 1];
+  
+  if (firstPoint.x !== lastPoint.x || firstPoint.y !== lastPoint.y) {
+    straightenedPoints.push({ ...firstPoint }); // Close the polygon
+  }
+  
+  return straightenedPoints;
+};
 
 /**
- * Alias for straightenPolyline for backward compatibility
+ * Straighten a stroke (polyline with specific attributes)
+ * @param points Points in the stroke
+ * @param strokeType Type of stroke
+ * @returns Straightened array of points
  */
-export const straightenPolygon = straightenPolyline;
+export const straightenStroke = (points: Point[], strokeType: string): Point[] => {
+  if (!points || points.length < 2) return points;
+  
+  // Use different straightening methods based on stroke type
+  if (strokeType === 'wall' || strokeType === 'room') {
+    return straightenPolyline(points);
+  }
+  
+  // For other types, only straighten if close to standard angles
+  const angle = calculateAngleDegrees(points[0], points[points.length - 1]);
+  if (isNearStandardAngle(angle)) {
+    return straightenPolyline(points);
+  }
+  
+  return points;
+};

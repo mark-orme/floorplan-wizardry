@@ -18,7 +18,7 @@ export type {
   ZoomOptions
 } from './zoomTypes';
 
-// Re-export from drawingTypes
+// Re-export from drawingTypes - use export type for isolatedModules compatibility
 export type {
   Point as DrawingPoint,
   CanvasDimensions as DrawingCanvasDimensions,

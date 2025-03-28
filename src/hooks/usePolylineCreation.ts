@@ -1,8 +1,7 @@
-
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
 import { POLYLINE_STYLES } from "@/constants/drawingConstants";
-import { Point } from "@/types/floorPlanTypes";
+import { Point } from "@/types/geometryTypes";
 
 // Defined types for line cap and join styles
 type CanvasLineCap = "butt" | "round" | "square";

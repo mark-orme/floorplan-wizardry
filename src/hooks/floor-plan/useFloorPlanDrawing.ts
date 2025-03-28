@@ -163,7 +163,8 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
           points: finalPoints,
           type: 'line', // Default type
           color: '#000000', // Default color
-          thickness: 2 // Default thickness
+          thickness: 2, // Default thickness
+          width: 2 // Add required width property
         };
         
         updatedPlan.strokes = [...updatedPlan.strokes, newStroke];
@@ -200,7 +201,8 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
           points: finalPoints,
           type: 'line', // Default type
           color: '#000000', // Default color
-          thickness: 2 // Default thickness
+          thickness: 2, // Default thickness
+          width: 2 // Add required width property
         };
         
         currentFloorPlan.strokes = [...currentFloorPlan.strokes, newStroke];
@@ -301,7 +303,8 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
           points: [{x: 0, y: 0}, {x: 10, y: 10}], // Dummy points for test
           type: 'line' as StrokeType,
           color: '#000000',
-          thickness: 2
+          thickness: 2,
+          width: 2 // Add required width property
         };
         
         currentFloorPlan.strokes = [...currentFloorPlan.strokes, newStroke];

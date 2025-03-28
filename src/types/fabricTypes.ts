@@ -10,6 +10,25 @@ export type FabricCanvas = Canvas;
 export type FabricObject = FabricObjectBase;
 export type FabricPointType = FabricPoint;
 
+// Object ID type for fabric objects
+export type ObjectId = string;
+
+/**
+ * Validates if a string is a valid object ID
+ * @param id The ID to validate
+ * @returns True if the ID is valid
+ */
+export function isValidObjectId(id: string): boolean {
+  return typeof id === 'string' && id.length > 0;
+}
+
+// Grid line type enum for differentiating grid lines
+export enum GridLineType {
+  SMALL = 'small',
+  LARGE = 'large',
+  AXIS = 'axis'
+}
+
 // Extended fabric object with common properties used in our app
 export interface ExtendedFabricObject extends FabricObject {
   objectType?: string;

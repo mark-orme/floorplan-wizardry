@@ -1,4 +1,3 @@
-
 /**
  * Path processing hook
  * Handles processing of drawing paths
@@ -128,7 +127,8 @@ export const usePathProcessing = ({
       points,
       type: drawingToolToStrokeType(tool),
       color: path.stroke?.toString() || '#000000',
-      thickness: path.strokeWidth || 1
+      thickness: path.strokeWidth || 1,
+      width: path.strokeWidth || 1 // Add width property to match Stroke interface
     };
     
     // Update floor plans with the new stroke

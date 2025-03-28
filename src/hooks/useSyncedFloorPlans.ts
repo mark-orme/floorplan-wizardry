@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -17,6 +16,25 @@ import {
 } from '@/utils/syncService';
 import { useSupabaseFloorPlans } from './useSupabaseFloorPlans';
 import logger from '@/utils/logger';
+
+/**
+ * Convert between FloorPlan types to ensure compatibility
+ */
+const convertFloorPlanTypes = (plans: any[]): FloorPlan[] => {
+  return plans.map(plan => {
+    // Ensure required fields exist
+    if (!plan.index && plan.metadata && typeof plan.metadata.level === 'number') {
+      plan.index = plan.metadata.level;
+    }
+    
+    // Ensure label exists
+    if (!plan.label && plan.name) {
+      plan.label = plan.name;
+    }
+    
+    return plan as FloorPlan;
+  });
+};
 
 /**
  * Hook for managing floor plans with real-time sync across devices
@@ -137,9 +155,9 @@ export const useSyncedFloorPlans = () => {
         data = await loadFromSupabase();
         if (data) {
           logger.info('Loaded floor plans from Supabase');
-          setFloorPlans(data);
+          setFloorPlans(convertFloorPlanTypes(data));
           // Also save to local storage for offline access
-          await saveFloorPlans(data);
+          await saveFloorPlans(convertFloorPlanTypes(data));
           setIsLoading(false);
           return data;
         }
@@ -148,11 +166,11 @@ export const useSyncedFloorPlans = () => {
       // If not logged in or no Supabase data, fall back to local storage
       logger.info('Falling back to local storage for floor plans');
       data = await loadFloorPlans();
-      setFloorPlans(data);
+      setFloorPlans(convertFloorPlanTypes(data));
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && data && data.length > 0) {
-        await saveToSupabase(data);
+        await saveToSupabase(convertFloorPlanTypes(data));
       }
       
       return data;
@@ -207,7 +225,7 @@ export const useSyncedFloorPlans = () => {
     if (isLoggedIn) {
       supabaseSaveTimeoutRef.current = window.setTimeout(async () => {
         try {
-          const success = await saveToSupabase(newFloorPlans);
+          const success = await saveToSupabase(convertFloorPlanTypes(newFloorPlans));
           if (success) {
             logger.info('Floor plans saved to Supabase');
           }

@@ -1,103 +1,91 @@
 
 /**
- * Coordinate transformation utilities module
- * Functions for transforming between coordinate systems
- * @module geometry/coordinateTransforms
+ * Coordinate transformation utilities
+ * @module utils/geometry/coordinateTransforms
  */
-import { Point } from '@/types/drawingTypes';
-import { PIXELS_PER_METER } from './constants';
+import { Point } from '@/types/geometryTypes';
+import { PIXELS_PER_METER, GRID_SPACING } from '@/constants/numerics';
 
 /**
- * Convert canvas pixel coordinates to real-world meters
- * @param {Point} point - Point in pixel coordinates
- * @returns {Point} Point in meter coordinates
+ * Convert pixels to meters
+ * @param pixels Value in pixels
+ * @returns Value in meters
  */
-export const pixelsToMeters = (point: Point): Point => {
-  if (!point) return { x: 0, y: 0 };
-  
+export const pixelsToMeters = (pixels: number): number => {
+  return pixels / PIXELS_PER_METER;
+};
+
+/**
+ * Convert meters to pixels
+ * @param meters Value in meters
+ * @returns Value in pixels
+ */
+export const metersToPixels = (meters: number): number => {
+  return meters * PIXELS_PER_METER;
+};
+
+/**
+ * Convert a point from pixel coordinates to meter coordinates
+ * @param point Point in pixel coordinates
+ * @returns Point in meter coordinates
+ */
+export const pixelPointToMeterPoint = (point: Point): Point => {
   return {
-    x: point.x / PIXELS_PER_METER,
-    y: point.y / PIXELS_PER_METER
+    x: pixelsToMeters(point.x),
+    y: pixelsToMeters(point.y)
   };
 };
 
 /**
- * Convert real-world meter coordinates to canvas pixels
- * @param {Point} point - Point in meter coordinates
- * @returns {Point} Point in pixel coordinates
+ * Convert a point from meter coordinates to pixel coordinates
+ * @param point Point in meter coordinates
+ * @returns Point in pixel coordinates
  */
-export const metersToPixels = (point: Point): Point => {
-  if (!point) return { x: 0, y: 0 };
-  
+export const meterPointToPixelPoint = (point: Point): Point => {
   return {
-    x: point.x * PIXELS_PER_METER,
-    y: point.y * PIXELS_PER_METER
+    x: metersToPixels(point.x),
+    y: metersToPixels(point.y)
   };
 };
 
 /**
- * Convert point from screen to canvas coordinates
- * Accounts for canvas offset and scaling
- * @param {Point} point - Point in screen coordinates
- * @param {HTMLCanvasElement} canvas - Canvas element
- * @param {number} zoom - Current zoom level
- * @returns {Point} Point in canvas coordinates
+ * Convert pixels to grid units
+ * @param pixels Value in pixels
+ * @returns Value in grid units
  */
-export const screenToCanvasCoordinates = (
-  point: Point,
-  canvas: HTMLCanvasElement,
-  zoom: number = 1
-): Point => {
-  if (!point || !canvas) return { x: 0, y: 0 };
-  
-  const rect = canvas.getBoundingClientRect();
-  
+export const pixelsToGridUnits = (pixels: number): number => {
+  return pixels / GRID_SPACING;
+};
+
+/**
+ * Convert grid units to pixels
+ * @param gridUnits Value in grid units
+ * @returns Value in pixels
+ */
+export const gridUnitsToPixels = (gridUnits: number): number => {
+  return gridUnits * GRID_SPACING;
+};
+
+/**
+ * Convert a point from pixel coordinates to grid units
+ * @param point Point in pixel coordinates
+ * @returns Point in grid units
+ */
+export const pixelPointToGridPoint = (point: Point): Point => {
   return {
-    x: (point.x - rect.left) / zoom,
-    y: (point.y - rect.top) / zoom
+    x: pixelsToGridUnits(point.x),
+    y: pixelsToGridUnits(point.y)
   };
 };
 
 /**
- * Convert point from canvas to screen coordinates
- * Accounts for canvas offset and scaling
- * @param {Point} point - Point in canvas coordinates
- * @param {HTMLCanvasElement} canvas - Canvas element
- * @param {number} zoom - Current zoom level
- * @returns {Point} Point in screen coordinates
+ * Convert a point from grid units to pixel coordinates
+ * @param point Point in grid units
+ * @returns Point in pixel coordinates
  */
-export const canvasToScreenCoordinates = (
-  point: Point,
-  canvas: HTMLCanvasElement,
-  zoom: number = 1
-): Point => {
-  if (!point || !canvas) return { x: 0, y: 0 };
-  
-  const rect = canvas.getBoundingClientRect();
-  
+export const gridPointToPixelPoint = (point: Point): Point => {
   return {
-    x: point.x * zoom + rect.left,
-    y: point.y * zoom + rect.top
-  };
-};
-
-/**
- * Apply zoom transformation to a point
- * Zooms relative to a specified center point
- * @param {Point} point - Point to transform
- * @param {Point} center - Center point of zoom
- * @param {number} scale - Zoom scale factor
- * @returns {Point} Transformed point
- */
-export const applyZoomTransform = (
-  point: Point,
-  center: Point,
-  scale: number
-): Point => {
-  if (!point || !center) return { x: 0, y: 0 };
-  
-  return {
-    x: center.x + (point.x - center.x) * scale,
-    y: center.y + (point.y - center.y) * scale
+    x: gridUnitsToPixels(point.x),
+    y: gridUnitsToPixels(point.y)
   };
 };

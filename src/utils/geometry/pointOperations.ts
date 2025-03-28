@@ -77,3 +77,23 @@ export const rotatePoint = (point: Point, origin: Point, angle: number): Point =
     y: origin.y + dx * Math.sin(angle) + dy * Math.cos(angle)
   };
 };
+
+/**
+ * Format distance for display
+ * @param dist Distance in pixels
+ * @returns Formatted distance string
+ */
+export const formatDistance = (dist: number): string => {
+  return `${dist.toFixed(2)}px`;
+};
+
+/**
+ * Check if a value is an exact multiple of the grid spacing
+ * @param value Value to check
+ * @param gridSpacing Grid spacing to check against
+ * @returns True if value is an exact multiple
+ */
+export const isExactGridMultiple = (value: number, gridSpacing: number): boolean => {
+  const remainder = value % gridSpacing;
+  return remainder < 0.001 || Math.abs(remainder - gridSpacing) < 0.001;
+};
