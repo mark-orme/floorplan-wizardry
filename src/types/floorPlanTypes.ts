@@ -1,9 +1,9 @@
-
 /**
  * Floor plan type definitions
  * @module floorPlanTypes
  */
 import { Point } from './geometryTypes';
+import { Wall as CoreWall } from './core/FloorPlan';
 
 /**
  * Paper size enumeration
@@ -40,13 +40,14 @@ export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehan
 /**
  * Wall definition
  * Represents a wall in a floor plan
+ * Compatible with CoreWall from core/FloorPlan
  */
 export interface Wall {
   /** Unique identifier */
   id: string;
-  /** Start point of the wall */
+  /** Start point of the wall - maps to 'start' in CoreWall */
   startPoint: Point;
-  /** End point of the wall */
+  /** End point of the wall - maps to 'end' in CoreWall */
   endPoint: Point;
   /** Wall thickness in mm */
   thickness: number;
@@ -56,6 +57,10 @@ export interface Wall {
   color?: string;
   /** Associated room IDs */
   roomIds?: string[];
+  /** Start point for CoreWall compatibility */
+  start?: Point;
+  /** End point for CoreWall compatibility */
+  end?: Point;
 }
 
 /**

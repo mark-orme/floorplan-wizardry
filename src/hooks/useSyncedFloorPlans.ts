@@ -5,8 +5,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { Channel } from 'pusher-js';
-import { FloorPlan } from '@/types/floorPlanTypes';
-import { FloorPlan as CoreFloorPlan } from '@/types/core/FloorPlan';
+import { FloorPlan } from '@/types/core/FloorPlan';
+import { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
 import { loadFloorPlans, saveFloorPlans } from '@/utils/floorPlanStorage';
 import { 
   subscribeSyncChannel, 
@@ -32,7 +32,7 @@ export const useSyncedFloorPlans = () => {
   /**
    * State for floor plans data
    */
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
+  const [floorPlans, setFloorPlans] = useState<AppFloorPlan[]>([]);
   /**
    * Loading state indicator
    */
@@ -143,7 +143,7 @@ export const useSyncedFloorPlans = () => {
 
   /**
    * Load initial floor plan data from Supabase or local storage
-   * @returns {Promise<FloorPlan[]>} The loaded floor plans
+   * @returns {Promise<AppFloorPlan[]>} The loaded floor plans
    */
   const loadData = useCallback(async () => {
     try {
@@ -194,12 +194,9 @@ export const useSyncedFloorPlans = () => {
       if (isLoggedIn && localData && localData.length > 0) {
         // Convert app floor plans to core floor plans with ensured labels
         // Explicitly cast to CoreFloorPlan[] after ensuring all required fields are present
-        const plansCoreFormat = appToCoreFloorPlans(plansWithLabels.map(plan => ({
-          ...plan,
-          label: plan.label || plan.name || '' // Ensure label is set
-        }))) as CoreFloorPlan[];
+        const corePlans = appToCoreFloorPlans(plansWithLabels);
         
-        await saveToSupabase(plansWithLabels);
+        await saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
       }
       
       return plansWithLabels;
@@ -216,9 +213,9 @@ export const useSyncedFloorPlans = () => {
    * Save floor plans with debouncing and multi-device synchronization
    * Updates local state, persists to storage, and broadcasts to other devices
    * 
-   * @param {FloorPlan[]} newFloorPlans - The floor plans to save
+   * @param {AppFloorPlan[]} newFloorPlans - The floor plans to save
    */
-  const saveFloorPlansWithSync = useCallback((newFloorPlans: FloorPlan[]) => {
+  const saveFloorPlansWithSync = useCallback((newFloorPlans: AppFloorPlan[]) => {
     // Ensure all plans have a label before any operations
     const plansWithLabels = newFloorPlans.map(plan => ({
       ...plan,
@@ -240,10 +237,7 @@ export const useSyncedFloorPlans = () => {
 
       try {
         // Convert to core floor plans with required labels and explicit cast to CoreFloorPlan[]
-        const corePlans = appToCoreFloorPlans(plansWithLabels.map(plan => ({
-          ...plan,
-          label: plan.label || plan.name || '' // Ensure label is set
-        }))) as CoreFloorPlan[];
+        const corePlans = appToCoreFloorPlans(plansWithLabels);
         
         await saveFloorPlans(corePlans);
         broadcastFloorPlanUpdate(plansWithLabels);
@@ -268,7 +262,7 @@ export const useSyncedFloorPlans = () => {
         try {
           // Convert to core floor plans with required labels before saving to Supabase
           const corePlans = appToCoreFloorPlans(plansWithLabels);
-          const success = await saveToSupabase(plansWithLabels);
+          const success = await saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
           if (success) {
             logger.info('Floor plans saved to Supabase');
           }

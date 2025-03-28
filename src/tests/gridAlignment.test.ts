@@ -1,4 +1,3 @@
-
 /**
  * Grid alignment and snapping tests
  * Validates that the grid snapping functionality works as expected
