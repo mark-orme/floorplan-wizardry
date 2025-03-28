@@ -40,6 +40,7 @@ export interface ZoomOptions {
 
 /**
  * Debug info state interface
+ * Synchronized with core/DebugInfo
  */
 export interface DebugInfoState {
   /** Frames per second */
@@ -78,41 +79,12 @@ export interface DebugInfoState {
   performanceStats: Record<string, number>;
   /** Event handlers set flag */
   eventHandlersSet: boolean;
-  /** Optional grid initialization state */
-  gridInitialized?: boolean;
-  /** Optional debug messages */
-  messages?: string[];
-  /** Optional object count */
-  objectCount?: number;
-  /** Optional canvas dimensions */
-  dimensions?: {
-    width: number;
-    height: number;
-  };
-  /** Optional current tool */
-  currentTool?: string;
-  /** Optional initialization time */
-  initTime?: number;
-  /** Optional grid objects count */
-  gridObjects?: number;
-  /** Optional canvas objects count */
-  canvasObjects?: number;
-  /** Optional canvas width */
-  canvasWidth?: number;
-  /** Optional canvas height */
-  canvasHeight?: number;
-  /** Optional device pixel ratio */
-  devicePixelRatio?: number;
-  /** Optional last error */
-  lastError?: any;
-  /** Optional last error time */
-  lastErrorTime?: number;
-  /** Optional canvas events registered flag */
-  canvasEventsRegistered?: boolean;
-  /** Optional grid rendered flag */
-  gridRendered?: boolean;
-  /** Optional tools initialized flag */
-  toolsInitialized?: boolean;
+  /** Canvas events registered flag */
+  canvasEventsRegistered: boolean;
+  /** Grid rendered flag */
+  gridRendered: boolean;
+  /** Tools initialized flag */
+  toolsInitialized: boolean;
 }
 
 /**

@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for floor plan drawing functionality
  * Manages drawing operations and calculations for floor plans
@@ -181,8 +180,7 @@ export const useFloorPlanDrawing = (props?: UseFloorPlanDrawingProps): UseFloorP
           setGia) {
         // Calculate area for closed shape
         // We need to extract just the points for the GIA calculation
-        const pointArrays = [[...finalPoints]];
-        const area = calculateGIA(pointArrays);
+        const area = calculateGIA(finalPoints);
         setGia(prev => prev + area);
         toast.success(`Area: ${area.toFixed(2)} m²`);
       }
@@ -347,11 +345,10 @@ export const calculateFloorPlanAreas = (floorPlan: FloorPlan): number[] => {
     return [];
   }
   
-  // Extract just the points arrays from each stroke for calculateGIA
-  const pointArrays = floorPlan.strokes.map(stroke => stroke.points);
-  const areas = calculateGIA(pointArrays);
+  // Extract points and calculate area for each stroke separately
+  const areas = floorPlan.strokes.map(stroke => calculateGIA(stroke.points));
   
-  return [areas];
+  return areas;
 };
 
 /**

@@ -1,113 +1,157 @@
 
 /**
- * Line operation utilities
+ * Line operations utility
  * @module geometry/lineOperations
  */
 import { Point } from '@/types/geometryTypes';
-import { GRID_SPACING } from '@/constants/numerics';
 
 /**
- * Calculate the distance between two points
+ * Calculate angle between two points in degrees
+ * Returns the angle in degrees from the positive x-axis
  * 
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {number} Distance between points
+ * @param {Point} start - Start point
+ * @param {Point} end - End point
+ * @returns {number} Angle in degrees (0-360)
  */
-export const calculateDistance = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
+export const calculateAngle = (start: Point, end: Point): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  
+  // Convert from radians to degrees and normalize to 0-360
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  
+  // Normalize to 0-360 degrees
+  if (angle < 0) {
+    angle += 360;
+  }
+  
+  return angle;
+};
+
+/**
+ * Calculate distance between two points
+ * 
+ * @param {Point} start - Start point
+ * @param {Point} end - End point
+ * @returns {number} Distance in pixels
+ */
+export const calculateDistance = (start: Point, end: Point): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
   return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
- * Format a distance for display
+ * Calculate midpoint between two points
  * 
- * @param {number} distance - Raw distance in pixels
- * @param {number} precision - Number of decimal places
- * @returns {string} Formatted distance
- */
-export const formatDistance = (distance: number, precision: number = 2): string => {
-  const meters = distance / 100; // Assuming 100 pixels = 1 meter
-  return meters.toFixed(precision) + 'm';
-};
-
-/**
- * Calculate the midpoint between two points
- * 
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
+ * @param {Point} start - Start point
+ * @param {Point} end - End point
  * @returns {Point} Midpoint
  */
-export const calculateMidpoint = (p1: Point, p2: Point): Point => {
+export const calculateMidpoint = (start: Point, end: Point): Point => {
   return {
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
+    x: (start.x + end.x) / 2,
+    y: (start.y + end.y) / 2
   };
 };
 
 /**
- * Calculate the angle between two points in degrees
+ * Check if two lines are parallel
  * 
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {number} Angle in degrees
+ * @param {Point} line1Start - First line start point
+ * @param {Point} line1End - First line end point
+ * @param {Point} line2Start - Second line start point
+ * @param {Point} line2End - Second line end point
+ * @param {number} angleTolerance - Angle tolerance in degrees
+ * @returns {boolean} Whether the lines are parallel
  */
-export const calculateAngle = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  const angleRadians = Math.atan2(dy, dx);
-  return angleRadians * (180 / Math.PI);
-};
-
-/**
- * Check if a value is an exact multiple of the grid spacing
- * 
- * @param {number} value - Value to check
- * @param {number} [gridSpacing] - Grid spacing to use
- * @returns {boolean} Whether the value is an exact grid multiple
- */
-export const isExactGridMultiple = (value: number, gridSpacing = GRID_SPACING.SMALL): boolean => {
-  return Math.abs(value % gridSpacing) < 0.001;
-};
-
-/**
- * Snap an angle to standard 45-degree increments
- * 
- * @param {number} angle - Angle in degrees
- * @returns {number} Snapped angle in degrees
- */
-export const snapAngleToStandard = (angle: number): number => {
-  // Normalize angle to 0-360
-  const normalizedAngle = ((angle % 360) + 360) % 360;
+export const areLinesParallel = (
+  line1Start: Point,
+  line1End: Point,
+  line2Start: Point,
+  line2End: Point,
+  angleTolerance: number = 5
+): boolean => {
+  const angle1 = calculateAngle(line1Start, line1End);
+  const angle2 = calculateAngle(line2Start, line2End);
   
-  // Snap to nearest 45-degree increment
-  const increment = 45;
-  return Math.round(normalizedAngle / increment) * increment;
+  // Calculate the smaller angle between the two lines
+  let angleDiff = Math.abs(angle1 - angle2) % 180;
+  if (angleDiff > 90) {
+    angleDiff = 180 - angleDiff;
+  }
+  
+  return angleDiff <= angleTolerance;
 };
 
 /**
- * Get the nearest point on a line from a given point
+ * Calculate the slope of a line
  * 
+ * @param {Point} start - Start point
+ * @param {Point} end - End point
+ * @returns {number} Slope of the line (Infinity for vertical lines)
+ */
+export const calculateSlope = (start: Point, end: Point): number => {
+  const dx = end.x - start.x;
+  
+  // Avoid division by zero for vertical lines
+  if (Math.abs(dx) < 0.0001) {
+    return Infinity;
+  }
+  
+  return (end.y - start.y) / dx;
+};
+
+/**
+ * Get a point at a certain distance along a line
+ * 
+ * @param {Point} start - Start point
+ * @param {Point} end - End point
+ * @param {number} distance - Distance from start
+ * @returns {Point} New point
+ */
+export const getPointAtDistance = (
+  start: Point,
+  end: Point,
+  distance: number
+): Point => {
+  const totalDistance = calculateDistance(start, end);
+  
+  // Avoid division by zero
+  if (totalDistance < 0.0001) {
+    return { ...start };
+  }
+  
+  const ratio = distance / totalDistance;
+  
+  return {
+    x: start.x + (end.x - start.x) * ratio,
+    y: start.y + (end.y - start.y) * ratio
+  };
+};
+
+/**
+ * Check if a point is on a line segment
+ * 
+ * @param {Point} point - Point to check
  * @param {Point} lineStart - Line start point
  * @param {Point} lineEnd - Line end point
- * @param {Point} point - Point to find nearest point for
- * @returns {Point} Nearest point on the line
+ * @param {number} tolerance - Distance tolerance
+ * @returns {boolean} Whether the point is on the line
  */
-export const getNearestPointOnLine = (lineStart: Point, lineEnd: Point, point: Point): Point => {
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
+export const isPointOnLine = (
+  point: Point,
+  lineStart: Point,
+  lineEnd: Point,
+  tolerance: number = 1
+): boolean => {
+  // Calculate distances
+  const d1 = calculateDistance(point, lineStart);
+  const d2 = calculateDistance(point, lineEnd);
+  const lineLength = calculateDistance(lineStart, lineEnd);
   
-  // Handle case where line is just a point
-  if (dx === 0 && dy === 0) return lineStart;
+  // Check if point is on line (with tolerance)
+  const delta = Math.abs(d1 + d2 - lineLength);
   
-  // Calculate projection
-  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (dx * dx + dy * dy);
-  
-  // Clamp t to line segment
-  const tClamped = Math.max(0, Math.min(1, t));
-  
-  return {
-    x: lineStart.x + tClamped * dx,
-    y: lineStart.y + tClamped * dy
-  };
+  return delta <= tolerance;
 };

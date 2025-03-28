@@ -10,9 +10,9 @@ export type { FloorPlan } from './core/FloorPlan';
 export type { CanvasDimensions } from './core/Geometry';
 export type { DebugInfoState } from './core/DebugInfo';
 export type { DrawingState } from './core/DrawingState';
-export type { GridCreationState } from './core/GridState';
+export type { GridCreationState } from './gridTypes';
 
-// Re-export drawing-related types
+// Re-export zoom-related types
 export type {
   ZoomDirection,
   ZoomOptions

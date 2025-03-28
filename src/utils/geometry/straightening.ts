@@ -32,6 +32,28 @@ export const straightenLine = (start: Point, end: Point): Point => {
 };
 
 /**
+ * Straighten a polygon (array of points) to the nearest cardinal or ordinal directions
+ * 
+ * @param {Point[]} points - Points defining the polygon
+ * @returns {Point[]} Straightened points
+ */
+export const straightenPolygon = (points: Point[]): Point[] => {
+  if (points.length < 2) return [...points];
+  
+  const result: Point[] = [points[0]]; // Keep the first point as is
+  
+  // Straighten each segment
+  for (let i = 1; i < points.length; i++) {
+    const start = result[i - 1];
+    const end = points[i];
+    const straightened = straightenLine(start, end);
+    result.push(straightened);
+  }
+  
+  return result;
+};
+
+/**
  * Check if a line is already straightened
  * 
  * @param {Point} start - Start point
@@ -81,4 +103,43 @@ export const isHorizontalOrVertical = (angle: number, tolerance = 10): boolean =
     Math.abs(normalizedAngle - 270) <= tolerance ||
     Math.abs(normalizedAngle - 360) <= tolerance
   );
+};
+
+/**
+ * Straighten a stroke (array of points) while maintaining relative positions
+ * 
+ * @param {Point[]} points - Points defining the stroke
+ * @returns {Point[]} Straightened points
+ */
+export const straightenStroke = (points: Point[]): Point[] => {
+  if (points.length < 2) return [...points];
+  
+  return straightenPolygon(points);
+};
+
+/**
+ * Check if walls are aligned (parallel or perpendicular)
+ * 
+ * @param {Point[]} strokeA - First wall stroke
+ * @param {Point[]} strokeB - Second wall stroke
+ * @param {number} [tolerance=3] - Angle tolerance in degrees
+ * @returns {boolean} Whether the walls are aligned
+ */
+export const hasAlignedWalls = (
+  strokeA: Point[],
+  strokeB: Point[],
+  tolerance = 3
+): boolean => {
+  if (strokeA.length < 2 || strokeB.length < 2) return false;
+  
+  // Get the main directions of the strokes
+  const angleA = calculateAngle(strokeA[0], strokeA[strokeA.length - 1]);
+  const angleB = calculateAngle(strokeB[0], strokeB[strokeB.length - 1]);
+  
+  // Normalize angles to 0-90 degrees (treating perpendicular as aligned)
+  const normA = angleA % 90;
+  const normB = angleB % 90;
+  
+  // Check if angles are within tolerance
+  return Math.abs(normA - normB) <= tolerance;
 };

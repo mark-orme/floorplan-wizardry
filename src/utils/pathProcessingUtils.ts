@@ -5,7 +5,6 @@
  */
 import { Object as FabricObject, Path as FabricPath } from "fabric";
 import { Point } from "@/types/core/Point";
-import { distanceToGridLine, snapPointToGrid } from "./grid/snapping";
 import { GRID_SPACING, SNAP_THRESHOLD } from "@/constants/numerics";
 
 /**
@@ -99,6 +98,30 @@ export const createPathFromPoints = (points: Point[], options: any = {}): Fabric
 };
 
 /**
+ * Snap a point to grid
+ * Simple implementation for utility usage
+ */
+export function snapToGrid(point: Point, gridSize: number = GRID_SPACING.SMALL): Point {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
+}
+
+/**
+ * Calculate distance to nearest grid line
+ */
+export function distanceToNearestGridLine(point: Point, gridSize: number = GRID_SPACING.SMALL): { x: number, y: number } {
+  const nearestX = Math.round(point.x / gridSize) * gridSize;
+  const nearestY = Math.round(point.y / gridSize) * gridSize;
+  
+  return {
+    x: Math.abs(point.x - nearestX),
+    y: Math.abs(point.y - nearestY)
+  };
+}
+
+/**
  * Snap a path's points to grid
  * @param path - Fabric path object
  * @param gridSize - Grid size
@@ -110,7 +133,7 @@ export const snapPathToGrid = (path: FabricPath, gridSize: number = GRID_SPACING
   if (points.length === 0) return path;
   
   // Snap points to grid
-  const snappedPoints = points.map(p => snapPointToGrid(p, gridSize));
+  const snappedPoints = points.map(p => snapToGrid(p, gridSize));
   
   // Create new path with snapped points
   const options = {
@@ -137,7 +160,7 @@ export const shouldSnapPathToGrid = (path: FabricPath): boolean => {
   
   // Check if any point is close to a grid line
   for (const point of points) {
-    const dist = distanceToGridLine(point, GRID_SPACING.SMALL);
+    const dist = distanceToNearestGridLine(point, GRID_SPACING.SMALL);
     if (dist.x <= SNAP_THRESHOLD || dist.y <= SNAP_THRESHOLD) {
       return true;
     }

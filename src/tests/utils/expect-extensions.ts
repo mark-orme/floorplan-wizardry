@@ -82,6 +82,11 @@ expect.extend({
   }
 });
 
+// Ensure the global 'expect' is extended with custom matchers
+if (typeof global !== 'undefined' && typeof global.expect === 'undefined') {
+  (global as any).expect = expect;
+}
+
 // Export types for the new matchers
 declare global {
   namespace Vi {

@@ -6,7 +6,8 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingTool } from './useCanvasState';
-import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
+import { ZOOM_CONSTRAINTS } from '@/constants/numerics';
+import { Point, createPoint } from '@/types/geometryTypes';
 import logger from '@/utils/logger';
 
 /**
@@ -23,6 +24,8 @@ interface UseCanvasToolsProps {
   zoomLevel: number;
   /** Function to set zoom level */
   setZoomLevel: (zoom: number) => void;
+  /** Line thickness (optional) */
+  lineThickness?: number;
 }
 
 /**
@@ -43,17 +46,17 @@ export const useCanvasTools = (props: UseCanvasToolsProps) => {
     
     // Calculate new zoom level within constraints
     const newZoom = Math.min(
-      Math.max(zoomLevel * factor, ZOOM_CONSTANTS.MIN_ZOOM),
-      ZOOM_CONSTANTS.MAX_ZOOM
+      Math.max(zoomLevel * factor, ZOOM_CONSTRAINTS.MIN),
+      ZOOM_CONSTRAINTS.MAX
     );
     
     // Apply zoom centered on canvas center
-    const center = {
-      x: canvas.width! / 2,
-      y: canvas.height! / 2
-    };
+    const centerPoint = createPoint(
+      canvas.width! / 2,
+      canvas.height! / 2
+    );
     
-    canvas.zoomToPoint(center, newZoom);
+    canvas.zoomToPoint(centerPoint, newZoom);
     setZoomLevel(newZoom);
     
     // Refresh canvas
@@ -93,11 +96,11 @@ export const useCanvasTools = (props: UseCanvasToolsProps) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    canvas.setZoom(ZOOM_CONSTANTS.DEFAULT_ZOOM);
+    canvas.setZoom(ZOOM_CONSTRAINTS.DEFAULT);
     canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
     canvas.requestRenderAll();
     
-    setZoomLevel(ZOOM_CONSTANTS.DEFAULT_ZOOM);
+    setZoomLevel(ZOOM_CONSTRAINTS.DEFAULT);
     logger.info("Zoom reset to default");
   }, [fabricCanvasRef, setZoomLevel]);
   
