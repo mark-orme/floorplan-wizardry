@@ -18,6 +18,17 @@ export function convertCoreToFloorPlanType(fp: CoreFloorPlan): FloorPlanType {
       ...wall,
       startPoint: wall.start,
       endPoint: wall.end,
+      start: wall.start,  // Ensure both properties are present
+      end: wall.end       // Ensure both properties are present
     })),
   };
+}
+
+/**
+ * Converts multiple Core FloorPlans to FloorPlanType format
+ * @param plans Array of Core FloorPlan objects
+ * @returns Array of FloorPlanType formatted objects
+ */
+export function convertCoreArrayToFloorPlanType(plans: CoreFloorPlan[]): FloorPlanType[] {
+  return plans.map(convertCoreToFloorPlanType);
 }

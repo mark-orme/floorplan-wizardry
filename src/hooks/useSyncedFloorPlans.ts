@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -21,7 +22,7 @@ import {
   appToCoreFloorPlans, 
   coreToAppFloorPlans
 } from '@/utils/floorPlanAdapter';
-import { convertCoreToFloorPlanType } from '@/utils/adapters/convertCoreFloorPlan';
+import { convertCoreToFloorPlanType, convertCoreArrayToFloorPlanType } from '@/utils/adapters/convertCoreFloorPlan';
 
 /**
  * Hook for managing floor plans with real-time sync across devices
@@ -178,7 +179,7 @@ export const useSyncedFloorPlans = () => {
       const localData = await loadFloorPlans();
       
       // Convert core floor plans to app floor plans using our adapter
-      const appData = coreToAppFloorPlans(localData);
+      const appData = convertCoreArrayToFloorPlanType(localData);
       
       // Ensure all plans have labels
       const plansWithLabels = appData.map(plan => ({
