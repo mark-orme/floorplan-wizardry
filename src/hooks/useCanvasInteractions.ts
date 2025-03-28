@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas interactions
  * Manages zooming, panning, and keyboard shortcuts
@@ -8,6 +9,8 @@ import { Canvas as FabricCanvas } from "fabric";
 import { useCanvasState } from "./useCanvasState";
 import { useZoom } from "./useZoom";
 import { ZoomOptions } from "@/types";
+import { Point } from "@/types/core/Point";
+import { DrawingState } from "@/types/core/DrawingState";
 
 /**
  * Interface for the return value of the useCanvasInteractions hook.
@@ -18,19 +21,55 @@ interface UseCanvasInteractionsResult {
    * Function to reset the viewport transform of the canvas.
    */
   resetViewport: () => void;
+  /**
+   * Current drawing state
+   */
+  drawingState?: DrawingState;
+  /**
+   * Current zoom level
+   */
+  currentZoom: number;
+  /**
+   * Toggle grid snapping
+   */
+  toggleSnap: () => void;
+  /**
+   * Whether snapping is enabled
+   */
+  snapEnabled: boolean;
+}
+
+// Extend fabric Canvas with our custom properties
+interface ExtendedCanvas extends FabricCanvas {
+  isPanning?: boolean;
+  lastPanPosition?: { x: number; y: number } | null;
 }
 
 /**
  * Custom hook for managing canvas interactions such as zooming, panning, and handling keyboard shortcuts.
  *
  * @param {React.MutableRefObject<FabricCanvas | null>} fabricCanvasRef - Reference to the Fabric.js canvas instance.
+ * @param {string} tool - Current selected drawing tool
+ * @param {number} lineThickness - Line thickness for drawing
+ * @param {string} lineColor - Line color for drawing
  * @returns {UseCanvasInteractionsResult} - An object containing the resetViewport function.
  */
 export const useCanvasInteractions = (
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
+  tool: string,
+  lineThickness: number,
+  lineColor: string
 ): UseCanvasInteractionsResult => {
-  const { tool } = useCanvasState();
-  const { updateZoomState } = useZoom();
+  const { tool: stateTool } = useCanvasState();
+  const { updateZoomState, currentZoom } = useZoom();
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  
+  /**
+   * Toggle snap to grid functionality
+   */
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
   
   /**
    * Resets the viewport transform of the canvas to its initial state.
@@ -81,7 +120,8 @@ export const useCanvasInteractions = (
     const newZoom = Math.max(0.5, Math.min(5, currentZoom + zoomDelta));
     
     // Apply zoom to the canvas
-    canvas.zoomToPoint({ x: pointer.x, y: pointer.y }, newZoom);
+    const zoomPoint = new Point(pointer.x, pointer.y);
+    canvas.zoomToPoint(zoomPoint, newZoom);
     
     // Update zoom level in state
     updateZoomState(newZoom);
@@ -95,8 +135,8 @@ export const useCanvasInteractions = (
    * @param {any} event - The event object.
    */
   const handlePan = useCallback((event: any) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || tool !== 'pan') return;
+    const canvas = fabricCanvasRef.current as ExtendedCanvas | null;
+    if (!canvas || tool !== "pan") return;
     
     // Set panning to true on mouse down
     canvas.isPanning = true;
@@ -113,8 +153,8 @@ export const useCanvasInteractions = (
    * @param {any} event - The event object.
    */
   const handlePanMove = useCallback((event: any) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || tool !== 'pan' || !canvas.isPanning || !canvas.lastPanPosition) return;
+    const canvas = fabricCanvasRef.current as ExtendedCanvas | null;
+    if (!canvas || tool !== "pan" || !canvas.isPanning || !canvas.lastPanPosition) return;
     
     // Get the pointer coordinates
     const { x, y } = canvas.getPointer(event.e);
@@ -124,7 +164,8 @@ export const useCanvasInteractions = (
     const deltaY = (typeof y === 'number' && typeof canvas.lastPanPosition.y === 'number') ? y - canvas.lastPanPosition.y : 0;
     
     // Update the viewport transform
-    canvas.relativePan({ x: deltaX, y: deltaY });
+    const panPoint = { x: deltaX, y: deltaY };
+    canvas.relativePan(panPoint);
     
     // Update the last pan position
     canvas.lastPanPosition = { x, y };
@@ -134,7 +175,7 @@ export const useCanvasInteractions = (
    * Handles mouse up events for panning.
    */
   const handlePanEnd = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = fabricCanvasRef.current as ExtendedCanvas | null;
     if (!canvas) return;
     
     // Set panning to false on mouse up
@@ -226,6 +267,13 @@ export const useCanvasInteractions = (
   }, [registerZoomEvents, registerPanEvents, registerKeyboardEvents]);
   
   return {
-    resetViewport
+    resetViewport,
+    currentZoom,
+    toggleSnap,
+    snapEnabled,
+    drawingState: undefined // Placeholder, should be populated with actual drawing state
   };
 };
+
+// Add the useState import
+import { useState } from 'react';

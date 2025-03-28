@@ -7,7 +7,6 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { DrawingTool } from "@/hooks/useCanvasState";
 import { FloorPlan } from "@/types/floorPlanTypes";
-import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
 import { usePusherConnection } from "@/hooks/usePusherConnection";
 import { useCanvasControllerTools } from "@/hooks/canvas/controller/useCanvasControllerTools";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
@@ -50,6 +49,18 @@ interface UseCanvasToolsManagerProps {
   recalculateGIA?: () => void;
 }
 
+// Import useCanvasInteractions with adjusted return type
+import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
+
+// Custom interface for canvas interactions that matches what we use
+interface CanvasInteractionsResult {
+  resetViewport: () => void;
+  drawingState?: any;
+  currentZoom: number;
+  toggleSnap: () => void;
+  snapEnabled: boolean;
+}
+
 /**
  * Hook that centrally manages all canvas tool operations
  * 
@@ -71,8 +82,7 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     currentFloor,
     setFloorPlans,
     setGia,
-    createGrid,
-    recalculateGIA
+    createGrid
   } = props;
   
   // Get drawing tools from controller tools hook
@@ -113,18 +123,18 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     saveCurrentState
   });
   
-  // Get canvas interactions for drawing
+  // Get canvas interactions for drawing, with type assertion
   const {
     drawingState,
     currentZoom,
     toggleSnap,
     snapEnabled
-  } = useCanvasInteractions({
+  } = useCanvasInteractions(
     fabricCanvasRef,
     tool,
     lineThickness,
     lineColor
-  });
+  ) as CanvasInteractionsResult;  // Assert the type to match our expectations
   
   // Connect to Pusher for real-time updates
   // Get floorplan ID from first floorplan if available

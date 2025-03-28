@@ -165,7 +165,12 @@ export const useSyncedFloorPlans = () => {
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
-        await saveToSupabase(appData);
+        // Ensure all plans have a label before saving to Supabase
+        const processedData = appData.map(plan => ({
+          ...plan,
+          label: plan.label || plan.name // Ensure label is set
+        }));
+        await saveToSupabase(processedData);
       }
       
       return appData;
@@ -199,14 +204,13 @@ export const useSyncedFloorPlans = () => {
       }
 
       try {
-        // Convert app floor plans to core floor plans for storage
-        // Ensure label is set for each floor plan
+        // Ensure all plans have a label before saving
         const processedPlans = newFloorPlans.map(plan => ({
           ...plan,
           label: plan.label || plan.name // Ensure label is set
         }));
         
-        // Now convert to core floor plans
+        // Now convert to core floor plans with required labels
         const corePlans = appToCoreFloorPlans(processedPlans);
         
         await saveFloorPlans(corePlans);
