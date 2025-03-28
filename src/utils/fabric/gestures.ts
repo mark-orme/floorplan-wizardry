@@ -1,4 +1,3 @@
-
 /**
  * Utilities for handling touch gestures on Fabric.js canvas
  * Provides multi-touch support for mobile devices
@@ -368,8 +367,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     }
   };
 
-  // Add event listeners with passive: false for all touch events
+  // Add event listeners with proper passive settings based on function needs
   const canvasElement = canvas.getElement();
+  
+  // For events that call preventDefault(), we need { passive: false }
   canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
   canvasElement.addEventListener('touchmove', handleTouchMove, { passive: false });
   canvasElement.addEventListener('touchend', handleTouchEnd, { passive: false });

@@ -7,7 +7,7 @@
 
 // Track seen messages and their timestamps
 const seenMessages: Map<string, number> = new Map();
-const MESSAGE_THROTTLE_TIME = 5000; // 5 seconds between identical messages
+const MESSAGE_THROTTLE_TIME = 10000; // 10 seconds between identical messages (increased from 5s)
 
 /**
  * Throttled console log
@@ -17,6 +17,7 @@ const MESSAGE_THROTTLE_TIME = 5000; // 5 seconds between identical messages
  * @param {any[]} args - Additional args to log
  */
 export function throttledLog(message: string, ...args: any[]): void {
+  // Only log in development mode
   if (process.env.NODE_ENV !== 'development') return;
   
   const now = Date.now();
@@ -50,8 +51,8 @@ export function throttledError(message: string, ...args: any[]): void {
   const now = Date.now();
   const lastTime = seenMessages.get(`error:${message}`) || 0;
   
-  // For errors, use a shorter throttle time
-  if (now - lastTime > 1000) {
+  // For errors, use a longer throttle time to reduce console spam
+  if (now - lastTime > 5000) { // Increased from 1000ms
     console.error(message, ...args);
     seenMessages.set(`error:${message}`, now);
   }

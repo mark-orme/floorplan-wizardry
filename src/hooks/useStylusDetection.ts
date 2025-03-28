@@ -63,10 +63,11 @@ export const useStylusDetection = ({
           }
         };
         
-        canvasElement.addEventListener('touchstart', checkForceHandler, { once: true });
+        // Use { once: true, passive: true } since we don't need preventDefault
+        canvasElement.addEventListener('touchstart', checkForceHandler, { once: true, passive: true });
       }
       
-      // Prevent scrolling when using stylus
+      // When we need to prevent scrolling, we must use passive: false
       canvasElement.addEventListener('touchmove', (e: TouchEvent) => {
         // If there's pressure data, likely a stylus, so prevent page scrolling
         if (e.touches[0] && 'force' in e.touches[0]) {
@@ -74,7 +75,7 @@ export const useStylusDetection = ({
         }
       }, { passive: false });
       
-      // Prevent context menu on long press
+      // Context menu doesn't need passive setting
       canvasElement.addEventListener('contextmenu', (e: Event) => {
         e.preventDefault();
       });
@@ -100,7 +101,7 @@ export const useStylusDetection = ({
       }
       metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
       
-      // Prevent double-tap to zoom on iOS
+      // For touchend where we need to prevent zoom, we use passive: false
       const preventDoubleTapZoom = (e: TouchEvent) => {
         e.preventDefault();
       };

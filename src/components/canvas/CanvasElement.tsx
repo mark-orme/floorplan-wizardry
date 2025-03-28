@@ -34,7 +34,7 @@ export const CanvasElement: React.FC<CanvasElementProps> = ({
       data-ready={canvasReady ? "true" : "false"}
       data-attempt={dimensionsSetupAttempt}
       className="w-full h-full border border-gray-200 touch-none"
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'none' }} // This ensures scroll blocking is well-defined
     />
   );
 };
