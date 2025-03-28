@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for initializing Fabric.js canvas
  * @module useCanvasCreation

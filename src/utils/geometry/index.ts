@@ -4,10 +4,31 @@
  * @module utils/geometry
  */
 
-// Export all from sub-modules
-export * from './lineOperations';
-export * from './pointOperations';
-export * from './coordinateTransforms';
+// Explicitly export from lineOperations with name resolution
+export { 
+  calculateAngle,
+  formatDistance,
+  isExactGridMultiple,
+  snapToGrid
+} from './lineOperations';
+
+// Explicitly export from pointOperations
+export {
+  isPointNear,
+  roundToGrid,
+  arePointsEqual
+} from './pointOperations';
+
+// Explicitly export with aliasing to avoid conflicts
+export { 
+  calculateDistance as pointDistance,
+  calculateMidpoint as pointMidpoint
+} from './pointOperations';
+
+export { 
+  calculateDistance as lineDistance,
+  calculateMidpoint as lineMidpoint
+} from './lineOperations';
 
 // Export explicitly to avoid name conflicts
 export {
@@ -26,9 +47,3 @@ try {
 } catch (err) {
   console.warn('Failed to import straightening module');
 }
-
-// Add any missing utility exports
-export { 
-  formatDistance, 
-  isExactGridMultiple 
-} from './pointOperations';

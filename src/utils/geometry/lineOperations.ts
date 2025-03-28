@@ -62,8 +62,9 @@ export function formatDistance(distance: number, precision: number = 2): string 
  * @returns True if value is multiple of grid
  */
 export function isExactGridMultiple(value: number, tolerance: number = 0.1): boolean {
-  const remainder = value % GRID_SPACING;
-  return remainder <= tolerance || (GRID_SPACING - remainder) <= tolerance;
+  const gridSize = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
+  const remainder = value % gridSize;
+  return remainder <= tolerance || (gridSize - remainder) <= tolerance;
 }
 
 /**
@@ -72,6 +73,6 @@ export function isExactGridMultiple(value: number, tolerance: number = 0.1): boo
  * @param gridSize The grid size
  * @returns Snapped value
  */
-export function snapToGrid(value: number, gridSize: number = GRID_SPACING): number {
+export function snapToGrid(value: number, gridSize: number = (typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT)): number {
   return Math.round(value / gridSize) * gridSize;
 }

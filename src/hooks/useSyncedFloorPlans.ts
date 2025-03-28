@@ -18,9 +18,7 @@ import { useSupabaseFloorPlans } from './useSupabaseFloorPlans';
 import logger from '@/utils/logger';
 import { 
   appToCoreFloorPlans, 
-  coreToAppFloorPlans,
-  appToCoreFloorPlan,
-  coreToAppFloorPlan
+  coreToAppFloorPlans
 } from '@/utils/floorPlanAdapter';
 
 /**

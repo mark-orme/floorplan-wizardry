@@ -58,7 +58,7 @@ export const formatDistance = (distance: number, precision: number = 2): string 
  * @returns True if value is an exact grid multiple
  */
 export const isExactGridMultiple = (value: number): boolean => {
-  const gridSize = GRID_SPACING;
+  const gridSize = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
   return Math.abs(value % gridSize) < 0.0001;
 };
 
@@ -68,7 +68,7 @@ export const isExactGridMultiple = (value: number): boolean => {
  * @returns Rounded point
  */
 export const roundToGrid = (point: Point): Point => {
-  const gridSize = GRID_SPACING;
+  const gridSize = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
   return {
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
