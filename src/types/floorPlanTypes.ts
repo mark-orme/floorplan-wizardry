@@ -122,8 +122,8 @@ export interface FloorPlan {
   id: string;
   /** Floor plan name */
   name: string;
-  /** Floor plan display label */
-  label?: string;
+  /** Floor plan display label - now required to match core FloorPlan */
+  label: string;
   /** Array of drawing strokes */
   strokes: Stroke[];
   /** Array of walls */
