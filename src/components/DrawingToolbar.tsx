@@ -71,7 +71,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === "hand" ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("hand" as DrawingTool)}
+                onClick={() => onToolChange("hand")}
               >
                 <Hand className="h-4 w-4" />
               </Button>
@@ -105,7 +105,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === "straightLine" ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("straightLine" as DrawingTool)}
+                onClick={() => onToolChange("straightLine")}
               >
                 <div className="h-4 w-4 border-b-2 border-current transform rotate-45" />
               </Button>

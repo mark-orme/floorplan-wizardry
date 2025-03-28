@@ -1,3 +1,4 @@
+
 /**
  * Hook for handling canvas object events
  * @module canvas-events/useObjectEvents
@@ -29,7 +30,7 @@ export const useObjectEvents = ({
    */
   const handleObjectAdded = useCallback(() => {
     // Only save state for non-drawing tools
-    if (tool !== 'draw' && tool !== 'straightLine') {
+    if (tool !== 'draw' && tool !== 'line') {
       saveCurrentState();
     }
   }, [tool, saveCurrentState]);

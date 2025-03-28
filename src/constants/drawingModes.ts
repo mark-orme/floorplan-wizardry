@@ -28,14 +28,18 @@ export enum DrawingMode {
   /** Text annotation mode */
   TEXT = 'text',
   /** Eraser mode */
-  ERASER = 'eraser'
+  ERASER = 'eraser',
+  /** Straight line drawing mode */
+  STRAIGHT_LINE = 'straightLine',
+  /** Hand (pan) mode */
+  HAND = 'hand'
 }
 
 /**
  * Available drawing tools
  * @type {string}
  */
-export type DrawingTool = 'select' | 'draw' | 'line' | 'rectangle' | 'circle' | 'wall' | 'room' | 'measure' | 'text' | 'eraser';
+export type DrawingTool = 'select' | 'draw' | 'line' | 'rectangle' | 'circle' | 'wall' | 'room' | 'measure' | 'text' | 'eraser' | 'straightLine' | 'hand';
 
 /**
  * Tool display information
@@ -76,6 +80,12 @@ export const DRAWING_TOOLS: ToolInfo[] = [
     icon: 'minus'
   },
   {
+    id: 'straightLine',
+    name: 'Straight Line',
+    description: 'Draw precise straight lines',
+    icon: 'minus'
+  },
+  {
     id: 'rectangle',
     name: 'Rectangle',
     description: 'Draw rectangles',
@@ -98,6 +108,12 @@ export const DRAWING_TOOLS: ToolInfo[] = [
     name: 'Room',
     description: 'Create enclosed rooms',
     icon: 'layout'
+  },
+  {
+    id: 'hand',
+    name: 'Hand',
+    description: 'Pan the canvas',
+    icon: 'hand'
   },
   {
     id: 'measure',

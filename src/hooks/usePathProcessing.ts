@@ -7,7 +7,7 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from 'fabric';
 import { FloorPlan, Stroke, StrokeType, StrokeTypeLiteral } from '@/types/floorPlanTypes';
-import { DrawingTool } from '@/hooks/useCanvasState';
+import { DrawingTool } from '@/constants/drawingModes';
 import { Point } from '@/types/drawingTypes';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -78,7 +78,6 @@ const drawingToolToStrokeType = (tool?: DrawingTool): StrokeTypeLiteral => {
     case 'room':
       return 'room';
     case 'line':
-    case 'straightLine':
       return 'line';
     case 'draw':
       return 'freehand';

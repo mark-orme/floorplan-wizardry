@@ -6,7 +6,7 @@ import {
   Pencil, 
   Square, 
   Circle, 
-  Line, 
+  Minus, 
   Undo2, 
   Redo2, 
   Trash, 
@@ -76,7 +76,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onClick={() => onToolChange('line')}
           title="Line Tool"
         >
-          <Line className="h-4 w-4" />
+          <Minus className="h-4 w-4" />
         </Button>
         <Button 
           size="sm" 

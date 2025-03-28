@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect } from 'react';
 import { UseBrushSettingsProps, EventHandlerResult } from './types';
+import { DrawingTool } from '@/constants/drawingModes';
 
 /**
  * Hook for managing brush settings on the canvas
@@ -27,7 +28,7 @@ export const useBrushSettings = ({
     if (!canvas) return;
     
     // Only update brush settings if in drawing mode
-    if (tool === 'draw' || tool === 'straightLine') {
+    if (tool === 'draw' || tool === 'line') {
       if (canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush.color = lineColor;
         canvas.freeDrawingBrush.width = lineThickness;

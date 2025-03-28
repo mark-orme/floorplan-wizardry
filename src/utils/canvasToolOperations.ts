@@ -5,7 +5,7 @@
  * @module canvasToolOperations
  */
 import { Canvas, Object as FabricObject, Line, PencilBrush } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingTool } from "@/constants/drawingModes";
 import { separateGridAndDrawingObjects } from "./canvasLayerOrdering";
 import { 
   DEFAULT_LINE_THICKNESS,
@@ -132,7 +132,7 @@ export const handleToolChange = (
       
     case "wall":
     case "room":
-    case "straightLine":
+    case "line":
       // Custom drawing modes - disable native drawing but also disable selection
       canvas.isDrawingMode = false;
       canvas.selection = false;
@@ -151,13 +151,12 @@ export const handleToolChange = (
       console.log("Selection mode enabled");
       break;
       
-    case "hand":
+    case "eraser":
       canvas.isDrawingMode = false;
-      canvas.selection = false;
-      canvas.defaultCursor = 'grab';
-      canvas.hoverCursor = 'grab';
-      disableSelection(canvas);
-      console.log("Hand/pan mode enabled");
+      canvas.selection = true;
+      canvas.defaultCursor = 'cell';
+      canvas.hoverCursor = 'cell';
+      console.log("Eraser mode enabled");
       break;
       
     default:
@@ -250,10 +249,9 @@ export const setActiveTool = (
       canvas.isDrawingMode = false;
       canvas.selection = true;
       break;
-    case "hand":
+    case "eraser":
       canvas.isDrawingMode = false;
-      canvas.selection = false;
-      // Additional panning mode setup would go here
+      canvas.selection = true;
       break;
     default:
       canvas.isDrawingMode = false;

@@ -58,7 +58,7 @@ export interface CanvasControllerContextValue {
   /** Handler for redo operation */
   handleRedo: () => void;
   /** Handler for zoom operation */
-  handleZoom: (zoomLevel: number) => void;
+  handleZoom: (direction: "in" | "out") => void;
   /** Handler to clear canvas */
   clearCanvas: () => void;
   /** Handler to save canvas */
@@ -118,6 +118,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   // References
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const historyRef = useRef({ past: [], future: [] });
 
   // Debug state
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
@@ -146,7 +147,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   // Initialize the canvas controller setup
-  const { historyRef } = useCanvasControllerSetup({
+  const setupResult = useCanvasControllerSetup({
     canvasDimensions: dimensions,
     tool,
     currentFloor,
@@ -199,20 +200,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   });
 
   // Initialize tools
-  const {
-    handleToolChange: toolChange,
-    handleUndo: undo,
-    handleRedo: redo,
-    handleZoom: zoom,
-    clearCanvas: clear,
-    saveCanvas: save,
-    deleteSelectedObjects: deleteSelected,
-    handleFloorSelect: selectFloor,
-    handleAddFloor: addFloor,
-    handleLineThicknessChange: changeLineThickness,
-    handleLineColorChange: changeLineColor,
-    openMeasurementGuide: showMeasurementGuide
-  } = useCanvasControllerTools({
+  const toolsResult = useCanvasControllerTools({
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
@@ -228,6 +216,57 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     setGia,
     createGrid
   });
+
+  // Delete selected objects function
+  const deleteSelectedObjects = () => {
+    if (fabricCanvasRef.current) {
+      const canvas = fabricCanvasRef.current;
+      const activeObjects = canvas.getActiveObjects();
+      if (activeObjects.length > 0) {
+        canvas.remove(...activeObjects);
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        toast('Selected objects deleted');
+      }
+    }
+  };
+  
+  // Floor selection function
+  const handleFloorSelect = (floorIndex: number) => {
+    if (floorIndex >= 0 && floorIndex < floorPlans.length) {
+      setCurrentFloor(floorIndex);
+      toast(`Switched to ${floorPlans[floorIndex].name}`);
+    }
+  };
+  
+  // Add floor function
+  const handleAddFloor = () => {
+    const newFloorIndex = floorPlans.length;
+    const newFloor = createFloorPlan(`floor-${newFloorIndex}`, `Floor ${newFloorIndex}`);
+    setFloorPlans([...floorPlans, newFloor]);
+    toast(`Added new floor: ${newFloor.name}`);
+  };
+  
+  // Line thickness change function
+  const handleLineThicknessChange = (thickness: number) => {
+    setLineThickness(thickness);
+    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
+      fabricCanvasRef.current.freeDrawingBrush.width = thickness;
+    }
+  };
+  
+  // Line color change function
+  const handleLineColorChange = (color: string) => {
+    setLineColor(color);
+    if (fabricCanvasRef.current && fabricCanvasRef.current.freeDrawingBrush) {
+      fabricCanvasRef.current.freeDrawingBrush.color = color;
+    }
+  };
+  
+  // Measurement guide function
+  const openMeasurementGuide = () => {
+    toast.info('Measurement guide coming soon');
+  };
 
   // Initialize Fabric.js canvas when the component mounts
   useEffect(() => {
@@ -309,51 +348,41 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
    * Handler functions that connect to the tool implementations
    */
   const handleToolChange = (newTool: DrawingTool): void => {
-    toolChange(newTool);
+    if (toolsResult.handleToolChange) {
+      toolsResult.handleToolChange(newTool);
+    } else {
+      setTool(newTool);
+    }
   };
   
   const handleUndo = (): void => {
-    undo();
+    if (toolsResult.handleUndo) {
+      toolsResult.handleUndo();
+    }
   };
   
   const handleRedo = (): void => {
-    redo();
+    if (toolsResult.handleRedo) {
+      toolsResult.handleRedo();
+    }
   };
   
-  const handleZoom = (newZoomLevel: number): void => {
-    zoom(newZoomLevel > 1 ? "in" : "out");
+  const handleZoom = (direction: "in" | "out"): void => {
+    if (toolsResult.handleZoom) {
+      toolsResult.handleZoom(direction);
+    }
   };
   
   const clearCanvas = (): void => {
-    clear();
+    if (toolsResult.clearCanvas) {
+      toolsResult.clearCanvas();
+    }
   };
   
   const saveCanvas = (): void => {
-    save();
-  };
-  
-  const deleteSelectedObjects = (): void => {
-    deleteSelected();
-  };
-  
-  const handleFloorSelect = (floorIndex: number): void => {
-    selectFloor(floorIndex);
-  };
-  
-  const handleAddFloor = (): void => {
-    addFloor();
-  };
-  
-  const handleLineThicknessChange = (thickness: number): void => {
-    changeLineThickness(thickness);
-  };
-  
-  const handleLineColorChange = (color: string): void => {
-    changeLineColor(color);
-  };
-  
-  const openMeasurementGuide = (): void => {
-    showMeasurementGuide();
+    if (toolsResult.saveCanvas) {
+      toolsResult.saveCanvas();
+    }
   };
   
   const contextValue: CanvasControllerContextValue = {
