@@ -1,4 +1,3 @@
-
 /**
  * Hook for loading floor plan data in the canvas controller
  * @module useCanvasControllerLoader
@@ -6,7 +5,7 @@
 import { useEffect, useCallback } from "react";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
 import { FloorPlan, StrokeType, StrokeTypeLiteral, Wall } from "@/types/floorPlanTypes";
-import { coreToAppFloorPlans } from "@/utils/typeAdapters";
+import { adaptFloorPlans } from "@/utils/typeAdapters";
 import { Point } from "@/types/geometryTypes";
 
 /**

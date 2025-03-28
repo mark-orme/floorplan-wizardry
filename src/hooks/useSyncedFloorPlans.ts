@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -237,7 +236,7 @@ export const useSyncedFloorPlans = () => {
         const corePlans = appToCoreFloorPlans(plansWithLabels);
         
         await saveFloorPlans(corePlans);
-        broadcastFloorPlanUpdate(corePlans.map(convertCoreToFloorPlanType));
+        broadcastFloorPlanUpdate(adaptFloorPlans(corePlans));
         lastSyncTimeRef.current = Date.now();
         logger.info('Floor plans saved locally and synced via Pusher');
       } catch (error: any) {

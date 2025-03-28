@@ -33,3 +33,6 @@ export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
 export function adaptFloorPlans(corePlans: CoreFloorPlan[]): AppFloorPlan[] {
   return corePlans.map(adaptFloorPlan);
 }
+
+// Export alias for backward compatibility
+export const coreToAppFloorPlans = adaptFloorPlans;
