@@ -1,3 +1,4 @@
+
 /**
  * Test helpers for grid utilities
  * Provides compatibility functions for test files using older signatures
