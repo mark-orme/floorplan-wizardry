@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
-import { DrawingTool } from '@/constants/drawingModes';
+import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import { DebugInfoState } from '@/types/core/DebugInfo';
+import { DebugInfoState } from '@/types/drawingTypes';
 import { toast } from 'sonner';
 import { createFloorPlan } from '@/utils/floorPlanUtils';
 import { Canvas as FabricCanvas } from 'fabric';
@@ -28,9 +28,9 @@ const DEFAULT_CANVAS_HEIGHT = 600;
  */
 export interface CanvasControllerContextValue {
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Function to set the active drawing tool */
-  setTool: (tool: DrawingTool) => void;
+  setTool: (tool: DrawingMode) => void;
   /** Gross Internal Area calculation result */
   gia: number;
   /** State setter for Gross Internal Area */
@@ -52,7 +52,7 @@ export interface CanvasControllerContextValue {
   /** Debug information state */
   debugInfo: DebugInfoState;
   /** Handler for tool change */
-  handleToolChange: (tool: DrawingTool) => void;
+  handleToolChange: (tool: DrawingMode) => void;
   /** Handler for undo operation */
   handleUndo: () => void;
   /** Handler for redo operation */
@@ -103,7 +103,7 @@ const createInitialFloorPlan = (): FloorPlan => {
  */
 export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Canvas state
-  const [tool, setTool] = useState<DrawingTool>('select');
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
   const [gia, setGia] = useState<number>(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([createInitialFloorPlan()]);
   const [currentFloor, setCurrentFloor] = useState<number>(INITIAL_FLOOR_INDEX);
@@ -347,7 +347,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   /**
    * Handler functions that connect to the tool implementations
    */
-  const handleToolChange = (newTool: DrawingTool): void => {
+  const handleToolChange = (newTool: DrawingMode): void => {
     if (toolsResult.handleToolChange) {
       toolsResult.handleToolChange(newTool);
     } else {

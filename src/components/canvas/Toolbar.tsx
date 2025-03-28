@@ -14,16 +14,16 @@ import {
   Eraser,
   Ruler
 } from 'lucide-react';
-import { DrawingTool } from '@/constants/drawingModes';
+import { DrawingMode } from '@/constants/drawingModes';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
 interface ToolbarProps {
-  activeTool: DrawingTool;
+  activeTool: DrawingMode;
   lineThickness: number;
   lineColor: string;
-  onToolChange: (tool: DrawingTool) => void;
+  onToolChange: (tool: DrawingMode) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
@@ -56,48 +56,48 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <div className="flex items-center gap-1">
         <Button 
           size="sm" 
-          variant={activeTool === 'select' ? 'default' : 'outline'} 
-          onClick={() => onToolChange('select')}
+          variant={activeTool === DrawingMode.SELECT ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.SELECT)}
           title="Select Tool"
         >
           <Pointer className="h-4 w-4" />
         </Button>
         <Button 
           size="sm" 
-          variant={activeTool === 'draw' ? 'default' : 'outline'} 
-          onClick={() => onToolChange('draw')}
+          variant={activeTool === DrawingMode.DRAW ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.DRAW)}
           title="Draw Tool"
         >
           <Pencil className="h-4 w-4" />
         </Button>
         <Button 
           size="sm" 
-          variant={activeTool === 'line' ? 'default' : 'outline'} 
-          onClick={() => onToolChange('line')}
+          variant={activeTool === DrawingMode.LINE ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.LINE)}
           title="Line Tool"
         >
           <Minus className="h-4 w-4" />
         </Button>
         <Button 
           size="sm" 
-          variant={activeTool === 'rectangle' ? 'default' : 'outline'} 
-          onClick={() => onToolChange('rectangle')}
+          variant={activeTool === DrawingMode.RECTANGLE ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.RECTANGLE)}
           title="Rectangle Tool"
         >
           <Square className="h-4 w-4" />
         </Button>
         <Button 
           size="sm" 
-          variant={activeTool === 'circle' ? 'default' : 'outline'} 
-          onClick={() => onToolChange('circle')}
+          variant={activeTool === DrawingMode.CIRCLE ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.CIRCLE)}
           title="Circle Tool"
         >
           <Circle className="h-4 w-4" />
         </Button>
         <Button 
           size="sm" 
-          variant={activeTool === 'eraser' ? 'default' : 'outline'} 
-          onClick={() => onToolChange('eraser')}
+          variant={activeTool === DrawingMode.ERASER ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.ERASER)}
           title="Eraser Tool"
         >
           <Eraser className="h-4 w-4" />

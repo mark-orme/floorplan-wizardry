@@ -2,7 +2,7 @@
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { DrawingTool } from "@/constants/drawingModes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { LineSettings } from "./LineSettings";
 import { 
   MousePointerSquareDashed, Pencil, Grid2X2, 
@@ -11,8 +11,8 @@ import {
 import { formatGIA } from "@/utils/display";
 
 interface DrawingToolbarProps {
-  tool: DrawingTool;
-  onToolChange: (tool: DrawingTool) => void;
+  tool: DrawingMode;
+  onToolChange: (tool: DrawingMode) => void;
   onUndo: () => void;
   onRedo: () => void;
   onZoom: (direction: "in" | "out") => void;
@@ -52,9 +52,9 @@ export const DrawingToolbar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant={tool === "select" ? "default" : "outline"} 
+                variant={tool === DrawingMode.SELECT ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("select")}
+                onClick={() => onToolChange(DrawingMode.SELECT)}
               >
                 <MousePointerSquareDashed className="h-4 w-4" />
               </Button>
@@ -69,9 +69,9 @@ export const DrawingToolbar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant={tool === "hand" ? "default" : "outline"} 
+                variant={tool === DrawingMode.HAND ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("hand")}
+                onClick={() => onToolChange(DrawingMode.HAND)}
               >
                 <Hand className="h-4 w-4" />
               </Button>
@@ -86,9 +86,9 @@ export const DrawingToolbar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant={tool === "draw" ? "default" : "outline"} 
+                variant={tool === DrawingMode.DRAW ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("draw")}
+                onClick={() => onToolChange(DrawingMode.DRAW)}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -103,9 +103,9 @@ export const DrawingToolbar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant={tool === "straightLine" ? "default" : "outline"} 
+                variant={tool === DrawingMode.STRAIGHT_LINE ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("straightLine")}
+                onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
               >
                 <div className="h-4 w-4 border-b-2 border-current transform rotate-45" />
               </Button>
@@ -120,9 +120,9 @@ export const DrawingToolbar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant={tool === "room" ? "default" : "outline"} 
+                variant={tool === DrawingMode.ROOM ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange("room")}
+                onClick={() => onToolChange(DrawingMode.ROOM)}
               >
                 <Grid2X2 className="h-4 w-4" />
               </Button>

@@ -3,7 +3,7 @@
  * Types related to drawing operations
  * @module types/drawingTypes
  */
-import type { DrawingMode } from '@/constants/drawingModes';
+import { DrawingMode } from '@/constants/drawingModes';
 import { createDefaultDrawingState as originalCreateDefaultDrawingState } from '@/types/core/DrawingState';
 
 /**

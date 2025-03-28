@@ -6,7 +6,17 @@
 import type { MutableRefObject } from 'react';
 import type { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import type { DrawingMode } from '@/constants/drawingModes';
-import type { ZoomDirection } from '@/types/drawingTypes';
+import type { ZoomDirection, ZoomOptions } from '@/types/drawingTypes';
+
+/**
+ * Zoom level constants
+ */
+export const ZOOM_LEVEL_CONSTANTS = {
+  MIN_ZOOM: 0.1,
+  MAX_ZOOM: 5.0,
+  DEFAULT_ZOOM: 1.0,
+  ZOOM_STEP: 0.1
+};
 
 /**
  * Base props interface for event handlers
@@ -41,6 +51,37 @@ export interface UseCanvasHandlersProps {
   fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
   /** Event handlers map */
   handlers: Record<string, (event?: unknown) => void>;
+}
+
+/**
+ * Canvas events type
+ */
+export type CanvasEvents = 'object:added' | 'object:modified' | 'object:removed' | 'object:selected' | 'selection:cleared';
+
+/**
+ * Event handler map type
+ */
+export type EventHandlerMap = Record<string, (event?: unknown) => void>;
+
+/**
+ * Base event handler props
+ */
+export interface BaseEventHandlerProps {
+  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
+}
+
+/**
+ * Target event with target property
+ */
+export interface TargetEvent {
+  target: FabricObject;
+}
+
+/**
+ * Editable Fabric object
+ */
+export interface EditableFabricObject extends FabricObject {
+  isEditing?: boolean;
 }
 
 /**
@@ -89,6 +130,12 @@ export interface UseMouseEventsProps extends BaseEventProps {
   lineThickness?: number;
   /** Line color */
   lineColor?: string;
+  /** Handle mouse down event */
+  handleMouseDown?: (e: any) => void;
+  /** Handle mouse move event */
+  handleMouseMove?: (e: any) => void;
+  /** Handle mouse up event */
+  handleMouseUp?: (e: any) => void;
 }
 
 /**
@@ -102,4 +149,35 @@ export interface UseKeyboardEventsProps extends BaseEventProps {
   handleRedo: () => void;
   /** Function to delete selected objects */
   deleteSelectedObjects: () => void;
+  /** Handle escape key press */
+  handleEscape?: () => void;
+  /** Handle delete key press */
+  handleDelete?: () => void;
+}
+
+/**
+ * Props for path events
+ */
+export interface UsePathEventsProps extends BaseEventProps {
+  /** Function to save current state before changes */
+  saveCurrentState: () => void;
+}
+
+/**
+ * Props for zoom tracking
+ */
+export interface UseZoomTrackingProps {
+  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
+  zoomLevel: number;
+  setZoomLevel: (level: number) => void;
+}
+
+/**
+ * Result for zoom tracking
+ */
+export interface UseZoomTrackingResult {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+  setZoom: (level: number) => void;
 }

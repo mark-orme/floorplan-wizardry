@@ -9,7 +9,7 @@ import { CanvasLayout } from "@/components/CanvasLayout";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types/drawingTypes";
 import { ZoomDirection } from "@/types/drawingTypes";
 import { DrawingMode } from "@/constants/drawingModes";
 
