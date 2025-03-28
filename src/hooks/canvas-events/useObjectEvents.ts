@@ -66,17 +66,20 @@ export const useObjectEvents = ({
     'selection:cleared'
   ];
   
+  // Define handlers map
+  const handlers = {
+    'object:modified': handleObjectModified,
+    'object:added': handleObjectAdded,
+    'object:removed': handleObjectRemoved,
+    'object:selected': handleObjectSelected,
+    'selection:cleared': handleSelectionCleared
+  };
+  
   // Set up handlers with useCanvasHandlers
   return useCanvasHandlers({
     fabricCanvasRef,
     tool,
     eventTypes,
-    handlers: {
-      'object:modified': handleObjectModified,
-      'object:added': handleObjectAdded,
-      'object:removed': handleObjectRemoved,
-      'object:selected': handleObjectSelected,
-      'selection:cleared': handleSelectionCleared
-    }
+    handlers
   });
 };

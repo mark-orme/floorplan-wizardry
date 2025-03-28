@@ -29,7 +29,8 @@ export const useCanvasHandlers = ({
     eventTypes.forEach(eventType => {
       const handler = handlers[eventType];
       if (handler) {
-        canvas.on(eventType, handler);
+        // Use type assertion to handle string event types
+        canvas.on(eventType as any, handler);
       }
     });
   }, [fabricCanvasRef, eventTypes, handlers]);
@@ -46,7 +47,8 @@ export const useCanvasHandlers = ({
     eventTypes.forEach(eventType => {
       const handler = handlers[eventType];
       if (handler) {
-        canvas.off(eventType, handler);
+        // Use type assertion to handle string event types
+        canvas.off(eventType as any, handler);
       }
     });
   }, [fabricCanvasRef, eventTypes, handlers]);
