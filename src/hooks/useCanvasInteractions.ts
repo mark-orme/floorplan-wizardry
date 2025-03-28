@@ -1,4 +1,3 @@
-
 /**
  * Canvas interactions hook
  * Manages mouse/touch interactions and drawing state for the canvas
@@ -6,7 +5,7 @@
 import { Canvas as FabricCanvas } from 'fabric';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/geometryTypes';
 import { DrawingTool } from '@/constants/drawingModes';
 import { usePointProcessing } from './usePointProcessing';
 import { useSnapToGrid } from './useSnapToGrid';
@@ -354,7 +353,7 @@ export const useCanvasInteractions = ({
    */
   const isSnappedToGrid = useCallback((point: Point | null): boolean => {
     if (!point || !snapEnabled) return false;
-    return checkIsSnappedToGrid(point, point);
+    return checkIsSnappedToGrid(point);
   }, [checkIsSnappedToGrid, snapEnabled]);
 
   /**
@@ -367,7 +366,7 @@ export const useCanvasInteractions = ({
    */
   const isLineAutoStraightened = useCallback((startPoint: Point | null, endPoint: Point | null): boolean => {
     if (!startPoint || !endPoint || !snapEnabled) return false;
-    return checkIsAutoStraightened(startPoint, endPoint, endPoint);
+    return checkIsAutoStraightened(startPoint, endPoint);
   }, [checkIsAutoStraightened, snapEnabled]);
 
   return {

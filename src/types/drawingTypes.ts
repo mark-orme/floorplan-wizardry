@@ -92,6 +92,7 @@ export interface DebugInfoState {
 /**
  * State for drawing operations
  * Make all properties required for proper type checking
+ * Added optional flag to endX and endY to match core/DrawingState
  */
 export interface DrawingState {
   /** Whether the user is currently drawing */
@@ -107,9 +108,9 @@ export interface DrawingState {
   /** Start Y coordinate */
   startY: number;
   /** End X coordinate */
-  endX: number;
+  endX?: number;
   /** End Y coordinate */
-  endY: number;
+  endY?: number;
   /** Current path being drawn */
   currentPath: FabricPath | null;
   /** Whether pressure sensitivity is enabled */

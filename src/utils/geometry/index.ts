@@ -1,27 +1,39 @@
 
 /**
- * Geometry utilities main module
- * Re-exports functionality from specialized geometry modules
- * @module geometry
+ * Geometry utilities index
+ * @module utils/geometry
  */
 
-// Export constants from the constants module
-export * from './constants';
-
-// Export functionality from specialized modules
-export * from './areaCalculations';
-export * from './coordinateTransforms';
+// Export all from sub-modules, renaming where needed to avoid ambiguity
+export * from './pointOperations';
 export * from './lineOperations';
-export * from './midpointCalculation';
+export * from './polygonOperations';
+export * from './polylineOperations';
+export * from './rectangleOperations';
 export * from './straightening';
-export * from './boundingBox';
-export * from './conversion';
 
-// Re-export key utility functions directly
+// Export renamed functions from coordinateTransforms to avoid ambiguity
+export {
+  pixelsToMeters as convertPixelsToMeters,
+  metersToPixels as convertMetersToPixels,
+  pixelsToGridUnits,
+  gridUnitsToPixels
+} from './coordinateTransforms';
+
+// Explicitly re-export the original functions as well
+export * from './coordinateTransforms';
+
+// Export functions from lineOperations
 export {
   calculateDistance,
   calculateMidpoint,
-  calculateAngle,
-  formatDistance,
-  isExactGridMultiple
+  isLineHorizontal,
+  isLineVertical,
+  formatDistance
 } from './lineOperations';
+
+// Export functions from straightening
+export {
+  straightenPolyline,
+  arePointsAligned
+} from './straightening';

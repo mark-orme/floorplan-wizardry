@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas drawing tools
  * Centralizes tool operations and state changes
@@ -153,8 +152,8 @@ export const useCanvasControllerTools = (
   return {
     clearDrawings: toolFunctions.clearCanvas,
     handleToolChange: toolFunctions.setActiveTool,
-    handleUndo: toolFunctions.undo,
-    handleRedo: toolFunctions.redo,
+    handleUndo: toolFunctions.handleUndo,
+    handleRedo: toolFunctions.handleRedo,
     handleZoom: (direction: "in" | "out") => {
       if (direction === "in") {
         toolFunctions.zoomIn();
@@ -164,6 +163,6 @@ export const useCanvasControllerTools = (
     },
     clearCanvas: toolFunctions.clearCanvas,
     saveCanvas: enhancedSaveCanvas,
-    saveCurrentState: () => console.log('Save current state called')
+    saveCurrentState: toolFunctions.saveCurrentState
   };
 };

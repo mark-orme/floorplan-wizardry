@@ -1,3 +1,4 @@
+
 /**
  * Hook for calculating Gross Internal Area (GIA) for floor plans
  * @module useFloorPlanGIA
@@ -35,10 +36,10 @@ export const useFloorPlanGIA = ({
       const polygons = extractPolygonsFromObjects(drawingObjects);
       
       // For each polygon, extract its points
-      const allPoints = polygons.map(poly => poly.points.map(pt => ({ x: pt.x, y: pt.y })));
+      const allPoints = polygons.map(poly => poly.points);
       
       // Calculate the area in pixels
-      const areaInPixels = calculateTotalAreaInPixels(allPoints as any);
+      const areaInPixels = calculateTotalAreaInPixels(allPoints);
       
       // Convert to square meters
       const areaInSqMeters = pixelsToSquareMeters(areaInPixels, PIXELS_PER_METER);

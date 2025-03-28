@@ -1,16 +1,16 @@
 
 /**
  * Line operation utilities
- * @module geometry/lineOperations
+ * @module utils/geometry/lineOperations
  */
 import { Point } from '@/types/geometryTypes';
-import { GRID_SPACING, DISTANCE_PRECISION } from '@/constants/numerics';
+import { PIXELS_PER_METER, DISTANCE_PRECISION } from '@/constants/numerics';
 
 /**
  * Calculate distance between two points
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {number} Distance between points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance in pixels
  */
 export const calculateDistance = (p1: Point, p2: Point): number => {
   const dx = p2.x - p1.x;
@@ -19,55 +19,10 @@ export const calculateDistance = (p1: Point, p2: Point): number => {
 };
 
 /**
- * Format distance for display
- * @param {number} distance - Distance in pixels
- * @param {number} precision - Number of decimal places
- * @returns {string} Formatted distance string
- */
-export const formatDistance = (
-  distance: number, 
-  precision: number = DISTANCE_PRECISION
-): string => {
-  return distance.toFixed(precision);
-};
-
-/**
- * Check if a number is an exact multiple of grid size
- * @param {number} value - Value to check
- * @param {number} gridSize - Grid size
- * @returns {boolean} True if exact multiple
- */
-export const isExactGridMultiple = (
-  value: number, 
-  gridSize: number = GRID_SPACING.SMALL
-): boolean => {
-  return Math.abs(value % gridSize) < 0.001;
-};
-
-/**
- * Calculate the angle between two points in degrees
- * @param {Point} start - Start point
- * @param {Point} end - End point
- * @returns {number} Angle in degrees (0-360)
- */
-export const calculateAngle = (start: Point, end: Point): number => {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  
-  // Normalize to 0-360
-  if (angle < 0) {
-    angle += 360;
-  }
-  
-  return angle;
-};
-
-/**
- * Calculate the midpoint between two points
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {Point} Midpoint
+ * Calculate midpoint between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Midpoint
  */
 export const calculateMidpoint = (p1: Point, p2: Point): Point => {
   return {
@@ -77,30 +32,47 @@ export const calculateMidpoint = (p1: Point, p2: Point): Point => {
 };
 
 /**
- * Calculate a point at a specific distance and angle from start
- * @param {Point} start - Start point
- * @param {number} distance - Distance
- * @param {number} angleDegrees - Angle in degrees
- * @returns {Point} Resulting point
+ * Check if line is horizontally aligned (or nearly so)
+ * @param p1 First point
+ * @param p2 Second point
+ * @param tolerance Tolerance in pixels (default: 2)
+ * @returns True if horizontally aligned
  */
-export const pointAtDistanceAndAngle = (
-  start: Point,
-  distance: number,
-  angleDegrees: number
-): Point => {
-  const angleRadians = angleDegrees * (Math.PI / 180);
-  return {
-    x: start.x + Math.cos(angleRadians) * distance,
-    y: start.y + Math.sin(angleRadians) * distance
-  };
+export const isLineHorizontal = (p1: Point, p2: Point, tolerance: number = 2): boolean => {
+  return Math.abs(p1.y - p2.y) <= tolerance;
 };
 
 /**
- * Calculate length of a line
- * @param {Point} start - Start point
- * @param {Point} end - End point
- * @returns {number} Line length
+ * Check if line is vertically aligned (or nearly so)
+ * @param p1 First point
+ * @param p2 Second point
+ * @param tolerance Tolerance in pixels (default: 2)
+ * @returns True if vertically aligned
  */
-export const calculateLineLength = (start: Point, end: Point): number => {
-  return calculateDistance(start, end);
+export const isLineVertical = (p1: Point, p2: Point, tolerance: number = 2): boolean => {
+  return Math.abs(p1.x - p2.x) <= tolerance;
+};
+
+/**
+ * Format a distance for display
+ * @param distanceInPixels Distance in pixels
+ * @param pixelsPerMeter Pixels per meter conversion ratio
+ * @returns Formatted distance string
+ */
+export const formatDistance = (
+  distanceInPixels: number, 
+  pixelsPerMeter: number = PIXELS_PER_METER
+): string => {
+  const distanceInMeters = distanceInPixels / pixelsPerMeter;
+  return `${distanceInMeters.toFixed(DISTANCE_PRECISION)}m`;
+};
+
+/**
+ * Check if a value is an exact multiple of the grid size
+ * @param value Value to check
+ * @param gridSize Grid size
+ * @returns True if value is exact multiple of grid size
+ */
+export const isExactGridMultiple = (value: number, gridSize: number): boolean => {
+  return Math.abs(value % gridSize) < 0.001;
 };
