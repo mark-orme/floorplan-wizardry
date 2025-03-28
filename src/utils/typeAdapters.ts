@@ -8,6 +8,21 @@ import { FloorPlan as CoreFloorPlan, Wall as CoreWall } from '@/types/core/Floor
 import { FloorPlan as AppFloorPlan, Wall as AppWall } from '@/types/floorPlanTypes';
 
 /**
+ * Convert a core wall to app wall format
+ * @param wall Core wall
+ * @returns App wall
+ */
+export function adaptWall(wall: CoreWall): AppWall {
+  return {
+    ...wall,
+    startPoint: wall.start,
+    endPoint: wall.end,
+    start: wall.start,  // Ensure both properties are present
+    end: wall.end       // Ensure both properties are present
+  };
+}
+
+/**
  * Convert a core floor plan to app floor plan format
  * @param plan Core floor plan
  * @returns App floor plan
@@ -15,13 +30,7 @@ import { FloorPlan as AppFloorPlan, Wall as AppWall } from '@/types/floorPlanTyp
 export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
   return {
     ...corePlan,
-    walls: corePlan.walls.map((wall: CoreWall) => ({
-      ...wall,
-      startPoint: wall.start,
-      endPoint: wall.end,
-      start: wall.start,  // Ensure both properties are present
-      end: wall.end       // Ensure both properties are present
-    })) as AppWall[],
+    walls: corePlan.walls.map(adaptWall),
   };
 }
 
@@ -40,4 +49,3 @@ export function adaptFloorPlans(corePlans: CoreFloorPlan[]): AppFloorPlan[] {
  * @returns Array of app floor plans
  */
 export const coreToAppFloorPlans = adaptFloorPlans;
-
