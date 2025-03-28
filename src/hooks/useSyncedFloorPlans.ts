@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -139,10 +140,10 @@ export const useSyncedFloorPlans = () => {
   }, [syncChannel, saveToSupabase, isLoggedIn]);
 
   /**
-   * Load initial floor plan data from Supabase or local storage
+   * Load initial floor plan data from storage
    * @returns {Promise<AppFloorPlan[]>} The loaded floor plans
    */
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (): Promise<AppFloorPlan[]> => {
     try {
       setIsLoading(true);
       
