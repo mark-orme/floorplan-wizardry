@@ -1,100 +1,71 @@
 
 /**
- * Type definitions for fabric.js
- * @module fabricTypes
+ * Type definitions for Fabric.js objects
+ * @module types/fabricTypes
  */
-import { Canvas, Object } from 'fabric';
+import { Canvas, Object as FabricObjectBase, Point as FabricPoint } from "fabric";
 
-// Export canvas type for fabric
+// Export the Fabric Canvas and Object types
 export type FabricCanvas = Canvas;
+export type FabricObject = FabricObjectBase;
+export type FabricPointType = FabricPoint;
 
-// Export object type for fabric
-export type FabricObject = Object;
-
-// Export Point type for fabric
-export interface FabricPoint {
-  x: number;
-  y: number;
-}
-
-/**
- * Fabric object with object type metadata
- */
-export interface TypedFabricObject extends Object {
+// Extended fabric object with common properties used in our app
+export interface ExtendedFabricObject extends FabricObject {
   objectType?: string;
+  id?: string;
+  points?: Array<{x: number, y: number}>;
+  path?: Array<any>;
+  isGrid?: boolean;
+  gridType?: 'small' | 'large' | 'axis';
+  unitSize?: number;
+  lineColor?: string;
 }
 
 /**
- * Object ID type for fabric objects
+ * Enhanced interface for polyline objects
  */
-export type ObjectId = string;
-
-/**
- * Grid line type enum
- */
-export enum GridLineType {
-  SMALL = 'small',
-  LARGE = 'large',
-  AXIS = 'axis'
+export interface PolylineObject extends ExtendedFabricObject {
+  points: Array<{x: number, y: number}>;
+  type: 'polyline' | 'polygon' | 'line';
 }
 
 /**
- * Validate if a string is a valid object ID
- * @param id The ID to validate
- * @returns True if valid
+ * Enhanced interface for path objects
  */
-export const isValidObjectId = (id: string): boolean => {
-  return typeof id === 'string' && id.length > 0;
-};
-
-/**
- * Drawing path options
- */
-export interface PathOptions {
-  stroke: string;
-  strokeWidth: number;
-  fill?: string;
-  selectable?: boolean;
-  objectCaching?: boolean;
-  perPixelTargetFind?: boolean;
-  strokeLineCap?: 'butt' | 'round' | 'square';
-  strokeLineJoin?: 'bevel' | 'round' | 'miter';
-  strokeDashArray?: number[];
-  opacity?: number;
-  objectType?: string;
-  hasBorders?: boolean;
-  hasControls?: boolean;
-  lockMovementX?: boolean;
-  lockMovementY?: boolean;
-  hoverCursor?: string;
-  data?: any;
+export interface PathObject extends ExtendedFabricObject {
+  path: Array<any>;
+  type: 'path';
 }
 
 /**
- * Line options
+ * Union type for common drawing objects
  */
-export interface LineOptions extends PathOptions {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+export type DrawingObject = PolylineObject | PathObject;
+
+/**
+ * Type guard to check if an object is a polyline
+ * @param obj Object to check
+ * @returns True if object is a polyline
+ */
+export function isPolylineObject(obj: FabricObject): obj is PolylineObject {
+  return 'points' in obj && Array.isArray((obj as any).points);
 }
 
 /**
- * Rectangle options
+ * Type guard to check if an object is a path
+ * @param obj Object to check
+ * @returns True if object is a path
  */
-export interface RectOptions extends PathOptions {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
+export function isPathObject(obj: FabricObject): obj is PathObject {
+  return 'path' in obj && Array.isArray((obj as any).path);
 }
 
 /**
- * Circle options
+ * Type guard to check if an object is a grid object
+ * @param obj Object to check
+ * @returns True if object is a grid element
  */
-export interface CircleOptions extends PathOptions {
-  left: number;
-  top: number;
-  radius: number;
+export function isGridObject(obj: FabricObject): boolean {
+  return 'isGrid' in obj && (obj as any).isGrid === true;
 }

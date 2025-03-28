@@ -32,6 +32,16 @@ export const calculateMidpoint = (p1: Point, p2: Point): Point => {
 };
 
 /**
+ * Calculate angle between two points (in radians)
+ * @param p1 First point (start)
+ * @param p2 Second point (end)
+ * @returns Angle in radians
+ */
+export const calculateAngle = (p1: Point, p2: Point): number => {
+  return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+};
+
+/**
  * Check if line is horizontally aligned (or nearly so)
  * @param p1 First point
  * @param p2 Second point

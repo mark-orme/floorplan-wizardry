@@ -4,36 +4,51 @@
  * @module utils/geometry
  */
 
-// Export all from sub-modules, renaming where needed to avoid ambiguity
-export * from './pointOperations';
+// Export all from sub-modules
 export * from './lineOperations';
-export * from './polygonOperations';
-export * from './polylineOperations';
-export * from './rectangleOperations';
-export * from './straightening';
-
-// Export renamed functions from coordinateTransforms to avoid ambiguity
-export {
-  pixelsToMeters as convertPixelsToMeters,
-  metersToPixels as convertMetersToPixels,
-  pixelsToGridUnits,
-  gridUnitsToPixels
-} from './coordinateTransforms';
-
-// Explicitly re-export the original functions as well
+export * from './pointOperations';
 export * from './coordinateTransforms';
 
-// Export functions from lineOperations
-export {
-  calculateDistance,
-  calculateMidpoint,
-  isLineHorizontal,
-  isLineVertical,
-  formatDistance
-} from './lineOperations';
+// Conditionally export from modules that might be missing
+// If modules are missing, try-catch prevents app from crashing
+try {
+  const polygonOps = require('./polygonOperations');
+  if (polygonOps) {
+    Object.assign(exports, polygonOps);
+  }
+} catch (err) {
+  console.warn('Failed to import polygonOperations module');
+}
 
-// Export functions from straightening
+try {
+  const polylineOps = require('./polylineOperations');
+  if (polylineOps) {
+    Object.assign(exports, polylineOps);
+  }
+} catch (err) {
+  console.warn('Failed to import polylineOperations module');
+}
+
+try {
+  const rectOps = require('./rectangleOperations');
+  if (rectOps) {
+    Object.assign(exports, rectOps);
+  }
+} catch (err) {
+  console.warn('Failed to import rectangleOperations module');
+}
+
+try {
+  const straightening = require('./straightening');
+  if (straightening) {
+    Object.assign(exports, straightening);
+  }
+} catch (err) {
+  console.warn('Failed to import straightening module');
+}
+
+// Re-export renamed functions to avoid ambiguity
 export {
-  straightenPolyline,
-  arePointsAligned
-} from './straightening';
+  pixelsToMeters as convertPixelsToMeters,
+  metersToPixels as convertMetersToPixels
+} from './coordinateTransforms';

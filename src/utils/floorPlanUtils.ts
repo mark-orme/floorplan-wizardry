@@ -1,3 +1,4 @@
+
 /**
  * Floor plan utility functions
  * @module utils/floorPlanUtils
@@ -19,14 +20,16 @@ export const createFloorPlan = (id: string, name: string, level: number = 0): Fl
     walls: [],
     rooms: [],
     strokes: [],
+    canvasJson: null,
     canvasData: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     gia: 0,
     level,
+    index: level, // Use level as the index to maintain compatibility
     metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
       paperSize: PaperSize.A4,
       level
     }
@@ -41,5 +44,15 @@ export const createFloorPlan = (id: string, name: string, level: number = 0): Fl
 export const calculateGIA = (floorPlan: FloorPlan): number => {
   // This is a placeholder implementation
   // In a real app, would calculate GIA from room areas
-  return floorPlan.rooms.reduce((total, room) => total + room.area, 0);
+  let totalArea = 0;
+  
+  if (floorPlan.rooms) {
+    for (const room of floorPlan.rooms) {
+      if (room.area) {
+        totalArea += room.area;
+      }
+    }
+  }
+  
+  return totalArea;
 };

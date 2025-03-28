@@ -1,86 +1,156 @@
-
 /**
- * Line straightening utilities
+ * Path straightening utilities
  * @module utils/geometry/straightening
  */
 import { Point } from '@/types/geometryTypes';
-import { snapToAngle } from '@/utils/grid/snapping';
+import { calculateDistance, calculateAngle } from './lineOperations';
+
+// Constants for angle snapping (in radians)
+const HORIZONTAL_ANGLE = 0; // or Math.PI
+const VERTICAL_ANGLE = Math.PI / 2; // or -Math.PI / 2
+const DIAGONAL_ANGLE_POS = Math.PI / 4; // or 5 * Math.PI / 4
+const DIAGONAL_ANGLE_NEG = -Math.PI / 4; // or 3 * Math.PI / 4
+const ANGLE_TOLERANCE = 0.15; // ~8.6 degrees
 
 /**
- * Straighten a polyline by snapping the angles to standard increments
- * @param points Array of points defining the polyline
- * @param angleStep Angle increment to snap to (default: 45 degrees)
- * @returns New array of straightened points
+ * Check if two points are aligned to standard angles
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns True if points are aligned to standard angles
  */
-export const straightenPolyline = (points: Point[], angleStep: number = 45): Point[] => {
+export const arePointsAligned = (p1: Point, p2: Point): boolean => {
+  const angle = calculateAngle(p1, p2);
+  return isStandardAngle(angle);
+};
+
+/**
+ * Check if an angle is close to a standard angle
+ * @param angle Angle in radians
+ * @returns True if angle is close to a standard angle
+ */
+export const isStandardAngle = (angle: number): boolean => {
+  const normalizedAngle = normalizeAngle(angle);
+  
+  return (
+    Math.abs(normalizedAngle - HORIZONTAL_ANGLE) <= ANGLE_TOLERANCE ||
+    Math.abs(normalizedAngle - VERTICAL_ANGLE) <= ANGLE_TOLERANCE ||
+    Math.abs(normalizedAngle - DIAGONAL_ANGLE_POS) <= ANGLE_TOLERANCE ||
+    Math.abs(normalizedAngle - DIAGONAL_ANGLE_NEG) <= ANGLE_TOLERANCE ||
+    Math.abs(Math.abs(normalizedAngle) - Math.PI) <= ANGLE_TOLERANCE // opposite of horizontal
+  );
+};
+
+/**
+ * Normalize angle to range between -PI and PI
+ * @param angle Angle in radians
+ * @returns Normalized angle
+ */
+const normalizeAngle = (angle: number): number => {
+  let normalized = angle;
+  while (normalized > Math.PI) normalized -= 2 * Math.PI;
+  while (normalized < -Math.PI) normalized += 2 * Math.PI;
+  return normalized;
+};
+
+/**
+ * Snap an angle to the nearest standard angle
+ * @param angle Angle in radians
+ * @returns Snapped angle
+ */
+export const snapToStandardAngle = (angle: number): number => {
+  const normalized = normalizeAngle(angle);
+  
+  // Find closest standard angle
+  const angles = [
+    HORIZONTAL_ANGLE,
+    VERTICAL_ANGLE,
+    DIAGONAL_ANGLE_POS,
+    DIAGONAL_ANGLE_NEG,
+    Math.PI, // opposite of horizontal
+    -VERTICAL_ANGLE // opposite of vertical
+  ];
+  
+  let closestAngle = angles[0];
+  let minDiff = Math.abs(normalized - angles[0]);
+  
+  for (let i = 1; i < angles.length; i++) {
+    const diff = Math.abs(normalized - angles[i]);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closestAngle = angles[i];
+    }
+  }
+  
+  return closestAngle;
+};
+
+/**
+ * Straighten a polyline by snapping points to standard angles
+ * @param points Polyline points
+ * @returns Straightened polyline points
+ */
+export const straightenPolyline = (points: Point[]): Point[] => {
   if (points.length < 2) return [...points];
   
-  const result: Point[] = [{ ...points[0] }]; // Start with the first point
+  const result: Point[] = [{ ...points[0] }]; // Start with first point
   
   for (let i = 1; i < points.length; i++) {
-    const prevPoint = result[i-1];
+    const prevPoint = result[result.length - 1];
     const currentPoint = points[i];
     
-    // Calculate angle and distance
-    const dx = currentPoint.x - prevPoint.x;
-    const dy = currentPoint.y - prevPoint.y;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Skip points that are too close to previous point
+    if (calculateDistance(prevPoint, currentPoint) < 5) continue;
     
-    // Snap angle to the nearest increment
-    const snappedAngle = snapToAngle(angle, angleStep);
-    const snappedRadian = snappedAngle * (Math.PI / 180);
+    // Get angle between previous and current point
+    const angle = calculateAngle(prevPoint, currentPoint);
+    const distance = calculateDistance(prevPoint, currentPoint);
     
-    // Calculate new point position
-    const newPoint = {
-      x: prevPoint.x + Math.cos(snappedRadian) * distance,
-      y: prevPoint.y + Math.sin(snappedRadian) * distance
-    };
-    
-    result.push(newPoint);
+    // If angle is close to a standard angle, straighten it
+    if (Math.abs(angle - HORIZONTAL_ANGLE) <= ANGLE_TOLERANCE || 
+        Math.abs(Math.abs(angle) - Math.PI) <= ANGLE_TOLERANCE) {
+      // Horizontal line
+      result.push({ x: currentPoint.x, y: prevPoint.y });
+    } else if (Math.abs(Math.abs(angle) - VERTICAL_ANGLE) <= ANGLE_TOLERANCE) {
+      // Vertical line
+      result.push({ x: prevPoint.x, y: currentPoint.y });
+    } else if (Math.abs(angle - DIAGONAL_ANGLE_POS) <= ANGLE_TOLERANCE || 
+               Math.abs(angle - DIAGONAL_ANGLE_NEG) <= ANGLE_TOLERANCE) {
+      // Diagonal line (45 degrees)
+      const dx = currentPoint.x - prevPoint.x;
+      const avgDelta = (Math.abs(dx) + Math.abs(currentPoint.y - prevPoint.y)) / 2;
+      const signY = angle > 0 ? 1 : -1;
+      result.push({ 
+        x: prevPoint.x + (dx > 0 ? avgDelta : -avgDelta), 
+        y: prevPoint.y + signY * avgDelta 
+      });
+    } else {
+      // Keep original point for non-standard angles
+      result.push({ ...currentPoint });
+    }
   }
   
   return result;
 };
 
 /**
- * Check if points are aligned horizontally or vertically
- * @param p1 First point
- * @param p2 Second point
- * @param tolerance Tolerance in pixels (default: 2)
- * @returns True if points are aligned
+ * Also export as straightenLine for backward compatibility
  */
-export const arePointsAligned = (p1: Point, p2: Point, tolerance: number = 2): boolean => {
-  return (
-    Math.abs(p1.x - p2.x) <= tolerance || // Vertical alignment
-    Math.abs(p1.y - p2.y) <= tolerance    // Horizontal alignment
-  );
-};
+export const straightenLine = straightenPolyline;
 
 /**
- * Legacy version of function (aliased as straightenPolygon for tests)
+ * Check if a polygon has aligned walls (uses straightening internally)
+ * @param points Polygon points
+ * @returns True if polygon has aligned walls
  */
-export const straightenPolygon = straightenPolyline;
-
-/**
- * Check if all walls in a polygon are aligned to standard angles
- * @param points Points defining the polygon
- * @param angleStep Angle step for alignment checking
- * @returns True if all walls are aligned
- */
-export const hasAlignedWalls = (points: Point[], angleStep: number = 45): boolean => {
+export const hasAlignedWalls = (points: Point[]): boolean => {
   if (points.length < 3) return false;
   
+  // Check each segment
   for (let i = 0; i < points.length; i++) {
     const p1 = points[i];
     const p2 = points[(i + 1) % points.length];
     
-    // Calculate angle
-    const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-    const snappedAngle = snapToAngle(angle, angleStep);
-    
-    // Check if angle is not aligned
-    if (Math.abs(angle - snappedAngle) > 1) { // 1 degree tolerance
+    if (!arePointsAligned(p1, p2)) {
       return false;
     }
   }
@@ -89,10 +159,13 @@ export const hasAlignedWalls = (points: Point[], angleStep: number = 45): boolea
 };
 
 /**
- * Straighten a stroke based on its control points
- * @param points Array of points forming the stroke
- * @returns Straightened points
+ * Straighten a stroke (same as polyline but with alias for compatibility)
+ * @param points Stroke points
+ * @returns Straightened stroke points
  */
-export const straightenStroke = (points: Point[]): Point[] => {
-  return straightenPolyline(points);
-};
+export const straightenStroke = straightenPolyline;
+
+/**
+ * Alias for straightenPolyline for backward compatibility
+ */
+export const straightenPolygon = straightenPolyline;

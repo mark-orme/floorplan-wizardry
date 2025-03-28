@@ -64,20 +64,33 @@ export interface Room {
   type: string;
   /** Room points forming polygon */
   points: Point[];
+  /** Room area in square meters */
+  area?: number;
   /** Room properties */
   properties?: Record<string, any>;
 }
 
 /**
+ * Stroke type enum
+ */
+export type StrokeType = 'line' | 'wall' | 'room' | 'freehand' | 'polyline';
+
+/**
  * Stroke in a drawing
  */
 export interface Stroke {
+  /** Unique stroke ID */
+  id?: string;
   /** Points making up the stroke */
   points: Point[];
   /** Stroke color */
   color: string;
   /** Stroke width */
   width: number;
+  /** Stroke thickness (alias for width for compatibility) */
+  thickness?: number;
+  /** Stroke type */
+  type?: StrokeType;
   /** Stroke properties */
   properties?: Record<string, any>;
 }
@@ -90,6 +103,8 @@ export interface FloorPlan {
   id: string;
   /** Floor plan name */
   name: string;
+  /** Floor plan display label */
+  label?: string;
   /** Floor plan walls */
   walls?: Wall[];
   /** Floor plan rooms */
@@ -100,8 +115,18 @@ export interface FloorPlan {
   index: number;
   /** Serialized canvas JSON */
   canvasJson?: string;
+  /** Alternative for canvasJson in some implementations */
+  canvasData?: string | null;
   /** Free-form strokes */
-  strokes?: Stroke[];
+  strokes: Stroke[];
+  /** Gross internal area in square meters */
+  gia?: number;
+  /** Creation timestamp */
+  createdAt?: string;
+  /** Last update timestamp */
+  updatedAt?: string;
+  /** Floor level (synchronizes with metadata.level) */
+  level?: number;
 }
 
 /**
@@ -121,6 +146,7 @@ export const createFloorPlan = (id: string, name: string, index: number): FloorP
   return {
     id,
     name,
+    label: name,
     walls: [],
     rooms: [],
     metadata: createDefaultMetadata(),

@@ -46,3 +46,23 @@ export const squareMetersToPixels = (squareMeters: number, pixelsPerMeter: numbe
   // Square pixels = square meters * (pixels per meter)²
   return squareMeters * (pixelsPerMeter * pixelsPerMeter);
 };
+
+/**
+ * Convert pixels to grid units
+ * @param pixels Value in pixels
+ * @param gridSize Size of grid cell in pixels
+ * @returns Value in grid units
+ */
+export const pixelsToGridUnits = (pixels: number, gridSize: number): number => {
+  return pixels / gridSize;
+};
+
+/**
+ * Convert grid units to pixels
+ * @param gridUnits Value in grid units
+ * @param gridSize Size of grid cell in pixels
+ * @returns Value in pixels
+ */
+export const gridUnitsToPixels = (gridUnits: number, gridSize: number): number => {
+  return gridUnits * gridSize;
+};
