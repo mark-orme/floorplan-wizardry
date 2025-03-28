@@ -6,6 +6,7 @@
 import { useCallback } from 'react';
 import { useCanvasHandlers } from './useCanvasHandlers';
 import { UseObjectEventsProps, EventHandlerResult } from './types';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Hook for handling object-related canvas events
@@ -21,16 +22,16 @@ export const useObjectEvents = ({
   /**
    * Handle object modified event
    */
-  const handleObjectModified = useCallback(() => {
+  const handleObjectModified = useCallback((): void => {
     saveCurrentState();
   }, [saveCurrentState]);
   
   /**
    * Handle object added event
    */
-  const handleObjectAdded = useCallback(() => {
+  const handleObjectAdded = useCallback((): void => {
     // Only save state for non-drawing tools
-    if (tool !== 'draw' && tool !== 'line') {
+    if (tool !== DrawingMode.DRAW && tool !== DrawingMode.LINE) {
       saveCurrentState();
     }
   }, [tool, saveCurrentState]);
@@ -38,21 +39,21 @@ export const useObjectEvents = ({
   /**
    * Handle object removed event
    */
-  const handleObjectRemoved = useCallback(() => {
+  const handleObjectRemoved = useCallback((): void => {
     saveCurrentState();
   }, [saveCurrentState]);
   
   /**
    * Handle object selected event
    */
-  const handleObjectSelected = useCallback(() => {
+  const handleObjectSelected = useCallback((): void => {
     // Handle selection if needed
   }, []);
   
   /**
    * Handle selection cleared event
    */
-  const handleSelectionCleared = useCallback(() => {
+  const handleSelectionCleared = useCallback((): void => {
     // Handle selection clearing if needed
   }, []);
   

@@ -41,6 +41,14 @@ export const baseConfig = {
       {
         "selector": "CallExpression[callee.name='setTimeout'][arguments.length!=2]",
         "message": "setTimeout must always be invoked with two arguments."
+      },
+      {
+        "selector": "Literal[value='hand']",
+        "message": "Use DrawingTool.HAND instead of the string literal 'hand'"
+      },
+      {
+        "selector": "Literal[value='straightLine']",
+        "message": "Use DrawingTool.STRAIGHT_LINE instead of the string literal 'straightLine'"
       }
     ],
     

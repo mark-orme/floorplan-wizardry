@@ -11,7 +11,7 @@ import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 import { DebugInfoState } from "@/types/debugTypes";
 import { ZoomDirection } from "@/types/drawingTypes";
-import { DrawingTool } from "@/constants/drawingModes";
+import { DrawingMode } from "@/constants/drawingModes";
 
 /**
  * Canvas application component
@@ -60,7 +60,7 @@ export const CanvasApp = (): JSX.Element => {
 
   return (
     <CanvasLayout
-      tool={tool as DrawingTool}
+      tool={tool}
       gia={gia}
       floorPlans={floorPlans}
       currentFloor={currentFloor}
@@ -68,7 +68,7 @@ export const CanvasApp = (): JSX.Element => {
       canvasRef={canvasRef}
       lineThickness={lineThickness}
       lineColor={lineColor}
-      onToolChange={handleToolChange as (tool: DrawingTool) => void}
+      onToolChange={handleToolChange}
       onUndo={handleUndo}
       onRedo={handleRedo}
       onZoom={handleZoomAdapter}

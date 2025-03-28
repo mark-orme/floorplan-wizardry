@@ -1,83 +1,62 @@
 
 /**
- * Canvas event types
- * Type definitions for canvas event handlers
+ * Types for canvas event handlers
  * @module canvas-events/types
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Point as FabricPoint } from "fabric";
-import { DrawingTool } from "@/constants/drawingModes";
-import { ZOOM_CONSTRAINTS } from "@/types/zoomTypes";
+import type { MutableRefObject } from 'react';
+import type { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import type { DrawingMode } from '@/constants/drawingModes';
+import type { ZoomDirection } from '@/types/drawingTypes';
 
 /**
- * Result of an event handler registration
+ * Base props interface for event handlers
+ * @interface BaseEventProps
+ */
+export interface BaseEventProps {
+  /** Reference to the Fabric canvas instance */
+  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
+  /** Current drawing tool */
+  tool: DrawingMode;
+}
+
+/**
+ * Result of event handler hooks
+ * @interface EventHandlerResult
  */
 export interface EventHandlerResult {
-  /** Register event handlers */
+  /** Register all event handlers */
   register: () => void;
-  /** Unregister event handlers */
+  /** Unregister all event handlers */
   unregister: () => void;
   /** Clean up resources */
   cleanup: () => void;
 }
 
 /**
- * Props for useZoomTracking hook
+ * Props for canvas event handlers
+ * @interface UseCanvasHandlersProps
  */
-export interface UseZoomTrackingProps {
-  /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current drawing tool */
-  tool: DrawingTool;
-  /** Function to update zoom level */
-  updateZoomLevel?: (zoom: number) => void;
+export interface UseCanvasHandlersProps {
+  /** Reference to the Fabric canvas instance */
+  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
+  /** Event handlers map */
+  handlers: Record<string, (event?: unknown) => void>;
 }
 
 /**
- * Result of useZoomTracking hook
+ * Props for object events
+ * @interface UseObjectEventsProps
  */
-export interface UseZoomTrackingResult extends EventHandlerResult {
-  /** Current zoom level */
-  currentZoom: number;
-  /** Alias for register for backward compatibility */
-  registerZoomTracking: () => void;
-}
-
-/**
- * Props for usePathEvents hook
- */
-export interface UsePathEventsProps {
-  /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current drawing tool */
-  tool?: DrawingTool;
-  /** Function to save current state */
-  saveCurrentState: () => void;
-  /** Function to handle created path */
-  processCreatedPath: (path: FabricObject) => void;
-  /** Function to handle mouse up event */
-  handleMouseUp: (e?: any) => void;
-}
-
-/**
- * Props for useObjectEvents hook
- */
-export interface UseObjectEventsProps {
-  /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current drawing tool */
-  tool: DrawingTool;
-  /** Function to save current state */
+export interface UseObjectEventsProps extends BaseEventProps {
+  /** Save current state function */
   saveCurrentState: () => void;
 }
 
 /**
- * Props for useBrushSettings hook
+ * Props for brush settings
+ * @interface UseBrushSettingsProps
  */
-export interface UseBrushSettingsProps {
-  /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current drawing tool */
-  tool: DrawingTool;
+export interface UseBrushSettingsProps extends BaseEventProps {
   /** Line color */
   lineColor?: string;
   /** Line thickness */
@@ -85,108 +64,42 @@ export interface UseBrushSettingsProps {
 }
 
 /**
- * Props for useKeyboardEvents hook
+ * Props for zoom events
+ * @interface UseZoomEventsProps
  */
-export interface UseKeyboardEventsProps {
-  /** Reference to fabric canvas */
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+export interface UseZoomEventsProps extends BaseEventProps {
+  /** Function to handle zoom changes */
+  handleZoom: (direction: ZoomDirection) => void;
+  /** Current zoom level */
+  zoomLevel: number;
+  /** Function to set zoom level */
+  setZoomLevel: (level: number) => void;
+}
+
+/**
+ * Props for mouse events
+ * @interface UseMouseEventsProps
+ */
+export interface UseMouseEventsProps extends BaseEventProps {
+  /** Function to save current state before changes */
+  saveCurrentState: () => void;
+  /** Grid layer objects reference */
+  gridLayerRef?: MutableRefObject<FabricObject[]>;
+  /** Line thickness */
+  lineThickness?: number;
+  /** Line color */
+  lineColor?: string;
+}
+
+/**
+ * Props for keyboard events
+ * @interface UseKeyboardEventsProps
+ */
+export interface UseKeyboardEventsProps extends BaseEventProps {
   /** Function to handle undo operation */
   handleUndo: () => void;
-  /** Function to redo operation */
+  /** Function to handle redo operation */
   handleRedo: () => void;
   /** Function to delete selected objects */
   deleteSelectedObjects: () => void;
-  /** Function to handle escape key */
-  handleEscape?: () => void;
-  /** Function to handle delete key */
-  handleDelete?: () => void;
 }
-
-/**
- * Zoom direction options
- */
-export type ZoomDirection = 'in' | 'out';
-
-/**
- * Zoom options configuration
- */
-export interface ZoomOptions {
-  /** Direction to zoom */
-  direction: ZoomDirection;
-  /** Zoom factor */
-  factor?: number;
-  /** Zoom center point */
-  point?: { x: number; y: number };
-}
-
-/**
- * Canvas event types
- */
-export interface CanvasEvents {
-  'object:added': any;
-  'object:removed': any;
-  'object:modified': any;
-  'object:selected': any;
-  'selection:cleared': any;
-  'mouse:down': any;
-  'mouse:move': any;
-  'mouse:up': any;
-  'path:created': any;
-  'zoom:updated': any;
-  'zoom:changed': any;
-  [key: string]: any; // Allow string indexing
-}
-
-/**
- * Map of event handlers
- */
-export interface EventHandlerMap {
-  [eventName: string]: (e: any) => void;
-}
-
-/**
- * Base properties for event handlers
- */
-export interface BaseEventHandlerProps {
-  /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-}
-
-/**
- * Editable fabric object with additional properties
- */
-export interface EditableFabricObject extends FabricObject {
-  isEditing?: boolean;
-}
-
-/**
- * Event with target object
- */
-export interface TargetEvent {
-  target: FabricObject;
-}
-
-/**
- * Props for useMouseEvents hook
- */
-export interface UseMouseEventsProps extends BaseEventHandlerProps {
-  /** Current drawing tool */
-  tool: DrawingTool;
-  /** Function to handle mouse down event */
-  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
-  /** Function to handle mouse move event */
-  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  /** Function to handle mouse up event */
-  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
-}
-
-/**
- * Props for useCanvasHandlers hook
- */
-export interface UseCanvasHandlersProps extends BaseEventHandlerProps {
-  /** Event handlers to register */
-  handlers: EventHandlerMap;
-}
-
-// Export zoom level constants for backward compatibility
-export const ZOOM_LEVEL_CONSTANTS = ZOOM_CONSTRAINTS;

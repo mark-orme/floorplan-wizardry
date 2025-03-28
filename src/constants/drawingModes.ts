@@ -37,9 +37,13 @@ export enum DrawingMode {
 
 /**
  * Available drawing tools
+ * Defined as union of DrawingMode enum values to ensure type safety
  * @type {string}
  */
-export type DrawingTool = 'select' | 'draw' | 'line' | 'rectangle' | 'circle' | 'wall' | 'room' | 'measure' | 'text' | 'eraser' | 'straightLine' | 'hand';
+export type DrawingTool = DrawingMode.SELECT | DrawingMode.DRAW | DrawingMode.LINE | 
+  DrawingMode.RECTANGLE | DrawingMode.CIRCLE | DrawingMode.WALL | DrawingMode.ROOM | 
+  DrawingMode.MEASURE | DrawingMode.TEXT | DrawingMode.ERASER | DrawingMode.STRAIGHT_LINE | 
+  DrawingMode.HAND;
 
 /**
  * Tool display information
@@ -62,73 +66,73 @@ export interface ToolInfo {
  */
 export const DRAWING_TOOLS: ToolInfo[] = [
   {
-    id: 'select',
+    id: DrawingMode.SELECT,
     name: 'Select',
     description: 'Select and modify objects',
     icon: 'cursor'
   },
   {
-    id: 'draw',
+    id: DrawingMode.DRAW,
     name: 'Draw',
     description: 'Free-hand drawing',
     icon: 'pencil'
   },
   {
-    id: 'line',
+    id: DrawingMode.LINE,
     name: 'Line',
     description: 'Draw straight lines',
     icon: 'minus'
   },
   {
-    id: 'straightLine',
+    id: DrawingMode.STRAIGHT_LINE,
     name: 'Straight Line',
     description: 'Draw precise straight lines',
     icon: 'minus'
   },
   {
-    id: 'rectangle',
+    id: DrawingMode.RECTANGLE,
     name: 'Rectangle',
     description: 'Draw rectangles',
     icon: 'square'
   },
   {
-    id: 'circle',
+    id: DrawingMode.CIRCLE,
     name: 'Circle',
     description: 'Draw circles',
     icon: 'circle'
   },
   {
-    id: 'wall',
+    id: DrawingMode.WALL,
     name: 'Wall',
     description: 'Draw walls with thickness',
     icon: 'square'
   },
   {
-    id: 'room',
+    id: DrawingMode.ROOM,
     name: 'Room',
     description: 'Create enclosed rooms',
     icon: 'layout'
   },
   {
-    id: 'hand',
+    id: DrawingMode.HAND,
     name: 'Hand',
     description: 'Pan the canvas',
     icon: 'hand'
   },
   {
-    id: 'measure',
+    id: DrawingMode.MEASURE,
     name: 'Measure',
     description: 'Measure distances',
     icon: 'ruler'
   },
   {
-    id: 'text',
+    id: DrawingMode.TEXT,
     name: 'Text',
     description: 'Add text annotations',
     icon: 'type'
   },
   {
-    id: 'eraser',
+    id: DrawingMode.ERASER,
     name: 'Eraser',
     description: 'Erase objects',
     icon: 'eraser'

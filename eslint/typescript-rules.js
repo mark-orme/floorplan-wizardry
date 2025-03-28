@@ -36,7 +36,7 @@ export const typescriptRules = {
     
     // TypeScript function and return types
     "@typescript-eslint/explicit-function-return-type": ["error", {
-      "allowExpressions": true,
+      "allowExpressions": false,
       "allowTypedFunctionExpressions": true,
       "allowHigherOrderFunctions": true
     }],
@@ -58,6 +58,7 @@ export const typescriptRules = {
     // Additional strict rules requested
     "@typescript-eslint/no-misused-promises": "error",
     "@typescript-eslint/strict-boolean-expressions": "warn",
+    "@typescript-eslint/no-redundant-type-constituents": "error",
     
     // TypeScript banned types and naming
     "@typescript-eslint/ban-types": ["error", {

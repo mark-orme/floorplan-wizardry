@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect } from 'react';
 import { UseBrushSettingsProps, EventHandlerResult } from './types';
-import { DrawingTool } from '@/constants/drawingModes';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Hook for managing brush settings on the canvas
@@ -23,12 +23,12 @@ export const useBrushSettings = ({
   /**
    * Update brush settings based on current tool and preferences
    */
-  const updateBrushSettings = useCallback(() => {
+  const updateBrushSettings = useCallback((): void => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
     // Only update brush settings if in drawing mode
-    if (tool === 'draw' || tool === 'line') {
+    if (tool === DrawingMode.DRAW || tool === DrawingMode.LINE) {
       if (canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush.color = lineColor;
         canvas.freeDrawingBrush.width = lineThickness;
@@ -36,10 +36,10 @@ export const useBrushSettings = ({
     }
     
     // Set drawing mode based on tool
-    canvas.isDrawingMode = tool === 'draw';
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
     
     // Enable/disable selection based on tool
-    if (tool === 'select') {
+    if (tool === DrawingMode.SELECT) {
       canvas.selection = true;
     } else {
       canvas.selection = false;
@@ -49,21 +49,21 @@ export const useBrushSettings = ({
   /**
    * Register event handlers
    */
-  const register = useCallback(() => {
+  const register = useCallback((): void => {
     updateBrushSettings();
   }, [updateBrushSettings]);
   
   /**
    * Unregister event handlers
    */
-  const unregister = useCallback(() => {
+  const unregister = useCallback((): void => {
     // No event handlers to remove
   }, []);
   
   /**
    * Clean up resources
    */
-  const cleanup = useCallback(() => {
+  const cleanup = useCallback((): void => {
     unregister();
   }, [unregister]);
   

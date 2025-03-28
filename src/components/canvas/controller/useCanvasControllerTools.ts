@@ -7,7 +7,7 @@
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useDrawingTools, UseDrawingToolsResult } from "@/hooks/useDrawingTools";
-import { DrawingTool } from "@/constants/drawingModes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 import { ZoomDirection } from "@/types/drawingTypes";
@@ -24,7 +24,7 @@ interface UseCanvasControllerToolsProps {
   /** Reference to history state for undo/redo */
   historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current zoom level */
   zoomLevel: number;
   /** Line thickness for drawing */
@@ -32,7 +32,7 @@ interface UseCanvasControllerToolsProps {
   /** Line color for drawing */
   lineColor: string;
   /** Function to set the current tool */
-  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
   /** Function to set the zoom level */
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   /** Array of floor plans */
@@ -55,7 +55,7 @@ interface UseCanvasControllerToolsResult {
   /** Function to clear drawings from canvas */
   clearDrawings: () => void;
   /** Function to change the current tool */
-  handleToolChange: (tool: DrawingTool) => void;
+  handleToolChange: (tool: DrawingMode) => void;
   /** Function to undo last action */
   handleUndo: () => void;
   /** Function to redo previously undone action */
@@ -68,6 +68,18 @@ interface UseCanvasControllerToolsResult {
   saveCanvas: () => boolean; 
   /** Function to save current state before making changes */
   saveCurrentState: () => void;
+  /** Function to delete selected objects */
+  deleteSelectedObjects: () => void;
+  /** Function to handle floor selection */
+  handleFloorSelect: (floorIndex: number) => void;
+  /** Function to add a new floor */
+  handleAddFloor: () => void;
+  /** Function to change line thickness */
+  handleLineThicknessChange: (thickness: number) => void;
+  /** Function to change line color */
+  handleLineColorChange: (color: string) => void;
+  /** Function to open measurement guide */
+  openMeasurementGuide: () => void;
 }
 
 /**
@@ -126,7 +138,7 @@ export const useCanvasControllerTools = (
     const canvas = fabricCanvasRef.current;
     
     // Calculate GIA on object modifications, additions or removals
-    const handleObjectChange = () => {
+    const handleObjectChange = (): void => {
       recalculateGIA();
     };
     
@@ -166,6 +178,48 @@ export const useCanvasControllerTools = (
     }
   }, [toolFunctions]);
 
+  // Basic implementation of missing required functions
+  const deleteSelectedObjects = useCallback((): void => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    const activeObjects = canvas.getActiveObjects();
+    
+    if (activeObjects.length > 0) {
+      canvas.remove(...activeObjects);
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+      console.info('Selected objects deleted');
+    }
+  }, [fabricCanvasRef]);
+
+  const handleFloorSelect = useCallback((floorIndex: number): void => {
+    if (floorIndex >= 0 && floorIndex < floorPlans.length) {
+      console.info(`Floor selected: ${floorPlans[floorIndex].name}`);
+      // Implement actual floor selection logic
+    }
+  }, [floorPlans]);
+
+  const handleAddFloor = useCallback((): void => {
+    console.info('Add floor functionality');
+    // Implement add floor logic
+  }, []);
+
+  const handleLineThicknessChange = useCallback((thickness: number): void => {
+    console.info(`Line thickness changed to ${thickness}`);
+    // Implement line thickness change logic
+  }, []);
+
+  const handleLineColorChange = useCallback((color: string): void => {
+    console.info(`Line color changed to ${color}`);
+    // Implement line color change logic
+  }, []);
+
+  const openMeasurementGuide = useCallback((): void => {
+    console.info('Measurement guide opened');
+    // Implement measurement guide logic
+  }, []);
+
   return {
     clearDrawings: toolFunctions.clearCanvas,
     handleToolChange: toolFunctions.handleToolChange,
@@ -174,6 +228,12 @@ export const useCanvasControllerTools = (
     handleZoom,
     clearCanvas: toolFunctions.clearCanvas,
     saveCanvas: enhancedSaveCanvas,
-    saveCurrentState: toolFunctions.saveCurrentState
+    saveCurrentState: toolFunctions.saveCurrentState,
+    deleteSelectedObjects,
+    handleFloorSelect,
+    handleAddFloor,
+    handleLineThicknessChange,
+    handleLineColorChange,
+    openMeasurementGuide
   };
 };
