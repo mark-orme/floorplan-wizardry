@@ -238,9 +238,7 @@ export function coreToAppWall(wall: CoreWall): AppWall {
 /**
  * Convert app wall to core wall
  */
-export function appToCoreWall(wall: AppWall): AppWall['startPoint'] extends CoreWall['start'] 
-  ? CoreWall 
-  : never {
+export function appToCoreWall(wall: AppWall): CoreWall {
   return {
     id: wall.id,
     start: wall.startPoint,
@@ -249,7 +247,7 @@ export function appToCoreWall(wall: AppWall): AppWall['startPoint'] extends Core
     color: wall.color || '#000000',
     height: wall.height,
     roomIds: wall.roomIds
-  } as any;
+  } as CoreWall;
 }
 
 /**
@@ -275,8 +273,8 @@ export function mapPaperSizeToApp(paperSize: string | CorePaperSize): AppPaperSi
       return AppPaperSize.A3;
     case CorePaperSize.A4:
       return AppPaperSize.A4;
-    case CorePaperSize.A5:
-      return AppPaperSize.A5;
+    case CorePaperSize.Custom:
+      return AppPaperSize.CUSTOM;
     default:
       return AppPaperSize.A4;
   }

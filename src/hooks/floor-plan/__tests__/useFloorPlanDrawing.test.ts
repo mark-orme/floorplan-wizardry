@@ -1,3 +1,4 @@
+
 /**
  * Tests for the useFloorPlanDrawing hook
  * @module hooks/floor-plan/__tests__/useFloorPlanDrawing.test
@@ -5,7 +6,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
-import { FloorPlan, Stroke, StrokeType } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, StrokeType, PaperSize } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Point';
 
 describe('useFloorPlanDrawing', () => {
@@ -18,6 +19,7 @@ describe('useFloorPlanDrawing', () => {
     walls: [],
     rooms: [],
     level: 0,
+    index: 0, // Added missing index property
     gia: 0,
     canvasData: null,
     createdAt: new Date().toISOString(),

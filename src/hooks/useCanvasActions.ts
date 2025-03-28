@@ -132,7 +132,7 @@ export const useCanvasActions = ({
           const dataUrl = fabricCanvasRef.current!.toDataURL({
             format: 'png',
             quality: 1,
-            multiplier: 1
+            multiplier: 1 // Added required multiplier property
           });
           
           // Create and trigger download link
