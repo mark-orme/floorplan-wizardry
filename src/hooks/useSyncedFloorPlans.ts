@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
