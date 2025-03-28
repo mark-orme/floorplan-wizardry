@@ -45,7 +45,7 @@ export interface FloorPlanMetadata {
   updatedAt: string;
   
   /** Paper size for printing */
-  paperSize: PaperSize;
+  paperSize: PaperSize | string;
   
   /** Floor level (0 = ground floor) */
   level: number;
@@ -69,6 +69,12 @@ export interface Wall {
   
   /** Wall color */
   color: string;
+  
+  /** Wall height in pixels (optional) */
+  height?: number;
+  
+  /** Associated room IDs (optional) */
+  roomIds?: string[];
 }
 
 /**
@@ -100,7 +106,7 @@ export interface Room {
 }
 
 /**
- * Stroke type enum
+ * Stroke type enum as a string literal type for compatibility
  */
 export type StrokeType = 'line' | 'wall' | 'room' | 'freehand' | 'polyline';
 
@@ -122,6 +128,9 @@ export interface Stroke {
   
   /** Stroke thickness */
   thickness: number;
+  
+  /** Stroke width (same as thickness for compatibility) */
+  width?: number;
 }
 
 /**
@@ -148,6 +157,9 @@ export interface FloorPlan {
   /** Display label */
   label: string;
   
+  /** Floor index for compatibility with app FloorPlan */
+  index?: number;
+  
   /** Walls in the floor plan */
   walls: Wall[];
   
@@ -160,6 +172,9 @@ export interface FloorPlan {
   /** Serialized canvas data (optional) */
   canvasData: string | null;
   
+  /** Canvas JSON serialization for fabric.js */
+  canvasJson?: string;
+  
   /** Creation timestamp */
   createdAt: string;
   
@@ -171,6 +186,9 @@ export interface FloorPlan {
   
   /** Floor level (0 = ground floor) */
   level: number;
+  
+  /** Paper size */
+  paperSize?: PaperSize | string;
   
   /** Metadata */
   metadata: FloorPlanMetadata;
@@ -207,10 +225,13 @@ export const createFloorPlan = (id: string, name: string, level: number = 0): Fl
     rooms: [],
     strokes: [],
     canvasData: null,
+    canvasJson: null,
     createdAt: now,
     updatedAt: now,
     gia: 0,
     level,
+    index: level,
+    paperSize: PaperSize.A4,
     metadata: createDefaultMetadata(level)
   };
 };

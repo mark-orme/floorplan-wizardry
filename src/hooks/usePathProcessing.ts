@@ -1,3 +1,4 @@
+
 /**
  * Path processing hook
  * Handles processing of drawing paths
@@ -68,21 +69,21 @@ const extractPointsFromPath = (path: FabricPath): Point[] => {
  * @returns The corresponding stroke type
  */
 const drawingToolToStrokeType = (tool?: DrawingTool): StrokeType => {
-  if (!tool) return 'line';
+  if (!tool) return StrokeType.LINE;
   
   // Map drawing tools to stroke types
   switch (tool) {
     case 'wall':
-      return 'wall';
+      return StrokeType.WALL;
     case 'room':
-      return 'room';
+      return StrokeType.ROOM;
     case 'line':
     case 'straightLine':
-      return 'line';
+      return StrokeType.LINE;
     case 'draw':
-      return 'freehand';
+      return StrokeType.FREEHAND;
     default:
-      return 'line';
+      return StrokeType.LINE;
   }
 };
 

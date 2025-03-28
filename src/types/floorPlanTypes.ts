@@ -28,7 +28,10 @@ export enum StrokeType {
   CIRCLE = 'CIRCLE',
   RECTANGLE = 'RECTANGLE',
   TEXT = 'TEXT',
-  PATH = 'PATH'
+  PATH = 'PATH',
+  WALL = 'WALL',
+  ROOM = 'ROOM',
+  FREEHAND = 'FREEHAND'
 }
 
 // String literal type for compatibility with core StrokeType
@@ -143,6 +146,8 @@ export interface FloorPlan {
   updatedAt?: string;
   /** Floor level */
   level?: number;
+  /** Paper size */
+  paperSize?: string | PaperSize;
 }
 
 // Use export type for isolatedModules compatibility
