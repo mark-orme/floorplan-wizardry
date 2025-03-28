@@ -1,11 +1,11 @@
+
 /**
  * Custom hook for handling canvas drawing events
  * @module canvas/drawing/useCanvasDrawingEvents
  */
 import { useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
-import { DrawingState } from '@/types/drawingTypes';
-import { DrawingTool } from '@/hooks/useCanvasState';
+import { DrawingState, Point } from '@/types';
 
 /**
  * Constants for drawing events
@@ -32,7 +32,7 @@ interface UseCanvasDrawingEventsProps {
   /** Function to update drawing state */
   setDrawingState: React.Dispatch<React.SetStateAction<DrawingState>>;
   /** Current drawing tool */
-  tool: DrawingTool;
+  tool: string;
   /** Function to process created path */
   processCreatedPath: (path: FabricPath) => void;
 }
@@ -109,7 +109,9 @@ export const useCanvasDrawingEvents = ({
       lastX: x,
       lastY: y,
       startX: x,
-      startY: y
+      startY: y,
+      startPoint: { x, y },
+      currentPoint: { x, y }
     }));
     
     // Handle different tools
@@ -120,8 +122,8 @@ export const useCanvasDrawingEvents = ({
       // For straight lines and shapes, we'll handle the drawing manually
       // Start a new path
       const newPath = new FabricPath(`M ${x} ${y}`, {
-        stroke: drawingState.currentPath?.stroke || '#000000',
-        strokeWidth: drawingState.currentPath?.strokeWidth || 2,
+        stroke: drawingState.color || '#000000',
+        strokeWidth: drawingState.width || 2,
         fill: 'transparent',
         selectable: false
       });
@@ -134,7 +136,7 @@ export const useCanvasDrawingEvents = ({
         currentPath: newPath
       }));
     }
-  }, [fabricCanvasRef, setDrawingState, tool, drawingState.currentPath]);
+  }, [fabricCanvasRef, setDrawingState, tool, drawingState.color, drawingState.width]);
   
   /**
    * Handle mouse move event
@@ -201,11 +203,32 @@ export const useCanvasDrawingEvents = ({
       }
     }
     
-    // Update last position
+    // Update points for distance calculation
+    const currentPoint: Point = { x, y };
+    const midPoint: Point | null = drawingState.startPoint 
+      ? { 
+          x: (drawingState.startPoint.x + x) / 2, 
+          y: (drawingState.startPoint.y + y) / 2 
+        } 
+      : null;
+    
+    // Calculate distance between points
+    let distance = null;
+    if (drawingState.startPoint) {
+      const dx = x - drawingState.startPoint.x;
+      const dy = y - drawingState.startPoint.y;
+      distance = Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    // Update last position and points
     setDrawingState(prev => ({
       ...prev,
       lastX: x,
-      lastY: y
+      lastY: y,
+      currentPoint,
+      midPoint,
+      distance,
+      cursorPosition: { x, y }
     }));
   }, [fabricCanvasRef, drawingState, setDrawingState, tool]);
   
