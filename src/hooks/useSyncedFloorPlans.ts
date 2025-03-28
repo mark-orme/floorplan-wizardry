@@ -194,11 +194,8 @@ export const useSyncedFloorPlans = () => {
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
         // Create properly typed CoreFloorPlan array for Supabase with ensured labels
-        const supabasePlans = plansWithLabels.map(plan => ({
-          ...plan,
-          label: plan.label || plan.name || ''
-        }));
-        await saveToSupabase(supabasePlans);
+        const supabasePlans = appToCoreFloorPlans(plansWithLabels);
+        await saveToSupabase(plansWithLabels);
       }
       
       return plansWithLabels;

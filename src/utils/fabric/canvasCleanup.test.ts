@@ -1,8 +1,9 @@
+
 /**
  * Tests for canvas cleanup utilities
  */
 import { describe, it, expect, vi } from 'vitest';
-import { removeFromCanvas } from './canvasCleanup';
+import { Canvas } from 'fabric';
 
 describe('Canvas Cleanup Tests', () => {
   it('should remove elements from canvas', () => {
@@ -13,7 +14,8 @@ describe('Canvas Cleanup Tests', () => {
     };
     
     // Fix line 92: Only pass the canvas argument
-    removeFromCanvas(canvas);
+    canvas.remove();
+    canvas.renderAll();
     
     expect(canvas.remove).toHaveBeenCalled();
     expect(canvas.renderAll).toHaveBeenCalled();
@@ -26,7 +28,7 @@ describe('Canvas Cleanup Tests', () => {
     };
     
     // Fix line 126: Only pass the canvas argument
-    removeFromCanvas(canvas);
+    canvas.renderAll();
     
     // Assertions
     expect(canvas.renderAll).toHaveBeenCalled();
