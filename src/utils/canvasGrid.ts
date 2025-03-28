@@ -5,76 +5,30 @@
  * Handles the creation, validation, and error handling for grid elements
  * @module canvasGrid
  */
-import { Canvas, Object as FabricObject, Line } from "fabric";
+import { Canvas, Object as FabricObject } from "fabric";
 import { shouldThrottleCreation } from "./gridManager";
-import { validateCanvasForGrid } from "./grid/gridValidation";
-import { createGridLayer, createFallbackGrid } from "./grid/gridCreator";
-import { handleGridCreationError } from "./grid/gridErrorHandling";
-import { acquireGridLockWithSafety, cleanupGridResources } from "./grid/gridSafety";
+import { toast } from "sonner";
 import logger from "./logger";
 import { DebugInfoState } from "@/types/debugTypes";
-import { toast } from "sonner";
 
-// Store last grid creation time to prevent excessive creation attempts
+// Import all grid utilities
+import {
+  validateCanvasForGrid,
+  createGridLayer,
+  createFallbackGrid,
+  handleGridCreationError,
+  acquireGridLockWithSafety,
+  cleanupGridResources,
+  GRID_CREATION_COOLDOWN,
+  MAX_CREATE_ATTEMPTS,
+  GRID_CREATION_CONSTANTS,
+  TOAST_MESSAGES
+} from "./grid";
+
+// Grid creation state tracking
 let lastGridCreationTime = 0;
-const GRID_CREATION_COOLDOWN = 5000; // 5 seconds between attempts
 let gridCreationInProgress = false;
 let createAttempt = 0;
-const MAX_CREATE_ATTEMPTS = 5;
-
-/**
- * Grid creation timing constants
- * @constant {Object}
- */
-const GRID_CREATION_CONSTANTS = {
-  /**
-   * Delay for logging in development mode (ms)
-   * @constant {number}
-   */
-  DEV_LOG_DELAY: 100,
-  
-  /**
-   * Maximum time allowed for grid creation in ms
-   * @constant {number}
-   */
-  MAX_CREATION_TIME: 2000,
-  
-  /**
-   * Delay between creation attempts in ms
-   * @constant {number}
-   */
-  RETRY_DELAY: 500
-};
-
-/**
- * Toast message constants
- * @constant {Object}
- */
-const TOAST_MESSAGES = {
-  /**
-   * Error message for grid creation failure
-   * @constant {string}
-   */
-  GRID_CREATION_FAILED: "Grid creation failed - no objects could be created",
-  
-  /**
-   * Error message for all methods failing
-   * @constant {string}
-   */
-  ALL_METHODS_FAILED: "All grid creation methods failed",
-  
-  /**
-   * Successful grid creation message
-   * @constant {string}
-   */
-  GRID_CREATED: "Grid created successfully",
-  
-  /**
-   * Fallback grid creation message
-   * @constant {string}
-   */
-  USING_FALLBACK_GRID: "Using fallback grid"
-};
 
 /**
  * Create grid lines for the canvas
@@ -166,78 +120,8 @@ export const createGrid = (
       logger.info("Creating grid - implementation starting");
     }
     
-    // ACTUAL IMPLEMENTATION INSTEAD OF PLACEHOLDER
-    const createGridLines = () => {
-      const width = canvas.width || canvasDimensions.width;
-      const height = canvas.height || canvasDimensions.height;
-      const gridObjects: FabricObject[] = [];
-      
-      // Parameters for grid
-      const smallGridSpacing = 10; // 10px for small grid (0.1m)
-      const largeGridSpacing = 100; // 100px for large grid (1m)
-      const smallGridColor = '#f0f0f0';
-      const largeGridColor = '#d0d0d0';
-      
-      // Create horizontal small grid lines
-      for (let y = 0; y <= height; y += smallGridSpacing) {
-        const line = new Line([0, y, width, y], {
-          stroke: smallGridColor,
-          selectable: false,
-          evented: false,
-          strokeWidth: 0.5,
-          hoverCursor: 'default'
-        });
-        
-        gridObjects.push(line);
-        canvas.add(line);
-      }
-      
-      // Create vertical small grid lines
-      for (let x = 0; x <= width; x += smallGridSpacing) {
-        const line = new Line([x, 0, x, height], {
-          stroke: smallGridColor,
-          selectable: false,
-          evented: false,
-          strokeWidth: 0.5,
-          hoverCursor: 'default'
-        });
-        
-        gridObjects.push(line);
-        canvas.add(line);
-      }
-      
-      // Create horizontal large grid lines
-      for (let y = 0; y <= height; y += largeGridSpacing) {
-        const line = new Line([0, y, width, y], {
-          stroke: largeGridColor,
-          selectable: false,
-          evented: false,
-          strokeWidth: 1,
-          hoverCursor: 'default'
-        });
-        
-        gridObjects.push(line);
-        canvas.add(line);
-      }
-      
-      // Create vertical large grid lines
-      for (let x = 0; x <= width; x += largeGridSpacing) {
-        const line = new Line([x, 0, x, height], {
-          stroke: largeGridColor,
-          selectable: false,
-          evented: false,
-          strokeWidth: 1,
-          hoverCursor: 'default'
-        });
-        
-        gridObjects.push(line);
-        canvas.add(line);
-      }
-      
-      return gridObjects;
-    };
-    
-    const gridObjects = createGridLines();
+    // Create grid
+    const gridObjects = createGridLayer(canvas, gridLayerRef, setDebugInfo);
     
     if (!gridObjects || gridObjects.length === 0) {
       if (process.env.NODE_ENV === 'development') {
@@ -316,7 +200,4 @@ export const createGrid = (
 };
 
 // Re-export all grid utility functions for easier imports
-export * from "./grid/gridCreator";
-export * from "./grid/gridValidation";
-export * from "./grid/gridErrorHandling";
-export * from "./grid/gridSafety";
+export * from "./grid";
