@@ -84,7 +84,7 @@ export interface Stroke extends Omit<CoreStroke, 'type' | 'width'> {
  * Floor plan metadata
  * Contains additional information about a floor plan
  */
-export interface FloorPlanMetadata extends CoreFloorPlanMetadata {
+export interface FloorPlanMetadata extends Omit<CoreFloorPlanMetadata, 'createdAt' | 'updatedAt'> {
   /** Creation timestamp */
   createdAt: number;
   /** Last update timestamp */
@@ -113,7 +113,7 @@ export interface FloorPlan extends Omit<CoreFloorPlan, 'walls' | 'rooms' | 'stro
   /** Serialized canvas state */
   canvasJson?: string;
   /** Gross internal area in square meters */
-  gia?: number;
+  gia: number;
   /** Canvas data for storage */
   canvasData: any;
   /** Floor level */

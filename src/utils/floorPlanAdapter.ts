@@ -16,8 +16,8 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
   const walls = Array.isArray(appPlan.walls) 
     ? appPlan.walls.map(wall => ({
         id: wall.id,
-        start: wall.startPoint, // Map startPoint to start
-        end: wall.endPoint,     // Map endPoint to end
+        start: wall.startPoint || wall.start, // Use either property
+        end: wall.endPoint || wall.end,     // Use either property
         thickness: wall.thickness,
         color: wall.color || '#000000',
         height: wall.height,
@@ -27,16 +27,43 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
   
   // Convert strokes and ensure each has width property
   const strokes = Array.isArray(appPlan.strokes) 
-    ? appPlan.strokes.map(stroke => ({
-        id: stroke.id,
-        points: stroke.points,
-        type: typeof stroke.type === 'string' 
-          ? stroke.type.toLowerCase() as CoreStroke['type'] 
-          : 'line',
-        color: stroke.color,
-        thickness: stroke.thickness,
-        width: stroke.width || stroke.thickness, // Ensure width is set
-      } as CoreStroke))
+    ? appPlan.strokes.map(stroke => {
+        // Convert enum to string type
+        let strokeType: CoreStroke['type'];
+        if (typeof stroke.type === 'string') {
+          strokeType = stroke.type.toLowerCase() as CoreStroke['type'];
+        } else {
+          // Handle enum values
+          switch (stroke.type) {
+            case StrokeType.LINE:
+              strokeType = 'line';
+              break;
+            case StrokeType.POLYLINE:
+              strokeType = 'polyline';
+              break;
+            case StrokeType.WALL:
+              strokeType = 'wall';
+              break;
+            case StrokeType.ROOM:
+              strokeType = 'room';
+              break; 
+            case StrokeType.FREEHAND:
+              strokeType = 'freehand';
+              break;
+            default:
+              strokeType = 'line';
+          }
+        }
+
+        return {
+          id: stroke.id,
+          points: stroke.points,
+          type: strokeType,
+          color: stroke.color,
+          thickness: stroke.thickness,
+          width: stroke.width || stroke.thickness // Ensure width is set
+        } as CoreStroke;
+      })
     : [];
   
   return {
@@ -82,6 +109,8 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
         id: wall.id,
         startPoint: wall.start, // Map start to startPoint
         endPoint: wall.end,     // Map end to endPoint
+        start: wall.start,      // Keep original properties too
+        end: wall.end,
         thickness: wall.thickness,
         height: wall.height || 0,
         color: wall.color,
@@ -142,7 +171,9 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
         : Date.now(),
       paperSize: corePlan.metadata?.paperSize || 'A4',
       level: corePlan.metadata?.level || 0
-    }
+    },
+    gia: corePlan.gia || 0,
+    canvasData: corePlan.canvasData || null
   };
 }
 
