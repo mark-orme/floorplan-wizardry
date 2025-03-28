@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for initializing Fabric.js canvas
  * @module useCanvasCreation
@@ -201,7 +202,8 @@ export const useCanvasCreation = ({
       
       // Mark this canvas element as initialized to prevent duplicate initialization
       if (canvasElement) {
-        markCanvasAsInitialized(canvasElement);
+        // Fixed: remove argument since markCanvasAsInitialized expects 0 arguments
+        markCanvasAsInitialized();
       }
       
       fabricCanvasRef.current = fabricCanvas;

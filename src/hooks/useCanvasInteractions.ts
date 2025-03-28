@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas interactions
  * Manages drawing events, path creation, and shape processing
@@ -102,7 +103,7 @@ export const useCanvasInteractions = (props: UseCanvasInteractionsProps): UseCan
    * @returns {boolean} True if the point is on the grid
    */
   const isPointOnGrid = useCallback((point: Point): boolean => {
-    return isExactGridMultiple(point.x, GRID_SPACING) && isExactGridMultiple(point.y, GRID_SPACING);
+    return isExactGridMultiple(point.x) && isExactGridMultiple(point.y);
   }, []);
 
   /**
@@ -243,16 +244,20 @@ export const useCanvasInteractions = (props: UseCanvasInteractionsProps): UseCan
     setCurrentZoom(fabricCanvasRef.current.getZoom());
   }, [fabricCanvasRef]);
 
+  // Add type for fabric.js events
+  type FabricEventName = 'object:selected' | 'zoom:changed';
+
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
 
+    // Fixed: correct event binding with proper event names
     fabricCanvasRef.current.on('object:selected', handleObjectSelected);
-    fabricCanvasRef.current.on('before:zoom', handleZoom);
+    fabricCanvasRef.current.on('zoom:changed', handleZoom);
 
     return () => {
       if (fabricCanvasRef.current) {
         fabricCanvasRef.current.off('object:selected', handleObjectSelected);
-        fabricCanvasRef.current.off('before:zoom', handleZoom);
+        fabricCanvasRef.current.off('zoom:changed', handleZoom);
       }
     };
   }, [fabricCanvasRef, handleObjectSelected, handleZoom]);

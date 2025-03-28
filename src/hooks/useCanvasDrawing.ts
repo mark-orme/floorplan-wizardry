@@ -11,9 +11,9 @@ import { useCanvasHistory } from "./useCanvasHistory";
 import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { type FloorPlan } from "@/types/floorPlanTypes";
 import { DrawingTool } from "./useCanvasState";
-import { type DrawingState } from "@/types/drawingTypes";
-import { useCanvasDrawingState } from "./canvas/drawing/useCanvasDrawingState";
+import { useCanvasDrawingState } from "./useCanvasDrawingState";
 import { useCanvasDrawingEvents } from "./canvas/drawing/useCanvasDrawingEvents";
+import { DrawingState } from "@/types/drawingTypes";
 
 /**
  * History state reference object
@@ -86,7 +86,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     recalculateGIA = () => {}
   } = props;
 
-  // Drawing state
+  // Drawing state - explicitly using the DrawingState type from drawingTypes
   const { drawingState, setDrawingState } = useCanvasDrawingState();
   
   // Canvas history
