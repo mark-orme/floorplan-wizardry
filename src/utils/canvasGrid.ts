@@ -98,7 +98,7 @@ export const createGrid = (
 ): FabricObject[] => {
   // Only log detailed information in development mode, and only once per creation
   if (process.env.NODE_ENV === 'development' && !gridCreationInProgress) {
-    console.log("🌐 createGrid called with canvas dimensions:", {
+    logger.debug("createGrid called with canvas dimensions:", {
       width: canvas?.width,
       height: canvas?.height,
       getWidth: canvas?.getWidth?.(),
@@ -121,7 +121,7 @@ export const createGrid = (
   // Check if we've exceeded max attempts
   if (createAttempt >= MAX_CREATE_ATTEMPTS) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
+      logger.warn(`Grid creation abandoned after ${MAX_CREATE_ATTEMPTS} attempts`);
     }
     toast.error("Grid creation abandoned. Please refresh the page.");
     return gridLayerRef.current;
@@ -140,7 +140,7 @@ export const createGrid = (
   try {
     // Validate inputs first
     if (!validateCanvasForGrid(canvas, gridLayerRef, canvasDimensions)) {
-      console.error("❌ Grid validation failed, cannot create grid");
+      logger.error("Grid validation failed, cannot create grid");
       gridCreationInProgress = false;
       return gridLayerRef.current;
     }
@@ -241,7 +241,7 @@ export const createGrid = (
     
     if (!gridObjects || gridObjects.length === 0) {
       if (process.env.NODE_ENV === 'development') {
-        console.error("⚠️ Grid creation failed: createGridLayer returned no objects");
+        logger.error("Grid creation failed: createGridLayer returned no objects");
       }
       
       // Try fallback grid immediately
@@ -290,10 +290,10 @@ export const createGrid = (
     // Handle errors
     if (error instanceof Error) {
       handleGridCreationError(error, setHasError, setErrorMessage);
-      console.error("❌ Grid creation error:", error.message);
+      logger.error("Grid creation error:", error.message);
     } else {
       handleGridCreationError(new Error('Unknown error during grid creation'), setHasError, setErrorMessage);
-      console.error("❌ Unknown grid creation error");
+      logger.error("Unknown grid creation error");
     }
     
     // Try fallback grid on error

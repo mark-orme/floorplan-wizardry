@@ -15,7 +15,7 @@ export const typescriptRules = {
   },
   rules: {
     // TypeScript no-explicit-any and generic type safety
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-magic-numbers": ["error", { 
       "ignore": [0, 1, -1, 2], 
       "ignoreArrayIndexes": true,
@@ -113,7 +113,7 @@ export const typescriptRules = {
     "import/named": "error",
     
     // ✅ Disallow unused imports
-    "@typescript-eslint/no-unused-vars": ["warn"],
+    "@typescript-eslint/no-unused-vars": ["error"],
     
     // ✅ Prevent fabric, lodash, etc. usage without import
     "no-undef": "error",
@@ -132,6 +132,11 @@ export const typescriptRules = {
             "name": "fabric",
             "importNames": ["fabric"],
             "message": "Use default import for fabric: import fabric from 'fabric';"
+          },
+          {
+            "name": "@/types/floorPlanTypes",
+            "importNames": ["FloorPlan"],
+            "message": "Use FloorPlan from @/types/core/FloorPlan instead."
           }
         ]
       }

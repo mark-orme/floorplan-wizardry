@@ -24,6 +24,11 @@ export const baseConfig = {
         "name": "@/utils/grid/gridDebugUtils",
         "importNames": ["forceCreateGrid"],
         "message": "Make sure this function exists and is exported"
+      },
+      {
+        "name": "@/types/floorPlanTypes",
+        "importNames": ["FloorPlan"],
+        "message": "Use FloorPlan from @/types/core/FloorPlan instead."
       }]
     }],
     
@@ -49,6 +54,10 @@ export const baseConfig = {
       {
         "selector": "Literal[value='straightLine']",
         "message": "Use DrawingTool.STRAIGHT_LINE instead of the string literal 'straightLine'"
+      },
+      {
+        "selector": "CallExpression[callee.name='setTimeout']",
+        "message": "Avoid raw setTimeout – use a util."
       }
     ],
     

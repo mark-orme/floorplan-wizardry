@@ -26,8 +26,12 @@ enum LogLevel {
  */
 let currentLogLevel: LogLevel = 
   process.env.NODE_ENV === 'production' 
-    ? LogLevel.ERROR    // Only errors in production (reduced from WARN)
-    : LogLevel.INFO;    // Reduced from DEBUG to INFO in development
+    ? LogLevel.ERROR    // Only errors in production
+    : LogLevel.INFO;    // INFO level in development (reduced from DEBUG)
+
+// Track seen messages to avoid duplicates
+const seenMessages = new Set<string>();
+const MAX_SEEN_MESSAGES = 1000;
 
 /**
  * Check if a specific log level is currently enabled
@@ -66,6 +70,13 @@ const setLogLevel = (level: LogLevel | string): void => {
 };
 
 /**
+ * Clear the seen messages cache
+ */
+const clearSeenMessages = (): void => {
+  seenMessages.clear();
+};
+
+/**
  * Format log messages with consistent structure
  * @param {string} level - Log level name
  * @param {string} message - Main log message
@@ -77,6 +88,31 @@ const formatLog = (level: string, message: string, args: any[]): [string, ...any
   const formattedMessage = `[${timestamp}] [${level}] ${message}`;
   
   return [formattedMessage, ...args];
+};
+
+/**
+ * Check if message has been seen before to avoid duplicates
+ * @param {string} level - Log level
+ * @param {string} message - Message to check
+ * @returns {boolean} Whether the message is a duplicate
+ */
+const isDuplicateMessage = (level: string, message: string): boolean => {
+  const key = `${level}:${message}`;
+  if (seenMessages.has(key)) {
+    return true;
+  }
+  
+  // Add to seen messages, manage cache size
+  seenMessages.add(key);
+  if (seenMessages.size > MAX_SEEN_MESSAGES) {
+    // Remove oldest entries when we exceed the limit
+    const iterator = seenMessages.values();
+    for (let i = 0; i < 100; i++) {
+      seenMessages.delete(iterator.next().value);
+    }
+  }
+  
+  return false;
 };
 
 /**
@@ -97,6 +133,7 @@ const error = (message: string, ...args: any[]): void => {
  */
 const warn = (message: string, ...args: any[]): void => {
   if (isLevelEnabled(LogLevel.WARN)) {
+    // Don't deduplicate warnings - they're important
     console.warn(...formatLog('WARN', message, args));
   }
 };
@@ -108,7 +145,10 @@ const warn = (message: string, ...args: any[]): void => {
  */
 const info = (message: string, ...args: any[]): void => {
   if (isLevelEnabled(LogLevel.INFO)) {
-    console.info(...formatLog('INFO', message, args));
+    // Only log in development and avoid duplicates
+    if (process.env.NODE_ENV !== 'development' || !isDuplicateMessage('INFO', message)) {
+      console.info(...formatLog('INFO', message, args));
+    }
   }
 };
 
@@ -119,7 +159,10 @@ const info = (message: string, ...args: any[]): void => {
  */
 const debug = (message: string, ...args: any[]): void => {
   if (isLevelEnabled(LogLevel.DEBUG)) {
-    console.debug(...formatLog('DEBUG', message, args));
+    // Only log in development and avoid duplicates for debug
+    if (process.env.NODE_ENV !== 'development' || !isDuplicateMessage('DEBUG', message)) {
+      console.debug(...formatLog('DEBUG', message, args));
+    }
   }
 };
 
@@ -130,7 +173,10 @@ const debug = (message: string, ...args: any[]): void => {
  */
 const trace = (message: string, ...args: any[]): void => {
   if (isLevelEnabled(LogLevel.TRACE)) {
-    console.debug(...formatLog('TRACE', message, args));
+    // Only log in development and avoid duplicates for trace
+    if (process.env.NODE_ENV !== 'development' || !isDuplicateMessage('TRACE', message)) {
+      console.debug(...formatLog('TRACE', message, args));
+    }
   }
 };
 
@@ -140,7 +186,7 @@ const trace = (message: string, ...args: any[]): void => {
  * @param {Function} logFunction - Function containing grouped logs
  */
 const group = (label: string, logFunction: () => void): void => {
-  if (isLevelEnabled(LogLevel.DEBUG)) {
+  if (isLevelEnabled(LogLevel.DEBUG) && process.env.NODE_ENV === 'development') {
     console.group(`[Group] ${label}`);
     try {
       logFunction();
@@ -160,7 +206,7 @@ const group = (label: string, logFunction: () => void): void => {
  * @returns The return value of the measured function
  */
 const time = <T>(label: string, fn: () => T): T => {
-  if (isLevelEnabled(LogLevel.DEBUG)) {
+  if (isLevelEnabled(LogLevel.DEBUG) && process.env.NODE_ENV === 'development') {
     console.time(`[Time] ${label}`);
     try {
       return fn();
@@ -186,6 +232,7 @@ const logger = {
   time,
   setLogLevel,
   isLevelEnabled,
+  clearSeenMessages,
   levels: LogLevel
 };
 

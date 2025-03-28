@@ -30,6 +30,8 @@ export const reactRules = {
     "react/react-in-jsx-scope": "off",
     "react/no-unused-prop-types": "warn",
     "react/jsx-no-useless-fragment": "error",
+    "react/jsx-boolean-value": ["error", "never"],
+    "react/no-unstable-nested-components": "warn",
     
     // React function component definition style
     "react/function-component-definition": ["warn", {
