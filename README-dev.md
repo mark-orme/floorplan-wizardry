@@ -1,4 +1,3 @@
-
 # FloorPlan Designer - Developer Guide
 
 This document provides comprehensive technical details and development guidelines for the FloorPlan Designer application. It's intended for developers working on the codebase.
@@ -103,26 +102,40 @@ src/
    - Use strict typing with proper interfaces and type definitions
    - Avoid `any` types and `@ts-ignore` directives
    - Create dedicated type files for complex interfaces
+   - Prefix interfaces with 'I' (e.g., IUserData)
+   - Always include explicit function return types
+   - Handle all promises properly (await or .catch())
+   - Use strict boolean expressions
 
 2. **React Best Practices**:
    - Use functional components with hooks
    - Implement proper memo/useMemo for performance optimization
    - Split large components into smaller, reusable ones
+   - Avoid unnecessary re-renders
 
 3. **Documentation**:
    - Use JSDoc for all functions, classes, and interfaces
    - Include examples for non-obvious implementations
    - Document complex algorithms and business rules
+   - Keep documentation updated when code changes
 
 4. **State Management**:
    - Use React Query for server state
    - Use React Context for global UI state
    - Keep local state with useState/useReducer when appropriate
+   - Implement proper state initialization and cleanup
 
 5. **Error Handling**:
    - Implement proper error boundaries
    - Log errors with appropriate context
    - Provide user-friendly error messages and recovery options
+   - Catch and handle all promise rejections
+
+6. **Code Quality Enforcement**:
+   - ESLint rules enforce TypeScript best practices
+   - Pre-commit hooks run linting automatically via Husky
+   - Prettier ensures consistent code formatting
+   - Regular dependency audits with depcheck
 
 ### Working with the Canvas
 
@@ -225,7 +238,35 @@ The application uses a modular grid system with the following characteristics:
    - Handle touch, mouse, and stylus inputs correctly
    - Implement proper gesture recognition
 
-## Debugging Tips
+### ESLint and Type Safety
+
+The project enforces strict type safety through ESLint rules:
+
+1. **Type Checking Rules**:
+   - No explicit `any` types allowed
+   - Explicit function return types required
+   - No floating promises (all promises must be handled)
+   - Strict boolean expressions enforced
+   - No misused promises (e.g., in if conditions)
+
+2. **Code Organization Rules**:
+   - Consistent type imports required
+   - Consistent type definitions (prefer interfaces)
+   - No magic numbers (must use constants)
+   - Explicit member accessibility modifiers
+
+3. **Common Issues Prevented**:
+   - Runtime type errors
+   - Unhandled promise rejections
+   - NaN and undefined propagation
+   - Type mismatches in React components
+
+4. **Running Linting Checks**:
+   - `npm run lint` - Check for linting issues
+   - `npm run lint:fix` - Automatically fix linting issues
+   - Pre-commit hooks will run linting on staged files
+
+### Debugging Tips
 
 1. **Canvas Debug Mode**:
    - Enable debug mode by adding `?debug=true` to the URL

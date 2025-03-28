@@ -8,8 +8,12 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Always import types from '@/types'** - never import types from implementation files
 - **Never redefine interfaces or types** that already exist in the codebase
 - **Never use 'any'** - use 'unknown' if the type is truly unknown, then narrow with type guards
+- **Always include explicit return types** for functions and methods
+- **Never leave promises unhandled** - always await or add catch handlers to promises
 - **Always wrap unions with type guards** before accessing properties
+- **Use proper boolean expressions** - avoid implicit boolean conversions
 - **Use enums from '@/constants'** for modes, statuses, or other finite sets of values
+- **Use interface prefix convention** - prefix interfaces with 'I' (e.g., IUserData)
 - **Respect project ESLint rules** - especially those related to TypeScript
 
 ## Array and Object Access
@@ -17,6 +21,7 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Always check arrays before accessing** with `if (Array.isArray(arr) && arr.length > 0)`
 - **Use optional chaining** for potentially undefined properties: `obj?.prop`
 - **Check object existence** before accessing properties: `if (obj && 'prop' in obj)`
+- **Use nullish coalescing** for default values: `const value = obj.value ?? defaultValue`
 
 ## Module Organization
 
@@ -24,6 +29,7 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Avoid circular dependencies** by keeping type definitions free of imports from implementation files
 - **Keep files focused and small** (under 200 lines) - create more files rather than growing existing ones
 - **Export only what's needed** from a module - avoid `export *` where possible
+- **Use barrel exports** for related functionality to simplify imports
 
 ## Code Quality
 
@@ -31,9 +37,26 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Use meaningful variable names** that reflect purpose and type
 - **Add type guards** for complex operations and type narrowing
 - **Write tests** that verify type contracts and behavior
+- **Avoid magic numbers** - extract constants with meaningful names
+- **Use pre-commit hooks** to enforce linting rules before committing
 
 ## Debugging
 
 - **Use console logging judiciously** - and clean up before committing
 - **Add explicit error handling** for async operations and complex logic
 - **Include helpful error messages** that indicate where the error occurred
+- **Use performance monitoring** for complex canvas operations
+
+## Git and Pre-commit
+
+- **Pre-commit hooks** will run ESLint and Prettier automatically
+- **Lint staged files** ensures only clean code is committed
+- **Follow commit message conventions** for clear history
+- **Keep PRs focused** on single concerns for easier review
+
+## Performance Considerations
+
+- **Implement throttling** for expensive canvas operations
+- **Use batching** when creating multiple canvas objects
+- **Implement proper cleanup** to prevent memory leaks
+- **Be aware of rendering cycles** in React components
