@@ -21,7 +21,7 @@ import logger from '@/utils/logger';
 import { 
   appToCoreFloorPlans
 } from '@/utils/floorPlanAdapter';
-import { coreToAppFloorPlans } from '@/utils/typeAdapters';
+import { adaptFloorPlans, coreToAppFloorPlans } from '@/utils/typeAdapters';
 
 /**
  * Hook for managing floor plans with real-time sync across devices
