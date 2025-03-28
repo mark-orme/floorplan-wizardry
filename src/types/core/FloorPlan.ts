@@ -5,6 +5,7 @@
  */
 
 import { Point } from './Point';
+import { StrokeType as AppStrokeType } from '../floorPlanTypes';
 
 /**
  * Paper size enum
@@ -108,7 +109,7 @@ export interface Room {
 /**
  * Stroke type enum as a string literal type for compatibility
  */
-export type StrokeType = 'line' | 'wall' | 'room' | 'freehand' | 'polyline';
+export type StrokeType = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
 
 /**
  * Stroke interface for annotations

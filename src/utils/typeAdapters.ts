@@ -4,8 +4,8 @@
  * Provides utility functions to adapt between incompatible type definitions
  * @module utils/typeAdapters
  */
-import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, StrokeType as CoreStrokeType } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, StrokeType as AppStrokeType } from '@/types/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, StrokeType as CoreStrokeType, Room as CoreRoom, RoomType as CoreRoomType } from '@/types/core/FloorPlan';
+import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, StrokeType as AppStrokeType, Room as AppRoom, PaperSize } from '@/types/floorPlanTypes';
 import { Point } from '@/types/geometryTypes';
 
 /**
@@ -21,7 +21,7 @@ export function coreToAppFloorPlan(plan: CoreFloorPlan): AppFloorPlan {
     index: typeof plan.level !== 'undefined' ? Number(plan.level) : 0,
     strokes: Array.isArray(plan.strokes) ? plan.strokes.map(coreToAppStroke) : [],
     walls: Array.isArray(plan.walls) ? plan.walls.map(coreToAppWall) : [],
-    rooms: Array.isArray(plan.rooms) ? plan.rooms : [],
+    rooms: Array.isArray(plan.rooms) ? plan.rooms.map(coreToAppRoom) : [],
     metadata: {
       createdAt: typeof plan.metadata?.createdAt === 'string' 
         ? new Date(plan.metadata.createdAt).getTime() 
@@ -32,12 +32,13 @@ export function coreToAppFloorPlan(plan: CoreFloorPlan): AppFloorPlan {
       paperSize: plan.metadata?.paperSize || 'A4',
       level: plan.metadata?.level || 0
     },
-    canvasJson: '',
+    canvasJson: plan.canvasJson || '',
     gia: plan.gia || 0,
     canvasData: plan.canvasData || null,
     level: plan.level || 0,
     createdAt: plan.createdAt || new Date().toISOString(),
-    updatedAt: plan.updatedAt || new Date().toISOString()
+    updatedAt: plan.updatedAt || new Date().toISOString(),
+    paperSize: plan.paperSize || 'A4'
   };
 }
 
@@ -52,7 +53,7 @@ export function appToCoreFloorPlan(plan: AppFloorPlan): CoreFloorPlan {
     name: plan.name,
     label: plan.label || plan.name,
     walls: Array.isArray(plan.walls) ? plan.walls.map(appToCoreWall) : [],
-    rooms: Array.isArray(plan.rooms) ? plan.rooms : [],
+    rooms: Array.isArray(plan.rooms) ? plan.rooms.map(appToCoreRoom) : [],
     strokes: Array.isArray(plan.strokes) ? plan.strokes.map(appToCoreStroke) : [],
     canvasData: plan.canvasData || null,
     createdAt: plan.createdAt || new Date().toISOString(),
@@ -64,7 +65,10 @@ export function appToCoreFloorPlan(plan: AppFloorPlan): CoreFloorPlan {
       updatedAt: plan.metadata?.updatedAt ? new Date(plan.metadata.updatedAt).toISOString() : new Date().toISOString(),
       paperSize: plan.metadata?.paperSize || 'A4',
       level: plan.metadata?.level || 0
-    }
+    },
+    paperSize: plan.paperSize || 'A4',
+    canvasJson: plan.canvasJson || '',
+    index: plan.index
   };
 }
 
@@ -72,18 +76,28 @@ export function appToCoreFloorPlan(plan: AppFloorPlan): CoreFloorPlan {
  * Convert core stroke to app stroke
  */
 export function coreToAppStroke(stroke: CoreStroke): AppStroke {
-  // Map the stroke type from core to app
+  // Convert string type to enum
   let appStrokeType: AppStrokeType;
+  
   switch (stroke.type) {
     case 'line':
-    case 'wall':
-    case 'room':
-    case 'freehand':
+      appStrokeType = AppStrokeType.LINE;
+      break;
     case 'polyline':
-      appStrokeType = stroke.type;
+      appStrokeType = AppStrokeType.POLYLINE;
+      break;
+    case 'wall':
+      appStrokeType = AppStrokeType.WALL;
+      break;
+    case 'room':
+      appStrokeType = AppStrokeType.ROOM;
+      break;
+    case 'freehand':
+      appStrokeType = AppStrokeType.FREEHAND;
       break;
     default:
-      appStrokeType = 'LINE'; // Default to LINE if not matching
+      appStrokeType = AppStrokeType.LINE;
+      break;
   }
 
   return {
@@ -100,23 +114,44 @@ export function coreToAppStroke(stroke: CoreStroke): AppStroke {
  * Convert app stroke to core stroke
  */
 export function appToCoreStroke(stroke: AppStroke): CoreStroke {
-  // Map the stroke type from app to core
+  // Convert enum to string type
   let coreStrokeType: CoreStrokeType;
-  switch (stroke.type) {
-    case 'LINE':
-      coreStrokeType = 'line';
-      break;
-    case 'POLYLINE':
-      coreStrokeType = 'polyline';
-      break;
-    case 'CIRCLE':
-    case 'RECTANGLE':
-    case 'TEXT':
-    case 'PATH':
-      coreStrokeType = 'line'; // Map other types to line by default
-      break;
-    default:
-      coreStrokeType = 'line';
+  
+  if (typeof stroke.type === 'string') {
+    switch (stroke.type.toUpperCase()) {
+      case 'LINE':
+      case 'POLYLINE':
+      case 'WALL':
+      case 'ROOM':
+      case 'FREEHAND':
+        coreStrokeType = stroke.type.toLowerCase() as CoreStrokeType;
+        break;
+      default:
+        coreStrokeType = 'line';
+        break;
+    }
+  } else {
+    // Handle enum values
+    switch (stroke.type) {
+      case AppStrokeType.LINE:
+        coreStrokeType = 'line';
+        break;
+      case AppStrokeType.POLYLINE:
+        coreStrokeType = 'polyline';
+        break;
+      case AppStrokeType.WALL:
+        coreStrokeType = 'wall';
+        break;
+      case AppStrokeType.ROOM:
+        coreStrokeType = 'room';
+        break;
+      case AppStrokeType.FREEHAND:
+        coreStrokeType = 'freehand';
+        break;
+      default:
+        coreStrokeType = 'line';
+        break;
+    }
   }
 
   return {
@@ -124,7 +159,46 @@ export function appToCoreStroke(stroke: AppStroke): CoreStroke {
     points: stroke.points,
     type: coreStrokeType,
     color: stroke.color,
-    thickness: stroke.width || stroke.thickness
+    thickness: stroke.width || stroke.thickness,
+    width: stroke.width || stroke.thickness
+  };
+}
+
+/**
+ * Convert core room to app room
+ */
+export function coreToAppRoom(room: CoreRoom): AppRoom {
+  return {
+    id: room.id,
+    name: room.name,
+    type: room.type || 'other',
+    points: room.points,
+    color: room.color,
+    area: room.area || 0,
+    level: 0
+  };
+}
+
+/**
+ * Convert app room to core room
+ */
+export function appToCoreRoom(room: AppRoom): CoreRoom {
+  let roomType: CoreRoomType = 'other';
+  
+  if (typeof room.type === 'string') {
+    // Check if the type is one of the allowed RoomType values
+    if (['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'].includes(room.type)) {
+      roomType = room.type as CoreRoomType;
+    }
+  }
+  
+  return {
+    id: room.id,
+    name: room.name,
+    type: roomType,
+    points: room.points,
+    color: room.color || '#ffffff',
+    area: room.area || 0
   };
 }
 
@@ -137,9 +211,9 @@ export function coreToAppWall(wall: CoreWall): AppWall {
     startPoint: wall.start,
     endPoint: wall.end,
     thickness: wall.thickness,
-    height: 0,
+    height: wall.height || 0,
     color: wall.color,
-    roomIds: []
+    roomIds: wall.roomIds || []
   };
 }
 
@@ -152,7 +226,9 @@ export function appToCoreWall(wall: AppWall): CoreWall {
     start: wall.startPoint,
     end: wall.endPoint,
     thickness: wall.thickness,
-    color: wall.color || '#000000'
+    color: wall.color || '#000000',
+    height: wall.height,
+    roomIds: wall.roomIds
   };
 }
 

@@ -5,7 +5,9 @@
  */
 import { useEffect, useCallback } from "react";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan, StrokeType, Wall } from "@/types/floorPlanTypes";
+import { coreToAppFloorPlans } from "@/utils/typeAdapters";
+import { Point } from "@/types/geometryTypes";
 
 /**
  * Props for the useCanvasControllerLoader hook
@@ -71,14 +73,35 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
           id: plan.id || '',
           name: plan.name || '',
           label: plan.label || plan.name || '',
-          index: typeof plan.index !== 'undefined' ? Number(plan.index) : (plan.metadata?.level || 0),
+          index: typeof plan.level !== 'undefined' ? Number(plan.level) : (plan.metadata?.level || 0),
           strokes: Array.isArray(plan.strokes) ? plan.strokes.map(stroke => ({
-            ...stroke,
+            id: stroke.id,
+            points: stroke.points,
+            type: mapStrokeType(stroke.type),
+            color: stroke.color,
+            thickness: stroke.thickness,
             width: stroke.width || stroke.thickness || 1
           })) : [],
-          walls: plan.walls || [],
+          walls: plan.walls?.map(wall => ({
+            id: wall.id,
+            startPoint: wall.start || { x: 0, y: 0 } as Point,
+            endPoint: wall.end || { x: 0, y: 0 } as Point,
+            thickness: wall.thickness,
+            height: wall.height || 0,
+            color: wall.color,
+            roomIds: wall.roomIds || []
+          } as Wall)) || [],
           rooms: plan.rooms || [],
-          metadata: plan.metadata || {
+          metadata: plan.metadata ? {
+            createdAt: typeof plan.metadata.createdAt === 'string' 
+              ? new Date(plan.metadata.createdAt).getTime() 
+              : plan.metadata.createdAt || Date.now(),
+            updatedAt: typeof plan.metadata.updatedAt === 'string' 
+              ? new Date(plan.metadata.updatedAt).getTime() 
+              : plan.metadata.updatedAt || Date.now(),
+            paperSize: plan.metadata.paperSize || 'CUSTOM',
+            level: plan.metadata.level || 0
+          } : {
             createdAt: Date.now(),
             updatedAt: Date.now(),
             paperSize: plan.paperSize || 'CUSTOM',
@@ -89,7 +112,8 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
           level: plan.level || 0,
           canvasData: plan.canvasData || null,
           createdAt: plan.createdAt || new Date().toISOString(),
-          updatedAt: plan.updatedAt || new Date().toISOString()
+          updatedAt: plan.updatedAt || new Date().toISOString(),
+          paperSize: plan.paperSize || 'CUSTOM'
         };
         
         return typedPlan;
@@ -103,6 +127,25 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
     }
     return;
   }, [floorPlanLoader, setFloorPlans, setHasError, setErrorMessage]);
+
+  // Helper function to map stroke types
+  function mapStrokeType(type: string | any): StrokeType {
+    if (typeof type === 'string') {
+      switch (type.toUpperCase()) {
+        case 'LINE': return StrokeType.LINE;
+        case 'POLYLINE': return StrokeType.POLYLINE;
+        case 'WALL': return StrokeType.WALL;
+        case 'ROOM': return StrokeType.ROOM;
+        case 'FREEHAND': return StrokeType.FREEHAND;
+        case 'CIRCLE': return StrokeType.CIRCLE;
+        case 'RECTANGLE': return StrokeType.RECTANGLE;
+        case 'TEXT': return StrokeType.TEXT;
+        case 'PATH': return StrokeType.PATH;
+        default: return StrokeType.LINE;
+      }
+    }
+    return StrokeType.LINE;
+  }
 
   // Load floor plans data on mount
   useEffect(() => {
