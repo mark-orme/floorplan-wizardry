@@ -5,6 +5,7 @@
  */
 import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom, StrokeType as CoreStrokeType } from '@/types/core/FloorPlan';
 import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeType, StrokeTypeLiteral } from '@/types/floorPlanTypes';
+import { createPoint } from '@/types/core/Point';
 
 /**
  * Convert from app FloorPlan type to core FloorPlan type
@@ -83,19 +84,24 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
  * @returns The app FloorPlan
  */
 export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
-  // Convert wall format
+  // Convert wall format - ensuring both start/end and startPoint/endPoint are provided
   const walls = Array.isArray(corePlan.walls) 
-    ? corePlan.walls.map(wall => ({
-        id: wall.id,
-        startPoint: wall.start, // Map start to startPoint
-        endPoint: wall.end,     // Map end to endPoint
-        start: wall.start,      // Keep original properties too
-        end: wall.end,
-        thickness: wall.thickness,
-        height: wall.height || 0,
-        color: wall.color,
-        roomIds: wall.roomIds || []
-      } as AppWall))
+    ? corePlan.walls.map(wall => {
+        const start = wall.start || createPoint(0, 0);
+        const end = wall.end || createPoint(0, 0);
+        
+        return {
+          id: wall.id,
+          startPoint: start, // Map start to startPoint
+          endPoint: end,     // Map end to endPoint
+          start: start,      // Keep original properties too
+          end: end,
+          thickness: wall.thickness,
+          height: wall.height || 0,
+          color: wall.color,
+          roomIds: wall.roomIds || []
+        } as AppWall;
+      })
     : [];
     
   // Convert strokes ensuring type is valid StrokeTypeLiteral
@@ -117,7 +123,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
   
   return {
     ...corePlan,
-    label: corePlan.label, // Ensure label is preserved
+    label: corePlan.label || corePlan.name || '', // Ensure label is preserved and required
     strokes: strokes,
     walls: walls,
     rooms: Array.isArray(corePlan.rooms) ? corePlan.rooms.map(room => ({

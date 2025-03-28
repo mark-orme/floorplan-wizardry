@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -107,14 +106,15 @@ export const useSyncedFloorPlans = () => {
       
       // Save to local storage without broadcasting
       isSavingRef.current = true;
-      // Convert received app floor plans to core format for storage
-      // Ensure all plans have a label
+      
+      // Convert received app floor plans to core format for storage using adapter
+      // First ensure all plans have a label
       const plansWithLabels = data.floorPlans.map((plan: AppFloorPlan) => ({
         ...plan,
         label: plan.label || plan.name || ''
       }));
       
-      // Explicitly convert to CoreFloorPlan[] by ensuring all required fields
+      // Use adapter to convert app floor plans to core floor plans
       const corePlans = appToCoreFloorPlans(plansWithLabels);
       
       saveFloorPlans(corePlans).finally(() => {
@@ -123,7 +123,8 @@ export const useSyncedFloorPlans = () => {
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
+        // Convert to proper type using our adapter
+        saveToSupabase(corePlans);
       }
 
       toast.info('Floor plans synchronized from another device');
@@ -153,7 +154,7 @@ export const useSyncedFloorPlans = () => {
         if (supabaseData && supabaseData.length > 0) {
           logger.info('Loaded floor plans from Supabase');
           
-          // Convert core floor plans to app floor plans
+          // Convert core floor plans to app floor plans using our adapter
           const appData = coreToAppFloorPlans(supabaseData);
           
           // Ensure all plans have labels
@@ -175,7 +176,7 @@ export const useSyncedFloorPlans = () => {
       logger.info('Falling back to local storage for floor plans');
       const localData = await loadFloorPlans();
       
-      // Convert core floor plans to app floor plans
+      // Convert core floor plans to app floor plans using our adapter
       const appData = coreToAppFloorPlans(localData);
       
       // Ensure all plans have labels
@@ -188,7 +189,8 @@ export const useSyncedFloorPlans = () => {
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
-        await saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
+        // No need for conversion as saveToSupabase expects CoreFloorPlan[]
+        await saveToSupabase(localData);
       }
       
       return plansWithLabels;
@@ -228,7 +230,7 @@ export const useSyncedFloorPlans = () => {
       }
 
       try {
-        // Convert to core floor plans with required labels and explicit cast to CoreFloorPlan[]
+        // Convert to core floor plans with required labels using our adapter
         const corePlans = appToCoreFloorPlans(plansWithLabels);
         
         await saveFloorPlans(corePlans);
@@ -252,7 +254,9 @@ export const useSyncedFloorPlans = () => {
     if (isLoggedIn) {
       supabaseSaveTimeoutRef.current = window.setTimeout(async () => {
         try {
-          await saveToSupabase(plansWithLabels as unknown as FloorPlan[]);
+          // Convert to core floor plans with required labels using our adapter
+          const corePlans = appToCoreFloorPlans(plansWithLabels);
+          await saveToSupabase(corePlans);
           logger.info('Floor plans saved to Supabase');
         } catch (error) {
           logger.error('Error saving floor plans to Supabase:', error);

@@ -96,7 +96,7 @@ describe('Grid Alignment', () => {
       
       testAngles.forEach((angle, index) => {
         // Create a Point object from the angle value
-        const snapped = snapToAngle(createPoint(angle, 0), new fabric.Point(45, 0));
+        const snapped = snapToAngle(createPoint(angle, 0), createPoint(45, 0));
         expect(snapped.x).toBe(expectedSnaps[index]);
       });
     });
