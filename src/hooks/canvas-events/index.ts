@@ -30,7 +30,8 @@ export type {
   EditableFabricObject,
   TargetEvent,
   UseCanvasHandlersProps,
-  UseBrushSettingsProps
+  UseBrushSettingsProps,
+  UseObjectEventsProps
 } from './types';
 
 // Export constants

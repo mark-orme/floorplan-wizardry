@@ -1,3 +1,4 @@
+
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react-hooks';
 import { useKeyboardEvents } from '@/hooks/canvas-events/useKeyboardEvents';
@@ -18,7 +19,7 @@ describe('useKeyboardEvents', () => {
   
   // Mock fabric canvas ref
   const mockFabricCanvasRef = {
-    current: {} as fabric.Canvas
+    current: {} as Canvas
   };
   
   beforeEach(() => {
