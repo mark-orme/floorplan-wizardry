@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -75,69 +74,6 @@ export const useSyncedFloorPlans = () => {
       }
     };
   }, []);
-
-  /**
-   * Set up sync event listeners for real-time updates
-   */
-  useEffect(() => {
-    if (!syncChannel) return;
-
-    /**
-     * Handler for floor plan updates from other devices
-     * @param {any} data - The update data received from Pusher
-     */
-    const handleFloorPlanUpdate = (data: any) => {
-      // Skip if this update is from this device
-      if (isUpdateFromThisDevice(data.deviceId)) {
-        logger.info('Ignoring update from this device');
-        return;
-      }
-
-      // Skip if this update is older than our last sync
-      if (data.timestamp <= lastSyncTimeRef.current) {
-        logger.info('Ignoring older update');
-        return;
-      }
-
-      logger.info('Received floor plan update from another device');
-      lastSyncTimeRef.current = data.timestamp;
-
-      // Update floor plans and save to local storage
-      setFloorPlans(data.floorPlans);
-      
-      // Save to local storage without broadcasting
-      isSavingRef.current = true;
-      
-      // Convert received app floor plans to core format for storage using adapter
-      // First ensure all plans have a label
-      const plansWithLabels = data.floorPlans.map((plan: AppFloorPlan) => ({
-        ...plan,
-        label: plan.label || plan.name || ''
-      }));
-      
-      // Use adapter to convert app floor plans to core floor plans
-      const corePlans = appToCoreFloorPlans(plansWithLabels);
-      
-      saveFloorPlans(corePlans).finally(() => {
-        isSavingRef.current = false;
-      });
-
-      // Also save to Supabase if logged in
-      if (isLoggedIn) {
-        // Convert to proper type using our adapter
-        saveToSupabase(corePlans);
-      }
-
-      toast.info('Floor plans synchronized from another device');
-    };
-
-    // Listen for update events
-    syncChannel.bind(`client-${UPDATE_EVENT}`, handleFloorPlanUpdate);
-
-    return () => {
-      syncChannel.unbind(`client-${UPDATE_EVENT}`, handleFloorPlanUpdate);
-    };
-  }, [syncChannel, saveToSupabase, isLoggedIn]);
 
   /**
    * Load initial floor plan data from storage
@@ -267,6 +203,69 @@ export const useSyncedFloorPlans = () => {
       }, 5000); // Longer debounce for Supabase to reduce API calls
     }
   }, [saveToSupabase, isLoggedIn]);
+
+  /**
+   * Set up sync event listeners for real-time updates
+   */
+  useEffect(() => {
+    if (!syncChannel) return;
+
+    /**
+     * Handler for floor plan updates from other devices
+     * @param {any} data - The update data received from Pusher
+     */
+    const handleFloorPlanUpdate = (data: any) => {
+      // Skip if this update is from this device
+      if (isUpdateFromThisDevice(data.deviceId)) {
+        logger.info('Ignoring update from this device');
+        return;
+      }
+
+      // Skip if this update is older than our last sync
+      if (data.timestamp <= lastSyncTimeRef.current) {
+        logger.info('Ignoring older update');
+        return;
+      }
+
+      logger.info('Received floor plan update from another device');
+      lastSyncTimeRef.current = data.timestamp;
+
+      // Update floor plans and save to local storage
+      setFloorPlans(data.floorPlans);
+      
+      // Save to local storage without broadcasting
+      isSavingRef.current = true;
+      
+      // Convert received app floor plans to core format for storage using adapter
+      // First ensure all plans have a label
+      const plansWithLabels = data.floorPlans.map((plan: AppFloorPlan) => ({
+        ...plan,
+        label: plan.label || plan.name || ''
+      }));
+      
+      // Use adapter to convert app floor plans to core floor plans
+      const corePlans = appToCoreFloorPlans(plansWithLabels);
+      
+      saveFloorPlans(corePlans).finally(() => {
+        isSavingRef.current = false;
+      });
+
+      // Also save to Supabase if logged in
+      if (isLoggedIn) {
+        // Convert to proper type using our adapter
+        saveToSupabase(corePlans);
+      }
+
+      toast.info('Floor plans synchronized from another device');
+    };
+
+    // Listen for update events
+    syncChannel.bind(`client-${UPDATE_EVENT}`, handleFloorPlanUpdate);
+
+    return () => {
+      syncChannel.unbind(`client-${UPDATE_EVENT}`, handleFloorPlanUpdate);
+    };
+  }, [syncChannel, saveToSupabase, isLoggedIn]);
 
   return {
     floorPlans,
