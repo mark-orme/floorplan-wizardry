@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -18,11 +19,9 @@ import {
 import { useSupabaseFloorPlans } from './useSupabaseFloorPlans';
 import logger from '@/utils/logger';
 import { 
-  appToCoreFloorPlans, 
-  coreToAppFloorPlans
+  appToCoreFloorPlans
 } from '@/utils/floorPlanAdapter';
-import { adaptFloorPlans } from '@/utils/typeAdapters';
-import { convertCoreToFloorPlanType, convertCoreArrayToFloorPlanType } from '@/utils/adapters/convertCoreFloorPlan';
+import { adaptFloorPlans, coreToAppFloorPlans } from '@/utils/typeAdapters';
 
 /**
  * Hook for managing floor plans with real-time sync across devices
@@ -157,7 +156,7 @@ export const useSyncedFloorPlans = () => {
           logger.info('Loaded floor plans from Supabase');
           
           // Convert core floor plans to app floor plans using our adapter
-          const appData = adaptFloorPlans(supabaseData);
+          const appData = coreToAppFloorPlans(supabaseData);
           
           // Ensure all plans have labels
           const plansWithLabels = appData.map(plan => ({
@@ -179,7 +178,7 @@ export const useSyncedFloorPlans = () => {
       const localData = await loadFloorPlans();
       
       // Convert core floor plans to app floor plans using our adapter
-      const appData = adaptFloorPlans(localData);
+      const appData = coreToAppFloorPlans(localData);
       
       // Ensure all plans have labels
       const plansWithLabels = appData.map(plan => ({
@@ -236,7 +235,7 @@ export const useSyncedFloorPlans = () => {
         const corePlans = appToCoreFloorPlans(plansWithLabels);
         
         await saveFloorPlans(corePlans);
-        broadcastFloorPlanUpdate(adaptFloorPlans(corePlans));
+        broadcastFloorPlanUpdate(coreToAppFloorPlans(corePlans));
         lastSyncTimeRef.current = Date.now();
         logger.info('Floor plans saved locally and synced via Pusher');
       } catch (error: any) {

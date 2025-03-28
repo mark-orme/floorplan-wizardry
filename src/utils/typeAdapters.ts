@@ -34,5 +34,9 @@ export function adaptFloorPlans(corePlans: CoreFloorPlan[]): AppFloorPlan[] {
   return corePlans.map(adaptFloorPlan);
 }
 
-// Export alias for backward compatibility
+/**
+ * Convert multiple core floor plans to app floor plans (alias for adaptFloorPlans)
+ * @param corePlans Array of core floor plans
+ * @returns Array of app floor plans
+ */
 export const coreToAppFloorPlans = adaptFloorPlans;
