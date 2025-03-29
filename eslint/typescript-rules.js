@@ -122,6 +122,41 @@ export const typescriptRules = {
         "selector": "typeParameter",
         "format": ["PascalCase"],
         "prefix": ["T"]
+      },
+      // NEW: Enforce consistent component prop naming
+      {
+        "selector": "parameter",
+        "format": ["camelCase"],
+        "leadingUnderscore": "allow"
+      },
+      // NEW: Enforce consistent hook naming
+      {
+        "selector": "function",
+        "filter": {
+          "regex": "^use[A-Z]",
+          "match": true
+        },
+        "format": ["camelCase"],
+        "prefix": ["use"]
+      },
+      // NEW: Enforce consistent event handler naming
+      {
+        "selector": "function",
+        "filter": {
+          "regex": "^(handle|on)[A-Z]",
+          "match": true
+        },
+        "format": ["camelCase"]
+      },
+      // NEW: Enforce consistent context naming
+      {
+        "selector": "variable",
+        "filter": {
+          "regex": "Context$",
+          "match": true
+        },
+        "format": ["PascalCase"],
+        "suffix": ["Context"]
       }
     ],
     
@@ -229,6 +264,53 @@ export const typescriptRules = {
           }
         ]
       }
-    ]
+    ],
+    
+    // NEW: Accessibility rules
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
+    
+    // NEW: Consistent return handling
+    "@typescript-eslint/no-confusing-void-expression": ["error", {
+      "ignoreArrowShorthand": true,
+      "ignoreVoidOperator": true
+    }],
+    
+    // NEW: Prevent accidental Promise rejections
+    "@typescript-eslint/no-floating-promises": "error",
+    
+    // NEW: Prevent accidental Promise returns
+    "@typescript-eslint/return-await": ["error", "in-try-catch"],
+    
+    // NEW: Force usage of Record<> type for objects
+    "@typescript-eslint/consistent-indexed-object-style": ["error", "record"],
+    
+    // NEW: Enforce consistent handling of object literal property shorthand
+    "@typescript-eslint/object-shorthand": ["error", "properties"],
+    
+    // NEW: Prevent unnecessary template literals
+    "@typescript-eslint/prefer-string-starts-ends-with": "error",
+    
+    // NEW: Enforce readable type imports
+    "@typescript-eslint/consistent-type-imports": ["error", {
+      "prefer": "type-imports",
+      "disallowTypeAnnotations": true,
+      "fixStyle": "separate-type-imports"
+    }],
+    
+    // NEW: Force consistent naming for private class members
+    "@typescript-eslint/member-naming": ["error", {
+      "private": "^_[a-z][a-zA-Z0-9]*$"
+    }],
+    
+    // NEW: Require explicit accessibility modifiers
+    "@typescript-eslint/explicit-member-accessibility": ["error", {
+      "accessibility": "explicit",
+      "overrides": {
+        "constructors": "no-public"
+      }
+    }]
   }
 };

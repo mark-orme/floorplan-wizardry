@@ -156,4 +156,59 @@ echo "Largest barrel files:"
 echo "$barrel_files"
 echo "   Consider splitting large barrel files into more focused modules."
 
+# NEW: Check for files with too many imports
+echo "🔍 Checking for files with too many dependencies..."
+files_with_many_imports=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "^import" | xargs grep -c "^import" | sort -nr | head -10)
+
+echo "Files with most imports:"
+echo "$files_with_many_imports"
+echo "   Files with more than 15 imports might be doing too much. Consider splitting them."
+
+# NEW: Check component file sizes
+echo "🔍 Checking component sizes..."
+large_components=$(find src -type f -name "*.tsx" | xargs wc -l | sort -nr | head -10)
+
+echo "Largest components:"
+echo "$large_components"
+echo "   Components over 200 lines should be split into smaller components."
+
+# NEW: Check for direct DOM manipulation
+echo "🔍 Checking for direct DOM manipulation (which should use refs)..."
+dom_manipulation=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "document\.get" || true)
+
+if [ -n "$dom_manipulation" ]; then
+  echo "⚠️ Warning: Direct DOM manipulation found in:"
+  echo "$dom_manipulation"
+  echo "   Use React refs instead of directly manipulating the DOM."
+fi
+
+# NEW: Check for inline JSX styles (should use Tailwind or CSS)
+echo "🔍 Checking for inline styles..."
+inline_styles=$(find src -type f -name "*.tsx" | xargs grep -l "style=" || true)
+
+if [ -n "$inline_styles" ]; then
+  echo "⚠️ Warning: Inline styles found in:"
+  echo "$inline_styles"
+  echo "   Consider using Tailwind classes instead of inline styles."
+fi
+
+# NEW: Check for accessibility issues in JSX
+echo "🔍 Checking for basic accessibility issues..."
+missing_alt=$(find src -type f -name "*.tsx" | xargs grep -l "<img" | xargs grep -L "alt=" || true)
+
+if [ -n "$missing_alt" ]; then
+  echo "⚠️ Warning: Images without alt attributes found in:"
+  echo "$missing_alt"
+  echo "   Always add alt attributes to images for accessibility."
+fi
+
+# NEW: Check for files that might have circular dependencies
+echo "🔍 Checking for potential circular dependencies..."
+circular_imports=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "from '\.\." | sort)
+
+echo "Files with parent imports (potential circular dependencies):"
+echo "$circular_imports"
+echo "   Review these files to ensure they don't create circular dependencies."
+
 echo "✅ All export checks completed."
+

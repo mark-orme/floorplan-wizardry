@@ -71,6 +71,26 @@ export const baseConfig = {
       {
         "selector": "MemberExpression[object.name='window'][property.name='location'][property.name='href']",
         "message": "Use React Router for navigation instead of directly manipulating window.location."
+      },
+      // NEW: Prevent direct DOM manipulation
+      {
+        "selector": "CallExpression[callee.object.name='document'][callee.property.name='querySelector']",
+        "message": "Use React refs instead of direct DOM manipulation with querySelector."
+      },
+      // NEW: Prevent usage of problematic methods
+      {
+        "selector": "CallExpression[callee.property.name='forEach'][callee.object.property.name='children']",
+        "message": "Use React.Children.forEach instead of directly iterating over children."
+      },
+      // NEW: Enforce architectural boundaries
+      {
+        "selector": "ImportDeclaration[source.value=/^\\.\\.\\/utils\\/canvas/][parent.source.value=/components\\/ui/]",
+        "message": "UI components should not import canvas utilities directly. Use hooks or context instead."
+      },
+      // NEW: Prevent unsafe React patterns
+      {
+        "selector": "CallExpression[callee.name='useEffect'][arguments.length=1]",
+        "message": "useEffect without dependencies array will run on every render. Add a dependency array."
       }
     ],
     
@@ -107,6 +127,50 @@ export const baseConfig = {
     "prefer-object-spread": "warn",
     "object-shorthand": "warn",
     "array-callback-return": "error",
-    "require-await": "error"
+    "require-await": "error",
+    
+    // NEW: Memory leak prevention
+    "react-hooks/exhaustive-deps": "error",
+    
+    // NEW: React performance optimization
+    "react/jsx-no-bind": ["warn", {
+      "allowArrowFunctions": true,
+      "allowFunctions": false,
+      "allowBind": false
+    }],
+    
+    // NEW: Error handling
+    "no-unsafe-optional-chaining": "error",
+    
+    // NEW: Early returns for better readability
+    "no-else-return": ["error", { "allowElseIf": false }],
+    
+    // NEW: String concatenation safety
+    "no-useless-concat": "error",
+    
+    // NEW: Async/await consistency
+    "no-async-promise-executor": "error",
+    "no-await-in-loop": "warn",
+    
+    // NEW: Prevent common logic errors
+    "no-constant-binary-expression": "error",
+    "no-constant-condition": "error",
+    "no-unreachable-loop": "error",
+    "no-template-curly-in-string": "error",
+    
+    // NEW: Force consistent error handling
+    "handle-callback-err": ["error", "^(err|error|errorMessage)$"],
+    
+    // NEW: Ensure error propagation
+    "no-empty-function": ["error", { 
+      "allow": ["arrowFunctions", "constructors"] 
+    }],
+    
+    // NEW: Code reliability checks
+    "no-constructor-return": "error",
+    "no-new-native-nonconstructor": "error",
+    "no-obj-calls": "error",
+    "no-unmodified-loop-condition": "error",
+    "require-atomic-updates": "error"
   }
 };

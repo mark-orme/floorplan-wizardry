@@ -123,7 +123,49 @@ export const importExportRules = {
     "import/export": ["error", { "detectAmbiguousExports": true }],
     
     // NEW: Enforce that each module gets re-exported once
-    "import/no-duplicates": "error"
+    "import/no-duplicates": "error",
+    
+    // NEW: Architectural boundaries
+    "import/no-restricted-paths": ["error", {
+      "zones": [
+        {
+          "target": "./src/components/ui/**/*",
+          "from": "./src/hooks/canvas**",
+          "message": "UI components should not depend on canvas-specific hooks."
+        },
+        {
+          "target": "./src/hooks/**/*",
+          "from": "./src/components/**/*",
+          "message": "Hooks should not import from components to avoid circular dependencies."
+        },
+        {
+          "target": "./src/utils/**/*",
+          "from": "./src/components/**/*",
+          "message": "Utilities should not import from components."
+        },
+        {
+          "target": "./src/utils/**/*",
+          "from": "./src/hooks/**/*",
+          "message": "Utilities should not import from hooks to maintain proper layering."
+        }
+      ]
+    }],
+    
+    // NEW: Prevent direct importing of implementation files when index barrel files exist
+    "import/no-relative-parent-imports": "error",
+    
+    // NEW: Enforce imports from within the same directory to use relative imports
+    "import/no-relative-packages": "error",
+    
+    // NEW: Prevent importing test files in production code
+    "import/no-test-files": "error",
+    
+    // NEW: Prevent importing from devDependencies in production code
+    "import/no-extraneous-dependencies": ["error", {
+      "devDependencies": ["**/*.test.ts", "**/*.spec.ts", "**/tests/**", "**/test/**", "**/*.test.tsx", "**/*.spec.tsx", "vite.config.ts"],
+      "optionalDependencies": false,
+      "peerDependencies": true
+    }]
   },
   settings: {
     "import/resolver": {

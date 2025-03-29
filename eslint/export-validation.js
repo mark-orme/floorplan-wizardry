@@ -133,7 +133,45 @@ export const exportValidationRules = {
     "import/prefer-default-export": "off",
     
     // NEW: Prevent importing packages through relative paths
-    "import/no-relative-packages": "error"
+    "import/no-relative-packages": "error",
+    
+    // NEW: Enforce module boundaries by controlling re-exports
+    "import/no-internal-modules": ["error", {
+      "allow": ["@/components/*", "@/hooks/*", "@/utils/*", "@/types/*", "@/lib/*"]
+    }],
+    
+    // NEW: Check for absolute paths in imports that should be relative
+    "import/no-absolute-path": "error",
+    
+    // NEW: Prevent importing modules using dynamic expressions
+    "import/no-dynamic-require": "error",
+    
+    // NEW: Prevent webpack loader syntax in imports
+    "import/no-webpack-loader-syntax": "error",
+    
+    // NEW: Ensure consistent import/export style
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    
+    // NEW: Prevent too many dependencies in a single file
+    "import/max-dependencies": ["warn", { 
+      "max": 15,
+      "ignoreTypeImports": true
+    }],
+    
+    // NEW: Enforce explicit exports instead of relying on a namespace import
+    "import/namespace": ["error", { "allowComputed": false }],
+    
+    // NEW: Enforce unique export names across the codebase
+    "import/export": ["error", { 
+      "detectExportNameConflicts": true,
+      "detectAmbiguousExports": true
+    }],
+    
+    // NEW: Ensure barrel files are properly maintained
+    "import/no-cycle": ["error", { 
+      "maxDepth": 1,
+      "ignoreExternal": false
+    }]
   },
   settings: {
     "import/resolver": {
