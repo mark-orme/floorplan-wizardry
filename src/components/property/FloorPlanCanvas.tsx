@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { handleError } from "@/utils/errorHandling";
 import { Canvas as CanvasComponent } from "@/components/Canvas"; // Rename to avoid confusion
 import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid"; // Import the new SimpleGrid component
 
 // Constants for component
 const CANVAS_WIDTH = 800;
@@ -171,6 +172,14 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
               onCanvasReady={handleCanvasReady}
             />
           </ReliableCanvasContainer>
+          
+          {/* Add SimpleGrid component that will create the grid */}
+          {fabricCanvas && (
+            <SimpleGrid 
+              canvas={fabricCanvas} 
+              showControls={true} 
+            />
+          )}
         </CanvasControllerProvider>
       )}
       
