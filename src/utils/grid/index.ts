@@ -8,8 +8,16 @@
 // Export constants
 export * from './constants';
 
-// Export creation utilities
-export * from './gridCreation';
+// Export creation utilities - but not createBasicEmergencyGrid, which we'll export explicitly
+export { 
+  createSmallScaleGrid,
+  createLargeScaleGrid,
+  createGridLayer,
+  createFallbackGrid
+} from './gridCreation';
+
+// Explicitly re-export createBasicEmergencyGrid to resolve ambiguity
+export { createBasicEmergencyGrid } from './gridCreation';
 
 // Export validation utilities
 export * from './gridValidation';
@@ -37,8 +45,3 @@ export const cleanupGridResources = (): void => {
   // Implementation for cleaning up grid resources
   console.log("Grid resources cleaned up");
 };
-
-// REMOVED: Direct export of createBasicEmergencyGrid to resolve ambiguity
-// This function is already exported from './gridCreation'
-// Import it directly from the specific module instead:
-// import { createBasicEmergencyGrid } from "@/utils/grid/gridCreation";
