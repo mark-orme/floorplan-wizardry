@@ -1,3 +1,4 @@
+
 /**
  * Grid Diagnostics Utility
  * Provides comprehensive diagnostic tools and tests for grid functionality
@@ -349,7 +350,7 @@ export const emergencyGridFix = (
     const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
     
     // Function to create a single grid line
-    const createGridLine = (coords: number[], isLarge: boolean) => {
+    const createGridLine = (coords: [number, number, number, number], isLarge: boolean) => {
       const line = new Line(coords, {
         stroke: isLarge ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: isLarge ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,

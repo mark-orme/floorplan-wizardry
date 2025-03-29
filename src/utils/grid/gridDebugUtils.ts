@@ -148,7 +148,7 @@ export const dumpGridState = (
       totalObjects: canvas.getObjects().length,
       viewportTransform: canvas.viewportTransform,
       zoom: canvas.getZoom(),
-      rendered: typeof canvas.isRendered === 'function' ? canvas.isRendered() : 'unknown',
+      rendered: 'unknown', // Changed from using isRendered
       renderOnAddRemove: canvas.renderOnAddRemove
     };
     
@@ -354,7 +354,7 @@ export const diagnoseGridFailure = (
     objectCount: canvas.getObjects()?.length || 0,
     contextExists: !!(canvas as any).contextContainer,
     renderOnAddRemove: canvas.renderOnAddRemove,
-    rendered: typeof canvas.isRendered === 'function' ? canvas.isRendered() : 'unknown'
+    rendered: 'unknown' // Changed from using isRendered
   } : {
     exists: false
   };

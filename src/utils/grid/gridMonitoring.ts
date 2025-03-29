@@ -124,7 +124,7 @@ export const stopGridMonitoring = (): boolean => {
  * Perform grid health check
  * @param {FabricCanvas} canvas - Canvas to check
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Grid objects reference
- * @param {GridMonitoringOptions} options - Monitoring options
+ * @param {Required<GridMonitoringOptions>} options - Monitoring options
  * @returns {boolean} Whether grid is healthy
  */
 const performGridHealthCheck = (
