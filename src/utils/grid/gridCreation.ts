@@ -98,7 +98,7 @@ export function createSmallScaleGrid(
     gridObjects.push(line);
     
     // Send to back to ensure grid is behind all objects
-    line.sendToBack();
+    canvas.sendObjectToBack(line);
   }
   
   // Create vertical lines
@@ -116,7 +116,7 @@ export function createSmallScaleGrid(
     gridObjects.push(line);
     
     // Send to back to ensure grid is behind all objects
-    line.sendToBack();
+    canvas.sendObjectToBack(line);
   }
   
   return gridObjects;
@@ -157,7 +157,7 @@ export function createLargeScaleGrid(
     gridObjects.push(line);
     
     // Send to back to ensure grid is behind all objects
-    line.sendToBack();
+    canvas.sendObjectToBack(line);
   }
   
   // Create vertical lines
@@ -175,7 +175,7 @@ export function createLargeScaleGrid(
     gridObjects.push(line);
     
     // Send to back to ensure grid is behind all objects
-    line.sendToBack();
+    canvas.sendObjectToBack(line);
   }
   
   return gridObjects;
@@ -282,7 +282,7 @@ export function createFallbackGrid(
       
       canvas.add(line);
       gridObjects.push(line);
-      line.sendToBack();
+      canvas.sendObjectToBack(line);
     }
     
     // Create just a few vertical lines for the emergency grid
@@ -298,7 +298,7 @@ export function createFallbackGrid(
       
       canvas.add(line);
       gridObjects.push(line);
-      line.sendToBack();
+      canvas.sendObjectToBack(line);
     }
     
     // Update reference
@@ -323,7 +323,7 @@ export function createBasicEmergencyGrid(
   canvas: Canvas, 
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] {
-  // Basically same as fallback grid but with even fewer lines
+  // Same functionality as fallback grid but with even fewer lines
   try {
     throttledLog("Creating basic emergency grid");
     

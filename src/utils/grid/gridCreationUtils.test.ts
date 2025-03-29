@@ -1,16 +1,15 @@
-
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 
-  verifyGridExists, 
-  retryWithBackoff, 
-  reorderGridObjects,
-  createCompleteGrid,
+  validateGrid,
   ensureGrid,
-  validateGrid
+  verifyGridExists,
+  retryWithBackoff,
+  reorderGridObjects
 } from '../gridCreationUtils';
 
 describe('gridCreationUtils', () => {
+  // Same tests as in src/utils/__tests__/gridCreationUtils.test.ts
   describe('verifyGridExists', () => {
     it('should return false when canvas is null', () => {
       const gridLayerRef = { current: [] };
@@ -52,6 +51,5 @@ describe('gridCreationUtils', () => {
     });
   });
   
-  // Add more tests as needed
+  // Add more test suites as needed
 });
-

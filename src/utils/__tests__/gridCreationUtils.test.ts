@@ -2,12 +2,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 
-  verifyGridExists, 
-  retryWithBackoff, 
-  reorderGridObjects,
+  validateGrid, 
   createCompleteGrid,
-  validateGrid,
-  ensureGrid
+  ensureGrid,
+  verifyGridExists,
+  retryWithBackoff,
+  reorderGridObjects
 } from '../gridCreationUtils';
 
 describe('gridCreationUtils', () => {
@@ -92,6 +92,5 @@ describe('gridCreationUtils', () => {
     });
   });
   
-  // Add more tests as needed
+  // Additional tests for other functions
 });
-

@@ -7,8 +7,7 @@
 import { Canvas, Object as FabricObject } from "fabric";
 import { 
   createGridLayer, 
-  createFallbackGrid, 
-  createBasicEmergencyGrid 
+  createFallbackGrid
 } from "./grid/gridCreation";
 import { validateCanvas } from "./grid/gridValidation";
 import { throttledLog } from "./grid/consoleThrottling";
@@ -35,7 +34,6 @@ export function createCompleteGrid(
 
 /**
  * Create a basic emergency grid
- * Wrapper for gridCreation.createBasicEmergencyGrid
  * 
  * @param {Canvas} canvas - The canvas instance
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
@@ -50,7 +48,7 @@ export function createBasicEmergencyGrid(
   }
   
   throttledLog("Creating basic emergency grid");
-  return createBasicEmergencyGrid(canvas, gridLayerRef);
+  return createFallbackGrid(canvas, gridLayerRef);
 }
 
 /**
@@ -84,6 +82,86 @@ export function validateGrid(
   }
   
   return foundOnCanvas;
+}
+
+/**
+ * Verify if grid exists and is valid on the canvas
+ * 
+ * @param {Canvas | null} canvas - The canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Whether grid exists and is valid
+ */
+export function verifyGridExists(
+  canvas: Canvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean {
+  if (!canvas) return false;
+  if (!gridLayerRef.current || gridLayerRef.current.length === 0) return false;
+  
+  // Check if at least some grid objects are on canvas
+  let foundOnCanvas = false;
+  for (const obj of gridLayerRef.current) {
+    if (canvas.contains(obj)) {
+      foundOnCanvas = true;
+      break;
+    }
+  }
+  
+  return foundOnCanvas;
+}
+
+/**
+ * Reorder grid objects for proper rendering
+ * 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Grid objects to reorder
+ */
+export function reorderGridObjects(
+  canvas: Canvas,
+  gridObjects: FabricObject[]
+): void {
+  if (!canvas || !gridObjects || gridObjects.length === 0) {
+    return;
+  }
+  
+  // Send grid objects to back
+  gridObjects.forEach(obj => {
+    if (canvas.contains(obj)) {
+      canvas.sendObjectToBack(obj);
+    }
+  });
+}
+
+/**
+ * Retry a function with exponential backoff
+ * 
+ * @param {Function} operation - Function to retry
+ * @param {number} maxAttempts - Maximum number of attempts
+ * @param {number} initialDelay - Initial delay in ms
+ * @returns {Promise<any>} Result of the operation
+ */
+export async function retryWithBackoff<T>(
+  operation: () => T | Promise<T>,
+  maxAttempts: number = 3,
+  initialDelay: number = 100
+): Promise<T> {
+  let attempt = 1;
+  const execute = async (): Promise<T> => {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= maxAttempts) {
+        throw error;
+      }
+      
+      const delay = initialDelay * Math.pow(2, attempt - 1);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      attempt++;
+      return execute();
+    }
+  };
+  
+  return execute();
 }
 
 /**

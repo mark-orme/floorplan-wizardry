@@ -50,7 +50,7 @@ export function validateGridObjects(gridObjects: FabricObject[]): boolean {
   
   // Check if all objects have the expected grid properties
   const allValid = gridObjects.every(obj => {
-    return obj && typeof obj.name === 'string' && obj.name.startsWith('grid-');
+    return obj && obj.get('name') && (obj.get('name') as string).startsWith('grid-');
   });
   
   if (!allValid) {
@@ -107,7 +107,7 @@ export function countGridObjectsOnCanvas(canvas: Canvas): number {
   let gridCount = 0;
   
   canvas.forEachObject(obj => {
-    if (obj && typeof obj.name === 'string' && obj.name.startsWith('grid-')) {
+    if (obj && obj.get('name') && (obj.get('name') as string).startsWith('grid-')) {
       gridCount++;
     }
   });
