@@ -76,3 +76,35 @@ export const validateGridState = (canvas: Canvas, gridObjects: any[]): {
     details: `Grid has ${onCanvas}/${gridObjects.length} objects on canvas`
   };
 };
+
+/**
+ * Validate canvas for grid creation
+ * More thorough validation checking additional properties
+ * 
+ * @param {Canvas} canvas - Canvas to validate
+ * @returns {boolean} Whether canvas is valid for grid creation
+ */
+export const validateCanvasForGrid = (canvas: Canvas): boolean => {
+  if (!validateCanvas(canvas)) {
+    return false;
+  }
+  
+  // Additional checks for grid creation
+  try {
+    // Check if canvas has required methods for grid creation
+    if (typeof canvas.add !== 'function' || 
+        typeof canvas.remove !== 'function' ||
+        typeof canvas.contains !== 'function' ||
+        typeof canvas.requestRenderAll !== 'function') {
+      logger.error("Canvas validation failed: Missing required methods");
+      console.error("Canvas validation failed: Missing required methods");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    logger.error("Canvas validation error:", error);
+    console.error("Canvas validation error:", error);
+    return false;
+  }
+};

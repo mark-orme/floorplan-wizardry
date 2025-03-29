@@ -46,12 +46,15 @@ module.exports = {
     }
   },
   
-  // Enforce proper sendToBack usage (using canvas.sendToBack, not object.sendToBack)
-  "correct-sendtoback-usage": {
+  // Enforce proper fabric.js v6 API usage (canvas.sendObjectToBack, not object.sendToBack)
+  "fabric-v6-compatibility": {
     create(context) {
       return {
         MemberExpression(node) {
-          if (node.property.name === 'sendToBack' &&
+          // Check for method calls that changed in Fabric.js v6
+          const incompatibleMethods = ['sendToBack', 'sendBackwards', 'bringToFront', 'bringForward'];
+          
+          if (incompatibleMethods.includes(node.property.name) &&
               node.parent.type === 'CallExpression') {
             
             // Get the object being called on
@@ -61,7 +64,7 @@ module.exports = {
             if (callee.type === 'Identifier' && callee.name !== 'canvas') {
               context.report({
                 node,
-                message: 'Use canvas.sendToBack(object) instead of object.sendToBack()'
+                message: `Use canvas.send* methods instead of object.${node.property.name}() for Fabric.js v6 compatibility. Replace with canvas.sendObjectToBack(object) or similar.`
               });
             }
           }
@@ -103,6 +106,72 @@ module.exports = {
                   message: 'Imported GRID_CONSTANTS is unused'
                 });
               }
+            }
+          }
+        }
+      };
+    }
+  },
+  
+  // Enforce consistent grid creation patterns
+  "consistent-grid-creation": {
+    create(context) {
+      return {
+        CallExpression(node) {
+          if (node.callee.type === 'Identifier' && 
+              (node.callee.name === 'createGrid' || 
+               node.callee.name.includes('Grid'))) {
+            
+            // Check if canvas is first argument
+            if (node.arguments.length > 0) {
+              const firstArg = node.arguments[0];
+              
+              // Canvas should be explicitly passed as first argument
+              if (firstArg.type === 'Identifier' && 
+                  firstArg.name !== 'canvas' && 
+                  !firstArg.name.includes('canvas')) {
+                context.report({
+                  node,
+                  message: 'Grid creation functions should receive canvas as first argument'
+                });
+              }
+            }
+          }
+        }
+      };
+    }
+  },
+  
+  // Prevent direct canvas dimension usage without validation
+  "validate-canvas-dimensions": {
+    create(context) {
+      return {
+        MemberExpression(node) {
+          // Check if accessing canvas.width or canvas.height
+          if (node.object.type === 'Identifier' && 
+              (node.object.name === 'canvas' || node.object.name.includes('canvas')) && 
+              (node.property.name === 'width' || node.property.name === 'height')) {
+            
+            let isInValidation = false;
+            let current = node.parent;
+            
+            // Look up the parent chain to see if it's in a validation condition
+            while (current && !isInValidation) {
+              if (current.type === 'IfStatement' || 
+                  current.type === 'LogicalExpression' ||
+                  current.type === 'BinaryExpression') {
+                isInValidation = true;
+                break;
+              }
+              current = current.parent;
+            }
+            
+            // If directly using dimension without validation, report
+            if (!isInValidation && node.parent.type !== 'BinaryExpression') {
+              context.report({
+                node,
+                message: `Always validate canvas.${node.property.name} before use to avoid errors`
+              });
             }
           }
         }

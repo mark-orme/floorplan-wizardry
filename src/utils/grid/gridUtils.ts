@@ -1,29 +1,27 @@
 
 /**
  * Grid Utilities
- * Centralized utilities for grid operations, error handling, and validation
- * @module utils/grid/gridUtils
+ * Helper functions for grid operations
+ * @module grid/gridUtils
  */
+
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { toast } from "sonner";
-import logger from "@/utils/logger";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
 /**
- * Validate if the canvas is ready for grid operations
+ * Validate canvas for grid creation
+ * 
  * @param {FabricCanvas} canvas - Canvas to validate
  * @returns {boolean} Whether canvas is valid
  */
-export const validateCanvasForGrid = (canvas: FabricCanvas | null): boolean => {
+export const validateCanvasForGrid = (canvas: FabricCanvas): boolean => {
   if (!canvas) {
-    logger.error("Grid operation failed: Canvas is null");
+    console.error("Invalid canvas: null or undefined");
     return false;
   }
   
   if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
-    logger.error("Grid operation failed: Canvas has invalid dimensions", {
-      width: canvas.width,
-      height: canvas.height
-    });
+    console.error(`Invalid canvas dimensions: ${canvas.width}x${canvas.height}`);
     return false;
   }
   
@@ -31,148 +29,118 @@ export const validateCanvasForGrid = (canvas: FabricCanvas | null): boolean => {
 };
 
 /**
- * Check if grid objects are properly configured
- * @param {FabricObject[]} gridObjects - Grid objects to check
- * @returns {boolean} Whether grid objects are valid
+ * Get snap point based on grid
+ * 
+ * @param {number} value - Original coordinate value
+ * @param {number} gridSize - Grid size to snap to
+ * @returns {number} Snapped value
  */
-export const validateGridObjects = (gridObjects: FabricObject[]): boolean => {
-  if (!Array.isArray(gridObjects)) {
-    logger.error("Grid objects validation failed: Not an array");
-    return false;
-  }
-  
-  if (gridObjects.length === 0) {
-    logger.warn("Grid objects validation: Empty grid");
-    return false;
-  }
-  
-  // Check object types
-  const validObjects = gridObjects.every(obj => 
-    obj && (obj.type === 'line' || obj.type === 'rect' || obj.type === 'text')
-  );
-  
-  if (!validObjects) {
-    logger.error("Grid objects validation failed: Invalid object types");
-    return false;
-  }
-  
-  return true;
+export const snapToGrid = (value: number, gridSize: number = GRID_CONSTANTS.SMALL_GRID_SIZE): number => {
+  return Math.round(value / gridSize) * gridSize;
 };
 
 /**
- * Count grid objects on canvas
- * @param {FabricCanvas} canvas - The canvas to check
- * @param {FabricObject[]} gridObjects - Grid objects reference
- * @returns {Object} Counts of grid objects
+ * Find nearest grid intersection
+ * 
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} gridSize - Grid size for snapping
+ * @returns {[number, number]} Snapped coordinates
+ */
+export const snapPointToGrid = (
+  x: number, 
+  y: number, 
+  gridSize: number = GRID_CONSTANTS.SMALL_GRID_SIZE
+): [number, number] => {
+  return [snapToGrid(x, gridSize), snapToGrid(y, gridSize)];
+};
+
+/**
+ * Count grid objects of a specific type
+ * 
+ * @param {FabricCanvas} canvas - Canvas to check
+ * @param {string} gridType - Grid type to count ('small' or 'large')
+ * @returns {number} Count of objects
  */
 export const countGridObjects = (
-  canvas: FabricCanvas, 
-  gridObjects: FabricObject[]
-): { total: number; onCanvas: number; missing: number } => {
-  if (!validateCanvasForGrid(canvas)) {
-    return { total: 0, onCanvas: 0, missing: 0 };
+  canvas: FabricCanvas,
+  gridType?: 'small' | 'large'
+): number => {
+  if (!canvas) return 0;
+  
+  const allObjects = canvas.getObjects();
+  
+  if (gridType) {
+    return allObjects.filter(obj => 
+      obj.objectType === 'grid' && obj.gridType === gridType
+    ).length;
   }
   
-  const total = gridObjects.length;
-  const onCanvas = gridObjects.filter(obj => canvas.contains(obj)).length;
+  return allObjects.filter(obj => obj.objectType === 'grid').length;
+};
+
+/**
+ * Get grid size based on zoom level
+ * Adjusts grid size for better visibility at different zoom levels
+ * 
+ * @param {number} zoomLevel - Current zoom level
+ * @returns {{ small: number, large: number }} Adjusted grid sizes
+ */
+export const getGridSizeForZoom = (zoomLevel: number) => {
+  if (zoomLevel <= 0.5) {
+    // At low zoom, use larger grid spacing
+    return {
+      small: GRID_CONSTANTS.LARGE_GRID_SIZE,
+      large: GRID_CONSTANTS.LARGE_GRID_SIZE * 5
+    };
+  } else if (zoomLevel >= 2) {
+    // At high zoom, use smaller grid spacing
+    return {
+      small: GRID_CONSTANTS.SMALL_GRID_SIZE / 2,
+      large: GRID_CONSTANTS.SMALL_GRID_SIZE * 2
+    };
+  }
   
+  // Default grid spacing
   return {
-    total,
-    onCanvas,
-    missing: total - onCanvas
+    small: GRID_CONSTANTS.SMALL_GRID_SIZE,
+    large: GRID_CONSTANTS.LARGE_GRID_SIZE
   };
 };
 
 /**
- * Handle grid errors consistently
- * @param {unknown} error - The error that occurred
- * @param {string} context - Error context
- * @param {boolean} showToast - Whether to show a toast notification
+ * Check if object is part of grid
+ * 
+ * @param {FabricObject} obj - Object to check
+ * @returns {boolean} Whether object is part of grid
  */
-export const handleGridError = (
-  error: unknown, 
-  context: string, 
-  showToast = true
+export const isGridObject = (obj: FabricObject): boolean => {
+  return obj.objectType === 'grid';
+};
+
+/**
+ * Send grid objects to back
+ * 
+ * @param {FabricCanvas} canvas - Canvas with grid objects
+ * @param {FabricObject[]} gridObjects - Grid objects to send to back
+ */
+export const arrangeGridElements = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
 ): void => {
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  if (!canvas || !gridObjects || gridObjects.length === 0) return;
   
-  // Log error
-  logger.error(`Grid error (${context}):`, error);
-  console.error(`Grid error (${context}):`, error);
+  // Process small lines first, then large lines for proper layering
+  const smallGridObjects = gridObjects.filter(obj => obj.gridType === 'small');
+  const largeGridObjects = gridObjects.filter(obj => obj.gridType === 'large');
   
-  // Show toast if enabled
-  if (showToast) {
-    toast.error(`Grid error: ${errorMessage}`, {
-      id: `grid-error-${context}`,
-      duration: 5000
-    });
-  }
-};
-
-/**
- * Diagnose grid health and provide human-readable status
- * @param {FabricCanvas} canvas - Canvas to check
- * @param {FabricObject[]} gridObjects - Grid objects
- * @returns {Object} Grid health diagnostics
- */
-export const getGridHealth = (
-  canvas: FabricCanvas | null,
-  gridObjects: FabricObject[]
-): { 
-  status: 'healthy' | 'degraded' | 'failed';
-  message: string;
-  details: Record<string, any>;
-} => {
-  if (!canvas) {
-    return {
-      status: 'failed',
-      message: 'Canvas is not available',
-      details: { canvasExists: false }
-    };
-  }
+  // Send all grid objects to back in proper order
+  [...largeGridObjects, ...smallGridObjects].forEach(obj => {
+    if (canvas.contains(obj)) {
+      canvas.sendObjectToBack(obj);
+    }
+  });
   
-  const canvasValid = validateCanvasForGrid(canvas);
-  if (!canvasValid) {
-    return {
-      status: 'failed',
-      message: 'Canvas has invalid dimensions',
-      details: {
-        canvasExists: true,
-        width: canvas.width,
-        height: canvas.height
-      }
-    };
-  }
-  
-  const counts = countGridObjects(canvas, gridObjects);
-  
-  if (counts.total === 0) {
-    return {
-      status: 'failed',
-      message: 'No grid objects exist',
-      details: counts
-    };
-  }
-  
-  if (counts.onCanvas === 0) {
-    return {
-      status: 'failed',
-      message: 'Grid exists but no objects are on canvas',
-      details: counts
-    };
-  }
-  
-  if (counts.missing > 0) {
-    return {
-      status: 'degraded',
-      message: `${counts.missing} grid objects are missing from canvas`,
-      details: counts
-    };
-  }
-  
-  return {
-    status: 'healthy',
-    message: 'Grid is healthy',
-    details: counts
-  };
+  // Force render
+  canvas.requestRenderAll();
 };

@@ -10,9 +10,9 @@ export const GRID_CONSTANTS = {
   SMALL_GRID_SIZE: 10,
   LARGE_GRID_SIZE: 50,
   
-  // Direct values for grid creation
-  SMALL_GRID: 10, // Added for direct reference
-  LARGE_GRID: 50, // Added for direct reference
+  // Direct values for grid creation - added these for direct reference
+  SMALL_GRID: 10,
+  LARGE_GRID: 50,
   
   // Pixels per meter for scaling
   PIXELS_PER_METER: 100,
@@ -73,3 +73,7 @@ export const GRID_CONSTANTS_VALIDATION = {
   BACKGROUND_OPACITY: true,
   MARKER_TEXT_SIZE: true
 };
+
+// Export specific constants needed by other modules
+export const GRID_CREATION_COOLDOWN = 1000;
+export const MAX_CREATE_ATTEMPTS = 3;

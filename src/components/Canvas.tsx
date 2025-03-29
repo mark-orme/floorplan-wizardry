@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { CANVAS_CONSTANTS } from "@/constants/canvasConstants";
 import { ERROR_MESSAGES } from "@/constants/errorMessages";
-import { GridLayer } from "@/components/canvas/grid/GridLayer";
+import { useSimpleGrid } from "@/hooks/useSimpleGrid";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import logger from "@/utils/logger";
 
@@ -36,6 +36,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const { setCanvas } = useCanvasContext();
   const [showDebug, setShowDebug] = useState(process.env.NODE_ENV === 'development');
+  
+  // Use our simple grid hook
+  const { 
+    gridCreated, 
+    objectCount, 
+    creationAttempts, 
+    createGrid, 
+    clearGrid 
+  } = useSimpleGrid(fabricCanvas, { showToasts: true });
 
   // Reset initialization state and set up debug key combo
   useEffect(() => {
@@ -130,6 +139,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     setInitAttempts(prev => prev + 1);
     toast.info("Retrying canvas initialization...");
   };
+  
+  // Handle grid refresh
+  const handleRefreshGrid = (): void => {
+    if (fabricCanvas) {
+      // Clear first then create new grid
+      clearGrid();
+      setTimeout(() => createGrid(), 100);
+      
+      toast.success("Refreshing grid...");
+    }
+  };
 
   // Render error state if initialization fails
   if (error) {
@@ -146,7 +166,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     );
   }
 
-  // Render canvas with grid layer
+  // Render canvas with debug info
   return (
     <div className="relative">
       <canvas 
@@ -155,12 +175,34 @@ export const Canvas: React.FC<CanvasProps> = ({
         data-testid="canvas"
       />
       
-      {fabricCanvas && (
-        <GridLayer 
-          fabricCanvas={fabricCanvas}
-          dimensions={{ width, height }}
-          showDebug={showDebug}
-        />
+      {showDebug && fabricCanvas && (
+        <div className="absolute top-2 right-2 bg-white/95 p-3 rounded shadow text-xs z-10">
+          <div className="font-bold mb-1">Grid Status</div>
+          <div>Grid created: {gridCreated ? 'Yes' : 'No'}</div>
+          <div>Grid objects: {objectCount}</div>
+          <div>Creation attempts: {creationAttempts}</div>
+          <Button 
+            size="sm"
+            variant="outline"
+            className="mt-2 text-xs h-7 px-2"
+            onClick={handleRefreshGrid}
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh Grid
+          </Button>
+        </div>
+      )}
+      
+      {!showDebug && fabricCanvas && !gridCreated && (
+        <Button 
+          size="sm"
+          variant="outline"
+          className="absolute top-2 right-2 text-xs z-10"
+          onClick={createGrid}
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Create Grid
+        </Button>
       )}
     </div>
   );
