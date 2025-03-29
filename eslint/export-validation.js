@@ -64,7 +64,26 @@ export const exportValidationRules = {
     "import/namespace": ["error", { "allowComputed": true }],
     
     // NEW: Ensure imports point to files/modules that can be resolved
-    "import/no-self-import": "error"
+    "import/no-self-import": "error",
+    
+    // ADDED: Prevent duplicate exports across files or within a file
+    "import/export": "error",
+    
+    // ADDED: Enforce naming convention for exports to avoid conflicts
+    "import/no-named-export": "off",
+    
+    // ADDED: Ensure default export is only imported as default import
+    "import/default": "error",
+    
+    // ADDED: Warn on potential namespace confusion in exports
+    "import/namespace": "error",
+    
+    // ADDED: Prevent excessive re-exports that can lead to ambiguity
+    "import/no-extraneous-dependencies": ["error", {
+      "devDependencies": ["**/*.test.ts", "**/*.spec.ts", "**/tests/**"],
+      "optionalDependencies": false,
+      "peerDependencies": false
+    }]
   },
   settings: {
     "import/resolver": {

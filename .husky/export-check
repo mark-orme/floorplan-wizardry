@@ -40,4 +40,17 @@ if [ -n "$duplicate_check" ]; then
   # This is just a warning, not an error that stops the commit
 fi
 
+# NEW: Add a specific check for re-exports with the same name
+echo "🔍 Checking for re-export conflicts..."
+for file in $(find src -type f -name "index.ts"); do
+  export_names=$(grep -E "export \* from|export {|export const" $file | sort)
+  duplicate_exports=$(echo "$export_names" | grep -o -E "[a-zA-Z0-9_]+" | sort | uniq -d)
+  
+  if [ -n "$duplicate_exports" ]; then
+    echo "⚠️  Warning: Potential export name conflicts in $file:"
+    echo "$duplicate_exports"
+    echo "   Consider using explicit named exports to avoid ambiguity."
+  fi
+done
+
 echo "✅ All export checks completed."
