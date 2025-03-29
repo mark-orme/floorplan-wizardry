@@ -66,11 +66,8 @@ export const exportValidationRules = {
     // Ensure imports point to files/modules that can be resolved
     "import/no-self-import": "error",
     
-    // Prevent duplicate exports across files or within a file
-    "import/export": "error",
-    
-    // Enforce naming convention for exports to avoid conflicts
-    "import/no-named-export": "off",
+    // NEW: Forbid default exports
+    "import/no-default-export": "warn",
     
     // Ensure default export is only imported as default import
     "import/default": "error",
@@ -115,7 +112,28 @@ export const exportValidationRules = {
     "import/export": ["error", { "detectAmbiguousExports": true }],
     
     // Disallow re-exporting with the same name as a direct export in the same file
-    "import/no-named-as-default-member": "error"
+    "import/no-named-as-default-member": "error",
+    
+    // NEW: Improve detection of export conflicts
+    "import/no-named-as-default": "error",
+    
+    // NEW: Enforce explicit re-exports instead of wildcards in barrel files
+    "import/no-namespace": ["warn", { "ignore": ["react", "react-dom"] }],
+    
+    // NEW: Enforce a maximum number of exports per module
+    "import/max-dependencies": ["warn", { "max": 20 }],
+    
+    // NEW: Prevent cyclic dependencies between modules
+    "import/no-cycle": ["error", { "maxDepth": 1 }],
+    
+    // NEW: Enforce all exports to be declared at the end of the file
+    "import/exports-last": "warn",
+    
+    // NEW: Require modules with a single export to use a default export
+    "import/prefer-default-export": "off",
+    
+    // NEW: Prevent importing packages through relative paths
+    "import/no-relative-packages": "error"
   },
   settings: {
     "import/resolver": {

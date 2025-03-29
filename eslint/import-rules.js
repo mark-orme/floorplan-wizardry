@@ -61,7 +61,69 @@ export const importExportRules = {
     "import/no-useless-path-segments": ["error", { "commonjs": true }],
     
     // Prevent a module from importing itself
-    "import/no-cycle": ["error", { "maxDepth": 1 }]
+    "import/no-cycle": ["error", { "maxDepth": 1 }],
+    
+    // NEW: Enforce a consistent style for all imports, allowing caching to be effective
+    "import/order": ["error", {
+      "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
+      "newlines-between": "always",
+      "alphabetize": {
+        "order": "asc",
+        "caseInsensitive": true
+      }
+    }],
+    
+    // NEW: Enforce first-level imports to be explicitly sorted according to a convention
+    "sort-imports": ["error", {
+      "ignoreCase": true,
+      "ignoreDeclarationSort": true, // We use import/order for declarations
+      "ignoreMemberSort": false,
+      "memberSyntaxSortOrder": ["none", "all", "multiple", "single"],
+      "allowSeparatedGroups": true
+    }],
+    
+    // NEW: Prevent using an exported name as the locally imported name of a default export
+    "import/no-named-as-default": "error",
+    
+    // NEW: Prevent using a default export as a property of the named import
+    "import/no-named-as-default-member": "error",
+    
+    // NEW: Prevent imports to folders without pointing to the index file
+    "import/no-useless-path-segments": ["error", { "noUselessIndex": true }],
+    
+    // NEW: Prevent dynamic requires
+    "import/no-dynamic-require": "error",
+    
+    // NEW: Enforce all imports to appear before non-import statements
+    "import/first": "error",
+    
+    // NEW: Enforce a newline after import statements
+    "import/newline-after-import": "error",
+    
+    // NEW: Prevent import statements that don't import anything
+    "import/no-empty-named-blocks": "error",
+    
+    // NEW: Prevent importing the submodules of other modules
+    "import/no-internal-modules": ["error", {
+      "allow": ["@/*/**", "**/index", "**/dist/**"]
+    }],
+    
+    // NEW: Prefer named exports
+    "import/prefer-default-export": "off",
+    "import/no-default-export": "warn",
+    
+    // NEW: Forbid modules without exports, or exports without matching import in another module
+    "import/no-unused-modules": ["warn", {
+      "unusedExports": true,
+      "missingExports": true,
+      "ignoreExports": ["**/index.ts", "**/*.d.ts"]
+    }],
+    
+    // NEW: Prevent ambiguous exports
+    "import/export": ["error", { "detectAmbiguousExports": true }],
+    
+    // NEW: Enforce that each module gets re-exported once
+    "import/no-duplicates": "error"
   },
   settings: {
     "import/resolver": {

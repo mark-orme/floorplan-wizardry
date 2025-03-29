@@ -130,4 +130,30 @@ done
 
 echo "✅ No ambiguous exports detected in barrel files."
 
+# NEW: Check for proper function exports (must have return types)
+echo "🔍 Checking for function exports without explicit return types..."
+function_exports_without_types=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "export function" | xargs grep -L "):.*{" || true)
+
+if [ -n "$function_exports_without_types" ]; then
+  echo "⚠️ Warning: Function exports without explicit return types found in:"
+  echo "$function_exports_without_types"
+  echo "   Consider adding explicit return types to all exported functions."
+fi
+
+# NEW: Check for large files that might need refactoring
+echo "🔍 Checking for large files that might need refactoring..."
+large_files=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -nr | head -10)
+
+echo "Largest files in the codebase:"
+echo "$large_files"
+echo "   Consider refactoring files over 300 lines into smaller, focused modules."
+
+# NEW: Check for excessive barrel files (index.ts)
+echo "🔍 Checking for barrel files with too many exports..."
+barrel_files=$(find src -name "index.ts" | xargs wc -l | sort -nr | head -5)
+
+echo "Largest barrel files:"
+echo "$barrel_files"
+echo "   Consider splitting large barrel files into more focused modules."
+
 echo "✅ All export checks completed."

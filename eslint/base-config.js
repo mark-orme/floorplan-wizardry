@@ -58,11 +58,55 @@ export const baseConfig = {
       {
         "selector": "CallExpression[callee.name='setTimeout']",
         "message": "Avoid raw setTimeout – use a util."
+      },
+      // NEW: Prevent common anti-patterns
+      {
+        "selector": "CallExpression[callee.name='JSON'][callee.property.name='parse'][arguments.0.type='Literal']",
+        "message": "Don't use JSON.parse with a literal value. Use the object directly."
+      },
+      {
+        "selector": "MemberExpression[object.name='document'][property.name='getElementById']",
+        "message": "Use React refs instead of direct DOM manipulation."
+      },
+      {
+        "selector": "MemberExpression[object.name='window'][property.name='location'][property.name='href']",
+        "message": "Use React Router for navigation instead of directly manipulating window.location."
       }
     ],
     
     // Enhancing code readability
     "max-lines-per-function": ["warn", { "max": 100, "skipBlankLines": true, "skipComments": true }],
-    "complexity": ["warn", { "max": 10 }]
+    "complexity": ["warn", { "max": 10 }],
+    
+    // NEW: Enforce consistent code clarity
+    "max-depth": ["error", 4],
+    "max-nested-callbacks": ["error", 3],
+    "max-params": ["warn", 5],
+    "max-len": ["warn", { "code": 100, "ignoreComments": true, "ignoreStrings": true, "ignoreTemplateLiterals": true }],
+    
+    // NEW: Prevent potential issues
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-return-await": "error",
+    "no-promise-executor-return": "error",
+    "no-param-reassign": "error",
+    "no-sequences": "error",
+    "no-shadow": "error",
+    "no-throw-literal": "error",
+    "no-unused-expressions": "error",
+    "prefer-template": "warn",
+    "prefer-arrow-callback": "warn",
+    "prefer-rest-params": "error",
+    "prefer-spread": "error",
+    "yoda": "error",
+    
+    // NEW: File structure rules
+    "max-lines": ["warn", { "max": 300, "skipBlankLines": true, "skipComments": true }],
+    
+    // NEW: Object/array patterns
+    "prefer-object-spread": "warn",
+    "object-shorthand": "warn",
+    "array-callback-return": "error",
+    "require-await": "error"
   }
 };
