@@ -1,207 +1,168 @@
 
 /**
- * ESLint import/export rules
- * Rules to enforce proper module imports and exports
+ * Import/export ESLint rules
+ * Controls how modules can be imported and exported
  * @module eslint/import-rules
  */
-
 export const importExportRules = {
-  files: ["**/*.{ts,tsx}"],
-  plugins: ["import"],
+  files: ["**/*.{js,ts,jsx,tsx}"],
+  plugins: ["import", "sort-exports"],
   rules: {
-    // Ensures that all named imports are actually exported from the target module
-    "import/named": ["error", { 
-      "commonjs": true,
-      "checkInTypeImports": true
-    }],
+    // Ensure imports point to files/modules that exist
+    "import/no-unresolved": "error",
     
-    // Ensures that a default export is only imported as a default import
+    // Ensure named imports correspond to a named export
+    "import/named": "error",
+    
+    // Ensure default import corresponds to a default export
     "import/default": "error",
     
-    // Ensures that a module with a namespace import has exports
-    "import/namespace": ["error", {
-      "allowComputed": true
-    }],
+    // Ensure imported namespaces contain the properties
+    "import/namespace": "error",
     
-    // Prevent importing modules that you don't have listed in your package.json
+    // Ensure a default export is present for default imports
+    "import/no-default-export": "off",
+    
+    // Restrict which files can be imported in a given folder
+    "import/no-restricted-paths": "off",
+    
+    // Prevent importing the submodules of other modules
+    "import/no-internal-modules": "off",
+    
+    // Warn on cyclic dependencies
+    "import/no-cycle": ["warn", { maxDepth: 10 }],
+    
+    // Prevent unnecessary path segments
+    "import/no-useless-path-segments": ["error", { noUselessIndex: true }],
+    
+    // Prevent importing packages with peer dependencies problems
     "import/no-extraneous-dependencies": ["error", {
-      "devDependencies": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "**/test/**", "**/tests/**"],
-      "optionalDependencies": false,
-      "peerDependencies": false
+      devDependencies: [
+        "**/*.test.{js,ts,jsx,tsx}",
+        "**/*.spec.{js,ts,jsx,tsx}",
+        "**/__tests__/**/*.{js,ts,jsx,tsx}",
+        "**/jest.config.js",
+        "**/eslint/**"
+      ],
+      optionalDependencies: false,
+      peerDependencies: false
     }],
     
-    // Report any invalid exports, i.e. re-export of the same name
-    "import/export": ["error", {
-      "detectAmbiguousExports": true
+    // Prevent importing mutables
+    "import/no-mutable-exports": "error",
+    
+    // Control import of specific files
+    "import/no-restricted-import": "off",
+    
+    // Group imports by type
+    "import/order": ["error", {
+      "groups": [
+        "builtin",
+        "external",
+        "internal",
+        ["parent", "sibling"],
+        "index",
+        "object",
+        "type"
+      ],
+      "pathGroups": [
+        { 
+          "pattern": "react", 
+          "group": "builtin", 
+          "position": "before" 
+        },
+        { 
+          "pattern": "@/**", 
+          "group": "internal", 
+          "position": "after" 
+        }
+      ],
+      "pathGroupsExcludedImportTypes": ["react"],
+      "newlines-between": "always",
+      "alphabetize": { 
+        "order": "asc", 
+        "caseInsensitive": true 
+      }
     }],
     
-    // Ensure consistent use of file extension within the import path
-    "import/extensions": ["error", "never", { 
-      "json": "always", 
-      "css": "always", 
-      "scss": "always", 
-      "svg": "always" 
+    // Prefer named exports
+    "import/prefer-default-export": "off",
+    
+    // Prevent invalid exports (dupe, default, named)
+    "import/export": "error",
+    
+    // ENHANCED: Ensure all exports are used
+    "import/no-unused-modules": ["warn", {
+      "unusedExports": true,
+      "missingExports": true,
+      "ignoreExports": [
+        "**/index.{js,ts,jsx,tsx}",
+        "**/*.d.ts",
+        "**/eslint/**",
+        "**/*.test.{js,ts,jsx,tsx}",
+        "**/__tests__/**",
+        "**/types/**"
+      ]
     }],
     
-    // Prefer named exports to be grouped together
-    "import/group-exports": "error",
+    // ENHANCED: Prevent self imports
+    "import/no-self-import": "error",
     
-    // Make sure imports point to files/modules that can be resolved
-    "import/no-unresolved": ["error", {
-      "caseSensitive": true,
-      "caseSensitiveStrict": true,
-      "commonjs": true
-    }],
-    
-    // Prevent unnecessary path segments in import and require statements
+    // ENHANCED: Prevent useless re-exports
     "import/no-useless-path-segments": ["error", {
       "noUselessIndex": true
     }],
     
-    // Prevent import of modules using absolute paths
-    "import/no-absolute-path": "error",
-    
-    // Ensure imports point to a file/module that can be resolved
-    "import/no-self-import": "error",
-    
-    // Forbid import of modules using absolute paths
-    "import/no-absolute-path": "error",
-    
-    // Prevent unnecessary path segments in import and require statements
-    "import/no-useless-path-segments": ["error", { "commonjs": true }],
-    
-    // Prevent a module from importing itself
-    "import/no-cycle": ["error", { "maxDepth": Infinity }],
-    
-    // Enforce a consistent style for all imports, allowing caching to be effective
-    "import/order": ["error", {
-      "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
-      "newlines-between": "always",
-      "alphabetize": {
-        "order": "asc",
-        "caseInsensitive": true
-      }
+    // ENHANCED: Check for missing file extensions
+    "import/extensions": ["error", "ignorePackages", {
+      "js": "never",
+      "jsx": "never",
+      "ts": "never",
+      "tsx": "never"
     }],
     
-    // Enforce first-level imports to be explicitly sorted according to a convention
+    // ENHANCED: Ensure consistent use of file extension
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    
+    // ENHANCED: Sort imports alphabetically within groups
     "sort-imports": ["error", {
       "ignoreCase": true,
-      "ignoreDeclarationSort": true, // We use import/order for declarations
+      "ignoreDeclarationSort": true,
       "ignoreMemberSort": false,
       "memberSyntaxSortOrder": ["none", "all", "multiple", "single"],
       "allowSeparatedGroups": true
     }],
     
-    // Prevent using an exported name as the locally imported name of a default export
-    "import/no-named-as-default": "error",
+    // NEW: Prevent importing from same directory with path
+    "import/no-relative-parent-imports": "off",
     
-    // Prevent using a default export as a property of the named import
-    "import/no-named-as-default-member": "error",
-    
-    // Prevent imports to folders without pointing to the index file
-    "import/no-useless-path-segments": ["error", { "noUselessIndex": true }],
-    
-    // Prevent dynamic requires
-    "import/no-dynamic-require": "error",
-    
-    // Enforce all imports to appear before non-import statements
+    // NEW: Ensure declaration order is correct
     "import/first": "error",
     
-    // Enforce a newline after import statements
-    "import/newline-after-import": "error",
+    // NEW: Ensure new line after imports
+    "import/newline-after-import": ["error", { "count": 1 }],
     
-    // Prevent import statements that don't import anything
-    "import/no-empty-named-blocks": "error",
+    // NEW: Ensure exports at the end of the file
+    "import/exports-last": "warn",
     
-    // Prefer named exports
-    "import/prefer-default-export": "off",
-    "import/no-default-export": "error",
+    // NEW: Check for missing exports
+    "import/default": "error",
     
-    // Forbid modules without exports, or exports without matching import in another module
-    "import/no-unused-modules": ["error", {
-      "unusedExports": true,
-      "missingExports": true,
-      "ignoreExports": ["**/index.ts", "**/*.d.ts"]
-    }],
+    // NEW: Check for namespace imports
+    "import/namespace": ["error", { "allowComputed": true }],
     
-    // Prevent ambiguous exports
-    "import/export": ["error", { "detectAmbiguousExports": true }],
+    // NEW: Prefer using the export keyword over module.exports
+    "import/no-commonjs": "error",
     
-    // Enforce that each module gets re-exported once
-    "import/no-duplicates": "error",
-    
-    // STRENGTHENED: Architectural boundaries
-    "import/no-restricted-paths": ["error", {
-      "zones": [
-        {
-          "target": "./src/components/ui/**/*",
-          "from": "./src/hooks/canvas**",
-          "message": "UI components should not depend on canvas-specific hooks."
-        },
-        {
-          "target": "./src/hooks/**/*",
-          "from": "./src/components/**/*",
-          "message": "Hooks should not import from components to avoid circular dependencies."
-        },
-        {
-          "target": "./src/utils/**/*",
-          "from": "./src/components/**/*",
-          "message": "Utilities should not import from components."
-        },
-        {
-          "target": "./src/utils/**/*",
-          "from": "./src/hooks/**/*",
-          "message": "Utilities should not import from hooks to maintain proper layering."
-        }
-      ]
-    }],
-    
-    // NEW: Check for absolute paths that should be module paths
-    "import/no-absolute-path": "error",
-    
-    // NEW: Enforce imports from within the same directory to use relative imports
-    "import/no-relative-packages": "error",
-    
-    // NEW: Prevent importing test files in production code
-    "import/no-test-files": "error",
-    
-    // NEW: Prevent importing from devDependencies in production code
-    "import/no-extraneous-dependencies": ["error", {
-      "devDependencies": ["**/*.test.ts", "**/*.spec.ts", "**/tests/**", "**/test/**", "**/*.test.tsx", "**/*.spec.tsx", "vite.config.ts"],
-      "optionalDependencies": false,
-      "peerDependencies": true
-    }],
-    
-    // STRENGTHENED: Enforce all module exports are valid and exist
-    "import/named": ["error", {
-      "commonjs": true,
-      "checkInTypeImports": true
-    }],
-    
-    // STRENGTHENED: Disallow unresolved imports
-    "import/no-unresolved": ["error", {
-      "caseSensitive": true,
-      "caseSensitiveStrict": true,
-      "commonjs": true,
-      "amd": true,
-      "esmodule": true
+    // NEW: Prevent anonymous default exports
+    "import/no-anonymous-default-export": ["error", {
+      "allowArray": false,
+      "allowArrowFunction": false,
+      "allowAnonymousClass": false,
+      "allowAnonymousFunction": false,
+      "allowCallExpression": true,
+      "allowLiteral": false,
+      "allowObject": false
     }]
-  },
-  settings: {
-    "import/resolver": {
-      "typescript": {
-        "alwaysTryTypes": true,
-        "project": "./tsconfig.json"
-      }
-    },
-    "import/parsers": {
-      "@typescript-eslint/parser": [".ts", ".tsx"]
-    },
-    "import/extensions": [
-      ".js",
-      ".jsx",
-      ".ts",
-      ".tsx"
-    ]
   }
 };

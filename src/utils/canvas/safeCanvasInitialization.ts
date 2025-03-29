@@ -25,6 +25,86 @@ export const resetInitializationState = (): void => {
 };
 
 /**
+ * Prepare canvas element for initialization
+ * Ensures canvas has proper dimensions and attributes
+ * 
+ * @param {HTMLCanvasElement} canvasElement - DOM canvas element to prepare
+ */
+export const prepareCanvasForInitialization = (canvasElement: HTMLCanvasElement): void => {
+  if (!canvasElement) {
+    logger.warn("Cannot prepare null canvas element");
+    return;
+  }
+  
+  // Ensure canvas has an ID for debugging
+  if (!canvasElement.id) {
+    canvasElement.id = "fabric-canvas-" + Date.now();
+  }
+  
+  // Log canvas preparation
+  console.log("🔍 Preparing canvas element for initialization", {
+    id: canvasElement.id,
+    width: canvasElement.width,
+    height: canvasElement.height,
+    offsetWidth: canvasElement.offsetWidth,
+    offsetHeight: canvasElement.offsetHeight
+  });
+  
+  // Force canvas to be visible
+  canvasElement.style.display = "block";
+};
+
+/**
+ * Validate canvas was properly initialized
+ * 
+ * @param {FabricCanvas} canvas - Canvas to validate
+ * @returns {boolean} Whether canvas is valid
+ */
+export const validateCanvasInitialization = (canvas: FabricCanvas): boolean => {
+  if (!canvas) {
+    console.warn("❌ Cannot validate null canvas");
+    return false;
+  }
+  
+  const isValid = !!(
+    canvas.width && 
+    canvas.height && 
+    canvas.width > 0 && 
+    canvas.height > 0
+  );
+  
+  console.log("🧪 Canvas validation result:", isValid, {
+    width: canvas.width,
+    height: canvas.height
+  });
+  
+  return isValid;
+};
+
+/**
+ * Handle initialization failure
+ * 
+ * @param {string} errorMessage - Error message to log
+ * @param {boolean} criticalError - Whether error is critical
+ */
+export const handleInitializationFailure = (errorMessage: string, criticalError: boolean = false): void => {
+  // Log error
+  if (criticalError) {
+    logger.error("Critical canvas initialization error:", errorMessage);
+    console.error("⛔ Critical canvas initialization error:", errorMessage);
+  } else {
+    logger.warn("Canvas initialization failed:", errorMessage);
+    console.warn("⚠️ Canvas initialization warning:", errorMessage);
+  }
+  
+  // Increment attempt counter
+  initializationAttempts++;
+  
+  // Reset initializing flag
+  initializing = false;
+};
+
+/**
  * Safely initialize canvas with checks for existing references
  * 
  * @param {HTMLCanvasElement} canvasElement - DOM canvas element
