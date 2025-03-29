@@ -45,45 +45,54 @@ export const exportValidationRules = {
     // Prefer ES6-style imports over legacy formats
     "import/no-dynamic-require": "warn",
     
-    // NEW: Check for missing exports when imported
+    // Check for missing exports when imported
     "import/named": "error",
     
-    // NEW: Prevent ambiguous re-exports
+    // Prevent ambiguous re-exports
     "import/export": "error",
     
-    // NEW: Enforce exports are grouped together at the end of the file
+    // Enforce exports are grouped together at the end of the file
     "import/group-exports": "warn",
     
-    // NEW: Prefer named exports to be grouped in a declaration
+    // Prefer named exports to be grouped in a declaration
     "import/no-duplicates": "error",
     
-    // NEW: Ensure imports resolve to a file/module
+    // Ensure imports resolve to a file/module
     "import/no-unresolved": ["error", { "commonjs": true }],
     
-    // NEW: Check if the imported module has the imported name as an export
+    // Check if the imported module has the imported name as an export
     "import/namespace": ["error", { "allowComputed": true }],
     
-    // NEW: Ensure imports point to files/modules that can be resolved
+    // Ensure imports point to files/modules that can be resolved
     "import/no-self-import": "error",
     
-    // ADDED: Prevent duplicate exports across files or within a file
+    // Prevent duplicate exports across files or within a file
     "import/export": "error",
     
-    // ADDED: Enforce naming convention for exports to avoid conflicts
+    // Enforce naming convention for exports to avoid conflicts
     "import/no-named-export": "off",
     
-    // ADDED: Ensure default export is only imported as default import
+    // Ensure default export is only imported as default import
     "import/default": "error",
     
-    // ADDED: Warn on potential namespace confusion in exports
+    // Warn on potential namespace confusion in exports
     "import/namespace": "error",
     
-    // ADDED: Prevent excessive re-exports that can lead to ambiguity
+    // Prevent excessive re-exports that can lead to ambiguity
     "import/no-extraneous-dependencies": ["error", {
       "devDependencies": ["**/*.test.ts", "**/*.spec.ts", "**/tests/**"],
       "optionalDependencies": false,
       "peerDependencies": false
-    }]
+    }],
+    
+    // NEW: Prevent re-exporting the same name from different modules
+    "import/no-duplicates": "error",
+    
+    // NEW: Prevent re-exporting the same name with different meanings
+    "import/export": "error",
+    
+    // NEW: Warn about barrel files that might create ambiguous exports
+    "import/no-named-default": "warn"
   },
   settings: {
     "import/resolver": {

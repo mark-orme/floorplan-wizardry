@@ -137,5 +137,17 @@ export const EXPORT_BEST_PRACTICES = {
    * Document exports
    * Use JSDoc to document the purpose and usage of exports
    */
-  DOCUMENT_EXPORTS: "Document exports with JSDoc comments"
+  DOCUMENT_EXPORTS: "Document exports with JSDoc comments",
+  
+  /**
+   * NEW: Avoid ambiguous exports
+   * Don't export the same name from multiple sources
+   */
+  AVOID_AMBIGUOUS_EXPORTS: "Avoid exporting the same name from multiple sources",
+  
+  /**
+   * NEW: Use explicit re-exports
+   * When re-exporting from multiple modules, use named exports
+   */
+  USE_EXPLICIT_REEXPORTS: "Use explicit re-exports to avoid name conflicts"
 };

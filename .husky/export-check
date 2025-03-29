@@ -40,7 +40,7 @@ if [ -n "$duplicate_check" ]; then
   # This is just a warning, not an error that stops the commit
 fi
 
-# NEW: Add a specific check for re-exports with the same name
+# Enhanced check for re-exports with the same name
 echo "🔍 Checking for re-export conflicts..."
 for file in $(find src -type f -name "index.ts"); do
   export_names=$(grep -E "export \* from|export {|export const" $file | sort)
@@ -50,6 +50,30 @@ for file in $(find src -type f -name "index.ts"); do
     echo "⚠️  Warning: Potential export name conflicts in $file:"
     echo "$duplicate_exports"
     echo "   Consider using explicit named exports to avoid ambiguity."
+  fi
+done
+
+# NEW: Check specifically for exported names from imported modules
+echo "🔍 Checking for ambiguous re-exports..."
+for file in $(find src -type f -name "index.ts"); do
+  import_patterns=$(grep -E "export \* from" $file | grep -o -E "'[^']+'" | tr -d "'" | sort)
+  
+  if [ -n "$import_patterns" ]; then
+    echo "Checking re-exports in $file:"
+    
+    # For each wildcard export, check if any other export could conflict
+    for import_path in $import_patterns; do
+      target_file=$(find src -path "*${import_path}.ts")
+      
+      if [ -n "$target_file" ]; then
+        exports_in_target=$(grep -E "export (const|function|class|interface|type|enum)" $target_file | awk '{print $3}' | cut -d '(' -f1 | cut -d ':' -f1 | sort)
+        
+        if [ -n "$exports_in_target" ]; then
+          echo "⚠️  $file re-exports these from $import_path:"
+          echo "$exports_in_target"
+        fi
+      fi
+    done
   fi
 done
 
