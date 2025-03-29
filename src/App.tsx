@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { StoreProvider } from "@/store";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -42,30 +43,32 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <Routes>
-              {/* Default route redirects to properties */}
-              <Route path="/" element={<Navigate to="/properties" replace />} />
-              
-              {/* Auth route - accessible to all */}
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Properties routes - Simplified to ensure proper loading */}
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/properties/new" element={<PropertyForm />} />
-              <Route path="/properties/:id" element={<PropertyDetail />} />
-              
-              {/* Floor plan editor - accessible to all */}
-              <Route path="/floorplans" element={<Index />} />
-              
-              {/* Catch-all */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ErrorBoundary>
-        </AuthProvider>
-      </BrowserRouter>
+      <StoreProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <Routes>
+                {/* Default route redirects to properties */}
+                <Route path="/" element={<Navigate to="/properties" replace />} />
+                
+                {/* Auth route - accessible to all */}
+                <Route path="/auth" element={<Auth />} />
+                
+                {/* Properties routes - Simplified to ensure proper loading */}
+                <Route path="/properties" element={<Properties />} />
+                <Route path="/properties/new" element={<PropertyForm />} />
+                <Route path="/properties/:id" element={<PropertyDetail />} />
+                
+                {/* Floor plan editor - accessible to all */}
+                <Route path="/floorplans" element={<Index />} />
+                
+                {/* Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ErrorBoundary>
+          </AuthProvider>
+        </BrowserRouter>
+      </StoreProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
