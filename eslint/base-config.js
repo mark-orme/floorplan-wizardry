@@ -1,3 +1,4 @@
+
 /**
  * Base ESLint configuration
  * Shared rules for all files
@@ -255,6 +256,33 @@ export const baseConfig = {
     
     // NEW: Enforce strong typing practices
     "no-implicit-coercion": "error",
-    "radix": "error"
+    "radix": "error",
+    
+    // NEW: Enforce proper JSX syntax
+    "react/jsx-closing-tag-location": "error",
+    "react/jsx-closing-bracket-location": "error",
+    "react/jsx-curly-brace-presence": ["error", { "props": "never", "children": "never" }],
+    "react/jsx-curly-spacing": ["error", { "when": "never" }],
+    "react/jsx-equals-spacing": ["error", "never"],
+    "react/jsx-pascal-case": "error",
+    
+    // NEW: Prevent common regex issues
+    "no-regex-spaces": "error",
+    "no-control-regex": "error",
+    "no-empty-character-class": "error",
+    "no-invalid-regexp": "error",
+    
+    // NEW: Syntax error prevention
+    "no-dupe-class-members": "error",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-func-assign": "error",
+    "no-inner-declarations": "error",
+    "no-redeclare": "error",
+    "no-undef": "error",
+    "no-unexpected-multiline": "error",
+    "no-unreachable": "error"
   }
 };
