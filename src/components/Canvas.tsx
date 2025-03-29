@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { CANVAS_CONSTANTS } from "@/constants/canvasConstants";
 import { ERROR_MESSAGES } from "@/constants/errorMessages";
+import { useCanvasGrid } from "@/hooks/useCanvasGrid";
 import logger from "@/utils/logger";
 
 interface CanvasProps {
@@ -28,7 +29,14 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [error, setError] = useState<Error | null>(null);
   const [initAttempts, setInitAttempts] = useState(0);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const { setCanvas } = useCanvasContext();
+
+  // Set up grid handling with the useCanvasGrid hook
+  const { gridLayerRef, createGrid } = useCanvasGrid({
+    fabricCanvasRef,
+    canvasDimensions: { width, height }
+  });
 
   // Canvas initialization effect
   useEffect(() => {
@@ -56,8 +64,9 @@ export const Canvas: React.FC<CanvasProps> = ({
           canvas.freeDrawingBrush.width = CANVAS_CONSTANTS.DEFAULT_BRUSH_WIDTH;
         }
 
-        // Store the canvas reference
+        // Store the canvas reference in both state and ref
         setFabricCanvas(canvas);
+        fabricCanvasRef.current = canvas;
         setCanvas(canvas);
 
         // Notify parent component
@@ -66,6 +75,12 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
 
         logger.info("Canvas initialized successfully");
+        console.log("Canvas initialized successfully");
+        
+        // Initialize the grid after a short delay
+        setTimeout(() => {
+          createGrid();
+        }, 300);
 
       } catch (err) {
         const error = err instanceof Error ? err : new Error(ERROR_MESSAGES.CANVAS_INIT_FAILED);
@@ -86,15 +101,23 @@ export const Canvas: React.FC<CanvasProps> = ({
       if (fabricCanvas) {
         fabricCanvas.dispose();
         setFabricCanvas(null);
+        fabricCanvasRef.current = null;
         setCanvas(null);
       }
     };
-  }, [width, height, backgroundColor, setCanvas, onCanvasReady, onError, initAttempts]);
+  }, [width, height, backgroundColor, setCanvas, onCanvasReady, onError, initAttempts, createGrid]);
 
   const handleRetry = (): void => {
     setError(null);
     setInitAttempts(prev => prev + 1);
     toast.info("Retrying canvas initialization...");
+  };
+
+  const handleForceGrid = (): void => {
+    if (fabricCanvasRef.current) {
+      createGrid();
+      toast.info("Forcing grid recreation...");
+    }
   };
 
   if (error) {
@@ -103,19 +126,37 @@ export const Canvas: React.FC<CanvasProps> = ({
         <p className="text-red-500 mb-4">
           {error.message || ERROR_MESSAGES.CANVAS_INIT_FAILED}
         </p>
-        <Button onClick={handleRetry} variant="outline">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Try Again
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleRetry} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+          <Button onClick={handleForceGrid} variant="outline">
+            Create Grid
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="border border-gray-200 rounded-lg shadow-lg max-w-full"
-      data-testid="canvas"
-    />
+    <div className="relative">
+      <canvas 
+        ref={canvasRef} 
+        className="border border-gray-200 rounded-lg shadow-lg max-w-full"
+        data-testid="canvas"
+      />
+      {fabricCanvas && !gridLayerRef.current.length && (
+        <Button 
+          onClick={handleForceGrid}
+          className="absolute top-2 right-2"
+          size="sm"
+          variant="secondary"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Create Grid
+        </Button>
+      )}
+    </div>
   );
 };

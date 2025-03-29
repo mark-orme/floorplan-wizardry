@@ -1,53 +1,34 @@
 
 /**
- * Canvas constants for consistent configuration
+ * Canvas constants for consistent canvas rendering and behavior
  * @module constants/canvasConstants
  */
 
 /**
- * Canvas constants
- * @constant {Object}
+ * Canvas constants for default sizes and behavior
  */
 export const CANVAS_CONSTANTS = {
-  /** Default canvas width */
+  /** Default canvas width in pixels */
   DEFAULT_WIDTH: 800,
   
-  /** Default canvas height */
+  /** Default canvas height in pixels */
   DEFAULT_HEIGHT: 600,
   
-  /** Default canvas background color */
+  /** Default background color */
   DEFAULT_BACKGROUND_COLOR: '#ffffff',
   
-  /** Default brush color */
+  /** Default drawing brush color */
   DEFAULT_BRUSH_COLOR: '#000000',
   
-  /** Default brush width */
+  /** Default drawing brush width */
   DEFAULT_BRUSH_WIDTH: 2,
   
-  /** Default zoom increment */
-  ZOOM_INCREMENT: 0.1,
+  /** Minimum canvas width */
+  MIN_WIDTH: 400,
   
-  /** Maximum zoom level */
-  MAX_ZOOM: 5,
+  /** Minimum canvas height */
+  MIN_HEIGHT: 300,
   
-  /** Minimum zoom level */
-  MIN_ZOOM: 0.5
-};
-
-/**
- * Error messages for canvas operations
- * @constant {Object}
- */
-export const ERROR_MESSAGES = {
-  /** Canvas element not found error */
-  CANVAS_ELEMENT_NOT_FOUND: 'Canvas element not found in DOM',
-  
-  /** Canvas initialization failed error */
-  CANVAS_INIT_FAILED: 'Failed to initialize canvas',
-  
-  /** Grid creation failed error */
-  GRID_CREATION_FAILED: 'Failed to create grid',
-  
-  /** Tool initialization failed error */
-  TOOL_INIT_FAILED: 'Failed to initialize drawing tools'
+  /** Default canvas padding */
+  PADDING: 20
 };
