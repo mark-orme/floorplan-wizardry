@@ -12,9 +12,9 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { handleError } from "@/utils/errorHandling";
-import { Canvas as CanvasComponent } from "@/components/Canvas"; // Rename to avoid confusion
+import { Canvas as CanvasComponent } from "@/components/Canvas";
 import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid"; // Import the new SimpleGrid component
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 
 // Constants for component
 const CANVAS_WIDTH = 800;
@@ -173,7 +173,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
             />
           </ReliableCanvasContainer>
           
-          {/* Add SimpleGrid component that will create the grid */}
+          {/* IMPORTANT: Always show SimpleGrid component when canvas is available */}
           {fabricCanvas && (
             <SimpleGrid 
               canvas={fabricCanvas} 
