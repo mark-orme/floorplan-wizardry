@@ -38,7 +38,7 @@ export const cleanupGridResources = (): void => {
   console.log("Grid resources cleaned up");
 };
 
-// REMOVED: The direct export of createBasicEmergencyGrid
+// REMOVED: Direct export of createBasicEmergencyGrid to resolve ambiguity
 // This function is already exported from './gridCreation'
 // Import it directly from the specific module instead:
 // import { createBasicEmergencyGrid } from "@/utils/grid/gridCreation";

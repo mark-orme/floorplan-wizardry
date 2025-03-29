@@ -19,16 +19,15 @@ import {
 
 // Direct named exports from gridValidation
 import {
-  validateGridObjectIntegrity,
-  isValidGridLine,
-  checkGridConsistency
+  validateGridObjects,
+  validateCanvas,
+  validateGridState
 } from './gridValidation';
 
 // Direct named exports from gridDebugUtils
 import {
-  logGridCreationAttempt,
-  forceCreateGrid,
-  analyzeGridPerformance
+  dumpGridState,
+  forceCreateGrid
 } from './gridDebugUtils';
 
 // Re-export with clear namespacing
@@ -41,15 +40,14 @@ export const GridCreation = {
 };
 
 export const GridValidation = {
-  validateGridObjectIntegrity,
-  isValidGridLine,
-  checkGridConsistency
+  validateGridObjects,
+  validateCanvas,
+  validateGridState
 };
 
 export const GridDebug = {
-  logGridCreationAttempt,
-  forceCreateGrid,
-  analyzeGridPerformance
+  dumpGridState,
+  forceCreateGrid
 };
 
 // Also export individual functions for direct import
@@ -59,10 +57,9 @@ export {
   createGridLayer,
   createFallbackGrid,
   createBasicEmergencyGrid,
-  validateGridObjectIntegrity,
-  isValidGridLine,
-  checkGridConsistency,
-  logGridCreationAttempt,
-  forceCreateGrid,
-  analyzeGridPerformance
+  validateGridObjects,
+  validateCanvas,
+  validateGridState,
+  dumpGridState,
+  forceCreateGrid
 };

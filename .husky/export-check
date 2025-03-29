@@ -1,3 +1,4 @@
+
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
@@ -52,8 +53,8 @@ for file in $(find src -type f -name "index.ts"); do
   fi
 done
 
-# NEW: More robust check for wildcard exports combined with direct exports
-echo "🔍 Running new critical ambiguity check..."
+# More robust check for wildcard exports combined with direct exports
+echo "🔍 Running critical ambiguity check..."
 
 # Check for files that have both direct exports and wildcard exports
 for file in $(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "export \* from" | xargs grep -l "export const"); do
@@ -62,7 +63,7 @@ for file in $(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "ex
   echo "   Example: 'export { specificFunction } from './module'' instead of 'export * from './module''"
 done
 
-# NEW: Check specifically for exported names from imported modules
+# Check specifically for exported names from imported modules
 echo "🔍 Checking for ambiguous re-exports..."
 for file in $(find src -type f -name "index.ts"); do
   import_patterns=$(grep -E "export \* from" $file | grep -o -E "'[^']+'" | tr -d "'" | sort)
@@ -81,7 +82,7 @@ for file in $(find src -type f -name "index.ts"); do
           echo "⚠️  $file re-exports these from $import_path:"
           echo "$exports_in_target"
           
-          # NEW: Check each export against direct exports in the barrel file
+          # Check each export against direct exports in the barrel file
           for export_name in $exports_in_target; do
             if grep -q "export const $export_name" "$file" || grep -q "export function $export_name" "$file" || grep -q "export class $export_name" "$file"; then
               echo "⛔ ERROR: Ambiguous export detected! '$export_name' is both directly exported and re-exported via wildcard!"
@@ -94,7 +95,7 @@ for file in $(find src -type f -name "index.ts"); do
   fi
 done
 
-# NEW: Enhanced check for ambiguous exports in barrel files
+# Enhanced check for ambiguous exports in barrel files
 echo "🔍 Running enhanced checks for ambiguous exports in barrel files..."
 
 for barrel_file in $(find src -name "index.ts"); do
