@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 

@@ -1,64 +1,88 @@
 
 /**
- * Grid constants
- * Contains all constants related to grid creation and management
+ * Grid constants module
+ * Contains common constants for grid creation and management
  * @module grid/constants
  */
 
 /**
- * Grid creation timing constants
- * @constant {Object}
+ * Toast messages for grid-related notifications
  */
-export const GRID_CREATION_CONSTANTS = {
-  /**
-   * Delay for logging in development mode (ms)
-   * @constant {number}
-   */
-  DEV_LOG_DELAY: 100,
-  
-  /**
-   * Maximum time allowed for grid creation in ms
-   * @constant {number}
-   */
-  MAX_CREATION_TIME: 2000,
-  
-  /**
-   * Delay between creation attempts in ms
-   * @constant {number}
-   */
-  RETRY_DELAY: 500
+export const TOAST_MESSAGES = {
+  GRID_CREATION_FAILED: "Grid creation failed. Please try refreshing the page.",
+  GRID_CREATION_SUCCESS: "Grid created successfully.",
+  USING_FALLBACK_GRID: "Using simplified grid mode.",
+  GRID_RECREATED: "Grid has been recreated.",
+  GRID_ERROR: "Error creating drawing grid."
 };
 
 /**
- * Toast message constants
- * @constant {Object}
+ * Grid creation constants for throttling and retries
  */
-export const TOAST_MESSAGES = {
+export const GRID_CREATION_CONSTANTS = {
   /**
-   * Error message for grid creation failure
-   * @constant {string}
+   * Cooldown period between grid creation attempts in milliseconds
+   * Prevents excessive recreation
    */
-  GRID_CREATION_FAILED: "Grid creation failed - no objects could be created",
+  COOLDOWN: 1000,
   
   /**
-   * Error message for all methods failing
-   * @constant {string}
+   * Maximum number of creation attempts before giving up
    */
-  ALL_METHODS_FAILED: "All grid creation methods failed",
+  MAX_ATTEMPTS: 3,
   
   /**
-   * Successful grid creation message
-   * @constant {string}
+   * Maximum time in milliseconds that grid creation should take
+   * Used for performance monitoring
    */
-  GRID_CREATED: "Grid created successfully",
+  MAX_CREATION_TIME: 500,
   
   /**
-   * Fallback grid creation message
-   * @constant {string}
+   * Default small grid spacing in pixels
    */
-  USING_FALLBACK_GRID: "Using fallback grid"
+  SMALL_GRID_SPACING: 10,
+  
+  /**
+   * Default large grid spacing in pixels
+   */
+  LARGE_GRID_SPACING: 50,
+  
+  /**
+   * Maximum number of grid lines before performance optimization kicks in
+   */
+  MAX_GRID_LINES: 200
 };
 
-// Grid creation constants
-export const GRID_CREATION_COOLDOWN = 5000; // 5 seconds between attempts
-export const MAX_CREATE_ATTEMPTS = 5;
+/**
+ * Grid error codes for consistent error identification
+ */
+export const GRID_ERROR_CODES = {
+  INVALID_CANVAS: "GRID_ERR_001",
+  CREATION_IN_PROGRESS: "GRID_ERR_002",
+  THROTTLED: "GRID_ERR_003",
+  MAX_ATTEMPTS: "GRID_ERR_004",
+  CREATION_FAILED: "GRID_ERR_005",
+  NO_OBJECTS_CREATED: "GRID_ERR_006",
+  EMERGENCY_FAILED: "GRID_ERR_007",
+  GRID_MISSING: "GRID_ERR_008"
+};
+
+/**
+ * Grid debug constants
+ */
+export const GRID_DEBUG = {
+  /**
+   * Whether to enable detailed grid debug logging
+   */
+  ENABLED: process.env.NODE_ENV === 'development',
+  
+  /**
+   * Whether to send debug data to Sentry
+   */
+  SEND_TO_SENTRY: true,
+  
+  /**
+   * Whether to show debug toasts
+   */
+  SHOW_TOASTS: process.env.NODE_ENV === 'development'
+};
