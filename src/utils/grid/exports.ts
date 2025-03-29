@@ -10,16 +10,19 @@
 
 // Direct named exports from gridCreation
 import { 
-  createSmallScaleGrid,
-  createLargeScaleGrid,
+  createCompleteGrid,
+  createBasicEmergencyGrid,
+  validateGrid,
+  verifyGridExists,
+  retryWithBackoff,
+  reorderGridObjects,
+  ensureGrid,
   createGridLayer,
-  createFallbackGrid,
-  createBasicEmergencyGrid
-} from './gridCreation';
+  createFallbackGrid
+} from '../gridCreationUtils';
 
 // Direct named exports from gridValidation
 import {
-  validateGridObjects,
   validateCanvas,
   validateGridState
 } from './gridValidation';
@@ -32,15 +35,15 @@ import {
 
 // Re-export with clear namespacing
 export const GridCreation = {
-  createSmallScaleGrid,
-  createLargeScaleGrid,
+  createSmallScaleGrid: createCompleteGrid,
+  createLargeScaleGrid: createCompleteGrid,
   createGridLayer,
   createFallbackGrid,
   createBasicEmergencyGrid
 };
 
 export const GridValidation = {
-  validateGridObjects,
+  validateGridObjects: validateGrid,
   validateCanvas,
   validateGridState
 };
@@ -52,12 +55,15 @@ export const GridDebug = {
 
 // Also export individual functions for direct import
 export {
-  createSmallScaleGrid,
-  createLargeScaleGrid,
+  createCompleteGrid,
+  createBasicEmergencyGrid,
+  validateGrid,
+  verifyGridExists,
+  retryWithBackoff,
+  reorderGridObjects,
+  ensureGrid,
   createGridLayer,
   createFallbackGrid,
-  createBasicEmergencyGrid,
-  validateGridObjects,
   validateCanvas,
   validateGridState,
   dumpGridState,

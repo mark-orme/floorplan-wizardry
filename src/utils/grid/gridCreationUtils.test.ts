@@ -2,9 +2,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 
-  validateGrid,
-  ensureGrid,
   verifyGridExists,
+  ensureGrid,
   retryWithBackoff,
   reorderGridObjects
 } from '../gridCreationUtils';
@@ -13,14 +12,15 @@ describe('gridCreationUtils', () => {
   // Same tests as in src/utils/__tests__/gridCreationUtils.test.ts
   describe('verifyGridExists', () => {
     it('should return false when canvas is null', () => {
-      const gridLayerRef = { current: [] };
+      const gridLayerRef = { current: [] as FabricObject[] };
+      // @ts-ignore - We're intentionally passing null for testing
       const result = verifyGridExists(null, gridLayerRef);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
-      const gridLayerRef = { current: [] };
+      const gridLayerRef = { current: [] as FabricObject[] };
       const result = verifyGridExists(canvas, gridLayerRef);
       expect(result).toBe(false);
     });

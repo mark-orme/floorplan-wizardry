@@ -8,16 +8,18 @@
 // Export constants
 export * from './constants';
 
-// Export creation utilities - but not createBasicEmergencyGrid, which we'll export explicitly
+// Export creation utilities
 export { 
-  createSmallScaleGrid,
-  createLargeScaleGrid,
+  createCompleteGrid,
+  createBasicEmergencyGrid,
+  validateGrid,
+  verifyGridExists,
+  retryWithBackoff,
+  reorderGridObjects,
+  ensureGrid,
   createGridLayer,
   createFallbackGrid
-} from './gridCreation';
-
-// Explicitly re-export createBasicEmergencyGrid to resolve ambiguity
-export { createBasicEmergencyGrid } from './gridCreation';
+} from '../gridCreationUtils';
 
 // Export validation utilities
 export * from './gridValidation';

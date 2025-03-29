@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { 
   createCompleteGrid,
-  createBasicEmergencyGrid as emergencyCreate, 
+  createBasicEmergencyGrid, 
   validateGrid,
   ensureGrid 
 } from "@/utils/gridCreationUtils";
@@ -130,14 +130,26 @@ export const useReliableGridInitialization = (
       let gridObjects: FabricObject[] = [];
       
       try {
-        gridObjects = createCompleteGrid(canvas, gridLayerRef);
+        // The mRef object that holds the current grid objects
+        const mRef = { current: gridLayerRef.current };
+        
+        gridObjects = createCompleteGrid(canvas, mRef);
+        
+        // Update our ref with the objects from mRef
+        gridLayerRef.current = mRef.current;
       } catch (error) {
         logger.error("Error creating complete grid:", error);
         console.error("❌ Error creating complete grid:", error);
         
         // Try emergency grid as fallback
         try {
-          gridObjects = emergencyCreate(canvas, gridLayerRef);
+          // The mRef object that holds the current grid objects
+          const mRef = { current: gridLayerRef.current };
+          
+          gridObjects = createBasicEmergencyGrid(canvas, mRef);
+          
+          // Update our ref with the objects from mRef
+          gridLayerRef.current = mRef.current;
         } catch (emergencyError) {
           logger.error("Emergency grid creation also failed:", emergencyError);
           console.error("❌ Emergency grid creation also failed:", emergencyError);
@@ -212,7 +224,10 @@ export const useReliableGridInitialization = (
       return false;
     }
     
-    return ensureGrid(fabricCanvasRef.current, gridLayerRef);
+    const mRef = { current: gridLayerRef.current };
+    const result = ensureGrid(fabricCanvasRef.current, mRef);
+    gridLayerRef.current = mRef.current;
+    return result;
   }, [fabricCanvasRef]);
   
   /**
@@ -267,4 +282,3 @@ export const useReliableGridInitialization = (
     getGridStatus
   };
 };
-
