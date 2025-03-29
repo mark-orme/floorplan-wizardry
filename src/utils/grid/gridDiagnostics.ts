@@ -1,3 +1,4 @@
+
 /**
  * Grid Diagnostics Utility
  * Provides comprehensive diagnostic tools and tests for grid functionality
@@ -8,6 +9,8 @@ import { captureError } from "../sentryUtils";
 import logger from "../logger";
 import { toast } from "sonner";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { trackGridError } from "./gridErrorTracker";
+import { ensureCoordsTuple } from "./gridValidator";
 
 // Track diagnostics across attempts for pattern analysis
 let diagnosticRuns: Record<string, any>[] = [];
@@ -68,13 +71,18 @@ export const runGridDiagnostics = (
   }
   
   // Grid information
-  const objectsOnCanvas = gridObjects.filter(obj => {
-    try {
-      return canvas.contains(obj);
-    } catch (error) {
-      return false;
-    }
-  }).length;
+  let objectsOnCanvas = 0;
+  try {
+    objectsOnCanvas = gridObjects.filter(obj => {
+      try {
+        return canvas.contains(obj);
+      } catch (error) {
+        return false;
+      }
+    }).length;
+  } catch (error) {
+    trackGridError(error, "grid-diagnostics-contains-check");
+  }
   
   diagnostics.gridInfo = {
     total: gridObjects.length,
@@ -349,14 +357,21 @@ export const emergencyGridFix = (
     const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
     
     // Function to create a single grid line
-    const createGridLine = (coords: [number, number, number, number], isLarge: boolean) => {
-      const line = new Line(coords, {
+    const createGridLine = (coords: number[], isLarge: boolean): Line => {
+      // Fix the tuple type issue by ensuring we have a proper tuple
+      const coordsTuple = ensureCoordsTuple(coords);
+      
+      const line = new Line(coordsTuple, {
         stroke: isLarge ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: isLarge ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
         selectable: false,
         evented: false,
         hoverCursor: 'default'
       });
+      
+      // Add line to canvas
+      canvas.add(line);
+      emergencyGrid.push(line);
       
       return line;
     };
@@ -399,6 +414,7 @@ export const emergencyGridFix = (
     return true;
   } catch (error) {
     console.error("Emergency grid fix failed:", error);
+    trackGridError(error, "emergency-grid-fix-failed");
     
     captureError(error, "grid-emergency-fix-error", {
       level: "error"
