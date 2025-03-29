@@ -4,5 +4,6 @@ module.exports = {
     "eslint --config ./eslint/export-validation.js --fix",
     "eslint --fix",
     "prettier --write"
-  ]
+  ],
+  "*.{json,md}": ["prettier --write"]
 };

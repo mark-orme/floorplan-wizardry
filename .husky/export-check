@@ -210,5 +210,50 @@ echo "Files with parent imports (potential circular dependencies):"
 echo "$circular_imports"
 echo "   Review these files to ensure they don't create circular dependencies."
 
-echo "✅ All export checks completed."
+# NEW: Check for consistent naming conventions
+echo "🔍 Checking for consistent naming conventions..."
+# Component files should use PascalCase
+component_naming_issues=$(find src/components -type f -name "*.tsx" | grep -v -E '^[A-Z][a-zA-Z0-9]*\.tsx$' || true)
+if [ -n "$component_naming_issues" ]; then
+  echo "⚠️ Warning: Component files not following PascalCase naming convention:"
+  echo "$component_naming_issues"
+  echo "   Component files should use PascalCase (e.g., Button.tsx)."
+fi
 
+# Hook files should start with 'use'
+hook_naming_issues=$(find src/hooks -type f -name "*.ts" | grep -v -E '^use[A-Z][a-zA-Z0-9]*\.ts$' || true)
+if [ -n "$hook_naming_issues" ]; then
+  echo "⚠️ Warning: Hook files not following 'use' prefix convention:"
+  echo "$hook_naming_issues"
+  echo "   Hook files should start with 'use' and use camelCase (e.g., useAuth.ts)."
+fi
+
+# NEW: Check for TypeScript 'any' type usage
+echo "🔍 Checking for 'any' type usage..."
+any_usage=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l ": any" || true)
+if [ -n "$any_usage" ]; then
+  echo "⚠️ Warning: 'any' type usage found in:"
+  echo "$any_usage"
+  echo "   Consider using more specific types for better type safety."
+  echo "   If 'any' is necessary, use '// @ts-expect-error' or '// @ts-ignore' with explanation."
+fi
+
+# NEW: Check for console.log statements
+echo "🔍 Checking for console.log statements..."
+console_logs=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "console\.log" || true)
+if [ -n "$console_logs" ]; then
+  echo "⚠️ Warning: console.log statements found in:"
+  echo "$console_logs"
+  echo "   Consider removing or replacing with proper logging mechanism before committing."
+fi
+
+# NEW: Check for TODO/FIXME comments without ticket numbers
+echo "🔍 Checking for TODO/FIXME comments without ticket numbers..."
+todo_without_ticket=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -E "// (TODO|FIXME)(?!: \[([A-Z]+-[0-9]+)\])" || true)
+if [ -n "$todo_without_ticket" ]; then
+  echo "⚠️ Warning: TODO/FIXME comments without ticket references:"
+  echo "$todo_without_ticket"
+  echo "   Format should be: // TODO: [TICKET-123] Description"
+fi
+
+echo "✅ All export checks completed."

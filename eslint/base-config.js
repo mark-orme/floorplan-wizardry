@@ -12,13 +12,13 @@ export const baseConfig = {
     "no-alert": "error",
     "no-debugger": "warn",
     "no-var": "error",
-    "prefer-const": "warn",
+    "prefer-const": "error", // Strengthened from warn to error
     "eqeqeq": ["error", "smart"],
     "curly": ["error", "all"],
     
     // Import rules to prevent runtime errors
     "import/no-unresolved": "error",
-    "no-unused-vars": "warn",
+    "no-unused-vars": "error", // Strengthened from warn to error
     "no-restricted-imports": ["error", {
       "paths": [{
         "name": "@/utils/grid/gridDebugUtils",
@@ -34,11 +34,11 @@ export const baseConfig = {
     
     // Style consistency
     "comma-dangle": ["error", "never"],
-    "quotes": ["warn", "double", { "avoidEscape": true }],
-    "semi": ["warn", "always"],
+    "quotes": ["error", "double", { "avoidEscape": true }], // Strengthened from warn to error
+    "semi": ["error", "always"], // Strengthened from warn to error
     
     // Best practices
-    "arrow-body-style": ["warn", "as-needed"],
+    "arrow-body-style": ["error", "as-needed"], // Strengthened from warn to error
     "no-use-before-define": ["error", { "functions": false, "classes": true }],
     "no-duplicate-imports": "error",
     "no-restricted-syntax": [
@@ -91,6 +91,11 @@ export const baseConfig = {
       {
         "selector": "CallExpression[callee.name='useEffect'][arguments.length=1]",
         "message": "useEffect without dependencies array will run on every render. Add a dependency array."
+      },
+      // STRICT: No undeclared variables
+      {
+        "selector": "Identifier[name=/^[a-zA-Z][a-zA-Z0-9_]*$/]:not(ImportSpecifier *):not(ImportDefaultSpecifier *):not(ImportNamespaceSpecifier *):not(Property[method=true] > .key)",
+        "message": "All variables must be properly declared before use."
       }
     ],
     
@@ -171,6 +176,33 @@ export const baseConfig = {
     "no-new-native-nonconstructor": "error",
     "no-obj-calls": "error",
     "no-unmodified-loop-condition": "error",
-    "require-atomic-updates": "error"
+    "require-atomic-updates": "error",
+    
+    // STRICT: Enforce explicit boolean comparisons
+    "no-implicit-coercion": ["error", {
+      "boolean": true,
+      "number": true,
+      "string": true
+    }],
+    
+    // STRICT: Prevent potential memory leaks with event listeners
+    "no-return-assign": ["error", "always"],
+    
+    // STRICT: Enforce consistent naming conventions
+    "camelcase": ["error", { "properties": "never" }],
+    
+    // STRICT: Prevent assignment in conditionals
+    "no-cond-assign": ["error", "always"],
+    
+    // STRICT: No unused variables with exceptions for prefixed unused params
+    "no-unused-vars": ["error", { 
+      "vars": "all", 
+      "args": "after-used",
+      "argsIgnorePattern": "^_",
+      "caughtErrors": "all"
+    }],
+    
+    // STRICT: Prevent accidental boolean assignments
+    "no-constant-condition": ["error", { "checkLoops": true }]
   }
 };

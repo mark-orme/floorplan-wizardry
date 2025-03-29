@@ -11,6 +11,7 @@ import { reactRules } from "./eslint/react-rules.js";
 import { jsdocRules } from "./eslint/jsdoc-rules.js";
 import { prettierRules } from "./eslint/prettier-rules.js";
 import { importExportRules } from "./eslint/import-rules.js";
+import { exportValidationRules } from "./eslint/export-validation.js";
 
 // Export the combined configuration
 export default tseslint.config(
@@ -20,5 +21,6 @@ export default tseslint.config(
   reactRules,
   jsdocRules,
   prettierRules,
-  importExportRules
+  importExportRules,
+  exportValidationRules
 );
