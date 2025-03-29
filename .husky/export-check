@@ -1,0 +1,14 @@
+
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Check for missing exports and other import-related issues
+echo "🔍 Checking exports and imports..."
+npx eslint --config ./eslint/export-validation.js $(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx)$')
+
+if [ $? -ne 0 ]; then
+  echo "❌ Export validation failed. Please fix the issues and try again."
+  exit 1
+fi
+
+echo "✅ Export validation passed."

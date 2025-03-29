@@ -10,6 +10,7 @@ import { typescriptRules } from "./eslint/typescript-rules.js";
 import { reactRules } from "./eslint/react-rules.js";
 import { jsdocRules } from "./eslint/jsdoc-rules.js";
 import { prettierRules } from "./eslint/prettier-rules.js";
+import { importExportRules } from "./eslint/import-rules.js";
 
 // Export the combined configuration
 export default tseslint.config(
@@ -18,5 +19,6 @@ export default tseslint.config(
   typescriptRules,
   reactRules,
   jsdocRules,
-  prettierRules
+  prettierRules,
+  importExportRules
 );

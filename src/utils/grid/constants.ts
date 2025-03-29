@@ -86,3 +86,15 @@ export const GRID_DEBUG = {
    */
   SHOW_TOASTS: process.env.NODE_ENV === 'development'
 };
+
+/**
+ * Cooldown period between grid creation attempts in milliseconds
+ * Direct export for backward compatibility
+ */
+export const GRID_CREATION_COOLDOWN = GRID_CREATION_CONSTANTS.COOLDOWN;
+
+/**
+ * Maximum number of creation attempts before giving up
+ * Direct export for backward compatibility
+ */
+export const MAX_CREATE_ATTEMPTS = GRID_CREATION_CONSTANTS.MAX_ATTEMPTS;

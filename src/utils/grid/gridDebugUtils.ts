@@ -3,8 +3,8 @@
  * Tools for debugging grid creation and rendering issues
  * @module grid/gridDebugUtils
  */
-import { Canvas, Object as FabricObject } from "fabric";
-import { throttledLog } from "./consoleThrottling";
+import { Canvas, Object as FabricObject, Line } from "fabric";
+import { throttledLog, throttledError } from "./consoleThrottling";
 import { captureError } from "../sentryUtils";
 
 /**
@@ -51,6 +51,151 @@ export const gridDebugStats = {
     // Keep hasEverSucceeded as is - it's a lifetime value
   }
 };
+
+/**
+ * Create a basic emergency grid when normal grid creation fails
+ * Provides a simple fallback grid with minimal styling
+ * 
+ * @param {Canvas | null} canvas - The canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @returns {FabricObject[]} Created grid objects
+ */
+export function createBasicEmergencyGrid(
+  canvas: Canvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] {
+  if (!canvas) {
+    console.error("Cannot create emergency grid: Canvas is null");
+    return [];
+  }
+  
+  try {
+    const gridObjects: FabricObject[] = [];
+    const width = canvas.width || 800;
+    const height = canvas.height || 600;
+    
+    // Create horizontal lines (every 50px)
+    for (let y = 0; y <= height; y += 50) {
+      const line = new Line([0, y, width, y], {
+        stroke: "#c0c0c0",
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        name: `grid-h-emergency-${y}`
+      });
+      
+      canvas.add(line);
+      canvas.sendObjectToBack(line);
+      gridObjects.push(line);
+    }
+    
+    // Create vertical lines (every 50px)
+    for (let x = 0; x <= width; x += 50) {
+      const line = new Line([x, 0, x, height], {
+        stroke: "#c0c0c0",
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        name: `grid-v-emergency-${x}`
+      });
+      
+      canvas.add(line);
+      canvas.sendObjectToBack(line);
+      gridObjects.push(line);
+    }
+    
+    // Update grid layer reference
+    gridLayerRef.current = gridObjects;
+    
+    // Log success
+    captureError(
+      new Error("Emergency grid created successfully"),
+      "grid-emergency",
+      {
+        level: "info",
+        tags: { component: "grid", operation: "emergency-creation" },
+        extra: { gridObjectCount: gridObjects.length }
+      }
+    );
+    
+    return gridObjects;
+  } catch (error) {
+    console.error("Error creating emergency grid:", error);
+    
+    // Log error to Sentry
+    captureError(
+      error instanceof Error ? error : new Error("Unknown error in emergency grid creation"),
+      "grid-emergency-error",
+      {
+        level: "error",
+        tags: { component: "grid", operation: "emergency-creation" }
+      }
+    );
+    
+    return [];
+  }
+}
+
+/**
+ * Force create a new grid, removing any existing grid objects
+ * Used for manual grid recreation when automatic creation fails
+ * 
+ * @param {Canvas} canvas - The canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @returns {FabricObject[]} Created grid objects
+ */
+export function forceCreateGrid(
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] {
+  try {
+    // First remove all existing grid objects
+    const existingGridObjects = gridLayerRef.current;
+    if (existingGridObjects.length > 0) {
+      existingGridObjects.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    }
+    
+    // Create a new grid
+    const result = createBasicEmergencyGrid(canvas, gridLayerRef);
+    
+    // Force render
+    canvas.requestRenderAll();
+    
+    // Log success
+    captureError(
+      new Error("Grid forcibly recreated"),
+      "grid-force-create",
+      {
+        level: "info",
+        tags: { component: "grid", operation: "force-create" },
+        extra: { gridObjectCount: result.length }
+      }
+    );
+    
+    return result;
+  } catch (error) {
+    console.error("Error in forceCreateGrid:", error);
+    
+    // Log error to Sentry
+    captureError(
+      error instanceof Error ? error : new Error("Unknown error in force create grid"),
+      "grid-force-create-error",
+      {
+        level: "error",
+        tags: { component: "grid", operation: "force-create" }
+      }
+    );
+    
+    return [];
+  }
+}
 
 /**
  * Track a grid creation attempt

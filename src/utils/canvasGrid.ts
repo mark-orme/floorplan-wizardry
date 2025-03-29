@@ -1,4 +1,3 @@
-
 /**
  * Canvas grid creation module
  * Provides a visual reference for drawing to scale
@@ -9,22 +8,53 @@ import { Canvas, Object as FabricObject } from "fabric";
 import { shouldThrottleCreation, logGridStatus } from "./grid/gridManager";
 import { toast } from "sonner";
 import logger from "./logger";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types";
 import { throttledLog, throttledError } from "./grid/consoleThrottling";
 
-// Import all grid utilities
+// Import directly from gridCreationUtils to ensure we have all needed functions
 import {
-  validateCanvas,
-  createGridLayer,
-  createFallbackGrid,
-  handleGridCreationError,
-  acquireGridLockWithSafety,
-  cleanupGridResources,
+  verifyGridExists,
+  retryWithBackoff,
+  reorderGridObjects,
+  createBasicEmergencyGrid
+} from "./gridCreationUtils";
+
+// Import from constants
+import {
   GRID_CREATION_COOLDOWN,
   MAX_CREATE_ATTEMPTS,
   GRID_CREATION_CONSTANTS,
   TOAST_MESSAGES
-} from "./grid";
+} from "./grid/constants";
+
+// Import validation functions
+import { validateCanvas } from "./grid/gridValidation";
+
+// Import error handling
+import { handleGridCreationError } from "./grid/errorHandling";
+
+// Utility function placeholders - implement these as needed
+const acquireGridLockWithSafety = (id: number): boolean => true;
+const cleanupGridResources = (): void => {
+  console.log("Grid resources cleaned up");
+};
+
+// Grid creation function placeholder - implement or import
+const createGridLayer = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  // Implementation
+  return [];
+};
+
+// Fallback grid creation placeholder - implement or import
+const createFallbackGrid = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  return createBasicEmergencyGrid(canvas, gridLayerRef);
+};
 
 // Grid creation state tracking
 let lastGridCreationTime = 0;

@@ -4,7 +4,10 @@
  * Manages grid creation state and throttling
  * @module gridManager
  */
-import { GRID_CREATION_COOLDOWN } from "./grid/constants";
+import { GRID_CREATION_CONSTANTS } from "./grid/constants";
+
+// Use the constants from the imported object
+const GRID_CREATION_COOLDOWN = GRID_CREATION_CONSTANTS.COOLDOWN;
 
 // Grid manager state
 interface GridManagerState {
