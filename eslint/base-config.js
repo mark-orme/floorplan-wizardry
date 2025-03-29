@@ -241,7 +241,7 @@ export const baseConfig = {
     // NEW: Enforce consistent module patterns
     "sort-imports": ["error", {
       "ignoreCase": true,
-      "ignoreDeclarationSort": true,
+      "ignoreDeclarationSort": true, // We use import/order for declarations
       "ignoreMemberSort": false,
       "memberSyntaxSortOrder": ["none", "all", "multiple", "single"],
       "allowSeparatedGroups": true
@@ -338,6 +338,39 @@ export const baseConfig = {
     // ENHANCED: Prevent syntax errors in JSX
     "react/jsx-no-comment-textnodes": "error",
     "react/jsx-uses-vars": "error",
-    "react/jsx-uses-react": "off" // for React 17+
+    "react/jsx-uses-react": "off", // for React 17+
+    
+    // NEW: Enforce balanced JSX tags and parentheses
+    "react/jsx-closing-bracket-location": "error",
+    "react/jsx-closing-tag-location": "error", 
+    "react/jsx-tag-spacing": ["error", {
+      "closingSlash": "never",
+      "beforeSelfClosing": "always",
+      "afterOpening": "never",
+      "beforeClosing": "never"
+    }],
+    
+    // NEW: Regular expression validation
+    "prefer-regex-literals": "error",
+    "no-regex-spaces": "error",
+    "no-control-regex": "error",
+    
+    // NEW: Syntax completeness checks
+    "no-unexpected-multiline": "error",
+    "no-unreachable": "error",
+    "no-unused-expressions": ["error", { 
+      "allowShortCircuit": true, 
+      "allowTernary": true,
+      "allowTaggedTemplates": true 
+    }],
+    
+    // NEW: Enforce proper variable declaration and usage
+    "block-scoped-var": "error",
+    "guard-for-in": "error",
+    "no-use-before-define": ["error", { 
+      "functions": false, 
+      "classes": true, 
+      "variables": true 
+    }]
   }
 };
