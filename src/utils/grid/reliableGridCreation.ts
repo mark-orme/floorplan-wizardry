@@ -4,7 +4,7 @@
  * Provides robust grid creation with error handling and fallbacks
  * @module utils/grid/reliableGridCreation
  */
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Line, Object as FabricObject, Rect } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
@@ -71,8 +71,8 @@ export const createReliableGrid = (
     
     const gridObjects: FabricObject[] = [];
     const { width, height } = canvas;
-    const gridSize = GRID_CONSTANTS.GRID_SIZE || 20;
-    const gridColor = GRID_CONSTANTS.GRID_COLOR || '#e0e0e0';
+    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE || 20;
+    const gridColor = GRID_CONSTANTS.SMALL_GRID_COLOR || '#e0e0e0';
     
     console.log(`Creating grid for canvas ${width}x${height} with grid size ${gridSize}`);
     
@@ -94,7 +94,7 @@ export const createReliableGrid = (
       gridObjects.push(line);
       
       // Send to back (lowest z-index)
-      line.sendToBack();
+      canvas.sendObjectToBack(line);
     }
     
     // Create horizontal lines
@@ -115,7 +115,7 @@ export const createReliableGrid = (
       gridObjects.push(line);
       
       // Send to back (lowest z-index)
-      line.sendToBack();
+      canvas.sendObjectToBack(line);
     }
     
     // Re-render the canvas
@@ -176,7 +176,7 @@ const createEmergencyFallbackGrid = (
       
       canvas.add(line);
       gridObjects.push(line);
-      line.sendToBack();
+      canvas.sendObjectToBack(line);
     }
     
     // Create just a few horizontal lines
@@ -190,7 +190,7 @@ const createEmergencyFallbackGrid = (
       
       canvas.add(line);
       gridObjects.push(line);
-      line.sendToBack();
+      canvas.sendObjectToBack(line);
     }
     
     canvas.requestRenderAll();
@@ -230,7 +230,7 @@ export const ensureGridVisibility = (
         missingGridLines.forEach(line => {
           if (!canvas.contains(line)) {
             canvas.add(line);
-            line.sendToBack();
+            canvas.sendObjectToBack(line);
           }
         });
         
@@ -255,7 +255,7 @@ export const testGridCreation = (canvas: FabricCanvas): void => {
   console.log("Testing grid creation...");
   
   // Create a temporary indicator
-  const testRect = new fabric.Rect({
+  const testRect = new Rect({
     left: 10,
     top: 10,
     width: 30,

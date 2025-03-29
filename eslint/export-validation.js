@@ -91,6 +91,23 @@ export const exportValidationRules = {
       ]
     }],
     
+    // NEWLY ADDED: Enforce strict TypeScript checking on imports
+    "@typescript-eslint/consistent-type-imports": ["error", { 
+      prefer: "type-imports",
+      disallowTypeAnnotations: true
+    }],
+    
+    // NEWLY ADDED: Enforce strict property access
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    
+    // NEWLY ADDED: Prevent accessing properties that don't exist
+    "@typescript-eslint/no-non-null-assertion": "error",
+    
+    // NEWLY ADDED: Check that all imports refer to existing files
+    "import/no-unresolved": ["error", { caseSensitive: true }],
+    
     // NEW: Explicitly prevent duplicate exports of the same name
     "no-dupe-class-members": "error",
     "no-redeclare": "error",
