@@ -126,6 +126,27 @@ export const exportValidationRules = {
       allowExpressions: true,
       allowTypedFunctionExpressions: true,
       allowHigherOrderFunctions: true,
-    }]
+    }],
+    
+    // NEW RULES: Added to prevent TypeScript errors and improve code quality
+    "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/ban-ts-comment": "warn",
+    "@typescript-eslint/no-unnecessary-type-assertion": "error",
+    "@typescript-eslint/prefer-optional-chain": "warn",
+    
+    // NEW: Rules to enforce strict property access and existence
+    "@typescript-eslint/strict-boolean-expressions": ["warn", {
+      allowString: true,
+      allowNumber: true,
+      allowNullableObject: true,
+      allowNullableBoolean: false,
+      allowNullableString: false,
+      allowNullableNumber: false
+    }],
+    
+    // NEW: Prevent duplicate exports in the same file
+    "import/export": "error"
   }
 };
