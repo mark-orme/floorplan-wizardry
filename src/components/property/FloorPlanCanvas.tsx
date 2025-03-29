@@ -17,6 +17,7 @@ import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
 import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { captureError } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
+import { resetGridProgress } from "@/utils/gridManager";
 
 // Constants for component
 const CANVAS_WIDTH = 800;
@@ -42,7 +43,10 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   useEffect(() => {
     // Reset canvas initialization state at the start
     resetInitializationState();
+    resetGridProgress(); // Also reset grid progress
+    
     logger.info(`Initializing FloorPlanCanvas, attempt: ${initAttempt}`);
+    console.log(`FloorPlanCanvas: Initializing, attempt: ${initAttempt}`);
     
     // Unmount any existing canvas before trying to render a new one
     setIsReady(false);
@@ -69,6 +73,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
     try {
       // Reset canvas initialization state
       resetInitializationState();
+      resetGridProgress();
       
       // Reset state to trigger re-rendering
       setIsReady(false);
@@ -163,11 +168,18 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
     }
   };
   
+  // Handle grid creation completion
+  const handleGridCreated = (gridObjects: FabricObject[]) => {
+    console.log(`Grid created with ${gridObjects.length} objects`);
+    gridLayerRef.current = gridObjects;
+  };
+  
   // Clean up resources when component unmounts
   useEffect(() => {
     return () => {
       unmountedRef.current = true;
       resetInitializationState();
+      resetGridProgress();
       
       // Clean up the canvas if it exists
       if (fabricCanvas) {
@@ -230,7 +242,9 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
           {fabricCanvas && (
             <SimpleGrid 
               canvas={fabricCanvas} 
-              showControls={true} 
+              showControls={true}
+              onGridCreated={handleGridCreated}
+              defaultVisible={true}
             />
           )}
         </CanvasControllerProvider>
