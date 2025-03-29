@@ -7,6 +7,7 @@
 
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { ExtendedFabricObject } from "@/types/fabricTypes";
 
 /**
  * Validate canvas for grid creation
@@ -71,12 +72,13 @@ export const countGridObjects = (
   const allObjects = canvas.getObjects();
   
   if (gridType) {
-    return allObjects.filter(obj => 
-      obj.objectType === 'grid' && obj.gridType === gridType
-    ).length;
+    return allObjects.filter(obj => {
+      const extObj = obj as ExtendedFabricObject;
+      return extObj.objectType === 'grid' && extObj.gridType === gridType;
+    }).length;
   }
   
-  return allObjects.filter(obj => obj.objectType === 'grid').length;
+  return allObjects.filter(obj => (obj as ExtendedFabricObject).objectType === 'grid').length;
 };
 
 /**
@@ -115,7 +117,7 @@ export const getGridSizeForZoom = (zoomLevel: number) => {
  * @returns {boolean} Whether object is part of grid
  */
 export const isGridObject = (obj: FabricObject): boolean => {
-  return obj.objectType === 'grid';
+  return (obj as ExtendedFabricObject).objectType === 'grid';
 };
 
 /**
@@ -131,8 +133,15 @@ export const arrangeGridElements = (
   if (!canvas || !gridObjects || gridObjects.length === 0) return;
   
   // Process small lines first, then large lines for proper layering
-  const smallGridObjects = gridObjects.filter(obj => obj.gridType === 'small');
-  const largeGridObjects = gridObjects.filter(obj => obj.gridType === 'large');
+  const smallGridObjects = gridObjects.filter(obj => {
+    const extObj = obj as ExtendedFabricObject;
+    return extObj.gridType === 'small';
+  });
+  
+  const largeGridObjects = gridObjects.filter(obj => {
+    const extObj = obj as ExtendedFabricObject;
+    return extObj.gridType === 'large';
+  });
   
   // Send all grid objects to back in proper order
   [...largeGridObjects, ...smallGridObjects].forEach(obj => {
