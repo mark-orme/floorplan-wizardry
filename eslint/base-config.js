@@ -19,16 +19,28 @@ export const baseConfig = {
     "import/no-unresolved": "error",
     "no-unused-vars": "error", // Strengthened from warn to error
     "no-restricted-imports": ["error", {
-      "paths": [{
-        "name": "@/utils/grid/gridDebugUtils",
-        "importNames": ["forceCreateGrid"],
-        "message": "Make sure this function exists and is exported"
-      },
-      {
-        "name": "@/types/floorPlanTypes",
-        "importNames": ["FloorPlan"],
-        "message": "Use FloorPlan from @/types/core/FloorPlan instead."
-      }]
+      "paths": [
+        {
+          "name": "@/utils/grid/gridDebugUtils",
+          "importNames": ["forceCreateGrid"],
+          "message": "Make sure this function exists and is exported"
+        },
+        {
+          "name": "@/types/floorPlanTypes",
+          "importNames": ["FloorPlan"],
+          "message": "Use FloorPlan from @/types/core/FloorPlan instead."
+        },
+        {
+          "name": "@/utils/gridCreationUtils",
+          "importNames": ["validateGrid", "createGridLayer", "createFallbackGrid", "createBasicEmergencyGrid"],
+          "message": "Ensure these functions are properly exported from gridCreationUtils"
+        },
+        {
+          "name": "./gridCreation",
+          "importNames": ["createGridLayer", "createFallbackGrid", "createBasicEmergencyGrid"],
+          "message": "Ensure these functions are properly exported from gridCreation"
+        }
+      ]
     }],
     
     // Style consistency
@@ -198,7 +210,8 @@ export const baseConfig = {
       "vars": "all", 
       "args": "after-used",
       "argsIgnorePattern": "^_",
-      "caughtErrors": "all"
+      "caughtErrors": "all",
+      "ignoreRestSiblings": true
     }],
     
     // STRICT: Prevent accidental boolean assignments

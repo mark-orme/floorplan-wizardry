@@ -304,7 +304,7 @@ export const typescriptRules = {
       "private": "^_[a-z][a-zA-Z0-9]*$"
     }],
     
-    // NEW: Enforce explicit accessibility modifiers
+    // NEW: Require explicit accessibility modifiers
     "@typescript-eslint/explicit-member-accessibility": ["error", {
       "accessibility": "explicit",
       "overrides": {
@@ -602,6 +602,75 @@ export const typescriptRules = {
       "overrides": {
         "constructors": "no-public"
       }
-    }]
+    }],
+    
+    // STRENGTHENED: Ensure import/export type safety
+    "@typescript-eslint/no-unused-vars": ["error", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true
+    }],
+    
+    // ADDED: Enforce consistent exports
+    "@typescript-eslint/consistent-type-exports": ["error", { 
+      "fixMixedExportsWithInlineTypeSpecifier": true 
+    }],
+    
+    // ADDED: Enforce proper type imports
+    "@typescript-eslint/consistent-type-imports": ["error", {
+      "prefer": "type-imports",
+      "disallowTypeAnnotations": true,
+      "fixStyle": "separate-type-imports"
+    }],
+    
+    // ADDED: Prevent incorrect type assertions
+    "@typescript-eslint/no-unnecessary-type-assertion": "error",
+    
+    // STRENGTHENED: Restrict imports from certain modules
+    "@typescript-eslint/no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/hooks/useCanvasState",
+            "importNames": ["DrawingTool"],
+            "message": "Use DrawingTool from @/types/core/DrawingTool instead."
+          },
+          {
+            "name": "fabric",
+            "importNames": ["fabric"],
+            "message": "Use default import for fabric: import fabric from 'fabric';"
+          },
+          {
+            "name": "@/types/floorPlanTypes",
+            "importNames": ["FloorPlan"],
+            "message": "Use FloorPlan from @/types/core/FloorPlan instead."
+          },
+          // ADDED: Prevent imports of non-existent exports
+          {
+            "name": "@/utils/gridCreationUtils",
+            "importNames": ["validateGrid", "createGridLayer", "createFallbackGrid", "createBasicEmergencyGrid"],
+            "message": "Ensure these functions are properly exported from gridCreationUtils"
+          },
+          {
+            "name": "./gridCreation",
+            "importNames": ["createGridLayer", "createFallbackGrid", "createBasicEmergencyGrid"],
+            "message": "Ensure these functions are properly exported from gridCreation"
+          }
+        ]
+      }
+    ],
+    
+    // ADDED: Prevent importing non-existent types
+    "@typescript-eslint/no-import-type-side-effects": "error",
+    
+    // ADDED: Restrict usage to ensure type safety
+    "@typescript-eslint/restrict-template-expressions": ["error", {
+      "allowNumber": true,
+      "allowBoolean": false,
+      "allowAny": false,
+      "allowNullish": false,
+      "allowRegExp": false
+    }],
   }
 };

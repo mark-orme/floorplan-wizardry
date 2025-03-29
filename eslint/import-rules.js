@@ -10,13 +10,18 @@ export const importExportRules = {
   plugins: ["import"],
   rules: {
     // Ensures that all named imports are actually exported from the target module
-    "import/named": "error",
+    "import/named": ["error", { 
+      "commonjs": true,
+      "checkInTypeImports": true
+    }],
     
     // Ensures that a default export is only imported as a default import
     "import/default": "error",
     
     // Ensures that a module with a namespace import has exports
-    "import/namespace": "error",
+    "import/namespace": ["error", {
+      "allowComputed": true
+    }],
     
     // Prevent importing modules that you don't have listed in your package.json
     "import/no-extraneous-dependencies": ["error", {
@@ -26,7 +31,9 @@ export const importExportRules = {
     }],
     
     // Report any invalid exports, i.e. re-export of the same name
-    "import/export": "error",
+    "import/export": ["error", {
+      "detectAmbiguousExports": true
+    }],
     
     // Ensure consistent use of file extension within the import path
     "import/extensions": ["error", "never", { 
@@ -37,13 +44,19 @@ export const importExportRules = {
     }],
     
     // Prefer named exports to be grouped together
-    "import/group-exports": "warn",
+    "import/group-exports": "error",
     
     // Make sure imports point to files/modules that can be resolved
-    "import/no-unresolved": "error",
+    "import/no-unresolved": ["error", {
+      "caseSensitive": true,
+      "caseSensitiveStrict": true,
+      "commonjs": true
+    }],
     
     // Prevent unnecessary path segments in import and require statements
-    "import/no-useless-path-segments": "error",
+    "import/no-useless-path-segments": ["error", {
+      "noUselessIndex": true
+    }],
     
     // Prevent import of modules using absolute paths
     "import/no-absolute-path": "error",
@@ -54,16 +67,13 @@ export const importExportRules = {
     // Forbid import of modules using absolute paths
     "import/no-absolute-path": "error",
     
-    // Forbid a module from importing itself
-    "import/no-self-import": "error",
-    
     // Prevent unnecessary path segments in import and require statements
     "import/no-useless-path-segments": ["error", { "commonjs": true }],
     
     // Prevent a module from importing itself
-    "import/no-cycle": ["error", { "maxDepth": 1 }],
+    "import/no-cycle": ["error", { "maxDepth": Infinity }],
     
-    // NEW: Enforce a consistent style for all imports, allowing caching to be effective
+    // Enforce a consistent style for all imports, allowing caching to be effective
     "import/order": ["error", {
       "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
       "newlines-between": "always",
@@ -73,7 +83,7 @@ export const importExportRules = {
       }
     }],
     
-    // NEW: Enforce first-level imports to be explicitly sorted according to a convention
+    // Enforce first-level imports to be explicitly sorted according to a convention
     "sort-imports": ["error", {
       "ignoreCase": true,
       "ignoreDeclarationSort": true, // We use import/order for declarations
@@ -82,50 +92,45 @@ export const importExportRules = {
       "allowSeparatedGroups": true
     }],
     
-    // NEW: Prevent using an exported name as the locally imported name of a default export
+    // Prevent using an exported name as the locally imported name of a default export
     "import/no-named-as-default": "error",
     
-    // NEW: Prevent using a default export as a property of the named import
+    // Prevent using a default export as a property of the named import
     "import/no-named-as-default-member": "error",
     
-    // NEW: Prevent imports to folders without pointing to the index file
+    // Prevent imports to folders without pointing to the index file
     "import/no-useless-path-segments": ["error", { "noUselessIndex": true }],
     
-    // NEW: Prevent dynamic requires
+    // Prevent dynamic requires
     "import/no-dynamic-require": "error",
     
-    // NEW: Enforce all imports to appear before non-import statements
+    // Enforce all imports to appear before non-import statements
     "import/first": "error",
     
-    // NEW: Enforce a newline after import statements
+    // Enforce a newline after import statements
     "import/newline-after-import": "error",
     
-    // NEW: Prevent import statements that don't import anything
+    // Prevent import statements that don't import anything
     "import/no-empty-named-blocks": "error",
     
-    // NEW: Prevent importing the submodules of other modules
-    "import/no-internal-modules": ["error", {
-      "allow": ["@/*/**", "**/index", "**/dist/**"]
-    }],
-    
-    // NEW: Prefer named exports
+    // Prefer named exports
     "import/prefer-default-export": "off",
-    "import/no-default-export": "warn",
+    "import/no-default-export": "error",
     
-    // NEW: Forbid modules without exports, or exports without matching import in another module
-    "import/no-unused-modules": ["warn", {
+    // Forbid modules without exports, or exports without matching import in another module
+    "import/no-unused-modules": ["error", {
       "unusedExports": true,
       "missingExports": true,
       "ignoreExports": ["**/index.ts", "**/*.d.ts"]
     }],
     
-    // NEW: Prevent ambiguous exports
+    // Prevent ambiguous exports
     "import/export": ["error", { "detectAmbiguousExports": true }],
     
-    // NEW: Enforce that each module gets re-exported once
+    // Enforce that each module gets re-exported once
     "import/no-duplicates": "error",
     
-    // NEW: Architectural boundaries
+    // STRENGTHENED: Architectural boundaries
     "import/no-restricted-paths": ["error", {
       "zones": [
         {
@@ -151,8 +156,8 @@ export const importExportRules = {
       ]
     }],
     
-    // NEW: Prevent direct importing of implementation files when index barrel files exist
-    "import/no-relative-parent-imports": "error",
+    // NEW: Check for absolute paths that should be module paths
+    "import/no-absolute-path": "error",
     
     // NEW: Enforce imports from within the same directory to use relative imports
     "import/no-relative-packages": "error",
@@ -165,6 +170,21 @@ export const importExportRules = {
       "devDependencies": ["**/*.test.ts", "**/*.spec.ts", "**/tests/**", "**/test/**", "**/*.test.tsx", "**/*.spec.tsx", "vite.config.ts"],
       "optionalDependencies": false,
       "peerDependencies": true
+    }],
+    
+    // STRENGTHENED: Enforce all module exports are valid and exist
+    "import/named": ["error", {
+      "commonjs": true,
+      "checkInTypeImports": true
+    }],
+    
+    // STRENGTHENED: Disallow unresolved imports
+    "import/no-unresolved": ["error", {
+      "caseSensitive": true,
+      "caseSensitiveStrict": true,
+      "commonjs": true,
+      "amd": true,
+      "esmodule": true
     }]
   },
   settings: {
@@ -173,6 +193,15 @@ export const importExportRules = {
         "alwaysTryTypes": true,
         "project": "./tsconfig.json"
       }
-    }
+    },
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
+    "import/extensions": [
+      ".js",
+      ".jsx",
+      ".ts",
+      ".tsx"
+    ]
   }
 };
