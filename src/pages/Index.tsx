@@ -7,7 +7,7 @@ import { Home } from "lucide-react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { GridMonitor } from "@/components/canvas/GridMonitor";
-import { useCanvasRefs } from "@/hooks/useCanvasRefs";
+import { useCanvasRefs } from "@/hooks/useCanvasRefs"; // Updated import (extension change happens automatically)
 import { toast } from "sonner";
 
 /**
