@@ -95,12 +95,8 @@ export const createReliableGrid = (
       // Add to canvas and tracking
       canvas.add(line);
       
-      // Move to back
-      if (typeof line.sendToBack === 'function') {
-        line.sendToBack();
-      } else {
-        canvas.sendObjectToBack(line);
-      }
+      // Move to back - use canvas method instead of object method
+      canvas.sendObjectToBack(line);
       
       gridObjects.push(line);
     }
@@ -118,12 +114,8 @@ export const createReliableGrid = (
       // Add to canvas and tracking
       canvas.add(line);
       
-      // Move to back
-      if (typeof line.sendToBack === 'function') {
-        line.sendToBack();
-      } else {
-        canvas.sendObjectToBack(line);
-      }
+      // Move to back - use canvas method instead of object method
+      canvas.sendObjectToBack(line);
       
       gridObjects.push(line);
     }
@@ -231,12 +223,8 @@ const createFallbackGrid = (
     
     canvas.add(line);
     
-    // Move to back
-    if (typeof line.sendToBack === 'function') {
-      line.sendToBack();
-    } else {
-      canvas.sendObjectToBack(line);
-    }
+    // Move to back - use canvas method instead of object method
+    canvas.sendObjectToBack(line);
     
     gridObjects.push(line);
   }
@@ -251,12 +239,8 @@ const createFallbackGrid = (
     
     canvas.add(line);
     
-    // Move to back
-    if (typeof line.sendToBack === 'function') {
-      line.sendToBack();
-    } else {
-      canvas.sendObjectToBack(line);
-    }
+    // Move to back - use canvas method instead of object method
+    canvas.sendObjectToBack(line);
     
     gridObjects.push(line);
   }
@@ -319,12 +303,8 @@ const createEmergencyGrid = (
   
   canvas.add(background);
   
-  // Move to back
-  if (typeof background.sendToBack === 'function') {
-    background.sendToBack();
-  } else {
-    canvas.sendObjectToBack(background);
-  }
+  // Move to back - use canvas method instead of object method
+  canvas.sendObjectToBack(background);
   
   // Store in grid objects
   gridLayerRef.current = [background];
@@ -379,11 +359,7 @@ export const ensureGridVisibility = (
         canvas.add(obj);
         
         // Send to back to prevent covering other objects
-        if (typeof obj.sendToBack === 'function') {
-          obj.sendToBack();
-        } else {
-          canvas.sendObjectToBack(obj);
-        }
+        canvas.sendObjectToBack(obj);
       }
     });
     

@@ -1,20 +1,18 @@
 
 /**
- * Grid error handling module
- * Handles errors and retries for grid creation
- * @module gridErrorHandling
+ * Grid error handling utilities
+ * @module grid/gridErrorHandling
  */
-import { Canvas } from "fabric";
+
 import { toast } from "sonner";
-import { gridManager } from "../gridManager";
 import logger from "../logger";
-import { captureError } from "../sentryUtils";
+
+// Import from gridManager directly
+import { resetGridProgress } from "../gridManager";
 
 /**
- * Handle grid creation errors
- * Provides error handling and user feedback
- * 
- * @param {Error} error - The error that occurred
+ * Handle grid creation error
+ * @param {Error} error - Error to handle
  * @param {Function} setHasError - Function to set error state
  * @param {Function} setErrorMessage - Function to set error message
  */
@@ -23,76 +21,48 @@ export const handleGridCreationError = (
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void
 ): void => {
-  // Clear the safety timeout if exists
-  if (gridManager.safetyTimeout) {
-    clearTimeout(gridManager.safetyTimeout);
-    gridManager.safetyTimeout = null;
-  }
+  // Log error
+  logger.error("Grid creation error:", error);
+  console.error("Grid creation error:", error);
   
-  if (process.env.NODE_ENV === 'development') {
-    logger.error("Error creating grid:", error);
-  }
-  
-  // Report to Sentry
-  captureError(error, 'grid-creation', {
-    tags: {
-      component: 'grid',
-      operation: 'creation'
-    },
-    extra: {
-      gridManager: {
-        ...gridManager,
-        // Remove circular references
-        safetyTimeout: gridManager.safetyTimeout ? 'exists' : 'null'
-      }
-    }
-  });
-  
+  // Set error state
   setHasError(true);
-  setErrorMessage(`Error creating grid: ${error.message}`);
+  setErrorMessage(error.message || "Unknown grid creation error");
   
-  // Notify user of the issue with a toast
-  toast.error("Grid creation failed. Please try refreshing the page.", {
-    id: "grid-error",
-    duration: 5000
+  // Show toast
+  toast.error("Error creating grid", {
+    description: error.message || "Unknown error",
+    duration: 3000
   });
+  
+  // Reset grid progress
+  resetGridProgress();
 };
 
 /**
- * Schedule a grid creation retry
- * Uses setTimeout to retry after a delay
- * 
- * @param {Canvas} canvas - The Fabric canvas instance
- * @param {Function} createGridCallback - Function to create the grid
- * @param {number} delay - Delay before retry in milliseconds
- * @returns {number} Timeout ID
+ * Format grid error for logging
+ * @param {Error} error - Error to format
+ * @returns {string} Formatted error
  */
-export const scheduleGridRetry = (
-  canvas: Canvas,
-  createGridCallback: (canvas: Canvas) => void,
-  delay: number = 1000
-): number => {
-  if (process.env.NODE_ENV === 'development') {
-    logger.info(`Scheduling grid retry in ${delay}ms`);
+export const formatGridError = (error: Error): string => {
+  return `Grid Error: ${error.message}\nStack: ${error.stack || "No stack trace"}`;
+};
+
+/**
+ * Get error severity level
+ * @param {Error} error - Error to check
+ * @returns {string} Severity level
+ */
+export const getErrorSeverity = (error: Error): "low" | "medium" | "high" => {
+  const message = error.message.toLowerCase();
+  
+  if (message.includes("canvas") || message.includes("disposed")) {
+    return "high";
   }
   
-  return window.setTimeout(() => {
-    if (!canvas) return;
-    
-    try {
-      createGridCallback(canvas);
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        logger.error("Error in grid retry:", error);
-      }
-      
-      // Report retry error to Sentry
-      captureError(error, 'grid-retry-failure', {
-        tags: {
-          component: 'grid',
-          operation: 'retry'
-        }
-      });
-    }
-  }, delay);
+  if (message.includes("render") || message.includes("object")) {
+    return "medium";
+  }
+  
+  return "low";
 };

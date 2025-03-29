@@ -152,3 +152,183 @@ export const forceGridRender = (
     console.error("Failed to force grid render:", error);
   }
 };
+
+/* Add the missing exports that are referenced in other files */
+
+/**
+ * Verify if grid exists and is valid
+ * @param {FabricCanvas} canvas - Canvas to check
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Whether grid exists
+ */
+export const verifyGridExists = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas || !gridLayerRef.current || gridLayerRef.current.length === 0) {
+    return false;
+  }
+  
+  // Check if grid objects are on canvas
+  const validObjects = gridLayerRef.current.filter(obj => canvas.contains(obj)).length;
+  return validObjects > 0;
+};
+
+/**
+ * Create a complete grid with all elements
+ * @param {FabricCanvas} canvas - Canvas to create grid on
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createCompleteGrid = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  console.log("Creating complete grid");
+  return createBasicEmergencyGrid(canvas, gridLayerRef);
+};
+
+/**
+ * Ensure grid exists, creating it if necessary
+ * @param {FabricCanvas} canvas - Canvas to check
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject[]} Grid objects
+ */
+export const ensureGrid = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  if (verifyGridExists(canvas, gridLayerRef)) {
+    return gridLayerRef.current;
+  }
+  return createCompleteGrid(canvas, gridLayerRef);
+};
+
+/**
+ * Retry an operation with exponential backoff
+ * @param {Function} operation - Operation to retry
+ * @param {number} maxAttempts - Maximum number of attempts
+ * @returns {Promise<any>} Operation result
+ */
+export const retryWithBackoff = async <T>(
+  operation: () => T | Promise<T>,
+  maxAttempts: number = 3
+): Promise<T> => {
+  let attempt = 1;
+  
+  const retry = async (): Promise<T> => {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= maxAttempts) {
+        throw error;
+      }
+      
+      const delay = Math.pow(2, attempt) * 100;
+      console.log(`Retry attempt ${attempt} after ${delay}ms`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+      attempt++;
+      
+      return retry();
+    }
+  };
+  
+  return retry();
+};
+
+/**
+ * Reorder grid objects for proper rendering
+ * @param {FabricCanvas} canvas - Canvas to check
+ * @param {FabricObject[]} gridObjects - Grid objects to reorder
+ */
+export const reorderGridObjects = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): void => {
+  if (!canvas || !gridObjects || gridObjects.length === 0) {
+    return;
+  }
+  
+  // Send all grid objects to back
+  gridObjects.forEach(obj => {
+    if (canvas.contains(obj)) {
+      canvas.sendToBack(obj);
+    }
+  });
+};
+
+/**
+ * Validate grid existence and structure
+ * @param {FabricCanvas} canvas - Canvas to check
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Whether grid is valid
+ */
+export const validateGrid = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  return verifyGridExists(canvas, gridLayerRef);
+};
+
+/**
+ * Create a grid layer of specified type
+ * @param {FabricCanvas} canvas - Canvas to create grid on
+ * @param {string} type - Type of grid layer
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createGridLayer = (
+  canvas: FabricCanvas,
+  type: string = 'default'
+): FabricObject[] => {
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
+  const gridObjects: FabricObject[] = [];
+  
+  // Default grid implementation
+  const spacing = 50;
+  const color = '#e0e0e0';
+  
+  // Horizontal lines
+  for (let y = 0; y <= height; y += spacing) {
+    const line = new Line([0, y, width, y], {
+      stroke: color,
+      selectable: false,
+      evented: false,
+      strokeWidth: 1
+    });
+    
+    canvas.add(line);
+    canvas.sendToBack(line);
+    gridObjects.push(line);
+  }
+  
+  // Vertical lines
+  for (let x = 0; x <= width; x += spacing) {
+    const line = new Line([x, 0, x, height], {
+      stroke: color,
+      selectable: false,
+      evented: false,
+      strokeWidth: 1
+    });
+    
+    canvas.add(line);
+    canvas.sendToBack(line);
+    gridObjects.push(line);
+  }
+  
+  return gridObjects;
+};
+
+/**
+ * Create a fallback grid with minimal functionality
+ * @param {FabricCanvas} canvas - Canvas to create grid on
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createFallbackGrid = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  return createBasicEmergencyGrid(canvas, gridLayerRef);
+};

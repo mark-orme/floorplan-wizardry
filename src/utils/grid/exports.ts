@@ -8,12 +8,14 @@
  * @module grid/exports
  */
 
-// Direct named exports from gridCreation
+// Direct imports from gridCreationUtils - correct the path
 import { 
-  createCompleteGrid,
   createBasicEmergencyGrid,
-  validateGrid,
+  hasCompleteGrid,
+  forceGridRender,
   verifyGridExists,
+  createCompleteGrid,
+  validateGrid,
   retryWithBackoff,
   reorderGridObjects,
   ensureGrid,

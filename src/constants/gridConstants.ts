@@ -1,49 +1,50 @@
 
 /**
- * Grid constants for consistent grid rendering and behavior
+ * Grid constants
+ * Configuration values for grid creation and rendering
  * @module constants/gridConstants
  */
 
-/**
- * Grid constants
- */
 export const GRID_CONSTANTS = {
-  /** Default small grid size in pixels */
+  // Grid spacing in pixels
   SMALL_GRID_SIZE: 10,
-  
-  /** Default large grid size in pixels (5x small grid) */
   LARGE_GRID_SIZE: 50,
   
-  /** Pixels per meter for scale conversion */
+  // Pixels per meter for scaling
   PIXELS_PER_METER: 100,
   
-  /** Small grid line color */
-  SMALL_GRID_COLOR: 'rgba(200, 200, 200, 0.4)',
+  // Grid line colors
+  SMALL_GRID_COLOR: "#f0f0f0",
+  LARGE_GRID_COLOR: "#d0d0d0",
+  MARKER_COLOR: "#a0a0a0",
   
-  /** Large grid line color */
-  LARGE_GRID_COLOR: 'rgba(150, 150, 150, 0.6)',
-  
-  /** Grid marker text color */
-  MARKER_COLOR: 'rgba(100, 100, 100, 0.8)',
-  
-  /** Small grid line width */
+  // Grid line widths
   SMALL_GRID_WIDTH: 0.5,
-  
-  /** Large grid line width */
   LARGE_GRID_WIDTH: 1,
   
-  /** Grid cell size in pixels */
-  GRID_SPACING: 10,
+  // Grid drawing settings
+  GRID_OPACITY: 0.8,
+  GRID_SNAP_THRESHOLD: 5,
+  GRID_SNAP_STRENGTH: 1,
+  BACKGROUND_OPACITY: 0.05,
   
-  /** Small grid spacing */
-  SMALL_GRID: 10,
-  
-  /** Large grid spacing */
-  LARGE_GRID: 50,
-  
-  /** Snap threshold in pixels */
-  SNAP_THRESHOLD: 10,
-  
-  /** Marker text size */
+  // Grid marker settings
   MARKER_TEXT_SIZE: 10
+};
+
+export const GRID_CREATION_CONSTANTS = {
+  // Maximum time in ms that grid creation should take
+  MAX_CREATION_TIME: 300,
+  
+  // Minimum time between grid recreation attempts
+  MIN_RECREATION_INTERVAL: 2000,
+  
+  // Maximum number of retries for grid creation
+  MAX_RETRIES: 3
+};
+
+export const TOAST_MESSAGES = {
+  GRID_CREATION_FAILED: "Failed to create drawing grid",
+  USING_FALLBACK_GRID: "Using simplified grid",
+  GRID_RECREATED: "Grid recreated successfully"
 };

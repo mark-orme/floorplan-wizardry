@@ -16,7 +16,10 @@ import {
   verifyGridExists,
   retryWithBackoff,
   reorderGridObjects,
-  createBasicEmergencyGrid
+  createBasicEmergencyGrid,
+  createCompleteGrid,
+  createGridLayer,
+  createFallbackGrid
 } from "./gridCreationUtils";
 
 // Import from constants
@@ -37,23 +40,6 @@ import { handleGridCreationError } from "./grid/errorHandling";
 const acquireGridLockWithSafety = (id: number): boolean => true;
 const cleanupGridResources = (): void => {
   console.log("Grid resources cleaned up");
-};
-
-// Grid creation function placeholder - implement or import
-const createGridLayer = (
-  canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
-  // Implementation
-  return [];
-};
-
-// Fallback grid creation placeholder - implement or import
-const createFallbackGrid = (
-  canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
-  return createBasicEmergencyGrid(canvas, gridLayerRef);
 };
 
 // Grid creation state tracking
@@ -158,7 +144,7 @@ export const createGrid = (
     }
     
     // Create grid
-    const gridObjects = createGridLayer(canvas, gridLayerRef);
+    const gridObjects = createGridLayer(canvas, 'default');
     
     if (!gridObjects || gridObjects.length === 0) {
       if (shouldLog && process.env.NODE_ENV === 'development') {
