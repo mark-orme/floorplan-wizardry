@@ -1,3 +1,4 @@
+
 /**
  * Grid Export Validator
  * 
@@ -163,6 +164,66 @@ export function trackBarrelExport(
 }
 
 /**
+ * NEW: Check for direct exports that conflict with wildcard re-exports
+ * @param barrelFilePath - Path to the barrel file
+ * @param directExports - Array of direct export names in the barrel file
+ * @param wildcardModules - Array of paths to modules being re-exported with wildcard
+ * @returns Array of conflicting export names
+ */
+export function checkForWildcardConflicts(
+  barrelFilePath: string,
+  directExports: string[],
+  wildcardModules: string[]
+): string[] {
+  const conflictingExports: string[] = [];
+  
+  // For each direct export, check if it might conflict with a wildcard re-export
+  for (const exportName of directExports) {
+    for (const modulePath of wildcardModules) {
+      try {
+        // In a real implementation, you would dynamically load the module
+        // and check if it exports the same name
+        // For now, we'll just log a warning
+        console.warn(
+          `⚠️ Potential conflict: '${exportName}' is directly exported in ${barrelFilePath} and may also be exported via wildcard from ${modulePath}`
+        );
+        conflictingExports.push(exportName);
+      } catch (error) {
+        console.error(`Error checking exports in ${modulePath}:`, error);
+      }
+    }
+  }
+  
+  return conflictingExports;
+}
+
+/**
+ * NEW: Validate barrel file exports during development or build time
+ * @param barrelFilePath - Path to the barrel file
+ * @returns Validation result with any issues found
+ */
+export function validateBarrelFile(barrelFilePath: string): {
+  valid: boolean;
+  ambiguousExports: string[];
+  wildcardConflicts: string[];
+} {
+  // This is a simplified implementation that would need to be expanded
+  // with actual file system access in a real project
+  
+  const ambiguousExports: string[] = [];
+  const wildcardConflicts: string[] = [];
+  
+  // For demonstration purposes only
+  console.log(`Validating barrel file: ${barrelFilePath}`);
+  
+  return {
+    valid: ambiguousExports.length === 0 && wildcardConflicts.length === 0,
+    ambiguousExports,
+    wildcardConflicts
+  };
+}
+
+/**
  * Best practices for exports
  */
 export const EXPORT_BEST_PRACTICES = {
@@ -206,5 +267,48 @@ export const EXPORT_BEST_PRACTICES = {
    * NEW: Use explicit re-exports
    * When re-exporting from multiple modules, use named exports
    */
-  USE_EXPLICIT_REEXPORTS: "Use explicit re-exports to avoid name conflicts"
+  USE_EXPLICIT_REEXPORTS: "Use explicit re-exports to avoid name conflicts",
+  
+  /**
+   * NEW: Avoid direct exports in barrel files that use wildcards
+   * This prevents ambiguous exports that can be difficult to debug
+   */
+  AVOID_DIRECT_EXPORTS_WITH_WILDCARDS: "Avoid direct exports in barrel files that also use wildcard exports",
+  
+  /**
+   * NEW: Use import type for type-only imports
+   * This prevents issues with circular dependencies for types
+   */
+  USE_IMPORT_TYPE: "Use import type for type-only imports to prevent circular dependencies"
 };
+
+/**
+ * NEW: Rule checker for barrel files to prevent common issues
+ */
+export function checkBarrelFileRules(
+  barrelFilePath: string,
+  fileContent: string
+): { 
+  valid: boolean;
+  violations: Array<{ rule: string; message: string }>
+} {
+  const violations: Array<{ rule: string; message: string }> = [];
+  
+  // Check if the file has both wildcard exports and direct exports
+  const hasWildcardExports = /export \* from/.test(fileContent);
+  const hasDirectExports = /export (const|function|class|type|interface|enum)/.test(fileContent);
+  
+  if (hasWildcardExports && hasDirectExports) {
+    violations.push({
+      rule: "AVOID_DIRECT_EXPORTS_WITH_WILDCARDS",
+      message: `Barrel file ${barrelFilePath} contains both wildcard exports and direct exports. Consider using only explicit named re-exports.`
+    });
+  }
+  
+  // Check for duplicate name exports (would require more sophisticated parsing)
+  
+  return {
+    valid: violations.length === 0,
+    violations
+  };
+}

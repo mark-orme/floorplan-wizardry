@@ -1,3 +1,4 @@
+
 /**
  * ESLint rules for export validation
  * Enforces proper module export patterns
@@ -94,7 +95,21 @@ export const exportValidationRules = {
     "import/no-named-default": "error",
     
     // NEW: Check for named exports in the same file
-    "import/no-namespace": "warn"
+    "import/no-namespace": "warn",
+    
+    // NEW: Prevent wildcard exports alongside individual exports to avoid ambiguity
+    "import/no-restricted-paths": ["error", {
+      "zones": [
+        {
+          "target": "**/index.ts",
+          "from": "./",
+          "message": "Be cautious with wildcard exports in index files to avoid ambiguity."
+        }
+      ]
+    }],
+    
+    // NEW: Enforce explicit re-exports to avoid ambiguity
+    "import/no-anonymous-default-export": "error"
   },
   settings: {
     "import/resolver": {

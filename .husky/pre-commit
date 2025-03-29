@@ -2,4 +2,9 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Run export validation checks
+sh "$(dirname -- "$0")/export-check" || exit 1
+
+# Run standard lint-staged checks
 npx lint-staged
+

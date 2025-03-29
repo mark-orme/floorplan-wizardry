@@ -1,3 +1,4 @@
+
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
@@ -70,6 +71,14 @@ for file in $(find src -type f -name "index.ts"); do
         if [ -n "$exports_in_target" ]; then
           echo "⚠️  $file re-exports these from $import_path:"
           echo "$exports_in_target"
+          
+          # NEW: Check each export against direct exports in the barrel file
+          for export_name in $exports_in_target; do
+            if grep -q "export const $export_name" "$file" || grep -q "export function $export_name" "$file" || grep -q "export class $export_name" "$file"; then
+              echo "⛔ ERROR: Ambiguous export detected! '$export_name' is both directly exported and re-exported via wildcard!"
+              exit 1
+            fi
+          done
         fi
       fi
     done
@@ -98,7 +107,7 @@ for barrel_file in $(find src -name "index.ts"); do
       # For each export in the target file
       for export_name in $target_exports; do
         # Check if the same name is directly exported in the barrel file
-        if grep -q "export const $export_name" "$barrel_file"; then
+        if grep -q "export const $export_name" "$barrel_file" || grep -q "export function $export_name" "$barrel_file" || grep -q "export class $export_name" "$barrel_file"; then
           echo "⛔ CRITICAL: Ambiguous export detected in $barrel_file"
           echo "   '$export_name' is exported both directly and via wildcard import from $export_path"
           echo "   This will cause TypeScript errors! Please fix this before committing."
