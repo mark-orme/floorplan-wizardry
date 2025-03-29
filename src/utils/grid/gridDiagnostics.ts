@@ -1,4 +1,3 @@
-
 /**
  * Grid Diagnostics Utility
  * Provides comprehensive diagnostic tools and tests for grid functionality
@@ -313,11 +312,11 @@ export const verifyGridVisibility = (
 /**
  * Emergency fix - try to make grid visible when all else fails
  * @param {FabricCanvas} canvas - The canvas to fix
- * @param {FabricObject[]} gridObjects - The grid objects to fix
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Grid objects reference
  * @returns {boolean} Whether emergency fix was successful
  */
 export const emergencyGridFix = (
-  canvas: FabricCanvas | null,
+  canvas: FabricCanvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): boolean => {
   if (!canvas) return false;
@@ -356,15 +355,10 @@ export const emergencyGridFix = (
         strokeWidth: isLarge ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
         selectable: false,
         evented: false,
-        opacity: GRID_CONSTANTS.GRID_OPACITY
+        hoverCursor: 'default'
       });
       
-      // Add custom properties
-      (line as any).objectType = 'grid';
-      (line as any).gridType = isLarge ? 'large' : 'small';
-      
-      canvas.add(line);
-      emergencyGrid.push(line);
+      return line;
     };
     
     // Create vertical lines (large grid only for performance)

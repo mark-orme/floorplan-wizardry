@@ -1,4 +1,3 @@
-
 /**
  * TypeScript specific ESLint rules
  * Enforces strict type checking and code quality for TypeScript files
@@ -101,6 +100,74 @@ export const typescriptRules = {
     "@typescript-eslint/no-unnecessary-type-arguments": "warn",
     
     // NEW: Prevent potential bugs in grid code
-    "@typescript-eslint/switch-exhaustiveness-check": "error"
+    "@typescript-eslint/switch-exhaustiveness-check": "error",
+    // Prevent using non-existent properties on objects
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-return": "error",
+    
+    // NEW: Prevent type errors
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-argument": "error",
+    "@typescript-eslint/no-unsafe-return": "error",
+    
+    // NEW: Prevent array vs tuple confusion
+    "@typescript-eslint/array-type": ["error", {
+      "default": "array",
+      "readonly": "array"
+    }],
+    
+    // NEW: Require explicit tuple types when needed
+    "@typescript-eslint/typedef": ["error", {
+      "arrayDestructuring": false,
+      "arrowParameter": false,
+      "memberVariableDeclaration": false,
+      "objectDestructuring": false,
+      "parameter": false,
+      "propertyDeclaration": false,
+      "variableDeclaration": false,
+      "variableDeclarationIgnoreFunction": false
+    }],
+    
+    // NEW: Stricter property existence checking
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    
+    // NEW: Ensure optional chain usage where appropriate
+    "@typescript-eslint/prefer-optional-chain": "warn",
+    
+    // NEW: Enforces exact object shapes
+    "@typescript-eslint/consistent-indexed-object-style": ["error", "record"],
+    
+    // NEW: Prevent explicit any
+    "@typescript-eslint/no-explicit-any": ["warn", {
+      "ignoreRestArgs": true
+    }],
+    
+    // NEW: Ensure function parameter types are specified
+    "@typescript-eslint/explicit-function-return-type": ["error", {
+      "allowExpressions": true,
+      "allowHigherOrderFunctions": true,
+      "allowTypedFunctionExpressions": true
+    }],
+    
+    // NEW: Prevent unnecessary type assertions
+    "@typescript-eslint/consistent-type-assertions": ["error", {
+      "assertionStyle": "as",
+      "objectLiteralTypeAssertions": "never"
+    }],
+    
+    // NEW: Enhanced property checking
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "property",
+        "format": ["camelCase", "PascalCase", "UPPER_CASE"],
+        "filter": {
+          "regex": "^(data-|aria-|type|id|[a-zA-Z]+Image|key|name|role|placeholder|label|title|alt|src|href|target|rel|value|min|max|required|disabled|readonly|checked|selected|multiple|size|pattern|minLength|maxLength|step|rows|cols|for|className|style)$",
+          "match": false
+        }
+      }
+    ]
   }
 };

@@ -135,6 +135,7 @@ export const createBasicEmergencyGrid = (
  * 
  * @param {FabricCanvas} canvas - Canvas to diagnose
  * @param {FabricObject[]} gridObjects - Grid objects to inspect
+ * @returns {Record<string, any> | null} Diagnostics information or null on error
  */
 export const dumpGridState = (
   canvas: FabricCanvas,
