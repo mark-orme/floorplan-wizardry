@@ -283,6 +283,61 @@ export const baseConfig = {
     "no-redeclare": "error",
     "no-undef": "error",
     "no-unexpected-multiline": "error",
-    "no-unreachable": "error"
+    "no-unreachable": "error",
+    
+    // ENHANCED: Syntax and parsing error prevention
+    "no-misleading-character-class": "error",
+    "no-new-symbol": "error",
+    "no-sparse-arrays": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-negation": "error",
+    "valid-typeof": ["error", { "requireStringLiterals": true }],
+    
+    // ENHANCED: Code structure safety
+    "no-lone-blocks": "error",
+    "no-useless-catch": "error",
+    "no-useless-return": "error",
+    "require-yield": "error",
+    
+    // ENHANCED: TypeScript-specific syntax rules (when not using the TypeScript plugin)
+    "no-this-before-super": "error",
+    "constructor-super": "error",
+    "no-class-assign": "error",
+    "no-const-assign": "error",
+    "no-new-object": "error",
+    
+    // ENHANCED: React JSX specific rules for syntax correctness
+    "react/jsx-no-duplicate-props": "error",
+    "react/jsx-no-undef": "error",
+    "react/no-direct-mutation-state": "error",
+    "react/no-unknown-property": "error",
+    "react/no-string-refs": "error",
+    
+    // ENHANCED: Bracket and parenthesis completion rules
+    "jsx-quotes": ["error", "prefer-double"],
+    "no-extra-parens": ["error", "all", { 
+      "ignoreJSX": "all",
+      "enforceForArrowConditionals": false,
+      "nestedBinaryExpressions": false
+    }],
+    "no-extra-semi": "error",
+    
+    // ENHANCED: String syntax validation
+    "no-multi-str": "error",
+    "no-new-wrappers": "error",
+    
+    // ENHANCED: Regular expression safety
+    "no-div-regex": "error",
+    "no-irregular-whitespace": ["error", { 
+      "skipStrings": true, 
+      "skipComments": true, 
+      "skipRegExps": true, 
+      "skipTemplates": true 
+    }],
+    
+    // ENHANCED: Prevent syntax errors in JSX
+    "react/jsx-no-comment-textnodes": "error",
+    "react/jsx-uses-vars": "error",
+    "react/jsx-uses-react": "off" // for React 17+
   }
 };
