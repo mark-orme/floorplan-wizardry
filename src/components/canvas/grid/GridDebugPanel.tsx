@@ -214,7 +214,7 @@ export const GridDebugPanel = ({
                   ) : canvasState.grid?.onCanvas === 0 ? (
                     <Badge variant="destructive" className="text-[0.6rem]">Not Visible</Badge>
                   ) : canvasState.grid?.onCanvas < canvasState.grid?.total ? (
-                    <Badge variant="warning" className="text-[0.6rem] bg-yellow-100">Partial</Badge>
+                    <Badge variant="secondary" className="text-[0.6rem] bg-yellow-100">Partial</Badge>
                   ) : (
                     <Badge variant="outline" className="text-[0.6rem] bg-green-50">OK</Badge>
                   )}
