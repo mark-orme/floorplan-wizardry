@@ -42,3 +42,4 @@ export const cleanupGridResources = (): void => {
 // to resolve the ambiguity with the same named export from gridCreation.ts
 // Import it directly from the specific module instead:
 // import { createBasicEmergencyGrid } from "@/utils/grid/gridCreation";
+
