@@ -1,87 +1,173 @@
-
 /**
- * Grid manager 
- * Central management for grid creation and state
- * @module gridManager
+ * Grid Manager
+ * Centralized grid management and tracking across components
+ * @module utils/gridManager
  */
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { captureError } from "./sentryUtils";
+import logger from "./logger";
 
-// Track grid creation state
-let gridCreationInProgress = false;
-let lastGridCreationTime = 0;
-let gridCreationAttempt = 0;
+interface GridProgressState {
+  inProgress: boolean;
+  lastAttemptTime: number;
+  attemptsCount: number;
+  lastError: Error | null;
+}
+
+// Singleton state for grid creation progress
+const gridProgress: GridProgressState = {
+  inProgress: false,
+  lastAttemptTime: 0,
+  attemptsCount: 0,
+  lastError: null
+};
+
+// Track grid instances
+const gridInstances: Map<string, FabricObject[]> = new Map();
+const MAX_ATTEMPTS = 3;
+const MIN_RETRY_INTERVAL = 2000; // ms
 
 /**
- * Reset grid creation progress tracking
- * Used when grid creation needs to be restarted
+ * Reset grid progress state
+ * Used to break potential deadlocks in grid creation
  */
 export const resetGridProgress = (): void => {
-  gridCreationInProgress = false;
-  gridCreationAttempt = 0;
-  console.log("Grid progress reset");
+  console.log("Resetting grid progress state");
+  gridProgress.inProgress = false;
+  // We keep the attempts count to limit retries
 };
 
 /**
- * Check if grid creation is already in progress
- * @returns {boolean} Whether creation is in progress
+ * Check if grid creation should be rate-limited
+ * @returns {boolean} Whether grid creation should be throttled
  */
-export const isGridCreationInProgress = (): boolean => {
-  return gridCreationInProgress;
+export const shouldThrottleGridCreation = (): boolean => {
+  const now = Date.now();
+  return (now - gridProgress.lastAttemptTime) < MIN_RETRY_INTERVAL;
 };
 
 /**
- * Set grid creation in progress state
- * @param {boolean} inProgress - Whether creation is in progress
+ * Mark grid creation as in progress
+ * @returns {boolean} Whether the operation can proceed
  */
-export const setGridCreationInProgress = (inProgress: boolean): void => {
-  gridCreationInProgress = inProgress;
+export const startGridCreation = (): boolean => {
+  if (gridProgress.inProgress) {
+    logger.warn("Grid creation already in progress, skipping new request");
+    return false;
+  }
+  
+  if (gridProgress.attemptsCount >= MAX_ATTEMPTS) {
+    logger.warn(`Max grid creation attempts (${MAX_ATTEMPTS}) reached`);
+    return false;
+  }
+  
+  if (shouldThrottleGridCreation()) {
+    logger.warn("Grid creation throttled due to recent attempt");
+    return false;
+  }
+  
+  // Update state
+  gridProgress.inProgress = true;
+  gridProgress.attemptsCount++;
+  gridProgress.lastAttemptTime = Date.now();
+  logger.info(`Starting grid creation, attempt ${gridProgress.attemptsCount}`);
+  
+  return true;
 };
 
 /**
- * Get time since last grid creation attempt
- * @returns {number} Time in milliseconds since last attempt
+ * Mark grid creation as complete
+ * @param {string} instanceId - Identifier for the grid instance
+ * @param {FabricObject[]} gridObjects - Created grid objects
  */
-export const getTimeSinceLastCreation = (): number => {
-  return Date.now() - lastGridCreationTime;
+export const finishGridCreation = (
+  instanceId: string,
+  gridObjects: FabricObject[]
+): void => {
+  // Reset progress
+  gridProgress.inProgress = false;
+  
+  // Store instance
+  if (gridObjects.length > 0) {
+    gridInstances.set(instanceId, gridObjects);
+    logger.info(`Grid creation for "${instanceId}" completed with ${gridObjects.length} objects`);
+  } else {
+    logger.warn(`Grid creation for "${instanceId}" completed but no objects were created`);
+  }
 };
 
 /**
- * Update last grid creation time
+ * Handle grid creation error
+ * @param {Error} error - The error that occurred
  */
-export const updateLastCreationTime = (): void => {
-  lastGridCreationTime = Date.now();
-};
-
-/**
- * Increment grid creation attempt counter
- * @returns {number} New attempt count
- */
-export const incrementCreationAttempt = (): number => {
-  return ++gridCreationAttempt;
-};
-
-/**
- * Get current grid creation attempt count
- * @returns {number} Current attempt count
- */
-export const getCreationAttemptCount = (): number => {
-  return gridCreationAttempt;
-};
-
-/**
- * Reset grid creation attempt counter
- */
-export const resetCreationAttempts = (): void => {
-  gridCreationAttempt = 0;
-};
-
-/**
- * Log current grid status
- * Useful for debugging grid creation issues
- */
-export const logGridStatus = (): void => {
-  console.log("Grid Status:", {
-    creationInProgress: gridCreationInProgress,
-    lastCreationTime: new Date(lastGridCreationTime).toISOString(),
-    attemptCount: gridCreationAttempt
+export const handleGridCreationError = (error: Error): void => {
+  // Reset progress
+  gridProgress.inProgress = false;
+  gridProgress.lastError = error;
+  
+  // Log error
+  logger.error("Grid creation error:", error);
+  
+  // Report to Sentry with detailed context
+  captureError(error, "grid-manager-creation-error", {
+    level: "error",
+    tags: {
+      component: "gridManager",
+      operation: "creation",
+      attempt: String(gridProgress.attemptsCount)
+    },
+    extra: {
+      attemptsCount: gridProgress.attemptsCount,
+      lastAttemptTime: new Date(gridProgress.lastAttemptTime).toISOString()
+    }
   });
+};
+
+/**
+ * Get grid creation progress
+ * @returns {GridProgressState} Current grid creation state
+ */
+export const getGridProgress = (): GridProgressState => {
+  return { ...gridProgress };
+};
+
+/**
+ * Register a grid instance
+ * @param {string} id - Instance identifier
+ * @param {FabricObject[]} gridObjects - Grid objects
+ */
+export const registerGridInstance = (
+  id: string,
+  gridObjects: FabricObject[]
+): void => {
+  gridInstances.set(id, gridObjects);
+};
+
+/**
+ * Check if grid objects are still valid
+ * @param {FabricCanvas} canvas - Canvas to check
+ * @param {FabricObject[]} gridObjects - Grid objects to verify
+ * @returns {boolean} Whether grid objects are valid
+ */
+export const validateGridObjects = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): boolean => {
+  if (!canvas || !gridObjects.length) return false;
+  
+  try {
+    // Check if at least some grid objects are on canvas
+    const objectsOnCanvas = gridObjects.filter(obj => {
+      try {
+        return canvas.contains(obj);
+      } catch (error) {
+        return false;
+      }
+    }).length;
+    
+    return objectsOnCanvas > 0;
+  } catch (error) {
+    logger.error("Error validating grid objects:", error);
+    return false;
+  }
 };

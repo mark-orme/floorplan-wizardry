@@ -15,6 +15,8 @@ import { handleError } from "@/utils/errorHandling";
 import { Canvas as CanvasComponent } from "@/components/Canvas";
 import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
 import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
+import { captureError } from "@/utils/sentryUtils";
+import logger from "@/utils/logger";
 
 // Constants for component
 const CANVAS_WIDTH = 800;
@@ -31,6 +33,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   const [initAttempt, setInitAttempt] = useState(0);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [showDebug, setShowDebug] = useState(true); // Show debug panel by default
+  const [canvasError, setCanvasError] = useState<string | null>(null);
   const unmountedRef = useRef(false);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
@@ -39,6 +42,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   useEffect(() => {
     // Reset canvas initialization state at the start
     resetInitializationState();
+    logger.info(`Initializing FloorPlanCanvas, attempt: ${initAttempt}`);
     
     // Unmount any existing canvas before trying to render a new one
     setIsReady(false);
@@ -46,6 +50,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
     const timer = setTimeout(() => {
       if (!unmountedRef.current) {
         setIsReady(true);
+        logger.info('FloorPlanCanvas: Setting ready state to true');
         console.log('FloorPlanCanvas: Setting ready state to true');
       }
     }, INIT_DELAY);
@@ -69,10 +74,13 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
       setIsReady(false);
       setFabricCanvas(null);
       fabricCanvasRef.current = null;
+      setCanvasError(null);
       setInitAttempt(prev => prev + 1);
       
+      logger.info("Retrying canvas initialization...");
+      console.log('FloorPlanCanvas: Retrying canvas initialization, attempt:', initAttempt + 1);
+      
       toast.info("Retrying canvas initialization...");
-      console.log('FloorPlanCanvas: Retrying canvas initialization');
       
       // Try to re-initialize after a delay
       setTimeout(() => {
@@ -92,18 +100,63 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
    * Handle successful canvas initialization
    */
   const handleCanvasReady = (canvas: FabricCanvas) => {
-    console.log('FloorPlanCanvas: Canvas ready callback received');
+    logger.info('FloorPlanCanvas: Canvas ready callback received');
+    console.log('FloorPlanCanvas: Canvas ready callback received', {
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      objectCount: canvas.getObjects().length
+    });
+    
     setFabricCanvas(canvas);
     fabricCanvasRef.current = canvas;
     toast.success("Canvas initialized successfully");
+    
+    // Log detailed canvas info to help debug grid issues
+    captureError(
+      new Error("Canvas initialization info"), 
+      "canvas-debug-info", 
+      {
+        level: "info",
+        tags: {
+          component: "FloorPlanCanvas",
+          operation: "canvas-ready"
+        },
+        extra: {
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+          objectCount: canvas.getObjects().length,
+          initAttempt
+        }
+      }
+    );
   };
   
   /**
    * Handle canvas initialization error
    */
   const handleCanvasInitError = (error: Error) => {
+    logger.error('FloorPlanCanvas: Canvas initialization error', error);
     console.error('FloorPlanCanvas: Canvas initialization error', error);
+    
+    setCanvasError(error.message);
     toast.error(`Canvas error: ${error.message}`);
+    
+    // Report detailed error to Sentry
+    captureError(error, "canvas-initialization-error", {
+      level: "error",
+      tags: {
+        component: "FloorPlanCanvas",
+        operation: "canvas-init",
+        attempt: String(initAttempt)
+      },
+      extra: {
+        initAttempt,
+        browserInfo: {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform
+        }
+      }
+    });
     
     if (onCanvasError) {
       onCanvasError();
@@ -192,7 +245,10 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
       
       {initAttempt >= 2 && !fabricCanvas && (
         <div className="flex flex-col items-center justify-center h-full bg-gray-50 border border-gray-200 rounded-md p-4">
-          <p className="text-red-500 mb-4">Canvas initialization failed.</p>
+          <p className="text-red-500 mb-2">Canvas initialization failed.</p>
+          {canvasError && (
+            <p className="text-sm text-gray-700 mb-4">Error: {canvasError}</p>
+          )}
           <Button onClick={handleCanvasRetry} variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" />
             Try Again
