@@ -6,8 +6,9 @@
  */
 import { useCallback, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createCompleteGrid, createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
+import { createCompleteGrid, createBasicEmergencyGrid } from "@/utils/grid/gridCreationUtils";
 import { arrangeGridElementsWithRetry } from "@/utils/useCanvasLayerOrdering";
+import { runGridDiagnostics, applyGridFixes } from "@/utils/grid/gridDiagnostics";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ export const useCanvasGrid = ({
   const createCanvasGrid = useCallback(() => {
     if (!fabricCanvasRef.current) {
       logger.warn("Cannot create grid: Canvas reference is null");
+      console.warn("Cannot create grid: Canvas reference is null");
       return;
     }
     
@@ -54,7 +56,11 @@ export const useCanvasGrid = ({
     
     try {
       logger.info("Creating grid on canvas");
-      console.log("Creating grid on canvas");
+      console.log("Creating grid on canvas", {
+        width: canvas.width,
+        height: canvas.height,
+        canvasDimensions
+      });
       
       // Check if canvas has valid dimensions
       if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
@@ -77,7 +83,7 @@ export const useCanvasGrid = ({
       }
       
       // Create complete grid
-      const gridObjects = createCompleteGrid(canvas);
+      const gridObjects = createCompleteGrid(canvas, gridLayerRef);
       
       // If grid creation failed, try emergency grid
       if (!gridObjects || gridObjects.length === 0) {
@@ -95,8 +101,7 @@ export const useCanvasGrid = ({
           toast.error("Failed to create grid. Please try refreshing the application.");
         }
       } else {
-        // Store grid objects in the ref
-        gridLayerRef.current = gridObjects;
+        // Grid created successfully
         gridInitializedRef.current = true;
         
         // Log success
@@ -109,6 +114,16 @@ export const useCanvasGrid = ({
       
       // Force render to ensure grid is visible
       canvas.requestRenderAll();
+      
+      // Run diagnostics after a short delay to verify grid is properly displayed
+      setTimeout(() => {
+        const diagnostics = runGridDiagnostics(canvas, gridLayerRef.current, true);
+        
+        // If issues found, try to fix them
+        if (diagnostics.status !== 'ok') {
+          applyGridFixes(canvas, gridLayerRef.current);
+        }
+      }, 500);
       
     } catch (error) {
       logger.error("Error creating grid:", error);
@@ -127,7 +142,7 @@ export const useCanvasGrid = ({
         console.error("Emergency grid creation also failed:", emergencyError);
       }
     }
-  }, [fabricCanvasRef]);
+  }, [fabricCanvasRef, canvasDimensions]);
   
   // Create grid when canvas or dimensions change
   useEffect(() => {
@@ -158,9 +173,33 @@ export const useCanvasGrid = ({
     }
   }, [zoomLevel, createCanvasGrid]);
   
+  // Periodic check to ensure grid is visible
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (fabricCanvasRef.current && gridLayerRef.current.length > 0) {
+        // Run quick diagnostics - verbose=false to reduce log noise
+        const diagnostics = runGridDiagnostics(fabricCanvasRef.current, gridLayerRef.current, false);
+        
+        // If no grid objects are on canvas, try to fix
+        if (diagnostics.gridInfo.objectsOnCanvas === 0 && gridLayerRef.current.length > 0) {
+          console.log("Periodic check found missing grid - attempting fix");
+          applyGridFixes(fabricCanvasRef.current, gridLayerRef.current);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+    
+    return () => clearInterval(intervalId);
+  }, [fabricCanvasRef]);
+  
   return {
     gridLayerRef,
     createGrid: createCanvasGrid,
-    isGridInitialized: () => gridInitializedRef.current
+    isGridInitialized: () => gridInitializedRef.current,
+    runDiagnostics: () => {
+      if (fabricCanvasRef.current) {
+        return runGridDiagnostics(fabricCanvasRef.current, gridLayerRef.current, true);
+      }
+      return null;
+    }
   };
 };

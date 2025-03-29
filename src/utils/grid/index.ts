@@ -19,7 +19,7 @@ export {
   ensureGrid,
   createGridLayer,
   createFallbackGrid
-} from '../gridCreationUtils';
+} from './gridCreationUtils';
 
 // Export validation utilities
 export * from './gridValidation';

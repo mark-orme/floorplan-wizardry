@@ -46,6 +46,8 @@ export const Canvas: React.FC<CanvasProps> = ({
           throw new Error(ERROR_MESSAGES.CANVAS_ELEMENT_NOT_FOUND);
         }
 
+        console.log("Initializing canvas with dimensions:", width, height);
+
         // Create fabric.js canvas
         const canvas = new FabricCanvas(canvasRef.current, {
           width,
@@ -75,16 +77,21 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
 
         logger.info("Canvas initialized successfully");
-        console.log("Canvas initialized successfully");
+        console.log("Canvas initialized successfully", { 
+          width: canvas.width, 
+          height: canvas.height 
+        });
         
         // Initialize the grid after a short delay
         setTimeout(() => {
+          console.log("Creating grid after initialization");
           createGrid();
         }, 300);
 
       } catch (err) {
         const error = err instanceof Error ? err : new Error(ERROR_MESSAGES.CANVAS_INIT_FAILED);
         logger.error("Canvas initialization error:", error);
+        console.error("Canvas initialization error:", error);
         setError(error);
         
         if (onError) {
@@ -115,6 +122,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   const handleForceGrid = (): void => {
     if (fabricCanvasRef.current) {
+      console.log("Forcing grid recreation...");
       createGrid();
       toast.info("Forcing grid recreation...");
     }
