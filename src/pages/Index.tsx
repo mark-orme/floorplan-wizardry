@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
+import { GridMonitor } from "@/components/canvas/GridMonitor";
+import { useCanvasRefs } from "@/hooks/useCanvasRefs";
+import { toast } from "sonner";
 
 /**
  * Main Index page component
@@ -14,10 +17,18 @@ import { resetInitializationState } from "@/utils/canvas/safeCanvasInitializatio
  */
 const Index = () => {
   const navigate = useNavigate();
+  const { fabricCanvasRef, gridLayerRef } = useCanvasRefs();
+  const [enableGridMonitoring, setEnableGridMonitoring] = useState(true);
   
   // Reset canvas initialization state when the page loads
   useEffect(() => {
     resetInitializationState();
+    
+    // Log a welcome message with enhanced grid stability
+    toast.success("Floor Plan Editor loaded with enhanced grid stability", {
+      duration: 3000,
+      id: "floor-plan-welcome"
+    });
   }, []);
   
   return (
@@ -38,6 +49,12 @@ const Index = () => {
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
           <CanvasApp />
+          {/* Add the GridMonitor component for background grid monitoring */}
+          <GridMonitor 
+            fabricCanvasRef={fabricCanvasRef}
+            gridLayerRef={gridLayerRef}
+            active={enableGridMonitoring}
+          />
         </CanvasControllerProvider>
       </div>
     </main>

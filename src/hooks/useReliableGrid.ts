@@ -1,252 +1,255 @@
 
 /**
  * Reliable Grid Hook
- * Provides robust grid creation and management for the canvas
+ * Provides a robust and self-healing grid creation mechanism
  * @module hooks/useReliableGrid
  */
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { createGridElements } from "@/utils/grid/createGridElements";
 import { 
-  createReliableGrid, 
-  ensureGridVisibility, 
-  isGridCreationOnCooldown,
-  resetGridCreationState,
-  testGridCreation
-} from '@/utils/grid/reliableGridCreation';
-import logger from '@/utils/logger';
-import { validateCanvasForGrid } from '@/utils/grid/gridUtils';
+  runGridDiagnostics, 
+  applyGridFixes, 
+  verifyGridVisibility,
+  emergencyGridFix
+} from "@/utils/grid/gridDiagnostics";
+import { toast } from "sonner";
+import { captureError } from "@/utils/sentryUtils";
+import logger from "@/utils/logger";
 
 interface UseReliableGridProps {
-  /** Reference to the Fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Canvas dimensions */
   canvasDimensions: { width: number; height: number };
-  /** Whether to test the grid on initialization */
-  testMode?: boolean;
-}
-
-interface UseReliableGridResult {
-  /** Reference to grid objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Create or refresh the grid */
-  createGrid: () => void;
-  /** Clean up grid resources */
-  cleanupGrid: () => void;
-  /** Whether grid initialization has been attempted */
-  gridInitialized: boolean;
-  /** Whether grid creation is currently in progress */
-  isCreatingGrid: boolean;
-  /** Number of grid objects */
-  gridObjectCount: number;
 }
 
 /**
  * Hook for reliable grid creation and management
+ * Features auto-recovery, diagnostics, and emergency fallbacks
  */
 export const useReliableGrid = ({
   fabricCanvasRef,
-  canvasDimensions,
-  testMode = false
-}: UseReliableGridProps): UseReliableGridResult => {
-  // Track grid objects
+  canvasDimensions
+}: UseReliableGridProps) => {
+  // Grid objects reference
   const gridLayerRef = useRef<FabricObject[]>([]);
   
-  // Track initialization state
+  // State for tracking grid status
   const [gridInitialized, setGridInitialized] = useState(false);
   const [isCreatingGrid, setIsCreatingGrid] = useState(false);
   const [gridObjectCount, setGridObjectCount] = useState(0);
+  const [gridErrorCount, setGridErrorCount] = useState(0);
+  const [lastGridCreationTime, setLastGridCreationTime] = useState(0);
   
-  // Retry tracking
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track attempts to prevent infinite loops
   const attemptCountRef = useRef(0);
+  const maxAttempts = 5;
+  const cooldownPeriod = 1000; // 1 second between attempts
   
   /**
-   * Create grid on canvas with better error handling and diagnostics
+   * Create grid with enhanced reliability and error handling
    */
   const createGrid = useCallback(() => {
-    // Skip if already creating grid
-    if (isCreatingGrid) {
-      console.log("Grid creation already in progress, skipping");
+    const canvas = fabricCanvasRef.current;
+    
+    // Don't allow too many attempts in short succession
+    if (Date.now() - lastGridCreationTime < cooldownPeriod) {
+      console.log("Grid creation on cooldown, skipping");
       return;
     }
     
-    // Skip if canvas is null
-    if (!fabricCanvasRef.current) {
-      console.warn("Cannot create grid: Canvas is null");
-      return;
-    }
-    
-    // Validate canvas dimensions
-    if (!validateCanvasForGrid(fabricCanvasRef.current)) {
-      console.error("Cannot create grid: Canvas validation failed");
-      
-      // Show diagnostic toast in development
-      if (process.env.NODE_ENV === 'development') {
-        toast.error("Grid creation blocked: Canvas validation failed", {
-          description: `Canvas dimensions: ${fabricCanvasRef.current.width}x${fabricCanvasRef.current.height}`
-        });
-      }
-      return;
-    }
-    
-    // Skip if still on cooldown and we already have a grid
-    if (isGridCreationOnCooldown() && gridLayerRef.current.length > 0) {
-      console.log("Grid creation on cooldown - reusing existing grid");
-      return;
-    }
-    
-    // Set creating state
-    setIsCreatingGrid(true);
+    // Track attempt
     attemptCountRef.current++;
+    setLastGridCreationTime(Date.now());
+    
+    // Safety check to prevent infinite loops
+    if (attemptCountRef.current > maxAttempts) {
+      console.warn(`Exceeded max grid creation attempts (${maxAttempts})`);
+      captureError(
+        new Error(`Max grid creation attempts (${maxAttempts}) reached`),
+        "grid-max-attempts",
+        { level: "warning" }
+      );
+      return;
+    }
+    
+    // Validate canvas
+    if (!canvas) {
+      console.error("Cannot create grid: Canvas is null");
+      setGridErrorCount(prev => prev + 1);
+      return;
+    }
+    
+    if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
+      console.error("Cannot create grid: Invalid canvas dimensions", {
+        width: canvas.width,
+        height: canvas.height
+      });
+      setGridErrorCount(prev => prev + 1);
+      
+      captureError(
+        new Error(`Invalid canvas dimensions: ${canvas.width}x${canvas.height}`),
+        "grid-invalid-dimensions",
+        {
+          level: "error",
+          extra: { dimensions: canvasDimensions }
+        }
+      );
+      return;
+    }
     
     try {
-      console.log("Creating grid...", {
-        canvasDimensions,
-        attempt: attemptCountRef.current,
-        existingGridObjects: gridLayerRef.current.length
+      setIsCreatingGrid(true);
+      console.log("Creating grid on canvas", {
+        width: canvas.width,
+        height: canvas.height
       });
       
-      const canvas = fabricCanvasRef.current;
-      
-      // Create the grid using our new reliable grid creation
-      const gridObjects = createReliableGrid(canvas, gridLayerRef);
-      
-      // Check result
-      if (gridObjects && gridObjects.length > 0) {
-        console.log(`Grid created with ${gridObjects.length} objects`);
-        setGridInitialized(true);
-        setGridObjectCount(gridObjects.length);
-        
-        // Run test if in test mode
-        if (testMode) {
-          testGridCreation(canvas);
-        }
-      } else {
-        console.warn("Grid creation returned no objects");
-        setGridInitialized(false);
-        setGridObjectCount(0);
-        
-        // Schedule retry with exponential backoff
-        if (retryTimeoutRef.current) {
-          clearTimeout(retryTimeoutRef.current);
-        }
-        
-        // Determine retry delay based on attempt count (exponential backoff)
-        const retryDelay = Math.min(1000 * Math.pow(1.5, attemptCountRef.current - 1), 10000);
-        
-        retryTimeoutRef.current = setTimeout(() => {
-          console.log(`Retrying grid creation (attempt ${attemptCountRef.current + 1})...`);
-          createGrid();
-        }, retryDelay);
+      // First, remove any existing grid objects
+      if (gridLayerRef.current.length > 0) {
+        gridLayerRef.current.forEach(obj => {
+          try {
+            if (canvas.contains(obj)) {
+              canvas.remove(obj);
+            }
+          } catch (error) {
+            console.error("Error removing grid object:", error);
+          }
+        });
+        gridLayerRef.current = [];
       }
+      
+      // Create new grid
+      const gridObjects = createGridElements(canvas);
+      
+      // Update references
+      gridLayerRef.current = gridObjects;
+      setGridObjectCount(gridObjects.length);
+      
+      // Mark grid as initialized
+      setGridInitialized(true);
+      
+      // Force render
+      canvas.requestRenderAll();
+      
+      // Reset attempt counter on success
+      attemptCountRef.current = 0;
+      
+      console.log(`Grid created successfully with ${gridObjects.length} objects`);
+      logger.info(`Grid created with ${gridObjects.length} objects`);
+      
+      return gridObjects;
     } catch (error) {
       console.error("Error creating grid:", error);
-      logger.error("Error creating grid:", error);
+      setGridErrorCount(prev => prev + 1);
       
-      // Show error toast
-      toast.error("Error creating grid. Retrying...");
+      // Report to Sentry
+      captureError(error, "grid-creation-error", {
+        level: "error",
+        extra: { attemptCount: attemptCountRef.current }
+      });
       
-      // Schedule retry with exponential backoff
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
+      // Try emergency fix as last resort
+      if (attemptCountRef.current >= maxAttempts - 1) {
+        console.warn("Trying emergency grid fix");
+        emergencyGridFix(canvas, gridLayerRef);
       }
       
-      const retryDelay = Math.min(2000 * Math.pow(1.5, attemptCountRef.current - 1), 10000);
-      
-      retryTimeoutRef.current = setTimeout(() => {
-        console.log(`Retrying grid creation after error (attempt ${attemptCountRef.current + 1})...`);
-        createGrid();
-      }, retryDelay);
+      return [];
     } finally {
       setIsCreatingGrid(false);
     }
-  }, [fabricCanvasRef, canvasDimensions, testMode, isCreatingGrid]);
+  }, [fabricCanvasRef, canvasDimensions, lastGridCreationTime]);
   
-  /**
-   * Clean up grid resources
-   */
-  const cleanupGrid = useCallback(() => {
-    if (fabricCanvasRef.current && gridLayerRef.current.length > 0) {
-      // Remove all grid objects
-      gridLayerRef.current.forEach(obj => {
-        if (fabricCanvasRef.current?.contains(obj)) {
-          fabricCanvasRef.current.remove(obj);
-        }
-      });
-      
-      // Clear references
-      gridLayerRef.current = [];
-      setGridInitialized(false);
-      setGridObjectCount(0);
-      
-      // Reset state
-      resetGridCreationState();
-      
-      logger.info("Grid cleaned up");
-    }
-    
-    // Clear any pending retries
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
-  }, [fabricCanvasRef]);
-  
-  // Create grid when canvas changes
-  useEffect(() => {
-    if (fabricCanvasRef.current && !gridInitialized && !isCreatingGrid) {
-      console.log("Canvas changed, creating grid...");
-      
-      // Short delay to ensure canvas is ready
-      const timeoutId = setTimeout(() => {
-        createGrid();
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [fabricCanvasRef.current, gridInitialized, isCreatingGrid, createGrid]);
-  
-  // Create or update grid when dimensions change significantly
+  // Initial grid creation on component mount
   useEffect(() => {
     if (fabricCanvasRef.current && 
         canvasDimensions.width > 0 && 
-        canvasDimensions.height > 0) {
-      console.log("Canvas dimensions changed, updating grid...");
-      createGrid();
+        canvasDimensions.height > 0 && 
+        !gridInitialized) {
+      // Short delay to ensure canvas is fully initialized
+      const timer = setTimeout(() => {
+        createGrid();
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
-  }, [canvasDimensions.width, canvasDimensions.height, createGrid]);
+  }, [
+    fabricCanvasRef, 
+    canvasDimensions.width, 
+    canvasDimensions.height, 
+    gridInitialized, 
+    createGrid
+  ]);
   
-  // Periodically check grid visibility
+  // Periodic check for grid health
   useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const checkGridInterval = setInterval(() => {
-      if (fabricCanvasRef.current && gridLayerRef.current.length > 0) {
-        const fixed = ensureGridVisibility(fabricCanvasRef.current, gridLayerRef);
-        if (fixed) {
-          console.log("Grid visibility fixed");
-          setGridObjectCount(gridLayerRef.current.length);
+    const checkGridHealth = () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      // Only run diagnostics if we have grid objects
+      if (gridLayerRef.current.length > 0) {
+        const diagnostics = runGridDiagnostics(canvas, gridLayerRef.current, false);
+        
+        // If we have issues with grid visibility, apply fixes
+        if (diagnostics.status !== 'ok') {
+          console.log("Grid health check found issues:", diagnostics.issues);
+          applyGridFixes(canvas, gridLayerRef.current);
         }
       }
-    }, 5000);
-    
-    return () => clearInterval(checkGridInterval);
-  }, [fabricCanvasRef]);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      cleanupGrid();
+      // If no grid objects but canvas exists, try to create grid
+      else if (canvas && canvas.width && canvas.height) {
+        console.log("No grid objects found during health check, creating grid");
+        createGrid();
+      }
     };
-  }, [cleanupGrid]);
+    
+    // Check every 5 seconds
+    const intervalId = setInterval(checkGridHealth, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, [fabricCanvasRef, createGrid]);
+  
+  // Create grid when dimensions change significantly
+  useEffect(() => {
+    if (fabricCanvasRef.current && 
+        gridInitialized && 
+        canvasDimensions.width > 0 && 
+        canvasDimensions.height > 0) {
+      // Check if canvas dimensions have changed significantly
+      const canvas = fabricCanvasRef.current;
+      if (Math.abs(canvas.width - canvasDimensions.width) > 50 || 
+          Math.abs(canvas.height - canvasDimensions.height) > 50) {
+        console.log("Canvas dimensions changed significantly, recreating grid");
+        createGrid();
+      }
+    }
+  }, [canvasDimensions, fabricCanvasRef, gridInitialized, createGrid]);
+  
+  // Verify grid visibility after creation
+  useEffect(() => {
+    if (gridInitialized && fabricCanvasRef.current && gridLayerRef.current.length > 0) {
+      // Check if grid is visible 
+      const timer = setTimeout(() => {
+        const isVisible = verifyGridVisibility(fabricCanvasRef.current, gridLayerRef.current);
+        
+        if (!isVisible) {
+          console.warn("Grid visibility check failed, attempting repair");
+          applyGridFixes(fabricCanvasRef.current!, gridLayerRef.current);
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [fabricCanvasRef, gridInitialized]);
   
   return {
     gridLayerRef,
     createGrid,
-    cleanupGrid,
     gridInitialized,
     isCreatingGrid,
-    gridObjectCount
+    gridObjectCount,
+    gridErrorCount,
+    runDiagnostics: () => runGridDiagnostics(fabricCanvasRef.current, gridLayerRef.current, true)
   };
 };

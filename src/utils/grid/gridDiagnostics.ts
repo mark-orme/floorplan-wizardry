@@ -1,207 +1,415 @@
 
 /**
- * Grid diagnostics utilities
- * Provides functions for diagnosing grid rendering issues
- * @module grid/gridDiagnostics
+ * Grid Diagnostics Utility
+ * Provides comprehensive diagnostic tools and tests for grid functionality
+ * @module utils/grid/gridDiagnostics
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { toast } from "sonner";
+import { captureError } from "../sentryUtils";
 import logger from "../logger";
+import { toast } from "sonner";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
+
+// Track diagnostics across attempts for pattern analysis
+let diagnosticRuns: Record<string, any>[] = [];
+const MAX_DIAGNOSTICS_HISTORY = 10;
 
 /**
- * Grid diagnostic information
- */
-interface GridDiagnostics {
-  timestamp: string;
-  canvasInfo: {
-    width: number | null;
-    height: number | null;
-    objectCount: number;
-    backgroundColor: string | null;
-    initialized: boolean;
-  };
-  gridInfo: {
-    objectCount: number;
-    objectsOnCanvas: number;
-    smallGridLines: number;
-    largeGridLines: number;
-    markers: number;
-  };
-  warnings: string[];
-  status: 'ok' | 'warning' | 'error';
-}
-
-/**
- * Run comprehensive diagnostics on grid rendering
- * 
+ * Run comprehensive grid diagnostics to identify issues
  * @param {FabricCanvas} canvas - The canvas to diagnose
- * @param {FabricObject[]} gridObjects - Grid objects to check
- * @param {boolean} verbose - Whether to log verbose output
- * @returns {GridDiagnostics} Diagnostic information 
+ * @param {FabricObject[]} gridObjects - The grid objects to check
+ * @param {boolean} verbose - Whether to log verbose diagnostics
+ * @returns {Object} Diagnostic results
  */
 export const runGridDiagnostics = (
   canvas: FabricCanvas | null,
-  gridObjects: FabricObject[] | null,
+  gridObjects: FabricObject[],
   verbose: boolean = false
-): GridDiagnostics => {
-  const warnings: string[] = [];
-  let status: 'ok' | 'warning' | 'error' = 'ok';
+): Record<string, any> => {
+  const startTime = performance.now();
+  const timestamp = new Date().toISOString();
   
-  // Initialize diagnostics object
-  const diagnostics: GridDiagnostics = {
-    timestamp: new Date().toISOString(),
-    canvasInfo: {
-      width: null,
-      height: null,
-      objectCount: 0,
-      backgroundColor: null,
-      initialized: false
-    },
-    gridInfo: {
-      objectCount: 0,
-      objectsOnCanvas: 0,
-      smallGridLines: 0,
-      largeGridLines: 0,
-      markers: 0
-    },
-    warnings,
-    status
+  // Create diagnostic result object
+  const diagnostics: Record<string, any> = {
+    timestamp,
+    status: 'unknown',
+    canvasInfo: {},
+    gridInfo: {},
+    issues: [],
+    recommendations: [],
+    renderingInfo: {}
   };
   
-  // Check canvas
+  // Check if canvas exists
   if (!canvas) {
-    warnings.push("Canvas is null");
-    status = 'error';
-    console.error("Grid diagnostics: Canvas is null");
-    return { ...diagnostics, warnings, status };
+    diagnostics.status = 'critical';
+    diagnostics.issues.push('Canvas is null or undefined');
+    diagnostics.recommendations.push('Ensure canvas initialization completes before grid creation');
+    
+    logDiagnostics(diagnostics, verbose);
+    return diagnostics;
   }
   
-  // Gather canvas info
-  diagnostics.canvasInfo.width = canvas.width;
-  diagnostics.canvasInfo.height = canvas.height;
-  diagnostics.canvasInfo.objectCount = canvas.getObjects().length;
-  diagnostics.canvasInfo.backgroundColor = canvas.backgroundColor as string | null;
-  diagnostics.canvasInfo.initialized = !!(canvas.width && canvas.height && canvas.width > 0 && canvas.height > 0);
+  // Canvas information
+  diagnostics.canvasInfo = {
+    width: canvas.width,
+    height: canvas.height,
+    valid: Boolean(canvas.width && canvas.height && canvas.width > 0 && canvas.height > 0),
+    objectCount: canvas.getObjects().length,
+    disposed: Boolean((canvas as any)._isDisposed),
+    renderOnAddRemove: canvas.renderOnAddRemove,
+    contextExists: Boolean((canvas as any).contextContainer)
+  };
   
-  // Check for canvas issues
-  if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
-    warnings.push("Canvas has invalid dimensions");
-    status = 'error';
-    console.error("Grid diagnostics: Canvas has invalid dimensions", {
-      width: canvas.width,
-      height: canvas.height
-    });
+  // Check canvas validity
+  if (!diagnostics.canvasInfo.valid) {
+    diagnostics.status = 'critical';
+    diagnostics.issues.push(`Canvas has invalid dimensions: ${canvas.width}x${canvas.height}`);
+    diagnostics.recommendations.push('Ensure canvas is properly initialized with valid dimensions');
   }
   
-  // Check grid
-  if (!gridObjects || gridObjects.length === 0) {
-    warnings.push("No grid objects found");
-    status = status === 'error' ? 'error' : 'warning';
-    console.warn("Grid diagnostics: No grid objects found");
+  // Grid information
+  const objectsOnCanvas = gridObjects.filter(obj => {
+    try {
+      return canvas.contains(obj);
+    } catch (error) {
+      return false;
+    }
+  }).length;
+  
+  diagnostics.gridInfo = {
+    total: gridObjects.length,
+    objectsOnCanvas,
+    missingObjects: gridObjects.length - objectsOnCanvas,
+    percentOnCanvas: gridObjects.length ? Math.round((objectsOnCanvas / gridObjects.length) * 100) : 0
+  };
+  
+  // Check grid status
+  if (gridObjects.length === 0) {
+    diagnostics.status = 'critical';
+    diagnostics.issues.push('No grid objects exist');
+    diagnostics.recommendations.push('Create grid objects using createGridElements');
+  } else if (objectsOnCanvas === 0) {
+    diagnostics.status = 'critical';
+    diagnostics.issues.push('Grid objects exist but none are on canvas');
+    diagnostics.recommendations.push('Add existing grid objects to canvas or recreate grid');
+  } else if (objectsOnCanvas < gridObjects.length) {
+    diagnostics.status = 'warning';
+    diagnostics.issues.push(`${gridObjects.length - objectsOnCanvas} grid objects are missing from canvas`);
+    diagnostics.recommendations.push('Re-add missing grid objects to canvas');
   } else {
-    diagnostics.gridInfo.objectCount = gridObjects.length;
-    
-    // Count objects on canvas
-    let objectsOnCanvas = 0;
-    let smallGridLines = 0;
-    let largeGridLines = 0;
-    let markers = 0;
-    
-    gridObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        objectsOnCanvas++;
-        
-        // Categorize objects
-        if (obj.type === 'line') {
-          const line = obj as any;
-          if (line.strokeWidth && line.strokeWidth > 0.5) {
-            largeGridLines++;
-          } else {
-            smallGridLines++;
-          }
-        } else if (obj.type === 'text') {
-          markers++;
-        }
-      }
-    });
-    
-    diagnostics.gridInfo.objectsOnCanvas = objectsOnCanvas;
-    diagnostics.gridInfo.smallGridLines = smallGridLines;
-    diagnostics.gridInfo.largeGridLines = largeGridLines;
-    diagnostics.gridInfo.markers = markers;
-    
-    // Check if grid objects are on canvas
-    if (objectsOnCanvas === 0) {
-      warnings.push("No grid objects are on canvas");
-      status = 'error';
-      console.error("Grid diagnostics: No grid objects are on canvas");
-    } else if (objectsOnCanvas < gridObjects.length) {
-      warnings.push(`Only ${objectsOnCanvas}/${gridObjects.length} grid objects are on canvas`);
-      status = status === 'error' ? 'error' : 'warning';
-      console.warn(`Grid diagnostics: Only ${objectsOnCanvas}/${gridObjects.length} grid objects are on canvas`);
-    }
+    diagnostics.status = 'ok';
   }
   
-  // Set status
-  diagnostics.status = status;
-  diagnostics.warnings = warnings;
-  
-  // Log results
-  if (verbose || status !== 'ok') {
-    console.log("Grid diagnostics:", diagnostics);
+  // Rendering information
+  try {
+    const context = (canvas as any).contextContainer;
+    diagnostics.renderingInfo = {
+      contextExists: Boolean(context),
+      renderCallsAvailable: typeof canvas.renderAll === 'function' && typeof canvas.requestRenderAll === 'function',
+      lastRenderTime: (canvas as any)._lastRenderTime || 'unknown'
+    };
     
-    if (status === 'error') {
-      logger.error("Grid diagnostics found errors:", warnings.join(", "));
-    } else if (status === 'warning') {
-      logger.warn("Grid diagnostics found warnings:", warnings.join(", "));
+    if (!context) {
+      diagnostics.status = 'critical';
+      diagnostics.issues.push('Canvas rendering context is missing');
+      diagnostics.recommendations.push('Recreate canvas with valid context');
     }
-    
-    // Show toast for errors
-    if (status === 'error') {
-      toast.error("Grid rendering issue detected");
-    }
+  } catch (error) {
+    diagnostics.renderingInfo = {
+      error: String(error)
+    };
+    diagnostics.issues.push('Error checking rendering info: ' + String(error));
   }
+  
+  // Calculate timing
+  diagnostics.timing = {
+    diagnosticTime: performance.now() - startTime
+  };
+  
+  // Store diagnostic run (limited history)
+  diagnosticRuns.unshift(diagnostics);
+  if (diagnosticRuns.length > MAX_DIAGNOSTICS_HISTORY) {
+    diagnosticRuns.pop();
+  }
+  
+  // Log diagnostics
+  logDiagnostics(diagnostics, verbose);
   
   return diagnostics;
 };
 
 /**
- * Fix common grid rendering issues
- * 
+ * Apply fixes based on diagnostic results
  * @param {FabricCanvas} canvas - The canvas to fix
- * @param {FabricObject[]} gridObjects - Grid objects to fix
- * @returns {boolean} Whether any fixes were applied
+ * @param {FabricObject[]} gridObjects - The grid objects to fix
+ * @returns {boolean} Whether fixes were applied
  */
 export const applyGridFixes = (
-  canvas: FabricCanvas | null,
-  gridObjects: FabricObject[] | null
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
 ): boolean => {
-  if (!canvas || !gridObjects || gridObjects.length === 0) {
-    return false;
-  }
-  
+  const diagnostics = runGridDiagnostics(canvas, gridObjects, true);
   let fixesApplied = false;
   
-  // Check if grid objects need to be added to canvas
-  gridObjects.forEach(obj => {
-    if (!canvas.contains(obj)) {
-      canvas.add(obj);
+  try {
+    // If we have grid objects but they're not on canvas, add them
+    if (diagnostics.gridInfo.total > 0 && diagnostics.gridInfo.objectsOnCanvas === 0) {
+      console.log("Fixing missing grid - adding all grid objects to canvas");
+      
+      // Add all grid objects to canvas
+      gridObjects.forEach(obj => {
+        if (!canvas.contains(obj)) {
+          canvas.add(obj);
+        }
+      });
+      
+      // Force render
+      canvas.requestRenderAll();
+      fixesApplied = true;
+      
+      toast.success("Grid display fixed", {
+        id: "grid-fix",
+        duration: 2000
+      });
+    }
+    
+    // If only some objects are missing, add just those
+    else if (diagnostics.gridInfo.missingObjects > 0) {
+      console.log(`Fixing partially missing grid - adding ${diagnostics.gridInfo.missingObjects} objects`);
+      
+      // Find and add missing objects
+      gridObjects.forEach(obj => {
+        if (!canvas.contains(obj)) {
+          canvas.add(obj);
+        }
+      });
+      
+      // Force render
+      canvas.requestRenderAll();
       fixesApplied = true;
     }
-  });
-  
-  // If fixes were applied, force render
-  if (fixesApplied) {
-    canvas.requestRenderAll();
-    logger.info("Applied grid fixes");
-    console.log("Applied grid fixes");
+    
+    // If canvas has invalid dimensions but exists
+    if (!diagnostics.canvasInfo.valid && canvas) {
+      console.log("Canvas has invalid dimensions - forcing minimum dimensions");
+      
+      // Force minimum dimensions
+      if (!canvas.width || canvas.width < 100) {
+        console.log("Setting minimum canvas width");
+        canvas.setWidth(800);
+      }
+      
+      if (!canvas.height || canvas.height < 100) {
+        console.log("Setting minimum canvas height");
+        canvas.setHeight(600);
+      }
+      
+      fixesApplied = true;
+      
+      // Force canvas to update
+      canvas.renderAll();
+    }
+    
+    // Log result to Sentry
+    if (fixesApplied) {
+      captureError(
+        new Error("Grid fixes applied successfully"),
+        "grid-fixes-applied",
+        {
+          level: "info",
+          extra: {
+            diagnostics,
+            fixTime: new Date().toISOString()
+          }
+        }
+      );
+    }
+    
+    return fixesApplied;
+  } catch (error) {
+    console.error("Error applying grid fixes:", error);
+    
+    captureError(error, "grid-fix-error", {
+      level: "error",
+      extra: { diagnostics }
+    });
+    
+    return false;
   }
-  
-  return fixesApplied;
 };
 
-// Export diagnostic functions
-export default {
-  runGridDiagnostics,
-  applyGridFixes
+/**
+ * Log grid diagnostics
+ * @param {Object} diagnostics - Diagnostic results
+ * @param {boolean} verbose - Whether to log verbose output
+ */
+function logDiagnostics(diagnostics: Record<string, any>, verbose: boolean): void {
+  // Always log critical issues
+  if (diagnostics.status === 'critical') {
+    console.error("🚨 CRITICAL GRID ISSUES:", diagnostics.issues);
+    
+    // Report to Sentry
+    captureError(
+      new Error(`Critical grid issues: ${diagnostics.issues.join(', ')}`),
+      "grid-critical-issues",
+      {
+        level: "error",
+        extra: diagnostics
+      }
+    );
+  } 
+  // Log warnings if verbose or there are issues
+  else if (verbose || diagnostics.status === 'warning') {
+    console.warn("⚠️ Grid diagnostic:", diagnostics);
+  }
+  // Log success if verbose
+  else if (verbose && diagnostics.status === 'ok') {
+    console.log("✅ Grid diagnostic: OK", diagnostics);
+  }
+  
+  // Log to the logger service
+  if (diagnostics.status !== 'ok') {
+    logger.warn(`Grid diagnostic: ${diagnostics.status}`, diagnostics);
+  } else if (verbose) {
+    logger.info("Grid diagnostic: OK", diagnostics);
+  }
+}
+
+/**
+ * Get diagnostic history for analysis
+ * @returns {Array} Diagnostic history
+ */
+export const getDiagnosticHistory = (): Record<string, any>[] => {
+  return [...diagnosticRuns];
+};
+
+/**
+ * Verify if grid is visible and properly rendered
+ * @param {FabricCanvas} canvas - The canvas to check
+ * @param {FabricObject[]} gridObjects - The grid objects to check
+ * @returns {boolean} Whether grid is properly visible
+ */
+export const verifyGridVisibility = (
+  canvas: FabricCanvas | null,
+  gridObjects: FabricObject[]
+): boolean => {
+  if (!canvas) return false;
+  
+  try {
+    const diagnostics = runGridDiagnostics(canvas, gridObjects, false);
+    
+    // Consider grid visible if most objects are on canvas
+    const visibilityThreshold = 0.9; // 90% of objects must be visible
+    const visibilityRatio = diagnostics.gridInfo.objectsOnCanvas / diagnostics.gridInfo.total;
+    
+    return visibilityRatio >= visibilityThreshold;
+  } catch (error) {
+    console.error("Error verifying grid visibility:", error);
+    return false;
+  }
+};
+
+/**
+ * Emergency fix - try to make grid visible when all else fails
+ * @param {FabricCanvas} canvas - The canvas to fix
+ * @param {FabricObject[]} gridObjects - The grid objects to fix
+ * @returns {boolean} Whether emergency fix was successful
+ */
+export const emergencyGridFix = (
+  canvas: FabricCanvas | null,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas) return false;
+  
+  try {
+    console.log("🚨 Applying emergency grid fix");
+    
+    // Force canvas dimensions if they're invalid
+    if (!canvas.width || canvas.width <= 0) {
+      canvas.setWidth(800);
+    }
+    
+    if (!canvas.height || canvas.height <= 0) {
+      canvas.setHeight(600);
+    }
+    
+    // Remove all existing grid objects first
+    const gridObjects = gridLayerRef.current;
+    gridObjects.forEach(obj => {
+      if (canvas.contains(obj)) {
+        canvas.remove(obj);
+      }
+    });
+    
+    // Create emergency grid lines
+    const emergencyGrid: FabricObject[] = [];
+    
+    // Get grid size from constants
+    const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+    const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
+    
+    // Function to create a single grid line
+    const createGridLine = (coords: number[], isLarge: boolean) => {
+      const line = new fabric.Line(coords, {
+        stroke: isLarge ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: isLarge ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        opacity: GRID_CONSTANTS.GRID_OPACITY
+      });
+      
+      // Add custom properties
+      (line as any).objectType = 'grid';
+      (line as any).gridType = isLarge ? 'large' : 'small';
+      
+      canvas.add(line);
+      emergencyGrid.push(line);
+    };
+    
+    // Create vertical lines (large grid only for performance)
+    for (let x = 0; x <= canvas.width; x += largeGridSize) {
+      createGridLine([x, 0, x, canvas.height], true);
+    }
+    
+    // Create horizontal lines (large grid only for performance)
+    for (let y = 0; y <= canvas.height; y += largeGridSize) {
+      createGridLine([0, y, canvas.width, y], true);
+    }
+    
+    // Update grid reference
+    gridLayerRef.current = emergencyGrid;
+    
+    // Force render
+    canvas.requestRenderAll();
+    
+    // Log success
+    console.log(`✅ Emergency grid created with ${emergencyGrid.length} lines`);
+    toast.success("Emergency grid created", {
+      duration: 2000
+    });
+    
+    // Report to Sentry
+    captureError(
+      new Error("Emergency grid fix applied"),
+      "grid-emergency-fix",
+      {
+        level: "warning",
+        extra: {
+          linesCreated: emergencyGrid.length,
+          canvasDimensions: `${canvas.width}x${canvas.height}`
+        }
+      }
+    );
+    
+    return true;
+  } catch (error) {
+    console.error("Emergency grid fix failed:", error);
+    
+    captureError(error, "grid-emergency-fix-error", {
+      level: "error"
+    });
+    
+    return false;
+  }
 };

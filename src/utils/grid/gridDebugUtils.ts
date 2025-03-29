@@ -1,160 +1,51 @@
 /**
  * Grid debugging utilities
- * Tools for debugging grid creation and rendering issues
- * @module grid/gridDebugUtils
+ * Advanced debugging and testing tools for grid functionality
+ * @module utils/grid/gridDebugUtils
  */
-import { Canvas, Object as FabricObject, Line } from "fabric";
-import { throttledLog, throttledError } from "./consoleThrottling";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { captureError } from "../sentryUtils";
+import logger from "../logger";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
-/**
- * Track grid creation attempts for debugging
- */
+// Track grid debug stats across page loads
 export const gridDebugStats = {
-  // Creation attempts
   attempts: 0,
-  failedAttempts: 0,
-  successfulAttempts: 0,
-  
-  // Timing
-  firstAttemptTime: 0,
-  lastAttemptTime: 0,
-  lastSuccessTime: 0,
-  
-  // Canvas state when last attempted
-  lastCanvasDimensions: { width: 0, height: 0 },
-  lastCanvasObjectCount: 0,
-  
-  // Error tracking
-  lastError: null as Error | null,
+  successfulCreations: 0,
+  failedCreations: 0,
   errorMessages: [] as string[],
-  
-  // Grid state
-  lastGridObjectCount: 0,
-  
-  // Tracking flags
-  hasEverSucceeded: false,
-  
-  // Reset stats
-  reset(): void {
-    this.attempts = 0;
-    this.failedAttempts = 0;
-    this.successfulAttempts = 0;
-    this.firstAttemptTime = 0;
-    this.lastAttemptTime = 0;
-    this.lastSuccessTime = 0;
-    this.lastCanvasDimensions = { width: 0, height: 0 };
-    this.lastCanvasObjectCount = 0;
-    this.lastError = null;
-    this.errorMessages = [];
-    this.lastGridObjectCount = 0;
-    // Keep hasEverSucceeded as is - it's a lifetime value
-  }
+  lastError: null as Error | null,
+  lastSuccessTime: null as number | null,
+  creationTimes: [] as number[],
+  gridStats: [] as Record<string, any>[]
 };
 
 /**
- * Create a basic emergency grid when normal grid creation fails
- * Provides a simple fallback grid with minimal styling
+ * Create basic emergency grid directly
+ * Uses minimal approach for maximum reliability
  * 
- * @param {Canvas | null} canvas - The canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @param {FabricCanvas} canvas - Canvas to create grid on
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
  * @returns {FabricObject[]} Created grid objects
  */
-export function createBasicEmergencyGrid(
-  canvas: Canvas | null,
+export const createBasicEmergencyGrid = (
+  canvas: FabricCanvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] {
-  if (!canvas) {
-    console.error("Cannot create emergency grid: Canvas is null");
-    return [];
-  }
+): FabricObject[] => {
+  console.log("Creating basic emergency grid");
   
   try {
-    const gridObjects: FabricObject[] = [];
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
+    // Start performance measurement
+    const startTime = performance.now();
     
-    // Create horizontal lines (every 50px)
-    for (let y = 0; y <= height; y += 50) {
-      const line = new Line([0, y, width, y], {
-        stroke: "#c0c0c0",
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-        name: `grid-h-emergency-${y}`
-      });
-      
-      canvas.add(line);
-      canvas.sendObjectToBack(line);
-      gridObjects.push(line);
-    }
+    // Set basic constants
+    const gridSize = 50; // Large grid only for emergency
+    const gridColor = "#aaaaaa";
+    const gridWidth = 0.5;
     
-    // Create vertical lines (every 50px)
-    for (let x = 0; x <= width; x += 50) {
-      const line = new Line([x, 0, x, height], {
-        stroke: "#c0c0c0",
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-        name: `grid-v-emergency-${x}`
-      });
-      
-      canvas.add(line);
-      canvas.sendObjectToBack(line);
-      gridObjects.push(line);
-    }
-    
-    // Update grid layer reference
-    gridLayerRef.current = gridObjects;
-    
-    // Log success
-    captureError(
-      new Error("Emergency grid created successfully"),
-      "grid-emergency",
-      {
-        level: "info",
-        tags: { component: "grid", operation: "emergency-creation" },
-        extra: { gridObjectCount: gridObjects.length }
-      }
-    );
-    
-    return gridObjects;
-  } catch (error) {
-    console.error("Error creating emergency grid:", error);
-    
-    // Log error to Sentry
-    captureError(
-      error instanceof Error ? error : new Error("Unknown error in emergency grid creation"),
-      "grid-emergency-error",
-      {
-        level: "error",
-        tags: { component: "grid", operation: "emergency-creation" }
-      }
-    );
-    
-    return [];
-  }
-}
-
-/**
- * Force create a new grid, removing any existing grid objects
- * Used for manual grid recreation when automatic creation fails
- * 
- * @param {Canvas} canvas - The canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
- * @returns {FabricObject[]} Created grid objects
- */
-export function forceCreateGrid(
-  canvas: Canvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] {
-  try {
-    // First remove all existing grid objects
-    const existingGridObjects = gridLayerRef.current;
-    if (existingGridObjects.length > 0) {
-      existingGridObjects.forEach(obj => {
+    // Clear existing grid if any
+    if (gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
         if (canvas.contains(obj)) {
           canvas.remove(obj);
         }
@@ -162,304 +53,362 @@ export function forceCreateGrid(
       gridLayerRef.current = [];
     }
     
-    // Create a new grid
-    const result = createBasicEmergencyGrid(canvas, gridLayerRef);
+    // Create emergency grid
+    const gridObjects: FabricObject[] = [];
     
-    // Force render
+    // Disable rendering during creation for better performance
+    const originalRenderOnAddRemove = canvas.renderOnAddRemove;
+    canvas.renderOnAddRemove = false;
+    
+    // Create vertical lines with basic constructor
+    for (let x = 0; x <= canvas.width; x += gridSize) {
+      const line = new Line([x, 0, x, canvas.height], {
+        stroke: gridColor,
+        strokeWidth: gridWidth,
+        selectable: false,
+        evented: false
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create horizontal lines with basic constructor
+    for (let y = 0; y <= canvas.height; y += gridSize) {
+      const line = new Line([0, y, canvas.width, y], {
+        stroke: gridColor,
+        strokeWidth: gridWidth,
+        selectable: false,
+        evented: false
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Restore rendering setting and force render
+    canvas.renderOnAddRemove = originalRenderOnAddRemove;
     canvas.requestRenderAll();
     
-    // Log success
-    captureError(
-      new Error("Grid forcibly recreated"),
-      "grid-force-create",
-      {
-        level: "info",
-        tags: { component: "grid", operation: "force-create" },
-        extra: { gridObjectCount: result.length }
-      }
-    );
+    // Store the created grid in the reference
+    gridLayerRef.current = gridObjects;
     
-    return result;
+    // Track timing
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    
+    // Update debug stats
+    gridDebugStats.attempts++;
+    gridDebugStats.successfulCreations++;
+    gridDebugStats.lastSuccessTime = Date.now();
+    gridDebugStats.creationTimes.push(duration);
+    
+    console.log(`Emergency grid created with ${gridObjects.length} objects in ${duration.toFixed(1)}ms`);
+    
+    return gridObjects;
   } catch (error) {
-    console.error("Error in forceCreateGrid:", error);
+    console.error("Error creating emergency grid:", error);
     
-    // Log error to Sentry
-    captureError(
-      error instanceof Error ? error : new Error("Unknown error in force create grid"),
-      "grid-force-create-error",
-      {
-        level: "error",
-        tags: { component: "grid", operation: "force-create" }
+    // Update debug stats
+    gridDebugStats.attempts++;
+    gridDebugStats.failedCreations++;
+    gridDebugStats.errorMessages.push(String(error));
+    gridDebugStats.lastError = error instanceof Error ? error : new Error(String(error));
+    
+    // Report to Sentry
+    captureError(error, "emergency-grid-creation-error", {
+      level: "error",
+      tags: {
+        component: "gridDebugUtils",
+        function: "createBasicEmergencyGrid"
       }
-    );
+    });
     
     return [];
   }
-}
+};
 
 /**
- * Track a grid creation attempt
+ * Dump grid state to console and Sentry
+ * Provides comprehensive diagnostic information
  * 
- * @param {Canvas} canvas - The canvas instance
- * @param {boolean} success - Whether the attempt was successful
- * @param {Error} [error] - Optional error if attempt failed
+ * @param {FabricCanvas} canvas - Canvas to diagnose
+ * @param {FabricObject[]} gridObjects - Grid objects to inspect
  */
-export function trackGridAttempt(
-  canvas: Canvas,
-  success: boolean,
-  error?: Error
-): void {
-  const now = Date.now();
-  
-  // First time setup
-  if (gridDebugStats.firstAttemptTime === 0) {
-    gridDebugStats.firstAttemptTime = now;
-  }
-  
-  // Update stats
-  gridDebugStats.attempts++;
-  gridDebugStats.lastAttemptTime = now;
-  
-  // Store canvas info
-  if (canvas) {
-    gridDebugStats.lastCanvasDimensions = {
-      width: canvas.width || 0,
-      height: canvas.height || 0
-    };
-    gridDebugStats.lastCanvasObjectCount = canvas.getObjects()?.length || 0;
-  }
-  
-  if (success) {
-    gridDebugStats.successfulAttempts++;
-    gridDebugStats.lastSuccessTime = now;
-    gridDebugStats.hasEverSucceeded = true;
-  } else {
-    gridDebugStats.failedAttempts++;
-    
-    if (error) {
-      gridDebugStats.lastError = error;
-      gridDebugStats.errorMessages.push(error.message);
-      
-      // Keep the list at a reasonable size
-      if (gridDebugStats.errorMessages.length > 10) {
-        gridDebugStats.errorMessages.shift();
-      }
-    }
-  }
-}
-
-/**
- * Generate a detailed report of grid state
- * 
- * @param {Canvas} canvas - The canvas instance
- * @param {FabricObject[]} gridObjects - The grid objects
- * @returns {Object} Detailed grid state report
- */
-export function dumpGridState(
-  canvas: Canvas,
+export const dumpGridState = (
+  canvas: FabricCanvas,
   gridObjects: FabricObject[]
-): Record<string, any> {
-  const now = Date.now();
-  const state = {
-    timestamp: new Date().toISOString(),
-    timeSinceFirstAttempt: gridDebugStats.firstAttemptTime ? now - gridDebugStats.firstAttemptTime : null,
-    timeSinceLastAttempt: gridDebugStats.lastAttemptTime ? now - gridDebugStats.lastAttemptTime : null,
-    timeSinceLastSuccess: gridDebugStats.lastSuccessTime ? now - gridDebugStats.lastSuccessTime : null,
-    
-    // Canvas state
-    canvasExists: !!canvas,
-    canvasInitialized: canvas && canvas.width > 0 && canvas.height > 0,
-    canvasDimensions: canvas ? { width: canvas.width, height: canvas.height } : null,
-    zoom: canvas?.getZoom?.() || null,
-    viewportTransform: canvas?.viewportTransform || null,
-    
-    // Grid state
-    gridLayerExists: Array.isArray(gridObjects),
-    gridObjectCount: gridObjects?.length || 0,
-    canvasObjectCount: canvas?.getObjects()?.length || 0,
-    gridObjectsOnCanvas: canvas && gridObjects ? 
-      gridObjects.filter(obj => canvas.contains(obj)).length : 0,
-    
-    // Debug stats
-    stats: { ...gridDebugStats }
-  };
-  
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    throttledLog('Grid state dump:', state);
-  }
-  
-  // Send detailed report to Sentry
-  captureError(
-    new Error(`Grid debug report: ${state.gridObjectCount} objects, ${state.gridObjectsOnCanvas} on canvas`),
-    "grid-debug-report",
-    {
-      level: "info",
-      tags: { 
-        component: "grid", 
-        operation: "debug-dump",
-        success: String(!!state.gridObjectsOnCanvas && state.gridObjectsOnCanvas > 0)
-      },
-      extra: state
-    }
-  );
-  
-  return state;
-}
-
-/**
- * Check for common grid issues
- * 
- * @param {Canvas} canvas - The canvas instance
- * @param {FabricObject[]} gridObjects - The grid objects
- * @returns {string[]} Array of identified issues
- */
-export function identifyGridIssues(
-  canvas: Canvas,
-  gridObjects: FabricObject[]
-): string[] {
-  const issues: string[] = [];
-  
-  if (!canvas) {
-    issues.push("Canvas reference is null or undefined");
-    return issues;
-  }
-  
-  // Check canvas dimensions
-  if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
-    issues.push(`Canvas has invalid dimensions: ${canvas.width}x${canvas.height}`);
-  }
-  
-  // Check grid objects
-  if (!Array.isArray(gridObjects)) {
-    issues.push("Grid objects reference is not an array");
-  } else if (gridObjects.length === 0) {
-    issues.push("Grid objects array is empty");
-  } 
-  
-  // Check if grid objects are on canvas
-  if (Array.isArray(gridObjects) && gridObjects.length > 0 && canvas) {
-    const onCanvas = gridObjects.filter(obj => canvas.contains(obj)).length;
-    
-    if (onCanvas === 0) {
-      issues.push("No grid objects are present on the canvas");
-    } else if (onCanvas < gridObjects.length) {
-      issues.push(`Only ${onCanvas}/${gridObjects.length} grid objects are on canvas`);
-    }
-    
-    // Check grid object properties to ensure they're intact
-    const invalidObjects = gridObjects.filter(obj => 
-      !obj || !obj.get('name') || !(obj.get('name') as string).startsWith('grid-')
-    );
-    
-    if (invalidObjects.length > 0) {
-      issues.push(`${invalidObjects.length} grid objects are missing required properties`);
-    }
-  }
-  
-  // Additional checks for the canvas
-  if (canvas) {
-    // Check for abnormal zoom levels
-    const zoom = canvas.getZoom();
-    if (zoom && (zoom < 0.1 || zoom > 10)) {
-      issues.push(`Canvas has abnormal zoom level: ${zoom}`);
-    }
-    
-    // Check for large number of objects that might cause performance issues
-    const totalObjects = canvas.getObjects()?.length || 0;
-    if (totalObjects > 1000) {
-      issues.push(`Canvas has unusually high number of objects: ${totalObjects}`);
-    }
-    
-    // Check if canvas is in an invalid state
-    try {
-      const isRendering = (canvas as any)._isCurrentlyDrawing;
-      if (isRendering) {
-        issues.push("Canvas is currently in drawing state, may be locked");
-      }
-    } catch (e) {
-      issues.push("Error checking canvas rendering state");
-    }
-  }
-  
-  // Report issues to Sentry
-  if (issues.length > 0) {
-    captureError(
-      new Error(`Grid issues identified: ${issues.length} problems found`),
-      "grid-issues",
-      {
-        level: "warning",
-        tags: { component: "grid", operation: "diagnose" },
-        extra: { 
-          issues,
-          canvasDimensions: canvas ? { width: canvas.width, height: canvas.height } : null,
-          gridObjectCount: gridObjects?.length || 0
-        }
-      }
-    );
-  }
-  
-  return issues;
-}
-
-/**
- * Diagnostic function to be called when grid fails to render
- * Captures detailed state for debugging
- * 
- * @param {Canvas} canvas - The canvas instance 
- * @param {FabricObject[]} gridObjects - The grid objects
- * @param {string} context - Additional context about where this was called from
- */
-export function diagnoseGridFailure(
-  canvas: Canvas | null,
-  gridObjects: FabricObject[] | null,
-  context: string
-): void {
-  // Create a comprehensive report
-  const report = {
-    timestamp: new Date().toISOString(),
-    context,
-    canvasState: canvas ? {
-      exists: true,
+): void => {
+  try {
+    // Collect canvas info
+    const canvasInfo = {
       width: canvas.width,
       height: canvas.height,
-      zoom: canvas.getZoom?.() || 'unknown',
-      objectCount: canvas.getObjects()?.length || 0,
+      totalObjects: canvas.getObjects().length,
       viewportTransform: canvas.viewportTransform,
+      zoom: canvas.getZoom(),
+      rendered: canvas.isRendered(),
       renderOnAddRemove: canvas.renderOnAddRemove
-    } : { exists: false },
-    gridState: gridObjects ? {
-      exists: true,
-      length: gridObjects.length,
-      onCanvas: canvas ? gridObjects.filter(obj => canvas.contains(obj)).length : 'n/a'
-    } : { exists: false },
-    debugStats: { ...gridDebugStats },
-    browserInfo: typeof window !== 'undefined' ? {
-      userAgent: window.navigator.userAgent,
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight
+    };
+    
+    // Collect grid info
+    const gridInfo = {
+      total: gridObjects.length,
+      onCanvas: gridObjects.filter(obj => canvas.contains(obj)).length,
+      visible: gridObjects.filter(obj => !obj.invisible).length,
+      types: gridObjects.reduce((acc, obj) => {
+        const type = obj.type || 'unknown';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    };
+    
+    // Sample a few grid objects
+    const sampleObjects = gridObjects.slice(0, 3).map(obj => ({
+      type: obj.type,
+      visible: !obj.invisible,
+      onCanvas: canvas.contains(obj),
+      coords: obj.type === 'line' ? 
+        [(obj as any).x1, (obj as any).y1, (obj as any).x2, (obj as any).y2] : 
+        [obj.left, obj.top, obj.width, obj.height]
+    }));
+    
+    // Build diagnostic object
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      canvas: canvasInfo,
+      grid: gridInfo,
+      sampleObjects,
+      constants: {
+        SMALL_GRID_SIZE: GRID_CONSTANTS.SMALL_GRID_SIZE,
+        LARGE_GRID_SIZE: GRID_CONSTANTS.LARGE_GRID_SIZE
+      },
+      debugStats: { ...gridDebugStats }
+    };
+    
+    // Log to console
+    console.group("🔍 Grid State Dump");
+    console.log("Canvas:", canvasInfo);
+    console.log("Grid:", gridInfo);
+    console.log("Sample Objects:", sampleObjects);
+    console.groupEnd();
+    
+    // Report to Sentry as diagnostic
+    captureError(
+      new Error("Grid state dump"),
+      "grid-state-dump",
+      {
+        level: "info",
+        extra: diagnostics
       }
-    } : null
+    );
+    
+    // Update debug stats
+    gridDebugStats.gridStats.push({
+      timestamp: Date.now(),
+      gridCount: gridInfo.total,
+      onCanvas: gridInfo.onCanvas
+    });
+    
+    // Only keep last 10 stats
+    if (gridDebugStats.gridStats.length > 10) {
+      gridDebugStats.gridStats.shift();
+    }
+    
+    return diagnostics;
+  } catch (error) {
+    console.error("Error dumping grid state:", error);
+    return null;
+  }
+};
+
+/**
+ * Force creation of grid by trying multiple strategies
+ * Last resort utility for fixing grids
+ * 
+ * @param {FabricCanvas} canvas - Canvas to create grid on
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Whether grid creation was successful
+ */
+export const forceCreateGrid = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  console.log("Forcing grid creation with multiple strategies");
+  
+  try {
+    // First try standard emergency grid
+    let success = false;
+    let gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+    
+    if (gridObjects.length > 0) {
+      console.log("Standard emergency grid created successfully");
+      success = true;
+    } else {
+      // Try alternative approach with default fabric constructor
+      console.log("Standard approach failed, trying alternative grid creation");
+      gridObjects = [];
+      
+      // Set basic constants
+      const gridSize = 100; // Even larger grid for last resort
+      const gridColor = "#999999";
+      const gridWidth = 0.5;
+      
+      // Disable rendering during creation
+      canvas.renderOnAddRemove = false;
+      
+      // Create very basic grid
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        const line = new fabric.Line([x, 0, x, canvas.height], {
+          stroke: gridColor,
+          strokeWidth: gridWidth,
+          selectable: false
+        });
+        canvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        const line = new fabric.Line([0, y, canvas.width, y], {
+          stroke: gridColor,
+          strokeWidth: gridWidth,
+          selectable: false
+        });
+        canvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      // Re-enable rendering and force render
+      canvas.renderOnAddRemove = true;
+      canvas.requestRenderAll();
+      
+      // Update reference
+      gridLayerRef.current = gridObjects;
+      
+      success = gridObjects.length > 0;
+      console.log(`Alternative grid creation ${success ? 'succeeded' : 'failed'}`);
+    }
+    
+    // Report result
+    if (success) {
+      logger.info(`Forced grid creation successful with ${gridObjects.length} objects`);
+      
+      captureError(
+        new Error("Force grid creation succeeded"),
+        "force-grid-creation-success",
+        {
+          level: "info",
+          extra: {
+            objectsCreated: gridObjects.length,
+            canvasDimensions: `${canvas.width}x${canvas.height}`
+          }
+        }
+      );
+    } else {
+      logger.error("Force grid creation failed with all approaches");
+      
+      captureError(
+        new Error("Force grid creation failed"),
+        "force-grid-creation-failed",
+        {
+          level: "error",
+          extra: {
+            canvasDimensions: `${canvas.width}x${canvas.height}`
+          }
+        }
+      );
+    }
+    
+    return success;
+  } catch (error) {
+    console.error("Error in force grid creation:", error);
+    return false;
+  }
+};
+
+/**
+ * Diagnose grid failure and report comprehensive information
+ * @param {FabricCanvas | null} canvas - Canvas to diagnose
+ * @param {FabricObject[] | null} gridObjects - Grid objects to diagnose
+ * @param {string} context - Context for the diagnosis
+ */
+export const diagnoseGridFailure = (
+  canvas: FabricCanvas | null,
+  gridObjects: FabricObject[] | null,
+  context: string = "grid-failure"
+): void => {
+  // Get as much diagnostic info as possible
+  const diagnostics: Record<string, any> = {
+    timestamp: new Date().toISOString(),
+    context,
+    debugStats: { ...gridDebugStats }
   };
   
-  // Send detailed diagnostic to Sentry
+  // Canvas information
+  diagnostics.canvas = canvas ? {
+    exists: true,
+    width: canvas.width,
+    height: canvas.height,
+    valid: !!(canvas.width && canvas.height && canvas.width > 0 && canvas.height > 0),
+    objectCount: canvas.getObjects()?.length || 0,
+    contextExists: !!(canvas as any).contextContainer,
+    renderOnAddRemove: canvas.renderOnAddRemove,
+    rendered: canvas.isRendered?.() || false
+  } : {
+    exists: false
+  };
+  
+  // Grid information
+  diagnostics.grid = gridObjects ? {
+    exists: true,
+    count: gridObjects.length,
+    onCanvas: canvas ? gridObjects.filter(obj => {
+      try { return canvas.contains(obj); } catch { return false; }
+    }).length : 'N/A',
+    types: gridObjects.reduce((acc, obj) => {
+      const type = obj.type || 'unknown';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  } : {
+    exists: false
+  };
+  
+  // Identify issues
+  diagnostics.issues = [];
+  
+  if (!canvas) {
+    diagnostics.issues.push('Canvas is null');
+  } else if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
+    diagnostics.issues.push(`Canvas has invalid dimensions: ${canvas.width}x${canvas.height}`);
+  }
+  
+  if (!gridObjects || gridObjects.length === 0) {
+    diagnostics.issues.push('No grid objects exist');
+  } else if (canvas && diagnostics.grid.onCanvas === 0) {
+    diagnostics.issues.push('Grid objects exist but none are on canvas');
+  } else if (canvas && diagnostics.grid.onCanvas < gridObjects.length) {
+    diagnostics.issues.push(`${gridObjects.length - diagnostics.grid.onCanvas} grid objects are missing from canvas`);
+  }
+  
+  // Log diagnostic information
+  console.group(`🔍 Grid Failure Diagnosis: ${context}`);
+  console.log("Diagnostics:", diagnostics);
+  console.groupEnd();
+  
+  logger.error(`Grid failure diagnosed (${context}):`, diagnostics);
+  
+  // Report to Sentry
   captureError(
-    new Error(`Grid failure diagnosed from ${context}`),
+    new Error(`Grid failure diagnosis: ${context}`),
     "grid-failure-diagnosis",
     {
       level: "error",
-      tags: { 
-        component: "grid", 
-        operation: "diagnose",
+      tags: {
+        component: "grid",
         context
       },
-      extra: report
+      extra: diagnostics
     }
   );
-  
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`[Grid Diagnosis] Failure from ${context}:`, report);
-  }
-}
+};
