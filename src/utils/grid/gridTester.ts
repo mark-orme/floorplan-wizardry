@@ -4,7 +4,7 @@
  * Provides testing tools for diagnosing grid rendering issues
  * @module utils/grid/gridTester
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Rect } from "fabric";
 import { toast } from "sonner";
 import { captureError } from "../sentryUtils";
 import logger from "../logger";
@@ -232,7 +232,7 @@ export const showGridTestPattern = (canvas: FabricCanvas | null): boolean => {
     
     // Add a blue square around it
     const squareSize = 150;
-    const square = new fabric.Rect({
+    const square = new Rect({
       left: centerX - squareSize/2,
       top: centerY - squareSize/2,
       width: squareSize,

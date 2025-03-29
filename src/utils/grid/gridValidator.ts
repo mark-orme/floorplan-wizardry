@@ -4,7 +4,7 @@
  * Provides comprehensive validation for grid functionality
  * @module utils/grid/gridValidator
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { checkCanvasHealth, trackGridError } from "./gridErrorTracker";
 import logger from "../logger";
 
@@ -37,7 +37,7 @@ export const validateCanvasForGrid = (canvas: FabricCanvas | null): boolean => {
   
   // Check if context exists by seeing if objects can be added
   try {
-    const testObject = new fabric.Line([0, 0, 1, 1], { visible: false });
+    const testObject = new Line([0, 0, 1, 1], { visible: false });
     canvas.add(testObject);
     canvas.remove(testObject);
   } catch (error) {
