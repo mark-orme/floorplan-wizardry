@@ -1,170 +1,157 @@
 
 /**
- * Grid Debug Panel Component
- * Shows real-time information about the canvas grid
- * @module canvas/grid/GridDebugPanel
+ * Grid Debug Panel
+ * Provides real-time diagnostics and controls for grid troubleshooting
+ * @module components/canvas/grid/GridDebugPanel
  */
-import React, { useState, useEffect } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { Button } from '@/components/ui/button';
-import { X, RefreshCw, ZoomIn, Grid } from 'lucide-react';
-import { dumpGridState, forceCreateGrid } from '@/utils/grid/gridDebugUtils';
+import { useState, useEffect } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Bug, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { validateCanvasForGrid } from "@/utils/grid/gridUtils";
+import { createReliableGrid } from "@/utils/grid/reliableGridCreation";
 
-/**
- * Props for the GridDebugPanel component
- * @interface GridDebugPanelProps
- */
 interface GridDebugPanelProps {
-  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Whether the panel is visible */
   visible?: boolean;
 }
 
-/**
- * Grid debug panel component
- * Displays real-time grid statistics and provides utilities for grid management
- * 
- * @param {GridDebugPanelProps} props - Component properties
- * @returns {JSX.Element | null} Rendered component
- */
-export function GridDebugPanel({ 
-  fabricCanvasRef, 
-  gridLayerRef, 
-  visible = false 
-}: GridDebugPanelProps) {
-  const [isOpen, setIsOpen] = useState(visible);
-  const [gridStats, setGridStats] = useState({
-    canvasWidth: 0,
-    canvasHeight: 0,
-    totalGridObjects: 0,
-    objectsOnCanvas: 0
-  });
+export const GridDebugPanel: React.FC<GridDebugPanelProps> = ({
+  fabricCanvasRef,
+  gridLayerRef,
+  visible = false
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<Record<string, any>>({});
+  const [refreshCount, setRefreshCount] = useState(0);
   
-  // Update grid statistics
+  // Run diagnostics
   useEffect(() => {
-    if (!isOpen) return;
+    if (!visible) return;
     
-    const updateStats = () => {
+    const runDiagnostics = () => {
       const canvas = fabricCanvasRef.current;
       
-      if (!canvas) {
-        setGridStats({
-          canvasWidth: 0,
-          canvasHeight: 0,
-          totalGridObjects: 0,
-          objectsOnCanvas: 0
-        });
-        return;
-      }
+      const diag: Record<string, any> = {
+        timestamp: new Date().toISOString(),
+        canvas: {
+          available: !!canvas,
+          width: canvas?.width || 0,
+          height: canvas?.height || 0,
+          valid: canvas ? validateCanvasForGrid(canvas) : false,
+          objectCount: canvas?.getObjects()?.length || 0
+        },
+        grid: {
+          objectCount: gridLayerRef.current?.length || 0,
+          onCanvas: canvas ? gridLayerRef.current.filter(obj => canvas.contains(obj)).length : 0
+        }
+      };
       
-      // Count grid objects on canvas
-      const gridObjects = gridLayerRef.current;
-      const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj)).length;
-      
-      setGridStats({
-        canvasWidth: canvas.width || 0,
-        canvasHeight: canvas.height || 0,
-        totalGridObjects: gridObjects.length,
-        objectsOnCanvas
-      });
+      setDiagnostics(diag);
     };
     
-    // Update initially and on interval
-    updateStats();
-    const interval = setInterval(updateStats, 2000);
+    // Run diagnostics immediately and then on interval
+    runDiagnostics();
+    const intervalId = setInterval(runDiagnostics, 2000);
     
-    return () => clearInterval(interval);
-  }, [isOpen, fabricCanvasRef, gridLayerRef]);
+    return () => clearInterval(intervalId);
+  }, [visible, fabricCanvasRef, gridLayerRef, refreshCount]);
   
-  if (!isOpen) {
-    return (
-      <Button
-        className="absolute bottom-4 right-4 p-2 bg-blue-500 text-white rounded-full"
-        onClick={() => setIsOpen(true)}
-        title="Show Grid Debug Panel"
-      >
-        <Grid className="h-4 w-4" />
-      </Button>
-    );
-  }
-  
-  // Handle force grid creation
-  const handleForceCreateGrid = () => {
+  const handleForceGridCreation = () => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      toast.error("Canvas not available");
+      return;
+    }
     
-    forceCreateGrid(canvas, gridLayerRef);
+    try {
+      toast.loading("Creating grid...");
+      const gridObjects = createReliableGrid(canvas, gridLayerRef);
+      
+      if (gridObjects.length > 0) {
+        toast.success(`Grid created with ${gridObjects.length} objects`);
+        setRefreshCount(prev => prev + 1);
+      } else {
+        toast.error("Grid creation failed: No objects created");
+      }
+    } catch (error) {
+      toast.error(`Grid creation error: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
   
-  // Handle grid inspection
-  const handleInspectGrid = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    dumpGridState(canvas, gridLayerRef.current);
-  };
+  if (!visible) return null;
   
-  const gridHealth = gridStats.totalGridObjects > 0 &&
-                    gridStats.objectsOnCanvas === gridStats.totalGridObjects;
-
   return (
-    <div className="absolute bottom-4 right-4 p-4 bg-white border border-gray-300 rounded-lg shadow-lg w-80">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="font-medium">Grid Debug Panel</h3>
+    <div className="fixed bottom-4 right-4 z-50">
+      {!expanded ? (
         <Button 
-          variant="ghost" 
-          className="h-6 w-6 p-0"
-          onClick={() => setIsOpen(false)}
+          variant="secondary" 
+          size="sm"
+          className="flex items-center gap-2 shadow-lg"
+          onClick={() => setExpanded(true)}
         >
-          <X className="h-4 w-4" />
+          <Bug className="h-4 w-4" />
+          Grid Debug
+          {diagnostics.grid?.objectCount === 0 && (
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+          )}
         </Button>
-      </div>
-      
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span>Canvas dimensions:</span>
-          <span>{gridStats.canvasWidth}×{gridStats.canvasHeight}px</span>
+      ) : (
+        <div className="bg-white/95 p-4 rounded-lg shadow-lg max-w-xs w-full">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold text-sm">Grid Diagnostics</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => setExpanded(false)}
+            >
+              <EyeOff className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="text-xs space-y-1 mb-3">
+            <div className="flex justify-between">
+              <span>Canvas:</span>
+              <span className={diagnostics.canvas?.valid ? "text-green-600" : "text-red-600"}>
+                {diagnostics.canvas?.valid ? "Valid" : "Invalid"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Size:</span>
+              <span>{diagnostics.canvas?.width}x{diagnostics.canvas?.height}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Canvas Objects:</span>
+              <span>{diagnostics.canvas?.objectCount || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Grid Objects:</span>
+              <span className={diagnostics.grid?.objectCount > 0 ? "text-green-600" : "text-red-600"}>
+                {diagnostics.grid?.objectCount || 0}
+              </span>
+            </div>
+            {diagnostics.grid?.onCanvas !== undefined && (
+              <div className="flex justify-between">
+                <span>Grid on Canvas:</span>
+                <span>{diagnostics.grid.onCanvas}/{diagnostics.grid.objectCount}</span>
+              </div>
+            )}
+          </div>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full"
+            onClick={handleForceGridCreation}
+          >
+            <RefreshCw className="h-3 w-3 mr-2" />
+            Force Grid Creation
+          </Button>
         </div>
-        <div className="flex justify-between">
-          <span>Grid objects:</span>
-          <span>{gridStats.totalGridObjects}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Grid objects on canvas:</span>
-          <span>{gridStats.objectsOnCanvas}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Grid health:</span>
-          <span className={gridHealth ? "text-green-500" : "text-red-500"}>
-            {gridHealth ? "Good" : "Issues detected"}
-          </span>
-        </div>
-      </div>
-      
-      <div className="flex justify-between mt-4 gap-2">
-        <Button 
-          size="sm" 
-          variant="outline"
-          onClick={handleInspectGrid}
-          className="text-xs flex-1"
-        >
-          <ZoomIn className="h-3 w-3 mr-1" />
-          Inspect Grid
-        </Button>
-        
-        <Button 
-          size="sm" 
-          variant="outline"
-          onClick={handleForceCreateGrid}
-          className="text-xs flex-1"
-        >
-          <RefreshCw className="h-3 w-3 mr-1" />
-          Force Create Grid
-        </Button>
-      </div>
+      )}
     </div>
   );
-}
+};

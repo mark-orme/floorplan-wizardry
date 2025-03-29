@@ -1,4 +1,8 @@
 
+/**
+ * Canvas Component
+ * Responsible for rendering the fabric.js canvas with grid
+ */
 import React, { useRef, useEffect, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
@@ -48,7 +52,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Canvas initialization effect
+  // Canvas initialization effect with improved error handling
   useEffect(() => {
     const initCanvas = (): void => {
       try {
@@ -58,7 +62,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         console.log("Initializing canvas with dimensions:", width, height);
 
-        // Create fabric.js canvas
+        // Create fabric.js canvas with explicit dimensions
         const canvas = new FabricCanvas(canvasRef.current, {
           width,
           height,
@@ -67,7 +71,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           preserveObjectStacking: true
         });
 
-        // Initialize the canvas with default settings
+        // Set dimensions again to ensure they're applied
         canvas.setDimensions({ width, height });
         
         // Set free drawing brush options
@@ -106,22 +110,28 @@ export const Canvas: React.FC<CanvasProps> = ({
     // Initialize canvas
     initCanvas();
 
-    // Cleanup function
+    // Cleanup function to properly dispose canvas
     return () => {
       if (fabricCanvas) {
-        fabricCanvas.dispose();
+        try {
+          fabricCanvas.dispose();
+        } catch (err) {
+          console.error("Error disposing canvas:", err);
+        }
         setFabricCanvas(null);
         setCanvas(null);
       }
     };
   }, [width, height, backgroundColor, setCanvas, onCanvasReady, onError, initAttempts]);
 
+  // Handle retry button click
   const handleRetry = (): void => {
     setError(null);
     setInitAttempts(prev => prev + 1);
     toast.info("Retrying canvas initialization...");
   };
 
+  // Render error state if initialization fails
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-gray-50 border border-gray-200 rounded-md p-4">
@@ -136,6 +146,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     );
   }
 
+  // Render canvas with grid layer
   return (
     <div className="relative">
       <canvas 

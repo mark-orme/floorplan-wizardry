@@ -49,32 +49,32 @@ export const typescriptRules = {
     "@typescript-eslint/no-unsafe-assignment": "error",
     "@typescript-eslint/no-unsafe-return": "error",
     
-    // NEW: Promise handling
+    // Promise handling
     "@typescript-eslint/no-misused-promises": "error",
     "@typescript-eslint/no-floating-promises": "error",
     
-    // NEW: Type assertion checks
+    // Type assertion checks
     "@typescript-eslint/no-unnecessary-type-assertion": "error",
     "@typescript-eslint/prefer-as-const": "error",
     
-    // NEW: Null checking
+    // Null checking
     "@typescript-eslint/no-non-null-asserted-optional-chain": "error",
     
-    // NEW: Object literal type improvements
+    // Object literal type improvements
     "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
     
-    // NEW: Better error messages
+    // Better error messages
     "@typescript-eslint/unified-signatures": "error",
     
-    // NEW: Function overloads
+    // Function overloads
     "@typescript-eslint/adjacent-overload-signatures": "error",
     
-    // NEW: Prevent common mistakes
+    // Prevent common mistakes
     "@typescript-eslint/no-namespace": "error",
     "@typescript-eslint/no-this-alias": "error",
     "@typescript-eslint/prefer-optional-chain": "warn",
     
-    // NEW: Extra safety for grid and canvas operations
+    // Extra safety for grid and canvas operations
     "@typescript-eslint/strict-boolean-expressions": ["warn", {
       allowString: true,
       allowNumber: true,
@@ -82,6 +82,25 @@ export const typescriptRules = {
       allowNullableBoolean: false,
       allowNullableString: false,
       allowNullableNumber: false
-    }]
+    }],
+    
+    // NEW: Prevent duplicate exports
+    "no-dupe-class-members": "error",
+    "import/export": "error",
+    "import/no-duplicates": "error",
+    
+    // NEW: Stricter grid-specific rules
+    "@typescript-eslint/no-unnecessary-condition": ["warn", {
+      allowConstantLoopConditions: true
+    }],
+    
+    // NEW: Better type narrowing
+    "@typescript-eslint/prefer-nullish-coalescing": "warn",
+    
+    // NEW: Property existence checking
+    "@typescript-eslint/no-unnecessary-type-arguments": "warn",
+    
+    // NEW: Prevent potential bugs in grid code
+    "@typescript-eslint/switch-exhaustiveness-check": "error"
   }
 };

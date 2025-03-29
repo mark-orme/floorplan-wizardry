@@ -1,97 +1,137 @@
 
 /**
- * Grid manager module
- * Manages grid creation state and throttling
+ * Grid manager
+ * Manages grid creation process and state
  * @module gridManager
  */
-import { GRID_CREATION_CONSTANTS } from "./grid/constants";
+import { toast } from "sonner";
+import logger from "./logger";
 
-// Use the constants from the imported object
-const GRID_CREATION_COOLDOWN = GRID_CREATION_CONSTANTS.COOLDOWN;
+// Global state for grid creation
+let inProgress = false;
+let lastAttempt = 0;
+let consecutiveFailures = 0;
+let isLocked = false;
+let lockTimestamp = 0;
 
-// Grid manager state
-interface GridManagerState {
-  lastGridCreationTime: number;
-  gridCreationInProgress: boolean;
-  createAttempt: number;
-  safetyTimeout: number | null;
-  
-  // Required properties for grid management
-  lastAttemptTime: number;
-  throttleInterval: number;
-  lastCreationTime: number;
-  consecutiveResets: number;
-  creationLock: {
-    id: number;
-    timestamp: number;
-    isLocked: boolean;
-  };
-}
-
-// Initialize grid manager state
-export const gridManager: GridManagerState = {
-  lastGridCreationTime: 0,
-  gridCreationInProgress: false,
-  createAttempt: 0,
-  safetyTimeout: null,
-  
-  // Initialize with default values
-  lastAttemptTime: 0,
-  throttleInterval: 1000, // Default throttle interval in ms
-  lastCreationTime: 0,
-  consecutiveResets: 0,
-  creationLock: {
-    id: 0,
-    timestamp: 0,
-    isLocked: false
-  }
-};
+const LOCK_TIMEOUT = 10000; // 10 seconds
 
 /**
- * Check if grid creation should be throttled
- * Prevents excessive creation attempts
- * 
- * @returns {boolean} True if creation should be throttled
- */
-export const shouldThrottleCreation = (): boolean => {
-  const now = Date.now();
-  return now - gridManager.lastGridCreationTime < GRID_CREATION_COOLDOWN;
-};
-
-/**
- * Reset grid creation progress state
- * Used to clear stuck state or prepare for a fresh attempt
+ * Reset grid progress state
+ * Used to clear stuck locks
  */
 export const resetGridProgress = (): void => {
-  gridManager.gridCreationInProgress = false;
+  const wasLocked = isLocked;
   
-  // Don't reset lastGridCreationTime to avoid immediate retries
-  // Don't reset createAttempt to maintain the attempt count
+  inProgress = false;
+  lastAttempt = 0;
   
-  // Clear safety timeout if it exists
-  if (gridManager.safetyTimeout !== null) {
-    clearTimeout(gridManager.safetyTimeout);
-    gridManager.safetyTimeout = null;
+  // Only reset lock if it's been locked for more than LOCK_TIMEOUT
+  if (isLocked && Date.now() - lockTimestamp > LOCK_TIMEOUT) {
+    isLocked = false;
+    logger.info("Grid lock reset after timeout");
+    console.log("Grid lock reset after timeout");
   }
   
-  // Increment consecutive resets counter
-  gridManager.consecutiveResets += 1;
+  if (wasLocked && !isLocked) {
+    toast.info("Grid creation reset");
+  }
 };
 
 /**
- * Log grid creation status
- * Only logs in development mode and throttles messages to reduce console spam
- * 
- * @param {string} message - Message to log
- * @param {any} data - Additional data to log
+ * Mark grid creation as started
+ * @returns {boolean} Whether marking was successful
  */
-export const logGridStatus = (message: string, data?: any): void => {
-  // Only log in development and limit frequency to reduce spam
-  if (process.env.NODE_ENV !== 'development') return;
+export const markGridCreationStarted = (): boolean => {
+  // Check if already in progress or locked
+  if (inProgress) {
+    console.log("Grid creation already in progress");
+    return false;
+  }
   
+  if (isLocked) {
+    const lockAge = Date.now() - lockTimestamp;
+    console.log(`Grid creation locked for ${lockAge}ms`);
+    
+    // Auto-unlock if lock is too old
+    if (lockAge > LOCK_TIMEOUT) {
+      isLocked = false;
+      lockTimestamp = 0;
+      console.log("Grid lock expired, resetting");
+    } else {
+      return false;
+    }
+  }
+  
+  // Check throttling (no more than once per 1s)
   const now = Date.now();
-  if (now - gridManager.lastAttemptTime < 2000) return; // Only log once every 2 seconds
+  if (now - lastAttempt < 1000) {
+    console.log(`Grid creation throttled - last attempt ${now - lastAttempt}ms ago`);
+    return false;
+  }
   
-  gridManager.lastAttemptTime = now;
-  console.log(`[Grid] ${message}`, data || '');
+  // Mark as in progress
+  inProgress = true;
+  lastAttempt = now;
+  return true;
+};
+
+/**
+ * Mark grid creation as completed
+ * @param {boolean} success - Whether creation was successful
+ */
+export const markGridCreationCompleted = (success: boolean): void => {
+  inProgress = false;
+  
+  if (success) {
+    consecutiveFailures = 0;
+  } else {
+    consecutiveFailures++;
+    
+    // Lock grid creation after too many consecutive failures
+    if (consecutiveFailures >= 3) {
+      isLocked = true;
+      lockTimestamp = Date.now();
+      logger.warn(`Grid creation locked after ${consecutiveFailures} consecutive failures`);
+      console.warn(`Grid creation locked after ${consecutiveFailures} consecutive failures`);
+    }
+  }
+};
+
+/**
+ * Check if grid creation is in progress
+ * @returns {boolean} Whether grid creation is in progress
+ */
+export const isGridCreationInProgress = (): boolean => {
+  return inProgress;
+};
+
+/**
+ * Check if grid creation is locked
+ * @returns {boolean} Whether grid creation is locked
+ */
+export const isGridCreationLocked = (): boolean => {
+  // Auto-unlock if lock is too old
+  if (isLocked && Date.now() - lockTimestamp > LOCK_TIMEOUT) {
+    isLocked = false;
+    lockTimestamp = 0;
+    logger.info("Grid lock expired, auto-unlocking");
+    console.log("Grid lock expired, auto-unlocking");
+  }
+  
+  return isLocked;
+};
+
+/**
+ * Get grid creation state
+ * @returns {Object} Current grid creation state
+ */
+export const getGridCreationState = (): Record<string, any> => {
+  return {
+    inProgress,
+    lastAttempt,
+    consecutiveFailures,
+    isLocked,
+    lockAge: isLocked ? Date.now() - lockTimestamp : 0
+  };
 };

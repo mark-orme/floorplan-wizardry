@@ -174,7 +174,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
         </CanvasControllerProvider>
       )}
       
-      {/* Grid Debug Panel */}
+      {/* Enhanced Grid Debug Panel */}
       <GridDebugPanel 
         fabricCanvasRef={fabricCanvasRef}
         gridLayerRef={gridLayerRef}
