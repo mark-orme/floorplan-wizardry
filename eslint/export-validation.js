@@ -1,4 +1,3 @@
-
 /**
  * ESLint rules for export validation
  * Enforces proper module export patterns
@@ -85,14 +84,17 @@ export const exportValidationRules = {
       "peerDependencies": false
     }],
     
-    // NEW: Prevent re-exporting the same name from different modules
-    "import/no-duplicates": "error",
+    // NEW: Prevent re-exporting the same name from different modules with stricter settings
+    "import/no-duplicates": ["error", { "considerQueryString": true }],
     
-    // NEW: Prevent re-exporting the same name with different meanings
+    // NEW: Prevent re-exporting the same name with different meanings with stricter settings
     "import/export": "error",
     
-    // NEW: Warn about barrel files that might create ambiguous exports
-    "import/no-named-default": "warn"
+    // NEW: Improved warning about barrel files that might create ambiguous exports
+    "import/no-named-default": "error",
+    
+    // NEW: Check for named exports in the same file
+    "import/no-namespace": "warn"
   },
   settings: {
     "import/resolver": {

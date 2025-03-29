@@ -1,4 +1,3 @@
-
 /**
  * Grid Export Validator
  * 
@@ -103,6 +102,64 @@ export function checkForAmbiguousExports(
  */
 export function clearTrackedExports(): void {
   trackedExports.clear();
+}
+
+/**
+ * Detect ambiguous re-exports across barrel files
+ * @param barrelFilePath - Path to the barrel file (e.g., index.ts)
+ * @param sourceMap - Map of export names to their source files
+ * @returns Array of ambiguous exports with their sources
+ */
+export function detectAmbiguousExports(
+  barrelFilePath: string,
+  sourceMap: Map<string, string[]>
+): { name: string; sources: string[] }[] {
+  const ambiguousExports: { name: string; sources: string[] }[] = [];
+  
+  // Find exports with multiple sources
+  for (const [name, sources] of sourceMap.entries()) {
+    if (sources.length > 1) {
+      ambiguousExports.push({ name, sources });
+      
+      console.warn(
+        `⚠️ Ambiguous export detected in ${barrelFilePath}: '${name}' is exported from multiple sources:`,
+        sources.join(', ')
+      );
+    }
+  }
+  
+  return ambiguousExports;
+}
+
+/**
+ * Track exports in a barrel file to detect ambiguity
+ * @param exportName - Name of export
+ * @param sourcePath - Path to source file
+ * @param barrelPath - Path to barrel file
+ * @param sourceMap - Map to track sources
+ */
+export function trackBarrelExport(
+  exportName: string,
+  sourcePath: string,
+  barrelPath: string,
+  sourceMap: Map<string, string[]> = new Map()
+): void {
+  // Get or create the array of sources for this export
+  const sources = sourceMap.get(exportName) || [];
+  
+  // Add this source if it's not already included
+  if (!sources.includes(sourcePath)) {
+    sources.push(sourcePath);
+    sourceMap.set(exportName, sources);
+    
+    // Check if this is now ambiguous (more than one source)
+    if (sources.length > 1) {
+      console.warn(
+        `⚠️ Potential ambiguous export in ${barrelPath}: '${exportName}' is now exported from multiple sources:`,
+        sources.join(', ')
+      );
+    }
+  }
 }
 
 /**

@@ -1,4 +1,3 @@
-
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
@@ -76,5 +75,40 @@ for file in $(find src -type f -name "index.ts"); do
     done
   fi
 done
+
+# NEW: Enhanced check for ambiguous exports in barrel files
+echo "🔍 Running enhanced checks for ambiguous exports in barrel files..."
+
+for barrel_file in $(find src -name "index.ts"); do
+  # Get directory of barrel file
+  barrel_dir=$(dirname "$barrel_file")
+  
+  # Find all direct exports from other files
+  direct_exports=$(grep -E "export \* from" "$barrel_file" | sed -E "s/.*from '(.*)'.*/\1/")
+  
+  # Check each direct export for conflicts
+  for export_path in $direct_exports; do
+    # Find the actual file being exported
+    target_file="$barrel_dir/${export_path}.ts"
+    
+    if [ -f "$target_file" ]; then
+      # Get exports from the target file
+      target_exports=$(grep -E "export (const|function|class|enum|type|interface)" "$target_file" | sed -E "s/export (const|function|class|enum|type|interface) ([a-zA-Z0-9_]+).*/\2/")
+      
+      # For each export in the target file
+      for export_name in $target_exports; do
+        # Check if the same name is directly exported in the barrel file
+        if grep -q "export const $export_name" "$barrel_file"; then
+          echo "⛔ CRITICAL: Ambiguous export detected in $barrel_file"
+          echo "   '$export_name' is exported both directly and via wildcard import from $export_path"
+          echo "   This will cause TypeScript errors! Please fix this before committing."
+          exit 1
+        fi
+      done
+    fi
+  done
+done
+
+echo "✅ No ambiguous exports detected in barrel files."
 
 echo "✅ All export checks completed."
