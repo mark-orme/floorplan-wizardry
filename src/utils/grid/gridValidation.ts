@@ -29,8 +29,8 @@ export const validateCanvas = (canvas: Canvas): boolean => {
     return false;
   }
   
-  // Check if canvas is disposed
-  if (typeof canvas.isDisposed === 'function' && canvas.isDisposed()) {
+  // Check if canvas is disposed - using correct property 'disposed' instead of 'isDisposed'
+  if (canvas.disposed) {
     logger.error("Canvas validation failed: Canvas is disposed");
     console.error("Canvas validation failed: Canvas is disposed");
     return false;
