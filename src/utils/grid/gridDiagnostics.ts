@@ -1,10 +1,9 @@
-
 /**
  * Grid Diagnostics Utility
  * Provides comprehensive diagnostic tools and tests for grid functionality
  * @module utils/grid/gridDiagnostics
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { captureError } from "../sentryUtils";
 import logger from "../logger";
 import { toast } from "sonner";
@@ -351,7 +350,7 @@ export const emergencyGridFix = (
     
     // Function to create a single grid line
     const createGridLine = (coords: number[], isLarge: boolean) => {
-      const line = new fabric.Line(coords, {
+      const line = new Line(coords, {
         stroke: isLarge ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: isLarge ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
         selectable: false,

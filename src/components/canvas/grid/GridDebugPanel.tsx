@@ -1,4 +1,3 @@
-
 /**
  * Grid Debug Panel Component
  * Provides debugging information and controls for grid-related issues
@@ -8,7 +7,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Bug, Grid, EyeOff, ChevronUp, ChevronDown, AlertCircle, Tool, Zap } from "lucide-react";
+import { RefreshCw, Bug, Grid, EyeOff, ChevronUp, ChevronDown, AlertCircle, Wrench, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { captureError } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
@@ -317,7 +316,7 @@ export const GridDebugPanel = ({
                 onClick={fixGridIssues}
                 disabled={isAnalyzing || !fabricCanvasRef.current}
               >
-                <Tool className="h-3 w-3 mr-1" />
+                <Wrench className="h-3 w-3 mr-1" />
                 Fix Issues
               </Button>
             </div>

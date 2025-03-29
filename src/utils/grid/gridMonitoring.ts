@@ -24,7 +24,7 @@ interface GridMonitoringOptions {
 }
 
 // Default options
-const DEFAULT_OPTIONS: GridMonitoringOptions = {
+const DEFAULT_OPTIONS: Required<GridMonitoringOptions> = {
   checkInterval: 5000,
   autoRepair: true,
   useEmergencyGrid: true,
@@ -59,8 +59,11 @@ export const startGridMonitoring = (
     return false;
   }
   
-  // Merge options
-  const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
+  // Merge options - use spread to ensure all required properties are present
+  const mergedOptions: Required<GridMonitoringOptions> = { 
+    ...DEFAULT_OPTIONS, 
+    ...options 
+  };
   
   try {
     // Set monitoring state

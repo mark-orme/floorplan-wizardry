@@ -1,3 +1,4 @@
+
 /**
  * Grid debugging utilities
  * Advanced debugging and testing tools for grid functionality
@@ -138,7 +139,7 @@ export const createBasicEmergencyGrid = (
 export const dumpGridState = (
   canvas: FabricCanvas,
   gridObjects: FabricObject[]
-): void => {
+): Record<string, any> | null => {
   try {
     // Collect canvas info
     const canvasInfo = {
@@ -147,7 +148,7 @@ export const dumpGridState = (
       totalObjects: canvas.getObjects().length,
       viewportTransform: canvas.viewportTransform,
       zoom: canvas.getZoom(),
-      rendered: canvas.isRendered(),
+      rendered: typeof canvas.isRendered === 'function' ? canvas.isRendered() : 'unknown',
       renderOnAddRemove: canvas.renderOnAddRemove
     };
     
@@ -155,7 +156,7 @@ export const dumpGridState = (
     const gridInfo = {
       total: gridObjects.length,
       onCanvas: gridObjects.filter(obj => canvas.contains(obj)).length,
-      visible: gridObjects.filter(obj => !obj.invisible).length,
+      visible: gridObjects.filter(obj => obj.visible !== false).length,
       types: gridObjects.reduce((acc, obj) => {
         const type = obj.type || 'unknown';
         acc[type] = (acc[type] || 0) + 1;
@@ -166,7 +167,7 @@ export const dumpGridState = (
     // Sample a few grid objects
     const sampleObjects = gridObjects.slice(0, 3).map(obj => ({
       type: obj.type,
-      visible: !obj.invisible,
+      visible: obj.visible !== false,
       onCanvas: canvas.contains(obj),
       coords: obj.type === 'line' ? 
         [(obj as any).x1, (obj as any).y1, (obj as any).x2, (obj as any).y2] : 
@@ -233,7 +234,7 @@ export const dumpGridState = (
 export const forceCreateGrid = (
   canvas: FabricCanvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
-): boolean => {
+): FabricObject[] => {
   console.log("Forcing grid creation with multiple strategies");
   
   try {
@@ -259,7 +260,7 @@ export const forceCreateGrid = (
       
       // Create very basic grid
       for (let x = 0; x <= canvas.width; x += gridSize) {
-        const line = new fabric.Line([x, 0, x, canvas.height], {
+        const line = new Line([x, 0, x, canvas.height], {
           stroke: gridColor,
           strokeWidth: gridWidth,
           selectable: false
@@ -269,7 +270,7 @@ export const forceCreateGrid = (
       }
       
       for (let y = 0; y <= canvas.height; y += gridSize) {
-        const line = new fabric.Line([0, y, canvas.width, y], {
+        const line = new Line([0, y, canvas.width, y], {
           stroke: gridColor,
           strokeWidth: gridWidth,
           selectable: false
@@ -319,10 +320,10 @@ export const forceCreateGrid = (
       );
     }
     
-    return success;
+    return gridObjects;
   } catch (error) {
     console.error("Error in force grid creation:", error);
-    return false;
+    return [];
   }
 };
 
@@ -353,7 +354,7 @@ export const diagnoseGridFailure = (
     objectCount: canvas.getObjects()?.length || 0,
     contextExists: !!(canvas as any).contextContainer,
     renderOnAddRemove: canvas.renderOnAddRemove,
-    rendered: canvas.isRendered?.() || false
+    rendered: typeof canvas.isRendered === 'function' ? canvas.isRendered() : 'unknown'
   } : {
     exists: false
   };
