@@ -6,7 +6,7 @@
  * @module canvasGrid
  */
 import { Canvas, Object as FabricObject } from "fabric";
-import { shouldThrottleCreation, logGridStatus } from "./gridManager";
+import { shouldThrottleCreation, logGridStatus } from "./grid/gridManager";
 import { toast } from "sonner";
 import logger from "./logger";
 import { DebugInfoState } from "@/types/debugTypes";
@@ -14,7 +14,7 @@ import { throttledLog, throttledError } from "./grid/consoleThrottling";
 
 // Import all grid utilities
 import {
-  validateCanvasForGrid,
+  validateCanvas,
   createGridLayer,
   createFallbackGrid,
   handleGridCreationError,
@@ -100,7 +100,7 @@ export const createGrid = (
   
   try {
     // Validate inputs first
-    if (!validateCanvasForGrid(canvas, gridLayerRef, canvasDimensions)) {
+    if (!validateCanvas(canvas)) {
       throttledError("Grid validation failed, cannot create grid");
       gridCreationInProgress = false;
       return gridLayerRef.current;
@@ -128,7 +128,7 @@ export const createGrid = (
     }
     
     // Create grid
-    const gridObjects = createGridLayer(canvas, gridLayerRef, setDebugInfo);
+    const gridObjects = createGridLayer(canvas, gridLayerRef);
     
     if (!gridObjects || gridObjects.length === 0) {
       if (shouldLog && process.env.NODE_ENV === 'development') {
@@ -136,7 +136,7 @@ export const createGrid = (
       }
       
       // Try fallback grid immediately
-      const fallbackGrid = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
+      const fallbackGrid = createFallbackGrid(canvas, gridLayerRef);
       
       if (!fallbackGrid || fallbackGrid.length === 0) {
         toast.error(TOAST_MESSAGES.GRID_CREATION_FAILED);
@@ -193,7 +193,7 @@ export const createGrid = (
       if (shouldLog && process.env.NODE_ENV === 'development') {
         throttledLog("Attempting fallback grid after error");
       }
-      const fallbackResult = createFallbackGrid(canvas, gridLayerRef, setDebugInfo);
+      const fallbackResult = createFallbackGrid(canvas, gridLayerRef);
       gridCreationInProgress = false;
       return fallbackResult;
     } catch (fallbackError) {

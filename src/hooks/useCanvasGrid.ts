@@ -85,10 +85,7 @@ export const useCanvasGrid = ({
           gridLayerRef.current = [];
         }
         
-        const width = canvasDimensions.width;
-        const height = canvasDimensions.height;
-        
-        // Create small and large grid lines - using only 2 arguments now
+        // Create small and large grid lines
         const smallGridObjects = createSmallScaleGrid(canvas, {
           color: '#e0e0e0',
           width: 0.5,
@@ -116,7 +113,6 @@ export const useCanvasGrid = ({
     );
   }, [
     fabricCanvasRef, 
-    canvasDimensions, 
     shouldThrottleCreation, 
     handleThrottledCreation, 
     validateGridComponents,
