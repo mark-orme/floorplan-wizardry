@@ -41,8 +41,8 @@ export function createGrid(
   
   // Determine spacing based on grid type
   const spacing = gridType === 'small' ? 
-    GRID_CONSTANTS.SMALL_GRID : 
-    GRID_CONSTANTS.LARGE_GRID;
+    GRID_CONSTANTS.SMALL_GRID_SIZE : 
+    GRID_CONSTANTS.LARGE_GRID_SIZE;
   
   // Limit number of grid lines for performance (max 100 lines in each direction)
   const maxLines = 100;

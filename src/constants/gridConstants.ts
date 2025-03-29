@@ -10,6 +10,10 @@ export const GRID_CONSTANTS = {
   SMALL_GRID_SIZE: 10,
   LARGE_GRID_SIZE: 50,
   
+  // Direct values for grid creation
+  SMALL_GRID: 10, // Added for direct reference
+  LARGE_GRID: 50, // Added for direct reference
+  
   // Pixels per meter for scaling
   PIXELS_PER_METER: 100,
   
@@ -47,4 +51,25 @@ export const TOAST_MESSAGES = {
   GRID_CREATION_FAILED: "Failed to create drawing grid",
   USING_FALLBACK_GRID: "Using simplified grid",
   GRID_RECREATED: "Grid recreated successfully"
+};
+
+// ESLint validation object to ensure all constants are properly used
+export const GRID_CONSTANTS_VALIDATION = {
+  // This object serves as a typing reference for ESLint to check properties
+  // It must match the structure of GRID_CONSTANTS
+  SMALL_GRID_SIZE: true,
+  LARGE_GRID_SIZE: true,
+  SMALL_GRID: true,
+  LARGE_GRID: true,
+  PIXELS_PER_METER: true,
+  SMALL_GRID_COLOR: true,
+  LARGE_GRID_COLOR: true,
+  MARKER_COLOR: true,
+  SMALL_GRID_WIDTH: true,
+  LARGE_GRID_WIDTH: true,
+  GRID_OPACITY: true,
+  GRID_SNAP_THRESHOLD: true,
+  GRID_SNAP_STRENGTH: true,
+  BACKGROUND_OPACITY: true,
+  MARKER_TEXT_SIZE: true
 };

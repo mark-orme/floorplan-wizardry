@@ -153,7 +153,7 @@ export const forceGridRender = (
   }
 };
 
-/* Add the missing exports that are referenced in other files */
+/* Add exports required by other modules */
 
 /**
  * Verify if grid exists and is valid

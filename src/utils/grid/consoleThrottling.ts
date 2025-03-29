@@ -1,66 +1,84 @@
 
 /**
  * Console throttling utilities
- * Prevents excessive console output from grid operations
+ * Prevents excessive console logging by throttling messages
  * @module grid/consoleThrottling
  */
 
-// Track seen messages and their timestamps
-const seenMessages: Map<string, number> = new Map();
-const MESSAGE_THROTTLE_TIME = 10000; // 10 seconds between identical messages (increased from 5s)
+// Track last log times by message
+const lastLogTimes: Record<string, number> = {};
+const DEFAULT_THROTTLE_MS = 5000;
 
 /**
- * Throttled console log
- * Only logs messages if they haven't been seen recently
+ * Log a message with throttling
+ * Only logs once per throttle period for the same message
  * 
  * @param {string} message - Message to log
- * @param {any[]} args - Additional args to log
+ * @param {any} data - Optional data to log
+ * @param {number} throttleMs - Throttle period in milliseconds
  */
-export function throttledLog(message: string, ...args: any[]): void {
-  // Only log in development mode
-  if (process.env.NODE_ENV !== 'development') return;
-  
+export const throttledLog = (
+  message: string,
+  data?: any,
+  throttleMs: number = DEFAULT_THROTTLE_MS
+): void => {
   const now = Date.now();
-  const lastTime = seenMessages.get(message) || 0;
+  const lastTime = lastLogTimes[message] || 0;
   
-  // Only log if we haven't seen this message recently
-  if (now - lastTime > MESSAGE_THROTTLE_TIME) {
-    console.log(message, ...args);
-    seenMessages.set(message, now);
-    
-    // Clean up old messages to prevent memory leaks
-    if (seenMessages.size > 100) {
-      // Remove the oldest entries
-      const oldestEntries = [...seenMessages.entries()]
-        .sort((a, b) => a[1] - b[1])
-        .slice(0, 50);
-        
-      oldestEntries.forEach(([key]) => seenMessages.delete(key));
+  if (now - lastTime > throttleMs) {
+    if (data) {
+      console.log(message, data);
+    } else {
+      console.log(message);
     }
+    
+    lastLogTimes[message] = now;
   }
-}
+};
 
 /**
- * Throttled error logging
- * Always logs errors, but prevents duplicates
+ * Log an error with throttling
+ * Only logs once per throttle period for the same error message
  * 
- * @param {string} message - Error message
- * @param {any[]} args - Additional args to log
+ * @param {string} message - Error message to log
+ * @param {any} error - Optional error object to log
+ * @param {number} throttleMs - Throttle period in milliseconds
  */
-export function throttledError(message: string, ...args: any[]): void {
+export const throttledError = (
+  message: string,
+  error?: any,
+  throttleMs: number = DEFAULT_THROTTLE_MS
+): void => {
   const now = Date.now();
-  const lastTime = seenMessages.get(`error:${message}`) || 0;
+  const lastTime = lastLogTimes[message] || 0;
   
-  // For errors, use a longer throttle time to reduce console spam
-  if (now - lastTime > 5000) { // Increased from 1000ms
-    console.error(message, ...args);
-    seenMessages.set(`error:${message}`, now);
+  if (now - lastTime > throttleMs) {
+    if (error) {
+      console.error(message, error);
+    } else {
+      console.error(message);
+    }
+    
+    lastLogTimes[message] = now;
   }
-}
+};
 
 /**
- * Clear the throttled message cache
+ * Reset throttling for a specific message
+ * Allows the message to be logged immediately next time
+ * 
+ * @param {string} message - Message to reset
  */
-export function clearMessageCache(): void {
-  seenMessages.clear();
-}
+export const resetThrottling = (message: string): void => {
+  delete lastLogTimes[message];
+};
+
+/**
+ * Clear all throttling state
+ * Allows all messages to be logged immediately
+ */
+export const clearAllThrottling = (): void => {
+  Object.keys(lastLogTimes).forEach(key => {
+    delete lastLogTimes[key];
+  });
+};
