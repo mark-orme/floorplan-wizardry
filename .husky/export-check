@@ -8,7 +8,36 @@ npx eslint --config ./eslint/export-validation.js $(git diff --cached --name-onl
 
 if [ $? -ne 0 ]; then
   echo "❌ Export validation failed. Please fix the issues and try again."
+  echo "   Common issues:"
+  echo "   - Importing a name that is not exported from a module"
+  echo "   - Re-exporting the same name from multiple sources"
+  echo "   - Missing export declarations"
+  echo "   - Circular dependencies between modules"
   exit 1
 fi
 
 echo "✅ Export validation passed."
+
+# Additional checks for module naming consistency and ambiguity
+echo "🔍 Checking for ambiguous exports..."
+ambiguous_exports=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "export \* from" | xargs grep -l "export {" || true)
+
+if [ -n "$ambiguous_exports" ]; then
+  echo "⚠️  Warning: Potentially ambiguous exports found in:"
+  echo "$ambiguous_exports"
+  echo "   Consider using explicit exports to avoid naming conflicts."
+  # This is just a warning, not an error that stops the commit
+fi
+
+# Check for duplicate exports across the codebase
+echo "🔍 Checking for duplicate export names..."
+duplicate_check=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -h "export const" | grep -v "from" | awk '{print $3}' | sort | uniq -d)
+
+if [ -n "$duplicate_check" ]; then
+  echo "⚠️  Warning: Potential duplicate export names found:"
+  echo "$duplicate_check"
+  echo "   Consider using unique names or explicit imports to avoid confusion."
+  # This is just a warning, not an error that stops the commit
+fi
+
+echo "✅ All export checks completed."

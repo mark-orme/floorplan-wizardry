@@ -43,6 +43,35 @@ export const exportValidationRules = {
     "import/no-amd": "error",
     
     // Prefer ES6-style imports over legacy formats
-    "import/no-dynamic-require": "warn"
+    "import/no-dynamic-require": "warn",
+    
+    // NEW: Check for missing exports when imported
+    "import/named": "error",
+    
+    // NEW: Prevent ambiguous re-exports
+    "import/export": "error",
+    
+    // NEW: Enforce exports are grouped together at the end of the file
+    "import/group-exports": "warn",
+    
+    // NEW: Prefer named exports to be grouped in a declaration
+    "import/no-duplicates": "error",
+    
+    // NEW: Ensure imports resolve to a file/module
+    "import/no-unresolved": ["error", { "commonjs": true }],
+    
+    // NEW: Check if the imported module has the imported name as an export
+    "import/namespace": ["error", { "allowComputed": true }],
+    
+    // NEW: Ensure imports point to files/modules that can be resolved
+    "import/no-self-import": "error"
+  },
+  settings: {
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": "./tsconfig.json"
+      }
+    }
   }
 };

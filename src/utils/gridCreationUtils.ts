@@ -33,6 +33,77 @@ export const verifyGridExists = (
 };
 
 /**
+ * Validate that grid exists and is properly attached to canvas
+ * 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @returns {boolean} Whether grid is valid
+ */
+export const validateGrid = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas || !gridLayerRef.current || gridLayerRef.current.length === 0) {
+    return false;
+  }
+  
+  // Check that at least 50% of grid objects are still on canvas
+  let validObjects = 0;
+  
+  gridLayerRef.current.forEach(obj => {
+    if (canvas.contains(obj)) {
+      validObjects++;
+    }
+  });
+  
+  return validObjects > gridLayerRef.current.length / 2;
+};
+
+/**
+ * Create a complete grid
+ * Main entry point for grid creation
+ * 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createCompleteGrid = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  // Implementation for complete grid creation that uses gridCreation.ts functions
+  // This is a placeholder implementation that will be replaced with actual grid creation logic
+  console.log("Creating grid - placeholder implementation");
+  
+  // Create a basic emergency grid as temporary implementation
+  return createBasicEmergencyGrid(canvas, gridLayerRef);
+};
+
+/**
+ * Ensure grid exists, creating it if necessary
+ * 
+ * @param {Canvas} canvas - The Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @returns {boolean} Whether grid exists and was checked/created successfully
+ */
+export const ensureGrid = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (verifyGridExists(canvas, gridLayerRef)) {
+    return true;
+  }
+  
+  try {
+    createCompleteGrid(canvas, gridLayerRef);
+    return gridLayerRef.current.length > 0;
+  } catch (error) {
+    console.error("Error ensuring grid exists:", error);
+    return false;
+  }
+};
+
+/**
  * Retry an operation with exponential backoff
  * 
  * @param {Function} operation - The operation to retry
