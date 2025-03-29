@@ -157,9 +157,57 @@ export const typescriptRules = {
       "objectLiteralTypeAssertions": "never"
     }],
     
-    // NEW: Enhanced property checking
+    // Enhanced property checking
     "@typescript-eslint/naming-convention": [
       "error",
+      {
+        "selector": "property",
+        "format": ["camelCase", "PascalCase", "UPPER_CASE"],
+        "filter": {
+          "regex": "^(data-|aria-|type|id|[a-zA-Z]+Image|key|name|role|placeholder|label|title|alt|src|href|target|rel|value|min|max|required|disabled|readonly|checked|selected|multiple|size|pattern|minLength|maxLength|step|rows|cols|for|className|style)$",
+          "match": false
+        }
+      }
+    ],
+    
+    // NEW: Ensure proper Fabric.js imports
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[object.name='fabric']",
+        "message": "Don't use the fabric namespace directly. Import specific components from 'fabric'."
+      }
+    ],
+    
+    // NEW: Enforce direct component imports for fabric.js
+    "no-restricted-imports": ["error", {
+      "patterns": [
+        {
+          "group": ["fabric"],
+          "importNames": ["fabric"],
+          "message": "Import specific components: import { Canvas, Line, Rect } from 'fabric' - not 'fabric.*'"
+        }
+      ]
+    }],
+    
+    // NEW: Enhanced protection for fabric components
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "typeLike",
+        "format": ["PascalCase"],
+        "prefix": ["Fabric", "I", "T", "E"],
+        "filter": {
+          "regex": "^(Canvas|Object|Line|Rect|Circle|Ellipse|Polygon|Polyline|Path|Group|Text|IText|Textbox|Image|Triangle|Point)$",
+          "match": true
+        }
+      },
+      {
+        "selector": "variable",
+        "types": ["boolean"],
+        "format": ["PascalCase"],
+        "prefix": ["is", "has", "can", "should", "will", "did"]
+      },
       {
         "selector": "property",
         "format": ["camelCase", "PascalCase", "UPPER_CASE"],
