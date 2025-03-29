@@ -1,4 +1,3 @@
-
 /**
  * Base ESLint configuration
  * Shared rules for all files
@@ -203,6 +202,59 @@ export const baseConfig = {
     }],
     
     // STRICT: Prevent accidental boolean assignments
-    "no-constant-condition": ["error", { "checkLoops": true }]
+    "no-constant-condition": ["error", { "checkLoops": true }],
+
+    // NEW: Enhance error prevention
+    "no-fallthrough": "error",
+    "no-case-declarations": "error",
+    "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
+    "no-prototype-builtins": "error",
+    "no-self-compare": "error",
+    "no-unmodified-loop-condition": "error",
+    "no-unreachable-loop": "error",
+    "require-atomic-updates": "error",
+    
+    // NEW: Strengthen component architecture
+    "react/no-array-index-key": "error",
+    "react/jsx-key": "error",
+    "react/jsx-fragments": ["error", "syntax"],
+    "react/jsx-no-constructed-context-values": "error",
+    "react/jsx-no-script-url": "error",
+    "react/jsx-no-target-blank": "error",
+    "react/no-danger": "error",
+    
+    // NEW: Enhance code maintainability
+    "prefer-template": "error",
+    "spaced-comment": ["error", "always"],
+    "no-multi-assign": "error",
+    "no-nested-ternary": "error",
+    "no-unneeded-ternary": "error",
+    "multiline-comment-style": ["warn", "starred-block"],
+    
+    // NEW: Ensure proper callback handling
+    "callback-return": ["error", ["callback", "cb", "next", "done"]],
+    "handle-callback-err": ["error", "^(err|error|errorMessage)$"],
+    "prefer-promise-reject-errors": "error",
+    
+    // NEW: Enforce consistent module patterns
+    "sort-imports": ["error", {
+      "ignoreCase": true,
+      "ignoreDeclarationSort": true,
+      "ignoreMemberSort": false,
+      "memberSyntaxSortOrder": ["none", "all", "multiple", "single"],
+      "allowSeparatedGroups": true
+    }],
+    
+    // NEW: Prevent React optimization issues
+    "react/jsx-no-bind": ["warn", {
+      "allowArrowFunctions": true,
+      "allowFunctions": false,
+      "allowBind": false
+    }],
+    
+    // NEW: Enforce strong typing practices
+    "no-implicit-coercion": "error",
+    "radix": "error"
   }
 };

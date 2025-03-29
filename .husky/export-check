@@ -1,4 +1,3 @@
-
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
@@ -128,7 +127,76 @@ for barrel_file in $(find src -name "index.ts"); do
   done
 done
 
-echo "✅ No ambiguous exports detected in barrel files."
+# NEW: Check for direct DOM manipulation in components
+echo "🔍 Checking for direct DOM references in components..."
+dom_refs=$(find src/components -type f -name "*.tsx" | xargs grep -l "document\." || true)
+
+if [ -n "$dom_refs" ]; then
+  echo "⛔ ERROR: Direct DOM references found in components:"
+  echo "$dom_refs"
+  echo "   Components should use React refs instead of direct DOM access."
+  exit 1
+fi
+
+# NEW: Check for proper useEffect dependency arrays
+echo "🔍 Checking for proper useEffect dependencies..."
+missing_deps=$(find src -type f -name "*.tsx" -o -name "*.ts" | xargs grep -l "useEffect([^,]*)" || true)
+
+if [ -n "$missing_deps" ]; then
+  echo "⚠️ Warning: Potential missing dependency arrays in useEffect:"
+  echo "$missing_deps"
+  echo "   All useEffect calls should include a dependency array."
+fi
+
+# NEW: Check for potential memory leaks in event handlers
+echo "🔍 Checking for potential memory leaks in event handlers..."
+event_listeners=$(find src -type f -name "*.tsx" -o -name "*.ts" | xargs grep -l "addEventListener" | xargs grep -L "removeEventListener" || true)
+
+if [ -n "$event_listeners" ]; then
+  echo "⚠️ Warning: Potential memory leaks - event listeners without cleanup:"
+  echo "$event_listeners"
+  echo "   Make sure to remove event listeners in useEffect cleanup functions."
+fi
+
+# NEW: Check for redundant component re-renders with anonymous functions
+echo "🔍 Checking for anonymous functions in component JSX..."
+anon_funcs=$(find src/components -type f -name "*.tsx" | xargs grep -l "onClick={(\(\) =>" || true)
+
+if [ -n "$anon_funcs" ]; then
+  echo "⚠️ Warning: Anonymous functions in JSX could cause unnecessary re-renders:"
+  echo "$anon_funcs"
+  echo "   Consider using useCallback or moving functions outside the render path."
+fi
+
+# NEW: Check for explicit component return types
+echo "🔍 Checking for explicit component return types..."
+missing_return_types=$(find src/components -type f -name "*.tsx" | xargs grep -l "React.FC\|React.FunctionComponent" | xargs grep -L "=>.*:" || true)
+
+if [ -n "$missing_return_types" ]; then
+  echo "⚠️ Warning: Components without explicit return types:"
+  echo "$missing_return_types"
+  echo "   Add explicit return types to all components for better type checking."
+fi
+
+# NEW: Check for commented-out code
+echo "🔍 Checking for commented-out code..."
+commented_code=$(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "// [a-zA-Z0-9_]\+(" || true)
+
+if [ -n "$commented_code" ]; then
+  echo "⚠️ Warning: Potential commented-out code found:"
+  echo "$commented_code"
+  echo "   Remove commented-out code instead of leaving it in the codebase."
+fi
+
+# NEW: Check for proper error boundary usage
+echo "🔍 Checking for proper error boundary usage in page components..."
+missing_error_boundaries=$(find src/pages -type f -name "*.tsx" | xargs grep -L "ErrorBoundary\|<ErrorFallback" || true)
+
+if [ -n "$missing_error_boundaries" ]; then
+  echo "⚠️ Warning: Page components without Error Boundaries:"
+  echo "$missing_error_boundaries"
+  echo "   Consider wrapping page components with ErrorBoundary for graceful error handling."
+fi
 
 # NEW: Check for proper function exports (must have return types)
 echo "🔍 Checking for function exports without explicit return types..."

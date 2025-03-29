@@ -1,4 +1,3 @@
-
 /**
  * ESLint rules for export validation
  * Enforces proper module export patterns
@@ -171,6 +170,73 @@ export const exportValidationRules = {
     "import/no-cycle": ["error", { 
       "maxDepth": 1,
       "ignoreExternal": false
+    }],
+    
+    // NEW: Improve module structure
+    "import/no-self-import": "error",
+    "import/no-cycle": ["error", { "maxDepth": 1 }],
+    "import/no-useless-path-segments": ["error", { "noUselessIndex": true }],
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    
+    // NEW: Prevent accidental default exports
+    "import/no-anonymous-default-export": ["error", {
+      "allowArray": false,
+      "allowArrowFunction": false,
+      "allowAnonymousClass": false,
+      "allowAnonymousFunction": false,
+      "allowCallExpression": false,
+      "allowLiteral": false,
+      "allowObject": false
+    }],
+    
+    // NEW: Enforce proper type imports
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    
+    // NEW: Enforce architectural boundaries more strictly
+    "import/no-restricted-paths": ["error", {
+      "zones": [
+        {
+          "target": "**/index.ts",
+          "from": "./",
+          "message": "Be cautious with wildcard exports in index files to avoid ambiguity."
+        },
+        {
+          "target": "./src/utils/**/*",
+          "from": "./src/components/**/*",
+          "message": "Utils should not import from components. This creates circular dependencies."
+        },
+        {
+          "target": "./src/types/**/*", 
+          "from": "./src/**/*",
+          "except": ["./src/types/**/*"],
+          "message": "Types should only import from other types to prevent circular dependencies."
+        },
+        {
+          "target": "./src/hooks/canvas-resizing/**/*",
+          "from": "./src/hooks/canvas-events/**/*",
+          "message": "Canvas resizing should not depend on canvas events to maintain proper separation of concerns."
+        }
+      ]
+    }],
+    
+    // NEW: Warn on potentially problematic imports
+    "import/no-deprecated": "warn",
+    
+    // NEW: Prevent accidental imports from devDependencies in production code
+    "import/no-extraneous-dependencies": ["error", {
+      "devDependencies": [
+        "**/*.test.ts", 
+        "**/*.test.tsx", 
+        "**/*.spec.ts", 
+        "**/*.spec.tsx", 
+        "**/test/**", 
+        "**/tests/**", 
+        "vite.config.ts",
+        "vitest.config.ts"
+      ],
+      "optionalDependencies": false,
+      "peerDependencies": true
     }]
   },
   settings: {
