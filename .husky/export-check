@@ -53,6 +53,16 @@ for file in $(find src -type f -name "index.ts"); do
   fi
 done
 
+# NEW: More robust check for wildcard exports combined with direct exports
+echo "🔍 Running new critical ambiguity check..."
+
+# Check for files that have both direct exports and wildcard exports
+for file in $(find src -type f -name "*.ts" -o -name "*.tsx" | xargs grep -l "export \* from" | xargs grep -l "export const"); do
+  echo "⚠️ File with both wildcard and direct exports detected: $file"
+  echo "   This pattern can lead to ambiguous exports. Consider using explicit exports only."
+  echo "   Example: 'export { specificFunction } from './module'' instead of 'export * from './module''"
+done
+
 # NEW: Check specifically for exported names from imported modules
 echo "🔍 Checking for ambiguous re-exports..."
 for file in $(find src -type f -name "index.ts"); do

@@ -85,19 +85,19 @@ export const exportValidationRules = {
       "peerDependencies": false
     }],
     
-    // NEW: Prevent re-exporting the same name from different modules with stricter settings
+    // Prevent re-exporting the same name from different modules with stricter settings
     "import/no-duplicates": ["error", { "considerQueryString": true }],
     
-    // NEW: Prevent re-exporting the same name with different meanings with stricter settings
+    // Prevent re-exporting the same name with different meanings with stricter settings
     "import/export": "error",
     
-    // NEW: Improved warning about barrel files that might create ambiguous exports
+    // Improved warning about barrel files that might create ambiguous exports
     "import/no-named-default": "error",
     
-    // NEW: Check for named exports in the same file
+    // Check for named exports in the same file
     "import/no-namespace": "warn",
     
-    // NEW: Prevent wildcard exports alongside individual exports to avoid ambiguity
+    // Prevent wildcard exports alongside individual exports to avoid ambiguity
     "import/no-restricted-paths": ["error", {
       "zones": [
         {
@@ -108,8 +108,14 @@ export const exportValidationRules = {
       ]
     }],
     
-    // NEW: Enforce explicit re-exports to avoid ambiguity
-    "import/no-anonymous-default-export": "error"
+    // Enforce explicit re-exports to avoid ambiguity
+    "import/no-anonymous-default-export": "error",
+    
+    // NEW: More strictly catch ambiguous exports
+    "import/export": ["error", { "detectAmbiguousExports": true }],
+    
+    // NEW: Disallow re-exporting with the same name as a direct export in the same file
+    "import/no-named-as-default-member": "error"
   },
   settings: {
     "import/resolver": {
