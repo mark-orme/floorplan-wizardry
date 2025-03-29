@@ -4,7 +4,7 @@
  * Provides a lightweight Redux-like state management using React Context and useReducer
  * @module store
  */
-import { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 
 // Action type definition
 export interface Action<T = any> {
