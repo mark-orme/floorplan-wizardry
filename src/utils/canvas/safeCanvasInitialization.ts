@@ -216,9 +216,5 @@ export const isCanvasProperlyInitialized = (canvas: FabricCanvas | null): boolea
   return isValid;
 };
 
-// Export the previously missing functions
-export {
-  prepareCanvasForInitialization,
-  validateCanvasInitialization,
-  handleInitializationFailure
-};
+// We don't need to re-export these functions as they're already exported above
+// Removing the duplicate exports that were causing the error

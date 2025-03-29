@@ -89,6 +89,26 @@ export const exportValidationRules = {
         "ExportDefaultDeclaration > FunctionDeclaration",
         "ExportDefaultDeclaration > ClassDeclaration"
       ]
+    }],
+    
+    // NEW: Explicitly prevent duplicate exports of the same name
+    "no-dupe-class-members": "error",
+    "no-redeclare": "error",
+    
+    // NEW: TypeScript specific rules for checking exports
+    "@typescript-eslint/no-duplicate-imports": "error",
+    "@typescript-eslint/explicit-module-boundary-types": ["error", {
+      allowArgumentsExplicitlyTypedAsAny: false,
+      allowDirectConstAssertionInArrowFunctions: true,
+      allowHigherOrderFunctions: true,
+      allowTypedFunctionExpressions: true,
+    }],
+    
+    // NEW: Ensure exported functions have return types
+    "@typescript-eslint/explicit-function-return-type": ["error", {
+      allowExpressions: true,
+      allowTypedFunctionExpressions: true,
+      allowHigherOrderFunctions: true,
     }]
   }
 };
