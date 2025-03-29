@@ -111,10 +111,10 @@ export const exportValidationRules = {
     // Enforce explicit re-exports to avoid ambiguity
     "import/no-anonymous-default-export": "error",
     
-    // NEW: More strictly catch ambiguous exports
+    // More strictly catch ambiguous exports
     "import/export": ["error", { "detectAmbiguousExports": true }],
     
-    // NEW: Disallow re-exporting with the same name as a direct export in the same file
+    // Disallow re-exporting with the same name as a direct export in the same file
     "import/no-named-as-default-member": "error"
   },
   settings: {
