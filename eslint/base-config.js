@@ -371,6 +371,35 @@ export const baseConfig = {
       "functions": false, 
       "classes": true, 
       "variables": true 
-    }]
+    }],
+    
+    // NEW: Additional JSX syntax checks
+    "react/jsx-wrap-multilines": ["error", {
+      "declaration": "parens-new-line",
+      "assignment": "parens-new-line",
+      "return": "parens-new-line",
+      "arrow": "parens-new-line",
+      "condition": "parens-new-line",
+      "logical": "parens-new-line",
+      "prop": "parens-new-line"
+    }],
+    
+    // NEW: Regular expression literal safety
+    "no-empty-pattern": "error",
+    "no-empty-character-class": "error",
+    "no-control-regex": "error",
+    
+    // NEW: Enforcement of proper statement structure
+    "no-lone-blocks": "error",
+    "no-lone-blocks": "error",
+    "keyword-spacing": ["error", { "before": true, "after": true }],
+    "space-before-blocks": ["error", "always"],
+    
+    // NEW: Balancing of brackets and parentheses
+    "template-curly-spacing": ["error", "never"],
+    "array-bracket-spacing": ["error", "never"],
+    "object-curly-spacing": ["error", "always"],
+    "computed-property-spacing": ["error", "never"],
+    "no-whitespace-before-property": "error"
   }
 };
