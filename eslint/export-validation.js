@@ -16,12 +16,12 @@ export const exportValidationRules = {
     "import/no-named-as-default-member": "warn",
     
     // Prevent usage of undefined exports
-    "import/no-unresolved": "error",
+    "import/no-unresolved": ["error", { commonjs: true, caseSensitive: true }],
     
-    // NEW: Prevent circular dependencies
+    // Prevent circular dependencies
     "import/no-cycle": ["error", { maxDepth: 10 }],
     
-    // NEW: Ensure all exports are used somewhere
+    // Ensure all exports are used somewhere
     "import/no-unused-modules": ["warn", { 
       unusedExports: true,
       missingExports: true,
@@ -34,27 +34,24 @@ export const exportValidationRules = {
       ]
     }],
     
-    // NEW: Prevent exporting mutable values
+    // Prevent exporting mutable values
     "import/no-mutable-exports": "error",
     
-    // NEW: Ensure consistent export patterns
+    // Ensure consistent export patterns
     "import/no-anonymous-default-export": "error",
     
-    // NEW: Ensure all imported modules can be resolved to a module on the local filesystem
-    "import/no-unresolved": ["error", { caseSensitive: true }],
-    
-    // NEW: Strict checking for dynamic import expressions
+    // Strict checking for dynamic import expressions
     "import/dynamic-import-chunkname": ["error", {
       webpackChunknameFormat: "[a-zA-Z0-9-/_]+"
     }],
     
-    // NEW: Ensure exports are sorted alphabetically
+    // Ensure exports are sorted alphabetically
     "sort-exports/sort-exports": ["warn", {
       sortDir: "asc",
       ignoreCase: true
     }],
     
-    // NEW: Custom rule to check for exports usage
+    // Enhanced validation for export components
     "no-restricted-imports": ["error", {
       "patterns": [
         {
@@ -70,7 +67,13 @@ export const exportValidationRules = {
       ]
     }],
     
-    // NEW: Custom rule to enforce documentation for exports
+    // ENHANCED: Prevent duplicate exports
+    "no-duplicate-imports": "error",
+    
+    // ENHANCED: Force all export statements to be at the end of the file
+    "import/exports-last": "warn",
+    
+    // ENHANCED: Custom rule to enforce documentation for exports
     "jsdoc/require-jsdoc": ["warn", {
       publicOnly: true,
       require: {

@@ -215,3 +215,10 @@ export const isCanvasProperlyInitialized = (canvas: FabricCanvas | null): boolea
   
   return isValid;
 };
+
+// Export the previously missing functions
+export {
+  prepareCanvasForInitialization,
+  validateCanvasInitialization,
+  handleInitializationFailure
+};
