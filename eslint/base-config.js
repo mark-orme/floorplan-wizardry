@@ -1,4 +1,3 @@
-
 /**
  * Base ESLint configuration
  * Shared rules for all files
@@ -400,6 +399,9 @@ export const baseConfig = {
     "array-bracket-spacing": ["error", "never"],
     "object-curly-spacing": ["error", "always"],
     "computed-property-spacing": ["error", "never"],
-    "no-whitespace-before-property": "error"
+    "no-whitespace-before-property": "error",
+    
+    // NEW: Prevent JSX in .ts files - require .tsx extension for files with JSX
+    "react/jsx-filename-extension": ["error", { "extensions": [".jsx", ".tsx"] }]
   }
 };
