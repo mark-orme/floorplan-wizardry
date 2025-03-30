@@ -1,130 +1,112 @@
 
 /**
- * Floor plan type definitions
- * @module floorPlanTypes
+ * Types related to floor plans
+ * @module types/floorPlanTypes
  */
-import { Point } from './geometryTypes';
-import { 
-  FloorPlan as CoreFloorPlan, 
-  Wall as CoreWall, 
-  Stroke as CoreStroke, 
-  Room as CoreRoom, 
-  FloorPlanMetadata as CoreFloorPlanMetadata,
-  StrokeType as CoreStrokeType
-} from './core/FloorPlan';
-
-/**
- * Paper size enumeration
- * Standard paper sizes used in floor plans
- */
-export enum PaperSize {
-  A0 = 'A0',
-  A1 = 'A1',
-  A2 = 'A2',
-  A3 = 'A3',
-  A4 = 'A4',
-  CUSTOM = 'CUSTOM'
-}
-
-/**
- * String literal type for stroke types
- * Types of strokes that can be drawn
- */
-export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
-
-/**
- * Stroke type enumeration
- * Types of strokes that can be drawn
- */
-export enum StrokeType {
-  LINE = 'line',
-  POLYLINE = 'polyline',
-  CIRCLE = 'circle',
-  RECTANGLE = 'rectangle',
-  TEXT = 'text',
-  PATH = 'path',
-  WALL = 'wall',
-  ROOM = 'room',
-  FREEHAND = 'freehand'
-}
-
-/**
- * Wall definition
- * Represents a wall in a floor plan
- * Compatible with CoreWall from core/FloorPlan
- */
-export interface Wall extends CoreWall {
-  /** Start point of the wall - maps to 'start' in CoreWall */
-  startPoint: Point;
-  /** End point of the wall - maps to 'end' in CoreWall */
-  endPoint: Point;
-  /** Start point of the wall (alias for compatibility) */
-  start: Point;
-  /** End point of the wall (alias for compatibility) */
-  end: Point;
-}
-
-/**
- * Room definition
- * Represents a room in a floor plan
- */
-export interface Room extends CoreRoom {
-  /** Room level */
-  level?: number;
-}
-
-/**
- * Stroke definition
- * Represents a drawing stroke on the canvas
- */
-export interface Stroke extends Omit<CoreStroke, 'type' | 'width'> {
-  /** Type of stroke */
-  type: StrokeTypeLiteral;
-  /** Stroke width in pixels (equivalent to thickness for API compatibility) */
-  width?: number; // Changed to optional to match core
-}
 
 /**
  * Floor plan metadata
- * Contains additional information about a floor plan
  */
-export interface FloorPlanMetadata extends Omit<CoreFloorPlanMetadata, 'createdAt' | 'updatedAt'> {
-  /** Creation timestamp as string to match CoreFloorPlanMetadata */
+export interface FloorPlanMetadata {
   createdAt: string;
-  /** Last update timestamp as string to match CoreFloorPlanMetadata */
   updatedAt: string;
-  /** Paper size */
-  paperSize: PaperSize | string;
-  /** Floor level */
+  paperSize: string;
   level: number;
+  [key: string]: any; // Additional metadata properties
 }
 
 /**
- * Floor plan definition
- * Represents a complete floor plan with all its elements
+ * Wall object in a floor plan
  */
-export interface FloorPlan extends Omit<CoreFloorPlan, 'walls' | 'rooms' | 'strokes' | 'metadata' | 'canvasData'> {
-  /** Floor plan display label - now required to match core FloorPlan */
-  label: string;
-  /** Array of drawing strokes */
-  strokes: Stroke[];
-  /** Array of walls */
-  walls: Wall[];
-  /** Array of rooms */
-  rooms: Room[];
-  /** Floor plan metadata */
-  metadata: FloorPlanMetadata;
-  /** Serialized canvas state */
-  canvasJson?: string;
-  /** Gross internal area in square meters */
-  gia: number;
-  /** Canvas data for storage */
-  canvasData: any;
-  /** Floor level */
-  level: number;
-  /** Paper size */
-  paperSize?: string | PaperSize;
+export interface Wall {
+  id: string;
+  points: { x: number; y: number }[];
+  thickness?: number;
+  length?: number;
+  [key: string]: any; // Additional wall properties
 }
 
-// Use export type for isolatedModules compatibility
-export type { Point } from './geometryTypes';
+/**
+ * Room object in a floor plan
+ */
+export interface Room {
+  id: string;
+  name?: string;
+  points: { x: number; y: number }[];
+  area?: number;
+  [key: string]: any; // Additional room properties
+}
+
+/**
+ * Stroke (drawn path) in a floor plan
+ */
+export interface Stroke {
+  id: string;
+  points: { x: number; y: number }[];
+  color?: string;
+  thickness?: number;
+  [key: string]: any; // Additional stroke properties
+}
+
+/**
+ * Floor plan object
+ */
+export interface FloorPlan {
+  id: string;
+  name: string;
+  label: string;
+  gia: number;
+  walls: Wall[];
+  rooms: Room[];
+  strokes: Stroke[];
+  canvasData: any | null;
+  canvasJson: any | null;
+  createdAt: string;
+  updatedAt: string;
+  level: number;
+  index: number;
+  metadata: FloorPlanMetadata;
+}
+
+/**
+ * Create a default floor plan
+ * @param {number} index Floor index
+ * @returns {FloorPlan} Default floor plan
+ */
+export const createDefaultFloorPlan = (index: number = 0): FloorPlan => {
+  const now = new Date().toISOString();
+  const name = `Floor ${index + 1}`;
+  
+  return {
+    id: `floor-${Date.now()}-${index}`,
+    name,
+    label: name,
+    gia: 0,
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasData: null,
+    canvasJson: null,
+    createdAt: now,
+    updatedAt: now,
+    level: index,
+    index,
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: index
+    }
+  };
+};
+
+/**
+ * Calculate GIA (Gross Internal Area) for a floor plan
+ * @param {FloorPlan} floorPlan Floor plan to calculate GIA for
+ * @returns {number} Calculated GIA
+ */
+export const calculateFloorPlanGIA = (floorPlan: FloorPlan): number => {
+  // Simple implementation - in a real app, this would calculate
+  // the sum of all room areas or use a more complex algorithm
+  return floorPlan.rooms.reduce((total, room) => total + (room.area || 0), 0);
+};

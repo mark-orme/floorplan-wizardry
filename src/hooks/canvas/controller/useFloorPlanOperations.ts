@@ -5,6 +5,7 @@
  */
 import { useCallback } from "react";
 import { FloorPlan } from "@/types/floorPlanTypes";
+import { toast } from "sonner";
 
 /**
  * Props for useFloorPlanOperations hook
@@ -31,6 +32,7 @@ export const useFloorPlanOperations = ({
   const handleFloorSelect = useCallback((floorIndex: number): void => {
     if (floorIndex >= 0 && floorIndex < floorPlans.length) {
       console.info(`Floor selected: ${floorPlans[floorIndex].name}`);
+      toast.success(`${floorPlans[floorIndex].name} selected`);
       // Implement actual floor selection logic
     }
   }, [floorPlans]);
@@ -66,6 +68,7 @@ export const useFloorPlanOperations = ({
     
     // Add it to the list
     setFloorPlans(prevFloorPlans => [...prevFloorPlans, newFloor]);
+    toast.success(`New floor added: ${newFloorName}`);
   }, [floorPlans, setFloorPlans]);
   
   return {
