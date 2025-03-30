@@ -1,114 +1,162 @@
 
-/**
- * Simple Grid Creator
- * Provides reliable and simplified grid creation functions
- * @module utils/grid/simpleGridCreator
- */
-
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createSimpleGrid } from './simpleGrid';
-import { runGridDiagnostics } from './gridDiagnostics';
-import { retryWithBackoff } from './gridCreationUtils';
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 
 /**
- * Create a reliable grid with retry mechanism
- * @param canvas Fabric canvas
- * @param gridLayerRef Reference to grid objects
- * @returns Created grid objects
+ * Snap a point to the nearest grid point
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} [gridSize] - Optional grid size to snap to (defaults to small grid size)
+ * @returns {{ x: number, y: number }} Snapped coordinates
  */
-export const createReliableGrid = (
-  canvas: FabricCanvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
-  if (!canvas) {
-    console.error('Cannot create reliable grid: Canvas not available');
-    return [];
+export const snapPointToGrid = (x: number, y: number, gridSize?: number): { x: number, y: number } => {
+  const snapSize = gridSize || GRID_CONSTANTS.SMALL_GRID_SIZE;
+  
+  return {
+    x: Math.round(x / snapSize) * snapSize,
+    y: Math.round(y / snapSize) * snapSize
+  };
+};
+
+/**
+ * Create a simple grid on the canvas
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
+  if (!canvas) return [];
+  
+  const gridObjects: FabricObject[] = [];
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
+  
+  // Create small grid lines
+  for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+    const line = new Line([i, 0, i, height], {
+      stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    canvas.add(line);
+    gridObjects.push(line);
   }
   
-  try {
-    // Clear any existing grid first
-    if (gridLayerRef.current.length > 0) {
-      // Clear existing grid
-      gridLayerRef.current.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.remove(obj);
-        }
-      });
-      gridLayerRef.current = [];
-    }
-    
-    // Create a new grid with retry mechanism
-    const createGridWithRetry = async (): Promise<FabricObject[]> => {
-      try {
-        return createSimpleGrid(canvas);
-      } catch (error) {
-        console.error('Error in grid creation, retrying:', error);
-        return [];
-      }
-    };
-    
-    // Use the retryWithBackoff utility
-    retryWithBackoff(createGridWithRetry, 3)
-      .then(gridObjects => {
-        if (gridObjects.length > 0) {
-          gridLayerRef.current = gridObjects;
-          canvas.requestRenderAll();
-          
-          // Run diagnostics to verify grid health
-          const diagnostics = runGridDiagnostics(canvas, gridObjects);
-          console.log('Grid diagnostics:', diagnostics);
-        }
-      })
-      .catch(error => {
-        console.error('Failed to create grid after retries:', error);
-      });
-    
-    // Return the initial grid objects immediately
-    // The retry mechanism will update gridLayerRef asynchronously if needed
-    const initialGridObjects = createSimpleGrid(canvas);
-    gridLayerRef.current = initialGridObjects;
-    
-    return initialGridObjects;
-  } catch (error) {
-    console.error('Error in createReliableGrid:', error);
-    return [];
+  for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+    const line = new Line([0, i, width, i], {
+      stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    canvas.add(line);
+    gridObjects.push(line);
   }
+  
+  // Create large grid lines
+  for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+    const line = new Line([i, 0, i, height], {
+      stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+    const line = new Line([0, i, width, i], {
+      stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  canvas.requestRenderAll();
+  return gridObjects;
 };
 
 /**
  * Ensure grid is visible on canvas
- * @param canvas Fabric canvas
- * @param gridObjects Grid objects
- * @returns Whether grid visibility was ensured
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Grid objects to check
+ * @returns {boolean} Whether any fixes were applied
  */
-export const ensureGridVisibility = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[]
-): boolean => {
-  if (!canvas || gridObjects.length === 0) return false;
+export const ensureGridVisibility = (canvas: FabricCanvas, gridObjects: FabricObject[]): boolean => {
+  if (!canvas || !gridObjects.length) return false;
   
-  try {
-    let visibilityChanged = false;
-    
-    // Check if any grid objects are hidden
-    const hiddenObjects = gridObjects.filter(obj => !obj.visible);
-    
-    if (hiddenObjects.length > 0) {
-      // Make all grid objects visible
-      hiddenObjects.forEach(obj => {
-        obj.visible = true;
-        visibilityChanged = true;
-      });
-      
-      // Force render if visibility changed
-      if (visibilityChanged) {
-        canvas.requestRenderAll();
-      }
+  let fixesApplied = false;
+  
+  // Check if each grid object is on canvas
+  gridObjects.forEach(obj => {
+    if (!canvas.contains(obj)) {
+      canvas.add(obj);
+      fixesApplied = true;
     }
-    
-    return visibilityChanged;
-  } catch (error) {
-    console.error('Error ensuring grid visibility:', error);
-    return false;
+  });
+  
+  if (fixesApplied) {
+    canvas.requestRenderAll();
   }
+  
+  return fixesApplied;
+};
+
+/**
+ * Create a reliable grid on the canvas
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {React.MutableRefObject<FabricObject[]>} gridObjectsRef - Reference to grid objects
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createReliableGrid = (
+  canvas: FabricCanvas,
+  gridObjectsRef: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  if (!canvas) return [];
+
+  // Clear any existing grid
+  if (gridObjectsRef.current.length > 0) {
+    gridObjectsRef.current.forEach(obj => {
+      if (canvas.contains(obj)) {
+        canvas.remove(obj);
+      }
+    });
+    gridObjectsRef.current = [];
+  }
+
+  // Create new grid
+  const gridObjects = createSimpleGrid(canvas);
+  gridObjectsRef.current = gridObjects;
+  
+  return gridObjects;
+};
+
+/**
+ * Force grid recreation when needed
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {FabricObject[]} currentGrid - Current grid objects
+ * @returns {FabricObject[]} New grid objects
+ */
+export const forceGridRecreation = (canvas: FabricCanvas, currentGrid: FabricObject[]): FabricObject[] => {
+  if (!canvas) return [];
+  
+  // Remove existing grid objects
+  if (currentGrid.length > 0) {
+    currentGrid.forEach(obj => {
+      if (canvas.contains(obj)) {
+        canvas.remove(obj);
+      }
+    });
+  }
+  
+  // Create new grid
+  return createSimpleGrid(canvas);
 };

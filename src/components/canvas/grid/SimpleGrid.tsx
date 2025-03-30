@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { SimpleGrid as SimpleGridClass } from './SimpleGridClass';
+import { SimpleGridClass } from './SimpleGridClass';
 import { Button } from '@/components/ui/button';
 import { Grid, X } from 'lucide-react';
 

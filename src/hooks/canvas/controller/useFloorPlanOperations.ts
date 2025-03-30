@@ -45,8 +45,23 @@ export const useFloorPlanOperations = ({
     const newFloor: FloorPlan = {
       id: `floor-${Date.now()}`,
       name: newFloorName,
+      label: newFloorName,
       gia: 0,
-      objects: []
+      walls: [],
+      rooms: [],
+      strokes: [],
+      canvasData: null,
+      canvasJson: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      level: floorPlans.length,
+      index: floorPlans.length,
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        paperSize: 'A4',
+        level: floorPlans.length
+      }
     };
     
     // Add it to the list
