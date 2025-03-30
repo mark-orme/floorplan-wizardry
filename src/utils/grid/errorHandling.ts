@@ -1,4 +1,3 @@
-
 /**
  * Grid error handling module
  * Handles errors and retries for grid creation
@@ -6,9 +5,8 @@
  */
 import { toast } from "sonner";
 import logger from "../logger";
-import { captureError, captureMessage } from "../sentryUtils";
+import { captureError, captureMessage, startPerformanceTransaction } from "../sentry";
 import { Canvas, Object as FabricObject } from "fabric";
-import { startPerformanceTransaction } from "../sentryUtils";
 
 /**
  * Toast messages for grid errors

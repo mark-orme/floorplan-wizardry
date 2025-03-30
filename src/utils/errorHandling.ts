@@ -5,7 +5,7 @@
  * 
  * @module utils/errorHandling
  */
-import { captureError } from './sentryUtils';
+import { captureError } from './sentry';
 import logger from './logger';
 import { toast } from 'sonner';
 
