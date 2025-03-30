@@ -42,6 +42,31 @@
 - Provide user-friendly error messages and recovery options
 - Catch and handle all promise rejections
 
+## Module Design Patterns
+
+### Floor Plan Adapter Module
+
+The Floor Plan Adapter module follows these design patterns:
+
+1. **Separation of Concerns**:
+   - `converters.ts`: Focuses only on conversion between types
+   - `validators.ts`: Handles data validation
+   - `types.ts`: Provides type helpers and utilities
+
+2. **Consistent Interfaces**:
+   - Clear function names that describe their purpose
+   - Consistent parameter and return types
+   - Proper error handling and fallbacks
+
+3. **Default Values**:
+   - Sensible defaults for missing or invalid data
+   - Graceful handling of null or undefined values
+
+4. **Documentation**:
+   - JSDoc comments for all public functions
+   - Examples of usage where appropriate
+   - Clear explanation of function parameters and return values
+
 ## Hook Design Patterns
 
 1. **Composition**:

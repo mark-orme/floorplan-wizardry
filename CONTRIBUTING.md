@@ -24,6 +24,7 @@ For detailed documentation on specific aspects of the codebase, please refer to:
 
 - [Project Overview](./docs/project-overview.md) - High-level architecture and directory structure
 - [Grid System](./docs/grid-system.md) - Detailed documentation on the grid architecture
+- [Floor Plan Adapter](./docs/floor-plan-adapter.md) - Documentation on the floor plan adapter module
 - [Development Guidelines](./docs/development-guidelines.md) - Coding standards and best practices
 - [Component Design](./docs/component-design.md) - Component architecture and patterns
 - [Testing Strategy](./docs/testing-strategy.md) - Testing approaches and tools

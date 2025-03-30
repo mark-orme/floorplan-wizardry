@@ -19,10 +19,14 @@ src/
 ├── pages/          # Page components
 ├── tests/          # Test files and utilities
 ├── types/          # TypeScript type definitions
+│   ├── core/       # Core type definitions
+│   │   └── floor-plan/ # Floor plan type definitions 
+│   └── floor-plan/ # Application floor plan type definitions
 └── utils/          # Utility functions
     ├── geometry/   # Geometry-related utilities
     ├── grid/       # Grid creation utilities
-    └── fabric/     # Fabric.js utilities
+    ├── fabric/     # Fabric.js utilities
+    └── floorPlanAdapter/ # Floor plan adapter utilities
 ```
 
 ## Key Modules
@@ -31,6 +35,11 @@ src/
 - **Fabric.js Integration**: Custom extensions for drawing and manipulation
 - **Event Handling**: Touch, mouse, and stylus event normalization
 - **Object Management**: Creation, selection, and modification of canvas objects
+
+### Floor Plan Adapter
+- **Converters**: Conversion between application and core floor plan types
+- **Validators**: Validation of floor plan data
+- **Type Helpers**: Type conversion and validation utilities
 
 ### Data Storage and Synchronization
 - **Local Storage**: IndexedDB implementation for floor plan persistence

@@ -72,6 +72,14 @@ The application follows a component-based architecture with:
 - **Custom Hooks**: Separate logic concerns (drawing, resizing, history, etc.)
 - **Context Providers**: Manage application state and user preferences
 
+### Floor Plan Adapter System
+The application implements a modular floor plan adapter system for:
+
+- **Data Conversion**: Converting between different floor plan formats
+- **Type Safety**: Ensuring type consistency across the application
+- **Validation**: Validating floor plan data before processing
+- **Default Values**: Providing sensible defaults for missing data
+
 ### Grid System Architecture
 The application implements a robust grid system with:
 
@@ -137,12 +145,24 @@ src/
 ├── utils/          # Utility functions
 │   ├── grid/       # Grid utilities
 │   ├── fabric/     # Fabric.js utilities
+│   ├── floorPlanAdapter/ # Floor plan adapter utilities
 │   └── geometry/   # Geometry calculation utilities
 ├── pages/          # Page components
 └── types/          # TypeScript type definitions
+    ├── core/       # Core type definitions
+    │   └── floor-plan/ # Floor plan type definitions
+    └── floor-plan/ # Application floor plan type definitions
 ```
 
 ### Key Modules
+
+#### Floor Plan Adapter
+The floor plan adapter system is implemented in `src/utils/floorPlanAdapter/` with these key files:
+
+- `index.ts`: Re-exports all adapter functionality
+- `converters.ts`: Functions to convert between app and core floor plan types
+- `validators.ts`: Validation utilities for floor plan data
+- `types.ts`: Type helpers and conversion utilities
 
 #### Grid System
 The grid system is implemented in `src/utils/grid/` with these key files:
