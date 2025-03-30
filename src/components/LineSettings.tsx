@@ -1,63 +1,10 @@
 
-import { Slider } from "@/components/ui/slider";
+import React from "react";
 import { Label } from "@/components/ui/label";
-import { LINE_COLORS } from "@/constants/colorConstants";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 
-/**
- * Line settings constants
- * @constant {Object}
- */
-const LINE_SETTINGS = {
-  /**
-   * Minimum line thickness in pixels
-   * @constant {number}
-   */
-  MIN_THICKNESS: 1,
-  
-  /**
-   * Maximum line thickness in pixels
-   * @constant {number}
-   */
-  MAX_THICKNESS: 10,
-  
-  /**
-   * Line thickness step size
-   * @constant {number}
-   */
-  THICKNESS_STEP: 1,
-  
-  /**
-   * Default CSS class for slider width
-   * @constant {string}
-   */
-  SLIDER_WIDTH_CLASS: "w-28",
-  
-  /**
-   * Default CSS class for color picker
-   * @constant {string}
-   */
-  COLOR_PICKER_CLASS: "w-8 h-8 p-1 border rounded cursor-pointer",
-  
-  /**
-   * Container background CSS class
-   * @constant {string}
-   */
-  CONTAINER_CLASS: "flex items-center gap-4 bg-gray-50 dark:bg-gray-800 p-2 rounded border",
-  
-  /**
-   * Group wrapper CSS class
-   * @constant {string}
-   */
-  GROUP_CLASS: "flex flex-col gap-1",
-  
-  /**
-   * Label CSS class
-   * @constant {string}
-   */
-  LABEL_CLASS: "text-xs font-medium"
-};
-
-export interface LineSettingsProps {
+interface LineSettingsProps {
   thickness: number;
   color: string;
   onThicknessChange: (thickness: number) => void;
@@ -65,38 +12,51 @@ export interface LineSettingsProps {
 }
 
 /**
- * Component for adjusting line thickness and color in the drawing toolbar
+ * Line settings component for controlling line thickness and color
+ * @param {LineSettingsProps} props - Component props
+ * @returns {JSX.Element} Rendered component
  */
-export const LineSettings = ({
+export const LineSettings: React.FC<LineSettingsProps> = ({
   thickness,
   color,
   onThicknessChange,
   onColorChange
-}: LineSettingsProps) => {
+}) => {
+  // Handle thickness slider change
+  const handleThicknessChange = (values: number[]) => {
+    onThicknessChange(values[0]);
+  };
+
   return (
-    <div className={LINE_SETTINGS.CONTAINER_CLASS}>
-      <div className={LINE_SETTINGS.GROUP_CLASS}>
-        <Label htmlFor="thickness" className={LINE_SETTINGS.LABEL_CLASS}>Thickness: {thickness}px</Label>
+    <div className="flex gap-6 items-center">
+      <div className="flex flex-col space-y-1 min-w-[120px]">
+        <Label htmlFor="line-thickness" className="text-xs">Thickness: {thickness}px</Label>
         <Slider
-          id="thickness"
-          min={LINE_SETTINGS.MIN_THICKNESS}
-          max={LINE_SETTINGS.MAX_THICKNESS}
-          step={LINE_SETTINGS.THICKNESS_STEP}
+          id="line-thickness"
+          min={1}
+          max={20}
+          step={1}
           value={[thickness]}
-          onValueChange={(values) => onThicknessChange(values[0])}
-          className={LINE_SETTINGS.SLIDER_WIDTH_CLASS}
+          onValueChange={handleThicknessChange}
+          className="w-full"
         />
       </div>
       
-      <div className={LINE_SETTINGS.GROUP_CLASS}>
-        <Label htmlFor="color" className={LINE_SETTINGS.LABEL_CLASS}>Color</Label>
-        <input
-          id="color"
-          type="color"
-          value={color}
-          onChange={(e) => onColorChange(e.target.value)}
-          className={LINE_SETTINGS.COLOR_PICKER_CLASS}
-        />
+      <div className="flex flex-col space-y-1">
+        <Label htmlFor="line-color" className="text-xs">Color</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            id="line-color"
+            type="color"
+            value={color}
+            onChange={(e) => onColorChange(e.target.value)}
+            className="w-10 h-10 p-1 cursor-pointer"
+          />
+          <div 
+            className="w-6 h-6 rounded border border-gray-200" 
+            style={{ backgroundColor: color }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,108 +1,33 @@
 
-import { Object as FabricObject } from "fabric";
+/**
+ * Grid management utilities
+ * @module utils/gridManager
+ */
 
-// Grid creation state
+// Flag to track if grid creation is in progress
 let gridCreationInProgress = false;
-let gridCreationStartTime = 0;
-let gridCreationErrorCount = 0;
-let gridInstances: Record<string, FabricObject[]> = {};
 
 /**
- * Reset grid progress tracking
+ * Reset grid creation progress flag
+ * Use this to break any stuck locks
  */
 export const resetGridProgress = (): void => {
+  console.log("Resetting grid creation progress flag");
   gridCreationInProgress = false;
-  gridCreationStartTime = 0;
-  gridCreationErrorCount = 0;
 };
 
 /**
- * Start grid creation process
- * @returns {boolean} Whether creation can start
+ * Set grid creation progress flag
+ * @param {boolean} value - Progress flag value
  */
-export const startGridCreation = (): boolean => {
-  if (gridCreationInProgress) {
-    return false;
-  }
-  
-  console.log("Grid creation started");
-  gridCreationInProgress = true;
-  gridCreationStartTime = Date.now();
-  return true;
+export const setGridProgress = (value: boolean): void => {
+  gridCreationInProgress = value;
 };
 
 /**
- * Finish grid creation process
- * @param {string} instanceId - Identifier for the grid instance
- * @param {FabricObject[]} gridObjects - Created grid objects
+ * Check if grid creation is in progress
+ * @returns {boolean} True if grid creation is in progress
  */
-export const finishGridCreation = (instanceId: string, gridObjects: FabricObject[]): void => {
-  gridCreationInProgress = false;
-  gridInstances[instanceId] = gridObjects;
-  
-  console.log(`Grid creation finished. Created ${gridObjects.length} objects for instance ${instanceId}`);
-};
-
-/**
- * Handle grid creation error
- * @param {Error} error - The error that occurred
- */
-export const handleGridCreationError = (error: Error): void => {
-  gridCreationInProgress = false;
-  gridCreationErrorCount++;
-  
-  console.error("Grid creation error:", error);
-};
-
-/**
- * Check if grid creation should be throttled
- * @returns {boolean} Whether to throttle creation
- */
-export const shouldThrottleCreation = (): boolean => {
-  const now = Date.now();
-  
-  // Throttle if creation in progress
-  if (gridCreationInProgress) {
-    // Check for stuck creation process (timeout after 5 seconds)
-    if (now - gridCreationStartTime > 5000) {
-      console.warn("Grid creation appears stuck, resetting");
-      resetGridProgress();
-      return false;
-    }
-    return true;
-  }
-  
-  // Throttle frequent creation attempts (less than 500ms apart)
-  if (gridCreationStartTime > 0 && now - gridCreationStartTime < 500) {
-    return true;
-  }
-  
-  return false;
-};
-
-/**
- * Log grid creation status
- * @param {string} message - Status message
- * @param {any} data - Additional data
- */
-export const logGridStatus = (message: string, data?: any): void => {
-  console.log(`[Grid] ${message}`, data || '');
-};
-
-/**
- * Get grid instance by ID
- * @param {string} instanceId - Grid instance ID
- * @returns {FabricObject[] | null} Grid objects or null if not found
- */
-export const getGridInstance = (instanceId: string): FabricObject[] | null => {
-  return gridInstances[instanceId] || null;
-};
-
-/**
- * Check if grid instance exists
- * @param {string} instanceId - Grid instance ID
- * @returns {boolean} Whether the grid instance exists
- */
-export const hasGridInstance = (instanceId: string): boolean => {
-  return instanceId in gridInstances;
+export const isGridCreationInProgress = (): boolean => {
+  return gridCreationInProgress;
 };

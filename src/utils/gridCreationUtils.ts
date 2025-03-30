@@ -135,3 +135,85 @@ export const createCompleteGrid = (
   
   return gridObjects;
 };
+
+/**
+ * Verify if grid exists on canvas
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {boolean} True if grid exists
+ */
+export const verifyGridExists = (canvas: FabricCanvas): boolean => {
+  if (!canvas) return false;
+  
+  const objects = canvas.getObjects();
+  return objects.some(obj => (obj as any).objectType === 'grid');
+};
+
+/**
+ * Ensure grid exists on canvas, creating one if needed
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {FabricObject[]} Array of grid objects
+ */
+export const ensureGrid = (canvas: FabricCanvas): FabricObject[] => {
+  if (!canvas) return [];
+  
+  // Check if grid already exists
+  if (verifyGridExists(canvas)) {
+    return canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
+  }
+  
+  // Create new grid
+  return createEnhancedGrid(canvas);
+};
+
+/**
+ * Retry an operation with exponential backoff
+ * @param {Function} operation - Function to retry
+ * @param {number} maxRetries - Maximum number of retry attempts
+ * @returns {Promise<any>} Promise resolving to operation result
+ */
+export const retryWithBackoff = async (
+  operation: () => Promise<any>,
+  maxRetries: number = 3
+): Promise<any> => {
+  let lastError;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const delay = Math.pow(2, i) * 100; // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+};
+
+/**
+ * Reorder grid objects for better rendering
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {void}
+ */
+export const reorderGridObjects = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
+  
+  // Get all objects
+  const objects = canvas.getObjects();
+  
+  // Separate grid and non-grid objects
+  const gridObjects = objects.filter(obj => (obj as any).objectType === 'grid');
+  const nonGridObjects = objects.filter(obj => (obj as any).objectType !== 'grid');
+  
+  // Clear canvas
+  canvas.clear();
+  
+  // Add grid objects first (in the background)
+  gridObjects.forEach(obj => canvas.add(obj));
+  
+  // Add non-grid objects on top
+  nonGridObjects.forEach(obj => canvas.add(obj));
+  
+  // Render changes
+  canvas.renderAll();
+};

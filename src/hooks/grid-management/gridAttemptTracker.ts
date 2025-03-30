@@ -1,27 +1,34 @@
 
 /**
- * Grid attempt tracker module
- * Manages tracking of grid creation attempts
- * @module grid-management/gridAttemptTracker
+ * Grid attempt tracker utilities
+ * @module hooks/grid-management/gridAttemptTracker
  */
-import { GridAttemptTracker } from "./types";
+
+/**
+ * Interface for tracking grid creation attempts
+ */
+export interface GridAttemptTracker {
+  initialAttempted: boolean;
+  totalAttempts: number;
+  successfulAttempts: number;
+  lastError: string | null;
+}
 
 /**
  * Create a new grid attempt tracker
- * @returns {GridAttemptTracker} New grid attempt tracker
+ * @returns {GridAttemptTracker} New tracker instance
  */
 export const createGridAttemptTracker = (): GridAttemptTracker => ({
   initialAttempted: false,
-  count: 0,
-  maxAttempts: 5,
-  successful: false,
-  lastAttemptTime: 0
+  totalAttempts: 0,
+  successfulAttempts: 0,
+  lastError: null
 });
 
 /**
- * Mark initial grid creation as attempted
+ * Mark initial attempt as completed
  * @param {GridAttemptTracker} tracker - Current tracker state
- * @returns {GridAttemptTracker} Updated tracker
+ * @returns {GridAttemptTracker} Updated tracker state
  */
 export const markInitialAttempted = (tracker: GridAttemptTracker): GridAttemptTracker => ({
   ...tracker,
@@ -29,31 +36,32 @@ export const markInitialAttempted = (tracker: GridAttemptTracker): GridAttemptTr
 });
 
 /**
- * Increment the attempt count
+ * Increment total attempts counter
  * @param {GridAttemptTracker} tracker - Current tracker state
- * @returns {GridAttemptTracker} Updated tracker
+ * @returns {GridAttemptTracker} Updated tracker state
  */
-export const incrementAttemptCount = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+export const incrementTotalAttempts = (tracker: GridAttemptTracker): GridAttemptTracker => ({
   ...tracker,
-  count: tracker.count + 1,
-  lastAttemptTime: Date.now()
+  totalAttempts: tracker.totalAttempts + 1
 });
 
 /**
- * Mark grid creation as successful
+ * Increment successful attempts counter
  * @param {GridAttemptTracker} tracker - Current tracker state
- * @returns {GridAttemptTracker} Updated tracker
+ * @returns {GridAttemptTracker} Updated tracker state
  */
-export const markCreationSuccessful = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+export const incrementSuccessfulAttempts = (tracker: GridAttemptTracker): GridAttemptTracker => ({
   ...tracker,
-  successful: true
+  successfulAttempts: tracker.successfulAttempts + 1
 });
 
 /**
- * Check if maximum attempts have been reached
+ * Set last error message
  * @param {GridAttemptTracker} tracker - Current tracker state
- * @returns {boolean} Whether max attempts reached
+ * @param {string} error - Error message
+ * @returns {GridAttemptTracker} Updated tracker state
  */
-export const isMaxAttemptsReached = (tracker: GridAttemptTracker): boolean => {
-  return tracker.count >= tracker.maxAttempts;
-};
+export const setLastError = (tracker: GridAttemptTracker, error: string): GridAttemptTracker => ({
+  ...tracker,
+  lastError: error
+});

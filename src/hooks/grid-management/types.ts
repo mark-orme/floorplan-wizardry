@@ -1,55 +1,48 @@
 
 /**
- * Grid management types
- * Type definitions for grid management hooks
- * @module grid-management/types
+ * Grid management type definitions
+ * @module hooks/grid-management/types
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { DebugInfoState } from "@/types/drawingTypes";
+import { GridAttemptTracker } from "./gridAttemptTracker";
 
 /**
- * Grid attempt tracker interface
- * Tracks grid creation attempts and status
- * @interface GridAttemptTracker
- */
-export interface GridAttemptTracker {
-  /** Whether initial grid creation has been attempted */
-  initialAttempted: boolean;
-  /** Number of attempts made to create grid */
-  count: number;
-  /** Maximum number of attempts allowed */
-  maxAttempts: number;
-  /** Whether creation was successful */
-  successful: boolean;
-  /** Timestamp of the last attempt */
-  lastAttemptTime: number;
-}
-
-/**
- * Props for the useGridManagement hook
- * @interface UseGridManagementProps
+ * Props for useGridManagement hook
  */
 export interface UseGridManagementProps {
-  /** Reference to the fabric canvas instance */
+  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Canvas dimensions */
-  canvasDimensions: { width: number, height: number } | undefined;
-  /** Debug information about canvas state */
-  debugInfo: {
-    canvasInitialized: boolean;
-    gridCreated: boolean;
-    dimensionsSet: boolean;
-    brushInitialized: boolean;
-    [key: string]: unknown;
-  };
-  /** Function to create grid elements */
+  canvasDimensions: { width: number; height: number };
+  /** Debug information */
+  debugInfo?: DebugInfoState;
+  /** Function to create grid */
   createGrid: (canvas: FabricCanvas) => FabricObject[];
 }
 
 /**
- * Return type for the useGridManagement hook
- * @interface UseGridManagementResult
+ * Result of useGridManagement hook
  */
 export interface UseGridManagementResult {
+  /** Reference to the grid layer objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+}
+
+/**
+ * Props for useDimensionChangeHandler hook
+ */
+export interface UseDimensionChangeHandlerProps {
+  /** Current canvas dimensions */
+  canvasDimensions: { width: number; height: number };
+  /** Reference to Fabric canvas */
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Function to create grid elements */
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
+  /** Timestamp of last creation attempt */
+  lastAttemptTime: number;
+  /** Function to update last attempt timestamp */
+  updateLastAttemptTime: (time: number) => void;
 }

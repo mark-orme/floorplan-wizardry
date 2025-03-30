@@ -1,169 +1,152 @@
 
 /**
- * Hook for grid creation attempts with retry logic
- * @module grid-management/useGridCreationAttempt
+ * Hook for managing grid creation attempts
+ * @module hooks/grid-management/useGridCreationAttempt
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { startGridCreation, finishGridCreation, handleGridCreationError } from "@/utils/gridManager";
+import { toast } from "sonner";
 import logger from "@/utils/logger";
-import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
-
-// Constants
-const MIN_RETRY_INTERVAL = 1000; // Minimum time between attempts in ms
-const EMERGENCY_INSTANCE_ID = "emergency-grid";
+import { GridAttemptTracker, incrementTotalAttempts, incrementSuccessfulAttempts, setLastError } from "./gridAttemptTracker";
 
 /**
- * Types for grid attempt tracker
+ * Result of the useGridCreationAttempt hook
  */
-interface GridAttemptTracker {
-  initialAttempted: boolean;
-  totalAttempts: number;
-  successfulAttempts: number;
-  lastError: Error | null;
+interface UseGridCreationAttemptResult {
+  attemptGridCreation: (
+    status: GridAttemptTracker,
+    updateStatus: (updater: (status: GridAttemptTracker) => GridAttemptTracker) => void,
+    lastAttemptTime: number,
+    updateLastAttemptTime: (time: number) => void
+  ) => void;
+  createEmergencyGridOnFailure: (canvas: FabricCanvas) => FabricObject[];
+  shouldRateLimit: (lastAttemptTime: number) => boolean;
 }
 
 /**
- * Hook for managing grid creation attempts with retries
- * @param {React.MutableRefObject<FabricCanvas | null>} fabricCanvasRef - Reference to Fabric canvas
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid layer objects
- * @param {Function} createGrid - Function to create grid objects
- * @returns {Object} Grid creation attempt utilities
+ * Hook for managing grid creation attempts
+ * @param fabricCanvasRef - Reference to Fabric canvas
+ * @param gridLayerRef - Reference to grid layer objects
+ * @param createGrid - Function to create grid
+ * @returns Grid creation attempt utilities
  */
 export const useGridCreationAttempt = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
   gridLayerRef: React.MutableRefObject<FabricObject[]>,
   createGrid: (canvas: FabricCanvas) => FabricObject[]
-) => {
+): UseGridCreationAttemptResult => {
   /**
-   * Check if we should rate limit grid creation
-   * @param {number} lastAttemptTime - Timestamp of last attempt
-   * @returns {boolean} Whether to rate limit
+   * Check if grid creation should be rate limited
    */
   const shouldRateLimit = useCallback((lastAttemptTime: number): boolean => {
-    const now = Date.now();
-    return now - lastAttemptTime < MIN_RETRY_INTERVAL;
+    return Date.now() - lastAttemptTime < 500; // Rate limit to max once per 500ms
   }, []);
   
   /**
-   * Create an emergency grid as fallback
-   * @returns {boolean} Success indicator
+   * Create emergency grid when normal grid creation fails
    */
-  const createEmergencyGridOnFailure = useCallback((): boolean => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) {
-      logger.error("Cannot create emergency grid: Canvas is null");
-      return false;
-    }
-    
+  const createEmergencyGridOnFailure = useCallback((canvas: FabricCanvas): FabricObject[] => {
     try {
       logger.warn("Creating emergency grid after failure");
-      console.warn("🚨 Creating emergency grid after regular grid creation failed");
       
-      // Start emergency grid creation
-      startGridCreation();
+      // Create simple grid lines
+      const gridObjects: FabricObject[] = [];
+      const gridSize = 50;
+      const width = canvas.width || 800;
+      const height = canvas.height || 600;
       
-      // Create emergency grid
-      const emergencyGrid = createBasicEmergencyGrid(canvas);
+      // Simple horizontal lines
+      for (let i = 0; i <= height; i += gridSize) {
+        const line = new fabric.Line([0, i, width, i], {
+          stroke: '#e5e5e5',
+          selectable: false,
+          evented: false,
+          objectType: 'grid'
+        });
+        
+        canvas.add(line);
+        gridObjects.push(line);
+      }
       
-      // Update grid layer reference
-      gridLayerRef.current = emergencyGrid;
+      // Simple vertical lines
+      for (let i = 0; i <= width; i += gridSize) {
+        const line = new fabric.Line([i, 0, i, height], {
+          stroke: '#e5e5e5',
+          selectable: false,
+          evented: false,
+          objectType: 'grid'
+        });
+        
+        canvas.add(line);
+        gridObjects.push(line);
+      }
       
-      // Finish grid creation
-      finishGridCreation(EMERGENCY_INSTANCE_ID, emergencyGrid);
+      canvas.renderAll();
+      gridLayerRef.current = gridObjects;
       
-      return emergencyGrid.length > 0;
+      return gridObjects;
     } catch (error) {
-      const err = error as Error;
-      logger.error("Emergency grid creation failed:", err);
-      handleGridCreationError(err);
-      return false;
+      logger.error("Emergency grid creation failed:", error);
+      return [];
     }
-  }, [fabricCanvasRef, gridLayerRef]);
+  }, [gridLayerRef]);
   
   /**
-   * Attempt to create grid
-   * @param {GridAttemptTracker} status - Current attempt status
-   * @param {Function} updateStatus - Function to update attempt status
-   * @param {number} lastAttemptTime - Timestamp of last attempt
-   * @param {Function} updateLastAttemptTime - Function to update timestamp
-   * @returns {boolean} Success indicator
+   * Attempt to create grid with proper error handling
    */
   const attemptGridCreation = useCallback((
     status: GridAttemptTracker,
     updateStatus: (updater: (status: GridAttemptTracker) => GridAttemptTracker) => void,
-    lastAttemptTime: number,
+    lastAttemptTime: number, 
     updateLastAttemptTime: (time: number) => void
-  ): boolean => {
-    if (shouldRateLimit(lastAttemptTime)) {
-      logger.debug("Grid creation throttled");
-      return false;
-    }
-    
-    // Update attempt timestamp
-    updateLastAttemptTime(Date.now());
-    
-    // Update attempt count
-    updateStatus(prev => ({
-      ...prev,
-      totalAttempts: prev.totalAttempts + 1
-    }));
-    
+  ): void => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
       logger.error("Cannot create grid: Canvas is null");
-      return false;
+      return;
     }
     
+    // Update total attempts
+    updateStatus(incrementTotalAttempts);
+    
     try {
-      // Check dimensions
-      if (!canvas.width || !canvas.height || 
-          canvas.width === 0 || canvas.height === 0) {
-        logger.error("Grid creation failed: Canvas has zero dimensions");
-        return false;
-      }
-      
-      // Start grid creation process
-      if (!startGridCreation()) {
-        logger.warn("Grid creation already in progress");
-        return false;
-      }
-      
       // Create grid
-      const instanceId = `grid-${Date.now()}`;
+      logger.info("Attempting grid creation");
       const gridObjects = createGrid(canvas);
       
-      // Save grid objects in reference
+      // Store created objects
       gridLayerRef.current = gridObjects;
       
-      // Finish grid creation
-      finishGridCreation(instanceId, gridObjects);
+      // Handle success
+      if (gridObjects.length > 0) {
+        updateStatus(incrementSuccessfulAttempts);
+        console.log(`Created ${gridObjects.length} grid objects successfully`);
+      } else {
+        // Try emergency grid if no objects created
+        const emergencyGrid = createEmergencyGridOnFailure(canvas);
+        if (emergencyGrid.length > 0) {
+          updateStatus(incrementSuccessfulAttempts);
+          console.log(`Created ${emergencyGrid.length} emergency grid objects`);
+        }
+      }
       
-      // Update success count
-      updateStatus(prev => ({
-        ...prev,
-        successfulAttempts: prev.successfulAttempts + 1,
-        lastError: null
-      }));
+      // Update last attempt time
+      updateLastAttemptTime(Date.now());
       
-      return true;
     } catch (error) {
-      const err = error as Error;
-      logger.error("Grid creation failed:", err);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      updateStatus(status => setLastError(status, errorMessage));
       
-      // Update error state
-      updateStatus(prev => ({
-        ...prev,
-        lastError: err
-      }));
+      logger.error("Grid creation failed:", error);
+      console.error("Grid creation failed:", error);
       
-      // Handle error
-      handleGridCreationError(err);
+      // Try emergency grid on error
+      createEmergencyGridOnFailure(canvas);
       
-      // Try emergency grid
-      return createEmergencyGridOnFailure();
+      // Update last attempt time
+      updateLastAttemptTime(Date.now());
     }
-  }, [fabricCanvasRef, gridLayerRef, createGrid, shouldRateLimit, createEmergencyGridOnFailure]);
+  }, [fabricCanvasRef, gridLayerRef, createGrid, createEmergencyGridOnFailure]);
   
   return {
     attemptGridCreation,

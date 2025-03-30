@@ -25,9 +25,6 @@ export const initializeDrawingBrush = (canvas: FabricCanvas): PencilBrush => {
   brush.color = "#000000";
   brush.width = 2;
   
-  // Set opacity for semi-transparent lines
-  brush.opacity = 1.0;
-  
   // Set brush to be more responsive by reducing decimate value
   // This reduces the number of points in paths for better performance
   brush.decimate = 2;
