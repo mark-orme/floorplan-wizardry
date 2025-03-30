@@ -1,8 +1,10 @@
+
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import { forceCreateGrid } from "@/utils/grid/gridDebugUtils";
+import { createReliableGrid, ensureGridVisibility } from "@/utils/grid/simpleGridCreator";
 
 interface BasicGridProps {
   fabricCanvas: FabricCanvas | null;
@@ -29,106 +31,9 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     }
   };
   
-  // Create simple grid on the canvas
-  const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
-    if (!canvas || !canvas.width || !canvas.height) {
-      debugLog("Cannot create grid: Invalid canvas dimensions");
-      return [];
-    }
-    
-    try {
-      // Clean any existing grid objects
-      const existingGrid = canvas.getObjects().filter(obj => 
-        obj.objectType === 'grid' || obj.objectType === 'grid-debug'
-      );
-      existingGrid.forEach(obj => canvas.remove(obj));
-      
-      // Create new grid - use direct implementation for reliability
-      const gridObjects: FabricObject[] = [];
-      
-      // Use constants for grid spacing
-      const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
-      const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
-      
-      // Calculate grid dimensions to cover the entire canvas with margin
-      const width = canvas.width;
-      const height = canvas.height;
-      
-      // Create vertical grid lines - both small and large
-      for (let x = 0; x <= width; x += smallGridSize) {
-        // Create vertical line
-        const isLargeLine = x % largeGridSize === 0;
-        const line = new Line([x, 0, x, height], {
-          stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          excludeFromExport: true,
-          hoverCursor: 'default'
-        });
-        
-        canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      // Create horizontal grid lines - both small and large
-      for (let y = 0; y <= height; y += smallGridSize) {
-        // Create horizontal line
-        const isLargeLine = y % largeGridSize === 0;
-        const line = new Line([0, y, width, y], {
-          stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          excludeFromExport: true,
-          hoverCursor: 'default'
-        });
-        
-        canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      // Send all grid objects to back
-      gridObjects.forEach(obj => {
-        canvas.sendToBack(obj);
-      });
-      
-      // Force render
-      canvas.requestRenderAll();
-      
-      return gridObjects;
-    } catch (error) {
-      console.error("Error creating simple grid:", error);
-      // Fallback to debug grid if regular fails
-      return forceCreateGrid(canvas);
-    }
-  };
-  
   // Ensure grid is visible on canvas
   const ensureGridVisible = (canvas: FabricCanvas, gridObjects: FabricObject[]): boolean => {
-    if (!canvas || gridObjects.length === 0) return false;
-    
-    let fixed = false;
-    
-    // Check for missing grid objects and add them back
-    gridObjects.forEach(obj => {
-      if (!canvas.contains(obj)) {
-        canvas.add(obj);
-        fixed = true;
-      }
-    });
-    
-    // Send all grid objects to back
-    if (fixed) {
-      gridObjects.forEach(obj => {
-        canvas.sendToBack(obj);
-      });
-      canvas.renderAll();
-    }
-    
-    return fixed;
+    return ensureGridVisibility(canvas, { current: gridObjects });
   };
   
   // Force recreation of grid
@@ -141,11 +46,11 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     });
     
     // Create new grid
-    return createSimpleGrid(canvas);
+    return createReliableGrid(canvas, { current: currentGrid });
   };
   
   // Create grid with throttling
-  const createGridWithThrottle = () => {
+  const createGridWithThrottle = (): boolean => {
     const now = Date.now();
     
     // Prevent too frequent attempts
@@ -188,7 +93,7 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     }
     
     // Function to create the grid
-    const createGridOnCanvas = () => {
+    const createGridOnCanvas = (): boolean => {
       if (!fabricCanvas) return false;
       
       // Check if we should throttle
@@ -199,31 +104,8 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       try {
         debugLog(`Attempting to create grid (attempt ${initializationAttemptRef.current})`);
         
-        // Fix canvas dimensions if needed - USE THE FULL CLIENT AREA
-        const containerWidth = fabricCanvas.wrapperEl?.clientWidth || window.innerWidth;
-        const containerHeight = fabricCanvas.wrapperEl?.clientHeight || window.innerHeight - 200;
-        
-        // Make sure we're using appropriate dimensions
-        if (containerWidth && containerHeight && 
-            (fabricCanvas.width < 600 || fabricCanvas.height < 400)) {
-          debugLog(`Updating canvas dimensions to appropriate size: ${containerWidth}x${containerHeight}`);
-          fabricCanvas.setWidth(containerWidth);
-          fabricCanvas.setHeight(containerHeight);
-        }
-        
-        // Get current dimensions
-        const width = fabricCanvas.width;
-        const height = fabricCanvas.height;
-        debugLog(`Canvas dimensions: ${width}x${height}`);
-        
-        if (!width || !height || width < 10 || height < 10) {
-          console.error("Canvas has invalid dimensions, delaying grid creation");
-          return false; // Failed to create grid
-        }
-        
-        // Create the grid
-        const objects = createSimpleGrid(fabricCanvas);
-        gridObjectsRef.current = objects;
+        // Create grid using our reliable grid creator
+        const objects = createReliableGrid(fabricCanvas, gridObjectsRef);
         
         if (objects.length > 0) {
           debugLog(`Grid created with ${objects.length} objects`);
@@ -288,7 +170,6 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       if (fabricCanvas && gridObjectsRef.current.length === 0) {
         debugLog("No grid after 5 seconds, forcing recreation");
         const objects = forceGridRecreation(fabricCanvas, gridObjectsRef.current);
-        gridObjectsRef.current = objects;
         
         if (objects.length > 0 && onGridCreated) {
           onGridCreated(objects);

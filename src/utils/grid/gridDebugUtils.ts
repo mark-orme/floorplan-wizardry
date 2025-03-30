@@ -5,7 +5,7 @@
  * @module grid/gridDebugUtils
  */
 
-import { Canvas as FabricCanvas, Object as FabricObject, Line as FabricLine } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import logger from "../logger";
 
 /**
@@ -58,7 +58,7 @@ export const createBasicEmergencyGrid = (
   
   // Create horizontal lines
   for (let y = 0; y <= canvas.height; y += gridSize) {
-    const line = new FabricLine([0, y, canvas.width, y], {
+    const line = new Line([0, y, canvas.width, y], {
       stroke: '#ff5555', // Red for debugging
       strokeWidth: 2,
       selectable: false,
@@ -72,7 +72,7 @@ export const createBasicEmergencyGrid = (
   
   // Create vertical lines
   for (let x = 0; x <= canvas.width; x += gridSize) {
-    const line = new FabricLine([x, 0, x, canvas.height], {
+    const line = new Line([x, 0, x, canvas.height], {
       stroke: '#ff5555', // Red for debugging
       strokeWidth: 2,
       selectable: false,

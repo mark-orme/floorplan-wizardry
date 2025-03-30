@@ -41,6 +41,16 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Store the canvas in ref for component internal use
       fabricCanvasRef.current = fabricCanvas;
       
+      // Set actual canvas element size to match parent container
+      const containerWidth = fabricCanvas.wrapperEl?.clientWidth || window.innerWidth;
+      const containerHeight = fabricCanvas.wrapperEl?.clientHeight || window.innerHeight - 200;
+      
+      if (containerWidth && containerHeight && (width < 600 || height < 400)) {
+        console.log(`Adjusting canvas dimensions to match container: ${containerWidth}x${containerHeight}`);
+        fabricCanvas.setWidth(containerWidth);
+        fabricCanvas.setHeight(containerHeight);
+      }
+      
       // Ensure drawing brush is properly initialized
       if (!fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush = new PencilBrush(fabricCanvas);

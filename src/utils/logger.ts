@@ -1,36 +1,47 @@
 
 /**
  * Logger utility
- * @module logger
+ * Provides consistent logging across the application
+ * @module utils/logger
  */
 
 /**
- * Logger interface
+ * Simple logger for debugging
  */
-interface Logger {
-  info: (message: string, ...args: any[]) => void;
-  warn: (message: string, ...args: any[]) => void;
-  error: (message: string, ...args: any[]) => void;
-  debug: (message: string, ...args: any[]) => void;
-}
-
-/**
- * Logger implementation
- */
-const logger: Logger = {
-  info: (message: string, ...args: any[]) => {
+const logger = {
+  /**
+   * Log informational message
+   * @param {string} message - The message to log
+   * @param {any[]} args - Additional arguments
+   */
+  info: (message: string, ...args: any[]): void => {
     console.info(`[INFO] ${message}`, ...args);
   },
   
-  warn: (message: string, ...args: any[]) => {
+  /**
+   * Log warning message
+   * @param {string} message - The message to log
+   * @param {any[]} args - Additional arguments
+   */
+  warn: (message: string, ...args: any[]): void => {
     console.warn(`[WARN] ${message}`, ...args);
   },
   
-  error: (message: string, ...args: any[]) => {
+  /**
+   * Log error message
+   * @param {string} message - The message to log
+   * @param {any[]} args - Additional arguments
+   */
+  error: (message: string, ...args: any[]): void => {
     console.error(`[ERROR] ${message}`, ...args);
   },
   
-  debug: (message: string, ...args: any[]) => {
+  /**
+   * Log debug message (only in development)
+   * @param {string} message - The message to log
+   * @param {any[]} args - Additional arguments
+   */
+  debug: (message: string, ...args: any[]): void => {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DEBUG] ${message}`, ...args);
     }

@@ -1,125 +1,99 @@
 
 /**
- * Grid Monitor Component
- * Monitors grid health and provides self-healing capabilities
+ * GridMonitor Component
+ * Background component that monitors and repairs grid when needed
+ * @module components/canvas/GridMonitor
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createSimpleGrid } from "@/utils/simpleGridCreator";
+import { createReliableGrid, ensureGridVisibility } from "@/utils/grid/simpleGridCreator";
 import { toast } from "sonner";
+import logger from "@/utils/logger";
 
 interface GridMonitorProps {
+  /** Reference to the canvas object */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Whether monitor is active */
   active?: boolean;
+  /** Check interval in ms */
+  checkInterval?: number;
 }
 
 /**
- * Grid Monitor Component
- * Silently monitors and repairs grid issues in the background
+ * GridMonitor component
+ * Monitors and repairs grid in background
  */
 export const GridMonitor: React.FC<GridMonitorProps> = ({
   fabricCanvasRef,
   gridLayerRef,
-  active = true
+  active = true,
+  checkInterval = 5000
 }) => {
-  const [isActive, setIsActive] = useState(false);
+  const lastCheckRef = useRef(0);
+  const checkCountRef = useRef(0);
+  const repairCountRef = useRef(0);
   
-  // Start monitoring when component mounts or becomes active
+  // Monitor grid and repair if needed
   useEffect(() => {
     if (!active) return;
     
-    // Function to setup monitoring
-    const setupMonitoring = () => {
+    const checkAndRepairGrid = () => {
       const canvas = fabricCanvasRef.current;
-      if (!canvas) {
-        console.log("Cannot start grid monitoring: Canvas not available");
-        return;
+      if (!canvas) return;
+      
+      const now = Date.now();
+      lastCheckRef.current = now;
+      checkCountRef.current += 1;
+      
+      // Log checks every 5th check in development
+      if (process.env.NODE_ENV === 'development' && checkCountRef.current % 5 === 0) {
+        console.log(`GridMonitor: Check #${checkCountRef.current}, ${gridLayerRef.current.length} grid objects`);
       }
       
-      try {
-        setIsActive(true);
-        console.log("Grid monitoring started");
+      // Check if grid needs repair (missing or no grid)
+      const needsRepair = gridLayerRef.current.length === 0 || 
+        gridLayerRef.current.some(obj => !canvas.contains(obj));
+      
+      // If missing objects, try to restore visibility first
+      if (needsRepair && gridLayerRef.current.length > 0) {
+        const fixed = ensureGridVisibility(canvas, gridLayerRef);
         
-        // Check grid status initially
-        console.log("Grid state:", {
-          canvasWidth: canvas.width,
-          canvasHeight: canvas.height,
-          gridObjectCount: gridLayerRef.current.length,
-          objectsOnCanvas: gridLayerRef.current.filter(obj => canvas.contains(obj)).length
-        });
-        
-        // Set up monitoring interval
-        const intervalId = setInterval(() => {
-          const canvas = fabricCanvasRef.current;
-          if (!canvas) return;
-          
-          // Log current state
-          const gridObjectCount = gridLayerRef.current.length;
-          const objectsOnCanvas = gridLayerRef.current.filter(obj => canvas.contains(obj)).length;
-          
-          console.log("Grid monitor check:", { gridObjectCount, objectsOnCanvas });
-          
-          // Check if grid needs repair
-          if (objectsOnCanvas === 0 && gridObjectCount > 0) {
-            console.log("Grid objects exist but none are on canvas, repairing");
-            
-            // Try to re-add existing objects
-            gridLayerRef.current.forEach(obj => {
-              if (!canvas.contains(obj)) {
-                try {
-                  canvas.add(obj);
-                } catch (error) {
-                  console.error("Failed to re-add grid object:", error);
-                }
-              }
-            });
-            
-            canvas.requestRenderAll();
-          } else if (gridObjectCount === 0) {
-            console.log("No grid objects exist, creating grid");
-            gridLayerRef.current = createSimpleGrid(canvas);
-            toast.success("Grid restored");
-          }
-        }, 5000);
-        
-        return () => clearInterval(intervalId);
-      } catch (error) {
-        console.error("Error starting grid monitoring:", error);
+        if (fixed) {
+          repairCountRef.current += 1;
+          logger.info(`GridMonitor: Repaired grid visibility (repair #${repairCountRef.current})`);
+          return;
+        }
       }
-    };
-    
-    // Wait a bit to ensure canvas is initialized
-    const timerId = setTimeout(setupMonitoring, 1000);
-    
-    // Clean up on unmount
-    return () => {
-      clearTimeout(timerId);
-      setIsActive(false);
-    };
-  }, [fabricCanvasRef, gridLayerRef, active]);
-  
-  // Re-run monitoring setup when canvas reference changes
-  useEffect(() => {
-    if (active && fabricCanvasRef.current && !isActive) {
-      setIsActive(true);
       
-      // Log initial state
-      const canvas = fabricCanvasRef.current;
-      console.log("Grid monitor initial state:", {
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height,
-        gridObjectCount: gridLayerRef.current.length
-      });
-      
-      // Create grid if needed
+      // If no grid at all, create it
       if (gridLayerRef.current.length === 0) {
-        console.log("Creating initial grid from monitor");
-        gridLayerRef.current = createSimpleGrid(canvas);
+        logger.warn("GridMonitor: No grid found, creating a new one");
+        
+        // Create new grid
+        const gridObjects = createReliableGrid(canvas, gridLayerRef);
+        
+        if (gridObjects.length > 0) {
+          repairCountRef.current += 1;
+          logger.info(`GridMonitor: Created new grid with ${gridObjects.length} objects (repair #${repairCountRef.current})`);
+          toast.success("Grid repaired automatically");
+        }
       }
-    }
-  }, [fabricCanvasRef.current, active, isActive, gridLayerRef]);
+    };
+    
+    // Initial check
+    const initialTimeout = setTimeout(checkAndRepairGrid, 1000);
+    
+    // Regular check interval
+    const intervalId = setInterval(checkAndRepairGrid, checkInterval);
+    
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(intervalId);
+    };
+  }, [active, checkInterval, fabricCanvasRef, gridLayerRef]);
   
-  // This is an invisible component
+  // This is a non-visual component
   return null;
 };
