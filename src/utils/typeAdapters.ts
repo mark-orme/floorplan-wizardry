@@ -38,7 +38,10 @@ export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     name: corePlan.name,
     label: corePlan.label || corePlan.name,
     walls: corePlan.walls.map(adaptWall),
-    rooms: corePlan.rooms,
+    rooms: corePlan.rooms.map(room => ({
+      ...room,
+      name: room.name || 'Unnamed Room' // Ensure name is always provided
+    })),
     strokes: corePlan.strokes,
     index: corePlan.index || corePlan.level,
     gia: corePlan.gia,

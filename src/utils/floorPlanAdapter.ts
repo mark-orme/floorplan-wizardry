@@ -55,7 +55,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
     walls: walls,
     rooms: Array.isArray(appPlan.rooms) ? appPlan.rooms.map(room => ({
       id: room.id,
-      name: room.name,
+      name: room.name || 'Unnamed Room', // Ensure name is always set
       type: (room.type as CoreRoom['type']) || 'other',
       points: room.points,
       color: room.color || '#ffffff',
@@ -163,7 +163,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     walls: walls,
     rooms: Array.isArray(corePlan.rooms) ? corePlan.rooms.map(room => ({
       id: room.id,
-      name: room.name,
+      name: room.name || 'Unnamed Room', // Ensure name is always set
       type: room.type,
       points: room.points,
       color: room.color,

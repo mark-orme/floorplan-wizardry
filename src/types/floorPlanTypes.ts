@@ -67,7 +67,7 @@ export interface Wall {
  */
 export interface Room {
   id: string;
-  name?: string;
+  name: string; // Changed from optional to required for compatibility with core/FloorPlan.Room
   type?: string;
   points: { x: number; y: number }[];
   area?: number;
