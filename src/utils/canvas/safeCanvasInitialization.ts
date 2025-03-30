@@ -45,11 +45,11 @@ export const validateCanvasInitialization = (canvas: FabricCanvas): boolean => {
 
 /**
  * Handle initialization failure
- * @param {Error} error - The error that occurred
+ * @param {string} errorMessage - The error message
  * @returns {string} Error message
  */
-export const handleInitializationFailure = (error: Error): string => {
-  console.error("Canvas initialization failed:", error);
+export const handleInitializationFailure = (errorMessage: string): string => {
+  console.error("Canvas initialization failed:", errorMessage);
   
-  return error.message || "Unknown initialization error";
+  return errorMessage || "Unknown initialization error";
 };

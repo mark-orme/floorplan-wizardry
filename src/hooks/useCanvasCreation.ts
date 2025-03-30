@@ -156,7 +156,7 @@ export const useCanvasCreation = ({
     
     try {
       // Prepare the canvas element for initialization
-      prepareCanvasForInitialization(canvasElement);
+      prepareCanvasForInitialization();
       
       // Force canvas element to have width and height using inline style
       canvasElement.style.width = `${canvasDimensions.width || 800}px`;
@@ -222,7 +222,8 @@ export const useCanvasCreation = ({
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error("Error initializing canvas:", errorMessage);
       
-      handleInitializationFailure(errorMessage, false);
+      // Fixed: handleInitializationFailure now expects only one argument
+      handleInitializationFailure(errorMessage);
       
       setHasError(true);
       setErrorMessage(`Failed to initialize canvas: ${errorMessage}`);
