@@ -56,26 +56,12 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
     rooms: Array.isArray(appPlan.rooms) ? appPlan.rooms.map(room => ({
       id: room.id,
       name: room.name || 'Unnamed Room', // Ensure name is always set
-      type: validateRoomType(room.type) as RoomType, // Validate and convert room type
+      type: validateRoomType(room.type), // Use validateRoomType to ensure the type is valid
       points: room.points,
       color: room.color || '#ffffff',
       area: room.area || 0
     } as CoreRoom)) : [],
-    strokes: Array.isArray(appPlan.strokes) 
-      ? appPlan.strokes.map(stroke => {
-          // Convert string literal to core type directly
-          const strokeType = stroke.type as CoreStroke['type'];
-
-          return {
-            id: stroke.id,
-            points: stroke.points,
-            type: strokeType,
-            color: stroke.color,
-            thickness: stroke.thickness,
-            width: stroke.width || stroke.thickness // Ensure width is set
-          } as CoreStroke;
-        })
-      : [],
+    strokes: strokes,
     canvasData: appPlan.canvasData || null,
     canvasJson: appPlan.canvasJson || '',
     createdAt: appPlan.createdAt || new Date().toISOString(),
@@ -145,21 +131,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     id: corePlan.id,
     name: corePlan.name,
     label: corePlan.label || corePlan.name || '', // Ensure label is preserved and required
-    strokes: Array.isArray(corePlan.strokes)
-      ? corePlan.strokes.map(stroke => {
-          // Convert string stroke type to StrokeTypeLiteral
-          const strokeType: StrokeTypeLiteral = validateStrokeType(stroke.type);
-          
-          return {
-            id: stroke.id,
-            points: stroke.points,
-            type: strokeType,
-            color: stroke.color,
-            thickness: stroke.thickness,
-            width: stroke.width || stroke.thickness // Ensure width is set
-          } as AppStroke;
-        })
-      : [],
+    strokes: strokes,
     walls: walls,
     rooms: Array.isArray(corePlan.rooms) ? corePlan.rooms.map(room => ({
       id: room.id,
@@ -168,7 +140,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       points: room.points,
       color: room.color,
       area: room.area || 0,
-      level: corePlan.level || 0
+      level: corePlan.level || 0 // Set the level property from the floor plan
     } as AppRoom)) : [],
     index: corePlan.index || 0,
     level: corePlan.level || 0,
@@ -209,9 +181,7 @@ function validateStrokeType(type: string): StrokeTypeLiteral {
  * @param type The string type to validate
  * @returns A valid RoomType
  */
-function validateRoomType(type?: RoomTypeLiteral): RoomType {
-  if (!type) return 'other'; // Default to 'other' if no type provided
-  
+function validateRoomType(type: RoomTypeLiteral): RoomType {
   switch(type.toLowerCase()) {
     case 'living': return 'living';
     case 'bedroom': return 'bedroom';

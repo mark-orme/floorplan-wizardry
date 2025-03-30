@@ -33,7 +33,16 @@ export function adaptWall(wall: CoreWall): AppWall {
  * @returns App RoomTypeLiteral
  */
 function adaptRoomType(type: RoomType): RoomTypeLiteral {
-  return type as RoomTypeLiteral;
+  // Ensure we're returning a valid RoomTypeLiteral
+  switch (type) {
+    case 'living': return 'living';
+    case 'bedroom': return 'bedroom';
+    case 'kitchen': return 'kitchen';
+    case 'bathroom': return 'bathroom';
+    case 'office': return 'office';
+    case 'other': return 'other';
+    default: return 'other'; // Default to 'other' if the type is invalid
+  }
 }
 
 /**
@@ -50,7 +59,8 @@ export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     rooms: corePlan.rooms.map(room => ({
       ...room,
       name: room.name || 'Unnamed Room', // Ensure name is always provided
-      type: adaptRoomType(room.type) // Convert room type
+      type: adaptRoomType(room.type), // Convert room type
+      level: corePlan.level || 0 // Set the level from the floor plan
     })),
     strokes: corePlan.strokes,
     index: corePlan.index || corePlan.level,

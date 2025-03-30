@@ -17,7 +17,7 @@ describe('useFloorPlanDrawing', () => {
     label: 'First Floor', 
     strokes: [],
     walls: [],
-    rooms: [],
+    rooms: [], // Room array with required type property (if we add any rooms to this test)
     level: 0,
     index: 0,
     gia: 0,

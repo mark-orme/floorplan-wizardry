@@ -107,7 +107,7 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
             points: room.points,
             color: room.color || '#ffffff',
             area: room.area || 0,
-            level: room.level || plan.level || 0
+            level: plan.level || 0  // Set level from the plan level
           })) || [],
           metadata: plan.metadata ? {
             createdAt: typeof plan.metadata.createdAt === 'string' 

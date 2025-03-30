@@ -73,11 +73,11 @@ export interface Wall {
 export interface Room {
   id: string;
   name: string; // Changed from optional to required for compatibility with core/FloorPlan.Room
-  type?: RoomTypeLiteral; // Changed from string to RoomTypeLiteral for compatibility
+  type: RoomTypeLiteral; // Changed from optional string to required RoomTypeLiteral for compatibility
   points: { x: number; y: number }[];
   area?: number;
   color?: string;
-  level?: number;
+  level?: number; // Add level property to match useCanvasControllerLoader.ts usage
   [key: string]: any; // Additional room properties
 }
 
