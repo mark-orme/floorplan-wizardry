@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { handleError } from "@/utils/errorHandling";
 import { Canvas as CanvasComponent } from "@/components/Canvas";
 import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
+import { SimpleGrid as SimpleGridComponent } from "@/components/canvas/grid/SimpleGrid"; // Import the React component version
 import { captureError } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 import { resetGridProgress } from "@/utils/gridManager";
@@ -238,9 +238,9 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
             />
           </ReliableCanvasContainer>
           
-          {/* IMPORTANT: Always show SimpleGrid component when canvas is available */}
+          {/* IMPORTANT: Use the SimpleGridComponent (React component) instead of SimpleGrid class */}
           {fabricCanvas && (
-            <SimpleGrid 
+            <SimpleGridComponent 
               canvas={fabricCanvas} 
               showControls={true}
               onGridCreated={handleGridCreated}

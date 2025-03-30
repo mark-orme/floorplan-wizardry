@@ -37,6 +37,6 @@ export const GRID_CONSTANTS = {
   PIXELS_PER_METER: 100,
   
   // Grid types (as numbers to avoid type errors)
-  SMALL_GRID: 10,  // Changed from string to number
-  LARGE_GRID: 100  // Changed from string to number
+  SMALL_GRID: 10,  // Using number value
+  LARGE_GRID: 100  // Using number value
 };

@@ -82,15 +82,16 @@ export const useCanvasGrid = ({
         gridLayerRef.current = [];
       }
       
-      // Create complete grid
-      const gridObjects = createCompleteGrid(canvas, gridLayerRef);
+      // Create complete grid - Fixed: Removed the second parameter
+      const gridObjects = createCompleteGrid(canvas);
       
       // If grid creation failed, try emergency grid
       if (!gridObjects || gridObjects.length === 0) {
         logger.warn("Complete grid creation failed, trying emergency grid");
         console.warn("Complete grid creation failed, trying emergency grid");
         
-        const emergencyGrid = createBasicEmergencyGrid(canvas, gridLayerRef);
+        // Fixed: Removed the second parameter
+        const emergencyGrid = createBasicEmergencyGrid(canvas);
         if (emergencyGrid.length > 0) {
           gridInitializedRef.current = true;
           logger.info(`Created emergency grid with ${emergencyGrid.length} objects`);
@@ -132,7 +133,8 @@ export const useCanvasGrid = ({
       // Try emergency grid on error
       try {
         if (fabricCanvasRef.current) {
-          const emergencyGrid = createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
+          // Fixed: Removed the second parameter
+          const emergencyGrid = createBasicEmergencyGrid(fabricCanvasRef.current);
           if (emergencyGrid.length > 0) {
             gridInitializedRef.current = true;
           }

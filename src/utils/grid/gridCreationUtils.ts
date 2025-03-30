@@ -424,7 +424,7 @@ export const createGridLayer = (canvas: Canvas): FabricObject[] => {
  * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
  * @returns {FabricObject[]} Created grid objects
  */
-export const createFallbackGrid = (
+export const createReliableFallbackGrid = (
   canvas: Canvas,
   gridLayerRef: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] => {
@@ -481,12 +481,13 @@ export const createFallbackGrid = (
 
 /**
  * Create a specific grid layer for advanced rendering
+ * Renamed to avoid duplicate declaration
  * 
  * @param {Canvas} canvas - The fabric canvas
  * @param {string} layerType - Type of grid layer to create
  * @returns {FabricObject[]} Created grid objects
  */
-export const createGridLayer = (
+export const createSpecificGridLayer = (
   canvas: Canvas,
   layerType: 'small' | 'large' | 'markers'
 ): FabricObject[] => {
