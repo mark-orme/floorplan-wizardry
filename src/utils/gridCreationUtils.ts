@@ -1,4 +1,3 @@
-
 import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
@@ -199,4 +198,15 @@ export const forceGridRender = (canvas: FabricCanvas): boolean => {
  */
 export const validateGrid = (canvas: FabricCanvas): boolean => {
   return verifyGridExists(canvas);
+};
+
+/**
+ * Create a floor plan grid
+ * Specialized grid for floor plans with scale indicators
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createFloorPlanGrid = (canvas: FabricCanvas): FabricObject[] => {
+  // For now, use the basic emergency grid implementation
+  return createBasicEmergencyGrid(canvas);
 };

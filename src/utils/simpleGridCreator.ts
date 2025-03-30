@@ -83,3 +83,51 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
   canvas.requestRenderAll();
   return gridObjects;
 };
+
+/**
+ * Ensure grid is visible on canvas
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Grid objects to check
+ * @returns {boolean} Whether any fixes were applied
+ */
+export const ensureGridVisible = (canvas: FabricCanvas, gridObjects: FabricObject[]): boolean => {
+  if (!canvas || !gridObjects.length) return false;
+  
+  let fixesApplied = false;
+  
+  // Check if each grid object is on canvas
+  gridObjects.forEach(obj => {
+    if (!canvas.contains(obj)) {
+      canvas.add(obj);
+      fixesApplied = true;
+    }
+  });
+  
+  if (fixesApplied) {
+    canvas.requestRenderAll();
+  }
+  
+  return fixesApplied;
+};
+
+/**
+ * Force grid recreation when needed
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @param {FabricObject[]} currentGrid - Current grid objects
+ * @returns {FabricObject[]} New grid objects
+ */
+export const forceGridRecreation = (canvas: FabricCanvas, currentGrid: FabricObject[]): FabricObject[] => {
+  if (!canvas) return [];
+  
+  // Remove existing grid objects
+  if (currentGrid.length > 0) {
+    currentGrid.forEach(obj => {
+      if (canvas.contains(obj)) {
+        canvas.remove(obj);
+      }
+    });
+  }
+  
+  // Create new grid
+  return createSimpleGrid(canvas);
+};

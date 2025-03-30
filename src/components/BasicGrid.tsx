@@ -107,7 +107,7 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
         }
         
         // Create the grid
-        const objects = createSimpleGrid(fabricCanvas, gridObjectsRef.current);
+        const objects = createSimpleGrid(fabricCanvas);
         gridObjectsRef.current = objects;
         
         if (objects.length > 0) {

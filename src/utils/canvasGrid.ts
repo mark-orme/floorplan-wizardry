@@ -143,8 +143,8 @@ export const createGrid = (
       throttledLog("Creating grid - implementation starting");
     }
     
-    // Create grid
-    const gridObjects = createGridLayer(canvas, 'default');
+    // Create grid (update to use correct signature)
+    const gridObjects = createGridLayer(canvas);
     
     if (!gridObjects || gridObjects.length === 0) {
       if (shouldLog && process.env.NODE_ENV === 'development') {
@@ -204,12 +204,12 @@ export const createGrid = (
       throttledError("Unknown grid creation error");
     }
     
-    // Try fallback grid on error
+    // Try fallback grid on error (update to use correct signature)
     try {
       if (shouldLog && process.env.NODE_ENV === 'development') {
         throttledLog("Attempting fallback grid after error");
       }
-      const fallbackResult = createFallbackGrid(canvas, gridLayerRef);
+      const fallbackResult = createFallbackGrid(canvas);
       gridCreationInProgress = false;
       return fallbackResult;
     } catch (fallbackError) {

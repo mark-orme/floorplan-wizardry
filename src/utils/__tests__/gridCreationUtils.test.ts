@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 
@@ -12,43 +11,39 @@ import {
 describe('gridCreationUtils', () => {
   describe('verifyGridExists', () => {
     it('should return false when canvas is null', () => {
-      const gridLayerRef = { current: [] as FabricObject[] };
       // @ts-ignore - We're intentionally passing null for testing
-      const result = verifyGridExists(null, gridLayerRef);
+      const result = verifyGridExists(null);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
-      const gridLayerRef = { current: [] as FabricObject[] };
-      const result = verifyGridExists(canvas, gridLayerRef);
+      const result = verifyGridExists(canvas);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects are not on canvas', () => {
       const canvas = new Canvas(null);
-      const mockObjects = [{ id: 'grid1' }, { id: 'grid2' }] as unknown as FabricObject[];
-      const gridLayerRef = { current: mockObjects };
       
-      // Mock canvas.contains to return false
-      canvas.contains = vi.fn().mockReturnValue(false);
+      // Mock canvas.getObjects to return empty array
+      canvas.getObjects = vi.fn().mockReturnValue([]);
       
-      const result = verifyGridExists(canvas, gridLayerRef);
+      const result = verifyGridExists(canvas);
       expect(result).toBe(false);
-      expect(canvas.contains).toHaveBeenCalled();
+      expect(canvas.getObjects).toHaveBeenCalled();
     });
     
     it('should return true when grid objects are on canvas', () => {
       const canvas = new Canvas(null);
-      const mockObjects = [{ id: 'grid1' }, { id: 'grid2' }] as unknown as FabricObject[];
-      const gridLayerRef = { current: mockObjects };
       
-      // Mock canvas.contains to return true
-      canvas.contains = vi.fn().mockReturnValue(true);
+      // Mock canvas.getObjects to return objects with objectType='grid'
+      canvas.getObjects = vi.fn().mockReturnValue([
+        { objectType: 'grid' } as unknown as FabricObject
+      ]);
       
-      const result = verifyGridExists(canvas, gridLayerRef);
+      const result = verifyGridExists(canvas);
       expect(result).toBe(true);
-      expect(canvas.contains).toHaveBeenCalled();
+      expect(canvas.getObjects).toHaveBeenCalled();
     });
   });
   

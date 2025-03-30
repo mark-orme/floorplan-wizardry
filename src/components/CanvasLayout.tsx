@@ -1,14 +1,14 @@
 
 import React from "react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
-import { createFloorPlanGrid } from "@/utils/gridCreationUtils";
+import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 
 /**
  * Props for the CanvasLayout component
  */
 interface CanvasLayoutProps {
-  createGrid?: (canvas: FabricCanvas, existingGrid?: FabricObject[]) => FabricObject[];
+  createGrid?: (canvas: FabricCanvas) => FabricObject[];
   children?: React.ReactNode;
 }
 
@@ -18,7 +18,7 @@ interface CanvasLayoutProps {
  * @returns {JSX.Element} Rendered component
  */
 const CanvasLayout: React.FC<CanvasLayoutProps> = ({ 
-  createGrid = createFloorPlanGrid,
+  createGrid = createBasicEmergencyGrid,
   children 
 }) => {
   return (
