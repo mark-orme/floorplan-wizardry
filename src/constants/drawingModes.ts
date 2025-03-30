@@ -16,5 +16,14 @@ export enum DrawingMode {
   CIRCLE = 'circle',
   ERASER = 'eraser',
   HAND = 'hand',
-  ROOM = 'room'
+  ROOM = 'room',
+  WALL = 'wall',
+  TEXT = 'text',
+  MEASURE = 'measure'
 }
+
+/**
+ * Drawing tool type alias (for backwards compatibility)
+ * @deprecated Use DrawingMode enum instead
+ */
+export type DrawingTool = DrawingMode;

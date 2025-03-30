@@ -5,20 +5,28 @@ import {
   verifyGridExists,
   ensureGrid,
   retryWithBackoff,
-  reorderGridObjects
+  reorderGridObjects,
+  createBasicEmergencyGrid
 } from './gridCreationUtils';
+import { useRef } from 'react';
 
 describe('gridCreationUtils', () => {
   describe('verifyGridExists', () => {
     it('should return false when canvas is null', () => {
+      // Create a mock ref object for testing
+      const gridRef = { current: [] };
+      
       // @ts-ignore - We're intentionally passing null for testing
-      const result = verifyGridExists(null, []);
+      const result = verifyGridExists(null, gridRef);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
-      const result = verifyGridExists(canvas, []);
+      // Create a mock ref object for testing
+      const gridRef = { current: [] };
+      
+      const result = verifyGridExists(canvas, gridRef);
       expect(result).toBe(false);
     });
     
@@ -28,9 +36,9 @@ describe('gridCreationUtils', () => {
       // Mock canvas.getObjects to return empty array
       canvas.getObjects = vi.fn().mockReturnValue([]);
       
-      // Create a ref-like object for testing
+      // Create a mock ref object for testing
       const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
-      const result = verifyGridExists(canvas, gridRef.current);
+      const result = verifyGridExists(canvas, gridRef);
       expect(result).toBe(false);
       expect(canvas.getObjects).toHaveBeenCalled();
     });
@@ -43,9 +51,9 @@ describe('gridCreationUtils', () => {
         { objectType: 'grid' } as unknown as FabricObject
       ]);
       
-      // Create a ref-like object for testing
+      // Create a mock ref object for testing
       const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
-      const result = verifyGridExists(canvas, gridRef.current);
+      const result = verifyGridExists(canvas, gridRef);
       expect(result).toBe(true);
       expect(canvas.getObjects).toHaveBeenCalled();
     });
@@ -54,7 +62,7 @@ describe('gridCreationUtils', () => {
   describe('ensureGrid', () => {
     it('should do nothing if grid already exists', () => {
       const canvas = new Canvas(null);
-      // Create a ref-like object for testing
+      // Create a mock ref object for testing
       const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
       
       // Mock verifyGridExists to return true
@@ -63,7 +71,7 @@ describe('gridCreationUtils', () => {
       // Mock createGrid
       const createGrid = vi.fn().mockReturnValue(gridRef.current);
       
-      ensureGrid(canvas, gridRef.current, createGrid);
+      ensureGrid(canvas, gridRef, createGrid);
       expect(createGrid).not.toHaveBeenCalled();
     });
   });

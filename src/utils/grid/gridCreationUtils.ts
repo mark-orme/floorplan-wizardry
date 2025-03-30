@@ -15,12 +15,12 @@ import { GRID_CONSTANTS } from "@/constants/gridConstants";
  * Used when normal grid creation fails
  * 
  * @param {FabricCanvas} canvas - The Fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @param {React.MutableRefObject<FabricObject[]>} [gridLayerRef] - Optional reference to store grid objects
  * @returns {FabricObject[]} Array of created grid objects
  */
 export const createBasicEmergencyGrid = (
   canvas: FabricCanvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
+  gridLayerRef?: React.MutableRefObject<FabricObject[]>
 ): FabricObject[] => {
   logger.warn("Creating emergency grid");
   
@@ -35,8 +35,8 @@ export const createBasicEmergencyGrid = (
     // Create horizontal lines
     for (let y = 0; y <= height; y += emergencySpacing) {
       const line = new Line([0, y, width, y], {
-        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        stroke: GRID_CONSTANTS?.LARGE_GRID_COLOR || "#cccccc",
+        strokeWidth: GRID_CONSTANTS?.LARGE_GRID_WIDTH || 1,
         selectable: false,
         evented: false,
         objectType: 'grid'
@@ -49,8 +49,8 @@ export const createBasicEmergencyGrid = (
     // Create vertical lines
     for (let x = 0; x <= width; x += emergencySpacing) {
       const line = new Line([x, 0, x, height], {
-        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        stroke: GRID_CONSTANTS?.LARGE_GRID_COLOR || "#cccccc",
+        strokeWidth: GRID_CONSTANTS?.LARGE_GRID_WIDTH || 1,
         selectable: false,
         evented: false,
         objectType: 'grid'
@@ -60,8 +60,10 @@ export const createBasicEmergencyGrid = (
       canvas.add(line);
     }
     
-    // Update the grid layer reference
-    gridLayerRef.current = gridObjects;
+    // Update the grid layer reference if provided
+    if (gridLayerRef) {
+      gridLayerRef.current = gridObjects;
+    }
     
     // Request a render
     canvas.requestRenderAll();

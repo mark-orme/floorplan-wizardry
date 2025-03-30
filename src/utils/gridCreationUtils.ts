@@ -229,6 +229,64 @@ export const createBasicGrid = (
 };
 
 /**
+ * Create basic emergency grid
+ * @param {Canvas} canvas - Fabric canvas
+ * @returns {FabricObject[]} Created grid objects
+ */
+export const createBasicEmergencyGrid = (
+  canvas: Canvas
+): FabricObject[] => {
+  try {
+    if (!canvas || !canvas.width || !canvas.height) {
+      logger.error("Cannot create emergency grid: Invalid canvas or dimensions");
+      return [];
+    }
+    
+    const width = canvas.width;
+    const height = canvas.height;
+    const gridObjects: FabricObject[] = [];
+    
+    // Create minimal grid with larger spacing (for performance)
+    const emergencySpacing = 50;
+    
+    // Create horizontal lines
+    for (let y = 0; y <= height; y += emergencySpacing) {
+      const line = new Line([0, y, width, y], {
+        stroke: '#e8e8e8',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create vertical lines
+    for (let x = 0; x <= width; x += emergencySpacing) {
+      const line = new Line([x, 0, x, height], {
+        stroke: '#e8e8e8',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    canvas.renderAll();
+    
+    return gridObjects;
+  } catch (error) {
+    logger.error("Error creating emergency grid:", error);
+    return [];
+  }
+};
+
+/**
  * Verify if grid exists on canvas
  * @param {Canvas} canvas - Fabric canvas
  * @param {FabricObject[]} gridObjects - Grid objects to verify
@@ -372,4 +430,19 @@ export const forceGridRender = (canvas: Canvas, gridObjects: FabricObject[]): vo
   
   // Render all
   canvas.renderAll();
+};
+
+// Export other functions to maintain backwards compatibility
+export {
+  createCompleteGrid,
+  createBasicGrid,
+  verifyGridExists,
+  retryWithBackoff,
+  reorderGridObjects,
+  ensureGrid,
+  validateGrid,
+  createGridLayer,
+  createFallbackGrid,
+  hasCompleteGrid,
+  forceGridRender
 };

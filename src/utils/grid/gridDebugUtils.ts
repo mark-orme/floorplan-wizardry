@@ -1,9 +1,10 @@
+
 /**
  * Grid debug utilities
  * Provides tools for diagnosing and fixing grid-related issues
  * @module grid/gridDebugUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import logger from "../logger";
 
 /**

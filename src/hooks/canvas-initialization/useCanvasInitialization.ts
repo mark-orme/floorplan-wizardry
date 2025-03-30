@@ -1,4 +1,3 @@
-
 /**
  * useCanvasInitialization hook
  * Core hook for canvas initialization and setup
@@ -6,7 +5,7 @@
  */
 import { useRef, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool } from "../useCanvasState";
+import { DrawingMode } from "@/constants/drawingModes";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 
@@ -17,7 +16,7 @@ interface UseCanvasInitializationProps {
   /** Canvas dimensions */
   canvasDimensions: { width: number; height: number };
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current floor index */
   currentFloor: number;
   /** Function to set zoom level */
