@@ -106,7 +106,7 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
             type: mapRoomType(room.type), // Ensure type is properly mapped
             points: room.points,
             color: room.color || '#ffffff',
-            area: room.area || 0,
+            area: room.area || 0, // Ensure area is always provided
             level: plan.level || 0  // Set level from the plan level
           })) || [],
           metadata: plan.metadata ? {

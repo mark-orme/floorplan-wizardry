@@ -59,7 +59,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
       type: validateRoomType(room.type), // Use validateRoomType to ensure the type is valid
       points: room.points,
       color: room.color || '#ffffff',
-      area: room.area || 0
+      area: room.area // Area is now required in the Room interface
     } as CoreRoom)) : [],
     strokes: strokes,
     canvasData: appPlan.canvasData || null,
@@ -139,7 +139,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       type: room.type as RoomTypeLiteral, // Convert RoomType to RoomTypeLiteral
       points: room.points,
       color: room.color,
-      area: room.area || 0,
+      area: room.area, // Area is now required in the Room interface
       level: corePlan.level || 0 // Set the level property from the floor plan
     } as AppRoom)) : [],
     index: corePlan.index || 0,

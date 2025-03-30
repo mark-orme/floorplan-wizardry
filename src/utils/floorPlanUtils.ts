@@ -50,9 +50,7 @@ export const calculateGIA = (floorPlan: FloorPlan): number => {
   
   if (floorPlan.rooms) {
     for (const room of floorPlan.rooms) {
-      if (room.area) {
-        totalArea += room.area;
-      }
+      totalArea += room.area;
     }
   }
   
