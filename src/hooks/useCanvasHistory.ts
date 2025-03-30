@@ -1,150 +1,156 @@
 
-/**
- * Canvas history hook
- * Manages undo/redo history for canvas operations
- * @module hooks/useCanvasHistory
- */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { toast } from 'sonner';
 
-/**
- * Maximum number of history states to keep
- */
-const MAX_HISTORY_STATES = 50;
-
-/**
- * Props for the canvas history hook
- */
 export interface UseCanvasHistoryProps {
-  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to the history object */
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
-  /** Function to recalculate gross internal area */
-  recalculateGIA?: () => void;
+  historyRef: React.MutableRefObject<{
+    past: FabricObject[][];
+    future: FabricObject[][];
+  }>;
+  maxHistoryLength?: number;
 }
 
-/**
- * Result type for the canvas history hook
- */
-interface UseCanvasHistoryResult {
-  /** Save current canvas state to history */
+export interface UseCanvasHistoryResult {
   saveCurrentState: () => void;
-  /** Handle undo operation */
-  handleUndo: () => void;
-  /** Handle redo operation */
-  handleRedo: () => void;
+  undo: () => void;
+  redo: () => void;
+  clearHistory: () => void;
 }
 
 /**
- * Hook for managing canvas history and undo/redo operations
+ * Hook for managing canvas undo/redo history
  * 
- * @param props - Hook properties
- * @returns Operations for history management
+ * @param {UseCanvasHistoryProps} props - Hook properties
+ * @returns {UseCanvasHistoryResult} History functions
  */
 export const useCanvasHistory = ({
   fabricCanvasRef,
-  gridLayerRef,
   historyRef,
-  recalculateGIA = () => {}
+  maxHistoryLength = 20
 }: UseCanvasHistoryProps): UseCanvasHistoryResult => {
-  
+
   /**
-   * Save the current canvas state to history
+   * Save the current canvas state for undo/redo
    */
   const saveCurrentState = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    
-    // Get all objects except grid
-    const allCanvasObjects = canvas.getObjects();
-    const gridObjectIds = gridLayerRef.current.map(obj => obj.id);
-    
-    // Filter out grid objects from state to save
-    const objectsToSave = allCanvasObjects.filter(obj => !gridObjectIds.includes(obj.id));
-    
-    // Clone the objects to avoid reference issues
-    const objectsClone = objectsToSave.map(obj => canvas.getActiveObject() === obj ? null : obj);
-    
-    // Add to past, clear future
-    historyRef.current.past = [
-      ...historyRef.current.past.slice(-MAX_HISTORY_STATES + 1),
-      objectsClone
-    ];
-    historyRef.current.future = [];
-  }, [fabricCanvasRef, gridLayerRef, historyRef]);
-  
+
+    try {
+      // Clone all non-grid objects to prevent reference issues
+      const currentObjects = canvas.getObjects().filter(obj => obj.objectType !== 'grid');
+      
+      // If there are no objects, don't save an empty state unless history is empty
+      if (currentObjects.length === 0 && historyRef.current.past.length > 0) {
+        return;
+      }
+      
+      // Save current state to history
+      historyRef.current.past.push(currentObjects);
+      
+      // Clear future states (redo stack)
+      historyRef.current.future = [];
+      
+      // Limit history length
+      if (historyRef.current.past.length > maxHistoryLength) {
+        historyRef.current.past.shift();
+      }
+      
+      console.log(`Canvas state saved. History: ${historyRef.current.past.length} states`);
+    } catch (error) {
+      console.error('Error saving canvas state:', error);
+    }
+  }, [fabricCanvasRef, historyRef, maxHistoryLength]);
+
   /**
-   * Handle undo operation
+   * Undo the last canvas action
    */
-  const handleUndo = useCallback(() => {
+  const undo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || historyRef.current.past.length === 0) return;
-    
-    // Get current objects except grid
-    const allCanvasObjects = canvas.getObjects();
-    const gridObjectIds = gridLayerRef.current.map(obj => obj.id);
-    const currentObjects = allCanvasObjects.filter(obj => !gridObjectIds.includes(obj.id));
-    
-    // Move current state to future
-    historyRef.current.future = [currentObjects, ...historyRef.current.future];
-    
-    // Get the last past state
-    const lastPastState = historyRef.current.past.pop();
-    if (!lastPastState) return;
-    
-    // Clear current non-grid objects
-    currentObjects.forEach(obj => canvas.remove(obj));
-    
-    // Add objects from past state
-    lastPastState.forEach(obj => {
-      if (obj) canvas.add(obj);
-    });
-    
-    canvas.renderAll();
-    
-    // Recalculate GIA based on new canvas state
-    recalculateGIA();
-  }, [fabricCanvasRef, gridLayerRef, historyRef, recalculateGIA]);
-  
+    if (!canvas || historyRef.current.past.length === 0) {
+      toast.info('Nothing to undo');
+      return;
+    }
+
+    try {
+      // Get current state for redo
+      const currentObjects = canvas.getObjects().filter(obj => obj.objectType !== 'grid');
+      historyRef.current.future.push(currentObjects);
+
+      // Remove the current state from canvas
+      canvas.remove(...currentObjects);
+
+      // Get previous state
+      const previousState = historyRef.current.past.pop();
+      
+      // If there's a previous state, restore it
+      if (previousState && previousState.length > 0) {
+        canvas.add(...previousState);
+      }
+
+      // Render the canvas
+      canvas.requestRenderAll();
+      
+      toast.success('Undo successful');
+    } catch (error) {
+      console.error('Error during undo:', error);
+      toast.error('Error during undo');
+    }
+  }, [fabricCanvasRef, historyRef]);
+
   /**
-   * Handle redo operation
+   * Redo the last undone canvas action
    */
-  const handleRedo = useCallback(() => {
+  const redo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || historyRef.current.future.length === 0) return;
-    
-    // Get current objects except grid
-    const allCanvasObjects = canvas.getObjects();
-    const gridObjectIds = gridLayerRef.current.map(obj => obj.id);
-    const currentObjects = allCanvasObjects.filter(obj => !gridObjectIds.includes(obj.id));
-    
-    // Move current state to past
-    historyRef.current.past = [...historyRef.current.past, currentObjects];
-    
-    // Get the first future state
-    const firstFutureState = historyRef.current.future.shift();
-    if (!firstFutureState) return;
-    
-    // Clear current non-grid objects
-    currentObjects.forEach(obj => canvas.remove(obj));
-    
-    // Add objects from future state
-    firstFutureState.forEach(obj => {
-      if (obj) canvas.add(obj);
-    });
-    
-    canvas.renderAll();
-    
-    // Recalculate GIA based on new canvas state
-    recalculateGIA();
-  }, [fabricCanvasRef, gridLayerRef, historyRef, recalculateGIA]);
-  
+    if (!canvas || historyRef.current.future.length === 0) {
+      toast.info('Nothing to redo');
+      return;
+    }
+
+    try {
+      // Get current state for undo
+      const currentObjects = canvas.getObjects().filter(obj => obj.objectType !== 'grid');
+      historyRef.current.past.push(currentObjects);
+
+      // Remove current state from canvas
+      canvas.remove(...currentObjects);
+
+      // Get next state from future
+      const nextState = historyRef.current.future.pop();
+      
+      // If there's a next state, restore it
+      if (nextState && nextState.length > 0) {
+        canvas.add(...nextState);
+      }
+
+      // Render the canvas
+      canvas.requestRenderAll();
+      
+      toast.success('Redo successful');
+    } catch (error) {
+      console.error('Error during redo:', error);
+      toast.error('Error during redo');
+    }
+  }, [fabricCanvasRef, historyRef]);
+
+  /**
+   * Clear all history
+   */
+  const clearHistory = useCallback(() => {
+    historyRef.current = {
+      past: [],
+      future: []
+    };
+    console.log('History cleared');
+  }, [historyRef]);
+
   return {
     saveCurrentState,
-    handleUndo,
-    handleRedo
+    undo,
+    redo,
+    clearHistory
   };
 };

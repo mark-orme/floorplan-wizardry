@@ -6,7 +6,7 @@
  */
 import { Canvas } from "@/components/Canvas";
 import CanvasLayout from "@/components/CanvasLayout"; 
-import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
+import { DrawingManager } from "@/components/canvas/DrawingManager";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 
 /**
@@ -39,7 +39,7 @@ export const CanvasApp = ({ setCanvas, createGrid }: CanvasAppProps): JSX.Elemen
           }
         }} 
       />
-      <DrawingToolbarModals />
+      <DrawingManager />
     </CanvasLayout>
   );
 };

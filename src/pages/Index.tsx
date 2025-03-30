@@ -1,14 +1,12 @@
 
-import { useState, useEffect, useRef } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { useState, useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
-import { GridMonitor } from "@/components/canvas/GridMonitor";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { toast } from "sonner";
 
 /**
@@ -18,24 +16,18 @@ import { toast } from "sonner";
  */
 const Index = () => {
   const navigate = useNavigate();
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const gridLayerRef = useRef<FabricObject[]>([]);
-  const [enableGridMonitoring, setEnableGridMonitoring] = useState(true);
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   
   // Reset canvas initialization state when the page loads
   useEffect(() => {
     resetInitializationState();
     
-    // Log a welcome message with enhanced grid stability
-    toast.success("Floor Plan Editor loaded with enhanced grid stability", {
+    // Log a welcome message
+    toast.success("Floor Plan Editor loaded with enhanced drawing tools", {
       duration: 3000,
       id: "floor-plan-welcome"
     });
   }, []);
-  
-  const setCanvasInstance = (canvas: FabricCanvas | null) => {
-    fabricCanvasRef.current = canvas;
-  };
   
   return (
     <main className="flex flex-col w-full min-h-screen bg-background">
@@ -54,25 +46,7 @@ const Index = () => {
       
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
-          <CanvasApp setCanvas={setCanvasInstance} />
-          {/* Add the GridMonitor component for background grid monitoring */}
-          <GridMonitor 
-            fabricCanvasRef={fabricCanvasRef}
-            gridLayerRef={gridLayerRef}
-            active={enableGridMonitoring}
-          />
-          
-          {/* Add SimpleGrid component if canvas is available */}
-          {fabricCanvasRef.current && (
-            <SimpleGrid 
-              canvas={fabricCanvasRef.current}
-              showControls={true}
-              defaultVisible={true}
-              onGridCreated={(objects) => {
-                gridLayerRef.current = objects;
-              }}
-            />
-          )}
+          <CanvasApp setCanvas={setCanvas} />
         </CanvasControllerProvider>
       </div>
     </main>

@@ -5,7 +5,6 @@ import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { toast } from "sonner";
 import { Canvas as FabricCanvas } from "fabric";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 
 /**
  * FloorPlans page component
@@ -35,15 +34,6 @@ const FloorPlans = () => {
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
           <CanvasApp setCanvas={setCanvas} />
-          
-          {/* Add SimpleGrid component if canvas is available */}
-          {canvas && (
-            <SimpleGrid
-              canvas={canvas}
-              showControls={true}
-              defaultVisible={true}
-            />
-          )}
         </CanvasControllerProvider>
       </div>
     </main>
