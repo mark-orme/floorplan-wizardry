@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for error capture and reporting to Sentry
  * @module utils/sentryUtils
@@ -161,8 +162,25 @@ export function captureMessage(
       }
       
       // Capture the message with the correct type for Sentry
-      // Convert the string level to a Sentry.SeverityLevel type
-      const sentryLevel = level as Sentry.SeverityLevel;
+      // The Sentry.captureMessage expects a Severity level, which can be one of:
+      // 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug'
+      // We need to convert our string level to the correct type
+      
+      // First define what severity levels map to Sentry's levels
+      const severityMap: Record<string, Sentry.SeverityLevel> = {
+        'error': 'error',
+        'warning': 'warning',
+        'info': 'info',
+        // Add fallbacks for any other values
+        'debug': 'debug',
+        'log': 'log',
+        'fatal': 'fatal'
+      };
+      
+      // Use the map to get the proper Sentry severity level, defaulting to 'info'
+      const sentryLevel: Sentry.SeverityLevel = severityMap[level] || 'info';
+      
+      // Now pass the properly typed severity level to Sentry
       Sentry.captureMessage(`[${messageId}] ${message}`, sentryLevel);
     } else {
       // Mock Sentry capture
