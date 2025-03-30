@@ -5,12 +5,12 @@
  * @module CanvasApp
  */
 import { Canvas } from "@/components/Canvas";
-import CanvasLayout from "@/components/CanvasLayout"; // Fixed import statement
+import CanvasLayout from "@/components/CanvasLayout"; 
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { ZoomDirection } from "@/types/drawingTypes";
-import { DrawingTool } from "@/types/drawingTypes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 
 /**

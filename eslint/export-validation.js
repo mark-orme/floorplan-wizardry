@@ -1,4 +1,3 @@
-
 /**
  * Export validation rules
  * Ensures exported members are properly defined
@@ -68,6 +67,27 @@ export const exportValidationRules = {
           "group": ["@/types/drawingTypes", "@/types/core/DrawingTool"],
           "importNames": ["DrawingTool"],
           "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified type from '@/types/drawing/DrawingToolTypes'"
+        }
+      ]
+    }],
+    
+    // Rule to specifically target DrawingTool vs DrawingMode imports
+    "no-restricted-imports": ["error", {
+      "paths": [
+        {
+          "name": "@/types/drawingTypes",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified types from '@/types/drawing/DrawingToolTypes'"
+        },
+        {
+          "name": "@/types/core/DrawingTool",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified types from '@/types/drawing/DrawingToolTypes'"
+        },
+        {
+          "name": "@/hooks/useCanvasState",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified types from '@/types/drawing/DrawingToolTypes'"
         }
       ]
     }],

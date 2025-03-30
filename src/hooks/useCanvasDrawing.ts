@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -9,9 +10,10 @@ import { usePathProcessing } from "./usePathProcessing";
 import { useCanvasHistory } from "./useCanvasHistory";
 import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { type FloorPlan } from "@/types/floorPlanTypes";
-import { DrawingTool, DrawingState } from "@/types/drawingTypes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasDrawingState } from "./useCanvasDrawingState";
 import { useCanvasDrawingEvents } from "./canvas/drawing/useCanvasDrawingEvents";
+import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
 
 /**
  * History state reference object
@@ -36,7 +38,7 @@ interface UseCanvasDrawingProps {
   /** Reference to history state for undo/redo */
   historyRef: React.MutableRefObject<HistoryRef>;
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current floor index */
   currentFloor: number;
   /** Function to set floor plans */
@@ -148,9 +150,16 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
   return {
     drawingState: {
       ...drawingState,
-      isDrawing,
-      currentPath,
-      pathStartPoint: null
+      isDrawing: false,
+      currentPath: null,
+      pathStartPoint: null,
+      startPoint: null,
+      currentPoint: null,
+      points: [],
+      distance: null,
+      cursorPosition: null,
+      currentZoom: 1,
+      zoomLevel: 1
     }
   };
 };

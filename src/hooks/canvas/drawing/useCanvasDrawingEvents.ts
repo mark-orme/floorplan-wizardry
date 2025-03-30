@@ -12,10 +12,10 @@ import {
   IText as FabricIText, 
   Group as FabricGroup,
   Text as FabricText,
-  ITextOptions,
+  TOptions,
   TPointerEvent
 } from "fabric";
-import { DrawingTool } from "@/types/drawingTypes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasContext } from "@/contexts/CanvasContext";
 import { snapPointToGrid } from "@/utils/simpleGridCreator";
 import { toast } from "sonner";
@@ -28,13 +28,13 @@ const GRID_SNAP_SIZE = 10;
 
 /**
  * Hook for managing canvas drawing events
- * @param {DrawingTool} activeTool - Currently active drawing tool
+ * @param {DrawingMode} activeTool - Currently active drawing tool
  * @param {number} lineThickness - Line thickness for drawing
  * @param {string} lineColor - Line color for drawing
  * @returns {object} Drawing event handlers and state
  */
 export const useCanvasDrawingEvents = (
-  activeTool: DrawingTool,
+  activeTool: DrawingMode,
   lineThickness: number = DEFAULT_LINE_WIDTH,
   lineColor: string = DEFAULT_LINE_COLOR
 ) => {
@@ -55,7 +55,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const startDrawing = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.DRAW) return;
+    if (!canvas || activeTool !== DrawingMode.DRAW) return;
     
     try {
       // Get pointer coordinates
@@ -95,7 +95,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const continueDrawing = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.DRAW) return;
+    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingMode.DRAW) return;
     
     try {
       // Get pointer coordinates
@@ -159,7 +159,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const startWallDrawing = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.WALL) return;
+    if (!canvas || activeTool !== DrawingMode.WALL) return;
     
     try {
       // Get pointer coordinates
@@ -197,7 +197,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const continueWallDrawing = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.WALL) return;
+    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingMode.WALL) return;
     
     try {
       // Get pointer coordinates
@@ -264,7 +264,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const startRoomDrawing = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.ROOM) return;
+    if (!canvas || activeTool !== DrawingMode.ROOM) return;
     
     try {
       // Get pointer coordinates
@@ -307,7 +307,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const continueRoomDrawing = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.ROOM) return;
+    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingMode.ROOM) return;
     
     try {
       // Get pointer coordinates
@@ -374,46 +374,40 @@ export const useCanvasDrawingEvents = (
   }, [canvas, isDrawing, currentPath]);
 
   /**
-   * Handle text tool activation
+   * Handle text functionality
    * @param {any} event - Fabric event object
    */
   const handleTextTool = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.TEXT) return;
+    if (!canvas || activeTool !== DrawingMode.TEXT) return;
     
     try {
       // Get pointer coordinates
       const pointer = canvas.getPointer(event.e);
       
-      // Snap to grid
-      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
-      
-      // Create a text object
-      const text = new FabricIText('Text', {
-        left: snappedPoint.x,
-        top: snappedPoint.y,
-        fontFamily: 'Arial',
-        fontSize: 16,
+      // Create a new text object
+      const text = new FabricText('Text', {
+        left: pointer.x,
+        top: pointer.y,
+        fontSize: 20,
         fill: lineColor,
         selectable: true,
         editable: true
-      } as any);
+      });
       
       // Add text to canvas
       canvas.add(text);
       
-      // Select the text for editing
-      canvas.setActiveObject(text as any);
-      text.enterEditing();
-      text.selectAll();
+      // Select the text for immediate editing
+      canvas.setActiveObject(text);
       
-      // Fire object added event for history tracking
-      canvas.fire('object:added', { target: text as any });
+      // Enter edit mode
+      (text as any).enterEditing();
       
       // Request render
       canvas.requestRenderAll();
     } catch (error) {
-      logger.error("Error adding text:", error);
-      toast.error("Error adding text");
+      logger.error("Error creating text:", error);
+      toast.error("Error creating text");
     }
   }, [canvas, activeTool, lineColor]);
 
@@ -422,7 +416,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const handleEraserTool = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.ERASER) return;
+    if (!canvas || activeTool !== DrawingMode.ERASER) return;
     
     try {
       // Get pointer coordinates
@@ -463,7 +457,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const startMeasuring = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.MEASURE) return;
+    if (!canvas || activeTool !== DrawingMode.MEASURE) return;
     
     try {
       // Get pointer coordinates
@@ -518,7 +512,7 @@ export const useCanvasDrawingEvents = (
    * @param {any} event - Fabric event object
    */
   const continueMeasuring = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.MEASURE) return;
+    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingMode.MEASURE) return;
     
     try {
       // Get pointer coordinates
@@ -624,9 +618,10 @@ export const useCanvasDrawingEvents = (
   return {
     isDrawing,
     currentPath,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
+    pathStartPoint,
+    handleMouseDown: startDrawing,
+    handleMouseMove: continueDrawing,
+    handleMouseUp: endDrawing,
     cleanupTimeouts
   };
 };

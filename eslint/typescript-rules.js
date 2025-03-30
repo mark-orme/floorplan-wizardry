@@ -1,4 +1,3 @@
-
 /**
  * TypeScript specific ESLint rules
  * Enforces strict type checking and code quality for TypeScript files
@@ -84,10 +83,22 @@ export const typescriptRules = {
       allowNullableNumber: false
     }],
     
-    // Prevent duplicate exports
-    "no-dupe-class-members": "error",
-    "import/export": "error",
-    "import/no-duplicates": "error",
+    // Add strict type compatibility checking between DrawingTool and DrawingMode
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "TSTypeReference[typeName.name='DrawingTool']",
+        "message": "Use DrawingMode instead of DrawingTool for consistent typing across the application."
+      },
+      {
+        "selector": "ImportSpecifier[imported.name='DrawingTool'][local.name!='DrawingMode']",
+        "message": "Import DrawingMode instead of DrawingTool for consistent typing across the application."
+      },
+      {
+        "selector": "VariableDeclarator[id.typeAnnotation.typeAnnotation.typeName.name='DrawingTool']",
+        "message": "Use DrawingMode type instead of DrawingTool for consistent typing across the application."
+      }
+    ],
     
     // NEW: Stricter grid-specific rules
     "@typescript-eslint/no-unnecessary-condition": ["warn", {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
-import { DrawingTool } from '@/types/drawingTypes';
+import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { DebugInfoState } from '@/types/drawingTypes';
 import { toast } from 'sonner';
@@ -27,9 +27,9 @@ const DEFAULT_CANVAS_HEIGHT = 600;
  */
 export interface CanvasControllerContextValue {
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Function to set the active drawing tool */
-  setTool: (tool: DrawingTool) => void;
+  setTool: (tool: DrawingMode) => void;
   /** Gross Internal Area calculation result */
   gia: number;
   /** State setter for Gross Internal Area */
@@ -51,7 +51,7 @@ export interface CanvasControllerContextValue {
   /** Debug information state */
   debugInfo: DebugInfoState;
   /** Handler for tool change */
-  handleToolChange: (tool: DrawingTool) => void;
+  handleToolChange: (tool: DrawingMode) => void;
   /** Handler for undo operation */
   handleUndo: () => void;
   /** Handler for redo operation */
@@ -110,7 +110,7 @@ const createInitialFloorPlan = (): FloorPlan => {
  */
 export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ children, createGrid }) => {
   // Canvas state
-  const [tool, setTool] = useState<DrawingTool>(DrawingTool.SELECT);
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
   const [gia, setGia] = useState<number>(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([createInitialFloorPlan()]);
   const [currentFloor, setCurrentFloor] = useState<number>(INITIAL_FLOOR_INDEX);
@@ -121,6 +121,10 @@ export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ chil
     width: DEFAULT_CANVAS_WIDTH,
     height: DEFAULT_CANVAS_HEIGHT
   });
+  
+  // Define error handling state here to fix "no value exists in scope" errors
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   
   // References
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -304,7 +308,7 @@ export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ chil
     }
     
     // Initialize tool mode
-    if (tool === DrawingTool.DRAW) {
+    if (tool === DrawingMode.DRAW) {
       canvas.isDrawingMode = true;
     } else {
       canvas.isDrawingMode = false;
@@ -332,7 +336,7 @@ export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ chil
     const canvas = fabricCanvasRef.current;
     
     // Set drawing mode based on the selected tool
-    if (tool === DrawingTool.DRAW) {
+    if (tool === DrawingMode.DRAW) {
       canvas.isDrawingMode = true;
     } else {
       canvas.isDrawingMode = false;
@@ -353,7 +357,7 @@ export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ chil
   /**
    * Handler functions that connect to the tool implementations
    */
-  const handleToolChange = (newTool: DrawingTool): void => {
+  const handleToolChange = (newTool: DrawingMode): void => {
     if (toolsResult.handleToolChange) {
       toolsResult.handleToolChange(newTool);
     } else {
