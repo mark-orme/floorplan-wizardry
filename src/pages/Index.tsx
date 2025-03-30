@@ -8,7 +8,7 @@ import { Home } from "lucide-react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { GridMonitor } from "@/components/canvas/GridMonitor";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
+import { SimpleGrid as SimpleGridComponent } from "@/components/canvas/grid/SimpleGrid";
 import { toast } from "sonner";
 
 /**
@@ -41,8 +41,8 @@ const Index = () => {
       setTimeout(() => {
         const component = document.getElementById('canvas-grid-component');
         if (!component && canvas) {
-          // Manually mount a SimpleGrid if not already present
-          const gridInstance = new SimpleGrid({
+          // Mount a SimpleGridComponent if not already present
+          const gridComponent = new SimpleGridComponent({
             canvas,
             showControls: false,
             defaultVisible: true,
@@ -51,10 +51,9 @@ const Index = () => {
             }
           });
           
-          // Store reference to grid objects
-          if (gridInstance && typeof gridInstance === 'object') {
-            const gridObjects = gridLayerRef.current;
-            console.log(`Grid initialized with ${gridObjects.length} objects`);
+          // Check if gridComponent has rendered or created grid objects
+          if (gridComponent) {
+            console.log("Grid component initialized");
           }
         }
       }, 200);

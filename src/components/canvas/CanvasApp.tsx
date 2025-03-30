@@ -16,7 +16,7 @@ export interface CanvasAppProps {
   /** Function to set the canvas instance */
   setCanvas?: (canvas: FabricCanvas | null) => void;
   /** Optional function to create grid on canvas */
-  createGrid?: (canvas: FabricCanvas, existingGrid?: FabricObject[]) => FabricObject[];
+  createGrid?: (canvas: FabricCanvas) => FabricObject[];
 }
 
 /**

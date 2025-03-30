@@ -2,19 +2,24 @@
 /**
  * Grid management hook for canvas
  * Handles the creation and management of grid on canvas
- * @module useCanvasGrid
+ * @module hooks/useCanvasGrid
  */
 import { useCallback, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createCompleteGrid, createBasicEmergencyGrid } from "@/utils/grid/gridCreationUtils";
-import { arrangeGridElementsWithRetry } from "@/utils/useCanvasLayerOrdering";
-import { runGridDiagnostics, applyGridFixes } from "@/utils/grid/gridDiagnostics";
+import { useGridCreation } from "./grid/useGridCreation";
+import { useGridDiagnostics } from "./grid/useGridDiagnostics";
+import { useGridZoom } from "./grid/useGridZoom";
 import logger from "@/utils/logger";
-import { toast } from "sonner";
 
+/**
+ * Props for useCanvasGrid hook
+ */
 interface UseCanvasGridProps {
+  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Canvas dimensions */
   canvasDimensions: { width: number; height: number };
+  /** Current zoom level */
   zoomLevel?: number;
 }
 
@@ -23,7 +28,7 @@ interface UseCanvasGridProps {
  * Creates and maintains the grid lines on the canvas
  * 
  * @param {UseCanvasGridProps} props - Hook properties
- * @returns {Object} Grid management functions and references
+ * @returns Grid management functions and references
  */
 export const useCanvasGrid = ({
   fabricCanvasRef,
@@ -34,117 +39,28 @@ export const useCanvasGrid = ({
   const gridInitializedRef = useRef(false);
   const lastGridCreationAttemptRef = useRef(0);
   
-  /**
-   * Create grid on the canvas with error handling
-   */
-  const createCanvasGrid = useCallback(() => {
-    if (!fabricCanvasRef.current) {
-      logger.warn("Cannot create grid: Canvas reference is null");
-      console.warn("Cannot create grid: Canvas reference is null");
-      return;
-    }
-    
-    const canvas = fabricCanvasRef.current;
-    
-    // Throttle grid creation attempts
-    const now = Date.now();
-    if (now - lastGridCreationAttemptRef.current < 1000) {
-      logger.debug("Grid creation throttled");
-      return;
-    }
-    lastGridCreationAttemptRef.current = now;
-    
-    try {
-      logger.info("Creating grid on canvas");
-      console.log("Creating grid on canvas", {
-        width: canvas.width,
-        height: canvas.height,
-        canvasDimensions
-      });
-      
-      // Check if canvas has valid dimensions
-      if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
-        logger.error("Grid creation failed: Canvas has zero dimensions");
-        console.error("Grid creation failed: Canvas has zero dimensions", {
-          width: canvas.width,
-          height: canvas.height
-        });
-        return;
-      }
-      
-      // Clear existing grid objects
-      if (gridLayerRef.current.length > 0) {
-        gridLayerRef.current.forEach(obj => {
-          if (canvas.contains(obj)) {
-            canvas.remove(obj);
-          }
-        });
-        gridLayerRef.current = [];
-      }
-      
-      // Create complete grid - Fixed: Removed the second parameter
-      const gridObjects = createCompleteGrid(canvas);
-      
-      // If grid creation failed, try emergency grid
-      if (!gridObjects || gridObjects.length === 0) {
-        logger.warn("Complete grid creation failed, trying emergency grid");
-        console.warn("Complete grid creation failed, trying emergency grid");
-        
-        // Fixed: Removed the second parameter
-        const emergencyGrid = createBasicEmergencyGrid(canvas);
-        if (emergencyGrid.length > 0) {
-          gridInitializedRef.current = true;
-          logger.info(`Created emergency grid with ${emergencyGrid.length} objects`);
-          console.log(`Created emergency grid with ${emergencyGrid.length} objects`);
-        } else {
-          logger.error("Both regular and emergency grid creation failed");
-          console.error("Both regular and emergency grid creation failed");
-          toast.error("Failed to create grid. Please try refreshing the application.");
-        }
-      } else {
-        // Grid created successfully
-        gridInitializedRef.current = true;
-        
-        // Log success
-        logger.info(`Grid created with ${gridObjects.length} objects`);
-        console.log(`Grid created with ${gridObjects.length} objects`);
-        
-        // Ensure proper ordering
-        arrangeGridElementsWithRetry(canvas, gridLayerRef);
-      }
-      
-      // Force render to ensure grid is visible
-      canvas.requestRenderAll();
-      
-      // Run diagnostics after a short delay to verify grid is properly displayed
-      setTimeout(() => {
-        const diagnostics = runGridDiagnostics(canvas, gridLayerRef.current, true);
-        
-        // If issues found, try to fix them
-        if (diagnostics.status !== 'ok') {
-          applyGridFixes(canvas, gridLayerRef.current);
-        }
-      }, 500);
-      
-    } catch (error) {
-      logger.error("Error creating grid:", error);
-      console.error("Error creating grid:", error);
-      
-      // Try emergency grid on error
-      try {
-        if (fabricCanvasRef.current) {
-          // Fixed: Removed the second parameter
-          const emergencyGrid = createBasicEmergencyGrid(fabricCanvasRef.current);
-          if (emergencyGrid.length > 0) {
-            gridInitializedRef.current = true;
-          }
-        }
-      } catch (emergencyError) {
-        logger.error("Emergency grid creation also failed:", emergencyError);
-        console.error("Emergency grid creation also failed:", emergencyError);
-      }
-    }
-  }, [fabricCanvasRef, canvasDimensions]);
+  // Use the grid creation hook
+  const { createCanvasGrid } = useGridCreation({
+    fabricCanvasRef,
+    gridLayerRef,
+    gridInitializedRef,
+    lastGridCreationAttemptRef
+  });
+  
+  // Use the grid diagnostics hook
+  const { runDiagnostics } = useGridDiagnostics({
+    fabricCanvasRef,
+    gridLayerRef,
+    isGridInitialized: gridInitializedRef.current
+  });
+  
+  // Use the grid zoom hook
+  useGridZoom({
+    fabricCanvasRef,
+    gridInitializedRef,
+    zoomLevel,
+    createCanvasGrid
+  });
   
   // Create grid when canvas or dimensions change
   useEffect(() => {
@@ -165,43 +81,10 @@ export const useCanvasGrid = ({
     createCanvasGrid
   ]);
   
-  // Force grid recreation when zoom changes significantly
-  useEffect(() => {
-    if (gridInitializedRef.current && fabricCanvasRef.current) {
-      // Only recreate grid on significant zoom changes
-      if (zoomLevel <= 0.5 || zoomLevel >= 2) {
-        createCanvasGrid();
-      }
-    }
-  }, [zoomLevel, createCanvasGrid]);
-  
-  // Periodic check to ensure grid is visible
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (fabricCanvasRef.current && gridLayerRef.current.length > 0) {
-        // Run quick diagnostics - verbose=false to reduce log noise
-        const diagnostics = runGridDiagnostics(fabricCanvasRef.current, gridLayerRef.current, false);
-        
-        // If no grid objects are on canvas, try to fix
-        if (diagnostics.gridInfo.objectsOnCanvas === 0 && gridLayerRef.current.length > 0) {
-          console.log("Periodic check found missing grid - attempting fix");
-          applyGridFixes(fabricCanvasRef.current, gridLayerRef.current);
-        }
-      }
-    }, 5000); // Check every 5 seconds
-    
-    return () => clearInterval(intervalId);
-  }, [fabricCanvasRef]);
-  
   return {
     gridLayerRef,
     createGrid: createCanvasGrid,
     isGridInitialized: () => gridInitializedRef.current,
-    runDiagnostics: () => {
-      if (fabricCanvasRef.current) {
-        return runGridDiagnostics(fabricCanvasRef.current, gridLayerRef.current, true);
-      }
-      return null;
-    }
+    runDiagnostics
   };
 };

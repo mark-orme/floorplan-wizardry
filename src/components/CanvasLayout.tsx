@@ -1,6 +1,5 @@
 
 import React from "react";
-import { CanvasApp } from "@/components/canvas/CanvasApp";
 
 /**
  * Props for the CanvasLayout component
