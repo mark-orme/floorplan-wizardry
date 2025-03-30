@@ -3,7 +3,9 @@
  * Manages drawing-related event handlers
  */
 import { useCallback, useEffect, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath, Line as FabricLine, Rect as FabricRect, IText as FabricIText, Group as FabricGroup } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath, 
+  Line as FabricLine, Rect as FabricRect, IText as FabricIText, Group as FabricGroup,
+  Text as FabricText } from "fabric";
 import { DrawingTool } from "@/types/drawingTypes";
 import { useCanvasContext } from "@/contexts/CanvasContext";
 import { snapPointToGrid } from "@/utils/simpleGridCreator";
@@ -41,10 +43,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Start drawing path
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const startDrawing = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.Draw) return;
+    if (!canvas || activeTool !== DrawingTool.DRAW) return;
     
     try {
       // Get pointer coordinates
@@ -81,10 +83,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Continue drawing path
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const continueDrawing = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.Draw) return;
+    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.DRAW) return;
     
     try {
       // Get pointer coordinates
@@ -145,10 +147,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Handle wall drawing start
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const startWallDrawing = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.Wall) return;
+    if (!canvas || activeTool !== DrawingTool.WALL) return;
     
     try {
       // Get pointer coordinates
@@ -183,10 +185,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Continue wall drawing
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const continueWallDrawing = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.Wall) return;
+    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.WALL) return;
     
     try {
       // Get pointer coordinates
@@ -250,10 +252,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Handle room drawing start
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const startRoomDrawing = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.Room) return;
+    if (!canvas || activeTool !== DrawingTool.ROOM) return;
     
     try {
       // Get pointer coordinates
@@ -293,10 +295,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Continue room drawing
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const continueRoomDrawing = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.Room) return;
+    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.ROOM) return;
     
     try {
       // Get pointer coordinates
@@ -364,10 +366,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Handle text tool activation
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const handleTextTool = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.Text) return;
+    if (!canvas || activeTool !== DrawingTool.TEXT) return;
     
     try {
       // Get pointer coordinates
@@ -384,20 +386,19 @@ export const useCanvasDrawingEvents = (
         fontSize: 16,
         fill: lineColor,
         selectable: true,
-        editable: true,
-        objectType: 'text'
-      });
+        editable: true
+      } as any);
       
       // Add text to canvas
       canvas.add(text);
       
       // Select the text for editing
-      canvas.setActiveObject(text);
+      canvas.setActiveObject(text as any);
       text.enterEditing();
       text.selectAll();
       
       // Fire object added event for history tracking
-      canvas.fire('object:added', { target: text });
+      canvas.fire('object:added', { target: text as any });
       
       // Request render
       canvas.requestRenderAll();
@@ -409,10 +410,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Handle eraser tool
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const handleEraserTool = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.Eraser) return;
+    if (!canvas || activeTool !== DrawingTool.ERASER) return;
     
     try {
       // Get pointer coordinates
@@ -450,10 +451,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Handle measure tool
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const startMeasuring = useCallback((event: any) => {
-    if (!canvas || activeTool !== DrawingTool.Measure) return;
+    if (!canvas || activeTool !== DrawingTool.MEASURE) return;
     
     try {
       // Get pointer coordinates
@@ -505,10 +506,10 @@ export const useCanvasDrawingEvents = (
 
   /**
    * Continue measuring
-   * @param {fabric.Event} event - Fabric event object
+   * @param {any} event - Fabric event object
    */
   const continueMeasuring = useCallback((event: any) => {
-    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.Measure) return;
+    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.MEASURE) return;
     
     try {
       // Get pointer coordinates
@@ -533,7 +534,7 @@ export const useCanvasDrawingEvents = (
       const distanceCm = Math.round(distance);
       
       // Update measurement label
-      const text = (line as any).measurementLabel as FabricText;
+      const text = (line as any).measurementLabel as FabricIText;
       if (text) {
         text.set({
           text: `${distanceCm} cm`,
@@ -558,12 +559,11 @@ export const useCanvasDrawingEvents = (
     try {
       // Finalize the measurement
       const line = currentPath as FabricLine;
-      const text = (line as any).measurementLabel as FabricText;
+      const text = (line as any).measurementLabel as FabricIText;
       
       // Group line and text together
       const group = new FabricGroup([line, text], {
-        selectable: true,
-        objectType: 'measurement'
+        selectable: true
       });
       
       // Remove individual objects
@@ -599,44 +599,44 @@ export const useCanvasDrawingEvents = (
     
     // Set cursor based on tool
     switch (activeTool) {
-      case DrawingTool.Select:
+      case DrawingTool.SELECT:
         canvas.defaultCursor = 'default';
         canvas.hoverCursor = 'move';
         break;
-      case DrawingTool.Draw:
+      case DrawingTool.DRAW:
         canvas.defaultCursor = 'crosshair';
         canvas.hoverCursor = 'crosshair';
         canvas.on('mouse:down', startDrawing);
         canvas.on('mouse:move', continueDrawing);
         canvas.on('mouse:up', endDrawing);
         break;
-      case DrawingTool.Wall:
+      case DrawingTool.WALL:
         canvas.defaultCursor = 'crosshair';
         canvas.hoverCursor = 'crosshair';
         canvas.on('mouse:down', startWallDrawing);
         canvas.on('mouse:move', continueWallDrawing);
         canvas.on('mouse:up', endWallDrawing);
         break;
-      case DrawingTool.Room:
+      case DrawingTool.ROOM:
         canvas.defaultCursor = 'crosshair';
         canvas.hoverCursor = 'crosshair';
         canvas.on('mouse:down', startRoomDrawing);
         canvas.on('mouse:move', continueRoomDrawing);
         canvas.on('mouse:up', endRoomDrawing);
         break;
-      case DrawingTool.Measure:
+      case DrawingTool.MEASURE:
         canvas.defaultCursor = 'crosshair';
         canvas.hoverCursor = 'crosshair';
         canvas.on('mouse:down', startMeasuring);
         canvas.on('mouse:move', continueMeasuring);
         canvas.on('mouse:up', endMeasuring);
         break;
-      case DrawingTool.Text:
+      case DrawingTool.TEXT:
         canvas.defaultCursor = 'text';
         canvas.hoverCursor = 'text';
         canvas.on('mouse:down', handleTextTool);
         break;
-      case DrawingTool.Eraser:
+      case DrawingTool.ERASER:
         canvas.defaultCursor = 'not-allowed';
         canvas.hoverCursor = 'not-allowed';
         canvas.on('mouse:down', handleEraserTool);

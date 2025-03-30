@@ -1,4 +1,3 @@
-
 /**
  * Canvas application component
  * Main component that wraps the canvas with necessary UI elements
@@ -6,12 +5,11 @@
  */
 import { Canvas } from "@/components/Canvas";
 import CanvasLayout from "@/components/CanvasLayout"; // Fixed import statement
-import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 import { DebugInfoState } from "@/types/core/DebugInfo";
 import { ZoomDirection } from "@/types/drawingTypes";
-import { DrawingMode } from "@/constants/drawingModes";
+import { DrawingTool } from "@/types/drawingTypes";
 
 /**
  * Canvas application component
@@ -59,28 +57,7 @@ export const CanvasApp = (): JSX.Element => {
   };
 
   return (
-    <CanvasLayout
-      tool={tool}
-      gia={gia}
-      floorPlans={floorPlans}
-      currentFloor={currentFloor}
-      debugInfo={safeDebugInfo}
-      canvasRef={canvasRef}
-      lineThickness={lineThickness}
-      lineColor={lineColor}
-      onToolChange={handleToolChange}
-      onUndo={handleUndo}
-      onRedo={handleRedo}
-      onZoom={handleZoomAdapter}
-      onClear={clearCanvas}
-      onSave={saveCanvas}
-      onDelete={deleteSelectedObjects}
-      onFloorSelect={handleFloorSelect}
-      onAddFloor={handleAddFloor}
-      onLineThicknessChange={handleLineThicknessChange}
-      onLineColorChange={handleLineColorChange}
-      onShowMeasurementGuide={openMeasurementGuide}
-    >
+    <CanvasLayout>
       <Canvas />
       <DrawingToolbarModals />
     </CanvasLayout>

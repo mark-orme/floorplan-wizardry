@@ -9,6 +9,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
  */
 interface CanvasLayoutProps {
   createGrid?: (canvas: FabricCanvas, existingGrid?: FabricObject[]) => FabricObject[];
+  children?: React.ReactNode;
 }
 
 /**
@@ -16,8 +17,16 @@ interface CanvasLayoutProps {
  * Renders the main CanvasApp with proper grid creation
  * @returns {JSX.Element} Rendered component
  */
-const CanvasLayout: React.FC<CanvasLayoutProps> = ({ createGrid = createFloorPlanGrid }) => {
-  return <CanvasApp createGrid={createGrid} />;
+const CanvasLayout: React.FC<CanvasLayoutProps> = ({ 
+  createGrid = createFloorPlanGrid,
+  children 
+}) => {
+  return (
+    <>
+      <CanvasApp createGrid={createGrid} />
+      {children}
+    </>
+  );
 };
 
 export default CanvasLayout;

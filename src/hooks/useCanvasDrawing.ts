@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing

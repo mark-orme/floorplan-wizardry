@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
-import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingTool } from '@/types/drawingTypes';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { DebugInfoState } from '@/types/drawingTypes';
 import { toast } from 'sonner';
@@ -28,9 +27,9 @@ const DEFAULT_CANVAS_HEIGHT = 600;
  */
 export interface CanvasControllerContextValue {
   /** Current active drawing tool */
-  tool: DrawingMode;
+  tool: DrawingTool;
   /** Function to set the active drawing tool */
-  setTool: (tool: DrawingMode) => void;
+  setTool: (tool: DrawingTool) => void;
   /** Gross Internal Area calculation result */
   gia: number;
   /** State setter for Gross Internal Area */
@@ -52,7 +51,7 @@ export interface CanvasControllerContextValue {
   /** Debug information state */
   debugInfo: DebugInfoState;
   /** Handler for tool change */
-  handleToolChange: (tool: DrawingMode) => void;
+  handleToolChange: (tool: DrawingTool) => void;
   /** Handler for undo operation */
   handleUndo: () => void;
   /** Handler for redo operation */
@@ -86,6 +85,14 @@ export interface CanvasControllerContextValue {
 const CanvasControllerContext = createContext<CanvasControllerContextValue | null>(null);
 
 /**
+ * Props for the CanvasController
+ */
+interface CanvasControllerProps {
+  children: React.ReactNode;
+  createGrid?: (canvas: FabricCanvas, existingGrid?: any[]) => any[];
+}
+
+/**
  * Create initial floor plan with all required properties
  * @returns {FloorPlan} A complete FloorPlan object with default values
  */
@@ -101,9 +108,9 @@ const createInitialFloorPlan = (): FloorPlan => {
  * @param {React.ReactNode} props.children - Child components
  * @returns {JSX.Element} Provider component
  */
-export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ children, createGrid }) => {
   // Canvas state
-  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [tool, setTool] = useState<DrawingTool>(DrawingTool.SELECT);
   const [gia, setGia] = useState<number>(0);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([createInitialFloorPlan()]);
   const [currentFloor, setCurrentFloor] = useState<number>(INITIAL_FLOOR_INDEX);
@@ -118,6 +125,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   // References
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef({ past: [], future: [] });
 
   // Debug state
@@ -158,7 +166,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   });
 
   // Initialize dependencies like grid, etc.
-  const { gridLayerRef, createGrid } = useCanvasControllerDependencies({
+  const { gridLayerRef, createGrid: createGridFn } = useCanvasControllerDependencies({
     fabricCanvasRef,
     canvasRef,
     canvasDimensions: dimensions,
@@ -214,7 +222,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     currentFloor,
     setFloorPlans,
     setGia,
-    createGrid
+    createGrid: createGridFn
   });
 
   // Delete selected objects function
@@ -294,11 +302,13 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
       canvas.freeDrawingBrush.width = lineThickness;
     }
     
-    // Create grid
-    createGrid(canvas);
+    // Create grid if function is provided
+    if (createGrid) {
+      createGrid(canvas);
+    }
     
     // Initialize tool mode
-    if (tool === 'draw') {
+    if (tool === DrawingTool.DRAW) {
       canvas.isDrawingMode = true;
     } else {
       canvas.isDrawingMode = false;
@@ -326,7 +336,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
     const canvas = fabricCanvasRef.current;
     
     // Set drawing mode based on the selected tool
-    if (tool === 'draw') {
+    if (tool === DrawingTool.DRAW) {
       canvas.isDrawingMode = true;
     } else {
       canvas.isDrawingMode = false;
@@ -347,7 +357,7 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   /**
    * Handler functions that connect to the tool implementations
    */
-  const handleToolChange = (newTool: DrawingMode): void => {
+  const handleToolChange = (newTool: DrawingTool): void => {
     if (toolsResult.handleToolChange) {
       toolsResult.handleToolChange(newTool);
     } else {
@@ -416,7 +426,11 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
   return (
     <CanvasControllerContext.Provider value={contextValue}>
       {children}
-      <div className="canvas-container" style={{ position: 'relative', width: dimensions.width, height: dimensions.height }}>
+      <div 
+        ref={canvasContainerRef}
+        className="canvas-container relative bg-white shadow rounded-lg" 
+        style={{ width: dimensions.width, height: dimensions.height }}
+      >
         <canvas 
           ref={canvasRef} 
           width={dimensions.width} 
@@ -437,10 +451,11 @@ export const CanvasControllerProvider: React.FC<{ children: React.ReactNode }> =
 
 /**
  * Hook to access the Canvas Controller context
+ * @param {Function} [createGridFn] - Optional function to create grid
  * @returns {CanvasControllerContextValue} Canvas controller context value
  * @throws {Error} If used outside of a CanvasControllerProvider
  */
-export const useCanvasController = (): CanvasControllerContextValue => {
+export const useCanvasController = (createGridFn?: Function): CanvasControllerContextValue => {
   const context = useContext(CanvasControllerContext);
   if (!context) {
     throw new Error('useCanvasController must be used within a CanvasControllerProvider');
