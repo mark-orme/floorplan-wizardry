@@ -1,13 +1,18 @@
 
+/**
+ * Unit Tests for LineSettings Component
+ * Tests the functionality and UI interactions of the line settings panel
+ */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LineSettings } from './LineSettings';
 
 describe('LineSettings Component', () => {
+  // Mock callback functions to verify they're called correctly
   const mockThicknessChange = vi.fn();
   const mockColorChange = vi.fn();
   
-  // Default props for testing
+  // Default props for consistent testing
   const defaultProps = {
     thickness: 3,
     color: '#FF0000',
@@ -15,67 +20,73 @@ describe('LineSettings Component', () => {
     onColorChange: mockColorChange
   };
   
+  // Reset mocks before each test to ensure clean state
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
   test('renders with correct initial values', () => {
-    // When
+    // When: Component is rendered with default props
     render(<LineSettings {...defaultProps} />);
     
-    // Then
+    // Then: Should display the initial thickness and color values
     expect(screen.getByText('Thickness: 3px')).toBeInTheDocument();
     expect(screen.getByLabelText('Color')).toHaveValue('#FF0000');
   });
   
   test('calls onThicknessChange when slider value changes', () => {
-    // When
+    // When: Component is rendered and slider is changed
     render(<LineSettings {...defaultProps} />);
     
-    // Then - get slider and change its value
+    // Get the slider element
     const slider = screen.getByRole('slider');
     
-    // Use fireEvent to simulate a change in the slider
+    // Simulate a change in the slider value
     fireEvent.change(slider, { target: { value: 5 } });
     
-    // Check if the callback was called with correct value
+    // Then: Callback should be called with the new value
     expect(mockThicknessChange).toHaveBeenCalledWith(5);
   });
   
   test('calls onColorChange when color picker value changes', () => {
-    // When
+    // When: Component is rendered and color picker is changed
     render(<LineSettings {...defaultProps} />);
     
-    // Then - get color picker and change its value
+    // Get the color picker element
     const colorPicker = screen.getByLabelText('Color');
     
-    // Use fireEvent to simulate a change in the color picker
+    // Simulate a change in the color picker
     fireEvent.change(colorPicker, { target: { value: '#00FF00' } });
     
-    // Check if the callback was called with correct value  
+    // Then: Callback should be called with the new color value
     expect(mockColorChange).toHaveBeenCalledWith('#00FF00');
   });
   
   test('handles extreme thickness values', () => {
-    // Test with minimum thickness
+    // Test with minimum thickness value
     const minProps = { ...defaultProps, thickness: 1 };
     const { rerender } = render(<LineSettings {...minProps} />);
     
+    // Verify minimum thickness is displayed correctly
     expect(screen.getByText('Thickness: 1px')).toBeInTheDocument();
     
-    // Test with maximum thickness
+    // Test with maximum thickness value
     const maxProps = { ...defaultProps, thickness: 10 };
     rerender(<LineSettings {...maxProps} />);
     
+    // Verify maximum thickness is displayed correctly
     expect(screen.getByText('Thickness: 10px')).toBeInTheDocument();
   });
   
   test('renders correct container classes', () => {
-    // When
+    // When: Component is rendered
     render(<LineSettings {...defaultProps} />);
     
-    // Then
+    // Then: Container should have all the expected CSS classes
+    // Find the container by locating a child element first
     const container = screen.getByText('Thickness: 3px').closest('div')?.parentElement;
+    
+    // Verify all expected classes are applied
     expect(container).toHaveClass('bg-gray-50');
     expect(container).toHaveClass('dark:bg-gray-800');
     expect(container).toHaveClass('p-2');

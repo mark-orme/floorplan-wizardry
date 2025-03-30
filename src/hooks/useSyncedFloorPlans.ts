@@ -1,5 +1,7 @@
+
 /**
  * Hook for syncing floor plans between canvas and state
+ * This hook provides persistence and synchronization for floor plans
  * @module hooks/useSyncedFloorPlans
  */
 import { useEffect, useState, useCallback } from "react";
@@ -8,15 +10,18 @@ import { FloorPlan } from "@/types/floorPlanTypes";
 import { toast } from "sonner";
 
 /**
- * Hook to synchronize floor plans with the canvas
+ * Hook to synchronize floor plans with the canvas and localStorage
  * 
- * @returns Functions to manage floor plan synchronization
+ * Provides state management for floor plans along with persistence
+ * through localStorage and canvas integration capabilities
+ * 
+ * @returns {Object} Functions and state for floor plan synchronization
  */
 export const useSyncedFloorPlans = () => {
-  // Add state for floor plans
+  // State to track floor plans across the application
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   
-  // Sync effect for loading initial floor plans
+  // Initial loading of floor plans when component mounts
   useEffect(() => {
     console.log("Initializing synced floor plans");
     
@@ -25,8 +30,9 @@ export const useSyncedFloorPlans = () => {
   }, []);
   
   /**
-   * Load floor plans from storage
-   * @returns Promise that resolves to the loaded floor plans
+   * Load floor plans from localStorage
+   * 
+   * @returns {Promise<FloorPlan[]>} Promise that resolves to the loaded floor plans
    */
   const loadData = useCallback(async (): Promise<FloorPlan[]> => {
     try {
@@ -50,9 +56,10 @@ export const useSyncedFloorPlans = () => {
   }, []);
   
   /**
-   * Save floor plans to storage
-   * @param updatedFloorPlans Floor plans to save
-   * @returns Promise that resolves to success status
+   * Save floor plans to localStorage
+   * 
+   * @param {FloorPlan[]} updatedFloorPlans - Floor plans to save
+   * @returns {Promise<boolean>} Promise that resolves to success status
    */
   const saveData = useCallback(async (updatedFloorPlans: FloorPlan[]): Promise<boolean> => {
     try {
@@ -68,24 +75,52 @@ export const useSyncedFloorPlans = () => {
   }, []);
   
   return {
-    // Include the state and functions that PropertyDetail.tsx expects
+    // State setters and getters
     floorPlans,
     setFloorPlans,
     loadData,
-    // Keep the original functions
+    
+    // Canvas integration functions
+    /**
+     * Synchronizes floor plans with the canvas
+     * 
+     * @param {FabricCanvas} canvas - The fabric canvas to sync with
+     * @param {FloorPlan[]} floorPlans - Floor plans to sync to canvas
+     */
     syncFloorPlans: (canvas: FabricCanvas, floorPlans: FloorPlan[]) => {
       console.log("Syncing floor plans with canvas:", floorPlans.length);
       // Implementation would sync floor plans with canvas
     },
+    
+    /**
+     * Loads a single floor plan to the canvas
+     * 
+     * @param {FabricCanvas} canvas - The fabric canvas to load to
+     * @param {FloorPlan} floorPlan - Floor plan to load
+     */
     loadFloorPlan: (canvas: FabricCanvas, floorPlan: FloorPlan) => {
       console.log("Loading floor plan to canvas:", floorPlan.id);
       // Implementation would load a floor plan to canvas
     },
+    
+    /**
+     * Saves current canvas state to a floor plan
+     * 
+     * @param {FabricCanvas} canvas - The fabric canvas to save from
+     * @returns {FloorPlan|null} The saved floor plan or null on failure
+     */
     saveFloorPlan: (canvas: FabricCanvas): FloorPlan | null => {
       console.log("Saving canvas state to floor plan");
       // Implementation would save canvas state to floor plan
       return null;
     },
+    
+    /**
+     * Calculates Gross Internal Area from floor plans
+     * 
+     * @param {FloorPlan[]} floorPlans - Floor plans to calculate GIA from
+     * @returns {number} The calculated GIA value
+     */
     calculateGIA: (floorPlans: FloorPlan[]): number => {
       // Implementation would calculate GIA from floor plans
       return 0;

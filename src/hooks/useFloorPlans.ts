@@ -2,6 +2,10 @@
 /**
  * Main hook for floor plan operations
  * Combines specialized floor plan hooks for various functionalities
+ * 
+ * This hook serves as an orchestration layer for all floor plan-related
+ * operations, including drawing, calculation, management, and storage.
+ * 
  * @module useFloorPlans
  */
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -10,7 +14,7 @@ import { Canvas as FabricCanvas } from "fabric";
 // Import the unified FloorPlan type from the centralized location
 import { FloorPlan } from "@/types/floorPlanTypes";
 
-// Import specialized floor plan hooks
+// Import specialized floor plan hooks for different concerns
 import { useFloorPlanDrawing } from "./floor-plan";
 import { useFloorPlanGIA } from "./useFloorPlanGIA";
 import { useFloorPlanManagement } from "./useFloorPlanManagement";
@@ -43,7 +47,10 @@ interface UseFloorPlansProps {
 
 /**
  * Hook for managing floor plans with multiple specialized sub-hooks
- * Handles drawing, GIA calculation, management, and storage of floor plans
+ * 
+ * This hook follows the composition pattern, delegating specific
+ * responsibilities to specialized hooks while coordinating their
+ * interactions.
  * 
  * @param {UseFloorPlansProps} props - Hook properties
  * @returns {Object} Floor plan operations and state
@@ -59,15 +66,17 @@ export const useFloorPlans = ({
   clearDrawings,
   createGrid
 }: UseFloorPlansProps) => {
+  // Reference to track floor change operation status
+  // Prevents multiple simultaneous floor change operations
   const floorChangeInProgressRef = useRef(false);
   
-  // Initialize GIA calculation
+  // Initialize GIA calculation hook for area measurements
   const { recalculateGIA } = useFloorPlanGIA({
     fabricCanvasRef,
     setGia
   });
   
-  // Memoize hook dependencies to prevent circular dependencies
+  // Memoize hook dependencies to prevent circular dependencies and rerenders
   const hookDeps = useMemo(() => ({
     fabricCanvasRef,
     gridLayerRef,
@@ -76,25 +85,27 @@ export const useFloorPlans = ({
     recalculateGIA  // Pass recalculateGIA to the drawing hook
   }), [fabricCanvasRef, gridLayerRef, createGrid, recalculateGIA]);
   
-  // Initialize floor plan drawing functionality - Get the drawFloorPlan function
+  // Initialize floor plan drawing functionality
   const { drawFloorPlan } = useFloorPlanDrawing();
   
-  // Initialize floor plan management (add, select)
+  // Initialize floor plan management for adding and selecting floors
   const { handleAddFloor, handleSelectFloor } = useFloorPlanManagement({
     floorPlans,
     currentFloor,
     setFloorPlans
   });
   
-  // Initialize floor plan storage - Get the loadData function that returns a promise
+  // Initialize floor plan storage for persistence
   const { loadData, saveData, lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
 
   /**
    * Draws the floor plan on the canvas with proper error handling
+   * 
    * @param {number} floorIndex - Index of the floor to draw
    * @param {FloorPlan[]} plans - Array of floor plans
    */
   const drawFloorPlanWithCanvas = useCallback((floorIndex: number, plans: FloorPlan[]) => {
+    // Safety checks before attempting to draw
     if (!fabricCanvasRef.current) return;
     if (plans.length === 0 || floorIndex >= plans.length) return;
     
@@ -103,30 +114,33 @@ export const useFloorPlans = ({
       drawFloorPlan(fabricCanvasRef.current, floorPlan);
     }
     
-    // Recalculate GIA after drawing
+    // Schedule GIA recalculation after drawing completes
+    // Using setTimeout to ensure drawing has finished rendering
     setTimeout(recalculateGIA, 200);
   }, [fabricCanvasRef, drawFloorPlan, recalculateGIA]);
 
-  // Update canvas when floor changes with debouncing - use stable version of dependencies
+  // Update canvas when floor changes with debouncing
   useEffect(() => {
-    // Skip if no canvas, if loading, or if no floorplans
+    // Skip rendering under these conditions
     if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
-    
-    // Skip if a floor change is already in progress
     if (floorChangeInProgressRef.current) return;
     
     console.log("Floor changed, updating canvas");
     
-    // Use a more efficient approach for floor changes
+    // Handler function to redraw the floor plan
     const floorChangeHandler = () => {
+      // Clear the canvas first
       clearDrawings();
+      
+      // Draw the selected floor plan
       drawFloorPlanWithCanvas(currentFloor, floorPlans);
       
-      // OPTIMIZATION: Delay GIA calculation after drawing is complete
+      // OPTIMIZATION: Delay GIA calculation for better performance
       setTimeout(recalculateGIA, 200);
     };
     
     // Execute with a short delay to avoid rapid consecutive calls
+    // This helps prevent performance issues during rapid floor changes
     setTimeout(floorChangeHandler, 50);
     
   }, [
@@ -139,16 +153,26 @@ export const useFloorPlans = ({
     recalculateGIA
   ]);
 
+  // Return public API of the hook
   return {
+    // Draw the current floor plan or a specific floor
     drawFloorPlan: useCallback((floorIndex = currentFloor) => 
       drawFloorPlanWithCanvas(floorIndex, floorPlans), 
       [currentFloor, floorPlans, drawFloorPlanWithCanvas]
     ),
+    
+    // Area calculation
     recalculateGIA,
+    
+    // Floor management
     handleAddFloor,
     handleSelectFloor,
+    
+    // Storage operations
     loadData,
     saveData,
+    
+    // Status indicators
     lastSaved,
     isLoggedIn,
     isSaving
