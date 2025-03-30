@@ -283,10 +283,13 @@ export const trackGridCreationPerformance = (
         timestamp: new Date().toISOString(),
         objectsPerSecond: Math.round(objectCount / (duration / 1000)),
         performanceInfo: {
-          memory: performance.memory ? {
-            jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
-            totalJSHeapSize: performance.memory.totalJSHeapSize,
-            usedJSHeapSize: performance.memory.usedJSHeapSize
+          // Check if memory API is available before accessing it
+          // The Performance.memory is a non-standard API only available in some browsers
+          memory: typeof performance !== 'undefined' && 
+                 'memory' in performance ? {
+            jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit,
+            totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
+            usedJSHeapSize: (performance as any).memory.usedJSHeapSize
           } : 'Not available'
         }
       }

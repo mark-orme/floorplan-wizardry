@@ -92,8 +92,8 @@ describe('Grid Creation Utils Edge Cases', () => {
       .mockRejectedValueOnce(new Error('Second failure'))
       .mockResolvedValueOnce('success');
     
-    // Start the retry operation
-    const retryPromise = retryWithBackoff(mockOperation, 5, 10);
+    // Start the retry operation with default values
+    const retryPromise = retryWithBackoff(mockOperation);
     
     // Fast-forward through the retries
     vi.runAllTimers();
@@ -119,7 +119,7 @@ describe('Grid Creation Utils Edge Cases', () => {
     gridLayerRef.current = [];
     
     // Should detect existing grid despite empty reference
-    const exists = verifyGridExists(canvas, gridLayerRef);
+    const exists = verifyGridExists(canvas, gridLayerRef.current);
     
     expect(exists).toBe(true);
   });

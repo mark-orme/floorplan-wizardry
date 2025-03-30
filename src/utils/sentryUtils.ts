@@ -161,7 +161,7 @@ export function captureMessage(
         Sentry.setContext('additional', options.extra);
       }
       
-      // Capture the message
+      // Capture the message with the correct type for Sentry
       Sentry.captureMessage(`[${messageId}] ${message}`, level as Sentry.SeverityLevel);
     } else {
       // Mock Sentry capture
