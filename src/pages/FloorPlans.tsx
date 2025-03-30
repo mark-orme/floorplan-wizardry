@@ -5,8 +5,7 @@ import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { createFloorPlanGrid } from "@/utils/gridCreationUtils";
-import { BasicGrid } from "@/components/BasicGrid";
+import { createSimpleGrid } from "@/utils/simpleGridCreator";
 
 /**
  * FloorPlans page component
@@ -33,7 +32,7 @@ const FloorPlans = () => {
       
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
-          <CanvasApp createGrid={createFloorPlanGrid} />
+          <CanvasApp createGrid={createSimpleGrid} />
         </CanvasControllerProvider>
       </div>
     </main>
