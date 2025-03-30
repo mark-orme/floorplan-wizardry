@@ -1,33 +1,28 @@
 
 import React from "react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
-import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 
 /**
  * Props for the CanvasLayout component
  */
 interface CanvasLayoutProps {
-  createGrid?: (canvas: FabricCanvas, existingGrid?: FabricObject[]) => FabricObject[];
   children?: React.ReactNode;
 }
 
 /**
  * Canvas Layout component
- * Renders the main CanvasApp with proper grid creation
+ * Renders the main CanvasApp with proper layout structure
  * @returns {JSX.Element} Rendered component
  */
-const CanvasLayout: React.FC<CanvasLayoutProps> = ({ 
-  createGrid = createBasicEmergencyGrid,
-  children 
-}) => {
-  console.log("CanvasLayout: Rendering with grid creator function");
+const CanvasLayout: React.FC<CanvasLayoutProps> = ({ children }) => {
+  console.log("CanvasLayout: Rendering canvas layout");
   
   return (
-    <>
-      <CanvasApp createGrid={createGrid} />
-      {children}
-    </>
+    <div className="relative w-full h-full">
+      <div className="w-full h-full">
+        {children}
+      </div>
+    </div>
   );
 };
 

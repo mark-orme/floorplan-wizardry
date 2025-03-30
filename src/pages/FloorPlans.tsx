@@ -3,9 +3,10 @@ import React from "react";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createSimpleGrid } from "@/utils/simpleGridCreator";
+import { Canvas as FabricCanvas } from "fabric";
 
 /**
  * FloorPlans page component
@@ -13,6 +14,8 @@ import { createSimpleGrid } from "@/utils/simpleGridCreator";
  * @returns {JSX.Element} Rendered component
  */
 const FloorPlans = () => {
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+
   // Reset canvas initialization state when the page loads
   useEffect(() => {
     resetInitializationState();
@@ -32,7 +35,7 @@ const FloorPlans = () => {
       
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
-          <CanvasApp createGrid={createSimpleGrid} />
+          <CanvasApp setCanvas={setCanvas} />
         </CanvasControllerProvider>
       </div>
     </main>

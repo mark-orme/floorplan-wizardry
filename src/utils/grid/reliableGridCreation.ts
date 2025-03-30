@@ -87,7 +87,9 @@ export const createGridElements = (canvas: FabricCanvas): FabricObject[] => {
     
     // Add labels for large grid lines
     if (isLargeLine && i > 0) {
-      const text = new Text(`${Math.round(i / GRID_CONSTANTS.PIXELS_PER_METER)}m`, {
+      // Convert to string for label
+      const meterLabel = String(Math.round(i / GRID_CONSTANTS.PIXELS_PER_METER));
+      const text = new Text(`${meterLabel}m`, {
         left: i + 5,
         top: 5,
         fontSize: GRID_CONSTANTS.MARKER_TEXT_SIZE,
@@ -121,7 +123,9 @@ export const createGridElements = (canvas: FabricCanvas): FabricObject[] => {
     
     // Add labels for large grid lines
     if (isLargeLine && i > 0) {
-      const text = new Text(`${Math.round(i / GRID_CONSTANTS.PIXELS_PER_METER)}m`, {
+      // Convert to string for label
+      const meterLabel = String(Math.round(i / GRID_CONSTANTS.PIXELS_PER_METER));
+      const text = new Text(`${meterLabel}m`, {
         left: 5,
         top: i + 5,
         fontSize: GRID_CONSTANTS.MARKER_TEXT_SIZE,
