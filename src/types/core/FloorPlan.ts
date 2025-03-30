@@ -1,10 +1,11 @@
+
 /**
  * FloorPlan type definitions
  * @module types/core/FloorPlan
  */
 
 import { Point } from './Point';
-import { StrokeType, StrokeTypeLiteral } from '../floorPlanTypes';
+import { StrokeTypeLiteral } from '../floorPlanTypes';
 
 /**
  * Paper size enum
@@ -107,8 +108,9 @@ export interface Room {
 
 /**
  * Stroke type enum as a string literal type for compatibility
+ * We're using the imported StrokeTypeLiteral instead of defining our own
  */
-export type StrokeType = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
+export type StrokeType = StrokeTypeLiteral;
 
 /**
  * Stroke interface for annotations
