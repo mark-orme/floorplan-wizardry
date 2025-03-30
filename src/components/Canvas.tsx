@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { useCanvasContext } from "@/contexts/CanvasContext";
 import { BasicGrid } from "./BasicGrid";
 
@@ -43,7 +43,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       
       // Ensure drawing brush is properly initialized
       if (!fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
+        fabricCanvas.freeDrawingBrush = new PencilBrush(fabricCanvas);
       }
       
       // Set up drawing brush - ensure initialization is done properly

@@ -120,16 +120,13 @@ export const getMemoryUsage = (): { total?: number, used?: number, limit?: numbe
   }
   
   // Safely check and access performance.memory property (Chrome only)
-  if (performance && 'memory' in performance) {
-    const perfMemory = (performance as any).memory;
-    
-    if (perfMemory) {
-      return {
-        total: perfMemory.totalJSHeapSize,
-        used: perfMemory.usedJSHeapSize,
-        limit: perfMemory.jsHeapSizeLimit
-      };
-    }
+  const perfAny = performance as any;
+  if (perfAny && perfAny.memory) {
+    return {
+      total: perfAny.memory.totalJSHeapSize,
+      used: perfAny.memory.usedJSHeapSize,
+      limit: perfAny.memory.jsHeapSizeLimit
+    };
   }
   
   // Return empty object if memory info is not available
@@ -152,13 +149,14 @@ export const gridDebugStats = (
   
   const allObjects = canvas.getObjects();
   const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+  const canvasAny = canvas as any;
   
   return {
     canvas: {
       width: canvas.width,
       height: canvas.height,
       objectCount: allObjects.length,
-      initialized: (canvas as any).initialized || false
+      initialized: canvasAny.initialized || false
     },
     grid: {
       totalObjects: gridObjects.length,

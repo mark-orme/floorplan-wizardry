@@ -1,6 +1,5 @@
-
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { toast } from "sonner";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import { forceCreateGrid } from "@/utils/grid/gridDebugUtils";
@@ -59,7 +58,7 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       for (let x = 0; x <= width; x += smallGridSize) {
         // Create vertical line
         const isLargeLine = x % largeGridSize === 0;
-        const line = new fabric.Line([x, 0, x, height], {
+        const line = new Line([x, 0, x, height], {
           stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
           selectable: false,
@@ -77,7 +76,7 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       for (let y = 0; y <= height; y += smallGridSize) {
         // Create horizontal line
         const isLargeLine = y % largeGridSize === 0;
-        const line = new fabric.Line([0, y, width, y], {
+        const line = new Line([0, y, width, y], {
           stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
           selectable: false,
@@ -200,13 +199,14 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       try {
         debugLog(`Attempting to create grid (attempt ${initializationAttemptRef.current})`);
         
-        // Fix canvas dimensions if needed
-        const containerWidth = fabricCanvas.wrapperEl?.clientWidth;
-        const containerHeight = fabricCanvas.wrapperEl?.clientHeight;
+        // Fix canvas dimensions if needed - USE THE FULL CLIENT AREA
+        const containerWidth = fabricCanvas.wrapperEl?.clientWidth || window.innerWidth;
+        const containerHeight = fabricCanvas.wrapperEl?.clientHeight || window.innerHeight - 200;
         
+        // Make sure we're using appropriate dimensions
         if (containerWidth && containerHeight && 
-            (fabricCanvas.width !== containerWidth || fabricCanvas.height !== containerHeight)) {
-          debugLog(`Updating canvas dimensions to match container: ${containerWidth}x${containerHeight}`);
+            (fabricCanvas.width < 600 || fabricCanvas.height < 400)) {
+          debugLog(`Updating canvas dimensions to appropriate size: ${containerWidth}x${containerHeight}`);
           fabricCanvas.setWidth(containerWidth);
           fabricCanvas.setHeight(containerHeight);
         }
