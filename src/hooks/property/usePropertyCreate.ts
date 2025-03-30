@@ -29,6 +29,18 @@ export const usePropertyCreate = () => {
 
     try {
       const newProperty: Omit<Property, 'id'> = {
+        // Required properties from Property interface
+        name: address, // Use address as name
+        type: 'residential', // Default type
+        bedrooms: 0, // Default value
+        bathrooms: 0, // Default value
+        area: 0, // Default value
+        status: PropertyStatus.DRAFT,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: user!.id,
+        
+        // Additional properties specific to the application
         order_id: orderID,
         address,
         client_name: clientName,
@@ -36,7 +48,6 @@ export const usePropertyCreate = () => {
         created_by: user!.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        status: PropertyStatus.DRAFT,
         floorPlans: JSON.stringify(floorPlans)  // Convert FloorPlan array to JSON string
       };
 
