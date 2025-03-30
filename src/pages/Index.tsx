@@ -8,7 +8,7 @@ import { Home } from "lucide-react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { GridMonitor } from "@/components/canvas/GridMonitor";
-import { SimpleGrid as SimpleGridComponent } from "@/components/canvas/grid/SimpleGrid";
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { toast } from "sonner";
 
 /**
@@ -35,29 +35,6 @@ const Index = () => {
   
   const setCanvasInstance = (canvas: FabricCanvas | null) => {
     fabricCanvasRef.current = canvas;
-    
-    // Create grid immediately when canvas is available
-    if (canvas) {
-      setTimeout(() => {
-        const component = document.getElementById('canvas-grid-component');
-        if (!component && canvas) {
-          // Mount a SimpleGridComponent if not already present
-          const gridComponent = new SimpleGridComponent({
-            canvas,
-            showControls: false,
-            defaultVisible: true,
-            onGridCreated: (objects) => {
-              gridLayerRef.current = objects;
-            }
-          });
-          
-          // Check if gridComponent has rendered or created grid objects
-          if (gridComponent) {
-            console.log("Grid component initialized");
-          }
-        }
-      }, 200);
-    }
   };
   
   return (
@@ -84,6 +61,18 @@ const Index = () => {
             gridLayerRef={gridLayerRef}
             active={enableGridMonitoring}
           />
+          
+          {/* Add SimpleGrid component if canvas is available */}
+          {fabricCanvasRef.current && (
+            <SimpleGrid 
+              canvas={fabricCanvasRef.current}
+              showControls={true}
+              defaultVisible={true}
+              onGridCreated={(objects) => {
+                gridLayerRef.current = objects;
+              }}
+            />
+          )}
         </CanvasControllerProvider>
       </div>
     </main>

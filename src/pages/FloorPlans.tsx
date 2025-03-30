@@ -1,12 +1,11 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { createSimpleGrid } from "@/utils/simpleGridCreator";
 import { Canvas as FabricCanvas } from "fabric";
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 
 /**
  * FloorPlans page component
@@ -36,6 +35,15 @@ const FloorPlans = () => {
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
           <CanvasApp setCanvas={setCanvas} />
+          
+          {/* Add SimpleGrid component if canvas is available */}
+          {canvas && (
+            <SimpleGrid
+              canvas={canvas}
+              showControls={true}
+              defaultVisible={true}
+            />
+          )}
         </CanvasControllerProvider>
       </div>
     </main>

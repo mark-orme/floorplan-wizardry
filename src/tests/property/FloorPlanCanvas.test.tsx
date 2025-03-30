@@ -16,6 +16,16 @@ vi.mock('@/components/canvas/controller/CanvasController', () => ({
   )
 }));
 
+vi.mock('@/components/canvas/grid/SimpleGrid', () => ({
+  SimpleGrid: ({ onGridCreated }: { onGridCreated?: (objects: any[]) => void }) => {
+    if (onGridCreated) {
+      // Mock calling the onGridCreated callback with empty array
+      setTimeout(() => onGridCreated([]), 0);
+    }
+    return <div data-testid="mock-simple-grid">SimpleGrid Component</div>;
+  }
+}));
+
 vi.mock('@/utils/canvas/safeCanvasInitialization', () => ({
   resetInitializationState: vi.fn()
 }));

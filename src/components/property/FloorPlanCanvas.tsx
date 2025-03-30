@@ -128,13 +128,13 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
             />
           </ReliableCanvasContainer>
           
-          {/* Use the SimpleGrid React component */}
+          {/* Use the SimpleGrid React component properly */}
           {fabricCanvas && (
             <SimpleGrid 
               canvas={fabricCanvas} 
               showControls={true}
-              onGridCreated={handleGridCreated}
               defaultVisible={true}
+              onGridCreated={handleGridCreated}
             />
           )}
         </CanvasControllerProvider>
