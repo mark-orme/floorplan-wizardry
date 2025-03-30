@@ -91,7 +91,7 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     });
     
     // Ensure grid exists on canvas
-    ensureGridVisibility(canvas, gridObjectsRef);
+    ensureGridVisibility(canvas, gridObjectsRef.current);
     
     canvas.requestRenderAll();
   }, [canvas, visible]);

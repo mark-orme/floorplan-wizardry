@@ -7,21 +7,45 @@
 
 // Export from gridCreationUtils
 export {
-  createBasicEmergencyGrid,
-  createCompleteGrid,
-  createEnhancedGrid,
+  ensureGrid,
   verifyGridExists,
   validateGrid,
-  retryWithBackoff,
-  reorderGridObjects,
-  ensureGrid
+  reorderGridObjects
 } from './gridCreationUtils';
+
+// Export from gridRenderers
+export {
+  createBasicEmergencyGrid,
+  createCompleteGrid,
+  createEnhancedGrid
+} from './gridRenderers';
+
+// Export from gridRetryUtils
+export {
+  retryWithBackoff,
+  executeWithTimeout
+} from './gridRetryUtils';
+
+// Export from gridBasics
+export {
+  createBasicGrid,
+  clearGrid,
+  isCanvasValidForGrid,
+  createSimpleGrid
+} from './gridBasics';
 
 // Export from simpleGridCreator
 export {
   createReliableGrid,
   ensureGridVisibility
 } from './simpleGridCreator';
+
+// Export from gridDiagnostics
+export {
+  runGridDiagnostics,
+  applyGridFixes,
+  emergencyGridFix
+} from './gridDiagnostics';
 
 // Export from exports
 export { 
@@ -32,10 +56,3 @@ export {
 
 // Export types
 export type { GridOptions } from '../canvasGrid';
-
-// Export from simpleGrid
-export {
-  createSimpleGrid,
-  clearGrid,
-  isCanvasValidForGrid
-} from './simpleGrid';

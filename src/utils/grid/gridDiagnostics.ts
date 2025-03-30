@@ -1,6 +1,6 @@
 
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createBasicEmergencyGrid } from './gridCreationUtils';
+import { createBasicEmergencyGrid } from './gridRenderers';
 
 /**
  * Check grid health
@@ -110,7 +110,7 @@ export const emergencyGridFix = (
   if (!canvas) return false;
   
   try {
-    // Clear existing grid
+    // Clear existing grid first
     if (gridLayerRef.current.length > 0) {
       gridLayerRef.current.forEach(obj => {
         if (canvas.contains(obj)) {
@@ -131,7 +131,7 @@ export const emergencyGridFix = (
     
     return false;
   } catch (error) {
-    console.error("Error in emergencyGridFix:", error);
+    console.error("Error in emergency grid fix:", error);
     return false;
   }
 };

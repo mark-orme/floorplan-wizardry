@@ -49,7 +49,7 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
       if (!canvas) return;
       
       // Ensure grid is visible
-      ensureGridVisibility(canvas, gridLayerRef);
+      ensureGridVisibility(canvas, gridLayerRef.current);
       
       lastCheckRef.current = now;
     };

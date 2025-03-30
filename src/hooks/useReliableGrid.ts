@@ -5,7 +5,7 @@
  */
 import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createSimpleGrid, clearGrid } from "@/utils/grid/simpleGrid";
+import { createSimpleGrid, clearGrid } from "@/utils/grid/gridBasics";
 import { ensureGridVisibility } from "@/utils/grid/simpleGridCreator";
 import logger from "@/utils/logger";
 
@@ -77,7 +77,7 @@ export const useReliableGrid = ({
     if (!canvas) return false;
     
     try {
-      return ensureGridVisibility(canvas, gridLayerRef);
+      return ensureGridVisibility(canvas, gridLayerRef.current);
     } catch (error) {
       logger.error("Error ensuring grid visibility:", error);
       return false;
