@@ -33,3 +33,10 @@ export {
 
 // Export types
 export type { GridOptions } from '../canvasGrid';
+
+// Export from simpleGrid
+export {
+  createSimpleGrid,
+  clearGrid,
+  isCanvasValidForGrid
+} from './simpleGrid';

@@ -10,7 +10,7 @@ import { ReliableCanvasContainer } from "@/components/canvas/ReliableCanvasConta
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { Canvas as CanvasComponent } from "@/components/Canvas";
 import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid"; // Import the React component
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid"; // React component import
 import { resetGridProgress } from "@/utils/gridManager";
 import { useCanvasInitialization } from "./canvas/useCanvasInitialization";
 import { useDebugPanel } from "./canvas/useDebugPanel";

@@ -45,7 +45,10 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
       Object.assign(line, { objectType: 'grid', gridType: 'small' });
       
       canvas.add(line);
-      canvas.sendToBack(line);
+      // Use sendObjectToBack instead of sendToBack
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(line);
+      }
       gridObjects.push(line);
     }
     
@@ -63,7 +66,10 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
       Object.assign(line, { objectType: 'grid', gridType: 'small' });
       
       canvas.add(line);
-      canvas.sendToBack(line);
+      // Use sendObjectToBack instead of sendToBack
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(line);
+      }
       gridObjects.push(line);
     }
     
@@ -84,7 +90,10 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
       Object.assign(line, { objectType: 'grid', gridType: 'large' });
       
       canvas.add(line);
-      canvas.sendToBack(line);
+      // Use sendObjectToBack instead of sendToBack
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(line);
+      }
       gridObjects.push(line);
     }
     
@@ -102,7 +111,10 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
       Object.assign(line, { objectType: 'grid', gridType: 'large' });
       
       canvas.add(line);
-      canvas.sendToBack(line);
+      // Use sendObjectToBack instead of sendToBack
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(line);
+      }
       gridObjects.push(line);
     }
     

@@ -95,7 +95,10 @@ export const ensureGridVisibility = (
         // Add object back to canvas if missing
         try {
           canvas.add(obj);
-          canvas.sendToBack(obj);
+          // Use sendObjectToBack instead of sendToBack for newer Fabric.js versions
+          if (canvas.sendObjectToBack) {
+            canvas.sendObjectToBack(obj);
+          }
           objectsAdded++;
         } catch (error) {
           logger.error("Error adding grid object back to canvas:", error);

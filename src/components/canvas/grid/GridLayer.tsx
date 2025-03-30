@@ -32,16 +32,15 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   // Create ref to pass to useReliableGrid
   const fabricCanvasRef = { current: fabricCanvas };
   
-  // Initialize grid with our new reliable grid hook
+  // Initialize grid with our reliable grid hook
   const { 
     gridLayerRef, 
     createGrid, 
-    gridInitialized, 
-    isCreatingGrid,
-    gridObjectCount 
+    isInitialized,
+    ensureVisibility,
+    clearGrid
   } = useReliableGrid({
-    fabricCanvasRef,
-    canvasDimensions: dimensions
+    fabricCanvasRef
   });
   
   // More aggressive grid creation on component mount
@@ -86,7 +85,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   // Refresh grid periodically with better error handling
   useEffect(() => {
     // Initial check - make sure we have a grid
-    if (fabricCanvas && (!gridInitialized || gridLayerRef.current.length === 0)) {
+    if (fabricCanvas && (!isInitialized || gridLayerRef.current.length === 0)) {
       console.log("No grid detected on mount, creating grid...");
       safeCreateGrid();
     }
@@ -97,7 +96,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       
       if (fabricCanvas) {
         // If no grid at all, try to create it
-        if (!gridInitialized || gridLayerRef.current.length === 0) {
+        if (!isInitialized || gridLayerRef.current.length === 0) {
           console.log("No grid detected during periodic check, creating grid...");
           safeCreateGrid();
         }
@@ -110,7 +109,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     }, 2000);
     
     return () => clearInterval(gridCheckInterval);
-  }, [fabricCanvas, gridInitialized, gridLayerRef, safeCreateGrid]);
+  }, [fabricCanvas, isInitialized, gridLayerRef, safeCreateGrid]);
   
   // Handle manual refresh
   const handleRefreshGrid = () => {
@@ -132,7 +131,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         <div className="absolute top-2 right-2 bg-white/95 p-3 rounded shadow text-xs z-10">
           <div className="font-bold mb-1">Grid Status</div>
           <div>Grid objects: {gridLayerRef.current.length}</div>
-          <div>Status: {gridInitialized ? 'Initialized' : 'Not initialized'}</div>
+          <div>Status: {isInitialized ? 'Initialized' : 'Not initialized'}</div>
           <div>Checks: {checkCount}</div>
           {lastError && (
             <div className="text-red-500 mt-1">Error: {lastError}</div>
@@ -141,7 +140,6 @@ export const GridLayer: React.FC<GridLayerProps> = ({
             size="sm"
             variant="outline"
             className="mt-2 text-xs h-7 px-2"
-            disabled={isCreatingGrid}
             onClick={handleRefreshGrid}
           >
             <RefreshCw className="h-3 w-3 mr-1" />
