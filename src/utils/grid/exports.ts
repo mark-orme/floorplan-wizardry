@@ -13,14 +13,9 @@ import {
   createBasicEmergencyGrid,
   createCompleteGrid,
   verifyGridExists,
-  validateGrid,
   retryWithBackoff,
   reorderGridObjects,
-  ensureGrid,
-  createGridLayer,
-  createFallbackGrid,
-  hasCompleteGrid,
-  forceGridRender
+  ensureGrid
 } from '../gridCreationUtils';
 
 // Direct named exports from gridValidation
@@ -39,13 +34,10 @@ import {
 export const GridCreation = {
   createSmallScaleGrid: createCompleteGrid,
   createLargeScaleGrid: createCompleteGrid,
-  createGridLayer,
-  createFallbackGrid,
-  createBasicEmergencyGrid
+  ensureGrid
 };
 
 export const GridValidation = {
-  validateGridObjects: validateGrid,
   validateCanvas,
   validateGridState
 };
@@ -59,17 +51,12 @@ export const GridDebug = {
 export {
   createCompleteGrid,
   createBasicEmergencyGrid,
-  validateGrid,
   verifyGridExists,
   retryWithBackoff,
   reorderGridObjects,
   ensureGrid,
-  createGridLayer,
-  createFallbackGrid,
   validateCanvas,
   validateGridState,
   dumpGridState,
-  forceCreateGrid,
-  hasCompleteGrid,
-  forceGridRender
+  forceCreateGrid
 };

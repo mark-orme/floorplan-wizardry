@@ -7,6 +7,9 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { GridAttemptTracker } from "./gridAttemptTracker";
 
+// Re-export GridAttemptTracker for use in index.ts
+export { GridAttemptTracker };
+
 /**
  * Props for useGridManagement hook
  */

@@ -1,110 +1,44 @@
 
 /**
  * Grid validation utilities
- * @module grid/gridValidation
+ * @module utils/grid/gridValidation
  */
-
-import { Canvas } from "fabric";
-import logger from "../logger";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 
 /**
  * Validate canvas for grid creation
- * Ensures the canvas is in a valid state for creating a grid
- * 
- * @param {Canvas} canvas - Canvas to validate
- * @returns {boolean} Whether canvas is valid
+ * @param {FabricCanvas} canvas - Canvas to validate
+ * @returns {boolean} True if canvas is valid
  */
-export const validateCanvas = (canvas: Canvas): boolean => {
-  // Check if canvas exists
-  if (!canvas) {
-    logger.error("Canvas validation failed: No canvas provided");
-    console.error("Canvas validation failed: No canvas provided");
+export const validateCanvas = (canvas: FabricCanvas): boolean => {
+  if (!canvas) return false;
+  
+  try {
+    // Check if canvas has valid dimensions
+    const width = canvas.getWidth ? canvas.getWidth() : canvas.width;
+    const height = canvas.getHeight ? canvas.getHeight() : canvas.height;
+    
+    return Boolean(width && height && width > 0 && height > 0);
+  } catch (error) {
+    console.error("Error validating canvas:", error);
     return false;
   }
-  
-  // Check if canvas has valid dimensions
-  if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
-    logger.error(`Canvas validation failed: Invalid dimensions (${canvas.width}x${canvas.height})`);
-    console.error(`Canvas validation failed: Invalid dimensions (${canvas.width}x${canvas.height})`);
-    return false;
-  }
-  
-  // Check if canvas is disposed - using correct property 'disposed' instead of 'isDisposed'
-  if (canvas.disposed) {
-    logger.error("Canvas validation failed: Canvas is disposed");
-    console.error("Canvas validation failed: Canvas is disposed");
-    return false;
-  }
-  
-  return true;
 };
 
 /**
  * Validate grid state
- * Checks if grid objects are correctly attached to the canvas
- * 
- * @param {Canvas} canvas - Canvas to check
- * @param {Array} gridObjects - Grid objects to validate
- * @returns {Object} Validation result
+ * @param {FabricCanvas} canvas - Canvas to validate
+ * @param {FabricObject[]} gridObjects - Grid objects to validate
+ * @returns {boolean} True if grid state is valid
  */
-export const validateGridState = (canvas: Canvas, gridObjects: any[]): { 
-  valid: boolean; 
-  onCanvas: number; 
-  missing: number;
-  details: string;
-} => {
-  if (!canvas || !gridObjects) {
-    return { 
-      valid: false, 
-      onCanvas: 0, 
-      missing: 0,
-      details: "Invalid canvas or grid objects"
-    };
-  }
+export const validateGridState = (canvas: FabricCanvas, gridObjects: FabricObject[]): boolean => {
+  if (!canvas || !gridObjects || !Array.isArray(gridObjects)) return false;
   
-  // Count objects on canvas
-  const onCanvas = gridObjects.filter(obj => obj && canvas.contains(obj)).length;
-  const missing = gridObjects.length - onCanvas;
+  // Check if grid has objects
+  if (gridObjects.length === 0) return false;
   
-  // Grid is valid if at least 90% of objects are on canvas
-  const valid = onCanvas >= gridObjects.length * 0.9;
+  // Check if grid objects are on canvas
+  const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
   
-  return {
-    valid,
-    onCanvas,
-    missing,
-    details: `Grid has ${onCanvas}/${gridObjects.length} objects on canvas`
-  };
-};
-
-/**
- * Validate canvas for grid creation
- * More thorough validation checking additional properties
- * 
- * @param {Canvas} canvas - Canvas to validate
- * @returns {boolean} Whether canvas is valid for grid creation
- */
-export const validateCanvasForGrid = (canvas: Canvas): boolean => {
-  if (!validateCanvas(canvas)) {
-    return false;
-  }
-  
-  // Additional checks for grid creation
-  try {
-    // Check if canvas has required methods for grid creation
-    if (typeof canvas.add !== 'function' || 
-        typeof canvas.remove !== 'function' ||
-        typeof canvas.contains !== 'function' ||
-        typeof canvas.requestRenderAll !== 'function') {
-      logger.error("Canvas validation failed: Missing required methods");
-      console.error("Canvas validation failed: Missing required methods");
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    logger.error("Canvas validation error:", error);
-    console.error("Canvas validation error:", error);
-    return false;
-  }
+  return objectsOnCanvas.length > 0;
 };

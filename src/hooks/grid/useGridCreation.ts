@@ -112,15 +112,8 @@ export const useGridCreation = ({
     resetGridProgress();
     
     try {
-      // Create the grid by direct call to canvasGrid.ts
-      const grid = createGrid(
-        canvas, 
-        gridLayerRef, 
-        canvasDimensions, 
-        setDebugInfo, 
-        setHasError, 
-        setErrorMessage
-      );
+      // Create the grid by direct call to canvasGrid.ts - simplified to just pass canvas
+      const grid = createGrid(canvas);
       
       // IMPROVED: More detailed logging of grid creation results
       console.log("⚠️ createGrid returned:", {
@@ -134,6 +127,9 @@ export const useGridCreation = ({
       
       if (grid && grid.length > 0) {
         console.log(`✅ Grid created successfully with ${grid.length} objects`);
+        
+        // Store grid in reference
+        gridLayerRef.current = grid;
         
         // Force a render
         canvas.requestRenderAll();

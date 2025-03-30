@@ -65,3 +65,33 @@ export const setLastError = (tracker: GridAttemptTracker, error: string): GridAt
   ...tracker,
   lastError: error
 });
+
+/**
+ * Increment attempt count
+ * @param {GridAttemptTracker} tracker - Current tracker state
+ * @returns {GridAttemptTracker} Updated tracker state
+ */
+export const incrementAttemptCount = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+  ...tracker,
+  totalAttempts: tracker.totalAttempts + 1
+});
+
+/**
+ * Mark creation as successful
+ * @param {GridAttemptTracker} tracker - Current tracker state
+ * @returns {GridAttemptTracker} Updated tracker state
+ */
+export const markCreationSuccessful = (tracker: GridAttemptTracker): GridAttemptTracker => ({
+  ...tracker,
+  successfulAttempts: tracker.successfulAttempts + 1
+});
+
+/**
+ * Check if maximum attempts reached
+ * @param {GridAttemptTracker} tracker - Current tracker state
+ * @param {number} maxAttempts - Maximum allowed attempts
+ * @returns {boolean} True if max attempts reached
+ */
+export const isMaxAttemptsReached = (tracker: GridAttemptTracker, maxAttempts = 3): boolean => {
+  return tracker.totalAttempts >= maxAttempts;
+};

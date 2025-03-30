@@ -4,7 +4,7 @@
  * @module hooks/grid-management/useGridCreationAttempt
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { toast } from "sonner";
 import logger from "@/utils/logger";
 import { GridAttemptTracker, incrementTotalAttempts, incrementSuccessfulAttempts, setLastError } from "./gridAttemptTracker";
@@ -57,7 +57,7 @@ export const useGridCreationAttempt = (
       
       // Simple horizontal lines
       for (let i = 0; i <= height; i += gridSize) {
-        const line = new fabric.Line([0, i, width, i], {
+        const line = new Line([0, i, width, i], {
           stroke: '#e5e5e5',
           selectable: false,
           evented: false,
@@ -70,7 +70,7 @@ export const useGridCreationAttempt = (
       
       // Simple vertical lines
       for (let i = 0; i <= width; i += gridSize) {
-        const line = new fabric.Line([i, 0, i, height], {
+        const line = new Line([i, 0, i, height], {
           stroke: '#e5e5e5',
           selectable: false,
           evented: false,

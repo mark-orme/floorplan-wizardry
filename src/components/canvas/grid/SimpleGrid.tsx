@@ -1,4 +1,3 @@
-
 /**
  * Simple Grid Component
  * Renders a reliable grid on the canvas with refresh controls
@@ -11,7 +10,11 @@ import { toast } from "sonner";
 import { createGridElements } from "@/utils/grid/createGridElements";
 import { captureError } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
-import { startGridCreation, finishGridCreation, handleGridCreationError, resetGridProgress } from "@/utils/gridManager";
+import { 
+  resetGridProgress, 
+  isGridCreationInProgress, 
+  setGridProgress 
+} from "@/utils/gridManager";
 
 interface SimpleGridProps {
   /** The fabric canvas instance */
@@ -63,13 +66,15 @@ export const SimpleGrid = ({
     }
     
     // Attempt to acquire grid creation lock
-    if (!startGridCreation()) {
+    if (isGridCreationInProgress()) {
       console.log("Grid creation locked, skipping");
       toast.info("Grid creation already in progress");
       return;
     }
     
     try {
+      // Set grid creation in progress
+      setGridProgress(true);
       setIsCreating(true);
       refreshAttemptRef.current += 1;
       
@@ -108,8 +113,11 @@ export const SimpleGrid = ({
         // Update visibility
         setVisibility(isVisible, newGridObjects);
         
-        // Save instance
-        finishGridCreation(instanceIdRef.current, newGridObjects);
+        // Complete grid creation
+        setGridProgress(false);
+        
+        // Log success
+        console.log(`Grid created with instance ${instanceIdRef.current}: ${newGridObjects.length} objects`);
         
         // Notify parent
         if (onGridCreated) {
@@ -159,10 +167,11 @@ export const SimpleGrid = ({
       // Show error toast
       toast.error(`Grid creation error: ${error instanceof Error ? error.message : "Unknown error"}`);
       
-      // Handle creation error in grid manager
-      handleGridCreationError(error instanceof Error ? error : new Error(String(error)));
+      // Reset grid progress
+      resetGridProgress();
     } finally {
       setIsCreating(false);
+      setGridProgress(false);
     }
   };
   
