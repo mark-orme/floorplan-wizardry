@@ -10,6 +10,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import type { FloorPlan, Stroke, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 import type { Point } from '@/types/core/Point';
+import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 
 /**
  * Props for the useFloorPlanDrawing hook
@@ -17,9 +18,9 @@ import type { Point } from '@/types/core/Point';
  */
 interface UseFloorPlanDrawingProps {
   /** Reference to the Fabric canvas instance */
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  /** Initial drawing tool */
-  initialTool?: DrawingMode;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Current drawing tool */
+  tool: DrawingMode;
   /** Initial line color */
   initialLineColor?: string;
   /** Initial line thickness */
@@ -44,7 +45,7 @@ interface UseFloorPlanDrawingProps {
  */
 interface UseFloorPlanDrawingResult {
   /** Draw a floor plan on canvas */
-  drawFloorPlan: (canvas: FabricCanvas, floorPlan: any) => void;
+  drawFloorPlan: (canvas: FabricCanvas, floorPlan: FloorPlan) => void;
   /** Whether currently drawing */
   isDrawing: boolean;
   /** Current drawing points */
@@ -75,18 +76,22 @@ interface UseFloorPlanDrawingResult {
  * @returns {UseFloorPlanDrawingResult} Drawing management utilities
  */
 export const useFloorPlanDrawing = (
-  props?: UseFloorPlanDrawingProps
+  props: UseFloorPlanDrawingProps
 ): UseFloorPlanDrawingResult => {
+  const { fabricCanvasRef, tool } = props;
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingPoints, setDrawingPoints] = useState<Point[]>([]);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
   
+  // Use snapping functionality
+  const { snapPointToGrid } = useSnapToGrid();
+  
   /**
    * Draw a floor plan on the canvas
    * @param {FabricCanvas} canvas - The fabric canvas instance
-   * @param {any} floorPlan - Floor plan data to draw
+   * @param {FloorPlan} floorPlan - Floor plan data to draw
    */
-  const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: any): void => {
+  const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan): void => {
     logger.info(`Drawing floor plan: ${floorPlan.id}`);
     
     // Implementation would go here in a real system
@@ -122,10 +127,13 @@ export const useFloorPlanDrawing = (
    * @param {Point} point - Starting point
    */
   const startDrawing = useCallback((point: Point): void => {
+    // Apply grid snapping if enabled
+    const snappedPoint = snapPointToGrid(point);
+    
     setIsDrawing(true);
-    setDrawingPoints([point]);
-    setCurrentPoint(point);
-  }, []);
+    setDrawingPoints([snappedPoint]);
+    setCurrentPoint(snappedPoint);
+  }, [snapPointToGrid]);
   
   /**
    * Alias for startDrawing
@@ -142,9 +150,12 @@ export const useFloorPlanDrawing = (
   const continueDrawing = useCallback((point: Point): void => {
     if (!isDrawing) return;
     
-    setDrawingPoints(prev => [...prev, point]);
-    setCurrentPoint(point);
-  }, [isDrawing]);
+    // Apply grid snapping if enabled
+    const snappedPoint = snapPointToGrid(point);
+    
+    setDrawingPoints(prev => [...prev, snappedPoint]);
+    setCurrentPoint(snappedPoint);
+  }, [isDrawing, snapPointToGrid]);
   
   /**
    * End drawing at a point
@@ -153,19 +164,22 @@ export const useFloorPlanDrawing = (
   const endDrawing = useCallback((point: Point): void => {
     if (!isDrawing) return;
     
-    setDrawingPoints(prev => [...prev, point]);
+    // Apply grid snapping if enabled
+    const snappedPoint = snapPointToGrid(point);
+    
+    setDrawingPoints(prev => [...prev, snappedPoint]);
     setCurrentPoint(null);
     setIsDrawing(false);
     
     // Save the drawing
-    if (props?.setFloorPlan && props.floorPlan) {
+    if (props.setFloorPlan && props.floorPlan) {
       props.setFloorPlan(prev => ({
         ...prev,
         strokes: [
           ...prev.strokes,
           {
             id: `stroke-${Date.now()}`,
-            points: [...drawingPoints, point],
+            points: [...drawingPoints, snappedPoint],
             type: 'line' as StrokeTypeLiteral,
             color: '#000000',
             thickness: 2,
@@ -173,7 +187,7 @@ export const useFloorPlanDrawing = (
           }
         ]
       }));
-    } else if (props?.setFloorPlans && props.floorPlans && typeof props.currentFloor === 'number') {
+    } else if (props.setFloorPlans && props.floorPlans && typeof props.currentFloor === 'number') {
       props.setFloorPlans(prev => {
         const newFloorPlans = [...prev];
         const currentFloorPlan = newFloorPlans[props.currentFloor as number];
@@ -184,7 +198,7 @@ export const useFloorPlanDrawing = (
               ...currentFloorPlan.strokes,
               {
                 id: `stroke-${Date.now()}`,
-                points: [...drawingPoints, point],
+                points: [...drawingPoints, snappedPoint],
                 type: 'line' as StrokeTypeLiteral,
                 color: '#000000',
                 thickness: 2,
@@ -196,7 +210,7 @@ export const useFloorPlanDrawing = (
         return newFloorPlans;
       });
     }
-  }, [isDrawing, props, drawingPoints]);
+  }, [isDrawing, props, drawingPoints, snapPointToGrid]);
   
   /**
    * Cancel the current drawing
@@ -212,12 +226,12 @@ export const useFloorPlanDrawing = (
    * @param {Stroke} stroke - Stroke to add
    */
   const addStroke = useCallback((stroke: Stroke): void => {
-    if (props?.setFloorPlan && props.floorPlan) {
+    if (props.setFloorPlan && props.floorPlan) {
       props.setFloorPlan(prev => ({
         ...prev,
         strokes: [...prev.strokes, stroke]
       }));
-    } else if (props?.setFloorPlans && props.floorPlans && typeof props.currentFloor === 'number') {
+    } else if (props.setFloorPlans && props.floorPlans && typeof props.currentFloor === 'number') {
       props.setFloorPlans(prev => {
         const newFloorPlans = [...prev];
         const currentFloorPlan = newFloorPlans[props.currentFloor as number];
@@ -241,11 +255,11 @@ export const useFloorPlanDrawing = (
     // This is a stub
     const areas: number[] = [];
     
-    if (props?.floorPlan) {
+    if (props.floorPlan) {
       // Calculate from single floor plan
       // For now, just return a mock value
       areas.push(100);
-    } else if (props?.floorPlans && typeof props.currentFloor === 'number') {
+    } else if (props.floorPlans && typeof props.currentFloor === 'number') {
       // Calculate from multiple floor plans
       const currentFloorPlan = props.floorPlans[props.currentFloor];
       if (currentFloorPlan) {

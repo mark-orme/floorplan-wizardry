@@ -1,10 +1,9 @@
-
 /**
  * Custom hook for grid snapping functionality
  * @module useSnapToGrid
  */
 import { useState, useCallback } from 'react';
-import { Point } from '@/types/geometryTypes';
+import type { Point } from '@/types/geometryTypes';
 import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
@@ -91,8 +90,22 @@ export function useSnapToGrid(): UseSnapToGridResult {
     const snappedStart = snapPointToGrid(start);
     const snappedEnd = snapPointToGrid(end);
     
+    // If auto-straightening is enabled, check if we should make the line horizontal or vertical
+    if (isAutoStraightened) {
+      const dx = Math.abs(snappedEnd.x - snappedStart.x);
+      const dy = Math.abs(snappedEnd.y - snappedStart.y);
+      
+      // If the x distance is greater than the y distance, make it horizontal
+      if (dx > dy) {
+        return { start: snappedStart, end: { x: snappedEnd.x, y: snappedStart.y } };
+      } else {
+        // Otherwise make it vertical
+        return { start: snappedStart, end: { x: snappedStart.x, y: snappedEnd.y } };
+      }
+    }
+    
     return { start: snappedStart, end: snappedEnd };
-  }, [snapEnabled, snapPointToGrid]);
+  }, [snapEnabled, isAutoStraightened, snapPointToGrid]);
 
   return {
     snapEnabled,

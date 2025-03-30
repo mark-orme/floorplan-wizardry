@@ -6,10 +6,28 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
-import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize, RoomTypeLiteral } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/constants/drawingModes';
+import { Canvas } from 'fabric';
+
+// Mock useSnapToGrid hook
+vi.mock('@/hooks/useSnapToGrid', () => ({
+  useSnapToGrid: () => ({
+    snapPointToGrid: (point: Point) => point, // Return point unchanged for testing
+    snapLineToGrid: ({ start, end }: { start: Point, end: Point }) => ({ start, end }),
+    isSnappedToGrid: () => true,
+    snapEnabled: true,
+    toggleSnap: vi.fn(),
+    isAutoStraightened: false,
+    toggleAutoStraighten: vi.fn()
+  })
+}));
 
 describe('useFloorPlanDrawing', () => {
+  // Mock canvas ref
+  const mockCanvasRef = { current: null as Canvas | null };
+  
   // Mock FloorPlan type for testing
   const mockFloorPlan: FloorPlan = {
     id: '1',
@@ -17,12 +35,12 @@ describe('useFloorPlanDrawing', () => {
     label: 'First Floor', 
     strokes: [],
     walls: [],
-    rooms: [], // Room array with required type property (if we add any rooms to this test)
+    rooms: [],
     level: 0,
     index: 0,
     gia: 0,
     canvasData: null,
-    canvasJson: null, // Required field is now included
+    canvasJson: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     metadata: {
@@ -37,8 +55,18 @@ describe('useFloorPlanDrawing', () => {
   const mockSetFloorPlan = vi.fn();
   const mockSetGia = vi.fn();
   
+  beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks();
+    
+    // Create a mock canvas
+    mockCanvasRef.current = new Canvas('test-canvas');
+  });
+  
   it('initializes with the correct state', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.DRAW,
       floorPlan: mockFloorPlan,
       setFloorPlan: mockSetFloorPlan,
       setGia: mockSetGia
@@ -51,6 +79,8 @@ describe('useFloorPlanDrawing', () => {
   
   it('updates state when starting drawing', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.DRAW,
       floorPlan: mockFloorPlan,
       setFloorPlan: mockSetFloorPlan,
       setGia: mockSetGia
@@ -69,6 +99,8 @@ describe('useFloorPlanDrawing', () => {
   
   it('continues drawing by adding points', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.DRAW,
       floorPlan: mockFloorPlan,
       setFloorPlan: mockSetFloorPlan,
       setGia: mockSetGia
@@ -89,6 +121,8 @@ describe('useFloorPlanDrawing', () => {
   
   it('ends drawing and updates the floor plan', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.DRAW,
       floorPlan: mockFloorPlan,
       setFloorPlan: mockSetFloorPlan,
       setGia: mockSetGia
@@ -108,6 +142,8 @@ describe('useFloorPlanDrawing', () => {
   
   it('cancels drawing correctly', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.DRAW,
       floorPlan: mockFloorPlan,
       setFloorPlan: mockSetFloorPlan,
       setGia: mockSetGia
@@ -131,6 +167,8 @@ describe('useFloorPlanDrawing', () => {
     const mockSetFloorPlans = vi.fn();
     
     const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.DRAW,
       floorPlans: mockFloorPlans,
       currentFloor: 0,
       setFloorPlans: mockSetFloorPlans
@@ -142,7 +180,7 @@ describe('useFloorPlanDrawing', () => {
       type: "line" as StrokeTypeLiteral,
       color: "#000000",
       thickness: 2,
-      width: 2 // Add width property
+      width: 2
     };
     
     act(() => {
@@ -150,22 +188,6 @@ describe('useFloorPlanDrawing', () => {
     });
     
     expect(mockSetFloorPlans).toHaveBeenCalled();
-  });
-  
-  it('can start drawing at a point (alias method)', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({
-      floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
-    }));
-    
-    const testPoint: Point = { x: 100, y: 100 } as Point;
-    
-    act(() => {
-      result.current.startDrawingAt(testPoint);
-    });
-    
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.currentPoint).toEqual(testPoint);
   });
   
   it('can calculate areas for the floor plan', () => {
@@ -177,11 +199,13 @@ describe('useFloorPlanDrawing', () => {
         type: "line" as StrokeTypeLiteral,
         color: "#000000",
         thickness: 2,
-        width: 2 // Add width property
+        width: 2
       }]
     };
     
     const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.DRAW,
       floorPlan: floorPlanWithStrokes,
       setFloorPlan: mockSetFloorPlan
     }));

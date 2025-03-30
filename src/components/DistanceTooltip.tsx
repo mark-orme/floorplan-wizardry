@@ -5,7 +5,7 @@
  * @module components/DistanceTooltip
  */
 import React from 'react';
-import { Point } from '@/types/geometryTypes';
+import type { Point } from '@/types/geometryTypes';
 
 /**
  * Constants for distance tooltip
@@ -30,7 +30,10 @@ const TOOLTIP_CONSTANTS = {
   BORDER_RADIUS: 4,
   
   /** Tooltip offset from line */
-  OFFSET: 10
+  OFFSET: 10,
+  
+  /** Pixels per meter conversion factor */
+  PIXELS_PER_METER: 100
 };
 
 /**
@@ -42,13 +45,15 @@ interface DistanceTooltipProps {
   /** End point of the measurement */
   endPoint: Point;
   /** Distance in pixels */
-  distance: number;
+  distance?: number;
   /** Unit of measurement */
   unit?: string;
   /** Whether tooltip is visible */
   visible?: boolean;
   /** Position adjustment factor */
   positionAdjust?: number;
+  /** Conversion factor from pixels to measurement units */
+  pixelsPerUnit?: number;
 }
 
 /**
@@ -61,10 +66,11 @@ interface DistanceTooltipProps {
 export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
   startPoint,
   endPoint,
-  distance,
-  unit = 'px',
+  distance: propDistance,
+  unit = 'm',
   visible = true,
-  positionAdjust = TOOLTIP_CONSTANTS.OFFSET
+  positionAdjust = TOOLTIP_CONSTANTS.OFFSET,
+  pixelsPerUnit = TOOLTIP_CONSTANTS.PIXELS_PER_METER
 }) => {
   if (!visible) return null;
   
@@ -72,8 +78,17 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
   const midX = (startPoint.x + endPoint.x) / 2;
   const midY = (startPoint.y + endPoint.y) / 2;
   
+  // Calculate distance if not provided
+  const distance = propDistance !== undefined ? propDistance : Math.sqrt(
+    Math.pow(endPoint.x - startPoint.x, 2) + 
+    Math.pow(endPoint.y - startPoint.y, 2)
+  );
+  
+  // Convert distance from pixels to measurement units
+  const convertedDistance = distance / pixelsPerUnit;
+  
   // Format the distance
-  const formattedDistance = distance.toFixed(2);
+  const formattedDistance = convertedDistance.toFixed(2);
   
   // Calculate style for tooltip
   const tooltipStyle: React.CSSProperties = {
