@@ -16,6 +16,9 @@ import { resetInitializationState } from "@/utils/canvas/safeCanvasInitializatio
 import { useGridDiagnosticLogger } from "@/hooks/useGridDiagnosticLogger";
 import logger from "@/utils/logger";
 import { BasicGrid } from "@/components/BasicGrid";
+import { DistanceTooltip } from "@/components/DistanceTooltip";
+import { snapToGrid, snapToAngle } from "@/utils/grid/snapping";
+import { Point } from "@/types/geometryTypes";
 
 interface CanvasProps {
   width?: number;
@@ -38,6 +41,17 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const { setCanvas } = useCanvasContext();
   const [showDebug, setShowDebug] = useState(process.env.NODE_ENV === 'development');
+  const [currentMeasurement, setCurrentMeasurement] = useState<{
+    start: Point;
+    end: Point;
+    distance: number;
+    visible: boolean;
+  }>({
+    start: { x: 0, y: 0 },
+    end: { x: 0, y: 0 },
+    distance: 0,
+    visible: false
+  });
   
   // Use our simple grid hook
   const { 
@@ -67,6 +81,91 @@ export const Canvas: React.FC<CanvasProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Handle drawing events for snap-to-grid and measurements
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    // Function to convert event coordinates to canvas coordinates
+    const getCanvasPoint = (e: MouseEvent): Point => {
+      const canvasElement = fabricCanvas.getElement();
+      const rect = canvasElement.getBoundingClientRect();
+      const zoom = fabricCanvas.getZoom();
+      
+      return {
+        x: (e.clientX - rect.left) / zoom,
+        y: (e.clientY - rect.top) / zoom
+      };
+    };
+    
+    // Track start point for current drawing
+    let startPoint: Point | null = null;
+    
+    // Mouse down handler - start drawing and set start point
+    const handleMouseDown = (e: any) => {
+      if (!fabricCanvas.isDrawingMode) return;
+      
+      const canvasPoint = getCanvasPoint(e.e);
+      startPoint = snapToGrid(canvasPoint); // Snap to grid on drawing start
+      
+      // Reset measurement
+      setCurrentMeasurement({
+        start: startPoint,
+        end: startPoint,
+        distance: 0,
+        visible: true
+      });
+    };
+    
+    // Mouse move handler - update drawing and measurements
+    const handleMouseMove = (e: any) => {
+      if (!fabricCanvas.isDrawingMode || !startPoint) return;
+      
+      // Get current point and snap to grid
+      const canvasPoint = getCanvasPoint(e.e);
+      const snappedPoint = snapToGrid(canvasPoint);
+      
+      // Calculate distance for measurement tooltip
+      const dx = snappedPoint.x - startPoint.x;
+      const dy = snappedPoint.y - startPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Update measurement
+      setCurrentMeasurement({
+        start: startPoint,
+        end: snappedPoint,
+        distance,
+        visible: true
+      });
+    };
+    
+    // Mouse up handler - finalize drawing and hide measurement
+    const handleMouseUp = () => {
+      // Hide measurement after drawing is complete
+      setTimeout(() => {
+        setCurrentMeasurement(prev => ({
+          ...prev,
+          visible: false
+        }));
+      }, 1000);
+      
+      startPoint = null;
+    };
+    
+    // Register event handlers
+    fabricCanvas.on('mouse:down', handleMouseDown);
+    fabricCanvas.on('mouse:move', handleMouseMove);
+    fabricCanvas.on('mouse:up', handleMouseUp);
+    
+    // Cleanup handlers on unmount
+    return () => {
+      if (fabricCanvas) {
+        fabricCanvas.off('mouse:down', handleMouseDown);
+        fabricCanvas.off('mouse:move', handleMouseMove);
+        fabricCanvas.off('mouse:up', handleMouseUp);
+      }
+    };
+  }, [fabricCanvas]);
 
   // Canvas initialization effect with improved error handling
   useEffect(() => {
@@ -187,8 +286,18 @@ export const Canvas: React.FC<CanvasProps> = ({
         data-testid="canvas"
       />
       
-      {/* Add our new BasicGrid component */}
+      {/* Add our BasicGrid component */}
       <BasicGrid fabricCanvas={fabricCanvas} />
+      
+      {/* Add measurement tooltip */}
+      {currentMeasurement.visible && (
+        <DistanceTooltip
+          startPoint={currentMeasurement.start}
+          endPoint={currentMeasurement.end}
+          distance={currentMeasurement.distance}
+          visible={currentMeasurement.visible}
+        />
+      )}
       
       {showDebug && fabricCanvas && (
         <div className="absolute top-2 right-2 bg-white/95 p-3 rounded shadow text-xs z-10">

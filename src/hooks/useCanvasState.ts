@@ -11,8 +11,10 @@ import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Re-export DrawingMode as DrawingTool for backward compatibility
+ * This is the canonical source for DrawingTool type across the app
  */
 export type DrawingTool = DrawingMode;
+export { DrawingMode };
 
 /**
  * Canvas state interface

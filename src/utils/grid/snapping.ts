@@ -13,7 +13,7 @@ import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
  * @param gridSize - The grid size to snap to
  * @returns Point snapped to the nearest grid intersection
  */
-export const snapPointToGrid = (point: Point, gridSize: number): Point => {
+export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
   const x = Math.round(point.x / gridSize) * gridSize;
   const y = Math.round(point.y / gridSize) * gridSize;
   
@@ -30,8 +30,8 @@ export const snapPointToGrid = (point: Point, gridSize: number): Point => {
  */
 export const isPointOnGrid = (
   point: Point, 
-  gridSize: number, 
-  threshold: number = 0.5
+  gridSize: number = GRID_SPACING.SMALL, 
+  threshold: number = SNAP_THRESHOLD
 ): boolean => {
   const xOnGrid = Math.abs(point.x % gridSize) < threshold || 
                  Math.abs(point.x % gridSize - gridSize) < threshold;
@@ -48,7 +48,7 @@ export const isPointOnGrid = (
  * @param gridSize - The grid size
  * @returns Object with x and y distances to nearest grid lines
  */
-export const distanceToGridLine = (point: Point, gridSize: number): { x: number, y: number } => {
+export const distanceToGridLine = (point: Point, gridSize: number = GRID_SPACING.SMALL): { x: number, y: number } => {
   const xDist = Math.min(
     point.x % gridSize,
     gridSize - (point.x % gridSize)
@@ -125,7 +125,7 @@ export const snapLineToStandardAngles = (
  * Snap a point to the nearest grid point
  * 
  * @param point - Point to snap
- * @param gridSize - Grid size (optional, defaults to SMALL grid)
+ * @param gridSize - Grid size (defaults to SMALL grid)
  * @returns Snapped point
  */
 export const snapToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {

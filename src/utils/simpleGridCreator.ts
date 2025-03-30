@@ -137,3 +137,17 @@ export function ensureGridVisible(
   
   return fixed;
 }
+
+/**
+ * Snap a point to the grid
+ */
+export function snapPointToGrid(
+  x: number, 
+  y: number, 
+  gridSize: number = 10
+): { x: number, y: number } {
+  return {
+    x: Math.round(x / gridSize) * gridSize,
+    y: Math.round(y / gridSize) * gridSize
+  };
+}

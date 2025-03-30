@@ -41,7 +41,7 @@ interface DistanceTooltipProps {
   startPoint: Point;
   /** End point of the measurement */
   endPoint: Point;
-  /** Distance in real-world units */
+  /** Distance in pixels */
   distance: number;
   /** Unit of measurement */
   unit?: string;
@@ -62,7 +62,7 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
   startPoint,
   endPoint,
   distance,
-  unit = 'm',
+  unit = 'px',
   visible = true,
   positionAdjust = TOOLTIP_CONSTANTS.OFFSET
 }) => {

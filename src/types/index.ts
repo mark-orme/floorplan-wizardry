@@ -12,6 +12,10 @@ export type { DebugInfoState } from './core/DebugInfo';
 export type { DrawingState } from './core/DrawingState';
 export type { GridCreationState } from './gridTypes';
 
+// Re-export from useCanvasState for canonical DrawingTool definition
+export type { DrawingTool } from '@/hooks/useCanvasState';
+export { DrawingMode } from '@/hooks/useCanvasState';
+
 // Re-export zoom-related types
 export type {
   ZoomDirection,
