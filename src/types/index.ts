@@ -39,10 +39,8 @@ export { createFloorPlan } from './core/FloorPlan';
 // Drawing types
 export type { default as GridCreationLock } from './grid/GridCreationLock';
 
-// Use export type for isolatedModules compatibility
-export type { FloorPlan as AppFloorPlan } from './floorPlanTypes';
-export type { StrokeType, StrokeTypeLiteral, PaperSize, Wall, Room } from './floorPlanTypes';
-export type { Point as GeometryPoint } from './geometryTypes';
+// Use export type for isolatedModules compatibility - explicitly import from floorPlanTypes
+export type { FloorPlan as AppFloorPlan, Wall, Room, Stroke, StrokeType, StrokeTypeLiteral, PaperSize, RoomTypeLiteral } from './floorPlanTypes';
 
 // Export zoom constants and types
 export { ZOOM_CONSTRAINTS } from './zoomTypes';

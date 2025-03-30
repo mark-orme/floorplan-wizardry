@@ -1,5 +1,11 @@
 
 /**
+ * Utility functions for floor plan operations
+ * @module utils/floorPlanUtils
+ */
+import { FloorPlan, PaperSize } from '@/types/floorPlanTypes';
+
+/**
  * Create a new floor plan with default values
  * @param id - Unique identifier for the floor plan
  * @param name - Name of the floor plan

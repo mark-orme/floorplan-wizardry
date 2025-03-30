@@ -4,7 +4,7 @@
  */
 
 import { Point } from './Point';
-import { StrokeType as AppStrokeType, StrokeTypeLiteral } from '../floorPlanTypes';
+import { StrokeType, StrokeTypeLiteral } from '../floorPlanTypes';
 
 /**
  * Paper size enum
