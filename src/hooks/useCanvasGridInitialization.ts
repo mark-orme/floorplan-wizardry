@@ -1,3 +1,4 @@
+
 /**
  * Hook for initializing canvas grid
  * @module useCanvasGridInitialization
@@ -45,8 +46,6 @@ export const useCanvasGridInitialization = ({
   // Grid layer reference to track grid objects
   const gridLayerRef = useRef<FabricObject[]>([]);
   
-  // Utility functions, event handlers, etc.
-
   /**
    * Initialize grid on canvas with error handling
    */
@@ -88,6 +87,7 @@ export const useCanvasGridInitialization = ({
         const result = createGrid(canvas);
         if (Array.isArray(result) && result.length > 0) {
           gridObjects = result;
+          gridLayerRef.current = result;
           console.log("✅ Grid created using provided createGrid function:", gridObjects.length, "objects");
         }
       } catch (createGridError) {
@@ -101,7 +101,8 @@ export const useCanvasGridInitialization = ({
         
         toast.error("⚠️ Grid failed to render - switching to emergency mode");
         
-        gridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+        gridObjects = createBasicEmergencyGrid(canvas);
+        gridLayerRef.current = gridObjects;
       }
       
       // Force render after grid is created
@@ -128,8 +129,9 @@ export const useCanvasGridInitialization = ({
       try {
         if (canvas) {
           console.log("🚨 Attempting emergency grid creation");
-          createBasicEmergencyGrid(canvas, gridLayerRef);
-          return gridLayerRef.current;
+          const emergencyGrid = createBasicEmergencyGrid(canvas);
+          gridLayerRef.current = emergencyGrid;
+          return emergencyGrid;
         }
       } catch (emergencyError) {
         logger.error("Emergency grid creation also failed:", emergencyError);

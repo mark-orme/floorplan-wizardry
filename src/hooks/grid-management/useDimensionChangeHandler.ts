@@ -1,20 +1,35 @@
 
 /**
- * Dimension change handler hook
- * Manages grid recreation when canvas dimensions change
+ * Hook for handling canvas dimension changes
  * @module grid-management/useDimensionChangeHandler
  */
-import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { resetGridProgress } from "@/utils/gridManager";
-import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
-import { MIN_ATTEMPT_INTERVAL } from "./constants";
+import { useEffect } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import logger from "@/utils/logger";
 
 /**
- * Hook for handling canvas dimension changes
- * 
- * @param {Object} params - Hook parameters
- * @returns {Object} Dimension change handler
+ * Props for the useDimensionChangeHandler hook
+ * @interface UseDimensionChangeHandlerProps
+ */
+interface UseDimensionChangeHandlerProps {
+  /** Current canvas dimensions */
+  canvasDimensions: { width: number; height: number };
+  /** Reference to Fabric canvas */
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Reference to grid layer objects */
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  /** Function to create grid elements */
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
+  /** Timestamp of last creation attempt */
+  lastAttemptTime: number;
+  /** Function to update last attempt timestamp */
+  updateLastAttemptTime: (time: number) => void;
+}
+
+/**
+ * Hook for handling dimension changes and grid recreation
+ * @param {UseDimensionChangeHandlerProps} props - Hook properties
+ * @returns {void}
  */
 export const useDimensionChangeHandler = ({
   canvasDimensions,
@@ -23,71 +38,81 @@ export const useDimensionChangeHandler = ({
   createGrid,
   lastAttemptTime,
   updateLastAttemptTime
-}: {
-  canvasDimensions: { width: number, height: number } | undefined,
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  gridLayerRef: React.MutableRefObject<any[]>,
-  createGrid: (canvas: FabricCanvas) => any[],
-  lastAttemptTime: number,
-  updateLastAttemptTime: (time: number) => void
-}) => {
-  /**
-   * Handle dimension changes with rate limiting
-   */
+}: UseDimensionChangeHandlerProps): void => {
+  // Update grid when canvas dimensions change
   useEffect(() => {
-    // Add null/undefined check for canvasDimensions
-    if (canvasDimensions && canvasDimensions.width > 0 && canvasDimensions.height > 0 && fabricCanvasRef.current) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Canvas dimensions changed, recreating grid", canvasDimensions);
-      }
+    // Skip if dimensions are zero or invalid
+    if (!canvasDimensions.width || !canvasDimensions.height || 
+        canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
+      return;
+    }
+    
+    // Skip if canvas not yet initialized
+    if (!fabricCanvasRef.current) {
+      return;
+    }
+    
+    logger.info("Canvas dimensions changed, updating grid");
+    
+    const now = Date.now();
+    
+    // Rate limit grid creation (at most once per second)
+    if (now - lastAttemptTime < 1000) {
+      logger.debug("Skipping grid creation - throttled");
+      return;
+    }
+    
+    // Update timestamp
+    updateLastAttemptTime(now);
+    
+    // Remove old grid objects
+    if (gridLayerRef.current.length > 0) {
+      logger.debug(`Removing ${gridLayerRef.current.length} old grid objects`);
       
-      // Check rate-limiting - don't create grid too frequently
-      const now = Date.now();
-      if (now - lastAttemptTime < MIN_ATTEMPT_INTERVAL) {
-        console.log("Grid recreation for dimensions change attempted too soon, skipping");
-        return;
-      }
+      // Get canvas instance
+      const canvas = fabricCanvasRef.current;
       
-      // Update attempt time
-      updateLastAttemptTime(now);
+      // Remove each grid object
+      gridLayerRef.current.forEach(obj => {
+        if (canvas && canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
       
-      // Short timeout to ensure canvas is ready
-      setTimeout(() => {
-        resetGridProgress();
+      // Clear reference
+      gridLayerRef.current = [];
+    }
+    
+    // Create new grid with updated dimensions
+    if (fabricCanvasRef.current) {
+      try {
+        const canvas = fabricCanvasRef.current;
         
-        // Check if canvas still exists
-        if (!fabricCanvasRef.current) {
-          console.log("Canvas no longer exists when attempting to recreate grid");
-          return;
+        // Ensure canvas dimensions are updated
+        if (canvas.width !== canvasDimensions.width || 
+            canvas.height !== canvasDimensions.height) {
+          canvas.setDimensions({
+            width: canvasDimensions.width,
+            height: canvasDimensions.height
+          });
         }
         
-        try {
-          const grid = createGrid(fabricCanvasRef.current);
-          
-          // If standard grid creation fails, try emergency grid
-          if (!grid || grid.length === 0) {
-            console.log("Standard grid recreation returned 0 objects, trying emergency grid");
-            createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
-          }
-        } catch (error) {
-          console.error("Error during grid recreation:", error);
-          
-          // Try emergency grid on error
-          if (fabricCanvasRef.current) {
-            createBasicEmergencyGrid(fabricCanvasRef.current, gridLayerRef);
-          }
-        }
-      }, 100);
+        // Create new grid
+        const newGridObjects = createGrid(canvas);
+        gridLayerRef.current = newGridObjects;
+        
+        logger.info(`Created ${newGridObjects.length} new grid objects after dimension change`);
+      } catch (error) {
+        logger.error("Error creating grid after dimension change:", error);
+      }
     }
   }, [
-    canvasDimensions?.width,
-    canvasDimensions?.height, 
+    canvasDimensions.width, 
+    canvasDimensions.height, 
     fabricCanvasRef, 
     gridLayerRef,
     createGrid,
     lastAttemptTime,
     updateLastAttemptTime
   ]);
-
-  return {};
 };

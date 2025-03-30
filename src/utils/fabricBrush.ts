@@ -30,7 +30,7 @@ export const initializeDrawingBrush = (canvas: FabricCanvas): PencilBrush => {
   
   // Set brush to be more responsive by reducing decimate value
   // This reduces the number of points in paths for better performance
-  (brush as any).decimate = 2;
+  brush.decimate = 2;
   
   // Set canvas brush
   canvas.freeDrawingBrush = brush;
@@ -92,4 +92,16 @@ export const removePressureSensitivity = (canvas: FabricCanvas): void => {
     (canvas as any).pressureSensitivityCleanup();
     delete (canvas as any).pressureSensitivityCleanup;
   }
+};
+
+/**
+ * Track base line thickness for pressure sensitivity calculations
+ * @param {FabricCanvas} canvas - The Fabric.js canvas
+ * @param {number} baseThickness - Base line thickness
+ */
+export const trackLineThickness = (canvas: FabricCanvas, baseThickness: number): void => {
+  if (!canvas || !canvas.freeDrawingBrush) return;
+  
+  // Store base thickness as a property for reference in pressure calculations
+  (canvas.freeDrawingBrush as any).baseThickness = baseThickness;
 };

@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -12,7 +13,7 @@ import { type FloorPlan } from "@/types/floorPlanTypes";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasDrawingState } from "./useCanvasDrawingState";
 import { useCanvasDrawingEvents } from "./canvas/drawing/useCanvasDrawingEvents";
-import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
+import { DrawingState, createDefaultDrawingState } from "@/types/drawingTypes";
 
 /**
  * History state reference object
@@ -147,6 +148,6 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
   });
   
   return {
-    drawingState: createDefaultDrawingState()
+    drawingState
   };
 };

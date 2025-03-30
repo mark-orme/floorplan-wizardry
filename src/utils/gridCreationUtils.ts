@@ -1,4 +1,8 @@
 
+/**
+ * Grid creation utility functions
+ * @module gridCreationUtils
+ */
 import { Canvas as FabricCanvas, Object as FabricObject, Line as FabricLine } from "fabric";
 
 /**
@@ -108,6 +112,26 @@ export const createEnhancedGrid = (canvas: FabricCanvas): FabricObject[] => {
   canvas.renderAll();
   
   console.log(`Created ${gridObjects.length} enhanced grid objects`);
+  
+  return gridObjects;
+};
+
+/**
+ * Create complete grid on canvas and store in gridLayerRef
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance 
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {FabricObject[]} Array of created grid objects
+ */
+export const createCompleteGrid = (
+  canvas: FabricCanvas,
+  gridLayerRef?: React.MutableRefObject<FabricObject[]>
+): FabricObject[] => {
+  const gridObjects = createEnhancedGrid(canvas);
+  
+  // Store grid objects in reference if provided
+  if (gridLayerRef) {
+    gridLayerRef.current = gridObjects;
+  }
   
   return gridObjects;
 };

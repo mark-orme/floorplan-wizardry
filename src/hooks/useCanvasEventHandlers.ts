@@ -6,11 +6,10 @@
  */
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
-import { DrawingTool } from "@/types/drawingTypes";
+import { DrawingMode } from "@/constants/drawingModes";
 import logger from "@/utils/logger";
 
 // Import types and event hooks
-import { EventHandlerResult } from "./canvas-events/types";
 import { usePathEvents } from "./canvas-events/usePathEvents";
 import { useObjectEvents } from "./canvas-events/useObjectEvents";
 import { useZoomTracking } from "./canvas-events/useZoomTracking";
@@ -24,7 +23,7 @@ export interface UseCanvasEventHandlersProps {
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current line color */
   lineColor: string;
   /** Current line thickness */
@@ -116,7 +115,7 @@ export const useCanvasEventHandlers = ({
     canvas.freeDrawingBrush.width = lineThickness;
     
     // Set drawing mode based on tool
-    canvas.isDrawingMode = tool === DrawingTool.DRAW;
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
     
     return () => {
       // Unregister handlers

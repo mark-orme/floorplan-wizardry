@@ -1,14 +1,13 @@
 
 /**
- * Custom hook for initializing canvas grid
- * Handles grid creation with error recovery and fallbacks
- * @module useCanvasGridInitialization
+ * Hook for initializing canvas grid
+ * @module hooks/canvas-initialization/useCanvasGridInitialization
  */
 import { useCallback, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import logger from "@/utils/logger";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 
 /**
@@ -38,23 +37,6 @@ interface UseCanvasGridInitializationResult {
 /**
  * Hook for initializing and managing canvas grid
  * Handles grid creation, error recovery, and emergency fallbacks
- * 
- * @param {UseCanvasGridInitializationProps} props - Hook properties
- * @returns {UseCanvasGridInitializationResult} Grid initialization objects and methods
- * 
- * @example
- * const { gridLayerRef, initializeGrid } = useCanvasGridInitialization({
- *   setDebugInfo,
- *   setHasError,
- *   setErrorMessage
- * });
- * 
- * // Initialize grid with custom creation function
- * useEffect(() => {
- *   if (canvas) {
- *     initializeGrid(canvas, createGridCallback);
- *   }
- * }, [canvas]);
  */
 export const useCanvasGridInitialization = ({
   setDebugInfo,
@@ -66,11 +48,6 @@ export const useCanvasGridInitialization = ({
   
   /**
    * Initialize grid on canvas with error handling
-   * Handles validation, creation, and emergency fallbacks
-   * 
-   * @param {FabricCanvas} canvas - The fabric canvas instance
-   * @param {Function} createGrid - Function to create grid objects
-   * @returns {FabricObject[]} Array of created grid objects
    */
   const initializeGrid = useCallback((
     canvas: FabricCanvas,
@@ -110,6 +87,7 @@ export const useCanvasGridInitialization = ({
         const result = createGrid(canvas);
         if (Array.isArray(result) && result.length > 0) {
           gridObjects = result;
+          gridLayerRef.current = result;
           console.log("✅ Grid created using provided createGrid function:", gridObjects.length, "objects");
         }
       } catch (createGridError) {
@@ -123,15 +101,8 @@ export const useCanvasGridInitialization = ({
         
         toast.error("⚠️ Grid failed to render - switching to emergency mode");
         
-        createBasicEmergencyGrid(canvas, gridLayerRef);
-      } else {
-        console.log("✅ Grid successfully created:", gridObjects.length, "objects");
-        
-        // Update the gridLayerRef to track all grid objects
+        gridObjects = createBasicEmergencyGrid(canvas);
         gridLayerRef.current = gridObjects;
-        
-        // Show success toast
-        toast.success(`Grid created with ${gridObjects.length} objects`);
       }
       
       // Force render after grid is created
@@ -158,8 +129,9 @@ export const useCanvasGridInitialization = ({
       try {
         if (canvas) {
           console.log("🚨 Attempting emergency grid creation");
-          createBasicEmergencyGrid(canvas, gridLayerRef);
-          return gridLayerRef.current;
+          const emergencyGrid = createBasicEmergencyGrid(canvas);
+          gridLayerRef.current = emergencyGrid;
+          return emergencyGrid;
         }
       } catch (emergencyError) {
         logger.error("Emergency grid creation also failed:", emergencyError);
