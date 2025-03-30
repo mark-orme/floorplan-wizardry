@@ -8,19 +8,19 @@
  * @module grid/exports
  */
 
-// Direct imports from gridCreationUtils - correct the path
+// Direct imports from gridCreationUtils
 import { 
   createBasicEmergencyGrid,
-  hasCompleteGrid,
-  forceGridRender,
-  verifyGridExists,
   createCompleteGrid,
+  verifyGridExists,
   validateGrid,
   retryWithBackoff,
   reorderGridObjects,
   ensureGrid,
   createGridLayer,
-  createFallbackGrid
+  createFallbackGrid,
+  hasCompleteGrid,
+  forceGridRender
 } from '../gridCreationUtils';
 
 // Direct named exports from gridValidation
@@ -69,5 +69,7 @@ export {
   validateCanvas,
   validateGridState,
   dumpGridState,
-  forceCreateGrid
+  forceCreateGrid,
+  hasCompleteGrid,
+  forceGridRender
 };

@@ -1,13 +1,13 @@
-
 /**
  * Grid retry utilities
- * Provides functions for handling grid creation retries
- * @module gridRetryUtils
+ * Handles retrying grid creation with backoff
  */
 import { Canvas as FabricCanvas } from "fabric";
+import { toast } from "sonner";
+import logger from "./logger";
+
 import { createBasicEmergencyGrid } from "./gridCreationUtils";
 import { resetGridProgress } from "./gridManager";
-import { toast } from "sonner";
 import { captureError } from "./sentryUtils";
 
 /**

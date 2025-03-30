@@ -33,7 +33,7 @@ const FloorPlans = () => {
       
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
-          <CanvasApp />
+          <CanvasApp createGrid={createFloorPlanGrid} />
         </CanvasControllerProvider>
       </div>
     </main>
