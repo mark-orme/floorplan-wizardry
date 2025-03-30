@@ -12,6 +12,18 @@ import { validatePoint, validateTimestamp, validateColor } from './validators';
 import { Point } from '@/types/geometryTypes';
 
 /**
+ * Calculate distance between two points
+ * @param start Start point
+ * @param end End point
+ * @returns Distance between points
+ */
+function calculateDistance(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
  * Convert from app FloorPlan type to core FloorPlan type
  * @param appPlan The app FloorPlan
  * @returns The core FloorPlan
@@ -23,6 +35,9 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
         const start = wall.start || (wall.points && wall.points.length > 0 ? wall.points[0] : createPoint(0, 0));
         const end = wall.end || (wall.points && wall.points.length > 1 ? wall.points[1] : createPoint(0, 0));
         
+        // Calculate length if not already present
+        const length = wall.length !== undefined ? wall.length : calculateDistance(start, end);
+        
         return {
           id: wall.id,
           start,
@@ -30,7 +45,8 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
           thickness: wall.thickness || 1, // Provide default if missing
           color: wall.color || '#000000', // Provide default if missing
           height: wall.height,
-          roomIds: wall.roomIds
+          roomIds: wall.roomIds,
+          length
         } as CoreWall;
       }) 
     : [];
@@ -108,7 +124,8 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
           thickness: wall.thickness || 1, // Ensure thickness is present
           height: wall.height || 0,
           color: validateColor(wall.color, '#000000'),
-          roomIds: wall.roomIds || []
+          roomIds: wall.roomIds || [],
+          length: wall.length || calculateDistance(start, end) // Ensure length is present
         } as AppWall;
       })
     : [];
@@ -181,3 +198,4 @@ export function appToCoreFloorPlans(appPlans: AppFloorPlan[]): CoreFloorPlan[] {
 export function coreToAppFloorPlans(corePlans: CoreFloorPlan[]): AppFloorPlan[] {
   return corePlans.map(coreToAppFloorPlan);
 }
+

@@ -39,4 +39,8 @@ export interface Wall {
   
   /** Room IDs connected to this wall */
   roomIds?: string[];
+  
+  /** Length of the wall (calculated property) */
+  length: number;
 }
+
