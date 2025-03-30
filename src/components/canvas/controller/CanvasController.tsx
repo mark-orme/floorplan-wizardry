@@ -1,14 +1,52 @@
 
-import React, { createContext, useContext, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import React, { createContext, useContext, useState, useRef } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { DrawingTool } from "@/hooks/useCanvasState";
+import { DebugInfoState } from "@/types/core/DebugInfo";
+import { FloorPlan } from "@/types/floorPlanTypes";
+import { ZoomDirection } from "@/types/drawingTypes";
 
 /**
  * Canvas controller context type
  */
 interface CanvasControllerContextType {
+  // Canvas state
   canvas: FabricCanvas | null;
   setCanvas: React.Dispatch<React.SetStateAction<FabricCanvas | null>>;
+  
+  // Core functionality
   clearCanvas: () => void;
+  
+  // Drawing tools state
+  tool?: DrawingTool;
+  lineThickness?: number;
+  lineColor?: string;
+  
+  // Measurement
+  gia?: number;
+  
+  // Floor plans
+  floorPlans?: FloorPlan[];
+  currentFloor?: number;
+  
+  // Debug info
+  debugInfo?: DebugInfoState;
+  
+  // UI refs
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
+  
+  // Actions
+  handleToolChange?: (tool: DrawingTool) => void;
+  handleUndo?: () => void;
+  handleRedo?: () => void;
+  handleZoom?: (direction: ZoomDirection) => void;
+  saveCanvas?: () => boolean;
+  deleteSelectedObjects?: () => void;
+  handleFloorSelect?: (floorIndex: number) => void;
+  handleAddFloor?: () => void;
+  handleLineThicknessChange?: (thickness: number) => void; 
+  handleLineColorChange?: (color: string) => void;
+  openMeasurementGuide?: () => void;
 }
 
 // Create context with default values
@@ -26,6 +64,9 @@ interface CanvasControllerProviderProps {
  */
 export const CanvasControllerProvider: React.FC<CanvasControllerProviderProps> = ({ children }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  
+  // Create refs for canvas components
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   /**
    * Clear all objects from canvas
@@ -46,7 +87,12 @@ export const CanvasControllerProvider: React.FC<CanvasControllerProviderProps> =
   };
 
   return (
-    <CanvasControllerContext.Provider value={{ canvas, setCanvas, clearCanvas }}>
+    <CanvasControllerContext.Provider value={{ 
+      canvas, 
+      setCanvas, 
+      clearCanvas,
+      canvasRef
+    }}>
       {children}
     </CanvasControllerContext.Provider>
   );

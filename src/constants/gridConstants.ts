@@ -19,5 +19,8 @@ export const GRID_CONSTANTS = {
   
   // Markers
   MARKER_COLOR: '#999999',
-  MARKER_TEXT_SIZE: 10
+  MARKER_TEXT_SIZE: 10,
+  
+  // Scale
+  PIXELS_PER_METER: 100 // 100 pixels = 1 meter
 };

@@ -1,6 +1,7 @@
 
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { Point } from "@/types/core/Point";
 
 /**
  * Creates a simple grid on the canvas
@@ -121,6 +122,22 @@ export const createSimpleGrid = (
     console.error("Error creating grid:", error);
     return [];
   }
+};
+
+/**
+ * Snaps a point to the nearest grid intersection
+ * 
+ * @param {Point} point - The point to snap
+ * @param {number} gridSize - The grid size to snap to (default: small grid)
+ * @returns {Point} The snapped point
+ */
+export const snapPointToGrid = (point: Point, gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE): Point => {
+  if (!point) return { x: 0, y: 0 };
+  
+  const x = Math.round(point.x / gridSize) * gridSize;
+  const y = Math.round(point.y / gridSize) * gridSize;
+  
+  return { x, y };
 };
 
 /**
