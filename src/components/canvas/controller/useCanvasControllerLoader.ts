@@ -1,10 +1,11 @@
+
 /**
  * Hook for loading floor plan data in the canvas controller
  * @module useCanvasControllerLoader
  */
 import { useEffect, useCallback } from "react";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
-import { FloorPlan, Wall, StrokeType, StrokeTypeLiteral } from "@/types/floorPlanTypes";
+import { FloorPlan, Wall, StrokeType, StrokeTypeLiteral, RoomTypeLiteral } from "@/types/floorPlanTypes";
 import { adaptFloorPlans } from "@/utils/typeAdapters";
 import { Point } from "@/types/geometryTypes";
 
@@ -93,13 +94,21 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
               endPoint: end, // Set endPoint from end
               start: start, // Ensure start is present
               end: end, // Ensure end is present
-              thickness: wall.thickness,
+              thickness: wall.thickness || 1, // Ensure thickness is present
               height: wall.height || 0,
               color: wall.color || '#000000',
               roomIds: wall.roomIds || []
             } as Wall;
           }) || [],
-          rooms: plan.rooms || [],
+          rooms: plan.rooms?.map(room => ({
+            id: room.id,
+            name: room.name || 'Unnamed Room', // Ensure name is always set
+            type: mapRoomType(room.type), // Ensure type is properly mapped
+            points: room.points,
+            color: room.color || '#ffffff',
+            area: room.area || 0,
+            level: room.level || plan.level || 0
+          })) || [],
           metadata: plan.metadata ? {
             createdAt: typeof plan.metadata.createdAt === 'string' 
               ? plan.metadata.createdAt 
@@ -148,6 +157,21 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
       }
     }
     return 'line';
+  }
+  
+  // Helper function to map room types
+  function mapRoomType(type: string | any): RoomTypeLiteral {
+    if (typeof type === 'string') {
+      switch (type.toLowerCase()) {
+        case 'living': return 'living';
+        case 'bedroom': return 'bedroom';
+        case 'kitchen': return 'kitchen';
+        case 'bathroom': return 'bathroom';
+        case 'office': return 'office';
+        default: return 'other';
+      }
+    }
+    return 'other';
   }
 
   // Load floor plans data on mount

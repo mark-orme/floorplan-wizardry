@@ -3,8 +3,8 @@
  * Adapter utilities for converting between core.FloorPlan and floorPlanTypes.FloorPlan
  * @module utils/floorPlanAdapter
  */
-import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeTypeLiteral } from '@/types/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom, RoomType } from '@/types/core/FloorPlan';
+import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floorPlanTypes';
 import { createPoint } from '@/types/core/Point';
 
 /**
@@ -56,7 +56,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
     rooms: Array.isArray(appPlan.rooms) ? appPlan.rooms.map(room => ({
       id: room.id,
       name: room.name || 'Unnamed Room', // Ensure name is always set
-      type: (room.type as CoreRoom['type']) || 'other',
+      type: validateRoomType(room.type) as RoomType, // Validate and convert room type
       points: room.points,
       color: room.color || '#ffffff',
       area: room.area || 0
@@ -164,7 +164,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     rooms: Array.isArray(corePlan.rooms) ? corePlan.rooms.map(room => ({
       id: room.id,
       name: room.name || 'Unnamed Room', // Ensure name is always set
-      type: room.type,
+      type: room.type as RoomTypeLiteral, // Convert RoomType to RoomTypeLiteral
       points: room.points,
       color: room.color,
       area: room.area || 0,
@@ -201,6 +201,25 @@ function validateStrokeType(type: string): StrokeTypeLiteral {
     case 'room': return 'room';
     case 'freehand': return 'freehand';
     default: return 'line'; // Default to line if unknown type
+  }
+}
+
+/**
+ * Validate and convert a string to a valid RoomType
+ * @param type The string type to validate
+ * @returns A valid RoomType
+ */
+function validateRoomType(type?: RoomTypeLiteral): RoomType {
+  if (!type) return 'other'; // Default to 'other' if no type provided
+  
+  switch(type.toLowerCase()) {
+    case 'living': return 'living';
+    case 'bedroom': return 'bedroom';
+    case 'kitchen': return 'kitchen';
+    case 'bathroom': return 'bathroom';
+    case 'office': return 'office';
+    case 'other': return 'other';
+    default: return 'other'; // Default to 'other' if unknown type
   }
 }
 

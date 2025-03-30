@@ -4,8 +4,8 @@
  * Provides utility functions to adapt between incompatible type definitions
  * @module utils/typeAdapters
  */
-import { FloorPlan as CoreFloorPlan, Wall as CoreWall } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall } from '@/types/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan, Wall as CoreWall, RoomType } from '@/types/core/FloorPlan';
+import { FloorPlan as AppFloorPlan, Wall as AppWall, RoomTypeLiteral } from '@/types/floorPlanTypes';
 
 /**
  * Convert a core wall to app wall format
@@ -28,6 +28,15 @@ export function adaptWall(wall: CoreWall): AppWall {
 }
 
 /**
+ * Safely convert RoomType to RoomTypeLiteral
+ * @param type Core RoomType
+ * @returns App RoomTypeLiteral
+ */
+function adaptRoomType(type: RoomType): RoomTypeLiteral {
+  return type as RoomTypeLiteral;
+}
+
+/**
  * Convert a core floor plan to app floor plan format
  * @param corePlan Core floor plan
  * @returns App floor plan
@@ -40,7 +49,8 @@ export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     walls: corePlan.walls.map(adaptWall),
     rooms: corePlan.rooms.map(room => ({
       ...room,
-      name: room.name || 'Unnamed Room' // Ensure name is always provided
+      name: room.name || 'Unnamed Room', // Ensure name is always provided
+      type: adaptRoomType(room.type) // Convert room type
     })),
     strokes: corePlan.strokes,
     index: corePlan.index || corePlan.level,

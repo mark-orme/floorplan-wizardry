@@ -45,6 +45,11 @@ export enum StrokeType {
 export type StrokeTypeLiteral = "line" | "polyline" | "wall" | "room" | "freehand";
 
 /**
+ * Room type literal that matches core/FloorPlan.RoomType
+ */
+export type RoomTypeLiteral = "living" | "bedroom" | "kitchen" | "bathroom" | "office" | "other";
+
+/**
  * Wall object in a floor plan
  */
 export interface Wall {
@@ -68,7 +73,7 @@ export interface Wall {
 export interface Room {
   id: string;
   name: string; // Changed from optional to required for compatibility with core/FloorPlan.Room
-  type?: string;
+  type?: RoomTypeLiteral; // Changed from string to RoomTypeLiteral for compatibility
   points: { x: number; y: number }[];
   area?: number;
   color?: string;

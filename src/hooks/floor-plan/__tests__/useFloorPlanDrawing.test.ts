@@ -6,7 +6,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
-import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize, RoomTypeLiteral } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Point';
 
 describe('useFloorPlanDrawing', () => {
