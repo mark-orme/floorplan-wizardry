@@ -10,7 +10,7 @@ import { ReliableCanvasContainer } from "@/components/canvas/ReliableCanvasConta
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { Canvas as CanvasComponent } from "@/components/Canvas";
 import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
-import { SimpleGrid as SimpleGridComponent } from "@/components/canvas/grid/SimpleGrid"; // Import the React component version
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid"; // Import the React component
 import { resetGridProgress } from "@/utils/gridManager";
 import { useCanvasInitialization } from "./canvas/useCanvasInitialization";
 import { useDebugPanel } from "./canvas/useDebugPanel";
@@ -128,9 +128,9 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
             />
           </ReliableCanvasContainer>
           
-          {/* Use the SimpleGridComponent (React component) instead of SimpleGrid class */}
+          {/* Use the SimpleGrid React component */}
           {fabricCanvas && (
-            <SimpleGridComponent 
+            <SimpleGrid 
               canvas={fabricCanvas} 
               showControls={true}
               onGridCreated={handleGridCreated}

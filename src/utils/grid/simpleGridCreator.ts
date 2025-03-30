@@ -55,3 +55,62 @@ export const createReliableGrid = (
     return [];
   }
 };
+
+/**
+ * Ensures grid visibility on canvas
+ * Checks if grid is visible and attempts to fix if not
+ * 
+ * @param {Canvas} canvas - The fabric canvas
+ * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
+ * @returns {boolean} Success status
+ */
+export const ensureGridVisibility = (
+  canvas: Canvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas) return false;
+  
+  try {
+    const gridObjects = gridLayerRef.current;
+    
+    // If no grid objects, nothing to make visible
+    if (!gridObjects || gridObjects.length === 0) {
+      return false;
+    }
+    
+    // Check if grid objects are on canvas
+    let objectsFound = 0;
+    let objectsAdded = 0;
+    
+    gridObjects.forEach(obj => {
+      if (canvas.contains(obj)) {
+        objectsFound++;
+        
+        // Make sure object is visible
+        if (!obj.visible) {
+          obj.visible = true;
+          canvas.requestRenderAll();
+        }
+      } else {
+        // Add object back to canvas if missing
+        try {
+          canvas.add(obj);
+          canvas.sendToBack(obj);
+          objectsAdded++;
+        } catch (error) {
+          logger.error("Error adding grid object back to canvas:", error);
+        }
+      }
+    });
+    
+    if (objectsAdded > 0) {
+      canvas.requestRenderAll();
+      logger.info(`Added ${objectsAdded} missing grid objects back to canvas`);
+    }
+    
+    return objectsFound + objectsAdded > 0;
+  } catch (error) {
+    logger.error("Error ensuring grid visibility:", error);
+    return false;
+  }
+};

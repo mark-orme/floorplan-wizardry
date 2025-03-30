@@ -1,33 +1,35 @@
 
 /**
- * Grid module index
- * Exports all grid-related utilities
- * @module grid
+ * Grid utilities module
+ * Exports all grid-related functionality
+ * @module utils/grid
  */
 
 // Export from gridCreationUtils
-export { 
-  createCompleteGrid,
+export {
   createBasicEmergencyGrid,
+  createCompleteGrid,
+  createEnhancedGrid,
+  createSmallGrid,
   validateGrid,
   verifyGridExists,
   retryWithBackoff,
   reorderGridObjects,
-  ensureGrid,
-  createGridLayer,
-  createFallbackGrid
+  ensureGrid
 } from './gridCreationUtils';
 
-// Export from gridDebugUtils
+// Export from simpleGridCreator
 export {
-  dumpGridState,
-  createBasicEmergencyGrid as createEmergencyDebugGrid,
-  forceCreateGrid,
-  getMemoryUsage,
-  gridDebugStats,
-  diagnoseGridFailure
-} from './gridDebugUtils';
+  createReliableGrid,
+  ensureGridVisibility
+} from './simpleGridCreator';
 
-// Export constants needed by other modules
-export const GRID_CREATION_COOLDOWN = 1000;
-export const MAX_CREATE_ATTEMPTS = 3;
+// Export from exports
+export { 
+  GridCreation,
+  GridValidation,
+  GridDebug
+} from './exports';
+
+// Export types
+export type { GridOptions } from '../canvasGrid';

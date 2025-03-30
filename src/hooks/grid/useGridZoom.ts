@@ -5,7 +5,7 @@
  * @module hooks/grid/useGridZoom
  */
 import { useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas } from "fabric";
 
 /**
  * Props for the useGridZoom hook

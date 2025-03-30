@@ -1,158 +1,135 @@
 
 /**
- * Hook for reliable grid creation and management
+ * Reliable grid hook
+ * Provides utilities for creating and maintaining a reliable grid
  * @module hooks/useReliableGrid
  */
-import { useState, useEffect, useRef } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createReliableGrid, ensureGridVisibility } from "@/utils/grid/simpleGridCreator";
-import { resetGridProgress, setGridProgress, isGridCreationInProgress } from "@/utils/gridManager";
-import { toast } from "sonner";
-import logger from "@/utils/logger";
+import { useCallback, useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { createReliableGrid, ensureGridVisibility } from '@/utils/grid/simpleGridCreator';
+import logger from '@/utils/logger';
 
+/**
+ * Props for useReliableGrid hook
+ */
 interface UseReliableGridProps {
   /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Canvas dimensions */
-  canvasDimensions?: { width: number; height: number };
-  /** Whether to create grid automatically */
-  autoCreate?: boolean;
-  /** Whether to show toast messages */
-  showToasts?: boolean;
+  /** Current zoom level */
+  zoomLevel?: number;
+  /** Whether to create grid immediately */
+  createImmediately?: boolean;
+  /** Whether to auto-fix grid issues */
+  autoFix?: boolean;
+  /** Interval for checking grid in ms */
+  checkInterval?: number;
 }
 
 /**
- * Hook for reliable grid creation and management
+ * Hook for managing a reliable grid on canvas
+ * 
+ * @param {UseReliableGridProps} props - Hook properties
+ * @returns Grid management utilities
  */
 export const useReliableGrid = ({
   fabricCanvasRef,
-  canvasDimensions,
-  autoCreate = true,
-  showToasts = true
+  zoomLevel = 1,
+  createImmediately = true,
+  autoFix = true,
+  checkInterval = 5000
 }: UseReliableGridProps) => {
+  // Reference to store grid objects
   const gridLayerRef = useRef<FabricObject[]>([]);
-  const [gridInitialized, setGridInitialized] = useState(false);
-  const [isCreatingGrid, setIsCreatingGrid] = useState(false);
-  const [gridObjectCount, setGridObjectCount] = useState(0);
-  const [lastAttemptTime, setLastAttemptTime] = useState(0);
-  const attemptRef = useRef(0);
   
-  /**
-   * Create grid with proper handling
-   */
-  const createGrid = async () => {
+  // Track if grid is initialized
+  const gridInitializedRef = useRef(false);
+  
+  // Create grid function
+  const createGrid = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    
-    // Skip if no canvas
     if (!canvas) {
-      logger.warn("Cannot create grid: No canvas available");
-      return false;
-    }
-    
-    // Skip if already creating
-    if (isGridCreationInProgress()) {
-      logger.info("Grid creation already in progress, skipping");
-      return false;
+      logger.warn('Cannot create grid: Canvas is null');
+      return [];
     }
     
     try {
-      // Mark grid creation as in progress
-      setGridProgress(true);
-      setIsCreatingGrid(true);
-      attemptRef.current += 1;
-      setLastAttemptTime(Date.now());
+      const gridObjects = createReliableGrid(canvas, gridLayerRef);
       
-      // Create grid
-      logger.info(`Creating grid (attempt ${attemptRef.current})`);
-      const newGridObjects = createReliableGrid(canvas, gridLayerRef);
-      
-      // Update state
-      setGridObjectCount(newGridObjects.length);
-      setGridInitialized(newGridObjects.length > 0);
-      
-      // Show toast if requested
-      if (showToasts && newGridObjects.length > 0) {
-        toast.success(`Grid created with ${newGridObjects.length} objects`);
-      } else if (showToasts && newGridObjects.length === 0) {
-        toast.error("Failed to create grid");
+      if (gridObjects.length > 0) {
+        gridInitializedRef.current = true;
+        logger.info(`Grid created with ${gridObjects.length} objects`);
+      } else {
+        logger.warn('Failed to create grid, no objects returned');
       }
       
-      return newGridObjects.length > 0;
+      return gridObjects;
     } catch (error) {
-      logger.error("Error creating grid:", error);
-      if (showToasts) {
-        toast.error("Error creating grid");
-      }
-      return false;
-    } finally {
-      setIsCreatingGrid(false);
-      setGridProgress(false);
+      logger.error('Error creating grid:', error);
+      return [];
     }
-  };
+  }, [fabricCanvasRef]);
   
-  /**
-   * Ensure grid is visible
-   */
-  const ensureGridIsVisible = () => {
+  // Ensure grid visibility
+  const ensureVisibility = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || gridLayerRef.current.length === 0) return;
+    if (!canvas) return false;
     
-    const fixed = ensureGridVisibility(canvas, gridLayerRef);
-    if (fixed) {
-      logger.info("Fixed grid visibility issues");
-    }
-  };
+    return ensureGridVisibility(canvas, gridLayerRef);
+  }, [fabricCanvasRef]);
   
-  // Create grid on canvas available
+  // Setup auto-fix interval
   useEffect(() => {
-    if (autoCreate && fabricCanvasRef.current && !gridInitialized) {
-      // Reset any stuck state
-      resetGridProgress();
-      
-      // Short delay to ensure canvas is properly initialized
+    if (!autoFix) return;
+    
+    const intervalId = setInterval(() => {
+      if (gridInitializedRef.current && fabricCanvasRef.current) {
+        ensureVisibility();
+      }
+    }, checkInterval);
+    
+    return () => clearInterval(intervalId);
+  }, [autoFix, checkInterval, ensureVisibility, fabricCanvasRef]);
+  
+  // Create grid immediately if requested
+  useEffect(() => {
+    if (createImmediately && fabricCanvasRef.current && !gridInitializedRef.current) {
+      // Small delay to ensure canvas is ready
       const timeoutId = setTimeout(() => {
         createGrid();
-      }, 300);
+      }, 200);
       
       return () => clearTimeout(timeoutId);
     }
-  }, [fabricCanvasRef.current, autoCreate, gridInitialized]);
+  }, [createImmediately, createGrid, fabricCanvasRef]);
   
-  // Ensure grid visibility periodically
+  // Recreate grid when zoom changes significantly
   useEffect(() => {
-    if (!gridInitialized) return;
-    
-    const intervalId = setInterval(() => {
-      ensureGridIsVisible();
-    }, 5000);
-    
-    return () => clearInterval(intervalId);
-  }, [gridInitialized]);
-  
-  // Clean up grid on unmount
-  useEffect(() => {
-    return () => {
-      const canvas = fabricCanvasRef.current;
-      if (canvas && gridLayerRef.current.length > 0) {
-        gridLayerRef.current.forEach(obj => {
-          try {
-            if (canvas.contains(obj)) {
-              canvas.remove(obj);
-            }
-          } catch (error) {
-            // Ignore cleanup errors
-          }
-        });
+    if (gridInitializedRef.current && fabricCanvasRef.current) {
+      // Only recreate grid on significant zoom changes
+      if (zoomLevel <= 0.5 || zoomLevel >= 2) {
+        createGrid();
       }
-    };
-  }, [fabricCanvasRef]);
+    }
+  }, [zoomLevel, createGrid, fabricCanvasRef]);
   
   return {
     gridLayerRef,
     createGrid,
-    ensureGridIsVisible,
-    gridInitialized,
-    isCreatingGrid,
-    gridObjectCount
+    ensureVisibility,
+    isInitialized: gridInitializedRef.current,
+    clearGrid: useCallback(() => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      
+      gridLayerRef.current = [];
+      gridInitializedRef.current = false;
+      canvas.requestRenderAll();
+    }, [fabricCanvasRef])
   };
 };

@@ -1,136 +1,127 @@
 
-import React, { useEffect, useRef } from 'react';
+/**
+ * SimpleGrid Component
+ * A React component for creating and managing grid on canvas
+ * @module components/canvas/grid/SimpleGrid
+ */
+import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createReliableGrid, ensureGridVisibility } from '@/utils/grid/simpleGridCreator';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Grid } from 'lucide-react';
+import { createCompleteGrid } from '@/utils/grid/gridCreationUtils';
+import { ensureGridVisibility } from '@/utils/grid/simpleGridCreator';
 
+/**
+ * Props for the SimpleGrid component
+ */
 interface SimpleGridProps {
+  /** The fabric canvas instance */
   canvas: FabricCanvas;
+  /** Whether to show grid controls */
   showControls?: boolean;
-  onGridCreated?: (objects: FabricObject[]) => void;
+  /** Default grid visibility */
   defaultVisible?: boolean;
+  /** Callback when grid is created */
+  onGridCreated?: (gridObjects: FabricObject[]) => void;
 }
 
+/**
+ * SimpleGrid Component
+ * Creates and manages grid on canvas
+ * 
+ * @param {SimpleGridProps} props - Component properties
+ * @returns {JSX.Element | null} Rendered component
+ */
 export const SimpleGrid: React.FC<SimpleGridProps> = ({
   canvas,
   showControls = false,
-  onGridCreated,
-  defaultVisible = true
+  defaultVisible = true,
+  onGridCreated
 }) => {
+  const [gridVisible, setGridVisible] = useState(defaultVisible);
   const gridObjectsRef = useRef<FabricObject[]>([]);
-  const [visible, setVisible] = React.useState(defaultVisible);
   
-  // Create grid on component mount
+  // Create grid on mount
   useEffect(() => {
     if (!canvas) return;
     
-    // Create grid on 100ms delay to ensure canvas is fully ready
-    const timer = setTimeout(() => {
-      try {
-        console.log('SimpleGrid: Creating grid on canvas');
-        const gridObjects = createReliableGrid(canvas, { current: gridObjectsRef.current });
-        gridObjectsRef.current = gridObjects;
-        
-        if (onGridCreated && gridObjects.length > 0) {
-          onGridCreated(gridObjects);
-        }
-        
-        // Make objects visible or hidden based on current visibility setting
-        if (!visible) {
-          gridObjects.forEach(obj => {
-            obj.visible = false;
-          });
-          canvas.requestRenderAll();
-        }
-      } catch (error) {
-        console.error('Error creating grid:', error);
-      }
-    }, 100);
-    
-    // Check grid visibility every 3 seconds
-    const intervalId = setInterval(() => {
-      if (visible && gridObjectsRef.current.length > 0) {
-        ensureGridVisibility(canvas, { current: gridObjectsRef.current });
-      }
-    }, GRID_CONSTANTS.VISIBILITY_CHECK_INTERVAL);
-    
-    return () => {
-      clearTimeout(timer);
-      clearInterval(intervalId);
-    };
-  }, [canvas, onGridCreated, visible]);
-  
-  // Toggle grid visibility
-  const toggleGridVisibility = () => {
-    setVisible(prev => {
-      const newVisible = !prev;
+    try {
+      // Create grid
+      const gridObjects = createCompleteGrid(canvas);
       
-      if (gridObjectsRef.current.length > 0) {
-        gridObjectsRef.current.forEach(obj => {
-          obj.visible = newVisible;
+      // Store grid objects
+      gridObjectsRef.current = gridObjects;
+      
+      // Set initial visibility
+      if (!defaultVisible) {
+        gridObjects.forEach(obj => {
+          obj.visible = false;
         });
         canvas.requestRenderAll();
       }
       
-      toast.success(newVisible ? 'Grid shown' : 'Grid hidden');
-      return newVisible;
-    });
-  };
-  
-  // Recreate grid from scratch
-  const recreateGrid = () => {
-    if (!canvas) return;
-    
-    try {
-      // Remove existing grid objects
-      gridObjectsRef.current.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.remove(obj);
-        }
-      });
-      
-      // Create new grid
-      const gridObjects = createReliableGrid(canvas, { current: [] });
-      gridObjectsRef.current = gridObjects;
-      
-      if (onGridCreated && gridObjects.length > 0) {
+      // Call callback if provided
+      if (onGridCreated) {
         onGridCreated(gridObjects);
       }
-      
-      toast.success(`Grid recreated with ${gridObjects.length} objects`);
     } catch (error) {
-      console.error('Error recreating grid:', error);
-      toast.error('Failed to recreate grid');
+      console.error('Error creating grid:', error);
     }
+    
+    // Clean up grid on unmount
+    return () => {
+      if (canvas && gridObjectsRef.current) {
+        try {
+          gridObjectsRef.current.forEach(obj => {
+            if (canvas.contains(obj)) {
+              canvas.remove(obj);
+            }
+          });
+          canvas.requestRenderAll();
+        } catch (error) {
+          console.error('Error cleaning up grid:', error);
+        }
+      }
+    };
+  }, [canvas, defaultVisible, onGridCreated]);
+  
+  // Handle visibility changes
+  useEffect(() => {
+    if (!canvas || gridObjectsRef.current.length === 0) return;
+    
+    gridObjectsRef.current.forEach(obj => {
+      obj.visible = gridVisible;
+    });
+    
+    canvas.requestRenderAll();
+  }, [canvas, gridVisible]);
+  
+  // Toggle grid visibility
+  const toggleGridVisibility = () => {
+    if (!canvas) return;
+    
+    // Ensure grid exists
+    if (gridObjectsRef.current.length === 0 || !canvas.contains(gridObjectsRef.current[0])) {
+      ensureGridVisibility(canvas, gridObjectsRef);
+    }
+    
+    setGridVisible(!gridVisible);
   };
   
-  // If we don't need to show controls, return null (the grid is still created)
+  // Only render controls if requested
   if (!showControls) return null;
   
   return (
-    <div className="absolute top-2 right-2 bg-white/80 p-2 rounded-md shadow-md z-10 text-xs">
-      <div className="flex gap-2">
-        <button
-          className={`px-2 py-1 rounded text-xs ${visible ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-          onClick={toggleGridVisibility}
-        >
-          {visible ? 'Hide Grid' : 'Show Grid'}
-        </button>
-        
-        <button
-          className="px-2 py-1 rounded text-xs bg-gray-200"
-          onClick={recreateGrid}
-        >
-          Recreate Grid
-        </button>
-      </div>
-      
-      <div className="mt-1 text-[10px] text-gray-600">
-        {gridObjectsRef.current.length > 0 ? 
-          `${gridObjectsRef.current.length} grid objects` : 
-          'No grid created yet'}
-      </div>
+    <div className="absolute top-2 right-2 z-10">
+      <Button
+        variant="outline"
+        size="sm"
+        title={gridVisible ? "Hide Grid" : "Show Grid"}
+        onClick={toggleGridVisibility}
+      >
+        <Grid className="h-4 w-4" />
+        <span className="ml-1">{gridVisible ? "Hide" : "Show"} Grid</span>
+      </Button>
     </div>
   );
 };
