@@ -21,6 +21,7 @@ const PropertyDetail = () => {
   const navigate = useNavigate();
   const { currentProperty, getProperty, updatePropertyStatus, isLoading } = usePropertyManagement();
   const { user, userRole } = useAuth();
+  // This hook now returns floorPlans, setFloorPlans, and loadData
   const { floorPlans, setFloorPlans, loadData } = useSyncedFloorPlans();
   const [activeTab, setActiveTab] = useState('details');
   const [hasError, setHasError] = useState(false);
