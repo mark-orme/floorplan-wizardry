@@ -61,6 +61,7 @@ export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       name: room.name || 'Unnamed Room', // Ensure name is always provided
       type: adaptRoomType(room.type), // Convert room type
       area: room.area || 0, // Ensure area is always provided
+      color: room.color || '#ffffff', // Ensure color is always provided
       level: corePlan.level || 0 // Set the level from the floor plan
     })),
     strokes: corePlan.strokes,

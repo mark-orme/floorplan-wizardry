@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for synchronized floor plans across devices
  * @module useSyncedFloorPlans
@@ -106,8 +105,7 @@ export const useSyncedFloorPlans = () => {
           
           // Also save to local storage for offline access
           // Use appToCoreFloorPlans to convert to the correct format before saving
-          const corePlans = appToCoreFloorPlans(plansWithLabels);
-          await saveFloorPlans(corePlans);
+          await saveFloorPlans(appToCoreFloorPlans(plansWithLabels));
           setIsLoading(false);
           return plansWithLabels;
         }
@@ -130,13 +128,13 @@ export const useSyncedFloorPlans = () => {
       
       // If logged in and we loaded from local storage, save to Supabase
       if (isLoggedIn && localData && localData.length > 0) {
-        // Use adapter to convert before sending to Supabase
-        await saveToSupabase(coreToAppFloorPlans(localData));
+        // Convert app floor plans to core floor plans before sending to Supabase
+        await saveToSupabase(plansWithLabels);
       }
       
       return plansWithLabels;
     } catch (error) {
-      logger.error('Error loading floor plans:', error);
+      logger.error('Loading floor plans failed:', error);
       toast.error('Failed to load floor plans');
       return [];
     } finally {
@@ -258,7 +256,7 @@ export const useSyncedFloorPlans = () => {
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        saveToSupabase(plansWithLabels);
+        saveToSupabase(receivedFloorPlans);
       }
 
       toast.info('Floor plans synchronized from another device');

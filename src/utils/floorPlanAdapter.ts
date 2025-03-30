@@ -1,4 +1,3 @@
-
 /**
  * Adapter utilities for converting between core.FloorPlan and floorPlanTypes.FloorPlan
  * @module utils/floorPlanAdapter
@@ -138,7 +137,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       name: room.name || 'Unnamed Room', // Ensure name is always set
       type: room.type as RoomTypeLiteral, // Convert RoomType to RoomTypeLiteral
       points: room.points,
-      color: room.color,
+      color: room.color || '#ffffff',
       area: room.area, // Area is now required in the Room interface
       level: corePlan.level || 0 // Set the level property from the floor plan
     } as AppRoom)) : [],
