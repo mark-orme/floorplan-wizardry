@@ -4,8 +4,8 @@
  * Provides robust grid creation with retries and error handling
  * @module utils/grid/reliableGridCreation
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createGridElements } from "./createGridElements";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import { captureError } from "../sentryUtils";
 import logger from "../logger";
 
@@ -41,6 +41,107 @@ export const resetGridCreationState = (): void => {
   
   logger.info("Grid creation state reset");
   console.log("Grid creation state reset");
+};
+
+/**
+ * Create grid elements
+ * @param {FabricCanvas} canvas - The canvas to create grid on
+ * @returns {FabricObject[]} The created grid objects
+ */
+export const createGridElements = (canvas: FabricCanvas): FabricObject[] => {
+  const gridObjects: FabricObject[] = [];
+  
+  if (!canvas || !canvas.width || !canvas.height) {
+    console.error("Cannot create grid: Invalid canvas dimensions", {
+      width: canvas?.width,
+      height: canvas?.height
+    });
+    return [];
+  }
+  
+  const width = canvas.width;
+  const height = canvas.height;
+  
+  console.log(`Creating grid for canvas: ${width}x${height}`);
+  
+  // Create small grid lines
+  const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+  const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
+  
+  // Create vertical lines
+  for (let i = 0; i <= width; i += smallGridSize) {
+    const isLargeLine = i % largeGridSize === 0;
+    const line = new Line([i, 0, i, height], {
+      stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectCaching: false,
+      hoverCursor: "default",
+      excludeFromExport: true,
+      type: isLargeLine ? 'grid-large' : 'grid-small'
+    });
+    
+    gridObjects.push(line);
+    canvas.add(line);
+    
+    // Add labels for large grid lines
+    if (isLargeLine && i > 0) {
+      const text = new Text(`${Math.round(i / GRID_CONSTANTS.PIXELS_PER_METER)}m`, {
+        left: i + 5,
+        top: 5,
+        fontSize: GRID_CONSTANTS.MARKER_TEXT_SIZE,
+        fill: GRID_CONSTANTS.MARKER_COLOR,
+        selectable: false,
+        evented: false,
+        type: 'grid-text'
+      });
+      
+      gridObjects.push(text);
+      canvas.add(text);
+    }
+  }
+  
+  // Create horizontal lines
+  for (let i = 0; i <= height; i += smallGridSize) {
+    const isLargeLine = i % largeGridSize === 0;
+    const line = new Line([0, i, width, i], {
+      stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectCaching: false,
+      hoverCursor: "default",
+      excludeFromExport: true,
+      type: isLargeLine ? 'grid-large' : 'grid-small'
+    });
+    
+    gridObjects.push(line);
+    canvas.add(line);
+    
+    // Add labels for large grid lines
+    if (isLargeLine && i > 0) {
+      const text = new Text(`${Math.round(i / GRID_CONSTANTS.PIXELS_PER_METER)}m`, {
+        left: 5,
+        top: i + 5,
+        fontSize: GRID_CONSTANTS.MARKER_TEXT_SIZE,
+        fill: GRID_CONSTANTS.MARKER_COLOR,
+        selectable: false,
+        evented: false,
+        type: 'grid-text'
+      });
+      
+      gridObjects.push(text);
+      canvas.add(text);
+    }
+  }
+  
+  // Send all grid objects to back
+  gridObjects.forEach(obj => {
+    canvas.sendToBack(obj);
+  });
+  
+  return gridObjects;
 };
 
 /**
@@ -105,9 +206,6 @@ export const createReliableGrid = (
     // Report to Sentry
     captureError(error, "reliable-grid-creation-error", {
       level: "error",
-      tags: {
-        component: "reliableGridCreation"
-      },
       extra: {
         attemptsCount: gridCreationState.attemptsCount,
         canvasDimensions: canvas ? `${canvas.width}x${canvas.height}` : "unknown"
@@ -162,51 +260,5 @@ export const ensureGridVisibility = (
   } catch (error) {
     console.error("Error ensuring grid visibility:", error);
     return false;
-  }
-};
-
-/**
- * Test grid creation and log results
- * @param {FabricCanvas} canvas - The canvas to test on
- */
-export const testGridCreation = (canvas: FabricCanvas): void => {
-  try {
-    console.log("Testing grid creation...");
-    
-    // Create a temporary grid
-    const testGridObjects = createGridElements(canvas);
-    
-    // Log results
-    console.log(`Test grid creation results: ${testGridObjects.length} objects created`);
-    
-    // Clean up test grid
-    testGridObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
-    });
-    
-    // Report success
-    captureError(
-      new Error("Grid creation test results"),
-      "grid-creation-test",
-      {
-        level: "info",
-        extra: {
-          objectsCreated: testGridObjects.length,
-          canvasDimensions: `${canvas.width}x${canvas.height}`
-        }
-      }
-    );
-  } catch (error) {
-    console.error("Error testing grid creation:", error);
-    
-    // Report failure
-    captureError(error, "grid-creation-test-error", {
-      level: "error",
-      extra: {
-        canvasDimensions: canvas ? `${canvas.width}x${canvas.height}` : "unknown"
-      }
-    });
   }
 };

@@ -1,3 +1,4 @@
+
 /**
  * Canvas Component
  * Responsible for rendering the fabric.js canvas with grid

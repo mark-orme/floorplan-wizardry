@@ -5,8 +5,8 @@
  */
 import { useEffect, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { startGridMonitoring, stopGridMonitoring, getMonitoringStatus } from "@/utils/grid/gridMonitoring";
-import { runGridDiagnostics } from "@/utils/grid/gridDiagnostics";
+import { createReliableGrid } from "@/utils/grid/reliableGridCreation";
+import { logGridState } from "@/utils/grid/gridDiagnosticLogger";
 import { toast } from "sonner";
 
 interface GridMonitorProps {
@@ -39,17 +39,45 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
       }
       
       try {
-        const started = startGridMonitoring(canvas, gridLayerRef, {
-          checkInterval: 5000, // Check every 5 seconds
-          autoRepair: true,
-          useEmergencyGrid: true
-        });
+        setIsActive(true);
+        console.log("Grid monitoring started");
         
-        setIsActive(started);
+        // Check grid status initially
+        logGridState(canvas, gridLayerRef.current);
         
-        if (started) {
-          console.log("Grid monitoring started");
-        }
+        // Set up monitoring interval
+        const intervalId = setInterval(() => {
+          const canvas = fabricCanvasRef.current;
+          if (!canvas) return;
+          
+          // Log current state
+          logGridState(canvas, gridLayerRef.current);
+          
+          // Check if grid needs repair
+          const objectsOnCanvas = gridLayerRef.current.filter(obj => canvas.contains(obj)).length;
+          
+          if (objectsOnCanvas === 0 && gridLayerRef.current.length > 0) {
+            console.log("Grid objects exist but none are on canvas, repairing");
+            
+            // Try to re-add existing objects
+            gridLayerRef.current.forEach(obj => {
+              if (!canvas.contains(obj)) {
+                try {
+                  canvas.add(obj);
+                } catch (error) {
+                  console.error("Failed to re-add grid object:", error);
+                }
+              }
+            });
+            
+            canvas.requestRenderAll();
+          } else if (gridLayerRef.current.length === 0) {
+            console.log("No grid objects exist, creating grid");
+            createReliableGrid(canvas, gridLayerRef);
+          }
+        }, 5000);
+        
+        return () => clearInterval(intervalId);
       } catch (error) {
         console.error("Error starting grid monitoring:", error);
       }
@@ -61,7 +89,6 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
     // Clean up on unmount
     return () => {
       clearTimeout(timerId);
-      stopGridMonitoring();
       setIsActive(false);
     };
   }, [fabricCanvasRef, gridLayerRef, active]);
@@ -69,35 +96,17 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
   // Re-run monitoring setup when canvas reference changes
   useEffect(() => {
     if (active && fabricCanvasRef.current && !isActive) {
-      stopGridMonitoring(); // Stop any existing monitoring
+      setIsActive(true);
       
-      const canvas = fabricCanvasRef.current;
-      const started = startGridMonitoring(canvas, gridLayerRef);
-      setIsActive(started);
+      // Log initial state
+      logGridState(fabricCanvasRef.current, gridLayerRef.current);
+      
+      // Create grid if needed
+      if (gridLayerRef.current.length === 0) {
+        createReliableGrid(fabricCanvasRef.current, gridLayerRef);
+      }
     }
   }, [fabricCanvasRef.current, active, isActive, gridLayerRef]);
-  
-  // Perform an initial diagnostic on mount
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Small delay to ensure canvas is ready
-    const timerId = setTimeout(() => {
-      try {
-        const diagnostics = runGridDiagnostics(canvas, gridLayerRef.current, false);
-        
-        // Show a toast for serious issues
-        if (diagnostics.status === 'critical') {
-          toast.warning("Grid has critical issues, attempting repair");
-        }
-      } catch (error) {
-        console.error("Error running initial diagnostics:", error);
-      }
-    }, 2000);
-    
-    return () => clearTimeout(timerId);
-  }, [fabricCanvasRef, gridLayerRef]);
   
   // This is an invisible component
   return null;
