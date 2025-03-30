@@ -16,6 +16,57 @@
 11. 🔄 **Promise Handling** - Always use await or .catch() with promises to prevent unhandled rejections
 12. 🧮 **Boolean Expression Safety** - Use explicit boolean checks rather than truthy/falsy coercion
 
+## 📚 Code Structure Guidelines
+
+### Grid System
+
+When working with the grid system, follow these principles:
+
+1. **Function Responsibility**:
+   - Grid creation functions should be in `utils/grid/gridCreationUtils.ts`
+   - Grid validation functions should be in `utils/grid/gridValidator.ts`
+   - Debugging tools should be in `utils/grid/gridDebugUtils.ts`
+   - Diagnostics should be in `utils/grid/gridDiagnostics.ts`
+
+2. **Exports Organization**:
+   - All grid utilities should be exported through `utils/grid/index.ts`
+   - Use named exports for clarity
+   - Group related functions in namespaced objects when appropriate
+
+3. **Error Handling**:
+   - Grid functions should handle null/undefined canvases gracefully
+   - Implement proper try/catch blocks for canvas operations
+   - Log detailed error messages for debugging
+
+4. **Validation First**:
+   - Always validate inputs before performing grid operations
+   - Check canvas existence and validity
+   - Validate grid objects before manipulating them
+
+### Hook Design
+
+When creating React hooks:
+
+1. **Single Responsibility**:
+   - Each hook should focus on one specific concern
+   - Break complex hooks into smaller, composable hooks
+   - Separate data fetching, state management, and side effects
+
+2. **Naming Conventions**:
+   - Hooks should start with `use`
+   - Name should clearly indicate purpose (e.g., `useGridCreation`)
+   - Group related hooks in dedicated directories
+
+3. **Dependencies Management**:
+   - Be explicit about hook dependencies
+   - Use dependency arrays correctly in useEffect
+   - Consider memoization for expensive calculations
+
+4. **Error States**:
+   - Include error states in hook returns
+   - Provide clear error messages
+   - Implement recovery mechanisms where appropriate
+
 ## 📝 Pull Request Guidelines
 
 1. Reference the issue number in your PR description
@@ -25,6 +76,17 @@
 5. Keep PRs focused on a single concern for easier review
 6. Follow the code style defined in ESLint rules
 
+### PR Checklist
+
+Before submitting your PR, ensure:
+
+- [ ] Tests for the changes have been added/updated
+- [ ] Documentation has been updated
+- [ ] Code follows the established style guidelines
+- [ ] PR description clearly explains the changes
+- [ ] If adding new grid functions, they are properly exported in index.ts
+- [ ] All TypeScript types are properly defined with no `any`
+
 ## 🧪 Testing Standards
 
 1. All new features should include unit tests
@@ -32,6 +94,27 @@
 3. Use test-driven development where possible
 4. Test edge cases and error conditions thoroughly
 5. Mock external dependencies properly
+
+### Grid Testing
+
+When testing grid functions:
+
+1. **Mock Canvas**:
+   - Create a proper mock for FabricCanvas
+   - Implement necessary methods (add, remove, contains, etc.)
+   - Simulate canvas dimensions
+
+2. **Test Cases**:
+   - Test with valid canvas
+   - Test with null/undefined canvas
+   - Test with invalid dimensions
+   - Test with existing grid objects
+   - Test error recovery mechanisms
+
+3. **Validation**:
+   - Verify grid objects are created correctly
+   - Check proper styling is applied
+   - Validate error handling works as expected
 
 ## 💾 Pre-commit Hooks
 
@@ -49,27 +132,55 @@ This project uses Husky and lint-staged to enforce code quality on commit:
 3. Document why a dependency is added in PR descriptions
 4. Consider bundle size impact before adding new dependencies
 
-## 🏗️ Code Architecture
+## 🏗️ Grid Architecture
 
-1. Follow component-based architecture patterns
-2. Keep components small and focused on a single responsibility
-3. Maintain separation between UI, business logic, and data access
-4. Use custom hooks for shared logic
-5. Utilize context providers for global state
-6. Follow established folder structure and naming conventions
+The grid system follows a layered architecture:
 
-## 🪄 AI Assistant Usage Guidelines
+1. **Core Creation Layer**:
+   - Low-level grid creation functions
+   - Direct interaction with Fabric.js API
+   - Basic error handling
 
-When using AI tools to help with development, use this prompt template:
+2. **Validation Layer**:
+   - Input validation
+   - Grid integrity checks
+   - Canvas validation
 
-```
-Write this with no any, explicit function return types, extract magic numbers into constants, and include JSDoc for all exported functions. 
-Avoid circular references. All types should be in src/types/[domain].ts where relevant.
-Make sure the code follows our project structure with small, focused files. 
-Ensure compatibility with Fabric.js v6 API.
-Implement proper promise handling with await or .catch().
-Use strict boolean expressions.
-```
+3. **Recovery Layer**:
+   - Retry mechanisms
+   - Fallback methods
+   - Emergency grid creation
+
+4. **React Integration Layer**:
+   - React hooks for grid management
+   - Component lifecycle integration
+   - State management
+
+### Function Categories
+
+Grid functions fall into these categories:
+
+1. **Creation Functions**:
+   - `createBasicEmergencyGrid`: Simplified grid for fallback
+   - `createCompleteGrid`: Full-featured grid
+   - `createEnhancedGrid`: Grid with additional features
+   - `createSimpleGrid`: Basic grid implementation
+
+2. **Validation Functions**:
+   - `validateGrid`: Check grid integrity
+   - `verifyGridExists`: Verify grid existence
+   - `isCanvasValidForGrid`: Validate canvas for grid operation
+
+3. **Management Functions**:
+   - `ensureGrid`: Create or verify grid with safety checks
+   - `reorderGridObjects`: Manage grid object ordering
+   - `clearGrid`: Remove grid from canvas
+
+4. **Diagnostic Functions**:
+   - `runGridDiagnostics`: Check grid health
+   - `applyGridFixes`: Fix common grid issues
+   - `dumpGridState`: Log detailed grid information
+   - `emergencyGridFix`: Last-resort grid repair
 
 ## 🛠️ Type Safety Enforcement
 

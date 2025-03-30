@@ -45,17 +45,49 @@ src/
   - `useGridSafety`: Error boundaries and timeout protection
   
 - **Grid Creation Process**:
-  1. Validation: Check canvas and input validity 
-  2. Throttling: Prevent excessive grid creation operations
-  3. Creation: Generate grid lines with proper batching
-  4. Safety: Monitor for timeouts and prevent infinite loops
-  5. Error Recovery: Implement fallbacks and retry mechanisms
+  1. **Validation**: Check canvas and input validity 
+  2. **Throttling**: Prevent excessive grid creation operations
+  3. **Creation**: Generate grid lines with proper batching
+  4. **Safety**: Monitor for timeouts and prevent infinite loops
+  5. **Error Recovery**: Implement fallbacks and retry mechanisms
 
 - **Error Recovery System**:
   - Multiple fallback methods for grid creation
   - Automatic retries with exponential backoff
   - Emergency grid creation when all else fails
   - Detailed error logging and debugging information
+
+#### Grid Utilities
+The `/utils/grid` directory contains a set of specialized modules for grid management:
+
+- `gridCreationUtils.ts`: Core functions for creating different types of grids
+  - `createBasicEmergencyGrid`: Simple grid for fallback scenarios
+  - `createCompleteGrid`: Full-featured grid with small and large lines
+  - `createEnhancedGrid`: Extended grid with additional features
+  - `validateGrid`: Validate grid existence and integrity
+  - `verifyGridExists`: Quick check if grid objects exist
+  - `ensureGrid`: Main grid creation function with safety checks
+
+- `simpleGrid.ts`: Basic grid implementation
+  - `createSimpleGrid`: Create a basic grid on the canvas
+  - `clearGrid`: Remove grid from canvas
+  - `isCanvasValidForGrid`: Validate canvas for grid creation
+
+- `gridDiagnostics.ts`: Tools for grid debugging
+  - `runGridDiagnostics`: Comprehensive grid health checks
+  - `applyGridFixes`: Automatic fixes for common grid issues
+  - `emergencyGridFix`: Last-resort grid repair
+
+- `gridDebugUtils.ts`: Developer-focused grid tools
+  - `dumpGridState`: Log detailed grid state information
+  - `forceCreateGrid`: Force grid creation for testing
+
+- `gridValidator.ts`: Grid validation utilities
+  - `validateCanvasForGrid`: Validate canvas for grid operations
+  - `validateGridObjects`: Validate grid objects integrity
+  - `checkGridHealth`: Perform comprehensive grid health check
+
+All grid utilities are exported via the `/utils/grid/index.ts` file, which provides a clean interface for importing grid-related functionality.
 
 #### Geometry Calculations
 - **Grid Operations**: Snapping, alignment, and coordinate transformation
@@ -132,51 +164,97 @@ src/
    - Provide user-friendly error messages and recovery options
    - Catch and handle all promise rejections
 
-6. **Code Quality Enforcement**:
-   - ESLint rules enforce TypeScript best practices
-   - Pre-commit hooks run linting automatically via Husky
-   - Prettier ensures consistent code formatting
-   - Regular dependency audits with depcheck
+### Working with the Canvas Grid System
 
-### Working with the Canvas
+#### Grid Architecture Overview
 
-#### Grid System Implementation
-The application uses a modular grid system with the following characteristics:
-- **Base Settings**:
-  - Base grid spacing: `GRID_SIZE = 0.1` meters (10cm)
-  - Large grid: 1.0 meters (100cm)
-  - Pixels per meter: 100 pixels (configurable)
+The application's grid system follows a layered architecture:
 
-- **Grid Component Architecture**:
-  - `useCanvasGrid`: Main hook that composes specialized grid hooks
-  - `useGridCreation`: Handles the actual grid line creation
-  - `useGridRetry`: Implements retry logic for reliability
-  - `useGridThrottling`: Manages performance optimization
-  - `useGridValidation`: Validates inputs before grid creation
-  - `useGridSafety`: Provides timeouts and safety boundaries
+1. **Core Grid Creation** (`gridCreationUtils.ts`):
+   - Low-level grid creation functions
+   - Multiple grid types with different complexities
+   - Error recovery mechanisms
 
-- **Error Recovery Strategy**:
-  - Multi-level fallback mechanisms
-  - Automatic retry with exponential backoff
-  - Emergency grid creation when normal methods fail
-  - Detailed logging for debugging
+2. **Grid React Integration** (`SimpleGrid.tsx`):
+   - React component for grid management
+   - Grid state management
+   - Integration with canvas lifecycle
 
-#### Performance Considerations
+3. **Grid Hooks** (`useGridCreation.ts`, `useGridRetry.ts`, etc.):
+   - React hooks for grid operations
+   - Safety and validation logic
+   - Performance optimization
 
-1. **Canvas Rendering**:
-   - Use object batching for large operations
-   - Implement proper object caching
-   - Consider offscreen rendering for complex operations
+4. **Grid Diagnostics** (`gridDiagnostics.ts`):
+   - Tools for debugging grid issues
+   - Health check utilities
+   - Grid recovery functions
 
-2. **State Management**:
-   - Limit history states to prevent memory issues (default: 100 states)
-   - Use immutable patterns for state updates
-   - Implement throttling for high-frequency updates
+#### Grid Creation Process
 
-3. **Grid Creation**:
-   - Optimize grid line creation with batching
-   - Use visibility toggling instead of recreation when possible
-   - Implement proper cleanup to prevent memory leaks
+The grid creation follows a reliable process:
+
+1. **Canvas Validation**:
+   - Check if the canvas exists and is properly initialized
+   - Validate canvas dimensions
+
+2. **Grid Creation**:
+   - Create grid objects (lines) based on canvas dimensions
+   - Apply proper styling and properties
+   - Add grid objects to canvas
+
+3. **Grid Validation**:
+   - Verify grid objects were properly created
+   - Check if grid objects exist on canvas
+   - Validate grid visibility
+
+4. **Error Recovery**:
+   - Retry grid creation with backoff if initial creation fails
+   - Fall back to emergency grid if standard grid fails
+   - Apply automatic fixes for common grid issues
+
+#### Working with Grid Functions
+
+To work with the grid system, use these key functions:
+
+- **Creating a grid**:
+  ```typescript
+  // Standard grid creation
+  const gridObjects = createCompleteGrid(canvas);
+  
+  // Simple grid creation
+  const simpleGrid = createSimpleGrid(canvas);
+  
+  // Reliable grid creation with safety checks
+  const reliableGrid = ensureGrid(canvas, gridLayerRef);
+  ```
+
+- **Grid validation and debugging**:
+  ```typescript
+  // Check if grid exists
+  const exists = verifyGridExists(canvas, gridObjects);
+  
+  // Validate grid integrity
+  const isValid = validateGrid(canvas, gridObjects);
+  
+  // Debug grid state
+  dumpGridState(canvas, gridObjects);
+  
+  // Run diagnostics
+  const diagnostics = runGridDiagnostics(canvas, gridObjects);
+  ```
+
+- **Grid manipulation**:
+  ```typescript
+  // Clear grid
+  clearGrid(canvas, gridObjects);
+  
+  // Reorder grid objects to back
+  reorderGridObjects(canvas, gridObjects);
+  
+  // Fix grid issues
+  const fixCount = applyGridFixes(canvas, gridObjects);
+  ```
 
 ### Hook Design Patterns
 
@@ -239,51 +317,6 @@ The application uses a modular grid system with the following characteristics:
    - Handle touch, mouse, and stylus inputs correctly
    - Implement proper gesture recognition
 
-### ESLint and Type Safety
-
-The project enforces strict type safety through ESLint rules:
-
-1. **Type Checking Rules**:
-   - No explicit `any` types allowed
-   - Explicit function return types required
-   - No floating promises (all promises must be handled)
-   - Strict boolean expressions enforced
-   - No misused promises (e.g., in if conditions)
-
-2. **Code Organization Rules**:
-   - Consistent type imports required
-   - Consistent type definitions (prefer interfaces)
-   - No magic numbers (must use constants)
-   - Explicit member accessibility modifiers
-
-3. **Common Issues Prevented**:
-   - Runtime type errors
-   - Unhandled promise rejections
-   - NaN and undefined propagation
-   - Type mismatches in React components
-
-4. **Running Linting Checks**:
-   - `npm run lint` - Check for linting issues
-   - `npm run lint:fix` - Automatically fix linting issues
-   - Pre-commit hooks will run linting on staged files
-
-### Debugging Tips
-
-1. **Canvas Debug Mode**:
-   - Enable debug mode by adding `?debug=true` to the URL
-   - Use the DebugInfo component to visualize state
-   - Check bounding boxes and control points with debug rendering
-
-2. **Performance Analysis**:
-   - Use the React Profiler for component performance
-   - Monitor canvas rendering performance
-   - Check for unnecessary re-renders and object creation
-
-3. **Error Logging**:
-   - Check browser console for detailed logging
-   - Use the logger utility with appropriate categories
-   - Monitor for fabric.js warnings and errors
-
 ## Pull Request Process
 
 1. **Preparation**:
@@ -305,40 +338,3 @@ The project enforces strict type safety through ESLint rules:
    - Squash commits with clear commit messages
    - Ensure CI passes before merging
    - Update the changelog if applicable
-
-## Release Process
-
-1. **Version Bumping**:
-   - Follow semantic versioning principles
-   - Update version in package.json
-   - Create a release tag
-
-2. **Testing**:
-   - Run the full test suite before release
-   - Perform manual testing of key workflows
-   - Verify browser compatibility
-
-3. **Deployment**:
-   - Build production assets
-   - Deploy to staging environment first
-   - Verify functionality before production deployment
-
-## Code Audit Tools
-
-Regular code quality audits are performed using:
-
-1. **ESLint**: 
-   - Run `npm run lint` to check for code quality issues
-   - Custom rules enforce TypeScript best practices
-
-2. **Depcheck**:
-   - Run `npx depcheck` to identify unused dependencies
-   - Keep dependencies minimal and up-to-date
-
-3. **Type Coverage**:
-   - Ensure complete type coverage across the codebase
-   - No implicit 'any' types allowed
-
-4. **Bundle Analysis**:
-   - Monitor bundle size impacts of new dependencies
-   - Optimize code splitting and lazy loading

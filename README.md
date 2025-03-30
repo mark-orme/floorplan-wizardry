@@ -5,137 +5,14 @@ A powerful web-based application for creating and editing floor plans with accur
 
 ## 📋 Table of Contents
 
-- [For End Users](#-for-end-users)
-- [For Designers](#-for-designers)
-- [For Developers](#-for-developers)
-- [For Administrators](#-for-administrators)
 - [Project Overview](#-project-overview)
 - [Features](#-features)
-- [Technical Implementation](#-technical-implementation)
+- [Technical Architecture](#-technical-architecture)
 - [Getting Started](#-getting-started)
-- [Browser Support](#-browser-support)
 - [Usage Guide](#-usage-guide)
+- [Code Structure](#-code-structure)
 - [Contributing](#-contributing)
 - [License](#-license)
-- [Acknowledgments](#-acknowledgments)
-
-## 👤 For End Users
-
-### Quick Start
-
-1. **Access the Application**: Open the application in your web browser.
-2. **Create a New Plan**: Click the "New Plan" button to start a new floor plan.
-3. **Select Drawing Tools**: Use the toolbar to select different drawing tools.
-4. **Save Your Work**: Your work is automatically saved as you go, but you can also export as images.
-
-### Key Features for Users
-
-- Draw rooms with accurate measurements
-- Calculate floor areas automatically
-- Create multi-floor building plans
-- Export your designs as images
-
-### Need Help?
-
-- Check the built-in help section by clicking the "?" icon
-- Visit our [User Support Portal](https://support.floorplandesigner.com)
-- Email support: help@floorplandesigner.com
-
-## 🎨 For Designers
-
-### Design Features
-
-- **Grid Customization**: Adjust the grid size and visibility to match your design needs.
-- **Professional Measurements**: Work with industry-standard measurements and scales.
-- **Area Calculations**: Get accurate area calculations for client presentations.
-- **Multi-floor Design**: Create and manage multiple floors with synchronized layouts.
-
-### Design Workflow Tips
-
-1. Start with the building outline
-2. Add interior walls and room divisions
-3. Add doors and windows
-4. Add fixtures and furniture
-5. Calculate areas and export for presentation
-
-### Design Standards Support
-
-- Support for architectural scales and standards
-- Customizable display options for presentations
-- Exportable formats compatible with industry tools
-
-## 💻 For Developers
-
-### Technology Stack
-
-- **Frontend**: React 18+ with TypeScript
-- **Canvas Manipulation**: Fabric.js
-- **Styling**: Tailwind CSS + shadcn/ui
-- **State Management**: React Context + React Query
-- **Data Storage**: IndexedDB, Supabase
-- **Package Management**: npm/bun
-
-### Development Setup
-
-```sh
-# Clone the repository
-git clone <repository-url>
-
-# Navigate to the project directory
-cd floorplan-designer
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-### Architecture Overview
-
-The application follows a component-based architecture with:
-
-- **Canvas Components**: Manage rendering and user interaction
-- **Utility Functions**: Handle calculations and data processing
-- **Custom Hooks**: Separate logic concerns
-- **Context Providers**: Manage application state
-
-For more details, please see the [Contributing Guidelines](CONTRIBUTING.md) and [Architecture Documentation](docs/architecture.md).
-
-### Code Quality
-
-We enforce strict code quality standards with:
-- TypeScript for static type checking
-- ESLint for code style and error prevention
-- Automated tests for core functionality
-- Husky pre-commit hooks for quality checks
-
-## 🔧 For Administrators
-
-### Deployment Options
-
-- **Self-hosted**: Deploy on your own servers
-- **Cloud-hosted**: Use our managed cloud service
-- **Enterprise**: On-premises installation with additional security features
-
-### User Management
-
-- Create and manage user accounts
-- Assign roles and permissions
-- Monitor usage and activity
-
-### Security Features
-
-- End-to-end encryption for sensitive plans
-- Role-based access control
-- Regular security updates
-- Compliance with industry standards
-
-### Data Management
-
-- Automated backups
-- Data export/import options
-- Audit logs for all changes
 
 ## 🚀 Project Overview
 
@@ -177,10 +54,9 @@ This application allows architects, designers, and homeowners to:
 - **Touch & Stylus Support**: Optimized for drawing with stylus devices
 - **Local Storage**: Work is automatically saved locally
 
-## 🔧 Technical Implementation
+## 🔧 Technical Architecture
 
-The application is built using:
-
+### Core Technologies
 - **React 18+** with TypeScript for the UI and application logic
 - **Fabric.js** for canvas manipulation and drawing tools
 - **Tailwind CSS** with shadcn/ui for responsive design components
@@ -188,8 +64,7 @@ The application is built using:
 - **Supabase** for cloud storage and user authentication
 - **React Query** for efficient data fetching and state management
 
-### Architecture
-
+### Architecture Overview
 The application follows a component-based architecture with:
 
 - **Canvas Components**: Handle rendering and user interaction
@@ -197,11 +72,10 @@ The application follows a component-based architecture with:
 - **Custom Hooks**: Separate logic concerns (drawing, resizing, history, etc.)
 - **Context Providers**: Manage application state and user preferences
 
-#### Grid System Architecture
-
+### Grid System Architecture
 The application implements a robust grid system with:
 
-- **Modular Hook Design**: Specialized hooks for different grid functionalities
+- **Modular Design**: Specialized utility functions for different grid functionalities
 - **Error Recovery**: Automatic retry mechanisms and fallback grid rendering
 - **Performance Optimization**: Throttling and batched operations for smooth performance
 - **Safety Mechanisms**: Lock acquisition and timeout protection to prevent rendering issues
@@ -223,14 +97,6 @@ npm install
 # Start the development server
 npm run dev
 ```
-
-## 🌐 Browser Support
-
-The application works best in modern browsers:
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
 
 ## 📖 Usage Guide
 
@@ -256,10 +122,56 @@ The application works best in modern browsers:
    - Pan across the canvas by holding Space and dragging
    - Check the calculated GIA in the toolbar
 
-5. **Save and Export**:
-   - Work is automatically saved to local storage
-   - Export as PNG for sharing or printing
-   - Sync with cloud storage (if enabled)
+## 💻 Code Structure
+
+### Directory Organization
+```
+src/
+├── components/     # React components
+│   ├── ui/         # UI components from shadcn/ui
+│   ├── canvas/     # Canvas-related components
+│   └── property/   # Property components
+├── hooks/          # Custom React hooks
+│   ├── grid/       # Grid-related hooks
+│   └── canvas/     # Canvas-related hooks
+├── utils/          # Utility functions
+│   ├── grid/       # Grid utilities
+│   ├── fabric/     # Fabric.js utilities
+│   └── geometry/   # Geometry calculation utilities
+├── pages/          # Page components
+└── types/          # TypeScript type definitions
+```
+
+### Key Modules
+
+#### Grid System
+The grid system is implemented in `src/utils/grid/` with these key files:
+
+- `gridCreationUtils.ts`: Core grid creation functions
+- `simpleGrid.ts`: Basic grid implementation
+- `gridDiagnostics.ts`: Grid debugging tools
+- `gridDebugUtils.ts`: Developer tools for grid management
+- `gridValidator.ts`: Validation utilities for grid integrity
+
+The grid system provides:
+- Multiple grid types (basic, complete, enhanced)
+- Validation and verification mechanisms
+- Error recovery with retry logic
+- Diagnostic and debugging tools
+
+#### Canvas System
+The canvas system is built on Fabric.js and organized in:
+
+- `src/hooks/canvas/`: Canvas-related hooks
+- `src/utils/fabric/`: Fabric.js utility functions
+- `src/components/canvas/`: Canvas React components
+
+#### Drawing Tools
+Drawing tools are implemented in:
+
+- `src/hooks/drawing/`: Drawing-related hooks
+- `src/components/canvas/`: Tool-specific components
+- `src/utils/drawing/`: Drawing utility functions
 
 ## 🤝 Contributing
 
@@ -268,9 +180,3 @@ Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on our cod
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👏 Acknowledgments
-
-- Fabric.js for the powerful canvas manipulation library
-- shadcn/ui for the beautiful UI components
-- The React team for the excellent framework
