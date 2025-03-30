@@ -4,6 +4,7 @@ import { useLineSettings } from './useLineSettings';
 import { toast } from 'sonner';
 import { trackLineThickness } from "@/utils/fabricBrush";
 import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { Canvas } from 'fabric';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -16,25 +17,39 @@ vi.mock('@/utils/fabricBrush', () => ({
   trackLineThickness: vi.fn()
 }));
 
-describe('useLineSettings Hook', () => {
-  // Setup mock canvas and state
-  const mockFabricCanvas = {
-    freeDrawingBrush: {
-      width: 2,
-      color: '#000000'
-    }
+// Mock the fabric Canvas to satisfy TS
+vi.mock('fabric', () => {
+  return {
+    Canvas: vi.fn().mockImplementation(() => ({
+      // Mock the minimal Canvas interface needed for tests
+      enablePointerEvents: true,
+      freeDrawingBrush: {
+        width: 2,
+        color: '#000000'
+      },
+      // Add other required properties
+      getZoom: vi.fn().mockReturnValue(1),
+      setZoom: vi.fn(),
+      requestRenderAll: vi.fn()
+    }))
   };
-  
-  const mockCanvasRef = { current: mockFabricCanvas };
-  const mockSetLineThickness = vi.fn();
-  const mockSetLineColor = vi.fn();
+});
 
+describe('useLineSettings Hook', () => {
+  // Setup mock canvas with proper typing
+  let mockFabricCanvas: Canvas;
+  
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFabricCanvas = new Canvas();
   });
 
   test('handles line thickness changes correctly', () => {
     // Given
+    const mockCanvasRef = { current: mockFabricCanvas };
+    const mockSetLineThickness = vi.fn();
+    const mockSetLineColor = vi.fn();
+    
     const initialProps = {
       fabricCanvasRef: mockCanvasRef,
       lineThickness: 2,
@@ -66,6 +81,10 @@ describe('useLineSettings Hook', () => {
 
   test('handles line color changes correctly', () => {
     // Given
+    const mockCanvasRef = { current: mockFabricCanvas };
+    const mockSetLineThickness = vi.fn();
+    const mockSetLineColor = vi.fn();
+    
     const initialProps = {
       fabricCanvasRef: mockCanvasRef,
       lineThickness: 2,
@@ -94,6 +113,10 @@ describe('useLineSettings Hook', () => {
 
   test('applies line settings to canvas brush', () => {
     // Given
+    const mockCanvasRef = { current: mockFabricCanvas };
+    const mockSetLineThickness = vi.fn();
+    const mockSetLineColor = vi.fn();
+    
     const initialProps = {
       fabricCanvasRef: mockCanvasRef,
       lineThickness: 3,
@@ -125,6 +148,9 @@ describe('useLineSettings Hook', () => {
   test('handles missing canvas gracefully', () => {
     // Given - canvas ref with no current value
     const emptyCanvasRef = { current: null };
+    const mockSetLineThickness = vi.fn();
+    const mockSetLineColor = vi.fn();
+    
     const initialProps = {
       fabricCanvasRef: emptyCanvasRef,
       lineThickness: 2,

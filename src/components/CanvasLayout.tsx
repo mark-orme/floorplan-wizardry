@@ -8,7 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
  * Props for the CanvasLayout component
  */
 interface CanvasLayoutProps {
-  createGrid?: (canvas: FabricCanvas) => FabricObject[];
+  createGrid?: (canvas: FabricCanvas, existingGrid?: FabricObject[]) => FabricObject[];
   children?: React.ReactNode;
 }
 

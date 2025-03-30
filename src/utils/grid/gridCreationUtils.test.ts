@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 
@@ -17,8 +18,13 @@ describe('gridCreationUtils', () => {
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
+      
+      // Mock canvas.getObjects to return empty array
+      canvas.getObjects = vi.fn().mockReturnValue([]);
+      
       const result = verifyGridExists(canvas);
       expect(result).toBe(false);
+      expect(canvas.getObjects).toHaveBeenCalled();
     });
     
     it('should return false when grid objects are not on canvas', () => {

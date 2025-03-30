@@ -6,7 +6,8 @@
 import { useCallback, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { createBasicEmergencyGrid, dumpGridState, forceCreateGrid } from "@/utils/grid/gridDebugUtils";
+import { dumpGridState, forceCreateGrid } from "@/utils/grid/gridDebugUtils";
+import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 
 /**
  * Interface for grid health information
@@ -116,7 +117,7 @@ export const useGridCreationDebug = (
       gridLayerRef.current = [];
       
       // Create new emergency grid
-      const newGridObjects = createBasicEmergencyGrid(canvas, gridLayerRef);
+      const newGridObjects = createBasicEmergencyGrid(canvas);
       
       // Force render
       canvas.requestRenderAll();

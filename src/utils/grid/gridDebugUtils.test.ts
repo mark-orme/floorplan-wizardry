@@ -59,18 +59,20 @@ describe("Grid Debug Utilities", () => {
   });
   
   test("createBasicEmergencyGrid creates horizontal and vertical lines", () => {
-    const result = createBasicEmergencyGrid(canvas, gridLayerRef);
+    const result = createBasicEmergencyGrid(canvas);
     
     // For a real canvas with appropriate dimensions, we'd expect grid objects to be created
     expect(result.length).toBeGreaterThan(0);
-    expect(gridLayerRef.current).toBe(result);
   });
   
   test("forceCreateGrid removes existing grid and creates new one", () => {
     // Add some mock grid objects first
-    gridLayerRef.current = [{} as FabricObject, {} as FabricObject];
+    const mockGridObjects = [{} as FabricObject, {} as FabricObject];
+    vi.spyOn(canvas, 'getObjects').mockReturnValue(
+      mockGridObjects.map(obj => ({ ...obj, objectType: 'grid' } as FabricObject))
+    );
     
-    const result = forceCreateGrid(canvas, gridLayerRef);
+    const result = forceCreateGrid(canvas);
     
     expect(canvas.remove).toHaveBeenCalledTimes(2);
     expect(result.length).toBeGreaterThan(0);
@@ -78,7 +80,7 @@ describe("Grid Debug Utilities", () => {
   });
   
   test("handles null canvas gracefully", () => {
-    const result = createBasicEmergencyGrid(null as unknown as Canvas, gridLayerRef);
+    const result = createBasicEmergencyGrid(null as unknown as Canvas);
     
     expect(result).toEqual([]);
     expect(console.error).toHaveBeenCalled();
