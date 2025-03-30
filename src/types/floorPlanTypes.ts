@@ -16,13 +16,49 @@ export interface FloorPlanMetadata {
 }
 
 /**
+ * Paper size enum
+ */
+export enum PaperSize {
+  A3 = "A3",
+  A4 = "A4",
+  A5 = "A5",
+  Letter = "Letter",
+  Legal = "Legal",
+  Tabloid = "Tabloid",
+  Custom = "Custom"
+}
+
+/**
+ * Stroke type enum
+ */
+export enum StrokeType {
+  LINE = "line",
+  POLYLINE = "polyline",
+  WALL = "wall",
+  ROOM = "room",
+  FREEHAND = "freehand"
+}
+
+/**
+ * Stroke type literals for compatibility
+ */
+export type StrokeTypeLiteral = "line" | "polyline" | "wall" | "room" | "freehand";
+
+/**
  * Wall object in a floor plan
  */
 export interface Wall {
   id: string;
   points: { x: number; y: number }[];
+  startPoint?: { x: number; y: number }; // Optional for backward compatibility
+  endPoint?: { x: number; y: number }; // Optional for backward compatibility
+  start?: { x: number; y: number }; // Optional for backward compatibility
+  end?: { x: number; y: number }; // Optional for backward compatibility
   thickness?: number;
   length?: number;
+  height?: number;
+  color?: string;
+  roomIds?: string[];
   [key: string]: any; // Additional wall properties
 }
 
@@ -32,8 +68,11 @@ export interface Wall {
 export interface Room {
   id: string;
   name?: string;
+  type?: string;
   points: { x: number; y: number }[];
   area?: number;
+  color?: string;
+  level?: number;
   [key: string]: any; // Additional room properties
 }
 
@@ -43,8 +82,10 @@ export interface Room {
 export interface Stroke {
   id: string;
   points: { x: number; y: number }[];
+  type?: StrokeTypeLiteral;
   color?: string;
   thickness?: number;
+  width?: number;
   [key: string]: any; // Additional stroke properties
 }
 
@@ -60,12 +101,14 @@ export interface FloorPlan {
   rooms: Room[];
   strokes: Stroke[];
   canvasData: any | null;
-  canvasJson: any | null;
+  canvasJson: any | null; // Required field
   createdAt: string;
   updatedAt: string;
   level: number;
   index: number;
   metadata: FloorPlanMetadata;
+  paperSize?: string | PaperSize; // Optional property
+  objects?: any[]; // Optional for some implementations
 }
 
 /**
@@ -86,7 +129,7 @@ export const createDefaultFloorPlan = (index: number = 0): FloorPlan => {
     rooms: [],
     strokes: [],
     canvasData: null,
-    canvasJson: null,
+    canvasJson: null, // Include required field
     createdAt: now,
     updatedAt: now,
     level: index,

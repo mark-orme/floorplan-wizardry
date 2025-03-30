@@ -105,7 +105,7 @@ export const useSyncedFloorPlans = () => {
           setFloorPlans(plansWithLabels);
           
           // Also save to local storage for offline access
-          await saveFloorPlans(supabaseData);
+          await saveFloorPlans(supabaseData as any);
           setIsLoading(false);
           return plansWithLabels;
         }

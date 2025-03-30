@@ -1,10 +1,11 @@
+
 /**
  * Hook for loading floor plan data in the canvas controller
  * @module useCanvasControllerLoader
  */
 import { useEffect, useCallback } from "react";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
-import { FloorPlan, StrokeType, StrokeTypeLiteral, Wall } from "@/types/floorPlanTypes";
+import { FloorPlan, Wall, StrokeTypeLiteral } from "@/types/floorPlanTypes";
 import { adaptFloorPlans } from "@/utils/typeAdapters";
 import { Point } from "@/types/geometryTypes";
 
@@ -83,13 +84,18 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
           })) : [],
           walls: plan.walls?.map(wall => ({
             id: wall.id,
-            startPoint: wall.start || { x: 0, y: 0 } as Point,
-            endPoint: wall.end || { x: 0, y: 0 } as Point,
-            start: wall.start || { x: 0, y: 0 } as Point,
-            end: wall.end || { x: 0, y: 0 } as Point,
+            points: wall.start && wall.end ? 
+              [wall.start, wall.end] : 
+              (wall.startPoint && wall.endPoint ? 
+                [wall.startPoint, wall.endPoint] : 
+                [{ x: 0, y: 0 }, { x: 0, y: 0 }]),
+            startPoint: wall.start || wall.startPoint || { x: 0, y: 0 } as Point,
+            endPoint: wall.end || wall.endPoint || { x: 0, y: 0 } as Point,
+            start: wall.start || wall.startPoint || { x: 0, y: 0 } as Point,
+            end: wall.end || wall.endPoint || { x: 0, y: 0 } as Point,
             thickness: wall.thickness,
             height: wall.height || 0,
-            color: wall.color,
+            color: wall.color || '#000000',
             roomIds: wall.roomIds || []
           } as Wall)) || [],
           rooms: plan.rooms || [],
@@ -100,21 +106,20 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
             updatedAt: typeof plan.metadata.updatedAt === 'string' 
               ? plan.metadata.updatedAt 
               : new Date(plan.metadata.updatedAt || Date.now()).toISOString(),
-            paperSize: plan.metadata.paperSize || 'CUSTOM',
+            paperSize: plan.metadata.paperSize || 'A4',
             level: plan.metadata.level || 0
           } : {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            paperSize: plan.paperSize || 'CUSTOM',
+            paperSize: plan.paperSize || 'A4',
             level: plan.level || 0
           },
-          canvasJson: plan.canvasJson || '',
+          canvasJson: plan.canvasJson || null,
           gia: plan.gia || 0,
           level: plan.level || 0,
           canvasData: plan.canvasData || null,
           createdAt: plan.createdAt || new Date().toISOString(),
-          updatedAt: plan.updatedAt || new Date().toISOString(),
-          paperSize: plan.paperSize || 'CUSTOM'
+          updatedAt: plan.updatedAt || new Date().toISOString()
         };
         
         return typedPlan;

@@ -1,7 +1,12 @@
 
 import React, { createContext, useContext, useMemo, useState, useCallback } from "react";
-import { DrawingTool } from "@/types/drawingTypes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { DEFAULT_CANVAS_STATE } from "@/hooks/useCanvasState";
+
+/**
+ * Use DrawingMode as DrawingTool for backwards compatibility
+ */
+type DrawingTool = DrawingMode;
 
 /**
  * Drawing context type
@@ -44,7 +49,7 @@ interface DrawingProviderProps {
  */
 export const DrawingProvider: React.FC<DrawingProviderProps> = ({ children }) => {
   // Initialize with default state
-  const [tool, setTool] = useState<DrawingTool>(DEFAULT_CANVAS_STATE.tool);
+  const [tool, setTool] = useState<DrawingTool>(DEFAULT_CANVAS_STATE.tool as DrawingTool);
   const [lineColor, setLineColor] = useState(DEFAULT_CANVAS_STATE.lineColor);
   const [lineThickness, setLineThickness] = useState(DEFAULT_CANVAS_STATE.lineThickness);
   const [snapToGrid, setSnapToGrid] = useState(DEFAULT_CANVAS_STATE.snapToGrid);

@@ -1,4 +1,3 @@
-
 /**
  * Path processing hook
  * Handles processing of drawing paths
@@ -6,7 +5,7 @@
  */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from 'fabric';
-import { FloorPlan, Stroke, StrokeType, StrokeTypeLiteral } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 import { DrawingTool } from '@/constants/drawingModes';
 import { Point } from '@/types/drawingTypes';
 import { v4 as uuidv4 } from 'uuid';
@@ -43,7 +42,6 @@ export interface UsePathProcessingProps {
  * @returns Array of point coordinates
  */
 const extractPointsFromPath = (path: FabricPath): Point[] => {
-  // Simple implementation - in reality, you'd use more complex path parsing
   const points: Point[] = [];
   const pathData = path.path;
   
@@ -102,12 +100,6 @@ export const usePathProcessing = ({
   setGia
 }: UsePathProcessingProps) => {
   
-  /**
-   * Process a created path
-   * Handles different path types based on current tool
-   * 
-   * @param path - Created fabric path
-   */
   const processCreatedPath = useCallback((path: FabricPath) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !path) return;

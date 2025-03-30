@@ -14,23 +14,40 @@ import { FloorPlan as AppFloorPlan, Wall as AppWall } from '@/types/floorPlanTyp
  */
 export function adaptWall(wall: CoreWall): AppWall {
   return {
-    ...wall,
+    id: wall.id,
+    points: wall.start && wall.end ? [wall.start, wall.end] : [],
     startPoint: wall.start,
     endPoint: wall.end,
     start: wall.start,  // Ensure both properties are present
-    end: wall.end       // Ensure both properties are present
+    end: wall.end,      // Ensure both properties are present
+    thickness: wall.thickness,
+    color: wall.color,
+    height: wall.height,
+    roomIds: wall.roomIds
   };
 }
 
 /**
  * Convert a core floor plan to app floor plan format
- * @param plan Core floor plan
+ * @param corePlan Core floor plan
  * @returns App floor plan
  */
 export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
   return {
-    ...corePlan,
+    id: corePlan.id,
+    name: corePlan.name,
+    label: corePlan.label || corePlan.name,
     walls: corePlan.walls.map(adaptWall),
+    rooms: corePlan.rooms,
+    strokes: corePlan.strokes,
+    index: corePlan.index || corePlan.level,
+    gia: corePlan.gia,
+    level: corePlan.level,
+    createdAt: corePlan.createdAt,
+    updatedAt: corePlan.updatedAt,
+    canvasData: corePlan.canvasData,
+    canvasJson: corePlan.canvasJson || null,
+    metadata: corePlan.metadata
   };
 }
 

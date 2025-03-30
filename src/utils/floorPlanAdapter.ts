@@ -4,7 +4,7 @@
  * @module utils/floorPlanAdapter
  */
 import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom, StrokeType as CoreStrokeType } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeType, StrokeTypeLiteral } from '@/types/floorPlanTypes';
+import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 import { createPoint } from '@/types/core/Point';
 
 /**
@@ -15,22 +15,27 @@ import { createPoint } from '@/types/core/Point';
 export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
   // Convert wall format
   const walls = Array.isArray(appPlan.walls) 
-    ? appPlan.walls.map(wall => ({
-        id: wall.id,
-        start: wall.startPoint || wall.start, // Use either property
-        end: wall.endPoint || wall.end,     // Use either property
-        thickness: wall.thickness,
-        color: wall.color || '#000000',
-        height: wall.height,
-        roomIds: wall.roomIds
-      } as CoreWall)) 
+    ? appPlan.walls.map(wall => {
+        const start = wall.start || (wall.points && wall.points.length > 0 ? wall.points[0] : createPoint(0, 0));
+        const end = wall.end || (wall.points && wall.points.length > 1 ? wall.points[1] : createPoint(0, 0));
+        
+        return {
+          id: wall.id,
+          start,
+          end,
+          thickness: wall.thickness || 1,
+          color: wall.color || '#000000',
+          height: wall.height,
+          roomIds: wall.roomIds
+        } as CoreWall;
+      }) 
     : [];
   
   // Convert strokes and ensure each has width property
   const strokes = Array.isArray(appPlan.strokes) 
     ? appPlan.strokes.map(stroke => {
         // Convert string literal to core type directly
-        const strokeType: CoreStrokeType = stroke.type as CoreStrokeType;
+        const strokeType = stroke.type as CoreStrokeType;
 
         return {
           id: stroke.id,
@@ -92,6 +97,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
         
         return {
           id: wall.id,
+          points: [start, end], // Required property
           startPoint: start, // Map start to startPoint
           endPoint: end,     // Map end to endPoint
           start: start,      // Keep original properties too
@@ -121,8 +127,10 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       })
     : [];
   
-  return {
-    ...corePlan,
+  // Create a proper AppFloorPlan with required properties
+  const appFloorPlan: AppFloorPlan = {
+    id: corePlan.id,
+    name: corePlan.name,
     label: corePlan.label || corePlan.name || '', // Ensure label is preserved and required
     strokes: strokes,
     walls: walls,
@@ -136,6 +144,7 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       level: corePlan.level || 0
     } as AppRoom)) : [],
     index: corePlan.index || 0,
+    level: corePlan.level || 0,
     metadata: {
       createdAt: corePlan.metadata?.createdAt || new Date().toISOString(),
       updatedAt: corePlan.metadata?.updatedAt || new Date().toISOString(),
@@ -143,8 +152,13 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
       level: corePlan.metadata?.level || 0
     },
     gia: corePlan.gia || 0,
-    canvasData: corePlan.canvasData || null
+    canvasData: corePlan.canvasData || null,
+    canvasJson: corePlan.canvasJson || null,
+    createdAt: corePlan.createdAt || new Date().toISOString(),
+    updatedAt: corePlan.updatedAt || new Date().toISOString()
   };
+  
+  return appFloorPlan;
 }
 
 /**
