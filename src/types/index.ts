@@ -6,7 +6,7 @@
 
 // Core types - direct exports using export type for isolatedModules compatibility
 export type { Point } from './geometryTypes';
-export type { FloorPlan } from './core/FloorPlan';
+export type { FloorPlan } from './core/floor-plan/FloorPlan';
 export type { CanvasDimensions } from './core/Geometry';
 export type { DebugInfoState } from './core/DebugInfo';
 export type { DrawingState } from './core/DrawingState';
@@ -34,7 +34,7 @@ export type {
 export { createPoint } from './geometryTypes';
 export type { PerformanceStats } from './core/DebugInfo';
 export { createDefaultDrawingState } from './core/DrawingState';
-export { createFloorPlan } from './core/FloorPlan';
+export { createFloorPlan } from './core/floor-plan/FloorPlan';
 
 // Drawing types
 export type { default as GridCreationLock } from './grid/GridCreationLock';
