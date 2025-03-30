@@ -25,6 +25,7 @@ export const BasicGrid: React.FC<BasicGridProps> = ({ fabricCanvas }) => {
         
         if (objects.length > 0) {
           console.log(`Grid created with ${objects.length} objects`);
+          toast.success("Grid created successfully");
         } else {
           console.error("Grid creation returned 0 objects");
           toast.error("Failed to create grid");

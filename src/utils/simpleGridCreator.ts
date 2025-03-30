@@ -11,10 +11,14 @@ export function createSimpleGrid(
   gridObjects: FabricObject[] = []
 ): FabricObject[] {
   // Clear existing grid objects if any
-  for (const obj of gridObjects) {
-    if (canvas.contains(obj)) {
-      canvas.remove(obj);
+  try {
+    for (const obj of gridObjects) {
+      if (canvas.contains(obj)) {
+        canvas.remove(obj);
+      }
     }
+  } catch (error) {
+    console.error("Error clearing existing grid:", error);
   }
   
   // Get canvas dimensions
