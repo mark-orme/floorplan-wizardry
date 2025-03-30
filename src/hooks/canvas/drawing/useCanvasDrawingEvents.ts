@@ -567,12 +567,12 @@ export const useCanvasDrawingEvents = (
       // Get the measurement label
       const text = (line as any).measurementLabel as FabricText;
       
-      // Create a proper cast for fabric objects to use in Group
-      const lineAsObject = line as unknown as InteractiveFabricObject;
-      const textAsObject = text as unknown as InteractiveFabricObject;
+      // We need to use proper typing for the group
+      // Create an array of objects that Fabric will accept for the group
+      const objectsToGroup: FabricObject[] = [line, text];
       
-      // Group line and text together
-      const group = new FabricGroup([lineAsObject, textAsObject], {
+      // Create the group with the objects
+      const group = new FabricGroup(objectsToGroup, {
         selectable: true
       });
       
