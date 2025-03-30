@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { Canvas as FabricCanvas, Point, Line } from 'fabric';
+import { Canvas as FabricCanvas, Point, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 
@@ -199,7 +199,7 @@ export const useCanvasEventHandlers = ({
         const midpointX = (straightLineStartPoint.x + pointer.x) / 2;
         const midpointY = (straightLineStartPoint.y + pointer.y) / 2;
         
-        const measurementText = new fabric.Text(`${distanceInMeters} m`, {
+        const measurementText = new Text(`${distanceInMeters} m`, {
           left: midpointX,
           top: midpointY,
           fontSize: 14,

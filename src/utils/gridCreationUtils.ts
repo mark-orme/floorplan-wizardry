@@ -170,28 +170,32 @@ export const createEnhancedGrid = (canvas: Canvas): FabricObject[] => {
 };
 
 /**
- * Create basic emergency grid
+ * Create basic grid
  * @param {Canvas} canvas - Fabric canvas
  * @param {FabricObject[]} [existingGrid] - Optional array of existing grid objects
  * @returns {FabricObject[]} Created grid objects
  */
-export const createBasicEmergencyGrid = (
+export const createBasicGrid = (
   canvas: Canvas,
   existingGrid?: FabricObject[]
 ): FabricObject[] => {
   try {
-    logger.warn("Creating basic emergency grid");
+    if (!canvas || !canvas.width || !canvas.height) {
+      logger.error("Cannot create basic grid: Invalid canvas or dimensions");
+      return [];
+    }
     
-    // Create simple grid lines
+    const width = canvas.width;
+    const height = canvas.height;
     const gridObjects: FabricObject[] = [];
     const gridSize = 50;
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
     
-    // Simple horizontal lines
+    // Create grid lines
+    // Horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
-        stroke: '#e5e5e5',
+        stroke: '#e8e8e8',
+        strokeWidth: 1,
         selectable: false,
         evented: false,
         objectType: 'grid'
@@ -201,10 +205,11 @@ export const createBasicEmergencyGrid = (
       gridObjects.push(line);
     }
     
-    // Simple vertical lines
+    // Vertical lines
     for (let i = 0; i <= width; i += gridSize) {
       const line = new Line([i, 0, i, height], {
-        stroke: '#e5e5e5',
+        stroke: '#e8e8e8',
+        strokeWidth: 1,
         selectable: false,
         evented: false,
         objectType: 'grid'
@@ -218,7 +223,7 @@ export const createBasicEmergencyGrid = (
     
     return gridObjects;
   } catch (error) {
-    logger.error("Basic emergency grid creation failed:", error);
+    logger.error("Error creating basic grid:", error);
     return [];
   }
 };

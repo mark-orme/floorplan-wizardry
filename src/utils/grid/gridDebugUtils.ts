@@ -3,7 +3,7 @@
  * Provides tools for diagnosing and fixing grid-related issues
  * @module grid/gridDebugUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import logger from "../logger";
 
 /**
@@ -128,6 +128,42 @@ export const forceCreateGrid = (canvas: FabricCanvas): FabricObject[] => {
   }
 };
 
+/**
+ * Get memory usage information
+ * @returns {Object} Memory usage information
+ */
+export const getMemoryUsage = (): Record<string, unknown> => {
+  try {
+    const memoryInfo: Record<string, unknown> = {
+      jsHeapSizeLimit: 'N/A',
+      totalJSHeapSize: 'N/A',
+      usedJSHeapSize: 'N/A',
+      memoryUsage: 'N/A',
+      memoryUsagePercent: 'N/A'
+    };
+    
+    // Check if performance.memory is available (Chromium browsers only)
+    // @ts-ignore - performance.memory is not in the standard definition
+    if (performance && typeof performance.memory !== 'undefined') {
+      // @ts-ignore - accessing non-standard property
+      const memory = performance.memory;
+      
+      memoryInfo.jsHeapSizeLimit = formatBytes(memory.jsHeapSizeLimit);
+      memoryInfo.totalJSHeapSize = formatBytes(memory.totalJSHeapSize);
+      memoryInfo.usedJSHeapSize = formatBytes(memory.usedJSHeapSize);
+      
+      // Calculate memory usage percentage
+      const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
+      memoryInfo.memoryUsagePercent = `${usagePercent.toFixed(1)}%`;
+    }
+    
+    return memoryInfo;
+  } catch (error) {
+    logger.error("Error getting memory usage:", error);
+    return { error: "Failed to get memory usage" };
+  }
+};
+
 // Diagnostic utilities
 export const gridDebugStats = () => {
   return {
@@ -151,3 +187,16 @@ export const diagnoseGridFailure = (canvas: FabricCanvas) => {
     gridObjectCount: canvas ? canvas.getObjects().filter(obj => obj.objectType === 'grid').length : 0
   };
 };
+
+/**
+ * Format bytes to human-readable format
+ * @param {number} bytes - Number of bytes
+ * @returns {string} Formatted byte string
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+}
