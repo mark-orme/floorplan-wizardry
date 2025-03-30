@@ -11,6 +11,7 @@ export {
   createCompleteGrid,
   createEnhancedGrid,
   verifyGridExists,
+  validateGrid,
   retryWithBackoff,
   reorderGridObjects,
   ensureGrid

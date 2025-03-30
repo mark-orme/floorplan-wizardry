@@ -1,4 +1,3 @@
-
 import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
@@ -150,6 +149,26 @@ export const verifyGridExists = (
   if (!canvas) return false;
   if (!gridObjects || gridObjects.length === 0) return false;
   
+  const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+  return objectsOnCanvas.length > 0;
+};
+
+/**
+ * Validate grid existence and integrity
+ * @param canvas Fabric canvas
+ * @param gridObjects Grid objects to validate
+ * @returns Whether grid is valid
+ */
+export const validateGrid = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): boolean => {
+  if (!canvas) return false;
+  
+  // Check if grid objects exist
+  if (!gridObjects || gridObjects.length === 0) return false;
+  
+  // Check if grid objects are on canvas
   const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
   return objectsOnCanvas.length > 0;
 };
