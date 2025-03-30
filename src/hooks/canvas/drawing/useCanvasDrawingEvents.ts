@@ -1,3 +1,4 @@
+
 /**
  * Canvas drawing events hook
  * Manages drawing-related event handlers
@@ -9,9 +10,8 @@ import {
   Path as FabricPath, 
   Line as FabricLine, 
   Rect as FabricRect, 
-  IText as FabricIText, 
-  Group as FabricGroup,
   Text as FabricText,
+  Group as FabricGroup,
   TOptions,
   TPointerEvent,
   InteractiveFabricObject
@@ -21,11 +21,12 @@ import { useCanvasContext } from "@/contexts/CanvasContext";
 import { snapPointToGrid } from "@/utils/simpleGridCreator";
 import { toast } from "sonner";
 import logger from "@/utils/logger";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
 // Constants for drawing
 const DEFAULT_LINE_WIDTH = 2;
 const DEFAULT_LINE_COLOR = "#000000";
-const GRID_SNAP_SIZE = 10;
+const GRID_SNAP_SIZE = GRID_CONSTANTS.SMALL_GRID_SIZE || 10;
 
 /**
  * Hook for managing canvas drawing events

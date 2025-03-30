@@ -1,153 +1,310 @@
 
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
+/**
+ * Simple grid creator utility
+ * Creates and manages grid lines for the canvas
+ * @module utils/simpleGridCreator
+ */
+import { Canvas, Object as FabricObject, Line, Text } from "fabric";
 import { toast } from "sonner";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
+
+// Default spacing constants
+const DEFAULT_SMALL_GRID_SIZE = GRID_CONSTANTS.SMALL_GRID_SIZE || 10;
+const DEFAULT_LARGE_GRID_SIZE = GRID_CONSTANTS.LARGE_GRID_SIZE || 50;
 
 /**
- * Very simple, reliable grid creator with no dependencies
- * Creates a basic grid pattern on the canvas
+ * Create a simple grid on the canvas
+ * @param {Canvas} canvas - The canvas to create grid on
+ * @param {FabricObject[]} existingGridObjects - Existing grid objects (if any)
+ * @returns {FabricObject[]} Array of created grid objects
  */
 export function createSimpleGrid(
-  canvas: FabricCanvas, 
-  gridObjects: FabricObject[] = []
+  canvas: Canvas, 
+  existingGridObjects: FabricObject[] = []
 ): FabricObject[] {
-  // Clear existing grid objects if any
   try {
-    for (const obj of gridObjects) {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
+    console.log("Creating simple grid with canvas dimensions:", canvas.width, canvas.height);
+    
+    // Validation - skip if dimensions are invalid
+    if (!canvas || !canvas.width || !canvas.height) {
+      console.error("Cannot create grid: Invalid canvas dimensions", { 
+        hasCanvas: !!canvas,
+        width: canvas?.width, 
+        height: canvas?.height 
+      });
+      return [];
+    }
+    
+    // Remove existing grid objects
+    if (existingGridObjects.length > 0) {
+      existingGridObjects.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+    }
+    
+    const gridObjects: FabricObject[] = [];
+    const width = canvas.width || 1000;
+    const height = canvas.height || 800;
+    
+    console.log(`Creating grid for canvas: ${width}x${height}`);
+    
+    // Create small grid lines
+    const smallGridSize = DEFAULT_SMALL_GRID_SIZE;
+    const largeGridSize = DEFAULT_LARGE_GRID_SIZE;
+    
+    // Determine grid density - limit number of lines for very large canvases
+    const MAX_LINES = 200; // Maximum number of grid lines to create
+    let smallGridDensity = 1; // Draw every Nth line
+    
+    // Calculate density to avoid too many lines
+    if (width > smallGridSize * MAX_LINES || height > smallGridSize * MAX_LINES) {
+      smallGridDensity = Math.ceil(Math.max(width, height) / (smallGridSize * MAX_LINES));
+      console.log(`Grid density adjusted to 1/${smallGridDensity} for performance`);
+    }
+    
+    // Create horizontal small grid lines
+    for (let y = 0; y <= height; y += smallGridSize * smallGridDensity) {
+      const line = new Line([0, y, width, y], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectCaching: false,
+        hoverCursor: "default",
+        objectType: 'grid',
+        gridType: 'small'
+      });
+      
+      gridObjects.push(line);
+      canvas.add(line);
+    }
+    
+    // Create vertical small grid lines
+    for (let x = 0; x <= width; x += smallGridSize * smallGridDensity) {
+      const line = new Line([x, 0, x, height], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectCaching: false,
+        hoverCursor: "default",
+        objectType: 'grid',
+        gridType: 'small'
+      });
+      
+      gridObjects.push(line);
+      canvas.add(line);
+    }
+    
+    // Create horizontal large grid lines
+    for (let y = 0; y <= height; y += largeGridSize) {
+      const line = new Line([0, y, width, y], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectCaching: false,
+        hoverCursor: "default",
+        objectType: 'grid',
+        gridType: 'large'
+      });
+      
+      gridObjects.push(line);
+      canvas.add(line);
+      
+      // Add text label for each large grid line (except at origin)
+      if (y > 0) {
+        const label = new Text(`${y / GRID_CONSTANTS.PIXELS_PER_METER}m`, {
+          left: 5,
+          top: y + 2,
+          fontSize: GRID_CONSTANTS.MARKER_TEXT_SIZE,
+          fill: GRID_CONSTANTS.MARKER_COLOR,
+          selectable: false,
+          objectType: 'grid',
+          gridType: 'label'
+        });
+        
+        gridObjects.push(label);
+        canvas.add(label);
       }
     }
-  } catch (error) {
-    console.error("Error clearing existing grid:", error);
-  }
-  
-  // Get canvas dimensions
-  const width = canvas.width || 800;
-  const height = canvas.height || 600;
-  
-  if (!width || !height) {
-    console.error("Invalid canvas dimensions for grid creation", { width, height });
-    return [];
-  }
-  
-  console.log(`Creating simple grid on canvas ${width}x${height}`);
-  
-  const newGridObjects: FabricObject[] = [];
-  const smallGridSpacing = 10;
-  const largeGridSpacing = 50;
-  
-  try {
-    // Create large grid lines (less frequent, darker)
-    for (let i = 0; i <= width; i += largeGridSpacing) {
-      const line = new Line([i, 0, i, height], {
-        stroke: '#d0d0d0',
-        strokeWidth: 1,
+    
+    // Create vertical large grid lines
+    for (let x = 0; x <= width; x += largeGridSize) {
+      const line = new Line([x, 0, x, height], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
         selectable: false,
         evented: false,
-        objectCaching: false
+        objectCaching: false,
+        hoverCursor: "default",
+        objectType: 'grid',
+        gridType: 'large'
       });
-      newGridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    for (let i = 0; i <= height; i += largeGridSpacing) {
-      const line = new Line([0, i, width, i], {
-        stroke: '#d0d0d0',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectCaching: false
-      });
-      newGridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    // Create small grid lines (more frequent, lighter)
-    for (let i = 0; i <= width; i += smallGridSpacing) {
-      if (i % largeGridSpacing === 0) continue; // Skip where large grid exists
       
-      const line = new Line([i, 0, i, height], {
-        stroke: '#f0f0f0',
-        strokeWidth: 0.5,
-        selectable: false,
-        evented: false, 
-        objectCaching: false
-      });
-      newGridObjects.push(line);
+      gridObjects.push(line);
       canvas.add(line);
-    }
-    
-    for (let i = 0; i <= height; i += smallGridSpacing) {
-      if (i % largeGridSpacing === 0) continue; // Skip where large grid exists
       
-      const line = new Line([0, i, width, i], {
-        stroke: '#f0f0f0',
-        strokeWidth: 0.5,
-        selectable: false,
-        evented: false,
-        objectCaching: false
-      });
-      newGridObjects.push(line);
-      canvas.add(line);
+      // Add text label for each large grid line (except at origin)
+      if (x > 0) {
+        const label = new Text(`${x / GRID_CONSTANTS.PIXELS_PER_METER}m`, {
+          left: x + 2,
+          top: 5,
+          fontSize: GRID_CONSTANTS.MARKER_TEXT_SIZE,
+          fill: GRID_CONSTANTS.MARKER_COLOR,
+          selectable: false,
+          objectType: 'grid',
+          gridType: 'label'
+        });
+        
+        gridObjects.push(label);
+        canvas.add(label);
+      }
     }
     
-    // Force the canvas to render the grid
-    canvas.renderAll();
+    // Send all grid objects to back of the canvas
+    gridObjects.forEach(obj => {
+      canvas.sendToBack(obj);
+    });
     
-    console.log(`Created grid with ${newGridObjects.length} lines`);
-    return newGridObjects;
+    // Force render to ensure grid is visible
+    canvas.requestRenderAll();
+    
+    // Log success
+    console.log(`Created grid with ${gridObjects.length} objects`);
+    
+    return gridObjects;
   } catch (error) {
     console.error("Error creating simple grid:", error);
-    toast.error("Failed to create grid");
+    toast.error("Error creating grid");
     return [];
   }
 }
 
 /**
  * Ensure grid is visible on canvas
+ * @param {Canvas} canvas - The canvas to check
+ * @param {FabricObject[]} gridObjects - Grid objects to check
+ * @returns {boolean} Whether any changes were made
  */
 export function ensureGridVisible(
-  canvas: FabricCanvas,
+  canvas: Canvas,
   gridObjects: FabricObject[]
 ): boolean {
-  if (!canvas || !gridObjects.length) return false;
-  
-  let fixed = false;
-  
-  // Count objects on canvas
-  const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj)).length;
-  
-  // If no grid objects on canvas, try to re-add them
-  if (objectsOnCanvas < gridObjects.length) {
-    console.log(`Grid missing objects: ${objectsOnCanvas}/${gridObjects.length}`);
+  try {
+    if (!canvas || !gridObjects.length) return false;
     
-    // Add missing objects
+    let changesApplied = false;
+    let objectsReapplied = 0;
+    
+    // Check each grid object
     for (const obj of gridObjects) {
-      if (!canvas.contains(obj)) {
-        canvas.add(obj);
-        fixed = true;
+      try {
+        // If object is not on canvas, add it
+        if (!canvas.contains(obj)) {
+          canvas.add(obj);
+          objectsReapplied++;
+          changesApplied = true;
+        }
+        
+        // Ensure grid objects are at the back
+        canvas.sendToBack(obj);
+      } catch (error) {
+        console.error("Error fixing grid object:", error);
       }
     }
     
-    if (fixed) {
-      canvas.renderAll();
-      console.log("Fixed missing grid objects");
+    // If we made changes, re-render
+    if (changesApplied) {
+      canvas.requestRenderAll();
+      console.log(`Fixed grid visibility: reapplied ${objectsReapplied} objects`);
     }
+    
+    return changesApplied;
+  } catch (error) {
+    console.error("Error ensuring grid visibility:", error);
+    return false;
   }
-  
-  return fixed;
 }
 
 /**
- * Snap a point to the grid
+ * Snap point to grid
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} gridSize - Grid size to snap to
+ * @returns {{ x: number, y: number }} Snapped coordinates
  */
 export function snapPointToGrid(
-  x: number, 
-  y: number, 
-  gridSize: number = 10
+  x: number,
+  y: number,
+  gridSize: number = DEFAULT_SMALL_GRID_SIZE
 ): { x: number, y: number } {
-  return {
-    x: Math.round(x / gridSize) * gridSize,
-    y: Math.round(y / gridSize) * gridSize
-  };
+  try {
+    const snappedX = Math.round(x / gridSize) * gridSize;
+    const snappedY = Math.round(y / gridSize) * gridSize;
+    
+    return { x: snappedX, y: snappedY };
+  } catch (error) {
+    console.error("Error snapping to grid:", error);
+    return { x, y }; // Return original coordinates on error
+  }
+}
+
+/**
+ * Force grid recreation
+ * @param {Canvas} canvas - The canvas to create grid on
+ * @param {FabricObject[]} existingGridObjects - Existing grid objects (if any)
+ * @returns {FabricObject[]} Array of created grid objects
+ */
+export function forceGridRecreation(
+  canvas: Canvas,
+  existingGridObjects: FabricObject[] = []
+): FabricObject[] {
+  console.log("Forcing grid recreation");
+  
+  try {
+    // Remove all existing grid objects first
+    if (existingGridObjects.length > 0) {
+      existingGridObjects.forEach(obj => {
+        try {
+          if (canvas.contains(obj)) {
+            canvas.remove(obj);
+          }
+        } catch (error) {
+          // Ignore errors during removal
+        }
+      });
+    }
+    
+    // Force canvas to update dimensions if needed
+    if (canvas && canvas.lowerCanvasEl) {
+      const containerWidth = canvas.wrapperEl?.clientWidth || 1000;
+      const containerHeight = canvas.wrapperEl?.clientHeight || 800;
+      
+      if (containerWidth && containerHeight) {
+        canvas.setWidth(containerWidth);
+        canvas.setHeight(containerHeight);
+        console.log(`Updated canvas dimensions: ${containerWidth}x${containerHeight}`);
+      }
+    }
+    
+    // Create new grid
+    const gridObjects = createSimpleGrid(canvas, []);
+    
+    // Force render
+    canvas.requestRenderAll();
+    
+    // Show success toast
+    if (gridObjects.length > 0) {
+      toast.success(`Grid recreated with ${gridObjects.length} objects`);
+    }
+    
+    return gridObjects;
+  } catch (error) {
+    console.error("Error in forceGridRecreation:", error);
+    toast.error("Failed to recreate grid");
+    return [];
+  }
 }
