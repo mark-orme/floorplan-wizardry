@@ -1,84 +1,60 @@
 
 /**
- * Console throttling utilities
- * Prevents excessive console logging by throttling messages
+ * Console throttling utility
+ * Prevents excessive console logging
  * @module grid/consoleThrottling
  */
 
-// Track last log times by message
+// Map to store last log timestamps
 const lastLogTimes: Record<string, number> = {};
-const DEFAULT_THROTTLE_MS = 5000;
 
 /**
- * Log a message with throttling
- * Only logs once per throttle period for the same message
+ * Throttled console log
+ * Only logs messages at most once per interval
  * 
- * @param {string} message - Message to log
- * @param {any} data - Optional data to log
- * @param {number} throttleMs - Throttle period in milliseconds
+ * @param {string} message - The message to log
+ * @param {number} interval - Throttle interval in ms (default: 1000)
  */
-export const throttledLog = (
-  message: string,
-  data?: any,
-  throttleMs: number = DEFAULT_THROTTLE_MS
-): void => {
+export function throttledLog(message: string, interval = 1000): void {
   const now = Date.now();
   const lastTime = lastLogTimes[message] || 0;
   
-  if (now - lastTime > throttleMs) {
-    if (data) {
-      console.log(message, data);
-    } else {
-      console.log(message);
-    }
-    
+  if (now - lastTime >= interval) {
+    console.log(message);
     lastLogTimes[message] = now;
   }
-};
+}
 
 /**
- * Log an error with throttling
- * Only logs once per throttle period for the same error message
+ * Throttled console warn
+ * Only logs warnings at most once per interval
  * 
- * @param {string} message - Error message to log
- * @param {any} error - Optional error object to log
- * @param {number} throttleMs - Throttle period in milliseconds
+ * @param {string} message - The warning message to log
+ * @param {number} interval - Throttle interval in ms (default: 1000)
  */
-export const throttledError = (
-  message: string,
-  error?: any,
-  throttleMs: number = DEFAULT_THROTTLE_MS
-): void => {
+export function throttledWarn(message: string, interval = 1000): void {
   const now = Date.now();
-  const lastTime = lastLogTimes[message] || 0;
+  const lastTime = lastLogTimes[`warn:${message}`] || 0;
   
-  if (now - lastTime > throttleMs) {
-    if (error) {
-      console.error(message, error);
-    } else {
-      console.error(message);
-    }
-    
-    lastLogTimes[message] = now;
+  if (now - lastTime >= interval) {
+    console.warn(message);
+    lastLogTimes[`warn:${message}`] = now;
   }
-};
+}
 
 /**
- * Reset throttling for a specific message
- * Allows the message to be logged immediately next time
+ * Throttled console error
+ * Only logs errors at most once per interval
  * 
- * @param {string} message - Message to reset
+ * @param {string} message - The error message to log
+ * @param {number} interval - Throttle interval in ms (default: 1000)
  */
-export const resetThrottling = (message: string): void => {
-  delete lastLogTimes[message];
-};
-
-/**
- * Clear all throttling state
- * Allows all messages to be logged immediately
- */
-export const clearAllThrottling = (): void => {
-  Object.keys(lastLogTimes).forEach(key => {
-    delete lastLogTimes[key];
-  });
-};
+export function throttledError(message: string, interval = 1000): void {
+  const now = Date.now();
+  const lastTime = lastLogTimes[`error:${message}`] || 0;
+  
+  if (now - lastTime >= interval) {
+    console.error(message);
+    lastLogTimes[`error:${message}`] = now;
+  }
+}

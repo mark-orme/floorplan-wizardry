@@ -4,13 +4,16 @@
  * Centralizes tool operations and state changes
  * @module useCanvasControllerTools
  */
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useDrawingTools, UseDrawingToolsResult } from "@/hooks/useDrawingTools";
+import { useDrawingTools } from "@/hooks/useDrawingTools";
 import { DrawingMode } from "@/constants/drawingModes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 import { ZoomDirection } from "@/types/drawingTypes";
+import { useCanvasToolState } from "@/hooks/canvas/controller/useCanvasToolState";
+import { useCanvasOperations } from "@/hooks/canvas/controller/useCanvasOperations";
+import { useFloorPlanOperations } from "@/hooks/canvas/controller/useFloorPlanOperations";
 
 /**
  * Props for useCanvasControllerTools hook
@@ -48,48 +51,9 @@ interface UseCanvasControllerToolsProps {
 }
 
 /**
- * Return type for useCanvasControllerTools hook
- * @interface UseCanvasControllerToolsResult
- */
-interface UseCanvasControllerToolsResult {
-  /** Function to clear drawings from canvas */
-  clearDrawings: () => void;
-  /** Function to change the current tool */
-  handleToolChange: (tool: DrawingMode) => void;
-  /** Function to undo last action */
-  handleUndo: () => void;
-  /** Function to redo previously undone action */
-  handleRedo: () => void;
-  /** Function to zoom in or out */
-  handleZoom: (direction: ZoomDirection) => void;
-  /** Function to clear the entire canvas */
-  clearCanvas: () => void;
-  /** Function to save the canvas state */
-  saveCanvas: () => boolean; 
-  /** Function to save current state before making changes */
-  saveCurrentState: () => void;
-  /** Function to delete selected objects */
-  deleteSelectedObjects: () => void;
-  /** Function to handle floor selection */
-  handleFloorSelect: (floorIndex: number) => void;
-  /** Function to add a new floor */
-  handleAddFloor: () => void;
-  /** Function to change line thickness */
-  handleLineThicknessChange: (thickness: number) => void;
-  /** Function to change line color */
-  handleLineColorChange: (color: string) => void;
-  /** Function to open measurement guide */
-  openMeasurementGuide: () => void;
-}
-
-/**
  * Hook that manages canvas drawing tools and operations
- * @param {UseCanvasControllerToolsProps} props - Hook properties
- * @returns {UseCanvasControllerToolsResult} Drawing tool functions and handlers
  */
-export const useCanvasControllerTools = (
-  props: UseCanvasControllerToolsProps
-): UseCanvasControllerToolsResult => {
+export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) => {
   const {
     fabricCanvasRef,
     gridLayerRef,
@@ -113,7 +77,7 @@ export const useCanvasControllerTools = (
     setGia
   });
 
-  // Drawing tools with the GIA calculation function
+  // Get drawing tool functions
   const toolFunctions = useDrawingTools({
     fabricCanvasRef,
     gridLayerRef,
@@ -131,43 +95,31 @@ export const useCanvasControllerTools = (
     createGrid
   });
 
-  // Add canvas event listeners to trigger GIA calculation when objects change
-  useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    
-    // Calculate GIA on object modifications, additions or removals
-    const handleObjectChange = (): void => {
-      recalculateGIA();
-    };
-    
-    canvas.on('object:added', handleObjectChange);
-    canvas.on('object:removed', handleObjectChange);
-    canvas.on('object:modified', handleObjectChange);
-    
-    // Initial calculation
-    recalculateGIA();
-    
-    return () => {
-      if (canvas) {
-        canvas.off('object:added', handleObjectChange);
-        canvas.off('object:removed', handleObjectChange);
-        canvas.off('object:modified', handleObjectChange);
-      }
-    };
-  }, [fabricCanvasRef, recalculateGIA]);
+  // Use the tool state hook
+  const toolState = useCanvasToolState({
+    fabricCanvasRef,
+    tool,
+    setTool,
+    lineThickness,
+    lineColor,
+    zoomLevel,
+    setZoomLevel
+  });
 
-  // Ensure saveCanvas returns a boolean
-  const enhancedSaveCanvas = useCallback((): boolean => {
-    try {
-      toolFunctions.saveCanvas();
-      return true;
-    } catch (error) {
-      console.error('Error saving canvas:', error);
-      return false;
-    }
-  }, [toolFunctions]);
+  // Use the canvas operations hook
+  const canvasOperations = useCanvasOperations({
+    fabricCanvasRef,
+    gridLayerRef,
+    saveCurrentState: toolFunctions.saveCurrentState
+  });
+
+  // Use the floor plan operations hook
+  const floorPlanOperations = useFloorPlanOperations({
+    floorPlans,
+    currentFloor,
+    setFloorPlans,
+    setGia
+  });
 
   // Modified handleZoom to accept string direction
   const handleZoom = useCallback((direction: ZoomDirection): void => {
@@ -178,33 +130,7 @@ export const useCanvasControllerTools = (
     }
   }, [toolFunctions]);
 
-  // Basic implementation of missing required functions
-  const deleteSelectedObjects = useCallback((): void => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    const activeObjects = canvas.getActiveObjects();
-    
-    if (activeObjects.length > 0) {
-      canvas.remove(...activeObjects);
-      canvas.discardActiveObject();
-      canvas.requestRenderAll();
-      console.info('Selected objects deleted');
-    }
-  }, [fabricCanvasRef]);
-
-  const handleFloorSelect = useCallback((floorIndex: number): void => {
-    if (floorIndex >= 0 && floorIndex < floorPlans.length) {
-      console.info(`Floor selected: ${floorPlans[floorIndex].name}`);
-      // Implement actual floor selection logic
-    }
-  }, [floorPlans]);
-
-  const handleAddFloor = useCallback((): void => {
-    console.info('Add floor functionality');
-    // Implement add floor logic
-  }, []);
-
+  // Tool-related functions
   const handleLineThicknessChange = useCallback((thickness: number): void => {
     console.info(`Line thickness changed to ${thickness}`);
     // Implement line thickness change logic
@@ -221,17 +147,24 @@ export const useCanvasControllerTools = (
   }, []);
 
   return {
-    clearDrawings: toolFunctions.clearCanvas,
-    handleToolChange: toolFunctions.handleToolChange,
+    // From drawing tools
+    handleToolChange: toolState.handleToolChange,
     handleUndo: toolFunctions.undo,
     handleRedo: toolFunctions.redo,
     handleZoom,
-    clearCanvas: toolFunctions.clearCanvas,
-    saveCanvas: enhancedSaveCanvas,
     saveCurrentState: toolFunctions.saveCurrentState,
-    deleteSelectedObjects,
-    handleFloorSelect,
-    handleAddFloor,
+    
+    // From canvas operations
+    clearDrawings: canvasOperations.clearDrawings,
+    clearCanvas: canvasOperations.clearCanvas,
+    saveCanvas: canvasOperations.saveCanvas,
+    deleteSelectedObjects: canvasOperations.deleteSelectedObjects,
+    
+    // From floor plan operations
+    handleFloorSelect: floorPlanOperations.handleFloorSelect,
+    handleAddFloor: floorPlanOperations.handleAddFloor,
+    
+    // Additional tools
     handleLineThicknessChange,
     handleLineColorChange,
     openMeasurementGuide

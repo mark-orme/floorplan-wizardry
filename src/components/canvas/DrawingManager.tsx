@@ -1,13 +1,18 @@
 
-import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { CanvasToolbar } from "./CanvasToolbar";
+import { useRef, useState } from "react";
+import { Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { toast } from "sonner";
 import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
+import { ToolbarContainer } from "./ToolbarContainer";
+import { CanvasEventManager } from "./CanvasEventManager";
 
+/**
+ * Drawing manager component
+ * Coordinates drawing tools and canvas state
+ */
 export const DrawingManager = () => {
   // Get canvas from context
   const { canvas } = useCanvasController();
@@ -33,110 +38,6 @@ export const DrawingManager = () => {
     fabricCanvasRef: { current: canvas },
     historyRef
   });
-  
-  // Effect to set up canvas event listeners
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Save initial state
-    saveCurrentState();
-    
-    // Set up history tracking
-    const handleObjectModified = () => {
-      saveCurrentState();
-    };
-    
-    const handleObjectAdded = () => {
-      saveCurrentState();
-    };
-    
-    // Add event listeners
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('object:added', handleObjectAdded);
-    
-    // Handle keyboard shortcuts
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Undo: Ctrl+Z
-      if (e.ctrlKey && e.key === 'z') {
-        e.preventDefault();
-        undo();
-      }
-      
-      // Redo: Ctrl+Shift+Z or Ctrl+Y
-      if ((e.ctrlKey && e.shiftKey && e.key === 'z') || (e.ctrlKey && e.key === 'y')) {
-        e.preventDefault();
-        redo();
-      }
-      
-      // Delete: Delete key when in select mode
-      if (e.key === 'Delete' && tool === DrawingMode.SELECT) {
-        e.preventDefault();
-        deleteSelectedObjects();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      canvas.off('object:modified', handleObjectModified);
-      canvas.off('object:added', handleObjectAdded);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [canvas, tool]);
-  
-  // Effect to handle tool changes
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Reset canvas modes
-    canvas.isDrawingMode = false;
-    canvas.selection = false;
-    
-    // Apply tool-specific settings
-    switch (tool) {
-      case DrawingMode.SELECT:
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        canvas.hoverCursor = 'move';
-        break;
-        
-      case DrawingMode.DRAW:
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.width = lineThickness;
-        canvas.freeDrawingBrush.color = lineColor;
-        canvas.defaultCursor = 'crosshair';
-        break;
-        
-      case DrawingMode.HAND:
-        canvas.defaultCursor = 'grab';
-        canvas.hoverCursor = 'grab';
-        // Enable panning mode
-        break;
-        
-      case DrawingMode.STRAIGHT_LINE:
-      case DrawingMode.ROOM:
-        canvas.defaultCursor = 'crosshair';
-        canvas.hoverCursor = 'crosshair';
-        break;
-        
-      case DrawingMode.ERASER:
-        canvas.defaultCursor = 'cell';
-        canvas.hoverCursor = 'cell';
-        break;
-    }
-    
-    // Ensure grid stays at the bottom
-    if (gridLayerRef.current.length > 0) {
-      gridLayerRef.current.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.sendObjectToBack(obj);
-        }
-      });
-    }
-    
-    toast(`Tool changed to ${tool}`);
-    
-  }, [tool, lineThickness, lineColor, canvas]);
   
   // Handle zoom
   const handleZoom = (direction: "in" | "out") => {
@@ -208,9 +109,9 @@ export const DrawingManager = () => {
   
   return (
     <div className="flex flex-col gap-2">
-      <CanvasToolbar 
+      <ToolbarContainer 
         tool={tool}
-        onToolChange={setTool}
+        setTool={setTool}
         onUndo={undo}
         onRedo={redo}
         onZoom={handleZoom}
@@ -224,14 +125,28 @@ export const DrawingManager = () => {
       />
       
       {canvas && (
-        <SimpleGrid
-          canvas={canvas}
-          showControls={false}
-          defaultVisible={showGrid}
-          onGridCreated={(objects) => {
-            gridLayerRef.current = objects;
-          }}
-        />
+        <>
+          <CanvasEventManager 
+            canvas={canvas}
+            tool={tool}
+            lineThickness={lineThickness}
+            lineColor={lineColor}
+            gridLayerRef={gridLayerRef}
+            saveCurrentState={saveCurrentState}
+            undo={undo}
+            redo={redo}
+            deleteSelectedObjects={deleteSelectedObjects}
+          />
+          
+          <SimpleGrid
+            canvas={canvas}
+            showControls={false}
+            defaultVisible={showGrid}
+            onGridCreated={(objects) => {
+              gridLayerRef.current = objects;
+            }}
+          />
+        </>
       )}
     </div>
   );

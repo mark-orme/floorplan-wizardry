@@ -1,92 +1,92 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createSimpleGrid } from "@/utils/simpleGridCreator";
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { createCompleteGrid, createBasicEmergencyGrid } from '@/utils/grid/gridRenderers';
 
 /**
- * Props for SimpleGrid constructor
+ * Options for SimpleGrid class
  */
-interface SimpleGridProps {
+interface SimpleGridOptions {
   canvas: FabricCanvas;
   showControls?: boolean;
   defaultVisible?: boolean;
-  onGridCreated?: (objects: FabricObject[]) => void;
 }
 
 /**
- * SimpleGrid class for creating and managing grid on the canvas
+ * SimpleGrid class
+ * Handles grid creation and management
  */
-export class SimpleGrid {
+export class SimpleGridClass {
   private canvas: FabricCanvas;
   private gridObjects: FabricObject[] = [];
   private visible: boolean;
-  private showControls: boolean;
   
   /**
    * Create a new SimpleGrid instance
-   * @param props SimpleGrid props
    */
-  constructor(props: SimpleGridProps) {
-    this.canvas = props.canvas;
-    this.showControls = props.showControls || false;
-    this.visible = props.defaultVisible || true;
+  constructor(options: SimpleGridOptions) {
+    this.canvas = options.canvas;
+    this.visible = options.defaultVisible ?? true;
     
-    // Create grid on instantiation
+    // Create grid
     this.createGrid();
-    
-    // Call callback if provided
-    if (props.onGridCreated) {
-      props.onGridCreated(this.gridObjects);
+  }
+  
+  /**
+   * Create grid on the canvas
+   */
+  private createGrid(): void {
+    try {
+      // Create complete grid
+      const gridObjects = createCompleteGrid(this.canvas);
+      
+      if (gridObjects && gridObjects.length > 0) {
+        this.gridObjects = gridObjects;
+      } else {
+        // Try emergency grid
+        this.gridObjects = createBasicEmergencyGrid(this.canvas);
+      }
+      
+      // Set initial visibility
+      this.updateVisibility();
+      
+    } catch (error) {
+      console.error("Error creating grid:", error);
+      
+      // Try emergency grid
+      try {
+        this.gridObjects = createBasicEmergencyGrid(this.canvas);
+        this.updateVisibility();
+      } catch (emergencyError) {
+        console.error("Emergency grid creation also failed:", emergencyError);
+      }
     }
   }
   
   /**
-   * Create the grid on the canvas
+   * Update grid visibility
    */
-  private createGrid(): void {
-    try {
-      const gridObjects = createSimpleGrid(this.canvas);
-      this.gridObjects = gridObjects;
-      console.log(`SimpleGrid created with ${gridObjects.length} objects`);
-    } catch (error) {
-      console.error("Error creating simple grid:", error);
-    }
+  private updateVisibility(): void {
+    this.gridObjects.forEach(obj => {
+      obj.set('visible', this.visible);
+    });
+    
+    this.canvas.requestRenderAll();
   }
   
   /**
    * Show the grid
    */
   public show(): void {
-    if (!this.visible) {
-      this.gridObjects.forEach(obj => {
-        obj.set('visible', true);
-      });
-      this.visible = true;
-      this.canvas.requestRenderAll();
-    }
+    this.visible = true;
+    this.updateVisibility();
   }
   
   /**
    * Hide the grid
    */
   public hide(): void {
-    if (this.visible) {
-      this.gridObjects.forEach(obj => {
-        obj.set('visible', false);
-      });
-      this.visible = false;
-      this.canvas.requestRenderAll();
-    }
-  }
-  
-  /**
-   * Toggle grid visibility
-   */
-  public toggle(): void {
-    if (this.visible) {
-      this.hide();
-    } else {
-      this.show();
-    }
+    this.visible = false;
+    this.updateVisibility();
   }
   
   /**
@@ -97,15 +97,18 @@ export class SimpleGrid {
   }
   
   /**
-   * Destroy the grid
+   * Remove grid objects from canvas
    */
   public destroy(): void {
-    this.gridObjects.forEach(obj => {
-      if (this.canvas.contains(obj)) {
-        this.canvas.remove(obj);
-      }
-    });
-    this.gridObjects = [];
-    this.canvas.requestRenderAll();
+    if (this.gridObjects.length > 0) {
+      this.gridObjects.forEach(obj => {
+        if (this.canvas.contains(obj)) {
+          this.canvas.remove(obj);
+        }
+      });
+      
+      this.gridObjects = [];
+      this.canvas.requestRenderAll();
+    }
   }
 }
