@@ -8,6 +8,7 @@ import { Home } from "lucide-react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { GridMonitor } from "@/components/canvas/GridMonitor";
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { toast } from "sonner";
 
 /**
@@ -32,6 +33,29 @@ const Index = () => {
     });
   }, []);
   
+  const setCanvasInstance = (canvas: FabricCanvas | null) => {
+    fabricCanvasRef.current = canvas;
+    
+    // Create grid immediately when canvas is available
+    if (canvas) {
+      setTimeout(() => {
+        const component = document.getElementById('canvas-grid-component');
+        if (!component && canvas) {
+          // Manually mount a SimpleGrid if not already present
+          const container = document.createElement('div');
+          container.id = 'canvas-grid-component';
+          document.body.appendChild(container);
+          
+          // We can't actually render React components this way,
+          // but we can directly call the grid creation function
+          const gridUtils = require('@/utils/grid/simpleGridCreator');
+          const gridObjects = gridUtils.createReliableGrid(canvas, { current: [] });
+          gridLayerRef.current = gridObjects;
+        }
+      }, 200);
+    }
+  };
+  
   return (
     <main className="flex flex-col w-full min-h-screen bg-background">
       <div className="flex items-center p-2 bg-muted/30 border-b">
@@ -49,7 +73,7 @@ const Index = () => {
       
       <div className="flex-1 overflow-hidden">
         <CanvasControllerProvider>
-          <CanvasApp setCanvas={(canvas) => { fabricCanvasRef.current = canvas; }} />
+          <CanvasApp setCanvas={setCanvasInstance} />
           {/* Add the GridMonitor component for background grid monitoring */}
           <GridMonitor 
             fabricCanvasRef={fabricCanvasRef}

@@ -47,7 +47,7 @@ export const createReliableGrid = (
         selectable: false,
         evented: false,
         hoverCursor: "default",
-        type: isLarge ? "grid-large" : "grid-small"
+        objectCaching: false
       });
       
       canvas.add(line);
@@ -62,7 +62,7 @@ export const createReliableGrid = (
           fill: GRID_CONSTANTS.MARKER_COLOR,
           selectable: false,
           evented: false,
-          type: "grid-marker"
+          objectCaching: false
         });
         
         canvas.add(text);
@@ -79,7 +79,7 @@ export const createReliableGrid = (
         selectable: false,
         evented: false,
         hoverCursor: "default",
-        type: isLarge ? "grid-large" : "grid-small"
+        objectCaching: false
       });
       
       canvas.add(line);
@@ -94,7 +94,7 @@ export const createReliableGrid = (
           fill: GRID_CONSTANTS.MARKER_COLOR,
           selectable: false,
           evented: false,
-          type: "grid-marker"
+          objectCaching: false
         });
         
         canvas.add(text);

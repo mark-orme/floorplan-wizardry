@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { useCanvasContext } from "@/contexts/CanvasContext";
 import { BasicGrid } from "./BasicGrid";
+import { createReliableGrid } from "@/utils/grid/simpleGridCreator";
+import { toast } from "sonner";
 
 interface CanvasProps {
   width?: number;
@@ -19,6 +21,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const gridObjectsRef = useRef<any[]>([]);
   const { setCanvas } = useCanvasContext();
   
   useEffect(() => {
@@ -41,15 +44,23 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Store the canvas in ref for component internal use
       fabricCanvasRef.current = fabricCanvas;
       
-      // Set actual canvas element size to match parent container
-      const containerWidth = fabricCanvas.wrapperEl?.clientWidth || window.innerWidth;
-      const containerHeight = fabricCanvas.wrapperEl?.clientHeight || window.innerHeight - 200;
+      // Ensure actual canvas element size matches container
+      const containerWidth = fabricCanvas.wrapperEl?.clientWidth || width;
+      const containerHeight = fabricCanvas.wrapperEl?.clientHeight || height;
       
-      if (containerWidth && containerHeight && (width < 600 || height < 400)) {
+      if (containerWidth && containerHeight && (width !== containerWidth || height !== containerHeight)) {
         console.log(`Adjusting canvas dimensions to match container: ${containerWidth}x${containerHeight}`);
         fabricCanvas.setWidth(containerWidth);
         fabricCanvas.setHeight(containerHeight);
       }
+      
+      // Create grid directly here to ensure it's initialized early
+      setTimeout(() => {
+        if (fabricCanvas) {
+          const gridObjects = createReliableGrid(fabricCanvas, gridObjectsRef);
+          console.log(`Created ${gridObjects.length} grid objects`);
+        }
+      }, 100);
       
       // Ensure drawing brush is properly initialized
       if (!fabricCanvas.freeDrawingBrush) {
@@ -101,12 +112,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         className="border border-gray-200 rounded"
         data-testid="canvas-element"
       />
-      {fabricCanvasRef.current && (
-        <BasicGrid 
-          fabricCanvas={fabricCanvasRef.current}
-          debugMode={true}
-        />
-      )}
     </div>
   );
 };
