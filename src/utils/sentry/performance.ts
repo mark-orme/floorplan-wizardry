@@ -39,7 +39,7 @@ export function startPerformanceTransaction(name: string, tags?: Record<string, 
       try {
         if (transaction) {
           // Finish the Sentry transaction
-          transaction.finish(status);
+          transaction.finish();
         } else {
           // Log fallback timing
           const duration = performance.now() - startTime;

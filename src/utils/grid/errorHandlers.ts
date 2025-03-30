@@ -8,7 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import logger from "../logger";
 import { captureError, startPerformanceTransaction } from "../sentry";
-import { GridErrorSeverity, categorizeGridError } from "./errorTypes";
+import { GridErrorSeverity, categorizeGridError, GRID_ERROR_MESSAGES } from "./errorTypes";
 
 /**
  * Handle grid creation errors
@@ -17,14 +17,14 @@ import { GridErrorSeverity, categorizeGridError } from "./errorTypes";
  * @param {Error} error - The error that occurred
  * @param {Function} setHasError - Function to set error state
  * @param {Function} setErrorMessage - Function to set error message
- * @param {Canvas} [canvas] - Optional canvas instance for additional context
+ * @param {FabricCanvas} [canvas] - Optional canvas instance for additional context
  * @param {FabricObject[]} [gridObjects] - Optional grid objects for additional context
  */
 export const handleGridCreationError = (
   error: Error,
   setHasError: (value: boolean) => void,
   setErrorMessage: (value: string) => void,
-  canvas?: Canvas | null,
+  canvas?: FabricCanvas | null,
   gridObjects?: FabricObject[] | null
 ): void => {
   // Start error handling performance tracking
