@@ -4,8 +4,9 @@
  * @module canvas/drawing/useCanvasDrawingEvents
  */
 import { useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
+import { Canvas as FabricCanvas, Path as FabricPath, fabric } from 'fabric';
 import { DrawingState, Point } from '@/types';
+import { snapPointToGrid } from '@/utils/simpleGridCreator';
 
 /**
  * Constants for drawing events
@@ -35,6 +36,8 @@ interface UseCanvasDrawingEventsProps {
   tool: string;
   /** Function to process created path */
   processCreatedPath: (path: FabricPath) => void;
+  /** Whether to snap to grid */
+  snapToGrid?: boolean;
 }
 
 /**
@@ -62,7 +65,8 @@ export const useCanvasDrawingEvents = ({
   drawingState,
   setDrawingState,
   tool,
-  processCreatedPath
+  processCreatedPath,
+  snapToGrid = true
 }: UseCanvasDrawingEventsProps): UseCanvasDrawingEventsReturn => {
   // Timeout references
   const timeoutsRef = useRef<number[]>([]);
@@ -102,16 +106,22 @@ export const useCanvasDrawingEvents = ({
     const x = (clientX - rect.left) / canvas.getZoom();
     const y = (clientY - rect.top) / canvas.getZoom();
     
+    // Apply snap to grid if enabled
+    let startPoint = { x, y };
+    if (snapToGrid) {
+      startPoint = snapPointToGrid(x, y);
+    }
+    
     // Update drawing state
     setDrawingState(prev => ({
       ...prev,
       isDrawing: true,
-      lastX: x,
-      lastY: y,
-      startX: x,
-      startY: y,
-      startPoint: { x, y },
-      currentPoint: { x, y }
+      lastX: startPoint.x,
+      lastY: startPoint.y,
+      startX: startPoint.x,
+      startY: startPoint.y,
+      startPoint: startPoint,
+      currentPoint: startPoint
     }));
     
     // Handle different tools
@@ -121,7 +131,7 @@ export const useCanvasDrawingEvents = ({
     } else if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
       // For straight lines and shapes, we'll handle the drawing manually
       // Start a new path
-      const newPath = new FabricPath(`M ${x} ${y}`, {
+      const newPath = new FabricPath(`M ${startPoint.x} ${startPoint.y}`, {
         stroke: drawingState.color || '#000000',
         strokeWidth: drawingState.width || 2,
         fill: 'transparent',
@@ -136,7 +146,7 @@ export const useCanvasDrawingEvents = ({
         currentPath: newPath
       }));
     }
-  }, [fabricCanvasRef, setDrawingState, tool, drawingState.color, drawingState.width]);
+  }, [fabricCanvasRef, setDrawingState, tool, drawingState.color, drawingState.width, snapToGrid]);
   
   /**
    * Handle mouse move event
@@ -165,6 +175,12 @@ export const useCanvasDrawingEvents = ({
     const x = (clientX - rect.left) / canvas.getZoom();
     const y = (clientY - rect.top) / canvas.getZoom();
     
+    // Apply snap to grid if enabled
+    let currentPoint = { x, y };
+    if (snapToGrid) {
+      currentPoint = snapPointToGrid(x, y);
+    }
+    
     // Handle different tools
     if (tool === 'draw') {
       // For freehand drawing, let fabric.js handle it
@@ -176,12 +192,12 @@ export const useCanvasDrawingEvents = ({
         // Update the path data for a straight line
         if (tool === 'straightLine') {
           path.set({
-            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${x} ${y}`]
+            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${currentPoint.x} ${currentPoint.y}`]
           });
         } else if (tool === 'wall') {
           // For walls, we might want to snap to angles
           path.set({
-            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${x} ${y}`],
+            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${currentPoint.x} ${currentPoint.y}`],
             strokeWidth: 4 // Walls are thicker
           });
         } else if (tool === 'room') {
@@ -190,9 +206,9 @@ export const useCanvasDrawingEvents = ({
           path.set({
             path: [
               `M ${drawingState.startX} ${drawingState.startY}`,
-              `L ${x} ${drawingState.startY}`,
-              `L ${x} ${y}`,
-              `L ${drawingState.startX} ${y}`,
+              `L ${currentPoint.x} ${drawingState.startY}`,
+              `L ${currentPoint.x} ${currentPoint.y}`,
+              `L ${drawingState.startX} ${currentPoint.y}`,
               `L ${drawingState.startX} ${drawingState.startY}`
             ],
             fill: 'rgba(200, 200, 255, 0.2)'
@@ -203,34 +219,33 @@ export const useCanvasDrawingEvents = ({
       }
     }
     
-    // Update points for distance calculation
-    const currentPoint: Point = { x, y };
+    // Calculate midpoint for distance calculation
     const midPoint: Point | null = drawingState.startPoint 
       ? { 
-          x: (drawingState.startPoint.x + x) / 2, 
-          y: (drawingState.startPoint.y + y) / 2 
+          x: (drawingState.startPoint.x + currentPoint.x) / 2, 
+          y: (drawingState.startPoint.y + currentPoint.y) / 2 
         } 
       : null;
     
     // Calculate distance between points
     let distance = null;
     if (drawingState.startPoint) {
-      const dx = x - drawingState.startPoint.x;
-      const dy = y - drawingState.startPoint.y;
+      const dx = currentPoint.x - drawingState.startPoint.x;
+      const dy = currentPoint.y - drawingState.startPoint.y;
       distance = Math.sqrt(dx * dx + dy * dy);
     }
     
     // Update last position and points
     setDrawingState(prev => ({
       ...prev,
-      lastX: x,
-      lastY: y,
+      lastX: currentPoint.x,
+      lastY: currentPoint.y,
       currentPoint,
       midPoint,
       distance,
-      cursorPosition: { x, y }
+      cursorPosition: currentPoint
     }));
-  }, [fabricCanvasRef, drawingState, setDrawingState, tool]);
+  }, [fabricCanvasRef, drawingState, setDrawingState, tool, snapToGrid]);
   
   /**
    * Handle mouse up event

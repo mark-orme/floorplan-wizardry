@@ -1,5 +1,5 @@
 
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Line, Object as FabricObject, fabric } from "fabric";
 import { toast } from "sonner";
 
 /**
