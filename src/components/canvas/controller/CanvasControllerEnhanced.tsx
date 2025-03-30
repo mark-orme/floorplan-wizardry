@@ -108,11 +108,8 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerProviderProps> =
   });
   
   // Use synced floor plans if available
-  useSyncedFloorPlans({
-    fabricCanvasRef,
-    setFloorPlans,
-    setGia
-  });
+  // Fix: Don't pass any argument to useSyncedFloorPlans
+  useSyncedFloorPlans();
   
   // Handle any errors
   useEffect(() => {
