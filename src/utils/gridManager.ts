@@ -50,3 +50,30 @@ export const getGridCreationState = () => ({
   attempt: gridCreationAttempt,
   success: gridCreationSuccess
 });
+
+/**
+ * Start grid creation process
+ * Alias for setGridCreationInProgress for better readability
+ * @returns {boolean} Whether grid creation was started
+ */
+export const startGridCreation = (): boolean => {
+  return setGridCreationInProgress();
+};
+
+/**
+ * Finish grid creation process
+ * @param {string} instanceId - Unique ID for the grid instance
+ * @param {any[]} gridObjects - Created grid objects
+ */
+export const finishGridCreation = (instanceId: string, gridObjects: any[]): void => {
+  setGridCreationComplete(true);
+};
+
+/**
+ * Handle grid creation error
+ * @param {Error} error - Error that occurred during grid creation
+ */
+export const handleGridCreationError = (error: Error): void => {
+  console.error("Grid creation error:", error);
+  setGridCreationComplete(false);
+};

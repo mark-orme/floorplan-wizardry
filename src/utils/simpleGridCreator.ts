@@ -1,196 +1,85 @@
 
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
-import { Point } from "@/types/core/Point";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 
 /**
- * Creates a simple grid on the canvas
- * 
- * @param {FabricCanvas} canvas - The canvas to draw the grid on
- * @param {FabricObject[]} existingGrid - Any existing grid objects to clear first
- * @returns {FabricObject[]} Array of created grid objects
+ * Snap a point to the nearest grid point
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {number} [gridSize] - Optional grid size to snap to (defaults to small grid size)
+ * @returns {{ x: number, y: number }} Snapped coordinates
  */
-export const createSimpleGrid = (
-  canvas: FabricCanvas, 
-  existingGrid: FabricObject[] = []
-): FabricObject[] => {
-  if (!canvas || typeof canvas.getWidth !== 'function') {
-    console.error("Invalid canvas provided to createSimpleGrid");
-    return [];
-  }
+export const snapPointToGrid = (x: number, y: number, gridSize?: number): { x: number, y: number } => {
+  const snapSize = gridSize || GRID_CONSTANTS.SMALL_GRID_SIZE;
   
-  try {
-    // Get canvas dimensions
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
-    
-    if (!width || !height || width <= 0 || height <= 0) {
-      console.error("Invalid canvas dimensions", { width, height });
-      return [];
-    }
-    
-    console.log("Creating simple grid with dimensions:", width, "x", height);
-    
-    // Clear existing grid objects if provided
-    if (existingGrid && existingGrid.length > 0) {
-      existingGrid.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.remove(obj);
-        }
-      });
-    }
-    
-    const gridObjects: FabricObject[] = [];
-    const smallGridSize = 20; // Small grid size in pixels
-    const largeGridSize = 100; // Large grid size in pixels
-    
-    // Create small grid lines
-    for (let y = 0; y <= height; y += smallGridSize) {
-      const line = new Line([0, y, width, y], {
-        stroke: '#e5e5e5',
-        strokeWidth: 0.5,
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add custom properties
-      (line as any).objectType = 'grid';
-      (line as any).gridType = 'small';
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    for (let x = 0; x <= width; x += smallGridSize) {
-      const line = new Line([x, 0, x, height], {
-        stroke: '#e5e5e5',
-        strokeWidth: 0.5,
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add custom properties
-      (line as any).objectType = 'grid';
-      (line as any).gridType = 'small';
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Create large grid lines
-    for (let y = 0; y <= height; y += largeGridSize) {
-      const line = new Line([0, y, width, y], {
-        stroke: '#cccccc',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add custom properties
-      (line as any).objectType = 'grid';
-      (line as any).gridType = 'large';
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    for (let x = 0; x <= width; x += largeGridSize) {
-      const line = new Line([x, 0, x, height], {
-        stroke: '#cccccc',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add custom properties
-      (line as any).objectType = 'grid';
-      (line as any).gridType = 'large';
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Force render to ensure grid is visible
-    canvas.requestRenderAll();
-    
-    return gridObjects;
-  } catch (error) {
-    console.error("Error creating grid:", error);
-    return [];
-  }
+  return {
+    x: Math.round(x / snapSize) * snapSize,
+    y: Math.round(y / snapSize) * snapSize
+  };
 };
 
 /**
- * Snaps a point to the nearest grid intersection
- * 
- * @param {Point} point - The point to snap
- * @param {number} gridSize - The grid size to snap to (default: small grid)
- * @returns {Point} The snapped point
+ * Create a simple grid on the canvas
+ * @param {FabricCanvas} canvas - Fabric canvas instance
+ * @returns {FabricObject[]} Created grid objects
  */
-export const snapPointToGrid = (point: Point, gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE): Point => {
-  if (!point) return { x: 0, y: 0 };
+export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
+  if (!canvas) return [];
   
-  const x = Math.round(point.x / gridSize) * gridSize;
-  const y = Math.round(point.y / gridSize) * gridSize;
+  const gridObjects: FabricObject[] = [];
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
   
-  return { x, y };
-};
-
-/**
- * Ensure grid is visible
- * 
- * @param {FabricCanvas} canvas - The canvas
- * @param {FabricObject[]} gridObjects - The grid objects
- * @returns {boolean} Whether any fixes were applied
- */
-export const ensureGridVisible = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[]
-): boolean => {
-  if (!canvas || !gridObjects || gridObjects.length === 0) return false;
-  
-  let fixesApplied = false;
-  
-  try {
-    // Check if grid objects are on canvas and visible
-    gridObjects.forEach(obj => {
-      if (!canvas.contains(obj)) {
-        canvas.add(obj);
-        fixesApplied = true;
-      }
-      
-      if (!obj.visible) {
-        obj.visible = true;
-        fixesApplied = true;
-      }
+  // Create small grid lines
+  for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+    const line = new Line([i, 0, i, height], {
+      stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
     });
-    
-    // Force render if fixes were applied
-    if (fixesApplied) {
-      canvas.requestRenderAll();
-    }
-  } catch (error) {
-    console.error("Error ensuring grid visibility:", error);
+    canvas.add(line);
+    gridObjects.push(line);
   }
   
-  return fixesApplied;
-};
-
-/**
- * Force grid recreation
- * 
- * @param {FabricCanvas} canvas - The canvas
- * @param {FabricObject[]} existingGrid - Existing grid objects
- * @returns {FabricObject[]} New grid objects
- */
-export const forceGridRecreation = (
-  canvas: FabricCanvas,
-  existingGrid: FabricObject[] = []
-): FabricObject[] => {
-  console.log("Forcing grid recreation");
-  return createSimpleGrid(canvas, existingGrid);
+  for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+    const line = new Line([0, i, width, i], {
+      stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  // Create large grid lines
+  for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+    const line = new Line([i, 0, i, height], {
+      stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+    const line = new Line([0, i, width, i], {
+      stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid'
+    });
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  canvas.requestRenderAll();
+  return gridObjects;
 };
