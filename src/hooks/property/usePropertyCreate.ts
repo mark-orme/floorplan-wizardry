@@ -37,7 +37,7 @@ export const usePropertyCreate = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         status: PropertyStatus.DRAFT,
-        floor_plans: floorPlans
+        floorPlans: floorPlans  // Changed from floor_plans to floorPlans
       };
 
       const { data, error } = await supabase

@@ -90,7 +90,7 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
   const { drawingState, setDrawingState } = useCanvasDrawingState();
   
   // Canvas history
-  const { saveCurrentState } = useCanvasHistory({
+  const { saveCurrentState, undo, redo } = useCanvasHistory({
     fabricCanvasRef,
     historyRef
   });
@@ -135,6 +135,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     lineColor,
     lineThickness,
     saveCurrentState,
+    handleUndo: undo,  // Pass undo function explicitly
+    handleRedo: redo,  // Pass redo function explicitly
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
