@@ -1,54 +1,44 @@
 
 /**
- * Sentry Utilities
- * Provides error reporting functionality
- * @module utils/sentryUtils
+ * Utility functions for error capture and reporting to Sentry
  */
 
-interface CaptureErrorOptions {
-  level?: 'error' | 'warning' | 'info';
+interface ErrorCaptureOptions {
+  level?: "error" | "warning" | "info";
   tags?: Record<string, string>;
   extra?: Record<string, any>;
 }
 
 /**
- * Capture error for reporting
- * @param {Error | any} error - The error to capture
- * @param {string} [errorId] - Optional identifier for the error
- * @param {CaptureErrorOptions} [options] - Additional capture options
+ * Capture an error for Sentry reporting
+ * Fall back to console logging when Sentry is not available
+ * 
+ * @param error The error to capture
+ * @param errorId Unique identifier for the error
+ * @param options Additional options for the error report
  */
-export const captureError = (
-  error: Error | any,
-  errorId?: string,
-  options?: CaptureErrorOptions
-): void => {
-  // Log error to console in all environments for debugging
-  console.error(`Error captured${errorId ? ` (${errorId})` : ''}:`, error, options || {});
+export function captureError(
+  error: Error, 
+  errorId: string, 
+  options: ErrorCaptureOptions = {}
+): void {
+  // Get the current environment
+  const isProd = process.env.NODE_ENV === 'production';
   
-  // In production, we would send to Sentry here
-  // This is a placeholder implementation
-  if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
-    // If Sentry is initialized, we would report here
-    // Sentry.captureException(error, {
-    //   tags: { errorId, ...(options?.tags || {}) },
-    //   level: options?.level || 'error',
-    //   extra: options?.extra || {}
-    // });
+  // Log the error to console
+  if (isProd) {
+    console.error(`[${errorId}]`, error.message);
+  } else {
+    console.error(`[${errorId}]`, error, options);
   }
-};
-
-/**
- * Track error metrics
- * @param {string} category - Error category
- * @param {string} action - Error action
- * @param {Record<string, any>} [data] - Additional tracking data
- */
-export const trackErrorMetric = (
-  category: string,
-  action: string,
-  data?: Record<string, any>
-): void => {
-  console.info(`Error metric: ${category}/${action}`, data || {});
   
-  // In production, would send to analytics/monitoring
-};
+  // In the future, we could add actual Sentry integration here
+  // For now, we just log to console
+  try {
+    // Mock Sentry capture
+    const level = options.level || 'error';
+    console.info(`[Sentry Mock] Captured ${level} ${errorId}:`, error.message);
+  } catch (captureError) {
+    console.error('Failed to capture error:', captureError);
+  }
+}

@@ -42,15 +42,20 @@ const Index = () => {
         const component = document.getElementById('canvas-grid-component');
         if (!component && canvas) {
           // Manually mount a SimpleGrid if not already present
-          const container = document.createElement('div');
-          container.id = 'canvas-grid-component';
-          document.body.appendChild(container);
+          const gridInstance = new SimpleGrid({
+            canvas,
+            showControls: false,
+            defaultVisible: true,
+            onGridCreated: (objects) => {
+              gridLayerRef.current = objects;
+            }
+          });
           
-          // We can't actually render React components this way,
-          // but we can directly call the grid creation function
-          const gridUtils = require('@/utils/grid/simpleGridCreator');
-          const gridObjects = gridUtils.createReliableGrid(canvas, { current: [] });
-          gridLayerRef.current = gridObjects;
+          // Store reference to grid objects
+          if (gridInstance && typeof gridInstance === 'object') {
+            const gridObjects = gridLayerRef.current;
+            console.log(`Grid initialized with ${gridObjects.length} objects`);
+          }
         }
       }, 200);
     }
