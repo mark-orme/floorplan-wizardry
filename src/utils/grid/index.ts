@@ -10,8 +10,6 @@ export {
   createBasicEmergencyGrid,
   createCompleteGrid,
   createEnhancedGrid,
-  createSmallGrid,
-  validateGrid,
   verifyGridExists,
   retryWithBackoff,
   reorderGridObjects,

@@ -2,6 +2,7 @@
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createReliableGrid } from './simpleGridCreator';
 import { runGridDiagnostics } from './gridDiagnostics';
+import { createBasicEmergencyGrid } from './gridCreationUtils';
 
 /**
  * Dump grid state to console for debugging

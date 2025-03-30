@@ -1,5 +1,6 @@
 
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { createBasicEmergencyGrid } from './gridCreationUtils';
 
 /**
  * Check grid health
@@ -94,4 +95,43 @@ export const applyGridFixes = (
   }
   
   return fixCount;
+};
+
+/**
+ * Emergency fix for grid rendering issues
+ * @param canvas Fabric canvas
+ * @param gridLayerRef Reference to grid objects
+ * @returns Whether the fix was successful
+ */
+export const emergencyGridFix = (
+  canvas: FabricCanvas,
+  gridLayerRef: React.MutableRefObject<FabricObject[]>
+): boolean => {
+  if (!canvas) return false;
+  
+  try {
+    // Clear existing grid
+    if (gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      gridLayerRef.current = [];
+    }
+    
+    // Create emergency grid
+    const emergencyGrid = createBasicEmergencyGrid(canvas);
+    
+    if (emergencyGrid.length > 0) {
+      gridLayerRef.current = emergencyGrid;
+      canvas.requestRenderAll();
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error in emergencyGridFix:", error);
+    return false;
+  }
 };

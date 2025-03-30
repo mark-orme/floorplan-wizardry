@@ -5,11 +5,8 @@
  */
 import { expect, describe, test, beforeEach, afterEach, vi } from "vitest";
 import { Canvas, Object as FabricObject } from "fabric";
-import { 
-  dumpGridState, 
-  createBasicEmergencyGrid, 
-  forceCreateGrid 
-} from "./gridDebugUtils";
+import { dumpGridState, forceCreateGrid } from "./gridDebugUtils";
+import { createBasicEmergencyGrid } from "./gridCreationUtils";
 
 // Mock canvas and console methods
 vi.mock("fabric", () => {
