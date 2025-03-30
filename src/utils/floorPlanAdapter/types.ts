@@ -4,14 +4,18 @@
  * Type definitions and utilities for floor plan adapters
  * @module utils/floorPlanAdapter/types
  */
-import { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/basicTypes';
+import { StrokeTypeLiteral } from '@/types/floor-plan/basicTypes';
+import { StrokeType } from '@/types/core/floor-plan/Stroke';
+import { RoomType } from '@/types/core/floor-plan/Room';
 
 /**
  * Validate and convert a string to a valid StrokeTypeLiteral
  * @param type The string type to validate
  * @returns A valid StrokeTypeLiteral
  */
-export function validateStrokeType(type: string): StrokeTypeLiteral {
+export function validateStrokeType(type: string | null | undefined): StrokeTypeLiteral {
+  if (!type) return 'line';
+  
   switch(type.toLowerCase()) {
     case 'line': return 'line';
     case 'polyline': return 'polyline';
@@ -23,11 +27,13 @@ export function validateStrokeType(type: string): StrokeTypeLiteral {
 }
 
 /**
- * Map string to a valid RoomTypeLiteral
+ * Map string to a valid RoomType
  * @param type The string type to validate
- * @returns A valid RoomTypeLiteral
+ * @returns A valid RoomType
  */
-export function mapRoomType(type: string): RoomTypeLiteral {
+export function mapRoomType(type: string | null | undefined): string {
+  if (!type) return 'other';
+  
   switch(type.toLowerCase()) {
     case 'living': return 'living';
     case 'bedroom': return 'bedroom';
@@ -40,11 +46,13 @@ export function mapRoomType(type: string): RoomTypeLiteral {
 }
 
 /**
- * Map RoomTypeLiteral to core RoomType
- * @param type The RoomTypeLiteral to convert
+ * Map room type to core RoomType
+ * @param type The room type to convert
  * @returns A valid RoomType
  */
-export function validateRoomType(type: RoomTypeLiteral): string {
+export function validateRoomType(type: string | null | undefined): RoomType {
+  if (!type) return 'other';
+  
   switch(type.toLowerCase()) {
     case 'living': return 'living';
     case 'bedroom': return 'bedroom';

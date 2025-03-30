@@ -5,13 +5,13 @@
  */
 import { describe, it, expect } from 'vitest';
 import { 
-  CoreFloorPlan,
+  FloorPlan,
   createFloorPlan,
-  createRoom,
-  createWall,
-  StrokeTypeLiteral,
-  RoomTypeLiteral
-} from './FloorPlan';
+} from './floor-plan/FloorPlan';
+import { createRoom } from './floor-plan/Room';
+import { createWall } from './floor-plan/Wall';
+import { StrokeType } from './floor-plan/Stroke';
+import { RoomType } from './floor-plan/Room';
 
 describe('Core Floor Plan Types', () => {
   it('should properly re-export all necessary types and factories', () => {
@@ -22,17 +22,15 @@ describe('Core Floor Plan Types', () => {
   });
   
   it('should create a floor plan with factory function', () => {
-    const floorPlan = createFloorPlan({
-      name: 'Test Floor'
-    });
+    const floorPlan = createFloorPlan('test-id', 'Test Floor');
     
     // Verify floor plan properties
-    expect(floorPlan.id).toBeDefined();
+    expect(floorPlan.id).toBe('test-id');
     expect(floorPlan.name).toBe('Test Floor');
     expect(floorPlan.walls).toEqual([]);
     expect(floorPlan.rooms).toEqual([]);
     expect(floorPlan.metadata).toBeDefined();
-    expect(floorPlan.metadata.version).toBeDefined();
+    expect(floorPlan.metadata.createdAt).toBeDefined();
   });
   
   it('should create a wall with factory function', () => {
@@ -56,7 +54,7 @@ describe('Core Floor Plan Types', () => {
         { x: 100, y: 100 },
         { x: 0, y: 100 }
       ],
-      type: 'bedroom' as RoomTypeLiteral
+      type: 'bedroom' as RoomType
     });
     
     // Verify room properties

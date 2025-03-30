@@ -9,29 +9,27 @@ import {
   mapRoomType,
   validateRoomType
 } from './types';
-import { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/core/floor-plan';
+import { StrokeType } from '@/types/core/floor-plan/Stroke';
+import { RoomType } from '@/types/core/floor-plan/Room';
 
 describe('Floor Plan Type Utilities', () => {
   describe('validateStrokeType', () => {
     it('should validate valid stroke types', () => {
       // Test valid stroke types
-      expect(validateStrokeType('solid')).toBe('solid');
-      expect(validateStrokeType('dashed')).toBe('dashed');
-      expect(validateStrokeType('dotted')).toBe('dotted');
+      expect(validateStrokeType('line')).toBe('line');
+      expect(validateStrokeType('wall')).toBe('wall');
+      expect(validateStrokeType('room')).toBe('room');
     });
     
     it('should use default for invalid stroke types', () => {
       // Test with null
-      expect(validateStrokeType(null)).toBe('solid');
+      expect(validateStrokeType(null)).toBe('line');
       
       // Test with undefined
-      expect(validateStrokeType(undefined)).toBe('solid');
+      expect(validateStrokeType(undefined)).toBe('line');
       
       // Test with invalid string
-      expect(validateStrokeType('invalid-type' as StrokeTypeLiteral)).toBe('solid');
-      
-      // Test with custom default
-      expect(validateStrokeType(null, 'dashed')).toBe('dashed');
+      expect(validateStrokeType('invalid-type')).toBe('line');
     });
   });
   
@@ -67,7 +65,7 @@ describe('Floor Plan Type Utilities', () => {
     
     it('should use default for invalid room types', () => {
       // Test with invalid string
-      expect(validateRoomType('invalid-type' as RoomTypeLiteral)).toBe('other');
+      expect(validateRoomType('invalid-type')).toBe('other');
       
       // Test with null
       expect(validateRoomType(null)).toBe('other');

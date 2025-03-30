@@ -4,8 +4,7 @@
  * @module types/core/floor-plan/Room.test
  */
 import { describe, it, expect } from 'vitest';
-import { createRoom } from './Room';
-import { RoomTypeLiteral } from './types';
+import { Room, createRoom, RoomType } from './Room';
 
 describe('Room', () => {
   it('should create a room with default values', () => {
@@ -37,7 +36,7 @@ describe('Room', () => {
     const room = createRoom({
       id: 'customRoomId',
       points,
-      type: 'bedroom' as RoomTypeLiteral,
+      type: 'bedroom' as RoomType,
       name: 'Master Bedroom',
       color: '#CCFFCC'
     });

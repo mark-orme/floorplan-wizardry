@@ -39,7 +39,7 @@ export interface FloorPlan {
   canvasData: string | null;
   
   /** Canvas JSON serialization for fabric.js */
-  canvasJson?: string;
+  canvasJson?: string | null;
   
   /** Creation timestamp */
   createdAt: string;

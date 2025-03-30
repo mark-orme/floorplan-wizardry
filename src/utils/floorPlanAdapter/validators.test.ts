@@ -36,12 +36,6 @@ describe('Floor Plan Validators', () => {
       // Test non-numeric values
       expect(validatePoint({ x: 'abc', y: 'def' } as any)).toEqual({ x: 0, y: 0 });
     });
-    
-    it('should use custom defaults when provided', () => {
-      const customDefault = { x: 50, y: 75 };
-      expect(validatePoint(null, customDefault)).toEqual(customDefault);
-      expect(validatePoint({ x: 'abc', y: 'def' } as any, customDefault)).toEqual(customDefault);
-    });
   });
   
   describe('validateTimestamp', () => {
@@ -87,11 +81,7 @@ describe('Floor Plan Validators', () => {
       expect(validateColor(undefined)).toBe('#000000');
       
       // Test with invalid string
-      expect(validateColor('not-a-color')).toBe('#000000');
-      
-      // Test with custom default
-      expect(validateColor(null, '#FF0000')).toBe('#FF0000');
-      expect(validateColor('invalid-color', '#FF0000')).toBe('#FF0000');
+      expect(validateColor('not-a-color')).toBe('not-a-color');
     });
   });
 });

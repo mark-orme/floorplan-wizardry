@@ -35,7 +35,14 @@ export function validateTimestamp(timestamp: string | Date | undefined | null): 
   }
   
   if (typeof timestamp === 'string') {
-    return timestamp;
+    // Try to parse it as a date to validate
+    try {
+      new Date(timestamp).toISOString();
+      return timestamp;
+    } catch (e) {
+      // If it's not a valid date string, return current date
+      return new Date().toISOString();
+    }
   }
   
   if (timestamp instanceof Date) {
@@ -57,5 +64,5 @@ export function validateColor(color: string | undefined | null, defaultColor: st
   }
   
   // Simple validation: ensure it's a non-empty string
-  return color.trim() || defaultColor;
+  return color.trim() ? color.trim() : defaultColor;
 }

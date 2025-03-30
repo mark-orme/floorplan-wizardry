@@ -4,7 +4,7 @@
  * @module types/core/floor-plan/Wall.test
  */
 import { describe, it, expect } from 'vitest';
-import { createWall } from './Wall';
+import { Wall, createWall } from './Wall';
 
 describe('Wall', () => {
   it('should create a wall with default values', () => {

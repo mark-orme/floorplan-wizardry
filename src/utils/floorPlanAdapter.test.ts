@@ -13,8 +13,8 @@ import {
   validateStrokeType,
   mapRoomType
 } from './floorPlanAdapter';
-import { AppFloorPlan } from '@/types/floor-plan';
-import { CoreFloorPlan } from '@/types/core/floor-plan';
+import { FloorPlan as AppFloorPlan } from '@/types/floor-plan/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
 
 // This file now serves as an integration test for the floorPlanAdapter module
 // Individual functionality is tested in more detail in the respective test files:
@@ -39,19 +39,31 @@ describe('Floor Plan Adapter (Integration)', () => {
     const originalAppFloorPlan: AppFloorPlan = {
       id: 'test123',
       name: 'Test Floor',
+      label: 'Test Floor',
       walls: [
         { 
           id: 'wall1', 
           start: { x: 0, y: 0 }, 
           end: { x: 100, y: 0 }, 
-          thickness: 2 
+          thickness: 2,
+          points: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
+          color: '#000000'
         }
       ],
       rooms: [],
+      strokes: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      gia: 0,
+      level: 0,
+      index: 0,
+      canvasData: null,
+      canvasJson: null,
       metadata: {
-        created: new Date().toISOString(),
-        modified: new Date().toISOString(),
-        version: '1.0'
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        paperSize: 'A4',
+        level: 0
       }
     };
     

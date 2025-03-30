@@ -10,8 +10,8 @@ import {
   appToCoreFloorPlans,
   coreToAppFloorPlans
 } from './converters';
-import { AppFloorPlan } from '@/types/floor-plan';
-import { CoreFloorPlan } from '@/types/core/floor-plan';
+import { FloorPlan as AppFloorPlan } from '@/types/floor-plan/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
 
 describe('Floor Plan Converters', () => {
   describe('appToCoreFloorPlan', () => {
@@ -20,14 +20,31 @@ describe('Floor Plan Converters', () => {
       const appFloorPlan: AppFloorPlan = {
         id: '123',
         name: 'Test Floor',
+        label: 'Test Floor',
         walls: [
-          { id: 'wall1', start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, thickness: 2 }
+          { 
+            id: 'wall1', 
+            start: { x: 0, y: 0 }, 
+            end: { x: 100, y: 0 }, 
+            thickness: 2,
+            points: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
+            color: '#000000'
+          }
         ],
         rooms: [],
+        strokes: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
         metadata: {
-          created: new Date().toISOString(),
-          modified: new Date().toISOString(),
-          version: '1.0'
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          paperSize: 'A4',
+          level: 0
         }
       };
       
@@ -46,12 +63,22 @@ describe('Floor Plan Converters', () => {
       const emptyAppFloorPlan: AppFloorPlan = {
         id: '123',
         name: 'Empty Floor',
+        label: 'Empty Floor',
         walls: [],
         rooms: [],
+        strokes: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
         metadata: {
-          created: new Date().toISOString(),
-          modified: new Date().toISOString(),
-          version: '1.0'
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          paperSize: 'A4',
+          level: 0
         }
       };
       
@@ -71,14 +98,31 @@ describe('Floor Plan Converters', () => {
       const coreFloorPlan: CoreFloorPlan = {
         id: '123',
         name: 'Test Floor',
+        label: 'Test Floor',
         walls: [
-          { id: 'wall1', start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, thickness: 2 }
+          { 
+            id: 'wall1', 
+            start: { x: 0, y: 0 }, 
+            end: { x: 100, y: 0 }, 
+            thickness: 2,
+            color: '#000000',
+            length: 100
+          }
         ],
         rooms: [],
+        strokes: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
         metadata: {
-          created: new Date().toISOString(),
-          modified: new Date().toISOString(),
-          version: '1.0'
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          paperSize: 'A4',
+          level: 0
         }
       };
       
@@ -97,12 +141,22 @@ describe('Floor Plan Converters', () => {
       const emptyCoreFloorPlan: CoreFloorPlan = {
         id: '123',
         name: 'Empty Floor',
+        label: 'Empty Floor',
         walls: [],
         rooms: [],
+        strokes: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
         metadata: {
-          created: new Date().toISOString(),
-          modified: new Date().toISOString(),
-          version: '1.0'
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          paperSize: 'A4',
+          level: 0
         }
       };
       
@@ -123,23 +177,43 @@ describe('Floor Plan Converters', () => {
         {
           id: '123',
           name: 'Floor 1',
+          label: 'Floor 1',
           walls: [],
           rooms: [],
+          strokes: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          gia: 0,
+          level: 0,
+          index: 0,
+          canvasData: null,
+          canvasJson: null,
           metadata: {
-            created: new Date().toISOString(),
-            modified: new Date().toISOString(),
-            version: '1.0'
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            paperSize: 'A4',
+            level: 0
           }
         },
         {
           id: '456',
           name: 'Floor 2',
+          label: 'Floor 2',
           walls: [],
           rooms: [],
+          strokes: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          gia: 0,
+          level: 1,
+          index: 1,
+          canvasData: null,
+          canvasJson: null,
           metadata: {
-            created: new Date().toISOString(),
-            modified: new Date().toISOString(),
-            version: '1.0'
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            paperSize: 'A4',
+            level: 1
           }
         }
       ];
