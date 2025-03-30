@@ -1,71 +1,25 @@
+import { useCallback, useEffect } from 'react';
+import { Canvas as FabricCanvas, Point, Line } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
+import { toast } from 'sonner';
 
-/**
- * Custom hook for handling canvas event registration and cleanup
- * Centralizes all event handler management for canvas operations
- * @module useCanvasEventHandlers
- */
-import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import logger from "@/utils/logger";
-
-// Import types and event hooks
-import { usePathEvents } from "./canvas-events/usePathEvents";
-import { useObjectEvents } from "./canvas-events/useObjectEvents";
-import { useZoomTracking } from "./canvas-events/useZoomTracking";
-import { useBrushSettings } from "./canvas-events/useBrushSettings";
-
-/**
- * Props for the useCanvasEventHandlers hook
- * @interface UseCanvasEventHandlersProps
- */
-export interface UseCanvasEventHandlersProps {
-  /** Reference to the Fabric canvas instance */
+interface UseCanvasEventHandlersProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current active drawing tool */
   tool: DrawingMode;
-  /** Current line color */
   lineColor: string;
-  /** Current line thickness */
   lineThickness: number;
-  /** Function to save current state before making changes */
   saveCurrentState: () => void;
-  /** Function to handle undo operation */
   handleUndo: () => void;
-  /** Function to handle redo operation */
   handleRedo: () => void;
-  /** Function to handle mouse down event */
-  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
-  /** Function to handle mouse move event */
-  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  /** Function to handle mouse up event */
-  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
-  /** Function to process created path */
-  processCreatedPath: (path: FabricPath) => void;
-  /** Function to clean up timeouts */
-  cleanupTimeouts: () => void;
-  /** Function to delete selected objects */
-  deleteSelectedObjects: () => void;
-  /** Function to update zoom level */
-  updateZoomLevel: () => void;
+  deleteSelectedObjects?: () => void;
+  updateZoomLevel?: () => void;
+  processCreatedPath?: (path: any) => void;
+  handleMouseDown?: (e: MouseEvent | TouchEvent) => void;
+  handleMouseMove?: (e: MouseEvent | TouchEvent) => void;
+  handleMouseUp?: (e: MouseEvent | TouchEvent) => void;
+  cleanupTimeouts?: () => void;
 }
 
-/**
- * Return type for useCanvasEventHandlers hook
- * @interface UseCanvasEventHandlersResult
- */
-interface UseCanvasEventHandlersResult {
-  /** Cleanup all event handlers */
-  cleanupAllEventHandlers: () => void;
-}
-
-/**
- * Hook that handles canvas event registration and cleanup
- * Manages all event listeners for the canvas
- * 
- * @param {UseCanvasEventHandlersProps} props - Hook properties
- * @returns {UseCanvasEventHandlersResult} Event handling utilities
- */
 export const useCanvasEventHandlers = ({
   fabricCanvasRef,
   tool,
@@ -74,125 +28,242 @@ export const useCanvasEventHandlers = ({
   saveCurrentState,
   handleUndo,
   handleRedo,
+  deleteSelectedObjects,
+  updateZoomLevel,
+  processCreatedPath,
   handleMouseDown,
   handleMouseMove,
   handleMouseUp,
-  processCreatedPath,
-  cleanupTimeouts,
-  deleteSelectedObjects,
-  updateZoomLevel
-}: UseCanvasEventHandlersProps): UseCanvasEventHandlersResult => {
+  cleanupTimeouts
+}: UseCanvasEventHandlersProps) => {
+  // Variables for tracking straight line drawing
+  let isDrawingStraightLine = false;
+  let straightLineStartPoint: Point | null = null;
+  let currentStraightLine: Line | null = null;
   
-  // Register mouse event handlers directly
-  useEffect(() => {
+  // Handle keyboard shortcuts
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Undo: Ctrl/Cmd + Z
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+    }
+    
+    // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
+    if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+      e.preventDefault();
+      handleRedo();
+    }
+    
+    // Delete: Delete or Backspace key
+    if ((e.key === 'Delete' || e.key === 'Backspace') && deleteSelectedObjects) {
+      const canvas = fabricCanvasRef.current;
+      const activeObjects = canvas.getActiveObjects();
+      
+      if (activeObjects.length > 0) {
+        e.preventDefault();
+        deleteSelectedObjects();
+      }
+    }
+    
+    // Escape: Cancel current operation
+    if (e.key === 'Escape') {
+      const canvas = fabricCanvasRef.current;
+      
+      // Cancel straight line drawing if active
+      if (tool === DrawingMode.STRAIGHT_LINE && isDrawingStraightLine && currentStraightLine) {
+        canvas.remove(currentStraightLine);
+        canvas.requestRenderAll();
+        isDrawingStraightLine = false;
+        straightLineStartPoint = null;
+        currentStraightLine = null;
+      }
+      
+      // Clear selection
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+    }
+  }, [fabricCanvasRef, tool, handleUndo, handleRedo, deleteSelectedObjects]);
+  
+  // Handle canvas mouse down
+  const onCanvasMouseDown = useCallback((e: any) => {
+    if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
     
-    console.log("Registering direct canvas event handlers for tool:", tool);
-    
-    const onCanvasMouseDown = (e: any) => {
+    // Call the external handler if provided
+    if (handleMouseDown) {
       const nativeEvent = e.e as MouseEvent | TouchEvent;
       handleMouseDown(nativeEvent);
-    };
+    }
     
-    const onCanvasMouseMove = (e: any) => {
+    // Handle straight line tool
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      const pointer = canvas.getPointer(e.e);
+      isDrawingStraightLine = true;
+      straightLineStartPoint = new Point(pointer.x, pointer.y);
+      
+      // Create a new line
+      currentStraightLine = new Line([
+        pointer.x, 
+        pointer.y, 
+        pointer.x, 
+        pointer.y
+      ], {
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        selectable: false,
+        evented: false,
+        objectType: 'straight-line'
+      });
+      
+      canvas.add(currentStraightLine);
+      canvas.requestRenderAll();
+    }
+  }, [fabricCanvasRef, tool, lineColor, lineThickness, handleMouseDown]);
+  
+  // Handle canvas mouse move
+  const onCanvasMouseMove = useCallback((e: any) => {
+    if (!fabricCanvasRef.current) return;
+    const canvas = fabricCanvasRef.current;
+    
+    // Call the external handler if provided
+    if (handleMouseMove) {
       const nativeEvent = e.e as MouseEvent | TouchEvent;
       handleMouseMove(nativeEvent);
-    };
+    }
     
-    const onCanvasMouseUp = (e: any) => {
+    // Update straight line during drawing
+    if (tool === DrawingMode.STRAIGHT_LINE && isDrawingStraightLine && straightLineStartPoint && currentStraightLine) {
+      const pointer = canvas.getPointer(e.e);
+      
+      // Update the end point of the line
+      currentStraightLine.set({
+        x2: pointer.x,
+        y2: pointer.y
+      });
+      
+      // Calculate distance for measurement
+      const dx = pointer.x - straightLineStartPoint.x;
+      const dy = pointer.y - straightLineStartPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Convert to meters (assuming 100 pixels = 1 meter, adjust as needed)
+      const distanceInMeters = (distance / 100).toFixed(1);
+      
+      // Update the line and show measurement
+      currentStraightLine.set({
+        measurement: `${distanceInMeters} m`
+      });
+      
+      canvas.requestRenderAll();
+    }
+  }, [fabricCanvasRef, tool, handleMouseMove]);
+  
+  // Handle canvas mouse up
+  const onCanvasMouseUp = useCallback((e: any) => {
+    if (!fabricCanvasRef.current) return;
+    const canvas = fabricCanvasRef.current;
+    
+    // Call the external handler if provided
+    if (handleMouseUp) {
       const nativeEvent = e.e as MouseEvent | TouchEvent;
       handleMouseUp(nativeEvent);
-    };
+    }
     
-    // Register handlers
+    // Complete straight line drawing
+    if (tool === DrawingMode.STRAIGHT_LINE && isDrawingStraightLine && straightLineStartPoint && currentStraightLine) {
+      saveCurrentState();
+      
+      const pointer = canvas.getPointer(e.e);
+      
+      // Calculate distance for measurement
+      const dx = pointer.x - straightLineStartPoint.x;
+      const dy = pointer.y - straightLineStartPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Only keep the line if it has a meaningful length
+      if (distance > 5) {
+        // Convert to meters (assuming 100 pixels = 1 meter, adjust as needed)
+        const distanceInMeters = (distance / 100).toFixed(1);
+        
+        // Update the line properties for final rendering
+        currentStraightLine.set({
+          selectable: true,
+          evented: true,
+          measurement: `${distanceInMeters} m`
+        });
+        
+        // Add measurement text
+        const midpointX = (straightLineStartPoint.x + pointer.x) / 2;
+        const midpointY = (straightLineStartPoint.y + pointer.y) / 2;
+        
+        const measurementText = new fabric.Text(`${distanceInMeters} m`, {
+          left: midpointX,
+          top: midpointY,
+          fontSize: 14,
+          fill: '#000000',
+          backgroundColor: 'rgba(255,255,255,0.7)',
+          padding: 2,
+          objectType: 'measurement'
+        });
+        
+        canvas.add(measurementText);
+        
+        toast.success(`Line drawn: ${distanceInMeters} m`);
+      } else {
+        // Line too short, remove it
+        canvas.remove(currentStraightLine);
+      }
+      
+      canvas.requestRenderAll();
+    }
+    
+    // Reset straight line drawing state
+    isDrawingStraightLine = false;
+    straightLineStartPoint = null;
+    currentStraightLine = null;
+  }, [fabricCanvasRef, tool, saveCurrentState, handleMouseUp]);
+  
+  // Set up event listeners when component mounts
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Add event listeners
+    window.addEventListener('keydown', handleKeyDown);
     canvas.on('mouse:down', onCanvasMouseDown);
     canvas.on('mouse:move', onCanvasMouseMove);
     canvas.on('mouse:up', onCanvasMouseUp);
     
-    // Update brush settings
-    canvas.freeDrawingBrush.color = lineColor;
-    canvas.freeDrawingBrush.width = lineThickness;
+    // Determine cursor based on the tool
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+    }
     
-    // Set drawing mode based on tool
-    canvas.isDrawingMode = tool === DrawingMode.DRAW;
-    
+    // Clean up function
     return () => {
-      // Unregister handlers
-      canvas.off('mouse:down', onCanvasMouseDown);
-      canvas.off('mouse:move', onCanvasMouseMove);
-      canvas.off('mouse:up', onCanvasMouseUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      if (canvas) {
+        canvas.off('mouse:down', onCanvasMouseDown);
+        canvas.off('mouse:move', onCanvasMouseMove);
+        canvas.off('mouse:up', onCanvasMouseUp);
+      }
+      
+      if (cleanupTimeouts) {
+        cleanupTimeouts();
+      }
     };
   }, [
     fabricCanvasRef,
     tool,
-    lineColor,
-    lineThickness,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp
-  ]);
-  
-  // Set up all individual event handlers using the dedicated hooks
-  
-  // Handle path creation events
-  const { cleanup: cleanupPathEvents } = usePathEvents?.({
-    fabricCanvasRef,
-    tool,
-    saveCurrentState,
-    processCreatedPath,
-    handleMouseUp
-  }) || { cleanup: () => {} };
-  
-  // Handle object modification and removal events
-  const { cleanup: cleanupObjectEvents } = useObjectEvents?.({
-    fabricCanvasRef,
-    tool,
-    saveCurrentState
-  }) || { cleanup: () => {} };
-  
-  // Handle brush settings
-  const { cleanup: cleanupBrushSettings } = useBrushSettings?.({
-    fabricCanvasRef,
-    tool,
-    lineColor,
-    lineThickness
-  }) || { cleanup: () => {} };
-  
-  // Handle zoom tracking
-  const { cleanup: cleanupZoomTracking } = useZoomTracking?.({
-    fabricCanvasRef,
-    tool,
-    updateZoomLevel
-  }) || { cleanup: () => {} };
-  
-  // Cleanup function to remove all event handlers
-  const cleanupAllEventHandlers = useCallback(() => {
-    logger.info("Cleaning up all canvas event handlers");
-    
-    if (cleanupPathEvents) cleanupPathEvents();
-    if (cleanupObjectEvents) cleanupObjectEvents();
-    if (cleanupBrushSettings) cleanupBrushSettings();
-    if (cleanupZoomTracking) cleanupZoomTracking();
-    
-    // Also clean up any timeouts
-    cleanupTimeouts();
-  }, [
-    cleanupPathEvents,
-    cleanupObjectEvents,
-    cleanupBrushSettings,
-    cleanupZoomTracking,
+    handleKeyDown,
+    onCanvasMouseDown,
+    onCanvasMouseMove,
+    onCanvasMouseUp,
     cleanupTimeouts
   ]);
-  
-  // Ensure all handlers are cleaned up when the component unmounts
-  useEffect(() => {
-    return () => {
-      cleanupAllEventHandlers();
-    };
-  }, [cleanupAllEventHandlers]);
-
-  return {
-    cleanupAllEventHandlers
-  };
 };

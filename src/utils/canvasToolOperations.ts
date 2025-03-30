@@ -130,9 +130,20 @@ export const handleToolChange = (
       });
       break;
       
+    case DrawingMode.STRAIGHT_LINE:
+      // Special handling for straight line tool
+      canvas.isDrawingMode = false;
+      canvas.selection = false;
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+      disableSelection(canvas);
+      console.log(`Straight line mode enabled, selection disabled`);
+      break;
+      
     case DrawingMode.WALL:
     case DrawingMode.ROOM:
     case DrawingMode.LINE:
+    case DrawingMode.MEASURE:
       // Custom drawing modes - disable native drawing but also disable selection
       canvas.isDrawingMode = false;
       canvas.selection = false;
@@ -157,6 +168,15 @@ export const handleToolChange = (
       canvas.defaultCursor = 'cell';
       canvas.hoverCursor = 'cell';
       console.log("Eraser mode enabled");
+      break;
+      
+    case DrawingMode.HAND:
+      canvas.isDrawingMode = false;
+      canvas.selection = false;
+      canvas.defaultCursor = 'grab';
+      canvas.hoverCursor = 'grab';
+      disableSelection(canvas);
+      console.log("Hand (pan) mode enabled");
       break;
       
     default:

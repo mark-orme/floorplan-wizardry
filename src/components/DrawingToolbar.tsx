@@ -1,3 +1,4 @@
+
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
@@ -5,7 +6,7 @@ import { DrawingMode } from "@/constants/drawingModes";
 import { LineSettings } from "./LineSettings";
 import { 
   MousePointerSquareDashed, Pencil, Grid2X2, 
-  Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser 
+  Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser, Ruler 
 } from "lucide-react";
 import { formatGIA } from "@/utils/display";
 
@@ -106,11 +107,11 @@ export const DrawingToolbar = ({
                 size="sm"
                 onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
               >
-                <div className="h-4 w-4 border-b-2 border-current transform rotate-45" />
+                <Ruler className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Draw Wall (Straight Line)</p>
+              <p>Draw Wall (Straight Line) with Measurement</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -128,6 +129,112 @@ export const DrawingToolbar = ({
             </TooltipTrigger>
             <TooltipContent>
               <p>Room</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === DrawingMode.ERASER ? "default" : "outline"} 
+                size="sm"
+                onClick={() => onToolChange(DrawingMode.ERASER)}
+              >
+                <Eraser className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Eraser</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator orientation="vertical" className="h-8 mx-1" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onUndo}
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Undo (Ctrl+Z)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onRedo}
+              >
+                <Redo2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Redo (Ctrl+Shift+Z)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onClear}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Clear Canvas</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator orientation="vertical" className="h-8 mx-1" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onZoom("in")}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Zoom In</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onZoom("out")}
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Zoom Out</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

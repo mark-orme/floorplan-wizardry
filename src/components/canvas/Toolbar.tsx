@@ -80,6 +80,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </Button>
         <Button 
           size="sm" 
+          variant={activeTool === DrawingMode.STRAIGHT_LINE ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
+          title="Straight Line Tool"
+        >
+          <Ruler className="h-4 w-4" />
+        </Button>
+        <Button 
+          size="sm" 
           variant={activeTool === DrawingMode.RECTANGLE ? 'default' : 'outline'} 
           onClick={() => onToolChange(DrawingMode.RECTANGLE)}
           title="Rectangle Tool"
