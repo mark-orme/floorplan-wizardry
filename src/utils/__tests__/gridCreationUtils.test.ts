@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 
   verifyGridExists, 
-  createCompleteGrid,
   ensureGrid,
   retryWithBackoff,
   reorderGridObjects
@@ -12,13 +11,13 @@ describe('gridCreationUtils', () => {
   describe('verifyGridExists', () => {
     it('should return false when canvas is null', () => {
       // @ts-ignore - We're intentionally passing null for testing
-      const result = verifyGridExists(null);
+      const result = verifyGridExists(null, []);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
-      const result = verifyGridExists(canvas);
+      const result = verifyGridExists(canvas, []);
       expect(result).toBe(false);
     });
     
@@ -28,7 +27,7 @@ describe('gridCreationUtils', () => {
       // Mock canvas.getObjects to return empty array
       canvas.getObjects = vi.fn().mockReturnValue([]);
       
-      const result = verifyGridExists(canvas);
+      const result = verifyGridExists(canvas, []);
       expect(result).toBe(false);
       expect(canvas.getObjects).toHaveBeenCalled();
     });
@@ -41,7 +40,7 @@ describe('gridCreationUtils', () => {
         { objectType: 'grid' } as unknown as FabricObject
       ]);
       
-      const result = verifyGridExists(canvas);
+      const result = verifyGridExists(canvas, [{ objectType: 'grid' } as unknown as FabricObject]);
       expect(result).toBe(true);
       expect(canvas.getObjects).toHaveBeenCalled();
     });
@@ -86,6 +85,4 @@ describe('gridCreationUtils', () => {
       expect(operation).toHaveBeenCalledTimes(3);
     });
   });
-  
-  // Additional tests for other functions
 });

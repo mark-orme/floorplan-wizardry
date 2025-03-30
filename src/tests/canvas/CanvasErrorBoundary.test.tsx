@@ -32,7 +32,7 @@ describe('ErrorBoundary', () => {
 
   it('renders children when no error occurs', () => {
     render(
-      <ErrorBoundary fallback={<div>Something went wrong</div>} component="TestComponent">
+      <ErrorBoundary fallback={<div>Something went wrong</div>}>
         <NormalComponent />
       </ErrorBoundary>
     );
@@ -42,7 +42,7 @@ describe('ErrorBoundary', () => {
 
   it('renders fallback when error occurs', () => {
     render(
-      <ErrorBoundary fallback={<div>Something went wrong</div>} component="TestComponent">
+      <ErrorBoundary fallback={<div>Something went wrong</div>}>
         <ErrorComponent />
       </ErrorBoundary>
     );
@@ -53,8 +53,7 @@ describe('ErrorBoundary', () => {
   it('renders custom fallback when provided and error occurs', () => {
     render(
       <ErrorBoundary 
-        fallback={<div>Custom error: Canvas initialization failed</div>} 
-        component="TestComponent"
+        fallback={<div>Custom error: Canvas initialization failed</div>}
       >
         <ErrorComponent />
       </ErrorBoundary>

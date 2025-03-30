@@ -1,4 +1,3 @@
-
 /**
  * Grid creation utilities
  * @module utils/gridCreationUtils
@@ -173,12 +172,12 @@ export const createEnhancedGrid = (canvas: Canvas): FabricObject[] => {
 /**
  * Create basic emergency grid
  * @param {Canvas} canvas - Fabric canvas
- * @param {React.MutableRefObject<FabricObject[]>} [gridRef] - Optional reference to store grid objects
+ * @param {FabricObject[]} [existingGrid] - Optional array of existing grid objects
  * @returns {FabricObject[]} Created grid objects
  */
 export const createBasicEmergencyGrid = (
   canvas: Canvas,
-  gridRef?: React.MutableRefObject<FabricObject[]>
+  existingGrid?: FabricObject[]
 ): FabricObject[] => {
   try {
     logger.warn("Creating basic emergency grid");
@@ -216,11 +215,6 @@ export const createBasicEmergencyGrid = (
     }
     
     canvas.renderAll();
-    
-    // Update reference if provided
-    if (gridRef) {
-      gridRef.current = gridObjects;
-    }
     
     return gridObjects;
   } catch (error) {

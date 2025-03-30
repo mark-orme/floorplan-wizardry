@@ -1,4 +1,3 @@
-
 /**
  * Grid debug utilities
  * Provides tools for diagnosing and fixing grid-related issues
@@ -133,9 +132,14 @@ export const forceCreateGrid = (canvas: FabricCanvas): FabricObject[] => {
 export const gridDebugStats = () => {
   return {
     timestamp: new Date().toISOString(),
-    memoryUsage: window.performance && window.performance.memory 
-      ? window.performance.memory 
-      : { totalJSHeapSize: 'unavailable' }
+    memoryUsage: typeof performance !== 'undefined' && 
+                 // @ts-ignore - memory might not exist in all environments
+                 performance.memory ? {
+                   // @ts-ignore - TypeScript doesn't know about memory property
+                   totalJSHeapSize: performance.memory?.totalJSHeapSize || 'unavailable'
+                 } : { 
+                   totalJSHeapSize: 'unavailable' 
+                 }
   };
 };
 
