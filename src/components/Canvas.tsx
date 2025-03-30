@@ -15,6 +15,7 @@ import { useSimpleGrid } from "@/hooks/useSimpleGrid";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { useGridDiagnosticLogger } from "@/hooks/useGridDiagnosticLogger";
 import logger from "@/utils/logger";
+import { BasicGrid } from "@/components/BasicGrid";
 
 interface CanvasProps {
   width?: number;
@@ -98,6 +99,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         // Store the canvas reference in both state and ref
         setFabricCanvas(canvas);
         setCanvas(canvas);
+        fabricCanvasRef.current = canvas;
 
         // Notify parent component
         if (onCanvasReady) {
@@ -135,40 +137,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
         setFabricCanvas(null);
         setCanvas(null);
+        fabricCanvasRef.current = null;
       }
     };
   }, [width, height, backgroundColor, setCanvas, onCanvasReady, onError, initAttempts]);
-
-  // Update fabricCanvasRef when fabricCanvas changes
-  useEffect(() => {
-    fabricCanvasRef.current = fabricCanvas;
-  }, [fabricCanvas]);
-
-  // After canvas initialization, force create grid with extra logging
-  useEffect(() => {
-    if (fabricCanvas) {
-      // Log canvas creation success
-      logger.info("Canvas initialized, attempting grid creation", {
-        width: fabricCanvas.width,
-        height: fabricCanvas.height,
-        objectCount: fabricCanvas.getObjects().length
-      });
-      
-      // Force grid creation with small delay to ensure canvas is fully ready
-      const timer = setTimeout(() => {
-        try {
-          logger.info("Forcing initial grid creation");
-          console.log("🔲 Forcing initial grid creation");
-          createGrid();
-        } catch (error) {
-          logger.error("Failed to create initial grid:", error);
-          console.error("Failed to create initial grid:", error);
-        }
-      }, 200);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [fabricCanvas, createGrid]);
 
   // Handle retry button click
   const handleRetry = (): void => {
@@ -214,6 +186,9 @@ export const Canvas: React.FC<CanvasProps> = ({
         className="border border-gray-200 rounded-lg shadow-lg max-w-full"
         data-testid="canvas"
       />
+      
+      {/* Add our new BasicGrid component */}
+      <BasicGrid fabricCanvas={fabricCanvas} />
       
       {showDebug && fabricCanvas && (
         <div className="absolute top-2 right-2 bg-white/95 p-3 rounded shadow text-xs z-10">

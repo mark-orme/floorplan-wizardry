@@ -1,148 +1,64 @@
 
 /**
- * Grid Diagnostic Logger
- * Provides enhanced logging and troubleshooting for grid rendering issues
- * @module utils/grid/gridDiagnosticLogger
+ * Grid diagnostic logger
+ * Utilities for logging grid state for debugging
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import logger from "../logger";
-import { captureError } from "../sentryUtils";
 
 /**
- * Log comprehensive grid state for troubleshooting
- * @param {FabricCanvas} canvas - The canvas to diagnose
- * @param {FabricObject[]} gridObjects - Grid objects to diagnose
+ * Log the current state of the grid
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {FabricObject[]} gridObjects - The grid objects
  */
-export const logGridState = (
-  canvas: FabricCanvas | null,
+export function logGridState(
+  canvas: FabricCanvas,
   gridObjects: FabricObject[]
-): void => {
-  if (!canvas) {
-    logger.error("Cannot log grid state: Canvas is null");
-    console.error("Cannot log grid state: Canvas is null");
-    return;
-  }
-  
-  // Get a snapshot of the current canvas state
-  const canvasState = {
-    width: canvas.width,
-    height: canvas.height,
-    totalObjects: canvas.getObjects().length,
-    viewportTransform: canvas.viewportTransform,
-    zoom: canvas.getZoom(),
-    renderOnAddRemove: canvas.renderOnAddRemove,
-    selection: canvas.selection
-    // Removed stateful and interactive properties as they don't exist in Fabric.js v6
-  };
-  
-  // Get info about grid objects
-  const gridState = {
-    count: gridObjects.length,
-    onCanvas: gridObjects.filter(obj => canvas.contains(obj)).length,
-    visible: gridObjects.filter(obj => obj.visible).length,
-    types: {} as Record<string, number>
-  };
-  
-  // Count object types
-  gridObjects.forEach(obj => {
-    const type = obj.type || 'unknown';
-    gridState.types[type] = (gridState.types[type] || 0) + 1;
-  });
-  
-  // Log the current state
-  logger.info("Grid diagnostic report", {
-    canvas: canvasState,
-    grid: gridState,
-    timestamp: new Date().toISOString()
-  });
-  
-  console.log("📊 Grid Diagnostic Report:", {
-    canvas: canvasState,
-    grid: gridState
-  });
-  
-  // Check for common issues
-  const issues = [];
-  
-  if (gridState.count === 0) {
-    issues.push("No grid objects created");
-  } else if (gridState.onCanvas === 0) {
-    issues.push("Grid objects exist but none are on canvas");
-  } else if (gridState.onCanvas < gridState.count) {
-    issues.push(`Only ${gridState.onCanvas} of ${gridState.count} grid objects are on canvas`);
-  }
-  
-  if (gridState.visible === 0 && gridState.count > 0) {
-    issues.push("All grid objects are invisible");
-  }
-  
-  if (!canvas.renderOnAddRemove) {
-    issues.push("Canvas renderOnAddRemove is disabled");
-  }
-  
-  if (canvas.width === 0 || canvas.height === 0) {
-    issues.push(`Canvas has invalid dimensions: ${canvas.width}x${canvas.height}`);
-  }
-  
-  if (issues.length > 0) {
-    logger.warn("Grid rendering issues detected:", { issues });
-    console.warn("⚠️ Grid rendering issues detected:", issues);
-    
-    // Report serious issues to Sentry
-    if (issues.some(issue => issue.includes("No grid objects") || issue.includes("invalid dimensions"))) {
-      captureError(
-        new Error(`Grid rendering failure: ${issues.join(", ")}`),
-        "grid-diagnostic",
-        {
-          level: "error",
-          extra: {
-            canvasState,
-            gridState,
-            issues
-          }
-        }
-      );
+): void {
+  try {
+    if (!canvas) {
+      console.log("Cannot log grid state: Canvas is null");
+      return;
     }
+    
+    const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj)).length;
+    
+    console.log("Grid state:", {
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      totalObjects: canvas.getObjects().length,
+      gridObjects: gridObjects.length,
+      gridObjectsOnCanvas: objectsOnCanvas,
+      percentOnCanvas: gridObjects.length ? Math.round((objectsOnCanvas / gridObjects.length) * 100) : 0
+    });
+  } catch (error) {
+    console.error("Error logging grid state:", error);
   }
-};
+}
 
 /**
- * Add diagnostic event listeners to canvas
- * Helps track rendering and object management issues
- * @param {FabricCanvas} canvas - The canvas to monitor
+ * Set up diagnostic monitoring on a canvas
+ * @param {FabricCanvas} canvas - The fabric canvas instance
  */
-export const setupGridDiagnosticMonitoring = (canvas: FabricCanvas): void => {
-  if (!canvas) return;
-  
-  // Monitor object additions
-  canvas.on('object:added', (e) => {
-    if (e.target?.type?.includes('line') || e.target?.type?.includes('grid')) {
-      logger.debug("Grid object added to canvas", {
-        type: e.target.type,
-        visible: e.target.visible,
-        id: e.target.id
-      });
-    }
-  });
-  
-  // Monitor object removals
-  canvas.on('object:removed', (e) => {
-    if (e.target?.type?.includes('line') || e.target?.type?.includes('grid')) {
-      logger.debug("Grid object removed from canvas", {
-        type: e.target.type,
-        id: e.target.id
-      });
-    }
-  });
-  
-  // Monitor render events
-  let renderCount = 0;
-  canvas.on('after:render', () => {
-    renderCount++;
-    if (renderCount % 10 === 0) { // Log every 10th render to avoid spam
-      logger.debug(`Canvas rendered (${renderCount} times)`);
-    }
-  });
-  
-  logger.info("Grid diagnostic monitoring set up successfully");
-};
+export function setupGridDiagnosticMonitoring(canvas: FabricCanvas): void {
+  try {
+    // Log canvas state
+    console.log("Canvas diagnostic info:", {
+      width: canvas.width,
+      height: canvas.height,
+      objectCount: canvas.getObjects().length,
+      renderOnAddRemove: canvas.renderOnAddRemove
+    });
+    
+    // Listen for object added/removed events
+    canvas.on('object:added', () => {
+      console.log("Object added to canvas, total objects:", canvas.getObjects().length);
+    });
+    
+    canvas.on('object:removed', () => {
+      console.log("Object removed from canvas, total objects:", canvas.getObjects().length);
+    });
+    
+  } catch (error) {
+    console.error("Error setting up grid diagnostic monitoring:", error);
+  }
+}

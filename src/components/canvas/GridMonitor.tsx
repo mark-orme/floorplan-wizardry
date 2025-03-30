@@ -5,8 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createReliableGrid } from "@/utils/grid/reliableGridCreation";
-import { logGridState } from "@/utils/grid/gridDiagnosticLogger";
+import { createSimpleGrid } from "@/utils/simpleGridCreator";
 import { toast } from "sonner";
 
 interface GridMonitorProps {
@@ -43,7 +42,12 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
         console.log("Grid monitoring started");
         
         // Check grid status initially
-        logGridState(canvas, gridLayerRef.current);
+        console.log("Grid state:", {
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+          gridObjectCount: gridLayerRef.current.length,
+          objectsOnCanvas: gridLayerRef.current.filter(obj => canvas.contains(obj)).length
+        });
         
         // Set up monitoring interval
         const intervalId = setInterval(() => {
@@ -51,12 +55,13 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
           if (!canvas) return;
           
           // Log current state
-          logGridState(canvas, gridLayerRef.current);
-          
-          // Check if grid needs repair
+          const gridObjectCount = gridLayerRef.current.length;
           const objectsOnCanvas = gridLayerRef.current.filter(obj => canvas.contains(obj)).length;
           
-          if (objectsOnCanvas === 0 && gridLayerRef.current.length > 0) {
+          console.log("Grid monitor check:", { gridObjectCount, objectsOnCanvas });
+          
+          // Check if grid needs repair
+          if (objectsOnCanvas === 0 && gridObjectCount > 0) {
             console.log("Grid objects exist but none are on canvas, repairing");
             
             // Try to re-add existing objects
@@ -71,9 +76,10 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
             });
             
             canvas.requestRenderAll();
-          } else if (gridLayerRef.current.length === 0) {
+          } else if (gridObjectCount === 0) {
             console.log("No grid objects exist, creating grid");
-            createReliableGrid(canvas, gridLayerRef);
+            gridLayerRef.current = createSimpleGrid(canvas);
+            toast.success("Grid restored");
           }
         }, 5000);
         
@@ -99,11 +105,17 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
       setIsActive(true);
       
       // Log initial state
-      logGridState(fabricCanvasRef.current, gridLayerRef.current);
+      const canvas = fabricCanvasRef.current;
+      console.log("Grid monitor initial state:", {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        gridObjectCount: gridLayerRef.current.length
+      });
       
       // Create grid if needed
       if (gridLayerRef.current.length === 0) {
-        createReliableGrid(fabricCanvasRef.current, gridLayerRef);
+        console.log("Creating initial grid from monitor");
+        gridLayerRef.current = createSimpleGrid(canvas);
       }
     }
   }, [fabricCanvasRef.current, active, isActive, gridLayerRef]);
