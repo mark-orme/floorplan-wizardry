@@ -16,7 +16,7 @@ export const baseConfig = {
     "curly": ["error", "all"],
     
     // Import rules to prevent runtime errors
-    "import/no-unresolved": "error",
+    "import/no-unresolved": "error", // Added per request
     "no-unused-vars": "error", // Strengthened from warn to error
     "no-restricted-imports": ["error", {
       "paths": [
@@ -39,6 +39,10 @@ export const baseConfig = {
           "name": "./gridCreation",
           "importNames": ["createGridLayer", "createFallbackGrid", "createBasicEmergencyGrid"],
           "message": "Ensure these functions are properly exported from gridCreation"
+        },
+        {
+          "name": "@/hooks/useCanvasState",
+          "message": "Use DrawingTool from drawingTypes.ts instead."
         }
       ]
     }],

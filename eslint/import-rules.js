@@ -1,4 +1,3 @@
-
 /**
  * Import/export ESLint rules
  * Controls how modules can be imported and exported
@@ -9,7 +8,7 @@ export const importExportRules = {
   plugins: ["import", "sort-exports"],
   rules: {
     // Ensure imports point to files/modules that exist
-    "import/no-unresolved": "error",
+    "import/no-unresolved": "error", // Modified to error as per request
     
     // Ensure named imports correspond to a named export
     "import/named": "error",

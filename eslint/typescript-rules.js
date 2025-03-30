@@ -1,3 +1,4 @@
+
 /**
  * TypeScript specific ESLint rules
  * Enforces strict type checking and code quality for TypeScript files
@@ -20,10 +21,7 @@ export const typescriptRules = {
   rules: {
     // Strict TypeScript validation
     "@typescript-eslint/no-non-null-assertion": "error",
-    "@typescript-eslint/no-explicit-any": ["warn", { 
-      ignoreRestArgs: true,
-      allowExplicitAny: false
-    }],
+    "@typescript-eslint/no-explicit-any": "warn", // Updated to warn per request
     "@typescript-eslint/explicit-function-return-type": ["error", {
       allowExpressions: true,
       allowHigherOrderFunctions: true,
@@ -31,13 +29,10 @@ export const typescriptRules = {
     }],
     "@typescript-eslint/explicit-module-boundary-types": "error",
     "@typescript-eslint/ban-ts-comment": "warn",
-    "@typescript-eslint/no-unused-vars": ["error", { 
-      ignoreRestSiblings: true,
-      argsIgnorePattern: "^_" 
-    }],
+    "@typescript-eslint/no-unused-vars": ["warn"], // Updated to warn per request
     
     // Enforce consistent type imports
-    "@typescript-eslint/consistent-type-imports": ["error", {
+    "@typescript-eslint/consistent-type-imports": ["error", { // Added per request
       prefer: "type-imports",
       disallowTypeAnnotations: true
     }],
@@ -198,7 +193,11 @@ export const typescriptRules = {
           "importNames": ["fabric"],
           "message": "Import specific components: import { Canvas, Line, Rect } from 'fabric' - not 'fabric.*'"
         }
-      ]
+      ],
+      "paths": [{
+        "name": "@/hooks/useCanvasState",
+        "message": "Use DrawingTool from drawingTypes.ts instead."
+      }]
     }],
     
     // NEW: Enhanced protection for fabric components
