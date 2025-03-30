@@ -51,8 +51,14 @@ const PropertyDetail = () => {
   }, [id, getProperty]);
 
   useEffect(() => {
-    if (currentProperty?.floor_plans && currentProperty.floor_plans.length > 0) {
-      setFloorPlans(currentProperty.floor_plans);
+    if (currentProperty?.floorPlans && typeof currentProperty.floorPlans === 'string' && currentProperty.floorPlans.length > 0) {
+      try {
+        const parsedFloorPlans = JSON.parse(currentProperty.floorPlans);
+        setFloorPlans(parsedFloorPlans);
+      } catch (e) {
+        console.error("Error parsing floor plans:", e);
+        loadData();
+      }
     } else {
       loadData();
     }
@@ -109,7 +115,26 @@ const PropertyDetail = () => {
       );
     }
 
-    const canEdit = canEditProperty(currentProperty, userRole, user.id);
+    const canEdit = userRole ? canEditProperty(currentProperty, userRole, user.id) : false;
+    
+    // Property header expects these specific props
+    const headerProps = {
+      order_id: currentProperty.order_id || currentProperty.id,
+      status: currentProperty.status,
+      address: currentProperty.address
+    };
+    
+    // Property details tab expects these specific props
+    const detailsProps = {
+      order_id: currentProperty.order_id || currentProperty.id,
+      client_name: currentProperty.client_name || 'Unknown',
+      address: currentProperty.address,
+      branch_name: currentProperty.branch_name || undefined,
+      created_at: currentProperty.created_at || currentProperty.createdAt,
+      updated_at: currentProperty.updated_at || currentProperty.updatedAt,
+      notes: currentProperty.notes,
+      status: currentProperty.status
+    };
     
     return (
       <div className="container mx-auto py-6 px-4 max-w-7xl">
@@ -122,7 +147,7 @@ const PropertyDetail = () => {
             <Grid className="mr-2 h-4 w-4" />
             Floor Plan Editor
           </Button>
-          <PropertyHeader property={currentProperty} />
+          <PropertyHeader property={headerProps} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -133,8 +158,8 @@ const PropertyDetail = () => {
 
           <TabsContent value="details" className="space-y-4">
             <PropertyDetailsTab 
-              property={currentProperty}
-              userRole={userRole}
+              property={detailsProps}
+              userRole={userRole || UserRole.PHOTOGRAPHER}
               propertyId={id}
               onStatusChange={handleStatusChange}
             />
@@ -143,7 +168,7 @@ const PropertyDetail = () => {
           <TabsContent value="floorplan" className="space-y-4">
             <PropertyFloorPlanTab 
               canEdit={canEdit}
-              userRole={userRole}
+              userRole={userRole || UserRole.PHOTOGRAPHER}
               property={currentProperty}
               isSubmitting={isSubmitting}
               onStatusChange={handleStatusChange}

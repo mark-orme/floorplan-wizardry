@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { SimpleGridClass } from './SimpleGridClass';
+import { SimpleGrid as SimpleGridClass } from './SimpleGridClass';
 import { Button } from '@/components/ui/button';
-import { Grid, GridOff } from 'lucide-react';
+import { Grid, X } from 'lucide-react';
 
 /**
  * Props for SimpleGrid component
@@ -76,7 +76,7 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
         onClick={() => setVisible(!visible)}
         title={visible ? "Hide Grid" : "Show Grid"}
       >
-        {visible ? <GridOff className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+        {visible ? <X className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
       </Button>
     </div>
   );
