@@ -1,9 +1,27 @@
-
 /**
  * Grid utilities module
  * Exports all grid-related functionality
  * @module utils/grid
  */
+
+// Export from error handling modules
+export { 
+  GridErrorSeverity, 
+  categorizeGridError, 
+  GRID_ERROR_MESSAGES 
+} from './errorTypes';
+
+export { 
+  handleGridCreationError 
+} from './errorHandlers';
+
+export { 
+  createGridRecoveryPlan 
+} from './recoveryPlans';
+
+export { 
+  trackGridCreationPerformance 
+} from './performanceTracking';
 
 // Export from gridCreationUtils
 export {

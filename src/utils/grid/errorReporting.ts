@@ -7,6 +7,7 @@
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import logger from "@/utils/logger";
+import { GridErrorSeverity } from "./errorTypes";
 
 /**
  * Grid error types for categorization

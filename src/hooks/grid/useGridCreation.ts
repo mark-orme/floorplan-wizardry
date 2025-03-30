@@ -1,4 +1,3 @@
-
 /**
  * Grid creation hook
  * Handles the creation of grid on canvas
@@ -10,6 +9,9 @@ import { createCompleteGrid, createBasicEmergencyGrid } from "@/utils/grid/gridC
 import { arrangeGridElementsWithRetry } from "@/utils/useCanvasLayerOrdering";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
+
+// Import dependent functions that are used in this hook
+import { runGridDiagnostics, applyGridFixes } from "@/utils/grid/gridDiagnostics";
 
 /**
  * Props for the useGridCreation hook
@@ -153,6 +155,3 @@ export const useGridCreation = ({
     createCanvasGrid
   };
 };
-
-// Import dependent functions that are used in this hook
-import { runGridDiagnostics, applyGridFixes } from "@/utils/grid/gridDiagnostics";
