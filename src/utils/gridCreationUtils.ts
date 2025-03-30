@@ -1,3 +1,4 @@
+
 import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
@@ -6,12 +7,12 @@ import { GRID_CONSTANTS } from "@/constants/gridConstants";
  * Used as a fallback when standard grid creation fails
  * 
  * @param {FabricCanvas} canvas - The fabric canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to store grid objects
+ * @param {React.MutableRefObject<FabricObject[]> | FabricObject[]} gridLayerRefOrExisting - Reference to store grid objects or existing grid objects
  * @returns {FabricObject[]} Created grid objects
  */
 export const createBasicEmergencyGrid = (
   canvas: FabricCanvas,
-  gridLayerRef?: React.MutableRefObject<FabricObject[]>
+  gridLayerRefOrExisting?: React.MutableRefObject<FabricObject[]> | FabricObject[]
 ): FabricObject[] => {
   if (!canvas) return [];
   
@@ -47,8 +48,8 @@ export const createBasicEmergencyGrid = (
   }
   
   // Store grid objects in ref if provided
-  if (gridLayerRef) {
-    gridLayerRef.current = gridObjects;
+  if (gridLayerRefOrExisting && 'current' in gridLayerRefOrExisting) {
+    gridLayerRefOrExisting.current = gridObjects;
   }
   
   canvas.requestRenderAll();

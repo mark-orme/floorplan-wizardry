@@ -1,97 +1,55 @@
 
-/**
- * Safe canvas initialization utilities
- * Helps manage canvas initialization state to prevent errors
- */
+import { Canvas as FabricCanvas } from "fabric";
+
+let canvasInitialized = false;
+let initializationAttempt = 0;
+let canvasInitStartTime = 0;
 
 /**
- * Track if canvas is being initialized
+ * Reset canvas initialization state
+ * Call this when a component using canvas is unmounted
  */
-let isInitializing = false;
-
-/**
- * Get current initialization state
- * @returns {boolean} Whether canvas is initializing
- */
-export const getInitializationState = (): boolean => {
-  return isInitializing;
+export const resetInitializationState = (): void => {
+  canvasInitialized = false;
+  initializationAttempt = 0;
+  canvasInitStartTime = 0;
 };
 
 /**
- * Set canvas as initializing
- * @returns {boolean} Whether state was changed
+ * Prepare canvas for initialization
+ * @returns {boolean} Whether preparation was successful
  */
-export const setInitializing = (): boolean => {
-  if (isInitializing) return false;
+export const prepareCanvasForInitialization = (): boolean => {
+  canvasInitStartTime = Date.now();
+  initializationAttempt++;
   
-  isInitializing = true;
   return true;
 };
 
 /**
- * Set canvas as done initializing
- */
-export const setInitialized = (): void => {
-  isInitializing = false;
-};
-
-/**
- * Reset initialization state
- * Used when component unmounts or needs to restart
- */
-export const resetInitializationState = (): void => {
-  isInitializing = false;
-};
-
-/**
- * Prepare canvas element for initialization
- * Ensures the canvas element is ready for fabric initialization
- * @param {HTMLCanvasElement} canvasElement - The canvas element to prepare
- */
-export const prepareCanvasForInitialization = (canvasElement: HTMLCanvasElement): void => {
-  // Clear any existing context
-  const ctx = canvasElement.getContext('2d');
-  if (ctx) {
-    ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-  }
-  
-  // Reset any transforms
-  if (ctx && 'resetTransform' in ctx) {
-    (ctx as any).resetTransform();
-  }
-};
-
-/**
- * Validate that canvas initialization was successful
- * @param {any} canvas - The fabric canvas instance to validate
+ * Validate that canvas initialization completed successfully
+ * @param {FabricCanvas} canvas - The canvas to validate
  * @returns {boolean} Whether canvas is valid
  */
-export const validateCanvasInitialization = (canvas: any): boolean => {
+export const validateCanvasInitialization = (canvas: FabricCanvas): boolean => {
   if (!canvas) return false;
   
-  // Check essential methods exist
-  if (typeof canvas.getWidth !== 'function' || 
-      typeof canvas.getHeight !== 'function' ||
-      typeof canvas.add !== 'function') {
+  // Check that canvas has proper dimensions
+  if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
     return false;
   }
   
-  // Check dimensions are valid
-  const width = canvas.getWidth();
-  const height = canvas.getHeight();
-  
-  return width > 0 && height > 0;
+  canvasInitialized = true;
+  return true;
 };
 
 /**
  * Handle initialization failure
- * @param {string} errorMessage - Error message
- * @param {boolean} resetState - Whether to reset initialization state
+ * @param {Error} error - The error that occurred
+ * @returns {string} Error message
  */
-export const handleInitializationFailure = (errorMessage: string, resetState: boolean): void => {
-  console.error(`Canvas initialization failed: ${errorMessage}`);
+export const handleInitializationFailure = (error: Error): string => {
+  console.error("Canvas initialization failed:", error);
   
-  if (resetState) {
-    resetInitializationState();
-  }
+  return error.message || "Unknown initialization error";
 };

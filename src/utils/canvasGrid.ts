@@ -152,7 +152,7 @@ export const createGrid = (
       }
       
       // Try fallback grid immediately
-      const fallbackGrid = createFallbackGrid(canvas, gridLayerRef);
+      const fallbackGrid = createFallbackGrid(canvas);
       
       if (!fallbackGrid || fallbackGrid.length === 0) {
         toast.error(TOAST_MESSAGES.GRID_CREATION_FAILED);
