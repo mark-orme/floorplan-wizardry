@@ -1,4 +1,3 @@
-
 /**
  * Type Adapters
  * Provides utility functions to adapt between incompatible type definitions
@@ -13,6 +12,15 @@ import { FloorPlan as AppFloorPlan, Wall as AppWall, RoomTypeLiteral } from '@/t
  * @returns App wall
  */
 export function adaptWall(wall: CoreWall): AppWall {
+  const start = wall.start;
+  const end = wall.end;
+  
+  // Calculate length if not already present in the core wall
+  const length = wall.length || Math.sqrt(
+    Math.pow(end.x - start.x, 2) + 
+    Math.pow(end.y - start.y, 2)
+  );
+  
   return {
     id: wall.id,
     points: wall.start && wall.end ? [wall.start, wall.end] : [],
@@ -23,7 +31,8 @@ export function adaptWall(wall: CoreWall): AppWall {
     thickness: wall.thickness || 1, // Provide default if missing
     color: wall.color || '#000000', // Provide default if missing
     height: wall.height,
-    roomIds: wall.roomIds
+    roomIds: wall.roomIds,
+    length: length      // Add the length property
   };
 }
 

@@ -1,4 +1,3 @@
-
 /**
  * Tests for floor plan adapter converters
  * @module utils/floorPlanAdapter/converters.test
@@ -28,7 +27,8 @@ describe('Floor Plan Converters', () => {
             end: { x: 100, y: 0 }, 
             thickness: 2,
             points: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
-            color: '#000000'
+            color: '#000000',
+            length: 100  // Add the length property
           }
         ],
         rooms: [],
