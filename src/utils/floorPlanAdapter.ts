@@ -1,9 +1,8 @@
-
 /**
  * Adapter utilities for converting between core.FloorPlan and floorPlanTypes.FloorPlan
  * @module utils/floorPlanAdapter
  */
-import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom, StrokeType as CoreStrokeType } from '@/types/core/FloorPlan';
+import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom } from '@/types/core/FloorPlan';
 import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 import { createPoint } from '@/types/core/Point';
 
@@ -35,7 +34,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
   const strokes = Array.isArray(appPlan.strokes) 
     ? appPlan.strokes.map(stroke => {
         // Convert string literal to core type directly
-        const strokeType = stroke.type as CoreStrokeType;
+        const strokeType = stroke.type as CoreStroke['type'];
 
         return {
           id: stroke.id,
@@ -63,6 +62,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
     } as CoreRoom)) : [],
     strokes: strokes,
     canvasData: appPlan.canvasData || null,
+    canvasJson: appPlan.canvasJson || '',
     createdAt: appPlan.createdAt || new Date().toISOString(),
     updatedAt: appPlan.updatedAt || new Date().toISOString(),
     gia: appPlan.gia || 0,
@@ -77,9 +77,7 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
         : new Date().toISOString(),
       paperSize: appPlan.metadata?.paperSize || 'A4',
       level: appPlan.metadata?.level || 0
-    },
-    paperSize: appPlan.paperSize || 'A4',
-    canvasJson: appPlan.canvasJson || ''
+    }
   };
 }
 

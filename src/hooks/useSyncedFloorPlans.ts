@@ -105,7 +105,8 @@ export const useSyncedFloorPlans = () => {
           setFloorPlans(plansWithLabels);
           
           // Also save to local storage for offline access
-          await saveFloorPlans(supabaseData as any);
+          // Use appToCoreFloorPlans to convert to the correct format before saving
+          await saveFloorPlans(appToCoreFloorPlans(plansWithLabels));
           setIsLoading(false);
           return plansWithLabels;
         }
@@ -256,8 +257,7 @@ export const useSyncedFloorPlans = () => {
 
       // Also save to Supabase if logged in
       if (isLoggedIn) {
-        // Use adapter to convert before sending to Supabase
-        saveToSupabase(coreToAppFloorPlans(corePlans));
+        saveToSupabase(plansWithLabels);
       }
 
       toast.info('Floor plans synchronized from another device');

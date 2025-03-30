@@ -1,11 +1,10 @@
-
 /**
  * FloorPlan type definitions
  * @module types/core/FloorPlan
  */
 
 import { Point } from './Point';
-import { StrokeType as AppStrokeType } from '../floorPlanTypes';
+import { StrokeType as AppStrokeType, StrokeTypeLiteral } from '../floorPlanTypes';
 
 /**
  * Paper size enum

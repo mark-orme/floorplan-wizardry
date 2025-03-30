@@ -19,9 +19,10 @@ describe('useFloorPlanDrawing', () => {
     walls: [],
     rooms: [],
     level: 0,
-    index: 0, // Added missing index property
+    index: 0,
     gia: 0,
     canvasData: null,
+    canvasJson: null, // Add the required canvasJson field
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     metadata: {

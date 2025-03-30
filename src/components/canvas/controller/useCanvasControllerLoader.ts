@@ -1,11 +1,10 @@
-
 /**
  * Hook for loading floor plan data in the canvas controller
  * @module useCanvasControllerLoader
  */
 import { useEffect, useCallback } from "react";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
-import { FloorPlan, Wall, StrokeTypeLiteral } from "@/types/floorPlanTypes";
+import { FloorPlan, Wall, StrokeType, StrokeTypeLiteral } from "@/types/floorPlanTypes";
 import { adaptFloorPlans } from "@/utils/typeAdapters";
 import { Point } from "@/types/geometryTypes";
 
@@ -82,22 +81,24 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
             thickness: stroke.thickness,
             width: stroke.width || stroke.thickness || 1
           })) : [],
-          walls: plan.walls?.map(wall => ({
-            id: wall.id,
-            points: wall.start && wall.end ? 
-              [wall.start, wall.end] : 
-              (wall.startPoint && wall.endPoint ? 
-                [wall.startPoint, wall.endPoint] : 
-                [{ x: 0, y: 0 }, { x: 0, y: 0 }]),
-            startPoint: wall.start || wall.startPoint || { x: 0, y: 0 } as Point,
-            endPoint: wall.end || wall.endPoint || { x: 0, y: 0 } as Point,
-            start: wall.start || wall.startPoint || { x: 0, y: 0 } as Point,
-            end: wall.end || wall.endPoint || { x: 0, y: 0 } as Point,
-            thickness: wall.thickness,
-            height: wall.height || 0,
-            color: wall.color || '#000000',
-            roomIds: wall.roomIds || []
-          } as Wall)) || [],
+          walls: plan.walls?.map(wall => {
+            // Extract start and end points with proper validation
+            const start = wall.start || { x: 0, y: 0 } as Point;
+            const end = wall.end || { x: 0, y: 0 } as Point;
+            
+            return {
+              id: wall.id,
+              points: [start, end], // Ensure points are present
+              startPoint: start, // Set startPoint from start
+              endPoint: end, // Set endPoint from end
+              start: start, // Ensure start is present
+              end: end, // Ensure end is present
+              thickness: wall.thickness,
+              height: wall.height || 0,
+              color: wall.color || '#000000',
+              roomIds: wall.roomIds || []
+            } as Wall;
+          }) || [],
           rooms: plan.rooms || [],
           metadata: plan.metadata ? {
             createdAt: typeof plan.metadata.createdAt === 'string' 

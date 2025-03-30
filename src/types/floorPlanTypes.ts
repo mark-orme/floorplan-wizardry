@@ -50,14 +50,14 @@ export type StrokeTypeLiteral = "line" | "polyline" | "wall" | "room" | "freehan
 export interface Wall {
   id: string;
   points: { x: number; y: number }[];
-  startPoint?: { x: number; y: number }; // Optional for backward compatibility
-  endPoint?: { x: number; y: number }; // Optional for backward compatibility
-  start?: { x: number; y: number }; // Optional for backward compatibility
-  end?: { x: number; y: number }; // Optional for backward compatibility
+  startPoint: { x: number; y: number }; // Required for compatibility
+  endPoint: { x: number; y: number }; // Required for compatibility
+  start: { x: number; y: number }; // Required for compatibility with core/FloorPlan.Wall
+  end: { x: number; y: number }; // Required for compatibility with core/FloorPlan.Wall
   thickness?: number;
   length?: number;
   height?: number;
-  color?: string;
+  color: string; // Required for compatibility with core/FloorPlan.Wall
   roomIds?: string[];
   [key: string]: any; // Additional wall properties
 }
