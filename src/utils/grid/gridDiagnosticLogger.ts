@@ -31,9 +31,8 @@ export const logGridState = (
     viewportTransform: canvas.viewportTransform,
     zoom: canvas.getZoom(),
     renderOnAddRemove: canvas.renderOnAddRemove,
-    stateful: canvas.stateful,
-    interactive: canvas.interactive,
     selection: canvas.selection
+    // Removed stateful and interactive properties as they don't exist in Fabric.js v6
   };
   
   // Get info about grid objects
