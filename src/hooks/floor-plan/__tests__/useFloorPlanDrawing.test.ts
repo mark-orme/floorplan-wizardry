@@ -22,7 +22,7 @@ describe('useFloorPlanDrawing', () => {
     index: 0,
     gia: 0,
     canvasData: null,
-    canvasJson: null, // Add the required canvasJson field
+    canvasJson: null, // Required field is now included
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     metadata: {

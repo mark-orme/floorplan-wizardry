@@ -20,8 +20,8 @@ export function adaptWall(wall: CoreWall): AppWall {
     endPoint: wall.end,
     start: wall.start,  // Ensure both properties are present
     end: wall.end,      // Ensure both properties are present
-    thickness: wall.thickness,
-    color: wall.color,
+    thickness: wall.thickness || 1, // Provide default if missing
+    color: wall.color || '#000000', // Provide default if missing
     height: wall.height,
     roomIds: wall.roomIds
   };

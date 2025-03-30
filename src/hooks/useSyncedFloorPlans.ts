@@ -106,7 +106,8 @@ export const useSyncedFloorPlans = () => {
           
           // Also save to local storage for offline access
           // Use appToCoreFloorPlans to convert to the correct format before saving
-          await saveFloorPlans(appToCoreFloorPlans(plansWithLabels));
+          const corePlans = appToCoreFloorPlans(plansWithLabels);
+          await saveFloorPlans(corePlans);
           setIsLoading(false);
           return plansWithLabels;
         }

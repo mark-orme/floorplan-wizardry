@@ -54,7 +54,7 @@ export interface Wall {
   endPoint: { x: number; y: number }; // Required for compatibility
   start: { x: number; y: number }; // Required for compatibility with core/FloorPlan.Wall
   end: { x: number; y: number }; // Required for compatibility with core/FloorPlan.Wall
-  thickness?: number;
+  thickness: number; // Changed from optional to required
   length?: number;
   height?: number;
   color: string; // Required for compatibility with core/FloorPlan.Wall

@@ -1,3 +1,4 @@
+
 /**
  * Adapter utilities for converting between core.FloorPlan and floorPlanTypes.FloorPlan
  * @module utils/floorPlanAdapter
@@ -22,8 +23,8 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
           id: wall.id,
           start,
           end,
-          thickness: wall.thickness || 1,
-          color: wall.color || '#000000',
+          thickness: wall.thickness || 1, // Provide default if missing
+          color: wall.color || '#000000', // Provide default if missing
           height: wall.height,
           roomIds: wall.roomIds
         } as CoreWall;
@@ -60,7 +61,21 @@ export function appToCoreFloorPlan(appPlan: AppFloorPlan): CoreFloorPlan {
       color: room.color || '#ffffff',
       area: room.area || 0
     } as CoreRoom)) : [],
-    strokes: strokes,
+    strokes: Array.isArray(appPlan.strokes) 
+      ? appPlan.strokes.map(stroke => {
+          // Convert string literal to core type directly
+          const strokeType = stroke.type as CoreStroke['type'];
+
+          return {
+            id: stroke.id,
+            points: stroke.points,
+            type: strokeType,
+            color: stroke.color,
+            thickness: stroke.thickness,
+            width: stroke.width || stroke.thickness // Ensure width is set
+          } as CoreStroke;
+        })
+      : [],
     canvasData: appPlan.canvasData || null,
     canvasJson: appPlan.canvasJson || '',
     createdAt: appPlan.createdAt || new Date().toISOString(),
@@ -100,9 +115,9 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
           endPoint: end,     // Map end to endPoint
           start: start,      // Keep original properties too
           end: end,
-          thickness: wall.thickness,
+          thickness: wall.thickness || 1, // Ensure thickness is always set
           height: wall.height || 0,
-          color: wall.color,
+          color: wall.color || '#000000', // Ensure color is always set
           roomIds: wall.roomIds || []
         } as AppWall;
       })
@@ -130,7 +145,21 @@ export function coreToAppFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
     id: corePlan.id,
     name: corePlan.name,
     label: corePlan.label || corePlan.name || '', // Ensure label is preserved and required
-    strokes: strokes,
+    strokes: Array.isArray(corePlan.strokes)
+      ? corePlan.strokes.map(stroke => {
+          // Convert string stroke type to StrokeTypeLiteral
+          const strokeType: StrokeTypeLiteral = validateStrokeType(stroke.type);
+          
+          return {
+            id: stroke.id,
+            points: stroke.points,
+            type: strokeType,
+            color: stroke.color,
+            thickness: stroke.thickness,
+            width: stroke.width || stroke.thickness // Ensure width is set
+          } as AppStroke;
+        })
+      : [],
     walls: walls,
     rooms: Array.isArray(corePlan.rooms) ? corePlan.rooms.map(room => ({
       id: room.id,
