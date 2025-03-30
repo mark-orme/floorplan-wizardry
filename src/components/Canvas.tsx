@@ -1,4 +1,3 @@
-
 /**
  * Canvas Component
  * Responsible for rendering the fabric.js canvas with grid
@@ -13,6 +12,7 @@ import { CANVAS_CONSTANTS } from "@/constants/canvasConstants";
 import { ERROR_MESSAGES } from "@/constants/errorMessages";
 import { useSimpleGrid } from "@/hooks/useSimpleGrid";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
+import { useGridDiagnosticLogger } from "@/hooks/useGridDiagnosticLogger";
 import logger from "@/utils/logger";
 
 interface CanvasProps {
@@ -43,8 +43,13 @@ export const Canvas: React.FC<CanvasProps> = ({
     objectCount, 
     creationAttempts, 
     createGrid, 
-    clearGrid 
+    clearGrid,
+    gridLayerRef
   } = useSimpleGrid(fabricCanvas, { showToasts: true });
+  
+  // Add grid diagnostic logging
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  useGridDiagnosticLogger(fabricCanvasRef, gridLayerRef);
 
   // Reset initialization state and set up debug key combo
   useEffect(() => {
@@ -133,6 +138,37 @@ export const Canvas: React.FC<CanvasProps> = ({
     };
   }, [width, height, backgroundColor, setCanvas, onCanvasReady, onError, initAttempts]);
 
+  // Update fabricCanvasRef when fabricCanvas changes
+  useEffect(() => {
+    fabricCanvasRef.current = fabricCanvas;
+  }, [fabricCanvas]);
+
+  // After canvas initialization, force create grid with extra logging
+  useEffect(() => {
+    if (fabricCanvas) {
+      // Log canvas creation success
+      logger.info("Canvas initialized, attempting grid creation", {
+        width: fabricCanvas.width,
+        height: fabricCanvas.height,
+        objectCount: fabricCanvas.getObjects().length
+      });
+      
+      // Force grid creation with small delay to ensure canvas is fully ready
+      const timer = setTimeout(() => {
+        try {
+          logger.info("Forcing initial grid creation");
+          console.log("🔲 Forcing initial grid creation");
+          createGrid();
+        } catch (error) {
+          logger.error("Failed to create initial grid:", error);
+          console.error("Failed to create initial grid:", error);
+        }
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [fabricCanvas, createGrid]);
+
   // Handle retry button click
   const handleRetry = (): void => {
     setError(null);
@@ -145,7 +181,10 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (fabricCanvas) {
       // Clear first then create new grid
       clearGrid();
-      setTimeout(() => createGrid(), 100);
+      setTimeout(() => {
+        logger.info("Manual grid refresh requested");
+        createGrid();
+      }, 100);
       
       toast.success("Refreshing grid...");
     }

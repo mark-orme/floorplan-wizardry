@@ -37,6 +37,7 @@ export const validateCanvasForGrid = (canvas: FabricCanvas | null): boolean => {
   
   // Check if context exists by seeing if objects can be added
   try {
+    // Create a test line using the proper Line constructor from fabric
     const testObject = new Line([0, 0, 1, 1], { visible: false });
     canvas.add(testObject);
     canvas.remove(testObject);
