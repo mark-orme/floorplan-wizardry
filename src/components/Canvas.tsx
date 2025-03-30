@@ -24,6 +24,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!canvasRef.current) return;
     
     try {
+      console.log("Canvas component: Initializing Fabric canvas with dimensions", width, "x", height);
+      
       // Initialize Fabric.js canvas
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         width,
@@ -32,6 +34,11 @@ export const Canvas: React.FC<CanvasProps> = ({
         selection: true,
         preserveObjectStacking: true
       });
+      
+      // Set up drawing brush
+      fabricCanvas.freeDrawingBrush.color = "#000000";
+      fabricCanvas.freeDrawingBrush.width = 2;
+      fabricCanvas.isDrawingMode = true;
       
       // Update context
       setCanvas(fabricCanvas);

@@ -5,8 +5,8 @@
  */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { DrawingTool } from '@/constants/drawingModes';
+import { Point } from '@/types/drawingTypes';
+import { DrawingTool } from '@/types/drawingTypes';
 
 export interface UsePointProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -68,7 +68,7 @@ export const usePointProcessing = ({
     // Apply canvas transformations
     const point = canvas.getPointer({ clientX, clientY } as MouseEvent);
     
-    return { x: point.x, y: point.y } as Point;
+    return { x: point.x, y: point.y };
   }, [fabricCanvasRef]);
   
   return { processPoint };

@@ -1,152 +1,95 @@
+
 /**
- * Utilities for Fabric.js brushes and drawing tools
- * Provides brush initialization and configuration functions
+ * Utilities for Fabric.js brush configuration
  * @module fabricBrush
  */
-import { Canvas, PencilBrush } from "fabric";
+import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 
 /**
- * Brush configuration constants
+ * Initialize drawing brush with optimized settings
+ * @param {FabricCanvas} canvas - The Fabric.js canvas
+ * @returns {PencilBrush} Configured drawing brush
  */
-const BRUSH_CONFIG = {
-  /**
-   * Default brush color
-   * @constant {string}
-   */
-  DEFAULT_COLOR: "#000000",
+export const initializeDrawingBrush = (canvas: FabricCanvas): PencilBrush => {
+  if (!canvas) {
+    console.error("Cannot initialize brush: Canvas is null");
+    throw new Error("Canvas is null");
+  }
   
-  /**
-   * Default brush width in pixels
-   * @constant {number}
-   */
-  DEFAULT_WIDTH: 2,
+  console.log("Initializing drawing brush");
   
-  /**
-   * Decimate factor for performance optimization
-   * Reduces the number of points in the path
-   * @constant {number}
-   */
-  DECIMATE_FACTOR: 2,
+  // Create a fresh PencilBrush
+  const brush = new PencilBrush(canvas);
   
-  /**
-   * Minimum pressure value for stylus input
-   * @constant {number}
-   */
-  MIN_PRESSURE: 0.2,
+  // Configure brush settings
+  brush.color = "#000000";
+  brush.width = 2;
   
-  /**
-   * Maximum pressure value for stylus input
-   * @constant {number}
-   */
-  MAX_PRESSURE: 1
+  // Set opacity for semi-transparent lines
+  brush.opacity = 1.0;
+  
+  // Set brush to be more responsive by reducing decimate value
+  // This reduces the number of points in paths for better performance
+  (brush as any).decimate = 2;
+  
+  // Set canvas brush
+  canvas.freeDrawingBrush = brush;
+  
+  return brush;
 };
 
 /**
- * Initialize a drawing brush for a Fabric canvas
- * Creates and configures a PencilBrush with optimized settings
- * 
- * @param {Canvas} canvas - The Fabric canvas instance
- * @returns {PencilBrush|null} The initialized brush or null if initialization fails
+ * Add pressure sensitivity for stylus input
+ * @param {FabricCanvas} canvas - The Fabric.js canvas
  */
-export const initializeDrawingBrush = (canvas: Canvas): PencilBrush | null => {
+export const addPressureSensitivity = (canvas: FabricCanvas): void => {
   if (!canvas) {
-    console.error("Cannot initialize brush: canvas is null");
-    return null;
-  }
-  
-  try {
-    const brush = new PencilBrush(canvas);
-    brush.color = BRUSH_CONFIG.DEFAULT_COLOR;
-    brush.width = BRUSH_CONFIG.DEFAULT_WIDTH;
-    
-    // Improve brush performance and smoothness
-    if ('decimate' in brush) {
-      (brush as any).decimate = BRUSH_CONFIG.DECIMATE_FACTOR;
-    }
-    
-    console.log("Drawing brush initialized successfully");
-    return brush;
-  } catch (error) {
-    console.error("Failed to initialize drawing brush:", error);
-    return null;
-  }
-};
-
-/**
- * Add Pressure sensitivity for Apple Pencil and other stylus devices
- * Configures brush width to respond to pressure input
- * 
- * @param {Canvas} canvas - The Fabric canvas instance
- */
-export const addPressureSensitivity = (canvas: Canvas): void => {
-  if (!canvas) {
-    console.error("Cannot add pressure sensitivity: canvas is null");
+    console.error("Cannot add pressure sensitivity: Canvas is null");
     return;
   }
   
+  const brush = canvas.freeDrawingBrush as PencilBrush;
+  
   try {
-    // Check if stylus is supported in the browser
-    const hasStylus = 'maxTouchPoints' in navigator && navigator.maxTouchPoints > 0 && 
-                     ('ontouchstart' in window || (window as any).DocumentTouch);
-    
-    // Normalize pressure values between stylus and mouse
-    canvas.on('mouse:down', (e: any) => {
-      if (!canvas.freeDrawingBrush) return;
+    // Check if browser supports Pointer events with pressure
+    if (window.PointerEvent && 'pressure' in new PointerEvent('pointerdown')) {
+      console.log("Pressure sensitivity supported by browser");
       
-      let pressure = BRUSH_CONFIG.MAX_PRESSURE; // Default pressure for mouse
-      
-      // Handle touch events with pressure (Apple Pencil, etc.)
-      if (e.e instanceof TouchEvent && e.e.touches[0] && 'force' in e.e.touches[0]) {
-        // Normalize Apple Pencil pressure (ranges from 0 to ~1)
-        pressure = Math.max(BRUSH_CONFIG.MIN_PRESSURE, Math.min(BRUSH_CONFIG.MAX_PRESSURE, e.e.touches[0].force || BRUSH_CONFIG.MAX_PRESSURE));
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`Stylus pressure detected: ${pressure}`);
+      // Set up pressure sensitivity handlers
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType === 'pen') {
+          const pressure = e.pressure || 0.5;
+          console.log("Stylus pressure:", pressure);
+          
+          // Adjust brush width based on pressure
+          brush.width = Math.max(1, pressure * 5);
         }
-      }
+      };
       
-      // Apply consistent line behavior for both stylus and mouse
-      const baseWidth = canvas.freeDrawingBrush.width || BRUSH_CONFIG.DEFAULT_WIDTH;
+      const canvasElement = canvas.getElement();
+      canvasElement.addEventListener('pointerdown', onPointerDown);
       
-      // For stylus, adjust width based on pressure
-      if (pressure !== BRUSH_CONFIG.MAX_PRESSURE) {
-        // Scale pressure to reasonable brush width (keeping original line width as reference)
-        canvas.freeDrawingBrush.width = baseWidth * pressure;
-      }
-    });
-    
-    // Reset width on mouse up to ensure consistency
-    canvas.on('mouse:up', () => {
-      if (canvas.freeDrawingBrush) {
-        // Restore original brush width after drawing is complete
-        const lineThickness = (canvas as any)._lineThickness || BRUSH_CONFIG.DEFAULT_WIDTH;
-        canvas.freeDrawingBrush.width = lineThickness;
-      }
-    });
-    
-    if (hasStylus) {
-      console.log("Stylus support detected and enabled");
+      // Store cleanup function in canvas for later removal
+      (canvas as any).pressureSensitivityCleanup = () => {
+        canvasElement.removeEventListener('pointerdown', onPointerDown);
+      };
+    } else {
+      console.log("Pressure sensitivity not supported by browser");
     }
-    console.log("Pressure sensitivity support added");
   } catch (error) {
-    console.error("Error adding pressure sensitivity:", error);
+    console.error("Error setting up pressure sensitivity:", error);
   }
 };
 
 /**
- * Track baseline line thickness for consistent reset after pressure changes
- * Stores the default line thickness in a custom canvas property
- * 
- * @param {Canvas} canvas - The Fabric canvas instance
- * @param {number} thickness - The baseline thickness to track
+ * Remove pressure sensitivity handlers
+ * @param {FabricCanvas} canvas - The Fabric.js canvas
  */
-export const trackLineThickness = (canvas: Canvas, thickness: number): void => {
+export const removePressureSensitivity = (canvas: FabricCanvas): void => {
   if (!canvas) return;
   
-  try {
-    // Store the base line thickness in a custom property for reference
-    (canvas as any)._lineThickness = thickness;
-  } catch (error) {
-    console.error("Error tracking line thickness:", error);
+  if ((canvas as any).pressureSensitivityCleanup) {
+    (canvas as any).pressureSensitivityCleanup();
+    delete (canvas as any).pressureSensitivityCleanup;
   }
 };

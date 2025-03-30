@@ -18,9 +18,11 @@ interface CanvasLayoutProps {
  * @returns {JSX.Element} Rendered component
  */
 const CanvasLayout: React.FC<CanvasLayoutProps> = ({ 
-  createGrid = (canvas: FabricCanvas) => createBasicEmergencyGrid(canvas),
+  createGrid = createBasicEmergencyGrid,
   children 
 }) => {
+  console.log("CanvasLayout: Rendering with grid creator function");
+  
   return (
     <>
       <CanvasApp createGrid={createGrid} />

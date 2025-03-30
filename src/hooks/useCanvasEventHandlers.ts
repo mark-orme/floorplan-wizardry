@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for handling canvas event registration and cleanup
  * Centralizes all event handler management for canvas operations
@@ -5,7 +6,7 @@
  */
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
+import { DrawingTool } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 
 // Import types and event hooks
@@ -23,7 +24,7 @@ export interface UseCanvasEventHandlersProps {
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current active drawing tool */
-  tool: DrawingMode;
+  tool: DrawingTool;
   /** Current line color */
   lineColor: string;
   /** Current line thickness */
@@ -83,38 +84,88 @@ export const useCanvasEventHandlers = ({
   updateZoomLevel
 }: UseCanvasEventHandlersProps): UseCanvasEventHandlersResult => {
   
+  // Register mouse event handlers directly
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    console.log("Registering direct canvas event handlers for tool:", tool);
+    
+    const onCanvasMouseDown = (e: any) => {
+      const nativeEvent = e.e as MouseEvent | TouchEvent;
+      handleMouseDown(nativeEvent);
+    };
+    
+    const onCanvasMouseMove = (e: any) => {
+      const nativeEvent = e.e as MouseEvent | TouchEvent;
+      handleMouseMove(nativeEvent);
+    };
+    
+    const onCanvasMouseUp = (e: any) => {
+      const nativeEvent = e.e as MouseEvent | TouchEvent;
+      handleMouseUp(nativeEvent);
+    };
+    
+    // Register handlers
+    canvas.on('mouse:down', onCanvasMouseDown);
+    canvas.on('mouse:move', onCanvasMouseMove);
+    canvas.on('mouse:up', onCanvasMouseUp);
+    
+    // Update brush settings
+    canvas.freeDrawingBrush.color = lineColor;
+    canvas.freeDrawingBrush.width = lineThickness;
+    
+    // Set drawing mode based on tool
+    canvas.isDrawingMode = tool === DrawingTool.DRAW;
+    
+    return () => {
+      // Unregister handlers
+      canvas.off('mouse:down', onCanvasMouseDown);
+      canvas.off('mouse:move', onCanvasMouseMove);
+      canvas.off('mouse:up', onCanvasMouseUp);
+    };
+  }, [
+    fabricCanvasRef,
+    tool,
+    lineColor,
+    lineThickness,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp
+  ]);
+  
   // Set up all individual event handlers using the dedicated hooks
   
   // Handle path creation events
-  const { cleanup: cleanupPathEvents } = usePathEvents({
+  const { cleanup: cleanupPathEvents } = usePathEvents?.({
     fabricCanvasRef,
     tool,
     saveCurrentState,
     processCreatedPath,
     handleMouseUp
-  });
+  }) || { cleanup: () => {} };
   
   // Handle object modification and removal events
-  const { cleanup: cleanupObjectEvents } = useObjectEvents({
+  const { cleanup: cleanupObjectEvents } = useObjectEvents?.({
     fabricCanvasRef,
     tool,
     saveCurrentState
-  });
+  }) || { cleanup: () => {} };
   
   // Handle brush settings
-  const { cleanup: cleanupBrushSettings } = useBrushSettings({
+  const { cleanup: cleanupBrushSettings } = useBrushSettings?.({
     fabricCanvasRef,
     tool,
     lineColor,
     lineThickness
-  });
+  }) || { cleanup: () => {} };
   
   // Handle zoom tracking
-  const { cleanup: cleanupZoomTracking } = useZoomTracking({
+  const { cleanup: cleanupZoomTracking } = useZoomTracking?.({
     fabricCanvasRef,
     tool,
     updateZoomLevel
-  });
+  }) || { cleanup: () => {} };
   
   // Cleanup function to remove all event handlers
   const cleanupAllEventHandlers = useCallback(() => {

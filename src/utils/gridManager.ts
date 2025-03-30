@@ -25,6 +25,7 @@ export const startGridCreation = (): boolean => {
     return false;
   }
   
+  console.log("Grid creation started");
   gridCreationInProgress = true;
   gridCreationStartTime = Date.now();
   return true;
@@ -38,6 +39,8 @@ export const startGridCreation = (): boolean => {
 export const finishGridCreation = (instanceId: string, gridObjects: FabricObject[]): void => {
   gridCreationInProgress = false;
   gridInstances[instanceId] = gridObjects;
+  
+  console.log(`Grid creation finished. Created ${gridObjects.length} objects for instance ${instanceId}`);
 };
 
 /**
@@ -84,4 +87,22 @@ export const shouldThrottleCreation = (): boolean => {
  */
 export const logGridStatus = (message: string, data?: any): void => {
   console.log(`[Grid] ${message}`, data || '');
+};
+
+/**
+ * Get grid instance by ID
+ * @param {string} instanceId - Grid instance ID
+ * @returns {FabricObject[] | null} Grid objects or null if not found
+ */
+export const getGridInstance = (instanceId: string): FabricObject[] | null => {
+  return gridInstances[instanceId] || null;
+};
+
+/**
+ * Check if grid instance exists
+ * @param {string} instanceId - Grid instance ID
+ * @returns {boolean} Whether the grid instance exists
+ */
+export const hasGridInstance = (instanceId: string): boolean => {
+  return instanceId in gridInstances;
 };

@@ -202,7 +202,7 @@ export const useCanvasCreation = ({
       
       // Mark this canvas element as initialized to prevent duplicate initialization
       if (canvasElement) {
-        // Fixed: remove argument since markCanvasAsInitialized expects 0 arguments
+        // Call markCanvasAsInitialized with no arguments
         markCanvasAsInitialized();
       }
       
@@ -222,7 +222,7 @@ export const useCanvasCreation = ({
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error("Error initializing canvas:", errorMessage);
       
-      // Fixed: handleInitializationFailure now expects only one argument
+      // Call handleInitializationFailure with just errorMessage
       handleInitializationFailure(errorMessage);
       
       setHasError(true);
