@@ -1,16 +1,24 @@
 
 import React from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { useCanvasController } from './controller/CanvasController';
 import { Toolbar } from './Toolbar';
 import { Sidebar } from './Sidebar';
 import { DebugPanel } from './debug/DebugPanel';
 
 /**
+ * Props for the CanvasApp component
+ */
+interface CanvasAppProps {
+  createGrid?: (canvas: FabricCanvas, existingGrid?: FabricObject[]) => FabricObject[];
+}
+
+/**
  * Main canvas application component
  * Handles layout and integration of canvas components
  * @returns {JSX.Element} Rendered component
  */
-export const CanvasApp: React.FC = (): JSX.Element => {
+export const CanvasApp: React.FC<CanvasAppProps> = ({ createGrid }): JSX.Element => {
   const {
     debugInfo,
     tool,
@@ -29,7 +37,7 @@ export const CanvasApp: React.FC = (): JSX.Element => {
     handleFloorSelect,
     handleAddFloor,
     gia
-  } = useCanvasController();
+  } = useCanvasController(createGrid);
 
   return (
     <div className="flex h-full">

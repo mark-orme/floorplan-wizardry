@@ -3,7 +3,7 @@
  * Manages drawing-related event handlers
  */
 import { useCallback, useEffect, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath, Line as FabricLine, Rect as FabricRect, IText as FabricIText, Group as FabricGroup } from "fabric";
 import { DrawingTool } from "@/types/drawingTypes";
 import { useCanvasContext } from "@/contexts/CanvasContext";
 import { snapPointToGrid } from "@/utils/simpleGridCreator";
@@ -31,6 +31,13 @@ export const useCanvasDrawingEvents = (
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<FabricObject | null>(null);
   const [pathStartPoint, setPathStartPoint] = useState<{ x: number, y: number } | null>(null);
+  const [timeouts, setTimeouts] = useState<number[]>([]);
+
+  // Add cleanup function for timeouts
+  const cleanupTimeouts = useCallback(() => {
+    timeouts.forEach(id => window.clearTimeout(id));
+    setTimeouts([]);
+  }, [timeouts]);
 
   /**
    * Start drawing path
@@ -47,7 +54,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Create a new path
-      const path = new fabric.Path(`M ${snappedPoint.x} ${snappedPoint.y}`, {
+      const path = new FabricPath(`M ${snappedPoint.x} ${snappedPoint.y}`, {
         stroke: lineColor,
         strokeWidth: lineThickness,
         fill: '',
@@ -87,7 +94,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Get current path data
-      const path = currentPath as fabric.Path;
+      const path = currentPath as FabricPath;
       const pathData = path.path;
       
       // Add line to current point
@@ -111,7 +118,7 @@ export const useCanvasDrawingEvents = (
     
     try {
       // Finalize the path
-      const path = currentPath as fabric.Path;
+      const path = currentPath as FabricPath;
       
       // If path is too short (just a click), remove it
       if (path.path.length <= 1) {
@@ -151,7 +158,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Create a temporary line
-      const line = new fabric.Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
+      const line = new FabricLine([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
         stroke: lineColor,
         strokeWidth: lineThickness * 2, // Walls are thicker
         selectable: true,
@@ -189,7 +196,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Update line end point
-      const line = currentPath as fabric.Line;
+      const line = currentPath as FabricLine;
       line.set({
         x2: snappedPoint.x,
         y2: snappedPoint.y
@@ -210,7 +217,7 @@ export const useCanvasDrawingEvents = (
     
     try {
       // Finalize the wall
-      const line = currentPath as fabric.Line;
+      const line = currentPath as FabricLine;
       
       // Get end points
       const x1 = line.x1 || pathStartPoint.x;
@@ -256,7 +263,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Create a temporary rectangle
-      const rect = new fabric.Rect({
+      const rect = new FabricRect({
         left: snappedPoint.x,
         top: snappedPoint.y,
         width: 0,
@@ -307,7 +314,7 @@ export const useCanvasDrawingEvents = (
       const top = Math.min(pathStartPoint.y, snappedPoint.y);
       
       // Update rectangle
-      const rect = currentPath as fabric.Rect;
+      const rect = currentPath as FabricRect;
       rect.set({
         left,
         top,
@@ -330,7 +337,7 @@ export const useCanvasDrawingEvents = (
     
     try {
       // Finalize the room
-      const rect = currentPath as fabric.Rect;
+      const rect = currentPath as FabricRect;
       
       // If rectangle is too small, remove it
       if (rect.width < 10 || rect.height < 10) {
@@ -370,7 +377,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Create a text object
-      const text = new fabric.IText('Text', {
+      const text = new FabricIText('Text', {
         left: snappedPoint.x,
         top: snappedPoint.y,
         fontFamily: 'Arial',
@@ -456,7 +463,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Create a temporary line
-      const line = new fabric.Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
+      const line = new FabricLine([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
         stroke: '#ff0000',
         strokeWidth: 1,
         strokeDashArray: [5, 5],
@@ -468,7 +475,7 @@ export const useCanvasDrawingEvents = (
       canvas.add(line);
       
       // Create measurement label
-      const text = new fabric.Text('0 cm', {
+      const text = new FabricText('0 cm', {
         left: snappedPoint.x,
         top: snappedPoint.y - 15,
         fontSize: 12,
@@ -511,7 +518,7 @@ export const useCanvasDrawingEvents = (
       const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
       
       // Update line end point
-      const line = currentPath as fabric.Line;
+      const line = currentPath as FabricLine;
       line.set({
         x2: snappedPoint.x,
         y2: snappedPoint.y
@@ -526,7 +533,7 @@ export const useCanvasDrawingEvents = (
       const distanceCm = Math.round(distance);
       
       // Update measurement label
-      const text = (line as any).measurementLabel as fabric.Text;
+      const text = (line as any).measurementLabel as FabricText;
       if (text) {
         text.set({
           text: `${distanceCm} cm`,
@@ -550,11 +557,11 @@ export const useCanvasDrawingEvents = (
     
     try {
       // Finalize the measurement
-      const line = currentPath as fabric.Line;
-      const text = (line as any).measurementLabel as fabric.Text;
+      const line = currentPath as FabricLine;
+      const text = (line as any).measurementLabel as FabricText;
       
       // Group line and text together
-      const group = new fabric.Group([line, text], {
+      const group = new FabricGroup([line, text], {
         selectable: true,
         objectType: 'measurement'
       });
@@ -641,6 +648,7 @@ export const useCanvasDrawingEvents = (
     
     // Clean up event listeners on unmount
     return () => {
+      cleanupTimeouts();
       if (canvas) {
         canvas.off('mouse:down');
         canvas.off('mouse:move');
@@ -663,11 +671,16 @@ export const useCanvasDrawingEvents = (
     continueMeasuring,
     endMeasuring,
     handleTextTool,
-    handleEraserTool
+    handleEraserTool,
+    cleanupTimeouts
   ]);
 
   return {
     isDrawing,
-    currentPath
+    currentPath,
+    handleMouseDown: startDrawing,
+    handleMouseMove: continueDrawing,
+    handleMouseUp: endDrawing,
+    cleanupTimeouts
   };
 };

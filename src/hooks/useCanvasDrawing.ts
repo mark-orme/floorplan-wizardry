@@ -1,16 +1,15 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath } from "fabric";
 import { usePathProcessing } from "./usePathProcessing";
 import { useCanvasHistory } from "./useCanvasHistory";
 import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { type FloorPlan } from "@/types/floorPlanTypes";
-import { DrawingTool } from "./useCanvasState";
+import { DrawingTool } from "@/types/drawingTypes";
 import { useCanvasDrawingState } from "./useCanvasDrawingState";
 import { useCanvasDrawingEvents } from "./canvas/drawing/useCanvasDrawingEvents";
 import { DrawingState } from "@/types/drawingTypes";
@@ -120,13 +119,14 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
   }, [fabricCanvasRef, setDrawingState]);
   
   // Canvas drawing events
-  const { handleMouseDown, handleMouseMove, handleMouseUp, cleanupTimeouts } = useCanvasDrawingEvents({
-    fabricCanvasRef,
-    drawingState,
-    setDrawingState,
-    tool,
-    processCreatedPath
-  });
+  const { 
+    isDrawing, 
+    currentPath, 
+    handleMouseDown, 
+    handleMouseMove, 
+    handleMouseUp, 
+    cleanupTimeouts 
+  } = useCanvasDrawingEvents(tool, lineThickness, lineColor);
   
   // Register event handlers
   useCanvasEventHandlers({

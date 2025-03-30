@@ -5,7 +5,7 @@
  * @module CanvasApp
  */
 import { Canvas } from "@/components/Canvas";
-import { CanvasLayout } from "@/components/CanvasLayout";
+import CanvasLayout from "@/components/CanvasLayout"; // Fixed import statement
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
