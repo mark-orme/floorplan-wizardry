@@ -8,6 +8,14 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LineSettings } from './LineSettings';
+import * as Sentry from '@sentry/react';
+
+// Mock Sentry
+vi.mock('@sentry/react', () => ({
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  setTag: vi.fn()
+}));
 
 describe('LineSettings Edge Cases', () => {
   // Mock callback functions
@@ -65,6 +73,12 @@ describe('LineSettings Edge Cases', () => {
     // Then: The color picker should still have a value (fallback or original)
     const colorPicker = screen.getByLabelText('Color');
     expect(colorPicker).toHaveValue();
+    
+    // Should log the invalid color to Sentry
+    expect(Sentry.captureMessage).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid color value"),
+      "warning"
+    );
   });
 
   test('is keyboard accessible', () => {
@@ -127,5 +141,29 @@ describe('LineSettings Edge Cases', () => {
     // Color picker should be properly labeled
     const colorPicker = screen.getByLabelText('Color');
     expect(colorPicker).toBeInTheDocument();
+  });
+  
+  test('handles thickness slider edge boundaries', () => {
+    // When: Component is rendered with values at boundaries
+    render(
+      <LineSettings
+        thickness={0}
+        color="#FF0000"
+        onThicknessChange={mockThicknessChange}
+        onColorChange={mockColorChange}
+      />
+    );
+    
+    const slider = screen.getByRole('slider');
+    
+    // Then: Should handle minimum value
+    expect(slider).toHaveAttribute('min');
+    
+    // Try to go below minimum (should stay at minimum)
+    fireEvent.change(slider, { target: { value: -10 } });
+    
+    // The value passed to the callback should be constrained
+    const callValues = mockThicknessChange.mock.calls.map(call => call[0]);
+    expect(callValues.some(val => val < 0)).toBe(false);
   });
 });

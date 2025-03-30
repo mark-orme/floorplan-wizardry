@@ -6,8 +6,9 @@
  */
 import { toast } from "sonner";
 import logger from "../logger";
-import { captureError } from "../sentryUtils";
+import { captureError, captureMessage } from "../sentryUtils";
 import { Canvas, Object as FabricObject } from "fabric";
+import { startPerformanceTransaction } from "../sentryUtils";
 
 /**
  * Toast messages for grid errors
@@ -17,6 +18,49 @@ export const GRID_ERROR_MESSAGES = {
   GRID_CREATION_PARTIAL: "Grid creation was only partially successful.",
   GRID_MISSING: "Grid is missing or incomplete. Try refreshing the page.",
   GRID_RECOVERY_FAILED: "Unable to recover grid. Please refresh the page."
+};
+
+/**
+ * Error severities for categorization
+ */
+export enum GridErrorSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+/**
+ * Categorize grid error by severity
+ * @param {Error} error - The error to categorize
+ * @returns {GridErrorSeverity} Error severity
+ */
+export const categorizeGridError = (error: Error): GridErrorSeverity => {
+  const message = error.message.toLowerCase();
+  
+  // Critical errors that indicate severe problems
+  if (message.includes('disposed') || 
+      message.includes('destroyed') || 
+      message.includes('removed')) {
+    return GridErrorSeverity.CRITICAL;
+  }
+  
+  // High severity errors that likely require user intervention
+  if (message.includes('canvas') || 
+      message.includes('context') || 
+      message.includes('rendering')) {
+    return GridErrorSeverity.HIGH;
+  }
+  
+  // Medium severity errors that might be recoverable
+  if (message.includes('object') || 
+      message.includes('add') || 
+      message.includes('remove')) {
+    return GridErrorSeverity.MEDIUM;
+  }
+  
+  // Default to low severity
+  return GridErrorSeverity.LOW;
 };
 
 /**
@@ -36,6 +80,12 @@ export const handleGridCreationError = (
   canvas?: Canvas | null,
   gridObjects?: FabricObject[] | null
 ): void => {
+  // Start error handling performance tracking
+  const transaction = startPerformanceTransaction('grid-error-handling', {
+    errorType: error.name,
+    context: 'grid-creation'
+  });
+  
   if (process.env.NODE_ENV === 'development') {
     logger.error("Error creating grid:", error);
   }
@@ -44,10 +94,14 @@ export const handleGridCreationError = (
   setHasError(true);
   setErrorMessage(`Error creating grid: ${error.message}`);
   
-  // Diagnose grid failure
+  // Categorize error severity
+  const severity = categorizeGridError(error);
+  
+  // Diagnose grid failure with detailed information
   const diagnosis = {
     timestamp: new Date().toISOString(),
     context: "grid-creation-error",
+    errorSeverity: severity,
     canvasState: canvas ? {
       width: canvas.width,
       height: canvas.height,
@@ -57,7 +111,13 @@ export const handleGridCreationError = (
     gridObjects: gridObjects ? {
       count: gridObjects.length,
       onCanvas: canvas ? gridObjects.filter(obj => canvas.contains(obj)).length : 'unknown'
-    } : 'No grid objects'
+    } : 'No grid objects',
+    browserInfo: {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      deviceMemory: (navigator as any).deviceMemory || 'unknown',
+      hardwareConcurrency: navigator.hardwareConcurrency || 'unknown'
+    }
   };
   
   // Create enhanced error data with detailed debugging info
@@ -80,14 +140,15 @@ export const handleGridCreationError = (
   
   // Report to Sentry with enhanced context
   captureError(error, 'grid-creation', {
+    level: severity === GridErrorSeverity.CRITICAL || severity === GridErrorSeverity.HIGH ? 'error' : 'warning',
     tags: {
       component: 'grid',
       operation: 'creation',
       error_type: error.name,
-      critical: 'true'
+      critical: (severity === GridErrorSeverity.CRITICAL).toString(),
+      severity: severity
     },
-    extra: errorData,
-    level: 'error'
+    extra: errorData
   });
   
   // Notify user of the issue with a toast
@@ -95,6 +156,9 @@ export const handleGridCreationError = (
     id: "grid-error",
     duration: 5000
   });
+  
+  // Calculate and report performance metrics
+  transaction.finish(severity);
 };
 
 /**
@@ -155,9 +219,12 @@ export const createGridRecoveryPlan = (
     }
   }
   
-  // Log the recovery plan to Sentry
-  captureError(
-    new Error(`Grid recovery plan for ${failureContext}`),
+  // Log the recovery plan to application log
+  logger.info(`Grid recovery plan for ${failureContext}:`, plan);
+  
+  // Report the recovery plan to Sentry
+  captureMessage(
+    `Grid recovery plan for ${failureContext}`,
     "grid-recovery-plan",
     {
       level: "info",
@@ -165,12 +232,64 @@ export const createGridRecoveryPlan = (
         component: "grid",
         operation: "recovery",
         context: failureContext,
-        needs_recreation: String(plan.needsGridRecreation),
-        needs_refresh: String(plan.needsFullRefresh)
+        needs_recreation: plan.needsGridRecreation.toString(),
+        needs_refresh: plan.needsFullRefresh.toString()
       },
       extra: plan
     }
   );
   
   return plan;
+};
+
+/**
+ * Track grid creation performance metrics
+ * 
+ * @param {boolean} success - Whether grid creation was successful
+ * @param {number} duration - Duration in milliseconds
+ * @param {Object} dimensions - Canvas dimensions
+ * @param {number} objectCount - Number of grid objects created
+ */
+export const trackGridCreationPerformance = (
+  success: boolean, 
+  duration: number, 
+  dimensions: { width: number; height: number },
+  objectCount: number
+): void => {
+  // Log performance data
+  logger.debug("Grid creation performance:", {
+    success,
+    duration,
+    dimensions,
+    objectCount,
+    objectsPerSecond: Math.round(objectCount / (duration / 1000))
+  });
+  
+  // Report performance data to Sentry
+  captureMessage(
+    `Grid creation ${success ? "succeeded" : "failed"} in ${duration.toFixed(1)}ms`,
+    "grid-creation-performance",
+    {
+      level: "info",
+      tags: {
+        component: "grid",
+        operation: "creation-performance",
+        success: success.toString()
+      },
+      extra: {
+        duration,
+        dimensions,
+        objectCount,
+        timestamp: new Date().toISOString(),
+        objectsPerSecond: Math.round(objectCount / (duration / 1000)),
+        performanceInfo: {
+          memory: performance.memory ? {
+            jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
+            totalJSHeapSize: performance.memory.totalJSHeapSize,
+            usedJSHeapSize: performance.memory.usedJSHeapSize
+          } : 'Not available'
+        }
+      }
+    }
+  );
 };

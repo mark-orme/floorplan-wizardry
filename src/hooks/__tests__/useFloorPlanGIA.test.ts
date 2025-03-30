@@ -9,6 +9,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanGIA } from '../useFloorPlanGIA';
 import { Canvas } from 'fabric';
+import * as Sentry from '@sentry/react';
+
+// Mock Sentry
+vi.mock('@sentry/react', () => ({
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  setTag: vi.fn()
+}));
 
 describe('useFloorPlanGIA Hook', () => {
   // Mock dependencies
@@ -48,11 +56,8 @@ describe('useFloorPlanGIA Hook', () => {
       result.current.recalculateGIA();
     });
     
-    // In a real implementation, this should sum up the areas
-    // and call setGia with the result
-    // For this simplified test, we're just checking if it executes
-    // and calls the setGia function
-    expect(mockCanvas.getObjects).toHaveBeenCalled();
+    // Should sum up the areas and call setGia with the result
+    expect(mockSetGia).toHaveBeenCalledWith(250);
   });
   
   it('should handle missing canvas gracefully', () => {
@@ -71,6 +76,12 @@ describe('useFloorPlanGIA Hook', () => {
     
     // Should not have called setGia
     expect(mockSetGia).not.toHaveBeenCalled();
+    
+    // Should capture the error to Sentry
+    expect(Sentry.captureMessage).toHaveBeenCalledWith(
+      "Cannot calculate GIA: Canvas reference is null",
+      "warning"
+    );
   });
   
   it('should handle empty canvas gracefully', () => {
@@ -89,5 +100,47 @@ describe('useFloorPlanGIA Hook', () => {
     
     // Should call setGia with 0 for empty canvas
     expect(mockSetGia).toHaveBeenCalledWith(0);
+  });
+  
+  it('should handle objects without area property', () => {
+    // Mock canvas with objects lacking area property
+    mockCanvas.getObjects = vi.fn().mockReturnValue([
+      { objectType: 'room' }, // No area property
+      { objectType: 'room', area: 100 },
+      { objectType: 'wall' } // Not a room
+    ]);
+    
+    const { result } = renderHook(() => useFloorPlanGIA({
+      fabricCanvasRef: mockCanvasRef,
+      setGia: mockSetGia
+    }));
+    
+    // Call the recalculateGIA function
+    act(() => {
+      result.current.recalculateGIA();
+    });
+    
+    // Should only count valid areas
+    expect(mockSetGia).toHaveBeenCalledWith(100);
+  });
+  
+  it('should capture errors during calculation', () => {
+    // Mock canvas that will throw an error
+    mockCanvas.getObjects = vi.fn().mockImplementation(() => {
+      throw new Error('Canvas error');
+    });
+    
+    const { result } = renderHook(() => useFloorPlanGIA({
+      fabricCanvasRef: mockCanvasRef,
+      setGia: mockSetGia
+    }));
+    
+    // Should catch error and report to Sentry
+    act(() => {
+      result.current.recalculateGIA();
+    });
+    
+    expect(Sentry.captureException).toHaveBeenCalled();
+    expect(mockSetGia).not.toHaveBeenCalled();
   });
 });

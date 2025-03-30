@@ -93,15 +93,17 @@ describe('useSyncedFloorPlans Hook', () => {
     expect(result.current.floorPlans).toEqual(testFloorPlans);
   });
 
-  it('should save floor plans to localStorage', async () => {
+  it('should save floor plans to localStorage when using setFloorPlans', async () => {
     // Setup: Render hook
     const { result } = renderHook(() => useSyncedFloorPlans());
     
-    // Execute: Save floor plans
-    await act(async () => {
-      const success = await result.current.saveData([mockFloorPlan]);
-      expect(success).toBe(true);
+    // Execute: Set floor plans using the setter
+    act(() => {
+      result.current.setFloorPlans([mockFloorPlan]);
     });
+    
+    // Allow any async operations to complete
+    await vi.runAllTimersAsync();
     
     // Verify: Floor plans are saved to localStorage
     expect(localStorageMock.setItem).toHaveBeenCalledWith('floorPlans', JSON.stringify([mockFloorPlan]));
@@ -132,10 +134,10 @@ describe('useSyncedFloorPlans Hook', () => {
     const { result } = renderHook(() => useSyncedFloorPlans());
     
     await act(async () => {
-      const success = await result.current.saveData([mockFloorPlan]);
+      // Trigger save via setFloorPlans which internally saves to localStorage
+      result.current.setFloorPlans([mockFloorPlan]);
       
-      // Verify: Function returns false on error
-      expect(success).toBe(false);
+      // Verify: Error handling occurred
       expect(toast.error).toHaveBeenCalledWith('Failed to save floor plans');
     });
   });
@@ -166,22 +168,6 @@ describe('useSyncedFloorPlans Hook', () => {
     
     // Note: This test is just checking the function executes without errors
     // In a real implementation, we would verify canvas changes
-  });
-
-  it('should save canvas state to a floor plan', () => {
-    // Setup: Create mock canvas
-    const mockCanvas = new Canvas(null);
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Execute: Save canvas state to floor plan
-    let savedFloorPlan;
-    act(() => {
-      savedFloorPlan = result.current.saveFloorPlan(mockCanvas);
-    });
-    
-    // Note: In the current implementation, this returns null
-    // In a real implementation, this would return a saved floor plan
-    expect(savedFloorPlan).toBeNull();
   });
 
   it('should calculate Gross Internal Area (GIA)', () => {

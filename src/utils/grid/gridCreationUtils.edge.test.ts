@@ -20,7 +20,7 @@ vi.useFakeTimers();
 
 describe('Grid Creation Utils Edge Cases', () => {
   let canvas: Canvas;
-  const gridLayerRef = { current: [] };
+  let gridLayerRef: { current: FabricObject[] };
   
   beforeEach(() => {
     vi.clearAllMocks();
@@ -37,7 +37,7 @@ describe('Grid Creation Utils Edge Cases', () => {
       requestRenderAll: vi.fn()
     } as unknown as Canvas;
     
-    gridLayerRef.current = [];
+    gridLayerRef = { current: [] };
   });
 
   it('should handle canvas with zero dimensions', () => {
