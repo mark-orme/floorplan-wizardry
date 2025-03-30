@@ -11,6 +11,7 @@ export const gridFabricRules = {
     "no-dupe-class-members": "error",
     "import/export": "error",
     "import/no-duplicates": "error",
+    "no-redeclare": "error", // Add this rule to prevent redeclarations
     
     // Grid-specific rules
     "no-empty-function": ["error", { "allow": ["arrowFunctions"] }],
@@ -30,7 +31,7 @@ export const gridFabricRules = {
     // Enforce proper TypeScript typing
     "@typescript-eslint/no-unsafe-assignment": "warn",
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-duplicate-exports": "error",
+    "@typescript-eslint/no-duplicate-exports": "error", // Add this rule to prevent duplicate exports in TS
     
     // Enforce proper Canvas API usage
     "no-undef": "error"

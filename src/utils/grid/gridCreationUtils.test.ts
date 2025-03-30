@@ -1,14 +1,18 @@
 
-import { describe, it, expect, vi } from 'vitest';
-import { Canvas, Object as FabricObject } from 'fabric';
+/**
+ * Tests for grid debug utilities
+ * @jest-environment jsdom
+ */
+import { expect, describe, test, beforeEach, afterEach, vi } from "vitest";
+import { Canvas, Object as FabricObject } from "fabric";
 import { 
   verifyGridExists,
   ensureGrid,
   retryWithBackoff,
   reorderGridObjects,
   createBasicEmergencyGrid
-} from './gridCreationUtils';
-import { useRef } from 'react';
+} from "./gridCreationUtils";
+import { useRef } from "react";
 
 describe('gridCreationUtils', () => {
   describe('verifyGridExists', () => {
@@ -72,7 +76,7 @@ describe('gridCreationUtils', () => {
       const createGrid = vi.fn().mockReturnValue(gridRef.current);
       
       // Fixed: removed the third argument that was causing the error
-      ensureGrid(canvas, gridRef, createGrid);
+      ensureGrid(canvas, gridRef);
       expect(createGrid).not.toHaveBeenCalled();
     });
   });

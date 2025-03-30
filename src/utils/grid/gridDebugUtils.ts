@@ -114,14 +114,21 @@ export const forceCreateGrid = (
  * @returns {object} Memory usage statistics
  */
 export const getMemoryUsage = (): { total?: number, used?: number, limit?: number } => {
-  if (typeof performance === 'undefined' || !performance.memory) {
+  // Fix: Properly type check and handle performance.memory which isn't available in all browsers
+  if (typeof performance === 'undefined') {
+    return {};
+  }
+  
+  // Add type check for performance.memory which is a non-standard API
+  const perfMemory = (performance as any).memory;
+  if (!perfMemory) {
     return {};
   }
   
   return {
-    total: performance.memory?.totalJSHeapSize,
-    used: performance.memory?.usedJSHeapSize,
-    limit: performance.memory?.jsHeapSizeLimit
+    total: perfMemory.totalJSHeapSize,
+    used: perfMemory.usedJSHeapSize,
+    limit: perfMemory.jsHeapSizeLimit
   };
 };
 
@@ -147,7 +154,7 @@ export const gridDebugStats = (
       width: canvas.width,
       height: canvas.height,
       objectCount: allObjects.length,
-      initialized: canvas.initialized || false
+      initialized: (canvas as any).initialized || false
     },
     grid: {
       totalObjects: gridObjects.length,

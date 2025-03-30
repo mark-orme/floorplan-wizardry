@@ -1,3 +1,4 @@
+
 /**
  * Grid creation utilities
  * @module utils/gridCreationUtils
@@ -77,7 +78,9 @@ export const createCompleteGrid = (
  * @param {Canvas} canvas - Fabric canvas
  * @returns {FabricObject[]} Created grid objects
  */
-export const createEnhancedGrid = (canvas: Canvas): FabricObject[] => {
+export const createEnhancedGrid = (
+  canvas: Canvas
+): FabricObject[] => {
   try {
     if (!canvas || !canvas.width || !canvas.height) {
       logger.error("Cannot create enhanced grid: Invalid canvas or dimensions");
@@ -292,7 +295,10 @@ export const createBasicEmergencyGrid = (
  * @param {FabricObject[]} gridObjects - Grid objects to verify
  * @returns {boolean} True if grid exists
  */
-export const verifyGridExists = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): boolean => {
+export const verifyGridExists = (
+  canvas: Canvas, 
+  gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>
+): boolean => {
   if (!canvas) return false;
   
   // Handle both array and ref object
@@ -340,7 +346,10 @@ export const retryWithBackoff = async (
  * @param {FabricObject[]} gridObjects - Grid objects to reorder
  * @returns {void}
  */
-export const reorderGridObjects = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): void => {
+export const reorderGridObjects = (
+  canvas: Canvas, 
+  gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>
+): void => {
   if (!canvas) return;
   
   // Handle both array and ref object
@@ -363,7 +372,7 @@ export const reorderGridObjects = (canvas: Canvas, gridObjects: FabricObject[] |
  */
 export const ensureGrid = (
   canvas: Canvas, 
-  gridRef: React.MutableRefObject<FabricObject[]>, 
+  gridRef: React.MutableRefObject<FabricObject[]>,
   createGridFn = createCompleteGrid
 ): FabricObject[] => {
   if (!canvas) return [];
@@ -382,7 +391,10 @@ export const ensureGrid = (
  * @param {FabricObject[]} gridObjects - Grid objects to validate
  * @returns {boolean} True if grid valid
  */
-export const validateGrid = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): boolean => {
+export const validateGrid = (
+  canvas: Canvas, 
+  gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>
+): boolean => {
   if (!canvas) return false;
   
   // Handle both array and ref object
@@ -421,7 +433,10 @@ export const createFallbackGrid = (canvas: Canvas): FabricObject[] => {
  * @param {FabricObject[]} gridObjects - Grid objects to check
  * @returns {boolean} True if complete grid exists
  */
-export const hasCompleteGrid = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): boolean => {
+export const hasCompleteGrid = (
+  canvas: Canvas, 
+  gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>
+): boolean => {
   if (!canvas) return false;
   
   // Handle both array and ref object
@@ -441,7 +456,10 @@ export const hasCompleteGrid = (canvas: Canvas, gridObjects: FabricObject[] | Re
  * @param {FabricObject[]} gridObjects - Grid objects to render
  * @returns {void}
  */
-export const forceGridRender = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): void => {
+export const forceGridRender = (
+  canvas: Canvas, 
+  gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>
+): void => {
   if (!canvas) return;
   
   // Handle both array and ref object
@@ -458,17 +476,4 @@ export const forceGridRender = (canvas: Canvas, gridObjects: FabricObject[] | Re
   canvas.renderAll();
 };
 
-// Export other functions to maintain backwards compatibility
-export {
-  createCompleteGrid,
-  createBasicGrid,
-  verifyGridExists,
-  retryWithBackoff,
-  reorderGridObjects,
-  ensureGrid,
-  validateGrid,
-  createGridLayer,
-  createFallbackGrid,
-  hasCompleteGrid,
-  forceGridRender
-};
+// Remove the duplicated export list at the end
