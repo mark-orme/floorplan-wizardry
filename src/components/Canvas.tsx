@@ -18,6 +18,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onError
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const { setCanvas } = useCanvasContext();
   
   useEffect(() => {
@@ -35,10 +36,15 @@ export const Canvas: React.FC<CanvasProps> = ({
         preserveObjectStacking: true
       });
       
-      // Set up drawing brush
-      fabricCanvas.freeDrawingBrush.color = "#000000";
-      fabricCanvas.freeDrawingBrush.width = 2;
-      fabricCanvas.isDrawingMode = true;
+      // Store the canvas in ref for component internal use
+      fabricCanvasRef.current = fabricCanvas;
+      
+      // Set up drawing brush - ensure initialization is done properly
+      if (fabricCanvas.freeDrawingBrush) {
+        fabricCanvas.freeDrawingBrush.color = "#000000";
+        fabricCanvas.freeDrawingBrush.width = 2;
+        fabricCanvas.isDrawingMode = false; // Start in selection mode by default
+      }
       
       // Update context
       setCanvas(fabricCanvas);
@@ -51,6 +57,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Clean up function
       return () => {
         fabricCanvas.dispose();
+        fabricCanvasRef.current = null;
         setCanvas(null);
       };
     } catch (error) {
@@ -69,10 +76,12 @@ export const Canvas: React.FC<CanvasProps> = ({
         className="border border-gray-200 rounded"
         data-testid="canvas-element"
       />
-      <BasicGrid 
-        fabricCanvas={canvasRef.current ? new FabricCanvas(canvasRef.current) : null}
-        debugMode={true}
-      />
+      {fabricCanvasRef.current && (
+        <BasicGrid 
+          fabricCanvas={fabricCanvasRef.current}
+          debugMode={true}
+        />
+      )}
     </div>
   );
 };

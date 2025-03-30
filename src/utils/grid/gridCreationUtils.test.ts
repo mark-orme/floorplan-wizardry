@@ -9,8 +9,7 @@ import {
   verifyGridExists,
   ensureGrid,
   retryWithBackoff,
-  reorderGridObjects,
-  createBasicEmergencyGrid
+  reorderGridObjects
 } from "./gridCreationUtils";
 import { useRef } from "react";
 
@@ -75,7 +74,7 @@ describe('gridCreationUtils', () => {
       // Mock createGrid
       const createGrid = vi.fn().mockReturnValue(gridRef.current);
       
-      // Fixed: removed the third argument that was causing the error
+      // Call ensureGrid with two arguments - fixed test
       ensureGrid(canvas, gridRef);
       expect(createGrid).not.toHaveBeenCalled();
     });

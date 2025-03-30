@@ -1,3 +1,4 @@
+
 /**
  * Grid exports helper
  * 
@@ -15,7 +16,6 @@ import {
   reorderGridObjects,
   ensureGrid,
   createEnhancedGrid
-  // other imports...
 } from '../gridCreationUtils';
 
 // Direct named exports from gridValidation

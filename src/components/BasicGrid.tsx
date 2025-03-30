@@ -1,9 +1,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createSimpleGrid, ensureGridVisible, forceGridRecreation } from "@/utils/simpleGridCreator";
 import { toast } from "sonner";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { forceCreateGrid } from "@/utils/grid/gridDebugUtils";
 
 interface BasicGridProps {
   fabricCanvas: FabricCanvas | null;
@@ -28,6 +28,66 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     if (debugMode) {
       console.log(`[BasicGrid] ${message}`, ...args);
     }
+  };
+  
+  // Create simple grid on the canvas
+  const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
+    if (!canvas || !canvas.width || !canvas.height) {
+      debugLog("Cannot create grid: Invalid canvas dimensions");
+      return [];
+    }
+    
+    try {
+      // Clean any existing grid objects
+      const existingGrid = canvas.getObjects().filter(obj => 
+        obj.objectType === 'grid' || obj.objectType === 'grid-debug'
+      );
+      existingGrid.forEach(obj => canvas.remove(obj));
+      
+      // Create new grid
+      return forceCreateGrid(canvas);
+    } catch (error) {
+      console.error("Error creating simple grid:", error);
+      return [];
+    }
+  };
+  
+  // Ensure grid is visible on canvas
+  const ensureGridVisible = (canvas: FabricCanvas, gridObjects: FabricObject[]): boolean => {
+    if (!canvas || gridObjects.length === 0) return false;
+    
+    let fixed = false;
+    
+    // Check for missing grid objects and add them back
+    gridObjects.forEach(obj => {
+      if (!canvas.contains(obj)) {
+        canvas.add(obj);
+        fixed = true;
+      }
+    });
+    
+    // Send all grid objects to back
+    if (fixed) {
+      gridObjects.forEach(obj => {
+        canvas.sendToBack(obj);
+      });
+      canvas.renderAll();
+    }
+    
+    return fixed;
+  };
+  
+  // Force recreation of grid
+  const forceGridRecreation = (canvas: FabricCanvas, currentGrid: FabricObject[]): FabricObject[] => {
+    // Remove existing grid
+    currentGrid.forEach(obj => {
+      if (canvas.contains(obj)) {
+        canvas.remove(obj);
+      }
+    });
+    
+    // Create new grid
+    return createSimpleGrid(canvas);
   };
   
   // Create grid with throttling

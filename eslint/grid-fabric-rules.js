@@ -12,6 +12,7 @@ export const gridFabricRules = {
     "import/export": "error",
     "import/no-duplicates": "error",
     "no-redeclare": "error", // Add this rule to prevent redeclarations
+    "no-dupe-exports": "error", // Add a specific rule for duplicate exports
     
     // Grid-specific rules
     "no-empty-function": ["error", { "allow": ["arrowFunctions"] }],

@@ -379,7 +379,7 @@ export const ensureGrid = (
   
   // Check if grid exists
   if (!verifyGridExists(canvas, gridRef)) {
-    return createGridFn(canvas);
+    return createGridFn(canvas, gridRef);
   }
   
   return gridRef.current;
@@ -475,5 +475,3 @@ export const forceGridRender = (
   // Render all
   canvas.renderAll();
 };
-
-// Remove the duplicated export list at the end
