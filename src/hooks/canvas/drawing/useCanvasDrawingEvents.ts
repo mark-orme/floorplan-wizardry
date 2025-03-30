@@ -1,286 +1,673 @@
+/**
+ * Canvas drawing events hook
+ * Manages drawing-related event handlers
+ */
+import { useCallback, useEffect, useState } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { DrawingTool } from "@/types/drawingTypes";
+import { useCanvasContext } from "@/contexts/CanvasContext";
+import { snapPointToGrid } from "@/utils/simpleGridCreator";
+import { toast } from "sonner";
+import logger from "@/utils/logger";
+
+// Constants for drawing
+const DEFAULT_LINE_WIDTH = 2;
+const DEFAULT_LINE_COLOR = "#000000";
+const GRID_SNAP_SIZE = 10;
 
 /**
- * Custom hook for handling canvas drawing events
- * @module canvas/drawing/useCanvasDrawingEvents
+ * Hook for managing canvas drawing events
+ * @param {DrawingTool} activeTool - Currently active drawing tool
+ * @param {number} lineThickness - Line thickness for drawing
+ * @param {string} lineColor - Line color for drawing
+ * @returns {object} Drawing event handlers and state
  */
-import { useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas, Path as FabricPath, fabric } from 'fabric';
-import { DrawingState, Point } from '@/types';
-import { snapPointToGrid } from '@/utils/simpleGridCreator';
+export const useCanvasDrawingEvents = (
+  activeTool: DrawingTool,
+  lineThickness: number = DEFAULT_LINE_WIDTH,
+  lineColor: string = DEFAULT_LINE_COLOR
+) => {
+  const { canvas } = useCanvasContext();
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentPath, setCurrentPath] = useState<FabricObject | null>(null);
+  const [pathStartPoint, setPathStartPoint] = useState<{ x: number, y: number } | null>(null);
 
-/**
- * Constants for drawing events
- */
-const DRAWING_EVENT_CONSTANTS = {
-  /** Timeout for cleanup operations in ms */
-  CLEANUP_TIMEOUT: 500,
-  
-  /** Default tolerance value for path operations */
-  DEFAULT_TOLERANCE: 10,
-  
-  /** Delay for starting drag operations in ms */
-  DRAG_START_DELAY: 150
-};
-
-/**
- * Props for the drawing events hook
- */
-interface UseCanvasDrawingEventsProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current drawing state */
-  drawingState: DrawingState;
-  /** Function to update drawing state */
-  setDrawingState: React.Dispatch<React.SetStateAction<DrawingState>>;
-  /** Current drawing tool */
-  tool: string;
-  /** Function to process created path */
-  processCreatedPath: (path: FabricPath) => void;
-  /** Whether to snap to grid */
-  snapToGrid?: boolean;
-}
-
-/**
- * Return type for the drawing events hook
- */
-interface UseCanvasDrawingEventsReturn {
-  /** Mouse down event handler */
-  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
-  /** Mouse move event handler */
-  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  /** Mouse up event handler */
-  handleMouseUp: (e?: MouseEvent | TouchEvent) => void;
-  /** Clean up timeouts and event state */
-  cleanupTimeouts: () => void;
-}
-
-/**
- * Hook for handling canvas drawing events
- * 
- * @param props - Hook properties
- * @returns Event handlers for drawing operations
- */
-export const useCanvasDrawingEvents = ({
-  fabricCanvasRef,
-  drawingState,
-  setDrawingState,
-  tool,
-  processCreatedPath,
-  snapToGrid = true
-}: UseCanvasDrawingEventsProps): UseCanvasDrawingEventsReturn => {
-  // Timeout references
-  const timeoutsRef = useRef<number[]>([]);
-  
   /**
-   * Clean up timeouts
+   * Start drawing path
+   * @param {fabric.Event} event - Fabric event object
    */
-  const cleanupTimeouts = useCallback(() => {
-    timeoutsRef.current.forEach(timeout => window.clearTimeout(timeout));
-    timeoutsRef.current = [];
-  }, []);
-  
-  /**
-   * Handle mouse down event
-   */
-  const handleMouseDown = useCallback((e: MouseEvent | TouchEvent) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  const startDrawing = useCallback((event: any) => {
+    if (!canvas || activeTool !== DrawingTool.Draw) return;
     
-    // Get coordinates based on event type
-    let clientX: number, clientY: number;
-    
-    if ('touches' in e) {
-      // Touch event
-      if (e.touches.length === 0) return;
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      // Mouse event
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    
-    // Convert client coordinates to canvas coordinates
-    const canvasElement = canvas.getElement();
-    const rect = canvasElement.getBoundingClientRect();
-    const x = (clientX - rect.left) / canvas.getZoom();
-    const y = (clientY - rect.top) / canvas.getZoom();
-    
-    // Apply snap to grid if enabled
-    let startPoint = { x, y };
-    if (snapToGrid) {
-      startPoint = snapPointToGrid(x, y);
-    }
-    
-    // Update drawing state
-    setDrawingState(prev => ({
-      ...prev,
-      isDrawing: true,
-      lastX: startPoint.x,
-      lastY: startPoint.y,
-      startX: startPoint.x,
-      startY: startPoint.y,
-      startPoint: startPoint,
-      currentPoint: startPoint
-    }));
-    
-    // Handle different tools
-    if (tool === 'draw') {
-      // For freehand drawing, let fabric.js handle it
-      // The path:created event will be triggered
-    } else if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
-      // For straight lines and shapes, we'll handle the drawing manually
-      // Start a new path
-      const newPath = new FabricPath(`M ${startPoint.x} ${startPoint.y}`, {
-        stroke: drawingState.color || '#000000',
-        strokeWidth: drawingState.width || 2,
-        fill: 'transparent',
-        selectable: false
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Create a new path
+      const path = new fabric.Path(`M ${snappedPoint.x} ${snappedPoint.y}`, {
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        fill: '',
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round',
+        selectable: true
       });
       
-      canvas.add(newPath);
+      // Add path to canvas
+      canvas.add(path);
       
-      // Store the path in state
-      setDrawingState(prev => ({
-        ...prev,
-        currentPath: newPath
-      }));
+      // Update state
+      setIsDrawing(true);
+      setCurrentPath(path);
+      setPathStartPoint(snappedPoint);
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error starting drawing:", error);
+      toast.error("Error starting drawing");
     }
-  }, [fabricCanvasRef, setDrawingState, tool, drawingState.color, drawingState.width, snapToGrid]);
-  
+  }, [canvas, activeTool, lineColor, lineThickness]);
+
   /**
-   * Handle mouse move event
+   * Continue drawing path
+   * @param {fabric.Event} event - Fabric event object
    */
-  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !drawingState.isDrawing) return;
+  const continueDrawing = useCallback((event: any) => {
+    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.Draw) return;
     
-    // Get coordinates based on event type
-    let clientX: number, clientY: number;
-    
-    if ('touches' in e) {
-      // Touch event
-      if (e.touches.length === 0) return;
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      // Mouse event
-      clientX = e.clientX;
-      clientY = e.clientY;
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Get current path data
+      const path = currentPath as fabric.Path;
+      const pathData = path.path;
+      
+      // Add line to current point
+      pathData.push(['L', snappedPoint.x, snappedPoint.y]);
+      
+      // Update path
+      path.set({ path: pathData });
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error continuing drawing:", error);
     }
+  }, [canvas, isDrawing, currentPath, activeTool]);
+
+  /**
+   * End drawing path
+   */
+  const endDrawing = useCallback(() => {
+    if (!canvas || !isDrawing || !currentPath) return;
     
-    // Convert client coordinates to canvas coordinates
-    const canvasElement = canvas.getElement();
-    const rect = canvasElement.getBoundingClientRect();
-    const x = (clientX - rect.left) / canvas.getZoom();
-    const y = (clientY - rect.top) / canvas.getZoom();
-    
-    // Apply snap to grid if enabled
-    let currentPoint = { x, y };
-    if (snapToGrid) {
-      currentPoint = snapPointToGrid(x, y);
-    }
-    
-    // Handle different tools
-    if (tool === 'draw') {
-      // For freehand drawing, let fabric.js handle it
-    } else if (tool === 'straightLine' || tool === 'wall' || tool === 'room') {
-      // For straight lines and shapes, update the path
-      if (drawingState.currentPath) {
-        const path = drawingState.currentPath as FabricPath;
+    try {
+      // Finalize the path
+      const path = currentPath as fabric.Path;
+      
+      // If path is too short (just a click), remove it
+      if (path.path.length <= 1) {
+        canvas.remove(path);
+      } else {
+        // Finalize the path
+        path.setCoords();
         
-        // Update the path data for a straight line
-        if (tool === 'straightLine') {
-          path.set({
-            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${currentPoint.x} ${currentPoint.y}`]
-          });
-        } else if (tool === 'wall') {
-          // For walls, we might want to snap to angles
-          path.set({
-            path: [`M ${drawingState.startX} ${drawingState.startY}`, `L ${currentPoint.x} ${currentPoint.y}`],
-            strokeWidth: 4 // Walls are thicker
-          });
-        } else if (tool === 'room') {
-          // For rooms, we might want to create a polygon
-          // This is a simplified version - in reality, you'd track multiple points
-          path.set({
-            path: [
-              `M ${drawingState.startX} ${drawingState.startY}`,
-              `L ${currentPoint.x} ${drawingState.startY}`,
-              `L ${currentPoint.x} ${currentPoint.y}`,
-              `L ${drawingState.startX} ${currentPoint.y}`,
-              `L ${drawingState.startX} ${drawingState.startY}`
-            ],
-            fill: 'rgba(200, 200, 255, 0.2)'
-          });
-        }
-        
-        canvas.renderAll();
+        // Fire object added event for history tracking
+        canvas.fire('object:added', { target: path });
       }
+      
+      // Reset state
+      setIsDrawing(false);
+      setCurrentPath(null);
+      setPathStartPoint(null);
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error ending drawing:", error);
     }
-    
-    // Calculate midpoint for distance calculation
-    const midPoint: Point | null = drawingState.startPoint 
-      ? { 
-          x: (drawingState.startPoint.x + currentPoint.x) / 2, 
-          y: (drawingState.startPoint.y + currentPoint.y) / 2 
-        } 
-      : null;
-    
-    // Calculate distance between points
-    let distance = null;
-    if (drawingState.startPoint) {
-      const dx = currentPoint.x - drawingState.startPoint.x;
-      const dy = currentPoint.y - drawingState.startPoint.y;
-      distance = Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    // Update last position and points
-    setDrawingState(prev => ({
-      ...prev,
-      lastX: currentPoint.x,
-      lastY: currentPoint.y,
-      currentPoint,
-      midPoint,
-      distance,
-      cursorPosition: currentPoint
-    }));
-  }, [fabricCanvasRef, drawingState, setDrawingState, tool, snapToGrid]);
-  
+  }, [canvas, isDrawing, currentPath]);
+
   /**
-   * Handle mouse up event
+   * Handle wall drawing start
+   * @param {fabric.Event} event - Fabric event object
    */
-  const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
-    const canvas = fabricCanvasRef.current;
+  const startWallDrawing = useCallback((event: any) => {
+    if (!canvas || activeTool !== DrawingTool.Wall) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Create a temporary line
+      const line = new fabric.Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
+        stroke: lineColor,
+        strokeWidth: lineThickness * 2, // Walls are thicker
+        selectable: true,
+        objectType: 'wall'
+      });
+      
+      // Add line to canvas
+      canvas.add(line);
+      
+      // Update state
+      setIsDrawing(true);
+      setCurrentPath(line);
+      setPathStartPoint(snappedPoint);
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error starting wall drawing:", error);
+      toast.error("Error starting wall drawing");
+    }
+  }, [canvas, activeTool, lineColor, lineThickness]);
+
+  /**
+   * Continue wall drawing
+   * @param {fabric.Event} event - Fabric event object
+   */
+  const continueWallDrawing = useCallback((event: any) => {
+    if (!canvas || !isDrawing || !currentPath || activeTool !== DrawingTool.Wall) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Update line end point
+      const line = currentPath as fabric.Line;
+      line.set({
+        x2: snappedPoint.x,
+        y2: snappedPoint.y
+      });
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error continuing wall drawing:", error);
+    }
+  }, [canvas, isDrawing, currentPath, activeTool]);
+
+  /**
+   * End wall drawing
+   */
+  const endWallDrawing = useCallback(() => {
+    if (!canvas || !isDrawing || !currentPath || !pathStartPoint) return;
+    
+    try {
+      // Finalize the wall
+      const line = currentPath as fabric.Line;
+      
+      // Get end points
+      const x1 = line.x1 || pathStartPoint.x;
+      const y1 = line.y1 || pathStartPoint.y;
+      const x2 = line.x2 || x1;
+      const y2 = line.y2 || y1;
+      
+      // If line is too short (just a click), remove it
+      if (Math.abs(x2 - x1) < 5 && Math.abs(y2 - y1) < 5) {
+        canvas.remove(line);
+      } else {
+        // Finalize the line
+        line.setCoords();
+        
+        // Fire object added event for history tracking
+        canvas.fire('object:added', { target: line });
+      }
+      
+      // Reset state
+      setIsDrawing(false);
+      setCurrentPath(null);
+      setPathStartPoint(null);
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error ending wall drawing:", error);
+    }
+  }, [canvas, isDrawing, currentPath, pathStartPoint]);
+
+  /**
+   * Handle room drawing start
+   * @param {fabric.Event} event - Fabric event object
+   */
+  const startRoomDrawing = useCallback((event: any) => {
+    if (!canvas || activeTool !== DrawingTool.Room) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Create a temporary rectangle
+      const rect = new fabric.Rect({
+        left: snappedPoint.x,
+        top: snappedPoint.y,
+        width: 0,
+        height: 0,
+        fill: 'rgba(200, 200, 255, 0.3)',
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        selectable: true,
+        objectType: 'room'
+      });
+      
+      // Add rectangle to canvas
+      canvas.add(rect);
+      
+      // Update state
+      setIsDrawing(true);
+      setCurrentPath(rect);
+      setPathStartPoint(snappedPoint);
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error starting room drawing:", error);
+      toast.error("Error starting room drawing");
+    }
+  }, [canvas, activeTool, lineColor, lineThickness]);
+
+  /**
+   * Continue room drawing
+   * @param {fabric.Event} event - Fabric event object
+   */
+  const continueRoomDrawing = useCallback((event: any) => {
+    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.Room) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Calculate width and height
+      const width = Math.abs(snappedPoint.x - pathStartPoint.x);
+      const height = Math.abs(snappedPoint.y - pathStartPoint.y);
+      
+      // Calculate left and top (in case drawing backwards)
+      const left = Math.min(pathStartPoint.x, snappedPoint.x);
+      const top = Math.min(pathStartPoint.y, snappedPoint.y);
+      
+      // Update rectangle
+      const rect = currentPath as fabric.Rect;
+      rect.set({
+        left,
+        top,
+        width,
+        height
+      });
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error continuing room drawing:", error);
+    }
+  }, [canvas, isDrawing, currentPath, pathStartPoint, activeTool]);
+
+  /**
+   * End room drawing
+   */
+  const endRoomDrawing = useCallback(() => {
+    if (!canvas || !isDrawing || !currentPath) return;
+    
+    try {
+      // Finalize the room
+      const rect = currentPath as fabric.Rect;
+      
+      // If rectangle is too small, remove it
+      if (rect.width < 10 || rect.height < 10) {
+        canvas.remove(rect);
+      } else {
+        // Finalize the rectangle
+        rect.setCoords();
+        
+        // Fire object added event for history tracking
+        canvas.fire('object:added', { target: rect });
+      }
+      
+      // Reset state
+      setIsDrawing(false);
+      setCurrentPath(null);
+      setPathStartPoint(null);
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error ending room drawing:", error);
+    }
+  }, [canvas, isDrawing, currentPath]);
+
+  /**
+   * Handle text tool activation
+   * @param {fabric.Event} event - Fabric event object
+   */
+  const handleTextTool = useCallback((event: any) => {
+    if (!canvas || activeTool !== DrawingTool.Text) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Create a text object
+      const text = new fabric.IText('Text', {
+        left: snappedPoint.x,
+        top: snappedPoint.y,
+        fontFamily: 'Arial',
+        fontSize: 16,
+        fill: lineColor,
+        selectable: true,
+        editable: true,
+        objectType: 'text'
+      });
+      
+      // Add text to canvas
+      canvas.add(text);
+      
+      // Select the text for editing
+      canvas.setActiveObject(text);
+      text.enterEditing();
+      text.selectAll();
+      
+      // Fire object added event for history tracking
+      canvas.fire('object:added', { target: text });
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error adding text:", error);
+      toast.error("Error adding text");
+    }
+  }, [canvas, activeTool, lineColor]);
+
+  /**
+   * Handle eraser tool
+   * @param {fabric.Event} event - Fabric event object
+   */
+  const handleEraserTool = useCallback((event: any) => {
+    if (!canvas || activeTool !== DrawingTool.Eraser) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Find objects at pointer position
+      const objects = canvas.getObjects().filter(obj => {
+        // Skip objects with objectType 'grid'
+        if (obj.objectType === 'grid') return false;
+        
+        // Check if pointer is inside object
+        return obj.containsPoint(pointer);
+      });
+      
+      // Remove objects
+      if (objects.length > 0) {
+        objects.forEach(obj => {
+          canvas.remove(obj);
+        });
+        
+        // Request render
+        canvas.requestRenderAll();
+        
+        // Show toast if objects were removed
+        if (objects.length === 1) {
+          toast.success("Object erased");
+        } else if (objects.length > 1) {
+          toast.success(`${objects.length} objects erased`);
+        }
+      }
+    } catch (error) {
+      logger.error("Error using eraser:", error);
+    }
+  }, [canvas, activeTool]);
+
+  /**
+   * Handle measure tool
+   * @param {fabric.Event} event - Fabric event object
+   */
+  const startMeasuring = useCallback((event: any) => {
+    if (!canvas || activeTool !== DrawingTool.Measure) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Create a temporary line
+      const line = new fabric.Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
+        stroke: '#ff0000',
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: true,
+        objectType: 'measurement'
+      });
+      
+      // Add line to canvas
+      canvas.add(line);
+      
+      // Create measurement label
+      const text = new fabric.Text('0 cm', {
+        left: snappedPoint.x,
+        top: snappedPoint.y - 15,
+        fontSize: 12,
+        fill: '#ff0000',
+        selectable: false,
+        objectType: 'measurement'
+      });
+      
+      // Add text to canvas
+      canvas.add(text);
+      
+      // Update state
+      setIsDrawing(true);
+      setCurrentPath(line);
+      setPathStartPoint(snappedPoint);
+      
+      // Store text reference in line object for later updates
+      (line as any).measurementLabel = text;
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error starting measurement:", error);
+      toast.error("Error starting measurement");
+    }
+  }, [canvas, activeTool]);
+
+  /**
+   * Continue measuring
+   * @param {fabric.Event} event - Fabric event object
+   */
+  const continueMeasuring = useCallback((event: any) => {
+    if (!canvas || !isDrawing || !currentPath || !pathStartPoint || activeTool !== DrawingTool.Measure) return;
+    
+    try {
+      // Get pointer coordinates
+      const pointer = canvas.getPointer(event.e);
+      
+      // Snap to grid
+      const snappedPoint = snapPointToGrid(pointer.x, pointer.y, GRID_SNAP_SIZE);
+      
+      // Update line end point
+      const line = currentPath as fabric.Line;
+      line.set({
+        x2: snappedPoint.x,
+        y2: snappedPoint.y
+      });
+      
+      // Calculate distance
+      const dx = snappedPoint.x - pathStartPoint.x;
+      const dy = snappedPoint.y - pathStartPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Convert to cm (assuming 1 unit = 1 cm)
+      const distanceCm = Math.round(distance);
+      
+      // Update measurement label
+      const text = (line as any).measurementLabel as fabric.Text;
+      if (text) {
+        text.set({
+          text: `${distanceCm} cm`,
+          left: (pathStartPoint.x + snappedPoint.x) / 2,
+          top: (pathStartPoint.y + snappedPoint.y) / 2 - 15
+        });
+      }
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error continuing measurement:", error);
+    }
+  }, [canvas, isDrawing, currentPath, pathStartPoint, activeTool]);
+
+  /**
+   * End measuring
+   */
+  const endMeasuring = useCallback(() => {
+    if (!canvas || !isDrawing || !currentPath) return;
+    
+    try {
+      // Finalize the measurement
+      const line = currentPath as fabric.Line;
+      const text = (line as any).measurementLabel as fabric.Text;
+      
+      // Group line and text together
+      const group = new fabric.Group([line, text], {
+        selectable: true,
+        objectType: 'measurement'
+      });
+      
+      // Remove individual objects
+      canvas.remove(line);
+      canvas.remove(text);
+      
+      // Add group to canvas
+      canvas.add(group);
+      
+      // Fire object added event for history tracking
+      canvas.fire('object:added', { target: group });
+      
+      // Reset state
+      setIsDrawing(false);
+      setCurrentPath(null);
+      setPathStartPoint(null);
+      
+      // Request render
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error ending measurement:", error);
+    }
+  }, [canvas, isDrawing, currentPath]);
+
+  // Set up event handlers based on active tool
+  useEffect(() => {
     if (!canvas) return;
     
-    // Process the path if we have one
-    if (drawingState.currentPath) {
-      processCreatedPath(drawingState.currentPath as FabricPath);
+    // Remove existing event listeners
+    canvas.off('mouse:down');
+    canvas.off('mouse:move');
+    canvas.off('mouse:up');
+    
+    // Set cursor based on tool
+    switch (activeTool) {
+      case DrawingTool.Select:
+        canvas.defaultCursor = 'default';
+        canvas.hoverCursor = 'move';
+        break;
+      case DrawingTool.Draw:
+        canvas.defaultCursor = 'crosshair';
+        canvas.hoverCursor = 'crosshair';
+        canvas.on('mouse:down', startDrawing);
+        canvas.on('mouse:move', continueDrawing);
+        canvas.on('mouse:up', endDrawing);
+        break;
+      case DrawingTool.Wall:
+        canvas.defaultCursor = 'crosshair';
+        canvas.hoverCursor = 'crosshair';
+        canvas.on('mouse:down', startWallDrawing);
+        canvas.on('mouse:move', continueWallDrawing);
+        canvas.on('mouse:up', endWallDrawing);
+        break;
+      case DrawingTool.Room:
+        canvas.defaultCursor = 'crosshair';
+        canvas.hoverCursor = 'crosshair';
+        canvas.on('mouse:down', startRoomDrawing);
+        canvas.on('mouse:move', continueRoomDrawing);
+        canvas.on('mouse:up', endRoomDrawing);
+        break;
+      case DrawingTool.Measure:
+        canvas.defaultCursor = 'crosshair';
+        canvas.hoverCursor = 'crosshair';
+        canvas.on('mouse:down', startMeasuring);
+        canvas.on('mouse:move', continueMeasuring);
+        canvas.on('mouse:up', endMeasuring);
+        break;
+      case DrawingTool.Text:
+        canvas.defaultCursor = 'text';
+        canvas.hoverCursor = 'text';
+        canvas.on('mouse:down', handleTextTool);
+        break;
+      case DrawingTool.Eraser:
+        canvas.defaultCursor = 'not-allowed';
+        canvas.hoverCursor = 'not-allowed';
+        canvas.on('mouse:down', handleEraserTool);
+        break;
+      default:
+        canvas.defaultCursor = 'default';
+        canvas.hoverCursor = 'default';
     }
     
-    // Reset drawing state
-    setDrawingState(prev => ({
-      ...prev,
-      isDrawing: false,
-      currentPath: null
-    }));
-    
-    // Schedule cleanup
-    const timeoutId = window.setTimeout(() => {
-      // Perform any additional cleanup
-      if (canvas && tool !== 'draw') {
-        canvas.renderAll();
+    // Clean up event listeners on unmount
+    return () => {
+      if (canvas) {
+        canvas.off('mouse:down');
+        canvas.off('mouse:move');
+        canvas.off('mouse:up');
       }
-    }, DRAWING_EVENT_CONSTANTS.CLEANUP_TIMEOUT);
-    
-    timeoutsRef.current.push(timeoutId);
-  }, [fabricCanvasRef, drawingState.currentPath, processCreatedPath, setDrawingState, tool]);
-  
+    };
+  }, [
+    canvas, 
+    activeTool, 
+    startDrawing, 
+    continueDrawing, 
+    endDrawing,
+    startWallDrawing,
+    continueWallDrawing,
+    endWallDrawing,
+    startRoomDrawing,
+    continueRoomDrawing,
+    endRoomDrawing,
+    startMeasuring,
+    continueMeasuring,
+    endMeasuring,
+    handleTextTool,
+    handleEraserTool
+  ]);
+
   return {
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    cleanupTimeouts
+    isDrawing,
+    currentPath
   };
 };

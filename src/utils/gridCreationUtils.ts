@@ -4,7 +4,7 @@
  * Provides utilities for creating and managing grids
  * @module gridCreationUtils
  */
-import { Canvas as FabricCanvas, Line, Rect, Object as FabricObject, fabric } from "fabric";
+import { Canvas as FabricCanvas, Line, Rect, Object as FabricObject } from "fabric";
 import logger from "./logger";
 import { createSimpleGrid } from "./simpleGridCreator";
 

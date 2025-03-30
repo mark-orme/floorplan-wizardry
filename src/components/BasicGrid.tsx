@@ -1,6 +1,5 @@
-
 import React, { useEffect, useRef } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, fabric } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { createSimpleGrid, ensureGridVisible } from "@/utils/simpleGridCreator";
 import { toast } from "sonner";
 

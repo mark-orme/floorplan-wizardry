@@ -1,4 +1,3 @@
-
 /**
  * Types related to drawing operations
  * @module types/drawingTypes
@@ -76,3 +75,28 @@ export const createDefaultDrawingState = (): CoreDrawingState => {
 
 // Re-export the DrawingMode enum for backwards compatibility
 export { DrawingMode };
+
+/**
+ * Drawing tool types
+ * Defines the available drawing tools for the canvas
+ */
+
+/**
+ * Drawing tool enum
+ * Single source of truth for all drawing tool names
+ */
+export enum DrawingTool {
+  Select = "select",
+  Draw = "draw",
+  Wall = "wall",
+  Room = "room",
+  Measure = "measure",
+  Text = "text",
+  Eraser = "eraser"
+}
+
+/**
+ * Drawing tool type
+ * Type definition that maps to DrawingTool enum values
+ */
+export type DrawingToolType = `${DrawingTool}`;

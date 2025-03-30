@@ -1,9 +1,8 @@
-
 /**
  * Types for canvas event handlers
  * @module canvas-events/types
  */
-import fabric from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
@@ -11,7 +10,7 @@ import { DrawingMode } from '@/constants/drawingModes';
  */
 export interface BaseEventProps {
   /** Reference to fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<fabric.Canvas | null>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current drawing tool */
   tool: DrawingMode;
 }
@@ -51,7 +50,7 @@ export interface UsePathEventsProps extends BaseEventProps {
   /** Save current canvas state */
   saveCurrentState: () => void;
   /** Process a newly created path */
-  processCreatedPath?: (path: fabric.Path) => void;
+  processCreatedPath?: (path: FabricObject) => void;
   /** Handle mouse up event */
   handleMouseUp?: (e?: MouseEvent | TouchEvent) => void;
 }
@@ -179,7 +178,7 @@ export type EventHandlerMap = Record<string, (e: any) => void>;
 /**
  * Editable fabric object interface
  */
-export interface EditableFabricObject extends fabric.Object {
+export interface EditableFabricObject extends FabricObject {
   /** Whether the object is being edited */
   isEditing?: boolean;
 }
@@ -189,5 +188,5 @@ export interface EditableFabricObject extends fabric.Object {
  */
 export interface TargetEvent {
   /** Target object */
-  target: fabric.Object;
+  target: FabricObject;
 }
