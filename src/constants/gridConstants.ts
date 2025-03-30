@@ -37,5 +37,25 @@ export const GRID_CONSTANTS = {
   THROTTLE_TIME: 2000,
   
   /** Grid visibility check interval in ms */
-  VISIBILITY_CHECK_INTERVAL: 3000
+  VISIBILITY_CHECK_INTERVAL: 3000,
+  
+  /** Pixels per meter for scale representation */
+  PIXELS_PER_METER: 100,
+  
+  /** Marker text size in pixels */
+  MARKER_TEXT_SIZE: 12,
+  
+  /** Marker text color */
+  MARKER_COLOR: "#555555",
+  
+  /** Small grid spacing value (alias) */
+  SMALL_GRID: 20,
+  
+  /** Large grid spacing value (alias) */
+  LARGE_GRID: 100
 };
+
+/**
+ * For backward compatibility
+ */
+export const PIXELS_PER_METER = GRID_CONSTANTS.PIXELS_PER_METER;

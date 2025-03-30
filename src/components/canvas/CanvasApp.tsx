@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { useCanvasController } from './controller/CanvasController';
@@ -13,9 +12,13 @@ import { ChevronDown } from 'lucide-react';
 
 interface CanvasAppProps {
   createGrid?: (canvas: FabricCanvas, existingGrid?: FabricObject[]) => FabricObject[];
+  setCanvas?: (canvas: FabricCanvas | null) => void;
 }
 
-export const CanvasApp: React.FC<CanvasAppProps> = ({ createGrid = createBasicGrid }) => {
+export const CanvasApp: React.FC<CanvasAppProps> = ({ 
+  createGrid = createBasicGrid,
+  setCanvas: externalSetCanvas
+}) => {
   const { canvas, setCanvas, canvasRef, clearCanvas } = useCanvasController();
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
@@ -45,6 +48,11 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ createGrid = createBasicGr
       fabricCanvasRef.current = fabricCanvas;
       setCanvas(fabricCanvas);
       
+      // Also provide canvas to external handler if provided
+      if (externalSetCanvas) {
+        externalSetCanvas(fabricCanvas);
+      }
+      
       // Create grid
       if (createGrid) {
         const gridObjects = createGrid(fabricCanvas);
@@ -60,12 +68,16 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ createGrid = createBasicGr
         fabricCanvas.dispose();
         fabricCanvasRef.current = null;
         setCanvas(null);
+        
+        if (externalSetCanvas) {
+          externalSetCanvas(null);
+        }
       };
     } catch (error) {
       console.error('Error initializing canvas:', error);
       toast.error('Failed to initialize canvas');
     }
-  }, [canvasRef, setCanvas, createGrid, lineThickness, lineColor]);
+  }, [canvasRef, setCanvas, externalSetCanvas, createGrid, lineThickness, lineColor]);
   
   // Handle tool change
   const handleToolChange = useCallback((newTool: DrawingTool) => {
