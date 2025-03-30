@@ -4,7 +4,8 @@
  */
 import { useState, useCallback } from 'react';
 import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
-import { Point } from '@/types/drawingTypes';
+import type { Point } from '@/types/drawingTypes';
+import type { DrawingTool } from '@/types/drawing/DrawingToolTypes';
 
 /**
  * Hook for managing drawing state
@@ -13,6 +14,7 @@ import { Point } from '@/types/drawingTypes';
 export const useDrawingState = () => {
   // Initialize with default state
   const [drawingState, setDrawingState] = useState<DrawingState>(createDefaultDrawingState());
+  const [currentTool, setCurrentTool] = useState<DrawingTool | null>(null);
   
   /**
    * Start drawing operation
@@ -22,7 +24,9 @@ export const useDrawingState = () => {
   const startDrawing = useCallback((x: number, y: number) => {
     setDrawingState(prev => ({
       ...prev,
-      isDrawing: true
+      isDrawing: true,
+      startPoint: { x, y },
+      pathStartPoint: { x, y }
     }));
   }, []);
   
@@ -88,6 +92,8 @@ export const useDrawingState = () => {
     endDrawing,
     resetDrawing,
     updateDistance,
-    updateCursorPosition
+    updateCursorPosition,
+    currentTool,
+    setCurrentTool
   };
 };

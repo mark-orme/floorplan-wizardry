@@ -7,14 +7,15 @@
 import { useState } from 'react';
 import { BRUSH_CONSTANTS } from '@/constants/brushConstants';
 import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
+import type { DrawingTool } from '@/types/drawing/DrawingToolTypes';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Re-export DrawingMode as DrawingTool for backward compatibility
- * This is the canonical source for DrawingTool type across the app
+ * Export DrawingTool and DrawingMode from the canonical source
+ * This ensures consistency across the application
  */
-export type DrawingTool = DrawingMode;
 export { DrawingMode };
+export type { DrawingTool };
 
 /**
  * Canvas state interface

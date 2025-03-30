@@ -3,7 +3,7 @@
  * Core drawing tool types
  * @module types/core/DrawingTool
  */
-import { DrawingMode } from '@/constants/drawingModes';
+import type { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Re-export DrawingMode as DrawingTool for backward compatibility
@@ -14,4 +14,4 @@ export type DrawingTool = DrawingMode;
 /**
  * Re-export the DrawingMode enum to make it accessible from this module
  */
-export { DrawingMode };
+export { DrawingMode } from '@/constants/drawingModes';

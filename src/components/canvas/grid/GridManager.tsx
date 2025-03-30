@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useLayoutEffect } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createCompleteGrid, createBasicEmergencyGrid } from '@/utils/grid/gridRenderers';
 import { toast } from 'sonner';
@@ -25,13 +25,49 @@ export const GridManager: React.FC<GridManagerProps> = ({
   onGridCreated
 }) => {
   const gridCreatedRef = useRef(false);
+  const gridCreationAttemptsRef = useRef(0);
+  const MAX_RETRY_ATTEMPTS = 5;
+  const RETRY_DELAY = 300; // ms
   
-  // Create grid when component mounts or canvas changes
-  useEffect(() => {
+  // Create grid using layout effect to ensure DOM measurements are complete
+  useLayoutEffect(() => {
+    if (!canvas || gridCreatedRef.current) return;
+    
+    // Check if canvas has valid dimensions
+    if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
+      console.warn("Canvas has zero dimensions, scheduling retry...", {
+        width: canvas.width,
+        height: canvas.height,
+        attempt: gridCreationAttemptsRef.current + 1
+      });
+      
+      // Increment attempts counter
+      gridCreationAttemptsRef.current += 1;
+      
+      // If we haven't exceeded max attempts, schedule retry
+      if (gridCreationAttemptsRef.current < MAX_RETRY_ATTEMPTS) {
+        const timerId = setTimeout(() => attemptGridCreation(), RETRY_DELAY);
+        return () => clearTimeout(timerId);
+      } else {
+        console.error("Maximum grid creation attempts reached with zero dimensions");
+        toast.error("Could not initialize grid - please refresh the page");
+        return;
+      }
+    }
+    
+    // If we have dimensions, create the grid immediately
+    attemptGridCreation();
+  }, [canvas]);
+  
+  // Attempt to create the grid
+  const attemptGridCreation = () => {
     if (!canvas || gridCreatedRef.current) return;
     
     try {
-      console.log("Creating grid on canvas");
+      console.log("Creating grid on canvas with dimensions:", {
+        width: canvas.width, 
+        height: canvas.height
+      });
       
       // Check if canvas has valid dimensions
       if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
@@ -64,6 +100,8 @@ export const GridManager: React.FC<GridManagerProps> = ({
           if (onGridCreated) {
             onGridCreated(emergencyGrid);
           }
+          
+          console.log("Emergency grid created successfully with", emergencyGrid.length, "objects");
         } else {
           console.error("Both regular and emergency grid creation failed");
           toast.error("Failed to create grid");
@@ -76,6 +114,8 @@ export const GridManager: React.FC<GridManagerProps> = ({
         if (onGridCreated) {
           onGridCreated(gridObjects);
         }
+        
+        console.log("Grid created successfully with", gridObjects.length, "objects");
       }
       
       // Update grid visibility
@@ -105,7 +145,7 @@ export const GridManager: React.FC<GridManagerProps> = ({
         console.error("Emergency grid creation also failed:", emergencyError);
       }
     }
-  }, [canvas]);
+  };
   
   // Update grid visibility when visible prop changes
   useEffect(() => {
