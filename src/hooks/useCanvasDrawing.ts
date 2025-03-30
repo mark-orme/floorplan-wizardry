@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas drawing operations
  * Manages drawing events, path creation, and shape processing
@@ -148,18 +147,6 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
   });
   
   return {
-    drawingState: {
-      ...drawingState,
-      isDrawing: false,
-      currentPath: null,
-      pathStartPoint: null,
-      startPoint: null,
-      currentPoint: null,
-      points: [],
-      distance: null,
-      cursorPosition: null,
-      currentZoom: 1,
-      zoomLevel: 1
-    }
+    drawingState: createDefaultDrawingState()
   };
 };

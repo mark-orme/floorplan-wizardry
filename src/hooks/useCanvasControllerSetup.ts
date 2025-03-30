@@ -7,7 +7,7 @@ import { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasInitialization } from "@/hooks/canvas-initialization";
 import { DebugInfoState } from "@/types/drawingTypes";
-import { DrawingTool } from "@/types/drawingTypes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import logger from "@/utils/logger";
 
@@ -19,7 +19,7 @@ interface UseCanvasControllerSetupProps {
   /** Current canvas dimensions */
   canvasDimensions: { width: number; height: number };
   /** Current drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current floor index */
   currentFloor: number;
   /** Function to set zoom level */

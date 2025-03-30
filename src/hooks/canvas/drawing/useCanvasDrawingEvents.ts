@@ -13,7 +13,8 @@ import {
   Group as FabricGroup,
   Text as FabricText,
   TOptions,
-  TPointerEvent
+  TPointerEvent,
+  InteractiveFabricObject
 } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasContext } from "@/contexts/CanvasContext";
@@ -537,7 +538,7 @@ export const useCanvasDrawingEvents = (
       const distanceCm = Math.round(distance);
       
       // Update measurement label
-      const text = (line as any).measurementLabel as FabricIText;
+      const text = (line as any).measurementLabel as FabricText;
       if (text) {
         text.set({
           text: `${distanceCm} cm`,
@@ -562,10 +563,16 @@ export const useCanvasDrawingEvents = (
     try {
       // Finalize the measurement
       const line = currentPath as FabricLine;
-      const text = (line as any).measurementLabel as FabricIText;
+      
+      // Get the measurement label
+      const text = (line as any).measurementLabel as FabricText;
+      
+      // Create a proper cast for fabric objects to use in Group
+      const lineAsObject = line as unknown as InteractiveFabricObject;
+      const textAsObject = text as unknown as InteractiveFabricObject;
       
       // Group line and text together
-      const group = new FabricGroup([line, text], {
+      const group = new FabricGroup([lineAsObject, textAsObject], {
         selectable: true
       });
       
