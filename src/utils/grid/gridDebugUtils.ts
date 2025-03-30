@@ -114,22 +114,26 @@ export const forceCreateGrid = (
  * @returns {object} Memory usage statistics
  */
 export const getMemoryUsage = (): { total?: number, used?: number, limit?: number } => {
-  // Fix: Properly type check and handle performance.memory which isn't available in all browsers
+  // Check if performance is available
   if (typeof performance === 'undefined') {
     return {};
   }
   
-  // Add type check for performance.memory which is a non-standard API
-  const perfMemory = (performance as any).memory;
-  if (!perfMemory) {
-    return {};
+  // Safely check and access performance.memory property (Chrome only)
+  if (performance && 'memory' in performance) {
+    const perfMemory = (performance as any).memory;
+    
+    if (perfMemory) {
+      return {
+        total: perfMemory.totalJSHeapSize,
+        used: perfMemory.usedJSHeapSize,
+        limit: perfMemory.jsHeapSizeLimit
+      };
+    }
   }
   
-  return {
-    total: perfMemory.totalJSHeapSize,
-    used: perfMemory.usedJSHeapSize,
-    limit: perfMemory.jsHeapSizeLimit
-  };
+  // Return empty object if memory info is not available
+  return {};
 };
 
 /**

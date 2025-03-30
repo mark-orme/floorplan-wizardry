@@ -44,11 +44,66 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       );
       existingGrid.forEach(obj => canvas.remove(obj));
       
-      // Create new grid
-      return forceCreateGrid(canvas);
+      // Create new grid - use direct implementation for reliability
+      const gridObjects: FabricObject[] = [];
+      
+      // Use constants for grid spacing
+      const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+      const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
+      
+      // Calculate grid dimensions to cover the entire canvas with margin
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      // Create vertical grid lines - both small and large
+      for (let x = 0; x <= width; x += smallGridSize) {
+        // Create vertical line
+        const isLargeLine = x % largeGridSize === 0;
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
+          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          excludeFromExport: true,
+          hoverCursor: 'default'
+        });
+        
+        canvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      // Create horizontal grid lines - both small and large
+      for (let y = 0; y <= height; y += smallGridSize) {
+        // Create horizontal line
+        const isLargeLine = y % largeGridSize === 0;
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
+          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          excludeFromExport: true,
+          hoverCursor: 'default'
+        });
+        
+        canvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      // Send all grid objects to back
+      gridObjects.forEach(obj => {
+        canvas.sendToBack(obj);
+      });
+      
+      // Force render
+      canvas.requestRenderAll();
+      
+      return gridObjects;
     } catch (error) {
       console.error("Error creating simple grid:", error);
-      return [];
+      // Fallback to debug grid if regular fails
+      return forceCreateGrid(canvas);
     }
   };
   

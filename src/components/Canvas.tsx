@@ -27,27 +27,42 @@ export const Canvas: React.FC<CanvasProps> = ({
     try {
       console.log("Canvas component: Initializing Fabric canvas with dimensions", width, "x", height);
       
-      // Initialize Fabric.js canvas
+      // Initialize Fabric.js canvas with proper dimensions
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
         backgroundColor: "#FFFFFF",
         selection: true,
-        preserveObjectStacking: true
+        preserveObjectStacking: true,
+        renderOnAddRemove: true,
+        stopContextMenu: true
       });
       
       // Store the canvas in ref for component internal use
       fabricCanvasRef.current = fabricCanvas;
       
-      // Set up drawing brush - ensure initialization is done properly
-      if (fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.color = "#000000";
-        fabricCanvas.freeDrawingBrush.width = 2;
-        fabricCanvas.isDrawingMode = false; // Start in selection mode by default
+      // Ensure drawing brush is properly initialized
+      if (!fabricCanvas.freeDrawingBrush) {
+        fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
       }
+      
+      // Set up drawing brush - ensure initialization is done properly
+      fabricCanvas.freeDrawingBrush.color = "#000000";
+      fabricCanvas.freeDrawingBrush.width = 2;
+      fabricCanvas.isDrawingMode = false; // Start in selection mode by default
+      
+      // Configure necessary canvas event options for proper tool handling
+      fabricCanvas.selection = true;
+      fabricCanvas.hoverCursor = 'move';
+      
+      // Mark canvas as initialized for grid tools
+      (fabricCanvas as any).initialized = true;
       
       // Update context
       setCanvas(fabricCanvas);
+      
+      // Force initial render to ensure all setup is displayed
+      fabricCanvas.requestRenderAll();
       
       // Notify parent component
       if (onCanvasReady) {
