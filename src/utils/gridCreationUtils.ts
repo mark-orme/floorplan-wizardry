@@ -1,4 +1,3 @@
-
 /**
  * Grid creation utilities
  * @module utils/gridCreationUtils
@@ -57,13 +56,81 @@ export const createBasicEmergencyGrid = (canvas: FabricCanvas): FabricObject[] =
 };
 
 /**
- * Create a complete grid with major and minor lines
+ * Create an enhanced grid with major and minor lines
  * @param {FabricCanvas} canvas - Canvas to create grid on
  * @returns {FabricObject[]} Created grid objects
  */
-export const createCompleteGrid = (canvas: FabricCanvas): FabricObject[] => {
-  // For now, delegate to the emergency grid
-  return createBasicEmergencyGrid(canvas);
+export const createEnhancedGrid = (canvas: FabricCanvas): FabricObject[] => {
+  if (!canvas) return [];
+  
+  try {
+    const gridObjects: FabricObject[] = [];
+    const width = canvas.width || 800;
+    const height = canvas.height || 600;
+    const smallGridSize = 20;
+    const largeGridSize = 100;
+    
+    // Create small grid lines (minor)
+    for (let i = 0; i <= height; i += smallGridSize) {
+      const line = new Line([0, i, width, i], {
+        stroke: '#e5e5e5',
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    for (let i = 0; i <= width; i += smallGridSize) {
+      const line = new Line([i, 0, i, height], {
+        stroke: '#e5e5e5',
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create large grid lines (major)
+    for (let i = 0; i <= height; i += largeGridSize) {
+      const line = new Line([0, i, width, i], {
+        stroke: '#cccccc',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    for (let i = 0; i <= width; i += largeGridSize) {
+      const line = new Line([i, 0, i, height], {
+        stroke: '#cccccc',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    canvas.renderAll();
+    return gridObjects;
+  } catch (error) {
+    console.error("Error creating enhanced grid:", error);
+    // Fallback to basic grid on error
+    return createBasicEmergencyGrid(canvas);
+  }
 };
 
 /**

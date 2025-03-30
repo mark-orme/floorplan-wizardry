@@ -1,4 +1,3 @@
-
 /**
  * Canvas grid utilities
  * @module utils/canvasGrid

@@ -6,7 +6,7 @@
  */
 
 // Export types
-export { GridAttemptTracker } from "./gridAttemptTracker";
+export type { GridAttemptTracker } from "./gridAttemptTracker";
 export type { UseGridManagementProps, UseGridManagementResult } from "./types";
 
 // Export hooks

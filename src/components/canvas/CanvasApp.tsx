@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { useCanvasController } from "./controller/CanvasController";
-import { createEnhancedGrid } from "@/utils/gridCreationUtils";
+import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 import { initializeDrawingBrush } from "@/utils/fabricBrush";
 import { DrawingMode } from "@/constants/drawingModes";
 import { DrawingToolbar } from "../DrawingToolbar";
@@ -48,7 +48,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ createGrid }) => {
       brush.width = lineThickness;
       
       // Create grid using the provided function or default
-      const gridCreator = createGrid || createEnhancedGrid;
+      const gridCreator = createGrid || createBasicEmergencyGrid;
       const gridObjects = gridCreator(fabricCanvas);
       gridObjectsRef.current = gridObjects;
       

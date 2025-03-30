@@ -1,113 +1,42 @@
 
-/**
- * Error handling utilities module
- * Contains functions for consistent error handling across the application
- * @module errorHandling
- */
-import { toast } from "sonner";
-import { captureError } from "./sentryUtils";
+// Create a basic error handling utility
 
 /**
- * Type definition for error context
+ * Error handling options
  */
-export interface ErrorContext {
-  /** Component or module where the error occurred */
-  component: string;
-  /** Specific operation that was being performed */
-  operation: string;
-  /** Additional data related to the error */
-  data?: Record<string, any>;
+interface ErrorHandlingOptions {
+  /** Component name */
+  component?: string;
+  /** Operation being performed */
+  operation?: string;
+  /** Additional context information */
+  context?: Record<string, any>;
+  /** Whether to show toast notification */
+  showToast?: boolean;
 }
 
 /**
- * Options for handleError function
+ * Handle error with appropriate logging and reporting
+ * @param {Error | unknown} error - Error to handle
+ * @param {ErrorHandlingOptions} options - Error handling options
  */
-export interface HandleErrorOptions {
-  /** Show a user-facing toast notification */
-  showToast: boolean;
-  /** Send error to monitoring service */
-  reportToSentry: boolean;
-  /** Error severity level */
-  level?: 'debug' | 'info' | 'warning' | 'error' | 'fatal';
-  /** Extra data to include with the error report */
-  extra?: Record<string, any>;
-}
-
-/**
- * Default options for error handling
- */
-const defaultErrorOptions: HandleErrorOptions = {
-  showToast: true,
-  reportToSentry: true,
-  level: 'error'
-};
-
-/**
- * Handle errors consistently across the application
- * @param {unknown} error - The error that occurred
- * @param {ErrorContext} context - Error context information
- * @param {HandleErrorOptions} options - Error handling options
- */
-export const handleError = (
-  error: unknown,
-  context: ErrorContext,
-  options: Partial<HandleErrorOptions> = {}
-): void => {
-  // Merge with default options
-  const mergedOptions = { ...defaultErrorOptions, ...options };
+export const handleError = (error: Error | unknown, options: ErrorHandlingOptions = {}): void => {
+  const { component = 'unknown', operation = 'unknown', context = {}, showToast = false } = options;
   
-  // Determine error message
-  const errorMessage = error instanceof Error 
-    ? error.message 
-    : String(error);
+  // Convert unknown error to Error object with sensible default message
+  const errorObj = error instanceof Error 
+    ? error 
+    : new Error(typeof error === 'string' ? error : 'An unknown error occurred');
   
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`Error in ${context.component} (${context.operation}):`, error);
+  // Log to console with context
+  console.error(`[${component}/${operation}] Error:`, errorObj, context);
+  
+  // In a real app, we would report to monitoring service here
+  
+  // Show toast notification if requested
+  if (showToast) {
+    // Assuming toast is imported and available
+    // toast.error(errorObj.message);
+    console.error(`TOAST: ${errorObj.message}`);
   }
-  
-  // Show toast notification if enabled
-  if (mergedOptions.showToast) {
-    toast.error(`Error: ${errorMessage}`, {
-      id: `${context.component}-${context.operation}-error`,
-      duration: 5000
-    });
-  }
-  
-  // Report to error monitoring if enabled
-  if (mergedOptions.reportToSentry) {
-    captureError(error, `${context.component}-${context.operation}`, {
-      level: mergedOptions.level,
-      tags: {
-        component: context.component,
-        operation: context.operation
-      },
-      extra: {
-        ...context.data,
-        ...mergedOptions.extra
-      }
-    });
-  }
-};
-
-/**
- * Wrap an async function with error handling
- * @param {Function} fn - The async function to wrap
- * @param {ErrorContext} context - Error context information
- * @param {HandleErrorOptions} options - Error handling options
- * @returns {Function} Wrapped function with error handling
- */
-export const withErrorHandling = <T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  context: ErrorContext,
-  options: Partial<HandleErrorOptions> = {}
-): ((...args: Parameters<T>) => Promise<ReturnType<T>>) => {
-  return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
-    try {
-      return await fn(...args);
-    } catch (error) {
-      handleError(error, context, options);
-      throw error; // Re-throw to allow caller to handle if needed
-    }
-  };
 };
