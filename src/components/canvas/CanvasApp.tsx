@@ -1,45 +1,39 @@
 
-/**
- * Canvas application component
- * Main component that wraps the canvas with necessary UI elements
- * @module CanvasApp
- */
-import { Canvas } from "@/components/Canvas";
-import CanvasLayout from "@/components/CanvasLayout"; 
-import { DrawingManager } from "@/components/canvas/DrawingManager";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import React, { useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { CanvasControllerEnhanced } from "./controller/CanvasControllerEnhanced";
+import { ConnectedDrawingCanvas } from "./ConnectedDrawingCanvas";
+import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
+import { resetGridProgress } from "@/utils/gridManager";
 
-/**
- * Props for the CanvasApp component
- */
-export interface CanvasAppProps {
-  /** Function to set the canvas instance */
+interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
-  /** Optional function to create grid on canvas */
-  createGrid?: (canvas: FabricCanvas) => FabricObject[];
 }
 
-/**
- * Canvas application component
- * Wraps the canvas with necessary controllers and UI
- * @returns {JSX.Element} Rendered component
- */
-export const CanvasApp = ({ setCanvas, createGrid }: CanvasAppProps): JSX.Element => {
+export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
+  // Reset initialization state when component mounts
+  useEffect(() => {
+    resetInitializationState();
+    resetGridProgress();
+    
+    return () => {
+      // Clean up when component unmounts
+      if (setCanvas) {
+        setCanvas(null);
+      }
+    };
+  }, [setCanvas]);
+  
   return (
-    <CanvasLayout>
-      <Canvas 
-        onCanvasReady={canvas => {
-          if (setCanvas) {
-            setCanvas(canvas);
-          }
-          
-          // Create grid if function provided
-          if (createGrid && canvas) {
-            createGrid(canvas);
-          }
-        }} 
-      />
-      <DrawingManager />
-    </CanvasLayout>
+    <CanvasControllerEnhanced>
+      <div className="w-full h-full flex flex-col">
+        <div className="flex-1 overflow-hidden">
+          <ConnectedDrawingCanvas 
+            width={window.innerWidth - 48}
+            height={window.innerHeight - 120}
+          />
+        </div>
+      </div>
+    </CanvasControllerEnhanced>
   );
 };

@@ -1,8 +1,12 @@
 
+/**
+ * Updated FloorPlans page component
+ * Uses the enhanced canvas with improved grid and drawing integration
+ */
 import React, { useEffect, useState } from "react";
-import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
+import { resetGridProgress } from "@/utils/gridManager";
 import { toast } from "sonner";
 import { Canvas as FabricCanvas } from "fabric";
 
@@ -17,9 +21,10 @@ const FloorPlans = () => {
   // Reset canvas initialization state when the page loads
   useEffect(() => {
     resetInitializationState();
+    resetGridProgress();
     
     // Log a welcome message
-    toast.success("Floor Plan Editor loaded", {
+    toast.success("Floor Plan Editor loaded with enhanced drawing tools", {
       duration: 3000,
       id: "floor-plan-welcome"
     });
@@ -32,9 +37,7 @@ const FloorPlans = () => {
       </div>
       
       <div className="flex-1 overflow-hidden">
-        <CanvasControllerProvider>
-          <CanvasApp setCanvas={setCanvas} />
-        </CanvasControllerProvider>
+        <CanvasApp setCanvas={setCanvas} />
       </div>
     </main>
   );
