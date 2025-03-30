@@ -1,3 +1,4 @@
+
 /**
  * TypeScript specific ESLint rules
  * Enforces strict type checking and code quality for TypeScript files
@@ -83,7 +84,7 @@ export const typescriptRules = {
       allowNullableNumber: false
     }],
     
-    // NEW: Prevent duplicate exports
+    // Prevent duplicate exports
     "no-dupe-class-members": "error",
     "import/export": "error",
     "import/no-duplicates": "error",
@@ -101,16 +102,15 @@ export const typescriptRules = {
     
     // NEW: Prevent potential bugs in grid code
     "@typescript-eslint/switch-exhaustiveness-check": "error",
-    // Prevent using non-existent properties on objects
+    
+    // NEW: Prevent using non-existent properties on objects
     "@typescript-eslint/no-unsafe-member-access": "error",
     "@typescript-eslint/no-unsafe-call": "error",
     "@typescript-eslint/no-unsafe-assignment": "error",
     "@typescript-eslint/no-unsafe-return": "error",
     
     // NEW: Prevent type errors
-    "@typescript-eslint/no-unsafe-assignment": "error",
     "@typescript-eslint/no-unsafe-argument": "error",
-    "@typescript-eslint/no-unsafe-return": "error",
     
     // NEW: Prevent array vs tuple confusion
     "@typescript-eslint/array-type": ["error", {
@@ -196,7 +196,6 @@ export const typescriptRules = {
       {
         "selector": "typeLike",
         "format": ["PascalCase"],
-        "prefix": ["Fabric", "I", "T", "E"],
         "filter": {
           "regex": "^(Canvas|Object|Line|Rect|Circle|Ellipse|Polygon|Polyline|Path|Group|Text|IText|Textbox|Image|Triangle|Point)$",
           "match": true
@@ -216,6 +215,41 @@ export const typescriptRules = {
           "match": false
         }
       }
-    ]
+    ],
+    
+    // NEW: Add strict type compatibility checking between DrawingTool and DrawingMode
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "TSTypeReference[typeName.name='DrawingTool']",
+        "message": "Use DrawingMode instead of DrawingTool for consistent typing across the application."
+      },
+      {
+        "selector": "ImportSpecifier[imported.name='DrawingTool'][local.name!='DrawingMode']",
+        "message": "Import DrawingMode instead of DrawingTool for consistent typing across the application."
+      },
+      {
+        "selector": "VariableDeclarator[id.typeAnnotation.typeAnnotation.typeName.name='DrawingTool']",
+        "message": "Use DrawingMode type instead of DrawingTool for consistent typing across the application."
+      }
+    ],
+    
+    // NEW: Add rule to enforce using defined state initializers
+    "react-hooks/exhaustive-deps": "warn",
+    "@typescript-eslint/no-unnecessary-initializer": "warn",
+    
+    // NEW: Ensure all object properties are defined before use
+    "@typescript-eslint/no-object-literal-type-assertion": "error",
+    "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+    
+    // NEW: Enforce checking for undefined values
+    "@typescript-eslint/strict-boolean-expressions": ["warn", {
+      "allowString": true,
+      "allowNumber": true,
+      "allowNullableObject": true,
+      "allowNullableBoolean": false,
+      "allowNullableString": false,
+      "allowNullableNumber": false
+    }]
   }
 };

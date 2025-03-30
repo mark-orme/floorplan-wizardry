@@ -63,6 +63,11 @@ export const exportValidationRules = {
           "group": ["*/gridCreationUtils", "*/gridCreation"],
           "importNames": ["validateGrid", "createGridLayer", "createFallbackGrid", "createBasicEmergencyGrid"],
           "message": "These functions must be properly exported from the grid utilities"
+        },
+        {
+          "group": ["@/types/drawingTypes", "@/types/core/DrawingTool"],
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified type from '@/types/drawing/DrawingToolTypes'"
         }
       ]
     }],
@@ -144,6 +149,27 @@ export const exportValidationRules = {
       allowNullableBoolean: false,
       allowNullableString: false,
       allowNullableNumber: false
+    }],
+    
+    // NEW: Rule to specifically target DrawingTool vs DrawingMode imports
+    "no-restricted-imports": ["error", {
+      "paths": [
+        {
+          "name": "@/types/drawingTypes",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified types from '@/types/drawing/DrawingToolTypes'"
+        },
+        {
+          "name": "@/types/core/DrawingTool",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified types from '@/types/drawing/DrawingToolTypes'"
+        },
+        {
+          "name": "@/hooks/useCanvasState",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' or use the unified types from '@/types/drawing/DrawingToolTypes'"
+        }
+      ]
     }],
     
     // NEW: Prevent duplicate exports in the same file

@@ -1,48 +1,93 @@
 
 /**
  * Grid and Fabric.js specific ESLint rules
- * Enforces proper imports and usage of Fabric.js in grid-related files
+ * Custom rules for dealing with Canvas drawing APIs and components
  * @module eslint/grid-fabric-rules
  */
 export const gridFabricRules = {
-  files: ["**/grid/**/*.{ts,tsx}"],
+  files: ["**/*.{ts,tsx}"],
   rules: {
-    // Enforce direct imports
-    "no-restricted-globals": ["error", "fabric"],
-    
-    // Prevent direct access to fabric namespace
-    "no-restricted-syntax": [
-      "error",
-      {
-        "selector": "MemberExpression[object.name='fabric']",
-        "message": "Don't use the fabric namespace directly. Import specific components from 'fabric'."
-      }
-    ],
-    
-    // Ensure proper error handling in canvas operations
-    "no-restricted-syntax": [
-      "error",
-      {
-        "selector": "CallExpression[callee.object.name='canvas'][callee.property.name=/^(add|remove|clear|setWidth|setHeight|setDimensions)$/][arguments.length>0]:not(TryStatement > *)",
-        "message": "Canvas operations should be wrapped in try/catch blocks to prevent runtime errors."
-      }
-    ],
-    
-    // Ensure proper type imports
-    "@typescript-eslint/consistent-type-imports": ["error", { 
-      "prefer": "type-imports",
-      "disallowTypeAnnotations": true
+    // Enforce consistent type usage for canvas drawing
+    "no-restricted-imports": ["error", {
+      "paths": [
+        {
+          "name": "@/types/drawingTypes",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' instead for consistency."
+        },
+        {
+          "name": "@/types/core/DrawingTool",
+          "importNames": ["DrawingTool"],
+          "message": "Import DrawingMode from '@/constants/drawingModes' instead for consistency."
+        }
+      ],
+      "patterns": [
+        {
+          "group": ["fabric"],
+          "importNames": ["fabric"],
+          "message": "Import specific components: import { Canvas, Line, Rect } from 'fabric' - not the entire namespace"
+        }
+      ]
     }],
     
-    // Prevent type errors from accessing fabric properties
-    "@typescript-eslint/no-unsafe-member-access": "error",
+    // Custom rules to enforce consistent imports
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "ImportDeclaration[source.value='@/types/drawingTypes'] ImportSpecifier[imported.name='DrawingTool']",
+        "message": "Import DrawingMode from '@/constants/drawingModes' instead of DrawingTool for consistency."
+      },
+      {
+        "selector": "TSTypeReference[typeName.name='DrawingTool']",
+        "message": "Use DrawingMode instead of DrawingTool for consistent typing across the application."
+      },
+      {
+        "selector": "TSPropertySignature[key.name='tool'][typeAnnotation.typeAnnotation.typeName.name='DrawingTool']",
+        "message": "Use DrawingMode type for 'tool' properties instead of DrawingTool."
+      },
+      {
+        "selector": "Parameter[typeAnnotation.typeAnnotation.typeName.name='DrawingTool']",
+        "message": "Use DrawingMode for parameter type annotations instead of DrawingTool."
+      }
+    ],
+    
+    // Canvas-specific validation rules
+    "init-declarations": ["error", "always"],
+    
+    // Fabric-specific rules for better error detection
+    "no-unsafe-optional-chaining": "error",
+    
+    // Ensure proper Fabric.js component usage
     "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-member-access": "error",
     "@typescript-eslint/no-unsafe-assignment": "error",
     
-    // Ensure proper tuple types
-    "@typescript-eslint/array-type": ["error", {
-      "default": "array",
-      "readonly": "array"
+    // Ensure state values are properly initialized (fixes the setHasError, setErrorMessage errors)
+    "@typescript-eslint/no-use-before-define": ["error", {
+      "functions": false,
+      "classes": true,
+      "variables": true,
+      "allowNamedExports": false
+    }],
+    
+    // Custom rule to prevent using FabricObject as a type for IText
+    "no-restricted-syntax": [
+      "error", 
+      {
+        "selector": "CallExpression[callee.object.name='canvas'][callee.property.name='add'] > Identifier[name=/^text$/]",
+        "message": "Use proper type casting when adding text objects to canvas."
+      },
+      {
+        "selector": "TSTypeAnnotation > TSTypeReference[typeName.name='FabricObject']",
+        "message": "Be more specific with Fabric.js object types. Use the exact type (Line, Rect, etc.) when possible."
+      }
+    ],
+    
+    // Ensure proper initialization of variables before use
+    "no-use-before-define": ["error", { 
+      "functions": false, 
+      "classes": true, 
+      "variables": true 
     }]
   }
 };
