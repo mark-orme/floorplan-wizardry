@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for error capture and reporting to Sentry
  * @module utils/sentryUtils
@@ -162,7 +161,9 @@ export function captureMessage(
       }
       
       // Capture the message with the correct type for Sentry
-      Sentry.captureMessage(`[${messageId}] ${message}`, level as Sentry.SeverityLevel);
+      // Convert the string level to a Sentry.SeverityLevel type
+      const sentryLevel = level as Sentry.SeverityLevel;
+      Sentry.captureMessage(`[${messageId}] ${message}`, sentryLevel);
     } else {
       // Mock Sentry capture
       console.info(`[Sentry Mock] Captured ${level} message [${messageId}]:`, message);
