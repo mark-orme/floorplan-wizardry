@@ -16,5 +16,9 @@ export { useGridManagement } from "./useGridManagement";
 export { 
   incrementAttemptCount, 
   markCreationSuccessful, 
-  isMaxAttemptsReached 
+  isMaxAttemptsReached,
+  markInitialAttempted,
+  incrementTotalAttempts,
+  incrementSuccessfulAttempts,
+  setLastError
 } from "./gridAttemptTracker";

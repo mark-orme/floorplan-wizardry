@@ -36,6 +36,16 @@ interface UseCanvasErrorHandlingResult {
 }
 
 /**
+ * Convert unknown error to proper Error object
+ * @param {unknown} error - The error to convert
+ * @returns {Error} Converted error
+ */
+const convertToError = (error: unknown): Error => {
+  if (error instanceof Error) return error;
+  return new Error(typeof error === 'string' ? error : 'Unknown error occurred');
+};
+
+/**
  * Hook for managing canvas error states and retry functionality
  * Provides consistent error handling and retry mechanisms
  * 
@@ -83,13 +93,14 @@ export const useCanvasErrorHandling = ({
    * @param {string} context - Context description for the error
    */
   const handleError = useCallback((error: unknown, context: string) => {
-    console.error(`Error ${context}:`, error);
+    const errorObj = convertToError(error);
+    console.error(`Error ${context}:`, errorObj);
     setHasError(true);
-    setErrorMessage(`Failed to ${context}: ${error instanceof Error ? error.message : String(error)}`);
+    setErrorMessage(`Failed to ${context}: ${errorObj.message}`);
     toast.error(`Failed to ${context}`);
     
-    // Report error to Sentry
-    captureError(error, `canvas-${context}`, {
+    // Report error to Sentry with properly converted error
+    captureError(errorObj, `canvas-${context}`, {
       tags: {
         component: 'canvas',
         operation: context

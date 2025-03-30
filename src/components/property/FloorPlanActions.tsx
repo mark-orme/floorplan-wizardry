@@ -40,7 +40,7 @@ export const FloorPlanActions = ({
       handleError(error, {
         component: 'FloorPlanActions',
         operation: 'status-change',
-        data: { newStatus }
+        context: { newStatus }
       });
     }
   };

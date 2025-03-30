@@ -7,7 +7,6 @@
 import { toast } from "sonner";
 import logger from "../logger";
 import { captureError } from "../sentryUtils";
-import { gridDebugStats, diagnoseGridFailure } from "./gridDebugUtils";
 import { Canvas, Object as FabricObject } from "fabric";
 
 /**
@@ -45,23 +44,21 @@ export const handleGridCreationError = (
   setHasError(true);
   setErrorMessage(`Error creating grid: ${error.message}`);
   
-  // Diagnose grid failure and capture all relevant context
-  if (canvas || gridObjects) {
-    diagnoseGridFailure(
-      canvas || null, 
-      gridObjects || null, 
-      "grid-creation-error-handler"
-    );
-  }
-  
-  // Add error to debug stats
-  if (gridDebugStats) {
-    if (!gridDebugStats.errorMessages) {
-      gridDebugStats.errorMessages = [];
-    }
-    gridDebugStats.errorMessages.push(error.message);
-    gridDebugStats.lastError = error;
-  }
+  // Diagnose grid failure
+  const diagnosis = {
+    timestamp: new Date().toISOString(),
+    context: "grid-creation-error",
+    canvasState: canvas ? {
+      width: canvas.width,
+      height: canvas.height,
+      objectCount: canvas.getObjects().length,
+      initialized: !!(canvas.width && canvas.height && canvas.width > 0 && canvas.height > 0)
+    } : 'Canvas is null',
+    gridObjects: gridObjects ? {
+      count: gridObjects.length,
+      onCanvas: canvas ? gridObjects.filter(obj => canvas.contains(obj)).length : 'unknown'
+    } : 'No grid objects'
+  };
   
   // Create enhanced error data with detailed debugging info
   const errorData = {
@@ -78,7 +75,7 @@ export const handleGridCreationError = (
       count: gridObjects.length,
       onCanvas: canvas ? gridObjects.filter(obj => canvas.contains(obj)).length : 'unknown'
     } : 'No grid objects',
-    debugStats: { ...gridDebugStats }
+    diagnosis
   };
   
   // Report to Sentry with enhanced context

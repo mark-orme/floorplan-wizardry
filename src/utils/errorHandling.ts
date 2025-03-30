@@ -11,6 +11,8 @@ interface ErrorHandlingOptions {
   operation?: string;
   /** Additional context information */
   context?: Record<string, any>;
+  /** Additional data related to the error */
+  data?: Record<string, any>;
   /** Whether to show toast notification */
   showToast?: boolean;
 }
@@ -21,7 +23,7 @@ interface ErrorHandlingOptions {
  * @param {ErrorHandlingOptions} options - Error handling options
  */
 export const handleError = (error: Error | unknown, options: ErrorHandlingOptions = {}): void => {
-  const { component = 'unknown', operation = 'unknown', context = {}, showToast = false } = options;
+  const { component = 'unknown', operation = 'unknown', context = {}, data = {}, showToast = false } = options;
   
   // Convert unknown error to Error object with sensible default message
   const errorObj = error instanceof Error 
@@ -29,7 +31,7 @@ export const handleError = (error: Error | unknown, options: ErrorHandlingOption
     : new Error(typeof error === 'string' ? error : 'An unknown error occurred');
   
   // Log to console with context
-  console.error(`[${component}/${operation}] Error:`, errorObj, context);
+  console.error(`[${component}/${operation}] Error:`, errorObj, { context, data });
   
   // In a real app, we would report to monitoring service here
   

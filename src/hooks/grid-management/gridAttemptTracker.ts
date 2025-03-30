@@ -17,6 +17,14 @@ export interface GridAttemptTracker {
   lastAttemptSuccessful: boolean;
   /** Timestamp of last attempt */
   lastAttemptTime: number;
+  /** Whether initial attempt has been made */
+  initialAttempted: boolean;
+  /** Total attempts counter */
+  totalAttempts: number;
+  /** Successful attempts counter */
+  successfulAttempts: number;
+  /** Last error message */
+  lastError: string | null;
 }
 
 /**
@@ -29,7 +37,11 @@ export const createGridAttemptTracker = (maxAttempts: number = 3): GridAttemptTr
     attemptCount: 0,
     maxAttempts,
     lastAttemptSuccessful: false,
-    lastAttemptTime: 0
+    lastAttemptTime: 0,
+    initialAttempted: false,
+    totalAttempts: 0,
+    successfulAttempts: 0,
+    lastError: null
   };
 };
 
@@ -88,4 +100,53 @@ export const isMaxAttemptsReached = (tracker: GridAttemptTracker): boolean => {
  */
 export const isCooldownPassed = (tracker: GridAttemptTracker, cooldownMs: number = 1000): boolean => {
   return Date.now() - tracker.lastAttemptTime > cooldownMs;
+};
+
+/**
+ * Mark initial attempt as completed
+ * @param {GridAttemptTracker} tracker - Grid attempt tracker
+ * @returns {GridAttemptTracker} Updated tracker
+ */
+export const markInitialAttempted = (tracker: GridAttemptTracker): GridAttemptTracker => {
+  return {
+    ...tracker,
+    initialAttempted: true
+  };
+};
+
+/**
+ * Increment total attempts counter
+ * @param {GridAttemptTracker} tracker - Grid attempt tracker
+ * @returns {GridAttemptTracker} Updated tracker
+ */
+export const incrementTotalAttempts = (tracker: GridAttemptTracker): GridAttemptTracker => {
+  return {
+    ...tracker,
+    totalAttempts: tracker.totalAttempts + 1
+  };
+};
+
+/**
+ * Increment successful attempts counter
+ * @param {GridAttemptTracker} tracker - Grid attempt tracker
+ * @returns {GridAttemptTracker} Updated tracker
+ */
+export const incrementSuccessfulAttempts = (tracker: GridAttemptTracker): GridAttemptTracker => {
+  return {
+    ...tracker,
+    successfulAttempts: tracker.successfulAttempts + 1
+  };
+};
+
+/**
+ * Set last error message
+ * @param {GridAttemptTracker} tracker - Grid attempt tracker
+ * @param {string} errorMessage - Error message
+ * @returns {GridAttemptTracker} Updated tracker
+ */
+export const setLastError = (tracker: GridAttemptTracker, errorMessage: string): GridAttemptTracker => {
+  return {
+    ...tracker,
+    lastError: errorMessage
+  };
 };

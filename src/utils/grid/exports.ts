@@ -11,7 +11,7 @@
 // Direct imports from gridCreationUtils
 import { 
   createBasicEmergencyGrid,
-  createCompleteGrid,
+  createEnhancedGrid,
   verifyGridExists,
   retryWithBackoff,
   reorderGridObjects,
@@ -21,7 +21,7 @@ import {
   createFallbackGrid,
   hasCompleteGrid,
   forceGridRender,
-  createEnhancedGrid
+  createCompleteGrid
 } from '../gridCreationUtils';
 
 // Direct named exports from gridValidation
