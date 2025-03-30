@@ -1,4 +1,3 @@
-
 /**
  * Grid exports helper
  * 
@@ -11,16 +10,12 @@
 // Direct imports from gridCreationUtils
 import { 
   createBasicEmergencyGrid,
-  createEnhancedGrid,
   verifyGridExists,
   retryWithBackoff,
   reorderGridObjects,
   ensureGrid,
-  // validateGrid, // Not currently exported
-  // createGridLayer, // Not currently exported
-  // createFallbackGrid, // Not currently exported
-  // hasCompleteGrid, // Not currently exported
-  // forceGridRender // Not currently exported
+  createEnhancedGrid
+  // other imports...
 } from '../gridCreationUtils';
 
 // Direct named exports from gridValidation
@@ -38,8 +33,8 @@ import {
 // Re-export with clear namespacing
 export const GridCreation = {
   createBasicEmergencyGrid,
-  createEnhancedGrid,
-  ensureGrid
+  ensureGrid,
+  createEnhancedGrid
 };
 
 export const GridValidation = {
@@ -55,7 +50,6 @@ export const GridDebug = {
 // Also export individual functions for direct import
 export {
   createBasicEmergencyGrid,
-  createEnhancedGrid,
   verifyGridExists,
   retryWithBackoff,
   reorderGridObjects,
@@ -63,5 +57,6 @@ export {
   validateCanvas,
   validateGridState,
   dumpGridState,
-  forceCreateGrid
+  forceCreateGrid,
+  createEnhancedGrid
 };

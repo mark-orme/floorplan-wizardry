@@ -292,13 +292,18 @@ export const createBasicEmergencyGrid = (
  * @param {FabricObject[]} gridObjects - Grid objects to verify
  * @returns {boolean} True if grid exists
  */
-export const verifyGridExists = (canvas: Canvas, gridObjects: FabricObject[]): boolean => {
-  if (!canvas || !gridObjects || gridObjects.length === 0) {
+export const verifyGridExists = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): boolean => {
+  if (!canvas) return false;
+  
+  // Handle both array and ref object
+  const gridArray = 'current' in gridObjects ? gridObjects.current : gridObjects;
+  
+  if (!gridArray || gridArray.length === 0) {
     return false;
   }
   
   // Check if grid objects exist on canvas
-  const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+  const gridOnCanvas = gridArray.filter(obj => canvas.contains(obj));
   return gridOnCanvas.length > 0;
 };
 
@@ -306,9 +311,14 @@ export const verifyGridExists = (canvas: Canvas, gridObjects: FabricObject[]): b
  * Retry with backoff
  * @param {Function} fn - Function to retry
  * @param {number} maxRetries - Maximum retries
+ * @param {number} delayFactor - Delay factor for exponential backoff
  * @returns {Promise<any>} Result of function
  */
-export const retryWithBackoff = async (fn: () => Promise<any>, maxRetries: number = 3): Promise<any> => {
+export const retryWithBackoff = async (
+  fn: () => Promise<any>, 
+  maxRetries: number = 3,
+  delayFactor: number = 500
+): Promise<any> => {
   let lastError;
   
   for (let i = 0; i < maxRetries; i++) {
@@ -316,7 +326,7 @@ export const retryWithBackoff = async (fn: () => Promise<any>, maxRetries: numbe
       return await fn();
     } catch (error) {
       lastError = error;
-      const delay = Math.pow(2, i) * 500; // Exponential backoff
+      const delay = Math.pow(2, i) * delayFactor; // Exponential backoff
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -330,11 +340,14 @@ export const retryWithBackoff = async (fn: () => Promise<any>, maxRetries: numbe
  * @param {FabricObject[]} gridObjects - Grid objects to reorder
  * @returns {void}
  */
-export const reorderGridObjects = (canvas: Canvas, gridObjects: FabricObject[]): void => {
+export const reorderGridObjects = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): void => {
   if (!canvas) return;
   
+  // Handle both array and ref object
+  const gridArray = 'current' in gridObjects ? gridObjects.current : gridObjects;
+  
   // Send grid objects to back
-  gridObjects.forEach(obj => {
+  gridArray.forEach(obj => {
     canvas.sendToBack(obj);
   });
   
@@ -344,23 +357,23 @@ export const reorderGridObjects = (canvas: Canvas, gridObjects: FabricObject[]):
 /**
  * Ensure grid exists
  * @param {Canvas} canvas - Fabric canvas
- * @param {FabricObject[]} gridObjects - Grid objects to check
+ * @param {React.MutableRefObject<FabricObject[]>} gridRef - Grid objects to check
  * @param {Function} createGridFn - Function to create grid
  * @returns {FabricObject[]} Grid objects
  */
 export const ensureGrid = (
   canvas: Canvas, 
-  gridObjects: FabricObject[], 
+  gridRef: React.MutableRefObject<FabricObject[]>, 
   createGridFn = createCompleteGrid
 ): FabricObject[] => {
   if (!canvas) return [];
   
   // Check if grid exists
-  if (!verifyGridExists(canvas, gridObjects)) {
+  if (!verifyGridExists(canvas, gridRef)) {
     return createGridFn(canvas);
   }
   
-  return gridObjects;
+  return gridRef.current;
 };
 
 /**
@@ -369,14 +382,19 @@ export const ensureGrid = (
  * @param {FabricObject[]} gridObjects - Grid objects to validate
  * @returns {boolean} True if grid valid
  */
-export const validateGrid = (canvas: Canvas, gridObjects: FabricObject[]): boolean => {
-  if (!canvas || !gridObjects || gridObjects.length === 0) {
+export const validateGrid = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): boolean => {
+  if (!canvas) return false;
+  
+  // Handle both array and ref object
+  const gridArray = 'current' in gridObjects ? gridObjects.current : gridObjects;
+  
+  if (!gridArray || gridArray.length === 0) {
     return false;
   }
   
   // Check if grid objects exist on canvas
-  const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
-  return gridOnCanvas.length === gridObjects.length;
+  const gridOnCanvas = gridArray.filter(obj => canvas.contains(obj));
+  return gridOnCanvas.length === gridArray.length;
 };
 
 /**
@@ -403,13 +421,18 @@ export const createFallbackGrid = (canvas: Canvas): FabricObject[] => {
  * @param {FabricObject[]} gridObjects - Grid objects to check
  * @returns {boolean} True if complete grid exists
  */
-export const hasCompleteGrid = (canvas: Canvas, gridObjects: FabricObject[]): boolean => {
-  if (!canvas || !gridObjects || gridObjects.length === 0) {
+export const hasCompleteGrid = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): boolean => {
+  if (!canvas) return false;
+  
+  // Handle both array and ref object
+  const gridArray = 'current' in gridObjects ? gridObjects.current : gridObjects;
+  
+  if (!gridArray || gridArray.length === 0) {
     return false;
   }
   
   // Check if we have a complete grid (at least 20 lines)
-  return gridObjects.length >= 20 && verifyGridExists(canvas, gridObjects);
+  return gridArray.length >= 20 && verifyGridExists(canvas, gridArray);
 };
 
 /**
@@ -418,11 +441,14 @@ export const hasCompleteGrid = (canvas: Canvas, gridObjects: FabricObject[]): bo
  * @param {FabricObject[]} gridObjects - Grid objects to render
  * @returns {void}
  */
-export const forceGridRender = (canvas: Canvas, gridObjects: FabricObject[]): void => {
+export const forceGridRender = (canvas: Canvas, gridObjects: FabricObject[] | React.MutableRefObject<FabricObject[]>): void => {
   if (!canvas) return;
   
+  // Handle both array and ref object
+  const gridArray = 'current' in gridObjects ? gridObjects.current : gridObjects;
+  
   // Re-add grid objects if not already on canvas
-  gridObjects.forEach(obj => {
+  gridArray.forEach(obj => {
     if (!canvas.contains(obj)) {
       canvas.add(obj);
     }

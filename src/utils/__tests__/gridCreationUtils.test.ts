@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { 
@@ -10,14 +11,16 @@ import {
 describe('gridCreationUtils', () => {
   describe('verifyGridExists', () => {
     it('should return false when canvas is null', () => {
+      const gridRef = { current: [] };
       // @ts-ignore - We're intentionally passing null for testing
-      const result = verifyGridExists(null, []);
+      const result = verifyGridExists(null, gridRef);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
-      const result = verifyGridExists(canvas, []);
+      const gridRef = { current: [] };
+      const result = verifyGridExists(canvas, gridRef);
       expect(result).toBe(false);
     });
     
@@ -27,7 +30,8 @@ describe('gridCreationUtils', () => {
       // Mock canvas.getObjects to return empty array
       canvas.getObjects = vi.fn().mockReturnValue([]);
       
-      const result = verifyGridExists(canvas, []);
+      const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
+      const result = verifyGridExists(canvas, gridRef);
       expect(result).toBe(false);
       expect(canvas.getObjects).toHaveBeenCalled();
     });
@@ -40,7 +44,8 @@ describe('gridCreationUtils', () => {
         { objectType: 'grid' } as unknown as FabricObject
       ]);
       
-      const result = verifyGridExists(canvas, [{ objectType: 'grid' } as unknown as FabricObject]);
+      const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
+      const result = verifyGridExists(canvas, gridRef);
       expect(result).toBe(true);
       expect(canvas.getObjects).toHaveBeenCalled();
     });

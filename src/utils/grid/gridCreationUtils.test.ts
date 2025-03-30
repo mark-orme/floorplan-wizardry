@@ -71,6 +71,7 @@ describe('gridCreationUtils', () => {
       // Mock createGrid
       const createGrid = vi.fn().mockReturnValue(gridRef.current);
       
+      // Fixed: removed the third argument that was causing the error
       ensureGrid(canvas, gridRef, createGrid);
       expect(createGrid).not.toHaveBeenCalled();
     });

@@ -1,203 +1,195 @@
 
 /**
  * Grid debug utilities
- * Provides tools for diagnosing and fixing grid-related issues
+ * Provides debugging tools for grid issues
  * @module grid/gridDebugUtils
  */
+
 import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import logger from "../logger";
 
 /**
- * Dump grid state for debugging
- * @param {FabricCanvas} canvas - The Fabric canvas
+ * Dump grid state to console for debugging
+ * @param {FabricCanvas} canvas - The Fabric canvas instance
  * @param {FabricObject[]} gridObjects - Grid objects to analyze
  */
-export const dumpGridState = (canvas: FabricCanvas, gridObjects: FabricObject[]): void => {
+export const dumpGridState = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): void => {
+  if (!canvas) {
+    console.error("Cannot dump grid state: Canvas is null");
+    return;
+  }
+  
   console.group("Grid State Dump");
-  console.log("Canvas:", {
-    width: canvas.width,
-    height: canvas.height,
-    objectCount: canvas.getObjects().length,
-    zoom: canvas.getZoom()
-  });
+  console.log("Canvas dimensions:", canvas.width, "x", canvas.height);
+  console.log("Canvas objects total:", canvas.getObjects().length);
+  console.log("Grid objects in array:", gridObjects.length);
   
-  console.log("Grid objects:", {
-    count: gridObjects.length,
-    visible: gridObjects.filter(o => o.visible).length,
-    objectTypes: gridObjects.map(o => o.type).filter((v, i, a) => a.indexOf(v) === i)
-  });
+  const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+  console.log("Grid objects on canvas:", gridOnCanvas.length);
   
-  console.log("Grid objects on canvas:", gridObjects.filter(o => canvas.contains(o)).length);
+  const missingObjects = gridObjects.filter(obj => !canvas.contains(obj));
+  console.log("Missing grid objects:", missingObjects.length);
+  
+  if (missingObjects.length > 0) {
+    console.log("First missing object:", missingObjects[0]);
+  }
+  
   console.groupEnd();
 };
 
 /**
- * Create basic grid for emergency situations
- * Creates a simple grid when other methods fail
- * 
- * @param {FabricCanvas} canvas - The Fabric canvas
- * @returns {FabricObject[]} - Created grid objects
+ * Create a basic emergency grid for debugging
+ * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @returns {FabricObject[]} Created grid objects
  */
-export const createBasicEmergencyGrid = (canvas: FabricCanvas): FabricObject[] => {
-  if (!canvas) {
-    console.error("Cannot create emergency grid: Canvas is null");
+export const createBasicEmergencyGrid = (
+  canvas: FabricCanvas
+): FabricObject[] => {
+  if (!canvas || !canvas.width || !canvas.height) {
+    console.error("Cannot create emergency debug grid: Invalid canvas");
     return [];
   }
-  
-  logger.warn("Creating basic emergency grid");
   
   const gridObjects: FabricObject[] = [];
-  const width = canvas.width || 800;
-  const height = canvas.height || 600;
+  const gridSize = 100; // Larger size for better visibility in debug
   
-  try {
-    // Create horizontal lines
-    for (let y = 0; y <= height; y += 100) {
-      const line = new Line([0, y, width, y], {
-        stroke: "#cccccc",
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectType: "grid"
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Create vertical lines
-    for (let x = 0; x <= width; x += 100) {
-      const line = new Line([x, 0, x, height], {
-        stroke: "#cccccc",
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectType: "grid"
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Force render
-    canvas.requestRenderAll();
-    
-    logger.info(`Created ${gridObjects.length} grid objects`);
-    return gridObjects;
-  } catch (error) {
-    logger.error("Error creating emergency grid:", error);
-    return [];
-  }
-};
-
-/**
- * Force grid creation
- * Removes existing grid and creates a new one
- * 
- * @param {FabricCanvas} canvas - The Fabric canvas
- * @returns {FabricObject[]} - Created grid objects
- */
-export const forceCreateGrid = (canvas: FabricCanvas): FabricObject[] => {
-  if (!canvas) {
-    logger.error("Cannot force create grid: Canvas is null");
-    return [];
-  }
-  
-  try {
-    // Get all grid objects
-    const existingGridObjects = canvas.getObjects().filter(obj => 
-      obj.objectType === "grid"
-    );
-    
-    // Remove them
-    existingGridObjects.forEach(obj => {
-      try {
-        canvas.remove(obj);
-      } catch (error) {
-        console.error("Error removing grid object:", error);
-      }
+  // Create horizontal lines
+  for (let y = 0; y <= canvas.height; y += gridSize) {
+    const line = new Line([0, y, canvas.width, y], {
+      stroke: '#ff5555', // Red for debugging
+      strokeWidth: 2,
+      selectable: false,
+      evented: false,
+      objectType: 'grid-debug'
     });
     
-    // Create new emergency grid
-    const newGrid = createBasicEmergencyGrid(canvas);
-    
-    // Force render
-    canvas.requestRenderAll();
-    
-    return newGrid;
-  } catch (error) {
-    logger.error("Error in forceCreateGrid:", error);
-    return [];
+    canvas.add(line);
+    gridObjects.push(line);
   }
+  
+  // Create vertical lines
+  for (let x = 0; x <= canvas.width; x += gridSize) {
+    const line = new Line([x, 0, x, canvas.height], {
+      stroke: '#ff5555', // Red for debugging
+      strokeWidth: 2,
+      selectable: false,
+      evented: false,
+      objectType: 'grid-debug'
+    });
+    
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  canvas.renderAll();
+  console.log(`Created ${gridObjects.length} emergency debug grid objects`);
+  
+  return gridObjects;
 };
 
 /**
- * Get memory usage information
- * @returns {Object} Memory usage information
+ * Force create grid for debugging
+ * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @returns {FabricObject[]} Created grid objects
  */
-export const getMemoryUsage = (): Record<string, unknown> => {
-  try {
-    const memoryInfo: Record<string, unknown> = {
-      jsHeapSizeLimit: 'N/A',
-      totalJSHeapSize: 'N/A',
-      usedJSHeapSize: 'N/A',
-      memoryUsage: 'N/A',
-      memoryUsagePercent: 'N/A'
-    };
-    
-    // Check if performance.memory is available (Chromium browsers only)
-    // @ts-ignore - performance.memory is not in the standard definition
-    if (performance && typeof performance.memory !== 'undefined') {
-      // @ts-ignore - accessing non-standard property
-      const memory = performance.memory;
-      
-      memoryInfo.jsHeapSizeLimit = formatBytes(memory.jsHeapSizeLimit);
-      memoryInfo.totalJSHeapSize = formatBytes(memory.totalJSHeapSize);
-      memoryInfo.usedJSHeapSize = formatBytes(memory.usedJSHeapSize);
-      
-      // Calculate memory usage percentage
-      const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
-      memoryInfo.memoryUsagePercent = `${usagePercent.toFixed(1)}%`;
-    }
-    
-    return memoryInfo;
-  } catch (error) {
-    logger.error("Error getting memory usage:", error);
-    return { error: "Failed to get memory usage" };
+export const forceCreateGrid = (
+  canvas: FabricCanvas
+): FabricObject[] => {
+  // Clean existing grid objects
+  const existingGrid = canvas.getObjects().filter(obj => 
+    obj.objectType === 'grid' || obj.objectType === 'grid-debug'
+  );
+  
+  existingGrid.forEach(obj => canvas.remove(obj));
+  
+  // Create debug grid
+  return createBasicEmergencyGrid(canvas);
+};
+
+/**
+ * Get memory usage statistics
+ * @returns {object} Memory usage statistics
+ */
+export const getMemoryUsage = (): { total?: number, used?: number, limit?: number } => {
+  if (typeof performance === 'undefined' || !performance.memory) {
+    return {};
   }
-};
-
-// Diagnostic utilities
-export const gridDebugStats = () => {
+  
   return {
-    timestamp: new Date().toISOString(),
-    memoryUsage: typeof performance !== 'undefined' && 
-                 // @ts-ignore - memory might not exist in all environments
-                 performance.memory ? {
-                   // @ts-ignore - TypeScript doesn't know about memory property
-                   totalJSHeapSize: performance.memory?.totalJSHeapSize || 'unavailable'
-                 } : { 
-                   totalJSHeapSize: 'unavailable' 
-                 }
-  };
-};
-
-export const diagnoseGridFailure = (canvas: FabricCanvas) => {
-  return {
-    canvasValid: !!canvas,
-    canvasDimensions: canvas ? { width: canvas.width, height: canvas.height } : null,
-    objectCount: canvas ? canvas.getObjects().length : 0,
-    gridObjectCount: canvas ? canvas.getObjects().filter(obj => obj.objectType === 'grid').length : 0
+    total: performance.memory?.totalJSHeapSize,
+    used: performance.memory?.usedJSHeapSize,
+    limit: performance.memory?.jsHeapSizeLimit
   };
 };
 
 /**
- * Format bytes to human-readable format
- * @param {number} bytes - Number of bytes
- * @returns {string} Formatted byte string
+ * Get grid debug statistics
+ * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Grid objects to analyze
+ * @returns {object} Debug statistics
  */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
-}
+export const gridDebugStats = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): object => {
+  if (!canvas) {
+    return { error: "Canvas is null" };
+  }
+  
+  const allObjects = canvas.getObjects();
+  const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+  
+  return {
+    canvas: {
+      width: canvas.width,
+      height: canvas.height,
+      objectCount: allObjects.length,
+      initialized: canvas.initialized || false
+    },
+    grid: {
+      totalObjects: gridObjects.length,
+      objectsOnCanvas: gridOnCanvas.length,
+      missing: gridObjects.length - gridOnCanvas.length
+    },
+    memory: getMemoryUsage()
+  };
+};
+
+/**
+ * Diagnose grid failure 
+ * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Grid objects to analyze
+ * @returns {object} Diagnostic information
+ */
+export const diagnoseGridFailure = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): object => {
+  if (!canvas) {
+    return { error: "Canvas is null" };
+  }
+  
+  const diagnostics = gridDebugStats(canvas, gridObjects);
+  const issues = [];
+  
+  // Check canvas dimensions
+  if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
+    issues.push("Canvas has zero dimensions");
+  }
+  
+  // Check grid objects
+  if (gridObjects.length === 0) {
+    issues.push("No grid objects in array");
+  } else if (gridObjects.filter(obj => canvas.contains(obj)).length === 0) {
+    issues.push("No grid objects on canvas");
+  }
+  
+  return {
+    diagnostics,
+    issues,
+    recommendation: issues.length > 0 ? "Recreate grid with valid dimensions" : "Grid appears valid"
+  };
+};
