@@ -1,0 +1,202 @@
+
+/**
+ * Tests for useSyncedFloorPlans hook
+ * Verifies floor plan synchronization and persistence
+ * 
+ * @module hooks/__tests__/useSyncedFloorPlans
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useSyncedFloorPlans } from '../useSyncedFloorPlans';
+import { Canvas } from 'fabric';
+import { FloorPlan } from '@/types/floorPlanTypes';
+import { toast } from 'sonner';
+
+// Mock dependencies
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn()
+  }
+}));
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value.toString();
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    })
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
+});
+
+describe('useSyncedFloorPlans Hook', () => {
+  const mockFloorPlan: FloorPlan = {
+    id: 'test-floor-1',
+    name: 'Test Floor 1',
+    label: 'Test Floor 1',
+    strokes: [],
+    walls: [],
+    rooms: [],
+    level: 0,
+    index: 0,
+    gia: 0,
+    canvasData: null,
+    canvasJson: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    metadata: {
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      paperSize: 'A4',
+      level: 0
+    }
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorageMock.clear();
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('should initialize with empty floor plans', () => {
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    expect(result.current.floorPlans).toEqual([]);
+  });
+
+  it('should load floor plans from localStorage on init', () => {
+    // Setup: Add floor plans to localStorage
+    const testFloorPlans = [mockFloorPlan];
+    localStorageMock.setItem('floorPlans', JSON.stringify(testFloorPlans));
+    
+    // Execute: Render the hook
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    // Verify: Floor plans are loaded from localStorage
+    expect(localStorageMock.getItem).toHaveBeenCalledWith('floorPlans');
+    expect(result.current.floorPlans).toEqual(testFloorPlans);
+  });
+
+  it('should save floor plans to localStorage', async () => {
+    // Setup: Render hook
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    // Execute: Save floor plans
+    await act(async () => {
+      const success = await result.current.saveData([mockFloorPlan]);
+      expect(success).toBe(true);
+    });
+    
+    // Verify: Floor plans are saved to localStorage
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('floorPlans', JSON.stringify([mockFloorPlan]));
+    expect(result.current.floorPlans).toEqual([mockFloorPlan]);
+  });
+
+  it('should handle localStorage errors when loading data', async () => {
+    // Setup: Mock localStorage to throw error
+    localStorageMock.getItem.mockImplementationOnce(() => {
+      throw new Error('Test error');
+    });
+    
+    // Execute: Render hook
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    // Verify: Error is handled and toast is shown
+    expect(toast.error).toHaveBeenCalledWith('Failed to load floor plans');
+    expect(result.current.floorPlans).toEqual([]);
+  });
+
+  it('should handle localStorage errors when saving data', async () => {
+    // Setup: Mock localStorage to throw error
+    localStorageMock.setItem.mockImplementationOnce(() => {
+      throw new Error('Test error');
+    });
+    
+    // Execute: Render hook and attempt to save
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    await act(async () => {
+      const success = await result.current.saveData([mockFloorPlan]);
+      
+      // Verify: Function returns false on error
+      expect(success).toBe(false);
+      expect(toast.error).toHaveBeenCalledWith('Failed to save floor plans');
+    });
+  });
+
+  it('should sync floor plans with canvas', () => {
+    // Setup: Create mock canvas
+    const mockCanvas = new Canvas(null);
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    // Execute: Sync floor plans with canvas
+    act(() => {
+      result.current.syncFloorPlans(mockCanvas, [mockFloorPlan]);
+    });
+    
+    // Note: This test is just checking the function executes without errors
+    // In a real implementation, we would verify canvas changes
+  });
+
+  it('should load a floor plan to canvas', () => {
+    // Setup: Create mock canvas
+    const mockCanvas = new Canvas(null);
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    // Execute: Load floor plan to canvas
+    act(() => {
+      result.current.loadFloorPlan(mockCanvas, mockFloorPlan);
+    });
+    
+    // Note: This test is just checking the function executes without errors
+    // In a real implementation, we would verify canvas changes
+  });
+
+  it('should save canvas state to a floor plan', () => {
+    // Setup: Create mock canvas
+    const mockCanvas = new Canvas(null);
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    // Execute: Save canvas state to floor plan
+    let savedFloorPlan;
+    act(() => {
+      savedFloorPlan = result.current.saveFloorPlan(mockCanvas);
+    });
+    
+    // Note: In the current implementation, this returns null
+    // In a real implementation, this would return a saved floor plan
+    expect(savedFloorPlan).toBeNull();
+  });
+
+  it('should calculate Gross Internal Area (GIA)', () => {
+    // Setup: Create floor plans with different GIA values
+    const floorPlansWithGIA = [
+      { ...mockFloorPlan, gia: 100 },
+      { ...mockFloorPlan, id: 'test-floor-2', gia: 200 }
+    ];
+    
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    // Execute: Calculate GIA
+    const gia = result.current.calculateGIA(floorPlansWithGIA as FloorPlan[]);
+    
+    // Verify: GIA should be the sum of all floor plans
+    expect(gia).toBe(300);
+  });
+});
