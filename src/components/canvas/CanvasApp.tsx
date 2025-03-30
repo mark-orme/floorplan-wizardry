@@ -5,6 +5,7 @@ import { useCanvasController } from './controller/CanvasController';
 import { Toolbar } from './Toolbar';
 import { Sidebar } from './Sidebar';
 import { DebugPanel } from './debug/DebugPanel';
+import { DrawingTool } from '@/types/drawingTypes';
 
 /**
  * Props for the CanvasApp component

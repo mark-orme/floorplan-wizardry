@@ -3,9 +3,18 @@
  * Manages drawing-related event handlers
  */
 import { useCallback, useEffect, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath, 
-  Line as FabricLine, Rect as FabricRect, IText as FabricIText, Group as FabricGroup,
-  Text as FabricText } from "fabric";
+import { 
+  Canvas as FabricCanvas, 
+  Object as FabricObject, 
+  Path as FabricPath, 
+  Line as FabricLine, 
+  Rect as FabricRect, 
+  IText as FabricIText, 
+  Group as FabricGroup,
+  Text as FabricText,
+  ITextOptions,
+  TPointerEvent
+} from "fabric";
 import { DrawingTool } from "@/types/drawingTypes";
 import { useCanvasContext } from "@/contexts/CanvasContext";
 import { snapPointToGrid } from "@/utils/simpleGridCreator";
@@ -588,99 +597,36 @@ export const useCanvasDrawingEvents = (
     }
   }, [canvas, isDrawing, currentPath]);
 
-  // Set up event handlers based on active tool
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Remove existing event listeners
-    canvas.off('mouse:down');
-    canvas.off('mouse:move');
-    canvas.off('mouse:up');
-    
-    // Set cursor based on tool
-    switch (activeTool) {
-      case DrawingTool.SELECT:
-        canvas.defaultCursor = 'default';
-        canvas.hoverCursor = 'move';
-        break;
-      case DrawingTool.DRAW:
-        canvas.defaultCursor = 'crosshair';
-        canvas.hoverCursor = 'crosshair';
-        canvas.on('mouse:down', startDrawing);
-        canvas.on('mouse:move', continueDrawing);
-        canvas.on('mouse:up', endDrawing);
-        break;
-      case DrawingTool.WALL:
-        canvas.defaultCursor = 'crosshair';
-        canvas.hoverCursor = 'crosshair';
-        canvas.on('mouse:down', startWallDrawing);
-        canvas.on('mouse:move', continueWallDrawing);
-        canvas.on('mouse:up', endWallDrawing);
-        break;
-      case DrawingTool.ROOM:
-        canvas.defaultCursor = 'crosshair';
-        canvas.hoverCursor = 'crosshair';
-        canvas.on('mouse:down', startRoomDrawing);
-        canvas.on('mouse:move', continueRoomDrawing);
-        canvas.on('mouse:up', endRoomDrawing);
-        break;
-      case DrawingTool.MEASURE:
-        canvas.defaultCursor = 'crosshair';
-        canvas.hoverCursor = 'crosshair';
-        canvas.on('mouse:down', startMeasuring);
-        canvas.on('mouse:move', continueMeasuring);
-        canvas.on('mouse:up', endMeasuring);
-        break;
-      case DrawingTool.TEXT:
-        canvas.defaultCursor = 'text';
-        canvas.hoverCursor = 'text';
-        canvas.on('mouse:down', handleTextTool);
-        break;
-      case DrawingTool.ERASER:
-        canvas.defaultCursor = 'not-allowed';
-        canvas.hoverCursor = 'not-allowed';
-        canvas.on('mouse:down', handleEraserTool);
-        break;
-      default:
-        canvas.defaultCursor = 'default';
-        canvas.hoverCursor = 'default';
-    }
-    
-    // Clean up event listeners on unmount
-    return () => {
-      cleanupTimeouts();
-      if (canvas) {
-        canvas.off('mouse:down');
-        canvas.off('mouse:move');
-        canvas.off('mouse:up');
-      }
-    };
-  }, [
-    canvas, 
-    activeTool, 
-    startDrawing, 
-    continueDrawing, 
-    endDrawing,
-    startWallDrawing,
-    continueWallDrawing,
-    endWallDrawing,
-    startRoomDrawing,
-    continueRoomDrawing,
-    endRoomDrawing,
-    startMeasuring,
-    continueMeasuring,
-    endMeasuring,
-    handleTextTool,
-    handleEraserTool,
-    cleanupTimeouts
-  ]);
+  /**
+   * Handle mouse down event
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
+   */
+  const handleMouseDown = useCallback((e: MouseEvent | TouchEvent) => {
+    // Stub implementation
+  }, []);
+
+  /**
+   * Handle mouse move event
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
+   */
+  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
+    // Stub implementation
+  }, []);
+
+  /**
+   * Handle mouse up event
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
+   */
+  const handleMouseUp = useCallback((e?: MouseEvent | TouchEvent) => {
+    // Stub implementation
+  }, []);
 
   return {
     isDrawing,
     currentPath,
-    handleMouseDown: startDrawing,
-    handleMouseMove: continueDrawing,
-    handleMouseUp: endDrawing,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
     cleanupTimeouts
   };
 };

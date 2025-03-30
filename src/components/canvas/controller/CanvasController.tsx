@@ -147,13 +147,9 @@ export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ chil
     gridObjectCount: 0,
     canvasDimensions: { width: 0, height: 0 },
     hasError: false,
-    errorMessage: "",
-    performanceStats: {}
+    errorMessage: ""
   });
   
-  const [hasError, setHasError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-
   // Initialize the canvas controller setup
   const setupResult = useCanvasControllerSetup({
     canvasDimensions: dimensions,
@@ -437,10 +433,10 @@ export const CanvasControllerProvider: React.FC<CanvasControllerProps> = ({ chil
           height={dimensions.height}
           className="border border-gray-200 rounded shadow-sm"
         />
-        {hasError && (
+        {debugInfo.hasError && (
           <div className="absolute inset-0 flex items-center justify-center bg-red-100/50">
             <p className="text-red-500 font-semibold p-4 bg-white rounded shadow">
-              {errorMessage || "An error occurred with the canvas"}
+              {debugInfo.errorMessage || "An error occurred with the canvas"}
             </p>
           </div>
         )}

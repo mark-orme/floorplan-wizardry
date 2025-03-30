@@ -4,7 +4,7 @@
  */
 import { useState, useCallback } from 'react';
 import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
-import { Point, createPoint } from '@/types/core/Point';
+import { Point } from '@/types/drawingTypes';
 
 /**
  * Hook for managing drawing state
