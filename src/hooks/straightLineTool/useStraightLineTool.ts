@@ -113,17 +113,6 @@ export const useStraightLineTool = ({
     lineState
   );
 
-  // Debug the fabricCanvasRef to verify it's not null
-  useEffect(() => {
-    if (tool === DrawingMode.STRAIGHT_LINE) {
-      console.log("FabricCanvasRef in useStraightLineTool:", {
-        isNull: fabricCanvasRef === null,
-        current: fabricCanvasRef.current,
-        isCurrentNull: fabricCanvasRef.current === null
-      });
-    }
-  }, [fabricCanvasRef, tool]);
-  
   // Initialize and clean up event handlers when tool changes
   useEffect(() => {
     // Using a delayed check to give the canvas time to initialize
@@ -158,12 +147,12 @@ export const useStraightLineTool = ({
             }
           });
           
-          // FIX: Make sure we remove any existing handlers before adding new ones
+          // IMPROVED: Use the FabricEventTypes enum for consistent event naming
           canvas.off(FabricEventTypes.MOUSE_DOWN);
           canvas.off(FabricEventTypes.MOUSE_MOVE);
           canvas.off(FabricEventTypes.MOUSE_UP);
           
-          // Add our specific event handlers
+          // IMPROVED: Make sure we're using the correct event types
           canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
           canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
           canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp);

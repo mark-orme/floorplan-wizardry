@@ -1,69 +1,54 @@
 
 /**
- * Type definitions for Fabric.js integration
- * @module types/fabric
+ * Type definitions for Fabric.js
+ * Provides type aliases and interfaces for working with Fabric.js
  */
 
-import { Canvas, Object } from 'fabric';
+import { Canvas, Object, PencilBrush, Line, Point } from 'fabric';
 
-// Export type aliases for Fabric.js objects
+// Canvas alias that can be used throughout the application
 export type FabricCanvas = Canvas;
+
+// Object alias that can be used throughout the application
 export type FabricObject = Object;
 
-// Re-export the imported types from fabric.d.ts
-export type {
-  CanvasCreationOptions,
-  CanvasReferences,
-  GridDimensions,
-  GridRenderResult,
-  CustomTouchEvent,
-  CustomFabricTouchEvent,
-  FabricPointerEvent
-} from './fabric.d';
+// Brush alias that can be used throughout the application
+export type FabricBrush = PencilBrush;
+
+// Line alias that can be used throughout the application
+export type FabricLine = Line;
+
+// Point alias that can be used throughout the application
+export type FabricPoint = Point;
 
 /**
- * Type guard to check if a value is a Touch event
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a Touch event
+ * Custom event types for Fabric.js
+ * These help with type safety when working with Fabric.js events
  */
-export function isTouchEvent(value: unknown): value is TouchEvent {
-  return typeof value === 'object' && 
-         value !== null && 
-         'touches' in value &&
-         'changedTouches' in value;
+export interface FabricObjectWithId extends FabricObject {
+  id?: string;
+  isGrid?: boolean;
+  objectType?: string;
 }
 
 /**
- * Type guard to check if a value is a fabric-compatible touch event
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a fabric-compatible touch event
+ * Custom touch event interface for Fabric.js
  */
-export function isFabricTouchEvent(value: unknown): value is CustomFabricTouchEvent {
-  return typeof value === 'object' && 
-         value !== null && 
-         'touches' in value;
+export interface CustomFabricTouchEvent {
+  e: TouchEvent;
+  pointer: { x: number; y: number };
+  target?: FabricObject;
 }
 
 /**
- * Type guard to check if a value is a pointer/mouse event
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a pointer event
+ * Custom mouse event interface for Fabric.js
  */
-export function isPointerEvent(value: unknown): value is PointerEvent {
-  return typeof value === 'object' && 
-         value !== null && 
-         'pointerId' in value;
+export interface CustomFabricMouseEvent {
+  e: MouseEvent | CustomFabricTouchEvent;
+  pointer: { x: number; y: number };
+  target?: FabricObject;
 }
 
-/**
- * Type guard to check if a value is a mouse event
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a mouse event
- */
-export function isMouseEvent(value: unknown): value is MouseEvent {
-  return typeof value === 'object' && 
-         value !== null && 
-         'clientX' in value &&
-         'clientY' in value &&
-         !('touches' in value);
-}
+// Export event types for ease of use
+export { Canvas, Object, PencilBrush, Line, Point };
+
