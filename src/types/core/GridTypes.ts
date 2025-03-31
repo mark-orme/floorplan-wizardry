@@ -21,6 +21,17 @@ export interface GridCreationLock {
 }
 
 /**
+ * Default grid creation lock
+ * Initial values for grid creation lock
+ */
+export const DEFAULT_GRID_CREATION_LOCK: GridCreationLock = {
+  isLocked: false,
+  lockedBy: null,
+  lockedAt: null,
+  maxLockTime: 5000
+};
+
+/**
  * Grid creation state interface
  * Tracks the state of grid creation on the canvas
  */
@@ -98,15 +109,4 @@ export const DEFAULT_GRID_CREATION_STATE: GridCreationState = {
   maxRecreations: 5,
   minRecreationInterval: 500,
   creationLock: DEFAULT_GRID_CREATION_LOCK
-};
-
-/**
- * Default grid creation lock
- * Initial values for grid creation lock
- */
-export const DEFAULT_GRID_CREATION_LOCK: GridCreationLock = {
-  isLocked: false,
-  lockedBy: null,
-  lockedAt: null,
-  maxLockTime: 5000
 };

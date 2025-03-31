@@ -12,7 +12,7 @@ module.exports = {
     // Prevent using [] empty arrays where specific array types are expected
     "@typescript-eslint/no-empty-interface": "error",
     "@typescript-eslint/ban-types": "error",
-    "@typescript-eslint/no-explicit-any": ["warn", { "ignoreRestArgs": true }],
+    "@typescript-eslint/no-explicit-any": ["error", { "ignoreRestArgs": true }],
     
     // Ensure proper typing with generics
     "@typescript-eslint/no-unnecessary-type-assertion": "error",
@@ -54,8 +54,8 @@ module.exports = {
     "@typescript-eslint/no-non-null-assertion": "error",
     
     // Prevent using object literals with incorrect property names
-    "@typescript-eslint/no-unsafe-assignment": "warn",
-    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-member-access": "error",
     
     // Force explicit typing for object literals
     "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
@@ -70,20 +70,45 @@ module.exports = {
       "caughtErrorsIgnorePattern": "^_"
     }],
     
-    // Check for missing exported types
+    // Consistent indexed object style
     "@typescript-eslint/consistent-indexed-object-style": ["error", "record"],
     
     // Enforce proper type checking
     "@typescript-eslint/no-floating-promises": "error",
     
-    // New rule: Detect type imports that don't exist in the referenced module
+    // Detect type imports that don't exist in the referenced module
     "@typescript-eslint/no-import-type-side-effects": "error",
     
-    // Prevent fabric-specific errors 
+    // Prevent implicit any
+    "@typescript-eslint/no-implicit-any": "error",
+    
+    // Enforce const when variable is not reassigned
+    "prefer-const": "error",
+    
+    // Prevent duplicate imports
+    "no-duplicate-imports": "error",
+    
+    // Ensure return values are consistent
+    "consistent-return": "error",
+    
+    // Prevent circular references
+    "no-use-before-define": ["error", { "functions": false, "classes": true, "variables": true }],
+    "@typescript-eslint/no-use-before-define": ["error", { "functions": false, "classes": true, "variables": true }],
+    
+    // Prevent dynamic property access without type checking
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-argument": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    
+    // Prevent mutation of state objects without proper typing
     "no-restricted-syntax": [
       "error",
       {
-        "selector": "NewExpression[callee.name='Line'] > ArrayExpression:first-child[elements.length!=4]",
+        "selector": "AssignmentExpression[left.object.name=/state|setState/][left.property.name]",
+        "message": "Use proper type assertion with 'as keyof StateType' when accessing dynamic properties on state objects"
+      },
+      {
+        "selector": "MemberExpression[object.name='Line'] > ArrayExpression:first-child[elements.length!=4]",
         "message": "Fabric.js Line constructor requires exactly 4 numbers as first argument: [x1, y1, x2, y2]"
       },
       {

@@ -22,14 +22,18 @@ module.exports = {
     // Additional core rules
     "prefer-const": "error",
     "no-duplicate-imports": "error",
-    "consistent-return": "error",
+    "consistent-return": "error", 
     "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
     
     // React specific rules
     "react/prop-types": "off",
     "react/react-in-jsx-scope": "off",
     "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "error" // Changed from warn to error
+    "react-hooks/exhaustive-deps": "error",
+    
+    // New rules to prevent initialization errors
+    "no-use-before-define": ["error", { "functions": false, "classes": true, "variables": true }],
+    "@typescript-eslint/no-use-before-define": ["error", { "functions": false, "classes": true, "variables": true, "typedefs": true }]
   },
   settings: {
     react: {
