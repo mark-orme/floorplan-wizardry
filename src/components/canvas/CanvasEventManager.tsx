@@ -11,6 +11,7 @@ import {
   useBrushSettings 
 } from "@/hooks/canvas-events";
 import { useStraightLineTool } from "@/hooks/useStraightLineTool";
+import { validateStraightLineTool, scheduleStraightLineValidation } from "@/utils/diagnostics/straightLineValidator";
 import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import { GridRenderer } from "./grid/GridRenderer";
@@ -48,6 +49,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   // Ref for the canvas
   const canvasRef = useRef<FabricCanvas | null>(canvas);
   const initialStateRef = useRef(false);
+  const previousToolRef = useRef<DrawingMode | null>(null);
   
   // Update canvas ref when canvas changes
   useEffect(() => {
@@ -95,12 +97,32 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   useEffect(() => {
     if (!canvas) return;
     
+    // Tool has changed - log the transition
+    if (previousToolRef.current !== tool) {
+      logger.info(`Tool transition: ${previousToolRef.current || 'none'} -> ${tool}`);
+      captureMessage("Drawing tool changed", "tool-transition", {
+        tags: { component: "CanvasEventManager" },
+        extra: { 
+          previousTool: previousToolRef.current,
+          newTool: tool,
+          lineThickness,
+          lineColor
+        }
+      });
+      previousToolRef.current = tool;
+    }
+    
     // Validate the straight line tool
     if (tool === DrawingMode.STRAIGHT_LINE) {
       logger.info("Running straight line tool diagnostics");
       validateStraightLineDrawing(canvas, tool);
+      validateStraightLineTool(canvas, tool);
+      
+      // Schedule periodic validation
+      const cleanupValidation = scheduleStraightLineValidation(canvas, tool);
+      return cleanupValidation;
     }
-  }, [canvas, tool]);
+  }, [canvas, tool, lineThickness, lineColor]);
   
   // Effect to handle tool changes (cursor, selection, etc.)
   useEffect(() => {
@@ -186,6 +208,23 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           canvas.discardActiveObject();
           logger.info("Straight line tool activated", { 
             isToolInitialized
+          });
+          
+          // Enhanced logging for straight line tool
+          captureMessage("Straight line tool activated", "straight-line-tool-active", {
+            tags: { component: "CanvasEventManager" },
+            extra: {
+              initialized: isToolInitialized,
+              canvasState: {
+                isDrawingMode: canvas.isDrawingMode,
+                selection: canvas.selection,
+                defaultCursor: canvas.defaultCursor
+              },
+              lineSettings: {
+                color: lineColor,
+                thickness: lineThickness
+              }
+            }
           });
           break;
           
