@@ -34,7 +34,6 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       
       const objectCount = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid').length;
       
-      // Fix: remove the first argument and pass the metadata directly as the first argument
       captureMessage({
         message: "Canvas state saved",
         category: "canvas-save-state",
@@ -44,7 +43,6 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas state", { error: errorMsg });
-      // Fix: Pass the error object directly without a second argument
       captureError(error as Error);
       toast.error(`Failed to save canvas state: ${errorMsg}`);
     }
@@ -66,7 +64,6 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         setCanRedo(true);
       });
       
-      // Fix: remove the first argument and pass the metadata directly
       captureMessage({
         message: "Undo performed",
         category: "canvas-undo",
@@ -75,7 +72,6 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to undo", { error: errorMsg });
-      // Fix: Pass the error object directly without a second argument
       captureError(error as Error);
       toast.error(`Failed to undo: ${errorMsg}`);
     }
@@ -99,7 +95,6 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to redo", { error: errorMsg });
-      // Fix: Pass the error object directly without a second argument
       captureError(error as Error);
       toast.error(`Failed to redo: ${errorMsg}`);
     }

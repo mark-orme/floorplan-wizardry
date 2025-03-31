@@ -44,7 +44,6 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to delete objects", { error: errorMsg });
-      // Fix: Pass the error object directly without a second argument
       captureError(error as Error);
       toast.error(`Failed to delete objects: ${errorMsg}`);
     }
@@ -71,7 +70,6 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to clear canvas", { error: errorMsg });
-      // Fix: Pass the error object directly without a second argument
       captureError(error as Error);
       toast.error(`Failed to clear canvas: ${errorMsg}`);
     }
@@ -98,7 +96,6 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error(`Failed to zoom ${direction}`, { error: errorMsg });
-      // Fix: Pass the error object directly without a second argument
       captureError(error as Error);
       toast.error(`Failed to zoom ${direction}: ${errorMsg}`);
     }
@@ -123,7 +120,6 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas", { error: errorMsg });
-      // Fix: Pass the error object directly without a second argument
       captureError(error as Error);
       toast.error(`Failed to save canvas: ${errorMsg}`);
       return false;
