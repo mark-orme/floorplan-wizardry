@@ -1,12 +1,15 @@
+
 /**
  * Utilities for handling touch gestures on Fabric.js canvas
  * Provides multi-touch support for mobile devices
+ * 
  * @module fabric/gestures
  */
 import { Canvas, PencilBrush, Point, Object as FabricObject } from 'fabric';
 import type { CustomTouchEvent, CustomFabricTouchEvent, FabricPointerEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { isTouchEvent, isMouseEvent } from '@/types/fabric';
+import { FabricEventTypes } from '@/types/fabric-events';
 
 /**
  * Touch gesture constants for event handling
@@ -88,6 +91,17 @@ const TOUCH_CONSTANTS = {
   GESTURES_INIT_MSG: "Touch gestures initialized for canvas"
 };
 
+// Define custom interface for compatible pointer events
+interface CompatiblePointerEvent {
+  e: Event;
+  pointer: Point;
+  absolutePointer: Point;
+  scenePoint: Point;
+  viewportPoint: Point;
+  isClick?: boolean;
+  currentSubTargets?: FabricObject[];
+}
+
 /**
  * Type guard to check if a value is a Touch
  * Validates that the object has the correct Touch interface properties
@@ -144,9 +158,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
   const isPencilTouch = (touch: Touch): boolean => {
     // Check if touch has Apple Pencil-specific properties
     return supportsApplePencil && 
-          (touch as any).touchType === 'stylus' || 
+          ((touch as any).touchType === 'stylus' || 
           (touch as any).radiusX < TOUCH_CONSTANTS.MIN_STYLUS_RADIUS || // Pencil has small radius
-          'force' in touch; // Pencil supports pressure (force)
+          'force' in touch); // Pencil supports pressure (force)
   };
 
   /**
@@ -174,20 +188,19 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * force;
       }
 
-      // Create fabric-compatible event object with proper Point objects
-      const eventInfo: FabricPointerEvent = {
+      // Create fabric-compatible event object
+      const eventInfo: CompatiblePointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
-        target: null,
         isClick: true,
         currentSubTargets: []
       };
       
       // Use the canvas.fire with the EventInfo
-      canvas.fire('mouse:down', eventInfo);
+      canvas.fire(FabricEventTypes.MOUSE_DOWN, eventInfo as any);
 
       console.log(`${TOUCH_CONSTANTS.DRAWING_STARTED_MSG}:`, isPencil ? "Apple Pencil/Stylus" : "Touch");
     }
@@ -197,8 +210,8 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       const touchPosition = getTouchPosition(touch);
 
       ongoingTouches.push({
-        touches: [{ x: touchPosition.x, y: touchPosition.y }],
-        e: touch
+        touches: [touchPosition],
+        e: e
       });
     }
 
@@ -229,20 +242,19 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth * Math.max(TOUCH_CONSTANTS.MIN_PRESSURE_MULTIPLIER, force);
       }
 
-      // Create fabric-compatible event object with proper Point objects
-      const eventInfo: FabricPointerEvent = {
+      // Create fabric-compatible event object
+      const eventInfo: CompatiblePointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition, 
         viewportPoint: touchPosition.clone(),
-        target: null,
         isClick: false,
         currentSubTargets: []
       };
       
       // Use the canvas.fire with the EventInfo
-      canvas.fire('mouse:move', eventInfo);
+      canvas.fire(FabricEventTypes.MOUSE_MOVE, eventInfo as any);
     }
 
     for (let i = 0; i < touches.length; i++) {
@@ -250,13 +262,15 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       const touchPosition = getTouchPosition(touch);
 
       const ongoingTouchIndex = ongoingTouches.findIndex(t => {
-        return isTouch(t.e) && t.e.identifier === touch.identifier;
+        return t.e instanceof TouchEvent && 
+               isTouch((t.e as TouchEvent).changedTouches[0]) && 
+               (t.e as TouchEvent).changedTouches[0].identifier === touch.identifier;
       });
 
       if (ongoingTouchIndex !== -1) {
         ongoingTouches[ongoingTouchIndex] = {
-          touches: [{ x: touchPosition.x, y: touchPosition.y }],
-          e: touch
+          touches: [touchPosition],
+          e: e
         };
       }
     }
@@ -286,20 +300,19 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         canvas.freeDrawingBrush.width = baseWidth;
       }
 
-      // Create fabric-compatible event object with proper Point objects
-      const eventInfo: FabricPointerEvent = {
+      // Create fabric-compatible event object
+      const eventInfo: CompatiblePointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
         scenePoint: touchPosition,
         viewportPoint: touchPosition.clone(),
-        target: null,
         isClick: true,
         currentSubTargets: []
       };
       
       // Use the canvas.fire with the EventInfo
-      canvas.fire('mouse:up', eventInfo);
+      canvas.fire(FabricEventTypes.MOUSE_UP, eventInfo as any);
 
       console.log(TOUCH_CONSTANTS.DRAWING_ENDED_MSG);
     }
@@ -307,7 +320,9 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
       ongoingTouches = ongoingTouches.filter(t => {
-        return !isTouch(t.e) || t.e.identifier !== touch.identifier;
+        return !(t.e instanceof TouchEvent && 
+                isTouch((t.e as TouchEvent).changedTouches[0]) && 
+                (t.e as TouchEvent).changedTouches[0].identifier === touch.identifier);
       });
     }
 
@@ -342,27 +357,28 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         const touch = touches[0];
         const touchPosition = getTouchPosition(touch);
         
-        // Create fabric-compatible event object with proper Point objects
-        const eventInfo: FabricPointerEvent = {
+        // Create fabric-compatible event object
+        const eventInfo: CompatiblePointerEvent = {
           e: e,
           pointer: touchPosition,
           absolutePointer: touchPosition.clone(),
           scenePoint: touchPosition,
           viewportPoint: touchPosition.clone(),
-          target: null,
           isClick: false,
           currentSubTargets: []
         };
         
         // Use the canvas.fire with the EventInfo
-        canvas.fire('mouse:up', eventInfo);
+        canvas.fire(FabricEventTypes.MOUSE_UP, eventInfo as any);
       }
     }
 
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
       ongoingTouches = ongoingTouches.filter(t => {
-        return !isTouch(t.e) || t.e.identifier !== touch.identifier;
+        return !(t.e instanceof TouchEvent && 
+                isTouch((t.e as TouchEvent).changedTouches[0]) && 
+                (t.e as TouchEvent).changedTouches[0].identifier === touch.identifier);
       });
     }
   };

@@ -2,6 +2,7 @@
 /**
  * Canvas Controller Setup Hook
  * Handles initialization and setup of the canvas controller
+ * 
  * @module canvas/controller/useCanvasControllerSetup
  */
 import { useRef, useEffect } from "react";
@@ -160,9 +161,9 @@ export const useCanvasControllerSetup = ({
 
   // Return the canvas references for the controller to use
   return {
+    canvasRef,
+    fabricCanvasRef,
     canvas: fabricCanvasRef.current,
-    canvasElement: canvasRef.current as HTMLCanvasElement,
-    container: canvasRef.current?.parentElement as HTMLElement
   };
 };
 

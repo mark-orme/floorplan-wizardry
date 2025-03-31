@@ -1,6 +1,9 @@
 
 /**
  * Unit tests for useLineState hook
+ * Tests state management for line drawing functionality
+ * 
+ * @module hooks/straightLineTool/__tests__/useLineState.test
  */
 import { renderHook, act } from '@testing-library/react-hooks';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -8,7 +11,7 @@ import { useLineState } from '../useLineState';
 import { Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 
-// Mock fabric classes
+// Mock fabric classes to isolate hook behavior from actual fabric implementation
 vi.mock('fabric', () => {
   const mockLine = vi.fn().mockImplementation(() => ({
     set: vi.fn(),
@@ -57,8 +60,8 @@ describe('useLineState', () => {
   it('should set current line reference', () => {
     const { result } = renderHook(() => useLineState());
     
-    // Create a mock line
-    const mockLine = new Line();
+    // Create a mock line with empty constructor arguments
+    const mockLine = new Line([], {});
     
     act(() => {
       result.current.setCurrentLine(mockLine);
@@ -71,8 +74,8 @@ describe('useLineState', () => {
   it('should set tooltip reference', () => {
     const { result } = renderHook(() => useLineState());
     
-    // Create a mock tooltip
-    const mockTooltip = new Text();
+    // Create a mock tooltip with empty constructor arguments
+    const mockTooltip = new Text('', {});
     
     act(() => {
       result.current.setDistanceTooltip(mockTooltip);
@@ -98,8 +101,8 @@ describe('useLineState', () => {
     
     // Set up initial state
     const testPoint: Point = { x: 100, y: 100 };
-    const mockLine = new Line();
-    const mockTooltip = new Text();
+    const mockLine = new Line([], {});
+    const mockTooltip = new Text('', {});
     
     act(() => {
       result.current.setStartPoint(testPoint);
