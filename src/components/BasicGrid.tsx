@@ -1,26 +1,51 @@
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
+/**
+ * Props for the BasicGrid component
+ * @interface BasicGridProps
+ */
 interface BasicGridProps {
+  /** The Fabric.js canvas instance to render the grid on */
   canvas: FabricCanvas;
+  /** Whether the grid should be visible */
   visible?: boolean;
+  /** Callback function triggered when the grid is successfully created */
   onGridCreated?: (gridObjects: FabricObject[]) => void;
 }
 
+/**
+ * BasicGrid component
+ * Renders a customizable grid on a Fabric.js canvas
+ * 
+ * @component
+ * @param {BasicGridProps} props - Component properties
+ * @returns {null} This is a UI-less component that manipulates the canvas directly
+ */
 export const BasicGrid: React.FC<BasicGridProps> = ({
   canvas,
   visible = true,
   onGridCreated
 }) => {
+  // Reference to track grid objects for manipulation and cleanup
   const gridObjectsRef = useRef<FabricObject[]>([]);
+  // State to track whether grid has been created
   const [isGridCreated, setIsGridCreated] = useState(false);
+  // Reference to track whether grid creation has been attempted
   const gridCreationAttemptedRef = useRef(false);
+  // Reference to track timeout for retry mechanism
   const gridCreationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Function to handle grid creation errors and retry
+  /**
+   * Creates grid with retry mechanism if canvas dimensions are not ready
+   * Implements exponential backoff for retries
+   * 
+   * @param {number} retryCount - Current retry attempt number
+   * @param {number} maxRetries - Maximum number of retry attempts
+   * @returns {FabricObject[] | undefined} Array of created grid objects or undefined on failure
+   */
   const createGridWithRetry = useCallback((retryCount = 0, maxRetries = 3) => {
     // Clear any existing timeout
     if (gridCreationTimeoutRef.current) {

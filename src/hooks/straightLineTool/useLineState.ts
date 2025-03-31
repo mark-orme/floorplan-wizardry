@@ -1,6 +1,6 @@
-
 /**
  * State management hook for straight line drawing tool
+ * Centralizes state for line drawing operations
  * @module hooks/straightLineTool/useLineState
  */
 import { useState, useRef, useCallback } from 'react';
@@ -9,6 +9,7 @@ import { Point } from '@/types/core/Geometry';
 
 /**
  * Interface for straight line tool state
+ * Contains all state and methods needed for the line drawing tool
  */
 export interface LineState {
   /** Whether currently drawing a line */
@@ -31,10 +32,14 @@ export interface LineState {
   initializeTool: () => void;
   /** Reset drawing state */
   resetDrawingState: () => void;
+  /** Set whether currently drawing */
+  setIsDrawing: (isDrawing: boolean) => void;
 }
 
 /**
  * Custom hook for managing straight line tool state
+ * Provides a centralized way to manage all state related to the line drawing tool
+ * 
  * @returns State and methods for line drawing
  */
 export const useLineState = (): LineState => {
@@ -46,6 +51,8 @@ export const useLineState = (): LineState => {
 
   /**
    * Sets the start point and activates drawing
+   * Called when drawing starts
+   * 
    * @param point - Starting point for the line
    */
   const setStartPoint = useCallback((point: Point) => {
@@ -96,6 +103,7 @@ export const useLineState = (): LineState => {
     setCurrentLine,
     setDistanceTooltip,
     initializeTool,
-    resetDrawingState
+    resetDrawingState,
+    setIsDrawing
   };
 };

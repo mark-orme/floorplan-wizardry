@@ -1,7 +1,7 @@
 
 /**
  * Centralized type exports
- * All types should be exported from this file to prevent duplication
+ * All types should be exported from this file to prevent duplication and ensure consistency
  * @module types/index
  */
 
@@ -21,13 +21,7 @@ export type { Point, CanvasDimensions } from './core/Geometry';
 // Re-export grid types
 export type { 
   GridCreationState, 
-  GridCreationLock,
-  GridStyle,
-  GridOptions,
-  GridConfig,
-  GridDimensions,
-  GridParameters,
-  Grid
+  GridCreationLock
 } from './core/GridTypes';
 export { 
   DEFAULT_GRID_CREATION_STATE,
@@ -47,4 +41,3 @@ export type {
   PerformanceStats,
   DistanceToolState 
 } from './drawingTypes';
-

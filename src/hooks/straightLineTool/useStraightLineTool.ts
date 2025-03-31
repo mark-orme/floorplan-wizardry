@@ -1,13 +1,13 @@
-
 /**
  * Hook for handling straight line drawing functionality
+ * Manages canvas interaction for drawing precise straight lines
  * @module hooks/straightLineTool/useStraightLineTool
  */
 
 import { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useLineState } from './useLineState';
+import { useLineState, LineState } from './useLineState';
 import { useLineEvents } from './useLineEvents';
 import { captureMessage } from '@/utils/sentry';
 import logger from '@/utils/logger';

@@ -1,6 +1,7 @@
 
 /**
  * ESLint rules collection
+ * Exports all rule sets for centralized configuration
  * @module eslint/index
  */
 
@@ -16,6 +17,7 @@ const prettierRules = require('./prettier-config');
 const exportValidationRule = require('./export-validation');
 const sentryRules = require('./sentry-rules');
 const drawingModeValidation = require('./drawing-mode-validation');
+const fabricTypesRules = require('./fabric-types-rules');
 const constants = require('./constants');
 const ignores = require('./ignores');
 
@@ -32,6 +34,7 @@ module.exports = {
   exportValidationRule,
   sentryRules,
   drawingModeValidation,
+  fabricTypesRules,
   constants,
   ignores
 };
