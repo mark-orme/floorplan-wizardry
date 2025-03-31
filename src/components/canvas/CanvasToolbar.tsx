@@ -91,30 +91,55 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
 }) => {
   // Handle tool change with verification and logging
   const handleToolChange = (newTool: DrawingMode) => {
-    logger.info(`Toolbar: changing tool from ${tool} to ${newTool}`);
+    logger.info(`Toolbar: changing tool from ${tool} to ${newTool}`, {
+      previousTool: tool,
+      newTool,
+      isSameTypeComparison: typeof tool === typeof newTool,
+      stringComparison: `'${tool}' vs '${newTool}'`,
+      isEqual: tool === newTool
+    });
     
     // Enhanced logging for straight line tool
     if (newTool === DrawingMode.STRAIGHT_LINE) {
       captureMessage('Straight line tool selected from toolbar', 'straight-line-tool-selected', {
         tags: { component: 'CanvasToolbar' },
-        extra: { previousTool: tool, lineThickness, lineColor }
+        extra: { 
+          previousTool: tool, 
+          lineThickness, 
+          lineColor,
+          stringCheck: newTool === 'straight-line' ? 'Matches string literal' : 'Does not match',
+          enumCheck: newTool === DrawingMode.STRAIGHT_LINE ? 'Matches enum' : 'Does not match',
+          toolValue: newTool,
+          toolType: typeof newTool
+        }
       });
       
       logger.info('Straight line tool selected from toolbar', {
         toolType: typeof newTool,
         toolValue: newTool,
-        toolCheck: newTool === DrawingMode.STRAIGHT_LINE
+        toolCheck: newTool === DrawingMode.STRAIGHT_LINE,
+        enumValue: DrawingMode.STRAIGHT_LINE
       });
+      
+      // Force a small delay to ensure tool change event propagates correctly
+      setTimeout(() => {
+        onToolChange(newTool);
+      }, 0);
+    } else {
+      onToolChange(newTool);
     }
     
-    onToolChange(newTool);
-    
     // For debugging - will run validation on the next render
-    setTimeout(() => {
-      if (newTool === DrawingMode.STRAIGHT_LINE) {
+    if (newTool === DrawingMode.STRAIGHT_LINE) {
+      setTimeout(() => {
         logger.info("Validating straight line tool after change");
-      }
-    }, 100);
+        logger.info("Current tool state after change", {
+          currentToolNow: tool,
+          shouldBe: newTool,
+          match: tool === newTool
+        });
+      }, 100);
+    }
   };
   
   return (

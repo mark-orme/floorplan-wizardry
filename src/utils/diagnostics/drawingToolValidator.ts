@@ -45,7 +45,9 @@ export const validateStraightLineDrawing = (
       hasListeners,
       drawingToolMatches: currentTool === DrawingMode.STRAIGHT_LINE,
       stringComparison: `'${currentTool}' === '${DrawingMode.STRAIGHT_LINE}'`,
-      canvasSize: { width: canvas.width, height: canvas.height }
+      canvasSize: { width: canvas.width, height: canvas.height },
+      objectCount: canvas.getObjects().length,
+      activeFabricObj: canvas.getActiveObject() ? 'Has Active Object' : 'No Active Object'
     };
     
     logger.info('Straight line tool diagnostic', diagnosticInfo);
@@ -184,15 +186,51 @@ export const testStraightLineDrawing = (
       objectCountBefore,
       isDrawingMode: canvas.isDrawingMode,
       selection: canvas.selection,
-      tool
+      tool,
+      canvasEventListenerCount: canvas.getElement().getEventListeners ? 
+        'Has event listeners API' : 'No event listeners API'
     });
     
-    // Note: This is just a diagnostic tool, not actual implementation
-    // In a real test, we would simulate mouse events and verify a line was created
+    // Enhanced diagnostics: Try to force a fake mouse event to test handlers
+    const canvasElement = canvas.getElement();
+    const position = { x: center.x, y: center.y };
+    
+    const mouseEvent = new MouseEvent('mousedown', {
+      clientX: position.x,
+      clientY: position.y,
+      bubbles: true
+    });
+    
+    logger.info('Dispatching test mouse event', {
+      type: mouseEvent.type,
+      position,
+      eventBubbles: mouseEvent.bubbles
+    });
+    
+    // Dispatch the event to test event handling
+    canvasElement.dispatchEvent(mouseEvent);
+    
+    // Additional diagnostics
+    setTimeout(() => {
+      const objectCountAfter = canvas.getObjects().length;
+      logger.info('Post-test object count', {
+        before: objectCountBefore,
+        after: objectCountAfter,
+        difference: objectCountAfter - objectCountBefore
+      });
+    }, 100);
     
     captureMessage('Straight line drawing test run', 'test-straight-line', {
       tags: { component: 'DrawingToolValidator' },
-      extra: { tool, objectCount: objectCountBefore }
+      extra: { 
+        tool, 
+        objectCount: objectCountBefore,
+        canvasSettings: {
+          isDrawingMode: canvas.isDrawingMode,
+          selection: canvas.selection,
+          defaultCursor: canvas.defaultCursor
+        }
+      }
     });
   } catch (error) {
     logger.error('Error testing straight line drawing', error);

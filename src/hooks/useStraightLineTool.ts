@@ -1,3 +1,4 @@
+
 /**
  * Hook for handling straight line drawing with measurement
  * @module hooks/useStraightLineTool
@@ -47,6 +48,7 @@ export const useStraightLineTool = ({
   const toolInitializedRef = useRef(false);
   const mouseDownHandledRef = useRef(false);
   const mouseMoveCountRef = useRef(0);
+  const eventHandlersRegisteredRef = useRef(false);
 
   // Get snapping functionality
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
@@ -68,7 +70,11 @@ export const useStraightLineTool = ({
           } : null
         }
       });
-      logger.info('Straight line tool activated', { lineColor, lineThickness });
+      logger.info('Straight line tool activated', { 
+        lineColor, 
+        lineThickness,
+        eventHandlersRegistered: eventHandlersRegisteredRef.current
+      });
       
       // Reset diagnostic counters
       mouseDownHandledRef.current = false;
@@ -142,7 +148,10 @@ export const useStraightLineTool = ({
     if (!fabricCanvasRef.current || tool !== DrawingMode.STRAIGHT_LINE) {
       logger.info('Mouse down ignored - not in straight line mode', { 
         hasCanvas: !!fabricCanvasRef.current, 
-        currentTool: tool 
+        currentTool: tool,
+        expectedTool: DrawingMode.STRAIGHT_LINE,
+        toolComparison: tool === DrawingMode.STRAIGHT_LINE ? 'equal' : 'not equal',
+        toolTypeOf: typeof tool
       });
       return;
     }
@@ -191,7 +200,7 @@ export const useStraightLineTool = ({
     );
     
     canvas.add(currentLineRef.current);
-    canvas.renderAll();
+    canvas.requestRenderAll();
     
     logger.info('Started drawing straight line', { point: snappedPoint });
     
@@ -394,16 +403,20 @@ export const useStraightLineTool = ({
 
   /**
    * Set up event listeners when tool is active
+   * CRITICAL CHANGE: Using direct DOM event listeners instead of relying on canvas events
+   * which may not be properly set up or propagated
    */
   useEffect(() => {
     logger.info('Straight line tool effect running', { 
       currentTool: tool, 
       isCorrectTool: tool === DrawingMode.STRAIGHT_LINE,
-      hasCanvas: !!fabricCanvasRef.current
+      hasCanvas: !!fabricCanvasRef.current,
+      toolCompareResult: `${tool} === ${DrawingMode.STRAIGHT_LINE} is ${tool === DrawingMode.STRAIGHT_LINE}`
     });
     
     if (tool !== DrawingMode.STRAIGHT_LINE) {
       toolInitializedRef.current = false;
+      eventHandlersRegisteredRef.current = false;
       return;
     }
     
@@ -416,14 +429,28 @@ export const useStraightLineTool = ({
       );
       return;
     }
-    
+
     try {
-      // Add event listeners directly to window to ensure they're not missed
-      window.addEventListener('mousedown', handleMouseDown);
+      // Important: We now add event listeners directly to the canvas DOM element
+      // instead of using fabric's event system which might be having issues
+      const canvasElement = fabricCanvasRef.current.getElement();
+      
+      // Add event listeners directly to canvas element
+      canvasElement.addEventListener('mousedown', handleMouseDown as any);
+      canvasElement.addEventListener('mousemove', handleMouseMove as any);
+      canvasElement.addEventListener('mouseup', handleMouseUp as any);
+      
+      // Also add to window to catch events that might occur outside canvas
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
       
-      logger.info('Straight line tool event listeners added');
+      logger.info('Straight line tool event listeners added directly to canvas DOM element', {
+        canvasElementId: canvasElement.id,
+        canvasElementWidth: canvasElement.width,
+        canvasElementHeight: canvasElement.height
+      });
+      
+      eventHandlersRegisteredRef.current = true;
       
       // Set canvas properties for straight line tool
       const canvas = fabricCanvasRef.current;
@@ -463,11 +490,20 @@ export const useStraightLineTool = ({
           lineSettings: {
             color: lineColor,
             thickness: lineThickness
-          }
+          },
+          domEventListeners: true
         }
       });
       
       toolInitializedRef.current = true;
+      
+      // Test the event handling immediately with a synthetic event
+      const testEvent = new CustomEvent('test-straight-line');
+      logger.info('Testing straight line event handling', {
+        isRegistered: eventHandlersRegisteredRef.current,
+        isToolInitialized: toolInitializedRef.current,
+        hasMouseDownHandler: !!handleMouseDown
+      });
     } catch (error) {
       logger.error('Error initializing straight line tool', error);
       captureError(error as Error, 'straight-line-init-error', {
@@ -480,7 +516,16 @@ export const useStraightLineTool = ({
       logger.info('Straight line tool cleanup running');
       
       try {
-        window.removeEventListener('mousedown', handleMouseDown);
+        if (fabricCanvasRef.current) {
+          const canvasElement = fabricCanvasRef.current.getElement();
+          
+          // Remove event listeners from canvas element
+          canvasElement.removeEventListener('mousedown', handleMouseDown as any);
+          canvasElement.removeEventListener('mousemove', handleMouseMove as any);
+          canvasElement.removeEventListener('mouseup', handleMouseUp as any);
+        }
+        
+        // Always remove window listeners
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
         
@@ -515,6 +560,8 @@ export const useStraightLineTool = ({
             tags: { component: 'useStraightLineTool' }
           });
         }
+        
+        eventHandlersRegisteredRef.current = false;
       } catch (error) {
         logger.error('Error during straight line tool cleanup', error);
         captureError(error as Error, 'straight-line-cleanup-error');
@@ -562,6 +609,10 @@ export const useStraightLineTool = ({
   return {
     isDrawing,
     cancelDrawing,
-    isToolInitialized: toolInitializedRef.current
+    isToolInitialized: toolInitializedRef.current,
+    // Export handler functions directly to allow other components to use them
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp
   };
 };
