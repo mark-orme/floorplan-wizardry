@@ -17,6 +17,8 @@ Welcome to the FloorPlan Designer project! This document provides guidelines for
 10. 🌍 **No Third-Party Code** - No external libraries unless approved and documented
 11. 🔄 **Promise Handling** - Always use await or .catch() with promises to prevent unhandled rejections
 12. 🧮 **Boolean Expression Safety** - Use explicit boolean checks rather than truthy/falsy coercion
+13. 🎨 **DrawingTool Consistency** - Always use the canonical DrawingTool type from '@/types/core/DrawingTool'
+14. 🔍 **Hook Contracts** - All hooks must have explicit return types
 
 ## 📚 Documentation References
 
@@ -29,6 +31,7 @@ For detailed documentation on specific aspects of the codebase, please refer to:
 - [Component Design](./docs/component-design.md) - Component architecture and patterns
 - [Testing Strategy](./docs/testing-strategy.md) - Testing approaches and tools
 - [Common Pitfalls](./docs/common-pitfalls.md) - Known issues and how to avoid them
+- [AI and Developer Guidelines](./AI_DEV_GUIDELINES.md) - Specific guidance for AI assistants and human developers
 
 ## 📝 Pull Request Guidelines
 
@@ -49,6 +52,8 @@ Before submitting your PR, ensure:
 - [ ] PR description clearly explains the changes
 - [ ] If adding new grid functions, they are properly exported in index.ts
 - [ ] All TypeScript types are properly defined with no `any`
+- [ ] DrawingTool usage is consistent with the canonical source
+- [ ] Hook return types are explicitly defined
 
 ## 💾 Pre-commit Hooks
 

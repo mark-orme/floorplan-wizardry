@@ -21,6 +21,7 @@ const fabricTypesRules = require('./fabric-types-rules');
 const constants = require('./constants');
 const ignores = require('./ignores');
 const functionArgumentRules = require('./function-argument-rules');
+const aiDevRules = require('./typescript/ai-dev-rules');
 
 // Export all rule sets and configurations
 module.exports = {
@@ -38,5 +39,6 @@ module.exports = {
   fabricTypesRules,
   constants,
   ignores,
-  functionArgumentRules
+  functionArgumentRules,
+  aiDevRules
 };

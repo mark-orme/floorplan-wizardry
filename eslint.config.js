@@ -21,6 +21,7 @@ import {
 } from './eslint/index.js';
 import typeScriptRules from './eslint/typescript-rules.js';
 import fabricTypesRules from './eslint/fabric-types-rules.js';
+import { aiDevRules } from './eslint/typescript/ai-dev-rules.js';
 
 /**
  * Comprehensive ESLint configuration
@@ -35,6 +36,7 @@ export default [
   typeSafetyRules,
   gridRules,
   gridFabricRules,
+  aiDevRules, // Add our new AI and Developer guidance rules
   drawingModeValidation, // Add our new drawing mode validation rules
   fabricTypesRules, // Add our new Fabric.js type safety rules
   jsdocRules,
