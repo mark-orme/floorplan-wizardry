@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line, Point as FabricPoint, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -5,13 +6,12 @@ import { toast } from 'sonner';
 import { useSnapToGrid } from './useSnapToGrid';
 import logger from '@/utils/logger';
 import { captureError, captureMessage } from '@/utils/sentry';
-
-// Define a proper type for Fabric.js events
-interface FabricPointerEvent {
-  e: MouseEvent | TouchEvent;
-  pointer?: { x: number; y: number };
-  target?: any;
-}
+import { 
+  FabricMouseDownEvent, 
+  FabricMouseMoveEvent, 
+  FabricMouseUpEvent,
+  FabricEventTypes
+} from '@/types/fabric-events';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -44,16 +44,16 @@ export const useStraightLineTool = ({
     if (!canvas) return;
     
     // Remove our specific event handlers
-    canvas.off('mouse:down', handleMouseDown);
-    canvas.off('mouse:move', handleMouseMove);
-    canvas.off('mouse:up', handleMouseUp);
+    canvas.off(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
+    canvas.off(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
+    canvas.off(FabricEventTypes.MOUSE_UP, handleMouseUp);
     
     logger.info("Straight line event handlers removed");
     captureMessage("Straight line tool event handlers removed", "straight-line-handlers-cleanup");
   }, [fabricCanvasRef]);
   
   // Handle mouse down to start drawing
-  const handleMouseDown = useCallback((event: FabricPointerEvent) => {
+  const handleMouseDown = useCallback((event: FabricMouseDownEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || tool !== DrawingMode.STRAIGHT_LINE) return;
     
@@ -102,7 +102,7 @@ export const useStraightLineTool = ({
   }, [fabricCanvasRef, tool, lineColor, lineThickness, snapPointToGrid]);
   
   // Handle mouse move to update line
-  const handleMouseMove = useCallback((event: FabricPointerEvent) => {
+  const handleMouseMove = useCallback((event: FabricMouseMoveEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !startPointRef.current || !currentLineRef.current) return;
     
@@ -169,7 +169,7 @@ export const useStraightLineTool = ({
   }, [fabricCanvasRef, isDrawing, tool, snapPointToGrid, snapLineToGrid]);
   
   // Handle mouse up to complete line drawing
-  const handleMouseUp = useCallback((event: FabricPointerEvent) => {
+  const handleMouseUp = useCallback((event: FabricMouseUpEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !startPointRef.current || !currentLineRef.current) return;
     
@@ -299,9 +299,9 @@ export const useStraightLineTool = ({
       });
       
       // Add our specific event handlers
-      canvas.on('mouse:down', handleMouseDown);
-      canvas.on('mouse:move', handleMouseMove);
-      canvas.on('mouse:up', handleMouseUp);
+      canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
+      canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
+      canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp);
       
       // Discard any active selection
       canvas.discardActiveObject();

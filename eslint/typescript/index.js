@@ -8,6 +8,7 @@ import { baseTypeScriptRules } from './base-rules.js';
 import { typeSafetyRules } from './safety-rules.js';
 import { namingRules } from './naming-rules.js';
 import { fabricRules } from './fabric-rules.js';
+import { fabricEventRules } from './fabric-event-rules.js';
 import { drawingToolRules } from './drawing-tool-rules.js';
 import { assertionRules } from './assertion-rules.js';
 import { reactTypescriptRules } from './react-rules.js';
@@ -17,6 +18,7 @@ export const typescriptRules = [
   typeSafetyRules,
   namingRules,
   fabricRules,
+  fabricEventRules,
   drawingToolRules,
   assertionRules,
   reactTypescriptRules

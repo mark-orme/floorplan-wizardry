@@ -41,23 +41,45 @@ vi.mock('fabric', () => {
     ...options
   }));
   
-  const mockCanvas = vi.fn().mockImplementation(() => ({
-    on: vi.fn(),
-    off: vi.fn(),
-    add: vi.fn(),
-    remove: vi.fn(),
-    requestRenderAll: vi.fn(),
-    discardActiveObject: vi.fn(),
-    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
-    getObjects: vi.fn().mockReturnValue([]),
-    contains: vi.fn().mockReturnValue(true),
-    isDrawingMode: false,
-    selection: true,
-    defaultCursor: 'default',
-    hoverCursor: 'default',
-    width: 800,
-    height: 600
-  }));
+  // Create a mock for canvas with proper event handlers structure
+  const mockCanvas = vi.fn().mockImplementation(() => {
+    const eventHandlers: Record<string, Array<Function>> = {
+      'mouse:down': [],
+      'mouse:move': [],
+      'mouse:up': []
+    };
+    
+    return {
+      on: vi.fn((eventName: string, handler: Function) => {
+        if (!eventHandlers[eventName]) {
+          eventHandlers[eventName] = [];
+        }
+        eventHandlers[eventName].push(handler);
+      }),
+      off: vi.fn((eventName: string, handler: Function) => {
+        if (eventHandlers[eventName]) {
+          const index = eventHandlers[eventName].indexOf(handler);
+          if (index !== -1) {
+            eventHandlers[eventName].splice(index, 1);
+          }
+        }
+      }),
+      add: vi.fn(),
+      remove: vi.fn(),
+      requestRenderAll: vi.fn(),
+      discardActiveObject: vi.fn(),
+      getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+      getObjects: vi.fn().mockReturnValue([]),
+      contains: vi.fn().mockReturnValue(true),
+      isDrawingMode: false,
+      selection: true,
+      defaultCursor: 'default',
+      hoverCursor: 'default',
+      width: 800,
+      height: 600,
+      _eventHandlers: eventHandlers // Accessible for testing
+    };
+  });
   
   return {
     Canvas: mockCanvas,
@@ -74,6 +96,13 @@ vi.mock('../useSnapToGrid', () => ({
     snapLineToGrid: vi.fn((start, end) => ({ start, end }))
   })
 }));
+
+// Type for mock event
+interface MockFabricEvent {
+  e: MouseEvent | TouchEvent;
+  pointer?: { x: number; y: number };
+  target?: any;
+}
 
 describe('useStraightLineTool', () => {
   let fabricCanvas: Canvas;
@@ -145,18 +174,21 @@ describe('useStraightLineTool', () => {
       saveCurrentState
     }));
     
-    // Get the mouse:down handler
-    const mouseDownHandler = vi.mocked(fabricCanvas.on).mock.calls.find(
+    // Extract the mouse:down handler from the mock
+    const onCall = vi.mocked(fabricCanvas.on);
+    const mouseDownHandler = onCall.mock.calls.find(
       call => call[0] === 'mouse:down'
     )?.[1];
     
     // Simulate mouse down event
     if (mouseDownHandler) {
+      const mockEvent: MockFabricEvent = { 
+        e: new MouseEvent('mousedown'), 
+        pointer: { x: 100, y: 100 } 
+      };
+      
       act(() => {
-        mouseDownHandler({ 
-          e: new MouseEvent('mousedown'), 
-          pointer: { x: 100, y: 100 } 
-        });
+        mouseDownHandler(mockEvent);
       });
       
       // Verify line creation and state
@@ -176,30 +208,35 @@ describe('useStraightLineTool', () => {
       saveCurrentState
     }));
     
-    // Get handlers
-    const mouseDownHandler = vi.mocked(fabricCanvas.on).mock.calls.find(
+    // Extract handlers from mock
+    const onCall = vi.mocked(fabricCanvas.on);
+    const mouseDownHandler = onCall.mock.calls.find(
       call => call[0] === 'mouse:down'
     )?.[1];
     
-    const mouseMoveHandler = vi.mocked(fabricCanvas.on).mock.calls.find(
+    const mouseMoveHandler = onCall.mock.calls.find(
       call => call[0] === 'mouse:move'
     )?.[1];
     
     // Start drawing
     if (mouseDownHandler && mouseMoveHandler) {
+      const mockDownEvent: MockFabricEvent = { 
+        e: new MouseEvent('mousedown'), 
+        pointer: { x: 100, y: 100 } 
+      };
+      
       act(() => {
-        mouseDownHandler({ 
-          e: new MouseEvent('mousedown'), 
-          pointer: { x: 100, y: 100 } 
-        });
+        mouseDownHandler(mockDownEvent);
       });
       
       // Move the mouse
+      const mockMoveEvent: MockFabricEvent = { 
+        e: new MouseEvent('mousemove'), 
+        pointer: { x: 200, y: 200 } 
+      };
+      
       act(() => {
-        mouseMoveHandler({ 
-          e: new MouseEvent('mousemove'), 
-          pointer: { x: 200, y: 200 } 
-        });
+        mouseMoveHandler(mockMoveEvent);
       });
       
       // Verify tooltip creation
@@ -218,12 +255,13 @@ describe('useStraightLineTool', () => {
       saveCurrentState
     }));
     
-    // Get handlers
-    const mouseDownHandler = vi.mocked(fabricCanvas.on).mock.calls.find(
+    // Extract handlers from mock
+    const onCall = vi.mocked(fabricCanvas.on);
+    const mouseDownHandler = onCall.mock.calls.find(
       call => call[0] === 'mouse:down'
     )?.[1];
     
-    const mouseUpHandler = vi.mocked(fabricCanvas.on).mock.calls.find(
+    const mouseUpHandler = onCall.mock.calls.find(
       call => call[0] === 'mouse:up'
     )?.[1];
     
@@ -232,18 +270,22 @@ describe('useStraightLineTool', () => {
     
     // Start and finish drawing
     if (mouseDownHandler && mouseUpHandler) {
-      act(() => {
-        mouseDownHandler({ 
-          e: new MouseEvent('mousedown'), 
-          pointer: { x: 100, y: 100 } 
-        });
-      });
+      const mockDownEvent: MockFabricEvent = { 
+        e: new MouseEvent('mousedown'), 
+        pointer: { x: 100, y: 100 } 
+      };
       
       act(() => {
-        mouseUpHandler({ 
-          e: new MouseEvent('mouseup'), 
-          pointer: { x: 200, y: 200 } 
-        });
+        mouseDownHandler(mockDownEvent);
+      });
+      
+      const mockUpEvent: MockFabricEvent = { 
+        e: new MouseEvent('mouseup'), 
+        pointer: { x: 200, y: 200 } 
+      };
+      
+      act(() => {
+        mouseUpHandler(mockUpEvent);
       });
       
       // Verify line is completed
@@ -263,16 +305,19 @@ describe('useStraightLineTool', () => {
     }));
     
     // Start drawing
-    const mouseDownHandler = vi.mocked(fabricCanvas.on).mock.calls.find(
+    const onCall = vi.mocked(fabricCanvas.on);
+    const mouseDownHandler = onCall.mock.calls.find(
       call => call[0] === 'mouse:down'
     )?.[1];
     
     if (mouseDownHandler) {
+      const mockEvent: MockFabricEvent = { 
+        e: new MouseEvent('mousedown'), 
+        pointer: { x: 100, y: 100 } 
+      };
+      
       act(() => {
-        mouseDownHandler({ 
-          e: new MouseEvent('mousedown'), 
-          pointer: { x: 100, y: 100 } 
-        });
+        mouseDownHandler(mockEvent);
       });
       
       // Verify drawing started
