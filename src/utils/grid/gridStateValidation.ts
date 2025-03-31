@@ -4,7 +4,7 @@
  * Validates GridCreationState objects to ensure they have correct properties
  * @module utils/grid/gridStateValidation
  */
-import { GridCreationState, DEFAULT_GRID_CREATION_STATE } from '@/types/core/GridTypes';
+import { GridCreationState, DEFAULT_GRID_CREATION_STATE, GridCreationLock } from '@/types/core/GridTypes';
 
 /**
  * Validates a GridCreationState object to ensure it has valid properties
