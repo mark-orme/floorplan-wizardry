@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -6,6 +5,7 @@ import { Point } from '@/types/core/Geometry';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
 import { FabricEventTypes } from '@/types/fabric-events';
 import logger from '@/utils/logger';
+import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 
 interface LineState {
   isDrawing: boolean;
@@ -43,49 +43,13 @@ export const useLineEvents = (
   
   const eventHandlersAttachedRef = useRef(false);
   
-  // Simple grid snapping function
-  const snapToGrid = useCallback((point: Point, gridSize: number = 20): Point => {
-    return {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    };
-  }, []);
-  
-  // Straighten lines if close to horizontal, vertical, or 45° diagonal
-  const straightenLine = useCallback((start: Point, end: Point): Point => {
-    const dx = Math.abs(end.x - start.x);
-    const dy = Math.abs(end.y - start.y);
-    
-    // If nearly horizontal (Y difference is small)
-    if (dy < dx * 0.2) {
-      return { x: end.x, y: start.y };
-    }
-    
-    // If nearly vertical (X difference is small)
-    if (dx < dy * 0.2) {
-      return { x: start.x, y: end.y };
-    }
-    
-    // If close to 45° diagonal
-    if (Math.abs(dx - dy) < Math.min(dx, dy) * 0.3) {
-      // Make it exactly 45°
-      const distance = Math.min(dx, dy);
-      const signX = end.x > start.x ? 1 : -1;
-      const signY = end.y > start.y ? 1 : -1;
-      return {
-        x: start.x + distance * signX,
-        y: start.y + distance * signY
-      };
-    }
-    
-    return end;
-  }, []);
+  // Use the grid snapping functionality
+  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid(fabricCanvasRef);
   
   const handleMouseDown = useCallback((opt: any) => {
-    console.log("Mouse down in straight line tool");
-    
+    logger.info("Mouse down in straight line tool");
     if (tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current) {
-      console.log(`Not handling mouse down: tool=${tool} or canvas not available`);
+      logger.info(`Not handling mouse down: tool=${tool} or canvas not available`);
       return;
     }
     
@@ -95,9 +59,9 @@ export const useLineEvents = (
     
     const pointer = canvas.getPointer(opt.e);
     // Apply grid snapping to starting point
-    const snappedPoint = snapToGrid({ x: pointer.x, y: pointer.y });
+    const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
     
-    console.log(`Starting line at point: x=${snappedPoint.x}, y=${snappedPoint.y}`);
+    logger.info(`Starting line at point: x=${snappedPoint.x}, y=${snappedPoint.y}`);
     setStartPoint(snappedPoint);
     
     const line = new Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
@@ -125,7 +89,7 @@ export const useLineEvents = (
     setDistanceTooltip(tooltip);
     
     canvas.requestRenderAll();
-  }, [tool, fabricCanvasRef, lineColor, lineThickness, setIsDrawing, setStartPoint, setCurrentLine, setDistanceTooltip, snapToGrid]);
+  }, [tool, fabricCanvasRef, lineColor, lineThickness, setIsDrawing, setStartPoint, setCurrentLine, setDistanceTooltip, snapPointToGrid]);
   
   const handleMouseMove = useCallback((opt: any) => {
     if (!isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current || !startPointRef.current) {
@@ -137,22 +101,22 @@ export const useLineEvents = (
     
     // Apply grid snapping to end point
     const rawEndPoint = { x: pointer.x, y: pointer.y };
-    const snappedEndPoint = snapToGrid(rawEndPoint);
+    const snappedEndPoint = snapPointToGrid(rawEndPoint);
     
     // Apply line straightening constraints for vertical/horizontal/diagonal lines
-    const straightenedEnd = straightenLine(startPointRef.current, snappedEndPoint);
+    const straightenedEnd = snapLineToGrid(startPointRef.current, snappedEndPoint);
     
     if (currentLineRef.current) {
       currentLineRef.current.set({
-        x2: straightenedEnd.x,
-        y2: straightenedEnd.y
+        x2: straightenedEnd.end.x,
+        y2: straightenedEnd.end.y
       });
       
-      const distance = calculateDistance(startPointRef.current, straightenedEnd);
+      const distance = calculateDistance(startPointRef.current, straightenedEnd.end);
       const displayDistance = Math.round(distance);
       
       if (distanceTooltipRef.current) {
-        const midpoint = getMidpoint(startPointRef.current, straightenedEnd);
+        const midpoint = getMidpoint(startPointRef.current, straightenedEnd.end);
         
         distanceTooltipRef.current.set({
           left: midpoint.x,
@@ -163,10 +127,10 @@ export const useLineEvents = (
       
       canvas.requestRenderAll();
     }
-  }, [isDrawing, tool, fabricCanvasRef, startPointRef, currentLineRef, distanceTooltipRef, snapToGrid, straightenLine]);
+  }, [isDrawing, tool, fabricCanvasRef, startPointRef, currentLineRef, distanceTooltipRef, snapPointToGrid, snapLineToGrid]);
   
   const handleMouseUp = useCallback(() => {
-    console.log("Mouse up in straight line tool", { isDrawing, tool });
+    logger.info("Mouse up in straight line tool", { isDrawing, tool });
     if (!isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current || !startPointRef.current) {
       return;
     }
@@ -183,7 +147,7 @@ export const useLineEvents = (
       if (distance > 1) {
         // Save current state to undo history
         saveCurrentState();
-        console.log("Completed line drawing, state saved");
+        logger.info("Completed line drawing, state saved");
       } else {
         // Line too short, remove it
         if (currentLineRef.current && canvas.contains(currentLineRef.current)) {
@@ -207,7 +171,7 @@ export const useLineEvents = (
     
     const canvas = fabricCanvasRef.current;
     
-    console.log("Cancelling line drawing");
+    logger.info("Cancelling line drawing");
     
     if (currentLineRef.current && canvas.contains(currentLineRef.current)) {
       canvas.remove(currentLineRef.current);
@@ -223,7 +187,7 @@ export const useLineEvents = (
   }, [isDrawing, fabricCanvasRef, currentLineRef, distanceTooltipRef, resetDrawingState]);
   
   const cleanupEventHandlers = useCallback(() => {
-    console.log("Cleaning up straight line event handlers");
+    logger.info("Cleaning up straight line event handlers");
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
@@ -235,7 +199,7 @@ export const useLineEvents = (
     eventHandlersAttachedRef.current = false;
     
     resetDrawingState();
-    console.log("Line event handlers removed");
+    logger.info("Line event handlers removed");
   }, [fabricCanvasRef, handleMouseDown, handleMouseMove, handleMouseUp, resetDrawingState]);
   
   return {

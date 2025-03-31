@@ -5,7 +5,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSnapToGrid } from '../useSnapToGrid';
-import { Point } from '@/types/geometryTypes';
+import { Point } from '@/types/core/Geometry';
 
 describe('useSnapToGrid hook', () => {
   test('should return correct initial state', () => {

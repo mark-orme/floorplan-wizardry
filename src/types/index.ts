@@ -16,7 +16,7 @@ export type {
 } from './core/DrawingState';
 
 // Re-export geometry types
-export type { Point, CanvasDimensions } from './core/Geometry';
+export type { Point, Size, Rectangle, Line, CanvasDimensions } from './core/Geometry';
 
 // Re-export grid types
 export type { 

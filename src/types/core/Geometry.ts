@@ -21,6 +21,14 @@ export interface Size {
 }
 
 /**
+ * Canvas dimensions type
+ */
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}
+
+/**
  * Rectangle interface with position and size
  */
 export interface Rectangle extends Point, Size {}

@@ -1,4 +1,3 @@
-
 /**
  * Hook for centralizing canvas controller state
  * @module useCanvasControllerState
@@ -64,7 +63,8 @@ export const useCanvasControllerState = () => {
 
   return {
     // Tool state
-    tool, setTool,
+    tool: canvasState.tool, 
+    setTool: canvasState.setTool,
     
     // Zoom state
     zoomLevel, setZoomLevel,
@@ -80,7 +80,8 @@ export const useCanvasControllerState = () => {
     isLoading, setIsLoading,
     
     // Canvas dimensions
-    canvasDimensions, setCanvasDimensions,
+    canvasDimensions, 
+    setCanvasDimensions,
     
     // Line settings
     lineThickness, setLineThickness,

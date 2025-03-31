@@ -3,7 +3,7 @@
  * Hook for grid snapping functionality
  * @module hooks/useSnapToGrid
  */
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Geometry';
 import { calculateAngle } from '@/utils/geometryUtils';
@@ -25,6 +25,17 @@ export const useSnapToGrid = (
   // Default grid size
   const defaultGridSize = 20;
   
+  // State to track if snapping is enabled
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  
+  // State to track if we auto-straightened the last line
+  const [isAutoStraightened, setIsAutoStraightened] = useState(false);
+  
+  // Toggle snap functionality
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
+  
   /**
    * Snap a point to the nearest grid intersection
    * @param point Point to snap
@@ -32,11 +43,16 @@ export const useSnapToGrid = (
    * @returns Snapped point
    */
   const snapPointToGrid = useCallback((point: Point, gridSize: number = defaultGridSize): Point => {
+    // If snapping is disabled, return the original point
+    if (!snapEnabled) {
+      return { ...point };
+    }
+    
     return {
       x: Math.round(point.x / gridSize) * gridSize,
       y: Math.round(point.y / gridSize) * gridSize
     };
-  }, []);
+  }, [snapEnabled]);
   
   /**
    * Snap a line to grid and straighten if close to horizontal, vertical, or 45°
@@ -57,12 +73,21 @@ export const useSnapToGrid = (
       angleThreshold = 10
     } = options;
     
+    // If snapping is disabled, return the original points
+    if (!snapEnabled) {
+      return { 
+        start: { ...start }, 
+        end: { ...end } 
+      };
+    }
+    
     // Snap endpoints to grid
     const snappedStart = snapPointToGrid(start, gridSize);
     const snappedEnd = snapPointToGrid(end, gridSize);
     
     // If angle snapping is disabled, return grid-snapped points
     if (!snapToAngle) {
+      setIsAutoStraightened(false);
       return { start: snappedStart, end: snappedEnd };
     }
     
@@ -83,12 +108,15 @@ export const useSnapToGrid = (
                      Math.abs(angle + 135) < angleThreshold;
     
     let straightenedEnd = { ...snappedEnd };
+    let didStraighten = false;
     
     // Straighten line if close to cardinal or 45° angles
     if (isNearHorizontal) {
       straightenedEnd.y = snappedStart.y; // Keep y the same as start point
+      didStraighten = true;
     } else if (isNearVertical) {
       straightenedEnd.x = snappedStart.x; // Keep x the same as start point
+      didStraighten = true;
     } else if (isNear45) {
       // Make it exactly 45°
       const dx = snappedEnd.x - snappedStart.x;
@@ -104,16 +132,39 @@ export const useSnapToGrid = (
       
       // Snap the end point back to grid after straightening
       straightenedEnd = snapPointToGrid(straightenedEnd, gridSize);
+      didStraighten = true;
     }
+    
+    setIsAutoStraightened(didStraighten);
     
     return {
       start: snappedStart,
       end: straightenedEnd
     };
-  }, [snapPointToGrid]);
+  }, [snapEnabled, snapPointToGrid]);
+  
+  /**
+   * Check if a point is snapped to the grid
+   * @param point Point to check
+   * @param threshold Maximum distance to be considered snapped
+   * @returns True if the point is snapped to grid
+   */
+  const isSnappedToGrid = useCallback((point: Point, threshold: number = 0.5): boolean => {
+    if (!snapEnabled) return false;
+    
+    const snappedPoint = snapPointToGrid(point);
+    const dx = Math.abs(point.x - snappedPoint.x);
+    const dy = Math.abs(point.y - snappedPoint.y);
+    
+    return dx <= threshold && dy <= threshold;
+  }, [snapEnabled, snapPointToGrid]);
   
   return {
+    snapEnabled,
+    isAutoStraightened,
+    toggleSnap,
     snapPointToGrid,
-    snapLineToGrid
+    snapLineToGrid,
+    isSnappedToGrid
   };
 };
