@@ -1,3 +1,4 @@
+
 /**
  * Integration tests for canvas drawing workflows
  * @module tests/canvas/drawing-flow
@@ -126,6 +127,7 @@ describe('Canvas Drawing Flow', () => {
     render(
       <CanvasContainer 
         debugInfo={mockDebugInfo}
+        onCanvasRef={() => {}}
       />
     );
     

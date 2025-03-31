@@ -24,6 +24,8 @@ interface DrawingToolbarProps {
   lineColor: string;
   onLineThicknessChange: (thickness: number) => void;
   onLineColorChange: (color: string) => void;
+  showGrid?: boolean;
+  onToggleGrid?: () => void;
 }
 
 /**
@@ -43,7 +45,9 @@ export const DrawingToolbar = ({
   lineThickness,
   lineColor,
   onLineThicknessChange,
-  onLineColorChange
+  onLineColorChange,
+  showGrid,
+  onToggleGrid
 }: DrawingToolbarProps): JSX.Element => {
   return (
     <div className="flex flex-col space-y-2">

@@ -1,4 +1,3 @@
-
 import React, { forwardRef, useEffect, useState, useRef, useImperativeHandle } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, Line, Text, Point as FabricPoint } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";

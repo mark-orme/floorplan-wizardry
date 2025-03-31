@@ -4,10 +4,12 @@ import { ConnectedDrawingCanvas } from "./ConnectedDrawingCanvas";
 
 interface CanvasContainerProps {
   onCanvasRef: (ref: any) => void;
+  debugInfo?: any; // Added to support tests
 }
 
 export const CanvasContainer: React.FC<CanvasContainerProps> = ({
-  onCanvasRef
+  onCanvasRef,
+  debugInfo
 }) => {
   return (
     <div className="flex-1 overflow-hidden">
