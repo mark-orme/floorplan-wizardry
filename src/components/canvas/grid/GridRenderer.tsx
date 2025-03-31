@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
@@ -16,10 +17,12 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
 }) => {
   // Keep references to grid objects
   const gridObjectsRef = useRef<FabricObject[]>([]);
+  // Add a flag to track if grid has been created
+  const gridCreatedRef = useRef(false);
   
   // Create the grid when the component mounts or canvas changes
   useEffect(() => {
-    if (!canvas || !showGrid) return;
+    if (!canvas || !showGrid || gridCreatedRef.current) return;
     
     const createGrid = () => {
       try {
@@ -27,7 +30,9 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
         
         // Remove any existing grid
         gridObjectsRef.current.forEach(obj => {
-          canvas.remove(obj);
+          if (canvas.contains(obj)) {
+            canvas.remove(obj);
+          }
         });
         
         const gridObjects: FabricObject[] = [];
@@ -101,6 +106,9 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
           onGridCreated(gridObjects);
         }
         
+        // Set the flag to indicate grid has been created
+        gridCreatedRef.current = true;
+        
         // Ensure grid is visible by rendering the canvas
         canvas.requestRenderAll();
         
@@ -117,12 +125,16 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     
     // Clean up function
     return () => {
-      gridObjects.forEach(obj => {
-        canvas.remove(obj);
+      gridObjectsRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
       });
       canvas.requestRenderAll();
+      // Reset created flag on cleanup
+      gridCreatedRef.current = false;
     };
-  }, [canvas, showGrid, onGridCreated]);
+  }, [canvas, showGrid, onGridCreated]); // Don't include other dependencies that might change frequently
   
   return null; // This component doesn't render anything
 };

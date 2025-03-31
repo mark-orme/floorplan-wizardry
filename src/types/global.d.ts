@@ -17,6 +17,12 @@ declare global {
     fabricCanvasInstances?: Canvas[];
     
     /**
+     * Reference to the current fabric canvas instance
+     * Used for debugging and testing purposes
+     */
+    fabricCanvas?: Canvas;
+    
+    /**
      * Debug information exposed globally
      */
     canvasDebug?: {

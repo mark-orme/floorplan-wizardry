@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { GridRenderer } from "./GridRenderer";
 
@@ -15,18 +15,23 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   showDebug = false
 }) => {
   const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  // Add ref to track if grid has been initialized
+  const gridInitializedRef = useRef(false);
   
   // Handle grid creation
   const handleGridCreated = (objects: FabricObject[]) => {
-    setGridObjects(objects);
+    if (!gridInitializedRef.current) {
+      setGridObjects(objects);
+      gridInitializedRef.current = true;
+    }
   };
   
-  // Update grid when dimensions change
+  // Update grid when dimensions change substantially
   useEffect(() => {
     if (fabricCanvas && gridObjects.length > 0) {
       fabricCanvas.requestRenderAll();
     }
-  }, [dimensions, fabricCanvas, gridObjects]);
+  }, [dimensions, fabricCanvas]); // Don't include gridObjects in dependencies
   
   return (
     <GridRenderer 
