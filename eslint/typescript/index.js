@@ -13,6 +13,7 @@ import { drawingToolRules } from './drawing-tool-rules.js';
 import { assertionRules } from './assertion-rules.js';
 import { reactTypescriptRules } from './react-rules.js';
 import { functionArgumentRules } from './function-argument-rules.js';
+import { gridStatePropertyRules } from './grid-state-property-rules.js';
 
 export const typescriptRules = [
   baseTypeScriptRules,
@@ -23,5 +24,6 @@ export const typescriptRules = [
   drawingToolRules,
   assertionRules,
   reactTypescriptRules,
-  functionArgumentRules
+  functionArgumentRules,
+  gridStatePropertyRules
 ];

@@ -64,9 +64,12 @@ export const BasicGrid = ({
       
       // Update state to indicate grid is created
       setGridState({
+        ...DEFAULT_GRID_CREATION_STATE,
         isCreated: true,
-        visible: initialVisibility,
-        objectCount: gridResult.gridObjects.length
+        objectCount: gridResult.gridObjects.length,
+        exists: true,
+        completed: true, // Mark as completed
+        started: true // Mark as started
       });
       
       logger.info(`Grid created with ${gridResult.gridObjects.length} objects`);
@@ -87,9 +90,12 @@ export const BasicGrid = ({
       
       // Set state to indicate grid creation failed
       setGridState({
+        ...DEFAULT_GRID_CREATION_STATE,
         isCreated: false,
-        visible: false,
-        error: error instanceof Error ? error.message : String(error)
+        hasError: true,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        attempts: gridState.attempts + 1,
+        lastAttemptTime: Date.now()
       });
       
       // Log to error monitoring system

@@ -1,7 +1,7 @@
 
 /**
  * TypeScript function argument validation ESLint rules
- * Prevents errors from incorrect function argument counts
+ * Prevents errors from incorrect function argument counts and property access
  * @module eslint/typescript/function-argument-rules
  */
 export const functionArgumentRules = {
@@ -28,6 +28,20 @@ export const functionArgumentRules = {
       {
         "selector": "MemberExpression[object.property.name='GridCreationState'][property.name='created']",
         "message": "Use 'isCreated' instead of 'created' on GridCreationState objects."
+      },
+      {
+        "selector": "CallExpression[callee.name='useCanvasReadyState'][callee.arguments]",
+        "message": "useCanvasReadyState hook does not accept arguments."
+      },
+      // Ensure proper property access on GridCreationState
+      {
+        "selector": "ObjectExpression[properties.length>0] > Property[key.name=/(visible|visibility)$/][parent.parent.callee.name=/setGridState|setState/]",
+        "message": "The 'visible/visibility' property does not exist on GridCreationState. Consider using 'exists' or another appropriate property."
+      },
+      // Prevent invalid property access on GridCreationState initialization
+      {
+        "selector": "ObjectExpression[properties.0.key.name=/GridCreationState/] > Property[key.name!=/isCreated|inProgress|attempts|lastAttemptTime|hasError|errorMessage|creationInProgress|consecutiveResets|maxConsecutiveResets|exists|lastCreationTime|throttleInterval|totalCreations|maxRecreations|minRecreationInterval|creationLock|objectCount|started|completed|startTime|endTime|error/]",
+        "message": "Invalid property used on GridCreationState. Check src/types/core/GridTypes.ts for valid properties."
       }
     ]
   }

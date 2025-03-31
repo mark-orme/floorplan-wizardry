@@ -31,7 +31,7 @@ export default [
   baseConfig,
   importRules,
   reactRules,
-  ...typeScriptRules, // Use the new TypeScript rules collection
+  ...typeScriptRules, // Use the new TypeScript rules collection including grid state property rules
   typeSafetyRules,
   gridRules,
   gridFabricRules,
