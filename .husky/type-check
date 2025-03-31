@@ -1,0 +1,30 @@
+
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run TypeScript compiler to check for type errors
+echo "🔍 Running type checks..."
+npx tsc --noEmit
+
+if [ $? -ne 0 ]; then
+  echo "❌ Type checking failed. Please fix the issues and try again."
+  exit 1
+fi
+
+echo "✅ Type checking passed."
+
+# Check for common type issues in the code
+echo "🔍 Checking for common type issues..."
+npx eslint --config ./eslint/type-safety-rules.js $(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx)$')
+
+if [ $? -ne 0 ]; then
+  echo "❌ Type safety check failed. Please fix the issues and try again."
+  echo "   Common issues:"
+  echo "   - Using incompatible types (like mixing our Point type with Fabric's Point)"
+  echo "   - Accessing properties that might not exist"
+  echo "   - Not checking array existence before operations"
+  echo "   - Using 'any' type without proper narrowing"
+  exit 1
+fi
+
+echo "✅ Type safety checks passed."

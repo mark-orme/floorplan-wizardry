@@ -13,6 +13,7 @@ import { prettierRules } from "./eslint/prettier-rules.js";
 import { importExportRules } from "./eslint/import-rules.js";
 import { exportValidationRules } from "./eslint/export-validation.js";
 import { gridFabricRules } from "./eslint/grid-fabric-rules.js";
+import { typeSafetyRules } from "./eslint/type-safety-rules.js";
 
 // Export the combined configuration
 export default tseslint.config(
@@ -24,5 +25,6 @@ export default tseslint.config(
   prettierRules,
   importExportRules,
   exportValidationRules,
-  gridFabricRules
+  gridFabricRules,
+  typeSafetyRules
 );
