@@ -1,105 +1,141 @@
 
-/**
- * BasicGrid Component
- * A simple grid creator component for canvas
- * @module components/BasicGrid
- */
-import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createBasicEmergencyGrid } from '@/utils/gridCreationUtils';
+import { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
-/**
- * Props for the BasicGrid component
- */
 interface BasicGridProps {
-  /** The fabric canvas instance */
   canvas: FabricCanvas;
-  /** Default grid visibility */
   visible?: boolean;
-  /** Callback when grid is created */
   onGridCreated?: (gridObjects: FabricObject[]) => void;
 }
 
-/**
- * BasicGrid Component
- * Creates a basic grid on canvas
- * 
- * @param {BasicGridProps} props - Component properties
- * @returns {null} This component doesn't render anything
- */
 export const BasicGrid: React.FC<BasicGridProps> = ({
   canvas,
   visible = true,
   onGridCreated
 }) => {
   const gridObjectsRef = useRef<FabricObject[]>([]);
-  
-  // Create grid on mount
+
+  // Create grid when component mounts or canvas changes
   useEffect(() => {
     if (!canvas) return;
     
-    try {
-      // Create grid
-      const gridObjects = createBasicEmergencyGrid(canvas);
-      
-      // Store grid objects
-      gridObjectsRef.current = gridObjects;
-      
-      // Set initial visibility
-      if (!visible) {
-        gridObjects.forEach(obj => {
-          obj.visible = false;
-        });
-        canvas.requestRenderAll();
-      }
-      
-      // Call callback if provided
-      if (onGridCreated) {
-        onGridCreated(gridObjects);
-      }
-    } catch (error) {
-      console.error('Error creating grid:', error);
+    // Check if canvas is actually ready with dimensions
+    if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
+      console.warn("Canvas dimensions not set, grid creation delayed");
+      return;
     }
     
-    // Clean up grid on unmount
-    return () => {
-      if (canvas && gridObjectsRef.current) {
-        try {
-          gridObjectsRef.current.forEach(obj => {
-            if (canvas.contains(obj)) {
-              canvas.remove(obj);
-            }
-          });
-          canvas.requestRenderAll();
-        } catch (error) {
-          console.error('Error cleaning up grid:', error);
-        }
-      }
-    };
-  }, [canvas, visible, onGridCreated]);
-  
-  // Ensure grid visibility when component updates
-  useEffect(() => {
-    if (!canvas) return;
+    console.log("Creating basic grid with dimensions:", canvas.width, "x", canvas.height);
     
-    // Update visibility whenever it changes
-    gridObjectsRef.current.forEach(obj => {
-      if (obj) {
-        obj.visible = visible;
-      }
+    // Create grid objects
+    const gridObjects: FabricObject[] = [];
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Create horizontal grid lines (small grid)
+    for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      } as any);
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create vertical grid lines (small grid)
+    for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+      const line = new Line([i, 0, i, height], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      } as any);
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create horizontal grid lines (large grid)
+    for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      } as any);
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create vertical grid lines (large grid)
+    for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+      const line = new Line([i, 0, i, height], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid'
+      } as any);
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Store grid objects
+    gridObjectsRef.current = gridObjects;
+    
+    // Send all grid to back
+    gridObjects.forEach(obj => {
+      canvas.sendObjectToBack(obj);
     });
     
-    // Ensure grid objects are on canvas
+    // Update visibility
+    updateGridVisibility(visible);
+    
+    // Call callback if provided
+    if (onGridCreated) {
+      onGridCreated(gridObjects);
+    }
+    
+    console.log(`Grid created with ${gridObjects.length} lines`);
+    
+    // Set initial render
+    canvas.requestRenderAll();
+    
+    // Clean up when component unmounts
+    return () => {
+      gridObjects.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      canvas.requestRenderAll();
+    };
+  }, [canvas, onGridCreated]);
+  
+  // Update grid visibility when visible prop changes
+  useEffect(() => {
+    updateGridVisibility(visible);
+  }, [visible]);
+  
+  // Update grid visibility
+  const updateGridVisibility = (isVisible: boolean) => {
+    if (!canvas || gridObjectsRef.current.length === 0) return;
+    
     gridObjectsRef.current.forEach(obj => {
-      if (!canvas.contains(obj)) {
-        canvas.add(obj);
-        canvas.sendToBack(obj);
-      }
+      obj.set('visible', isVisible);
     });
     
     canvas.requestRenderAll();
-  }, [canvas, visible]);
+  };
   
-  // This component doesn't render anything
-  return null;
+  return null; // This component doesn't render anything
 };

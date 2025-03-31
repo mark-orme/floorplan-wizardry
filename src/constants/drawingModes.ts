@@ -1,29 +1,35 @@
 
 /**
- * Drawing mode constants
- * @module constants/drawingModes
- */
-
-/**
- * Enum for drawing tools
+ * Drawing mode enum
+ * Defines the available drawing tools for the canvas
  */
 export enum DrawingMode {
+  /** Select and manipulate objects */
   SELECT = 'select',
+  /** Freehand drawing */
   DRAW = 'draw',
-  LINE = 'line',
-  STRAIGHT_LINE = 'straight-line', // Keep this as 'straight-line' to match objectType used in the tool
+  /** Create straight lines */
+  STRAIGHT_LINE = 'straight-line',
+  /** Create rectangles */
   RECTANGLE = 'rectangle',
+  /** Create circles */
   CIRCLE = 'circle',
-  ERASER = 'eraser',
-  HAND = 'hand',
-  ROOM = 'room',
-  WALL = 'wall',
+  /** Create text */
   TEXT = 'text',
-  MEASURE = 'measure'
+  /** Create wall */
+  WALL = 'wall',
+  /** Create door */
+  DOOR = 'door',
+  /** Create window */
+  WINDOW = 'window',
+  /** Create room label */
+  ROOM_LABEL = 'room-label',
+  /** Measure distances */
+  MEASURE = 'measure',
+  /** Move the canvas */
+  PAN = 'pan',
+  /** Zoom the canvas */
+  ZOOM = 'zoom',
+  /** Erase objects */
+  ERASE = 'erase'
 }
-
-/**
- * Drawing tool type alias (for backwards compatibility)
- * @deprecated Use DrawingMode enum instead
- */
-export type DrawingTool = DrawingMode;
