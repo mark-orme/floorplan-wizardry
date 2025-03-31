@@ -1,4 +1,3 @@
-
 /**
  * Advanced TypeScript ESLint rules
  * Provides stricter type safety checks to prevent build errors
@@ -156,6 +155,54 @@ export const typeAdvancedSafetyRules = {
                   node,
                   message: `Import 'createPoint' from '@/types/core/Point' instead of '${importPath}'`
                 });
+              }
+            }
+          }
+        };
+      }
+    },
+    
+    // New rule: Check for grid state completeness
+    "custom/complete-grid-state": {
+      create(context) {
+        return {
+          ReturnStatement(node) {
+            if (node.argument && node.argument.type === "ObjectExpression") {
+              // Check for spread operations in the object
+              const spreadElements = node.argument.properties.filter(
+                prop => prop.type === "SpreadElement"
+              );
+              
+              if (spreadElements.length > 0) {
+                // Extract identifiers being spread
+                const spreadIdentifiers = spreadElements
+                  .filter(el => el.argument.type === "Identifier")
+                  .map(el => el.argument.name);
+                
+                // Check if any are grid-related
+                const gridStateIdentifiers = spreadIdentifiers.filter(
+                  id => id.includes("grid") || id === "state" || id.includes("State")
+                );
+                
+                if (gridStateIdentifiers.length > 0) {
+                  // This spread operation likely involves a grid state
+                  // Extract property names from the object
+                  const properties = node.argument.properties
+                    .filter(prop => prop.type === "Property" && prop.key.type === "Identifier")
+                    .map(prop => prop.key.name);
+                  
+                  // Check if essential grid properties are included
+                  const essentialProps = ["started", "completed", "objectCount"];
+                  const includedEssentials = essentialProps.filter(prop => properties.includes(prop));
+                  
+                  if (includedEssentials.length < essentialProps.length) {
+                    const missing = essentialProps.filter(prop => !properties.includes(prop));
+                    context.report({
+                      node,
+                      message: `Grid state object is missing essential properties: ${missing.join(", ")}`
+                    });
+                  }
+                }
               }
             }
           }

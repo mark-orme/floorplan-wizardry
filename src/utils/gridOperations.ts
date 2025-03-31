@@ -1,4 +1,3 @@
-
 /**
  * Grid creation operations
  * Provides utility functions for grid management
@@ -6,6 +5,7 @@
  */
 import { Canvas, Object as FabricObject } from "fabric";
 import type { GridCreationState, GridCreationLock } from "@/types";
+import { DEFAULT_GRID_CREATION_STATE } from "@/types/core/GridTypes";
 
 /**
  * Get initial grid creation state
@@ -14,27 +14,32 @@ import type { GridCreationState, GridCreationLock } from "@/types";
  * @returns {GridCreationState} Default grid state with all required properties
  */
 export const getInitialGridState = (): GridCreationState => {
-  // Initialize with safe defaults to prevent undefined errors
+  // Use the default grid creation state as a base
   return {
-    inProgress: false,      // No creation in progress initially
-    isCreated: false,       // No grid created yet
-    attempts: 0,            // No attempts made
-    lastAttemptTime: 0,     // No previous attempts
-    hasError: false,        // No errors yet
-    errorMessage: "",       // No error message
+    ...DEFAULT_GRID_CREATION_STATE,
+    // Explicitly add required properties to prevent TypeScript errors
+    started: false,       // No grid creation started yet
+    completed: false,     // No grid creation completed
+    objectCount: 0,       // No grid objects created
+    inProgress: false,    // No creation in progress initially
+    isCreated: false,     // No grid created yet
+    attempts: 0,          // No attempts made
+    lastAttemptTime: 0,   // No previous attempts
+    hasError: false,      // No errors yet
+    errorMessage: "",     // No error message
     creationInProgress: false, // No creation actively happening
-    consecutiveResets: 0,   // No resets performed
+    consecutiveResets: 0, // No resets performed
     maxConsecutiveResets: 5, // Limit consecutive resets to prevent loops
-    exists: false,          // Grid doesn't exist yet
-    lastCreationTime: 0,    // No successful creation yet
-    throttleInterval: 500,  // 500ms between creation attempts
-    totalCreations: 0,      // No creations performed
-    maxRecreations: 10,     // Limit to 10 recreations to prevent infinite loops
+    exists: false,        // Grid doesn't exist yet
+    lastCreationTime: 0,  // No successful creation yet
+    throttleInterval: 500, // 500ms between creation attempts
+    totalCreations: 0,    // No creations performed
+    maxRecreations: 10,   // Limit to 10 recreations to prevent infinite loops
     minRecreationInterval: 1000, // 1 second between recreations
-    creationLock: {         // Initial unlocked state
+    creationLock: {       // Initial unlocked state
+      isLocked: false,
       id: 0,
-      timestamp: 0,
-      isLocked: false
+      timestamp: 0
     }
   };
 };

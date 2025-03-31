@@ -88,7 +88,9 @@ export const DEFAULT_GRID_CREATION_STATE: GridCreationState = {
   maxRecreations: 10,
   minRecreationInterval: 1000,
   creationLock: {
-    isLocked: false
+    isLocked: false,
+    id: 0,
+    timestamp: 0
   }
 };
 
@@ -96,5 +98,7 @@ export const DEFAULT_GRID_CREATION_STATE: GridCreationState = {
  * Default grid creation lock
  */
 export const DEFAULT_GRID_CREATION_LOCK: GridCreationLock = {
-  isLocked: false
+  isLocked: false,
+  id: 0,
+  timestamp: 0
 };
