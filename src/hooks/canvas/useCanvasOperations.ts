@@ -1,6 +1,6 @@
 
 import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Line, Point } from "fabric";
 import { toast } from "sonner";
 import { DrawingMode } from "@/constants/drawingModes";
 import { captureMessage, captureError } from "@/utils/sentry";
@@ -42,32 +42,21 @@ export const useCanvasOperations = ({
         canvas.discardActiveObject();
         logger.info(`Deleted ${objects.length} objects`);
         
-        captureMessage("Objects deleted", {
-          messageId: "objects-deleted",
-          level: "info",
-          tags: { component: "CanvasOperations", action: "deleteMultipleObjects" },
-          extra: { count: objects.length }
-        });
+        captureMessage("Objects deleted", "objects-deleted");
       } else {
         // Delete single object
         canvas.remove(activeObject);
         canvas.discardActiveObject();
         logger.info("Deleted single object");
         
-        captureMessage("Object deleted", {
-          messageId: "object-deleted",
-          level: "info",
-          tags: { component: "CanvasOperations", action: "deleteSingleObject" }
-        });
+        captureMessage("Object deleted", "object-deleted");
       }
       
       canvas.requestRenderAll();
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to delete objects", { error: errorMsg });
-      captureError(error as Error, {
-        errorId: "delete-objects-error"
-      });
+      captureError(error as Error, "delete-objects-error");
       toast.error(`Failed to delete objects: ${errorMsg}`);
     }
   }, [canvas, saveCurrentState]);
@@ -87,20 +76,13 @@ export const useCanvasOperations = ({
       
       logger.info(`Cleared canvas (removed ${objects.length} objects)`);
       
-      captureMessage("Canvas cleared", {
-        messageId: "canvas-cleared",
-        level: "info",
-        tags: { component: "CanvasOperations", action: "clearCanvas" },
-        extra: { count: objects.length }
-      });
+      captureMessage("Canvas cleared", "canvas-cleared");
       
       canvas.requestRenderAll();
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to clear canvas", { error: errorMsg });
-      captureError(error as Error, {
-        errorId: "clear-canvas-error" 
-      });
+      captureError(error as Error, "clear-canvas-error");
       toast.error(`Failed to clear canvas: ${errorMsg}`);
     }
   }, [canvas, saveCurrentState]);
@@ -123,7 +105,7 @@ export const useCanvasOperations = ({
         y: canvas.height! / 2
       };
       
-      canvas.zoomToPoint(center as fabric.Point, limitedZoom);
+      canvas.zoomToPoint(center as Point, limitedZoom);
       canvas.requestRenderAll();
       
       logger.info(`Canvas zoomed ${direction}`, { 
@@ -131,18 +113,11 @@ export const useCanvasOperations = ({
         newZoom: limitedZoom 
       });
       
-      captureMessage(`Canvas zoomed ${direction}`, {
-        messageId: "canvas-zoomed",
-        level: "info",
-        tags: { component: "CanvasOperations", action: "zoom" },
-        extra: { direction, previousZoom: currentZoom, newZoom: limitedZoom }
-      });
+      captureMessage(`Canvas zoomed ${direction}`, "canvas-zoomed");
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error(`Failed to zoom ${direction}`, { error: errorMsg });
-      captureError(error as Error, {
-        errorId: "zoom-error" 
-      });
+      captureError(error as Error, "zoom-error");
       toast.error(`Failed to zoom ${direction}: ${errorMsg}`);
     }
   }, [canvas]);
@@ -168,19 +143,13 @@ export const useCanvasOperations = ({
       
       logger.info("Canvas saved to JSON file");
       
-      captureMessage("Canvas saved to file", {
-        messageId: "canvas-saved",
-        level: "info",
-        tags: { component: "CanvasOperations", action: "saveCanvas" }
-      });
+      captureMessage("Canvas saved to file", "canvas-saved");
       
       toast.success("Canvas saved to file");
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas", { error: errorMsg });
-      captureError(error as Error, {
-        errorId: "save-canvas-error"
-      });
+      captureError(error as Error, "save-canvas-error");
       toast.error(`Failed to save canvas: ${errorMsg}`);
     }
   }, [canvas]);

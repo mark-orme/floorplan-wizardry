@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
@@ -106,7 +106,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           } else {
             logger.error("Drawing brush not available");
             // Initialize the freeDrawingBrush if it doesn't exist
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            canvas.freeDrawingBrush = new PencilBrush(canvas);
             canvas.freeDrawingBrush.width = lineThickness;
             canvas.freeDrawingBrush.color = lineColor;
             logger.info("Created new drawing brush", {
@@ -166,12 +166,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       canvas.renderAll();
       
-      captureMessage("Tool applied to canvas", {
-        messageId: "tool-applied",
-        level: "info",
-        tags: { component: "CanvasEventManager", action: "toolChange" },
-        extra: { tool, lineThickness, lineColor }
-      });
+      captureMessage("Tool applied to canvas", "tool-applied");
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to apply tool settings", { 
@@ -180,11 +175,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
         lineThickness, 
         lineColor 
       });
-      captureError(error as Error, {
-        errorId: "apply-tool-settings-error",
-        tags: { component: "CanvasEventManager" },
-        extra: { tool, lineThickness, lineColor }
-      });
+      captureError(error as Error, "apply-tool-settings-error");
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
   }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
