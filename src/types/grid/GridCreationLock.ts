@@ -14,9 +14,11 @@ export default interface GridCreationLock {
   /** Whether grid creation is currently locked */
   isLocked: boolean;
   /** Timestamp when lock was acquired */
-  lockedAt: number;
+  lockedAt: number | null;
   /** Timeout for lock expiration (in ms) */
   lockTimeout: number;
+  /** Timestamp when lock expires */
+  lockExpiresAt?: number;
   /** Whether the grid was successfully created */
   gridCreated: boolean;
   /** Number of grid creation attempts */
@@ -35,6 +37,7 @@ export const createDefaultGridCreationLock = (): GridCreationLock => ({
   isLocked: false,
   lockedAt: 0,
   lockTimeout: 5000, // 5 seconds default timeout
+  lockExpiresAt: 0,
   gridCreated: false,
   attempts: 0,
   maxAttempts: 3

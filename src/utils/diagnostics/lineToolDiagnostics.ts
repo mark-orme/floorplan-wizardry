@@ -109,8 +109,8 @@ export const runLineToolDiagnostics = (
       // Check event handlers
       // We need to access private properties to check event handlers
       // This is not ideal but necessary for diagnostics
-      // @ts-ignore - accessing private property for diagnostics
-      const eventListeners = canvas.__eventListeners || {};
+      // Use type assertion to access private property for diagnostics
+      const eventListeners = (canvas as any).__eventListeners || {};
       
       diagnostics.eventHandlers.mouseDown = 
         Array.isArray(eventListeners['mouse:down']) && 
@@ -151,6 +151,7 @@ export const runLineToolDiagnostics = (
  * @param {boolean} isToolInitialized - Whether the tool is initialized
  * @param {boolean} isDrawing - Whether drawing is in progress
  * @param {boolean} userInitiated - Whether the diagnostics were user-initiated
+ * @returns {LineToolDiagnostics} The diagnostic results
  */
 export const reportLineToolDiagnostics = (
   canvas: FabricCanvas | null,
@@ -158,7 +159,7 @@ export const reportLineToolDiagnostics = (
   isToolInitialized: boolean,
   isDrawing: boolean,
   userInitiated: boolean = false
-): void => {
+): LineToolDiagnostics => {
   try {
     const diagnostics = runLineToolDiagnostics(
       canvas, 
@@ -210,7 +211,21 @@ export const reportLineToolDiagnostics = (
       toast.error("Failed to run diagnostics");
     }
     
-    return null;
+    // Return minimal diagnostics with error info
+    return {
+      canvasInfo: { isAvailable: false },
+      eventHandlers: { mouseDown: false, mouseMove: false, mouseUp: false, hasCustomHandlers: false },
+      toolState: { activeTool: currentTool, isToolInitialized, isDrawing },
+      browserInfo: {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        touchEnabled: 'ontouchstart' in window,
+        screenWidth: window.innerWidth,
+        screenHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio,
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 };
 

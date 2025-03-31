@@ -74,6 +74,25 @@ interface UseStraightLineToolResult {
 }
 
 /**
+ * Safely check if canvas has event listeners
+ * This avoids directly accessing private properties
+ */
+const hasEventListener = (canvas: FabricCanvas, eventType: string): boolean => {
+  try {
+    // Use type assertion to access private property for diagnostic purposes only
+    // This is not ideal but necessary for checks
+    const listeners = (canvas as any).__eventListeners;
+    return listeners && 
+           typeof listeners === 'object' && 
+           Array.isArray(listeners[eventType]) && 
+           listeners[eventType].length > 0;
+  } catch (error) {
+    // If we can't access event listeners, assume they don't exist
+    return false;
+  }
+};
+
+/**
  * Custom hook for straight line drawing tool functionality
  * Manages the tool state, event handlers, and canvas interactions
  * 
@@ -220,12 +239,17 @@ export const useStraightLineTool = ({
               // Verify setup was successful
               const toolVerification = validateStraightLineTool(canvas, DrawingMode.STRAIGHT_LINE);
               
+              // Use the helper function to safely check event handlers
+              const hasMouseDown = hasEventListener(canvas, FabricEventTypes.MOUSE_DOWN);
+              const hasMouseMove = hasEventListener(canvas, FabricEventTypes.MOUSE_MOVE);
+              const hasMouseUp = hasEventListener(canvas, FabricEventTypes.MOUSE_UP);
+              
               captureMessage("Straight line tool event handlers attached", "event-handlers-attached", {
                 tags: { component: "useStraightLineTool", success: String(toolVerification) },
                 extra: {
-                  hasMouseDown: !!canvas.__eventListeners?.['mouse:down']?.length,
-                  hasMouseMove: !!canvas.__eventListeners?.['mouse:move']?.length,
-                  hasMouseUp: !!canvas.__eventListeners?.['mouse:up']?.length,
+                  hasMouseDown,
+                  hasMouseMove,
+                  hasMouseUp,
                   canvasConfig: {
                     isDrawingMode: canvas.isDrawingMode,
                     selection: canvas.selection,
@@ -247,7 +271,7 @@ export const useStraightLineTool = ({
                 extra: {
                   canvasAvailable: !!canvas,
                   toolState: { tool, isActive, isToolInitialized },
-                  eventListeners: canvas.__eventListeners ? Object.keys(canvas.__eventListeners) : [],
+                  eventListenersExist: hasEventListener(canvas, FabricEventTypes.MOUSE_DOWN)
                 }
               });
               

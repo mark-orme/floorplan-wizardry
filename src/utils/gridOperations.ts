@@ -202,13 +202,17 @@ export const acquireCreationLock = (state: GridCreationState): boolean => {
  * @returns {GridCreationState} Updated state with lock acquired
  */
 export const setCreationLock = (state: GridCreationState): GridCreationState => {
+  const currentTime = Date.now();
+  const maxLockTime = 5000;
+  
   return {
     ...state,
     creationLock: {
       isLocked: true,
-      lockedBy: "lock-" + Date.now().toString(),
-      lockedAt: Date.now(),
-      maxLockTime: 5000
+      lockedBy: "lock-" + currentTime.toString(),
+      lockedAt: currentTime,
+      maxLockTime: maxLockTime,
+      lockExpiresAt: currentTime + maxLockTime
     }
   };
 };
@@ -227,7 +231,8 @@ export const releaseCreationLock = (state: GridCreationState): GridCreationState
       isLocked: false,
       lockedBy: null,
       lockedAt: null,
-      maxLockTime: 5000
+      maxLockTime: 5000,
+      lockExpiresAt: 0
     }
   };
 };
