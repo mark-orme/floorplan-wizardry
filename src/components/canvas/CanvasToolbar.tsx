@@ -6,7 +6,6 @@ import {
   Pencil, 
   MousePointer, 
   Square, 
-  Circle, 
   Type, 
   Eraser, 
   Hand, 
@@ -15,7 +14,8 @@ import {
   RefreshCw, 
   Save, 
   Trash2, 
-  Grid
+  Grid,
+  Minus
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Toggle } from "@/components/ui/toggle";
@@ -109,21 +109,21 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         </Toggle>
         
         <Toggle 
+          pressed={tool === DrawingMode.STRAIGHT_LINE} 
+          onPressedChange={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
+          aria-label="Straight line tool"
+          size="sm"
+        >
+          <Minus className="h-4 w-4" />
+        </Toggle>
+        
+        <Toggle 
           pressed={tool === DrawingMode.RECTANGLE} 
           onPressedChange={() => onToolChange(DrawingMode.RECTANGLE)}
           aria-label="Rectangle tool"
           size="sm"
         >
           <Square className="h-4 w-4" />
-        </Toggle>
-        
-        <Toggle 
-          pressed={tool === DrawingMode.CIRCLE} 
-          onPressedChange={() => onToolChange(DrawingMode.CIRCLE)}
-          aria-label="Circle tool"
-          size="sm"
-        >
-          <Circle className="h-4 w-4" />
         </Toggle>
         
         <Toggle 

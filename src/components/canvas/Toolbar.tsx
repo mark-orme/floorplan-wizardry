@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Pointer, 
   Pencil, 
   Square, 
-  Circle, 
   Minus, 
   Undo2, 
   Redo2, 
@@ -93,14 +91,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           title="Rectangle Tool"
         >
           <Square className="h-4 w-4" />
-        </Button>
-        <Button 
-          size="sm" 
-          variant={activeTool === DrawingMode.CIRCLE ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.CIRCLE)}
-          title="Circle Tool"
-        >
-          <Circle className="h-4 w-4" />
         </Button>
         <Button 
           size="sm" 

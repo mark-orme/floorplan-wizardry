@@ -1,64 +1,73 @@
 
-import { useCallback, useMemo } from "react";
-import type { Point } from "@/types/drawingTypes";
-import { GRID_CONSTANTS } from "@/constants/gridConstants";
-import { useDrawingContext } from "@/contexts/DrawingContext";
-import { useSnapToGrid } from "@/hooks/useSnapToGrid";
-
 /**
- * Hook for grid snapping functionality
+ * Hook for managing grid snapping in canvas operations
+ * @module hooks/canvas/useGridSnapping
  */
-export const useGridSnapping = () => {
-  const { snapToGrid } = useDrawingContext();
-  const { 
-    snapPointToGrid: baseSnapPointToGrid, 
-    snapLineToGrid: baseSnapLineToGrid, 
-    isSnappedToGrid 
-  } = useSnapToGrid();
-  
+import { useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useSnapToGrid } from '@/hooks/useSnapToGrid';
+import type { Point } from '@/types/core/Point';
+
+export const useGridSnapping = (canvasRef: React.MutableRefObject<FabricCanvas | null>) => {
+  const { snapEnabled, snapPointToGrid, snapLineToGrid, isSnappedToGrid } = useSnapToGrid();
+
   /**
-   * Snap a point to the grid
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {number} [gridSize] - Optional grid size (defaults to small grid size)
-   * @returns {Point} Snapped point coordinates
+   * Snap an object to the grid
+   * @param object - Fabric object to snap
    */
-  const snapPointToGrid = useCallback((x: number, y: number, gridSize?: number): Point => {
-    if (!snapToGrid) return { x, y };
-    
-    // Use the base implementation from useSnapToGrid
-    return baseSnapPointToGrid({ x, y });
-  }, [snapToGrid, baseSnapPointToGrid]);
-  
+  const snapObjectToGrid = useCallback((object: any) => {
+    if (!snapEnabled || !object) return;
+
+    const left = Math.round(object.left / 20) * 20;
+    const top = Math.round(object.top / 20) * 20;
+
+    object.set({
+      left,
+      top
+    });
+
+    if (canvasRef.current) {
+      canvasRef.current.requestRenderAll();
+    }
+  }, [snapEnabled, canvasRef]);
+
   /**
-   * Snap a line to the grid
-   * @param {Point} start - Start point
-   * @param {Point} end - End point
-   * @returns {Object} Object with snapped start and end points
+   * Enable grid snapping
    */
-  const snapLineToGrid = useCallback((start: Point, end: Point): { start: Point, end: Point } => {
-    if (!snapToGrid) return { start, end };
-    
-    // Use the base implementation from useSnapToGrid
-    return baseSnapLineToGrid(start, end);
-  }, [snapToGrid, baseSnapLineToGrid]);
-  
+  const enableGridSnapping = useCallback(() => {
+    if (!canvasRef.current) return;
+
+    canvasRef.current.on('object:moving', (e) => {
+      if (snapEnabled && e.target) {
+        snapObjectToGrid(e.target);
+      }
+    });
+
+    canvasRef.current.on('object:scaling', (e) => {
+      if (snapEnabled && e.target) {
+        // Apply snapping for scaling operations
+        // Implementation depends on specific requirements
+      }
+    });
+  }, [canvasRef, snapEnabled, snapObjectToGrid]);
+
   /**
-   * Check if a point is already on a grid point
-   * @param {Point} point - Point to check
-   * @returns {boolean} Whether the point is on a grid point
+   * Disable grid snapping
    */
-  const isOnGridPoint = useCallback((point: Point): boolean => {
-    if (!snapToGrid) return false;
-    
-    // Use the base implementation from useSnapToGrid
-    return isSnappedToGrid(point);
-  }, [snapToGrid, isSnappedToGrid]);
-  
-  return useMemo(() => ({
+  const disableGridSnapping = useCallback(() => {
+    if (!canvasRef.current) return;
+
+    canvasRef.current.off('object:moving');
+    canvasRef.current.off('object:scaling');
+  }, [canvasRef]);
+
+  return {
+    snapEnabled,
     snapPointToGrid,
     snapLineToGrid,
-    isOnGridPoint,
-    snapToGrid
-  }), [snapPointToGrid, snapLineToGrid, isOnGridPoint, snapToGrid]);
+    isSnappedToGrid,
+    snapObjectToGrid,
+    enableGridSnapping,
+    disableGridSnapping
+  };
 };

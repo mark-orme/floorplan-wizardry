@@ -1,11 +1,10 @@
-
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { DrawingMode } from "@/constants/drawingModes";
 import { LineSettings } from "./LineSettings";
 import { 
-  MousePointerSquareDashed, Pencil, Grid2X2, 
+  MousePointerSquareDashed, Pencil, 
   Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser, Ruler,
   MoveHorizontal, Minus 
 } from "lucide-react";
@@ -138,23 +137,6 @@ export const DrawingToolbar = ({
             </TooltipTrigger>
             <TooltipContent>
               <p>Draw Wall with Measurement</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant={tool === DrawingMode.ROOM ? "default" : "outline"} 
-                size="sm"
-                onClick={() => onToolChange(DrawingMode.ROOM)}
-              >
-                <Grid2X2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Room</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
