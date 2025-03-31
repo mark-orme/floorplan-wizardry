@@ -8,8 +8,10 @@ import { GridCreationState, DEFAULT_GRID_CREATION_STATE, GridCreationLock } from
 
 /**
  * Validates a GridCreationState object to ensure it has valid properties
- * @param state - The state object to validate
- * @returns The validated state object with any invalid properties fixed
+ * Ensures all properties are of correct types and provides defaults if missing
+ * 
+ * @param {Partial<GridCreationState>} state - The state object to validate
+ * @returns {GridCreationState} The validated state object with any invalid properties fixed
  */
 export const validateGridState = (state: Partial<GridCreationState>): GridCreationState => {
   // Start with default state
@@ -25,8 +27,8 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
       if (typedKey in state) {
         // Type-safe assignment with proper casting
         const value = state[typedKey];
-        // Cast validState to any first to avoid type errors
-        (validState as any)[typedKey] = value;
+        // Use type-safe Record to avoid any assignments
+        (validState as Record<string, unknown>)[typedKey] = value;
       }
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
@@ -38,8 +40,10 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
 
 /**
  * Creates a valid grid state update object
- * @param updates - Partial updates to the grid state
- * @returns A validated update object
+ * Filters out invalid properties and ensures proper typing
+ * 
+ * @param {Partial<GridCreationState>} updates - Partial updates to the grid state
+ * @returns {Partial<GridCreationState>} A validated update object
  */
 export const createGridStateUpdate = (updates: Partial<GridCreationState>): Partial<GridCreationState> => {
   const validUpdates: Partial<GridCreationState> = {};
@@ -53,8 +57,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
       if (typedKey in updates) {
         // Type-safe assignment with proper casting
         const value = updates[typedKey];
-        // Cast validUpdates to any first to avoid type errors
-        (validUpdates as any)[typedKey] = value;
+        // Use type-safe Record to avoid any assignments
+        (validUpdates as Record<string, unknown>)[typedKey] = value;
       }
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
@@ -67,6 +71,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
 /**
  * Common property mapping for incorrectly named properties
  * Maps incorrect property names to their correct equivalents
+ * 
+ * @type {Record<string, keyof GridCreationState>}
  */
 export const GRID_STATE_PROPERTY_MAP: Record<string, keyof GridCreationState> = {
   'visible': 'exists',
@@ -77,8 +83,10 @@ export const GRID_STATE_PROPERTY_MAP: Record<string, keyof GridCreationState> = 
 
 /**
  * Repairs a grid state object with incorrectly named properties
- * @param state - The state object to repair
- * @returns The repaired state object
+ * Converts common misnamed properties to their correct counterparts
+ * 
+ * @param {Record<string, unknown>} state - The state object to repair
+ * @returns {Partial<GridCreationState>} The repaired state object
  */
 export const repairGridState = (state: Record<string, unknown>): Partial<GridCreationState> => {
   const repairedState: Partial<GridCreationState> = {};
@@ -91,16 +99,16 @@ export const repairGridState = (state: Record<string, unknown>): Partial<GridCre
       const value = state[key];
       
       // Type-safe assignment with proper casting
-      // Cast repairedState to any first to avoid type errors
-      (repairedState as any)[typedKey] = value;
+      // Use type-safe Record to avoid any assignments
+      (repairedState as Record<string, unknown>)[typedKey] = value;
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
       const value = state[key];
       
       // Type-safe assignment with proper casting
-      // Cast repairedState to any first to avoid type errors
-      (repairedState as any)[correctKey] = value;
+      // Use type-safe Record to avoid any assignments
+      (repairedState as Record<string, unknown>)[correctKey] = value;
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });

@@ -1,48 +1,81 @@
 
 /**
- * Types for Fabric.js events
+ * Fabric.js event type definitions
+ * Provides consistent event naming for Fabric.js event handling
+ * 
+ * @module types/fabric-events
  */
 
+/**
+ * Enum for Fabric.js event types
+ * Provides consistent event naming across the application
+ * 
+ * @enum {string}
+ */
 export enum FabricEventTypes {
-  // Mouse events
+  /** Mouse down event - triggered when mouse button is pressed */
   MOUSE_DOWN = 'mouse:down',
+  /** Mouse move event - triggered when mouse is moved */
   MOUSE_MOVE = 'mouse:move',
+  /** Mouse up event - triggered when mouse button is released */
   MOUSE_UP = 'mouse:up',
-  MOUSE_OVER = 'mouse:over',
-  MOUSE_OUT = 'mouse:out',
+  /** Mouse wheel event - triggered when mouse wheel is scrolled */
   MOUSE_WHEEL = 'mouse:wheel',
+  /** Mouse over event - triggered when mouse enters an object */
+  MOUSE_OVER = 'mouse:over',
+  /** Mouse out event - triggered when mouse leaves an object */
+  MOUSE_OUT = 'mouse:out',
+  /** Mouse double click event */
+  MOUSE_DBLCLICK = 'mouse:dblclick',
   
-  // Object events
+  /** Object added to canvas */
   OBJECT_ADDED = 'object:added',
-  OBJECT_MODIFIED = 'object:modified',
+  /** Object removed from canvas */
   OBJECT_REMOVED = 'object:removed',
-  OBJECT_ROTATING = 'object:rotating',
+  /** Object modified (moved, scaled, rotated, etc.) */
+  OBJECT_MODIFIED = 'object:modified',
+  /** Object scaling */
   OBJECT_SCALING = 'object:scaling',
+  /** Object moving */
   OBJECT_MOVING = 'object:moving',
+  /** Object rotation */
+  OBJECT_ROTATING = 'object:rotating',
+  /** Object selected */
   OBJECT_SELECTED = 'object:selected',
+  /** Selection created (can include multiple objects) */
   SELECTION_CREATED = 'selection:created',
+  /** Selection updated */
   SELECTION_UPDATED = 'selection:updated',
+  /** Selection cleared */
   SELECTION_CLEARED = 'selection:cleared',
   
-  // Canvas events
-  AFTER_RENDER = 'after:render',
+  /** Before canvas render */
   BEFORE_RENDER = 'before:render',
+  /** After canvas render */
+  AFTER_RENDER = 'after:render',
+  /** Canvas cleared */
   CANVAS_CLEARED = 'canvas:cleared',
-  ZOOM_CHANGE = 'zoom:change'
+  
+  /** Path created (during drawing) */
+  PATH_CREATED = 'path:created',
+  
+  /** Event for custom extended functionality */
+  GRID_CREATED = 'grid:created',
+  /** Event for custom extended functionality */
+  ZOOM_CHANGED = 'zoom:changed'
 }
 
-export type FabricEvent = {
-  e: Event;
+/**
+ * Fabric.js event option types
+ * Provides types for event options
+ * 
+ * @interface FabricEventOptions
+ */
+export interface FabricEventOptions {
+  /** Whether to prevent the default action */
+  preventDefault?: boolean;
+  /** Whether to stop event propagation */
+  stopPropagation?: boolean;
+  /** Event target override */
   target?: any;
-  pointer?: { x: number; y: number };
-  button?: number;
-  transform?: {
-    corner: string;
-    original: any;
-    originX: string;
-    originY: string;
-    width: number;
-    height: number;
-    target: any;
-  };
-};
+}

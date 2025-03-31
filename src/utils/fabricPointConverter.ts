@@ -1,76 +1,69 @@
 
 /**
- * Utility functions for converting between fabric points and app points
+ * Utility functions for converting between application Point and Fabric.js Point types
+ * Ensures consistent point conversion throughout the application
+ * 
  * @module utils/fabricPointConverter
  */
-import { Point as FabricPoint } from "fabric";
-import type { Point as AppPoint } from "@/types/core/Point";
-import { createPoint } from "@/types/core/Point";
+import { Point as FabricPoint } from 'fabric';
+import { Point } from '@/types/core/Point';
 
 /**
- * Convert a fabric point to an app point
- * @param fabricPoint - Fabric point
- * @returns App point
+ * Convert application Point to Fabric.js Point
+ * Creates a new Fabric.js Point object from x,y coordinates
+ * 
+ * @param {Point} point - Application point object
+ * @returns {FabricPoint} Fabric.js Point instance
  */
-export const toAppPoint = (fabricPoint: FabricPoint | {x: number, y: number}): AppPoint => {
-  return {
-    x: fabricPoint.x,
-    y: fabricPoint.y
-  };
-};
+export function toFabricPoint(point: Point): FabricPoint {
+  return new FabricPoint(point.x, point.y);
+}
 
 /**
- * Alias for toAppPoint for backward compatibility
- * @param fabricPoint - Fabric point
- * @returns App point
+ * Convert Fabric.js Point to application Point
+ * Extracts x,y coordinates from Fabric.js Point object
+ * 
+ * @param {FabricPoint} fabricPoint - Fabric.js Point instance
+ * @returns {Point} Application point object with x,y coordinates
  */
-export const fromFabricPoint = toAppPoint;
+export function toAppPoint(fabricPoint: FabricPoint): Point {
+  return { x: fabricPoint.x, y: fabricPoint.y };
+}
 
 /**
- * Get a point from a mouse event
- * @param event - Mouse event
- * @param canvas - Fabric canvas
- * @returns App point
+ * Safely convert a potentially null or undefined point
+ * Provides a fallback for invalid points
+ * 
+ * @param {Point | null | undefined} point - Point to convert
+ * @param {Point} defaultPoint - Default point to use if input is null/undefined
+ * @returns {FabricPoint} Fabric.js Point instance
  */
-export const getPointFromEvent = (event: MouseEvent, canvas: any): AppPoint => {
-  const pointer = canvas.getPointer(event);
-  return {
-    x: pointer.x,
-    y: pointer.y
-  };
-};
+export function safeToFabricPoint(
+  point: Point | null | undefined, 
+  defaultPoint: Point = { x: 0, y: 0 }
+): FabricPoint {
+  if (!point) {
+    return new FabricPoint(defaultPoint.x, defaultPoint.y);
+  }
+  return new FabricPoint(point.x, point.y);
+}
 
 /**
- * Check if a value is an app point
- * @param value - Value to check
- * @returns Whether the value is an app point
+ * Convert an array of application Points to an array of Fabric.js Points
+ * 
+ * @param {Point[]} points - Array of application points
+ * @returns {FabricPoint[]} Array of Fabric.js Points
  */
-export const isAppPoint = (value: any): value is AppPoint => {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    'x' in value &&
-    'y' in value &&
-    typeof value.x === 'number' &&
-    typeof value.y === 'number'
-  );
-};
+export function pointsArrayToFabric(points: Point[]): FabricPoint[] {
+  return points.map(point => toFabricPoint(point));
+}
 
 /**
- * Convert app point to fabric point
- * @param appPoint - App point
- * @returns Fabric point
+ * Convert an array of Fabric.js Points to an array of application Points
+ * 
+ * @param {FabricPoint[]} fabricPoints - Array of Fabric.js Points
+ * @returns {Point[]} Array of application points
  */
-export const toFabricPoint = (appPoint: AppPoint): FabricPoint => {
-  return new FabricPoint(appPoint.x, appPoint.y);
-};
-
-/**
- * Create a new fabric point
- * @param x - X coordinate
- * @param y - Y coordinate
- * @returns Fabric point
- */
-export const createFabricPoint = (x: number, y: number): FabricPoint => {
-  return new FabricPoint(x, y);
-};
+export function fabricPointsToAppPoints(fabricPoints: FabricPoint[]): Point[] {
+  return fabricPoints.map(point => toAppPoint(point));
+}

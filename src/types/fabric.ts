@@ -6,51 +6,72 @@
 
 import { Canvas, Object, PencilBrush, Line, Point } from 'fabric';
 
-// Canvas alias that can be used throughout the application
+/**
+ * Canvas alias that can be used throughout the application
+ * @type {Canvas} FabricCanvas - Alias for Fabric.js Canvas class
+ */
 export type FabricCanvas = Canvas;
 
-// Object alias that can be used throughout the application
+/**
+ * Object alias that can be used throughout the application
+ * @type {Object} FabricObject - Alias for Fabric.js Object class
+ */
 export type FabricObject = Object;
 
-// Brush alias that can be used throughout the application
+/**
+ * Brush alias that can be used throughout the application
+ * @type {PencilBrush} FabricBrush - Alias for Fabric.js PencilBrush class
+ */
 export type FabricBrush = PencilBrush;
 
-// Line alias that can be used throughout the application
+/**
+ * Line alias that can be used throughout the application
+ * @type {Line} FabricLine - Alias for Fabric.js Line class
+ */
 export type FabricLine = Line;
 
-// Point alias that can be used throughout the application
+/**
+ * Point alias that can be used throughout the application
+ * @type {Point} FabricPoint - Alias for Fabric.js Point class
+ */
 export type FabricPoint = Point;
 
 /**
  * Custom event types for Fabric.js
  * These help with type safety when working with Fabric.js events
  */
+
+/**
+ * Extended Fabric object with additional properties
+ * @interface FabricObjectWithId
+ * @extends {FabricObject}
+ */
 export interface FabricObjectWithId extends FabricObject {
+  /** Optional unique identifier for the object */
   id?: string;
+  /** Flag indicating if this object is part of the grid system */
   isGrid?: boolean;
+  /** Type identifier for specialized object categorization */
   objectType?: string;
 }
 
 /**
- * Custom touch event interface for Fabric.js
- */
-export interface CustomFabricTouchEvent {
-  e: TouchEvent;
-  pointer: { x: number; y: number };
-  target?: FabricObject;
-}
-
-/**
  * Custom mouse event interface for Fabric.js
+ * @interface CustomFabricMouseEvent
  */
 export interface CustomFabricMouseEvent {
+  /** Original DOM event (MouseEvent or TouchEvent) */
   e: MouseEvent | TouchEvent;
+  /** Current pointer coordinates relative to canvas */
   pointer: { x: number; y: number };
+  /** Object under the pointer, if any */
   target?: FabricObject;
 }
 
 /**
  * Extended TouchEvent with additional properties
+ * @interface CustomTouchEvent
+ * @extends {TouchEvent}
  */
 export interface CustomTouchEvent extends TouchEvent {
   /** X-coordinate of touch point relative to client area */
@@ -61,6 +82,7 @@ export interface CustomTouchEvent extends TouchEvent {
 
 /**
  * Fabric-specific pointer event format
+ * @interface FabricPointerEvent
  */
 export interface FabricPointerEvent {
   /** Original DOM event (MouseEvent or TouchEvent) */
@@ -84,6 +106,7 @@ export interface FabricPointerEvent {
 /**
  * Centralized references to canvas elements and instances
  * Used to maintain consistent access throughout the application
+ * @interface CanvasReferences
  */
 export interface CanvasReferences {
   /** Reference to the HTML canvas element */
@@ -98,7 +121,13 @@ export interface CanvasReferences {
   container?: HTMLElement | null;
 }
 
-// Type guards for event handling
+/**
+ * Type guard to check if an event is a touch event
+ * Used to safely handle both mouse and touch interactions
+ * 
+ * @param {unknown} event - The event to check
+ * @returns {boolean} True if the event is a touch event
+ */
 export const isTouchEvent = (event: unknown): event is TouchEvent => {
   return Boolean(
     event && 
@@ -108,6 +137,13 @@ export const isTouchEvent = (event: unknown): event is TouchEvent => {
   );
 };
 
+/**
+ * Type guard to check if an event is a mouse event
+ * Used to safely differentiate between mouse and touch events
+ * 
+ * @param {unknown} event - The event to check
+ * @returns {boolean} True if the event is a mouse event
+ */
 export const isMouseEvent = (event: unknown): event is MouseEvent => {
   return Boolean(
     event && 

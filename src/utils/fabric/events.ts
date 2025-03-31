@@ -1,3 +1,4 @@
+
 /**
  * Event utilities for Fabric.js
  * Provides type guards and event handling helpers
@@ -7,6 +8,7 @@ import { CustomTouchEvent, isTouchEvent, isMouseEvent } from "@/types/fabric";
 
 /**
  * Type guard to check if an event is a keyboard event
+ * Helps differentiate keyboard events from other DOM events
  * 
  * @param {unknown} event - The event to check
  * @returns {boolean} True if the event is a keyboard event

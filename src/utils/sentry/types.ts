@@ -1,59 +1,101 @@
 
 /**
- * Sentry types module
- * Defines types for Sentry error reporting
+ * Sentry shared types
+ * Type definitions for Sentry error reporting and monitoring
+ * 
  * @module utils/sentry/types
  */
 
+import * as Sentry from '@sentry/react';
+
 /**
- * Sentry error capture options
+ * Options interface for error capture functions
+ * Configures how errors are captured and reported to Sentry
+ * 
+ * @interface ErrorCaptureOptions
  */
 export interface ErrorCaptureOptions {
-  /** Error level */
-  level?: 'error' | 'warning' | 'info';
-  /** Tags to attach to error */
+  /** Severity level of the error or message */
+  level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
+  
+  /** Key-value pairs for categorizing the event */
   tags?: Record<string, string>;
-  /** Extra data to attach to error */
+  
+  /** Additional context data to include with the event */
   extra?: Record<string, any>;
-  /** User information */
+  
+  /** User information to associate with the event */
   user?: {
-    /** User ID */
     id?: string;
-    /** User email */
     email?: string;
-    /** Username */
     username?: string;
-    /** IP address */
     ip_address?: string;
-    /** User metadata */
     [key: string]: any;
   };
-  /** Whether to show the report dialog */
+  
+  /** Whether to show the report dialog to the user */
   showReportDialog?: boolean;
+  
+  /** Whether to capture console output with the error */
+  captureConsole?: boolean;
 }
 
 /**
- * Sentry performance transaction options
+ * Options interface for performance transactions
+ * Configures how performance is monitored and reported
+ * 
+ * @interface TransactionOptions
  */
 export interface TransactionOptions {
-  /** Tags to attach to transaction */
-  tags?: Record<string, string>;
-  /** Transaction data */
+  /** Additional data to include with the transaction */
   data?: Record<string, any>;
+  
+  /** Key-value pairs for categorizing the transaction */
+  tags?: Record<string, string>;
+  
+  /** Parent transaction or span reference */
+  parentSpanId?: string;
+  
+  /** Optional start time override */
+  startTime?: number;
 }
 
 /**
- * Sentry performance transaction result
+ * Interface for transaction result from startPerformanceTransaction
+ * Provides methods to control and finalize the transaction
+ * 
+ * @interface TransactionResult
  */
 export interface TransactionResult {
-  /** Finish the transaction */
+  /** 
+   * Finish the transaction with optional status 
+   * @param {string | number} [status] - Transaction status or HTTP status code
+   */
   finish: (status?: string | number) => void;
-  /** Set transaction name */
+  
+  /** 
+   * Update the transaction name
+   * @param {string} name - New transaction name 
+   */
   setName: (name: string) => void;
-  /** Set transaction status */
+  
+  /** 
+   * Set the transaction status
+   * @param {string} status - Transaction status
+   */
   setStatus: (status: string) => void;
-  /** Set tag on transaction */
+  
+  /** 
+   * Add a tag to the transaction
+   * @param {string} key - Tag key
+   * @param {string} value - Tag value
+   */
   setTag: (key: string, value: string) => void;
-  /** Set data on transaction */
+  
+  /** 
+   * Add data to the transaction
+   * @param {string} key - Data key
+   * @param {any} value - Data value
+   */
   setData: (key: string, value: any) => void;
 }
