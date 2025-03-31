@@ -23,6 +23,8 @@ export const DrawingManager = () => {
   const [lineColor, setLineColor] = useState("#000000");
   const [gia, setGia] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
   // Grid objects reference
   const gridLayerRef = useRef<FabricObject[]>([]);
@@ -38,6 +40,24 @@ export const DrawingManager = () => {
     fabricCanvasRef: { current: canvas },
     historyRef
   });
+  
+  // Update canUndo/canRedo based on history state
+  const updateHistoryState = () => {
+    setCanUndo(historyRef.current.past.length > 0);
+    setCanRedo(historyRef.current.future.length > 0);
+  };
+
+  // Enhanced undo function with state update
+  const handleUndo = () => {
+    undo();
+    updateHistoryState();
+  };
+
+  // Enhanced redo function with state update
+  const handleRedo = () => {
+    redo();
+    updateHistoryState();
+  };
   
   // Handle zoom
   const handleZoom = (direction: "in" | "out") => {
@@ -69,6 +89,9 @@ export const DrawingManager = () => {
     canvas.remove(...objectsToRemove);
     canvas.requestRenderAll();
     
+    // Update history state
+    updateHistoryState();
+    
     toast('Canvas cleared');
   };
   
@@ -86,6 +109,9 @@ export const DrawingManager = () => {
     canvas.remove(...selectedObjects);
     canvas.discardActiveObject();
     canvas.requestRenderAll();
+    
+    // Update history state
+    updateHistoryState();
     
     toast(`Deleted ${selectedObjects.length} object(s)`);
   };
@@ -112,8 +138,8 @@ export const DrawingManager = () => {
       <ToolbarContainer 
         tool={tool}
         setTool={setTool}
-        onUndo={undo}
-        onRedo={redo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
         onZoom={handleZoom}
         onClear={clearCanvas}
         onDelete={deleteSelectedObjects}
@@ -122,6 +148,10 @@ export const DrawingManager = () => {
         lineColor={lineColor}
         showGrid={showGrid}
         onToggleGrid={toggleGrid}
+        onLineThicknessChange={setLineThickness}
+        onLineColorChange={setLineColor}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
       
       {canvas && (
@@ -133,8 +163,8 @@ export const DrawingManager = () => {
             lineColor={lineColor}
             gridLayerRef={gridLayerRef}
             saveCurrentState={saveCurrentState}
-            undo={undo}
-            redo={redo}
+            undo={handleUndo}
+            redo={handleRedo}
             deleteSelectedObjects={deleteSelectedObjects}
           />
           

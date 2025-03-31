@@ -15,16 +15,16 @@ import {
   prettierRules,
   reactRules,
   sentryRules,
-  typescriptRules,
   typeSafetyRules
 } from './eslint/index.js';
+import typeScriptRules from './eslint/typescript-rules.js';
 
 export default [
   ignores,
   baseConfig,
   importRules,
   reactRules,
-  ...typescriptRules, // Now spread the array of TypeScript rule configurations
+  ...typeScriptRules, // Use the new TypeScript rules collection
   typeSafetyRules,
   gridRules,
   gridFabricRules,

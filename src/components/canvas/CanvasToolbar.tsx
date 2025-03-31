@@ -158,7 +158,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       
       {/* Style controls */}
       <LineThicknessControl 
-        value={lineThickness} 
+        thickness={lineThickness} 
         onChange={onLineThicknessChange} 
       />
       

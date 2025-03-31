@@ -40,11 +40,10 @@ export const useCanvasGrid = ({
   const lastGridCreationAttemptRef = useRef(0);
   
   // Use the grid creation hook
-  const { createCanvasGrid } = useGridCreation({
+  const { createGrid, ensureVisibility, isCreating, error } = useGridCreation({
     fabricCanvasRef,
-    gridLayerRef,
-    gridInitializedRef,
-    lastGridCreationAttemptRef
+    lastGridCreationAttemptRef,
+    gridInitializedRef
   });
   
   // Use the grid diagnostics hook
@@ -59,7 +58,7 @@ export const useCanvasGrid = ({
     fabricCanvasRef,
     gridInitializedRef,
     zoomLevel,
-    createCanvasGrid
+    createGrid
   });
   
   // Create grid when canvas or dimensions change
@@ -69,22 +68,28 @@ export const useCanvasGrid = ({
         canvasDimensions.height > 0) {
       // Small delay to ensure canvas is fully initialized
       const timer = setTimeout(() => {
-        createCanvasGrid();
+        const gridObjects = createGrid();
+        if (gridObjects.length > 0) {
+          gridLayerRef.current = gridObjects;
+          gridInitializedRef.current = true;
+        }
       }, 100);
       
       return () => clearTimeout(timer);
     }
   }, [
-    fabricCanvasRef,
+    fabricCanvasRef.current,
     canvasDimensions.width,
     canvasDimensions.height,
-    createCanvasGrid
+    createGrid
   ]);
   
   return {
     gridLayerRef,
-    createGrid: createCanvasGrid,
+    createCanvasGrid: createGrid,
     isGridInitialized: () => gridInitializedRef.current,
-    runDiagnostics
+    runDiagnostics,
+    isCreating,
+    error
   };
 };

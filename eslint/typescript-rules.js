@@ -1,10 +1,13 @@
 
 /**
- * TypeScript specific ESLint rules
- * Enforces strict type checking and code quality for TypeScript files
+ * TypeScript ESLint rules
  * @module eslint/typescript-rules
  */
 import { typescriptRules } from './typescript/index.js';
+import { typeAdvancedSafetyRules } from './type-safety-advanced-rules.js';
 
-// Export aggregated TypeScript rules
-export { typescriptRules };
+// Export all TypeScript rules
+export default [
+  ...typescriptRules,
+  typeAdvancedSafetyRules
+];
