@@ -9,7 +9,7 @@ import { Canvas as FabricCanvas, Point } from "fabric";
 import { useCanvasState } from "./useCanvasState";
 import { useZoom } from "./useZoom";
 import { ZoomOptions } from "@/types";
-import { Point as CorePoint, toPoint, createPoint } from "@/types/core/Point";
+import { Point as CorePoint, createPoint } from "@/types/core/Point";
 import { DrawingState } from "@/types/core/DrawingState";
 
 /**

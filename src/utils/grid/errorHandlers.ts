@@ -29,8 +29,10 @@ export const handleGridCreationError = (
 ): void => {
   // Start error handling performance tracking
   const transaction = startPerformanceTransaction('grid-error-handling', {
-    errorType: error.name,
-    context: 'grid-creation'
+    tags: {
+      errorType: error.name,
+      context: 'grid-creation'
+    }
   });
   
   if (process.env.NODE_ENV === 'development') {
