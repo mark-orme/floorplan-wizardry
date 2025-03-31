@@ -187,8 +187,7 @@ export const testStraightLineDrawing = (
       isDrawingMode: canvas.isDrawingMode,
       selection: canvas.selection,
       tool,
-      canvasEventListenerCount: canvas.getElement().getEventListeners ? 
-        'Has event listeners API' : 'No event listeners API'
+      canvasEventListenerCount: 'Cannot access browser event listeners programmatically'
     });
     
     // Enhanced diagnostics: Try to force a fake mouse event to test handlers
