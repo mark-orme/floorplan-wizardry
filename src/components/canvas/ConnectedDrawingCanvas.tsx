@@ -173,8 +173,9 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     
     try {
       const prevState = historyStack[historyIndex - 1];
-      // Fix: Remove the callback parameter from loadFromJSON
-      canvas.loadFromJSON(JSON.parse(prevState));
+      // Critical fix: Use the correct signature for loadFromJSON in Fabric.js v6
+      const prevStateObj = JSON.parse(prevState);
+      canvas.loadFromJSON(prevStateObj);
       canvas.renderAll();
       setHistoryIndex(historyIndex - 1);
       setCanUndo(historyIndex - 1 > 0);
@@ -197,8 +198,9 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     
     try {
       const nextState = historyStack[historyIndex + 1];
-      // Fix: Remove the callback parameter from loadFromJSON
-      canvas.loadFromJSON(JSON.parse(nextState));
+      // Critical fix: Use the correct signature for loadFromJSON in Fabric.js v6
+      const nextStateObj = JSON.parse(nextState);
+      canvas.loadFromJSON(nextStateObj);
       canvas.renderAll();
       setHistoryIndex(historyIndex + 1);
       setCanUndo(true);
