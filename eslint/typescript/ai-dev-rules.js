@@ -7,7 +7,7 @@
 export const aiDevRules = {
   files: ["**/*.{ts,tsx}"],
   rules: {
-    // Rules specifically for guiding AI code generation
+    // Strict TypeScript validation - preventing any and never types
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/ban-types": "error", // Ban {} and Object types
     "@typescript-eslint/explicit-function-return-type": ["error", {
@@ -15,6 +15,8 @@ export const aiDevRules = {
       "allowTypedFunctionExpressions": true,
       "allowHigherOrderFunctions": true
     }],
+    
+    // Prevent type safety issues
     "@typescript-eslint/no-unsafe-assignment": "error",
     "@typescript-eslint/no-unsafe-member-access": "error",
     "@typescript-eslint/no-unsafe-call": "error",
@@ -30,7 +32,13 @@ export const aiDevRules = {
     "@typescript-eslint/prefer-optional-chain": "error",
     "@typescript-eslint/prefer-nullish-coalescing": "error",
     
-    // Strongly enforce type safety with DrawingTool/DrawingMode
+    // Enforce proper type assertions with Record<string, unknown> instead of any
+    "@typescript-eslint/consistent-type-assertions": ["error", {
+      "assertionStyle": "as",
+      "objectLiteralTypeAssertions": "allow"
+    }],
+    
+    // DrawingTool and DrawingMode specific rules
     "no-restricted-syntax": [
       "error",
       {
@@ -59,7 +67,7 @@ export const aiDevRules = {
       }
     ],
     
-    // Clear guidelines for hook typing
+    // Hook typing rules
     "react-hooks/exhaustive-deps": "error",
     "@typescript-eslint/explicit-module-boundary-types": ["error", {
       "allowArgumentsExplicitlyTypedAsAny": false,

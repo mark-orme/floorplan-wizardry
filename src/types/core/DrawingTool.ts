@@ -1,56 +1,60 @@
 
 /**
- * Core drawing tool types
- * Provides the canonical source of truth for drawing tools in the application
+ * Drawing Tool type definitions
+ * Defines the central type for drawing tools across the application
  * @module types/core/DrawingTool
  */
+
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * DrawingTool type - The canonical type to use for all drawing tools
- * This is the primary source of truth for drawing tool types
- * Directly uses DrawingMode enum values for better type safety
- * 
- * @typedef {DrawingMode} DrawingTool
+ * DrawingTool type
+ * Uses DrawingMode enum for consistency and type safety
  */
-export type DrawingTool = DrawingMode;
+export type DrawingTool = keyof typeof DrawingMode | DrawingMode;
 
 /**
- * Type guard to check if a value is a valid DrawingTool
+ * Validates if a value is a valid DrawingTool
  * 
- * @param {unknown} value - The value to check
+ * @param {unknown} value - Value to validate
  * @returns {boolean} Whether the value is a valid DrawingTool
  */
 export function isValidDrawingTool(value: unknown): value is DrawingTool {
-  return typeof value === 'string' && 
-         Object.values(DrawingMode).includes(value as DrawingMode);
+  if (typeof value !== 'string') return false;
+  return Object.values(DrawingMode).includes(value as DrawingMode);
 }
 
 /**
- * Get a user-friendly display name for a DrawingTool
+ * Gets a display name for a drawing tool
  * 
- * @param {DrawingTool} tool - The drawing tool
- * @returns {string} A formatted display name for the tool
+ * @param {DrawingTool} tool - Tool to get display name for
+ * @returns {string} Display name for the tool
  */
 export function getToolDisplayName(tool: DrawingTool): string {
-  const formatted = tool.replace(/-/g, ' ');
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  const toolString = String(tool);
+  return toolString
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 /**
- * Convert a string to a DrawingTool if valid
+ * Parses a string into a DrawingTool
  * 
- * @param {string} value - The string value to convert
- * @returns {DrawingTool | null} The DrawingTool if valid, null otherwise
+ * @param {string} value - String to parse
+ * @returns {DrawingTool} Parsed DrawingTool, or SELECT if invalid
  */
-export function parseDrawingTool(value: string): DrawingTool | null {
-  return isValidDrawingTool(value) ? value : null;
+export function parseDrawingTool(value: string): DrawingTool {
+  if (isValidDrawingTool(value)) {
+    return value;
+  }
+  return DrawingMode.SELECT; // Default to SELECT
 }
 
 /**
- * Get the default drawing tool
+ * Gets the default drawing tool
  * 
- * @returns {DrawingTool} The default drawing tool
+ * @returns {DrawingTool} Default drawing tool (SELECT)
  */
 export function getDefaultDrawingTool(): DrawingTool {
   return DrawingMode.SELECT;
