@@ -1,100 +1,60 @@
-/**
- * State management hook for straight line drawing tool
- * Centralizes state for line drawing operations
- * @module hooks/straightLineTool/useLineState
- */
+
 import { useState, useRef, useCallback } from 'react';
 import { Line, Text } from 'fabric';
 import { Point } from '@/types/core/Geometry';
+import logger from '@/utils/logger';
 
 /**
- * Interface for straight line tool state
- * Contains all state and methods needed for the line drawing tool
+ * Hook to manage state for drawing straight lines
+ * @returns Line drawing state and helper functions
  */
-export interface LineState {
-  /** Whether currently drawing a line */
-  isDrawing: boolean;
-  /** Whether the tool is initialized */
-  isToolInitialized: boolean;
-  /** Reference to the starting point */
-  startPointRef: React.MutableRefObject<Point | null>;
-  /** Reference to the current line */
-  currentLineRef: React.MutableRefObject<Line | null>;
-  /** Reference to the distance tooltip */
-  distanceTooltipRef: React.MutableRefObject<Text | null>;
-  /** Set the start point for line drawing */
-  setStartPoint: (point: Point) => void;
-  /** Set the current line object */
-  setCurrentLine: (line: Line) => void;
-  /** Set the tooltip for showing distance */
-  setDistanceTooltip: (tooltip: Text) => void;
-  /** Initialize the tool */
-  initializeTool: () => void;
-  /** Reset drawing state */
-  resetDrawingState: () => void;
-  /** Set whether currently drawing */
-  setIsDrawing: (isDrawing: boolean) => void;
-}
-
-/**
- * Custom hook for managing straight line tool state
- * Provides a centralized way to manage all state related to the line drawing tool
- * 
- * @returns State and methods for line drawing
- */
-export const useLineState = (): LineState => {
+export const useLineState = () => {
+  // Track if we're currently drawing a line
   const [isDrawing, setIsDrawing] = useState(false);
+  
+  // Track if the tool is fully initialized
   const [isToolInitialized, setIsToolInitialized] = useState(false);
+  
+  // Refs for line drawing state
   const startPointRef = useRef<Point | null>(null);
   const currentLineRef = useRef<Line | null>(null);
   const distanceTooltipRef = useRef<Text | null>(null);
-
-  /**
-   * Sets the start point and activates drawing
-   * Called when drawing starts
-   * 
-   * @param point - Starting point for the line
-   */
+  
+  // Function to set line starting point
   const setStartPoint = useCallback((point: Point) => {
     startPointRef.current = point;
-    setIsDrawing(true);
+    console.log(`Line start point set to: x=${point.x}, y=${point.y}`);
   }, []);
-
-  /**
-   * Sets the current line being drawn
-   * @param line - Line object
-   */
+  
+  // Function to track the current line being drawn
   const setCurrentLine = useCallback((line: Line) => {
     currentLineRef.current = line;
+    console.log("Current line reference set");
   }, []);
-
-  /**
-   * Sets the distance tooltip
-   * @param tooltip - Text object showing distance
-   */
+  
+  // Function to track distance tooltip
   const setDistanceTooltip = useCallback((tooltip: Text) => {
     distanceTooltipRef.current = tooltip;
   }, []);
-
-  /**
-   * Initializes the line tool
-   */
+  
+  // Function to initialize the tool
   const initializeTool = useCallback(() => {
+    logger.info("Initializing straight line tool state");
     setIsToolInitialized(true);
   }, []);
-
-  /**
-   * Resets the drawing state
-   */
+  
+  // Function to reset drawing state
   const resetDrawingState = useCallback(() => {
+    logger.info("Resetting line drawing state");
     setIsDrawing(false);
     startPointRef.current = null;
     currentLineRef.current = null;
     distanceTooltipRef.current = null;
   }, []);
-
+  
   return {
     isDrawing,
+    setIsDrawing,
     isToolInitialized,
     startPointRef,
     currentLineRef,
@@ -103,7 +63,8 @@ export const useLineState = (): LineState => {
     setCurrentLine,
     setDistanceTooltip,
     initializeTool,
-    resetDrawingState,
-    setIsDrawing
+    resetDrawingState
   };
 };
+
+export type LineState = ReturnType<typeof useLineState>;

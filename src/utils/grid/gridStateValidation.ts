@@ -19,8 +19,8 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
   Object.keys(state).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
       const typedKey = key as keyof GridCreationState;
-      // Type assertion is safe here because we've verified key exists in DEFAULT_GRID_CREATION_STATE
-      validState[typedKey] = state[typedKey] as GridCreationState[keyof GridCreationState];
+      // Use specific property type to ensure type safety
+      validState[typedKey] = state[typedKey] as GridCreationState[typeof typedKey];
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
     }
@@ -40,8 +40,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
   Object.keys(updates).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
       const typedKey = key as keyof GridCreationState;
-      // Type assertion is safe here because we've verified key exists in DEFAULT_GRID_CREATION_STATE
-      validUpdates[typedKey] = updates[typedKey] as GridCreationState[keyof GridCreationState];
+      // Use specific property type to ensure type safety
+      validUpdates[typedKey] = updates[typedKey] as GridCreationState[typeof typedKey];
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
     }
@@ -74,12 +74,12 @@ export const repairGridState = (state: Record<string, unknown>): Partial<GridCre
     if (key in DEFAULT_GRID_CREATION_STATE) {
       // Use proper type-safe way to copy properties
       const typedKey = key as keyof GridCreationState;
-      // Use type assertion with specific property type
+      // Type the value specifically for this property
       repairedState[typedKey] = state[key] as GridCreationState[typeof typedKey];
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
-      // Use type assertion with specific property type
+      // Type the value specifically for this property
       repairedState[correctKey] = state[key] as GridCreationState[typeof correctKey];
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }

@@ -1,17 +1,19 @@
+
 /**
  * Hook for handling straight line drawing functionality
  * Manages canvas interaction for drawing precise straight lines
  * @module hooks/straightLineTool/useStraightLineTool
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useLineState, LineState } from './useLineState';
+import { useLineState } from './useLineState';
 import { useLineEvents } from './useLineEvents';
 import { captureMessage } from '@/utils/sentry';
 import logger from '@/utils/logger';
 import { FabricEventTypes } from '@/types/fabric-events';
+import { toast } from 'sonner';
 
 /**
  * Props for useStraightLineTool hook
@@ -115,7 +117,10 @@ export const useStraightLineTool = ({
     const canvas = fabricCanvasRef.current;
     
     // Early return if canvas isn't available yet
-    if (!canvas) return;
+    if (!canvas) {
+      logger.warn("Canvas not available for straight line tool");
+      return;
+    }
     
     if (tool === DrawingMode.STRAIGHT_LINE) {
       // Important: Only set up the tool if it's not already active
@@ -166,6 +171,11 @@ export const useStraightLineTool = ({
             }
           }
         });
+        
+        // Notify user that the tool is active
+        toast.success("Line drawing tool activated", {
+          id: "line-tool-activated"
+        });
       }
     } else {
       // If tool was active and is now changing, clean up
@@ -197,6 +207,11 @@ export const useStraightLineTool = ({
     isActive,
     initializeTool
   ]);
+  
+  // Log tool state changes for debugging
+  useEffect(() => {
+    console.log(`Straight line tool state changed: active=${isActive}, initialized=${isToolInitialized}, drawing=${isDrawing}`);
+  }, [isActive, isToolInitialized, isDrawing]);
   
   // Handle keyboard events - Escape to cancel
   useEffect(() => {

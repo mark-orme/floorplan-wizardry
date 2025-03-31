@@ -10,7 +10,7 @@ import {
   useObjectEvents, 
   useBrushSettings 
 } from "@/hooks/canvas-events";
-import { useStraightLineTool } from "@/hooks/useStraightLineTool";
+import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
 import { validateStraightLineTool, scheduleStraightLineValidation } from "@/utils/diagnostics/straightLineValidator";
 import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
@@ -85,13 +85,22 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   });
   
   // Initialize straight line tool
-  const { cancelDrawing, isToolInitialized } = useStraightLineTool({
+  const { cancelDrawing, isToolInitialized, isActive: isLineToolActive } = useStraightLineTool({
     fabricCanvasRef: canvasRef,
     tool,
     lineColor,
     lineThickness,
     saveCurrentState
   });
+  
+  // Log changes to line tool state
+  useEffect(() => {
+    logger.info("Line tool state change", {
+      isLineToolActive,
+      isToolInitialized,
+      tool
+    });
+  }, [isLineToolActive, isToolInitialized, tool]);
   
   // Run validation tools on tool change
   useEffect(() => {
@@ -134,7 +143,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     logger.info("Applying tool settings to canvas", { 
       tool, 
       lineThickness, 
-      lineColor
+      lineColor,
+      isLineToolActive
     });
     
     try {
@@ -207,7 +217,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           // Discard any active object to ensure nothing is selected
           canvas.discardActiveObject();
           logger.info("Straight line tool activated", { 
-            isToolInitialized
+            isToolInitialized,
+            isLineToolActive
           });
           
           // Enhanced logging for straight line tool
@@ -215,6 +226,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
             tags: { component: "CanvasEventManager" },
             extra: {
               initialized: isToolInitialized,
+              active: isLineToolActive,
               canvasState: {
                 isDrawingMode: canvas.isDrawingMode,
                 selection: canvas.selection,
@@ -270,7 +282,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       captureError(error as Error, "apply-tool-settings-error");
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
-  }, [tool, lineThickness, lineColor, canvas, gridLayerRef, isToolInitialized]);
+  }, [tool, lineThickness, lineColor, canvas, gridLayerRef, isToolInitialized, isLineToolActive]);
   
   // Effect to handle keyboard shortcuts
   useEffect(() => {

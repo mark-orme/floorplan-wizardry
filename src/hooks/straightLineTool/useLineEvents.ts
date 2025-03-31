@@ -1,9 +1,11 @@
+
 import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Geometry';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
 import { FabricEventTypes } from '@/types/fabric-events';
+import logger from '@/utils/logger';
 
 interface LineState {
   isDrawing: boolean;
@@ -42,13 +44,20 @@ export const useLineEvents = (
   const eventHandlersAttachedRef = useRef(false);
   
   const handleMouseDown = useCallback((opt: any) => {
-    if (tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current) return;
+    console.log("Mouse down in straight line tool");
+    if (tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current) {
+      console.log(`Not handling mouse down: tool=${tool} or canvas not available`);
+      return;
+    }
     
     const canvas = fabricCanvasRef.current;
+    
+    setIsDrawing(true);
     
     const pointer = canvas.getPointer(opt.e);
     const point = { x: pointer.x, y: pointer.y };
     
+    console.log(`Starting line at point: x=${point.x}, y=${point.y}`);
     setStartPoint(point);
     
     const line = new Line([point.x, point.y, point.x, point.y], {
@@ -76,10 +85,12 @@ export const useLineEvents = (
     setDistanceTooltip(tooltip);
     
     canvas.requestRenderAll();
-  }, [tool, fabricCanvasRef, lineColor, lineThickness, setStartPoint, setCurrentLine, setDistanceTooltip]);
+  }, [tool, fabricCanvasRef, lineColor, lineThickness, setIsDrawing, setStartPoint, setCurrentLine, setDistanceTooltip]);
   
   const handleMouseMove = useCallback((opt: any) => {
-    if (!isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current || !startPointRef.current) return;
+    if (!isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current || !startPointRef.current) {
+      return;
+    }
     
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(opt.e);
@@ -109,12 +120,18 @@ export const useLineEvents = (
   }, [isDrawing, tool, fabricCanvasRef, startPointRef, currentLineRef, distanceTooltipRef]);
   
   const handleMouseUp = useCallback(() => {
-    if (!isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current) return;
+    console.log("Mouse up in straight line tool", { isDrawing, tool });
+    if (!isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current) {
+      return;
+    }
     
     const canvas = fabricCanvasRef.current;
     
+    // Save current state to undo history
     saveCurrentState();
+    console.log("Completed line drawing, state saved");
     
+    // Reset drawing state to prepare for next line
     resetDrawingState();
     
     canvas.requestRenderAll();
@@ -124,6 +141,8 @@ export const useLineEvents = (
     if (!isDrawing || !fabricCanvasRef.current) return;
     
     const canvas = fabricCanvasRef.current;
+    
+    console.log("Cancelling line drawing");
     
     if (currentLineRef.current && canvas.contains(currentLineRef.current)) {
       canvas.remove(currentLineRef.current);
@@ -139,6 +158,7 @@ export const useLineEvents = (
   }, [isDrawing, fabricCanvasRef, currentLineRef, distanceTooltipRef, resetDrawingState]);
   
   const cleanupEventHandlers = useCallback(() => {
+    logger.info("Cleaning up straight line event handlers");
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
@@ -149,6 +169,7 @@ export const useLineEvents = (
     eventHandlersAttachedRef.current = false;
     
     resetDrawingState();
+    logger.info("Line event handlers removed");
   }, [fabricCanvasRef, handleMouseDown, handleMouseMove, handleMouseUp, resetDrawingState]);
   
   return {
