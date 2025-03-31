@@ -44,6 +44,26 @@ export function calculateGridDimensions(
 }
 
 /**
+ * Calculate the appropriate grid spacing based on zoom level
+ * @param zoomLevel Current zoom level of the canvas
+ * @returns The appropriate grid spacing for the current zoom
+ */
+export function calculateGridSpacing(zoomLevel: number = 1): number {
+  // Base small grid size
+  const baseSmallGrid = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
+  
+  // Adjust grid size based on zoom level
+  if (zoomLevel < 0.5) {
+    return baseSmallGrid * 4; // Use larger spacing when zoomed out
+  } else if (zoomLevel < 0.8) {
+    return baseSmallGrid * 2; // Use medium spacing at medium zoom
+  }
+  
+  // Return default spacing for normal zoom
+  return baseSmallGrid;
+}
+
+/**
  * Create grid lines on the canvas
  * @param canvas The canvas
  * @param dimensions Grid dimensions
@@ -92,15 +112,15 @@ export function createGridLines(
 /**
  * Create a complete grid with all components
  * @param canvas The canvas
- * @param width Canvas width
- * @param height Canvas height
- * @param cellSize Grid cell size
+ * @param width Canvas width (optional, defaults to canvas width)
+ * @param height Canvas height (optional, defaults to canvas height)
+ * @param cellSize Grid cell size (optional, defaults to 20)
  * @returns Grid render result
  */
 export function createCompleteGrid(
   canvas: Canvas,
-  width: number,
-  height: number,
+  width?: number,
+  height?: number,
   cellSize: number = 20
 ): {
   gridObjects: FabricObject[];
@@ -108,8 +128,12 @@ export function createCompleteGrid(
   largeGridLines: FabricObject[];
   markers: FabricObject[];
 } {
+  // Use provided dimensions or get from canvas
+  const canvasWidth = width || canvas.width || 800;
+  const canvasHeight = height || canvas.height || 600;
+  
   // Calculate grid dimensions
-  const dimensions = calculateGridDimensions(width, height, cellSize);
+  const dimensions = calculateGridDimensions(canvasWidth, canvasHeight, cellSize);
   
   // Create grid objects
   const gridObjects = createGridLines(canvas, dimensions);
@@ -135,6 +159,26 @@ export function createCompleteGrid(
     largeGridLines,
     markers: [] // Empty for now
   };
+}
+
+/**
+ * Set visibility of grid objects
+ * @param canvas The canvas
+ * @param gridObjects The grid objects to modify
+ * @param visible Whether grid should be visible
+ */
+export function setGridVisibility(
+  canvas: Canvas, 
+  gridObjects: FabricObject[], 
+  visible: boolean
+): void {
+  if (!canvas) return;
+  
+  gridObjects.forEach((obj: FabricObject) => {
+    obj.set({ visible });
+  });
+  
+  canvas.requestRenderAll();
 }
 
 /**
@@ -180,24 +224,6 @@ export function removeGrid(canvas: Canvas, gridObjects?: FabricObject[]): void {
   
   objectsToRemove.forEach((obj: FabricObject) => {
     canvas.remove(obj);
-  });
-  
-  canvas.requestRenderAll();
-}
-
-/**
- * Set visibility of grid objects
- * @param canvas The canvas
- * @param visible Whether grid should be visible
- */
-export function setGridVisibility(canvas: Canvas, visible: boolean): void {
-  if (!canvas) return;
-  
-  const gridObjects = canvas.getObjects().filter((obj: FabricObject) => 
-    isGridObject(obj));
-  
-  gridObjects.forEach((obj: FabricObject) => {
-    obj.set({ visible });
   });
   
   canvas.requestRenderAll();

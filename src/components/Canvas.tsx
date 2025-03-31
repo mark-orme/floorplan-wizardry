@@ -82,7 +82,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!canvasRef.current) return;
     
     // Mark canvas element as created
-    setCanvasCreated(true);
+    setCanvasCreated();
     
     // Prevent multiple initializations of the same canvas element
     if (canvasInitializedRef.current || canvas) {
@@ -102,7 +102,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         const existingCanvas = canvasRef.current._fabric as FabricCanvas;
         setCanvas(existingCanvas);
         canvasInitializedRef.current = true;
-        setCanvasInitialized(true);
+        setCanvasInitialized();
         
         if (onCanvasReady) {
           onCanvasReady(existingCanvas);
@@ -138,7 +138,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       
       setCanvas(fabricCanvas);
       canvasInitializedRef.current = true;
-      setCanvasInitialized(true);
+      setCanvasInitialized();
       
       if (onCanvasReady) {
         onCanvasReady(fabricCanvas);
@@ -150,7 +150,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       console.log("Canvas initialized successfully");
       
       // Mark tools as registered once canvas is initialized
-      setToolsRegistered(true);
+      setToolsRegistered();
       
       toast.success("Canvas ready", {
         id: "canvas-ready-toast"
@@ -215,7 +215,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     gridLayerRef.current = gridObjects;
     
     // Mark grid as loaded
-    setGridLoaded(true);
+    setGridLoaded();
     
     // Update debug info once, not on every render
     updateDebugInfo({ 

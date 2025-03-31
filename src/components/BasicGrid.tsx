@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { createCompleteGrid, setGridVisibility, calculateGridSpacing } from '@/utils/gridUtils';
+import { createCompleteGrid, setGridVisibility } from '@/utils/gridUtils';
 import { GridCreationState, DEFAULT_GRID_CREATION_STATE } from '@/types/core/GridTypes';
 import { captureMessage } from '@/utils/sentry';
 import logger from '@/utils/logger';
@@ -45,7 +45,7 @@ export const BasicGrid = ({
       return;
     }
     
-    if (gridState.created) {
+    if (gridState.isCreated) {
       logger.info('Grid already created, skipping creation');
       return;
     }
@@ -64,7 +64,7 @@ export const BasicGrid = ({
       
       // Update state to indicate grid is created
       setGridState({
-        created: true,
+        isCreated: true,
         visible: initialVisibility,
         objectCount: gridResult.gridObjects.length
       });
@@ -87,7 +87,7 @@ export const BasicGrid = ({
       
       // Set state to indicate grid creation failed
       setGridState({
-        created: false,
+        isCreated: false,
         visible: false,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -99,7 +99,7 @@ export const BasicGrid = ({
         { extra: { error: String(error) } }
       );
     }
-  }, [canvas, onGridCreated, initialVisibility, gridState.created]);
+  }, [canvas, onGridCreated, initialVisibility, gridState.isCreated]);
   
   // This component doesn't render any DOM elements
   return null;

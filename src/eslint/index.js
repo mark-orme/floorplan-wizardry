@@ -20,6 +20,7 @@ const drawingModeValidation = require('./drawing-mode-validation');
 const fabricTypesRules = require('./fabric-types-rules');
 const constants = require('./constants');
 const ignores = require('./ignores');
+const functionArgumentRules = require('./function-argument-rules');
 
 // Export all rule sets and configurations
 module.exports = {
@@ -36,5 +37,6 @@ module.exports = {
   drawingModeValidation,
   fabricTypesRules,
   constants,
-  ignores
+  ignores,
+  functionArgumentRules
 };

@@ -12,6 +12,7 @@ import { fabricEventRules } from './fabric-event-rules.js';
 import { drawingToolRules } from './drawing-tool-rules.js';
 import { assertionRules } from './assertion-rules.js';
 import { reactTypescriptRules } from './react-rules.js';
+import { functionArgumentRules } from './function-argument-rules.js';
 
 export const typescriptRules = [
   baseTypeScriptRules,
@@ -21,5 +22,6 @@ export const typescriptRules = [
   fabricEventRules,
   drawingToolRules,
   assertionRules,
-  reactTypescriptRules
+  reactTypescriptRules,
+  functionArgumentRules
 ];
