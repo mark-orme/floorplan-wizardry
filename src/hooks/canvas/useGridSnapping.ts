@@ -8,6 +8,11 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import type { Point } from '@/types/core/Point';
 
+/**
+ * Hook for grid snapping functionality
+ * @param canvasRef - Reference to the fabric canvas
+ * @returns Object with snapping functions and state
+ */
 export const useGridSnapping = (canvasRef: React.MutableRefObject<FabricCanvas | null>) => {
   const { snapEnabled, snapPointToGrid, snapLineToGrid, isSnappedToGrid } = useSnapToGrid();
 

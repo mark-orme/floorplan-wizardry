@@ -1,7 +1,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool, Point } from "@/types/drawingTypes";
+import { DrawingMode, Point } from "@/types/drawingTypes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { useGridSnapping } from "./useGridSnapping";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ export const useDrawingOperations = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>
 ) => {
   const { tool, lineColor, lineThickness, setCanUndo, setCanRedo } = useDrawingContext();
-  const { snapPointToGrid } = useGridSnapping();
+  const { snapPointToGrid } = useGridSnapping(fabricCanvasRef); // Pass the fabricCanvasRef argument
   
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
