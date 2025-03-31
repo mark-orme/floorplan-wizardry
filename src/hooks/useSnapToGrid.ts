@@ -22,12 +22,13 @@ export interface UseSnapToGridProps {
  * Line constraints for grid snapping
  * @interface LineConstraints
  */
-interface LineConstraints {
+export interface LineConstraints {
   start: Point;
   end: Point;
   isHorizontal?: boolean;
   isVertical?: boolean;
   isDiagonal?: boolean;
+  isAutoStraightened?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ interface LineConstraints {
  */
 export const useSnapToGrid = (props?: UseSnapToGridProps) => {
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [autoStraighten, setAutoStraighten] = useState(true);
   const { fabricCanvasRef } = props || {};
 
   /**
@@ -72,20 +74,44 @@ export const useSnapToGrid = (props?: UseSnapToGridProps) => {
     let isHorizontal = false;
     let isVertical = false;
     let isDiagonal = false;
+    let isAutoStraightened = false;
 
-    // Check for horizontal constraint
-    if (Math.abs(snappedEnd.y - snappedStart.y) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
-      snappedEnd.y = snappedStart.y;
-      isHorizontal = true;
-    }
-    // Check for vertical constraint
-    else if (Math.abs(snappedEnd.x - snappedStart.x) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
-      snappedEnd.x = snappedStart.x;
-      isVertical = true;
-    }
-    // Check for diagonal constraint (45-degree angle)
-    else if (Math.abs(snappedEnd.x - snappedStart.x) === Math.abs(snappedEnd.y - snappedStart.y)) {
-      isDiagonal = true;
+    // Only auto-straighten if that feature is enabled
+    if (autoStraighten) {
+      // Check for horizontal constraint
+      if (Math.abs(snappedEnd.y - snappedStart.y) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
+        snappedEnd.y = snappedStart.y;
+        isHorizontal = true;
+        isAutoStraightened = true;
+      }
+      // Check for vertical constraint
+      else if (Math.abs(snappedEnd.x - snappedStart.x) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
+        snappedEnd.x = snappedStart.x;
+        isVertical = true;
+        isAutoStraightened = true;
+      }
+      // Check for diagonal constraint (45-degree angle)
+      else if (Math.abs(Math.abs(snappedEnd.x - snappedStart.x) - Math.abs(snappedEnd.y - snappedStart.y)) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
+        // Make the diagonal precisely 45 degrees
+        const dx = Math.abs(snappedEnd.x - snappedStart.x);
+        const dy = Math.abs(snappedEnd.y - snappedStart.y);
+        const delta = (dx + dy) / 2;
+        
+        if (snappedEnd.x > snappedStart.x) {
+          snappedEnd.x = snappedStart.x + delta;
+        } else {
+          snappedEnd.x = snappedStart.x - delta;
+        }
+        
+        if (snappedEnd.y > snappedStart.y) {
+          snappedEnd.y = snappedStart.y + delta;
+        } else {
+          snappedEnd.y = snappedStart.y - delta;
+        }
+        
+        isDiagonal = true;
+        isAutoStraightened = true;
+      }
     }
 
     return {
@@ -93,9 +119,10 @@ export const useSnapToGrid = (props?: UseSnapToGridProps) => {
       end: snappedEnd,
       isHorizontal,
       isVertical,
-      isDiagonal
+      isDiagonal,
+      isAutoStraightened
     };
-  }, [snapEnabled, snapPointToGrid]);
+  }, [snapEnabled, autoStraighten, snapPointToGrid]);
 
   /**
    * Check if a point is snapped to the grid
@@ -112,9 +139,17 @@ export const useSnapToGrid = (props?: UseSnapToGridProps) => {
    * @param tool - Current drawing tool
    * @returns Whether snapping is enabled for this tool
    */
-  const getSnapEnabledForTool = (tool: DrawingMode): boolean => {
+  const getSnapEnabledForTool = useCallback((tool: DrawingMode): boolean => {
+    // We could customize snap behavior per tool here
     return snapEnabled;
-  };
+  }, [snapEnabled]);
+
+  /**
+   * Toggle auto-straightening of lines
+   */
+  const toggleAutoStraighten = useCallback(() => {
+    setAutoStraighten(prev => !prev);
+  }, []);
   
   return {
     snapEnabled,
@@ -122,7 +157,9 @@ export const useSnapToGrid = (props?: UseSnapToGridProps) => {
     snapPointToGrid,
     snapLineToGrid,
     isSnappedToGrid,
-    toggleSnapToGrid: () => setSnapEnabled(prev => !prev),
-    getSnapEnabledForTool
+    toggleSnapToGrid: useCallback(() => setSnapEnabled(prev => !prev), []),
+    getSnapEnabledForTool,
+    isAutoStraightened: autoStraighten,
+    toggleAutoStraighten
   };
 };

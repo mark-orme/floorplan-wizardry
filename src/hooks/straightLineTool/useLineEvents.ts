@@ -44,9 +44,9 @@ export const useLineEvents = (
   
   const eventHandlersAttachedRef = useRef(false);
   
-  // Use the grid snapping functionality with correct props
+  // Use the grid snapping functionality with fabricCanvasRef
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid({
-    fabricCanvasRef: fabricCanvasRef
+    fabricCanvasRef
   });
   
   const handleMouseDown = useCallback((opt: any) => {
@@ -107,19 +107,19 @@ export const useLineEvents = (
     const snappedEndPoint = snapPointToGrid(rawEndPoint);
     
     // Apply line straightening constraints for vertical/horizontal/diagonal lines
-    const straightenedEnd = snapLineToGrid(startPointRef.current, snappedEndPoint);
+    const straightenedLine = snapLineToGrid(startPointRef.current, snappedEndPoint);
     
     if (currentLineRef.current) {
       currentLineRef.current.set({
-        x2: straightenedEnd.end.x,
-        y2: straightenedEnd.end.y
+        x2: straightenedLine.end.x,
+        y2: straightenedLine.end.y
       });
       
-      const distance = calculateDistance(startPointRef.current, straightenedEnd.end);
+      const distance = calculateDistance(startPointRef.current, straightenedLine.end);
       const displayDistance = Math.round(distance);
       
       if (distanceTooltipRef.current) {
-        const midpoint = getMidpoint(startPointRef.current, straightenedEnd.end);
+        const midpoint = getMidpoint(startPointRef.current, straightenedLine.end);
         
         distanceTooltipRef.current.set({
           left: midpoint.x,

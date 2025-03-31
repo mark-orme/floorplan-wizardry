@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -49,6 +50,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onLineThicknessChange,
   onLineColorChange
 }: ToolbarProps): JSX.Element => {
+  // Log when the active tool changes to help debug
+  React.useEffect(() => {
+    console.log("Active tool in Toolbar:", activeTool);
+  }, [activeTool]);
+
+  const handleStraightLineClick = () => {
+    console.log("Straight line tool clicked, current tool:", activeTool);
+    onToolChange(DrawingMode.STRAIGHT_LINE);
+  };
+
   return (
     <div className="p-2 border-b flex flex-wrap gap-2 bg-white">
       <div className="flex items-center gap-1">
@@ -71,9 +82,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <Button 
           size="sm" 
           variant={activeTool === DrawingMode.STRAIGHT_LINE ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
+          onClick={handleStraightLineClick}
           title="Straight Line Tool"
           data-test-id="straight-line-button"
+          className={activeTool === DrawingMode.STRAIGHT_LINE ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
         >
           <Ruler className="h-4 w-4" />
         </Button>

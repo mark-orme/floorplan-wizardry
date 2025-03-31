@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -85,6 +84,11 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     lineThickness
   });
   
+  // Debug log whenever tool changes
+  useEffect(() => {
+    console.log(`Tool changed in CanvasEventManager: ${tool}`);
+  }, [tool]);
+  
   // Initialize straight line tool
   const { cancelDrawing, isToolInitialized, isActive: isLineToolActive } = useStraightLineTool({
     fabricCanvasRef: canvasRef,
@@ -99,14 +103,25 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     logger.info("Line tool state change", {
       isLineToolActive,
       isToolInitialized,
-      tool
+      tool,
+      canvas: !!canvas
     });
     
     // Track initialization status for this tool
     if (isToolInitialized && tool === DrawingMode.STRAIGHT_LINE) {
       toolInitializedRef.current.STRAIGHT_LINE = true;
     }
-  }, [isLineToolActive, isToolInitialized, tool]);
+    
+    // Show status toast for straight line tool
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      if (isLineToolActive && isToolInitialized) {
+        toast.success("Line tool ready! Click and drag to draw a line.", {
+          id: "line-tool-ready",
+          duration: 2000
+        });
+      }
+    }
+  }, [isLineToolActive, isToolInitialized, tool, canvas]);
   
   // Run validation tools on tool change
   useEffect(() => {

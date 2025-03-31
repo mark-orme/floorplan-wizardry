@@ -113,6 +113,16 @@ export const useStraightLineTool = ({
     lineState
   );
 
+  // Debug logging for initialization tracking
+  useEffect(() => {
+    console.log("Straight line tool status:", {
+      tool,
+      isActive,
+      isToolInitialized,
+      hasCanvas: !!fabricCanvasRef.current
+    });
+  }, [tool, isActive, isToolInitialized, fabricCanvasRef]);
+
   // Initialize and clean up event handlers when tool changes
   useEffect(() => {
     // Using a delayed check to give the canvas time to initialize
@@ -147,7 +157,7 @@ export const useStraightLineTool = ({
             }
           });
           
-          // IMPROVED: Use the FabricEventTypes enum for consistent event naming
+          // IMPROVED: Remove any existing event handlers to prevent duplicates
           canvas.off(FabricEventTypes.MOUSE_DOWN);
           canvas.off(FabricEventTypes.MOUSE_MOVE);
           canvas.off(FabricEventTypes.MOUSE_UP);
@@ -184,6 +194,13 @@ export const useStraightLineTool = ({
           cleanupEventHandlers();
           setIsActive(false);
           hasCleanedUpRef.current = true;
+          
+          // Reset cursor and selection behavior
+          if (canvas) {
+            canvas.defaultCursor = 'default';
+            canvas.selection = true;
+            canvas.requestRenderAll();
+          }
         }
       }
       
@@ -201,8 +218,21 @@ export const useStraightLineTool = ({
         checkAndSetupTool();
       }, 500);
       
+      // Retry a second time with a longer delay if still not successful
+      const secondRetryTimer = setTimeout(() => {
+        if (tool === DrawingMode.STRAIGHT_LINE && !isActive) {
+          console.log("🔄 Second retry attempt for straight line tool setup...");
+          const success = checkAndSetupTool();
+          if (!success) {
+            console.error("Failed to initialize straight line tool after multiple attempts");
+            toast.error("Could not initialize line tool. Try selecting a different tool and coming back.");
+          }
+        }
+      }, 1500);
+      
       return () => {
         clearTimeout(retryTimer);
+        clearTimeout(secondRetryTimer);
         if (isActive && !hasCleanedUpRef.current) {
           logger.info("Cleaning up straight line tool on unmount");
           cleanupEventHandlers();

@@ -30,7 +30,7 @@ export function validateGridState(state: unknown): GridCreationState {
   
   booleanProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'boolean') {
-      validState[prop] = stateRecord[prop] as boolean;
+      (validState[prop] as boolean) = stateRecord[prop] as boolean;
     }
   });
   
@@ -39,7 +39,7 @@ export function validateGridState(state: unknown): GridCreationState {
   
   numberProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'number') {
-      validState[prop] = stateRecord[prop] as number;
+      (validState[prop] as number) = stateRecord[prop] as number;
     }
   });
   
@@ -48,7 +48,7 @@ export function validateGridState(state: unknown): GridCreationState {
   
   stringProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'string') {
-      validState[prop] = stateRecord[prop] as string;
+      (validState[prop] as string) = stateRecord[prop] as string;
     }
   });
   
