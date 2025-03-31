@@ -27,16 +27,14 @@ export {
 // Export from gridCreationUtils
 export {
   ensureGrid,
-  verifyGridExists,
-  validateGrid,
-  reorderGridObjects
+  createBasicEmergencyGrid,
+  createEnhancedGrid
 } from '../gridCreationUtils';
 
 // Export from gridRenderers
 export {
-  createBasicEmergencyGrid,
   createCompleteGrid,
-  createEnhancedGrid
+  createSimpleGrid
 } from './gridRenderers';
 
 // Export from gridRetryUtils
@@ -50,12 +48,13 @@ export {
   createBasicGrid,
   clearGrid,
   isCanvasValidForGrid,
-  createSimpleGrid
+  createSimpleGrid as createBasicGrid
 } from './gridBasics';
 
 // Export from simpleGridCreator
 export {
-  createReliableGrid
+  createReliableGrid,
+  ensureGridVisibility
 } from './simpleGridCreator';
 
 // Export from gridDiagnostics

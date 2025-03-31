@@ -22,16 +22,22 @@ vi.mock('../../utils/logger', () => ({
   }
 }));
 
+// Create a mock canvas factory
+const createMockCanvas = (config = {}) => {
+  return {
+    width: 800,
+    height: 600,
+    getObjects: vi.fn().mockReturnValue([]),
+    ...config
+  } as unknown as Canvas;
+};
+
 describe('Grid Error Handling', () => {
   let mockCanvas: Canvas;
   
   beforeEach(() => {
     // Create mock canvas for testing
-    mockCanvas = {
-      width: 800,
-      height: 600,
-      getObjects: vi.fn().mockReturnValue([]),
-    } as unknown as Canvas;
+    mockCanvas = createMockCanvas();
     
     // Reset mocks
     vi.clearAllMocks();
@@ -63,27 +69,44 @@ describe('Grid Error Handling', () => {
   });
   
   // Test recovery plan creation
-  it('should create appropriate recovery plans based on error type', () => {
-    // Canvas error should recommend resizing and clearing
+  it('should create appropriate recovery plans for canvas errors', () => {
+    // Create a canvas initialization error
     const canvasError = new Error('canvas initialization failed');
-    const canvasPlan = createGridRecoveryPlan(canvasError, mockCanvas);
     
-    expect(canvasPlan.clearCanvas).toBe(true);
-    expect(canvasPlan.resizeCanvas).toBe(true);
+    // Get recovery plan
+    const plan = createGridRecoveryPlan(canvasError, mockCanvas);
     
-    // Rendering error should recommend simplified grid
+    // Verify recovery plan properties
+    expect(plan.clearCanvas).toBeTruthy();
+    expect(plan.resizeCanvas).toBeTruthy();
+  });
+  
+  it('should create appropriate recovery plans for rendering errors', () => {
+    // Create a rendering error
     const renderError = new Error('rendering error in grid');
-    const renderPlan = createGridRecoveryPlan(renderError, mockCanvas);
     
-    expect(renderPlan.useSimplifiedGrid).toBe(true);
-    expect(renderPlan.disableBackgroundGrid).toBe(true);
+    // Get recovery plan
+    const plan = createGridRecoveryPlan(renderError, mockCanvas);
     
-    // Object error should clear canvas if there are objects
-    mockCanvas.getObjects = vi.fn().mockReturnValue([{}, {}]);
+    // Verify recovery plan properties
+    expect(plan.useSimplifiedGrid).toBeTruthy();
+    expect(plan.disableBackgroundGrid).toBeTruthy();
+  });
+  
+  it('should create appropriate recovery plans for object errors', () => {
+    // Create a mock canvas with objects
+    const mockCanvasWithObjects = createMockCanvas({
+      getObjects: vi.fn().mockReturnValue([{}, {}])
+    });
+    
+    // Create an object error
     const objectError = new Error('object creation failed');
-    const objectPlan = createGridRecoveryPlan(objectError, mockCanvas);
     
-    expect(objectPlan.clearCanvas).toBe(true);
-    expect(objectPlan.useSimplifiedGrid).toBe(true);
+    // Get recovery plan
+    const plan = createGridRecoveryPlan(objectError, mockCanvasWithObjects);
+    
+    // Verify recovery plan properties
+    expect(plan.clearCanvas).toBeTruthy();
+    expect(plan.useSimplifiedGrid).toBeTruthy();
   });
 });

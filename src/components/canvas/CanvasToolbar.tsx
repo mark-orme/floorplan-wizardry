@@ -17,7 +17,8 @@ import {
   Pencil,
   Square,
   Circle,
-  Scissors  
+  Scissors,
+  Grid  
 } from "lucide-react";
 import { DrawingMode } from "@/constants/drawingModes";
 import { LineThicknessControl } from "./LineThicknessControl";
@@ -39,6 +40,8 @@ export interface CanvasToolbarProps {
   canUndo: boolean;
   /** Whether redo is available */
   canRedo: boolean;
+  /** Whether to show grid */
+  showGrid: boolean;
   /** Tool change handler */
   onToolChange: (tool: DrawingMode) => void;
   /** Undo handler */
@@ -57,6 +60,8 @@ export interface CanvasToolbarProps {
   onLineThicknessChange: (thickness: number) => void;
   /** Line color change handler */
   onLineColorChange: (color: string) => void;
+  /** Toggle grid visibility handler */
+  onToggleGrid: () => void;
 }
 
 /**
@@ -70,6 +75,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   gia,
   canUndo,
   canRedo,
+  showGrid,
   onToolChange,
   onUndo,
   onRedo,
@@ -78,7 +84,8 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   onSave,
   onDelete,
   onLineThicknessChange,
-  onLineColorChange
+  onLineColorChange,
+  onToggleGrid
 }) => {
   return (
     <div className="flex items-center p-2 gap-2 border-b border-gray-200 bg-gray-50">
@@ -171,6 +178,15 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
           title="Zoom Out"
         >
           <ZoomOut className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant={showGrid ? "default" : "outline"}
+          size="icon"
+          onClick={onToggleGrid}
+          title={showGrid ? "Hide Grid" : "Show Grid"}
+        >
+          <Grid className="h-4 w-4" />
         </Button>
       </div>
       

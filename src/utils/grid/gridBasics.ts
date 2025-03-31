@@ -1,63 +1,25 @@
 
 /**
  * Grid basics utilities
+ * Core functions for grid creation and management
  * @module utils/grid/gridBasics
  */
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { createBasicEmergencyGrid } from "../gridCreationUtils";
 import logger from "@/utils/logger";
 
 /**
  * Create a basic grid
  * 
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @param {FabricCanvas} canvas - The fabric.js canvas instance
  * @returns {FabricObject[]} Created grid objects
  */
 export const createBasicGrid = (
   canvas: FabricCanvas
 ): FabricObject[] => {
   try {
-    if (!canvas || !canvas.width || !canvas.height) {
-      logger.error("Cannot create basic grid: invalid canvas");
-      return [];
-    }
-    
-    const gridSize = 20;
-    const width = canvas.width;
-    const height = canvas.height;
-    const gridObjects: FabricObject[] = [];
-    
-    // Create horizontal lines
-    for (let y = 0; y <= height; y += gridSize) {
-      const line = new Line([0, y, width, y], {
-        stroke: "#e0e0e0",
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectType: "grid"
-      });
-      
-      canvas.add(line);
-      canvas.sendToBack(line);
-      gridObjects.push(line);
-    }
-    
-    // Create vertical lines
-    for (let x = 0; x <= width; x += gridSize) {
-      const line = new Line([x, 0, x, height], {
-        stroke: "#e0e0e0",
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectType: "grid"
-      });
-      
-      canvas.add(line);
-      canvas.sendToBack(line);
-      gridObjects.push(line);
-    }
-    
-    canvas.requestRenderAll();
-    return gridObjects;
+    // Use the basic emergency grid
+    return createBasicEmergencyGrid(canvas);
   } catch (error) {
     logger.error("Error creating basic grid:", error);
     return [];
@@ -67,24 +29,25 @@ export const createBasicGrid = (
 /**
  * Clear grid from canvas
  * 
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
- * @param {FabricObject[]} gridObjects - Array of grid objects
- * @returns {boolean} Whether grid was cleared successfully
+ * @param {FabricCanvas} canvas - The fabric.js canvas instance
+ * @returns {boolean} Whether clearing was successful
  */
 export const clearGrid = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[]
+  canvas: FabricCanvas
 ): boolean => {
   try {
     if (!canvas) return false;
     
+    // Find and remove all grid objects
+    const gridObjects = canvas.getObjects().filter(obj => 
+      obj.objectType === 'grid'
+    );
+    
     gridObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
+      canvas.remove(obj);
     });
     
-    canvas.requestRenderAll();
+    canvas.renderAll();
     return true;
   } catch (error) {
     logger.error("Error clearing grid:", error);
@@ -95,25 +58,36 @@ export const clearGrid = (
 /**
  * Check if canvas is valid for grid creation
  * 
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
- * @returns {boolean} Whether canvas is valid for grid creation
+ * @param {FabricCanvas} canvas - The fabric.js canvas instance
+ * @returns {boolean} Whether canvas is valid
  */
 export const isCanvasValidForGrid = (
-  canvas: FabricCanvas | null
+  canvas: FabricCanvas
 ): boolean => {
   if (!canvas) return false;
   
-  return !!canvas.width && !!canvas.height;
+  return Boolean(
+    canvas.width && 
+    canvas.height && 
+    canvas.width > 0 && 
+    canvas.height > 0
+  );
 };
 
 /**
  * Create a simple grid
  * 
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @param {FabricCanvas} canvas - The fabric.js canvas instance
  * @returns {FabricObject[]} Created grid objects
  */
 export const createSimpleGrid = (
   canvas: FabricCanvas
 ): FabricObject[] => {
-  return createBasicGrid(canvas);
+  try {
+    // Use the basic emergency grid for now
+    return createBasicEmergencyGrid(canvas);
+  } catch (error) {
+    logger.error("Error creating simple grid:", error);
+    return [];
+  }
 };

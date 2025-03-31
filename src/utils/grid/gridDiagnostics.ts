@@ -4,141 +4,120 @@
  * @module utils/grid/gridDiagnostics
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import logger from "@/utils/logger";
 import { createBasicEmergencyGrid } from "../gridCreationUtils";
+import logger from "@/utils/logger";
+
+/**
+ * Diagnostic result interface
+ */
+interface GridDiagnosticResult {
+  hasCanvas: boolean;
+  canvasReady: boolean;
+  canvasDimensions: {
+    width: number;
+    height: number;
+  };
+  gridExists: boolean;
+  gridCount: number;
+  gridObjectsOnCanvas: number;
+  issues: string[];
+}
 
 /**
  * Run grid diagnostics
  * 
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
- * @param {FabricObject[]} gridObjects - Array of grid objects
- * @returns {Record<string, any>} Diagnostics result
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @returns {GridDiagnosticResult} Diagnostic results
  */
 export const runGridDiagnostics = (
-  canvas: FabricCanvas | null,
-  gridObjects: FabricObject[]
-): Record<string, any> => {
+  canvas: FabricCanvas
+): GridDiagnosticResult => {
+  const issues: string[] = [];
+  
+  // Check if canvas exists
   if (!canvas) {
+    issues.push("Canvas is null or undefined");
     return {
       hasCanvas: false,
       canvasReady: false,
+      canvasDimensions: { width: 0, height: 0 },
       gridExists: false,
-      issues: ["Canvas is null"]
+      gridCount: 0,
+      gridObjectsOnCanvas: 0,
+      issues
     };
   }
   
-  const result = {
-    hasCanvas: true,
-    canvasReady: canvas.width > 0 && canvas.height > 0,
-    canvasDimensions: { width: canvas.width, height: canvas.height },
-    gridExists: gridObjects.length > 0,
-    gridCount: gridObjects.length,
-    issues: [] as string[]
-  };
-  
   // Check canvas dimensions
-  if (!result.canvasReady) {
-    result.issues.push("Canvas has invalid dimensions");
+  const width = canvas.width || 0;
+  const height = canvas.height || 0;
+  
+  if (width <= 0 || height <= 0) {
+    issues.push(`Invalid canvas dimensions: ${width}x${height}`);
   }
   
   // Check grid objects
-  if (!result.gridExists) {
-    result.issues.push("No grid objects found");
-  } else {
-    // Check which grid objects are on canvas
-    const canvasObjects = canvas.getObjects();
-    const gridObjectsOnCanvas = gridObjects.filter(obj => 
-      canvasObjects.includes(obj)
-    );
-    
-    result.gridObjectsOnCanvas = gridObjectsOnCanvas.length;
-    
-    if (gridObjectsOnCanvas.length < gridObjects.length) {
-      result.issues.push(`${gridObjects.length - gridObjectsOnCanvas.length} grid objects missing from canvas`);
-    }
+  const allObjects = canvas.getObjects();
+  const gridObjects = allObjects.filter(obj => obj.objectType === 'grid');
+  
+  if (gridObjects.length === 0) {
+    issues.push("No grid objects found on canvas");
   }
   
-  return result;
+  return {
+    hasCanvas: true,
+    canvasReady: width > 0 && height > 0,
+    canvasDimensions: { width, height },
+    gridExists: gridObjects.length > 0,
+    gridCount: gridObjects.length,
+    gridObjectsOnCanvas: gridObjects.length,
+    issues
+  };
 };
 
 /**
- * Apply grid fixes
+ * Apply grid fixes based on diagnostic results
  * 
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
- * @param {FabricObject[]} gridObjects - Array of grid objects
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {GridDiagnosticResult} results - Diagnostic results
  * @returns {boolean} Whether fixes were applied
  */
 export const applyGridFixes = (
-  canvas: FabricCanvas | null,
-  gridObjects: FabricObject[]
+  canvas: FabricCanvas,
+  results: GridDiagnosticResult
 ): boolean => {
   if (!canvas) return false;
   
-  let fixesApplied = false;
-  
-  // Check if grid exists
-  if (gridObjects.length === 0) {
-    // Create new grid
-    const newGridObjects = createBasicEmergencyGrid(canvas);
-    
-    // Update gridObjects array with new objects
-    gridObjects.push(...newGridObjects);
-    
-    fixesApplied = true;
-  } else {
-    // Check which grid objects are on canvas
-    const canvasObjects = canvas.getObjects();
-    
-    gridObjects.forEach(obj => {
-      if (!canvasObjects.includes(obj)) {
-        canvas.add(obj);
-        canvas.sendToBack(obj);
-        fixesApplied = true;
-      }
-    });
+  // If no grid objects, create emergency grid
+  if (!results.gridExists) {
+    logger.info("Creating emergency grid during fix");
+    const newGrid = createBasicEmergencyGrid(canvas);
+    return newGrid.length > 0;
   }
   
-  if (fixesApplied) {
-    canvas.requestRenderAll();
-  }
-  
-  return fixesApplied;
+  return true;
 };
 
 /**
  * Emergency grid fix
  * 
- * @param {FabricCanvas} canvas - The Fabric.js canvas instance
- * @param {React.MutableRefObject<FabricObject[]>} gridRef - Reference to grid objects
- * @returns {boolean} Whether emergency fix was applied
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @returns {FabricObject[]} Created grid objects
  */
 export const emergencyGridFix = (
-  canvas: FabricCanvas | null,
-  gridRef: React.MutableRefObject<FabricObject[]>
-): boolean => {
-  if (!canvas) return false;
+  canvas: FabricCanvas
+): FabricObject[] => {
+  if (!canvas) return [];
   
-  try {
-    logger.info("Applying emergency grid fix");
-    
-    // Clear existing grid objects
-    gridRef.current.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
-    });
-    
-    // Create new emergency grid
-    const gridObjects = createBasicEmergencyGrid(canvas);
-    
-    // Update grid reference
-    gridRef.current = gridObjects;
-    
-    canvas.requestRenderAll();
-    
-    return gridObjects.length > 0;
-  } catch (error) {
-    logger.error("Error applying emergency grid fix:", error);
-    return false;
-  }
+  // Clear any existing grid objects
+  const existingGrid = canvas.getObjects().filter(obj => 
+    obj.objectType === 'grid'
+  );
+  
+  existingGrid.forEach(obj => {
+    canvas.remove(obj);
+  });
+  
+  // Create new grid
+  return createBasicEmergencyGrid(canvas);
 };

@@ -26,7 +26,9 @@ export const GRID_ERROR_MESSAGES = {
   CANVAS_INVALID: "Canvas has invalid dimensions",
   GRID_EMPTY: "No grid objects created",
   GRID_CREATION_FAILED: "Grid creation failed",
-  GRID_VISIBILITY_FAILED: "Failed to ensure grid visibility"
+  GRID_VISIBILITY_FAILED: "Failed to ensure grid visibility",
+  CANVAS_INITIALIZATION_FAILED: "Canvas initialization failed",
+  GRID_RENDERING_ERROR: "Error rendering grid"
 };
 
 /**

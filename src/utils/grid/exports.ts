@@ -12,7 +12,8 @@
 import { 
   createBasicEmergencyGrid,
   ensureGrid,
-  createEnhancedGrid
+  createEnhancedGrid,
+  validateGrid
 } from '../gridCreationUtils';
 
 // Direct named exports from gridValidation
@@ -31,7 +32,8 @@ import {
 export const GridCreation = {
   createBasicEmergencyGrid,
   ensureGrid,
-  createEnhancedGrid
+  createEnhancedGrid,
+  validateGrid
 };
 
 export const GridValidation = {
@@ -52,5 +54,6 @@ export {
   validateGridState,
   dumpGridState,
   forceCreateGrid,
-  createEnhancedGrid
+  createEnhancedGrid,
+  validateGrid
 };

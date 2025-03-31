@@ -1,273 +1,124 @@
 
 /**
- * Grid Testing Utility
- * Provides testing tools for diagnosing grid rendering issues
+ * Grid tester utilities
+ * For testing grid functions and performance
  * @module utils/grid/gridTester
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line, Rect } from "fabric";
-import { toast } from "sonner";
-import { captureError } from "../sentryUtils";
-import logger from "../logger";
-import { checkCanvasHealth, trackGridError } from "./gridErrorTracker";
-import { validateCanvasForGrid } from "./gridValidator";
-import { runGridDiagnostics } from "./gridDiagnostics";
+import { Canvas as FabricCanvas } from "fabric";
+import logger from "@/utils/logger";
 
 /**
- * Test grid creation capabilities
- * @param {FabricCanvas} canvas - Canvas to test
+ * Test grid performance
+ * 
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {Function} gridFunction - The grid creation function to test
+ * @returns {Object} Performance results
+ */
+export const testGridPerformance = (
+  canvas: FabricCanvas,
+  gridFunction: (canvas: FabricCanvas) => any[]
+) => {
+  if (!canvas) {
+    return {
+      success: false,
+      error: "Canvas is null",
+      time: 0
+    };
+  }
+  
+  try {
+    // Start timer
+    const startTime = performance.now();
+    
+    // Run the grid function
+    const gridObjects = gridFunction(canvas);
+    
+    // End timer
+    const endTime = performance.now();
+    
+    return {
+      success: true,
+      objectCount: gridObjects.length,
+      time: endTime - startTime
+    };
+  } catch (error) {
+    logger.error("Error testing grid performance:", error);
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      time: 0
+    };
+  }
+};
+
+/**
+ * Test grid sizing accuracy
+ * 
+ * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {number} targetSize - The target grid size
  * @returns {Object} Test results
  */
-export const testGridCreationCapabilities = (
-  canvas: FabricCanvas | null
-): Record<string, any> => {
-  const results = {
-    timestamp: Date.now(),
-    success: false,
-    canvasValid: false,
-    canvasHealth: null as Record<string, any> | null,
-    lineCreationTest: false,
-    canvasRenderingTest: false,
-    testObjectCount: 0,
-    issues: [] as string[],
-    elapsedTime: 0
-  };
-  
-  const startTime = performance.now();
-  
-  if (!canvas) {
-    results.issues.push("Canvas is null or undefined");
-    results.elapsedTime = performance.now() - startTime;
-    return results;
-  }
-  
+export const testGridSizingAccuracy = (
+  canvas: FabricCanvas,
+  targetSize: number = 20
+) => {
   try {
-    // Test 1: Check canvas health
-    results.canvasHealth = checkCanvasHealth(canvas);
-    results.canvasValid = results.canvasHealth.canvasValid;
-    
-    if (!results.canvasValid) {
-      results.issues.push(...results.canvasHealth.issues);
-      results.elapsedTime = performance.now() - startTime;
-      return results;
+    if (!canvas) {
+      return {
+        success: false,
+        error: "Canvas is null"
+      };
     }
     
-    // Test 2: Validate canvas
-    if (!validateCanvasForGrid(canvas)) {
-      results.issues.push("Canvas failed validation checks");
-      results.elapsedTime = performance.now() - startTime;
-      return results;
-    }
-    
-    // Test 3: Create test lines
-    const testObjects: FabricObject[] = [];
-    
-    try {
-      // Simple horizontal and vertical lines
-      const hLine = new Line([0, 50, 100, 50], {
-        stroke: '#ff0000',
-        strokeWidth: 2
-      });
-      
-      const vLine = new Line([50, 0, 50, 100], {
-        stroke: '#0000ff',
-        strokeWidth: 2
-      });
-      
-      // Try to add them to canvas
-      canvas.add(hLine);
-      canvas.add(vLine);
-      
-      testObjects.push(hLine, vLine);
-      results.lineCreationTest = true;
-      results.testObjectCount += 2;
-      
-    } catch (error) {
-      results.issues.push(`Line creation test failed: ${error instanceof Error ? error.message : String(error)}`);
-      trackGridError(error, "grid-test-line-creation");
-    }
-    
-    // Test 4: Canvas rendering
-    try {
-      canvas.requestRenderAll();
-      // If we got here without an error, rendering seems to work
-      results.canvasRenderingTest = true;
-    } catch (error) {
-      results.issues.push(`Canvas rendering test failed: ${error instanceof Error ? error.message : String(error)}`);
-      trackGridError(error, "grid-test-rendering");
-    }
-    
-    // Clean up test objects
-    testObjects.forEach(obj => {
-      try {
-        canvas.remove(obj);
-      } catch (error) {
-        // Ignore cleanup errors
-      }
-    });
-    
-    // Determine overall success
-    results.success = 
-      results.canvasValid && 
-      results.lineCreationTest && 
-      results.canvasRenderingTest && 
-      results.issues.length === 0;
-    
-    results.elapsedTime = performance.now() - startTime;
-    
-    // Report results to Sentry for analysis
-    captureError(
-      new Error(results.success ? "Grid test successful" : "Grid test failed"),
-      "grid-test-results",
-      {
-        level: results.success ? "info" : "warning",
-        extra: results
-      }
+    // Get all grid lines
+    const gridObjects = canvas.getObjects().filter(obj => 
+      obj.objectType === 'grid'
     );
     
-    return results;
+    if (gridObjects.length === 0) {
+      return {
+        success: false,
+        error: "No grid objects found"
+      };
+    }
+    
+    // Check horizontal grid line spacing
+    const horizontalLines = gridObjects.filter(obj => 
+      obj.type === 'line' && 
+      obj.x1 === obj.x2
+    );
+    
+    // Calculate distances between adjacent lines
+    let previousY = 0;
+    const horizontalDistances: number[] = [];
+    
+    horizontalLines.sort((a, b) => a.y1 - b.y1).forEach(line => {
+      if (previousY > 0) {
+        horizontalDistances.push(line.y1 - previousY);
+      }
+      previousY = line.y1;
+    });
+    
+    // Calculate average distance
+    const averageHorizontalDistance = horizontalDistances.reduce((sum, dist) => sum + dist, 0) / 
+                                     horizontalDistances.length;
+    
+    // Calculate deviation from target size
+    const deviation = Math.abs(averageHorizontalDistance - targetSize) / targetSize;
+    
+    return {
+      success: true,
+      averageSize: averageHorizontalDistance,
+      deviation: deviation,
+      accuracy: 1 - deviation
+    };
   } catch (error) {
-    results.issues.push(`Grid test encountered an error: ${error instanceof Error ? error.message : String(error)}`);
-    results.elapsedTime = performance.now() - startTime;
-    trackGridError(error, "grid-test-error");
-    return results;
-  }
-};
-
-/**
- * Run a comprehensive grid analysis
- * @param {FabricCanvas} canvas - Canvas to analyze
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Grid objects reference
- * @returns {Object} Analysis results
- */
-export const analyzeGridRendering = (
-  canvas: FabricCanvas | null,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): Record<string, any> => {
-  const analysis = {
-    timestamp: Date.now(),
-    creationCapabilities: null as Record<string, any> | null,
-    diagnostics: null as Record<string, any> | null,
-    canvasSnapshot: null as Record<string, any> | null,
-    recommendations: [] as string[]
-  };
-  
-  if (!canvas) {
-    analysis.recommendations.push("Fix null canvas reference");
-    return analysis;
-  }
-  
-  // Test grid creation capabilities
-  analysis.creationCapabilities = testGridCreationCapabilities(canvas);
-  
-  // Run diagnostics on current grid
-  analysis.diagnostics = runGridDiagnostics(canvas, gridLayerRef.current, true);
-  
-  // Add canvas snapshot
-  analysis.canvasSnapshot = {
-    width: canvas.width,
-    height: canvas.height,
-    objects: canvas.getObjects().length,
-    hasContext: !!(canvas as any).contextContainer,
-    renderOnAddRemove: canvas.renderOnAddRemove,
-    gridObjectsCount: gridLayerRef.current.length,
-    gridObjectsOnCanvas: gridLayerRef.current.filter(obj => canvas.contains(obj)).length
-  };
-  
-  // Generate recommendations
-  if (!analysis.creationCapabilities.success) {
-    if (!analysis.creationCapabilities.canvasValid) {
-      analysis.recommendations.push("Fix canvas dimensions");
-    }
-    if (!analysis.creationCapabilities.lineCreationTest) {
-      analysis.recommendations.push("Fix line creation capability");
-    }
-    if (!analysis.creationCapabilities.canvasRenderingTest) {
-      analysis.recommendations.push("Fix canvas rendering");
-    }
-  }
-  
-  if (analysis.diagnostics.status !== 'ok') {
-    analysis.recommendations.push(...analysis.diagnostics.recommendations);
-  }
-  
-  // Log analysis results
-  logger.info("Grid analysis completed", {
-    success: analysis.creationCapabilities.success && analysis.diagnostics.status === 'ok',
-    recommendations: analysis.recommendations
-  });
-  
-  return analysis;
-};
-
-/**
- * Test immediate grid rendering
- * Shows a visible test pattern to verify grid display
- * @param {FabricCanvas} canvas - Canvas to test
- * @returns {boolean} Success status
- */
-export const showGridTestPattern = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) {
-    toast.error("Cannot create test pattern: Canvas is null");
-    return false;
-  }
-  
-  try {
-    // Create a visually distinct test pattern
-    const testObjects: FabricObject[] = [];
+    logger.error("Error testing grid sizing accuracy:", error);
     
-    // Create a red cross in the center
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const size = 100;
-    
-    const hLine = new Line([centerX - size, centerY, centerX + size, centerY], {
-      stroke: '#ff0000',
-      strokeWidth: 4
-    });
-    
-    const vLine = new Line([centerX, centerY - size, centerX, centerY + size], {
-      stroke: '#ff0000',
-      strokeWidth: 4
-    });
-    
-    // Add a blue square around it
-    const squareSize = 150;
-    const square = new Rect({
-      left: centerX - squareSize/2,
-      top: centerY - squareSize/2,
-      width: squareSize,
-      height: squareSize,
-      fill: 'transparent',
-      stroke: '#0000ff',
-      strokeWidth: 3
-    });
-    
-    // Add objects to canvas
-    canvas.add(hLine);
-    canvas.add(vLine);
-    canvas.add(square);
-    
-    testObjects.push(hLine, vLine, square);
-    
-    // Force render
-    canvas.requestRenderAll();
-    
-    toast.success("Test pattern displayed. A red cross in a blue square should be visible.");
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      testObjects.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.remove(obj);
-        }
-      });
-      canvas.requestRenderAll();
-    }, 5000);
-    
-    return true;
-  } catch (error) {
-    trackGridError(error, "grid-test-pattern-failed");
-    toast.error("Failed to create test pattern");
-    return false;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 };
