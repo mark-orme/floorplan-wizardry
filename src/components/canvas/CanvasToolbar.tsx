@@ -22,6 +22,8 @@ import { Toggle } from "@/components/ui/toggle";
 import { LineThicknessControl } from "./LineThicknessControl";
 import { ColorPicker } from "./ColorPicker";
 import { ZoomDirection } from "@/types/drawingTypes";
+import logger from "@/utils/logger";
+import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 
 /**
  * Props for Canvas Toolbar component
@@ -86,8 +88,18 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   showGrid,
   onToggleGrid
 }) => {
-  // Added console log for debugging
-  console.log("Current tool:", tool);
+  // Handle tool change with verification and logging
+  const handleToolChange = (newTool: DrawingMode) => {
+    logger.info(`Toolbar: changing tool from ${tool} to ${newTool}`);
+    onToolChange(newTool);
+    
+    // For debugging - will run validation on the next render
+    setTimeout(() => {
+      if (newTool === DrawingMode.STRAIGHT_LINE) {
+        logger.info("Validating straight line tool after change");
+      }
+    }, 100);
+  };
   
   return (
     <div className="bg-white border-b border-gray-200 p-2 flex items-center gap-2 shadow-sm z-10">
@@ -95,10 +107,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <div className="flex gap-1">
         <Toggle 
           pressed={tool === DrawingMode.SELECT} 
-          onPressedChange={() => {
-            console.log("Selecting SELECT tool");
-            onToolChange(DrawingMode.SELECT);
-          }}
+          onPressedChange={() => handleToolChange(DrawingMode.SELECT)}
           aria-label="Select tool"
           size="sm"
         >
@@ -107,10 +116,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.DRAW} 
-          onPressedChange={() => {
-            console.log("Selecting DRAW tool");
-            onToolChange(DrawingMode.DRAW);
-          }}
+          onPressedChange={() => handleToolChange(DrawingMode.DRAW)}
           aria-label="Draw tool"
           size="sm"
         >
@@ -119,10 +125,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.STRAIGHT_LINE} 
-          onPressedChange={() => {
-            console.log("Selecting STRAIGHT_LINE tool");
-            onToolChange(DrawingMode.STRAIGHT_LINE);
-          }}
+          onPressedChange={() => handleToolChange(DrawingMode.STRAIGHT_LINE)}
           aria-label="Straight line tool"
           size="sm"
           data-test-id="straight-line-tool"
@@ -132,7 +135,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.RECTANGLE} 
-          onPressedChange={() => onToolChange(DrawingMode.RECTANGLE)}
+          onPressedChange={() => handleToolChange(DrawingMode.RECTANGLE)}
           aria-label="Rectangle tool"
           size="sm"
         >
@@ -141,7 +144,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.TEXT} 
-          onPressedChange={() => onToolChange(DrawingMode.TEXT)}
+          onPressedChange={() => handleToolChange(DrawingMode.TEXT)}
           aria-label="Text tool"
           size="sm"
         >
@@ -150,7 +153,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.ERASER} 
-          onPressedChange={() => onToolChange(DrawingMode.ERASER)}
+          onPressedChange={() => handleToolChange(DrawingMode.ERASER)}
           aria-label="Eraser tool"
           size="sm"
         >
@@ -159,7 +162,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.HAND} 
-          onPressedChange={() => onToolChange(DrawingMode.HAND)}
+          onPressedChange={() => handleToolChange(DrawingMode.HAND)}
           aria-label="Hand tool"
           size="sm"
         >

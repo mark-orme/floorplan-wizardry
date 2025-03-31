@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, Line, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -10,7 +11,7 @@ import {
   useBrushSettings 
 } from "@/hooks/canvas-events";
 import { useStraightLineTool } from "@/hooks/useStraightLineTool";
-import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
+import { validateStraightLineDrawing, testStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 
 /**
  * Props for CanvasEventManager component
@@ -76,13 +77,31 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   });
   
   // Initialize straight line tool
-  const { cancelDrawing } = useStraightLineTool({
+  const { cancelDrawing, isToolInitialized } = useStraightLineTool({
     fabricCanvasRef: canvasRef,
     tool,
     lineColor,
     lineThickness,
     saveCurrentState
   });
+  
+  // Run validation tools on tool change
+  useEffect(() => {
+    if (!canvas) return;
+    
+    // Validate the straight line tool
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      logger.info("Running straight line tool diagnostics");
+      validateStraightLineDrawing(canvas, tool);
+      
+      // Run test drawing after a brief delay to ensure all settings are applied
+      setTimeout(() => {
+        if (canvas && tool === DrawingMode.STRAIGHT_LINE) {
+          testStraightLineDrawing(canvas, tool);
+        }
+      }, 500);
+    }
+  }, [canvas, tool]);
   
   // Effect to handle tool changes (cursor, selection, etc.)
   useEffect(() => {
@@ -111,7 +130,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           canvas.hoverCursor = 'move';
           // Make all objects selectable except grid
           canvas.getObjects().forEach(obj => {
-            if (obj.objectType !== 'grid') {
+            if ((obj as any).objectType !== 'grid') {
               obj.selectable = true;
               obj.evented = true;
             }
@@ -162,7 +181,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           // Make objects non-selectable when in straight line mode
           canvas.getObjects().forEach(obj => {
             obj.selectable = false;
-            if (obj.objectType !== 'grid') {
+            if ((obj as any).objectType !== 'grid') {
               obj.evented = true;
             }
           });
@@ -171,8 +190,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           logger.info("Straight line tool activated", { 
             toolType: typeof tool,
             toolValue: tool,
-            toolCheck: tool === DrawingMode.STRAIGHT_LINE
+            toolCheck: tool === DrawingMode.STRAIGHT_LINE,
+            isToolInitialized
           });
+          
+          // Log if the tool is properly initialized
+          if (!isToolInitialized) {
+            logger.warn("Straight line tool not properly initialized");
+          }
           break;
           
         case DrawingMode.ERASER:
@@ -228,7 +253,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       captureError(error as Error, "apply-tool-settings-error");
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
-  }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
+  }, [tool, lineThickness, lineColor, canvas, gridLayerRef, isToolInitialized]);
   
   // Effect to handle keyboard shortcuts
   useEffect(() => {

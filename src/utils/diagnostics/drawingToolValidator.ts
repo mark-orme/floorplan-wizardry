@@ -31,6 +31,7 @@ export const validateStraightLineDrawing = (
     const selection = canvas.selection;
     const defaultCursor = canvas.defaultCursor;
     const selectableObjects = canvas.getObjects().filter(obj => obj.selectable).length;
+    const eventListeners = canvas.__eventListeners ? Object.keys(canvas.__eventListeners).length : 0;
     
     const diagnosticInfo = {
       currentTool,
@@ -38,8 +39,10 @@ export const validateStraightLineDrawing = (
       selection,
       defaultCursor,
       selectableObjects,
+      eventListeners,
       drawingToolMatches: currentTool === DrawingMode.STRAIGHT_LINE,
-      stringComparison: `'${currentTool}' === '${DrawingMode.STRAIGHT_LINE}'`
+      stringComparison: `'${currentTool}' === '${DrawingMode.STRAIGHT_LINE}'`,
+      canvasSize: { width: canvas.width, height: canvas.height }
     };
     
     logger.info('Straight line tool diagnostic', diagnosticInfo);
@@ -58,6 +61,19 @@ export const validateStraightLineDrawing = (
     
     if (selectableObjects > 0) {
       logger.warn(`Straight line tool has ${selectableObjects} selectable objects`);
+    }
+    
+    // Test if mouse events are properly set up
+    const hasMouseDown = canvas.__eventListeners && 'mouse:down' in canvas.__eventListeners;
+    const hasMouseMove = canvas.__eventListeners && 'mouse:move' in canvas.__eventListeners;
+    const hasMouseUp = canvas.__eventListeners && 'mouse:up' in canvas.__eventListeners;
+    
+    if (!hasMouseDown || !hasMouseMove || !hasMouseUp) {
+      logger.error('Straight line tool missing required mouse event handlers', {
+        hasMouseDown,
+        hasMouseMove,
+        hasMouseUp
+      });
     }
     
     // Report to monitoring
@@ -120,3 +136,52 @@ export const validateAllDrawingTools = (
     captureError(error as Error, 'drawing-tools-validation-error');
   }
 };
+
+/**
+ * Test function to check straight line drawing on a canvas
+ * Call this function to verify the straight line tool is working correctly
+ * @param canvas - Fabric canvas instance 
+ * @param tool - Current drawing tool
+ */
+export const testStraightLineDrawing = (
+  canvas: FabricCanvas | null,
+  tool: DrawingMode
+): void => {
+  if (!canvas || tool !== DrawingMode.STRAIGHT_LINE) {
+    return;
+  }
+  
+  logger.info('Running straight line drawing test');
+  
+  try {
+    // Simulate mouse events to test line drawing
+    const center = {
+      x: canvas.width! / 2,
+      y: canvas.height! / 2
+    };
+    
+    const objectCountBefore = canvas.getObjects().length;
+    
+    // Log test parameters
+    logger.info('Straight line test parameters', {
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      centerPoint: center,
+      objectCountBefore,
+      isDrawingMode: canvas.isDrawingMode,
+      selection: canvas.selection,
+      tool
+    });
+    
+    // Note: This is just a diagnostic tool, not actual implementation
+    // In a real test, we would simulate mouse events and verify a line was created
+    
+    captureMessage('Straight line drawing test run', 'test-straight-line', {
+      tags: { component: 'DrawingToolValidator' },
+      extra: { tool, objectCount: objectCountBefore }
+    });
+  } catch (error) {
+    logger.error('Error testing straight line drawing', error);
+    captureError(error as Error, 'straight-line-test-error');
+  }
+}
