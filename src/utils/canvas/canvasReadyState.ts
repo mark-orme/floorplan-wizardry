@@ -1,90 +1,98 @@
 
 /**
- * Canvas ready state management utilities
- * Prevents interaction with canvas until fully initialized
+ * Canvas ready state tracking utility
+ * Ensures canvas is fully initialized before interactions
  * @module utils/canvas/canvasReadyState
  */
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 /**
- * Canvas ready state interface
+ * Interface for canvas ready state
+ * Tracks various stages of canvas initialization
  */
-export interface CanvasReadyState {
-  /** Whether the canvas element is created and added to DOM */
+interface CanvasReadyState {
+  /** Whether the canvas element has been created */
   canvasCreated: boolean;
-  /** Whether the fabric.js canvas is initialized */
+  /** Whether the canvas has been initialized with Fabric.js */
   canvasInitialized: boolean;
-  /** Whether the grid has been created and rendered */
+  /** Whether the grid has been loaded */
   gridLoaded: boolean;
-  /** Whether all drawing tools have been registered */
+  /** Whether drawing tools have been registered */
   toolsRegistered: boolean;
-  /** Whether the canvas is fully ready for interaction */
-  isReady: boolean;
 }
 
 /**
  * Default canvas ready state
+ * All states start as false until initialization steps are completed
  */
-export const DEFAULT_CANVAS_READY_STATE: CanvasReadyState = {
+const DEFAULT_READY_STATE: CanvasReadyState = {
   canvasCreated: false,
   canvasInitialized: false,
   gridLoaded: false,
-  toolsRegistered: false,
-  isReady: false
+  toolsRegistered: false
 };
 
 /**
- * Hook to manage canvas ready state
- * Blocks interaction until the canvas is fully ready
+ * Hook for tracking canvas ready state
+ * Provides state and setters for each initialization step
+ * 
+ * @returns Canvas ready state and setters
  */
 export const useCanvasReadyState = () => {
-  const [state, setState] = useState<CanvasReadyState>(DEFAULT_CANVAS_READY_STATE);
+  const [readyState, setReadyState] = useState<CanvasReadyState>(DEFAULT_READY_STATE);
   
-  // Computed property for overall readiness
-  useEffect(() => {
-    const isReady = state.canvasCreated && 
-                   state.canvasInitialized && 
-                   state.gridLoaded && 
-                   state.toolsRegistered;
-    
-    if (isReady !== state.isReady) {
-      setState(prev => ({ ...prev, isReady }));
-      
-      if (isReady) {
-        console.log('Canvas is fully initialized and ready for interaction');
-      }
-    }
-  }, [
-    state.canvasCreated,
-    state.canvasInitialized,
-    state.gridLoaded,
-    state.toolsRegistered,
-    state.isReady
-  ]);
+  /**
+   * Determine if canvas is fully ready for interactions
+   * All initialization steps must be completed
+   */
+  const isReady = readyState.canvasCreated && 
+                  readyState.canvasInitialized && 
+                  readyState.gridLoaded && 
+                  readyState.toolsRegistered;
   
-  // Update individual ready states
-  const setCanvasCreated = useCallback((value: boolean) => {
-    setState(prev => ({ ...prev, canvasCreated: value }));
+  /**
+   * Mark canvas element as created
+   */
+  const setCanvasCreated = useCallback(() => {
+    setReadyState(prev => ({ ...prev, canvasCreated: true }));
   }, []);
   
-  const setCanvasInitialized = useCallback((value: boolean) => {
-    setState(prev => ({ ...prev, canvasInitialized: value }));
+  /**
+   * Mark canvas as initialized with Fabric.js
+   */
+  const setCanvasInitialized = useCallback(() => {
+    setReadyState(prev => ({ ...prev, canvasInitialized: true }));
   }, []);
   
-  const setGridLoaded = useCallback((value: boolean) => {
-    setState(prev => ({ ...prev, gridLoaded: value }));
+  /**
+   * Mark grid as loaded
+   */
+  const setGridLoaded = useCallback(() => {
+    setReadyState(prev => ({ ...prev, gridLoaded: true }));
   }, []);
   
-  const setToolsRegistered = useCallback((value: boolean) => {
-    setState(prev => ({ ...prev, toolsRegistered: value }));
+  /**
+   * Mark drawing tools as registered
+   */
+  const setToolsRegistered = useCallback(() => {
+    setReadyState(prev => ({ ...prev, toolsRegistered: true }));
+  }, []);
+  
+  /**
+   * Reset the ready state to defaults
+   * Used when rebuilding the canvas
+   */
+  const resetReadyState = useCallback(() => {
+    setReadyState(DEFAULT_READY_STATE);
   }, []);
   
   return {
-    ...state,
+    ...readyState,
+    isReady,
     setCanvasCreated,
     setCanvasInitialized,
     setGridLoaded,
-    setToolsRegistered
+    setToolsRegistered,
+    resetReadyState
   };
 };

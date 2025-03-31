@@ -1,227 +1,106 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+
+/**
+ * Basic grid component for the canvas
+ * Renders a grid on the canvas for visual reference and snapping
+ * @module components/BasicGrid
+ */
+import { useEffect, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { createCompleteGrid, setGridVisibility, calculateGridSpacing } from '@/utils/gridUtils';
+import { GridCreationState, DEFAULT_GRID_CREATION_STATE } from '@/types/core/GridTypes';
+import { captureMessage } from '@/utils/sentry';
 import logger from '@/utils/logger';
 
 /**
- * Props for the BasicGrid component
- * @interface BasicGridProps
+ * Properties for the BasicGrid component
  */
 interface BasicGridProps {
-  /** The Fabric.js canvas instance to render the grid on */
+  /** Fabric canvas instance to render the grid on */
   canvas: FabricCanvas;
-  /** Whether the grid should be visible */
-  visible?: boolean;
-  /** Callback function triggered when the grid is successfully created */
-  onGridCreated?: (gridObjects: FabricObject[]) => void;
+  /** Callback function when the grid is created */
+  onGridCreated?: (gridObjects: any[]) => void;
+  /** Initial visibility setting for the grid */
+  initialVisibility?: boolean;
 }
 
 /**
  * BasicGrid component
- * Renders a customizable grid on a Fabric.js canvas
+ * Renders and manages a grid on the canvas
  * 
- * @component
  * @param {BasicGridProps} props - Component properties
- * @returns {null} This is a UI-less component that manipulates the canvas directly
+ * @returns {null} - This component doesn't render any DOM elements
  */
-export const BasicGrid: React.FC<BasicGridProps> = ({
+export const BasicGrid = ({
   canvas,
-  visible = true,
-  onGridCreated
-}) => {
-  // Reference to track grid objects for manipulation and cleanup
-  const gridObjectsRef = useRef<FabricObject[]>([]);
-  // State to track whether grid has been created
-  const [isGridCreated, setIsGridCreated] = useState(false);
-  // Reference to track whether grid creation has been attempted
-  const gridCreationAttemptedRef = useRef(false);
-  // Reference to track timeout for retry mechanism
-  const gridCreationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  onGridCreated,
+  initialVisibility = true
+}: BasicGridProps) => {
+  // Track the grid creation state
+  const [gridState, setGridState] = useState<GridCreationState>(DEFAULT_GRID_CREATION_STATE);
   
-  /**
-   * Creates grid with retry mechanism if canvas dimensions are not ready
-   * Implements exponential backoff for retries
-   * 
-   * @param {number} retryCount - Current retry attempt number
-   * @param {number} maxRetries - Maximum number of retry attempts
-   * @returns {FabricObject[] | undefined} Array of created grid objects or undefined on failure
-   */
-  const createGridWithRetry = useCallback((retryCount = 0, maxRetries = 3) => {
-    // Clear any existing timeout
-    if (gridCreationTimeoutRef.current) {
-      clearTimeout(gridCreationTimeoutRef.current);
-      gridCreationTimeoutRef.current = null;
+  // Create the grid on component mount
+  useEffect(() => {
+    if (!canvas) {
+      logger.warn('Cannot create grid: Canvas is null');
+      return;
     }
     
-    // Check if canvas is ready for grid creation
-    if (!canvas || !canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
-      if (retryCount < maxRetries) {
-        logger.warn(`Canvas dimensions not set, retrying grid creation (attempt ${retryCount + 1}/${maxRetries})`);
-        // Retry after delay with exponential backoff
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-        gridCreationTimeoutRef.current = setTimeout(() => {
-          createGridWithRetry(retryCount + 1, maxRetries);
-        }, delay);
-      } else {
-        logger.error('Failed to create grid: Canvas dimensions not available after maximum retries');
-      }
+    if (gridState.created) {
+      logger.info('Grid already created, skipping creation');
       return;
     }
     
     try {
-      logger.info("Creating basic grid with dimensions:", canvas.width, "x", canvas.height);
-      console.log("Creating basic grid with dimensions:", canvas.width, "x", canvas.height);
+      logger.info('Creating grid with canvas dimensions:', {
+        width: canvas.width,
+        height: canvas.height
+      });
       
-      // Create grid objects
-      const gridObjects: FabricObject[] = [];
-      const width = canvas.width;
-      const height = canvas.height;
+      // Create the grid with complete objects
+      const gridResult = createCompleteGrid(canvas);
       
-      // Create horizontal grid lines (small grid)
-      for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
-        const line = new Line([0, i, width, i], {
-          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid'
-        } as any);
-        
-        canvas.add(line);
-        gridObjects.push(line);
-      }
+      // Set initial visibility based on prop
+      setGridVisibility(canvas, gridResult.gridObjects, initialVisibility);
       
-      // Create vertical grid lines (small grid)
-      for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
-        const line = new Line([i, 0, i, height], {
-          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid'
-        } as any);
-        
-        canvas.add(line);
-        gridObjects.push(line);
-      }
+      // Update state to indicate grid is created
+      setGridState({
+        created: true,
+        visible: initialVisibility,
+        objectCount: gridResult.gridObjects.length
+      });
       
-      // Create horizontal grid lines (large grid)
-      for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-        const line = new Line([0, i, width, i], {
-          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid'
-        } as any);
-        
-        canvas.add(line);
-        gridObjects.push(line);
-      }
+      logger.info(`Grid created with ${gridResult.gridObjects.length} objects`);
       
-      // Create vertical grid lines (large grid)
-      for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-        const line = new Line([i, 0, i, height], {
-          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid'
-        } as any);
-        
-        canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      // Store grid objects
-      gridObjectsRef.current = gridObjects;
-      
-      // Update visibility
-      updateGridVisibility(visible);
-      
-      // Mark grid as created
-      setIsGridCreated(true);
-      
-      // Render the canvas to show the grid
-      canvas.renderAll();
-      
-      // Notify parent component
+      // Call the onGridCreated callback if provided
       if (onGridCreated) {
-        onGridCreated(gridObjects);
+        onGridCreated(gridResult.gridObjects);
       }
       
-      logger.info(`Grid created successfully with ${gridObjects.length} objects`);
-      console.log(`Grid created successfully with ${gridObjects.length} objects`);
-      
-      return gridObjects;
+      // Log to error monitoring system for tracking grid creation success
+      captureMessage(
+        'Grid created successfully', 
+        'grid-creation', 
+        { extra: { objectCount: gridResult.gridObjects.length } }
+      );
     } catch (error) {
       logger.error('Error creating grid:', error);
-      console.error('Error creating grid:', error);
       
-      if (retryCount < maxRetries) {
-        // Retry after delay
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-        gridCreationTimeoutRef.current = setTimeout(() => {
-          createGridWithRetry(retryCount + 1, maxRetries);
-        }, delay);
-      }
+      // Set state to indicate grid creation failed
+      setGridState({
+        created: false,
+        visible: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
       
-      return [];
+      // Log to error monitoring system
+      captureMessage(
+        'Grid creation failed', 
+        'grid-creation-error', 
+        { extra: { error: String(error) } }
+      );
     }
-  }, [canvas, visible, onGridCreated]);
+  }, [canvas, onGridCreated, initialVisibility, gridState.created]);
   
-  // Create grid when component mounts or canvas changes - ONCE
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Prevent multiple creation attempts
-    if (gridCreationAttemptedRef.current || isGridCreated) return;
-    gridCreationAttemptedRef.current = true;
-    
-    // Create grid with retry mechanism
-    createGridWithRetry();
-    
-    // Cleanup function
-    return () => {
-      if (gridCreationTimeoutRef.current) {
-        clearTimeout(gridCreationTimeoutRef.current);
-      }
-    };
-  }, [canvas, isGridCreated, createGridWithRetry]);
-  
-  // Update grid visibility when visible prop changes
-  const updateGridVisibility = useCallback((isVisible: boolean) => {
-    if (!canvas) return;
-    
-    const gridObjects = gridObjectsRef.current;
-    
-    // Update visibility of all grid objects
-    gridObjects.forEach(obj => {
-      obj.visible = isVisible;
-    });
-    
-    // Render the canvas to reflect visibility changes
-    canvas.renderAll();
-  }, [canvas]);
-  
-  // Update grid visibility when visible prop changes
-  useEffect(() => {
-    updateGridVisibility(visible);
-  }, [visible, updateGridVisibility]);
-  
-  // Cleanup grid objects when component unmounts
-  useEffect(() => {
-    return () => {
-      if (canvas && gridObjectsRef.current.length > 0) {
-        gridObjectsRef.current.forEach(obj => {
-          canvas.remove(obj);
-        });
-        canvas.renderAll();
-        gridObjectsRef.current = [];
-      }
-    };
-  }, [canvas]);
-  
-  // This is a UI-less component that manages grid objects
+  // This component doesn't render any DOM elements
   return null;
 };
