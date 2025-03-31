@@ -23,7 +23,7 @@ interface DrawingContextType {
   setLineThickness: (thickness: number) => void;
   
   // Grid settings
-  snapToGrid: boolean;
+  snapToGrid: boolean; // Changed from true to boolean to allow toggling
   toggleSnapToGrid: () => void;
   
   // Undo/redo state
@@ -52,7 +52,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({ children }) =>
   const [tool, setTool] = useState<DrawingTool>(DEFAULT_CANVAS_STATE?.tool || DrawingMode.SELECT);
   const [lineColor, setLineColor] = useState(DEFAULT_CANVAS_STATE?.lineColor || "#000000");
   const [lineThickness, setLineThickness] = useState(DEFAULT_CANVAS_STATE?.lineThickness || 2);
-  const [snapToGrid, setSnapToGrid] = useState(DEFAULT_CANVAS_STATE?.snapToGrid || true);
+  const [snapToGrid, setSnapToGrid] = useState<boolean>(DEFAULT_CANVAS_STATE?.snapToGrid || true);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   
