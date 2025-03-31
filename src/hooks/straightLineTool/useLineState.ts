@@ -59,7 +59,6 @@ export const useLineState = () => {
     isDrawing,
     setIsDrawing,
     isToolInitialized,
-    setIsToolInitialized,
     startPointRef,
     currentLineRef,
     distanceTooltipRef,
