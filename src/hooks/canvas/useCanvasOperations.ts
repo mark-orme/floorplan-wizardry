@@ -128,7 +128,7 @@ export const useCanvasOperations = ({
     
     try {
       // Save as JSON
-      const json = canvas.toJSON(['objectType']);
+      const json = canvas.toJSON();
       const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       

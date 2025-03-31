@@ -20,7 +20,7 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     if (!canvas) return;
     
     try {
-      const json = canvas.toJSON(['objectType']);
+      const json = canvas.toJSON();
       const jsonStr = JSON.stringify(json);
       
       // If we're not at the end of the history, remove everything after current index

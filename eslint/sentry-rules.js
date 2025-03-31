@@ -1,4 +1,3 @@
-
 /**
  * ESLint rules for Sentry usage
  * Ensures consistent usage of Sentry functions across the project
@@ -39,6 +38,14 @@ export const sentryRules = {
       {
         "selector": "CallExpression[callee.name='isSentryInitialized'][arguments.length>0]",
         "message": "isSentryInitialized doesn't accept any arguments"
+      },
+      {
+        "selector": "CallExpression[callee.object.property.name='canvas'][callee.property.name='toJSON'][arguments.length>0]",
+        "message": "canvas.toJSON() doesn't accept arguments in this Fabric.js version."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='toJSON'][arguments.length>0]",
+        "message": "The toJSON() method doesn't accept arguments in this Fabric.js version."
       }
     ],
     // Enforce using proper imports from sentry

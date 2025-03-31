@@ -55,7 +55,7 @@ export const typeSafetyRules = {
     // Enforce checking for exported types
     "@typescript-eslint/explicit-module-boundary-types": "error",
     
-    // NEW: Add specific rule to prevent using fabric namespace
+    // Add specific rule to prevent using fabric namespace
     "no-restricted-syntax": [
       "error",
       {
@@ -64,8 +64,25 @@ export const typeSafetyRules = {
       }
     ],
     
-    // NEW: Rule to enforce proper function calls with correct argument counts
+    // Rule to enforce proper function calls with correct argument counts
     "@typescript-eslint/no-invalid-void-type": "error",
-    "@typescript-eslint/no-misused-promises": "error"
+    "@typescript-eslint/no-misused-promises": "error",
+    
+    // NEW: Add specific rules to prevent method argument misuse
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.object.name='canvas'][callee.property.name='toJSON'][arguments.length>0]",
+        "message": "canvas.toJSON() doesn't accept arguments in this Fabric.js version."
+      },
+      {
+        "selector": "MemberExpression[object.name='fabric']",
+        "message": "Don't use the fabric namespace directly. Import specific components from 'fabric'."
+      }
+    ],
+    
+    // NEW: Add more specific rules for fabric method calls
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-argument": "error"
   }
 };

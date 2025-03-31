@@ -1,4 +1,3 @@
-
 /**
  * Type definitions to extend the Fabric.js library
  * Adds custom properties and events specific to our application
@@ -75,13 +74,19 @@ declare module 'fabric' {
     
     /** For active selection objects, iterate through child objects */
     forEachObject?: (callback: (obj: FabricObject) => void) => void;
+    
+    /** Explicitly override toJSON to take no arguments */
+    toJSON?: () => object;
   }
   
   /**
-   * Extended Canvas interface with custom methods for history operations 
+   * Extended Canvas interface with custom methods for history operations and explicit toJSON override
    * @interface Canvas
    */
   interface Canvas {
+    /** Explicitly override toJSON to take no arguments */
+    toJSON: () => object;
+    
     /** Handle undo operation */
     handleUndo?: () => void;
     
