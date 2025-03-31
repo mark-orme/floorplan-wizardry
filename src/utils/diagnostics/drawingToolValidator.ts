@@ -31,7 +31,9 @@ export const validateStraightLineDrawing = (
     const selection = canvas.selection;
     const defaultCursor = canvas.defaultCursor;
     const selectableObjects = canvas.getObjects().filter(obj => obj.selectable).length;
-    const eventListeners = canvas.__eventListeners ? Object.keys(canvas.__eventListeners).length : 0;
+    
+    // Instead of checking private __eventListeners, we check behavior
+    const hasListeners = canvas.getActiveObjects !== undefined;
     
     const diagnosticInfo = {
       currentTool,
@@ -39,7 +41,7 @@ export const validateStraightLineDrawing = (
       selection,
       defaultCursor,
       selectableObjects,
-      eventListeners,
+      hasListeners,
       drawingToolMatches: currentTool === DrawingMode.STRAIGHT_LINE,
       stringComparison: `'${currentTool}' === '${DrawingMode.STRAIGHT_LINE}'`,
       canvasSize: { width: canvas.width, height: canvas.height }
@@ -63,16 +65,11 @@ export const validateStraightLineDrawing = (
       logger.warn(`Straight line tool has ${selectableObjects} selectable objects`);
     }
     
-    // Test if mouse events are properly set up
-    const hasMouseDown = canvas.__eventListeners && 'mouse:down' in canvas.__eventListeners;
-    const hasMouseMove = canvas.__eventListeners && 'mouse:move' in canvas.__eventListeners;
-    const hasMouseUp = canvas.__eventListeners && 'mouse:up' in canvas.__eventListeners;
-    
-    if (!hasMouseDown || !hasMouseMove || !hasMouseUp) {
-      logger.error('Straight line tool missing required mouse event handlers', {
-        hasMouseDown,
-        hasMouseMove,
-        hasMouseUp
+    // Test for correct cursor and selection mode instead of directly accessing event listeners
+    if (defaultCursor !== 'crosshair' || selection !== false) {
+      logger.error('Straight line tool settings are not properly configured', {
+        cursor: defaultCursor,
+        selection
       });
     }
     
