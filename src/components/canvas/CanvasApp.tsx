@@ -9,7 +9,7 @@ import { useDrawingContext } from "@/contexts/DrawingContext";
 import { captureMessage } from "@/utils/sentry";
 import logger from "@/utils/logger";
 import { DrawingProvider } from "@/contexts/DrawingContext";
-import { useCanvasOperations } from "@/hooks/useCanvasOperations";
+import { useCanvasOperations } from "@/hooks/canvas-operations"; // Updated import path
 import { CanvasToolbar } from "./CanvasToolbar";
 import { CanvasContainer } from "./CanvasContainer";
 
