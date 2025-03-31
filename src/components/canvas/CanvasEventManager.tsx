@@ -103,6 +103,13 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           canvas.selection = true;
           canvas.defaultCursor = 'default';
           canvas.hoverCursor = 'move';
+          // Make all objects selectable except grid
+          canvas.getObjects().forEach(obj => {
+            if (obj.objectType !== 'grid') {
+              obj.selectable = true;
+              obj.evented = true;
+            }
+          });
           logger.info("Select tool activated", { selection: true });
           break;
           
@@ -134,6 +141,11 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           canvas.defaultCursor = 'grab';
           canvas.hoverCursor = 'grab';
           canvas.selection = false;
+          // Make objects non-selectable
+          canvas.getObjects().forEach(obj => {
+            obj.selectable = false;
+            obj.evented = false;
+          });
           logger.info("Hand tool activated");
           break;
           
@@ -141,6 +153,15 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           canvas.defaultCursor = 'crosshair';
           canvas.hoverCursor = 'crosshair';
           canvas.selection = false;
+          // Make objects non-selectable when in straight line mode
+          canvas.getObjects().forEach(obj => {
+            obj.selectable = false;
+            if (obj.objectType !== 'grid') {
+              obj.evented = true;
+            }
+          });
+          // Discard any active object to ensure nothing is selected
+          canvas.discardActiveObject();
           logger.info("Straight line tool activated");
           break;
           

@@ -4,6 +4,7 @@
  * @module hooks/useSnapToGrid
  */
 import { useCallback, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { useDrawingContext } from '@/contexts/DrawingContext';
 import type { Point } from '@/types/core/Point';
@@ -12,7 +13,7 @@ import type { Point } from '@/types/core/Point';
  * Hook for grid snapping functionality
  * @returns Object with snapping functions
  */
-export const useSnapToGrid = () => {
+export const useSnapToGrid = (fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>) => {
   // Get snap to grid setting from context
   const { snapToGrid } = useDrawingContext();
   // Local state for auto-straightening feature

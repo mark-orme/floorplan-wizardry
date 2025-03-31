@@ -46,7 +46,7 @@ export const useStraightLineTool = ({
   const tooltipRef = useRef<Text | null>(null);
 
   // Get snapping functionality
-  const { snapPointToGrid, snapLineToGrid, snapEnabled } = useSnapToGrid();
+  const { snapPointToGrid, snapLineToGrid, snapEnabled } = useSnapToGrid(fabricCanvasRef);
 
   /**
    * Create or update distance tooltip
@@ -240,6 +240,18 @@ export const useStraightLineTool = ({
     // Set cursor
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.defaultCursor = 'crosshair';
+      fabricCanvasRef.current.selection = false;
+      
+      // Disable selection mode when in straight line tool
+      const objects = fabricCanvasRef.current.getObjects();
+      objects.forEach(obj => {
+        if (obj.objectType !== 'grid' && obj.objectType !== 'measurement') {
+          obj.selectable = false;
+        }
+      });
+      
+      fabricCanvasRef.current.discardActiveObject();
+      fabricCanvasRef.current.requestRenderAll();
     }
     
     // Clean up
@@ -251,6 +263,17 @@ export const useStraightLineTool = ({
       // Reset cursor
       if (fabricCanvasRef.current) {
         fabricCanvasRef.current.defaultCursor = 'default';
+        
+        // Re-enable selection for objects when switching away
+        if (tool !== DrawingMode.STRAIGHT_LINE) {
+          const objects = fabricCanvasRef.current.getObjects();
+          objects.forEach(obj => {
+            if (obj.objectType !== 'grid' && obj.objectType !== 'measurement') {
+              obj.selectable = true;
+            }
+          });
+          fabricCanvasRef.current.requestRenderAll();
+        }
       }
       
       // Clean up any in-progress drawing

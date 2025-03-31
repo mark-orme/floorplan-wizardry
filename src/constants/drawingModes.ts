@@ -11,7 +11,7 @@ export enum DrawingMode {
   SELECT = 'select',
   DRAW = 'draw',
   LINE = 'line',
-  STRAIGHT_LINE = 'straight-line',
+  STRAIGHT_LINE = 'straight-line', // Keep this as 'straight-line' to match objectType used in the tool
   RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
   ERASER = 'eraser',
