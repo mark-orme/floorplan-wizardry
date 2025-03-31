@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasControllerEnhanced } from "./controller/CanvasControllerEnhanced";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
@@ -152,7 +152,7 @@ const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
   );
 };
 
-// Export the CanvasApp component
+// Export the CanvasApp component wrapped with DrawingProvider
 export const CanvasApp: React.FC<CanvasAppProps> = (props) => {
   return <CanvasAppInner {...props} />;
 };

@@ -9,6 +9,7 @@ import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { toast } from "sonner";
 import { CanvasProvider } from "@/contexts/CanvasContext";
+import { DrawingProvider } from "@/contexts/DrawingContext";
 
 /**
  * Main Index page component
@@ -46,11 +47,13 @@ const Index = () => {
       </div>
       
       <div className="flex-1 overflow-hidden">
-        <CanvasProvider>
-          <CanvasControllerProvider>
-            <CanvasApp setCanvas={setCanvas} />
-          </CanvasControllerProvider>
-        </CanvasProvider>
+        <DrawingProvider>
+          <CanvasProvider>
+            <CanvasControllerProvider>
+              <CanvasApp setCanvas={setCanvas} />
+            </CanvasControllerProvider>
+          </CanvasProvider>
+        </DrawingProvider>
       </div>
     </main>
   );

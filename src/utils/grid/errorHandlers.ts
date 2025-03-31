@@ -1,97 +1,72 @@
 
-/**
- * Grid error handlers
- * @module utils/grid/errorHandlers
- */
-
-import { Canvas, Object as FabricObject } from "fabric";
-import { GridErrorSeverity, categorizeGridError } from "./errorTypes";
-import { createGridRecoveryPlan } from "./recoveryPlans";
-import { createBasicEmergencyGrid } from "./gridRenderers";
+import { Canvas as FabricCanvas } from "fabric";
 import logger from "@/utils/logger";
+import { captureMessage } from "@/utils/sentry";
+import { createGridRecoveryPlan } from "./recoveryPlans";
 
 /**
- * Interface for grid error context
+ * Grid error messages
  */
-interface GridErrorContext {
-  /** The canvas where the error occurred */
-  canvas?: Canvas | null;
-  /** The error message */
-  message: string;
-  /** The original error */
-  error: Error;
-  /** Additional context information */
-  context?: Record<string, any>;
+export const GRID_ERROR_MESSAGES = {
+  CANVAS_NULL: "Canvas is not available",
+  CANVAS_INVALID: "Canvas is not valid",
+  GRID_EMPTY: "Grid is empty",
+  GRID_CREATION_FAILED: "Failed to create grid",
+  GRID_VISIBILITY_FAILED: "Failed to set grid visibility",
+  CANVAS_INITIALIZATION_FAILED: "Canvas initialization failed",
+  GRID_RENDERING_ERROR: "Error rendering grid"
+};
+
+/**
+ * Grid error severity levels
+ */
+export enum GridErrorSeverity {
+  INFO = "info",
+  WARNING = "warning",
+  ERROR = "error",
+  FATAL = "fatal"
 }
 
 /**
  * Handle grid creation error
- * Attempts to recover from grid creation errors
- * 
- * @param {GridErrorContext} errorContext - Context for the error
- * @returns {Promise<FabricObject[] | null>} Created grid objects or null if recovery failed
+ * @param canvas - Fabric canvas
+ * @param error - Error that occurred
+ * @returns Whether recovery was successful
  */
-export const handleGridCreationError = async (
-  errorContext: GridErrorContext
-): Promise<FabricObject[] | null> => {
-  const { canvas, message, error, context } = errorContext;
-  
-  logger.error("Grid creation error:", message, error, context);
-  
-  // If no canvas, can't recover
+export const handleGridCreationError = async (canvas: FabricCanvas, error?: Error): Promise<boolean> => {
   if (!canvas) {
-    logger.error("Cannot recover: No canvas available");
-    return null;
+    logger.error(GRID_ERROR_MESSAGES.CANVAS_NULL);
+    return false;
   }
   
-  // Determine error severity
-  const severity = categorizeGridError(error);
+  // Log error
+  logger.error("Grid creation error:", error);
   
-  // For HIGH severity errors, try emergency grid
-  if (severity === GridErrorSeverity.HIGH || severity === GridErrorSeverity.CRITICAL) {
-    logger.warn(`${severity} severity error detected, using emergency grid`);
-    
-    try {
-      // Try to create an emergency grid
-      const emergencyGrid = createBasicEmergencyGrid(canvas);
-      
-      if (emergencyGrid.length > 0) {
-        logger.info("Successfully created emergency grid as fallback");
-        return emergencyGrid;
+  // Capture error message
+  captureMessage("Grid creation error", "grid-error", {
+    tags: { component: "Grid", severity: GridErrorSeverity.ERROR },
+    extra: { 
+      errorMessage: error?.message,
+      canvasInfo: {
+        width: canvas.width,
+        height: canvas.height,
+        objectCount: canvas.getObjects().length
       }
-    } catch (emergencyError) {
-      logger.error("Emergency grid creation also failed:", emergencyError);
     }
-  }
+  });
   
-  // For MEDIUM and LOW severity errors, try recovery plan
-  if (severity === GridErrorSeverity.MEDIUM || severity === GridErrorSeverity.LOW) {
-    logger.info(`${severity} severity error detected, attempting recovery`);
-    
-    // Create recovery actions
-    const recoveryActions = [
-      // Wait a bit and try to create a simplified grid
-      async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        try {
-          const emergencyGrid = createBasicEmergencyGrid(canvas);
-          return emergencyGrid.length > 0;
-        } catch {
-          return false;
-        }
-      }
-    ];
-    
-    // Create and execute recovery plan
-    const recoveryPlan = createGridRecoveryPlan(error, recoveryActions);
-    const recoverySucceeded = await recoveryPlan.execute();
-    
-    if (recoverySucceeded) {
+  // Create recovery plan
+  const recoveryPlan = createGridRecoveryPlan(canvas, error);
+  
+  // Try each recovery action
+  for (const action of recoveryPlan.actions) {
+    const success = await action();
+    if (success) {
       logger.info("Grid recovery successful");
-      return canvas.getObjects().filter(obj => obj.objectType === 'grid');
+      return true;
     }
   }
   
-  logger.error("Grid recovery failed");
-  return null;
+  logger.error("Grid recovery failed, all actions exhausted");
+  return false;
 };

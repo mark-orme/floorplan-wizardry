@@ -1,70 +1,23 @@
 
-/**
- * Grid validation utilities
- * @module utils/grid/gridValidation
- */
-
-import { Canvas, Object as FabricObject } from "fabric";
-import { GRID_ERROR_MESSAGES } from "./errorTypes";
+import { Canvas as FabricCanvas } from "fabric";
 import logger from "@/utils/logger";
 
 /**
- * Validate canvas for grid creation
- * @param {Canvas} canvas - The canvas to validate
- * @returns {string|null} Error message or null if valid
+ * Validate the canvas for grid operations
+ * @param canvas - Fabric canvas to validate
+ * @returns Whether canvas is valid
  */
-export const validateCanvas = (canvas: Canvas): string | null => {
+export const validateCanvas = (canvas: FabricCanvas): boolean => {
   if (!canvas) {
-    return GRID_ERROR_MESSAGES.CANVAS_NULL;
+    logger.error("Canvas validation failed: Canvas is null");
+    return false;
   }
   
   if (!canvas.width || !canvas.height) {
-    return GRID_ERROR_MESSAGES.CANVAS_INVALID;
-  }
-  
-  return null;
-};
-
-/**
- * Validate grid state
- * @param {Canvas} canvas - The canvas to validate
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @returns {boolean} Whether grid state is valid
- */
-export const validateGridState = (
-  canvas: Canvas, 
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): boolean => {
-  // Check if canvas is valid
-  if (!canvas) {
-    logger.warn("Cannot validate grid state: Canvas is null");
-    return false;
-  }
-  
-  // Check if gridLayerRef exists and has grid objects
-  if (!gridLayerRef || !gridLayerRef.current || gridLayerRef.current.length === 0) {
-    logger.warn("Grid validation failed: No grid objects in reference");
-    return false;
-  }
-  
-  // Get all objects on canvas
-  const canvasObjects = canvas.getObjects();
-  
-  // Check if any grid objects are on canvas
-  const gridObjectsOnCanvas = canvasObjects.filter(obj => obj.objectType === 'grid');
-  
-  if (gridObjectsOnCanvas.length === 0) {
-    logger.warn("Grid validation failed: No grid objects on canvas");
-    return false;
-  }
-  
-  // Check if at least some of the referenced grid objects are on canvas
-  const refObjectsOnCanvas = gridLayerRef.current.filter(
-    refObj => canvasObjects.some(canvasObj => canvasObj === refObj)
-  );
-  
-  if (refObjectsOnCanvas.length === 0) {
-    logger.warn("Grid validation failed: None of the referenced grid objects are on canvas");
+    logger.error("Canvas validation failed: Invalid dimensions", {
+      width: canvas.width,
+      height: canvas.height
+    });
     return false;
   }
   
@@ -72,34 +25,35 @@ export const validateGridState = (
 };
 
 /**
- * Validate grid creation result
- * @param {FabricObject[]} createdGrid - Created grid objects
- * @param {Canvas} canvas - Canvas where grid was created
- * @returns {string|null} Error message or null if valid
+ * Validate the grid state
+ * @param canvas - Fabric canvas containing grid
+ * @returns Whether grid state is valid
  */
-export const validateGrid = (
-  createdGrid: FabricObject[],
-  canvas: Canvas
-): string | null => {
-  // Check if grid was created
-  if (!createdGrid || createdGrid.length === 0) {
-    return GRID_ERROR_MESSAGES.GRID_EMPTY;
+export const validateGridState = (canvas: FabricCanvas): boolean => {
+  if (!validateCanvas(canvas)) {
+    return false;
   }
   
-  // Check if canvas is valid
-  if (!canvas) {
-    return GRID_ERROR_MESSAGES.CANVAS_NULL;
+  try {
+    const gridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    );
+    
+    if (gridObjects.length === 0) {
+      logger.warn("Grid state validation: No grid objects found");
+      return false;
+    }
+    
+    // Check if all grid objects are visible
+    const allVisible = gridObjects.every(obj => obj.visible === true);
+    if (!allVisible) {
+      logger.warn("Grid state validation: Some grid objects are not visible");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    logger.error("Error validating grid state:", error);
+    return false;
   }
-  
-  // Check if all grid objects are on canvas
-  const canvasObjects = canvas.getObjects();
-  const gridOnCanvas = createdGrid.every(gridObj => 
-    canvasObjects.some(canvasObj => canvasObj === gridObj)
-  );
-  
-  if (!gridOnCanvas) {
-    return "Not all grid objects are on canvas";
-  }
-  
-  return null;
 };

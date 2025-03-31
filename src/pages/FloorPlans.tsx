@@ -10,6 +10,8 @@ import { resetGridProgress } from "@/utils/gridManager";
 import { toast } from "sonner";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingProvider } from "@/contexts/DrawingContext";
+import { CanvasProvider } from "@/contexts/CanvasContext";
+import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 
 /**
  * FloorPlans page component
@@ -39,7 +41,11 @@ const FloorPlans = () => {
       
       <div className="flex-1 overflow-hidden">
         <DrawingProvider>
-          <CanvasApp setCanvas={setCanvas} />
+          <CanvasProvider>
+            <CanvasControllerProvider>
+              <CanvasApp setCanvas={setCanvas} />
+            </CanvasControllerProvider>
+          </CanvasProvider>
         </DrawingProvider>
       </div>
     </main>

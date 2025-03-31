@@ -4,17 +4,20 @@ import { Toaster } from 'sonner';
 import Index from './pages/Index';
 import FloorPlans from './pages/FloorPlans';
 import { CanvasProvider } from './contexts/CanvasContext';
+import { DrawingProvider } from './contexts/DrawingContext';
 
 function App() {
   return (
     <Router>
-      <CanvasProvider>
-        <Toaster position="top-right" />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/floorplans" element={<FloorPlans />} />
-        </Routes>
-      </CanvasProvider>
+      <DrawingProvider>
+        <CanvasProvider>
+          <Toaster position="top-right" />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/floorplans" element={<FloorPlans />} />
+          </Routes>
+        </CanvasProvider>
+      </DrawingProvider>
     </Router>
   );
 }

@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from "react";
+
+import React, { useCallback } from "react";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { DrawingMode } from "@/constants/drawingModes";
 import { Object as FabricObject } from "fabric";
@@ -13,6 +14,8 @@ interface ToolbarContainerProps {
   lineColor: string;
   gia: number;
   showGrid: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
   onZoom: (direction: "in" | "out") => void;
@@ -34,6 +37,8 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
   lineColor,
   gia,
   showGrid,
+  canUndo,
+  canRedo,
   onUndo,
   onRedo,
   onZoom,
@@ -43,14 +48,6 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
   onLineThicknessChange = () => {},
   onLineColorChange = () => {}
 }) => {
-  // Add state for grid visibility
-  const [showGrid, setShowGrid] = useState<boolean>(true);
-  
-  // Toggle grid visibility
-  const handleToggleGrid = useCallback(() => {
-    setShowGrid(prev => !prev);
-  }, []);
-
   return (
     <div className="flex flex-col w-full">
       <CanvasToolbar 
@@ -68,7 +65,9 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onLineColorChange={onLineColorChange}
         gia={gia}
         showGrid={showGrid}
-        onToggleGrid={handleToggleGrid}
+        onToggleGrid={onToggleGrid}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
     </div>
   );
