@@ -1,6 +1,6 @@
 
 import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas, Line, Point, ActiveSelection } from "fabric";
+import { Canvas as FabricCanvas, ActiveSelection, Object as FabricObject, Point } from "fabric";
 import { toast } from "sonner";
 import { DrawingMode } from "@/constants/drawingModes";
 import { captureMessage, captureError } from "@/utils/sentry";
@@ -35,14 +35,14 @@ export const useCanvasOperations = ({
         const activeSelection = activeObject as ActiveSelection;
         const objects = [...activeSelection.getObjects()];
         
-        activeSelection.forEachObject((obj: fabric.Object) => {
+        activeSelection.forEachObject((obj: FabricObject) => {
           canvas.remove(obj);
         });
         
         canvas.discardActiveObject();
         logger.info(`Deleted ${objects.length} objects`);
         
-        captureMessage("Objects deleted", "objects-deleted");
+        captureMessage(`Objects deleted (${objects.length})`, "objects-deleted");
       } else {
         // Delete single object
         canvas.remove(activeObject);
@@ -76,7 +76,7 @@ export const useCanvasOperations = ({
       
       logger.info(`Cleared canvas (removed ${objects.length} objects)`);
       
-      captureMessage("Canvas cleared", "canvas-cleared");
+      captureMessage(`Canvas cleared (${objects.length} objects removed)`, "canvas-cleared");
       
       canvas.requestRenderAll();
     } catch (error) {

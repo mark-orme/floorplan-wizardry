@@ -5,18 +5,10 @@
  */
 
 // Import these directly to avoid circular dependencies
-export type { ErrorCaptureOptions } from './sentry/types';
+import type { ErrorCaptureOptions } from './sentry/types';
 
-/**
- * Type for error capture options
- */
-export interface ErrorCaptureOptions {
-  level?: string;
-  tags?: Record<string, string>;
-  extra?: Record<string, any>;
-  user?: Record<string, any>;
-  showReportDialog?: boolean;
-}
+// Re-export the types
+export type { ErrorCaptureOptions };
 
 /**
  * Capture a message for Sentry reporting

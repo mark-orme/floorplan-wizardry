@@ -58,6 +58,18 @@ export const sentryRules = {
           }
         ]
       }
-    ]
+    ],
+    // Make sure the Fabric namespace is properly imported
+    "@typescript-eslint/no-namespace": ["error", { "allowDeclarations": true }],
+    // Ensure we use proper typing for Fabric.js objects
+    "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+    // Enforce using named imports from fabric
+    "@typescript-eslint/no-unused-vars": ["error", { 
+      "vars": "all", 
+      "args": "after-used", 
+      "ignoreRestSiblings": true,
+      "varsIgnorePattern": "^_",
+      "argsIgnorePattern": "^_" 
+    }]
   }
 };
