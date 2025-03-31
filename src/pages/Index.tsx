@@ -8,6 +8,7 @@ import { Home } from "lucide-react";
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import { toast } from "sonner";
+import { CanvasProvider } from "@/contexts/CanvasContext";
 
 /**
  * Main Index page component
@@ -45,9 +46,11 @@ const Index = () => {
       </div>
       
       <div className="flex-1 overflow-hidden">
-        <CanvasControllerProvider>
-          <CanvasApp setCanvas={setCanvas} />
-        </CanvasControllerProvider>
+        <CanvasProvider>
+          <CanvasControllerProvider>
+            <CanvasApp setCanvas={setCanvas} />
+          </CanvasControllerProvider>
+        </CanvasProvider>
       </div>
     </main>
   );

@@ -11,12 +11,14 @@ import { useDrawingContext } from "@/contexts/DrawingContext";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
+import { DrawingProvider } from "@/contexts/DrawingContext";
 
 interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
 }
 
-export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
+// Inner component that uses DrawingContext
+const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
   // State for GIA (Gross Internal Area)
   const [gia, setGia] = useState<number>(0);
   const { 
@@ -335,10 +337,19 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
           <ConnectedDrawingCanvas 
             width={window.innerWidth - 48}
             height={window.innerHeight - 180} // Adjusted for toolbar height
-            ref={setCanvasRef}
+            onCanvasRef={setCanvasRef}
           />
         </div>
       </div>
     </CanvasControllerEnhanced>
+  );
+};
+
+// Wrapper component that provides DrawingContext
+export const CanvasApp: React.FC<CanvasAppProps> = (props) => {
+  return (
+    <DrawingProvider>
+      <CanvasAppInner {...props} />
+    </DrawingProvider>
   );
 };
