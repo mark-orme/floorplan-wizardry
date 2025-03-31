@@ -4,27 +4,15 @@
  * Manages drawing events, path creation, and shape processing
  * @module useCanvasDrawing
  */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Path as FabricPath } from "fabric";
-import { usePathProcessing } from "./usePathProcessing";
+import { useCallback, useRef, useState } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { usePathEvents } from "./usePathEvents";
 import { useCanvasHistory } from "./useCanvasHistory";
-import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
-import { type FloorPlan } from "@/types/floorPlanTypes";
+import { DrawingTool } from "@/types/core/DrawingTool";
 import { DrawingMode } from "@/constants/drawingModes";
-import { useCanvasDrawingState } from "./useCanvasDrawingState";
-import { useCanvasDrawingEvents } from "./canvas/drawing/useCanvasDrawingEvents";
+import { Point } from "@/types/core/Geometry";
 import { DrawingState, createDefaultDrawingState } from "@/types/drawingTypes";
-
-/**
- * History state reference object
- * @interface HistoryRef
- */
-interface HistoryRef {
-  /** Array of past states for undo operations */
-  past: FabricObject[][];
-  /** Array of future states for redo operations */
-  future: FabricObject[][];
-}
+import { FloorPlan } from "@/types/floorPlanTypes";
 
 /**
  * Props for the useCanvasDrawing hook
@@ -36,9 +24,12 @@ interface UseCanvasDrawingProps {
   /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<HistoryRef>;
+  historyRef: React.MutableRefObject<{
+    past: FabricObject[][];
+    future: FabricObject[][];
+  }>;
   /** Current active drawing tool */
-  tool: DrawingMode;
+  tool: DrawingTool;
   /** Current floor index */
   currentFloor: number;
   /** Function to set floor plans */
@@ -62,6 +53,16 @@ interface UseCanvasDrawingProps {
 interface UseCanvasDrawingResult {
   /** Current drawing state */
   drawingState: DrawingState;
+  /** Clear all drawn objects */
+  clearDrawings: () => void;
+  /** Delete selected objects */
+  deleteObjects: () => void;
+  /** Handle mouse down event */
+  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
+  /** Handle mouse move event */
+  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
+  /** Handle mouse up event */
+  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
 }
 
 /**
@@ -86,8 +87,8 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     recalculateGIA = () => {}
   } = props;
 
-  // Drawing state - explicitly using the DrawingState type from drawingTypes
-  const { drawingState, setDrawingState } = useCanvasDrawingState();
+  // Drawing state
+  const [drawingState, setDrawingState] = useState<DrawingState>(createDefaultDrawingState());
   
   // Canvas history
   const { saveCurrentState, undo, redo } = useCanvasHistory({
@@ -95,58 +96,175 @@ export const useCanvasDrawing = (props: UseCanvasDrawingProps): UseCanvasDrawing
     historyRef
   });
   
-  // Path processing - pass all required props
-  const { processCreatedPath } = usePathProcessing({
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    setFloorPlans,
-    currentFloor,
-    setGia
-  });
+  /**
+   * Start drawing at a point
+   * 
+   * @param {Point} point - Starting point
+   */
+  const startDrawing = useCallback((point: Point) => {
+    setDrawingState(prev => ({
+      ...prev,
+      isDrawing: true,
+      pathStartPoint: point,
+      startPoint: point,
+      currentPoint: point,
+      points: [point]
+    }));
+    
+    console.log('Started drawing with tool:', tool, 'at point:', point);
+  }, [tool]);
   
-  // Update zoom level function
-  const updateZoomLevel = useCallback(() => {
+  /**
+   * Continue drawing to a point
+   * 
+   * @param {Point} point - Current point
+   */
+  const continueDrawing = useCallback((point: Point) => {
+    if (!drawingState.isDrawing) return;
+    
+    setDrawingState(prev => ({
+      ...prev,
+      currentPoint: point,
+      points: [...prev.points, point]
+    }));
+  }, [drawingState.isDrawing]);
+  
+  /**
+   * End drawing at a point
+   * 
+   * @param {Point} point - End point
+   */
+  const endDrawing = useCallback((point: Point) => {
+    if (!drawingState.isDrawing) return;
+    
+    setDrawingState(prev => ({
+      ...prev,
+      isDrawing: false,
+      currentPoint: point,
+      points: [...prev.points, point]
+    }));
+    
+    // Process the completed drawing
+    processDrawing([...drawingState.points, point]);
+    
+    // Recalculate GIA if needed
+    if (recalculateGIA) {
+      recalculateGIA();
+    }
+  }, [drawingState, recalculateGIA]);
+  
+  /**
+   * Cancel the current drawing
+   */
+  const cancelDrawing = useCallback(() => {
+    setDrawingState(prev => ({
+      ...prev,
+      isDrawing: false
+    }));
+  }, []);
+  
+  /**
+   * Process a completed drawing
+   * 
+   * @param {Point[]} points - Points in the drawing
+   */
+  const processDrawing = useCallback((points: Point[]) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || points.length < 2) return;
+    
+    // Different behavior based on tool
+    switch (tool) {
+      case DrawingMode.DRAW:
+        // Create freeform path
+        // Implementation would depend on the specific requirements
+        break;
+        
+      case DrawingMode.STRAIGHT_LINE:
+      case DrawingMode.LINE:
+        // Create straight line between first and last points
+        // Implementation would depend on the specific requirements
+        break;
+        
+      case DrawingMode.RECTANGLE:
+        // Create rectangle from start and end points
+        // Implementation would depend on the specific requirements
+        break;
+        
+      case DrawingMode.CIRCLE:
+        // Create circle from start and end points
+        // Implementation would depend on the specific requirements
+        break;
+        
+      case DrawingMode.WALL:
+        // Create wall from points
+        // Implementation would depend on the specific requirements
+        break;
+        
+      default:
+        // For other tools or unknown tools
+        break;
+    }
+    
+    // Render canvas
+    canvas.requestRenderAll();
+    
+    // Save state after creating object
+    saveCurrentState();
+  }, [fabricCanvasRef, tool, saveCurrentState]);
+  
+  /**
+   * Clear all drawn objects on the canvas
+   */
+  const clearDrawings = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Update zoom level in drawing state
-    setDrawingState(prev => ({
-      ...prev,
-      zoomLevel: canvas.getZoom()
-    }));
-  }, [fabricCanvasRef, setDrawingState]);
+    // Save current state before clearing
+    saveCurrentState();
+    
+    // Get all non-grid objects
+    const objects = canvas.getObjects().filter(
+      obj => !gridLayerRef.current.includes(obj)
+    );
+    
+    // Remove all non-grid objects
+    canvas.remove(...objects);
+    canvas.requestRenderAll();
+  }, [fabricCanvasRef, gridLayerRef, saveCurrentState]);
   
-  // Canvas drawing events
+  /**
+   * Delete selected objects on the canvas
+   */
+  const deleteObjects = useCallback(() => {
+    if (deleteSelectedObjects) {
+      deleteSelectedObjects();
+    }
+  }, [deleteSelectedObjects]);
+  
+  // Get path event handlers
   const { 
-    isDrawing, 
-    currentPath, 
     handleMouseDown, 
     handleMouseMove, 
     handleMouseUp, 
     cleanupTimeouts 
-  } = useCanvasDrawingEvents(tool, lineThickness, lineColor);
-  
-  // Register event handlers
-  useCanvasEventHandlers({
+  } = usePathEvents({
     fabricCanvasRef,
     tool,
-    lineColor,
-    lineThickness,
+    startDrawing,
+    continueDrawing,
+    endDrawing,
+    cancelDrawing,
     saveCurrentState,
-    handleUndo: undo,  // Pass undo function explicitly
-    handleRedo: redo,  // Pass redo function explicitly
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    processCreatedPath,
-    cleanupTimeouts,
-    deleteSelectedObjects,
-    updateZoomLevel
+    lineThickness,
+    lineColor
   });
   
   return {
-    drawingState
+    drawingState,
+    clearDrawings,
+    deleteObjects,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp
   };
 };

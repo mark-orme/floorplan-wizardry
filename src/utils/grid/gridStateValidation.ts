@@ -1,113 +1,117 @@
 
 /**
- * Grid state validation
- * Validates GridCreationState objects to ensure they have correct properties
+ * Grid state validation utilities
+ * Provides functions to validate and sanitize grid state objects
  * @module utils/grid/gridStateValidation
  */
-import { GridCreationState, DEFAULT_GRID_CREATION_STATE, GridCreationLock } from '@/types/core/GridTypes';
+import { GridCreationState, DEFAULT_GRID_CREATION_STATE } from '@/types/core/GridTypes';
 
 /**
- * Validates a GridCreationState object to ensure it has valid properties
- * Ensures all properties are of correct types and provides defaults if missing
+ * Validates a grid state object
+ * Ensures all required properties are present and valid
  * 
- * @param {Partial<GridCreationState>} state - The state object to validate
- * @returns {GridCreationState} The validated state object with any invalid properties fixed
+ * @param {unknown} state - Grid state object to validate
+ * @returns {GridCreationState} Validated grid state
  */
-export const validateGridState = (state: Partial<GridCreationState>): GridCreationState => {
-  // Start with default state
-  const validState: GridCreationState = { ...DEFAULT_GRID_CREATION_STATE };
+export function validateGridState(state: unknown): GridCreationState {
+  // If state is not an object or is null, return default state
+  if (!state || typeof state !== 'object') {
+    return { ...DEFAULT_GRID_CREATION_STATE };
+  }
   
-  // Only copy valid properties
-  Object.keys(state).forEach(key => {
-    if (key in DEFAULT_GRID_CREATION_STATE) {
-      // Use proper type assertion with keyof
-      const typedKey = key as keyof GridCreationState;
-      
-      // Check if key exists in state
-      if (typedKey in state) {
-        // Type-safe assignment using type assertion and intermediate Record type
-        const value = state[typedKey];
-        (validState as Record<keyof GridCreationState, unknown>)[typedKey] = value;
-      }
-    } else {
-      console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
+  // Initialize with default state
+  const validState = { ...DEFAULT_GRID_CREATION_STATE };
+  
+  // Type-safe property mapping with explicit keys
+  const stateRecord = state as Record<string, unknown>;
+  
+  // Map boolean properties safely
+  const booleanProps: Array<keyof GridCreationState> = ['started', 'completed', 'inProgress', 'isCreated', 'hasError', 'creationInProgress', 'exists'];
+  
+  booleanProps.forEach(prop => {
+    if (prop in stateRecord && typeof stateRecord[prop] === 'boolean') {
+      // Type assertion to inform TypeScript about the assignment
+      (validState as Record<string, boolean>)[prop] = stateRecord[prop] as boolean;
     }
   });
+  
+  // Map number properties safely
+  const numberProps: Array<keyof GridCreationState> = ['objectCount', 'startTime', 'endTime', 'attempts', 'lastAttemptTime', 'consecutiveResets', 'maxConsecutiveResets', 'lastCreationTime', 'throttleInterval', 'totalCreations', 'maxRecreations', 'minRecreationInterval'];
+  
+  numberProps.forEach(prop => {
+    if (prop in stateRecord && typeof stateRecord[prop] === 'number') {
+      // Type assertion to inform TypeScript about the assignment
+      (validState as Record<string, number>)[prop] = stateRecord[prop] as number;
+    }
+  });
+  
+  // Map string properties safely
+  const stringProps: Array<keyof GridCreationState> = ['error', 'errorMessage'];
+  
+  stringProps.forEach(prop => {
+    if (prop in stateRecord && typeof stateRecord[prop] === 'string') {
+      // Type assertion to inform TypeScript about the assignment
+      (validState as Record<string, string>)[prop] = stateRecord[prop] as string;
+    }
+  });
+  
+  // Handle creationLock object separately
+  if ('creationLock' in stateRecord && stateRecord.creationLock && typeof stateRecord.creationLock === 'object') {
+    const lockRecord = stateRecord.creationLock as Record<string, unknown>;
+    
+    // Deep copy the creationLock to prevent mutations
+    validState.creationLock = { ...DEFAULT_GRID_CREATION_STATE.creationLock };
+    
+    // Update creationLock properties if valid
+    if ('isLocked' in lockRecord && typeof lockRecord.isLocked === 'boolean') {
+      validState.creationLock.isLocked = lockRecord.isLocked;
+    }
+    
+    if ('lockedBy' in lockRecord && typeof lockRecord.lockedBy === 'string') {
+      validState.creationLock.lockedBy = lockRecord.lockedBy;
+    }
+    
+    if ('lockedAt' in lockRecord && typeof lockRecord.lockedAt === 'number') {
+      validState.creationLock.lockedAt = lockRecord.lockedAt;
+    }
+    
+    if ('expireAt' in lockRecord && typeof lockRecord.expireAt === 'number') {
+      validState.creationLock.expireAt = lockRecord.expireAt;
+    }
+  }
   
   return validState;
-};
+}
 
 /**
- * Creates a valid grid state update object
- * Filters out invalid properties and ensures proper typing
+ * Creates a new grid state object with updated properties
  * 
- * @param {Partial<GridCreationState>} updates - Partial updates to the grid state
- * @returns {Partial<GridCreationState>} A validated update object
+ * @param {Partial<GridCreationState>} updates - Properties to update
+ * @returns {GridCreationState} Updated grid state
  */
-export const createGridStateUpdate = (updates: Partial<GridCreationState>): Partial<GridCreationState> => {
-  const validUpdates: Partial<GridCreationState> = {};
-  
-  Object.keys(updates).forEach(key => {
-    if (key in DEFAULT_GRID_CREATION_STATE) {
-      // Use proper type assertion with keyof
-      const typedKey = key as keyof GridCreationState;
-      
-      // Check if key exists in updates
-      if (typedKey in updates) {
-        // Type-safe assignment using type assertion and intermediate Record type
-        const value = updates[typedKey];
-        (validUpdates as Record<keyof GridCreationState, unknown>)[typedKey] = value;
-      }
-    } else {
-      console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
-    }
-  });
-  
-  return validUpdates;
-};
+export function createGridState(updates: Partial<GridCreationState>): GridCreationState {
+  return {
+    ...DEFAULT_GRID_CREATION_STATE,
+    ...updates
+  };
+}
 
 /**
- * Common property mapping for incorrectly named properties
- * Maps incorrect property names to their correct equivalents
+ * Checks if grid creation is in progress
  * 
- * @type {Record<string, keyof GridCreationState>}
+ * @param {GridCreationState} state - Grid state to check
+ * @returns {boolean} Whether grid creation is in progress
  */
-export const GRID_STATE_PROPERTY_MAP: Record<string, keyof GridCreationState> = {
-  'visible': 'exists',
-  'visibility': 'exists',
-  'created': 'isCreated',
-  'error': 'errorMessage'
-};
+export function isGridCreationInProgress(state: GridCreationState): boolean {
+  return state.inProgress === true || state.creationInProgress === true;
+}
 
 /**
- * Repairs a grid state object with incorrectly named properties
- * Converts common misnamed properties to their correct counterparts
+ * Check if grid has been successfully created
  * 
- * @param {Record<string, unknown>} state - The state object to repair
- * @returns {Partial<GridCreationState>} The repaired state object
+ * @param {GridCreationState} state - Grid state to check
+ * @returns {boolean} Whether grid has been created
  */
-export const repairGridState = (state: Record<string, unknown>): Partial<GridCreationState> => {
-  const repairedState: Partial<GridCreationState> = {};
-  
-  // Copy all valid properties
-  Object.keys(state).forEach(key => {
-    if (key in DEFAULT_GRID_CREATION_STATE) {
-      // Use proper type assertion with keyof
-      const typedKey = key as keyof GridCreationState;
-      const value = state[key];
-      
-      // Type-safe assignment using type assertion and intermediate Record type
-      (repairedState as Record<string, unknown>)[typedKey] = value;
-    } else if (key in GRID_STATE_PROPERTY_MAP) {
-      // Map incorrect properties to correct ones
-      const correctKey = GRID_STATE_PROPERTY_MAP[key];
-      const value = state[key];
-      
-      // Type-safe assignment using type assertion and intermediate Record type
-      (repairedState as Record<string, unknown>)[correctKey] = value;
-      console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
-    }
-  });
-  
-  return repairedState;
-};
+export function isGridCreated(state: GridCreationState): boolean {
+  return state.completed === true && state.hasError !== true;
+}

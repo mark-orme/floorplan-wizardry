@@ -1,34 +1,24 @@
 
 /**
- * Drawing tool enum
- * Defines all available tools for canvas drawing
+ * Drawing types
+ * Provides types for drawing operations and states
+ * @module types/drawingTypes
  */
-export enum DrawingTool {
-  SELECT = "select",
-  DRAW = "draw",
-  WALL = "wall",
-  ROOM = "room",
-  MEASURE = "measure",
-  TEXT = "text",
-  ERASER = "eraser",
-  LINE = "line",
-  RECTANGLE = "rectangle",
-  CIRCLE = "circle",
-  STRAIGHT_LINE = "straightLine",
-  HAND = "hand"
-}
+import { DrawingTool } from '@/types/core/DrawingTool';
+import { DrawingMode } from '@/constants/drawingModes';
+import { Point } from '@/types/core/Geometry';
 
 /**
- * Drawing tool type based on enum
- * String literal type for drawing tools
- */
-export type DrawingToolType = `${DrawingTool}`;
-
-/**
- * @deprecated Use DrawingTool from src/types/drawingTypes.ts instead
+ * @deprecated Use DrawingTool from src/types/core/DrawingTool.ts instead
  * This is kept for backward compatibility
  */
-export type DrawingMode = DrawingTool;
+export type { DrawingTool };
+
+/**
+ * @deprecated Use DrawingMode from @/constants/drawingModes instead
+ * This is kept for backward compatibility
+ */
+export { DrawingMode };
 
 // For compatibility with existing code
 export type ZoomDirection = "in" | "out";
@@ -109,8 +99,6 @@ export interface DebugInfoState {
   objectCount?: number;
   /** Timestamp of last error */
   lastErrorTime?: number;
-  /** Index signature for additional properties */
-  [key: string]: any;
 }
 
 /**
@@ -133,42 +121,29 @@ export interface DistanceToolState {
 }
 
 /**
- * Represents a point in 2D space
- */
-export interface Point {
-  /** X coordinate */
-  x: number;
-  /** Y coordinate */
-  y: number;
-}
-
-/**
- * Canvas dimensions type
- * Represents the width and height of the canvas
- */
-export interface CanvasDimensions {
-  /** Canvas width in pixels */
-  width: number;
-  /** Canvas height in pixels */
-  height: number;
-}
-
-/**
  * Drawing state interface
  * Contains the current state of drawing operations
  */
 export interface DrawingState {
+  /** Whether drawing is currently active */
   isDrawing: boolean;
+  /** Current path being drawn */
   currentPath: any | null;
-  pathStartPoint: { x: number, y: number } | null;
+  /** Starting point of the current path */
+  pathStartPoint: Point | null;
+  /** Current zoom level */
   zoomLevel: number;
-  
-  // Additional properties needed by tests
+  /** Starting point for tools like measure */
   startPoint: Point | null;
+  /** Current point position */
   currentPoint: Point | null;
+  /** Collection of points for the current drawing */
   points: Point[];
+  /** Measured distance value */
   distance: number | null;
+  /** Current cursor position */
   cursorPosition: Point | null;
+  /** Current canvas zoom level */
   currentZoom: number;
 }
 
