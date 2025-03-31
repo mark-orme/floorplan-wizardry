@@ -18,10 +18,11 @@ Use proper type assertions when copying properties:
 const typedKey = key as keyof GridCreationState;
 validState[typedKey] = state[typedKey];
 
-// CORRECT - Uses proper type assertion to align types
+// CORRECT - Uses property access with proper typing
 const typedKey = key as keyof GridCreationState;
-const value = state[typedKey];
-validState[typedKey] = value as unknown as GridCreationState[typeof typedKey];
+if (typedKey in state) {
+  validState[typedKey] = state[typedKey] as GridCreationState[typeof typedKey];
+}
 ```
 
 ### Dynamic Property Access

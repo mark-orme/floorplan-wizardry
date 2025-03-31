@@ -34,6 +34,16 @@ module.exports = {
         // Catch cases where a property is accessed that might not exist
         "selector": "MemberExpression[object.name=/gridState|validState|repairedState/][property.type='Identifier'][parent.type!='IfStatement'][parent.parent.type!='IfStatement']",
         "message": "Always check if a property exists on GridCreationState before accessing it to avoid type errors."
+      },
+      {
+        // New rule: Prevent dynamic property assignment without type checking
+        "selector": "AssignmentExpression[left.object.name=/gridState|validState|repairedState/][left.property.type='Identifier'][right.type!='AsExpression']",
+        "message": "Use proper type assertions with 'as GridCreationState[typeof key]' when assigning to grid state properties."
+      },
+      {
+        // New rule: Enforce property existence check before assignment
+        "selector": "AssignmentExpression[left.object.name=/gridState|validState|repairedState/][parent.type!='IfStatement'][parent.parent.type!='IfStatement']",
+        "message": "Check if property exists on GridCreationState before assignment to avoid type errors."
       }
     ],
     
@@ -62,6 +72,11 @@ module.exports = {
     }],
     
     // Prevent potential type errors in object property assignments
-    "@typescript-eslint/no-unsafe-member-access": "warn"
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    
+    // New rule: Prevent bypassing type safety with 'any' assertions
+    "@typescript-eslint/consistent-indexed-object-style": ["error", "record"],
+    "@typescript-eslint/no-unsafe-return": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn"
   }
 };

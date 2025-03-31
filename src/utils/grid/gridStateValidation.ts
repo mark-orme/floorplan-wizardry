@@ -19,11 +19,12 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
   Object.keys(state).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
       const typedKey = key as keyof GridCreationState;
-      // Use a more specific approach to typing the assignment
-      const value = state[typedKey];
       
-      // Make sure we're setting a value of the correct type
-      validState[typedKey] = value as any as typeof validState[typeof typedKey];
+      // Type-safe assignment using indexed access types
+      if (typedKey in state) {
+        // This tells TypeScript we're only assigning keys that exist in GridCreationState
+        validState[typedKey] = state[typedKey] as GridCreationState[typeof typedKey];
+      }
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
     }
@@ -43,11 +44,12 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
   Object.keys(updates).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
       const typedKey = key as keyof GridCreationState;
-      // Use a more specific approach to typing the assignment
-      const value = updates[typedKey];
       
-      // Make sure we're setting a value of the correct type
-      validUpdates[typedKey] = value as any as GridCreationState[typeof typedKey];
+      // Type-safe assignment using indexed access types
+      if (typedKey in updates) {
+        // This tells TypeScript we're only assigning keys that exist in GridCreationState
+        validUpdates[typedKey] = updates[typedKey] as GridCreationState[typeof typedKey];
+      }
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
     }
@@ -80,17 +82,15 @@ export const repairGridState = (state: Record<string, unknown>): Partial<GridCre
     if (key in DEFAULT_GRID_CREATION_STATE) {
       // Use proper type-safe way to copy properties
       const typedKey = key as keyof GridCreationState;
-      const value = state[key];
       
-      // Use proper typing to avoid 'never' type error
-      repairedState[typedKey] = value as unknown as GridCreationState[typeof typedKey];
+      // Type-safe assignment that preserves the correct property type
+      repairedState[typedKey] = state[key] as GridCreationState[typeof typedKey];
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
-      const value = state[key];
       
-      // Use proper typing to avoid 'never' type error
-      repairedState[correctKey] = value as unknown as GridCreationState[typeof correctKey];
+      // Type-safe assignment that preserves the correct property type
+      repairedState[correctKey] = state[key] as GridCreationState[typeof correctKey];
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });
