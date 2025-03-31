@@ -108,12 +108,12 @@ export const useFloorPlanDrawing = (
         canvas.remove(...objectsToRemove);
       }
       
-      // Draw from floorPlan.objects if available
-      if (floorPlan.objects && Array.isArray(floorPlan.objects)) {
-        logger.info(`Drawing ${floorPlan.objects.length} objects`);
+      // Draw strokes from floorPlan if available
+      if (floorPlan.strokes && Array.isArray(floorPlan.strokes)) {
+        logger.info(`Drawing ${floorPlan.strokes.length} strokes`);
         
-        // Loop through floor plan objects and add them to canvas
-        // Implementation depends on object format
+        // Loop through floor plan strokes and add them to canvas
+        // Implementation depends on stroke format
       }
       
       canvas.renderAll();

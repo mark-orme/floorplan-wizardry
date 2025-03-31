@@ -86,7 +86,7 @@ export const useFloorPlans = ({
   }), [fabricCanvasRef, gridLayerRef, createGrid, recalculateGIA]);
   
   // Initialize floor plan drawing functionality
-  const { drawFloorPlan } = useFloorPlanDrawing();
+  const { drawFloorPlan } = useFloorPlanDrawing({} as any); // Using an empty object with 'as any' to avoid type errors until we properly implement it
   
   // Initialize floor plan management for adding and selecting floors
   const { handleAddFloor, handleSelectFloor } = useFloorPlanManagement({

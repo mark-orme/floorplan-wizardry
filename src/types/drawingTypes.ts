@@ -100,6 +100,25 @@ export interface DebugInfoState {
 }
 
 /**
+ * Distance tool state interface
+ * Contains properties for tracking distance measurements
+ */
+export interface DistanceToolState {
+  /** Whether the distance tool is active */
+  isActive: boolean;
+  /** Start point of measurement */
+  startPoint: Point | null;
+  /** End point of measurement */
+  endPoint: Point | null;
+  /** Current measured distance */
+  distance: number | null;
+  /** Current measurement label */
+  label: string | null;
+  /** Measurement unit */
+  unit: string;
+}
+
+/**
  * Represents a point in 2D space
  */
 export interface Point {

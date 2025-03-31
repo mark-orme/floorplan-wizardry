@@ -1,9 +1,11 @@
+
 import { useCallback, useEffect } from 'react';
-import { Canvas as FabricCanvas, Point, Line, Text } from 'fabric';
+import { Canvas as FabricCanvas, Point as FabricPoint, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
-import type { DistanceToolState } from '@/types/drawingTypes';
+import type { Point } from '@/types/core/Point';
+import { toFabricPoint } from '@/utils/fabricPointConverter';
 
 interface UseCanvasEventHandlersProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -43,7 +45,7 @@ export const useCanvasEventHandlers = ({
   
   // Variables for tracking straight line drawing
   let isDrawingStraightLine = false;
-  let straightLineStartPoint: Point | null = null;
+  let straightLineStartPoint: FabricPoint | null = null;
   let currentStraightLine: Line | null = null;
   let distanceTooltip: Text | null = null;
   
@@ -156,7 +158,8 @@ export const useCanvasEventHandlers = ({
       const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
       
       isDrawingStraightLine = true;
-      straightLineStartPoint = new Point(snappedPoint.x, snappedPoint.y);
+      // Convert our app Point to FabricPoint
+      straightLineStartPoint = new FabricPoint(snappedPoint.x, snappedPoint.y);
       
       // Create a new line
       currentStraightLine = new Line([
