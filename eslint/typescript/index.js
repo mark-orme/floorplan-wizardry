@@ -14,6 +14,7 @@ import { assertionRules } from './assertion-rules.js';
 import { reactTypescriptRules } from './react-rules.js';
 import { functionArgumentRules } from './function-argument-rules.js';
 import { gridStatePropertyRules } from './grid-state-property-rules.js';
+import { gridTypeSafetyRules } from './grid-type-safety.js';
 
 export const typescriptRules = [
   baseTypeScriptRules,
@@ -25,5 +26,6 @@ export const typescriptRules = [
   assertionRules,
   reactTypescriptRules,
   functionArgumentRules,
-  gridStatePropertyRules
+  gridStatePropertyRules,
+  gridTypeSafetyRules
 ];
