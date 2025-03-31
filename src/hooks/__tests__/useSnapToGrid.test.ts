@@ -12,8 +12,7 @@ describe('useSnapToGrid hook', () => {
     const { result } = renderHook(() => useSnapToGrid());
     
     expect(result.current.snapEnabled).toBe(true);
-    expect(result.current.isAutoStraightened).toBe(false);
-    expect(typeof result.current.toggleSnap).toBe('function');
+    expect(typeof result.current.toggleSnapToGrid).toBe('function');
     expect(typeof result.current.snapPointToGrid).toBe('function');
     expect(typeof result.current.snapLineToGrid).toBe('function');
     expect(typeof result.current.isSnappedToGrid).toBe('function');
@@ -27,14 +26,14 @@ describe('useSnapToGrid hook', () => {
     
     // Toggle it off
     act(() => {
-      result.current.toggleSnap();
+      result.current.toggleSnapToGrid();
     });
     
     expect(result.current.snapEnabled).toBe(false);
     
     // Toggle it back on
     act(() => {
-      result.current.toggleSnap();
+      result.current.toggleSnapToGrid();
     });
     
     expect(result.current.snapEnabled).toBe(true);
@@ -57,7 +56,7 @@ describe('useSnapToGrid hook', () => {
     
     // Turn off snapping
     act(() => {
-      result.current.toggleSnap();
+      result.current.toggleSnapToGrid();
     });
     
     // Create a point that's slightly off grid
