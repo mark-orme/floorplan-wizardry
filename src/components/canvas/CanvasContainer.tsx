@@ -33,10 +33,14 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
       const container = document.getElementById('canvas-container');
       if (container) {
         const { clientWidth, clientHeight } = container;
-        if (clientWidth !== dimensions.width || clientHeight !== dimensions.height) {
+        const newWidth = Math.max(clientWidth, 800);
+        const newHeight = Math.max(clientHeight, 600);
+        
+        // Only update state if dimensions actually changed
+        if (newWidth !== dimensions.width || newHeight !== dimensions.height) {
           setDimensions({
-            width: Math.max(clientWidth, 800),
-            height: Math.max(clientHeight, 600)
+            width: newWidth,
+            height: newHeight
           });
         }
       }
@@ -51,7 +55,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     return () => {
       window.removeEventListener('resize', updateDimensions);
     };
-  }, [dimensions]);
+  }, []); // Remove dimensions from the dependency array
 
   // Handle canvas ready
   const handleCanvasReady = (canvas: any) => {
