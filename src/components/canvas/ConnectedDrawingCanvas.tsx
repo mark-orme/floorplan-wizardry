@@ -1,12 +1,13 @@
 
 import React, { forwardRef, useEffect, useState, useRef, useImperativeHandle } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
+import { Point } from "@/types/core/Point";
 
 /**
  * Props for ConnectedDrawingCanvas component

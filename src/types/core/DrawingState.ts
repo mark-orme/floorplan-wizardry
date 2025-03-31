@@ -1,40 +1,36 @@
 
-/**
- * Drawing state type definitions
- * @module types/core/DrawingState
- */
-import { Point } from "./Point";
+import { Point } from './Point';
 
 /**
  * Drawing state interface
  * Contains the current state of drawing operations
  */
 export interface DrawingState {
-  /** Whether the user is currently drawing */
+  /** Whether currently drawing */
   isDrawing: boolean;
   /** Current path being drawn */
   currentPath: any | null;
-  /** Starting point of the current path */
+  /** Starting point of the path */
   pathStartPoint: Point | null;
   /** Current zoom level */
   zoomLevel: number;
-  /** Starting point of the current drawing operation */
+  /** Starting point */
   startPoint: Point | null;
-  /** Current point of the drawing operation */
+  /** Current point */
   currentPoint: Point | null;
-  /** Collection of points in the current drawing */
+  /** Collection of points */
   points: Point[];
-  /** Current measured distance */
+  /** Current distance measurement */
   distance: number | null;
   /** Current cursor position */
   cursorPosition: Point | null;
-  /** Current zoom level (duplicate for compatibility) */
+  /** Current zoom */
   currentZoom: number;
 }
 
 /**
  * Create a default drawing state
- * @returns {DrawingState} Default drawing state
+ * @returns {DrawingState} A new drawing state with default values
  */
 export const createDefaultDrawingState = (): DrawingState => ({
   isDrawing: false,
