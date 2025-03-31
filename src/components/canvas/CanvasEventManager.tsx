@@ -136,6 +136,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           break;
       }
       
+      // Check if grid needs to be created
+      if (gridLayerRef.current.length === 0) {
+        logger.info("No grid detected, attempting to create grid");
+        const gridObjects = createBasicGrid(canvas);
+        gridLayerRef.current = gridObjects;
+        logger.info(`Created grid with ${gridObjects.length} objects`);
+      }
+      
       // Ensure grid stays at the bottom
       if (gridLayerRef.current.length > 0) {
         gridLayerRef.current.forEach(obj => {
@@ -182,6 +190,13 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   useEffect(() => {
     if (!canvas || initialStateRef.current) return;
     
+    // Create grid if not already created
+    if (gridLayerRef.current.length === 0) {
+      const gridObjects = createBasicGrid(canvas);
+      gridLayerRef.current = gridObjects;
+      logger.info(`Created initial grid with ${gridObjects.length} objects`);
+    }
+    
     // Save initial state once when canvas is first available
     const timer = setTimeout(() => {
       saveCurrentState();
@@ -189,7 +204,46 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [canvas, saveCurrentState]);
+  }, [canvas, saveCurrentState, gridLayerRef]);
+  
+  // Function to create basic grid
+  const createBasicGrid = (canvas: FabricCanvas) => {
+    try {
+      const gridSize = 20;
+      const gridObjects: FabricObject[] = [];
+      const width = canvas.width || 800;
+      const height = canvas.height || 600;
+      
+      // Create horizontal grid lines
+      for (let i = 0; i <= height; i += gridSize) {
+        const line = new fabric.Line([0, i, width, i], {
+          stroke: "#e0e0e0",
+          selectable: false,
+          evented: false,
+          objectType: "grid"
+        } as any);
+        canvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      // Create vertical grid lines
+      for (let i = 0; i <= width; i += gridSize) {
+        const line = new fabric.Line([i, 0, i, height], {
+          stroke: "#e0e0e0",
+          selectable: false,
+          evented: false,
+          objectType: "grid"
+        } as any);
+        canvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      return gridObjects;
+    } catch (error) {
+      logger.error("Failed to create basic grid", error);
+      return [];
+    }
+  };
   
   return null; // This component doesn't render anything
 };

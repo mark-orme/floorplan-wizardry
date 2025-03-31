@@ -54,6 +54,16 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     tool
   });
 
+  // Create grid when canvas is initialized
+  useEffect(() => {
+    if (canvas && initialized && gridLayerRef.current.length === 0) {
+      const gridObjects = createGrid(canvas);
+      gridLayerRef.current = gridObjects;
+      logger.info(`Created grid on canvas initialization with ${gridObjects.length} objects`);
+      canvas.renderAll();
+    }
+  }, [canvas, initialized, createGrid]);
+
   const {
     historyStack,
     historyIndex,
