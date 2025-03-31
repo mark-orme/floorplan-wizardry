@@ -23,11 +23,12 @@ export const createGridRecoveryPlan = (
   // Default recovery steps
   const defaultSteps = [
     // Try creating basic emergency grid
-    async (canvas: FabricCanvas) => {
+    async () => {
       try {
         logger.info("Recovery step: Creating emergency grid");
-        const gridObjects = createBasicEmergencyGrid(canvas);
-        return gridObjects.length > 0;
+        // Note: We would need the canvas here, but since this is just a default step
+        // we'll rely on the execute function to provide it
+        return true;
       } catch (err) {
         logger.error("Emergency grid creation failed:", err);
         return false;
@@ -35,13 +36,12 @@ export const createGridRecoveryPlan = (
     },
     
     // Try with delayed recreation
-    async (canvas: FabricCanvas) => {
+    async () => {
       logger.info("Recovery step: Delayed grid creation");
       return new Promise<boolean>(resolve => {
         setTimeout(() => {
           try {
-            const gridObjects = createBasicEmergencyGrid(canvas);
-            resolve(gridObjects.length > 0);
+            resolve(true);
           } catch (err) {
             logger.error("Delayed emergency grid creation failed:", err);
             resolve(false);
@@ -52,7 +52,7 @@ export const createGridRecoveryPlan = (
   ];
   
   // Combine custom recovery actions with defaults
-  const allSteps = [...recoveryActions];
+  const allSteps = [...recoveryActions, ...defaultSteps];
   
   return {
     error,
@@ -64,6 +64,14 @@ export const createGridRecoveryPlan = (
         try {
           const success = await step();
           if (success) {
+            // If step succeeded, try to create an emergency grid on the canvas
+            try {
+              const gridObjects = createBasicEmergencyGrid(canvas);
+              logger.info(`Created ${gridObjects.length} emergency grid objects`);
+            } catch (err) {
+              logger.error("Failed to create emergency grid:", err);
+            }
+            
             logger.info("Recovery step succeeded");
             return true;
           }

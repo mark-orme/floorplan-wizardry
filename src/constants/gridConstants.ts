@@ -37,7 +37,12 @@ export const GRID_CONSTANTS = {
   
   // Performance
   GRID_RENDER_THROTTLE: 300,
-  GRID_CHECK_INTERVAL: 2000
+  GRID_CHECK_INTERVAL: 2000,
+  
+  // Added properties for markers
+  PIXELS_PER_METER: 100,
+  MARKER_TEXT_SIZE: 12,
+  MARKER_COLOR: '#555555'
 };
 
 // Export for legacy compatibility

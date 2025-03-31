@@ -56,11 +56,11 @@ export const handleGridCreationError = async (canvas: FabricCanvas, error?: Erro
   });
   
   // Create recovery plan
-  const recoveryPlan = createGridRecoveryPlan(canvas, error);
+  const recoveryPlan = createGridRecoveryPlan(error || new Error("Unknown grid error"));
   
   // Try each recovery action
-  for (const action of recoveryPlan.actions) {
-    const success = await action();
+  for (const step of recoveryPlan.steps) {
+    const success = await step();
     if (success) {
       logger.info("Grid recovery successful");
       return true;

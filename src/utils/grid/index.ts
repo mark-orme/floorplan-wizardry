@@ -71,5 +71,5 @@ export {
   GridDebug
 } from './exports';
 
-// Export types
-export { GridOptions } from './gridRenderers';
+// Export types - Note the "export type" syntax
+export type { GridOptions } from './gridRenderers';
