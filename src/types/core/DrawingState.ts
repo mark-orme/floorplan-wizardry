@@ -1,63 +1,53 @@
 
 /**
- * Drawing state type definitions
- * Centralizes drawing state types to prevent inconsistencies
+ * Drawing state types
+ * Defines state interfaces for drawing operations
  * @module types/core/DrawingState
  */
 import { Point } from './Geometry';
 
 /**
  * Drawing state interface
- * Contains the current state of drawing operations
+ * Contains the current state of drawing operations on the canvas
  */
 export interface DrawingState {
-  /** Whether currently drawing */
+  /** Whether a drawing operation is in progress */
   isDrawing: boolean;
-  /** Current path being drawn */
+  /** Current path being drawn (Fabric.js path object) */
   currentPath: any | null;
-  /** Starting point of the path */
+  /** Starting point of the current path */
   pathStartPoint: Point | null;
-  /** Current zoom level */
+  /** Current zoom level of the canvas */
   zoomLevel: number;
-  /** Starting point */
+  /** Starting point for measurements/shapes */
   startPoint: Point | null;
-  /** Current point */
+  /** Current point during drawing operation */
   currentPoint: Point | null;
-  /** Collection of points */
+  /** Collection of points for complex paths */
   points: Point[];
-  /** Current distance measurement */
+  /** Current measured distance (for measurement tool) */
   distance: number | null;
-  /** Current cursor position */
+  /** Current cursor position on canvas */
   cursorPosition: Point | null;
-  /** Current zoom */
+  /** Alias for zoom level for backward compatibility */
   currentZoom: number;
-  /** Whether stylus is detected */
-  stylusDetected?: boolean;
-  /** Whether to use pressure sensitivity */
-  usePressure?: boolean;
-  /** Whether a selection is active */
-  selectionActive?: boolean;
-  /** The midpoint between start and current point */
-  midPoint?: Point | null;
 }
 
 /**
- * Create a default drawing state
- * @returns {DrawingState} A new drawing state with default values
+ * Create a default drawing state with initial values
+ * @returns A new DrawingState object with default values
  */
-export const createDefaultDrawingState = (): DrawingState => ({
-  isDrawing: false,
-  zoomLevel: 1,
-  currentPath: null,
-  pathStartPoint: null,
-  startPoint: null,
-  currentPoint: null,
-  points: [],
-  distance: null,
-  cursorPosition: null,
-  currentZoom: 1,
-  stylusDetected: false,
-  usePressure: false,
-  selectionActive: false,
-  midPoint: null
-});
+export function createDefaultDrawingState(): DrawingState {
+  return {
+    isDrawing: false,
+    currentPath: null,
+    pathStartPoint: null,
+    zoomLevel: 1,
+    startPoint: null,
+    currentPoint: null,
+    points: [],
+    distance: null,
+    cursorPosition: null,
+    currentZoom: 1
+  };
+}

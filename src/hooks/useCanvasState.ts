@@ -7,11 +7,11 @@
 import { useState } from 'react';
 import { BRUSH_CONSTANTS } from '@/constants/brushConstants';
 import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
-import type { DrawingTool } from '@/types/drawing/DrawingToolTypes';
+import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Export DrawingTool and DrawingMode from the canonical source
+ * Export DrawingMode from the canonical source
  * This ensures consistency across the application
  */
 export { DrawingMode };
@@ -19,6 +19,7 @@ export type { DrawingTool };
 
 /**
  * Canvas state interface
+ * Defines the complete state for the canvas
  */
 export interface CanvasState {
   /** Active drawing tool */
@@ -34,7 +35,27 @@ export interface CanvasState {
 }
 
 /**
+ * Result interface for useCanvasState hook
+ * Includes state values and setter functions
+ */
+export interface UseCanvasStateResult extends CanvasState {
+  /** Set active drawing tool */
+  setTool: (tool: DrawingMode) => void;
+  /** Set zoom level */
+  setZoomLevel: (zoomLevel: number) => void;
+  /** Set line thickness */
+  setLineThickness: (lineThickness: number) => void;
+  /** Set line color */
+  setLineColor: (lineColor: string) => void;
+  /** Set snap to grid */
+  setSnapToGrid: (snapToGrid: boolean) => void;
+  /** Toggle snap to grid */
+  toggleSnapToGrid: () => void;
+}
+
+/**
  * Default canvas state values
+ * Initial state for the canvas
  */
 export const DEFAULT_CANVAS_STATE: CanvasState = {
   tool: DrawingMode.SELECT,
@@ -48,14 +69,14 @@ export const DEFAULT_CANVAS_STATE: CanvasState = {
  * Hook for managing canvas state
  * @returns Canvas state and setter functions
  */
-export const useCanvasState = () => {
+export function useCanvasState(): UseCanvasStateResult {
   const [state, setState] = useState<CanvasState>(DEFAULT_CANVAS_STATE);
   
   /**
    * Set active drawing tool
    * @param tool - Drawing tool to set
    */
-  const setTool = (tool: DrawingMode) => {
+  const setTool = (tool: DrawingMode): void => {
     setState(prev => ({ ...prev, tool }));
   };
   
@@ -63,7 +84,7 @@ export const useCanvasState = () => {
    * Set zoom level
    * @param zoomLevel - Zoom level to set
    */
-  const setZoomLevel = (zoomLevel: number) => {
+  const setZoomLevel = (zoomLevel: number): void => {
     setState(prev => ({ ...prev, zoomLevel }));
   };
   
@@ -71,7 +92,7 @@ export const useCanvasState = () => {
    * Set line thickness
    * @param lineThickness - Line thickness to set
    */
-  const setLineThickness = (lineThickness: number) => {
+  const setLineThickness = (lineThickness: number): void => {
     setState(prev => ({ ...prev, lineThickness }));
   };
   
@@ -79,7 +100,7 @@ export const useCanvasState = () => {
    * Set line color
    * @param lineColor - Line color to set
    */
-  const setLineColor = (lineColor: string) => {
+  const setLineColor = (lineColor: string): void => {
     setState(prev => ({ ...prev, lineColor }));
   };
   
@@ -87,14 +108,14 @@ export const useCanvasState = () => {
    * Set snap to grid
    * @param snapToGrid - Whether to snap to grid
    */
-  const setSnapToGrid = (snapToGrid: boolean) => {
+  const setSnapToGrid = (snapToGrid: boolean): void => {
     setState(prev => ({ ...prev, snapToGrid }));
   };
   
   /**
    * Toggle snap to grid
    */
-  const toggleSnapToGrid = () => {
+  const toggleSnapToGrid = (): void => {
     setState(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }));
   };
   
@@ -107,4 +128,4 @@ export const useCanvasState = () => {
     setSnapToGrid,
     toggleSnapToGrid
   };
-};
+}

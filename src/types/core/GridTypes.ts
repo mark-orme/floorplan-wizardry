@@ -1,104 +1,109 @@
 
 /**
+ * Grid types and interfaces
+ * Defines types for grid creation and management
+ * @module types/core/GridTypes
+ */
+
+/**
  * Grid creation state interface
- * Contains information about the current state of grid creation
+ * Tracks the state of grid creation on the canvas
  */
 export interface GridCreationState {
   /** Whether grid creation has started */
   started: boolean;
-  /** Whether grid creation is complete */
+  /** Whether grid creation has completed */
   completed: boolean;
-  /** Timestamp of when grid creation started */
-  startTime?: number;
-  /** Timestamp of when grid creation completed */
-  endTime?: number;
-  /** Number of grid objects created */
+  /** Count of grid objects created */
   objectCount: number;
-  /** Any error that occurred during grid creation */
-  error?: string;
+  /** Time when grid creation started */
+  startTime: number;
+  /** Time when grid creation ended */
+  endTime: number;
+  /** Error message if grid creation failed */
+  error: string | null;
   /** Whether grid creation is in progress */
   inProgress: boolean;
-  /** Whether grid has been successfully created */
+  /** Whether the grid has been created successfully */
   isCreated: boolean;
-  /** Number of creation attempts */
+  /** Number of attempts to create the grid */
   attempts: number;
-  /** Timestamp of last attempt */
+  /** Time of the last creation attempt */
   lastAttemptTime: number;
   /** Whether there was an error during creation */
   hasError: boolean;
-  /** Error message if creation failed */
+  /** Error message if there was an error */
   errorMessage: string;
-  /** Whether creation is currently in progress */
+  /** Whether grid creation is currently in progress */
   creationInProgress: boolean;
-  /** Count of consecutive reset attempts */
+  /** Number of consecutive reset operations */
   consecutiveResets: number;
   /** Maximum allowed consecutive resets */
   maxConsecutiveResets: number;
-  /** Whether grid exists */
+  /** Whether the grid exists */
   exists: boolean;
-  /** Timestamp of last creation */
+  /** Time of last successful creation */
   lastCreationTime: number;
-  /** Minimum time between creation attempts */
+  /** Minimum interval between recreation attempts */
   throttleInterval: number;
-  /** Total number of grid creations */
+  /** Total number of creation operations */
   totalCreations: number;
-  /** Maximum number of allowed recreations */
+  /** Maximum number of recreation attempts */
   maxRecreations: number;
-  /** Minimum time between recreation attempts */
+  /** Minimum interval between recreation attempts */
   minRecreationInterval: number;
-  /** Creation lock to prevent concurrent operations */
-  creationLock: GridCreationLock;
 }
 
 /**
  * Grid creation lock interface
- * Used to prevent multiple simultaneous grid creation attempts
+ * Controls grid creation synchronization
  */
 export interface GridCreationLock {
-  /** Whether the grid creation is locked */
+  /** Whether the grid is currently locked for creation */
   isLocked: boolean;
-  /** ID of the grid creation process holding the lock */
-  lockId?: string;
+  /** ID of the operation that acquired the lock */
+  lockedBy: string | null;
   /** Timestamp when the lock was acquired */
-  timestamp?: number;
-  /** ID number for the lock */
-  id?: number;
+  lockedAt: number | null;
+  /** Maximum time the lock can be held */
+  maxLockTime: number;
 }
 
 /**
  * Default grid creation state
+ * Initial values for grid creation state
  */
 export const DEFAULT_GRID_CREATION_STATE: GridCreationState = {
   started: false,
   completed: false,
   objectCount: 0,
+  startTime: 0,
+  endTime: 0,
+  error: null,
   inProgress: false,
   isCreated: false,
   attempts: 0,
   lastAttemptTime: 0,
   hasError: false,
-  errorMessage: "",
+  errorMessage: '',
   creationInProgress: false,
   consecutiveResets: 0,
-  maxConsecutiveResets: 5,
+  maxConsecutiveResets: 3,
   exists: false,
   lastCreationTime: 0,
-  throttleInterval: 500,
+  throttleInterval: 1000,
   totalCreations: 0,
-  maxRecreations: 10,
-  minRecreationInterval: 1000,
-  creationLock: {
-    isLocked: false,
-    id: 0,
-    timestamp: 0
-  }
+  maxRecreations: 5,
+  minRecreationInterval: 500
 };
 
 /**
  * Default grid creation lock
+ * Initial values for grid creation lock
  */
 export const DEFAULT_GRID_CREATION_LOCK: GridCreationLock = {
   isLocked: false,
-  id: 0,
-  timestamp: 0
+  lockedBy: null,
+  lockedAt: null,
+  maxLockTime: 5000
 };
