@@ -1,93 +1,106 @@
 
 /**
  * Grid basics utilities
- * Core functions for grid creation and management
  * @module utils/grid/gridBasics
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createBasicEmergencyGrid } from "../gridCreationUtils";
+
+import { Canvas, Object as FabricObject } from "fabric";
+import { GRID_ERROR_MESSAGES } from "./errorTypes";
+import { createSimpleGrid } from "./gridRenderers";
 import logger from "@/utils/logger";
 
 /**
  * Create a basic grid
- * 
- * @param {FabricCanvas} canvas - The fabric.js canvas instance
+ * @param {Canvas} canvas - The fabric canvas instance
+ * @param {number} [spacing=20] - Grid spacing in pixels
  * @returns {FabricObject[]} Created grid objects
  */
 export const createBasicGrid = (
-  canvas: FabricCanvas
+  canvas: Canvas, 
+  spacing: number = 20
 ): FabricObject[] => {
-  try {
-    // Use the basic emergency grid
-    return createBasicEmergencyGrid(canvas);
-  } catch (error) {
-    logger.error("Error creating basic grid:", error);
-    return [];
-  }
+  return createSimpleGrid(canvas, { spacing });
 };
 
 /**
- * Clear grid from canvas
- * 
- * @param {FabricCanvas} canvas - The fabric.js canvas instance
- * @returns {boolean} Whether clearing was successful
+ * Clear all grid objects from the canvas
+ * @param {Canvas} canvas - The fabric canvas instance
+ * @returns {number} Number of grid objects removed
  */
-export const clearGrid = (
-  canvas: FabricCanvas
-): boolean => {
-  try {
-    if (!canvas) return false;
-    
-    // Find and remove all grid objects
-    const gridObjects = canvas.getObjects().filter(obj => 
-      obj.objectType === 'grid'
-    );
-    
-    gridObjects.forEach(obj => {
-      canvas.remove(obj);
-    });
-    
-    canvas.renderAll();
-    return true;
-  } catch (error) {
-    logger.error("Error clearing grid:", error);
-    return false;
+export const clearGrid = (canvas: Canvas): number => {
+  if (!canvas) {
+    logger.error(GRID_ERROR_MESSAGES.CANVAS_NULL);
+    return 0;
   }
+  
+  // Find all grid objects
+  const gridObjects = canvas.getObjects().filter(obj => obj.objectType === 'grid');
+  
+  // Remove them from the canvas
+  gridObjects.forEach(obj => {
+    canvas.remove(obj);
+  });
+  
+  // Render the canvas
+  canvas.renderAll();
+  
+  logger.info(`Cleared ${gridObjects.length} grid objects`);
+  return gridObjects.length;
 };
 
 /**
  * Check if canvas is valid for grid creation
- * 
- * @param {FabricCanvas} canvas - The fabric.js canvas instance
- * @returns {boolean} Whether canvas is valid
+ * @param {Canvas | null} canvas - The fabric canvas instance
+ * @returns {boolean} Whether the canvas is valid
  */
-export const isCanvasValidForGrid = (
-  canvas: FabricCanvas
-): boolean => {
-  if (!canvas) return false;
+export const isCanvasValidForGrid = (canvas: Canvas | null): boolean => {
+  if (!canvas) {
+    return false;
+  }
   
-  return Boolean(
-    canvas.width && 
-    canvas.height && 
-    canvas.width > 0 && 
-    canvas.height > 0
-  );
+  // Check canvas dimensions
+  if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
+    return false;
+  }
+  
+  return true;
 };
 
 /**
- * Create a simple grid
- * 
- * @param {FabricCanvas} canvas - The fabric.js canvas instance
- * @returns {FabricObject[]} Created grid objects
+ * Reorder grid objects to be at the back of the canvas
+ * @param {Canvas} canvas - The fabric canvas instance
+ * @param {FabricObject[]} gridObjects - Grid objects to reorder
+ * @returns {boolean} Whether reordering was successful
  */
-export const createSimpleGrid = (
-  canvas: FabricCanvas
-): FabricObject[] => {
+export const reorderGridObjects = (
+  canvas: Canvas, 
+  gridObjects: FabricObject[]
+): boolean => {
+  if (!canvas) {
+    logger.error(GRID_ERROR_MESSAGES.CANVAS_NULL);
+    return false;
+  }
+  
+  if (!gridObjects || gridObjects.length === 0) {
+    logger.warn("No grid objects to reorder");
+    return false;
+  }
+  
   try {
-    // Use the basic emergency grid for now
-    return createBasicEmergencyGrid(canvas);
+    // Send all grid objects to the back of the canvas
+    gridObjects.forEach(obj => {
+      if (canvas.contains(obj)) {
+        canvas.sendObjectToBack(obj);
+      }
+    });
+    
+    // Render the canvas
+    canvas.renderAll();
+    
+    logger.info(`Reordered ${gridObjects.length} grid objects to back`);
+    return true;
   } catch (error) {
-    logger.error("Error creating simple grid:", error);
-    return [];
+    logger.error("Error reordering grid objects:", error);
+    return false;
   }
 };

@@ -1,185 +1,128 @@
 
 /**
- * Hook for grid creation debugging
- * Provides utilities for diagnosing and fixing grid-related issues
+ * Debug hook for grid creation
+ * @module hooks/useGridCreationDebug
  */
+
 import { useCallback, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { toast } from "sonner";
-import { dumpGridState, forceCreateGrid } from "@/utils/grid/gridDebugUtils";
-import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
+import { Canvas as FabricCanvas } from "fabric";
+import { 
+  runGridDiagnostics, 
+  applyGridFixes, 
+  emergencyGridFix 
+} from "@/utils/grid/gridDiagnostics";
+import { dumpGridState } from "@/utils/grid/gridDebugUtils";
+import logger from "@/utils/logger";
 
 /**
- * Interface for grid health information
+ * Interface for useGridCreationDebug hook props
  */
-interface GridHealth {
-  exists: boolean;
-  size: number;
-  objectsOnCanvas: number;
-  missingObjects: number;
+interface UseGridCreationDebugProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
 }
 
 /**
  * Hook for debugging grid creation issues
- * @param fabricCanvasRef Reference to the fabric canvas
- * @param gridLayerRef Reference to grid objects
- * @returns Debugging utilities
+ * 
+ * @param {UseGridCreationDebugProps} props - Hook props
+ * @returns Debug utilities and state
  */
-export const useGridCreationDebug = (
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-) => {
-  const [debugMode, setDebugMode] = useState(false);
-  const [isWaitingForCanvas, setIsWaitingForCanvas] = useState(false);
-
-  /**
-   * Toggle debug mode
-   */
-  const toggleDebugMode = useCallback(() => {
-    setDebugMode(prev => !prev);
-    
-    if (!debugMode) {
-      const canvas = fabricCanvasRef.current;
-      if (canvas) {
-        toast.info("Grid debug mode enabled");
-        dumpGridState(canvas, gridLayerRef.current);
-      } else {
-        toast.error("Canvas not available for debug");
-      }
-    } else {
-      toast.info("Grid debug mode disabled");
-    }
-  }, [debugMode, fabricCanvasRef, gridLayerRef]);
-
-  /**
-   * Check grid health
-   * @returns Grid health information or false if canvas not available
-   */
-  const checkGridHealth = useCallback((): GridHealth | false => {
+export const useGridCreationDebug = ({ fabricCanvasRef }: UseGridCreationDebugProps) => {
+  const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
+  const [isRunningTests, setIsRunningTests] = useState(false);
+  
+  // Run diagnostics on the grid
+  const runDiagnostics = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
-      setIsWaitingForCanvas(true);
-      console.log("Canvas not available for grid health check");
-      return false;
+      setDiagnosticResults({ error: "Canvas is not available" });
+      return;
     }
     
-    setIsWaitingForCanvas(false);
-    
-    const gridObjects = gridLayerRef.current;
-    if (!Array.isArray(gridObjects)) {
-      return {
-        exists: false,
-        size: 0,
-        objectsOnCanvas: 0,
-        missingObjects: 0
-      };
-    }
-    
-    const gridOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
-    
-    return {
-      exists: gridObjects.length > 0,
-      size: gridObjects.length,
-      objectsOnCanvas: gridOnCanvas.length,
-      missingObjects: gridObjects.length - gridOnCanvas.length
-    };
-  }, [fabricCanvasRef, gridLayerRef]);
-
-  /**
-   * Force grid creation
-   * @returns Array of created grid objects or false if canvas not available
-   */
-  const forceGridCreation = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) {
-      setIsWaitingForCanvas(true);
-      return false;
-    }
-    
-    setIsWaitingForCanvas(false);
+    setIsRunningTests(true);
     
     try {
-      // Clear any existing grid objects
-      const gridObjects = gridLayerRef.current;
-      if (Array.isArray(gridObjects)) {
-        gridObjects.forEach(obj => {
-          if (canvas.contains(obj)) {
-            try {
-              canvas.remove(obj);
-            } catch (error) {
-              console.error("Error removing grid object:", error);
-            }
-          }
-        });
-      }
+      // Run diagnostics
+      const results = runGridDiagnostics(canvas);
+      setDiagnosticResults(results);
       
-      // Reset grid layer reference
-      gridLayerRef.current = [];
+      // Log to console
+      logger.info("Grid diagnostics results:", results);
       
-      // Create new emergency grid
-      const newGridObjects = createBasicEmergencyGrid(canvas);
+      // Dump grid state
+      dumpGridState(canvas);
       
-      // Force render
-      canvas.requestRenderAll();
-      
-      return newGridObjects;
+      return results;
     } catch (error) {
-      console.error("Error in forceGridCreation:", error);
-      return false;
+      logger.error("Error running grid diagnostics:", error);
+      setDiagnosticResults({ error: error instanceof Error ? error.message : String(error) });
+      return null;
+    } finally {
+      setIsRunningTests(false);
     }
-  }, [fabricCanvasRef, gridLayerRef]);
-
-  /**
-   * Fix grid issues
-   * @returns Array of fixed grid objects or false if canvas not available
-   */
-  const fixGridIssues = useCallback(() => {
+  }, [fabricCanvasRef]);
+  
+  // Apply fixes to the grid
+  const applyFixes = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
-      setIsWaitingForCanvas(true);
-      return false;
+      return null;
     }
-    
-    setIsWaitingForCanvas(false);
     
     try {
-      const health = checkGridHealth();
-      if (!health) return false;
+      // Run diagnostics first
+      const diagnostics = runGridDiagnostics(canvas);
       
-      // If grid is completely missing, create new one
-      if (health.size === 0) {
-        return forceGridCreation();
-      }
+      // Apply fixes
+      const fixedGrid = applyGridFixes(canvas, diagnostics);
       
-      // If some grid objects are missing from canvas, add them back
-      if (health.objectsOnCanvas < health.size) {
-        const gridObjects = gridLayerRef.current;
-        
-        if (Array.isArray(gridObjects)) {
-          gridObjects.forEach(obj => {
-            if (!canvas.contains(obj)) {
-              canvas.add(obj);
-            }
-          });
-        }
-        
-        canvas.requestRenderAll();
-        return gridObjects;
-      }
+      logger.info(`Applied fixes to grid, created/fixed ${fixedGrid.length} objects`);
       
-      return gridLayerRef.current;
+      // Update diagnostic results
+      setDiagnosticResults({
+        ...diagnostics,
+        fixedGrid: fixedGrid.length,
+        fixApplied: true
+      });
+      
+      return fixedGrid;
     } catch (error) {
-      console.error("Error in fixGridIssues:", error);
-      return false;
+      logger.error("Error applying grid fixes:", error);
+      return null;
     }
-  }, [fabricCanvasRef, gridLayerRef, checkGridHealth, forceGridCreation]);
-
+  }, [fabricCanvasRef]);
+  
+  // Apply emergency fix
+  const applyEmergencyFix = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      return null;
+    }
+    
+    try {
+      // Apply emergency fix
+      const newGrid = emergencyGridFix(canvas);
+      
+      logger.info(`Applied emergency grid fix, created ${newGrid.length} objects`);
+      
+      // Update diagnostic results
+      setDiagnosticResults({
+        emergencyFixApplied: true,
+        newGridObjects: newGrid.length
+      });
+      
+      return newGrid;
+    } catch (error) {
+      logger.error("Error applying emergency grid fix:", error);
+      return null;
+    }
+  }, [fabricCanvasRef]);
+  
   return {
-    debugMode,
-    toggleDebugMode,
-    checkGridHealth,
-    forceGridCreation,
-    fixGridIssues,
-    isWaitingForCanvas
+    runDiagnostics,
+    applyFixes,
+    applyEmergencyFix,
+    diagnosticResults,
+    isRunningTests
   };
 };

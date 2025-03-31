@@ -10,11 +10,11 @@
 
 // Direct imports from gridCreationUtils
 import { 
-  createBasicEmergencyGrid,
+  createGrid,
   ensureGrid,
   createEnhancedGrid,
   validateGrid
-} from '../gridCreationUtils';
+} from './gridRenderers';
 
 // Direct named exports from gridValidation
 import {
@@ -30,7 +30,7 @@ import {
 
 // Re-export with clear namespacing
 export const GridCreation = {
-  createBasicEmergencyGrid,
+  createBasicEmergencyGrid: createGrid,
   ensureGrid,
   createEnhancedGrid,
   validateGrid
@@ -48,7 +48,7 @@ export const GridDebug = {
 
 // Also export individual functions for direct import
 export {
-  createBasicEmergencyGrid,
+  createGrid as createBasicEmergencyGrid,
   ensureGrid,
   validateCanvas,
   validateGridState,

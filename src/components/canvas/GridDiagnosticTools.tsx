@@ -1,253 +1,177 @@
 
-/**
- * Grid Diagnostic Tools Component
- * Provides UI for diagnosing and fixing grid rendering issues
- */
-import { useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import React, { useState, useCallback } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { AlertCircle, Database, Grid, RefreshCw } from "lucide-react";
 import { 
-  Wrench, 
-  RefreshCw, 
-  AlertTriangle, 
-  Bug, 
-  Grid, 
-  CheckCircle, 
-  XCircle 
-} from 'lucide-react';
-import { 
-  testGridCreationCapabilities, 
+  runGridDiagnostics,
+  applyGridFixes,
+  emergencyGridFix
+} from "@/utils/grid/gridDiagnostics";
+import {
+  testGridCreationCapabilities,
   analyzeGridRendering,
-  showGridTestPattern 
-} from '@/utils/grid/gridTester';
-import { 
-  forceGridRepair, 
-  checkGridImmediately
-} from '@/utils/grid/gridMonitoring';
-import { 
-  trackGridError, 
-  getGridErrorStats,
-  clearGridErrorStats 
-} from '@/utils/grid/gridErrorTracker';
+  showGridTestPattern
+} from "@/utils/grid/gridTester";
+import logger from "@/utils/logger";
 
 interface GridDiagnosticToolsProps {
-  /** Reference to the fabric canvas */
-  fabricCanvas: FabricCanvas | null;
-  /** Reference to grid objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Whether to show simple or detailed controls */
-  detailed?: boolean;
-  /** Callback to force grid creation */
-  onForceCreateGrid?: () => void;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  visible?: boolean;
 }
 
-/**
- * Grid Diagnostic Tools Component
- * Provides debugging and repair tools for grid rendering
- */
 export const GridDiagnosticTools: React.FC<GridDiagnosticToolsProps> = ({
-  fabricCanvas,
-  gridLayerRef,
-  detailed = false,
-  onForceCreateGrid
+  fabricCanvasRef,
+  visible = false
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastResult, setLastResult] = useState<Record<string, any> | null>(null);
+  const [results, setResults] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   
-  // Run grid test
-  const handleRunTest = async () => {
-    if (!fabricCanvas) {
-      toast.error("Canvas not available");
+  // Run diagnostics
+  const handleRunDiagnostics = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      setResults({ error: "Canvas is not available" });
       return;
     }
     
-    setIsLoading(true);
+    setLoading(true);
     
     try {
-      // Run comprehensive analysis
-      const results = analyzeGridRendering(fabricCanvas, gridLayerRef);
-      setLastResult(results);
-      
-      if (results.creationCapabilities.success && results.diagnostics.status === 'ok') {
-        toast.success("Grid test passed successfully");
-      } else {
-        toast.warning(
-          `Grid test found ${results.recommendations.length} issues`, 
-          { description: results.recommendations.join('. ') }
-        );
-      }
+      const diagnostics = runGridDiagnostics(canvas);
+      setResults(diagnostics);
     } catch (error) {
-      trackGridError(error, "grid-diagnostic-tool-test");
-      toast.error("Error running grid test");
+      logger.error("Error running grid diagnostics:", error);
+      setResults({ error: error instanceof Error ? error.message : String(error) });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [fabricCanvasRef]);
   
-  // Repair grid
-  const handleRepairGrid = () => {
-    if (!fabricCanvas) {
-      toast.error("Canvas not available");
+  // Apply fixes
+  const handleApplyFixes = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      setResults({ error: "Canvas is not available" });
       return;
     }
     
-    setIsLoading(true);
+    setLoading(true);
     
     try {
-      const success = forceGridRepair(fabricCanvas, gridLayerRef);
+      const diagnostics = runGridDiagnostics(canvas);
+      const fixedGrid = applyGridFixes(canvas, diagnostics);
       
-      if (success) {
-        toast.success("Grid repair completed");
-        // Run analysis after repair
-        setTimeout(() => {
-          const results = analyzeGridRendering(fabricCanvas, gridLayerRef);
-          setLastResult(results);
-        }, 500);
-      } else {
-        toast.error("Grid repair failed");
-      }
+      setResults({
+        ...diagnostics,
+        fixedGrid: fixedGrid.length,
+        fixApplied: true
+      });
     } catch (error) {
-      trackGridError(error, "grid-diagnostic-tool-repair");
-      toast.error("Error repairing grid");
+      logger.error("Error applying grid fixes:", error);
+      setResults({ error: error instanceof Error ? error.message : String(error) });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [fabricCanvasRef]);
   
-  // Show test pattern
-  const handleShowTestPattern = () => {
-    if (!fabricCanvas) {
-      toast.error("Canvas not available");
+  // Emergency fix
+  const handleEmergencyFix = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      setResults({ error: "Canvas is not available" });
       return;
     }
     
-    showGridTestPattern(fabricCanvas);
-  };
-  
-  // Force grid creation
-  const handleForceCreate = () => {
-    if (onForceCreateGrid) {
-      try {
-        onForceCreateGrid();
-        toast.success("Force grid recreation initiated");
-      } catch (error) {
-        trackGridError(error, "grid-diagnostic-tool-force-create");
-        toast.error("Error creating grid");
-      }
+    setLoading(true);
+    
+    try {
+      const newGrid = emergencyGridFix(canvas);
+      
+      setResults({
+        emergencyFixApplied: true,
+        newGridObjects: newGrid.length
+      });
+    } catch (error) {
+      logger.error("Error applying emergency grid fix:", error);
+      setResults({ error: error instanceof Error ? error.message : String(error) });
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [fabricCanvasRef]);
   
-  // Basic diagnostic version (simple)
-  if (!detailed) {
-    return (
-      <div className="fixed bottom-4 right-4 flex gap-2 z-50">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleRepairGrid}
-          disabled={isLoading || !fabricCanvas}
-          className="bg-white/90"
-        >
-          <Wrench className="h-4 w-4 mr-1" />
-          Fix Grid
-        </Button>
-      </div>
-    );
-  }
+  if (!visible) return null;
   
-  // Detailed diagnostic panel
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-white/95 p-3 rounded-lg shadow-lg border border-gray-200 w-72">
-      <div className="font-semibold mb-2 flex items-center">
-        <Grid className="h-4 w-4 mr-1" />
+    <div className="bg-white p-4 rounded shadow absolute bottom-4 right-4 z-50 text-xs">
+      <div className="font-bold mb-2 flex items-center">
+        <Database className="w-3 h-3 mr-1" />
         Grid Diagnostic Tools
       </div>
       
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleRunTest}
-            disabled={isLoading || !fabricCanvas}
-            className="flex-1"
-          >
-            <Bug className="h-4 w-4 mr-1" />
-            Test Grid
-          </Button>
-          
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleRepairGrid}
-            disabled={isLoading || !fabricCanvas}
-            className="flex-1"
-          >
-            <Wrench className="h-4 w-4 mr-1" />
-            Repair Grid
-          </Button>
-        </div>
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <Button 
+          size="sm" 
+          className="text-xs h-7"
+          onClick={handleRunDiagnostics}
+          disabled={loading}
+        >
+          Run Diagnostics
+        </Button>
         
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleShowTestPattern}
-            disabled={isLoading || !fabricCanvas}
-            className="flex-1"
-          >
-            <AlertTriangle className="h-4 w-4 mr-1" />
-            Test Pattern
-          </Button>
-          
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleForceCreate}
-            disabled={isLoading || !fabricCanvas || !onForceCreateGrid}
-            className="flex-1"
-          >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Force Create
-          </Button>
-        </div>
-        
-        {lastResult && (
-          <div className="text-xs mt-2 p-2 bg-gray-100 rounded">
-            <div className="font-semibold mb-1">Last Test Result:</div>
-            <div className="flex items-center">
-              {lastResult.creationCapabilities.success ? (
-                <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-              ) : (
-                <XCircle className="h-3 w-3 text-red-500 mr-1" />
-              )}
-              Creation: {lastResult.creationCapabilities.success ? 'OK' : 'Failed'}
-            </div>
-            <div className="flex items-center">
-              {lastResult.diagnostics.status === 'ok' ? (
-                <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-              ) : (
-                <XCircle className="h-3 w-3 text-red-500 mr-1" />
-              )}
-              Diagnostics: {lastResult.diagnostics.status.toUpperCase()}
-            </div>
-            {lastResult.recommendations.length > 0 && (
-              <div className="mt-1">
-                <span className="font-semibold">Fixes needed:</span>
-                <ul className="list-disc list-inside">
-                  {lastResult.recommendations.slice(0, 3).map((rec: string, i: number) => (
-                    <li key={i}>{rec}</li>
-                  ))}
-                  {lastResult.recommendations.length > 3 && (
-                    <li>...and {lastResult.recommendations.length - 3} more</li>
-                  )}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+        <Button 
+          size="sm" 
+          className="text-xs h-7"
+          onClick={handleApplyFixes}
+          disabled={loading}
+          variant="outline"
+        >
+          Apply Fixes
+        </Button>
       </div>
+      
+      <Button 
+        size="sm" 
+        className="text-xs w-full h-7 mb-2"
+        onClick={handleEmergencyFix}
+        disabled={loading}
+        variant="destructive"
+      >
+        <AlertCircle className="w-3 h-3 mr-1" />
+        Emergency Grid Reset
+      </Button>
+      
+      <Separator className="my-2" />
+      
+      {results && (
+        <div className="mt-2">
+          {results.error ? (
+            <div className="text-red-500">{results.error}</div>
+          ) : (
+            <div className="space-y-1">
+              <div>Canvas: {results.hasCanvas ? '✅' : '❌'}</div>
+              <div>Grid exists: {results.gridExists ? '✅' : '❌'}</div>
+              <div>Grid count: {results.gridCount}</div>
+              {results.issues && results.issues.length > 0 && (
+                <div className="text-red-500">
+                  Issues: {results.issues.join(', ')}
+                </div>
+              )}
+              {results.fixApplied && (
+                <div className="text-green-500">
+                  Fixes applied: {results.fixedGrid} objects
+                </div>
+              )}
+              {results.emergencyFixApplied && (
+                <div className="text-green-500">
+                  Emergency fix applied: {results.newGridObjects} objects
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

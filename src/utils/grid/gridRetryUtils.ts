@@ -1,72 +1,94 @@
 
 /**
  * Grid retry utilities
+ * Provides retry mechanisms for grid operations
  * @module utils/grid/gridRetryUtils
  */
+
 import logger from "@/utils/logger";
 
 /**
  * Retry an operation with exponential backoff
+ * Useful for operations that might temporarily fail
  * 
- * @param {() => Promise<T>} operation - Operation to retry
- * @param {number} maxAttempts - Maximum number of attempts
- * @param {number} initialDelay - Initial delay in milliseconds
- * @returns {Promise<T>} Result of operation
+ * @param {() => Promise<T>} operation - The async operation to retry
+ * @param {number} [maxRetries=3] - Maximum number of retry attempts
+ * @param {number} [initialDelay=100] - Initial delay in milliseconds
+ * @returns {Promise<T>} Result of the operation
  */
 export const retryWithBackoff = async <T>(
   operation: () => Promise<T>,
-  maxAttempts = 3,
-  initialDelay = 100
+  maxRetries: number = 3,
+  initialDelay: number = 100
 ): Promise<T> => {
-  let attempts = 0;
-  let delay = initialDelay;
+  let lastError: Error | undefined;
   
-  while (attempts < maxAttempts) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
-      attempts++;
+      lastError = error instanceof Error ? error : new Error(String(error));
       
-      // Throw if max attempts reached
-      if (attempts >= maxAttempts) {
-        throw error;
+      if (attempt === maxRetries - 1) {
+        // Last attempt failed, don't need to wait
+        break;
       }
       
-      // Wait with exponential backoff
-      delay *= 2;
+      // Calculate delay with exponential backoff
+      const delay = initialDelay * Math.pow(2, attempt);
+      
+      logger.warn(`Retry attempt ${attempt + 1}/${maxRetries} for operation, waiting ${delay}ms`, {
+        error: lastError.message
+      });
+      
+      // Wait for the calculated delay
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
-  throw new Error("Max retry attempts reached");
+  // All retries failed
+  throw lastError || new Error("Operation failed after retries");
 };
 
 /**
- * Execute an operation with timeout
+ * Execute an operation with a timeout
+ * Prevents operations from hanging indefinitely
  * 
- * @param {() => Promise<T>} operation - Operation to execute
- * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<T>} Result of operation
+ * @param {() => Promise<T>} operation - The async operation to execute
+ * @param {number} [timeoutMs=5000] - Timeout in milliseconds
+ * @returns {Promise<T>} Result of the operation
  */
 export const executeWithTimeout = async <T>(
   operation: () => Promise<T>,
-  timeout = 5000
+  timeoutMs: number = 5000
 ): Promise<T> => {
-  return new Promise((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
+    // Track whether the operation has completed
+    let hasCompleted = false;
+    
     // Set up timeout
     const timeoutId = setTimeout(() => {
-      reject(new Error(`Operation timed out after ${timeout}ms`));
-    }, timeout);
+      if (!hasCompleted) {
+        hasCompleted = true;
+        reject(new Error(`Operation timed out after ${timeoutMs}ms`));
+      }
+    }, timeoutMs);
     
-    // Execute operation
+    // Execute the operation
     operation()
       .then(result => {
-        clearTimeout(timeoutId);
-        resolve(result);
+        if (!hasCompleted) {
+          hasCompleted = true;
+          clearTimeout(timeoutId);
+          resolve(result);
+        }
       })
       .catch(error => {
-        clearTimeout(timeoutId);
-        reject(error);
+        if (!hasCompleted) {
+          hasCompleted = true;
+          clearTimeout(timeoutId);
+          reject(error);
+        }
       });
   });
 };

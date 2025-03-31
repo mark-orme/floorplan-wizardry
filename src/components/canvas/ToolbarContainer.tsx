@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { DrawingMode } from "@/constants/drawingModes";
 import { Object as FabricObject } from "fabric";
@@ -44,23 +43,33 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
   onLineThicknessChange = () => {},
   onLineColorChange = () => {}
 }) => {
+  // Add state for grid visibility
+  const [showGrid, setShowGrid] = useState<boolean>(true);
+  
+  // Toggle grid visibility
+  const handleToggleGrid = useCallback(() => {
+    setShowGrid(prev => !prev);
+  }, []);
+
   return (
-    <CanvasToolbar 
-      tool={tool}
-      onToolChange={setTool}
-      onUndo={onUndo}
-      onRedo={onRedo}
-      onZoom={onZoom}
-      onClear={onClear}
-      onSave={() => {}}
-      onDelete={onDelete}
-      gia={gia}
-      lineThickness={lineThickness}
-      lineColor={lineColor}
-      onLineThicknessChange={onLineThicknessChange}
-      onLineColorChange={onLineColorChange}
-      showGrid={showGrid}
-      onToggleGrid={onToggleGrid}
-    />
+    <div className="flex flex-col w-full">
+      <CanvasToolbar 
+        tool={tool}
+        onToolChange={setTool}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        onZoom={onZoom}
+        onClear={onClear}
+        onSave={() => {}}
+        onDelete={onDelete}
+        lineThickness={lineThickness}
+        onLineThicknessChange={onLineThicknessChange}
+        lineColor={lineColor}
+        onLineColorChange={onLineColorChange}
+        gia={gia}
+        showGrid={showGrid}
+        onToggleGrid={handleToggleGrid}
+      />
+    </div>
   );
 };

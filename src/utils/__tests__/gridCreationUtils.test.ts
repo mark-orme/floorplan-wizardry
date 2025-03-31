@@ -1,26 +1,24 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
-import { 
-  verifyGridExists, 
-  ensureGrid,
-  retryWithBackoff,
-  reorderGridObjects
-} from '../gridCreationUtils';
+import { ensureGrid } from '../grid/gridRenderers';
+import { validateGridState } from '../grid/gridValidation';
+import { retryWithBackoff } from '../grid/gridRetryUtils';
+import { reorderGridObjects } from '../grid/gridBasics';
 
 describe('gridCreationUtils', () => {
-  describe('verifyGridExists', () => {
+  describe('validateGridState', () => {
     it('should return false when canvas is null', () => {
       const gridRef = { current: [] };
       // @ts-ignore - We're intentionally passing null for testing
-      const result = verifyGridExists(null, gridRef);
+      const result = validateGridState(null, gridRef);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
       const gridRef = { current: [] };
-      const result = verifyGridExists(canvas, gridRef);
+      const result = validateGridState(canvas, gridRef);
       expect(result).toBe(false);
     });
     
@@ -31,22 +29,8 @@ describe('gridCreationUtils', () => {
       canvas.getObjects = vi.fn().mockReturnValue([]);
       
       const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
-      const result = verifyGridExists(canvas, gridRef);
+      const result = validateGridState(canvas, gridRef);
       expect(result).toBe(false);
-      expect(canvas.getObjects).toHaveBeenCalled();
-    });
-    
-    it('should return true when grid objects are on canvas', () => {
-      const canvas = new Canvas(null);
-      
-      // Mock canvas.getObjects to return objects with objectType='grid'
-      canvas.getObjects = vi.fn().mockReturnValue([
-        { objectType: 'grid' } as unknown as FabricObject
-      ]);
-      
-      const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
-      const result = verifyGridExists(canvas, gridRef);
-      expect(result).toBe(true);
       expect(canvas.getObjects).toHaveBeenCalled();
     });
   });

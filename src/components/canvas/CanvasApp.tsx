@@ -27,6 +27,9 @@ const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
   // State for GIA (Gross Internal Area)
   const [gia, setGia] = useState<number>(0);
   
+  // State for grid visibility
+  const [showGrid, setShowGrid] = useState<boolean>(true);
+  
   // Get drawing context
   const { 
     tool, 
@@ -68,6 +71,11 @@ const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     setCanUndo,
     setCanRedo
   });
+  
+  // Toggle grid visibility
+  const handleToggleGrid = useCallback(() => {
+    setShowGrid(prev => !prev);
+  }, []);
   
   // Reset initialization state when component mounts
   useEffect(() => {
@@ -132,6 +140,8 @@ const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
           onLineColorChange={handleLineColorChange}
           canUndo={canUndo}
           canRedo={canRedo}
+          showGrid={showGrid}
+          onToggleGrid={handleToggleGrid}
         />
         <CanvasContainer 
           onCanvasRef={handleCanvasRef}

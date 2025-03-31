@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Canvas as FabricCanvas } from "fabric";
+import { dumpGridState } from "@/utils/grid/gridDebugUtils";
 
 interface GridDebugOverlayProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -23,9 +24,12 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
     renderedAt: new Date().toISOString()
   };
 
-  // Function to dump grid state (accepts only one parameter)
-  const dumpGridState = () => {
-    console.log("Grid state:", debugInfo);
+  // Function to dump grid state 
+  const handleDumpGridState = () => {
+    if (canvas) {
+      dumpGridState(canvas, true); // Pass both required parameters
+      console.log("Grid state dumped to console");
+    }
   };
 
   return (
@@ -35,7 +39,7 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
       <div>Objects: {debugInfo.objectCount}</div>
       <div>Rendered: {new Date().toLocaleTimeString()}</div>
       <button 
-        onClick={dumpGridState} 
+        onClick={handleDumpGridState} 
         className="mt-1 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-xs"
       >
         Dump State

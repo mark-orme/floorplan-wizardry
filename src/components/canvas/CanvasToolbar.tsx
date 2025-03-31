@@ -1,81 +1,74 @@
 
-/**
- * Canvas Toolbar Component
- * Provides drawing tools and controls for the canvas
- * @module components/canvas/CanvasToolbar
- */
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Undo, 
-  Redo, 
-  Trash, 
-  Save, 
-  ZoomIn, 
-  ZoomOut,
-  MousePointer,
-  Pencil,
-  Square,
-  Circle,
-  Scissors,
-  Grid  
-} from "lucide-react";
 import { DrawingMode } from "@/constants/drawingModes";
+import { 
+  Pencil, 
+  MousePointer, 
+  Square, 
+  Circle, 
+  Type, 
+  Eraser, 
+  Hand, 
+  ZoomIn, 
+  ZoomOut, 
+  RefreshCw, 
+  Save, 
+  Trash2, 
+  Grid
+} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Toggle } from "@/components/ui/toggle";
 import { LineThicknessControl } from "./LineThicknessControl";
 import { ColorPicker } from "./ColorPicker";
+import { ZoomDirection } from "@/types/drawingTypes";
 
 /**
- * Props for CanvasToolbar component
+ * Props for Canvas Toolbar component
  */
 export interface CanvasToolbarProps {
   /** Current drawing tool */
   tool: DrawingMode;
+  /** Function to handle tool change */
+  onToolChange: (tool: DrawingMode) => void;
+  /** Function to handle undo operation */
+  onUndo: () => void;
+  /** Function to handle redo operation */
+  onRedo: () => void;
+  /** Function to handle zoom operation */
+  onZoom: (direction: ZoomDirection) => void;
+  /** Function to clear canvas */
+  onClear: () => void;
+  /** Function to save canvas */
+  onSave: () => void;
+  /** Function to delete selected objects */
+  onDelete: () => void;
   /** Current line thickness */
   lineThickness: number;
+  /** Function to handle line thickness change */
+  onLineThicknessChange: (thickness: number) => void;
   /** Current line color */
   lineColor: string;
-  /** Gross internal area */
+  /** Function to handle line color change */
+  onLineColorChange: (color: string) => void;
+  /** Current GIA value */
   gia?: number;
   /** Whether undo is available */
   canUndo: boolean;
   /** Whether redo is available */
   canRedo: boolean;
-  /** Whether to show grid */
+  /** Whether grid is visible */
   showGrid: boolean;
-  /** Tool change handler */
-  onToolChange: (tool: DrawingMode) => void;
-  /** Undo handler */
-  onUndo: () => void;
-  /** Redo handler */
-  onRedo: () => void;
-  /** Zoom handler */
-  onZoom: (direction: "in" | "out") => void;
-  /** Clear canvas handler */
-  onClear: () => void;
-  /** Save canvas handler */
-  onSave: () => void;
-  /** Delete selected objects handler */
-  onDelete: () => void;
-  /** Line thickness change handler */
-  onLineThicknessChange: (thickness: number) => void;
-  /** Line color change handler */
-  onLineColorChange: (color: string) => void;
-  /** Toggle grid visibility handler */
+  /** Function to toggle grid visibility */
   onToggleGrid: () => void;
 }
 
 /**
  * Canvas Toolbar Component
- * Provides drawing tools and controls for the canvas
+ * Provides tools for drawing and manipulating canvas objects
  */
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   tool,
-  lineThickness,
-  lineColor,
-  gia,
-  canUndo,
-  canRedo,
-  showGrid,
   onToolChange,
   onUndo,
   onRedo,
@@ -83,160 +76,186 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   onClear,
   onSave,
   onDelete,
+  lineThickness,
   onLineThicknessChange,
+  lineColor,
   onLineColorChange,
+  gia,
+  canUndo,
+  canRedo,
+  showGrid,
   onToggleGrid
 }) => {
   return (
-    <div className="flex items-center p-2 gap-2 border-b border-gray-200 bg-gray-50">
-      {/* Drawing tools */}
-      <div className="flex items-center gap-1 border-r pr-2">
-        <Button
-          variant={tool === DrawingMode.SELECT ? "default" : "outline"}
-          size="icon"
-          onClick={() => onToolChange(DrawingMode.SELECT)}
-          title="Select Tool"
+    <div className="bg-white border-b border-gray-200 p-2 flex items-center gap-2 shadow-sm z-10">
+      {/* Tool selection group */}
+      <div className="flex gap-1">
+        <Toggle 
+          pressed={tool === DrawingMode.SELECT} 
+          onPressedChange={() => onToolChange(DrawingMode.SELECT)}
+          aria-label="Select tool"
+          size="sm"
         >
           <MousePointer className="h-4 w-4" />
-        </Button>
+        </Toggle>
         
-        <Button
-          variant={tool === DrawingMode.DRAW ? "default" : "outline"}
-          size="icon"
-          onClick={() => onToolChange(DrawingMode.DRAW)}
-          title="Draw Tool"
+        <Toggle 
+          pressed={tool === DrawingMode.DRAW} 
+          onPressedChange={() => onToolChange(DrawingMode.DRAW)}
+          aria-label="Draw tool"
+          size="sm"
         >
           <Pencil className="h-4 w-4" />
-        </Button>
+        </Toggle>
         
-        <Button
-          variant={tool === DrawingMode.RECTANGLE ? "default" : "outline"}
-          size="icon"
-          onClick={() => onToolChange(DrawingMode.RECTANGLE)}
-          title="Rectangle Tool"
+        <Toggle 
+          pressed={tool === DrawingMode.RECTANGLE} 
+          onPressedChange={() => onToolChange(DrawingMode.RECTANGLE)}
+          aria-label="Rectangle tool"
+          size="sm"
         >
           <Square className="h-4 w-4" />
-        </Button>
+        </Toggle>
         
-        <Button
-          variant={tool === DrawingMode.CIRCLE ? "default" : "outline"}
-          size="icon"
-          onClick={() => onToolChange(DrawingMode.CIRCLE)}
-          title="Circle Tool"
+        <Toggle 
+          pressed={tool === DrawingMode.CIRCLE} 
+          onPressedChange={() => onToolChange(DrawingMode.CIRCLE)}
+          aria-label="Circle tool"
+          size="sm"
         >
           <Circle className="h-4 w-4" />
-        </Button>
+        </Toggle>
         
-        <Button
-          variant={tool === DrawingMode.ERASER ? "default" : "outline"}
-          size="icon"
-          onClick={() => onToolChange(DrawingMode.ERASER)}
-          title="Eraser Tool"
+        <Toggle 
+          pressed={tool === DrawingMode.TEXT} 
+          onPressedChange={() => onToolChange(DrawingMode.TEXT)}
+          aria-label="Text tool"
+          size="sm"
         >
-          <Scissors className="h-4 w-4" />
-        </Button>
+          <Type className="h-4 w-4" />
+        </Toggle>
+        
+        <Toggle 
+          pressed={tool === DrawingMode.ERASER} 
+          onPressedChange={() => onToolChange(DrawingMode.ERASER)}
+          aria-label="Eraser tool"
+          size="sm"
+        >
+          <Eraser className="h-4 w-4" />
+        </Toggle>
+        
+        <Toggle 
+          pressed={tool === DrawingMode.HAND} 
+          onPressedChange={() => onToolChange(DrawingMode.HAND)}
+          aria-label="Hand tool"
+          size="sm"
+        >
+          <Hand className="h-4 w-4" />
+        </Toggle>
       </div>
       
-      {/* History operations */}
-      <div className="flex items-center gap-1 border-r pr-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onUndo}
-          disabled={!canUndo}
-          title="Undo"
-        >
-          <Undo className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onRedo}
-          disabled={!canRedo}
-          title="Redo"
-        >
-          <Redo className="h-4 w-4" />
-        </Button>
-      </div>
+      <Separator orientation="vertical" className="h-8" />
       
-      {/* Canvas operations */}
-      <div className="flex items-center gap-1 border-r pr-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onZoom("in")}
-          title="Zoom In"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onZoom("out")}
-          title="Zoom Out"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant={showGrid ? "default" : "outline"}
-          size="icon"
-          onClick={onToggleGrid}
-          title={showGrid ? "Hide Grid" : "Show Grid"}
-        >
-          <Grid className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Style controls */}
+      <LineThicknessControl 
+        value={lineThickness} 
+        onChange={onLineThicknessChange} 
+      />
       
-      {/* File operations */}
-      <div className="flex items-center gap-1 border-r pr-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onClear}
-          title="Clear Canvas"
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onSave}
-          title="Save Canvas"
-        >
-          <Save className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onDelete}
-          title="Delete Selected"
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
-      </div>
+      <ColorPicker 
+        color={lineColor} 
+        onChange={onLineColorChange} 
+      />
       
-      {/* Line properties */}
-      <div className="flex items-center gap-2">
-        <LineThicknessControl
-          value={lineThickness}
-          onChange={onLineThicknessChange}
-        />
-        
-        <ColorPicker
-          color={lineColor}
-          onChange={onLineColorChange}
-        />
-      </div>
+      <Separator orientation="vertical" className="h-8" />
       
-      {/* GIA display */}
+      {/* History controls */}
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onUndo}
+        disabled={!canUndo}
+        aria-label="Undo"
+      >
+        <RefreshCw className="h-4 w-4 rotate-[225deg]" />
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onRedo}
+        disabled={!canRedo}
+        aria-label="Redo"
+      >
+        <RefreshCw className="h-4 w-4 rotate-[135deg]" />
+      </Button>
+      
+      <Separator orientation="vertical" className="h-8" />
+      
+      {/* Zoom controls */}
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={() => onZoom("in")}
+        aria-label="Zoom in"
+      >
+        <ZoomIn className="h-4 w-4" />
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={() => onZoom("out")}
+        aria-label="Zoom out"
+      >
+        <ZoomOut className="h-4 w-4" />
+      </Button>
+      
+      <Separator orientation="vertical" className="h-8" />
+      
+      {/* Grid controls */}
+      <Toggle 
+        pressed={showGrid} 
+        onPressedChange={onToggleGrid}
+        aria-label="Toggle grid"
+        size="sm"
+      >
+        <Grid className="h-4 w-4" />
+      </Toggle>
+      
+      <Separator orientation="vertical" className="h-8" />
+      
+      {/* Action controls */}
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onClear}
+        aria-label="Clear canvas"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onSave}
+        aria-label="Save canvas"
+      >
+        <Save className="h-4 w-4" />
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onDelete}
+        aria-label="Delete selected"
+      >
+        <Trash2 className="h-4 w-4 text-red-500" />
+      </Button>
+      
       {gia !== undefined && (
         <div className="ml-auto text-sm">
-          <span className="font-semibold">GIA:</span> {gia} m²
+          <span className="font-medium">GIA:</span> {gia.toFixed(2)} m²
         </div>
       )}
     </div>

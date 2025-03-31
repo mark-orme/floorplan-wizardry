@@ -1,78 +1,77 @@
 
 /**
  * Grid recovery plans
+ * Provides strategies for recovering from grid-related errors
  * @module utils/grid/recoveryPlans
  */
-import { Canvas as FabricCanvas } from "fabric";
+
 import logger from "@/utils/logger";
 
 /**
- * Recovery plan interface
+ * Interface for a grid recovery plan
  */
 interface GridRecoveryPlan {
-  clearCanvas: boolean;
-  resizeCanvas: boolean;
-  useSimplifiedGrid: boolean;
-  disableBackgroundGrid: boolean;
-  recreateGridOnly: boolean;
+  /** Error that triggered the recovery plan */
+  originalError: Error;
+  /** Recovery steps to attempt */
+  steps: (() => Promise<boolean>)[];
+  /** Execute the recovery plan */
+  execute: () => Promise<boolean>;
 }
 
 /**
- * Create a grid recovery plan based on the encountered error
- * 
+ * Create a recovery plan for a grid error
  * @param {Error} error - The error that occurred
- * @param {FabricCanvas} canvas - The fabric canvas instance
+ * @param {(() => Promise<boolean>)[]} recoveryActions - Recovery actions to attempt
  * @returns {GridRecoveryPlan} Recovery plan
  */
 export const createGridRecoveryPlan = (
   error: Error,
-  canvas: FabricCanvas
+  recoveryActions: (() => Promise<boolean>)[] = []
 ): GridRecoveryPlan => {
-  const errorMessage = error.message.toLowerCase();
-  const objectCount = canvas ? canvas.getObjects().length : 0;
+  logger.warn("Creating grid recovery plan for error:", error.message);
   
-  // Default recovery plan
-  const plan: GridRecoveryPlan = {
-    clearCanvas: false,
-    resizeCanvas: false,
-    useSimplifiedGrid: false,
-    disableBackgroundGrid: false,
-    recreateGridOnly: true
+  // Default recovery steps
+  const defaultSteps: (() => Promise<boolean>)[] = [
+    // Basic recovery step - wait and retry
+    async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return true;
+    }
+  ];
+  
+  // Combine provided actions with default steps
+  const steps = [...recoveryActions, ...defaultSteps];
+  
+  // Create the recovery plan
+  const recoveryPlan: GridRecoveryPlan = {
+    originalError: error,
+    steps,
+    
+    // Execute the recovery plan
+    execute: async () => {
+      logger.info("Executing grid recovery plan with", steps.length, "steps");
+      
+      for (let i = 0; i < steps.length; i++) {
+        try {
+          logger.debug(`Executing recovery step ${i + 1}/${steps.length}`);
+          const result = await steps[i]();
+          
+          if (result) {
+            logger.info(`Recovery step ${i + 1} succeeded`);
+            return true;
+          }
+          
+          logger.warn(`Recovery step ${i + 1} failed, trying next step`);
+        } catch (stepError) {
+          logger.error(`Error in recovery step ${i + 1}:`, stepError);
+        }
+      }
+      
+      logger.error("All recovery steps failed");
+      return false;
+    }
   };
   
-  // Canvas initialization issues
-  if (
-    errorMessage.includes("canvas") && 
-    (errorMessage.includes("null") || 
-     errorMessage.includes("undefined") ||
-     errorMessage.includes("initialize"))
-  ) {
-    plan.resizeCanvas = true;
-    plan.clearCanvas = true;
-    plan.useSimplifiedGrid = true;
-    logger.warn("Recovery plan: Canvas initialization issues detected");
-  }
-  
-  // Rendering issues
-  else if (
-    errorMessage.includes("render") || 
-    errorMessage.includes("draw")
-  ) {
-    plan.useSimplifiedGrid = true;
-    plan.disableBackgroundGrid = true;
-    logger.warn("Recovery plan: Rendering issues detected");
-  }
-  
-  // Object creation issues
-  else if (
-    errorMessage.includes("object") || 
-    errorMessage.includes("create") || 
-    objectCount > 100
-  ) {
-    plan.clearCanvas = true;
-    plan.useSimplifiedGrid = true;
-    logger.warn("Recovery plan: Object issues detected");
-  }
-  
-  return plan;
+  return recoveryPlan;
 };

@@ -1,8 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Bug, Grid, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Layers } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
+import { dumpGridState } from "@/utils/grid/gridDebugUtils";
+import { runGridDiagnostics, applyGridFixes } from "@/utils/grid/gridDiagnostics";
 
 interface GridDebugPanelProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -15,86 +18,155 @@ export const GridDebugPanel: React.FC<GridDebugPanelProps> = ({
   gridLayerRef,
   visible
 }) => {
-  const [gridCount, setGridCount] = useState(0);
-  const [canvasInfo, setCanvasInfo] = useState({
-    width: 0,
-    height: 0,
-    objectCount: 0
-  });
+  const [expanded, setExpanded] = useState(false);
+  const [gridInfo, setGridInfo] = useState<any>(null);
   
-  // Update info when component mounts or refs change
-  useEffect(() => {
-    if (!visible) return;
-    
-    const updateInfo = () => {
-      const canvas = fabricCanvasRef.current;
-      if (!canvas) return;
-      
-      setGridCount(gridLayerRef.current.length);
-      setCanvasInfo({
-        width: canvas.width || 0,
-        height: canvas.height || 0,
-        objectCount: canvas.getObjects().length
-      });
-    };
-    
-    updateInfo();
-    
-    // Update periodically
-    const intervalId = setInterval(updateInfo, 2000);
-    return () => clearInterval(intervalId);
-  }, [fabricCanvasRef, gridLayerRef, visible]);
-  
-  if (!visible) return null;
-  
-  // Function to dump grid state to console (accepts only canvas and gridObjects)
-  const dumpGridState = () => {
+  // Get grid information
+  const refreshGridInfo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    console.log("Grid Debug State:", {
-      canvasWidth: canvas.width,
-      canvasHeight: canvas.height,
-      gridObjects: gridLayerRef.current.length,
-      allObjects: canvas.getObjects().length
+    // Run diagnostics
+    const diagnostics = runGridDiagnostics(canvas);
+    
+    // Count objects
+    const allObjects = canvas.getObjects();
+    const gridObjects = allObjects.filter(obj => obj.objectType === 'grid');
+    const drawingObjects = allObjects.filter(obj => obj.objectType !== 'grid');
+    
+    setGridInfo({
+      ...diagnostics,
+      totalObjects: allObjects.length,
+      gridObjects: gridObjects.length,
+      drawingObjects: drawingObjects.length,
+      gridRefCount: gridLayerRef.current.length,
+      timestamp: new Date().toISOString()
     });
-  };
+  }, [fabricCanvasRef, gridLayerRef]);
+  
+  // Fix grid issues
+  const handleFixGrid = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Run diagnostics
+    const diagnostics = runGridDiagnostics(canvas);
+    
+    // Apply fixes
+    const fixedGrid = applyGridFixes(canvas, diagnostics);
+    
+    // Update grid layer reference
+    gridLayerRef.current = fixedGrid;
+    
+    // Refresh grid info
+    refreshGridInfo();
+  }, [fabricCanvasRef, gridLayerRef, refreshGridInfo]);
+  
+  // Dump grid state to console
+  const handleDumpGridState = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    dumpGridState(canvas, true);
+    console.log("Grid layer ref:", gridLayerRef.current);
+  }, [fabricCanvasRef, gridLayerRef]);
+  
+  // Toggle visibility
+  const toggleExpanded = useCallback(() => {
+    const newState = !expanded;
+    setExpanded(newState);
+    
+    if (newState) {
+      refreshGridInfo();
+    }
+  }, [expanded, refreshGridInfo]);
+  
+  if (!visible) return null;
   
   return (
-    <div className="absolute bottom-2 right-2 bg-white/95 p-3 rounded shadow z-50 text-xs">
-      <h3 className="font-bold text-sm mb-1">Grid Debug</h3>
-      
-      <div>
-        <span className="font-medium">Canvas:</span> {canvasInfo.width}×{canvasInfo.height}
-      </div>
-      <div>
-        <span className="font-medium">Grid Objects:</span> {gridCount}
-      </div>
-      <div>
-        <span className="font-medium">Total Objects:</span> {canvasInfo.objectCount}
-      </div>
-      
-      <div className="flex gap-1 mt-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs"
-          onClick={dumpGridState}
+    <div className="absolute bottom-4 right-4 z-50 text-xs">
+      {!expanded ? (
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="h-8 w-8 rounded-full p-0 bg-white/90"
+          onClick={toggleExpanded}
         >
-          <Layers className="h-3 w-3 mr-1" />
-          Dump State
+          <Bug className="h-4 w-4" />
         </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs"
-          onClick={() => console.log("Force refresh grid")}
-        >
-          <RefreshCw className="h-3 w-3 mr-1" />
-          Refresh
-        </Button>
-      </div>
+      ) : (
+        <div className="bg-white/90 p-3 rounded shadow w-60">
+          <div className="flex justify-between items-center mb-2">
+            <div className="font-bold flex items-center">
+              <Grid className="h-3 w-3 mr-1" /> Grid Debug
+            </div>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-5 w-5 p-0"
+              onClick={toggleExpanded}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Button 
+                size="sm" 
+                className="text-xs h-7 px-2"
+                onClick={refreshGridInfo}
+              >
+                <RefreshCw className="h-3 w-3 mr-1" /> Refresh
+              </Button>
+              
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-xs h-7 px-2"
+                onClick={handleFixGrid}
+              >
+                Fix Grid
+              </Button>
+              
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-xs h-7 px-2"
+                onClick={handleDumpGridState}
+              >
+                Log Details
+              </Button>
+            </div>
+            
+            {gridInfo && (
+              <div className="mt-2 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span>Canvas:</span>
+                  <span>{gridInfo.canvasDimensions.width}×{gridInfo.canvasDimensions.height}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Grid Objects:</span>
+                  <span>{gridInfo.gridObjects} / {gridInfo.gridRefCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Drawing Objects:</span>
+                  <span>{gridInfo.drawingObjects}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Grid Valid:</span>
+                  <span>{gridInfo.gridExists ? '✅' : '❌'}</span>
+                </div>
+                {gridInfo.issues && gridInfo.issues.length > 0 && (
+                  <div className="text-red-500 mt-1">
+                    Issues: {gridInfo.issues.join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
