@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Pointer, 
@@ -11,12 +11,15 @@ import {
   Trash, 
   Save, 
   Eraser,
-  Ruler
+  Ruler,
+  AlertCircle
 } from 'lucide-react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { captureMessage } from '@/utils/sentry';
+import { toast } from 'sonner';
 
 interface ToolbarProps {
   activeTool: DrawingMode;
@@ -51,13 +54,47 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onLineColorChange
 }: ToolbarProps): JSX.Element => {
   // Log when the active tool changes to help debug
-  React.useEffect(() => {
+  useEffect(() => {
     console.log("Active tool in Toolbar:", activeTool);
+    
+    // Track tool changes in Sentry
+    captureMessage("Drawing tool changed", "tool-change", {
+      tags: { component: "Toolbar" },
+      extra: { tool: activeTool }
+    });
   }, [activeTool]);
 
   const handleStraightLineClick = () => {
     console.log("Straight line tool clicked, current tool:", activeTool);
+    
+    // Track attempt to change to straight line tool
+    captureMessage("Straight line tool clicked", "straight-line-button-click", {
+      tags: { component: "Toolbar" },
+      extra: { previousTool: activeTool }
+    });
+    
     onToolChange(DrawingMode.STRAIGHT_LINE);
+  };
+  
+  // Report issues with straight line tool
+  const reportStraightLineIssue = () => {
+    captureMessage("User reported straight line tool issue", "user-reported-issue", {
+      tags: { component: "Toolbar", critical: "true" },
+      extra: { 
+        activeTool,
+        browserInfo: {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+          windowDimensions: {
+            width: window.innerWidth,
+            height: window.innerHeight
+          }
+        }
+      }
+    });
+    
+    toast.success("Issue reported to developers. Thank you!");
   };
 
   return (
@@ -105,6 +142,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <Eraser className="h-4 w-4" />
         </Button>
+        
+        {/* Add a button to report line tool issues */}
+        {activeTool === DrawingMode.STRAIGHT_LINE && (
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="ml-2 text-amber-600 border-amber-600"
+            onClick={reportStraightLineIssue}
+            title="Report Issue with Line Tool"
+          >
+            <AlertCircle className="h-4 w-4 mr-1" />
+            <span className="text-xs">Report Issue</span>
+          </Button>
+        )}
       </div>
       
       <Separator orientation="vertical" className="h-8" />
