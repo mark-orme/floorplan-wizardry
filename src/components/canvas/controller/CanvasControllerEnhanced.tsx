@@ -1,4 +1,3 @@
-
 /**
  * Enhanced Canvas Controller Component
  * Provides unified state management and control for the canvas
@@ -7,7 +6,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { DebugInfoState } from "@/types/core/DebugInfo";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useUnifiedGridManagement } from "@/hooks/useUnifiedGridManagement";
 import { useSyncedFloorPlans } from "@/hooks/useSyncedFloorPlans";
@@ -30,7 +29,15 @@ const DEFAULT_DEBUG_INFO: DebugInfoState = {
   canvasInitialized: false,
   dimensionsSet: false,
   brushInitialized: false,
-  canvasReady: false
+  canvasReady: false,
+  canvasCreated: false,
+  gridObjectCount: 0,
+  canvasDimensions: {
+    width: 0,
+    height: 0
+  },
+  lastError: null,
+  lastRefresh: Date.now()
 };
 
 /**

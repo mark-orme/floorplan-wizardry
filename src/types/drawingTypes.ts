@@ -86,7 +86,7 @@ export interface DebugInfoState {
   /** Brush initialized flag */
   brushInitialized?: boolean;
   /** Canvas ready flag */
-  canvasReady?: boolean;
+  canvasReady: boolean;
   /** Canvas created flag */
   canvasCreated?: boolean;
   /** Canvas loaded flag */
@@ -95,8 +95,6 @@ export interface DebugInfoState {
   gridObjectCount?: number;
   /** Canvas dimensions */
   canvasDimensions?: { width: number; height: number };
-  /** Whether the canvas is ready for drawing */
-  canvasReady: boolean;
   /** Last error message */
   lastError: string | null;
   /** Timestamp of last refresh */

@@ -23,8 +23,8 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
       
       // Check if key exists in state
       if (typedKey in state) {
-        // Type-safe assignment using proper casting
-        validState[typedKey] = state[typedKey] as GridCreationState[keyof GridCreationState];
+        // Type-safe assignment using Record for intermediate casting
+        (validState as Record<string, unknown>)[typedKey] = state[typedKey];
       }
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
@@ -49,8 +49,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
       
       // Check if key exists in updates
       if (typedKey in updates) {
-        // Type-safe assignment using proper casting
-        validUpdates[typedKey] = updates[typedKey] as GridCreationState[keyof GridCreationState];
+        // Type-safe assignment using Record for intermediate casting
+        (validUpdates as Record<string, unknown>)[typedKey] = updates[typedKey];
       }
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
@@ -86,15 +86,15 @@ export const repairGridState = (state: Record<string, unknown>): Partial<GridCre
       const typedKey = key as keyof GridCreationState;
       const value = state[key];
       
-      // Type-safe assignment using proper casting
-      repairedState[typedKey] = value as GridCreationState[keyof GridCreationState];
+      // Type-safe assignment using Record for intermediate casting
+      (repairedState as Record<string, unknown>)[typedKey] = value;
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
       const value = state[key];
       
-      // Type-safe assignment using proper casting
-      repairedState[correctKey] = value as GridCreationState[keyof GridCreationState];
+      // Type-safe assignment using Record for intermediate casting
+      (repairedState as Record<string, unknown>)[correctKey] = value;
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });
