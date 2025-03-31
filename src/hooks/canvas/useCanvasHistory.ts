@@ -35,7 +35,7 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       const objectCount = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid').length;
       
       captureMessage(
-        `Canvas state saved with ${objectCount} objects`,
+        "Canvas state saved",
         "canvas-save-state",
         {
           tags: { component: "ConnectedDrawingCanvas", action: "saveState" },
