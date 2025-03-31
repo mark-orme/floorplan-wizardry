@@ -34,16 +34,21 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       
       const objectCount = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid').length;
       
-      captureMessage({
-        message: "Canvas state saved",
-        category: "canvas-save-state",
-        tags: { component: "ConnectedDrawingCanvas", action: "saveState" },
-        extra: { count: objectCount }
-      });
+      captureMessage(
+        `Canvas state saved with ${objectCount} objects`,
+        "canvas-save-state",
+        {
+          tags: { component: "ConnectedDrawingCanvas", action: "saveState" },
+          extra: { count: objectCount }
+        }
+      );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas state", { error: errorMsg });
-      captureError(error as Error);
+      captureError(
+        error as Error,
+        "canvas-save-error"
+      );
       toast.error(`Failed to save canvas state: ${errorMsg}`);
     }
   }, [canvas, historyStack, historyIndex]);
@@ -64,15 +69,20 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         setCanRedo(true);
       });
       
-      captureMessage({
-        message: "Undo performed",
-        category: "canvas-undo",
-        tags: { component: "ConnectedDrawingCanvas", action: "undo" }
-      });
+      captureMessage(
+        "Undo performed on canvas",
+        "canvas-undo",
+        {
+          tags: { component: "ConnectedDrawingCanvas", action: "undo" }
+        }
+      );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to undo", { error: errorMsg });
-      captureError(error as Error);
+      captureError(
+        error as Error,
+        "canvas-undo-error"
+      );
       toast.error(`Failed to undo: ${errorMsg}`);
     }
   }, [canvas, historyStack, historyIndex]);
@@ -95,7 +105,10 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to redo", { error: errorMsg });
-      captureError(error as Error);
+      captureError(
+        error as Error,
+        "canvas-redo-error"
+      );
       toast.error(`Failed to redo: ${errorMsg}`);
     }
   }, [canvas, historyStack, historyIndex]);
