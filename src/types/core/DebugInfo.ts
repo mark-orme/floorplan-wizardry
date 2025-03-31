@@ -109,5 +109,11 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   canvasReady: false,
   canvasCreated: false,
   canvasLoaded: false,
-  gridObjectCount: 0
+  gridObjectCount: 0,
+  objectCount: 0,
+  canvasWidth: 0,
+  canvasHeight: 0,
+  devicePixelRatio: window.devicePixelRatio || 1,
+  lastError: null,
+  lastErrorTime: 0
 };

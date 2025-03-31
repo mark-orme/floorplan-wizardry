@@ -7,8 +7,11 @@
 
 module.exports = {
   rules: {
-    // Prevent usage of any
-    "@typescript-eslint/no-explicit-any": "warn",
+    // Prevent usage of any - changed from warn to error as requested
+    "@typescript-eslint/no-explicit-any": "error",
+    
+    // NEW: Prevent implicit any types
+    "@typescript-eslint/no-implicit-any": "error",
     
     // Ensure proper typing of params and return values
     "@typescript-eslint/explicit-function-return-type": ["warn", {
@@ -60,6 +63,36 @@ module.exports = {
     // Ensure proper handling of optional properties
     "@typescript-eslint/no-unnecessary-condition": ["warn", {
       "allowConstantLoopConditions": true
-    }]
+    }],
+    
+    // NEW: Enforce prefer-const as requested
+    "prefer-const": "error",
+    
+    // NEW: Prevent duplicate imports as requested
+    "no-duplicate-imports": "error",
+    
+    // NEW: Ensure consistent return values as requested
+    "consistent-return": "error",
+    
+    // NEW: Add rule to prevent property access without type assertion
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[computed=true][property.type='Identifier'][object.type=/ObjectExpression|ArrayExpression/]",
+        "message": "Use proper type assertion when accessing properties dynamically: (obj as Record<string, unknown>)[key]"
+      },
+      {
+        "selector": "AssignmentExpression[left.type='MemberExpression'][left.computed=true][left.property.type='Identifier'][left.object.type=/ObjectExpression|ArrayExpression/]",
+        "message": "Use proper type assertion when assigning to dynamic properties: (obj as Record<string, unknown>)[key] = value"
+      },
+      {
+        "selector": "ForOfStatement > MemberExpression[computed=true]",
+        "message": "Use proper type assertion in loop iterations: (obj as Record<string, unknown>)[key]"
+      },
+      {
+        "selector": "ForInStatement > AssignmentExpression[left.type='MemberExpression'][left.computed=true]",
+        "message": "Use proper type assertion in for-in loops: (obj as Record<string, unknown>)[key]"
+      }
+    ]
   }
 };

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasControllerEnhanced } from "./controller/CanvasControllerEnhanced";
@@ -19,8 +20,8 @@ interface CanvasAppProps {
 
 // Inner component that uses DrawingContext
 const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
-  // State for debug info - fixed type consistency with DEFAULT_DEBUG_STATE
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({...DEFAULT_DEBUG_STATE}));
+  // State for debug info - fixed type consistency
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
   
   // State for GIA (Gross Internal Area)
   const [gia, setGia] = useState<number>(0);

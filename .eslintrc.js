@@ -22,14 +22,14 @@ module.exports = {
     // Additional core rules
     "prefer-const": "error",
     "no-duplicate-imports": "error",
-    "consistent-return": "warn",
+    "consistent-return": "error",
     "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
     
     // React specific rules
     "react/prop-types": "off",
     "react/react-in-jsx-scope": "off",
     "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn"
+    "react-hooks/exhaustive-deps": "error" // Changed from warn to error
   },
   settings: {
     react: {

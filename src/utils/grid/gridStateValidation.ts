@@ -18,13 +18,14 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
   // Only copy valid properties
   Object.keys(state).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
+      // Use proper type assertion with keyof
       const typedKey = key as keyof GridCreationState;
       
-      // Type-safe assignment using indexed access types
+      // Check if key exists in state
       if (typedKey in state) {
+        // Type-safe assignment
         const value = state[typedKey];
-        // Use proper type assertion chain - first to unknown, then to the specific type
-        (validState as unknown as Record<string, unknown>)[typedKey] = value;
+        validState[typedKey] = value as GridCreationState[typeof typedKey];
       }
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
@@ -40,24 +41,25 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
  * @returns A validated update object
  */
 export const createGridStateUpdate = (updates: Partial<GridCreationState>): Partial<GridCreationState> => {
-  const validUpdates: Partial<Record<keyof GridCreationState, unknown>> = {};
+  const validUpdates: Partial<GridCreationState> = {};
   
   Object.keys(updates).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
+      // Use proper type assertion with keyof
       const typedKey = key as keyof GridCreationState;
       
-      // Type-safe assignment using indexed access types
+      // Check if key exists in updates
       if (typedKey in updates) {
+        // Type-safe assignment
         const value = updates[typedKey];
-        // Use proper type assertion chain - first to unknown, then to the specific type
-        (validUpdates as unknown as Record<string, unknown>)[typedKey] = value;
+        validUpdates[typedKey] = value as GridCreationState[typeof typedKey];
       }
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
     }
   });
   
-  return validUpdates as Partial<GridCreationState>;
+  return validUpdates;
 };
 
 /**
@@ -77,27 +79,27 @@ export const GRID_STATE_PROPERTY_MAP: Record<string, keyof GridCreationState> = 
  * @returns The repaired state object
  */
 export const repairGridState = (state: Record<string, unknown>): Partial<GridCreationState> => {
-  const repairedState: Partial<Record<keyof GridCreationState, unknown>> = {};
+  const repairedState: Partial<GridCreationState> = {};
   
   // Copy all valid properties
   Object.keys(state).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
-      // Use proper type-safe way to copy properties
+      // Use proper type assertion with keyof
       const typedKey = key as keyof GridCreationState;
       const value = state[key];
       
-      // Type-safe assignment with proper casting chain
-      (repairedState as unknown as Record<string, unknown>)[typedKey] = value;
+      // Type-safe assignment
+      repairedState[typedKey] = value as GridCreationState[typeof typedKey];
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
       const value = state[key];
       
-      // Type-safe assignment with proper casting chain
-      (repairedState as unknown as Record<string, unknown>)[correctKey] = value;
+      // Type-safe assignment
+      repairedState[correctKey] = value as GridCreationState[typeof correctKey];
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });
   
-  return repairedState as Partial<GridCreationState>;
+  return repairedState;
 };

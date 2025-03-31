@@ -96,7 +96,8 @@ export const DEFAULT_GRID_CREATION_STATE: GridCreationState = {
   throttleInterval: 1000,
   totalCreations: 0,
   maxRecreations: 5,
-  minRecreationInterval: 500
+  minRecreationInterval: 500,
+  creationLock: DEFAULT_GRID_CREATION_LOCK
 };
 
 /**
