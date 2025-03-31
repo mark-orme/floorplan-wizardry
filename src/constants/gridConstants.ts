@@ -38,6 +38,9 @@ export const GRID_CONSTANTS = {
   MARKER_PADDING: 4,
   MARKER_COLOR: "#333333",
   
+  // Pixel-to-meter conversion
+  PIXELS_PER_METER: 100,
+  
   // For backward compatibility
   GRID_SIZE: 20,
   GRID_COLOR: "#e0e0e0",

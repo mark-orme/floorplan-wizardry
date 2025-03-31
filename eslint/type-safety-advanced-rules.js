@@ -9,10 +9,10 @@ export const typeAdvancedSafetyRules = {
   plugins: ["@typescript-eslint"],
   rules: {
     // Prevent type errors from function calls with incorrect arguments
-    "@typescript-eslint/no-unsafe-argument": "warn",
+    "@typescript-eslint/no-unsafe-argument": "error",
     
     // Ensure properties used in objects exist on their types
-    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-member-access": "error",
     
     // Prevent missing properties in object literals
     "@typescript-eslint/consistent-type-assertions": "error",
@@ -25,7 +25,7 @@ export const typeAdvancedSafetyRules = {
     
     // Ensure correct return types
     "@typescript-eslint/explicit-function-return-type": [
-      "warn", 
+      "error", 
       { allowExpressions: true, allowTypedFunctionExpressions: true }
     ],
     
@@ -46,16 +46,50 @@ export const typeAdvancedSafetyRules = {
       }
     ],
     
-    // Ensure imported modules exist and are correctly used
+    // New rule: Ensure imported modules exist and are correctly used
     "import/no-unresolved": "off", // This is handled by TypeScript
     
-    // Ensure exported functions have proper return types
+    // New rule: Ensure exported functions have proper return types
     "@typescript-eslint/explicit-module-boundary-types": [
-      "warn",
+      "error",
       { allowArgumentsExplicitlyTypedAsAny: true }
     ],
     
-    // Custom rule to check for common grid-related errors
+    // New rule: Prevent incomplete parameter lists
+    "@typescript-eslint/complete-function-call": {
+      create(context) {
+        return {
+          CallExpression(node) {
+            const { callee } = node;
+            if (callee.type !== 'Identifier') return;
+            
+            // Add specific function names that need special parameter checks
+            const functionCheckMap = {
+              'snapPointToGrid': { minArgs: 1, maxArgs: 2 },
+              'createPoint': { minArgs: 2, maxArgs: 2 },
+              'toFabricPoint': { minArgs: 1, maxArgs: 1 }
+            };
+            
+            if (functionCheckMap[callee.name]) {
+              const { minArgs, maxArgs } = functionCheckMap[callee.name];
+              if (node.arguments.length < minArgs) {
+                context.report({
+                  node,
+                  message: `Function '${callee.name}' requires at least ${minArgs} argument(s), but got ${node.arguments.length}.`
+                });
+              } else if (maxArgs !== undefined && node.arguments.length > maxArgs) {
+                context.report({
+                  node,
+                  message: `Function '${callee.name}' requires at most ${maxArgs} argument(s), but got ${node.arguments.length}.`
+                });
+              }
+            }
+          }
+        };
+      }
+    },
+    
+    // New rule: Check for proper grid constant usage
     "custom/grid-constant-usage": {
       create(context) {
         return {
@@ -76,13 +110,51 @@ export const typeAdvancedSafetyRules = {
                 "MIN_CANVAS_HEIGHT",
                 "GRID_SIZE",
                 "GRID_COLOR",
-                "MAJOR_GRID_COLOR"
+                "MAJOR_GRID_COLOR",
+                "PIXELS_PER_METER",
+                "MARKER_TEXT_SIZE",
+                "MARKER_COLOR",
+                "MARKER_PADDING",
+                "MARKER_BACKGROUND",
+                "DEFAULT_SHOW_GRID",
+                "DEFAULT_SNAP_TO_GRID",
+                "MAX_CANVAS_WIDTH",
+                "MAX_CANVAS_HEIGHT"
               ];
               
               if (!validProps.includes(propertyName)) {
                 context.report({
                   node,
                   message: `Invalid GRID_CONSTANTS property: ${propertyName}. Valid properties are: ${validProps.join(", ")}`
+                });
+              }
+            }
+          }
+        };
+      }
+    },
+    
+    // New rule: Ensure correct import path for createPoint
+    "custom/correct-create-point-import": {
+      create(context) {
+        return {
+          ImportDeclaration(node) {
+            const importPath = node.source.value;
+            const specifiers = node.specifiers;
+            
+            // Check if we're importing createPoint
+            const createPointImport = specifiers.find(
+              s => s.type === 'ImportSpecifier' && s.imported.name === 'createPoint'
+            );
+            
+            if (createPointImport) {
+              // Check if using the correct path
+              if (importPath !== '@/types/core/Point' && 
+                  importPath !== '../types/core/Point' &&
+                  importPath !== './types/core/Point') {
+                context.report({
+                  node,
+                  message: `Import 'createPoint' from '@/types/core/Point' instead of '${importPath}'`
                 });
               }
             }

@@ -28,6 +28,17 @@ export const typeSafetyRules = {
       ]
     }],
 
+    // Enforce proper imports from core types
+    "no-restricted-imports": ["error", {
+      "patterns": [
+        {
+          "group": ["@/types/geometryTypes"],
+          "importNames": ["createPoint"],
+          "message": "Import createPoint from '@/types/core/Point' instead."
+        }
+      ]
+    }],
+
     // Enforce null checks before accessing array properties
     "@typescript-eslint/no-unnecessary-condition": ["error", {
       "allowRuntimeChecks": true
@@ -78,6 +89,14 @@ export const typeSafetyRules = {
       {
         "selector": "MemberExpression[object.name='fabric']",
         "message": "Don't use the fabric namespace directly. Import specific components from 'fabric'."
+      },
+      {
+        "selector": "CallExpression[callee.name='snapPointToGrid'][arguments.length<1]",
+        "message": "snapPointToGrid requires at least one argument."
+      },
+      {
+        "selector": "CallExpression[callee.name='createPoint'][arguments.length!=2]",
+        "message": "createPoint requires exactly two arguments: x and y."
       }
     ],
     

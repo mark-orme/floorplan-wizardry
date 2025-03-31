@@ -8,6 +8,7 @@ import {
   getPointFromEvent,
   isAppPoint
 } from '../fabricPointConverter';
+import { Point as AppPoint } from "@/types/core/Point";
 
 describe('fabricPointConverter', () => {
   it('should convert between fabric point and app point correctly', () => {
@@ -30,7 +31,7 @@ describe('fabricPointConverter', () => {
   });
   
   it('should convert to app point format', () => {
-    const point = { x: 30, y: 40 };
+    const point: AppPoint = { x: 30, y: 40 };
     const appPoint = toAppPoint(point);
     
     expect(appPoint.x).toBe(30);

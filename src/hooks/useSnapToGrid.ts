@@ -30,17 +30,18 @@ export const useSnapToGrid = () => {
   /**
    * Snap a point to the nearest grid point
    * @param point - Point to snap
+   * @param gridSize - Optional grid size, defaults to SMALL_GRID_SIZE
    * @returns Snapped point
    */
-  const snapPointToGrid = useCallback((point: Point): Point => {
+  const snapPointToGrid = useCallback((point: Point, gridSize?: number): Point => {
     if (!snapToGrid) return point;
 
-    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+    const size = gridSize || GRID_CONSTANTS.SMALL_GRID_SIZE;
     
     // Snap to nearest grid point
     return {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
+      x: Math.round(point.x / size) * size,
+      y: Math.round(point.y / size) * size
     };
   }, [snapToGrid]);
 

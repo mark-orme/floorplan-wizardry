@@ -5,13 +5,14 @@
  */
 import { Point as FabricPoint } from "fabric";
 import type { Point as AppPoint } from "@/types/core/Point";
+import { createPoint } from "@/types/core/Point";
 
 /**
  * Convert a fabric point to an app point
  * @param fabricPoint - Fabric point
  * @returns App point
  */
-export const toAppPoint = (fabricPoint: FabricPoint): AppPoint => {
+export const toAppPoint = (fabricPoint: FabricPoint | {x: number, y: number}): AppPoint => {
   return {
     x: fabricPoint.x,
     y: fabricPoint.y
