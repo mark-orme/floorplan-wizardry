@@ -112,85 +112,114 @@ export const useStraightLineTool = ({
     saveCurrentState,
     lineState
   );
+
+  // Debug the fabricCanvasRef to verify it's not null
+  useEffect(() => {
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      console.log("FabricCanvasRef in useStraightLineTool:", {
+        isNull: fabricCanvasRef === null,
+        current: fabricCanvasRef.current,
+        isCurrentNull: fabricCanvasRef.current === null
+      });
+    }
+  }, [fabricCanvasRef, tool]);
   
   // Initialize and clean up event handlers when tool changes
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    
-    // Early return if canvas isn't available yet
-    if (!canvas) {
-      logger.warn("Canvas not available for straight line tool");
-      return;
-    }
-    
-    if (tool === DrawingMode.STRAIGHT_LINE) {
-      // Important: Only set up the tool if it's not already active
-      if (!isActive) {
-        logger.info("Activating straight line tool");
-        setIsActive(true);
-        hasCleanedUpRef.current = false;
-        
-        // Configure canvas for straight line drawing
-        canvas.isDrawingMode = false;
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-        canvas.hoverCursor = 'crosshair';
-        
-        // Make objects non-selectable except grid
-        canvas.getObjects().forEach(obj => {
-          if ((obj as any).objectType !== 'grid') {
-            obj.selectable = false;
-          }
-        });
-        
-        // Add our specific event handlers
-        canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
-        canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
-        canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp);
-        
-        // Discard any active selection
-        canvas.discardActiveObject();
-        canvas.requestRenderAll();
-        
-        // Important: Initialize the tool state
-        initializeTool();
-        
-        logger.info("Straight line tool initialized with event handlers", {
-          isDrawingMode: canvas.isDrawingMode,
-          selection: canvas.selection,
-          cursor: canvas.defaultCursor
-        });
-        
-        captureMessage("Straight line tool initialized", "straight-line-tool-init", {
-          tags: { component: "useStraightLineTool" },
-          extra: { 
-            canvasSize: { width: canvas.width, height: canvas.height },
-            settings: { 
-              isDrawingMode: canvas.isDrawingMode,
-              selection: canvas.selection,
-              cursor: canvas.defaultCursor,
-              lineColor,
-              lineThickness
+    // Using a delayed check to give the canvas time to initialize
+    const checkAndSetupTool = () => {
+      const canvas = fabricCanvasRef.current;
+      
+      // Early return if canvas isn't available yet
+      if (!canvas) {
+        logger.warn("Canvas not available for straight line tool");
+        console.warn("Canvas not available for straight line tool, will retry");
+        return false;
+      }
+      
+      // Only set up if the tool is straight line and not already active
+      if (tool === DrawingMode.STRAIGHT_LINE) {
+        if (!isActive) {
+          logger.info("Activating straight line tool");
+          console.log("🖊️ Activating straight line tool on canvas:", canvas);
+          setIsActive(true);
+          hasCleanedUpRef.current = false;
+          
+          // Configure canvas for straight line drawing
+          canvas.isDrawingMode = false;
+          canvas.selection = false;
+          canvas.defaultCursor = 'crosshair';
+          canvas.hoverCursor = 'crosshair';
+          
+          // Make objects non-selectable except grid
+          canvas.getObjects().forEach(obj => {
+            if ((obj as any).objectType !== 'grid') {
+              obj.selectable = false;
             }
-          }
-        });
-        
-        // Run validation to ensure tool is properly set up
-        validateStraightLineTool(canvas, tool);
-        
-        // Notify user that the tool is active
-        toast.success("Line drawing tool activated", {
-          id: "line-tool-activated"
-        });
+          });
+          
+          // FIX: Make sure we remove any existing handlers before adding new ones
+          canvas.off(FabricEventTypes.MOUSE_DOWN);
+          canvas.off(FabricEventTypes.MOUSE_MOVE);
+          canvas.off(FabricEventTypes.MOUSE_UP);
+          
+          // Add our specific event handlers
+          canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
+          canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
+          canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp);
+          
+          // Discard any active selection
+          canvas.discardActiveObject();
+          canvas.requestRenderAll();
+          
+          // Important: Initialize the tool state
+          initializeTool();
+          
+          logger.info("Straight line tool initialized with event handlers", {
+            isDrawingMode: canvas.isDrawingMode,
+            selection: canvas.selection,
+            cursor: canvas.defaultCursor
+          });
+          
+          // Notify user that the tool is active
+          toast.success("Line drawing tool activated", {
+            id: "line-tool-activated"
+          });
+          
+          return true;
+        }
+      } else {
+        // If tool was active and is now changing, clean up
+        if (isActive && !hasCleanedUpRef.current) {
+          logger.info("Deactivating straight line tool");
+          cleanupEventHandlers();
+          setIsActive(false);
+          hasCleanedUpRef.current = true;
+        }
       }
-    } else {
-      // If tool was active and is now changing, clean up
-      if (isActive && !hasCleanedUpRef.current) {
-        logger.info("Deactivating straight line tool");
-        cleanupEventHandlers();
-        setIsActive(false);
-        hasCleanedUpRef.current = true;
-      }
+      
+      return true;
+    };
+    
+    // Try immediately
+    const setupSuccess = checkAndSetupTool();
+    
+    // If failed on first try, set up retry with timeout
+    if (!setupSuccess && tool === DrawingMode.STRAIGHT_LINE) {
+      // Retry after a short delay to allow canvas to initialize
+      const retryTimer = setTimeout(() => {
+        console.log("🔄 Retrying straight line tool setup...");
+        checkAndSetupTool();
+      }, 500);
+      
+      return () => {
+        clearTimeout(retryTimer);
+        if (isActive && !hasCleanedUpRef.current) {
+          logger.info("Cleaning up straight line tool on unmount");
+          cleanupEventHandlers();
+          hasCleanedUpRef.current = true;
+        }
+      };
     }
     
     // Clean up on unmount
@@ -213,11 +242,6 @@ export const useStraightLineTool = ({
     isActive,
     initializeTool
   ]);
-  
-  // Log tool state changes for debugging
-  useEffect(() => {
-    logger.info(`Straight line tool state changed: active=${isActive}, initialized=${isToolInitialized}, drawing=${isDrawing}`);
-  }, [isActive, isToolInitialized, isDrawing]);
   
   // Handle keyboard events - Escape to cancel
   useEffect(() => {

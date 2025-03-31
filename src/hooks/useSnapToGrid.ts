@@ -1,119 +1,119 @@
 
 /**
- * Hook for managing grid snapping functionality
+ * Hook for grid snapping functionality
  * @module hooks/useSnapToGrid
  */
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { useDrawingContext } from '@/contexts/DrawingContext';
-import type { Point } from '@/types/core/Point';
+import { Point } from '@/types/core/Geometry';
+import { calculateAngle } from '@/utils/geometryUtils';
+
+interface SnapOptions {
+  gridSize: number;
+  snapToAngle: boolean;
+  angleThreshold: number;
+}
 
 /**
- * Hook for grid snapping functionality
- * @returns Object with snapping functions
+ * Hook for snapping points and lines to grid
+ * @param fabricCanvasRef Reference to the canvas
+ * @returns Grid snapping functions
  */
-export const useSnapToGrid = (fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>) => {
-  // Get snap to grid setting from context
-  const { snapToGrid } = useDrawingContext();
-  // Local state for auto-straightening feature
-  const [isAutoStraightened, setIsAutoStraightened] = useState(false);
-
+export const useSnapToGrid = (
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>
+) => {
+  // Default grid size
+  const defaultGridSize = 20;
+  
   /**
-   * Toggle the snap to grid setting
-   */
-  const toggleSnap = useCallback(() => {
-    // In a real implementation, this would update the DrawingContext
-    // This is implemented for test compatibility
-    console.log("Toggle snap called");
-  }, []);
-
-  /**
-   * Snap a point to the nearest grid point
-   * @param point - Point to snap
-   * @param gridSize - Optional grid size, defaults to SMALL_GRID_SIZE
+   * Snap a point to the nearest grid intersection
+   * @param point Point to snap
+   * @param gridSize Grid size in pixels
    * @returns Snapped point
    */
-  const snapPointToGrid = useCallback((point: Point, gridSize?: number): Point => {
-    if (!snapToGrid) return point;
-
-    const size = gridSize || GRID_CONSTANTS.SMALL_GRID_SIZE;
-    
-    // Snap to nearest grid point
+  const snapPointToGrid = useCallback((point: Point, gridSize: number = defaultGridSize): Point => {
     return {
-      x: Math.round(point.x / size) * size,
-      y: Math.round(point.y / size) * size
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
     };
-  }, [snapToGrid]);
-
+  }, []);
+  
   /**
-   * Constrain a line to horizontal, vertical, or diagonal (45°)
-   * @param start - Start point of line
-   * @param end - End point of line
-   * @returns Constrained start and end points
+   * Snap a line to grid and straighten if close to horizontal, vertical, or 45°
+   * @param start Start point of the line
+   * @param end End point of the line
+   * @param options Snapping options
+   * @returns Snapped start and end points
    */
-  const snapLineToGrid = useCallback((start: Point, end: Point): { start: Point, end: Point } => {
-    if (!snapToGrid) return { start, end };
-
-    const dx = Math.abs(end.x - start.x);
-    const dy = Math.abs(end.y - start.y);
+  const snapLineToGrid = useCallback((
+    start: Point, 
+    end: Point, 
+    options: Partial<SnapOptions> = {}
+  ): { start: Point, end: Point } => {
+    // Default options
+    const {
+      gridSize = defaultGridSize,
+      snapToAngle = true,
+      angleThreshold = 10
+    } = options;
     
-    // Determine line angle constraint with enhanced 45° detection
-    if (dx > dy * 2) {
-      // Horizontal constraint
-      return {
-        start,
-        end: { x: end.x, y: start.y }
-      };
-    } else if (dy > dx * 2) {
-      // Vertical constraint
-      return {
-        start,
-        end: { x: start.x, y: end.y }
-      };
-    } else {
-      // Diagonal constraint (45 degrees)
-      // Make both dx and dy equal for a perfect 45° angle
-      const distance = Math.min(dx, dy);
-      const directionX = end.x > start.x ? 1 : -1;
-      const directionY = end.y > start.y ? 1 : -1;
-      
-      return {
-        start,
-        end: {
-          x: start.x + distance * directionX,
-          y: start.y + distance * directionY
-        }
-      };
+    // Snap endpoints to grid
+    const snappedStart = snapPointToGrid(start, gridSize);
+    const snappedEnd = snapPointToGrid(end, gridSize);
+    
+    // If angle snapping is disabled, return grid-snapped points
+    if (!snapToAngle) {
+      return { start: snappedStart, end: snappedEnd };
     }
-  }, [snapToGrid]);
-
-  /**
-   * Check if a point is already snapped to grid
-   * @param point - Point to check
-   * @param threshold - Optional threshold for checking
-   * @returns Whether the point is already on a grid intersection
-   */
-  const isSnappedToGrid = useCallback((point: Point, threshold: number = 0.5): boolean => {
-    if (!snapToGrid) return false;
     
-    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+    // Calculate angle of line
+    const angle = calculateAngle(snappedStart, snappedEnd);
     
-    // Check x and y coordinates are near grid points
-    const isXOnGrid = Math.abs(point.x % gridSize) <= threshold || 
-                     Math.abs(point.x % gridSize - gridSize) <= threshold;
-    const isYOnGrid = Math.abs(point.y % gridSize) <= threshold || 
-                     Math.abs(point.y % gridSize - gridSize) <= threshold;
-                     
-    return isXOnGrid && isYOnGrid;
-  }, [snapToGrid]);
-
+    // Check if close to horizontal, vertical, or 45° angles
+    const isNearHorizontal = Math.abs(angle) < angleThreshold || 
+                             Math.abs(angle - 180) < angleThreshold || 
+                             Math.abs(angle + 180) < angleThreshold;
+                             
+    const isNearVertical = Math.abs(angle - 90) < angleThreshold || 
+                           Math.abs(angle + 90) < angleThreshold;
+                           
+    const isNear45 = Math.abs(angle - 45) < angleThreshold || 
+                     Math.abs(angle + 45) < angleThreshold || 
+                     Math.abs(angle - 135) < angleThreshold || 
+                     Math.abs(angle + 135) < angleThreshold;
+    
+    let straightenedEnd = { ...snappedEnd };
+    
+    // Straighten line if close to cardinal or 45° angles
+    if (isNearHorizontal) {
+      straightenedEnd.y = snappedStart.y; // Keep y the same as start point
+    } else if (isNearVertical) {
+      straightenedEnd.x = snappedStart.x; // Keep x the same as start point
+    } else if (isNear45) {
+      // Make it exactly 45°
+      const dx = snappedEnd.x - snappedStart.x;
+      const dy = snappedEnd.y - snappedStart.y;
+      const distance = Math.max(Math.abs(dx), Math.abs(dy));
+      const signX = dx > 0 ? 1 : -1;
+      const signY = dy > 0 ? 1 : -1;
+      
+      straightenedEnd = {
+        x: snappedStart.x + distance * signX,
+        y: snappedStart.y + distance * signY
+      };
+      
+      // Snap the end point back to grid after straightening
+      straightenedEnd = snapPointToGrid(straightenedEnd, gridSize);
+    }
+    
+    return {
+      start: snappedStart,
+      end: straightenedEnd
+    };
+  }, [snapPointToGrid]);
+  
   return {
-    snapEnabled: snapToGrid,
-    isAutoStraightened,
-    toggleSnap,
     snapPointToGrid,
-    snapLineToGrid,
-    isSnappedToGrid
+    snapLineToGrid
   };
 };

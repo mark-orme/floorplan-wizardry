@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import logger from "@/utils/logger";
 import { BasicGrid } from "./BasicGrid";
 import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
-import { useStraightLineTool } from "@/hooks/straightLineTool";
+import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
 import { useCanvasReadyState } from "@/utils/canvas/canvasReadyState";
 
 /**
@@ -36,7 +36,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onCanvasReady,
   onError,
   setDebugInfo,
-  tool
+  tool = DrawingMode.SELECT // Provide default value
 }) => {
   const { lineColor, lineThickness } = useDrawingContext();
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
@@ -44,6 +44,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [localDebugInfo, setLocalDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
   const gridLayerRef = useRef<any[]>([]);
   const canvasInitializedRef = useRef<boolean>(false);
+  
+  // IMPORTANT: Create fabricCanvasRef before any hooks that need it
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   
   // Canvas ready state tracking
   const { 
@@ -101,6 +104,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         logger.warn("Canvas element already has a Fabric.js instance");
         const existingCanvas = canvasRef.current._fabric as FabricCanvas;
         setCanvas(existingCanvas);
+        fabricCanvasRef.current = existingCanvas; // Set the fabricCanvasRef here
         canvasInitializedRef.current = true;
         setCanvasInitialized();
         
@@ -137,8 +141,11 @@ export const Canvas: React.FC<CanvasProps> = ({
       });
       
       setCanvas(fabricCanvas);
+      fabricCanvasRef.current = fabricCanvas; // Important: Set the fabricCanvasRef here
       canvasInitializedRef.current = true;
       setCanvasInitialized();
+      
+      console.log("Canvas initialized and stored in ref:", fabricCanvas);
       
       if (onCanvasReady) {
         onCanvasReady(fabricCanvas);
@@ -170,6 +177,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       if (canvas) {
         try {
           canvas.dispose();
+          fabricCanvasRef.current = null; // Clear the ref
           canvasInitializedRef.current = false;
           logger.info("Canvas disposed");
         } catch (error) {
@@ -197,8 +205,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     updateDebugInfo({ eventHandlersSet: true });
   }, [canvas, tool, lineColor, lineThickness, updateDebugInfo]);
   
-  // Initialize the straight line tool - ensure this hook is called unconditionally
-  const fabricCanvasRef = { current: canvas };
+  // Initialize the straight line tool using the proper fabricCanvasRef
   const { isDrawing: isStraightLineDrawing } = useStraightLineTool({
     fabricCanvasRef,
     tool,
@@ -247,7 +254,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         />
       )}
       
-      {/* Debug overlay */}
+      {/* Enhanced Debug overlay with tool status */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute top-0 right-0 bg-black/30 text-white p-2 text-xs">
           <div>Canvas Ready: {isReady ? '✅' : '❌'}</div>
@@ -255,7 +262,8 @@ export const Canvas: React.FC<CanvasProps> = ({
           <div>Grid Created: {localDebugInfo.gridCreated ? '✅' : '❌'}</div>
           <div>Grid Objects: {localDebugInfo.gridObjectCount}</div>
           <div>Tool: {tool}</div>
-          <div>Line Drawing: {isStraightLineDrawing ? 'Active' : 'Inactive'}</div>
+          <div>Straight Line Status: {isStraightLineDrawing ? 'Drawing' : 'Inactive'}</div>
+          <div>Canvas Ref Valid: {fabricCanvasRef.current ? '✅' : '❌'}</div>
         </div>
       )}
     </div>
