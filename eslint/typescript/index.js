@@ -1,31 +1,37 @@
 
 /**
- * TypeScript ESLint rules collection
- * Aggregates all TypeScript rule modules
- * @module eslint/typescript
+ * Aggregated TypeScript ESLint rules
+ * Imports and combines all TypeScript-specific ESLint rulesets
+ * 
+ * @module eslint/typescript/index
  */
-import { baseTypeScriptRules } from './base-rules.js';
-import { typeSafetyRules } from './safety-rules.js';
-import { namingRules } from './naming-rules.js';
-import { fabricRules } from './fabric-rules.js';
-import { fabricEventRules } from './fabric-event-rules.js';
-import { drawingToolRules } from './drawing-tool-rules.js';
-import { assertionRules } from './assertion-rules.js';
-import { reactTypescriptRules } from './react-rules.js';
-import { functionArgumentRules } from './function-argument-rules.js';
-import { gridStatePropertyRules } from './grid-state-property-rules.js';
-import { gridTypeSafetyRules } from './grid-type-safety.js';
 
-export const typescriptRules = [
-  baseTypeScriptRules,
-  typeSafetyRules,
-  namingRules,
-  fabricRules,
-  fabricEventRules,
-  drawingToolRules,
-  assertionRules,
-  reactTypescriptRules,
-  functionArgumentRules,
-  gridStatePropertyRules,
-  gridTypeSafetyRules
-];
+const baseRules = require('./base-rules');
+const assertionRules = require('./assertion-rules');
+const fabricRules = require('./fabric-rules');
+const functionArgumentRules = require('./function-argument-rules');
+const gridStatePropertyRules = require('./grid-state-property-rules');
+const gridTypeSafety = require('./grid-type-safety');
+const namingRules = require('./naming-rules');
+const reactRules = require('./react-rules');
+const safetyRules = require('./safety-rules');
+const drawingToolRules = require('./drawing-tool-rules');
+const fabricEventRules = require('./fabric-event-rules');
+const lineDrawingRules = require('./line-drawing-rules');
+
+module.exports = {
+  rules: {
+    ...baseRules.rules,
+    ...assertionRules.rules,
+    ...fabricRules.rules,
+    ...functionArgumentRules.rules,
+    ...gridStatePropertyRules.rules,
+    ...gridTypeSafety.rules,
+    ...namingRules.rules,
+    ...reactRules.rules,
+    ...safetyRules.rules,
+    ...drawingToolRules.rules,
+    ...fabricEventRules.rules,
+    ...lineDrawingRules.rules
+  }
+};

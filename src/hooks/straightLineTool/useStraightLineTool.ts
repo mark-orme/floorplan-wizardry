@@ -10,10 +10,11 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useLineState } from './useLineState';
 import { useLineEvents } from './useLineEvents';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage, captureError } from '@/utils/sentry';
 import logger from '@/utils/logger';
 import { FabricEventTypes } from '@/types/fabric-events';
 import { toast } from 'sonner';
+import { validateStraightLineTool } from '@/utils/diagnostics/straightLineValidator';
 
 /**
  * Props for useStraightLineTool hook
@@ -151,7 +152,9 @@ export const useStraightLineTool = ({
         canvas.discardActiveObject();
         canvas.requestRenderAll();
         
+        // Important: Initialize the tool state
         initializeTool();
+        
         logger.info("Straight line tool initialized with event handlers", {
           isDrawingMode: canvas.isDrawingMode,
           selection: canvas.selection,
@@ -171,6 +174,9 @@ export const useStraightLineTool = ({
             }
           }
         });
+        
+        // Run validation to ensure tool is properly set up
+        validateStraightLineTool(canvas, tool);
         
         // Notify user that the tool is active
         toast.success("Line drawing tool activated", {
@@ -210,7 +216,7 @@ export const useStraightLineTool = ({
   
   // Log tool state changes for debugging
   useEffect(() => {
-    console.log(`Straight line tool state changed: active=${isActive}, initialized=${isToolInitialized}, drawing=${isDrawing}`);
+    logger.info(`Straight line tool state changed: active=${isActive}, initialized=${isToolInitialized}, drawing=${isDrawing}`);
   }, [isActive, isToolInitialized, isDrawing]);
   
   // Handle keyboard events - Escape to cancel

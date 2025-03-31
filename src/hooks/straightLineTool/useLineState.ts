@@ -3,6 +3,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Line, Text } from 'fabric';
 import { Point } from '@/types/core/Geometry';
 import logger from '@/utils/logger';
+import { toast } from 'sonner';
 
 /**
  * Hook to manage state for drawing straight lines
@@ -23,24 +24,26 @@ export const useLineState = () => {
   // Function to set line starting point
   const setStartPoint = useCallback((point: Point) => {
     startPointRef.current = point;
-    console.log(`Line start point set to: x=${point.x}, y=${point.y}`);
+    logger.info(`Line start point set to: x=${point.x}, y=${point.y}`);
   }, []);
   
   // Function to track the current line being drawn
   const setCurrentLine = useCallback((line: Line) => {
     currentLineRef.current = line;
-    console.log("Current line reference set");
+    logger.info("Current line reference set", { lineId: line.id });
   }, []);
   
   // Function to track distance tooltip
   const setDistanceTooltip = useCallback((tooltip: Text) => {
     distanceTooltipRef.current = tooltip;
+    logger.info("Distance tooltip reference set");
   }, []);
   
   // Function to initialize the tool
   const initializeTool = useCallback(() => {
     logger.info("Initializing straight line tool state");
     setIsToolInitialized(true);
+    toast.success("Line tool initialized", { id: "line-tool-init" });
   }, []);
   
   // Function to reset drawing state

@@ -44,9 +44,9 @@ export const useLineEvents = (
   const eventHandlersAttachedRef = useRef(false);
   
   const handleMouseDown = useCallback((opt: any) => {
-    console.log("Mouse down in straight line tool");
+    logger.info("Mouse down in straight line tool");
     if (tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current) {
-      console.log(`Not handling mouse down: tool=${tool} or canvas not available`);
+      logger.info(`Not handling mouse down: tool=${tool} or canvas not available`);
       return;
     }
     
@@ -57,7 +57,7 @@ export const useLineEvents = (
     const pointer = canvas.getPointer(opt.e);
     const point = { x: pointer.x, y: pointer.y };
     
-    console.log(`Starting line at point: x=${point.x}, y=${point.y}`);
+    logger.info(`Starting line at point: x=${point.x}, y=${point.y}`);
     setStartPoint(point);
     
     const line = new Line([point.x, point.y, point.x, point.y], {
@@ -120,7 +120,7 @@ export const useLineEvents = (
   }, [isDrawing, tool, fabricCanvasRef, startPointRef, currentLineRef, distanceTooltipRef]);
   
   const handleMouseUp = useCallback(() => {
-    console.log("Mouse up in straight line tool", { isDrawing, tool });
+    logger.info("Mouse up in straight line tool", { isDrawing, tool });
     if (!isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !fabricCanvasRef.current) {
       return;
     }
@@ -129,7 +129,7 @@ export const useLineEvents = (
     
     // Save current state to undo history
     saveCurrentState();
-    console.log("Completed line drawing, state saved");
+    logger.info("Completed line drawing, state saved");
     
     // Reset drawing state to prepare for next line
     resetDrawingState();
@@ -142,7 +142,7 @@ export const useLineEvents = (
     
     const canvas = fabricCanvasRef.current;
     
-    console.log("Cancelling line drawing");
+    logger.info("Cancelling line drawing");
     
     if (currentLineRef.current && canvas.contains(currentLineRef.current)) {
       canvas.remove(currentLineRef.current);

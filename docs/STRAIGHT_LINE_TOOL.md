@@ -1,113 +1,122 @@
 
 # Straight Line Tool Documentation
 
+This document outlines the implementation details and usage guidelines for the straight line drawing tool in our application.
+
 ## Overview
 
-The Straight Line Tool allows users to draw precise straight lines on the canvas with measurement indicators. This document explains the architecture, usage, and implementation details.
+The straight line tool allows users to draw precise straight lines on the canvas. It includes visual feedback during drawing and shows the distance measurement in pixels.
 
 ## Architecture
 
-The tool is implemented using several interconnected components:
+The straight line tool is implemented using a set of React hooks that work together:
 
-1. **useStraightLineTool** - Main hook that manages the tool's state and interactions
-2. **useLineState** - Manages the state of the current line being drawn
-3. **useLineEvents** - Handles mouse events for line drawing operations
+1. **useStraightLineTool**: The main hook that coordinates the tool's functionality
+2. **useLineState**: Manages the internal state of the line drawing operation
+3. **useLineEvents**: Handles mouse events for drawing lines
 
-### Component Hierarchy
+## Implementation Details
 
-```
-useStraightLineTool
-  ├── useLineState (State management)
-  └── useLineEvents (Event handling)
-      └── Fabric.js Canvas interactions
-```
+### Initialization Flow
 
-## Type Definitions
+When the straight line tool is activated:
 
-### LineState Interface
+1. The canvas is configured:
+   - Drawing mode is disabled (`canvas.isDrawingMode = false`)
+   - Selection is disabled (`canvas.selection = false`)
+   - Cursor is set to crosshair
+   - Object selectability is disabled
 
-The `LineState` interface is used to track the state of line drawing:
+2. Event handlers are attached:
+   - `mouse:down` - Starts line drawing
+   - `mouse:move` - Updates line while drawing
+   - `mouse:up` - Completes line drawing
 
-```typescript
-interface LineState {
-  isDrawing: boolean;               // Whether currently drawing a line
-  isToolInitialized: boolean;       // Whether tool is initialized
-  startPointRef: RefObject<Point>;  // Starting point of the line
-  currentLineRef: RefObject<Line>;  // Current line being drawn
-  distanceTooltipRef: RefObject<Text>; // Text showing measurement
-  setStartPoint: (point: Point) => void;  // Set start point
-  setCurrentLine: (line: Line) => void;   // Set current line
-  setDistanceTooltip: (tooltip: Text) => void; // Set tooltip
-  initializeTool: () => void;       // Initialize the tool
-  resetDrawingState: () => void;    // Reset drawing state
-  setIsDrawing: (isDrawing: boolean) => void; // Set drawing state
-}
-```
+3. Tool state is initialized
 
-## Event Flow
+### Drawing Process
 
-1. **Activation**: When DrawingMode.STRAIGHT_LINE is selected, the tool initializes
-2. **Mouse Down**: Creates a new line starting at the cursor position
-3. **Mouse Move**: Updates the end point of the line and the distance tooltip
-4. **Mouse Up**: Finalizes the line and adds it to the canvas history
-5. **Escape Key**: Cancels the current drawing operation
+1. **Start (mouse down)**:
+   - Create a new Line object
+   - Create a distance tooltip
+   - Add both to canvas
+   - Set initial points
 
-## Implementation Notes
+2. **Draw (mouse move)**:
+   - Update the line's end point
+   - Calculate distance
+   - Update tooltip position and text
+   - Re-render canvas
 
-### Canvas Configuration
+3. **Complete (mouse up)**:
+   - Save canvas state for undo/redo
+   - Reset drawing state
+   - Prepare for next line
 
-When the Straight Line Tool is activated:
-- Drawing mode is disabled (`canvas.isDrawingMode = false`)
-- Selection mode is disabled (`canvas.selection = false`) 
-- Cursor is set to crosshair
-- Objects are made non-selectable
+### Cancellation
 
-### Measurement Display
+Line drawing can be cancelled by:
+- Pressing the Escape key
+- Changing tools
+- Calling the `cancelDrawing()` function
 
-A tooltip is created that follows the midpoint of the line and displays the current length in pixels. This is implemented using a fabric.js Text object.
+### Validation
 
-### Cleanup
+The `validateStraightLineTool()` function ensures the tool is correctly set up by checking:
+- Canvas configuration
+- Event handler presence
+- Cursor settings
 
-The tool properly cleans up all event handlers when:
-- Tool is deactivated (user selects another tool)
-- Component is unmounted
+## Common Issues and Debugging
 
-## Common Issues and Solutions
+### Line Tool Not Activating
 
-### Type Compatibility
+If the line tool isn't activating:
 
-Ensure proper type compatibility between our application Point interface and fabric.js Point objects by using the conversion utilities:
+1. Check console logs for "Activating straight line tool" message
+2. Verify that the DrawingMode is correctly set to STRAIGHT_LINE
+3. Ensure event handlers are properly attached using `verifyLineToolEventHandlers()`
 
-```typescript
-// Converting between types
-import { toFabricPoint, fromFabricPoint } from '@/utils/geometryUtils';
+### Drawing Not Working
 
-// Our Point type to fabric Point
-const fabricPoint = toFabricPoint(appPoint);
+If drawing doesn't work after tool activation:
 
-// fabric Point to our Point type
-const appPoint = fromFabricPoint(fabricPoint);
-```
+1. Verify mouse event handlers are correctly handling events
+2. Check that lineState is properly initialized
+3. Ensure the canvas reference is valid and accessible
 
-### Performance Considerations
+### Lines Not Appearing
 
-- Line rendering is optimized to only update necessary objects
-- Distance calculation uses optimized math functions
-- Event handlers are properly debounced/throttled when needed
+If lines don't appear:
+
+1. Verify line creation in handleMouseDown
+2. Check that lineColor and lineThickness are valid
+3. Ensure canvas.add() is called for the line
+
+## TypeScript Requirements
+
+To avoid type errors:
+
+1. Always import proper types from their source modules
+2. Use explicit typing for hook return values
+3. Properly type event handlers
+4. Never use `any` for event parameters
+5. Use FabricEventTypes enum for event names
 
 ## ESLint Rules
 
-Special ESLint rules have been implemented to ensure proper usage of the Straight Line Tool:
+We have specific ESLint rules for line drawing:
 
-- Ensuring correct Line constructor usage
-- Preventing fabric.js type confusion
-- Enforcing consistent event handling patterns
+1. Line constructor must have exactly 4 numbers (x1, y1, x2, y2)
+2. Always check if refs exist before accessing their current property
+3. Use DrawingMode enum constants for tool comparisons
+4. Clean up event handlers in useEffect return functions
+5. Use FabricEventTypes constants for event names
 
-## Testing
+## Best Practices
 
-The Straight Line Tool should be tested for:
-1. Correct line creation and rendering
-2. Accurate distance measurement
-3. Proper cleanup of resources
-4. Interaction with other canvas elements
-5. Touch device compatibility
+1. Always validate the tool state after initialization
+2. Clean up event handlers when the tool is deactivated
+3. Use the useLineState hook for state management
+4. Implement proper error handling and logging
+5. Test the tool with different canvas states

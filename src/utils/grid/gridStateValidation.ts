@@ -19,7 +19,7 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
   Object.keys(state).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
       const typedKey = key as keyof GridCreationState;
-      // Use specific property type to ensure type safety
+      // Use type assertion to fix the "never" type error
       validState[typedKey] = state[typedKey] as GridCreationState[typeof typedKey];
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
@@ -40,7 +40,7 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
   Object.keys(updates).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
       const typedKey = key as keyof GridCreationState;
-      // Use specific property type to ensure type safety
+      // Use type assertion to fix the "never" type error
       validUpdates[typedKey] = updates[typedKey] as GridCreationState[typeof typedKey];
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);

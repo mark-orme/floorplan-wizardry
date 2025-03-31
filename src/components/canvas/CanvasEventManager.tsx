@@ -50,6 +50,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   const canvasRef = useRef<FabricCanvas | null>(canvas);
   const initialStateRef = useRef(false);
   const previousToolRef = useRef<DrawingMode | null>(null);
+  const toolInitializedRef = useRef<Record<string, boolean>>({});
   
   // Update canvas ref when canvas changes
   useEffect(() => {
@@ -100,6 +101,11 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       isToolInitialized,
       tool
     });
+    
+    // Track initialization status for this tool
+    if (isToolInitialized && tool === DrawingMode.STRAIGHT_LINE) {
+      toolInitializedRef.current.STRAIGHT_LINE = true;
+    }
   }, [isLineToolActive, isToolInitialized, tool]);
   
   // Run validation tools on tool change
@@ -124,12 +130,20 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     // Validate the straight line tool
     if (tool === DrawingMode.STRAIGHT_LINE) {
       logger.info("Running straight line tool diagnostics");
-      validateStraightLineDrawing(canvas, tool);
-      validateStraightLineTool(canvas, tool);
+      
+      // Delay validation to ensure tool has time to initialize
+      const validationTimer = setTimeout(() => {
+        validateStraightLineDrawing(canvas, tool);
+        validateStraightLineTool(canvas, tool);
+      }, 200);
       
       // Schedule periodic validation
       const cleanupValidation = scheduleStraightLineValidation(canvas, tool);
-      return cleanupValidation;
+      
+      return () => {
+        clearTimeout(validationTimer);
+        cleanupValidation();
+      };
     }
   }, [canvas, tool, lineThickness, lineColor]);
   
@@ -144,7 +158,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       tool, 
       lineThickness, 
       lineColor,
-      isLineToolActive
+      isLineToolActive,
+      isToolInitialized
     });
     
     try {
@@ -207,6 +222,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           canvas.defaultCursor = 'crosshair';
           canvas.hoverCursor = 'crosshair';
           canvas.selection = false;
+          
           // Make objects non-selectable when in straight line mode
           canvas.getObjects().forEach(obj => {
             obj.selectable = false;
@@ -214,11 +230,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
               obj.evented = true;
             }
           });
+          
           // Discard any active object to ensure nothing is selected
           canvas.discardActiveObject();
-          logger.info("Straight line tool activated", { 
+          
+          logger.info("Straight line tool activated in CanvasEventManager", { 
             isToolInitialized,
-            isLineToolActive
+            isLineToolActive,
+            wasInitializedBefore: toolInitializedRef.current.STRAIGHT_LINE
           });
           
           // Enhanced logging for straight line tool
@@ -238,6 +257,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
               }
             }
           });
+          
+          if (!isLineToolActive && !isToolInitialized) {
+            // If the tool isn't active yet, show a loading toast
+            toast.loading("Initializing line tool...", {
+              id: "line-tool-initializing",
+              duration: 1000
+            });
+          }
           break;
           
         case DrawingMode.ERASER:
