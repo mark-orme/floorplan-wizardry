@@ -23,7 +23,7 @@ import { LineThicknessControl } from "./LineThicknessControl";
 import { ColorPicker } from "./ColorPicker";
 import { ZoomDirection } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
-import { validateStraightLineDrawing, testStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
+import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 import { captureMessage } from "@/utils/sentry";
 
 /**
@@ -93,51 +93,26 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   const handleToolChange = (newTool: DrawingMode) => {
     logger.info(`Toolbar: changing tool from ${tool} to ${newTool}`, {
       previousTool: tool,
-      newTool,
-      isSameTypeComparison: typeof tool === typeof newTool,
-      stringComparison: `'${tool}' vs '${newTool}'`,
-      isEqual: tool === newTool
+      newTool
     });
     
-    // Enhanced logging for straight line tool
-    if (newTool === DrawingMode.STRAIGHT_LINE) {
-      captureMessage('Straight line tool selected from toolbar', 'straight-line-tool-selected', {
-        tags: { component: 'CanvasToolbar' },
-        extra: { 
-          previousTool: tool, 
-          lineThickness, 
-          lineColor,
-          stringCheck: newTool === 'straight-line' ? 'Matches string literal' : 'Does not match',
-          enumCheck: newTool === DrawingMode.STRAIGHT_LINE ? 'Matches enum' : 'Does not match',
-          toolValue: newTool,
-          toolType: typeof newTool
-        }
-      });
-      
-      logger.info('Straight line tool selected from toolbar', {
-        toolType: typeof newTool,
-        toolValue: newTool,
-        toolCheck: newTool === DrawingMode.STRAIGHT_LINE,
-        enumValue: DrawingMode.STRAIGHT_LINE
-      });
-      
-      // Force a small delay to ensure tool change event propagates correctly
-      setTimeout(() => {
-        onToolChange(newTool);
-      }, 0);
-    } else {
-      onToolChange(newTool);
-    }
+    // Call the tool change handler
+    onToolChange(newTool);
     
     // For debugging - will run validation on the next render
     if (newTool === DrawingMode.STRAIGHT_LINE) {
+      // Log the change
+      captureMessage('Straight line tool selected from toolbar', 'straight-line-tool-selected', {
+        tags: { component: 'CanvasToolbar' },
+        extra: { previousTool: tool, lineThickness, lineColor }
+      });
+      
+      // Run validation after a brief delay to allow tool initialization
       setTimeout(() => {
-        logger.info("Validating straight line tool after change");
-        logger.info("Current tool state after change", {
-          currentToolNow: tool,
-          shouldBe: newTool,
-          match: tool === newTool
-        });
+        // This is just for debugging purposes
+        if (window.fabricCanvas) {
+          validateStraightLineDrawing(window.fabricCanvas, newTool);
+        }
       }, 100);
     }
   };

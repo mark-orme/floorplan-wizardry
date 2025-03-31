@@ -1,6 +1,6 @@
 
-import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Line, PencilBrush } from "fabric";
+import React, { useEffect, useRef } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
@@ -11,7 +11,9 @@ import {
   useBrushSettings 
 } from "@/hooks/canvas-events";
 import { useStraightLineTool } from "@/hooks/useStraightLineTool";
-import { validateStraightLineDrawing, testStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
+import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { GridRenderer } from "./grid/GridRenderer";
 
 /**
  * Props for CanvasEventManager component
@@ -50,6 +52,10 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   // Update canvas ref when canvas changes
   useEffect(() => {
     canvasRef.current = canvas;
+    // Add global reference for debugging (will be removed in production)
+    if (canvas && typeof window !== 'undefined') {
+      (window as any).fabricCanvas = canvas;
+    }
   }, [canvas]);
   
   // Initialize object events (history tracking)
@@ -93,13 +99,6 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     if (tool === DrawingMode.STRAIGHT_LINE) {
       logger.info("Running straight line tool diagnostics");
       validateStraightLineDrawing(canvas, tool);
-      
-      // Run test drawing after a brief delay to ensure all settings are applied
-      setTimeout(() => {
-        if (canvas && tool === DrawingMode.STRAIGHT_LINE) {
-          testStraightLineDrawing(canvas, tool);
-        }
-      }, 500);
     }
   }, [canvas, tool]);
   
@@ -113,9 +112,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     logger.info("Applying tool settings to canvas", { 
       tool, 
       lineThickness, 
-      lineColor,
-      isString: typeof tool === 'string',
-      toolMatches: tool === DrawingMode.STRAIGHT_LINE
+      lineColor
     });
     
     try {
@@ -188,16 +185,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           // Discard any active object to ensure nothing is selected
           canvas.discardActiveObject();
           logger.info("Straight line tool activated", { 
-            toolType: typeof tool,
-            toolValue: tool,
-            toolCheck: tool === DrawingMode.STRAIGHT_LINE,
             isToolInitialized
           });
-          
-          // Log if the tool is properly initialized
-          if (!isToolInitialized) {
-            logger.warn("Straight line tool not properly initialized");
-          }
           break;
           
         case DrawingMode.ERASER:
@@ -213,14 +202,6 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           break;
       }
       
-      // Check if grid needs to be created
-      if (gridLayerRef.current.length === 0) {
-        logger.info("No grid detected, attempting to create grid");
-        const gridObjects = createBasicGrid(canvas);
-        gridLayerRef.current = gridObjects;
-        logger.info(`Created grid with ${gridObjects.length} objects`);
-      }
-      
       // Ensure grid stays at the bottom
       if (gridLayerRef.current.length > 0) {
         gridLayerRef.current.forEach(obj => {
@@ -234,9 +215,6 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       }
       
       canvas.renderAll();
-      
-      // Add diagnostic validation after tool change
-      validateStraightLineDrawing(canvas, tool);
       
       captureMessage("Tool applied to canvas", "tool-applied", {
         tags: { toolName: tool },
@@ -277,9 +255,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     
     // Create grid if not already created
     if (gridLayerRef.current.length === 0) {
-      const gridObjects = createBasicGrid(canvas);
-      gridLayerRef.current = gridObjects;
-      logger.info(`Created initial grid with ${gridObjects.length} objects`);
+      // Handled by GridRenderer component
+      logger.info("Initial grid creation handled by GridRenderer");
     }
     
     // Save initial state once when canvas is first available
@@ -291,44 +268,16 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     return () => clearTimeout(timer);
   }, [canvas, saveCurrentState, gridLayerRef]);
   
-  // Function to create basic grid
-  const createBasicGrid = (canvas: FabricCanvas) => {
-    try {
-      const gridSize = 20;
-      const gridObjects: FabricObject[] = [];
-      const width = canvas.width || 800;
-      const height = canvas.height || 600;
-      
-      // Create horizontal grid lines
-      for (let i = 0; i <= height; i += gridSize) {
-        const line = new Line([0, i, width, i], {
-          stroke: "#e0e0e0",
-          selectable: false,
-          evented: false,
-          objectType: "grid"
-        } as any);
-        canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      // Create vertical grid lines
-      for (let i = 0; i <= width; i += gridSize) {
-        const line = new Line([i, 0, i, height], {
-          stroke: "#e0e0e0",
-          selectable: false,
-          evented: false,
-          objectType: "grid"
-        } as any);
-        canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      return gridObjects;
-    } catch (error) {
-      logger.error("Failed to create basic grid", error);
-      return [];
-    }
-  };
-  
-  return null; // This component doesn't render anything
+  return (
+    <>
+      {canvas && gridLayerRef.current.length === 0 && (
+        <GridRenderer 
+          canvas={canvas}
+          onGridCreated={(gridObjects) => {
+            gridLayerRef.current = gridObjects;
+          }}
+        />
+      )}
+    </>
+  );
 };

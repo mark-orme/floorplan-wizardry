@@ -10,8 +10,8 @@
  */
 export const GRID_CONSTANTS = {
   // Grid sizes
-  SMALL_GRID_SIZE: 10, // Now 10px = 0.1m
-  LARGE_GRID_SIZE: 100, // Now 100px = 1.0m
+  SMALL_GRID_SIZE: 10, // 10px = 0.1m
+  LARGE_GRID_SIZE: 100, // 100px = 1.0m
   
   // Grid colors for different hierarchy levels
   SMALL_GRID_COLOR: "#e0f7fa", // Lighter blue color similar to the reference
@@ -39,7 +39,7 @@ export const GRID_CONSTANTS = {
   MARKER_COLOR: "#333333",
   
   // Pixel-to-meter conversion
-  PIXELS_PER_METER: 100, // Now 100px = 1m (10 small squares of 10px each)
+  PIXELS_PER_METER: 100, // 100px = 1m (10 small squares of 10px each)
   
   // For backward compatibility
   GRID_SIZE: 10,
