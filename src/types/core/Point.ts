@@ -1,78 +1,68 @@
 
 /**
- * Point type definition
- * Represents a point in 2D space
+ * Point type definitions and utilities
+ * Provides a consistent interface for point operations
  * @module types/core/Point
  */
 
 /**
- * Point interface
- * Core type used throughout the application for 2D coordinates
+ * Basic Point interface
+ * Represents a point in 2D space
  */
 export interface Point {
   /** X coordinate */
   x: number;
-  
   /** Y coordinate */
   y: number;
 }
 
 /**
- * Create a new point
+ * Create a new Point
  * @param {number} x - X coordinate
  * @param {number} y - Y coordinate
- * @returns {Point} New point object
+ * @returns {Point} A new Point object
  */
-export function createPoint(x: number, y: number): Point {
-  return { x, y };
-}
+export const createPoint = (x: number, y: number): Point => ({
+  x,
+  y
+});
 
 /**
  * Calculate distance between two points
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
+ * @param {Point} point1 - First point
+ * @param {Point} point2 - Second point
  * @returns {number} Distance between points
  */
-export function distance(p1: Point, p2: Point): number {
-  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-}
+export const getDistance = (point1: Point, point2: Point): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+};
 
 /**
- * Check if two points are equal
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {boolean} Whether points are equal
+ * Convert fabric Point to our Point type
+ * @param {any} fabricPoint - Fabric.js Point object
+ * @returns {Point} Our Point object
  */
-export function pointsEqual(p1: Point, p2: Point): boolean {
-  return p1.x === p2.x && p1.y === p2.y;
-}
+export const fromFabricPoint = (fabricPoint: any): Point => {
+  return {
+    x: fabricPoint.x,
+    y: fabricPoint.y
+  };
+};
 
 /**
- * Add two points
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {Point} Resulting point
+ * Determine if a value is a valid Point
+ * @param {any} value - Value to check
+ * @returns {boolean} True if value is a valid Point
  */
-export function addPoints(p1: Point, p2: Point): Point {
-  return { x: p1.x + p2.x, y: p1.y + p2.y };
-}
-
-/**
- * Subtract second point from first
- * @param {Point} p1 - First point
- * @param {Point} p2 - Second point
- * @returns {Point} Resulting point
- */
-export function subtractPoints(p1: Point, p2: Point): Point {
-  return { x: p1.x - p2.x, y: p1.y - p2.y };
-}
-
-/**
- * Scale a point by a factor
- * @param {Point} p - Point to scale
- * @param {number} factor - Scale factor
- * @returns {Point} Scaled point
- */
-export function scalePoint(p: Point, factor: number): Point {
-  return { x: p.x * factor, y: p.y * factor };
-}
+export const isPoint = (value: any): value is Point => {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'x' in value &&
+    'y' in value &&
+    typeof value.x === 'number' &&
+    typeof value.y === 'number'
+  );
+};
