@@ -1,6 +1,6 @@
 
-import React, { forwardRef, useEffect, useState, useRef, useImperativeHandle } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Line, Text, Point as FabricPoint } from "fabric";
+import React, { useEffect, useState, useRef } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -175,7 +175,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       const prevState = historyStack[historyIndex - 1];
       const prevStateObj = JSON.parse(prevState);
       
-      // Fixed: Remove the callback parameter - call loadFromJSON without arguments
+      // Fixed: Don't pass any arguments to loadFromJSON
       canvas.loadFromJSON(prevStateObj);
       canvas.renderAll();
       setHistoryIndex(historyIndex - 1);
@@ -201,7 +201,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       const nextState = historyStack[historyIndex + 1];
       const nextStateObj = JSON.parse(nextState);
       
-      // Fixed: Remove the callback parameter - call loadFromJSON without arguments
+      // Fixed: Don't pass any arguments to loadFromJSON
       canvas.loadFromJSON(nextStateObj);
       canvas.renderAll();
       setHistoryIndex(historyIndex + 1);
@@ -286,9 +286,8 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       
       // Limit zoom range
       if (newZoom > 0.2 && newZoom < 5) {
-        // Create a FabricPoint for the center of the canvas
-        const centerPoint = new FabricPoint(canvas.width! / 2, canvas.height! / 2);
-        canvas.zoomToPoint(centerPoint, newZoom);
+        const center = new fabric.Point(canvas.width! / 2, canvas.height! / 2);
+        canvas.zoomToPoint(center, newZoom);
         canvas.requestRenderAll();
         
         toast.info(`Zoomed ${direction}`);
