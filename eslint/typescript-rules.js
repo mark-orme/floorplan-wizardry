@@ -1,4 +1,3 @@
-
 /**
  * TypeScript specific ESLint rules
  * Enforces strict type checking and code quality for TypeScript files
@@ -30,6 +29,11 @@ export const typescriptRules = {
     "@typescript-eslint/explicit-module-boundary-types": "error",
     "@typescript-eslint/ban-ts-comment": "warn",
     "@typescript-eslint/no-unused-vars": ["warn"], // Updated to warn per request
+    
+    // Add the requested rule for promises
+    "@typescript-eslint/no-misused-promises": ["error", { 
+      "checksVoidReturn": true 
+    }],
     
     // Enforce consistent type imports
     "@typescript-eslint/consistent-type-imports": ["error", { // Added per request
