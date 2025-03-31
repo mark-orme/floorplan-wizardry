@@ -22,8 +22,8 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
       
       // Type-safe assignment using indexed access types
       if (typedKey in state) {
-        // This tells TypeScript we're only assigning keys that exist in GridCreationState
-        validState[typedKey] = state[typedKey] as GridCreationState[typeof typedKey];
+        // Explicitly cast to the correct property type
+        validState[typedKey] = state[typedKey] as any as GridCreationState[typeof typedKey];
       }
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
@@ -47,8 +47,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
       
       // Type-safe assignment using indexed access types
       if (typedKey in updates) {
-        // This tells TypeScript we're only assigning keys that exist in GridCreationState
-        validUpdates[typedKey] = updates[typedKey] as GridCreationState[typeof typedKey];
+        // Explicitly cast to the correct property type
+        validUpdates[typedKey] = updates[typedKey] as any as GridCreationState[typeof typedKey];
       }
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
@@ -83,14 +83,14 @@ export const repairGridState = (state: Record<string, unknown>): Partial<GridCre
       // Use proper type-safe way to copy properties
       const typedKey = key as keyof GridCreationState;
       
-      // Type-safe assignment that preserves the correct property type
-      repairedState[typedKey] = state[key] as GridCreationState[typeof typedKey];
+      // Type-safe assignment with proper casting
+      repairedState[typedKey] = state[key] as any as GridCreationState[typeof typedKey];
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
       
-      // Type-safe assignment that preserves the correct property type
-      repairedState[correctKey] = state[key] as GridCreationState[typeof correctKey];
+      // Type-safe assignment with proper casting
+      repairedState[correctKey] = state[key] as any as GridCreationState[typeof correctKey];
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });
