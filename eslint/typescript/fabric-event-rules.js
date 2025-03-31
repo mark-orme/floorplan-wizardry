@@ -20,7 +20,7 @@ export const fabricEventRules = {
       },
       {
         "selector": "CallExpression[callee.object.name='fabricCanvas'][callee.property.name='on'] > Literal:first-child",
-        "message": "When using fabricCanvas.on(), ensure you're passing a proper event handler as the second argument."
+        "message": "Use FabricEventTypes enum instead of string literals for event names."
       },
       {
         "selector": "MemberExpression[object.name='fabricCanvas'][property.name='_eventListeners']",
@@ -28,7 +28,7 @@ export const fabricEventRules = {
       },
       {
         "selector": "CallExpression[callee.name='find'][callee.object.property.name='calls'] > BinaryExpression[operator='==='][left.property.name='0'][right.type='Literal']",
-        "message": "When extracting event handlers from mocks, use a helper function instead of direct array access."
+        "message": "When extracting event handlers from mocks, use extractFabricEventHandler utility instead of direct array access."
       }
     ],
     
@@ -37,7 +37,7 @@ export const fabricEventRules = {
       "error",
       {
         "selector": "CallExpression[callee.object.property.name='mock'][callee.property.name='calls'][arguments.length>0]",
-        "message": "Use extractHandlerFromMock utility instead of directly accessing mock.calls for event handlers."
+        "message": "Use extractFabricEventHandler utility instead of directly accessing mock.calls for event handlers."
       },
       {
         "selector": "MemberExpression[object.object.name='canvas'][property.name='_eventHandlers']",
@@ -93,6 +93,19 @@ export const fabricEventRules = {
       }
     ],
     
+    // New rules specific to Fabric event types
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "StringLiteral[value=/mouse:down|mouse:move|mouse:up|object:selected|selection:created/]",
+        "message": "Use FabricEventTypes enum instead of string literals for Fabric.js event names."
+      },
+      {
+        "selector": "CallExpression[callee.object.name=/canvas|fabricCanvas/][callee.property.name=/on|off|fire/][arguments.0.type='StringLiteral']",
+        "message": "Use FabricEventTypes enum instead of string literals for event names."
+      }
+    ],
+
     // Rule to enforce proper event handler extraction in tests
     "custom/use-handler-extraction": {
       create(context) {
@@ -106,7 +119,7 @@ export const fabricEventRules = {
               if (testCode.includes('call[0] ===') || testCode.includes(".calls.find")) {
                 context.report({
                   node,
-                  message: "Use extractHandlerFromMock utility instead of direct mock.calls access"
+                  message: "Use extractFabricEventHandler utility instead of direct mock.calls access"
                 });
               }
             }

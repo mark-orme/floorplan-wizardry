@@ -5,12 +5,16 @@
  */
 import { Canvas, Object as FabricObject } from 'fabric';
 import { vi } from 'vitest';
+import { FabricEventTypes } from '@/types/fabric-events';
 
 /**
  * Create a mock Fabric canvas for testing
  * @returns Mocked Fabric canvas instance
  */
 export const createMockCanvas = (): Canvas => {
+  // Using string type for event names to avoid the type errors
+  const eventHandlers = new Map<string, Array<Function>>();
+  
   return {
     add: vi.fn(),
     remove: vi.fn(),
@@ -22,8 +26,23 @@ export const createMockCanvas = (): Canvas => {
     requestRenderAll: vi.fn(),
     getZoom: vi.fn().mockReturnValue(1),
     setZoom: vi.fn(),
-    on: vi.fn(),
-    off: vi.fn(),
+    on: vi.fn((eventName: string, handler: Function) => {
+      if (!eventHandlers.has(eventName)) {
+        eventHandlers.set(eventName, []);
+      }
+      eventHandlers.get(eventName)!.push(handler);
+      return this;
+    }),
+    off: vi.fn((eventName: string, handler: Function) => {
+      if (eventHandlers.has(eventName)) {
+        const handlers = eventHandlers.get(eventName)!;
+        const index = handlers.indexOf(handler);
+        if (index !== -1) {
+          handlers.splice(index, 1);
+        }
+      }
+      return this;
+    }),
     fire: vi.fn(),
     getWidth: vi.fn().mockReturnValue(800),
     getHeight: vi.fn().mockReturnValue(600),
@@ -38,7 +57,14 @@ export const createMockCanvas = (): Canvas => {
     setViewportTransform: vi.fn(),
     width: 800,
     height: 600,
-    _objects: []
+    _objects: [],
+    discardActiveObject: vi.fn(),
+    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+    selection: true,
+    defaultCursor: 'default',
+    hoverCursor: 'default',
+    // Store eventHandlers in a way that's accessible for testing
+    __eventHandlers: eventHandlers
   } as unknown as Canvas;
 };
 
@@ -86,7 +112,6 @@ export const extractFabricEventHandler = (
 ): Function | undefined => {
   // Type assertion to access the mocked event handlers
   const mockCanvas = canvas as unknown as { 
-    on: jest.MockedFunction<any>;
     __eventHandlers?: Map<string, Function[]>;
   };
   
@@ -95,10 +120,5 @@ export const extractFabricEventHandler = (
     return mockCanvas.__eventHandlers.get(eventName)?.[0];
   }
   
-  // Fallback: try to extract from the .on method calls
-  const onMock = mockCanvas.on as jest.MockedFunction<any>;
-  if (!onMock.mock) return undefined;
-  
-  const call = onMock.mock.calls.find(call => call[0] === eventName);
-  return call?.[1];
+  return undefined;
 };
