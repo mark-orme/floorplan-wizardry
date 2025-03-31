@@ -44,7 +44,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     }
     
     logger.info("Setting up canvas event listeners", { tool });
-    captureMessage("Canvas event listeners initialized", {
+    captureMessage("Canvas event listeners initialized", "event-listeners-init", {
       level: "info",
       tags: { component: "CanvasEventManager" },
       extra: { tool, lineThickness, lineColor }
@@ -57,7 +57,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     const handleObjectModified = () => {
       saveCurrentState();
       logger.info("Object modified, saving state");
-      captureMessage("Canvas object modified", {
+      captureMessage("Canvas object modified", "object-modified", {
         level: "info",
         tags: { component: "CanvasEventManager", event: "objectModified" }
       });
@@ -66,7 +66,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     const handleObjectAdded = () => {
       saveCurrentState();
       logger.info("Object added, saving state");
-      captureMessage("Canvas object added", {
+      captureMessage("Canvas object added", "object-added", {
         level: "info",
         tags: { component: "CanvasEventManager", event: "objectAdded" }
       });
@@ -192,7 +192,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       canvas.renderAll();
       
-      captureMessage("Tool applied to canvas", {
+      captureMessage("Tool applied to canvas", "tool-applied", {
         level: "info",
         tags: { component: "CanvasEventManager", action: "toolChange" },
         extra: { tool, lineThickness, lineColor }

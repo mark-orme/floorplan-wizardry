@@ -38,7 +38,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     resetGridProgress();
     
     logger.info("CanvasApp mounted", { initialTool: tool });
-    captureMessage("CanvasApp initialized", {
+    captureMessage("CanvasApp initialized", "canvas-app-init", {
       level: "info",
       tags: { component: "CanvasApp" },
       extra: { initialTool: tool }
@@ -64,7 +64,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
       setTool(newTool);
       toast.success(`Changed to ${newTool} tool`);
       
-      captureMessage("Drawing tool changed", {
+      captureMessage("Drawing tool changed", "tool-change", {
         level: "info",
         tags: { component: "CanvasApp", action: "toolChange" },
         extra: { previousTool: tool, newTool: newTool }
@@ -98,7 +98,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       console.log("Undo action");
       toast.info("Undo action");
-      captureMessage("Undo action triggered", {
+      captureMessage("Undo action triggered", "undo-action", {
         level: "info",
         tags: { component: "CanvasApp", action: "undo" }
       });
@@ -123,7 +123,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       console.log("Redo action");
       toast.info("Redo action");
-      captureMessage("Redo action triggered", {
+      captureMessage("Redo action triggered", "redo-action", {
         level: "info",
         tags: { component: "CanvasApp", action: "redo" }
       });
@@ -142,7 +142,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       console.log(`Zoom ${direction}`);
       toast.info(`Zoom ${direction}`);
-      captureMessage("Zoom action triggered", {
+      captureMessage("Zoom action triggered", "zoom-action", {
         level: "info",
         tags: { component: "CanvasApp", action: "zoom" },
         extra: { direction }
@@ -164,7 +164,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       console.log("Clear canvas");
       toast.info("Clear canvas");
-      captureMessage("Clear canvas action triggered", {
+      captureMessage("Clear canvas action triggered", "clear-canvas", {
         level: "info",
         tags: { component: "CanvasApp", action: "clear" }
       });
@@ -183,7 +183,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       console.log("Save canvas");
       toast.success("Canvas saved");
-      captureMessage("Save canvas action triggered", {
+      captureMessage("Save canvas action triggered", "save-canvas", {
         level: "info",
         tags: { component: "CanvasApp", action: "save" }
       });
@@ -202,7 +202,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       console.log("Delete selected objects");
       toast.info("Objects deleted");
-      captureMessage("Delete objects action triggered", {
+      captureMessage("Delete objects action triggered", "delete-objects", {
         level: "info",
         tags: { component: "CanvasApp", action: "delete" }
       });
@@ -224,7 +224,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       setLineThickness(thickness);
       toast.info(`Line thickness set to ${thickness}`);
-      captureMessage("Line thickness changed", {
+      captureMessage("Line thickness changed", "thickness-change", {
         level: "info",
         tags: { component: "CanvasApp", action: "thicknessChange" },
         extra: { previousThickness: lineThickness, newThickness: thickness }
@@ -252,7 +252,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     try {
       setLineColor(color);
       toast.info(`Line color set to ${color}`);
-      captureMessage("Line color changed", {
+      captureMessage("Line color changed", "color-change", {
         level: "info",
         tags: { component: "CanvasApp", action: "colorChange" },
         extra: { previousColor: lineColor, newColor: color }

@@ -51,7 +51,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
         checkAndFixGrid();
       }, 100);
       
-      captureMessage("Canvas initialized successfully", {
+      captureMessage("Canvas initialized successfully", "canvas-init", {
         level: "info",
         tags: { component: "ConnectedDrawingCanvas" },
         extra: { 
@@ -124,7 +124,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       
       canvas.renderAll();
       
-      captureMessage("Tool applied to canvas", {
+      captureMessage("Tool applied to canvas", "tool-applied", {
         level: "info",
         tags: { component: "ConnectedDrawingCanvas", action: "applyTool" },
         extra: { tool: currentTool, lineThickness, lineColor }
@@ -201,7 +201,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
         canvas.requestRenderAll();
         toast.info("Objects deleted");
         
-        captureMessage("Objects deleted from canvas", {
+        captureMessage("Objects deleted from canvas", "objects-deleted", {
           level: "info",
           tags: { component: "ConnectedDrawingCanvas", action: "deleteObjects" },
           extra: { count: activeObjects.length }
@@ -225,7 +225,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
         logger.warn("No grid found, creating emergency grid");
         forceGridCreation();
         
-        captureMessage("Emergency grid created", {
+        captureMessage("Emergency grid created", "emergency-grid", {
           level: "warning",
           tags: { component: "ConnectedDrawingCanvas", action: "emergencyGrid" }
         });
