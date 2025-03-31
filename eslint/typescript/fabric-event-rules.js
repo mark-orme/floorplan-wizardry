@@ -25,15 +25,32 @@ export const fabricEventRules = {
       {
         "selector": "MemberExpression[object.name='fabricCanvas'][property.name='_eventListeners']",
         "message": "Don't access private Fabric.js properties like _eventListeners directly. Use the provided API methods."
+      },
+      {
+        "selector": "CallExpression[callee.name='find'][callee.object.property.name='calls'] > BinaryExpression[operator='==='][left.property.name='0'][right.type='Literal']",
+        "message": "When extracting event handlers from mocks, use a helper function instead of direct array access."
       }
     ],
     
-    // Prevent incorrect event handler extraction in tests
+    // Enhanced rules for testing Fabric.js event handlers
     "no-restricted-syntax": [
       "error",
       {
-        "selector": "CallExpression[callee.object.object.name='vi'][callee.object.property.name='mocked'][callee.property.name='calls'][arguments.length>0]",
-        "message": "When mocking with vi.mocked(), use proper typing for the mock calls."
+        "selector": "CallExpression[callee.object.property.name='mock'][callee.property.name='calls'][arguments.length>0]",
+        "message": "Use extractHandlerFromMock utility instead of directly accessing mock.calls for event handlers."
+      },
+      {
+        "selector": "MemberExpression[object.object.name='canvas'][property.name='_eventHandlers']",
+        "message": "Don't access private _eventHandlers directly. Use proper testing utilities."
+      }
+    ],
+    
+    // Rule to prevent string literals for event names
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.object.name=/canvas|fabricCanvas/][callee.property.name=/on|off|fire/] > Literal:first-child",
+        "message": "Use FabricEventTypes enum instead of string literals for event names."
       }
     ],
     
@@ -54,13 +71,48 @@ export const fabricEventRules = {
       }
     ],
     
-    // Enforce explicit type casting for event objects
+    // Enforce proper testing of event handlers
     "@typescript-eslint/consistent-type-assertions": [
       "error", 
       {
         "assertionStyle": "as",
         "objectLiteralTypeAssertions": "allow-as-parameter"
       }
-    ]
+    ],
+
+    // New rule to prevent direct mock function call access without proper extraction
+    "no-restricted-syntax": [
+      "error", 
+      {
+        "selector": "MemberExpression[object.object.name='vi'][object.property.name='mocked'][property.name='mock']",
+        "message": "Don't access vi.mocked().mock directly. Use proper test helper functions."
+      },
+      {
+        "selector": "MemberExpression[object.object.name='vi'][object.property.name='fn'][property.name='mock']",
+        "message": "Don't access vi.fn().mock directly. Use proper test helper functions."
+      }
+    ],
+    
+    // Rule to enforce proper event handler extraction in tests
+    "custom/use-handler-extraction": {
+      create(context) {
+        return {
+          CallExpression(node) {
+            if (node.callee.type === 'MemberExpression' && 
+                node.callee.property.name === 'find' &&
+                node.arguments.length > 0) {
+              // This is attempting to find something
+              const testCode = context.getSourceCode().getText(node);
+              if (testCode.includes('call[0] ===') || testCode.includes(".calls.find")) {
+                context.report({
+                  node,
+                  message: "Use extractHandlerFromMock utility instead of direct mock.calls access"
+                });
+              }
+            }
+          }
+        };
+      }
+    }
   }
 };

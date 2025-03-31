@@ -73,3 +73,32 @@ export const createMockCanvasRef = () => ({
 export const createMockGridLayerRef = () => ({
   current: []
 });
+
+/**
+ * Extract an event handler from a mock Fabric canvas
+ * @param canvas - The mock canvas
+ * @param eventName - The event name to extract handler for
+ * @returns The handler function if found
+ */
+export const extractFabricEventHandler = (
+  canvas: Canvas, 
+  eventName: string
+): Function | undefined => {
+  // Type assertion to access the mocked event handlers
+  const mockCanvas = canvas as unknown as { 
+    on: jest.MockedFunction<any>;
+    __eventHandlers?: Map<string, Function[]>;
+  };
+  
+  // First try to get from the __eventHandlers map (if using that pattern)
+  if (mockCanvas.__eventHandlers) {
+    return mockCanvas.__eventHandlers.get(eventName)?.[0];
+  }
+  
+  // Fallback: try to extract from the .on method calls
+  const onMock = mockCanvas.on as jest.MockedFunction<any>;
+  if (!onMock.mock) return undefined;
+  
+  const call = onMock.mock.calls.find(call => call[0] === eventName);
+  return call?.[1];
+};
