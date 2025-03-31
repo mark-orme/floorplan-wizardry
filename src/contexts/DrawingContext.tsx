@@ -1,15 +1,19 @@
 
+/**
+ * Drawing context
+ * Provides drawing state and operations to components
+ * @module contexts/DrawingContext
+ */
 import React, { createContext, useContext, useMemo, useState, useCallback } from "react";
 import { DrawingMode } from "@/constants/drawingModes";
+import { DrawingTool } from "@/types/core/DrawingTool";
 import { DEFAULT_CANVAS_STATE } from "@/hooks/useCanvasState";
 
 /**
- * Use DrawingMode as DrawingTool for backwards compatibility
- */
-type DrawingTool = DrawingMode;
-
-/**
  * Drawing context type
+ * Defines the shape of the drawing context
+ * 
+ * @interface DrawingContextType
  */
 interface DrawingContextType {
   // Tool state
@@ -23,7 +27,7 @@ interface DrawingContextType {
   setLineThickness: (thickness: number) => void;
   
   // Grid settings
-  snapToGrid: boolean; // Changed from true to boolean to allow toggling
+  snapToGrid: boolean;
   toggleSnapToGrid: () => void;
   
   // Undo/redo state
@@ -38,6 +42,8 @@ const DrawingContext = createContext<DrawingContextType | null>(null);
 
 /**
  * Props for the DrawingProvider
+ * 
+ * @interface DrawingProviderProps
  */
 interface DrawingProviderProps {
   children: React.ReactNode;
@@ -46,6 +52,9 @@ interface DrawingProviderProps {
 /**
  * Provider component for drawing context
  * Manages drawing tools, styles, and related state
+ * 
+ * @param {DrawingProviderProps} props - Provider props
+ * @returns {React.FC} Provider component
  */
 export const DrawingProvider: React.FC<DrawingProviderProps> = ({ children }) => {
   // Initialize with default state
@@ -92,7 +101,9 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({ children }) =>
 
 /**
  * Hook to access drawing context
+ * 
  * @returns {DrawingContextType} Drawing context
+ * @throws {Error} If used outside a DrawingProvider
  */
 export const useDrawingContext = (): DrawingContextType => {
   const context = useContext(DrawingContext);

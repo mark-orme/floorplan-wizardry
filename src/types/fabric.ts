@@ -2,6 +2,7 @@
 /**
  * Type definitions for Fabric.js
  * Provides type aliases and interfaces for working with Fabric.js
+ * @module types/fabric
  */
 
 import { Canvas, Object, PencilBrush, Line, Point } from 'fabric';

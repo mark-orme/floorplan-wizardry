@@ -11,7 +11,7 @@ import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Export DrawingMode from the canonical source
+ * Re-export DrawingMode from the canonical source
  * This ensures consistency across the application
  */
 export { DrawingMode };
@@ -20,6 +20,8 @@ export type { DrawingTool };
 /**
  * Canvas state interface
  * Defines the complete state for the canvas
+ * 
+ * @interface CanvasState
  */
 export interface CanvasState {
   /** Active drawing tool */
@@ -37,6 +39,9 @@ export interface CanvasState {
 /**
  * Result interface for useCanvasState hook
  * Includes state values and setter functions
+ * 
+ * @interface UseCanvasStateResult
+ * @extends CanvasState
  */
 export interface UseCanvasStateResult extends CanvasState {
   /** Set active drawing tool */
@@ -56,6 +61,8 @@ export interface UseCanvasStateResult extends CanvasState {
 /**
  * Default canvas state values
  * Initial state for the canvas
+ * 
+ * @constant {CanvasState} DEFAULT_CANVAS_STATE
  */
 export const DEFAULT_CANVAS_STATE: CanvasState = {
   tool: DrawingMode.SELECT,
@@ -67,14 +74,15 @@ export const DEFAULT_CANVAS_STATE: CanvasState = {
 
 /**
  * Hook for managing canvas state
- * @returns Canvas state and setter functions
+ * 
+ * @returns {UseCanvasStateResult} Canvas state and setter functions
  */
 export function useCanvasState(): UseCanvasStateResult {
   const [state, setState] = useState<CanvasState>(DEFAULT_CANVAS_STATE);
   
   /**
    * Set active drawing tool
-   * @param tool - Drawing tool to set
+   * @param {DrawingMode} tool - Drawing tool to set
    */
   const setTool = (tool: DrawingMode): void => {
     setState(prev => ({ ...prev, tool }));
@@ -82,7 +90,7 @@ export function useCanvasState(): UseCanvasStateResult {
   
   /**
    * Set zoom level
-   * @param zoomLevel - Zoom level to set
+   * @param {number} zoomLevel - Zoom level to set
    */
   const setZoomLevel = (zoomLevel: number): void => {
     setState(prev => ({ ...prev, zoomLevel }));
@@ -90,7 +98,7 @@ export function useCanvasState(): UseCanvasStateResult {
   
   /**
    * Set line thickness
-   * @param lineThickness - Line thickness to set
+   * @param {number} lineThickness - Line thickness to set
    */
   const setLineThickness = (lineThickness: number): void => {
     setState(prev => ({ ...prev, lineThickness }));
@@ -98,7 +106,7 @@ export function useCanvasState(): UseCanvasStateResult {
   
   /**
    * Set line color
-   * @param lineColor - Line color to set
+   * @param {string} lineColor - Line color to set
    */
   const setLineColor = (lineColor: string): void => {
     setState(prev => ({ ...prev, lineColor }));
@@ -106,7 +114,7 @@ export function useCanvasState(): UseCanvasStateResult {
   
   /**
    * Set snap to grid
-   * @param snapToGrid - Whether to snap to grid
+   * @param {boolean} snapToGrid - Whether to snap to grid
    */
   const setSnapToGrid = (snapToGrid: boolean): void => {
     setState(prev => ({ ...prev, snapToGrid }));

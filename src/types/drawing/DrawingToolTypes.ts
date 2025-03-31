@@ -5,12 +5,13 @@
  * @module types/drawing/DrawingToolTypes
  */
 import { DrawingMode } from "@/constants/drawingModes";
+import { DrawingTool, isValidDrawingTool } from "@/types/core/DrawingTool";
 
 /**
  * Re-export DrawingMode as the canonical drawing tool type
  * This helps standardize usage across the application
  */
-export type DrawingTool = DrawingMode;
+export type { DrawingTool };
 
 /**
  * Re-export the DrawingMode enum directly
@@ -19,26 +20,24 @@ export type DrawingTool = DrawingMode;
 export { DrawingMode };
 
 /**
- * Type guard to check if a value is a valid DrawingMode
- * @param value - Value to check
- * @returns Whether the value is a valid DrawingMode
+ * Re-export the type guard from core/DrawingTool
+ * Use this to validate DrawingTool values
  */
-export const isValidDrawingMode = (value: unknown): value is DrawingMode => {
-  return typeof value === 'string' && Object.values(DrawingMode).includes(value as DrawingMode);
-};
+export { isValidDrawingTool };
 
 /**
  * Convert a DrawingTool to DrawingMode safely
  * Use this function when transitioning between the two types
- * @param tool - Drawing tool to convert
- * @returns Equivalent DrawingMode
+ * 
+ * @param {DrawingTool} tool - Drawing tool to convert
+ * @returns {DrawingMode} Equivalent DrawingMode
  */
 export const toDrawingMode = (tool: DrawingTool): DrawingMode => {
-  return tool as unknown as DrawingMode;
+  return tool;
 };
 
 /**
  * Default drawing tool
  * Use this as the default value for drawing tool state
  */
-export const DEFAULT_DRAWING_TOOL = DrawingMode.SELECT;
+export const DEFAULT_DRAWING_TOOL: DrawingTool = DrawingMode.SELECT;

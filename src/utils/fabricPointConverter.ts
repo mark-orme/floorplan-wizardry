@@ -20,6 +20,12 @@ export function toFabricPoint(point: Point): FabricPoint {
 }
 
 /**
+ * Alias for toFabricPoint for backward compatibility
+ * @deprecated Use toFabricPoint instead
+ */
+export const createFabricPoint = toFabricPoint;
+
+/**
  * Convert Fabric.js Point to application Point
  * Extracts x,y coordinates from Fabric.js Point object
  * 
@@ -29,6 +35,12 @@ export function toFabricPoint(point: Point): FabricPoint {
 export function toAppPoint(fabricPoint: FabricPoint): Point {
   return { x: fabricPoint.x, y: fabricPoint.y };
 }
+
+/**
+ * Alias for toAppPoint for backward compatibility
+ * @deprecated Use toAppPoint instead
+ */
+export const fromFabricPoint = toAppPoint;
 
 /**
  * Safely convert a potentially null or undefined point
@@ -66,4 +78,42 @@ export function pointsArrayToFabric(points: Point[]): FabricPoint[] {
  */
 export function fabricPointsToAppPoints(fabricPoints: FabricPoint[]): Point[] {
   return fabricPoints.map(point => toAppPoint(point));
+}
+
+/**
+ * Check if a value is an application Point
+ * 
+ * @param {unknown} value - Value to check
+ * @returns {boolean} Whether the value is an application Point
+ */
+export function isAppPoint(value: unknown): value is Point {
+  return Boolean(
+    value && 
+    typeof value === 'object' && 
+    'x' in value && 
+    'y' in value &&
+    typeof (value as Point).x === 'number' &&
+    typeof (value as Point).y === 'number'
+  );
+}
+
+/**
+ * Extract a Point from a mouse or touch event
+ * 
+ * @param {MouseEvent | TouchEvent} event - Event to extract point from
+ * @returns {Point | null} Extracted point or null if not possible
+ */
+export function getPointFromEvent(event: MouseEvent | TouchEvent): Point | null {
+  if ('touches' in event && event.touches && event.touches.length > 0) {
+    return {
+      x: event.touches[0].clientX,
+      y: event.touches[0].clientY
+    };
+  } else if ('clientX' in event && 'clientY' in event) {
+    return {
+      x: event.clientX,
+      y: event.clientY
+    };
+  }
+  return null;
 }
