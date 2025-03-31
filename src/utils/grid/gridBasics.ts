@@ -23,12 +23,12 @@ export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
     const gridObjects: FabricObject[] = [];
     const width = canvas.width || 800;
     const height = canvas.height || 600;
-    const gridSize = GRID_CONSTANTS.GRID_SIZE;
+    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
     
     // Create horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
@@ -47,7 +47,7 @@ export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
     // Create vertical lines
     for (let i = 0; i <= width; i += gridSize) {
       const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: 0.5,
         selectable: false,
         evented: false,

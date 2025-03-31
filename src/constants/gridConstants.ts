@@ -53,6 +53,12 @@ export const GRID_CONSTANTS = {
   /** Large grid (legacy naming) */
   LARGE_GRID: 100,
   
+  /** Legacy grid size property (for backward compatibility) */
+  GRID_SIZE: 20,
+  
+  /** Legacy grid color property (for backward compatibility) */
+  GRID_COLOR: '#e0e0e0',
+  
   /** Pixels per meter for measurement conversion */
   PIXELS_PER_METER: 100,
   

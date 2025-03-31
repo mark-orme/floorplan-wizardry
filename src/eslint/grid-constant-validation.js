@@ -73,6 +73,28 @@ module.exports = {
           }
         };
       }
+    },
+    // New rule to prevent adding new keys to GRID_CONSTANTS outside the main definition file
+    "grid-constant-validation/no-direct-mutation": {
+      create(context) {
+        return {
+          AssignmentExpression(node) {
+            if (node.left.type === 'MemberExpression' &&
+                node.left.object.type === 'Identifier' &&
+                node.left.object.name === 'GRID_CONSTANTS') {
+              
+              // Allow assignments in gridConstants.ts but nowhere else
+              const filename = context.getFilename();
+              if (!filename.includes('gridConstants.ts')) {
+                context.report({
+                  node,
+                  message: 'Do not directly modify GRID_CONSTANTS outside of gridConstants.ts'
+                });
+              }
+            }
+          }
+        };
+      }
     }
   }
 };
