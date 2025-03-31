@@ -1,3 +1,4 @@
+
 /**
  * Grid state validation utilities
  * Provides functions to validate and sanitize grid state objects
@@ -21,7 +22,7 @@ export function validateGridState(state: unknown): GridCreationState {
   // Initialize with default state
   const validState = { ...DEFAULT_GRID_CREATION_STATE };
   
-  // Type-safe property mapping with explicit keys
+  // Cast the unknown state to a Record type for safer property access
   const stateRecord = state as Record<string, unknown>;
   
   // Map boolean properties safely
@@ -29,8 +30,7 @@ export function validateGridState(state: unknown): GridCreationState {
   
   booleanProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'boolean') {
-      // Type-safe assignment using any as an intermediate cast
-      (validState as any)[prop] = stateRecord[prop] as boolean;
+      validState[prop] = stateRecord[prop] as boolean;
     }
   });
   
@@ -39,8 +39,7 @@ export function validateGridState(state: unknown): GridCreationState {
   
   numberProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'number') {
-      // Type-safe assignment using any as an intermediate cast
-      (validState as any)[prop] = stateRecord[prop] as number;
+      validState[prop] = stateRecord[prop] as number;
     }
   });
   
@@ -49,8 +48,7 @@ export function validateGridState(state: unknown): GridCreationState {
   
   stringProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'string') {
-      // Type-safe assignment using any as an intermediate cast
-      (validState as any)[prop] = stateRecord[prop] as string;
+      validState[prop] = stateRecord[prop] as string;
     }
   });
   
@@ -77,6 +75,11 @@ export function validateGridState(state: unknown): GridCreationState {
     // Make sure to use only properties that exist on GridCreationLock
     if ('maxLockTime' in lockRecord && typeof lockRecord.maxLockTime === 'number') {
       validState.creationLock.maxLockTime = lockRecord.maxLockTime;
+    }
+    
+    // Using lockExpiresAt instead of expireAt
+    if ('lockExpiresAt' in lockRecord && typeof lockRecord.lockExpiresAt === 'number') {
+      validState.creationLock.lockExpiresAt = lockRecord.lockExpiresAt;
     }
   }
   

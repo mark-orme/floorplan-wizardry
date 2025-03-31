@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing grid snapping functionality
  * @module hooks/useSnapToGrid
@@ -13,6 +14,7 @@ import { GRID_CONSTANTS } from '@/constants/gridConstants';
  * @interface UseSnapToGridProps
  */
 export interface UseSnapToGridProps {
+  /** Reference to Fabric.js canvas */
   fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
 }
 
@@ -105,6 +107,15 @@ export const useSnapToGrid = (props?: UseSnapToGridProps) => {
     return point.x % gridSize === 0 && point.y % gridSize === 0;
   }, []);
   
+  /**
+   * Get snap enabled state based on tool
+   * @param tool - Current drawing tool
+   * @returns Whether snapping is enabled for this tool
+   */
+  const getSnapEnabledForTool = (tool: DrawingMode): boolean => {
+    return snapEnabled;
+  };
+  
   return {
     snapEnabled,
     setSnapEnabled,
@@ -112,6 +123,6 @@ export const useSnapToGrid = (props?: UseSnapToGridProps) => {
     snapLineToGrid,
     isSnappedToGrid,
     toggleSnapToGrid: () => setSnapEnabled(prev => !prev),
-    getSnapEnabledForTool: (tool: DrawingMode) => snapEnabled
+    getSnapEnabledForTool
   };
 };

@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -5,7 +6,7 @@ import { Point } from '@/types/core/Geometry';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
 import { FabricEventTypes } from '@/types/fabric-events';
 import logger from '@/utils/logger';
-import { useSnapToGrid, UseSnapToGridProps } from '@/hooks/useSnapToGrid';
+import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 
 interface LineState {
   isDrawing: boolean;
