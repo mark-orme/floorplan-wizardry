@@ -34,21 +34,18 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       
       const objectCount = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid').length;
       
-      captureMessage(
-        "Canvas state saved",
-        "canvas-save-state",
-        {
-          tags: { component: "ConnectedDrawingCanvas", action: "saveState" },
-          extra: { count: objectCount }
-        }
-      );
+      captureMessage("Canvas state saved", {
+        messageId: "canvas-save-state",
+        level: "info",
+        tags: { component: "ConnectedDrawingCanvas", action: "saveState" },
+        extra: { count: objectCount }
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas state", { error: errorMsg });
-      captureError(
-        error as Error,
-        "canvas-save-error"
-      );
+      captureError(error as Error, {
+        errorId: "canvas-save-error"
+      });
       toast.error(`Failed to save canvas state: ${errorMsg}`);
     }
   }, [canvas, historyStack, historyIndex]);
@@ -69,20 +66,17 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         setCanRedo(true);
       });
       
-      captureMessage(
-        "Undo performed on canvas",
-        "canvas-undo",
-        {
-          tags: { component: "ConnectedDrawingCanvas", action: "undo" }
-        }
-      );
+      captureMessage("Undo performed on canvas", {
+        messageId: "canvas-undo",
+        level: "info",
+        tags: { component: "ConnectedDrawingCanvas", action: "undo" }
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to undo", { error: errorMsg });
-      captureError(
-        error as Error,
-        "canvas-undo-error"
-      );
+      captureError(error as Error, {
+        errorId: "canvas-undo-error"
+      });
       toast.error(`Failed to undo: ${errorMsg}`);
     }
   }, [canvas, historyStack, historyIndex]);
@@ -103,20 +97,17 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         setCanRedo(historyIndex + 1 < historyStack.length - 1);
       });
       
-      captureMessage(
-        "Redo performed on canvas",
-        "canvas-redo",
-        {
-          tags: { component: "ConnectedDrawingCanvas", action: "redo" }
-        }
-      );
+      captureMessage("Redo performed on canvas", {
+        messageId: "canvas-redo",
+        level: "info",
+        tags: { component: "ConnectedDrawingCanvas", action: "redo" }
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to redo", { error: errorMsg });
-      captureError(
-        error as Error,
-        "canvas-redo-error"
-      );
+      captureError(error as Error, {
+        errorId: "canvas-redo-error"
+      });
       toast.error(`Failed to redo: ${errorMsg}`);
     }
   }, [canvas, historyStack, historyIndex]);

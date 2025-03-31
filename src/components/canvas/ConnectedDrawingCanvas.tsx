@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -63,6 +63,22 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       canvas.renderAll();
     }
   }, [canvas, initialized, createGrid]);
+
+  // Initialize the drawing brush when canvas is initialized
+  useEffect(() => {
+    if (canvas && initialized) {
+      // Ensure the drawing brush is initialized
+      if (!canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush = new PencilBrush(canvas);
+        logger.info("Initialized freeDrawingBrush on canvas");
+      }
+      
+      // Configure the brush
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+      logger.info("Configured drawing brush", { color: lineColor, width: lineThickness });
+    }
+  }, [canvas, initialized, lineColor, lineThickness]);
 
   const {
     historyStack,

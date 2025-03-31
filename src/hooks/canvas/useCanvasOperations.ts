@@ -1,7 +1,8 @@
 
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Point } from "fabric";
+import { useCallback, useRef } from "react";
+import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
+import { DrawingMode } from "@/constants/drawingModes";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
 
@@ -21,78 +22,85 @@ export const useCanvasOperations = ({
     
     try {
       const activeObject = canvas.getActiveObject();
-      if (activeObject) {
-        if (activeObject.type === 'activeSelection') {
-          // Multiple objects selected
-          activeObject.forEachObject((obj: any) => {
-            if ((obj as any).objectType !== 'grid') {
-              canvas.remove(obj);
-            }
-          });
-          canvas.discardActiveObject();
-        } else if ((activeObject as any).objectType !== 'grid') {
-          // Single object selected
-          canvas.remove(activeObject);
-        }
-        canvas.requestRenderAll();
-        saveCurrentState();
-        
-        toast.success("Objects deleted");
-        
-        captureMessage(
-          "Objects deleted from canvas", 
-          "delete-objects",
-          {
-            tags: { component: "Canvas", action: "deleteObjects" }
-          }
-        );
-      } else {
-        toast.info("Nothing selected to delete");
+      if (!activeObject) {
+        logger.info("No active object to delete");
+        return;
       }
+      
+      // Save current state before deleting
+      saveCurrentState();
+      
+      if (activeObject.type === 'activeSelection') {
+        // Delete multiple selected objects
+        const activeSelection = activeObject as fabric.ActiveSelection;
+        const objects = [...activeSelection.getObjects()];
+        
+        activeSelection.forEachObject((obj: fabric.Object) => {
+          canvas.remove(obj);
+        });
+        
+        canvas.discardActiveObject();
+        logger.info(`Deleted ${objects.length} objects`);
+        
+        captureMessage("Objects deleted", {
+          messageId: "objects-deleted",
+          level: "info",
+          tags: { component: "CanvasOperations", action: "deleteMultipleObjects" },
+          extra: { count: objects.length }
+        });
+      } else {
+        // Delete single object
+        canvas.remove(activeObject);
+        canvas.discardActiveObject();
+        logger.info("Deleted single object");
+        
+        captureMessage("Object deleted", {
+          messageId: "object-deleted",
+          level: "info",
+          tags: { component: "CanvasOperations", action: "deleteSingleObject" }
+        });
+      }
+      
+      canvas.requestRenderAll();
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to delete objects", { error: errorMsg });
-      captureError(
-        error as Error,
-        "delete-objects-error"
-      );
+      captureError(error as Error, {
+        errorId: "delete-objects-error"
+      });
       toast.error(`Failed to delete objects: ${errorMsg}`);
     }
   }, [canvas, saveCurrentState]);
   
-  // Clear canvas (remove all non-grid objects)
+  // Clear canvas of all drawings
   const clearCanvas = useCallback(() => {
     if (!canvas) return;
     
     try {
-      // Get all objects that are not grid
-      const nonGridObjects = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid');
-      
-      // Remove non-grid objects
-      nonGridObjects.forEach(obj => {
-        canvas.remove(obj);
-      });
-      
-      // Force render
-      canvas.requestRenderAll();
+      // Save current state before clearing
       saveCurrentState();
       
-      toast.success("Canvas cleared");
+      // Remove all non-grid objects
+      const objects = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid');
+      canvas.remove(...objects);
+      canvas.discardActiveObject();
       
-      captureMessage(
-        "Canvas cleared", 
-        "clear-canvas",
-        {
-          tags: { component: "Canvas", action: "clearCanvas" }
-        }
-      );
+      logger.info(`Cleared canvas (removed ${objects.length} objects)`);
+      
+      captureMessage("Canvas cleared", {
+        messageId: "canvas-cleared",
+        level: "info",
+        tags: { component: "CanvasOperations", action: "clearCanvas" },
+        extra: { count: objects.length }
+      });
+      
+      canvas.requestRenderAll();
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to clear canvas", { error: errorMsg });
-      captureError(
-        error as Error,
-        "clear-canvas-error"
-      );
+      captureError(error as Error, {
+        errorId: "clear-canvas-error" 
+      });
       toast.error(`Failed to clear canvas: ${errorMsg}`);
     }
   }, [canvas, saveCurrentState]);
@@ -107,30 +115,34 @@ export const useCanvasOperations = ({
       const newZoom = currentZoom * zoomFactor;
       
       // Limit zoom range
-      if (newZoom > 0.2 && newZoom < 5) {
-        // Create a Point instance properly
-        const center = new Point(canvas.width! / 2, canvas.height! / 2);
-        canvas.zoomToPoint(center, newZoom);
-        canvas.requestRenderAll();
-        
-        toast.info(`Zoomed ${direction}`);
-        
-        captureMessage(
-          `Canvas zoomed ${direction}`,
-          "zoom-canvas",
-          {
-            tags: { component: "Canvas", action: "zoom" },
-            extra: { direction, newZoom }
-          }
-        );
-      }
+      const limitedZoom = Math.min(Math.max(newZoom, 0.1), 10);
+      
+      // Get canvas center point
+      const center = {
+        x: canvas.width! / 2,
+        y: canvas.height! / 2
+      };
+      
+      canvas.zoomToPoint(center as fabric.Point, limitedZoom);
+      canvas.requestRenderAll();
+      
+      logger.info(`Canvas zoomed ${direction}`, { 
+        previousZoom: currentZoom, 
+        newZoom: limitedZoom 
+      });
+      
+      captureMessage(`Canvas zoomed ${direction}`, {
+        messageId: "canvas-zoomed",
+        level: "info",
+        tags: { component: "CanvasOperations", action: "zoom" },
+        extra: { direction, previousZoom: currentZoom, newZoom: limitedZoom }
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error(`Failed to zoom ${direction}`, { error: errorMsg });
-      captureError(
-        error as Error,
-        `zoom-${direction}-error`
-      );
+      captureError(error as Error, {
+        errorId: "zoom-error" 
+      });
       toast.error(`Failed to zoom ${direction}: ${errorMsg}`);
     }
   }, [canvas]);
@@ -140,34 +152,36 @@ export const useCanvasOperations = ({
     if (!canvas) return;
     
     try {
+      // Save as JSON
       const json = canvas.toJSON(['objectType']);
       const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
+      
+      // Create download link
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'canvas-drawing.json';
+      a.download = `canvas-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
+      
+      // Cleanup
       URL.revokeObjectURL(url);
       
-      toast.success("Canvas saved to file");
+      logger.info("Canvas saved to JSON file");
       
-      captureMessage(
-        "Canvas saved to file",
-        "save-canvas",
-        {
-          tags: { component: "CanvasApp", action: "saveCanvas" }
-        }
-      );
-      return true;
+      captureMessage("Canvas saved to file", {
+        messageId: "canvas-saved",
+        level: "info",
+        tags: { component: "CanvasOperations", action: "saveCanvas" }
+      });
+      
+      toast.success("Canvas saved to file");
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas", { error: errorMsg });
-      captureError(
-        error as Error,
-        "save-canvas-error"
-      );
+      captureError(error as Error, {
+        errorId: "save-canvas-error"
+      });
       toast.error(`Failed to save canvas: ${errorMsg}`);
-      return false;
     }
   }, [canvas]);
 

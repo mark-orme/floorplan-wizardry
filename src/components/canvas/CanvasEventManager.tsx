@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
@@ -105,6 +105,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
             });
           } else {
             logger.error("Drawing brush not available");
+            // Initialize the freeDrawingBrush if it doesn't exist
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            canvas.freeDrawingBrush.width = lineThickness;
+            canvas.freeDrawingBrush.color = lineColor;
+            logger.info("Created new drawing brush", {
+              brushWidth: lineThickness,
+              brushColor: lineColor
+            });
           }
           canvas.defaultCursor = 'crosshair';
           break;
@@ -158,14 +166,12 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       canvas.renderAll();
       
-      captureMessage(
-        "Tool applied to canvas", 
-        "tool-applied", 
-        {
-          tags: { component: "CanvasEventManager", action: "toolChange" },
-          extra: { tool, lineThickness, lineColor }
-        }
-      );
+      captureMessage("Tool applied to canvas", {
+        messageId: "tool-applied",
+        level: "info",
+        tags: { component: "CanvasEventManager", action: "toolChange" },
+        extra: { tool, lineThickness, lineColor }
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to apply tool settings", { 
@@ -174,14 +180,11 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
         lineThickness, 
         lineColor 
       });
-      captureError(
-        error as Error, 
-        "apply-tool-settings-error", 
-        {
-          tags: { component: "CanvasEventManager" },
-          extra: { tool, lineThickness, lineColor }
-        }
-      );
+      captureError(error as Error, {
+        errorId: "apply-tool-settings-error",
+        tags: { component: "CanvasEventManager" },
+        extra: { tool, lineThickness, lineColor }
+      });
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
   }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
@@ -216,7 +219,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       // Create horizontal grid lines
       for (let i = 0; i <= height; i += gridSize) {
-        const line = new fabric.Line([0, i, width, i], {
+        const line = new Line([0, i, width, i], {
           stroke: "#e0e0e0",
           selectable: false,
           evented: false,
@@ -228,7 +231,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       // Create vertical grid lines
       for (let i = 0; i <= width; i += gridSize) {
-        const line = new fabric.Line([i, 0, i, height], {
+        const line = new Line([i, 0, i, height], {
           stroke: "#e0e0e0",
           selectable: false,
           evented: false,
