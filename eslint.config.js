@@ -24,7 +24,7 @@ export default [
   baseConfig,
   importRules,
   reactRules,
-  typescriptRules,
+  ...typescriptRules, // Now spread the array of TypeScript rule configurations
   typeSafetyRules,
   gridRules,
   gridFabricRules,
