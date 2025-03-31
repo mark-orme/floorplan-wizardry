@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
+import { toast } from "sonner";
 
 /**
  * Props for CanvasEventManager component
@@ -43,10 +44,12 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     // Set up history tracking
     const handleObjectModified = () => {
       saveCurrentState();
+      console.log("Object modified, saving state");
     };
     
     const handleObjectAdded = () => {
       saveCurrentState();
+      console.log("Object added, saving state");
     };
     
     // Add event listeners
@@ -97,30 +100,43 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
         canvas.selection = true;
         canvas.defaultCursor = 'default';
         canvas.hoverCursor = 'move';
+        toast.info("Select tool: Click objects to select them");
         break;
         
       case DrawingMode.DRAW:
         canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.width = lineThickness;
-        canvas.freeDrawingBrush.color = lineColor;
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.width = lineThickness;
+          canvas.freeDrawingBrush.color = lineColor;
+        }
         canvas.defaultCursor = 'crosshair';
+        toast.info("Draw tool: Click and drag to draw freehand");
         break;
         
       case DrawingMode.HAND:
         canvas.defaultCursor = 'grab';
         canvas.hoverCursor = 'grab';
-        // Enable panning mode
+        canvas.selection = false;
+        toast.info("Hand tool: Click and drag to pan the canvas");
+        // Set up panning mode handlers
         break;
         
       case DrawingMode.STRAIGHT_LINE:
-      case DrawingMode.ROOM:
         canvas.defaultCursor = 'crosshair';
         canvas.hoverCursor = 'crosshair';
+        canvas.selection = false;
+        toast.info("Line tool: Click and drag to draw a straight line");
         break;
         
       case DrawingMode.ERASER:
         canvas.defaultCursor = 'cell';
         canvas.hoverCursor = 'cell';
+        canvas.selection = true;
+        toast.info("Eraser tool: Select objects to delete them");
+        break;
+        
+      default:
+        canvas.selection = true;
         break;
     }
     
@@ -132,6 +148,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
         }
       });
     }
+    
+    canvas.renderAll();
   }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
   
   return null; // This component doesn't render anything

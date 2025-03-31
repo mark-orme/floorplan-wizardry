@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useMemo, useState, useCallback } from "react";
 import { DrawingMode } from "@/constants/drawingModes";
 import { DEFAULT_CANVAS_STATE } from "@/hooks/useCanvasState";
@@ -48,10 +49,10 @@ interface DrawingProviderProps {
  */
 export const DrawingProvider: React.FC<DrawingProviderProps> = ({ children }) => {
   // Initialize with default state
-  const [tool, setTool] = useState<DrawingTool>(DEFAULT_CANVAS_STATE.tool);
-  const [lineColor, setLineColor] = useState(DEFAULT_CANVAS_STATE.lineColor);
-  const [lineThickness, setLineThickness] = useState(DEFAULT_CANVAS_STATE.lineThickness);
-  const [snapToGrid, setSnapToGrid] = useState(DEFAULT_CANVAS_STATE.snapToGrid);
+  const [tool, setTool] = useState<DrawingTool>(DEFAULT_CANVAS_STATE?.tool || DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState(DEFAULT_CANVAS_STATE?.lineColor || "#000000");
+  const [lineThickness, setLineThickness] = useState(DEFAULT_CANVAS_STATE?.lineThickness || 2);
+  const [snapToGrid, setSnapToGrid] = useState(DEFAULT_CANVAS_STATE?.snapToGrid || true);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   
@@ -60,10 +61,16 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({ children }) =>
     setSnapToGrid(prev => !prev);
   }, []);
   
+  // Tool change handler with side effects
+  const handleToolChange = useCallback((newTool: DrawingTool) => {
+    console.log(`Tool changed to: ${newTool}`);
+    setTool(newTool);
+  }, []);
+  
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     tool,
-    setTool,
+    setTool: handleToolChange,
     lineColor,
     setLineColor,
     lineThickness,
@@ -74,7 +81,7 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({ children }) =>
     canRedo,
     setCanUndo,
     setCanRedo
-  }), [tool, lineColor, lineThickness, snapToGrid, canUndo, canRedo, toggleSnapToGrid]);
+  }), [tool, lineColor, lineThickness, snapToGrid, canUndo, canRedo, toggleSnapToGrid, handleToolChange]);
 
   return (
     <DrawingContext.Provider value={contextValue}>

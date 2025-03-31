@@ -8,6 +8,7 @@ import { resetGridProgress } from "@/utils/gridManager";
 import { DrawingToolbar } from "@/components/DrawingToolbar";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
+import { toast } from "sonner";
 
 interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
@@ -22,7 +23,11 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     lineColor, 
     lineThickness, 
     setLineColor, 
-    setLineThickness 
+    setLineThickness,
+    canUndo,
+    canRedo,
+    setCanUndo,
+    setCanRedo
   } = useDrawingContext();
   
   // Reset initialization state when component mounts
@@ -41,44 +46,53 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
   // Toolbar action handlers
   const handleToolChange = (newTool: DrawingMode) => {
     setTool(newTool);
+    toast.success(`Changed to ${newTool} tool`);
   };
   
   const handleUndo = () => {
     console.log("Undo action");
+    toast.info("Undo action");
     // Will implement actual undo functionality later
   };
   
   const handleRedo = () => {
     console.log("Redo action");
+    toast.info("Redo action");
     // Will implement actual redo functionality later
   };
   
   const handleZoom = (direction: "in" | "out") => {
     console.log(`Zoom ${direction}`);
+    toast.info(`Zoom ${direction}`);
     // Will implement actual zoom functionality later
   };
   
   const handleClear = () => {
     console.log("Clear canvas");
+    toast.info("Clear canvas");
     // Will implement actual clear functionality later
   };
   
   const handleSave = () => {
     console.log("Save canvas");
+    toast.success("Canvas saved");
     // Will implement actual save functionality later
   };
   
   const handleDelete = () => {
     console.log("Delete selected objects");
+    toast.info("Objects deleted");
     // Will implement actual delete functionality later
   };
   
   const handleLineThicknessChange = (thickness: number) => {
     setLineThickness(thickness);
+    toast.info(`Line thickness set to ${thickness}`);
   };
   
   const handleLineColorChange = (color: string) => {
     setLineColor(color);
+    toast.info(`Line color set to ${color}`);
   };
   
   return (

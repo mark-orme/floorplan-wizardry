@@ -5,6 +5,7 @@ import { EnhancedCanvas } from "./EnhancedCanvas";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { toast } from "sonner";
+import { useDrawingContext } from "@/contexts/DrawingContext";
 
 interface ConnectedDrawingCanvasProps {
   width?: number;
@@ -16,9 +17,6 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
   height = 600
 }) => {
   const {
-    tool,
-    lineThickness,
-    lineColor,
     gridLayerRef,
     fabricCanvasRef,
     setHasError,
@@ -26,6 +24,8 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     checkAndFixGrid,
     forceGridCreation
   } = useCanvasController();
+  
+  const { tool, lineThickness, lineColor } = useDrawingContext();
   
   const [canvasCreated, setCanvasCreated] = useState(false);
   
@@ -35,11 +35,60 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     setCanvasCreated(true);
     toast.success("Drawing canvas ready");
     
+    // Set initial tool mode on canvas
+    applyToolToCanvas(canvas, tool);
+    
     // Ensure grid is properly set up
     setTimeout(() => {
       checkAndFixGrid();
     }, 100);
   };
+  
+  // Apply the selected tool to the canvas
+  const applyToolToCanvas = (canvas: FabricCanvas, currentTool: string) => {
+    if (!canvas) return;
+    
+    // Reset canvas modes
+    canvas.isDrawingMode = false;
+    canvas.selection = false;
+    
+    // Apply specific settings based on tool
+    switch (currentTool) {
+      case 'select':
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        canvas.hoverCursor = 'move';
+        break;
+      case 'draw':
+        canvas.isDrawingMode = true;
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.width = lineThickness;
+          canvas.freeDrawingBrush.color = lineColor;
+        }
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case 'straight-line':
+        canvas.defaultCursor = 'crosshair';
+        canvas.hoverCursor = 'crosshair';
+        break;
+      case 'hand':
+        canvas.defaultCursor = 'grab';
+        canvas.hoverCursor = 'grab';
+        break;
+      default:
+        canvas.selection = true;
+        break;
+    }
+    
+    canvas.renderAll();
+  };
+  
+  // Watch for tool changes and apply them to the canvas
+  useEffect(() => {
+    if (canvasCreated && fabricCanvasRef.current) {
+      applyToolToCanvas(fabricCanvasRef.current, tool);
+    }
+  }, [tool, lineThickness, lineColor, canvasCreated, fabricCanvasRef]);
   
   // Handle canvas error
   const handleCanvasError = (error: Error) => {
