@@ -125,6 +125,7 @@ export const useCanvasOperations = ({
       URL.revokeObjectURL(url);
       
       toast.success("Canvas saved to file");
+      
       captureMessage(
         "Canvas saved to file",
         "save-canvas",
