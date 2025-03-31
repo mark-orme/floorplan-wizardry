@@ -1,5 +1,10 @@
 
-import { Point } from './Point';
+/**
+ * Drawing state type definitions
+ * Centralizes drawing state types to prevent inconsistencies
+ * @module types/core/DrawingState
+ */
+import { Point } from './Geometry';
 
 /**
  * Drawing state interface
@@ -26,6 +31,14 @@ export interface DrawingState {
   cursorPosition: Point | null;
   /** Current zoom */
   currentZoom: number;
+  /** Whether stylus is detected */
+  stylusDetected?: boolean;
+  /** Whether to use pressure sensitivity */
+  usePressure?: boolean;
+  /** Whether a selection is active */
+  selectionActive?: boolean;
+  /** The midpoint between start and current point */
+  midPoint?: Point | null;
 }
 
 /**
@@ -42,5 +55,9 @@ export const createDefaultDrawingState = (): DrawingState => ({
   points: [],
   distance: null,
   cursorPosition: null,
-  currentZoom: 1
+  currentZoom: 1,
+  stylusDetected: false,
+  usePressure: false,
+  selectionActive: false,
+  midPoint: null
 });

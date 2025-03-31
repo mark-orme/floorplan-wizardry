@@ -1,25 +1,50 @@
 
+/**
+ * Centralized type exports
+ * All types should be exported from this file to prevent duplication
+ * @module types/index
+ */
+
 // Re-export types from core definitions
 export type { DebugInfoState } from './core/DebugInfo';
 export { DEFAULT_DEBUG_STATE } from './core/DebugInfo';
 
 // Re-export drawing-related types
 export type { 
-  DrawingState, 
-  PerformanceStats, 
-  Point, 
-  CanvasDimensions,
-  ZoomDirection,
-  DistanceToolState 
-} from './drawingTypes';
-export { createDefaultDrawingState } from './drawingTypes';
+  DrawingState,
+  createDefaultDrawingState 
+} from './core/DrawingState';
 
-// Re-export DrawingTool types
+// Re-export geometry types
+export type { Point, CanvasDimensions } from './core/Geometry';
+
+// Re-export grid types
+export type { 
+  GridCreationState, 
+  GridCreationLock,
+  GridStyle,
+  GridOptions,
+  GridConfig,
+  GridDimensions,
+  GridParameters,
+  Grid
+} from './core/GridTypes';
+export { 
+  DEFAULT_GRID_CREATION_STATE,
+  DEFAULT_GRID_CREATION_LOCK
+} from './core/GridTypes';
+
+// Re-export DrawingTool types - canonical source
 export type { DrawingTool } from './core/DrawingTool';
 export { DrawingMode } from '@/constants/drawingModes';
 
-// Grid types
-export type { GridCreationState, GridCreationLock } from './core/GridTypes';
-
-// Canvas event types
+// Re-export canvas event types
 export type { ZoomOptions } from './canvas-events/ZoomTypes';
+
+// Re-export for backwards compatibility
+export type { 
+  ZoomDirection, 
+  PerformanceStats,
+  DistanceToolState 
+} from './drawingTypes';
+

@@ -1,105 +1,83 @@
 
 /**
- * Hooks for managing line drawing state
+ * State management hook for straight line drawing tool
  * @module hooks/straightLineTool/useLineState
  */
-
-import { useRef, useState, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Line, Text } from 'fabric';
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/core/Geometry';
 
 /**
- * Interface for the return type of useLineState hook
- * @interface LineStateHookResult
+ * Interface for straight line tool state
  */
-interface LineStateHookResult {
-  /** Whether a line is currently being drawn */
+export interface LineState {
+  /** Whether currently drawing a line */
   isDrawing: boolean;
-  
-  /** Function to set drawing state */
-  setIsDrawing: (isDrawing: boolean) => void;
-  
-  /** Whether the tool has been properly initialized */
+  /** Whether the tool is initialized */
   isToolInitialized: boolean;
-  
-  /** Reference to the start point of the current line */
+  /** Reference to the starting point */
   startPointRef: React.MutableRefObject<Point | null>;
-  
-  /** Reference to the current line being drawn */
+  /** Reference to the current line */
   currentLineRef: React.MutableRefObject<Line | null>;
-  
-  /** Reference to the tooltip showing distance measurement */
+  /** Reference to the distance tooltip */
   distanceTooltipRef: React.MutableRefObject<Text | null>;
-  
-  /** Function to set the start point of a line */
+  /** Set the start point for line drawing */
   setStartPoint: (point: Point) => void;
-  
-  /** Function to set the current line being drawn */
+  /** Set the current line object */
   setCurrentLine: (line: Line) => void;
-  
-  /** Function to set the distance measurement tooltip */
+  /** Set the tooltip for showing distance */
   setDistanceTooltip: (tooltip: Text) => void;
-  
-  /** Function to initialize the tool */
+  /** Initialize the tool */
   initializeTool: () => void;
-  
-  /** Function to reset all drawing state */
+  /** Reset drawing state */
   resetDrawingState: () => void;
 }
 
 /**
- * Hook to manage state for straight line drawing
- * Maintains references to the current line, start point, and tooltip
- * to prevent unnecessary re-renders while drawing
- * 
- * @returns {LineStateHookResult} Object containing line drawing state and functions
+ * Custom hook for managing straight line tool state
+ * @returns State and methods for line drawing
  */
-export const useLineState = (): LineStateHookResult => {
-  // Drawing state
+export const useLineState = (): LineState => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
-  
-  // References to avoid re-renders
   const startPointRef = useRef<Point | null>(null);
   const currentLineRef = useRef<Line | null>(null);
   const distanceTooltipRef = useRef<Text | null>(null);
-  
+
   /**
-   * Set start point for line
-   * @param {Point} point - The starting point coordinates
+   * Sets the start point and activates drawing
+   * @param point - Starting point for the line
    */
   const setStartPoint = useCallback((point: Point) => {
     startPointRef.current = point;
     setIsDrawing(true);
   }, []);
-  
+
   /**
-   * Set current line object
-   * @param {Line} line - The line object being drawn
+   * Sets the current line being drawn
+   * @param line - Line object
    */
   const setCurrentLine = useCallback((line: Line) => {
     currentLineRef.current = line;
   }, []);
-  
+
   /**
-   * Set distance tooltip
-   * @param {Text} tooltip - The tooltip fabric object
+   * Sets the distance tooltip
+   * @param tooltip - Text object showing distance
    */
   const setDistanceTooltip = useCallback((tooltip: Text) => {
     distanceTooltipRef.current = tooltip;
   }, []);
-  
+
   /**
-   * Initialize tool
-   * Sets the tool initialized state to true
+   * Initializes the line tool
    */
   const initializeTool = useCallback(() => {
     setIsToolInitialized(true);
   }, []);
-  
+
   /**
-   * Reset drawing state
-   * Clears all current drawing references and sets drawing state to false
+   * Resets the drawing state
    */
   const resetDrawingState = useCallback(() => {
     setIsDrawing(false);
@@ -107,10 +85,9 @@ export const useLineState = (): LineStateHookResult => {
     currentLineRef.current = null;
     distanceTooltipRef.current = null;
   }, []);
-  
+
   return {
     isDrawing,
-    setIsDrawing,
     isToolInitialized,
     startPointRef,
     currentLineRef,

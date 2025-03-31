@@ -1,12 +1,12 @@
 
 /**
- * Geometric type definitions
- * @module core/Geometry
+ * Core geometry types
+ * Contains fundamental geometric types used throughout the application
+ * @module types/core/Geometry
  */
 
 /**
  * Represents a point in 2D space
- * @interface Point
  */
 export interface Point {
   /** X coordinate */
@@ -18,39 +18,28 @@ export interface Point {
 /**
  * Canvas dimensions type
  * Represents the width and height of the canvas
- * @interface CanvasDimensions
  */
 export interface CanvasDimensions {
   /** Canvas width in pixels */
   width: number;
-  /** Canvas height in pixels */
+  /** Height height in pixels */
   height: number;
 }
 
 /**
- * Type guard to check if a value is a Point
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is a valid Point
+ * Converts a fabric.js Point to our Point interface
+ * @param point - fabric.js Point object
+ * @returns Plain Point object
  */
-export function isPoint(value: unknown): value is Point {
-  return typeof value === 'object' && 
-         value !== null && 
-         'x' in value && 
-         'y' in value &&
-         typeof (value as Point).x === 'number' &&
-         typeof (value as Point).y === 'number';
-}
+export const fromFabricPoint = (point: fabric.Point): Point => {
+  return { x: point.x, y: point.y };
+};
 
 /**
- * Type guard to check if a value is CanvasDimensions
- * @param {unknown} value - The value to check
- * @returns {boolean} True if the value is valid CanvasDimensions
+ * Converts our Point interface to a fabric.js Point
+ * @param point - Plain Point object
+ * @returns fabric.js Point object
  */
-export function isCanvasDimensions(value: unknown): value is CanvasDimensions {
-  return typeof value === 'object' && 
-         value !== null && 
-         'width' in value && 
-         'height' in value &&
-         typeof (value as CanvasDimensions).width === 'number' &&
-         typeof (value as CanvasDimensions).height === 'number';
-}
+export const toFabricPoint = (point: Point): fabric.Point => {
+  return new fabric.Point(point.x, point.y);
+};

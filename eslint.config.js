@@ -6,6 +6,7 @@
 import {
   baseConfig,
   constants,
+  drawingModeValidation,
   exportValidationRule,
   gridFabricRules,
   gridRules,
@@ -28,6 +29,7 @@ export default [
   typeSafetyRules,
   gridRules,
   gridFabricRules,
+  drawingModeValidation, // Add our new drawing mode validation rules
   jsdocRules,
   prettierRules,
   exportValidationRule,

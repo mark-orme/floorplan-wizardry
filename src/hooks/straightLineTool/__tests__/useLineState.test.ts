@@ -9,7 +9,7 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useLineState } from '../useLineState';
 import { Line, Text } from 'fabric';
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/core/Geometry';
 
 // Mock fabric classes to isolate hook behavior from actual fabric implementation
 vi.mock('fabric', () => {
@@ -75,8 +75,8 @@ describe('useLineState', () => {
   it('should set tooltip reference', () => {
     const { result } = renderHook(() => useLineState());
     
-    // Create a mock tooltip with empty constructor arguments
-    const mockTooltip = new Text('', {});
+    // Create a mock tooltip with proper arguments
+    const mockTooltip = new Text('Distance: 100px', {});
     
     act(() => {
       result.current.setDistanceTooltip(mockTooltip);
@@ -103,7 +103,7 @@ describe('useLineState', () => {
     // Set up initial state
     const testPoint: Point = { x: 100, y: 100 };
     const mockLine = new Line([0, 0, 100, 100], {}); // Using proper Line constructor params
-    const mockTooltip = new Text('', {});
+    const mockTooltip = new Text('Distance: 100px', {});
     
     act(() => {
       result.current.setStartPoint(testPoint);
