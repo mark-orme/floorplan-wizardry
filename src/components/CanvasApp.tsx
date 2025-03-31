@@ -9,6 +9,7 @@ import { Canvas } from "@/components/Canvas";
 import CanvasLayout from "@/components/CanvasLayout"; 
 import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import type { DebugInfoState } from "@/types/core/DebugInfo";
 
 /**
  * Canvas application component
@@ -16,7 +17,7 @@ import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
  * @returns {JSX.Element} Rendered component
  */
 export const CanvasApp = (): JSX.Element => {
-  const [debugInfo, setDebugInfo] = useState(() => ({
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({
     ...DEFAULT_DEBUG_STATE,
     hasError: false,
     errorMessage: '',

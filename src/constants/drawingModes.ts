@@ -41,4 +41,3 @@ export enum DrawingMode {
   /** Eraser tool */
   ERASER = 'eraser'
 }
-

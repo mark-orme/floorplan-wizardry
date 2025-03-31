@@ -43,6 +43,8 @@ export interface DebugInfoState {
     frameTime?: number;
     maxFrameTime?: number;
     longFrames?: number;
+    errorCount?: number;
+    retryCount?: number;
     [key: string]: number | undefined;
   };
   /** Count of objects on canvas */
@@ -59,6 +61,8 @@ export interface DebugInfoState {
   lastErrorTime?: number;
   /** Canvas dimensions */
   canvasDimensions?: { width: number; height: number };
+  /** Additional properties for extensibility */
+  [key: string]: any;
 }
 
 /**
@@ -83,4 +87,3 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   toolsInitialized: false,
   canvasDimensions: { width: 0, height: 0 }
 };
-
