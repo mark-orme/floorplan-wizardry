@@ -256,7 +256,7 @@ export const attemptLineToolRepair = (canvas: FabricCanvas | null): boolean => {
     canvas.setViewportTransform(canvas.viewportTransform);
     
     // Signal canvas needs full redraw
-    canvas.renderAll(true);
+    canvas.renderAll();
     
     // Report repair attempt
     captureMessage("Line tool repair attempted", "line-tool-repair", {
