@@ -13,11 +13,11 @@ import { Point } from '@/types/core/Point';
 
 // Mock fabric classes to isolate hook behavior from actual fabric implementation
 vi.mock('fabric', () => {
-  const mockLine = vi.fn().mockImplementation(() => ({
+  const mockLine = vi.fn().mockImplementation((points, options) => ({
     set: vi.fn(),
   }));
   
-  const mockText = vi.fn().mockImplementation(() => ({
+  const mockText = vi.fn().mockImplementation((text, options) => ({
     set: vi.fn(),
   }));
   
@@ -60,8 +60,9 @@ describe('useLineState', () => {
   it('should set current line reference', () => {
     const { result } = renderHook(() => useLineState());
     
-    // Create a mock line with empty constructor arguments
-    const mockLine = new Line([], {});
+    // Create a mock line with proper constructor arguments
+    // Fabric.js Line requires an array of 4 numbers: [x1, y1, x2, y2]
+    const mockLine = new Line([0, 0, 100, 100], {});
     
     act(() => {
       result.current.setCurrentLine(mockLine);
@@ -101,7 +102,7 @@ describe('useLineState', () => {
     
     // Set up initial state
     const testPoint: Point = { x: 100, y: 100 };
-    const mockLine = new Line([], {});
+    const mockLine = new Line([0, 0, 100, 100], {}); // Using proper Line constructor params
     const mockTooltip = new Text('', {});
     
     act(() => {

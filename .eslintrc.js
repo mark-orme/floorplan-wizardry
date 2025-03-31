@@ -49,5 +49,10 @@ module.exports = {
       files: ['**/canvas/**/*.{ts,tsx}', '**/hooks/**/*.{ts,tsx}'],
       rules: require('./src/eslint/canvas-event-handling-rules').rules,
     },
+    {
+      // Apply stricter TypeScript rules to specific files
+      files: ['**/*.{ts,tsx}'],
+      rules: require('./src/eslint/typescript-strict-rules').rules,
+    },
   ],
 };

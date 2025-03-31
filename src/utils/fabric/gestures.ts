@@ -102,6 +102,16 @@ interface CompatiblePointerEvent {
   currentSubTargets?: FabricObject[];
 }
 
+// Define a proper TouchRecord to store touch data
+interface TouchRecord {
+  // Original touch event
+  originalEvent: TouchEvent;
+  // Touch identifier for tracking
+  identifier: number;
+  // Position information
+  position: Point;
+}
+
 /**
  * Type guard to check if a value is a Touch
  * Validates that the object has the correct Touch interface properties
@@ -124,7 +134,8 @@ function isTouch(value: unknown): value is Touch {
  * @param {Canvas} canvas - The Fabric.js canvas instance
  */
 export const initializeCanvasGestures = (canvas: Canvas): void => {
-  let ongoingTouches: CustomFabricTouchEvent[] = [];
+  // Use a properly typed array for storing ongoing touches
+  let ongoingTouches: TouchRecord[] = [];
   let isDrawing = false;
   let isPencil = false;
 
@@ -171,8 +182,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
    */
   const handleTouchStart = (e: TouchEvent) => {
     e.preventDefault();
-    const customEvent = e as CustomTouchEvent;
-    const touches = Array.from(customEvent.touches);
+    const touches = Array.from(e.touches);
 
     // If in drawing mode, start the drawing path
     if (canvas.isDrawingMode && touches.length === 1) {
@@ -189,7 +199,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
 
       // Create fabric-compatible event object
-      const eventInfo: CompatiblePointerEvent = {
+      const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
@@ -205,13 +215,15 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       console.log(`${TOUCH_CONSTANTS.DRAWING_STARTED_MSG}:`, isPencil ? "Apple Pencil/Stylus" : "Touch");
     }
 
+    // Store a record of each active touch
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
       const touchPosition = getTouchPosition(touch);
 
       ongoingTouches.push({
-        touches: [touchPosition],
-        e: e
+        originalEvent: e,
+        identifier: touch.identifier,
+        position: touchPosition
       });
     }
 
@@ -227,8 +239,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
    */
   const handleTouchMove = (e: TouchEvent) => {
     e.preventDefault();
-    const customEvent = e as CustomTouchEvent;
-    const touches = Array.from(customEvent.touches);
+    const touches = Array.from(e.touches);
 
     // If in drawing mode and already started drawing, continue the path
     if (canvas.isDrawingMode && isDrawing && touches.length === 1) {
@@ -243,7 +254,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
 
       // Create fabric-compatible event object
-      const eventInfo: CompatiblePointerEvent = {
+      const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
@@ -257,20 +268,18 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       canvas.fire(FabricEventTypes.MOUSE_MOVE, eventInfo as any);
     }
 
+    // Update the position of ongoing touches
     for (let i = 0; i < touches.length; i++) {
       const touch = touches[i];
       const touchPosition = getTouchPosition(touch);
 
-      const ongoingTouchIndex = ongoingTouches.findIndex(t => {
-        return t.e instanceof TouchEvent && 
-               isTouch((t.e as TouchEvent).changedTouches[0]) && 
-               (t.e as TouchEvent).changedTouches[0].identifier === touch.identifier;
-      });
+      const ongoingTouchIndex = ongoingTouches.findIndex(t => t.identifier === touch.identifier);
 
       if (ongoingTouchIndex !== -1) {
         ongoingTouches[ongoingTouchIndex] = {
-          touches: [touchPosition],
-          e: e
+          originalEvent: e,
+          identifier: touch.identifier,
+          position: touchPosition
         };
       }
     }
@@ -284,14 +293,13 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
    */
   const handleTouchEnd = (e: TouchEvent) => {
     e.preventDefault();
-    const customEvent = e as CustomTouchEvent;
-    const touches = Array.from(customEvent.changedTouches);
+    const changedTouches = Array.from(e.changedTouches);
 
     // If in drawing mode and finishing drawing, complete the path
-    if (canvas.isDrawingMode && isDrawing && touches.length > 0) {
+    if (canvas.isDrawingMode && isDrawing && changedTouches.length > 0) {
       isDrawing = false;
       isPencil = false;
-      const touch = touches[0];
+      const touch = changedTouches[0];
       const touchPosition = getTouchPosition(touch);
       
       // Reset brush width to default if it was changed
@@ -301,7 +309,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
 
       // Create fabric-compatible event object
-      const eventInfo: CompatiblePointerEvent = {
+      const eventInfo: FabricPointerEvent = {
         e: e,
         pointer: touchPosition,
         absolutePointer: touchPosition.clone(),
@@ -317,13 +325,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       console.log(TOUCH_CONSTANTS.DRAWING_ENDED_MSG);
     }
 
-    for (let i = 0; i < touches.length; i++) {
-      const touch = touches[i];
-      ongoingTouches = ongoingTouches.filter(t => {
-        return !(t.e instanceof TouchEvent && 
-                isTouch((t.e as TouchEvent).changedTouches[0]) && 
-                (t.e as TouchEvent).changedTouches[0].identifier === touch.identifier);
-      });
+    // Remove ended touches from the ongoing touches array
+    for (let i = 0; i < changedTouches.length; i++) {
+      const touch = changedTouches[i];
+      ongoingTouches = ongoingTouches.filter(t => t.identifier !== touch.identifier);
     }
 
     // Log touch end for debugging
@@ -338,8 +343,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
    */
   const handleTouchCancel = (e: TouchEvent) => {
     e.preventDefault();
-    const customEvent = e as CustomTouchEvent;
-    const touches = Array.from(customEvent.changedTouches);
+    const changedTouches = Array.from(e.changedTouches);
 
     // If in drawing mode, complete the drawing path
     if (canvas.isDrawingMode && isDrawing) {
@@ -353,12 +357,12 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
       
       // Get last touch if available
-      if (touches.length > 0) {
-        const touch = touches[0];
+      if (changedTouches.length > 0) {
+        const touch = changedTouches[0];
         const touchPosition = getTouchPosition(touch);
         
         // Create fabric-compatible event object
-        const eventInfo: CompatiblePointerEvent = {
+        const eventInfo: FabricPointerEvent = {
           e: e,
           pointer: touchPosition,
           absolutePointer: touchPosition.clone(),
@@ -373,13 +377,10 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       }
     }
 
-    for (let i = 0; i < touches.length; i++) {
-      const touch = touches[i];
-      ongoingTouches = ongoingTouches.filter(t => {
-        return !(t.e instanceof TouchEvent && 
-                isTouch((t.e as TouchEvent).changedTouches[0]) && 
-                (t.e as TouchEvent).changedTouches[0].identifier === touch.identifier);
-      });
+    // Remove canceled touches from the ongoing touches array
+    for (let i = 0; i < changedTouches.length; i++) {
+      const touch = changedTouches[i];
+      ongoingTouches = ongoingTouches.filter(t => t.identifier !== touch.identifier);
     }
   };
 
