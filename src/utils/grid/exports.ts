@@ -12,7 +12,7 @@
 import { 
   createGrid,
   ensureGrid,
-  createEnhancedGrid,
+  createCompleteGrid,
   validateGrid,
   createBasicEmergencyGrid
 } from './gridRenderers';
@@ -33,7 +33,7 @@ import {
 export const GridCreation = {
   createBasicEmergencyGrid,
   ensureGrid,
-  createEnhancedGrid,
+  createCompleteGrid,
   validateGrid,
   createGrid
 };
@@ -57,6 +57,6 @@ export {
   validateGridState,
   dumpGridState,
   forceCreateGrid,
-  createEnhancedGrid,
+  createCompleteGrid,
   validateGrid
 };

@@ -11,7 +11,7 @@ interface UseGridZoomProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridInitializedRef: React.MutableRefObject<boolean>;
   zoomLevel: number;
-  createCanvasGrid: () => void;
+  createGrid: () => void; // Changed from createCanvasGrid to createGrid
 }
 
 /**
@@ -21,7 +21,7 @@ export const useGridZoom = ({
   fabricCanvasRef,
   gridInitializedRef,
   zoomLevel,
-  createCanvasGrid
+  createGrid
 }: UseGridZoomProps) => {
   // Recreate grid when zoom changes significantly
   useEffect(() => {
@@ -33,8 +33,8 @@ export const useGridZoom = ({
       
       // Only recreate if grid was previously initialized
       if (gridInitializedRef.current) {
-        createCanvasGrid();
+        createGrid();
       }
     }
-  }, [zoomLevel, fabricCanvasRef, gridInitializedRef, createCanvasGrid]);
+  }, [zoomLevel, fabricCanvasRef, gridInitializedRef, createGrid]);
 };

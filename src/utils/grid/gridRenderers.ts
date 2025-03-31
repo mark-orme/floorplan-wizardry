@@ -9,6 +9,16 @@ import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import logger from "@/utils/logger";
 
 /**
+ * Grid options type
+ */
+export interface GridOptions {
+  color?: string;
+  width?: number;
+  selectable?: boolean;
+  type?: string;
+}
+
+/**
  * Create a basic grid
  * @param {FabricCanvas} canvas - Fabric canvas
  * @returns {FabricObject[]} Grid objects
@@ -23,12 +33,12 @@ export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
     const gridObjects: FabricObject[] = [];
     const width = canvas.width;
     const height = canvas.height;
-    const gridSize = GRID_CONSTANTS.GRID_SIZE;
+    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
     
     // Create horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
@@ -49,7 +59,7 @@ export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
     // Create vertical lines
     for (let i = 0; i <= width; i += gridSize) {
       const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
@@ -90,7 +100,7 @@ export const createBasicEmergencyGrid = (canvas: FabricCanvas): FabricObject[] =
     const gridObjects: FabricObject[] = [];
     const width = canvas.width;
     const height = canvas.height;
-    const gridSize = GRID_CONSTANTS.GRID_SIZE * 2; // Larger grid for better performance
+    const gridSize = GRID_CONSTANTS.LARGE_GRID_SIZE; // Larger grid for better performance
     
     // Create minimal number of lines (emergency mode)
     const maxLines = 20;
@@ -100,7 +110,7 @@ export const createBasicEmergencyGrid = (canvas: FabricCanvas): FabricObject[] =
     // Create horizontal lines
     for (let i = 0; i <= height; i += hStep) {
       const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
@@ -120,7 +130,7 @@ export const createBasicEmergencyGrid = (canvas: FabricCanvas): FabricObject[] =
     // Create vertical lines
     for (let i = 0; i <= width; i += vStep) {
       const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
@@ -159,7 +169,7 @@ export const createCompleteGrid = (canvas: FabricCanvas): FabricObject[] => {
     const gridObjects: FabricObject[] = [];
     const width = canvas.width;
     const height = canvas.height;
-    const minorGridSize = GRID_CONSTANTS.GRID_SIZE;
+    const minorGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
     const majorGridSize = minorGridSize * 5;
     
     // Create horizontal minor lines
@@ -167,7 +177,7 @@ export const createCompleteGrid = (canvas: FabricCanvas): FabricObject[] => {
       const isMajor = i % majorGridSize === 0;
       
       const line = new Line([0, i, width, i], {
-        stroke: isMajor ? GRID_CONSTANTS.MAJOR_GRID_COLOR : GRID_CONSTANTS.GRID_COLOR,
+        stroke: isMajor ? GRID_CONSTANTS.MAJOR_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: isMajor ? 1 : 0.5,
         selectable: false,
         evented: false,
@@ -191,7 +201,7 @@ export const createCompleteGrid = (canvas: FabricCanvas): FabricObject[] => {
       const isMajor = i % majorGridSize === 0;
       
       const line = new Line([i, 0, i, height], {
-        stroke: isMajor ? GRID_CONSTANTS.MAJOR_GRID_COLOR : GRID_CONSTANTS.GRID_COLOR,
+        stroke: isMajor ? GRID_CONSTANTS.MAJOR_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
         strokeWidth: isMajor ? 1 : 0.5,
         selectable: false,
         evented: false,
@@ -232,12 +242,12 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
     const gridObjects: FabricObject[] = [];
     const width = canvas.width;
     const height = canvas.height;
-    const gridSize = GRID_CONSTANTS.GRID_SIZE * 5; // Only major lines
+    const gridSize = GRID_CONSTANTS.LARGE_GRID_SIZE; // Only major lines
     
     // Create horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
         strokeWidth: 1,
         selectable: false,
         evented: false,
@@ -257,7 +267,7 @@ export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
     // Create vertical lines
     for (let i = 0; i <= width; i += gridSize) {
       const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.GRID_COLOR,
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
         strokeWidth: 1,
         selectable: false,
         evented: false,

@@ -4,8 +4,8 @@
  * @module utils/grid/gridCreationUtils
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createBasicGrid } from './gridBasics';
-import { createCompleteGrid as createFullGrid } from './gridRenderers';
+import { createGrid } from './gridBasics';
+import { createCompleteGrid } from './gridRenderers';
 import { retryWithBackoff } from './gridRetryUtils';
 
 /**
@@ -39,7 +39,7 @@ export const ensureGrid = (
   }
   
   // Create new grid
-  const gridObjects = createFullGrid(canvas);
+  const gridObjects = createCompleteGrid(canvas);
   gridLayerRef.current = gridObjects;
   
   return gridObjects;
@@ -109,4 +109,4 @@ export const verifyGridExists = (
 
 // Re-export for compatibility
 export { retryWithBackoff } from './gridRetryUtils';
-export { createBasicEmergencyGrid, createCompleteGrid, createEnhancedGrid } from './gridRenderers';
+export { createBasicEmergencyGrid, createCompleteGrid } from './gridRenderers';

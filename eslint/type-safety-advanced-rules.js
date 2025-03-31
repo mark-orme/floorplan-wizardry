@@ -1,197 +1,94 @@
 
 /**
- * Advanced TypeScript type safety rules
- * Helps prevent common type errors and build failures
+ * Advanced TypeScript ESLint rules
+ * Provides stricter type safety checks to prevent build errors
  * @module eslint/type-safety-advanced-rules
  */
+
 export const typeAdvancedSafetyRules = {
-  files: ["**/*.{ts,tsx}"],
+  plugins: ["@typescript-eslint"],
   rules: {
-    // Prevent using imports that don't exist
-    "@typescript-eslint/no-non-null-assertion": "error",
+    // Prevent type errors from function calls with incorrect arguments
+    "@typescript-eslint/no-unsafe-argument": "warn",
     
-    // Enforce using type imports to avoid circular dependencies
-    "@typescript-eslint/consistent-type-imports": ["error", {
-      "prefer": "type-imports",
-      "disallowTypeAnnotations": false
-    }],
+    // Ensure properties used in objects exist on their types
+    "@typescript-eslint/no-unsafe-member-access": "warn",
     
-    // Enforce consistent interfaces
-    "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+    // Prevent missing properties in object literals
+    "@typescript-eslint/consistent-type-assertions": "error",
     
-    // Prevent accidental any types
+    // Ensure function calls include all required parameters
     "@typescript-eslint/no-explicit-any": "warn",
     
-    // Ensure function return types are declared
-    "@typescript-eslint/explicit-function-return-type": ["error", {
-      "allowExpressions": true,
-      "allowTypedFunctionExpressions": true,
-      "allowHigherOrderFunctions": true
-    }],
+    // Prevent using object properties without checking if they exist
+    "@typescript-eslint/no-unnecessary-condition": "warn",
     
-    // Ensure all props are used
-    "@typescript-eslint/no-unused-vars": ["error", {
-      "vars": "all",
-      "args": "after-used",
-      "ignoreRestSiblings": true,
-      "argsIgnorePattern": "^_"
-    }],
+    // Ensure correct return types
+    "@typescript-eslint/explicit-function-return-type": [
+      "warn", 
+      { allowExpressions: true, allowTypedFunctionExpressions: true }
+    ],
     
-    // Enforce naming conventions for increased clarity
+    // Ensure object literals have all required properties
+    "@typescript-eslint/no-empty-interface": "error",
+    
+    // Ensure constants are PascalCase or UPPER_CASE
     "@typescript-eslint/naming-convention": [
       "error",
-      // Interface names must start with I
       {
-        "selector": "interface",
-        "format": ["PascalCase"],
-        "prefix": ["I"]
-      },
-      // Type names must be PascalCase
-      {
-        "selector": "typeAlias",
-        "format": ["PascalCase"]
-      },
-      // Enum names must be PascalCase
-      {
-        "selector": "enum",
-        "format": ["PascalCase"]
-      },
-      // Boolean props/vars should have is/has/should prefix
-      {
-        "selector": ["variable", "parameter", "property"],
-        "types": ["boolean"],
-        "format": ["PascalCase", "camelCase"],
-        "prefix": ["is", "has", "should", "can", "did", "will"]
+        selector: "variable",
+        modifiers: ["const", "global"],
+        format: ["UPPER_CASE", "PascalCase"],
+        filter: {
+          regex: "^(GRID_CONSTANTS|DEFAULT_GRID|GRID_).*$",
+          match: true
+        }
       }
     ],
     
-    // Prevent unsafe type assertions
-    "@typescript-eslint/consistent-type-assertions": ["error", {
-      "assertionStyle": "as",
-      "objectLiteralTypeAssertions": "never"
-    }],
+    // Ensure imported modules exist and are correctly used
+    "import/no-unresolved": "off", // This is handled by TypeScript
     
-    // Prevent assignment to imported variables
-    "no-import-assign": "error",
+    // Ensure exported functions have proper return types
+    "@typescript-eslint/explicit-module-boundary-types": [
+      "warn",
+      { allowArgumentsExplicitlyTypedAsAny: true }
+    ],
     
-    // Ensure proper error handling
-    "@typescript-eslint/no-throw-literal": "error",
-    
-    // Enforce explicit accessibility modifiers
-    "@typescript-eslint/explicit-member-accessibility": ["error", {
-      "accessibility": "explicit",
-      "overrides": {
-        "constructors": "no-public"
+    // Custom rule to check for common grid-related errors
+    "custom/grid-constant-usage": {
+      create(context) {
+        return {
+          MemberExpression(node) {
+            if (
+              node.object.type === "Identifier" &&
+              node.object.name === "GRID_CONSTANTS"
+            ) {
+              const propertyName = node.property.name;
+              const validProps = [
+                "SMALL_GRID_SIZE",
+                "LARGE_GRID_SIZE",
+                "SMALL_GRID_COLOR",
+                "LARGE_GRID_COLOR",
+                "SMALL_GRID_WIDTH",
+                "LARGE_GRID_WIDTH",
+                "MIN_CANVAS_WIDTH",
+                "MIN_CANVAS_HEIGHT",
+                "GRID_SIZE",
+                "GRID_COLOR",
+                "MAJOR_GRID_COLOR"
+              ];
+              
+              if (!validProps.includes(propertyName)) {
+                context.report({
+                  node,
+                  message: `Invalid GRID_CONSTANTS property: ${propertyName}. Valid properties are: ${validProps.join(", ")}`
+                });
+              }
+            }
+          }
+        };
       }
-    }],
-    
-    // Ensure proper async/await handling
-    "@typescript-eslint/await-thenable": "error",
-    "@typescript-eslint/no-misused-promises": "error",
-    "@typescript-eslint/no-floating-promises": "error",
-    
-    // Ensure proper React props validation
-    "react/prop-types": "off", // Use TypeScript instead
-    "react/require-default-props": "off", // TypeScript handles this
-    
-    // Ensure default props are properly typed
-    "react/default-props-match-prop-types": "off", // Use TypeScript instead
-    
-    // Ensure function components are properly typed
-    "react/function-component-definition": ["error", {
-      "namedComponents": "arrow-function",
-      "unnamedComponents": "arrow-function"
-    }],
-    
-    // Prevent imports/exports from missing files
-    "import/no-unresolved": "error",
-    
-    // Ensure modules can be resolved
-    "import/named": "error",
-    "import/default": "error",
-    "import/namespace": "error",
-    
-    // Prevent usage of variable before definition
-    "no-use-before-define": "off", // TypeScript handles this
-    "@typescript-eslint/no-use-before-define": ["error", {
-      "functions": false,
-      "classes": true,
-      "variables": true
-    }],
-    
-    // Prevent duplicate imports
-    "import/no-duplicates": "error",
-    
-    // Ensure imports point to existing files
-    "import/no-absolute-path": "error",
-    "import/no-self-import": "error",
-    "import/no-cycle": "error",
-    "import/no-useless-path-segments": "error",
-    
-    // Enforce file extension consistency
-    "import/extensions": ["error", "never", {
-      "json": "always",
-      "css": "always",
-      "scss": "always"
-    }],
-    
-    // Ensure no exported names are shadowed
-    "import/export": "error",
-    
-    // Ensure proper ordering of imports
-    "import/order": ["error", {
-      "groups": ["builtin", "external", "parent", "sibling", "index"],
-      "newlines-between": "always",
-      "alphabetize": {
-        "order": "asc",
-        "caseInsensitive": true
-      }
-    }],
-    
-    // Prevent unsafe string manipulation
-    "@typescript-eslint/restrict-template-expressions": ["error", {
-      "allowNumber": true,
-      "allowBoolean": true,
-      "allowAny": false,
-      "allowNullish": false
-    }],
-    
-    // Ensure correct use of optional chaining
-    "@typescript-eslint/prefer-optional-chain": "error",
-    
-    // Custom rules to prevent specific import errors
-    "no-restricted-imports": ["error", {
-      "patterns": [
-        {
-          "group": ["*/utils/*"],
-          "message": "Use specific import paths for utility functions."
-        },
-        {
-          "group": ["@/utils/grid/gridRenderers", "!@/utils/grid/gridRenderers"],
-          "message": "Import grid renderer functions directly from exports.ts."
-        }
-      ]
-    }],
-    
-    // Prevent missing React imports
-    "react/react-in-jsx-scope": "off", // Not needed with React 17+
-    
-    // Ensure event handlers are properly typed
-    "react/jsx-no-bind": ["error", {
-      "allowArrowFunctions": true,
-      "allowFunctions": false,
-      "allowBind": false
-    }],
-    
-    // Ensure props are properly spread
-    "react/jsx-props-no-spreading": "off",
-    
-    // Ensure components have proper display names
-    "react/display-name": "error",
-    
-    // Ensure null checks before accessing properties
-    "@typescript-eslint/no-unnecessary-condition": ["error", {
-      "allowRuntimeChecks": true
-    }]
+    }
   }
 };

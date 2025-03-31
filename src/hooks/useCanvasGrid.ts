@@ -58,7 +58,7 @@ export const useCanvasGrid = ({
     fabricCanvasRef,
     gridInitializedRef,
     zoomLevel,
-    createGrid
+    createGrid // Pass createGrid instead of createCanvasGrid
   });
   
   // Create grid when canvas or dimensions change
@@ -86,7 +86,7 @@ export const useCanvasGrid = ({
   
   return {
     gridLayerRef,
-    createCanvasGrid: createGrid,
+    createGrid, // Return createGrid instead of createCanvasGrid
     isGridInitialized: () => gridInitializedRef.current,
     runDiagnostics,
     isCreating,

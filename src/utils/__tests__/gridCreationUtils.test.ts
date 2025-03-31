@@ -4,21 +4,18 @@ import { Canvas, Object as FabricObject } from 'fabric';
 import { ensureGrid } from '../grid/gridRenderers';
 import { validateGridState } from '../grid/gridValidation';
 import { retryWithBackoff } from '../grid/gridRetryUtils';
-import { reorderGridObjects } from '../grid/gridBasics';
 
 describe('gridCreationUtils', () => {
   describe('validateGridState', () => {
     it('should return false when canvas is null', () => {
-      const gridRef = { current: [] };
       // @ts-ignore - We're intentionally passing null for testing
-      const result = validateGridState(null, gridRef);
+      const result = validateGridState(null);
       expect(result).toBe(false);
     });
     
     it('should return false when grid objects array is empty', () => {
       const canvas = new Canvas(null);
-      const gridRef = { current: [] };
-      const result = validateGridState(canvas, gridRef);
+      const result = validateGridState(canvas);
       expect(result).toBe(false);
     });
     
@@ -29,7 +26,7 @@ describe('gridCreationUtils', () => {
       canvas.getObjects = vi.fn().mockReturnValue([]);
       
       const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
-      const result = validateGridState(canvas, gridRef);
+      const result = validateGridState(canvas);
       expect(result).toBe(false);
       expect(canvas.getObjects).toHaveBeenCalled();
     });

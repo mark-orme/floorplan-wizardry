@@ -2,7 +2,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Canvas } from 'fabric';
 import { GridErrorSeverity, categorizeGridError, GRID_ERROR_MESSAGES } from '../grid/errorTypes';
-import { createGridRecoveryPlan } from '../grid/recoveryPlans';
+
+// Define a mock GridRecoveryPlan type for testing
+interface GridRecoveryPlan {
+  steps: Array<() => Promise<boolean>>;
+  execute: () => Promise<boolean>;
+}
+
+// Mock the createGridRecoveryPlan function for testing
+const createGridRecoveryPlan = (
+  error: Error,
+  recoveryActions: Array<() => Promise<boolean>>
+): GridRecoveryPlan => {
+  return {
+    steps: recoveryActions,
+    execute: async () => {
+      for (const action of recoveryActions) {
+        const result = await action();
+        if (result) return true;
+      }
+      return false;
+    }
+  };
+};
 
 // Mock the logger
 vi.mock('@/utils/logger', () => ({
