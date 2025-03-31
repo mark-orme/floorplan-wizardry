@@ -38,6 +38,14 @@ export const useCanvasOperations = ({
         saveCurrentState();
         
         toast.success("Objects deleted");
+        
+        captureMessage(
+          "Objects deleted from canvas", 
+          "delete-objects",
+          {
+            tags: { component: "Canvas", action: "deleteObjects" }
+          }
+        );
       } else {
         toast.info("Nothing selected to delete");
       }
@@ -70,6 +78,14 @@ export const useCanvasOperations = ({
       saveCurrentState();
       
       toast.success("Canvas cleared");
+      
+      captureMessage(
+        "Canvas cleared", 
+        "clear-canvas",
+        {
+          tags: { component: "Canvas", action: "clearCanvas" }
+        }
+      );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to clear canvas", { error: errorMsg });
@@ -98,6 +114,15 @@ export const useCanvasOperations = ({
         canvas.requestRenderAll();
         
         toast.info(`Zoomed ${direction}`);
+        
+        captureMessage(
+          `Canvas zoomed ${direction}`,
+          "zoom-canvas",
+          {
+            tags: { component: "Canvas", action: "zoom" },
+            extra: { direction, newZoom }
+          }
+        );
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";

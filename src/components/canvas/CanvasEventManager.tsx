@@ -149,10 +149,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       canvas.renderAll();
       
-      captureMessage("Tool applied to canvas", "tool-applied", {
-        tags: { component: "CanvasEventManager", action: "toolChange" },
-        extra: { tool, lineThickness, lineColor }
-      });
+      captureMessage(
+        "Tool applied to canvas", 
+        "tool-applied", 
+        {
+          tags: { component: "CanvasEventManager", action: "toolChange" },
+          extra: { tool, lineThickness, lineColor }
+        }
+      );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to apply tool settings", { 
@@ -161,10 +165,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
         lineThickness, 
         lineColor 
       });
-      captureError(error as Error, "apply-tool-settings-error", {
-        tags: { component: "CanvasEventManager" },
-        extra: { tool, lineThickness, lineColor }
-      });
+      captureError(
+        error as Error, 
+        "apply-tool-settings-error", 
+        {
+          tags: { component: "CanvasEventManager" },
+          extra: { tool, lineThickness, lineColor }
+        }
+      );
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
   }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
@@ -173,9 +181,12 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   useEffect(() => {
     if (!canvas) return;
     
-    // Save initial state
-    saveCurrentState();
+    // Save initial state once when canvas is first available
+    const timer = setTimeout(() => {
+      saveCurrentState();
+    }, 500);
     
+    return () => clearTimeout(timer);
   }, [canvas, saveCurrentState]);
   
   return null; // This component doesn't render anything

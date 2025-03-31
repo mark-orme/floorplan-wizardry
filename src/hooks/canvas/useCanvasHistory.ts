@@ -102,6 +102,14 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         setCanUndo(true);
         setCanRedo(historyIndex + 1 < historyStack.length - 1);
       });
+      
+      captureMessage(
+        "Redo performed on canvas",
+        "canvas-redo",
+        {
+          tags: { component: "ConnectedDrawingCanvas", action: "redo" }
+        }
+      );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to redo", { error: errorMsg });
