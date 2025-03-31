@@ -1,119 +1,82 @@
-/**
- * Custom hook for grid snapping functionality
- * @module useSnapToGrid
- */
-import { useState, useCallback } from 'react';
-import type { Point } from '@/types/geometryTypes';
-import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
- * Result type for the useSnapToGrid hook
+ * Hook for managing grid snapping functionality
+ * @module hooks/useSnapToGrid
  */
-export interface UseSnapToGridResult {
-  /** Whether snap to grid is enabled */
-  snapEnabled: boolean;
-  /** Toggle snap to grid */
-  toggleSnap: () => void;
-  /** Snap a point to the grid */
-  snapPointToGrid: (point: Point) => Point;
-  /** Snap a line to the grid */
-  snapLineToGrid: (start: Point, end: Point) => { start: Point; end: Point };
-  /** Check if a point is snapped to grid */
-  isSnappedToGrid: (point: Point) => boolean;
-  /** Whether auto-straightening is enabled */
-  isAutoStraightened: boolean;
-  /** Toggle auto-straightening */
-  toggleAutoStraighten: () => void;
-}
+import { useCallback } from 'react';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { useDrawingContext } from '@/contexts/DrawingContext';
+import type { Point } from '@/types/core/Point';
 
 /**
- * Hook for handling grid snapping functionality
- * @returns Snap to grid utilities
+ * Hook for grid snapping functionality
+ * @returns Object with snapping functions
  */
-export function useSnapToGrid(): UseSnapToGridResult {
-  const [snapEnabled, setSnapEnabled] = useState(true);
-  const [isAutoStraightened, setIsAutoStraightened] = useState(false);
+export const useSnapToGrid = () => {
+  // Get snap to grid setting from context
+  const { snapToGrid } = useDrawingContext();
 
   /**
-   * Toggle snap to grid
-   */
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
-  
-  /**
-   * Toggle auto-straightening
-   */
-  const toggleAutoStraighten = useCallback(() => {
-    setIsAutoStraightened(prev => !prev);
-  }, []);
-
-  /**
-   * Snap a point to the grid
-   * @param {Point} point - Point to snap
-   * @returns {Point} Snapped point
+   * Snap a point to the nearest grid point
+   * @param point - Point to snap
+   * @returns Snapped point
    */
   const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return point;
+    if (!snapToGrid) return point;
+
+    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
     
-    // Round to nearest grid point
-    const snapX = Math.round(point.x / GRID_SPACING.SMALL) * GRID_SPACING.SMALL;
-    const snapY = Math.round(point.y / GRID_SPACING.SMALL) * GRID_SPACING.SMALL;
-    
-    return { x: snapX, y: snapY };
-  }, [snapEnabled]);
+    // Snap to nearest grid point
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [snapToGrid]);
 
   /**
-   * Check if a point is already snapped to grid
-   * @param {Point} point - Point to check
-   * @returns {boolean} Whether the point is snapped to grid
+   * Constrain a line to horizontal, vertical, or diagonal
+   * @param start - Start point of line
+   * @param end - End point of line
+   * @returns Constrained start and end points
    */
-  const isSnappedToGrid = useCallback((point: Point): boolean => {
-    if (!snapEnabled) return false;
-    
-    const snapX = Math.round(point.x / GRID_SPACING.SMALL) * GRID_SPACING.SMALL;
-    const snapY = Math.round(point.y / GRID_SPACING.SMALL) * GRID_SPACING.SMALL;
-    
-    return Math.abs(point.x - snapX) <= SNAP_THRESHOLD && 
-           Math.abs(point.y - snapY) <= SNAP_THRESHOLD;
-  }, [snapEnabled]);
+  const snapLineToGrid = useCallback((start: Point, end: Point): { start: Point, end: Point } => {
+    if (!snapToGrid) return { start, end };
 
-  /**
-   * Snap a line to the grid
-   * @param {Point} start - Start point
-   * @param {Point} end - End point
-   * @returns {Object} Object with snapped start and end points
-   */
-  const snapLineToGrid = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled) return { start, end };
+    const dx = Math.abs(end.x - start.x);
+    const dy = Math.abs(end.y - start.y);
     
-    const snappedStart = snapPointToGrid(start);
-    const snappedEnd = snapPointToGrid(end);
-    
-    // If auto-straightening is enabled, check if we should make the line horizontal or vertical
-    if (isAutoStraightened) {
-      const dx = Math.abs(snappedEnd.x - snappedStart.x);
-      const dy = Math.abs(snappedEnd.y - snappedStart.y);
+    // Determine line angle constraint
+    if (dx > dy * 2) {
+      // Horizontal constraint
+      return {
+        start,
+        end: { x: end.x, y: start.y }
+      };
+    } else if (dy > dx * 2) {
+      // Vertical constraint
+      return {
+        start,
+        end: { x: start.x, y: end.y }
+      };
+    } else {
+      // Diagonal constraint (45 degrees)
+      const distance = Math.min(dx, dy);
+      const directionX = end.x > start.x ? 1 : -1;
+      const directionY = end.y > start.y ? 1 : -1;
       
-      // If the x distance is greater than the y distance, make it horizontal
-      if (dx > dy) {
-        return { start: snappedStart, end: { x: snappedEnd.x, y: snappedStart.y } };
-      } else {
-        // Otherwise make it vertical
-        return { start: snappedStart, end: { x: snappedStart.x, y: snappedEnd.y } };
-      }
+      return {
+        start,
+        end: {
+          x: start.x + distance * directionX,
+          y: start.y + distance * directionY
+        }
+      };
     }
-    
-    return { start: snappedStart, end: snappedEnd };
-  }, [snapEnabled, isAutoStraightened, snapPointToGrid]);
+  }, [snapToGrid]);
 
   return {
-    snapEnabled,
-    toggleSnap,
+    snapEnabled: snapToGrid,
     snapPointToGrid,
-    snapLineToGrid,
-    isSnappedToGrid,
-    isAutoStraightened,
-    toggleAutoStraighten
+    snapLineToGrid
   };
-}
+};

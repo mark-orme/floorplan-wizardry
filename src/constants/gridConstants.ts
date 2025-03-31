@@ -1,50 +1,64 @@
 
 /**
- * Grid constants
- * Provides consistent grid configuration values
+ * Grid constants for canvas
  * @module constants/gridConstants
  */
 
+/**
+ * Grid constants
+ */
 export const GRID_CONSTANTS = {
-  // Grid sizes
-  SMALL_GRID_SIZE: 10,
-  LARGE_GRID_SIZE: 50,
+  /** Size of small grid cells in pixels */
+  SMALL_GRID_SIZE: 20,
   
-  // Grid colors
+  /** Size of large grid cells in pixels */
+  LARGE_GRID_SIZE: 100,
+  
+  /** Small grid line color */
   SMALL_GRID_COLOR: '#e0e0e0',
-  LARGE_GRID_COLOR: '#c0c0c0',
-  MAJOR_GRID_COLOR: '#a0a0a0', // Added for major grid lines
   
-  // Line widths
+  /** Large grid line color */
+  LARGE_GRID_COLOR: '#c0c0c0',
+  
+  /** Major grid line color */
+  MAJOR_GRID_COLOR: '#a0a0a0',
+  
+  /** Small grid line width */
   SMALL_GRID_WIDTH: 0.5,
+  
+  /** Large grid line width */
   LARGE_GRID_WIDTH: 1,
   
-  // Canvas minimum dimensions
-  MIN_CANVAS_WIDTH: 200,
-  MIN_CANVAS_HEIGHT: 200,
+  /** Minimum canvas width */
+  MIN_CANVAS_WIDTH: 800,
   
-  // Grid types
-  SMALL_GRID: 'small',
-  LARGE_GRID: 'large',
+  /** Minimum canvas height */
+  MIN_CANVAS_HEIGHT: 600,
   
-  // For backwards compatibility
-  GRID_SIZE: 10,
-  GRID_COLOR: '#e0e0e0',
+  /** Maximum number of grid lines to render */
+  MAX_GRID_LINES: 1000,
   
-  // Render limits
-  MAX_GRID_LINES: 100,
+  /** Maximum number of objects per canvas */
   MAX_OBJECTS_PER_CANVAS: 5000,
   
-  // Performance
-  GRID_RENDER_THROTTLE: 300,
-  GRID_CHECK_INTERVAL: 2000,
+  /** Grid render throttle in milliseconds */
+  GRID_RENDER_THROTTLE: 100,
   
-  // Added properties for markers
+  /** Grid check interval in milliseconds */
+  GRID_CHECK_INTERVAL: 500,
+  
+  /** Small grid (legacy naming) */
+  SMALL_GRID: 20,
+  
+  /** Large grid (legacy naming) */
+  LARGE_GRID: 100,
+  
+  /** Pixels per meter for measurement conversion */
   PIXELS_PER_METER: 100,
-  MARKER_TEXT_SIZE: 12,
-  MARKER_COLOR: '#555555'
+  
+  /** Text size for measurement markers */
+  MARKER_TEXT_SIZE: 14,
+  
+  /** Color for measurement markers */
+  MARKER_COLOR: '#000000'
 };
-
-// Export for legacy compatibility
-export const DEFAULT_GRID_SIZE = GRID_CONSTANTS.SMALL_GRID_SIZE;
-export const DEFAULT_GRID_COLOR = GRID_CONSTANTS.SMALL_GRID_COLOR;

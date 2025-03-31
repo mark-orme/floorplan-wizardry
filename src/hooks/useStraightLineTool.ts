@@ -10,6 +10,7 @@ import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import type { Point } from '@/types/core/Point';
 import logger from '@/utils/logger';
+import { pixelsToMeters, calculateMidpoint } from '@/utils/measurementUtils';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -39,15 +40,6 @@ export const useStraightLineTool = ({
   const { snapPointToGrid, snapLineToGrid, snapEnabled } = useSnapToGrid();
 
   /**
-   * Convert pixels to meters
-   * @param pixelDistance - Distance in pixels
-   * @returns Distance in meters
-   */
-  const pixelsToMeters = useCallback((pixelDistance: number): number => {
-    return pixelDistance / GRID_CONSTANTS.PIXELS_PER_METER;
-  }, []);
-
-  /**
    * Create or update distance tooltip
    * @param start - Start point
    * @param end - End point
@@ -64,8 +56,9 @@ export const useStraightLineTool = ({
     const distanceInMeters = pixelsToMeters(distance).toFixed(1);
     
     // Calculate midpoint for tooltip position
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2 - 15; // Position above the line
+    const midpoint = calculateMidpoint(start, end);
+    const midX = midpoint.x;
+    const midY = midpoint.y - 15; // Position above the line
     
     // Create or update tooltip
     if (!tooltipRef.current) {
@@ -94,7 +87,7 @@ export const useStraightLineTool = ({
     canvas.renderAll();
     
     return { distance, distanceInMeters };
-  }, [pixelsToMeters]);
+  }, []);
 
   /**
    * Handle mouse down event for straight line drawing
@@ -228,7 +221,7 @@ export const useStraightLineTool = ({
     
     canvas.renderAll();
     logger.info('Finished drawing straight line');
-  }, [fabricCanvasRef, isDrawing, saveCurrentState, pixelsToMeters]);
+  }, [fabricCanvasRef, isDrawing, saveCurrentState]);
 
   /**
    * Set up event listeners when tool is active

@@ -7,7 +7,7 @@ import { LineSettings } from "./LineSettings";
 import { 
   MousePointerSquareDashed, Pencil, Grid2X2, 
   Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser, Ruler,
-  MoveHorizontal, LineHeight 
+  MoveHorizontal, Minus 
 } from "lucide-react";
 import { formatGIA } from "@/utils/display";
 
@@ -116,7 +116,7 @@ export const DrawingToolbar = ({
                 size="sm"
                 onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
               >
-                <LineHeight className="h-4 w-4" />
+                <Minus className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
