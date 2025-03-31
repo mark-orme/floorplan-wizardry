@@ -40,6 +40,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [localDebugInfo, setLocalDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
   const gridLayerRef = useRef<any[]>([]);
+  const canvasInitializedRef = useRef<boolean>(false);
   
   // Update parent debugInfo if provided
   useEffect(() => {
@@ -68,11 +69,38 @@ export const Canvas: React.FC<CanvasProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
     
+    // Prevent multiple initializations of the same canvas element
+    if (canvasInitializedRef.current || canvas) {
+      logger.info("Canvas already initialized, skipping initialization");
+      return;
+    }
+    
     try {
       logger.info("Initializing canvas with dimensions:", { width, height });
       console.log("Initializing canvas with dimensions:", width, height);
       
       updateDebugInfo({ canvasCreated: true });
+      
+      // Check if canvas element already has a Fabric.js instance
+      if (canvasRef.current._fabric) {
+        logger.warn("Canvas element already has a Fabric.js instance");
+        const existingCanvas = canvasRef.current._fabric as FabricCanvas;
+        setCanvas(existingCanvas);
+        canvasInitializedRef.current = true;
+        
+        if (onCanvasReady) {
+          onCanvasReady(existingCanvas);
+        }
+        
+        updateDebugInfo({ 
+          canvasInitialized: true, 
+          brushInitialized: true,
+          dimensionsSet: true,
+          canvasReady: true
+        });
+        
+        return;
+      }
       
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         width,
@@ -93,6 +121,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       });
       
       setCanvas(fabricCanvas);
+      canvasInitializedRef.current = true;
       
       if (onCanvasReady) {
         onCanvasReady(fabricCanvas);
@@ -121,13 +150,14 @@ export const Canvas: React.FC<CanvasProps> = ({
       if (canvas) {
         try {
           canvas.dispose();
+          canvasInitializedRef.current = false;
           logger.info("Canvas disposed");
         } catch (error) {
           logger.error("Error disposing canvas:", error);
         }
       }
     };
-  }, [width, height, tool, lineColor, lineThickness, updateDebugInfo, onCanvasReady, onError, canvas]);
+  }, [width, height, updateDebugInfo, onCanvasReady, onError, canvas, tool, lineColor, lineThickness]);
   
   // Update drawing mode when tool changes
   useEffect(() => {

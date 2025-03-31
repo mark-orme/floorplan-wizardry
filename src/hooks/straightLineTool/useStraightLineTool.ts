@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useLineState } from './useLineState';
@@ -25,6 +25,9 @@ export const useStraightLineTool = ({
 }: UseStraightLineToolProps) => {
   // State tracking whether the tool is active
   const [isActive, setIsActive] = useState(false);
+  
+  // Track if we've already cleaned up event handlers to prevent duplicate cleanup
+  const hasCleanedUpRef = useRef(false);
   
   // Manage line drawing state
   const lineState = useLineState();
@@ -56,7 +59,9 @@ export const useStraightLineTool = ({
     if (tool === DrawingMode.STRAIGHT_LINE) {
       // Important: Only set up the tool if it's not already active
       if (!isActive) {
+        logger.info("Activating straight line tool");
         setIsActive(true);
+        hasCleanedUpRef.current = false;
         
         // Configure canvas for straight line drawing
         canvas.isDrawingMode = false;
@@ -64,7 +69,7 @@ export const useStraightLineTool = ({
         canvas.defaultCursor = 'crosshair';
         canvas.hoverCursor = 'crosshair';
         
-        // Make objects non-selectable
+        // Make objects non-selectable except grid
         canvas.getObjects().forEach(obj => {
           if ((obj as any).objectType !== 'grid') {
             obj.selectable = false;
@@ -103,16 +108,20 @@ export const useStraightLineTool = ({
       }
     } else {
       // If tool was active and is now changing, clean up
-      if (isActive) {
-        setIsActive(false);
+      if (isActive && !hasCleanedUpRef.current) {
+        logger.info("Deactivating straight line tool");
         cleanupEventHandlers();
+        setIsActive(false);
+        hasCleanedUpRef.current = true;
       }
     }
     
     // Clean up on unmount
     return () => {
-      if (isActive) {
+      if (isActive && !hasCleanedUpRef.current) {
+        logger.info("Cleaning up straight line tool on unmount");
         cleanupEventHandlers();
+        hasCleanedUpRef.current = true;
       }
     };
   }, [
