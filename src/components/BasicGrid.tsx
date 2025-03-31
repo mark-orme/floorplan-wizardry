@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
@@ -15,10 +15,16 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
   onGridCreated
 }) => {
   const gridObjectsRef = useRef<FabricObject[]>([]);
-
+  const [isGridCreated, setIsGridCreated] = useState(false);
+  const gridCreationAttemptedRef = useRef(false);
+  
   // Create grid when component mounts or canvas changes
   useEffect(() => {
     if (!canvas) return;
+    
+    // Prevent multiple creation attempts
+    if (gridCreationAttemptedRef.current) return;
+    gridCreationAttemptedRef.current = true;
     
     // Check if canvas is actually ready with dimensions
     if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
@@ -100,7 +106,10 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     // Update visibility
     updateGridVisibility(visible);
     
-    // Call callback if provided
+    // Mark grid as created
+    setIsGridCreated(true);
+    
+    // Call callback if provided - ONLY ONCE
     if (onGridCreated) {
       onGridCreated(gridObjects);
     }
@@ -119,12 +128,15 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       });
       canvas.requestRenderAll();
     };
-  }, [canvas, onGridCreated]);
+  }, [canvas]); // Only depend on canvas
   
-  // Update grid visibility when visible prop changes
+  // Update grid visibility when visible prop changes (separated effect)
   useEffect(() => {
-    updateGridVisibility(visible);
-  }, [visible]);
+    // Only run this effect if grid is already created
+    if (isGridCreated) {
+      updateGridVisibility(visible);
+    }
+  }, [visible, isGridCreated]);
   
   // Update grid visibility
   const updateGridVisibility = (isVisible: boolean) => {

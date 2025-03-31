@@ -3,7 +3,7 @@
  * Main Canvas component that integrates with Fabric.js
  * @module components/Canvas
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -46,13 +46,13 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
   }, [localDebugInfo, setDebugInfo]);
   
-  // Helper to update debug info
-  const updateDebugInfo = (update: Partial<DebugInfoState>) => {
+  // Helper to update debug info - now memoized to prevent excessive re-renders
+  const updateDebugInfo = useCallback((update: Partial<DebugInfoState>) => {
     setLocalDebugInfo(prev => ({
       ...prev,
       ...update
     }));
-  };
+  }, []);
   
   // Initialize canvas
   useEffect(() => {
@@ -135,16 +135,16 @@ export const Canvas: React.FC<CanvasProps> = ({
     canvas.requestRenderAll();
     
     updateDebugInfo({ eventHandlersSet: true });
-  }, [canvas, tool, lineColor, lineThickness]);
+  }, [canvas, tool, lineColor, lineThickness, updateDebugInfo]);
   
-  // Handle grid creation callback
-  const handleGridCreated = (gridObjects: any[]) => {
+  // Handle grid creation callback - memoized to prevent creating new functions on each render
+  const handleGridCreated = useCallback((gridObjects: any[]) => {
     console.log(`Grid created with ${gridObjects.length} objects`);
     updateDebugInfo({ 
       gridCreated: true,
       gridObjectCount: gridObjects.length
     });
-  };
+  }, [updateDebugInfo]);
   
   return (
     <div className="relative">

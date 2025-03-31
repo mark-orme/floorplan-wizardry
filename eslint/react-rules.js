@@ -39,9 +39,63 @@ export const reactRules = {
       "unnamedComponents": "arrow-function"
     }],
     
-    // React hooks rules
+    // React hooks rules - Stricter rules to prevent infinite loops
     "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "error",
+    "react-hooks/exhaustive-deps": ["error", {
+      "additionalHooks": "(useRecoilCallback|useRecoilTransaction_UNSTABLE)"
+    }],
+    
+    // Custom rule to detect potential infinite loops
+    "custom/no-recursive-updates": {
+      create(context) {
+        return {
+          CallExpression(node) {
+            // Check for setState in useEffect without proper deps
+            if (node.callee.type === "Identifier" && 
+                node.callee.name.startsWith("set") && 
+                node.callee.name[3] && 
+                node.callee.name[3] === node.callee.name[3].toUpperCase()) {
+              
+              const ancestors = context.getAncestors();
+              const useEffectAncestor = ancestors.find(ancestor => 
+                ancestor.type === "CallExpression" && 
+                ancestor.callee.type === "Identifier" && 
+                ancestor.callee.name === "useEffect"
+              );
+              
+              if (useEffectAncestor) {
+                // Check if the setState's state is in the dependencies array
+                const stateVar = node.callee.name.substring(3);
+                const stateVarLowerCase = stateVar.charAt(0).toLowerCase() + stateVar.slice(1);
+                
+                const depsArray = useEffectAncestor.arguments[1];
+                if (!depsArray || depsArray.type !== "ArrayExpression") {
+                  context.report({
+                    node,
+                    message: `useState setter (${node.callee.name}) is used in a useEffect without a dependency array. This might cause an infinite loop.`
+                  });
+                  return;
+                }
+                
+                // Check if corresponding state variable is in deps array
+                const depElements = depsArray.elements || [];
+                const hasStateDep = depElements.some(
+                  el => el.type === "Identifier" && (el.name === stateVarLowerCase || el.name === node.callee.name)
+                );
+                
+                // If not in deps array, warn about potential infinite loop
+                if (!hasStateDep) {
+                  context.report({
+                    node,
+                    message: `useState setter (${node.callee.name}) might cause recursive updates because it updates state (${stateVarLowerCase}) which is missing from the deps array.`
+                  });
+                }
+              }
+            }
+          }
+        };
+      }
+    },
     
     // React refresh rules (for development)
     "react-refresh/only-export-components": [
