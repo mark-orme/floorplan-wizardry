@@ -23,7 +23,8 @@ import { LineThicknessControl } from "./LineThicknessControl";
 import { ColorPicker } from "./ColorPicker";
 import { ZoomDirection } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
-import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
+import { validateStraightLineDrawing, testStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
+import { captureMessage } from "@/utils/sentry";
 
 /**
  * Props for Canvas Toolbar component
@@ -91,6 +92,21 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   // Handle tool change with verification and logging
   const handleToolChange = (newTool: DrawingMode) => {
     logger.info(`Toolbar: changing tool from ${tool} to ${newTool}`);
+    
+    // Enhanced logging for straight line tool
+    if (newTool === DrawingMode.STRAIGHT_LINE) {
+      captureMessage('Straight line tool selected from toolbar', 'straight-line-tool-selected', {
+        tags: { component: 'CanvasToolbar' },
+        extra: { previousTool: tool, lineThickness, lineColor }
+      });
+      
+      logger.info('Straight line tool selected from toolbar', {
+        toolType: typeof newTool,
+        toolValue: newTool,
+        toolCheck: newTool === DrawingMode.STRAIGHT_LINE
+      });
+    }
+    
     onToolChange(newTool);
     
     // For debugging - will run validation on the next render

@@ -18,6 +18,7 @@ export const validateStraightLineDrawing = (
 ): void => {
   if (!canvas) {
     logger.error('Cannot validate straight line tool: canvas is null');
+    captureError(new Error('Cannot validate straight line drawing: canvas is null'), 'straight-line-null-canvas');
     return;
   }
 
@@ -51,18 +52,26 @@ export const validateStraightLineDrawing = (
     
     if (isDrawingMode) {
       logger.warn('Straight line tool should not have isDrawingMode=true');
+      captureMessage('Straight line tool incorrectly has isDrawingMode=true', 'straight-line-drawing-mode-error');
     }
     
     if (selection) {
       logger.warn('Straight line tool should have selection=false');
+      captureMessage('Straight line tool incorrectly has selection=true', 'straight-line-selection-error');
     }
     
     if (defaultCursor !== 'crosshair') {
       logger.warn('Straight line tool should have crosshair cursor');
+      captureMessage('Straight line tool has incorrect cursor', 'straight-line-cursor-error', {
+        extra: { actualCursor: defaultCursor }
+      });
     }
     
     if (selectableObjects > 0) {
       logger.warn(`Straight line tool has ${selectableObjects} selectable objects`);
+      captureMessage('Straight line tool has selectable objects', 'straight-line-selectable-error', {
+        extra: { selectableCount: selectableObjects }
+      });
     }
     
     // Test for correct cursor and selection mode instead of directly accessing event listeners
@@ -71,6 +80,12 @@ export const validateStraightLineDrawing = (
         cursor: defaultCursor,
         selection
       });
+      
+      captureError(
+        new Error('Straight line tool settings misconfigured'), 
+        'straight-line-settings-error',
+        { extra: { cursor: defaultCursor, selection, toolName: currentTool } }
+      );
     }
     
     // Report to monitoring
@@ -95,6 +110,7 @@ export const validateAllDrawingTools = (
 ): void => {
   if (!canvas) {
     logger.error('Cannot validate drawing tools: canvas is null');
+    captureError(new Error('Cannot validate drawing tools: canvas is null'), 'drawing-tools-null-canvas');
     return;
   }
   
@@ -117,6 +133,7 @@ export const validateAllDrawingTools = (
       case DrawingMode.DRAW:
         if (!canvas.isDrawingMode) {
           logger.error('Draw tool selected but isDrawingMode is false');
+          captureError(new Error('Draw tool incorrectly configured: isDrawingMode is false'), 'draw-tool-mode-error');
         }
         break;
       

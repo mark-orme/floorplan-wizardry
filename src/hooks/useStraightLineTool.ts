@@ -1,4 +1,3 @@
-
 /**
  * Hook for handling straight line drawing with measurement
  * @module hooks/useStraightLineTool
@@ -46,6 +45,8 @@ export const useStraightLineTool = ({
   const currentLineRef = useRef<Line | null>(null);
   const tooltipRef = useRef<Text | null>(null);
   const toolInitializedRef = useRef(false);
+  const mouseDownHandledRef = useRef(false);
+  const mouseMoveCountRef = useRef(0);
 
   // Get snapping functionality
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
@@ -55,11 +56,25 @@ export const useStraightLineTool = ({
     if (tool === DrawingMode.STRAIGHT_LINE) {
       captureMessage('Straight line tool activated', 'straight-line-activated', {
         tags: { component: 'useStraightLineTool' },
-        extra: { lineColor, lineThickness }
+        extra: { 
+          lineColor, 
+          lineThickness,
+          hasCanvas: !!fabricCanvasRef.current,
+          canvasProps: fabricCanvasRef.current ? {
+            width: fabricCanvasRef.current.width,
+            height: fabricCanvasRef.current.height,
+            isDrawingMode: fabricCanvasRef.current.isDrawingMode,
+            selection: fabricCanvasRef.current.selection
+          } : null
+        }
       });
       logger.info('Straight line tool activated', { lineColor, lineThickness });
+      
+      // Reset diagnostic counters
+      mouseDownHandledRef.current = false;
+      mouseMoveCountRef.current = 0;
     }
-  }, [tool, lineColor, lineThickness]);
+  }, [tool, lineColor, lineThickness, fabricCanvasRef]);
 
   /**
    * Create or update distance tooltip
@@ -113,6 +128,9 @@ export const useStraightLineTool = ({
       return { distance, distanceInMeters };
     } catch (error) {
       logger.error('Error updating measurement tooltip', error);
+      captureError(error as Error, 'measurement-tooltip-error', {
+        extra: { startPoint: start, endPoint: end }
+      });
       return { distance: 0, distanceInMeters: '0.0' };
     }
   }, []);
@@ -136,11 +154,20 @@ export const useStraightLineTool = ({
     // Get pointer position from event
     const pointer = canvas.getPointer(e);
     
-    logger.info('Starting straight line drawing', { 
+    logger.info('Mouse down in straight line tool', { 
       pointer, 
       tool, 
-      isCorrectTool: tool === DrawingMode.STRAIGHT_LINE 
+      isCorrectTool: tool === DrawingMode.STRAIGHT_LINE,
+      event: { 
+        type: e.type, 
+        clientX: e.clientX,
+        clientY: e.clientY,
+        button: e.button 
+      }
     });
+    
+    // Mark that we handled a mouse down event for diagnostic purposes
+    mouseDownHandledRef.current = true;
     
     // Start drawing
     setIsDrawing(true);
@@ -171,7 +198,14 @@ export const useStraightLineTool = ({
     // Capture analytics
     captureMessage('Straight line drawing started', 'straight-line-started', {
       tags: { component: 'useStraightLineTool' },
-      extra: { startPoint: snappedPoint }
+      extra: { 
+        startPoint: snappedPoint,
+        canvasState: {
+          objectCount: canvas.getObjects().length,
+          isDrawingMode: canvas.isDrawingMode,
+          selection: canvas.selection
+        }
+      }
     });
   }, [fabricCanvasRef, tool, lineColor, lineThickness, snapPointToGrid]);
 
@@ -185,8 +219,24 @@ export const useStraightLineTool = ({
     
     e.preventDefault(); // Prevent default browser behavior
     
+    // Increment move count for diagnostics
+    mouseMoveCountRef.current++;
+    
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e);
+    
+    // Log the first few mouse moves for diagnostic purposes
+    if (mouseMoveCountRef.current <= 3) {
+      logger.info(`Mouse move #${mouseMoveCountRef.current} in straight line drawing`, {
+        pointer,
+        startPoint: startPointRef.current,
+        event: { 
+          type: e.type, 
+          clientX: e.clientX,
+          clientY: e.clientY
+        }
+      });
+    }
     
     // Always snap the end point to grid
     const currentPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
@@ -211,6 +261,32 @@ export const useStraightLineTool = ({
    */
   const handleMouseUp = useCallback((e: MouseEvent) => {
     if (!fabricCanvasRef.current || !isDrawing || !startPointRef.current || !currentLineRef.current) {
+      if (isDrawing) {
+        // This is a problematic case - we were drawing but lost some state
+        logger.error('Mouse up with inconsistent drawing state', {
+          isDrawing,
+          hasCanvas: !!fabricCanvasRef.current,
+          hasStartPoint: !!startPointRef.current,
+          hasLine: !!currentLineRef.current,
+          tool
+        });
+        
+        captureError(
+          new Error('Mouse up with inconsistent drawing state'), 
+          'straight-line-state-error',
+          {
+            extra: {
+              isDrawing,
+              hasCanvas: !!fabricCanvasRef.current,
+              hasStartPoint: !!startPointRef.current,
+              hasLine: !!currentLineRef.current,
+              mouseDownHandled: mouseDownHandledRef.current,
+              mouseMoveCount: mouseMoveCountRef.current,
+              tool
+            }
+          }
+        );
+      }
       return;
     }
     
@@ -231,6 +307,13 @@ export const useStraightLineTool = ({
     const dx = end.x - startPointRef.current.x;
     const dy = end.y - startPointRef.current.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    logger.info('Finishing straight line drawing', {
+      distance,
+      startPoint: startPointRef.current,
+      endPoint: end,
+      mouseMoveCount: mouseMoveCountRef.current
+    });
     
     // Only keep the line if it has a meaningful length (more than 5 pixels)
     if (distance > 5) {
@@ -260,7 +343,8 @@ export const useStraightLineTool = ({
       logger.info('Completed straight line drawing', {
         startPoint: startPointRef.current,
         endPoint: end,
-        distance: distanceInMeters
+        distance: distanceInMeters,
+        canvasObjectCount: canvas.getObjects().length
       });
       
       toast.success(`Line drawn: ${distanceInMeters} m`);
@@ -271,7 +355,9 @@ export const useStraightLineTool = ({
         extra: { 
           startPoint: startPointRef.current,
           endPoint: end,
-          distance: distanceInMeters
+          distance: distanceInMeters,
+          mouseMoveCount: mouseMoveCountRef.current,
+          objectCount: canvas.getObjects().length
         }
       });
     } else {
@@ -280,6 +366,19 @@ export const useStraightLineTool = ({
       if (tooltipRef.current) {
         canvas.remove(tooltipRef.current);
       }
+      
+      // Log diagnostic information for short lines
+      captureMessage('Straight line discarded - too short', 'straight-line-discarded', {
+        tags: { component: 'useStraightLineTool' },
+        extra: {
+          distance,
+          startPoint: startPointRef.current,
+          endPoint: end,
+          threshold: 5,
+          mouseMoveCount: mouseMoveCountRef.current
+        }
+      });
+      
       logger.info('Discarded straight line - too short', { distance });
     }
     
@@ -287,9 +386,11 @@ export const useStraightLineTool = ({
     startPointRef.current = null;
     currentLineRef.current = null;
     tooltipRef.current = null;
+    mouseDownHandledRef.current = false;
+    mouseMoveCountRef.current = 0;
     
     canvas.renderAll();
-  }, [fabricCanvasRef, isDrawing, saveCurrentState, snapPointToGrid]);
+  }, [fabricCanvasRef, isDrawing, saveCurrentState, snapPointToGrid, tool]);
 
   /**
    * Set up event listeners when tool is active
@@ -308,71 +409,118 @@ export const useStraightLineTool = ({
     
     if (!fabricCanvasRef.current) {
       logger.error('Canvas reference is null in straight line tool');
+      captureError(
+        new Error('Canvas reference is null in straight line tool'), 
+        'straight-line-null-canvas-ref',
+        { tags: { component: 'useStraightLineTool' } }
+      );
       return;
     }
     
-    // Add event listeners directly to window to ensure they're not missed
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    
-    logger.info('Straight line tool event listeners added');
-    
-    // Set canvas properties for straight line tool
-    const canvas = fabricCanvasRef.current;
-    canvas.defaultCursor = 'crosshair';
-    canvas.hoverCursor = 'crosshair';
-    canvas.selection = false;
-    
-    // Disable selection mode when in straight line tool
-    const objects = canvas.getObjects();
-    objects.forEach(obj => {
-      if ((obj as any).objectType !== 'grid' && (obj as any).objectType !== 'measurement') {
-        obj.selectable = false;
-      }
-    });
-    
-    canvas.discardActiveObject();
-    canvas.requestRenderAll();
-    
-    logger.info('Straight line tool canvas settings applied');
-    toolInitializedRef.current = true;
+    try {
+      // Add event listeners directly to window to ensure they're not missed
+      window.addEventListener('mousedown', handleMouseDown);
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      
+      logger.info('Straight line tool event listeners added');
+      
+      // Set canvas properties for straight line tool
+      const canvas = fabricCanvasRef.current;
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+      canvas.selection = false;
+      
+      // Disable selection mode when in straight line tool
+      const objects = canvas.getObjects();
+      objects.forEach(obj => {
+        if ((obj as any).objectType !== 'grid' && (obj as any).objectType !== 'measurement') {
+          obj.selectable = false;
+        }
+      });
+      
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+      
+      logger.info('Straight line tool canvas settings applied', {
+        cursor: canvas.defaultCursor,
+        selection: canvas.selection,
+        objectCount: objects.length
+      });
+      
+      // Add diagnostic info to Sentry
+      captureMessage('Straight line tool initialized', 'straight-line-initialized', {
+        tags: { component: 'useStraightLineTool' },
+        extra: {
+          canvasProps: {
+            width: canvas.width,
+            height: canvas.height,
+            cursor: canvas.defaultCursor,
+            selection: canvas.selection,
+            isDrawingMode: canvas.isDrawingMode,
+            objectCount: canvas.getObjects().length
+          },
+          lineSettings: {
+            color: lineColor,
+            thickness: lineThickness
+          }
+        }
+      });
+      
+      toolInitializedRef.current = true;
+    } catch (error) {
+      logger.error('Error initializing straight line tool', error);
+      captureError(error as Error, 'straight-line-init-error', {
+        extra: { tool, lineColor, lineThickness }
+      });
+    }
     
     // Clean up
     return () => {
       logger.info('Straight line tool cleanup running');
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
       
-      // Reset cursor
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.defaultCursor = 'default';
+      try {
+        window.removeEventListener('mousedown', handleMouseDown);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
         
-        // Re-enable selection for objects when switching away
-        if (tool !== DrawingMode.STRAIGHT_LINE) {
-          const objects = fabricCanvasRef.current.getObjects();
-          objects.forEach(obj => {
-            if ((obj as any).objectType !== 'grid' && (obj as any).objectType !== 'measurement') {
-              obj.selectable = true;
-            }
+        // Reset cursor
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.defaultCursor = 'default';
+          
+          // Re-enable selection for objects when switching away
+          if (tool !== DrawingMode.STRAIGHT_LINE) {
+            const objects = fabricCanvasRef.current.getObjects();
+            objects.forEach(obj => {
+              if ((obj as any).objectType !== 'grid' && (obj as any).objectType !== 'measurement') {
+                obj.selectable = true;
+              }
+            });
+            fabricCanvasRef.current.requestRenderAll();
+          }
+        }
+        
+        // Clean up any in-progress drawing
+        if (isDrawing && fabricCanvasRef.current) {
+          if (currentLineRef.current) {
+            fabricCanvasRef.current.remove(currentLineRef.current);
+          }
+          if (tooltipRef.current) {
+            fabricCanvasRef.current.remove(tooltipRef.current);
+          }
+          setIsDrawing(false);
+          
+          // Log cleanup of in-progress drawing
+          captureMessage('Cleaned up in-progress straight line drawing', 'straight-line-cleanup', {
+            tags: { component: 'useStraightLineTool' }
           });
-          fabricCanvasRef.current.requestRenderAll();
         }
-      }
-      
-      // Clean up any in-progress drawing
-      if (isDrawing && fabricCanvasRef.current) {
-        if (currentLineRef.current) {
-          fabricCanvasRef.current.remove(currentLineRef.current);
-        }
-        if (tooltipRef.current) {
-          fabricCanvasRef.current.remove(tooltipRef.current);
-        }
-        setIsDrawing(false);
+      } catch (error) {
+        logger.error('Error during straight line tool cleanup', error);
+        captureError(error as Error, 'straight-line-cleanup-error');
       }
     };
-  }, [tool, handleMouseDown, handleMouseMove, handleMouseUp, fabricCanvasRef, isDrawing]);
+  }, [tool, handleMouseDown, handleMouseMove, handleMouseUp, fabricCanvasRef, isDrawing, lineColor, lineThickness]);
 
   /**
    * Cancel current drawing (useful for escape key)
@@ -382,22 +530,33 @@ export const useStraightLineTool = ({
     
     const canvas = fabricCanvasRef.current;
     
-    // Remove current line and tooltip
-    if (currentLineRef.current) {
-      canvas.remove(currentLineRef.current);
+    try {
+      // Remove current line and tooltip
+      if (currentLineRef.current) {
+        canvas.remove(currentLineRef.current);
+      }
+      if (tooltipRef.current) {
+        canvas.remove(tooltipRef.current);
+      }
+      
+      // Reset state
+      setIsDrawing(false);
+      startPointRef.current = null;
+      currentLineRef.current = null;
+      tooltipRef.current = null;
+      mouseDownHandledRef.current = false;
+      mouseMoveCountRef.current = 0;
+      
+      canvas.renderAll();
+      logger.info('Cancelled drawing straight line');
+      
+      captureMessage('Straight line drawing cancelled', 'straight-line-cancelled', {
+        tags: { component: 'useStraightLineTool' }
+      });
+    } catch (error) {
+      logger.error('Error cancelling straight line drawing', error);
+      captureError(error as Error, 'straight-line-cancel-error');
     }
-    if (tooltipRef.current) {
-      canvas.remove(tooltipRef.current);
-    }
-    
-    // Reset state
-    setIsDrawing(false);
-    startPointRef.current = null;
-    currentLineRef.current = null;
-    tooltipRef.current = null;
-    
-    canvas.renderAll();
-    logger.info('Cancelled drawing straight line');
   }, [fabricCanvasRef, isDrawing]);
 
   return {
