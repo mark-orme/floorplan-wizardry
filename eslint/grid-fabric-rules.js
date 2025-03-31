@@ -1,40 +1,56 @@
 
 /**
- * Grid and Fabric specific ESLint rules
+ * ESLint rules specifically for Fabric.js usage with the grid system
+ * Prevents common errors in Fabric.js usage patterns
+ * @module eslint/grid-fabric-rules
  */
-
-/** @type {import('eslint').Linter.FlatConfig} */
 export const gridFabricRules = {
-  name: "grid-fabric-rules",
+  files: ["**/*.{ts,tsx}"],
   rules: {
-    // Prevent duplicate exports
-    "no-dupe-class-members": "error",
-    "import/export": "error",
-    "import/no-duplicates": "error",
-    "no-redeclare": "error", // Add this rule to prevent redeclarations
-    "no-dupe-exports": "error", // Add a specific rule for duplicate exports
+    // Prevent using fabric namespace directly
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[object.name='fabric']",
+        "message": "Don't use the fabric namespace directly. Import specific components from 'fabric'."
+      },
+      {
+        "selector": "TSQualifiedName[left.name='fabric']",
+        "message": "Don't use fabric namespace in type annotations. Import types from 'fabric' directly."
+      }
+    ],
     
-    // Grid-specific rules
-    "no-empty-function": ["error", { "allow": ["arrowFunctions"] }],
-    "no-unused-vars": ["error", { 
-      "vars": "all", 
-      "args": "after-used", 
-      "ignoreRestSiblings": true,
-      "argsIgnorePattern": "^_"
+    // Enforce proper imports for Fabric.js
+    "no-restricted-imports": ["error", {
+      "paths": [{
+        "name": "fabric",
+        "importNames": ["fabric"],
+        "message": "Import specific components: import { Canvas, Line } from 'fabric' instead of 'fabric'"
+      }]
     }],
     
-    // Prevent mistypes in grid objects
-    "no-dupe-keys": "error",
+    // Check for commonly misused Fabric patterns
+    "@typescript-eslint/consistent-type-imports": ["error", { 
+      "prefer": "type-imports",
+      "disallowTypeAnnotations": false
+    }],
     
-    // Enforce proper function returns
-    "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }],
-    
-    // Enforce proper TypeScript typing
-    "@typescript-eslint/no-unsafe-assignment": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-duplicate-exports": "error", // Add this rule to prevent duplicate exports in TS
-    
-    // Enforce proper Canvas API usage
-    "no-undef": "error"
+    // Make sure we're using proper types for Fabric objects
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "typeParameter",
+        "format": ["PascalCase"],
+        "prefix": ["T"]
+      },
+      {
+        "selector": "interface",
+        "format": ["PascalCase"],
+        "custom": {
+          "regex": "^I[A-Z]",
+          "match": false
+        }
+      }
+    ]
   }
 };

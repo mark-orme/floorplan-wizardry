@@ -53,6 +53,19 @@ export const typeSafetyRules = {
     "@typescript-eslint/prefer-optional-chain": "error",
     
     // Enforce checking for exported types
-    "@typescript-eslint/explicit-module-boundary-types": "error"
+    "@typescript-eslint/explicit-module-boundary-types": "error",
+    
+    // NEW: Add specific rule to prevent using fabric namespace
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[object.name='fabric']",
+        "message": "Don't use the fabric namespace directly. Import specific components from 'fabric'."
+      }
+    ],
+    
+    // NEW: Rule to enforce proper function calls with correct argument counts
+    "@typescript-eslint/no-invalid-void-type": "error",
+    "@typescript-eslint/no-misused-promises": "error"
   }
 };
