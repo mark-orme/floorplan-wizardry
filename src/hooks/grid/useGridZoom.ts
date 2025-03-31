@@ -1,30 +1,21 @@
 
 /**
- * Grid zoom hook
- * Handles grid recreation on zoom level changes
+ * Grid zoom handling hook
  * @module hooks/grid/useGridZoom
  */
 import { useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
+import logger from "@/utils/logger";
 
-/**
- * Props for the useGridZoom hook
- */
 interface UseGridZoomProps {
-  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Flag to track if grid is initialized */
   gridInitializedRef: React.MutableRefObject<boolean>;
-  /** Current zoom level */
   zoomLevel: number;
-  /** Function to create the grid */
   createCanvasGrid: () => void;
 }
 
 /**
- * Hook for managing grid recreation on zoom level changes
- * 
- * @param {UseGridZoomProps} props - Hook properties
+ * Hook for handling grid zoom-related operations
  */
 export const useGridZoom = ({
   fabricCanvasRef,
@@ -32,14 +23,18 @@ export const useGridZoom = ({
   zoomLevel,
   createCanvasGrid
 }: UseGridZoomProps) => {
-  
-  // Force grid recreation when zoom changes significantly
+  // Recreate grid when zoom changes significantly
   useEffect(() => {
-    if (gridInitializedRef.current && fabricCanvasRef.current) {
-      // Only recreate grid on significant zoom changes
-      if (zoomLevel <= 0.5 || zoomLevel >= 2) {
+    if (!fabricCanvasRef.current) return;
+    
+    // Handle extreme zoom levels
+    if (zoomLevel > 3 || zoomLevel < 0.3) {
+      logger.info("Regenerating grid for extreme zoom level:", zoomLevel);
+      
+      // Only recreate if grid was previously initialized
+      if (gridInitializedRef.current) {
         createCanvasGrid();
       }
     }
-  }, [zoomLevel, createCanvasGrid, fabricCanvasRef, gridInitializedRef]);
+  }, [zoomLevel, fabricCanvasRef, gridInitializedRef, createCanvasGrid]);
 };

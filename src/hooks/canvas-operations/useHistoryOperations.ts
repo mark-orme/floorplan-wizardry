@@ -19,13 +19,7 @@ export const useHistoryOperations = ({
   canRedo
 }: UseHistoryOperationsProps) => {
   const handleUndo = useCallback(() => {
-    logger.info("Undo action requested", { canUndo });
-    
-    if (!canUndo) {
-      logger.warn("Undo requested but canUndo is false");
-      toast.info("Nothing to undo");
-      return;
-    }
+    logger.info("Undo action requested");
     
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.undo) {
@@ -35,7 +29,7 @@ export const useHistoryOperations = ({
         });
       } else {
         logger.warn("Undo function not available on canvas component");
-        toast.error("Undo functionality not available");
+        toast.info("Undo (not implemented yet)");
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
@@ -43,16 +37,10 @@ export const useHistoryOperations = ({
       captureError(error as Error, "undo-action-error");
       toast.error(`Failed to undo: ${errorMsg}`);
     }
-  }, [canUndo, canvasComponentRef]);
-  
+  }, [canvasComponentRef, canUndo]);
+
   const handleRedo = useCallback(() => {
-    logger.info("Redo action requested", { canRedo });
-    
-    if (!canRedo) {
-      logger.warn("Redo requested but canRedo is false");
-      toast.info("Nothing to redo");
-      return;
-    }
+    logger.info("Redo action requested");
     
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.redo) {
@@ -62,7 +50,7 @@ export const useHistoryOperations = ({
         });
       } else {
         logger.warn("Redo function not available on canvas component");
-        toast.error("Redo functionality not available");
+        toast.info("Redo (not implemented yet)");
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
@@ -70,7 +58,7 @@ export const useHistoryOperations = ({
       captureError(error as Error, "redo-action-error");
       toast.error(`Failed to redo: ${errorMsg}`);
     }
-  }, [canRedo, canvasComponentRef]);
+  }, [canvasComponentRef, canRedo]);
 
   return {
     handleUndo,

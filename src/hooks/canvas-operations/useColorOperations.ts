@@ -1,6 +1,6 @@
 
 /**
- * Hook for managing canvas color and thickness operations
+ * Hook for managing color and line thickness operations
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
@@ -28,7 +28,8 @@ export const useColorOperations = ({
     
     try {
       setLineThickness(thickness);
-      toast.info(`Line thickness set to ${thickness}`);
+      toast.success(`Changed line thickness to ${thickness}`);
+      
       captureMessage("Line thickness changed", "thickness-change", {
         tags: { component: "CanvasApp", action: "thicknessChange" },
         extra: { previousThickness: lineThickness, newThickness: thickness }
@@ -40,13 +41,16 @@ export const useColorOperations = ({
         previousThickness: lineThickness, 
         newThickness: thickness 
       });
+      
       captureError(error as Error, "thickness-change-error", {
+        tags: { component: "CanvasApp", action: "thicknessChange" },
         extra: { previousThickness: lineThickness, newThickness: thickness }
       });
-      toast.error(`Failed to set line thickness: ${errorMsg}`);
+      
+      toast.error(`Failed to change line thickness: ${errorMsg}`);
     }
   }, [lineThickness, setLineThickness]);
-  
+
   const handleLineColorChange = useCallback((color: string) => {
     logger.info("Line color change requested", { 
       previousColor: lineColor, 
@@ -55,7 +59,8 @@ export const useColorOperations = ({
     
     try {
       setLineColor(color);
-      toast.info(`Line color set to ${color}`);
+      toast.success(`Changed line color`);
+      
       captureMessage("Line color changed", "color-change", {
         tags: { component: "CanvasApp", action: "colorChange" },
         extra: { previousColor: lineColor, newColor: color }
@@ -67,10 +72,13 @@ export const useColorOperations = ({
         previousColor: lineColor, 
         newColor: color 
       });
+      
       captureError(error as Error, "color-change-error", {
+        tags: { component: "CanvasApp", action: "colorChange" },
         extra: { previousColor: lineColor, newColor: color }
       });
-      toast.error(`Failed to set line color: ${errorMsg}`);
+      
+      toast.error(`Failed to change line color: ${errorMsg}`);
     }
   }, [lineColor, setLineColor]);
 

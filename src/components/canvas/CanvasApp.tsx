@@ -8,10 +8,12 @@ import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { captureMessage } from "@/utils/sentry";
 import logger from "@/utils/logger";
-import { DrawingProvider } from "@/contexts/DrawingContext";
-import { useCanvasOperations } from "@/hooks/canvas-operations"; // Updated import path
+import { useCanvasOperations } from "@/hooks/canvas-operations";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { CanvasContainer } from "./CanvasContainer";
+import { toast } from "sonner";
+import { DebugInfoState } from "@/types/drawingTypes";
+import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 
 interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
@@ -19,8 +21,13 @@ interface CanvasAppProps {
 
 // Inner component that uses DrawingContext
 const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
+  // State for debug info
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
+  
   // State for GIA (Gross Internal Area)
   const [gia, setGia] = useState<number>(0);
+  
+  // Get drawing context
   const { 
     tool, 
     setTool, 
@@ -73,11 +80,38 @@ const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
       extra: { initialTool: tool }
     });
     
+    // Welcome message
+    toast.success("Floor Plan Editor initialized", {
+      id: "canvas-welcome-toast",
+      duration: 3000
+    });
+    
     // Clean up when component unmounts
     return () => {
       cleanupCanvas();
     };
   }, [tool, cleanupCanvas]);
+  
+  // Handle canvas ref setup
+  const handleCanvasRef = (ref: any) => {
+    logger.info("Canvas ref received");
+    
+    // Set the canvas ref
+    setCanvasRef(ref);
+    
+    // Update debug info
+    setDebugInfo(prev => ({
+      ...prev,
+      canvasReady: true,
+      canvasInitialized: true
+    }));
+    
+    // Enable undo/redo based on history state
+    if (ref && ref.history) {
+      setCanUndo(ref.history.canUndo());
+      setCanRedo(ref.history.canRedo());
+    }
+  };
   
   return (
     <CanvasControllerEnhanced>
@@ -96,18 +130,19 @@ const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
           lineColor={lineColor}
           onLineThicknessChange={handleLineThicknessChange}
           onLineColorChange={handleLineColorChange}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
-        <CanvasContainer onCanvasRef={setCanvasRef} />
+        <CanvasContainer 
+          onCanvasRef={handleCanvasRef}
+          debugInfo={debugInfo}
+        />
       </div>
     </CanvasControllerEnhanced>
   );
 };
 
-// Wrapper component that provides DrawingContext
+// Export the CanvasApp component
 export const CanvasApp: React.FC<CanvasAppProps> = (props) => {
-  return (
-    <DrawingProvider>
-      <CanvasAppInner {...props} />
-    </DrawingProvider>
-  );
+  return <CanvasAppInner {...props} />;
 };

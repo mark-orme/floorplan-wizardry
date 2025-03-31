@@ -1,69 +1,72 @@
 
 /**
- * Grid diagnostics hook
- * Handles grid diagnostics and fixes
+ * Grid diagnostics hook for troubleshooting grid issues
  * @module hooks/grid/useGridDiagnostics
  */
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { runGridDiagnostics, applyGridFixes } from "@/utils/grid/gridDiagnostics";
+import { toast } from "sonner";
+import logger from "@/utils/logger";
 
-/**
- * Props for the useGridDiagnostics hook
- */
 interface UseGridDiagnosticsProps {
-  /** Reference to the fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Whether the grid has been initialized */
   isGridInitialized: boolean;
 }
 
 /**
- * Hook for managing grid diagnostics and automatic repairs
- * 
- * @param {UseGridDiagnosticsProps} props - Hook properties
- * @returns Diagnostic functions
+ * Hook for diagnosing and troubleshooting grid issues
  */
 export const useGridDiagnostics = ({
   fabricCanvasRef,
   gridLayerRef,
   isGridInitialized
 }: UseGridDiagnosticsProps) => {
-  
   /**
-   * Run diagnostics on the grid
-   * @param {boolean} verbose - Whether to log detailed diagnostics
-   * @returns Diagnostic results
+   * Run diagnostics on grid state
    */
-  const runDiagnostics = useCallback((verbose = true) => {
-    if (fabricCanvasRef.current) {
-      return runGridDiagnostics(fabricCanvasRef.current, gridLayerRef.current, verbose);
+  const runDiagnostics = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      logger.warn("Cannot run grid diagnostics: Canvas is null");
+      return {
+        hasCanvas: false,
+        gridExists: false,
+        gridCount: 0,
+        canvasReady: false
+      };
     }
-    return null;
-  }, [fabricCanvasRef, gridLayerRef]);
-  
-  /**
-   * Runs periodic grid health checks
-   */
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (fabricCanvasRef.current && gridLayerRef.current.length > 0) {
-        // Run quick diagnostics - verbose=false to reduce log noise
-        const diagnostics = runGridDiagnostics(fabricCanvasRef.current, gridLayerRef.current, false);
-        
-        // If no grid objects are on canvas, try to fix
-        if (diagnostics.gridInfo.objectsOnCanvas === 0 && gridLayerRef.current.length > 0) {
-          console.log("Periodic check found missing grid - attempting fix");
-          applyGridFixes(fabricCanvasRef.current, gridLayerRef.current);
-        }
-      }
-    }, 5000); // Check every 5 seconds
     
-    return () => clearInterval(intervalId);
-  }, [fabricCanvasRef, gridLayerRef]);
-  
+    const gridObjects = gridLayerRef.current;
+    const gridCount = gridObjects.length;
+    
+    // Check grid objects presence
+    const gridObjectsOnCanvas = gridObjects.filter(obj => 
+      canvas.contains(obj)
+    );
+    
+    const result = {
+      hasCanvas: true,
+      canvasReady: canvas.width > 0 && canvas.height > 0,
+      canvasDimensions: { width: canvas.width, height: canvas.height },
+      gridExists: gridCount > 0,
+      gridInitialized: isGridInitialized,
+      gridCount,
+      gridObjectsOnCanvas: gridObjectsOnCanvas.length,
+      gridVisibilityIssues: gridCount > 0 && gridObjectsOnCanvas.length === 0,
+      missingGridObjects: gridCount - gridObjectsOnCanvas.length
+    };
+    
+    logger.info("Grid diagnostics result:", result);
+    
+    // Show issues in console if they exist
+    if (result.gridVisibilityIssues) {
+      console.warn("Grid visibility issues detected:", result);
+    }
+    
+    return result;
+  }, [fabricCanvasRef, gridLayerRef, isGridInitialized]);
+
   return {
     runDiagnostics
   };
