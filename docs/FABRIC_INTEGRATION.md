@@ -47,6 +47,8 @@ interface TouchRecord {
   originalEvent: TouchEvent;
   identifier: number;
   position: Point;
+  clientX: number;
+  clientY: number;
 }
 ```
 
@@ -80,3 +82,31 @@ canvas.fire(FabricEventTypes.MOUSE_DOWN, eventInfo as any);
 2. Event handling: Always clean up event listeners in useEffect returns
 3. Type narrowing: Use proper type guards instead of type assertions
 4. Object disposal: Always dispose of canvas objects when unmounting
+5. Touch events: Pay special attention to TouchEvent vs. Touch objects vs. simple coordinates
+
+## Custom Types for Fabric.js Integration
+
+### For Touch Events
+```typescript
+// Safe touch record with required properties
+interface TouchRecord {
+  identifier: number;
+  clientX: number;
+  clientY: number;
+  position: Point;
+  originalEvent?: TouchEvent;
+}
+```
+
+### For Point Conversion
+```typescript
+// Convert our Point to Fabric Point
+function toFabricPoint(point: Point): fabric.Point {
+  return new fabric.Point(point.x, point.y);
+}
+
+// Convert Fabric Point to our Point
+function fromFabricPoint(point: fabric.Point): Point {
+  return { x: point.x, y: point.y };
+}
+```

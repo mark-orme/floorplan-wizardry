@@ -64,12 +64,20 @@ module.exports = {
     "no-restricted-syntax": [
       "error",
       {
-        "selector": "NewExpression[callee.name='Line'] > ArrayExpression:first-child[elements.length=0]",
-        "message": "Fabric.js Line constructor requires 4 numbers as first argument: [x1, y1, x2, y2]"
+        "selector": "NewExpression[callee.name='Line'] > ArrayExpression:first-child[elements.length!=4]",
+        "message": "Fabric.js Line constructor requires exactly 4 numbers as first argument: [x1, y1, x2, y2]"
       },
       {
         "selector": "MemberExpression[property.name='set'][object.type='Identifier'][object.name=/^(point|Point)$/]",
         "message": "Fabric.js Point objects are immutable and don't have a 'set' method. Create a new Point instead."
+      },
+      {
+        "selector": "BinaryExpression[operator='instanceof'][right.name='Touch']",
+        "message": "Use type guards with proper interface matching instead of 'instanceof Touch'. Touch objects have specific required properties."
+      },
+      {
+        "selector": "VariableDeclarator[id.name=/TouchRecord/] > ObjectExpression:not(:has(Property[key.name='identifier'])):not(:has(Property[key.name='clientX'])):not(:has(Property[key.name='clientY']))",
+        "message": "Touch-like objects must include proper Touch properties (identifier, clientX, clientY)."
       }
     ]
   }
