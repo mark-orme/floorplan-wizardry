@@ -4,7 +4,7 @@
  * Create and manage grid lines and objects
  * @module utils/grid/gridRenderers
  */
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Line, Object as FabricObject, Text } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import logger from "@/utils/logger";
 
@@ -16,6 +16,7 @@ export interface GridOptions {
   width?: number;
   selectable?: boolean;
   type?: string;
+  showLabels?: boolean;
 }
 
 /**
@@ -33,17 +34,19 @@ export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
     const gridObjects: FabricObject[] = [];
     const width = canvas.width;
     const height = canvas.height;
-    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+    const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+    const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
     
-    // Create horizontal lines
-    for (let i = 0; i <= height; i += gridSize) {
+    // Create horizontal small grid lines
+    for (let i = 0; i <= height; i += smallGridSize) {
+      const isLarge = i % largeGridSize === 0;
+      
       const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-        strokeWidth: 0.5,
+        stroke: isLarge ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: isLarge ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
         selectable: false,
         evented: false,
         objectCaching: false,
-        strokeDashArray: [1, 3],
         hoverCursor: 'default'
       });
       
@@ -56,15 +59,16 @@ export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
       canvas.sendObjectToBack(line);
     }
     
-    // Create vertical lines
-    for (let i = 0; i <= width; i += gridSize) {
+    // Create vertical small grid lines
+    for (let i = 0; i <= width; i += smallGridSize) {
+      const isLarge = i % largeGridSize === 0;
+      
       const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-        strokeWidth: 0.5,
+        stroke: isLarge ? GRID_CONSTANTS.LARGE_GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: isLarge ? GRID_CONSTANTS.LARGE_GRID_WIDTH : GRID_CONSTANTS.SMALL_GRID_WIDTH,
         selectable: false,
         evented: false,
         objectCaching: false,
-        strokeDashArray: [1, 3],
         hoverCursor: 'default'
       });
       
@@ -75,6 +79,50 @@ export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
       gridObjects.push(line);
       canvas.add(line);
       canvas.sendObjectToBack(line);
+    }
+    
+    // Add meter labels (optional)
+    const addLabels = true;
+    if (addLabels) {
+      // Add horizontal meter labels
+      for (let i = largeGridSize; i <= width; i += largeGridSize) {
+        const meters = i / GRID_CONSTANTS.PIXELS_PER_METER;
+        const label = new Text(`${meters}m`, {
+          left: i,
+          top: 5,
+          fontSize: 10,
+          fill: GRID_CONSTANTS.MAJOR_GRID_COLOR,
+          selectable: false,
+          evented: false,
+          objectCaching: false
+        });
+        
+        (label as any).isGrid = true;
+        (label as any).objectType = 'grid-label';
+        
+        gridObjects.push(label);
+        canvas.add(label);
+      }
+      
+      // Add vertical meter labels
+      for (let i = largeGridSize; i <= height; i += largeGridSize) {
+        const meters = i / GRID_CONSTANTS.PIXELS_PER_METER;
+        const label = new Text(`${meters}m`, {
+          left: 5,
+          top: i,
+          fontSize: 10,
+          fill: GRID_CONSTANTS.MAJOR_GRID_COLOR,
+          selectable: false,
+          evented: false,
+          objectCaching: false
+        });
+        
+        (label as any).isGrid = true;
+        (label as any).objectType = 'grid-label';
+        
+        gridObjects.push(label);
+        canvas.add(label);
+      }
     }
     
     return gridObjects;

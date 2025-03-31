@@ -1,3 +1,4 @@
+
 /**
  * Hook for handling straight line drawing with measurement
  * @module hooks/useStraightLineTool
@@ -10,7 +11,15 @@ import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import type { Point } from '@/types/core/Point';
 import logger from '@/utils/logger';
-import { pixelsToMeters, calculateMidpoint } from '@/utils/measurementUtils';
+
+// Helper functions for measurement
+const pixelsToMeters = (pixels: number): number => {
+  return pixels / GRID_CONSTANTS.PIXELS_PER_METER;
+};
+
+const calculateMidpoint = (p1: Point, p2: Point): Point => {
+  return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+};
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -101,10 +110,8 @@ export const useStraightLineTool = ({
     // Start drawing
     setIsDrawing(true);
     
-    // Snap point to grid if enabled
-    const snappedPoint = snapEnabled 
-      ? snapPointToGrid({ x: pointer.x, y: pointer.y })
-      : { x: pointer.x, y: pointer.y };
+    // Always snap point to grid for better precision
+    const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
     
     // Save start point
     startPointRef.current = snappedPoint;
@@ -125,7 +132,7 @@ export const useStraightLineTool = ({
     canvas.renderAll();
     
     logger.info('Started drawing straight line', { point: snappedPoint });
-  }, [fabricCanvasRef, tool, lineColor, lineThickness, snapEnabled, snapPointToGrid]);
+  }, [fabricCanvasRef, tool, lineColor, lineThickness, snapPointToGrid]);
 
   /**
    * Handle mouse move event for straight line drawing
@@ -136,15 +143,11 @@ export const useStraightLineTool = ({
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e);
     
-    // Snap point to grid if enabled
-    const currentPoint = snapEnabled 
-      ? snapPointToGrid({ x: pointer.x, y: pointer.y })
-      : { x: pointer.x, y: pointer.y };
+    // Always snap the end point to grid
+    const currentPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
     
-    // Apply additional constraints if needed (like straight horizontal/vertical lines)
-    const { start, end } = snapEnabled
-      ? snapLineToGrid(startPointRef.current, currentPoint)
-      : { start: startPointRef.current, end: currentPoint };
+    // Apply additional constraints for horizontal/vertical/diagonal lines
+    const { start, end } = snapLineToGrid(startPointRef.current, currentPoint);
     
     // Update line
     currentLineRef.current.set({
@@ -156,7 +159,7 @@ export const useStraightLineTool = ({
     updateMeasurementTooltip(start, end, canvas);
     
     canvas.renderAll();
-  }, [fabricCanvasRef, isDrawing, snapEnabled, snapPointToGrid, snapLineToGrid, updateMeasurementTooltip]);
+  }, [fabricCanvasRef, isDrawing, snapPointToGrid, snapLineToGrid, updateMeasurementTooltip]);
 
   /**
    * Handle mouse up event for straight line drawing
@@ -185,7 +188,7 @@ export const useStraightLineTool = ({
       // Save state for undo
       saveCurrentState();
       
-      // Convert to meters
+      // Convert to meters (10 pixels = 0.1m)
       const distanceInMeters = pixelsToMeters(distance).toFixed(1);
       
       // Make line selectable and store measurement
@@ -221,7 +224,7 @@ export const useStraightLineTool = ({
     
     canvas.renderAll();
     logger.info('Finished drawing straight line');
-  }, [fabricCanvasRef, isDrawing, saveCurrentState]);
+  }, [fabricCanvasRef, isDrawing, saveCurrentState, snapPointToGrid]);
 
   /**
    * Set up event listeners when tool is active

@@ -46,7 +46,7 @@ export const useSnapToGrid = () => {
   }, [snapToGrid]);
 
   /**
-   * Constrain a line to horizontal, vertical, or diagonal
+   * Constrain a line to horizontal, vertical, or diagonal (45°)
    * @param start - Start point of line
    * @param end - End point of line
    * @returns Constrained start and end points
@@ -57,7 +57,7 @@ export const useSnapToGrid = () => {
     const dx = Math.abs(end.x - start.x);
     const dy = Math.abs(end.y - start.y);
     
-    // Determine line angle constraint
+    // Determine line angle constraint with enhanced 45° detection
     if (dx > dy * 2) {
       // Horizontal constraint
       return {
@@ -72,6 +72,7 @@ export const useSnapToGrid = () => {
       };
     } else {
       // Diagonal constraint (45 degrees)
+      // Make both dx and dy equal for a perfect 45° angle
       const distance = Math.min(dx, dy);
       const directionX = end.x > start.x ? 1 : -1;
       const directionY = end.y > start.y ? 1 : -1;
