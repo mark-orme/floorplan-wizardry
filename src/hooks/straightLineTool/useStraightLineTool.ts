@@ -52,50 +52,53 @@ export const useStraightLineTool = ({
     if (!canvas) return;
     
     if (tool === DrawingMode.STRAIGHT_LINE) {
-      setIsActive(true);
-      
-      // Configure canvas for straight line drawing
-      canvas.isDrawingMode = false;
-      canvas.selection = false;
-      canvas.defaultCursor = 'crosshair';
-      canvas.hoverCursor = 'crosshair';
-      
-      // Make objects non-selectable
-      canvas.getObjects().forEach(obj => {
-        if ((obj as any).objectType !== 'grid') {
-          obj.selectable = false;
-        }
-      });
-      
-      // Add our specific event handlers
-      canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
-      canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
-      canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp);
-      
-      // Discard any active selection
-      canvas.discardActiveObject();
-      canvas.requestRenderAll();
-      
-      initializeTool();
-      logger.info("Straight line tool initialized with event handlers", {
-        isDrawingMode: canvas.isDrawingMode,
-        selection: canvas.selection,
-        cursor: canvas.defaultCursor
-      });
-      
-      captureMessage("Straight line tool initialized", "straight-line-tool-init", {
-        tags: { component: "useStraightLineTool" },
-        extra: { 
-          canvasSize: { width: canvas.width, height: canvas.height },
-          settings: { 
-            isDrawingMode: canvas.isDrawingMode,
-            selection: canvas.selection,
-            cursor: canvas.defaultCursor,
-            lineColor,
-            lineThickness
+      // Important: Only set up the tool if it's not already active
+      if (!isActive) {
+        setIsActive(true);
+        
+        // Configure canvas for straight line drawing
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'crosshair';
+        canvas.hoverCursor = 'crosshair';
+        
+        // Make objects non-selectable
+        canvas.getObjects().forEach(obj => {
+          if ((obj as any).objectType !== 'grid') {
+            obj.selectable = false;
           }
-        }
-      });
+        });
+        
+        // Add our specific event handlers
+        canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
+        canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
+        canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp);
+        
+        // Discard any active selection
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        
+        initializeTool();
+        logger.info("Straight line tool initialized with event handlers", {
+          isDrawingMode: canvas.isDrawingMode,
+          selection: canvas.selection,
+          cursor: canvas.defaultCursor
+        });
+        
+        captureMessage("Straight line tool initialized", "straight-line-tool-init", {
+          tags: { component: "useStraightLineTool" },
+          extra: { 
+            canvasSize: { width: canvas.width, height: canvas.height },
+            settings: { 
+              isDrawingMode: canvas.isDrawingMode,
+              selection: canvas.selection,
+              cursor: canvas.defaultCursor,
+              lineColor,
+              lineThickness
+            }
+          }
+        });
+      }
     } else {
       // If tool was active and is now changing, clean up
       if (isActive) {
@@ -119,8 +122,8 @@ export const useStraightLineTool = ({
     cleanupEventHandlers,
     lineColor,
     lineThickness,
-    initializeTool,
-    isActive
+    isActive,
+    initializeTool
   ]);
   
   // Handle keyboard events - Escape to cancel
