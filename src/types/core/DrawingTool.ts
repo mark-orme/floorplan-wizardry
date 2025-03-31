@@ -11,7 +11,7 @@ import { DrawingMode } from '@/constants/drawingModes';
  * DrawingTool type
  * Uses DrawingMode enum for consistency and type safety
  */
-export type DrawingTool = keyof typeof DrawingMode | DrawingMode;
+export type DrawingTool = DrawingMode;
 
 /**
  * Validates if a value is a valid DrawingTool

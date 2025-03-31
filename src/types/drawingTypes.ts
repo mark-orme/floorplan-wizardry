@@ -6,7 +6,7 @@
  */
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from '@/types/core/Geometry';
+import { Point, CanvasDimensions } from '@/types/core/Geometry';
 
 /**
  * @deprecated Use DrawingTool from src/types/core/DrawingTool.ts instead
@@ -19,6 +19,9 @@ export type { DrawingTool };
  * This is kept for backward compatibility
  */
 export { DrawingMode };
+
+// Export geometry types for backward compatibility
+export type { Point, CanvasDimensions };
 
 // For compatibility with existing code
 export type ZoomDirection = "in" | "out";

@@ -6,6 +6,8 @@
  */
 import { FloorPlan, Stroke } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Geometry';
+import { DrawingTool } from '@/types/core/DrawingTool';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Mock props for useFloorPlanDrawing tests
@@ -23,7 +25,7 @@ export interface MockFloorPlanDrawingProps {
   
   // Common props
   fabricCanvasRef: { current: any };
-  tool?: string;
+  tool?: DrawingTool;
   setGia?: React.Dispatch<React.SetStateAction<number>>;
 }
 

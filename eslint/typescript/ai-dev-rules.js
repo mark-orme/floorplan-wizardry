@@ -38,9 +38,17 @@ export const aiDevRules = {
       "objectLiteralTypeAssertions": "allow"
     }],
     
-    // DrawingTool and DrawingMode specific rules
+    // New rule to prevent DrawingTool/DrawingMode incompatibility
     "no-restricted-syntax": [
       "error",
+      {
+        "selector": "TSTypeReference[typeName.name='DrawingTool'][typeName.type='Identifier'] + TSTypeReference[typeName.name='DrawingMode'][typeName.type='Identifier']",
+        "message": "DrawingTool and DrawingMode should be compatible types. Make sure DrawingTool is defined as type DrawingTool = DrawingMode."
+      },
+      {
+        "selector": "TSTypeReference[typeName.name='DrawingMode'][typeName.type='Identifier'] + TSTypeReference[typeName.name='DrawingTool'][typeName.type='Identifier']",
+        "message": "DrawingTool and DrawingMode should be compatible types. Make sure DrawingTool is defined as type DrawingTool = DrawingMode."
+      },
       {
         "selector": "ImportDeclaration[source.value=/drawingTypes/] > ImportSpecifier[imported.name='DrawingTool']",
         "message": "Import DrawingTool only from '@/types/core/DrawingTool' for consistency"
