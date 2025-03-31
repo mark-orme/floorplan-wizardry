@@ -86,13 +86,19 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   showGrid,
   onToggleGrid
 }) => {
+  // Added console log for debugging
+  console.log("Current tool:", tool);
+  
   return (
     <div className="bg-white border-b border-gray-200 p-2 flex items-center gap-2 shadow-sm z-10">
       {/* Tool selection group */}
       <div className="flex gap-1">
         <Toggle 
           pressed={tool === DrawingMode.SELECT} 
-          onPressedChange={() => onToolChange(DrawingMode.SELECT)}
+          onPressedChange={() => {
+            console.log("Selecting SELECT tool");
+            onToolChange(DrawingMode.SELECT);
+          }}
           aria-label="Select tool"
           size="sm"
         >
@@ -101,7 +107,10 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.DRAW} 
-          onPressedChange={() => onToolChange(DrawingMode.DRAW)}
+          onPressedChange={() => {
+            console.log("Selecting DRAW tool");
+            onToolChange(DrawingMode.DRAW);
+          }}
           aria-label="Draw tool"
           size="sm"
         >
@@ -110,9 +119,13 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         
         <Toggle 
           pressed={tool === DrawingMode.STRAIGHT_LINE} 
-          onPressedChange={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
+          onPressedChange={() => {
+            console.log("Selecting STRAIGHT_LINE tool");
+            onToolChange(DrawingMode.STRAIGHT_LINE);
+          }}
           aria-label="Straight line tool"
           size="sm"
+          data-test-id="straight-line-tool"
         >
           <Minus className="h-4 w-4" />
         </Toggle>

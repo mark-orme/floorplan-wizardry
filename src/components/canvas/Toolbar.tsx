@@ -70,17 +70,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </Button>
         <Button 
           size="sm" 
-          variant={activeTool === DrawingMode.LINE ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.LINE)}
-          title="Line Tool"
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <Button 
-          size="sm" 
           variant={activeTool === DrawingMode.STRAIGHT_LINE ? 'default' : 'outline'} 
           onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
           title="Straight Line Tool"
+          data-test-id="straight-line-button"
         >
           <Ruler className="h-4 w-4" />
         </Button>

@@ -102,10 +102,22 @@ export const useStraightLineTool = ({
    * Handle mouse down event for straight line drawing
    */
   const handleMouseDown = useCallback((e: MouseEvent) => {
-    if (!fabricCanvasRef.current || tool !== DrawingMode.STRAIGHT_LINE) return;
+    if (!fabricCanvasRef.current || tool !== DrawingMode.STRAIGHT_LINE) {
+      logger.info('Mouse down but ignored - canvas or tool condition not met', { 
+        hasCanvas: !!fabricCanvasRef.current, 
+        currentTool: tool 
+      });
+      return;
+    }
     
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e);
+    
+    logger.info('Starting straight line drawing', { 
+      pointer, 
+      tool, 
+      isCorrectTool: tool === DrawingMode.STRAIGHT_LINE 
+    });
     
     // Start drawing
     setIsDrawing(true);
@@ -230,12 +242,20 @@ export const useStraightLineTool = ({
    * Set up event listeners when tool is active
    */
   useEffect(() => {
+    logger.info('Straight line tool effect running', { 
+      currentTool: tool, 
+      isCorrectTool: tool === DrawingMode.STRAIGHT_LINE,
+      hasCanvas: !!fabricCanvasRef.current
+    });
+    
     if (tool !== DrawingMode.STRAIGHT_LINE) return;
     
     // Add event listeners
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    
+    logger.info('Straight line tool event listeners added');
     
     // Set cursor
     if (fabricCanvasRef.current) {
@@ -252,10 +272,13 @@ export const useStraightLineTool = ({
       
       fabricCanvasRef.current.discardActiveObject();
       fabricCanvasRef.current.requestRenderAll();
+      
+      logger.info('Straight line tool canvas settings applied');
     }
     
     // Clean up
     return () => {
+      logger.info('Straight line tool cleanup running');
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);

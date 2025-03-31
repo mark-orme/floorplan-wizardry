@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, Line, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -11,6 +10,7 @@ import {
   useBrushSettings 
 } from "@/hooks/canvas-events";
 import { useStraightLineTool } from "@/hooks/useStraightLineTool";
+import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 
 /**
  * Props for CanvasEventManager component
@@ -91,7 +91,13 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       return;
     }
     
-    logger.info("Applying tool settings to canvas", { tool, lineThickness, lineColor });
+    logger.info("Applying tool settings to canvas", { 
+      tool, 
+      lineThickness, 
+      lineColor,
+      isString: typeof tool === 'string',
+      toolMatches: tool === DrawingMode.STRAIGHT_LINE
+    });
     
     try {
       // Disable drawing mode by default
@@ -162,7 +168,11 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           });
           // Discard any active object to ensure nothing is selected
           canvas.discardActiveObject();
-          logger.info("Straight line tool activated");
+          logger.info("Straight line tool activated", { 
+            toolType: typeof tool,
+            toolValue: tool,
+            toolCheck: tool === DrawingMode.STRAIGHT_LINE
+          });
           break;
           
         case DrawingMode.ERASER:
@@ -174,7 +184,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           
         default:
           canvas.selection = true;
-          logger.info("Default tool settings applied");
+          logger.info("Default tool settings applied", { toolUsed: tool });
           break;
       }
       
@@ -200,7 +210,13 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       canvas.renderAll();
       
-      captureMessage("Tool applied to canvas", "tool-applied");
+      // Add diagnostic validation after tool change
+      validateStraightLineDrawing(canvas, tool);
+      
+      captureMessage("Tool applied to canvas", "tool-applied", {
+        tags: { toolName: tool },
+        extra: { lineThickness, lineColor }
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to apply tool settings", { 
