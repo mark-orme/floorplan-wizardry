@@ -54,12 +54,13 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       const prevState = historyStack[historyIndex - 1];
       const prevStateObj = JSON.parse(prevState);
       
-      // Fixed: Remove second argument to loadFromJSON
-      canvas.loadFromJSON(prevStateObj);
-      canvas.renderAll();
-      setHistoryIndex(historyIndex - 1);
-      setCanUndo(historyIndex - 1 > 0);
-      setCanRedo(true);
+      // Fixed: Use loadFromJSON without second argument
+      canvas.loadFromJSON(prevStateObj, () => {
+        canvas.renderAll();
+        setHistoryIndex(historyIndex - 1);
+        setCanUndo(historyIndex - 1 > 0);
+        setCanRedo(true);
+      });
       
       captureMessage("Undo performed", "canvas-undo", {
         tags: { component: "ConnectedDrawingCanvas", action: "undo" }
@@ -80,12 +81,13 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       const nextState = historyStack[historyIndex + 1];
       const nextStateObj = JSON.parse(nextState);
       
-      // Fixed: Remove second argument to loadFromJSON
-      canvas.loadFromJSON(nextStateObj);
-      canvas.renderAll();
-      setHistoryIndex(historyIndex + 1);
-      setCanUndo(true);
-      setCanRedo(historyIndex + 1 < historyStack.length - 1);
+      // Fixed: Use loadFromJSON with a callback instead of a second argument
+      canvas.loadFromJSON(nextStateObj, () => {
+        canvas.renderAll();
+        setHistoryIndex(historyIndex + 1);
+        setCanUndo(true);
+        setCanRedo(historyIndex + 1 < historyStack.length - 1);
+      });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to redo", { error: errorMsg });
