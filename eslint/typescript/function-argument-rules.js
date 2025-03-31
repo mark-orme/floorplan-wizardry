@@ -42,6 +42,16 @@ export const functionArgumentRules = {
       {
         "selector": "ObjectExpression[properties.0.key.name=/GridCreationState/] > Property[key.name!=/isCreated|inProgress|attempts|lastAttemptTime|hasError|errorMessage|creationInProgress|consecutiveResets|maxConsecutiveResets|exists|lastCreationTime|throttleInterval|totalCreations|maxRecreations|minRecreationInterval|creationLock|objectCount|started|completed|startTime|endTime|error/]",
         "message": "Invalid property used on GridCreationState. Check src/types/core/GridTypes.ts for valid properties."
+      },
+      // Prevent using untyped empty objects in grid state operations
+      {
+        "selector": "VariableDeclarator[init.type='ObjectExpression'][init.properties.length=0][id.name=/grid.*State|.*GridState/]",
+        "message": "Don't use empty object literals without types for grid state. Use Partial<GridCreationState> or similar."
+      },
+      // Prevent assigning to unknown properties in typed objects
+      {
+        "selector": "AssignmentExpression[left.object.name=/gridState/][left.property.name!=/isCreated|inProgress|attempts|lastAttemptTime|hasError|errorMessage|creationInProgress|consecutiveResets|maxConsecutiveResets|exists|lastCreationTime|throttleInterval|totalCreations|maxRecreations|minRecreationInterval|creationLock|objectCount|started|completed|startTime|endTime|error/]",
+        "message": "Invalid property assignment to GridCreationState. Check src/types/core/GridTypes.ts for valid properties."
       }
     ]
   }

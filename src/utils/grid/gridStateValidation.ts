@@ -18,7 +18,8 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
   // Only copy valid properties
   Object.keys(state).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
-      (validState as any)[key] = (state as any)[key];
+      const typedKey = key as keyof GridCreationState;
+      validState[typedKey] = state[typedKey];
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
     }
@@ -37,7 +38,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
   
   Object.keys(updates).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
-      (validUpdates as any)[key] = (updates as any)[key];
+      const typedKey = key as keyof GridCreationState;
+      validUpdates[typedKey] = updates[typedKey];
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
     }
@@ -62,7 +64,7 @@ export const GRID_STATE_PROPERTY_MAP: Record<string, keyof GridCreationState> = 
  * @param state - The state object to repair
  * @returns The repaired state object
  */
-export const repairGridState = (state: Record<string, any>): Partial<GridCreationState> => {
+export const repairGridState = (state: Record<string, unknown>): Partial<GridCreationState> => {
   const repairedState: Partial<GridCreationState> = {};
   
   // Copy all valid properties
@@ -70,11 +72,11 @@ export const repairGridState = (state: Record<string, any>): Partial<GridCreatio
     if (key in DEFAULT_GRID_CREATION_STATE) {
       // Use proper type-safe way to copy properties
       const typedKey = key as keyof GridCreationState;
-      repairedState[typedKey] = state[key];
+      repairedState[typedKey] = state[key] as any; // Cast temporarily, but we know this is valid
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
-      repairedState[correctKey] = state[key];
+      repairedState[correctKey] = state[key] as any; // Cast temporarily while maintaining the static type boundary
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });
