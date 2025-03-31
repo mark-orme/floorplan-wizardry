@@ -1,6 +1,6 @@
 
 import React, { forwardRef, useEffect, useState, useRef, useImperativeHandle } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Line, Text } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Text, Point as FabricPoint } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -100,7 +100,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       
       // Create horizontal grid lines
       for (let i = 0; i <= height; i += gridSize) {
-        const line = new fabricCanvas.Line([0, i, width, i], {
+        const line = new Line([0, i, width, i], {
           stroke: "#e0e0e0",
           selectable: false,
           evented: false,
@@ -112,7 +112,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       
       // Create vertical grid lines
       for (let i = 0; i <= width; i += gridSize) {
-        const line = new fabricCanvas.Line([i, 0, i, height], {
+        const line = new Line([i, 0, i, height], {
           stroke: "#e0e0e0",
           selectable: false,
           evented: false,
@@ -282,7 +282,9 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       
       // Limit zoom range
       if (newZoom > 0.2 && newZoom < 5) {
-        canvas.zoomToPoint({ x: canvas.width! / 2, y: canvas.height! / 2 }, newZoom);
+        // Create a FabricPoint for the center of the canvas
+        const centerPoint = new FabricPoint(canvas.width! / 2, canvas.height! / 2);
+        canvas.zoomToPoint(centerPoint, newZoom);
         canvas.requestRenderAll();
         
         toast.info(`Zoomed ${direction}`);

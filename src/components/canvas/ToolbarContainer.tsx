@@ -20,6 +20,8 @@ interface ToolbarContainerProps {
   onClear: () => void;
   onDelete: () => void;
   onToggleGrid: () => void;
+  onLineThicknessChange?: (thickness: number) => void;
+  onLineColorChange?: (color: string) => void;
 }
 
 /**
@@ -38,7 +40,9 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
   onZoom,
   onClear,
   onDelete,
-  onToggleGrid
+  onToggleGrid,
+  onLineThicknessChange = () => {},
+  onLineColorChange = () => {}
 }) => {
   return (
     <CanvasToolbar 
@@ -48,10 +52,13 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
       onRedo={onRedo}
       onZoom={onZoom}
       onClear={onClear}
+      onSave={() => {}}
       onDelete={onDelete}
       gia={gia}
       lineThickness={lineThickness}
       lineColor={lineColor}
+      onLineThicknessChange={onLineThicknessChange}
+      onLineColorChange={onLineColorChange}
       showGrid={showGrid}
       onToggleGrid={onToggleGrid}
     />

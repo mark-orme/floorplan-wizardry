@@ -17,6 +17,8 @@ interface CanvasToolbarProps {
   lineColor: string;
   onLineThicknessChange: (thickness: number) => void;
   onLineColorChange: (color: string) => void;
+  showGrid?: boolean;
+  onToggleGrid?: () => void;
 }
 
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
@@ -32,7 +34,9 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   lineThickness,
   lineColor,
   onLineThicknessChange,
-  onLineColorChange
+  onLineColorChange,
+  showGrid,
+  onToggleGrid
 }) => {
   return (
     <div className="p-2 border-b">
@@ -50,6 +54,8 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         lineColor={lineColor}
         onLineThicknessChange={onLineThicknessChange}
         onLineColorChange={onLineColorChange}
+        showGrid={showGrid}
+        onToggleGrid={onToggleGrid}
       />
     </div>
   );
