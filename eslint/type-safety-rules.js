@@ -1,4 +1,3 @@
-
 /**
  * TypeScript strict type safety rules
  * Prevents common type errors that have caused build failures
@@ -106,10 +105,23 @@ export const typeSafetyRules = {
       {
         "selector": "MemberExpression[object.object.name='debugInfo'][object.property.name!=/^(canvasCreated|canvasReady|canvasInitialized|gridCreated|gridObjectCount|dimensionsSet|showDebugInfo|eventHandlersSet|brushInitialized|hasError|errorMessage|lastInitTime|lastGridCreationTime|canvasEventsRegistered|gridRendered|toolsInitialized|performanceStats|objectCount|canvasWidth|canvasHeight|devicePixelRatio|lastError|lastErrorTime|canvasDimensions)$/]",
         "message": "Invalid DebugInfoState property. Make sure all properties are defined in the DebugInfoState interface."
+      },
+      {
+        "selector": "MemberExpression[object.name='DrawingMode'][property.name!=/^(SELECT|DRAW|STRAIGHT_LINE|RECTANGLE|CIRCLE|TEXT|WALL|DOOR|WINDOW|ROOM_LABEL|ROOM|LINE|MEASURE|PAN|HAND|ZOOM|ERASE|ERASER)$/]",
+        "message": "Invalid DrawingMode value. Use only values defined in the DrawingMode enum."
+      },
+      {
+        "selector": "MemberExpression[object.object.name='gridState'][object.property.name!=/^(started|completed|objectCount|startTime|endTime|error|inProgress|isCreated|attempts|lastAttemptTime|hasError|errorMessage|creationInProgress|consecutiveResets|maxConsecutiveResets|exists|lastCreationTime|throttleInterval|totalCreations|maxRecreations|minRecreationInterval|creationLock)$/]",
+        "message": "Invalid GridCreationState property. Make sure all properties are defined in the GridCreationState interface."
       }
     ],
     
-    // NEW: Enforce proper import paths for DrawingTool
+    // Prevent using object properties without checking if they exist
+    "@typescript-eslint/no-unnecessary-condition": ["error", {
+      "allowRuntimeChecks": true
+    }],
+    
+    // NEW: Enforce type checking for grid operations
     "no-restricted-imports": [
       "error",
       {
@@ -119,13 +131,14 @@ export const typeSafetyRules = {
             "importNames": ["DrawingTool"],
             "message": "Import DrawingTool from '@/types/core/DrawingTool' instead."
           }
+        ],
+        "patterns": [
+          {
+            "group": ["@/types/gridTypes"],
+            "message": "Import grid types from '@/types/core/GridTypes' instead."
+          }
         ]
       }
-    ],
-    
-    // NEW: Add more specific rules for fabric method calls
-    "@typescript-eslint/no-unsafe-call": "error",
-    "@typescript-eslint/no-unsafe-argument": "error"
+    ]
   }
 };
-

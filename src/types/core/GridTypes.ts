@@ -16,6 +16,38 @@ export interface GridCreationState {
   objectCount: number;
   /** Any error that occurred during grid creation */
   error?: string;
+  /** Whether grid creation is in progress */
+  inProgress: boolean;
+  /** Whether grid has been successfully created */
+  isCreated: boolean;
+  /** Number of creation attempts */
+  attempts: number;
+  /** Timestamp of last attempt */
+  lastAttemptTime: number;
+  /** Whether there was an error during creation */
+  hasError: boolean;
+  /** Error message if creation failed */
+  errorMessage: string;
+  /** Whether creation is currently in progress */
+  creationInProgress: boolean;
+  /** Count of consecutive reset attempts */
+  consecutiveResets: number;
+  /** Maximum allowed consecutive resets */
+  maxConsecutiveResets: number;
+  /** Whether grid exists */
+  exists: boolean;
+  /** Timestamp of last creation */
+  lastCreationTime: number;
+  /** Minimum time between creation attempts */
+  throttleInterval: number;
+  /** Total number of grid creations */
+  totalCreations: number;
+  /** Maximum number of allowed recreations */
+  maxRecreations: number;
+  /** Minimum time between recreation attempts */
+  minRecreationInterval: number;
+  /** Creation lock to prevent concurrent operations */
+  creationLock: GridCreationLock;
 }
 
 /**
@@ -29,6 +61,8 @@ export interface GridCreationLock {
   lockId?: string;
   /** Timestamp when the lock was acquired */
   timestamp?: number;
+  /** ID number for the lock */
+  id?: number;
 }
 
 /**
@@ -37,7 +71,25 @@ export interface GridCreationLock {
 export const DEFAULT_GRID_CREATION_STATE: GridCreationState = {
   started: false,
   completed: false,
-  objectCount: 0
+  objectCount: 0,
+  inProgress: false,
+  isCreated: false,
+  attempts: 0,
+  lastAttemptTime: 0,
+  hasError: false,
+  errorMessage: "",
+  creationInProgress: false,
+  consecutiveResets: 0,
+  maxConsecutiveResets: 5,
+  exists: false,
+  lastCreationTime: 0,
+  throttleInterval: 500,
+  totalCreations: 0,
+  maxRecreations: 10,
+  minRecreationInterval: 1000,
+  creationLock: {
+    isLocked: false
+  }
 };
 
 /**
