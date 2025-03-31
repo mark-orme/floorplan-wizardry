@@ -18,10 +18,11 @@ Use proper type assertions when copying properties:
 const typedKey = key as keyof GridCreationState;
 validState[typedKey] = state[typedKey];
 
-// CORRECT - Uses property access with proper typing
+// CORRECT - Uses intermediate Record type for safe property assignment
 const typedKey = key as keyof GridCreationState;
 if (typedKey in state) {
-  validState[typedKey] = state[typedKey] as GridCreationState[typeof typedKey];
+  const value = state[typedKey];
+  (validState as Record<string, unknown>)[typedKey] = value;
 }
 ```
 
@@ -58,6 +59,18 @@ const update = createGridStateUpdate({ exists: true, isCreated: true });
 const fixedState = repairGridState({ visible: true, created: true });
 ```
 
+### Proper Type Casting for Dynamic Property Access
+
+When working with dynamic property access, use proper type casting with Record:
+
+```typescript
+// INCORRECT - May cause "Type X is not assignable to type 'never'" errors
+gridState[propertyName] = someValue;
+
+// CORRECT - Use intermediate casting with Record
+(gridState as Record<string, unknown>)[propertyName] = someValue;
+```
+
 ### GridCreationState Property Mapping
 
 When migrating code or working with different property naming conventions, refer to the `GRID_STATE_PROPERTY_MAP` for the correct property names:
@@ -72,3 +85,12 @@ When migrating code or working with different property naming conventions, refer
 ## ESLint Rules
 
 Our ESLint configuration includes rules to detect and prevent common type safety issues with `GridCreationState` objects. Pay attention to warnings and errors related to grid state properties.
+
+### Type Safety Recommendations
+
+1. Always use explicit types for objects and maps
+2. Avoid using `any` type
+3. Use `Record<string, unknown>` for intermediate type casting
+4. Check property existence before access
+5. Use utility functions for grid state operations
+6. Follow naming conventions for grid state properties

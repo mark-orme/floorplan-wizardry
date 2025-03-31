@@ -38,12 +38,22 @@ module.exports = {
       {
         // New rule: Prevent dynamic property assignment without type checking
         "selector": "AssignmentExpression[left.object.name=/gridState|validState|repairedState/][left.property.type='Identifier'][right.type!='AsExpression']",
-        "message": "Use proper type assertions with 'as GridCreationState[typeof key]' when assigning to grid state properties."
+        "message": "Use proper type assertions when assigning to grid state properties. Consider using Record<string, unknown> as an intermediate cast."
       },
       {
         // New rule: Enforce property existence check before assignment
         "selector": "AssignmentExpression[left.object.name=/gridState|validState|repairedState/][parent.type!='IfStatement'][parent.parent.type!='IfStatement']",
         "message": "Check if property exists on GridCreationState before assignment to avoid type errors."
+      },
+      {
+        // New rule: Prevent direct property access without type checking
+        "selector": "MemberExpression[object.name=/gridState|validState|repairedState/][property.name!='hasOwnProperty'][parent.type!='IfStatement'][parent.type!='LogicalExpression']",
+        "message": "Always verify properties exist before accessing them to avoid runtime errors."
+      },
+      {
+        // New rule: Enforce explicit casting for typed objects
+        "selector": "AssignmentExpression[left.object.name=/gridState|validState|repairedState/][right.type='Identifier']",
+        "message": "Use explicit type casting when assigning variables to ensure type safety."
       }
     ],
     
