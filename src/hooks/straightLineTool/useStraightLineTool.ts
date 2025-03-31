@@ -49,6 +49,8 @@ export const useStraightLineTool = ({
   // Initialize and clean up event handlers when tool changes
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
+    
+    // Early return if canvas isn't available yet
     if (!canvas) return;
     
     if (tool === DrawingMode.STRAIGHT_LINE) {

@@ -127,7 +127,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
       }
     };
-  }, []);
+  }, [width, height, tool, lineColor, lineThickness, updateDebugInfo, onCanvasReady, onError, canvas]);
   
   // Update drawing mode when tool changes
   useEffect(() => {
@@ -147,9 +147,10 @@ export const Canvas: React.FC<CanvasProps> = ({
     updateDebugInfo({ eventHandlersSet: true });
   }, [canvas, tool, lineColor, lineThickness, updateDebugInfo]);
   
-  // Initialize the straight line tool
+  // Initialize the straight line tool - ensure this hook is called unconditionally
+  const fabricCanvasRef = { current: canvas };
   const { isDrawing: isStraightLineDrawing } = useStraightLineTool({
-    fabricCanvasRef: { current: canvas },
+    fabricCanvasRef,
     tool,
     lineColor,
     lineThickness,
