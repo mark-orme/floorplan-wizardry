@@ -91,12 +91,20 @@ export const useCanvasState = () => {
     setState(prev => ({ ...prev, snapToGrid }));
   };
   
+  /**
+   * Toggle snap to grid
+   */
+  const toggleSnapToGrid = () => {
+    setState(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }));
+  };
+  
   return {
     ...state,
     setTool,
     setZoomLevel,
     setLineThickness,
     setLineColor,
-    setSnapToGrid
+    setSnapToGrid,
+    toggleSnapToGrid
   };
 };

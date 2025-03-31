@@ -10,6 +10,7 @@ import {
   useObjectEvents, 
   useBrushSettings 
 } from "@/hooks/canvas-events";
+import { useStraightLineTool } from "@/hooks/useStraightLineTool";
 
 /**
  * Props for CanvasEventManager component
@@ -74,6 +75,15 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     lineThickness
   });
   
+  // Initialize straight line tool
+  const { cancelDrawing } = useStraightLineTool({
+    fabricCanvasRef: canvasRef,
+    tool,
+    lineColor,
+    lineThickness,
+    saveCurrentState
+  });
+  
   // Effect to handle tool changes (cursor, selection, etc.)
   useEffect(() => {
     if (!canvas) {
@@ -84,6 +94,9 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     logger.info("Applying tool settings to canvas", { tool, lineThickness, lineColor });
     
     try {
+      // Disable drawing mode by default
+      canvas.isDrawingMode = false;
+      
       // Apply tool-specific settings
       switch (tool) {
         case DrawingMode.SELECT:
@@ -179,6 +192,22 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
   }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
+  
+  // Effect to handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cancel line drawing on escape
+      if (e.key === 'Escape' && tool === DrawingMode.STRAIGHT_LINE) {
+        cancelDrawing();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [tool, cancelDrawing]);
   
   // Effect to save initial state - using a ref to ensure it only runs once
   useEffect(() => {

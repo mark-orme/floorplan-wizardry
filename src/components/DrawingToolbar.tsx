@@ -6,7 +6,8 @@ import { DrawingMode } from "@/constants/drawingModes";
 import { LineSettings } from "./LineSettings";
 import { 
   MousePointerSquareDashed, Pencil, Grid2X2, 
-  Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser, Ruler 
+  Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser, Ruler,
+  MoveHorizontal, LineHeight 
 } from "lucide-react";
 import { formatGIA } from "@/utils/display";
 
@@ -26,6 +27,8 @@ interface DrawingToolbarProps {
   onLineColorChange: (color: string) => void;
   showGrid?: boolean;
   onToggleGrid?: () => void;
+  snapToGrid?: boolean;
+  onToggleSnap?: () => void;
 }
 
 /**
@@ -47,7 +50,9 @@ export const DrawingToolbar = ({
   onLineThicknessChange,
   onLineColorChange,
   showGrid,
-  onToggleGrid
+  onToggleGrid,
+  snapToGrid,
+  onToggleSnap
 }: DrawingToolbarProps): JSX.Element => {
   return (
     <div className="flex flex-col space-y-2">
@@ -111,11 +116,28 @@ export const DrawingToolbar = ({
                 size="sm"
                 onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
               >
+                <LineHeight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Draw Straight Line with Measurement (in meters)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === DrawingMode.WALL ? "default" : "outline"} 
+                size="sm"
+                onClick={() => onToolChange(DrawingMode.WALL)}
+              >
                 <Ruler className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Draw Wall (Straight Line) with Measurement</p>
+              <p>Draw Wall with Measurement</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -242,6 +264,25 @@ export const DrawingToolbar = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        
+        {onToggleSnap && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant={snapToGrid ? "default" : "outline"} 
+                  size="sm"
+                  onClick={onToggleSnap}
+                >
+                  <MoveHorizontal className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{snapToGrid ? "Snap to Grid: On" : "Snap to Grid: Off"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
       
       <div className="flex flex-wrap items-center space-x-2">
