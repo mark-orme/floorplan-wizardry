@@ -4,19 +4,13 @@
  * @module types/fabric
  */
 
-// Import the types directly from their definition file
-// This avoids circular references
-import type { 
-  CanvasCreationOptions,
-  CanvasReferences,
-  GridDimensions,
-  GridRenderResult,
-  CustomTouchEvent,
-  CustomFabricTouchEvent,
-  FabricPointerEvent
-} from './fabric.d';
+import { Canvas, Object } from 'fabric';
 
-// Re-export the imported types
+// Export type aliases for Fabric.js objects
+export type FabricCanvas = Canvas;
+export type FabricObject = Object;
+
+// Re-export the imported types from fabric.d.ts
 export type {
   CanvasCreationOptions,
   CanvasReferences,
@@ -25,7 +19,7 @@ export type {
   CustomTouchEvent,
   CustomFabricTouchEvent,
   FabricPointerEvent
-};
+} from './fabric.d';
 
 /**
  * Type guard to check if a value is a Touch event
