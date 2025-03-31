@@ -1,3 +1,4 @@
+
 /**
  * Types for canvas event handlers
  * @module canvas-events/types

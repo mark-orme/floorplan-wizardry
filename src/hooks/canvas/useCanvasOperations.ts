@@ -86,6 +86,7 @@ export const useCanvasOperations = ({
       
       // Limit zoom range
       if (newZoom > 0.2 && newZoom < 5) {
+        // Fixed: Use fabric.Point instead of FabricPoint
         const center = new Point(canvas.width! / 2, canvas.height! / 2);
         canvas.zoomToPoint(center, newZoom);
         canvas.requestRenderAll();

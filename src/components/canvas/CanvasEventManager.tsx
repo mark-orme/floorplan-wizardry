@@ -1,10 +1,15 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
+import { 
+  useKeyboardEvents, 
+  useObjectEvents, 
+  useBrushSettings 
+} from "@/hooks/canvas-events";
 
 /**
  * Props for CanvasEventManager component
@@ -36,89 +41,44 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   redo,
   deleteSelectedObjects
 }) => {
-  // Effect to set up canvas event listeners
-  useEffect(() => {
-    if (!canvas) {
-      logger.warn("Canvas not available for event setup");
-      return;
-    }
-    
-    logger.info("Setting up canvas event listeners", { tool });
-    captureMessage("Canvas event listeners initialized", "event-listeners-init", {
-      tags: { component: "CanvasEventManager" },
-      extra: { tool, lineThickness, lineColor }
-    });
-    
-    // Save initial state
-    saveCurrentState();
-    
-    // Set up history tracking
-    const handleObjectModified = () => {
-      saveCurrentState();
-      logger.info("Object modified, saving state");
-      captureMessage("Canvas object modified", "object-modified", {
-        tags: { component: "CanvasEventManager", event: "objectModified" }
-      });
-    };
-    
-    const handleObjectAdded = () => {
-      saveCurrentState();
-      logger.info("Object added, saving state");
-      captureMessage("Canvas object added", "object-added", {
-        tags: { component: "CanvasEventManager", event: "objectAdded" }
-      });
-    };
-    
-    // Add event listeners
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('object:added', handleObjectAdded);
-    
-    // Handle keyboard shortcuts
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Undo: Ctrl+Z
-      if (e.ctrlKey && e.key === 'z') {
-        e.preventDefault();
-        logger.info("Keyboard shortcut: Undo (Ctrl+Z)");
-        undo();
-      }
-      
-      // Redo: Ctrl+Shift+Z or Ctrl+Y
-      if ((e.ctrlKey && e.shiftKey && e.key === 'z') || (e.ctrlKey && e.key === 'y')) {
-        e.preventDefault();
-        logger.info("Keyboard shortcut: Redo (Ctrl+Shift+Z or Ctrl+Y)");
-        redo();
-      }
-      
-      // Delete: Delete key when in select mode
-      if (e.key === 'Delete' && tool === DrawingMode.SELECT) {
-        e.preventDefault();
-        logger.info("Keyboard shortcut: Delete selected objects");
-        deleteSelectedObjects();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      if (canvas) {
-        canvas.off('object:modified', handleObjectModified);
-        canvas.off('object:added', handleObjectAdded);
-      }
-      window.removeEventListener('keydown', handleKeyDown);
-      logger.info("Canvas event listeners removed");
-    };
-  }, [canvas, tool, saveCurrentState, undo, redo, deleteSelectedObjects]);
+  // Ref for the canvas
+  const canvasRef = useRef<FabricCanvas | null>(canvas);
   
-  // Effect to handle tool changes
+  // Update canvas ref when canvas changes
+  useEffect(() => {
+    canvasRef.current = canvas;
+  }, [canvas]);
+  
+  // Initialize object events (history tracking)
+  useObjectEvents({
+    fabricCanvasRef: canvasRef,
+    tool,
+    saveCurrentState
+  });
+  
+  // Initialize keyboard events
+  useKeyboardEvents({
+    fabricCanvasRef: canvasRef,
+    tool,
+    handleUndo: undo,
+    handleRedo: redo,
+    deleteSelectedObjects
+  });
+  
+  // Initialize brush settings
+  useBrushSettings({
+    fabricCanvasRef: canvasRef,
+    tool,
+    lineColor,
+    lineThickness
+  });
+  
+  // Effect to handle tool changes (cursor, selection, etc.)
   useEffect(() => {
     if (!canvas) {
       logger.warn("Canvas not available for tool change");
       return;
     }
-    
-    // Reset canvas modes
-    canvas.isDrawingMode = false;
-    canvas.selection = false;
     
     logger.info("Applying tool settings to canvas", { tool, lineThickness, lineColor });
     
@@ -208,6 +168,15 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
   }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
+  
+  // Effect to save initial state
+  useEffect(() => {
+    if (!canvas) return;
+    
+    // Save initial state
+    saveCurrentState();
+    
+  }, [canvas, saveCurrentState]);
   
   return null; // This component doesn't render anything
 };
