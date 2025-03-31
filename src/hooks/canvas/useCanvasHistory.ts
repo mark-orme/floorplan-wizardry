@@ -54,7 +54,7 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       const prevState = historyStack[historyIndex - 1];
       const prevStateObj = JSON.parse(prevState);
       
-      // Fixed: Use loadFromJSON without second argument
+      // Fixed: Use loadFromJSON with a callback instead of second argument
       canvas.loadFromJSON(prevStateObj, () => {
         canvas.renderAll();
         setHistoryIndex(historyIndex - 1);
