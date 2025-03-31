@@ -54,8 +54,8 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       const prevState = historyStack[historyIndex - 1];
       const prevStateObj = JSON.parse(prevState);
       
-      // Fixed: Use loadFromJSON with a callback - Fabric.js expects the callback as a parameter
-      canvas.loadFromJSON(prevStateObj, function() {
+      // Updated to use loadFromJSON correctly, callback is the second parameter
+      canvas.loadFromJSON(prevStateObj, () => {
         canvas.renderAll();
         setHistoryIndex(historyIndex - 1);
         setCanUndo(historyIndex - 1 > 0);
@@ -81,8 +81,8 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       const nextState = historyStack[historyIndex + 1];
       const nextStateObj = JSON.parse(nextState);
       
-      // Fixed: Use loadFromJSON with a callback - Fabric.js expects the callback as a parameter
-      canvas.loadFromJSON(nextStateObj, function() {
+      // Updated to use loadFromJSON correctly, callback is the second parameter
+      canvas.loadFromJSON(nextStateObj, () => {
         canvas.renderAll();
         setHistoryIndex(historyIndex + 1);
         setCanUndo(true);
