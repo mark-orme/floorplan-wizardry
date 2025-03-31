@@ -22,6 +22,43 @@ export interface DebugInfoState {
   eventHandlersSet: boolean;
   /** Whether brush is initialized */
   brushInitialized: boolean;
+  /** Whether the application has an error */
+  hasError: boolean;
+  /** Error message if an error occurred */
+  errorMessage: string;
+  /** Time taken for last initialization */
+  lastInitTime: number;
+  /** Time taken for last grid creation */
+  lastGridCreationTime: number;
+  /** Whether canvas events are registered */
+  canvasEventsRegistered: boolean;
+  /** Whether the grid has been rendered */
+  gridRendered: boolean;
+  /** Whether drawing tools have been initialized */
+  toolsInitialized: boolean;
+  /** Performance statistics */
+  performanceStats?: {
+    fps?: number;
+    droppedFrames?: number;
+    frameTime?: number;
+    maxFrameTime?: number;
+    longFrames?: number;
+    [key: string]: number | undefined;
+  };
+  /** Count of objects on canvas */
+  objectCount?: number;
+  /** Canvas width in pixels */
+  canvasWidth?: number;
+  /** Canvas height in pixels */
+  canvasHeight?: number;
+  /** Device pixel ratio */
+  devicePixelRatio?: number;
+  /** Last error object */
+  lastError?: any;
+  /** Timestamp of last error */
+  lastErrorTime?: number;
+  /** Canvas dimensions */
+  canvasDimensions?: { width: number; height: number };
 }
 
 /**
@@ -36,5 +73,14 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   dimensionsSet: false,
   showDebugInfo: false,
   eventHandlersSet: false,
-  brushInitialized: false
+  brushInitialized: false,
+  hasError: false,
+  errorMessage: '',
+  lastInitTime: 0,
+  lastGridCreationTime: 0,
+  canvasEventsRegistered: false,
+  gridRendered: false,
+  toolsInitialized: false,
+  canvasDimensions: { width: 0, height: 0 }
 };
+

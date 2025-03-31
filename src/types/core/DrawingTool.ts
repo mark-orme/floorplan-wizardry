@@ -6,7 +6,7 @@
 import type { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Re-export DrawingMode as DrawingTool for backward compatibility
+ * Export DrawingTool type which is equivalent to DrawingMode
  * This maintains the existing API while centralizing the type definition
  */
 export type DrawingTool = DrawingMode;
@@ -15,3 +15,4 @@ export type DrawingTool = DrawingMode;
  * Re-export the DrawingMode enum to make it accessible from this module
  */
 export { DrawingMode } from '@/constants/drawingModes';
+

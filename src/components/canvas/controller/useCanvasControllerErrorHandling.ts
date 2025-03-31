@@ -4,7 +4,7 @@
  * @module useCanvasControllerErrorHandling
  */
 import { useCallback } from "react";
-import { DebugInfoState } from "@/types";
+import { DebugInfoState } from "@/types/core/DebugInfo";
 
 interface UseCanvasControllerErrorHandlingProps {
   setHasError: (value: boolean) => void;
@@ -31,8 +31,6 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     
     // Create a proper update object that conforms to Partial<DebugInfoState>
     updateDebugInfo({
-      hasError: true,
-      errorMessage: error.message,
       performanceStats: {
         // This is optional in DebugInfoState, so we can safely increment it
         errorCount: 1 // Default to 1 if not previously set
@@ -47,8 +45,6 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     
     // Create a proper update object that conforms to Partial<DebugInfoState>
     updateDebugInfo({
-      hasError: false,
-      errorMessage: "",
       performanceStats: {
         // These are optional in DebugInfoState, so we can safely update them
         retryCount: 1 // Default to 1 if not previously set

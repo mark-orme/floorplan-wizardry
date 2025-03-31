@@ -45,8 +45,7 @@ export const useCanvasDependencies = ({ canvasRef, fabricCanvasRef: externalFabr
   // State initialization
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
     ...DEFAULT_DEBUG_STATE,
-    canvasWidth: 0,
-    canvasHeight: 0
+    canvasDimensions: { width: 0, height: 0 }
   });
   
   /**

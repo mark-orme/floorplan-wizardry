@@ -42,10 +42,10 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
             <div>{debugInfo.eventHandlersSet ? "✅" : "❌"}</div>
             
             <div>Canvas Width:</div>
-            <div>{debugInfo.canvasDimensions.width}px</div>
+            <div>{debugInfo.canvasDimensions?.width ?? 0}px</div>
             
             <div>Canvas Height:</div>
-            <div>{debugInfo.canvasDimensions.height}px</div>
+            <div>{debugInfo.canvasDimensions?.height ?? 0}px</div>
             
             <div>Grid Objects:</div>
             <div>{debugInfo.gridObjectCount}</div>

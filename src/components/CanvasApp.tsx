@@ -16,7 +16,16 @@ import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
  * @returns {JSX.Element} Rendered component
  */
 export const CanvasApp = (): JSX.Element => {
-  const [debugInfo, setDebugInfo] = useState(DEFAULT_DEBUG_STATE);
+  const [debugInfo, setDebugInfo] = useState(() => ({
+    ...DEFAULT_DEBUG_STATE,
+    hasError: false,
+    errorMessage: '',
+    lastInitTime: 0,
+    lastGridCreationTime: 0,
+    canvasEventsRegistered: false,
+    gridRendered: false,
+    toolsInitialized: false
+  }));
   
   // Debug logging for troubleshooting
   useEffect(() => {

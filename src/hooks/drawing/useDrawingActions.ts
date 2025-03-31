@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing drawing actions
  * @module hooks/drawing/useDrawingActions
@@ -6,7 +5,7 @@
 import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
-import { DrawingTool } from "@/constants/drawingModes";
+import { DrawingTool } from '@/types/core/DrawingTool';
 
 /**
  * Props for the useDrawingActions hook

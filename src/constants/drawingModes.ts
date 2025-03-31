@@ -24,12 +24,21 @@ export enum DrawingMode {
   WINDOW = 'window',
   /** Create room label */
   ROOM_LABEL = 'room-label',
+  /** Create room */
+  ROOM = 'room',
+  /** Single line */
+  LINE = 'line',
   /** Measure distances */
   MEASURE = 'measure',
   /** Move the canvas */
   PAN = 'pan',
+  /** Hand tool for panning */
+  HAND = 'hand',
   /** Zoom the canvas */
   ZOOM = 'zoom',
   /** Erase objects */
-  ERASE = 'erase'
+  ERASE = 'erase',
+  /** Eraser tool */
+  ERASER = 'eraser'
 }
+

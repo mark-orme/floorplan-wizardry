@@ -1,5 +1,5 @@
 
-import { DebugInfoState } from "@/types";
+import { DebugInfoState } from "@/types/core/DebugInfo";
 
 interface DebugInfoProps {
   debugInfo: DebugInfoState;

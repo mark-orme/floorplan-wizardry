@@ -1,11 +1,10 @@
-
 /**
  * Hook for canvas tool actions
  * Provides functions for tool operations like zoom, clear, etc.
  */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingTool } from '@/constants/drawingModes';
+import { DrawingTool } from '@/types/core/DrawingTool';
 import { ZOOM_CONSTRAINTS } from '@/constants/numerics';
 import logger from '@/utils/logger';
 

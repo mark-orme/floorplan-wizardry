@@ -79,12 +79,12 @@ export const typeSafetyRules = {
     "@typescript-eslint/no-invalid-void-type": "error",
     "@typescript-eslint/no-misused-promises": "error",
     
-    // NEW: Add specific rules to prevent method argument misuse
+    // NEW RULES for enforcing DrawingMode enum values
     "no-restricted-syntax": [
       "error",
       {
-        "selector": "CallExpression[callee.object.name='canvas'][callee.property.name='toJSON'][arguments.length>0]",
-        "message": "canvas.toJSON() doesn't accept arguments in this Fabric.js version."
+        "selector": "MemberExpression[object.name='DrawingMode'][property.name!=/^(SELECT|DRAW|STRAIGHT_LINE|RECTANGLE|CIRCLE|TEXT|WALL|DOOR|WINDOW|ROOM_LABEL|ROOM|LINE|MEASURE|PAN|HAND|ZOOM|ERASE|ERASER)$/]",
+        "message": "Invalid DrawingMode value. Use only values defined in the DrawingMode enum."
       },
       {
         "selector": "MemberExpression[object.name='fabric']",
@@ -100,8 +100,32 @@ export const typeSafetyRules = {
       }
     ],
     
+    // NEW: More specific rules for checking DebugInfoState properties
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[object.object.name='debugInfo'][object.property.name!=/^(canvasCreated|canvasReady|canvasInitialized|gridCreated|gridObjectCount|dimensionsSet|showDebugInfo|eventHandlersSet|brushInitialized|hasError|errorMessage|lastInitTime|lastGridCreationTime|canvasEventsRegistered|gridRendered|toolsInitialized|performanceStats|objectCount|canvasWidth|canvasHeight|devicePixelRatio|lastError|lastErrorTime|canvasDimensions)$/]",
+        "message": "Invalid DebugInfoState property. Make sure all properties are defined in the DebugInfoState interface."
+      }
+    ],
+    
+    // NEW: Enforce proper import paths for DrawingTool
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/constants/drawingModes",
+            "importNames": ["DrawingTool"],
+            "message": "Import DrawingTool from '@/types/core/DrawingTool' instead."
+          }
+        ]
+      }
+    ],
+    
     // NEW: Add more specific rules for fabric method calls
     "@typescript-eslint/no-unsafe-call": "error",
     "@typescript-eslint/no-unsafe-argument": "error"
   }
 };
+

@@ -6,7 +6,7 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from 'fabric';
 import { FloorPlan, Stroke, StrokeTypeLiteral } from '@/types/floorPlanTypes';
-import { DrawingTool } from '@/constants/drawingModes';
+import { DrawingTool } from '@/types/core/DrawingTool';
 import { Point } from '@/types/drawingTypes';
 import { v4 as uuidv4 } from 'uuid';
 
