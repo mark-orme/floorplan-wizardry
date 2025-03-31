@@ -5,8 +5,7 @@
  */
 import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createSimpleGrid, clearGrid } from "@/utils/grid/gridBasics";
-import { ensureGridVisibility } from "@/utils/grid/simpleGridCreator";
+import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 import logger from "@/utils/logger";
 
 /**
@@ -43,12 +42,16 @@ export const useReliableGrid = ({
       
       // Clear any existing grid first
       if (gridLayerRef.current.length > 0) {
-        clearGrid(canvas, gridLayerRef.current);
+        gridLayerRef.current.forEach(obj => {
+          if (canvas.contains(obj)) {
+            canvas.remove(obj);
+          }
+        });
         gridLayerRef.current = [];
       }
       
       // Create new grid
-      const gridObjects = createSimpleGrid(canvas);
+      const gridObjects = createBasicEmergencyGrid(canvas);
       
       if (gridObjects.length > 0) {
         gridLayerRef.current = gridObjects;
@@ -77,7 +80,28 @@ export const useReliableGrid = ({
     if (!canvas) return false;
     
     try {
-      return ensureGridVisibility(canvas, gridLayerRef.current);
+      let fixesApplied = false;
+      
+      gridLayerRef.current.forEach(obj => {
+        // Re-add if not on canvas
+        if (!canvas.contains(obj)) {
+          canvas.add(obj);
+          canvas.sendToBack(obj);
+          fixesApplied = true;
+        }
+        
+        // Ensure visibility property is set
+        if (!obj.visible) {
+          obj.visible = true;
+          fixesApplied = true;
+        }
+      });
+      
+      if (fixesApplied) {
+        canvas.requestRenderAll();
+      }
+      
+      return fixesApplied;
     } catch (error) {
       logger.error("Error ensuring grid visibility:", error);
       return false;
@@ -92,7 +116,11 @@ export const useReliableGrid = ({
     if (!canvas) return;
     
     try {
-      clearGrid(canvas, gridLayerRef.current);
+      gridLayerRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
       gridLayerRef.current = [];
       setIsInitialized(false);
     } catch (error) {

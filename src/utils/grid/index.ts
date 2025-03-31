@@ -1,3 +1,4 @@
+
 /**
  * Grid utilities module
  * Exports all grid-related functionality
@@ -29,7 +30,7 @@ export {
   verifyGridExists,
   validateGrid,
   reorderGridObjects
-} from './gridCreationUtils';
+} from '../gridCreationUtils';
 
 // Export from gridRenderers
 export {
@@ -54,8 +55,7 @@ export {
 
 // Export from simpleGridCreator
 export {
-  createReliableGrid,
-  ensureGridVisibility
+  createReliableGrid
 } from './simpleGridCreator';
 
 // Export from gridDiagnostics

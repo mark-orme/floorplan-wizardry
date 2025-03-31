@@ -4,41 +4,84 @@
  * @module utils/grid/gridValidation
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import logger from "@/utils/logger";
 
 /**
  * Validate canvas for grid creation
- * @param {FabricCanvas} canvas - Canvas to validate
- * @returns {boolean} True if canvas is valid
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {boolean} Whether canvas is valid for grid creation
  */
-export const validateCanvas = (canvas: FabricCanvas): boolean => {
-  if (!canvas) return false;
-  
-  try {
-    // Check if canvas has valid dimensions
-    const width = canvas.getWidth ? canvas.getWidth() : canvas.width;
-    const height = canvas.getHeight ? canvas.getHeight() : canvas.height;
-    
-    return Boolean(width && height && width > 0 && height > 0);
-  } catch (error) {
-    console.error("Error validating canvas:", error);
+export const validateCanvas = (canvas: FabricCanvas | null): boolean => {
+  if (!canvas) {
+    logger.error("Cannot validate canvas: Canvas is null");
     return false;
   }
+  
+  if (!canvas.width || !canvas.height) {
+    logger.error("Invalid canvas dimensions", { width: canvas.width, height: canvas.height });
+    return false;
+  }
+  
+  return true;
 };
 
 /**
  * Validate grid state
- * @param {FabricCanvas} canvas - Canvas to validate
- * @param {FabricObject[]} gridObjects - Grid objects to validate
- * @returns {boolean} True if grid state is valid
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @param {FabricObject[]} gridObjects - Array of grid objects
+ * @returns {object} Validation result with diagnostics
  */
-export const validateGridState = (canvas: FabricCanvas, gridObjects: FabricObject[]): boolean => {
-  if (!canvas || !gridObjects || !Array.isArray(gridObjects)) return false;
+export const validateGridState = (
+  canvas: FabricCanvas | null,
+  gridObjects: FabricObject[]
+): { 
+  valid: boolean; 
+  objectCount: number;
+  onCanvas: number;
+  visible: number;
+  issues: string[];
+} => {
+  const result = {
+    valid: false,
+    objectCount: gridObjects.length,
+    onCanvas: 0,
+    visible: 0,
+    issues: [] as string[]
+  };
   
-  // Check if grid has objects
-  if (gridObjects.length === 0) return false;
+  if (!canvas) {
+    result.issues.push("Canvas is null");
+    return result;
+  }
   
-  // Check if grid objects are on canvas
-  const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
+  if (!gridObjects.length) {
+    result.issues.push("No grid objects found");
+    return result;
+  }
   
-  return objectsOnCanvas.length > 0;
+  // Check which objects are on canvas
+  const canvasObjects = canvas.getObjects();
+  
+  result.onCanvas = gridObjects.filter(obj => 
+    canvasObjects.includes(obj)
+  ).length;
+  
+  result.visible = gridObjects.filter(obj => 
+    obj.visible && canvasObjects.includes(obj)
+  ).length;
+  
+  // Record issues
+  if (result.onCanvas < result.objectCount) {
+    result.issues.push(`${result.objectCount - result.onCanvas} grid objects missing from canvas`);
+  }
+  
+  if (result.visible < result.onCanvas) {
+    result.issues.push(`${result.onCanvas - result.visible} grid objects on canvas but not visible`);
+  }
+  
+  result.valid = result.issues.length === 0;
+  
+  return result;
 };

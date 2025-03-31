@@ -1,94 +1,69 @@
-
 /**
- * Grid recovery plans module
- * Provides recovery strategies for grid creation failures
- * @module grid/recoveryPlans
+ * Grid recovery plans
+ * @module utils/grid/recoveryPlans
  */
 import { Canvas as FabricCanvas } from "fabric";
-import logger from "../logger";
+import logger from "@/utils/logger";
 
 /**
- * Recovery plan for grid creation
- */
-export interface GridRecoveryPlan {
-  /** Plan description */
-  description: string;
-  /** Whether to clear the canvas */
-  clearCanvas: boolean;
-  /** Whether to resize the canvas */
-  resizeCanvas: boolean;
-  /** Whether to retry with simplified grid */
-  useSimplifiedGrid: boolean;
-  /** Whether to disable background grid */
-  disableBackgroundGrid: boolean;
-  /** Maximum number of retry attempts */
-  maxRetries: number;
-}
-
-/**
- * Create a grid recovery plan based on error and canvas state
+ * Create grid recovery plan
  * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
  * @param {Error} error - The error that occurred
- * @param {FabricCanvas | null} canvas - Canvas reference
- * @returns {GridRecoveryPlan} Recovery plan
+ * @returns {Function[]} Recovery functions to try
  */
-export const createGridRecoveryPlan = (error: Error, canvas: FabricCanvas | null): GridRecoveryPlan => {
-  const errorMessage = error.message.toLowerCase();
-  const errorName = error.name;
-  const canvasValid = canvas && canvas.width && canvas.height;
-  const hasObjects = canvas && canvas.getObjects().length > 0;
+export const createGridRecoveryPlan = (
+  canvas: FabricCanvas | null,
+  error: Error
+): (() => Promise<boolean>)[] => {
+  if (!canvas) {
+    logger.error("Cannot create recovery plan: Canvas is null");
+    return [];
+  }
   
-  // Log recovery attempt
-  logger.info("Creating grid recovery plan", {
-    errorName,
-    errorMessage: error.message,
-    canvasValid,
-    hasObjects: hasObjects ? canvas?.getObjects().length : 0
+  const message = error.message.toLowerCase();
+  const recoveryPlan: (() => Promise<boolean>)[] = [];
+  
+  // Add delay recovery
+  recoveryPlan.push(async () => {
+    logger.info("Applying recovery: Wait and try again");
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
   });
   
-  // Default recovery plan
-  const defaultPlan: GridRecoveryPlan = {
-    description: "Standard recovery",
-    clearCanvas: false,
-    resizeCanvas: false,
-    useSimplifiedGrid: false,
-    disableBackgroundGrid: false,
-    maxRetries: 3
-  };
-  
-  // Canvas initialization errors
-  if (!canvasValid || errorMessage.includes("canvas")) {
-    return {
-      ...defaultPlan,
-      description: "Canvas initialization recovery",
-      clearCanvas: true,
-      resizeCanvas: true,
-      maxRetries: 2
-    };
+  // Add canvas reset if dimensions issue
+  if (message.includes("dimensions") || message.includes("size")) {
+    recoveryPlan.push(async () => {
+      logger.info("Applying recovery: Reset canvas dimensions");
+      
+      if (!canvas.width || !canvas.height) {
+        canvas.setDimensions({ width: 800, height: 600 });
+      }
+      
+      return true;
+    });
   }
   
-  // Rendering or performance errors
-  if (errorMessage.includes("render") || errorMessage.includes("maximum")) {
-    return {
-      ...defaultPlan,
-      description: "Rendering performance recovery",
-      useSimplifiedGrid: true,
-      disableBackgroundGrid: true,
-      maxRetries: 5
-    };
+  // Add clear objects if overflow issue
+  if (message.includes("overflow") || message.includes("too many") || message.includes("maximum")) {
+    recoveryPlan.push(async () => {
+      logger.info("Applying recovery: Clear excess objects");
+      
+      const objects = canvas.getObjects();
+      const gridObjects = objects.filter(obj => 
+        obj.objectType === "grid"
+      );
+      
+      // Keep only first 100 grid objects
+      if (gridObjects.length > 100) {
+        for (let i = 100; i < gridObjects.length; i++) {
+          canvas.remove(gridObjects[i]);
+        }
+      }
+      
+      return true;
+    });
   }
   
-  // Object-related errors
-  if (errorMessage.includes("object") || errorMessage.includes("element")) {
-    return {
-      ...defaultPlan,
-      description: "Object recovery",
-      clearCanvas: hasObjects || false,
-      useSimplifiedGrid: true,
-      maxRetries: 3
-    };
-  }
-  
-  // Return default plan for unknown errors
-  return defaultPlan;
+  return recoveryPlan;
 };

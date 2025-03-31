@@ -6,8 +6,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createBasicEmergencyGrid } from '@/utils/grid/gridCreationUtils';
-import { ensureGridVisibility } from '@/utils/grid/simpleGridCreator';
+import { createBasicEmergencyGrid } from '@/utils/gridCreationUtils';
 
 /**
  * Props for the BasicGrid component
@@ -90,8 +89,13 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       }
     });
     
-    // Ensure grid exists on canvas
-    ensureGridVisibility(canvas, gridObjectsRef.current);
+    // Ensure grid objects are on canvas
+    gridObjectsRef.current.forEach(obj => {
+      if (!canvas.contains(obj)) {
+        canvas.add(obj);
+        canvas.sendToBack(obj);
+      }
+    });
     
     canvas.requestRenderAll();
   }, [canvas, visible]);

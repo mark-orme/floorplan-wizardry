@@ -11,9 +11,6 @@
 // Direct imports from gridCreationUtils
 import { 
   createBasicEmergencyGrid,
-  verifyGridExists,
-  retryWithBackoff,
-  reorderGridObjects,
   ensureGrid,
   createEnhancedGrid
 } from '../gridCreationUtils';
@@ -50,9 +47,6 @@ export const GridDebug = {
 // Also export individual functions for direct import
 export {
   createBasicEmergencyGrid,
-  verifyGridExists,
-  retryWithBackoff,
-  reorderGridObjects,
   ensureGrid,
   validateCanvas,
   validateGridState,

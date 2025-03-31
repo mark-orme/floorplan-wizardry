@@ -1,69 +1,135 @@
 
 /**
- * Grid monitoring component
- * Monitors and ensures grid reliability
+ * Grid Monitor Component
+ * Provides a way to monitor and debug grid state
  * @module components/canvas/GridMonitor
  */
-import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { ensureGridVisibility } from '@/utils/grid/simpleGridCreator';
+import { useEffect, useState } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import logger from "@/utils/logger";
 
 /**
  * Props for the GridMonitor component
  */
 interface GridMonitorProps {
   /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas: FabricCanvas | null;
   /** Reference to grid objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Whether monitoring is active */
-  active?: boolean;
-  /** Monitoring interval in ms */
-  interval?: number;
+  gridObjects: FabricObject[];
+  /** Function to create grid */
+  createGrid: () => void;
+  /** Whether to show the monitor */
+  visible?: boolean;
 }
 
 /**
- * Grid monitoring component
- * Background component that ensures grid reliability
- * 
- * @param {GridMonitorProps} props - Component properties
- * @returns {null} This component doesn't render anything
+ * GridMonitor Component
+ * Monitors and debugs the grid state
  */
 export const GridMonitor: React.FC<GridMonitorProps> = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  active = true,
-  interval = 5000
+  canvas,
+  gridObjects,
+  createGrid,
+  visible = true
 }) => {
-  const lastCheckRef = useRef(0);
+  const [gridCount, setGridCount] = useState(0);
+  const [canvasObjectCount, setCanvasObjectCount] = useState(0);
+  const [refreshCount, setRefreshCount] = useState(0);
   
-  // Monitor grid at regular intervals
+  // Update counts
   useEffect(() => {
-    if (!active) return;
+    if (!canvas) return;
     
-    const checkGrid = () => {
-      const now = Date.now();
-      if (now - lastCheckRef.current < 1000) return; // Rate limit
-      
-      const canvas = fabricCanvasRef.current;
-      if (!canvas) return;
-      
-      // Ensure grid is visible
-      ensureGridVisibility(canvas, gridLayerRef.current);
-      
-      lastCheckRef.current = now;
+    const updateCounts = () => {
+      try {
+        setGridCount(gridObjects.length);
+        setCanvasObjectCount(canvas.getObjects().length);
+      } catch (error) {
+        logger.error("Error updating grid monitor counts:", error);
+      }
     };
     
-    // Check grid on mount
-    checkGrid();
+    // Update counts immediately
+    updateCounts();
     
-    // Set up monitoring interval
-    const intervalId = setInterval(checkGrid, interval);
+    // Set up interval to update counts
+    const interval = setInterval(updateCounts, 2000);
     
-    // Clean up
-    return () => clearInterval(intervalId);
-  }, [active, fabricCanvasRef, gridLayerRef, interval]);
+    return () => clearInterval(interval);
+  }, [canvas, gridObjects]);
   
-  // This component doesn't render anything
-  return null;
+  if (!visible || !canvas) {
+    return null;
+  }
+  
+  // Check grid state
+  const checkGridState = () => {
+    if (!canvas) return;
+    
+    try {
+      // Check which grid objects are on canvas
+      const canvasObjects = canvas.getObjects();
+      const onCanvas = gridObjects.filter(obj => canvasObjects.includes(obj));
+      
+      // Log results
+      logger.info("Grid monitor check:", {
+        gridObjectCount: gridObjects.length,
+        canvasObjectCount: canvasObjects.length,
+        gridObjectsOnCanvas: onCanvas.length,
+        missing: gridObjects.length - onCanvas.length
+      });
+      
+      // Ensure grid objects are on canvas
+      let fixesApplied = false;
+      
+      gridObjects.forEach(obj => {
+        if (!canvasObjects.includes(obj)) {
+          canvas.add(obj);
+          canvas.sendToBack(obj);
+          fixesApplied = true;
+        }
+      });
+      
+      if (fixesApplied) {
+        canvas.requestRenderAll();
+        logger.info("Grid fixes applied");
+      }
+      
+      setRefreshCount(prev => prev + 1);
+    } catch (error) {
+      logger.error("Error checking grid state:", error);
+    }
+  };
+  
+  return (
+    <div className="absolute top-2 right-2 bg-white/90 p-2 rounded shadow-md z-10 text-xs">
+      <h3 className="font-bold mb-1">Grid Monitor</h3>
+      <div>Grid objects: {gridCount}</div>
+      <div>Canvas objects: {canvasObjectCount}</div>
+      <div>Refreshes: {refreshCount}</div>
+      
+      <div className="flex gap-1 mt-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-7 text-xs"
+          onClick={checkGridState}
+        >
+          Check
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-7 text-xs"
+          onClick={createGrid}
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Recreate
+        </Button>
+      </div>
+    </div>
+  );
 };

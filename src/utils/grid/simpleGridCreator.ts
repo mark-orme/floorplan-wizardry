@@ -4,7 +4,7 @@
  * Focused on creating a grid that works consistently
  * @module utils/grid/simpleGridCreator
  */
-import { Canvas as FabricCanvas, Line } from "fabric";
+import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import logger from "@/utils/logger";
 
 /**
@@ -126,4 +126,60 @@ export const createReliableGrid = (
     console.error("Error creating reliable grid:", error);
     return [];
   }
+};
+
+/**
+ * Ensure grid objects are visible and attached to canvas
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @param {FabricObject[]} gridObjects - Array of grid objects to check
+ * @returns {boolean} True if fixes were applied
+ */
+export const ensureGridVisibility = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): boolean => {
+  try {
+    if (!canvas || !gridObjects.length) return false;
+    
+    let fixesApplied = false;
+    
+    // Check each grid object
+    gridObjects.forEach(obj => {
+      // Re-add if not on canvas
+      if (!canvas.contains(obj)) {
+        canvas.add(obj);
+        canvas.sendToBack(obj);
+        fixesApplied = true;
+      }
+      
+      // Ensure visibility property is set
+      if (!obj.visible) {
+        obj.visible = true;
+        fixesApplied = true;
+      }
+    });
+    
+    // Re-render if any fixes were applied
+    if (fixesApplied) {
+      canvas.requestRenderAll();
+    }
+    
+    return fixesApplied;
+  } catch (error) {
+    logger.error("Error ensuring grid visibility:", error);
+    return false;
+  }
+};
+
+/**
+ * Create a simple grid utility function
+ * Convenience function for basic grid creation
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {FabricObject[]} Array of created grid objects
+ */
+export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
+  const tempRef = { current: [] };
+  return createReliableGrid(canvas, tempRef);
 };

@@ -1,74 +1,83 @@
 
 /**
- * Grid basic utilities
- * Core functions for basic grid operations
+ * Grid basics utilities
  * @module utils/grid/gridBasics
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
+import logger from "@/utils/logger";
 
 /**
- * Create a basic grid with simple styling
- * @param canvas Fabric canvas
- * @returns Array of created grid objects
+ * Create a basic grid
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {FabricObject[]} Created grid objects
  */
 export const createBasicGrid = (
   canvas: FabricCanvas
 ): FabricObject[] => {
-  if (!canvas) return [];
-  
   try {
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
+    if (!canvas || !canvas.width || !canvas.height) {
+      logger.error("Cannot create basic grid: invalid canvas");
+      return [];
+    }
+    
+    const gridSize = 20;
+    const width = canvas.width;
+    const height = canvas.height;
     const gridObjects: FabricObject[] = [];
     
-    // Create vertical lines
-    for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-      const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-        selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true
-      });
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
     // Create horizontal lines
-    for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-      const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+    for (let y = 0; y <= height; y += gridSize) {
+      const line = new Line([0, y, width, y], {
+        stroke: "#e0e0e0",
+        strokeWidth: 1,
         selectable: false,
         evented: false,
-        objectType: 'grid',
-        isGrid: true
+        objectType: "grid"
       });
+      
       canvas.add(line);
+      canvas.sendToBack(line);
       gridObjects.push(line);
     }
     
+    // Create vertical lines
+    for (let x = 0; x <= width; x += gridSize) {
+      const line = new Line([x, 0, x, height], {
+        stroke: "#e0e0e0",
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: "grid"
+      });
+      
+      canvas.add(line);
+      canvas.sendToBack(line);
+      gridObjects.push(line);
+    }
+    
+    canvas.requestRenderAll();
     return gridObjects;
   } catch (error) {
-    console.error("Error creating basic grid:", error);
+    logger.error("Error creating basic grid:", error);
     return [];
   }
 };
 
 /**
- * Clear grid objects from canvas
- * @param canvas Fabric canvas
- * @param gridObjects Grid objects to clear
+ * Clear grid from canvas
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @param {FabricObject[]} gridObjects - Array of grid objects
+ * @returns {boolean} Whether grid was cleared successfully
  */
 export const clearGrid = (
   canvas: FabricCanvas,
   gridObjects: FabricObject[]
-): void => {
-  if (!canvas) return;
-  
+): boolean => {
   try {
+    if (!canvas) return false;
+    
     gridObjects.forEach(obj => {
       if (canvas.contains(obj)) {
         canvas.remove(obj);
@@ -76,35 +85,35 @@ export const clearGrid = (
     });
     
     canvas.requestRenderAll();
+    return true;
   } catch (error) {
-    console.error("Error clearing grid:", error);
+    logger.error("Error clearing grid:", error);
+    return false;
   }
 };
 
 /**
  * Check if canvas is valid for grid creation
- * @param canvas Fabric canvas
- * @returns Whether canvas is valid for grid
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {boolean} Whether canvas is valid for grid creation
  */
 export const isCanvasValidForGrid = (
-  canvas: FabricCanvas
+  canvas: FabricCanvas | null
 ): boolean => {
-  return !!canvas && !!canvas.width && !!canvas.height && 
-         canvas.width > 0 && canvas.height > 0;
+  if (!canvas) return false;
+  
+  return !!canvas.width && !!canvas.height;
 };
 
 /**
- * Create a simple grid on canvas
- * @param canvas Fabric canvas
- * @returns Array of created grid objects
+ * Create a simple grid
+ * 
+ * @param {FabricCanvas} canvas - The Fabric.js canvas instance
+ * @returns {FabricObject[]} Created grid objects
  */
 export const createSimpleGrid = (
   canvas: FabricCanvas
 ): FabricObject[] => {
-  if (!isCanvasValidForGrid(canvas)) {
-    console.error("Cannot create simple grid: Invalid canvas");
-    return [];
-  }
-  
   return createBasicGrid(canvas);
 };
