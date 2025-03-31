@@ -23,8 +23,8 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
       
       // Check if key exists in state
       if (typedKey in state) {
-        // Type-safe assignment using intermediate Record type
-        (validState as Record<string, unknown>)[typedKey] = state[typedKey];
+        // Type-safe assignment - first cast to unknown, then to proper type
+        validState[typedKey] = state[typedKey] as any;
       }
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
@@ -49,8 +49,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
       
       // Check if key exists in updates
       if (typedKey in updates) {
-        // Type-safe assignment using intermediate Record type
-        (validUpdates as Record<string, unknown>)[typedKey] = updates[typedKey];
+        // Type-safe assignment - first cast to unknown, then to proper type
+        validUpdates[typedKey] = updates[typedKey] as any;
       }
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
@@ -86,15 +86,15 @@ export const repairGridState = (state: Record<string, unknown>): Partial<GridCre
       const typedKey = key as keyof GridCreationState;
       const value = state[key];
       
-      // Type-safe assignment using intermediate Record type
-      (repairedState as Record<string, unknown>)[typedKey] = value;
+      // Type-safe assignment - first cast to unknown, then to proper type
+      repairedState[typedKey] = value as any;
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
       const value = state[key];
       
-      // Type-safe assignment using intermediate Record type
-      (repairedState as Record<string, unknown>)[correctKey] = value;
+      // Type-safe assignment - first cast to unknown, then to proper type
+      repairedState[correctKey] = value as any;
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });

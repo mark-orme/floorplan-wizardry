@@ -33,10 +33,12 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
           <p>Dimensions Set: {debugInfo.dimensionsSet ? "✅" : "❌"}</p>
           <p>Brush Initialized: {debugInfo.brushInitialized ? "✅" : "❌"}</p>
           <p>
-            Grid Objects: {formatDebugValue(debugInfo.gridObjectCount)} / Canvas Objects: {formatDebugValue(debugInfo.objectCount)}
+            Grid Objects: {formatDebugValue(debugInfo.gridObjectCount)} / Objects: {formatDebugValue(debugInfo.objectCount)}
           </p>
           <p>
-            Canvas Size: {formatDebugValue(debugInfo.canvasWidth)}x{formatDebugValue(debugInfo.canvasHeight)} (DPR: {formatDebugValue(debugInfo.devicePixelRatio)})
+            Canvas Size: {formatDebugValue(debugInfo.canvasWidth || debugInfo.canvasDimensions.width)}x
+            {formatDebugValue(debugInfo.canvasHeight || debugInfo.canvasDimensions.height)} 
+            (DPR: {formatDebugValue(debugInfo.devicePixelRatio)})
           </p>
         </div>
         
