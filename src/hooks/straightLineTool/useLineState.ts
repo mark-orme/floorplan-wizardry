@@ -1,76 +1,71 @@
 
-import { useState, useRef } from 'react';
-import { Line, Point as FabricPoint, Text } from 'fabric';
+import { useRef, useState, useCallback } from 'react';
+import { Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { captureMessage } from '@/utils/sentry';
-import logger from '@/utils/logger';
 
 /**
- * Hook for managing straight line drawing state
+ * Hook to manage state for straight line drawing
  */
 export const useLineState = () => {
-  // State for tracking drawing
+  // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
-  const startPointRef = useRef<FabricPoint | null>(null);
+  
+  // References to avoid re-renders
+  const startPointRef = useRef<Point | null>(null);
   const currentLineRef = useRef<Line | null>(null);
   const distanceTooltipRef = useRef<Text | null>(null);
   
   /**
-   * Initialize the tool state
+   * Set start point for line
    */
-  const initializeTool = () => {
-    logger.info("Initializing straight line tool state");
-    setIsToolInitialized(true);
-    captureMessage("Straight line tool state initialized", "straight-line-state-init");
-  }
+  const setStartPoint = useCallback((point: Point) => {
+    startPointRef.current = point;
+    setIsDrawing(true);
+  }, []);
   
   /**
-   * Reset the drawing state
+   * Set current line object
    */
-  const resetDrawingState = () => {
+  const setCurrentLine = useCallback((line: Line) => {
+    currentLineRef.current = line;
+  }, []);
+  
+  /**
+   * Set distance tooltip
+   */
+  const setDistanceTooltip = useCallback((tooltip: Text) => {
+    distanceTooltipRef.current = tooltip;
+  }, []);
+  
+  /**
+   * Initialize tool
+   */
+  const setIsToolInitialized = useCallback(() => {
+    setIsToolInitialized(true);
+  }, []);
+  
+  /**
+   * Reset drawing state
+   */
+  const resetDrawingState = useCallback(() => {
     setIsDrawing(false);
     startPointRef.current = null;
     currentLineRef.current = null;
     distanceTooltipRef.current = null;
-  }
-  
-  /**
-   * Set the line's start point
-   * @param point - The start point coordinates
-   */
-  const setStartPoint = (point: Point) => {
-    startPointRef.current = new FabricPoint(point.x, point.y);
-    setIsDrawing(true);
-  }
-  
-  /**
-   * Set the current line reference
-   * @param line - The line object
-   */
-  const setCurrentLine = (line: Line) => {
-    currentLineRef.current = line;
-  }
-  
-  /**
-   * Set the distance tooltip reference
-   * @param tooltip - The text object for the tooltip
-   */
-  const setDistanceTooltip = (tooltip: Text) => {
-    distanceTooltipRef.current = tooltip;
-  }
+  }, []);
   
   return {
     isDrawing,
     setIsDrawing,
     isToolInitialized,
-    setIsToolInitialized: initializeTool,
+    setIsToolInitialized,
     startPointRef,
     currentLineRef,
     distanceTooltipRef,
-    resetDrawingState,
     setStartPoint,
     setCurrentLine,
-    setDistanceTooltip
+    setDistanceTooltip,
+    resetDrawingState
   };
 };

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import logger from "@/utils/logger";
 import { BasicGrid } from "./BasicGrid";
 import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import { useStraightLineTool } from "@/hooks/straightLineTool";
 
 /**
  * Props for Canvas component
@@ -38,6 +39,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [localDebugInfo, setLocalDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
+  const gridLayerRef = useRef<any[]>([]);
   
   // Update parent debugInfo if provided
   useEffect(() => {
@@ -53,6 +55,14 @@ export const Canvas: React.FC<CanvasProps> = ({
       ...update
     }));
   }, []);
+  
+  // Save canvas state for undo/redo
+  const saveCurrentState = useCallback(() => {
+    if (!canvas) return;
+    
+    // This would be implemented with history state tracking
+    console.log("Saving current canvas state");
+  }, [canvas]);
   
   // Initialize canvas
   useEffect(() => {
@@ -137,9 +147,23 @@ export const Canvas: React.FC<CanvasProps> = ({
     updateDebugInfo({ eventHandlersSet: true });
   }, [canvas, tool, lineColor, lineThickness, updateDebugInfo]);
   
+  // Initialize the straight line tool
+  const { isDrawing: isStraightLineDrawing } = useStraightLineTool({
+    fabricCanvasRef: { current: canvas },
+    tool,
+    lineColor,
+    lineThickness,
+    saveCurrentState
+  });
+  
   // Handle grid creation callback - memoized to prevent creating new functions on each render
   const handleGridCreated = useCallback((gridObjects: any[]) => {
     console.log(`Grid created with ${gridObjects.length} objects`);
+    
+    // Store grid objects in ref to avoid re-renders
+    gridLayerRef.current = gridObjects;
+    
+    // Update debug info once, not on every render
     updateDebugInfo({ 
       gridCreated: true,
       gridObjectCount: gridObjects.length
@@ -164,6 +188,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           <div>Grid Created: {localDebugInfo.gridCreated ? '✅' : '❌'}</div>
           <div>Grid Objects: {localDebugInfo.gridObjectCount}</div>
           <div>Tool: {tool}</div>
+          <div>Line Drawing: {isStraightLineDrawing ? 'Active' : 'Inactive'}</div>
         </div>
       )}
     </div>

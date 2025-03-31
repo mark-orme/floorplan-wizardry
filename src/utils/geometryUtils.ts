@@ -1,90 +1,86 @@
 
 /**
- * Geometry utilities for working with points, lines, and shapes
- * @module utils/geometryUtils
+ * Utility functions for geometry calculations
  */
+
 import { Point } from '@/types/core/Point';
 
 /**
- * Calculate Euclidean distance between two points
- * 
- * @param {Point} point1 - First point coordinates
- * @param {Point} point2 - Second point coordinates
- * @returns {number} - Distance between the points in pixels
+ * Calculate the distance between two points
+ * @param point1 - First point
+ * @param point2 - Second point
+ * @returns The distance between the points
  */
 export const calculateDistance = (point1: Point, point2: Point): number => {
-  const deltaX = point2.x - point1.x;
-  const deltaY = point2.y - point1.y;
-  
-  return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
+  return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
- * Calculate angle between two points (in radians)
- * 
- * @param {Point} point1 - Starting point
- * @param {Point} point2 - End point
- * @returns {number} - Angle in radians
+ * Calculate the angle between two points (in radians)
+ * @param point1 - First point
+ * @param point2 - Second point
+ * @returns The angle in radians
  */
 export const calculateAngle = (point1: Point, point2: Point): number => {
   return Math.atan2(point2.y - point1.y, point2.x - point1.x);
 };
 
 /**
- * Calculate midpoint between two points
- * 
- * @param {Point} point1 - First point
- * @param {Point} point2 - Second point
- * @returns {Point} - Midpoint coordinates
+ * Calculate the angle between two points (in degrees)
+ * @param point1 - First point
+ * @param point2 - Second point
+ * @returns The angle in degrees (0-360)
  */
-export const calculateMidpoint = (point1: Point, point2: Point): Point => {
+export const calculateAngleDegrees = (point1: Point, point2: Point): number => {
+  const radians = calculateAngle(point1, point2);
+  let degrees = radians * (180 / Math.PI);
+  
+  // Normalize to 0-360
+  if (degrees < 0) {
+    degrees += 360;
+  }
+  
+  return degrees;
+};
+
+/**
+ * Check if two line segments intersect
+ * @param a1 - Start point of first line
+ * @param a2 - End point of first line
+ * @param b1 - Start point of second line
+ * @param b2 - End point of second line
+ * @returns Whether the line segments intersect
+ */
+export const linesIntersect = (
+  a1: Point, 
+  a2: Point, 
+  b1: Point, 
+  b2: Point
+): boolean => {
+  // Implementation of line intersection check
+  const det = (a2.x - a1.x) * (b2.y - b1.y) - (a2.y - a1.y) * (b2.x - b1.x);
+  
+  if (det === 0) {
+    return false; // Lines are parallel
+  }
+  
+  const lambda = ((b2.y - b1.y) * (b2.x - a1.x) + (b1.x - b2.x) * (b2.y - a1.y)) / det;
+  const gamma = ((a1.y - a2.y) * (b2.x - a1.x) + (a2.x - a1.x) * (b2.y - a1.y)) / det;
+  
+  return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+};
+
+/**
+ * Get the midpoint between two points
+ * @param point1 - First point
+ * @param point2 - Second point
+ * @returns The midpoint
+ */
+export const getMidpoint = (point1: Point, point2: Point): Point => {
   return {
     x: (point1.x + point2.x) / 2,
     y: (point1.y + point2.y) / 2
   };
-};
-
-/**
- * Check if a point is inside a polygon (using ray casting algorithm)
- * 
- * @param {Point} point - The point to check
- * @param {Point[]} polygon - Array of points forming the polygon
- * @returns {boolean} - True if the point is inside the polygon
- */
-export const isPointInPolygon = (point: Point, polygon: Point[]): boolean => {
-  if (polygon.length < 3) return false;
-  
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const intersect = 
-      ((polygon[i].y > point.y) !== (polygon[j].y > point.y)) &&
-      (point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / 
-      (polygon[j].y - polygon[i].y) + polygon[i].x);
-      
-    if (intersect) inside = !inside;
-  }
-  
-  return inside;
-};
-
-/**
- * Convert distance in pixels to meters based on scale
- * 
- * @param {number} pixels - Distance in pixels
- * @param {number} pixelsPerMeter - Scale factor (pixels per meter)
- * @returns {number} - Distance in meters
- */
-export const pixelsToMeters = (pixels: number, pixelsPerMeter: number = 100): number => {
-  return pixels / pixelsPerMeter;
-};
-
-/**
- * Convert distance in meters to pixels based on scale
- * 
- * @param {number} meters - Distance in meters
- * @param {number} pixelsPerMeter - Scale factor (pixels per meter)
- * @returns {number} - Distance in pixels
- */
-export const metersToPixels = (meters: number, pixelsPerMeter: number = 100): number => {
-  return meters * pixelsPerMeter;
 };

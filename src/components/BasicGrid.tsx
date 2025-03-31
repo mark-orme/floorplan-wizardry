@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
@@ -18,12 +18,12 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
   const [isGridCreated, setIsGridCreated] = useState(false);
   const gridCreationAttemptedRef = useRef(false);
   
-  // Create grid when component mounts or canvas changes
+  // Create grid when component mounts or canvas changes - ONCE
   useEffect(() => {
     if (!canvas) return;
     
     // Prevent multiple creation attempts
-    if (gridCreationAttemptedRef.current) return;
+    if (gridCreationAttemptedRef.current || isGridCreated) return;
     gridCreationAttemptedRef.current = true;
     
     // Check if canvas is actually ready with dimensions
@@ -98,11 +98,6 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     // Store grid objects
     gridObjectsRef.current = gridObjects;
     
-    // Send all grid to back
-    gridObjects.forEach(obj => {
-      canvas.sendObjectToBack(obj);
-    });
-    
     // Update visibility
     updateGridVisibility(visible);
     
@@ -128,18 +123,17 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
       });
       canvas.requestRenderAll();
     };
-  }, [canvas]); // Only depend on canvas
+  }, [canvas, onGridCreated]); // Remove visible from dependencies
   
-  // Update grid visibility when visible prop changes (separated effect)
+  // Separate effect for visibility changes
   useEffect(() => {
-    // Only run this effect if grid is already created
     if (isGridCreated) {
       updateGridVisibility(visible);
     }
   }, [visible, isGridCreated]);
   
-  // Update grid visibility
-  const updateGridVisibility = (isVisible: boolean) => {
+  // Update grid visibility - memoized to avoid recreating the function
+  const updateGridVisibility = useCallback((isVisible: boolean) => {
     if (!canvas || gridObjectsRef.current.length === 0) return;
     
     gridObjectsRef.current.forEach(obj => {
@@ -147,7 +141,7 @@ export const BasicGrid: React.FC<BasicGridProps> = ({
     });
     
     canvas.requestRenderAll();
-  };
+  }, [canvas]);
   
   return null; // This component doesn't render anything
 };

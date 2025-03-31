@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -6,6 +5,7 @@ import { Point } from '@/types/core/Point';
 import { calculateDistance } from '@/utils/geometryUtils';
 import { FabricEventTypes } from '@/types/fabric-events';
 import logger from '@/utils/logger';
+import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 
 interface UseLineEventsParams {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -16,7 +16,7 @@ interface UseLineEventsParams {
   lineState: {
     isDrawing: boolean;
     setIsDrawing: (isDrawing: boolean) => void;
-    startPointRef: React.MutableRefObject<any>;
+    startPointRef: React.MutableRefObject<Point | null>;
     currentLineRef: React.MutableRefObject<Line | null>;
     distanceTooltipRef: React.MutableRefObject<Text | null>;
     resetDrawingState: () => void;
@@ -46,6 +46,9 @@ export const useLineEvents = (
     setDistanceTooltip
   } = lineState;
 
+  // Use snapping for grid alignment
+  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
+
   // Handle mouse down to start drawing a line
   const handleMouseDown = useCallback(
     (opts: any) => {
@@ -54,20 +57,20 @@ export const useLineEvents = (
       const canvas = fabricCanvasRef.current;
       if (!canvas) return;
       
-      // Get mouse position
+      // Get mouse position and snap to grid
       const pointer = canvas.getPointer(opts.e);
-      const point = { x: pointer.x, y: pointer.y };
+      const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
       
       // Start drawing
-      setStartPoint(point);
+      setStartPoint(snappedPoint);
       
       logger.info("Straight line drawing started", { 
-        startPoint: point, 
+        startPoint: snappedPoint, 
         lineColor, 
         lineThickness 
       });
     },
-    [tool, fabricCanvasRef, lineColor, lineThickness, setStartPoint]
+    [tool, fabricCanvasRef, lineColor, lineThickness, setStartPoint, snapPointToGrid]
   );
 
   // Handle mouse move to update the line while drawing
@@ -78,17 +81,21 @@ export const useLineEvents = (
       const canvas = fabricCanvasRef.current;
       if (!canvas || !startPointRef.current) return;
       
-      // Get current pointer position
+      // Get current pointer position and snap to grid
       const pointer = canvas.getPointer(opts.e);
+      const currentPoint = { x: pointer.x, y: pointer.y };
+      
+      // Apply constraint to create horizontal, vertical, or 45-degree lines
+      const { start, end } = snapLineToGrid(startPointRef.current, currentPoint);
       
       // Create a new line or update existing one
       if (!currentLineRef.current) {
         const line = new Line(
           [
-            startPointRef.current.x,
-            startPointRef.current.y,
-            pointer.x,
-            pointer.y
+            start.x,
+            start.y,
+            end.x,
+            end.y
           ],
           {
             stroke: lineColor,
@@ -103,17 +110,15 @@ export const useLineEvents = (
         setCurrentLine(line);
         
         // Create distance tooltip
-        const midX = (startPointRef.current.x + pointer.x) / 2;
-        const midY = (startPointRef.current.y + pointer.y) / 2;
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
         
-        const distance = calculateDistance(
-          { x: startPointRef.current.x, y: startPointRef.current.y },
-          { x: pointer.x, y: pointer.y }
-        );
+        const distance = calculateDistance(start, end);
+        const distanceInMeters = (distance / 100).toFixed(2);
         
-        const tooltip = new Text(`${distance.toFixed(2)}m`, {
+        const tooltip = new Text(`${distanceInMeters}m`, {
           left: midX,
-          top: midY,
+          top: midY - 10,
           fontSize: 12,
           backgroundColor: 'rgba(255,255,255,0.7)',
           padding: 3,
@@ -127,24 +132,22 @@ export const useLineEvents = (
       } else {
         // Update existing line
         currentLineRef.current.set({
-          x2: pointer.x,
-          y2: pointer.y
+          x2: end.x,
+          y2: end.y
         });
         
         // Update distance tooltip
         if (distanceTooltipRef.current) {
           // Calculate new midpoint
-          const midX = (startPointRef.current.x + pointer.x) / 2;
-          const midY = (startPointRef.current.y + pointer.y) / 2;
+          const midX = (start.x + end.x) / 2;
+          const midY = (start.y + end.y) / 2 - 10;
           
           // Calculate new distance
-          const distance = calculateDistance(
-            { x: startPointRef.current.x, y: startPointRef.current.y },
-            { x: pointer.x, y: pointer.y }
-          );
+          const distance = calculateDistance(start, end);
+          const distanceInMeters = (distance / 100).toFixed(2);
           
           distanceTooltipRef.current.set({
-            text: `${distance.toFixed(2)}m`,
+            text: `${distanceInMeters}m`,
             left: midX,
             top: midY
           });
@@ -160,7 +163,8 @@ export const useLineEvents = (
       lineColor,
       lineThickness,
       setCurrentLine,
-      setDistanceTooltip
+      setDistanceTooltip,
+      snapLineToGrid
     ]
   );
 
@@ -170,32 +174,63 @@ export const useLineEvents = (
       if (tool !== DrawingMode.STRAIGHT_LINE || !isDrawing) return;
       
       const canvas = fabricCanvasRef.current;
-      if (!canvas || !currentLineRef.current) return;
+      if (!canvas || !currentLineRef.current || !startPointRef.current) return;
       
       // Complete drawing
       setIsDrawing(false);
       
-      // Remove distance tooltip after a delay
-      if (distanceTooltipRef.current) {
-        setTimeout(() => {
-          if (canvas && distanceTooltipRef.current && canvas.contains(distanceTooltipRef.current)) {
-            canvas.remove(distanceTooltipRef.current);
-            canvas.requestRenderAll();
-          }
-        }, 2000);
+      // Get the final position and snap it
+      const pointer = canvas.getPointer(opts.e);
+      const currentPoint = { x: pointer.x, y: pointer.y };
+      
+      // Apply constraint for the final line
+      const { end } = snapLineToGrid(startPointRef.current, currentPoint);
+      
+      // Update the line's final position
+      currentLineRef.current.set({
+        x2: end.x,
+        y2: end.y
+      });
+      
+      // Calculate final distance
+      const distance = calculateDistance(startPointRef.current, end);
+      
+      // Only keep meaningful lines (longer than 5px)
+      if (distance > 5) {
+        // Save current state for undo
+        saveCurrentState();
+        
+        // Make line selectable for later editing
+        currentLineRef.current.set({
+          selectable: true,
+          evented: true
+        });
+        
+        // Remove the tooltip after a delay
+        if (distanceTooltipRef.current) {
+          setTimeout(() => {
+            if (canvas && distanceTooltipRef.current && canvas.contains(distanceTooltipRef.current)) {
+              canvas.remove(distanceTooltipRef.current);
+              canvas.requestRenderAll();
+            }
+          }, 2000);
+        }
+      } else {
+        // Line too short, remove it
+        canvas.remove(currentLineRef.current);
+        if (distanceTooltipRef.current) {
+          canvas.remove(distanceTooltipRef.current);
+        }
       }
       
-      // Save the current state for undo/redo
-      saveCurrentState();
+      canvas.requestRenderAll();
       
       // Reset refs for next drawing
-      startPointRef.current = null;
-      currentLineRef.current = null;
-      distanceTooltipRef.current = null;
+      resetDrawingState();
       
       logger.info("Straight line drawing completed");
     },
-    [tool, isDrawing, fabricCanvasRef, setIsDrawing, saveCurrentState]
+    [tool, isDrawing, fabricCanvasRef, setIsDrawing, saveCurrentState, resetDrawingState, snapLineToGrid]
   );
 
   // Cancel drawing (e.g., on Escape key)

@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useLineState } from './useLineState';
@@ -23,6 +23,9 @@ export const useStraightLineTool = ({
   lineThickness,
   saveCurrentState
 }: UseStraightLineToolProps) => {
+  // State tracking whether the tool is active
+  const [isActive, setIsActive] = useState(false);
+  
   // Manage line drawing state
   const lineState = useLineState();
   const { isDrawing, isToolInitialized, setIsToolInitialized } = lineState;
@@ -49,6 +52,8 @@ export const useStraightLineTool = ({
     if (!canvas) return;
     
     if (tool === DrawingMode.STRAIGHT_LINE) {
+      setIsActive(true);
+      
       // Configure canvas for straight line drawing
       canvas.isDrawingMode = false;
       canvas.selection = false;
@@ -92,13 +97,18 @@ export const useStraightLineTool = ({
         }
       });
     } else {
-      // Remove event handlers when switching to a different tool
-      cleanupEventHandlers();
+      // If tool was active and is now changing, clean up
+      if (isActive) {
+        setIsActive(false);
+        cleanupEventHandlers();
+      }
     }
     
     // Clean up on unmount
     return () => {
-      cleanupEventHandlers();
+      if (isActive) {
+        cleanupEventHandlers();
+      }
     };
   }, [
     fabricCanvasRef,
@@ -109,7 +119,8 @@ export const useStraightLineTool = ({
     cleanupEventHandlers,
     lineColor,
     lineThickness,
-    setIsToolInitialized
+    setIsToolInitialized,
+    isActive
   ]);
   
   // Handle keyboard events - Escape to cancel
@@ -130,6 +141,7 @@ export const useStraightLineTool = ({
   return {
     isDrawing,
     cancelDrawing,
-    isToolInitialized
+    isToolInitialized,
+    isActive
   };
 };
