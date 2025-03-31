@@ -44,7 +44,7 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to delete objects", { error: errorMsg });
-      captureError(error as Error, "canvas-delete-error");
+      captureError(error as Error);
       toast.error(`Failed to delete objects: ${errorMsg}`);
     }
   }, [canvas, saveCurrentState]);
@@ -70,7 +70,7 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to clear canvas", { error: errorMsg });
-      captureError(error as Error, "canvas-clear-error");
+      captureError(error as Error);
       toast.error(`Failed to clear canvas: ${errorMsg}`);
     }
   }, [canvas, saveCurrentState]);
@@ -96,7 +96,7 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error(`Failed to zoom ${direction}`, { error: errorMsg });
-      captureError(error as Error, "canvas-zoom-error");
+      captureError(error as Error);
       toast.error(`Failed to zoom ${direction}: ${errorMsg}`);
     }
   }, [canvas]);
@@ -120,7 +120,7 @@ export const useCanvasOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas", { error: errorMsg });
-      captureError(error as Error, "canvas-save-error");
+      captureError(error as Error);
       toast.error(`Failed to save canvas: ${errorMsg}`);
       return false;
     }
