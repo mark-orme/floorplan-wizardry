@@ -82,6 +82,8 @@ export interface DebugInfoState {
   objectCount?: number;
   /** Timestamp of last error */
   lastErrorTime?: number;
+  /** Additional properties may be present */
+  [key: string]: any;
 }
 
 /**

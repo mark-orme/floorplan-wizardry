@@ -95,8 +95,24 @@ export interface DebugInfoState {
   gridObjectCount?: number;
   /** Canvas dimensions */
   canvasDimensions?: { width: number; height: number };
-  /** Additional debug properties */
-  [key: string]: string | number | boolean | object | undefined;
+  /** Whether the canvas is ready for drawing */
+  canvasReady: boolean;
+  /** Last error message */
+  lastError: string | null;
+  /** Timestamp of last refresh */
+  lastRefresh: number;
+  /** Canvas width */
+  canvasWidth?: number;
+  /** Canvas height */
+  canvasHeight?: number;
+  /** Device pixel ratio */
+  devicePixelRatio?: number;
+  /** Count of canvas objects */
+  objectCount?: number;
+  /** Timestamp of last error */
+  lastErrorTime?: number;
+  /** Index signature for additional properties */
+  [key: string]: any;
 }
 
 /**
