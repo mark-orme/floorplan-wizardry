@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -39,6 +39,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gridLayerRef = useRef<any[]>([]);
+  const operationsRef = useRef<any>(null);
   
   // Use our custom hooks
   const { 
@@ -75,7 +76,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
   
   // Expose canvas operations to parent component
   useEffect(() => {
-    if (!onCanvasRef) return;
+    if (!onCanvasRef || !canvas) return;
     
     const operations = {
       canvas,
@@ -90,7 +91,11 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       getCanvas: () => canvas
     };
     
-    onCanvasRef(operations);
+    // Only update if the operations have changed to prevent unnecessary re-renders
+    if (JSON.stringify(operationsRef.current) !== JSON.stringify(operations)) {
+      operationsRef.current = operations;
+      onCanvasRef(operations);
+    }
   }, [canvas, canUndo, canRedo, onCanvasRef, undo, redo, clearCanvas, deleteSelectedObjects, saveCanvas, zoom]);
   
   return (

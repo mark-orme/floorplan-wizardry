@@ -14,7 +14,7 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-
+  
   // Save current canvas state to history
   const saveCurrentState = useCallback(() => {
     if (!canvas) return;

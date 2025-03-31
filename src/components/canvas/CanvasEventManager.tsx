@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
@@ -43,6 +43,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
 }) => {
   // Ref for the canvas
   const canvasRef = useRef<FabricCanvas | null>(canvas);
+  const initialStateRef = useRef(false);
   
   // Update canvas ref when canvas changes
   useEffect(() => {
@@ -177,13 +178,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     }
   }, [tool, lineThickness, lineColor, canvas, gridLayerRef]);
   
-  // Effect to save initial state
+  // Effect to save initial state - using a ref to ensure it only runs once
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || initialStateRef.current) return;
     
     // Save initial state once when canvas is first available
     const timer = setTimeout(() => {
       saveCurrentState();
+      initialStateRef.current = true;
     }, 500);
     
     return () => clearTimeout(timer);
