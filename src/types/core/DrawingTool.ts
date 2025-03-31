@@ -3,7 +3,7 @@
  * Core drawing tool types
  * @module types/core/DrawingTool
  */
-import type { DrawingMode } from '@/constants/drawingModes';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * DrawingTool type - The canonical type to use for all drawing tools

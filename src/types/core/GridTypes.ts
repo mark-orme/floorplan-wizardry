@@ -6,6 +6,21 @@
  */
 
 /**
+ * Grid creation lock interface
+ * Controls grid creation synchronization
+ */
+export interface GridCreationLock {
+  /** Whether the grid is currently locked for creation */
+  isLocked: boolean;
+  /** ID of the operation that acquired the lock */
+  lockedBy: string | null;
+  /** Timestamp when the lock was acquired */
+  lockedAt: number | null;
+  /** Maximum time the lock can be held */
+  maxLockTime: number;
+}
+
+/**
  * Grid creation state interface
  * Tracks the state of grid creation on the canvas
  */
@@ -52,21 +67,8 @@ export interface GridCreationState {
   maxRecreations: number;
   /** Minimum interval between recreation attempts */
   minRecreationInterval: number;
-}
-
-/**
- * Grid creation lock interface
- * Controls grid creation synchronization
- */
-export interface GridCreationLock {
-  /** Whether the grid is currently locked for creation */
-  isLocked: boolean;
-  /** ID of the operation that acquired the lock */
-  lockedBy: string | null;
-  /** Timestamp when the lock was acquired */
-  lockedAt: number | null;
-  /** Maximum time the lock can be held */
-  maxLockTime: number;
+  /** Lock for grid creation synchronization */
+  creationLock?: GridCreationLock;
 }
 
 /**

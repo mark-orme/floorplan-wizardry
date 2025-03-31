@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasControllerEnhanced } from "./controller/CanvasControllerEnhanced";
@@ -12,8 +11,7 @@ import { useCanvasOperations } from "@/hooks/canvas-operations";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { CanvasContainer } from "./CanvasContainer";
 import { toast } from "sonner";
-import { DebugInfoState } from "@/types/drawingTypes";
-import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 
 interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
@@ -21,8 +19,8 @@ interface CanvasAppProps {
 
 // Inner component that uses DrawingContext
 const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
-  // State for debug info
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
+  // State for debug info - fixed type consistency with DEFAULT_DEBUG_STATE
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({...DEFAULT_DEBUG_STATE}));
   
   // State for GIA (Gross Internal Area)
   const [gia, setGia] = useState<number>(0);

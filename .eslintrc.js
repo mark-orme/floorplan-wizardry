@@ -1,58 +1,45 @@
 
+/**
+ * ESLint configuration
+ * @type {import('eslint').Linter.Config}
+ */
 module.exports = {
+  parser: "@typescript-eslint/parser",
   extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended"
   ],
-  parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint', 'react-refresh'],
+  plugins: ["@typescript-eslint", "react", "react-hooks"],
   rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    'no-console': 'off', // Allow console for now
+    // Import custom TypeScript safety rules
+    ...require('./src/eslint/typescript-safety-rules.js').rules,
     
-    // Enforce using FabricEventTypes for fabric.js events
-    'no-restricted-syntax': [
-      'error',
-      {
-        'selector': "CallExpression[callee.object.name=/canvas|fabricCanvas/][callee.property.name=/on|off|fire/] > Literal:first-child",
-        'message': "Use FabricEventTypes enum instead of string literals for event names."
-      }
-    ],
+    // Import custom grid type validation rules
+    ...require('./eslint/grid-type-validation').gridTypeValidationRules.rules,
     
-    // Enforce proper cleanup in useEffect hooks
-    'react-hooks/exhaustive-deps': 'error',
+    // Additional core rules
+    "prefer-const": "error",
+    "no-duplicate-imports": "error",
+    "consistent-return": "warn",
+    "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
     
-    // Prevent direct DOM manipulation in React components
-    'no-restricted-syntax': [
-      'error', 
-      {
-        'selector': "CallExpression[callee.object.property.name='current'][callee.property.name=/querySelector|getElementById/]",
-        'message': "Don't directly manipulate DOM in React components."
-      }
-    ],
-    
-    // Enforce proper nullish checks
-    '@typescript-eslint/prefer-optional-chain': 'error',
-    '@typescript-eslint/no-non-null-assertion': 'error',
+    // React specific rules
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
   },
-  overrides: [
-    {
-      files: ['**/grid/**/*.{ts,tsx,js,jsx}'],
-      rules: require('./src/eslint/grid-constant-validation').rules,
-    },
-    {
-      files: ['**/canvas/**/*.{ts,tsx}', '**/hooks/**/*.{ts,tsx}'],
-      rules: require('./src/eslint/canvas-event-handling-rules').rules,
-    },
-    {
-      // Apply stricter TypeScript rules to specific files
-      files: ['**/*.{ts,tsx}'],
-      rules: require('./src/eslint/typescript-strict-rules').rules,
-    },
-  ],
+  settings: {
+    react: {
+      version: "detect"
+    }
+  },
+  env: {
+    browser: true,
+    node: true,
+    es6: true
+  },
+  ignorePatterns: ["node_modules/", "dist/", "build/"]
 };

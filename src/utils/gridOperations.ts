@@ -4,8 +4,8 @@
  * @module gridOperations
  */
 import { Canvas, Object as FabricObject } from "fabric";
-import type { GridCreationState, GridCreationLock } from "@/types";
-import { DEFAULT_GRID_CREATION_STATE } from "@/types/core/GridTypes";
+import type { GridCreationState, GridCreationLock } from "@/types/core/GridTypes";
+import { DEFAULT_GRID_CREATION_STATE, DEFAULT_GRID_CREATION_LOCK } from "@/types/core/GridTypes";
 
 /**
  * Get initial grid creation state
@@ -17,30 +17,7 @@ export const getInitialGridState = (): GridCreationState => {
   // Use the default grid creation state as a base
   return {
     ...DEFAULT_GRID_CREATION_STATE,
-    // Explicitly add required properties to prevent TypeScript errors
-    started: false,       // No grid creation started yet
-    completed: false,     // No grid creation completed
-    objectCount: 0,       // No grid objects created
-    inProgress: false,    // No creation in progress initially
-    isCreated: false,     // No grid created yet
-    attempts: 0,          // No attempts made
-    lastAttemptTime: 0,   // No previous attempts
-    hasError: false,      // No errors yet
-    errorMessage: "",     // No error message
-    creationInProgress: false, // No creation actively happening
-    consecutiveResets: 0, // No resets performed
-    maxConsecutiveResets: 5, // Limit consecutive resets to prevent loops
-    exists: false,        // Grid doesn't exist yet
-    lastCreationTime: 0,  // No successful creation yet
-    throttleInterval: 500, // 500ms between creation attempts
-    totalCreations: 0,    // No creations performed
-    maxRecreations: 10,   // Limit to 10 recreations to prevent infinite loops
-    minRecreationInterval: 1000, // 1 second between recreations
-    creationLock: {       // Initial unlocked state
-      isLocked: false,
-      id: 0,
-      timestamp: 0
-    }
+    // Any additional initialization can be done here
   };
 };
 
@@ -209,7 +186,7 @@ export const resetGridCreationState = (state: GridCreationState): GridCreationSt
  * @returns {boolean} True if lock was acquired
  */
 export const acquireCreationLock = (state: GridCreationState): boolean => {
-  // Check if lock is already held by examining the creationLock object
+  // Check if lock exists and is active
   if (state.creationLock && state.creationLock.isLocked === true) {
     return false;
   }
@@ -228,9 +205,10 @@ export const setCreationLock = (state: GridCreationState): GridCreationState => 
   return {
     ...state,
     creationLock: {
-      id: Date.now(),
-      timestamp: Date.now(),
-      isLocked: true
+      isLocked: true,
+      lockedBy: "lock-" + Date.now().toString(),
+      lockedAt: Date.now(),
+      maxLockTime: 5000
     }
   };
 };
@@ -246,9 +224,10 @@ export const releaseCreationLock = (state: GridCreationState): GridCreationState
   return {
     ...state,
     creationLock: {
-      id: 0,
-      timestamp: 0,
-      isLocked: false
+      isLocked: false,
+      lockedBy: null,
+      lockedAt: null,
+      maxLockTime: 5000
     }
   };
 };

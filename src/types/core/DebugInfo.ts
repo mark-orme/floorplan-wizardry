@@ -21,6 +21,10 @@ export interface PerformanceStats {
   maxFrameTime?: number;
   /** Number of long frames (frames taking longer than 16ms) */
   longFrames?: number;
+  /** Error count for tracking issues */
+  errorCount?: number;
+  /** Retry count for operations */
+  retryCount?: number;
   /** Additional performance metrics */
   [key: string]: number | undefined;
 }
@@ -68,6 +72,20 @@ export interface DebugInfoState {
   gridObjectCount?: number;
   /** Canvas dimensions */
   canvasDimensions?: CanvasDimensions;
+  /** Object count */
+  objectCount?: number;
+  /** Canvas width */
+  canvasWidth?: number;
+  /** Canvas height */
+  canvasHeight?: number;
+  /** Device pixel ratio */
+  devicePixelRatio?: number;
+  /** Last error object or message */
+  lastError?: any;
+  /** Timestamp of last error */
+  lastErrorTime?: number;
+  /** Additional debug properties */
+  [key: string]: string | number | boolean | object | undefined;
 }
 
 /**
