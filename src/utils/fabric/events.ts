@@ -1,42 +1,9 @@
-
 /**
  * Event utilities for Fabric.js
  * Provides type guards and event handling helpers
  * @module fabric/events
  */
-import { CustomTouchEvent } from "@/types/fabric";
-
-/**
- * Type guard to check if an event is a touch event
- * Used to safely handle both mouse and touch interactions
- * 
- * @param {unknown} event - The event to check
- * @returns {boolean} True if the event is a touch event
- */
-export function isTouchEvent(event: unknown): event is TouchEvent {
-  return Boolean(
-    event && 
-    typeof event === 'object' && 
-    'touches' in event && 
-    'changedTouches' in event
-  );
-}
-
-/**
- * Type guard to check if an event is a mouse event
- * 
- * @param {unknown} event - The event to check
- * @returns {boolean} True if the event is a mouse event
- */
-export function isMouseEvent(event: unknown): event is MouseEvent {
-  return Boolean(
-    event && 
-    typeof event === 'object' && 
-    'clientX' in event &&
-    'clientY' in event &&
-    !('touches' in event)
-  );
-}
+import { CustomTouchEvent, isTouchEvent, isMouseEvent } from "@/types/fabric";
 
 /**
  * Type guard to check if an event is a keyboard event

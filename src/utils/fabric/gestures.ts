@@ -1,4 +1,3 @@
-
 /**
  * Utilities for handling touch gestures on Fabric.js canvas
  * Provides multi-touch support for mobile devices
@@ -6,9 +5,8 @@
  * @module fabric/gestures
  */
 import { Canvas, PencilBrush, Point, Object as FabricObject } from 'fabric';
-import type { CustomTouchEvent, CustomFabricTouchEvent, FabricPointerEvent } from '@/types/fabric';
+import { CustomTouchEvent, FabricPointerEvent, isTouchEvent, isMouseEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
-import { isTouchEvent, isMouseEvent } from '@/types/fabric';
 import { FabricEventTypes } from '@/types/fabric-events';
 
 /**
