@@ -1,4 +1,9 @@
 
+/**
+ * Hook for handling straight line drawing functionality
+ * @module hooks/straightLineTool/useStraightLineTool
+ */
+
 import { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -8,21 +13,77 @@ import { captureMessage } from '@/utils/sentry';
 import logger from '@/utils/logger';
 import { FabricEventTypes } from '@/types/fabric-events';
 
+/**
+ * Props for useStraightLineTool hook
+ * @interface UseStraightLineToolProps
+ */
 interface UseStraightLineToolProps {
+  /**
+   * Reference to the Fabric.js canvas instance
+   */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  
+  /**
+   * Current active drawing tool
+   */
   tool: DrawingMode;
+  
+  /**
+   * Color for drawing lines
+   */
   lineColor: string;
+  
+  /**
+   * Thickness for drawing lines
+   */
   lineThickness: number;
+  
+  /**
+   * Function to save current canvas state for undo/redo operations
+   */
   saveCurrentState: () => void;
 }
 
+/**
+ * Return type for useStraightLineTool hook
+ * @interface UseStraightLineToolResult
+ */
+interface UseStraightLineToolResult {
+  /**
+   * Whether a line is currently being drawn
+   */
+  isDrawing: boolean;
+  
+  /**
+   * Function to cancel the current drawing operation
+   */
+  cancelDrawing: () => void;
+  
+  /**
+   * Whether the tool has been properly initialized
+   */
+  isToolInitialized: boolean;
+  
+  /**
+   * Whether the tool is currently active
+   */
+  isActive: boolean;
+}
+
+/**
+ * Custom hook for straight line drawing tool functionality
+ * Manages the tool state, event handlers, and canvas interactions
+ * 
+ * @param {UseStraightLineToolProps} props - Hook input properties
+ * @returns {UseStraightLineToolResult} Hook output interface
+ */
 export const useStraightLineTool = ({
   fabricCanvasRef,
   tool,
   lineColor,
   lineThickness,
   saveCurrentState
-}: UseStraightLineToolProps) => {
+}: UseStraightLineToolProps): UseStraightLineToolResult => {
   // State tracking whether the tool is active
   const [isActive, setIsActive] = useState(false);
   

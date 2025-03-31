@@ -18,6 +18,9 @@ export interface FabricPointerEvent {
   target?: any;
   absolutePointer?: { x: number; y: number };
   transform?: any;
+  // Add v6 compatible properties
+  scenePoint?: { x: number; y: number };
+  viewportPoint?: { x: number; y: number };
 }
 
 /**

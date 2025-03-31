@@ -27,6 +27,7 @@ export interface CanvasCreationOptions {
 export interface CanvasReferences {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas?: FabricCanvas | null; // Add this property to fix the type error
 }
 
 export interface GridDimensions {
@@ -53,4 +54,7 @@ export interface CustomFabricTouchEvent {
 export interface FabricPointerEvent {
   e: MouseEvent | TouchEvent;
   pointer: { x: number; y: number };
+  absolutePointer?: { x: number; y: number };
+  scenePoint?: { x: number; y: number };
+  viewportPoint?: { x: number; y: number };
 }
