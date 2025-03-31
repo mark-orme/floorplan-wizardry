@@ -23,8 +23,8 @@ export const validateGridState = (state: Partial<GridCreationState>): GridCreati
       // Type-safe assignment using indexed access types
       if (typedKey in state) {
         const value = state[typedKey];
-        // Use proper type assertion with explicit property access
-        (validState as Record<string, unknown>)[typedKey] = value;
+        // Use proper type assertion chain - first to unknown, then to the specific type
+        (validState as unknown as Record<string, unknown>)[typedKey] = value;
       }
     } else {
       console.warn(`Invalid GridCreationState property: ${key}. This property will be ignored.`);
@@ -49,8 +49,8 @@ export const createGridStateUpdate = (updates: Partial<GridCreationState>): Part
       // Type-safe assignment using indexed access types
       if (typedKey in updates) {
         const value = updates[typedKey];
-        // Use proper type assertion with explicit property access
-        (validUpdates as Record<string, unknown>)[typedKey] = value;
+        // Use proper type assertion chain - first to unknown, then to the specific type
+        (validUpdates as unknown as Record<string, unknown>)[typedKey] = value;
       }
     } else {
       console.warn(`Invalid GridCreationState update property: ${key}. This property will be ignored.`);
@@ -86,15 +86,15 @@ export const repairGridState = (state: Record<string, unknown>): Partial<GridCre
       const typedKey = key as keyof GridCreationState;
       const value = state[key];
       
-      // Type-safe assignment with proper casting
-      (repairedState as Record<string, unknown>)[typedKey] = value;
+      // Type-safe assignment with proper casting chain
+      (repairedState as unknown as Record<string, unknown>)[typedKey] = value;
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
       const value = state[key];
       
-      // Type-safe assignment with proper casting
-      (repairedState as Record<string, unknown>)[correctKey] = value;
+      // Type-safe assignment with proper casting chain
+      (repairedState as unknown as Record<string, unknown>)[correctKey] = value;
       console.warn(`Renamed GridCreationState property: ${key} → ${correctKey}`);
     }
   });
