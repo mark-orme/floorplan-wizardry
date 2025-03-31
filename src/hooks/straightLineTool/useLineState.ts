@@ -41,7 +41,7 @@ export const useLineState = () => {
   /**
    * Initialize tool
    */
-  const setIsToolInitialized = useCallback(() => {
+  const initializeTool = useCallback(() => {
     setIsToolInitialized(true);
   }, []);
   
@@ -66,6 +66,7 @@ export const useLineState = () => {
     setStartPoint,
     setCurrentLine,
     setDistanceTooltip,
+    initializeTool,
     resetDrawingState
   };
 };

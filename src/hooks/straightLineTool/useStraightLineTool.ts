@@ -28,7 +28,7 @@ export const useStraightLineTool = ({
   
   // Manage line drawing state
   const lineState = useLineState();
-  const { isDrawing, isToolInitialized, setIsToolInitialized } = lineState;
+  const { isDrawing, isToolInitialized, initializeTool } = lineState;
 
   // Set up event handlers
   const {
@@ -76,7 +76,7 @@ export const useStraightLineTool = ({
       canvas.discardActiveObject();
       canvas.requestRenderAll();
       
-      setIsToolInitialized();
+      initializeTool();
       logger.info("Straight line tool initialized with event handlers", {
         isDrawingMode: canvas.isDrawingMode,
         selection: canvas.selection,
@@ -119,7 +119,7 @@ export const useStraightLineTool = ({
     cleanupEventHandlers,
     lineColor,
     lineThickness,
-    setIsToolInitialized,
+    initializeTool,
     isActive
   ]);
   
