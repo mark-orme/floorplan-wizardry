@@ -40,6 +40,13 @@ declare global {
      */
     _fabric?: any;
   }
+  
+  // Add type for Fabric.js pointer events
+  interface FabricPointerEvent {
+    e: MouseEvent | TouchEvent;
+    pointer?: { x: number; y: number };
+    target?: any;
+  }
 }
 
 // Export an empty object to make this file a module

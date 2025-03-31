@@ -6,12 +6,12 @@ import { toast } from 'sonner';
 import { useSnapToGrid } from './useSnapToGrid';
 import logger from '@/utils/logger';
 
-// Use a more generic type for event handling
-type FabricEvent = {
-  e: Event;
+// Define a proper type for Fabric.js events
+interface FabricPointerEvent {
+  e: MouseEvent | TouchEvent;
   pointer?: { x: number; y: number };
   target?: any;
-};
+}
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -52,7 +52,7 @@ export const useStraightLineTool = ({
   }, [fabricCanvasRef]);
   
   // Handle mouse down to start drawing
-  const handleMouseDown = useCallback((event: FabricEvent) => {
+  const handleMouseDown = useCallback((event: FabricPointerEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || tool !== DrawingMode.STRAIGHT_LINE) return;
     
@@ -92,7 +92,7 @@ export const useStraightLineTool = ({
   }, [fabricCanvasRef, tool, lineColor, lineThickness, snapPointToGrid]);
   
   // Handle mouse move to update line
-  const handleMouseMove = useCallback((event: FabricEvent) => {
+  const handleMouseMove = useCallback((event: FabricPointerEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !startPointRef.current || !currentLineRef.current) return;
     
@@ -154,7 +154,7 @@ export const useStraightLineTool = ({
   }, [fabricCanvasRef, isDrawing, tool, snapPointToGrid, snapLineToGrid]);
   
   // Handle mouse up to complete line drawing
-  const handleMouseUp = useCallback((event: FabricEvent) => {
+  const handleMouseUp = useCallback((event: FabricPointerEvent) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isDrawing || tool !== DrawingMode.STRAIGHT_LINE || !startPointRef.current || !currentLineRef.current) return;
     
