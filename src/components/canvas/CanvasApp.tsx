@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasControllerEnhanced } from "./controller/CanvasControllerEnhanced";
 import { ConnectedDrawingCanvas } from "./ConnectedDrawingCanvas";
@@ -32,6 +32,9 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     setCanRedo
   } = useDrawingContext();
   
+  // Reference to the drawing canvas component
+  const canvasComponentRef = useRef<any>(null);
+  
   // Reset initialization state when component mounts
   useEffect(() => {
     resetInitializationState();
@@ -39,7 +42,6 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     
     logger.info("CanvasApp mounted", { initialTool: tool });
     captureMessage("CanvasApp initialized", "canvas-app-init", {
-      level: "info",
       tags: { component: "CanvasApp" },
       extra: { initialTool: tool }
     });
@@ -65,7 +67,6 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
       toast.success(`Changed to ${newTool} tool`);
       
       captureMessage("Drawing tool changed", "tool-change", {
-        level: "info",
         tags: { component: "CanvasApp", action: "toolChange" },
         extra: { previousTool: tool, newTool: newTool }
       });
@@ -96,13 +97,15 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     }
     
     try {
-      console.log("Undo action");
-      toast.info("Undo action");
-      captureMessage("Undo action triggered", "undo-action", {
-        level: "info",
-        tags: { component: "CanvasApp", action: "undo" }
-      });
-      // Will implement actual undo functionality later
+      if (canvasComponentRef.current && canvasComponentRef.current.undo) {
+        canvasComponentRef.current.undo();
+        captureMessage("Undo action triggered", "undo-action", {
+          tags: { component: "CanvasApp", action: "undo" }
+        });
+      } else {
+        logger.warn("Undo function not available on canvas component");
+        toast.error("Undo functionality not available");
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to perform undo", { error: errorMsg });
@@ -121,13 +124,15 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     }
     
     try {
-      console.log("Redo action");
-      toast.info("Redo action");
-      captureMessage("Redo action triggered", "redo-action", {
-        level: "info",
-        tags: { component: "CanvasApp", action: "redo" }
-      });
-      // Will implement actual redo functionality later
+      if (canvasComponentRef.current && canvasComponentRef.current.redo) {
+        canvasComponentRef.current.redo();
+        captureMessage("Redo action triggered", "redo-action", {
+          tags: { component: "CanvasApp", action: "redo" }
+        });
+      } else {
+        logger.warn("Redo function not available on canvas component");
+        toast.error("Redo functionality not available");
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to perform redo", { error: errorMsg });
@@ -140,14 +145,16 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     logger.info("Zoom action requested", { direction });
     
     try {
-      console.log(`Zoom ${direction}`);
-      toast.info(`Zoom ${direction}`);
-      captureMessage("Zoom action triggered", "zoom-action", {
-        level: "info",
-        tags: { component: "CanvasApp", action: "zoom" },
-        extra: { direction }
-      });
-      // Will implement actual zoom functionality later
+      if (canvasComponentRef.current && canvasComponentRef.current.zoom) {
+        canvasComponentRef.current.zoom(direction);
+        captureMessage("Zoom action triggered", "zoom-action", {
+          tags: { component: "CanvasApp", action: "zoom" },
+          extra: { direction }
+        });
+      } else {
+        logger.warn("Zoom function not available on canvas component");
+        toast.info(`Zoom ${direction} (not implemented yet)`);
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to perform zoom", { error: errorMsg, direction });
@@ -162,13 +169,15 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     logger.info("Clear canvas requested");
     
     try {
-      console.log("Clear canvas");
-      toast.info("Clear canvas");
-      captureMessage("Clear canvas action triggered", "clear-canvas", {
-        level: "info",
-        tags: { component: "CanvasApp", action: "clear" }
-      });
-      // Will implement actual clear functionality later
+      if (canvasComponentRef.current && canvasComponentRef.current.clearCanvas) {
+        canvasComponentRef.current.clearCanvas();
+        captureMessage("Clear canvas action triggered", "clear-canvas", {
+          tags: { component: "CanvasApp", action: "clear" }
+        });
+      } else {
+        logger.warn("Clear function not available on canvas component");
+        toast.info("Clear canvas (not implemented yet)");
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to clear canvas", { error: errorMsg });
@@ -181,13 +190,31 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     logger.info("Save canvas requested");
     
     try {
-      console.log("Save canvas");
-      toast.success("Canvas saved");
-      captureMessage("Save canvas action triggered", "save-canvas", {
-        level: "info",
-        tags: { component: "CanvasApp", action: "save" }
-      });
-      // Will implement actual save functionality later
+      if (canvasComponentRef.current && canvasComponentRef.current.saveCanvas) {
+        canvasComponentRef.current.saveCanvas();
+        captureMessage("Save canvas action triggered", "save-canvas", {
+          tags: { component: "CanvasApp", action: "save" }
+        });
+      } else {
+        // Fallback to basic JSON serialization
+        if (canvasComponentRef.current && canvasComponentRef.current.getCanvas) {
+          const canvas = canvasComponentRef.current.getCanvas();
+          if (canvas) {
+            const json = canvas.toJSON();
+            const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'canvas-drawing.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success("Canvas saved to file");
+          }
+        } else {
+          logger.warn("Save function not available on canvas component");
+          toast.info("Save canvas (not implemented yet)");
+        }
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas", { error: errorMsg });
@@ -200,13 +227,15 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
     logger.info("Delete selected objects requested");
     
     try {
-      console.log("Delete selected objects");
-      toast.info("Objects deleted");
-      captureMessage("Delete objects action triggered", "delete-objects", {
-        level: "info",
-        tags: { component: "CanvasApp", action: "delete" }
-      });
-      // Will implement actual delete functionality later
+      if (canvasComponentRef.current && canvasComponentRef.current.deleteSelectedObjects) {
+        canvasComponentRef.current.deleteSelectedObjects();
+        captureMessage("Delete objects action triggered", "delete-objects", {
+          tags: { component: "CanvasApp", action: "delete" }
+        });
+      } else {
+        logger.warn("Delete function not available on canvas component");
+        toast.info("Delete selected objects (not implemented yet)");
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to delete objects", { error: errorMsg });
@@ -225,7 +254,6 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
       setLineThickness(thickness);
       toast.info(`Line thickness set to ${thickness}`);
       captureMessage("Line thickness changed", "thickness-change", {
-        level: "info",
         tags: { component: "CanvasApp", action: "thicknessChange" },
         extra: { previousThickness: lineThickness, newThickness: thickness }
       });
@@ -253,7 +281,6 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
       setLineColor(color);
       toast.info(`Line color set to ${color}`);
       captureMessage("Line color changed", "color-change", {
-        level: "info",
         tags: { component: "CanvasApp", action: "colorChange" },
         extra: { previousColor: lineColor, newColor: color }
       });
@@ -268,6 +295,19 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
         extra: { previousColor: lineColor, newColor: color }
       });
       toast.error(`Failed to set line color: ${errorMsg}`);
+    }
+  };
+  
+  // Expose canvas operations to parent component
+  const setCanvasRef = (ref: any) => {
+    canvasComponentRef.current = ref;
+    
+    // Update undo/redo state based on canvas state
+    if (ref && ref.canUndo !== undefined) {
+      setCanUndo(ref.canUndo);
+    }
+    if (ref && ref.canRedo !== undefined) {
+      setCanRedo(ref.canRedo);
     }
   };
   
@@ -295,6 +335,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({ setCanvas }) => {
           <ConnectedDrawingCanvas 
             width={window.innerWidth - 48}
             height={window.innerHeight - 180} // Adjusted for toolbar height
+            ref={setCanvasRef}
           />
         </div>
       </div>
