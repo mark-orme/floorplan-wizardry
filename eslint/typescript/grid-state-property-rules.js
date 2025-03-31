@@ -4,8 +4,7 @@
  * Prevents errors from using incorrect properties on GridCreationState
  * @module eslint/typescript/grid-state-property-rules
  */
-export const gridStatePropertyRules = {
-  files: ["**/*.{ts,tsx}"],
+module.exports = {
   rules: {
     // Prevent using incorrect properties on GridCreationState
     "no-restricted-syntax": [
@@ -25,6 +24,16 @@ export const gridStatePropertyRules = {
       {
         "selector": "MemberExpression[object.name='gridState'][property.name='created']",
         "message": "The 'created' property does not exist on GridCreationState. Use 'isCreated' instead."
+      },
+      {
+        // New rule: Prevent direct assignment to GridCreationState without proper type checking
+        "selector": "AssignmentExpression[left.object.name=/gridState|validState|repairedState/][right.type!='Identifier'][right.type!='MemberExpression']",
+        "message": "Use proper type assertions when assigning values to GridCreationState properties."
+      },
+      {
+        // Catch cases where a property is accessed that might not exist
+        "selector": "MemberExpression[object.name=/gridState|validState|repairedState/][property.type='Identifier'][parent.type!='IfStatement'][parent.parent.type!='IfStatement']",
+        "message": "Always check if a property exists on GridCreationState before accessing it to avoid type errors."
       }
     ],
     
