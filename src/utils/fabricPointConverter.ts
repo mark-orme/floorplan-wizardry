@@ -3,7 +3,7 @@
  * Utility functions for converting between fabric points and app points
  * @module utils/fabricPointConverter
  */
-import { Point } from "fabric/fabric-impl";
+import { Point as FabricPoint } from "fabric";
 import type { Point as AppPoint } from "@/types/core/Point";
 
 /**
@@ -11,12 +11,19 @@ import type { Point as AppPoint } from "@/types/core/Point";
  * @param fabricPoint - Fabric point
  * @returns App point
  */
-export const toAppPoint = (fabricPoint: Point): AppPoint => {
+export const toAppPoint = (fabricPoint: FabricPoint): AppPoint => {
   return {
     x: fabricPoint.x,
     y: fabricPoint.y
   };
 };
+
+/**
+ * Alias for toAppPoint for backward compatibility
+ * @param fabricPoint - Fabric point
+ * @returns App point
+ */
+export const fromFabricPoint = toAppPoint;
 
 /**
  * Get a point from a mouse event
@@ -53,6 +60,16 @@ export const isAppPoint = (value: any): value is AppPoint => {
  * @param appPoint - App point
  * @returns Fabric point
  */
-export const toFabricPoint = (appPoint: AppPoint): Point => {
-  return new Point(appPoint.x, appPoint.y);
+export const toFabricPoint = (appPoint: AppPoint): FabricPoint => {
+  return new FabricPoint(appPoint.x, appPoint.y);
+};
+
+/**
+ * Create a new fabric point
+ * @param x - X coordinate
+ * @param y - Y coordinate
+ * @returns Fabric point
+ */
+export const createFabricPoint = (x: number, y: number): FabricPoint => {
+  return new FabricPoint(x, y);
 };

@@ -43,10 +43,15 @@ describe('fabricPointConverter', () => {
       clientY: 60
     } as MouseEvent;
     
-    const point = getPointFromEvent(mouseEvent);
+    const mockCanvas = {
+      getPointer: jest.fn().mockReturnValue({ x: 50, y: 60 })
+    };
+    
+    const point = getPointFromEvent(mouseEvent, mockCanvas);
     
     expect(point.x).toBe(50);
     expect(point.y).toBe(60);
+    expect(mockCanvas.getPointer).toHaveBeenCalledWith(mouseEvent);
   });
   
   it('should validate if object is a point', () => {
