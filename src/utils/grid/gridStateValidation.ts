@@ -68,7 +68,9 @@ export const repairGridState = (state: Record<string, any>): Partial<GridCreatio
   // Copy all valid properties
   Object.keys(state).forEach(key => {
     if (key in DEFAULT_GRID_CREATION_STATE) {
-      (repairedState as any)[key] = state[key];
+      // Use proper type-safe way to copy properties
+      const typedKey = key as keyof GridCreationState;
+      repairedState[typedKey] = state[key];
     } else if (key in GRID_STATE_PROPERTY_MAP) {
       // Map incorrect properties to correct ones
       const correctKey = GRID_STATE_PROPERTY_MAP[key];
