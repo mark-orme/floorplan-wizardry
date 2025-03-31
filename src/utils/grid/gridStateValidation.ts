@@ -1,4 +1,3 @@
-
 /**
  * Grid state validation utilities
  * Provides functions to validate and sanitize grid state objects
@@ -30,7 +29,8 @@ export function validateGridState(state: unknown): GridCreationState {
   
   booleanProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'boolean') {
-      validState[prop] = stateRecord[prop] as boolean;
+      // Type-safe assignment using any as an intermediate cast
+      (validState as any)[prop] = stateRecord[prop] as boolean;
     }
   });
   
@@ -39,7 +39,8 @@ export function validateGridState(state: unknown): GridCreationState {
   
   numberProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'number') {
-      validState[prop] = stateRecord[prop] as number;
+      // Type-safe assignment using any as an intermediate cast
+      (validState as any)[prop] = stateRecord[prop] as number;
     }
   });
   
@@ -48,7 +49,8 @@ export function validateGridState(state: unknown): GridCreationState {
   
   stringProps.forEach(prop => {
     if (prop in stateRecord && typeof stateRecord[prop] === 'string') {
-      validState[prop] = stateRecord[prop] as string;
+      // Type-safe assignment using any as an intermediate cast
+      (validState as any)[prop] = stateRecord[prop] as string;
     }
   });
   
@@ -73,8 +75,8 @@ export function validateGridState(state: unknown): GridCreationState {
     }
     
     // Make sure to use only properties that exist on GridCreationLock
-    if ('lockExpiresAt' in lockRecord && typeof lockRecord.lockExpiresAt === 'number') {
-      validState.creationLock.lockExpiresAt = lockRecord.lockExpiresAt;
+    if ('maxLockTime' in lockRecord && typeof lockRecord.maxLockTime === 'number') {
+      validState.creationLock.maxLockTime = lockRecord.maxLockTime;
     }
   }
   

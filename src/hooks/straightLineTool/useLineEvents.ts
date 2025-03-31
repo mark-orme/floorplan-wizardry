@@ -5,7 +5,7 @@ import { Point } from '@/types/core/Geometry';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
 import { FabricEventTypes } from '@/types/fabric-events';
 import logger from '@/utils/logger';
-import { useSnapToGrid } from '@/hooks/useSnapToGrid';
+import { useSnapToGrid, UseSnapToGridProps } from '@/hooks/useSnapToGrid';
 
 interface LineState {
   isDrawing: boolean;
@@ -43,8 +43,10 @@ export const useLineEvents = (
   
   const eventHandlersAttachedRef = useRef(false);
   
-  // Use the grid snapping functionality
-  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid(fabricCanvasRef);
+  // Use the grid snapping functionality with correct props
+  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid({
+    fabricCanvasRef: fabricCanvasRef
+  });
   
   const handleMouseDown = useCallback((opt: any) => {
     logger.info("Mouse down in straight line tool");
