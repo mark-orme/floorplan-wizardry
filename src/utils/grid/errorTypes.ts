@@ -1,60 +1,63 @@
 
 /**
- * Grid error types and categorization
- * Defines error severity levels and categorization functions
+ * Grid error types and severity levels
+ * Defines error categories and messages for grid functionality
  * @module grid/errorTypes
  */
-import { toast } from "sonner";
 
 /**
- * Toast messages for grid errors
- */
-export const GRID_ERROR_MESSAGES = {
-  GRID_CREATION_FAILED: "Grid creation failed. Please try refreshing the page.",
-  GRID_CREATION_PARTIAL: "Grid creation was only partially successful.",
-  GRID_MISSING: "Grid is missing or incomplete. Try refreshing the page.",
-  GRID_RECOVERY_FAILED: "Unable to recover grid. Please refresh the page."
-};
-
-/**
- * Error severities for categorization
+ * Error severity levels for grid operations
  */
 export enum GridErrorSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  CRITICAL = "critical"
 }
 
 /**
- * Categorize grid error by severity
+ * Standard error messages for grid operations
+ */
+export const GRID_ERROR_MESSAGES = {
+  GRID_CREATION_FAILED: "Failed to create grid. The application will attempt to recover.",
+  CANVAS_INITIALIZATION_FAILED: "Canvas initialization failed. Please reload the page.",
+  GRID_RENDERING_ERROR: "Error rendering grid. Some elements may not display correctly.",
+  GRID_PERFORMANCE_ISSUE: "Grid performance issue detected. Reducing detail level.",
+  GRID_RECOVERY_FAILED: "Grid recovery failed. Please reload the application."
+};
+
+/**
+ * Categorize grid error by severity based on message content and error type
+ * 
  * @param {Error} error - The error to categorize
- * @returns {GridErrorSeverity} Error severity
+ * @returns {GridErrorSeverity} The error severity level
  */
 export const categorizeGridError = (error: Error): GridErrorSeverity => {
   const message = error.message.toLowerCase();
+  const name = error.name.toLowerCase();
   
-  // Critical errors that indicate severe problems
-  if (message.includes('disposed') || 
-      message.includes('destroyed') || 
-      message.includes('removed')) {
+  // Critical errors that affect the entire application
+  if (name.includes("fatal") || 
+      message.includes("cannot read property") || 
+      message.includes("is not a function") ||
+      message.includes("canvas disposed")) {
     return GridErrorSeverity.CRITICAL;
   }
   
-  // High severity errors that likely require user intervention
-  if (message.includes('canvas') || 
-      message.includes('context') || 
-      message.includes('rendering')) {
+  // High severity errors that affect grid functionality
+  if (message.includes("render") || 
+      message.includes("canvas") || 
+      message.includes("initialization")) {
     return GridErrorSeverity.HIGH;
   }
   
-  // Medium severity errors that might be recoverable
-  if (message.includes('object') || 
-      message.includes('add') || 
-      message.includes('remove')) {
+  // Medium severity errors that affect grid appearance
+  if (message.includes("grid") || 
+      message.includes("object") || 
+      message.includes("line")) {
     return GridErrorSeverity.MEDIUM;
   }
   
-  // Default to low severity
+  // Low severity errors that don't significantly impact functionality
   return GridErrorSeverity.LOW;
 };

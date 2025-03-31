@@ -1,51 +1,59 @@
 
 /**
- * Sentry utility type definitions
+ * Sentry types module
+ * Defines types for Sentry error reporting
  * @module utils/sentry/types
  */
-import * as Sentry from '@sentry/react';
 
 /**
- * Error capture options
+ * Sentry error capture options
  */
 export interface ErrorCaptureOptions {
-  /** Error severity level */
-  level?: "error" | "warning" | "info";
-  /** Additional tags for categorization */
+  /** Error level */
+  level?: 'error' | 'warning' | 'info';
+  /** Tags to attach to error */
   tags?: Record<string, string>;
-  /** Additional context data */
+  /** Extra data to attach to error */
   extra?: Record<string, any>;
   /** User information */
   user?: {
+    /** User ID */
     id?: string;
+    /** User email */
     email?: string;
+    /** Username */
     username?: string;
+    /** IP address */
     ip_address?: string;
+    /** User metadata */
+    [key: string]: any;
   };
-  /** Whether to show the report dialog to the user */
+  /** Whether to show the report dialog */
   showReportDialog?: boolean;
-  /** Additional fingerprinting information */
-  fingerprint?: string[];
 }
 
 /**
- * Severity level mapping
- * Maps our level strings to Sentry severity levels
+ * Sentry performance transaction options
  */
-export const severityMap: Record<string, Sentry.SeverityLevel> = {
-  'error': 'error',
-  'warning': 'warning',
-  'info': 'info',
-  'debug': 'debug',
-  'log': 'log',
-  'fatal': 'fatal'
-};
+export interface TransactionOptions {
+  /** Tags to attach to transaction */
+  tags?: Record<string, string>;
+  /** Transaction data */
+  data?: Record<string, any>;
+}
 
 /**
- * Get appropriate Sentry severity level
- * @param {string} level - The severity level string
- * @returns {Sentry.SeverityLevel} Proper Sentry severity level
+ * Sentry performance transaction result
  */
-export function getSentryLevel(level: string): Sentry.SeverityLevel {
-  return severityMap[level] || 'info';
+export interface TransactionResult {
+  /** Finish the transaction */
+  finish: (status?: string | number) => void;
+  /** Set transaction name */
+  setName: (name: string) => void;
+  /** Set transaction status */
+  setStatus: (status: string) => void;
+  /** Set tag on transaction */
+  setTag: (key: string, value: string) => void;
+  /** Set data on transaction */
+  setData: (key: string, value: any) => void;
 }

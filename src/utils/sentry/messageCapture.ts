@@ -1,17 +1,17 @@
 
 /**
- * Sentry message reporting functionality
+ * Sentry message capture functionality
  * @module utils/sentry/messageCapture
  */
 import * as Sentry from '@sentry/react';
 import logger from '../logger';
 import { isSentryInitialized } from './core';
-import { ErrorCaptureOptions, getSentryLevel } from './types';
+import { ErrorCaptureOptions } from './types';
 
 /**
- * Report a message to Sentry (for non-error issues)
+ * Capture a message for Sentry reporting
  * 
- * @param {string} message - Message to report
+ * @param {string} message - The message to capture
  * @param {string} messageId - Unique identifier for the message
  * @param {ErrorCaptureOptions} options - Additional options for the message
  */
@@ -20,11 +20,25 @@ export function captureMessage(
   messageId: string,
   options: ErrorCaptureOptions = {}
 ): void {
-  // Set default level
-  const level = options.level || 'info';
+  // Get the current environment
+  const isProd = process.env.NODE_ENV === 'production';
+  const isTest = process.env.NODE_ENV === 'test';
   
-  // Log the message
-  logger.info(`Capturing message: [${messageId}] ${message}`, { level });
+  // Add message ID to the message
+  const fullMessage = `[${messageId}] ${message}`;
+  
+  // Log the message to console
+  console.log(fullMessage);
+  
+  // Skip further Sentry reporting in test environment
+  if (isTest) return;
+  
+  // Log using application logger
+  logger.info(`Capturing message: ${fullMessage}`, {
+    messageId,
+    level: options.level || 'info',
+    tags: options.tags
+  });
   
   // Report to Sentry if available
   try {
@@ -41,16 +55,23 @@ export function captureMessage(
         Sentry.setContext('additional', options.extra);
       }
       
-      // Use the map to get the proper Sentry severity level
-      const sentryLevel = getSentryLevel(level);
+      // Set user information if provided
+      if (options.user) {
+        Sentry.setUser(options.user);
+      }
       
-      // Now pass the properly typed severity level to Sentry
-      Sentry.captureMessage(`[${messageId}] ${message}`, sentryLevel);
+      // Capture the message with appropriate level
+      const level = options.level || 'info';
+      const eventId = Sentry.captureMessage(fullMessage, level as Sentry.SeverityLevel);
+      
+      // Log the Sentry event ID
+      logger.debug(`Sentry event captured: ${eventId}`, { messageId });
     } else {
-      // Mock Sentry capture
-      console.info(`[Sentry Mock] Captured ${level} message [${messageId}]:`, message);
+      // Sentry not initialized, log as debug
+      logger.debug(`Sentry not initialized. Would have reported: ${fullMessage}`);
     }
   } catch (sentryError) {
+    // Failure in Sentry reporting should not break the application
     console.error('Failed to capture message in Sentry:', sentryError);
   }
 }

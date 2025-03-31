@@ -1,63 +1,130 @@
 
 /**
- * Grid performance tracking
- * Tracks and reports grid creation performance metrics
+ * Grid performance tracking module
+ * Monitors and reports grid creation performance
  * @module grid/performanceTracking
  */
+import { PerformanceStats } from "@/types";
 import logger from "../logger";
-import { captureMessage } from "../sentry";
+
+/** Performance tracking data */
+interface GridPerformanceData {
+  /** Start time in milliseconds */
+  startTime: number;
+  /** End time in milliseconds */
+  endTime: number | null;
+  /** Number of objects created */
+  objectCount: number;
+  /** Stats collected during operation */
+  stats: PerformanceStats;
+  /** Operation name */
+  operation: string;
+}
+
+// Store recent performance data
+const recentPerformance: GridPerformanceData[] = [];
+const MAX_STORED_OPERATIONS = 10;
 
 /**
- * Track grid creation performance metrics
+ * Start tracking grid creation performance
  * 
- * @param {boolean} success - Whether grid creation was successful
- * @param {number} duration - Duration in milliseconds
- * @param {Object} dimensions - Canvas dimensions
- * @param {number} objectCount - Number of grid objects created
+ * @param {string} operation - Name of the operation
+ * @returns {GridPerformanceData} Performance data object
  */
-export const trackGridCreationPerformance = (
-  success: boolean, 
-  duration: number, 
-  dimensions: { width: number; height: number },
+export const startGridPerformanceTracking = (operation: string): GridPerformanceData => {
+  const performanceData: GridPerformanceData = {
+    startTime: performance.now(),
+    endTime: null,
+    objectCount: 0,
+    stats: {
+      fps: 0,
+      droppedFrames: 0,
+      frameTime: 0,
+      maxFrameTime: 0,
+      longFrames: 0
+    },
+    operation
+  };
+  
+  return performanceData;
+};
+
+/**
+ * End performance tracking and calculate metrics
+ * 
+ * @param {GridPerformanceData} data - Performance data
+ * @param {number} objectCount - Number of objects created
+ * @returns {PerformanceStats} Performance statistics
+ */
+export const endGridPerformanceTracking = (
+  data: GridPerformanceData, 
   objectCount: number
-): void => {
+): PerformanceStats => {
+  const endTime = performance.now();
+  const duration = endTime - data.startTime;
+  
+  // Update the performance data
+  data.endTime = endTime;
+  data.objectCount = objectCount;
+  
+  // Calculate performance metrics
+  const stats: PerformanceStats = {
+    ...data.stats,
+    objectsPerSecond: objectCount / (duration / 1000),
+    creationTime: duration,
+    objectCount: objectCount,
+    averageTimePerObject: duration / (objectCount || 1)
+  };
+  
+  // Update the data stats
+  data.stats = stats;
+  
+  // Add to recent performance data
+  recentPerformance.unshift(data);
+  if (recentPerformance.length > MAX_STORED_OPERATIONS) {
+    recentPerformance.pop();
+  }
+  
   // Log performance data
-  logger.debug("Grid creation performance:", {
-    success,
-    duration,
-    dimensions,
+  logger.info(`Grid performance: ${data.operation}`, {
+    duration: `${duration.toFixed(2)}ms`,
     objectCount,
-    objectsPerSecond: Math.round(objectCount / (duration / 1000))
+    stats
   });
   
-  // Report performance data to Sentry
-  captureMessage(
-    `Grid creation ${success ? "succeeded" : "failed"} in ${duration.toFixed(1)}ms`,
-    "grid-creation-performance",
-    {
-      level: "info",
-      tags: {
-        component: "grid",
-        operation: "creation-performance",
-        success: success.toString()
-      },
-      extra: {
-        duration,
-        dimensions,
-        objectCount,
-        timestamp: new Date().toISOString(),
-        objectsPerSecond: Math.round(objectCount / (duration / 1000)),
-        performanceInfo: {
-          // Check if memory API is available before accessing it
-          // The Performance.memory is a non-standard API only available in some browsers
-          memory: typeof performance !== 'undefined' && 
-                 'memory' in performance ? {
-            jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit,
-            totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
-            usedJSHeapSize: (performance as any).memory.usedJSHeapSize
-          } : 'Not available'
-        }
-      }
-    }
-  );
+  return stats;
+};
+
+/**
+ * Track grid creation performance
+ * 
+ * @param {Function} createFn - Grid creation function
+ * @param {string} operation - Operation name
+ * @returns {Array} Result of the creation function and performance stats
+ */
+export const trackGridCreationPerformance = <T>(
+  createFn: () => T,
+  operation: string = "grid-creation"
+): [T, PerformanceStats] => {
+  // Start tracking
+  const perfData = startGridPerformanceTracking(operation);
+  
+  // Execute the creation function
+  const result = createFn();
+  
+  // Get object count (if result is an array)
+  const objectCount = Array.isArray(result) ? result.length : 0;
+  
+  // End tracking and get stats
+  const stats = endGridPerformanceTracking(perfData, objectCount);
+  
+  return [result, stats];
+};
+
+/**
+ * Get recent performance data
+ * @returns {GridPerformanceData[]} Recent performance data
+ */
+export const getRecentPerformanceData = (): GridPerformanceData[] => {
+  return [...recentPerformance];
 };

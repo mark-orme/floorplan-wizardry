@@ -1,90 +1,94 @@
 
 /**
- * Grid recovery planning
- * Provides recovery strategies for grid failures
+ * Grid recovery plans module
+ * Provides recovery strategies for grid creation failures
  * @module grid/recoveryPlans
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas } from "fabric";
 import logger from "../logger";
-import { captureMessage } from "../sentry";
 
 /**
- * Create a recovery plan for grid issues
- * Provides multi-step recovery strategy for grid failures
- * 
- * @param {Canvas} canvas - The canvas instance
- * @param {FabricObject[]} gridObjects - The grid objects
- * @param {string} failureContext - Context in which the failure occurred
- * @returns {Object} Recovery plan with steps to fix the issues
+ * Recovery plan for grid creation
  */
-export const createGridRecoveryPlan = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[],
-  failureContext: string
-): Record<string, any> => {
-  // Create a recovery plan based on identified issues
-  const plan = {
-    timestamp: new Date().toISOString(),
-    context: failureContext,
-    needsCanvasReset: false,
-    needsGridRecreation: false,
-    needsFullRefresh: false,
-    suggestedActions: [] as string[],
-    diagnostic: {}
+export interface GridRecoveryPlan {
+  /** Plan description */
+  description: string;
+  /** Whether to clear the canvas */
+  clearCanvas: boolean;
+  /** Whether to resize the canvas */
+  resizeCanvas: boolean;
+  /** Whether to retry with simplified grid */
+  useSimplifiedGrid: boolean;
+  /** Whether to disable background grid */
+  disableBackgroundGrid: boolean;
+  /** Maximum number of retry attempts */
+  maxRetries: number;
+}
+
+/**
+ * Create a grid recovery plan based on error and canvas state
+ * 
+ * @param {Error} error - The error that occurred
+ * @param {FabricCanvas | null} canvas - Canvas reference
+ * @returns {GridRecoveryPlan} Recovery plan
+ */
+export const createGridRecoveryPlan = (error: Error, canvas: FabricCanvas | null): GridRecoveryPlan => {
+  const errorMessage = error.message.toLowerCase();
+  const errorName = error.name;
+  const canvasValid = canvas && canvas.width && canvas.height;
+  const hasObjects = canvas && canvas.getObjects().length > 0;
+  
+  // Log recovery attempt
+  logger.info("Creating grid recovery plan", {
+    errorName,
+    errorMessage: error.message,
+    canvasValid,
+    hasObjects: hasObjects ? canvas?.getObjects().length : 0
+  });
+  
+  // Default recovery plan
+  const defaultPlan: GridRecoveryPlan = {
+    description: "Standard recovery",
+    clearCanvas: false,
+    resizeCanvas: false,
+    useSimplifiedGrid: false,
+    disableBackgroundGrid: false,
+    maxRetries: 3
   };
   
-  // Check for critical issues
-  if (!canvas || !canvas.width || !canvas.height) {
-    plan.needsFullRefresh = true;
-    plan.suggestedActions.push("Refresh the page to reinitialize canvas");
-    plan.diagnostic = { canvas: "invalid" };
-    return plan;
+  // Canvas initialization errors
+  if (!canvasValid || errorMessage.includes("canvas")) {
+    return {
+      ...defaultPlan,
+      description: "Canvas initialization recovery",
+      clearCanvas: true,
+      resizeCanvas: true,
+      maxRetries: 2
+    };
   }
   
-  // Check grid objects
-  const gridObjectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj)).length;
-  plan.diagnostic = {
-    canvasDimensions: { width: canvas.width, height: canvas.height },
-    totalGridObjects: gridObjects.length,
-    gridObjectsOnCanvas,
-    percentOnCanvas: gridObjects.length ? Math.round((gridObjectsOnCanvas / gridObjects.length) * 100) : 0
-  };
-  
-  // Grid is completely missing
-  if (gridObjects.length === 0) {
-    plan.needsGridRecreation = true;
-    plan.suggestedActions.push("Recreate entire grid");
-  }
-  // Grid is partially missing
-  else if (gridObjectsOnCanvas < gridObjects.length) {
-    if (gridObjectsOnCanvas === 0) {
-      plan.needsGridRecreation = true;
-      plan.suggestedActions.push("Recreate entire grid - all objects missing from canvas");
-    } else {
-      plan.needsGridRecreation = true;
-      plan.suggestedActions.push(`Recreate grid - only ${gridObjectsOnCanvas}/${gridObjects.length} objects on canvas`);
-    }
+  // Rendering or performance errors
+  if (errorMessage.includes("render") || errorMessage.includes("maximum")) {
+    return {
+      ...defaultPlan,
+      description: "Rendering performance recovery",
+      useSimplifiedGrid: true,
+      disableBackgroundGrid: true,
+      maxRetries: 5
+    };
   }
   
-  // Log the recovery plan to application log
-  logger.info(`Grid recovery plan for ${failureContext}:`, plan);
+  // Object-related errors
+  if (errorMessage.includes("object") || errorMessage.includes("element")) {
+    return {
+      ...defaultPlan,
+      description: "Object recovery",
+      clearCanvas: hasObjects || false,
+      useSimplifiedGrid: true,
+      maxRetries: 3
+    };
+  }
   
-  // Report the recovery plan to Sentry
-  captureMessage(
-    `Grid recovery plan for ${failureContext}`,
-    "grid-recovery-plan",
-    {
-      level: "info",
-      tags: {
-        component: "grid",
-        operation: "recovery",
-        context: failureContext,
-        needs_recreation: plan.needsGridRecreation.toString(),
-        needs_refresh: plan.needsFullRefresh.toString()
-      },
-      extra: plan
-    }
-  );
-  
-  return plan;
+  // Return default plan for unknown errors
+  return defaultPlan;
 };

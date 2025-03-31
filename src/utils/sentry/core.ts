@@ -1,18 +1,25 @@
 
 /**
- * Core Sentry utility functions
+ * Sentry core functionality
  * @module utils/sentry/core
  */
 import * as Sentry from '@sentry/react';
 
+// Track Sentry initialization state
+let sentryInitialized = false;
+
 /**
- * Check if Sentry is properly initialized
+ * Set Sentry initialization state
+ * @param {boolean} state - Whether Sentry is initialized
+ */
+export function setSentryInitialized(state: boolean): void {
+  sentryInitialized = state;
+}
+
+/**
+ * Check if Sentry is initialized
  * @returns {boolean} Whether Sentry is initialized
  */
-export const isSentryInitialized = (): boolean => {
-  try {
-    return Sentry.getCurrentHub().getClient() !== undefined;
-  } catch (e) {
-    return false;
-  }
-};
+export function isSentryInitialized(): boolean {
+  return sentryInitialized;
+}
