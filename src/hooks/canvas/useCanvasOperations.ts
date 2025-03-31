@@ -1,6 +1,6 @@
 
 import { useCallback, useRef } from "react";
-import { Canvas as FabricCanvas, Line, Point } from "fabric";
+import { Canvas as FabricCanvas, Line, Point, ActiveSelection } from "fabric";
 import { toast } from "sonner";
 import { DrawingMode } from "@/constants/drawingModes";
 import { captureMessage, captureError } from "@/utils/sentry";
@@ -32,7 +32,7 @@ export const useCanvasOperations = ({
       
       if (activeObject.type === 'activeSelection') {
         // Delete multiple selected objects
-        const activeSelection = activeObject as fabric.ActiveSelection;
+        const activeSelection = activeObject as ActiveSelection;
         const objects = [...activeSelection.getObjects()];
         
         activeSelection.forEachObject((obj: fabric.Object) => {
