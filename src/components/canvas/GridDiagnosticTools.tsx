@@ -9,11 +9,6 @@ import {
   applyGridFixes,
   emergencyGridFix
 } from "@/utils/grid/gridDiagnostics";
-import {
-  testGridCreationCapabilities,
-  analyzeGridRendering,
-  showGridTestPattern
-} from "@/utils/grid/gridTester";
 import logger from "@/utils/logger";
 
 interface GridDiagnosticToolsProps {
@@ -150,9 +145,9 @@ export const GridDiagnosticTools: React.FC<GridDiagnosticToolsProps> = ({
             <div className="text-red-500">{results.error}</div>
           ) : (
             <div className="space-y-1">
-              <div>Canvas: {results.hasCanvas ? '✅' : '❌'}</div>
+              <div>Canvas: {results.canvasDimensions?.width ? '✅' : '❌'}</div>
               <div>Grid exists: {results.gridExists ? '✅' : '❌'}</div>
-              <div>Grid count: {results.gridCount}</div>
+              <div>Grid count: {results.gridObjectCount}</div>
               {results.issues && results.issues.length > 0 && (
                 <div className="text-red-500">
                   Issues: {results.issues.join(', ')}

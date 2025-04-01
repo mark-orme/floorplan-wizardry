@@ -67,6 +67,58 @@ module.exports = {
         }
       ],
       "newlines-between": "always"
-    }]
+    }],
+    
+    // NEW RULES TO PREVENT SIMILAR ISSUES:
+    
+    // Ensure that all function calls have the correct number of arguments
+    "@typescript-eslint/no-confusing-void-expression": "error",
+    
+    // Ensure exported types use 'export type' with isolatedModules
+    "@typescript-eslint/consistent-type-exports": ["error", { 
+      "fixMixedExportsWithInlineTypeSpecifier": true 
+    }],
+    
+    // Prevent missing imports or exports
+    "import/named": "error",
+    "import/no-unresolved": "error",
+    "import/default": "error",
+    "import/namespace": "error",
+    
+    // Ensure components are defined before they are used
+    "react/jsx-no-undef": "error",
+    
+    // Ensure proper promise usage
+    "@typescript-eslint/prefer-promise-reject-errors": "error",
+    
+    // Enforce explicit parameter types in functions
+    "@typescript-eslint/explicit-module-boundary-types": ["error", {
+      "allowArgumentsExplicitlyTypedAsAny": false,
+      "allowDirectConstAssertionInArrowFunctions": true,
+      "allowHigherOrderFunctions": true,
+      "allowTypedFunctionExpressions": true
+    }],
+    
+    // Enforce consistent function type assertions
+    "@typescript-eslint/consistent-type-assertions": ["error", {
+      "assertionStyle": "as",
+      "objectLiteralTypeAssertions": "allow-as-parameter"
+    }],
+    
+    // Prevent potential null reference errors
+    "@typescript-eslint/no-non-null-assertion": "error",
+    
+    // Enforce consistent export naming
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "exportedFunction",
+        "format": ["camelCase", "PascalCase"]
+      },
+      {
+        "selector": "exportedVariable",
+        "format": ["camelCase", "PascalCase", "UPPER_CASE"]
+      }
+    ]
   }
 };

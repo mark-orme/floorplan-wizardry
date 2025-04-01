@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { 
   runGridDiagnostics, 
-  applyGridFixes, 
+  applyGridFixes,
   emergencyGridFix 
 } from "@/utils/grid/gridDiagnostics";
 import { dumpGridState } from "@/utils/grid/gridDebugUtils";

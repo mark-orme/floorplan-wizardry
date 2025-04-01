@@ -1,6 +1,6 @@
 
 /**
- * Grid debugging utilities
+ * Grid debug utilities
  * @module utils/grid/gridDebugUtils
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
@@ -8,60 +8,95 @@ import { createGrid } from './gridRenderers';
 import logger from '@/utils/logger';
 
 /**
- * Dumps the current grid state to the console for debugging
+ * Dump grid state to console for debugging
  * @param canvas - Fabric canvas
- * @returns Object containing grid state information
  */
-export function dumpGridState(canvas: FabricCanvas): Record<string, any> {
+export function dumpGridState(canvas: FabricCanvas): void {
   if (!canvas) {
     logger.warn('Cannot dump grid state: Canvas is null');
-    return { error: 'Canvas is null' };
+    return;
   }
-
-  const allObjects = canvas.getObjects();
-  const gridObjects = allObjects.filter(obj => (obj as any).objectType === 'grid');
   
-  const state = {
-    canvasWidth: canvas.width,
-    canvasHeight: canvas.height,
-    totalObjects: allObjects.length,
-    gridObjectCount: gridObjects.length,
-    gridTypes: {} as Record<string, number>
-  };
-  
-  // Count different grid types
-  gridObjects.forEach(obj => {
-    const type = (obj as any).gridType || 'unknown';
-    state.gridTypes[type] = (state.gridTypes[type] || 0) + 1;
-  });
-  
-  logger.debug('Grid state:', state);
-  return state;
+  try {
+    const gridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid'
+    );
+    
+    const gridState = {
+      canvas: {
+        width: canvas.width,
+        height: canvas.height,
+        totalObjects: canvas.getObjects().length
+      },
+      grid: {
+        objectCount: gridObjects.length,
+        visibleCount: gridObjects.filter(obj => obj.visible).length,
+        topLevelCount: gridObjects.filter(obj => obj.visible && obj.opacity === 1).length
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    logger.info('Grid state:', gridState);
+    console.log('Grid state dump:', gridState);
+    
+    // Additional detailed dump for grid objects
+    if (gridObjects.length > 0) {
+      const firstGridObj = gridObjects[0];
+      logger.debug('Sample grid object:', {
+        visible: firstGridObj.visible,
+        selectable: firstGridObj.selectable,
+        evented: firstGridObj.evented,
+        position: {
+          left: firstGridObj.left,
+          top: firstGridObj.top
+        }
+      });
+    }
+  } catch (error) {
+    logger.error('Error dumping grid state:', error);
+  }
 }
 
 /**
- * Force creates a grid regardless of existing grid state
- * This is mostly used for debugging and testing
+ * Force create a grid, bypassing checks
  * @param canvas - Fabric canvas
- * @returns Array of created grid objects
+ * @param skipChecks - Whether to skip validation checks
+ * @returns Created grid objects
  */
-export function forceCreateGrid(canvas: FabricCanvas): FabricObject[] {
+export function forceCreateGrid(
+  canvas: FabricCanvas,
+  skipChecks: boolean = false
+): FabricObject[] {
   if (!canvas) {
-    logger.warn('Cannot force create grid: Canvas is null');
+    logger.error('Cannot force create grid: Canvas is null');
     return [];
   }
   
-  logger.info('Force creating grid');
+  if (!skipChecks) {
+    // Minimal check for canvas dimensions
+    if (!canvas.width || !canvas.height) {
+      logger.warn('Force creating grid on canvas with invalid dimensions');
+    }
+  }
   
-  // Remove all existing grid objects
-  const existingGridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
-  existingGridObjects.forEach(obj => {
-    canvas.remove(obj);
-  });
-  
-  // Create new grid
-  const gridObjects = createGrid(canvas);
-  logger.info(`Created ${gridObjects.length} grid objects`);
-  
-  return gridObjects;
+  try {
+    // Remove any existing grid
+    const existingGridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid'
+    );
+    
+    existingGridObjects.forEach(obj => {
+      canvas.remove(obj);
+    });
+    
+    // Create new grid
+    const gridObjects = createGrid(canvas);
+    
+    logger.info(`Force created grid with ${gridObjects.length} objects`);
+    
+    return gridObjects;
+  } catch (error) {
+    logger.error('Error force creating grid:', error);
+    return [];
+  }
 }
