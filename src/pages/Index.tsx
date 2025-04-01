@@ -31,22 +31,24 @@ const Index = () => {
       duration: 3000,
       id: "floor-plan-welcome"
     });
-    
-    console.log("Index: Component mounted");
   }, []);
   
-  // Ensure grid visibility periodically
+  // Ensure grid visibility less frequently (once every 10 seconds instead of 3)
   useEffect(() => {
     if (!canvas) return;
     
-    console.log("Index: Setting up grid visibility monitor");
+    // Check grid visibility once at initialization
+    const initialCheck = setTimeout(() => {
+      ensureGridVisibility(canvas);
+    }, 2000);
     
-    // Check grid visibility every 3 seconds
+    // Then check less frequently
     const intervalId = setInterval(() => {
       ensureGridVisibility(canvas);
-    }, 3000);
+    }, 10000);
     
     return () => {
+      clearTimeout(initialCheck);
       clearInterval(intervalId);
     };
   }, [canvas]);

@@ -1,4 +1,3 @@
-
 /**
  * Emergency grid utility functions
  * Provides backup grid functionality when main grid fails
@@ -32,7 +31,6 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    // FIX: Use sendObjectToBack instead of sendToBack
     canvas.sendObjectToBack(line);
   }
 
@@ -49,7 +47,6 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    // FIX: Use sendObjectToBack instead of sendToBack
     canvas.sendObjectToBack(line);
   }
 
@@ -66,7 +63,6 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    // FIX: Use sendObjectToBack instead of sendToBack
     canvas.sendObjectToBack(line);
   }
 
@@ -83,7 +79,6 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    // FIX: Use sendObjectToBack instead of sendToBack
     canvas.sendObjectToBack(line);
   }
 

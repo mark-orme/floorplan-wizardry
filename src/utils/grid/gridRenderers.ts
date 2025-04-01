@@ -149,7 +149,6 @@ export function createGrid(
 
   // Move grid objects to the back
   gridObjects.forEach(obj => {
-    // FIX: Use sendObjectToBack instead of sendToBack
     canvas.sendObjectToBack(obj);
   });
 
@@ -211,7 +210,6 @@ export function createBasicEmergencyGrid(
 
   // Move grid objects to the back
   gridObjects.forEach(obj => {
-    // FIX: Use sendObjectToBack instead of sendToBack
     canvas.sendObjectToBack(obj);
   });
 

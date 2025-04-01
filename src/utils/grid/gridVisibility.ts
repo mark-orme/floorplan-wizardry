@@ -18,7 +18,6 @@ export function ensureGridVisibility(
 ): boolean {
   if (!canvas) {
     logger.warn('Cannot ensure grid visibility: Canvas is null');
-    console.warn('Cannot ensure grid visibility: Canvas is null');
     return false;
   }
   
@@ -30,11 +29,8 @@ export function ensureGridVisibility(
     
     if (gridItems.length === 0) {
       logger.warn('No grid objects found to ensure visibility');
-      console.warn('No grid objects found to ensure visibility');
       return false;
     }
-    
-    console.log(`Ensuring visibility for ${gridItems.length} grid objects`);
     
     // Check if any grid object is not visible
     let visibilityFixed = false;
@@ -50,7 +46,6 @@ export function ensureGridVisibility(
       // Always ensure grid objects are at the back
       // but only count as a fix if the object was not already at the back
       const originalIndex = canvas.getObjects().indexOf(obj);
-      // Fix: Use sendObjectToBack instead of sendToBack
       canvas.sendObjectToBack(obj);
       const newIndex = canvas.getObjects().indexOf(obj);
       
@@ -63,13 +58,11 @@ export function ensureGridVisibility(
     if (visibilityFixed || backOrderFixed) {
       canvas.requestRenderAll();
       logger.info(`Fixed visibility for ${gridItems.length} grid objects`);
-      console.log(`Fixed visibility for ${gridItems.length} grid objects (visibility: ${visibilityFixed}, order: ${backOrderFixed})`);
     }
     
     return visibilityFixed || backOrderFixed;
   } catch (error) {
     logger.error('Error ensuring grid visibility:', error);
-    console.error('Error ensuring grid visibility:', error);
     return false;
   }
 }
@@ -88,7 +81,6 @@ export function setGridVisibility(
 ): boolean {
   if (!canvas) {
     logger.warn('Cannot set grid visibility: Canvas is null');
-    console.warn('Cannot set grid visibility: Canvas is null');
     return false;
   }
   
@@ -100,11 +92,8 @@ export function setGridVisibility(
     
     if (gridItems.length === 0) {
       logger.warn('No grid objects found to set visibility');
-      console.warn('No grid objects found to set visibility');
       return false;
     }
-    
-    console.log(`Setting visibility to ${visible} for ${gridItems.length} grid objects`);
     
     // Set visibility for all grid objects
     gridItems.forEach(obj => {
@@ -117,7 +106,6 @@ export function setGridVisibility(
     return true;
   } catch (error) {
     logger.error('Error setting grid visibility:', error);
-    console.error('Error setting grid visibility:', error);
     return false;
   }
 }
