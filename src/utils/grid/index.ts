@@ -27,7 +27,7 @@ export {
 // Export from gridCreationUtils
 export {
   ensureGrid
-} from './gridCreationUtils';
+} from './gridRenderers';
 
 // Export from gridRenderers
 export {
@@ -45,7 +45,6 @@ export {
 
 // Export from gridBasics
 export {
-  createGrid as createBasicGrid,
   clearGrid,
   isCanvasValidForGrid,
   reorderGridObjects

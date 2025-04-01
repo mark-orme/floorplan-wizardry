@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { ensureGrid } from '../grid/gridRenderers';
 import { validateGridState } from '../grid/gridValidation';

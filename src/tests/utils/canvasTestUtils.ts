@@ -49,7 +49,8 @@ export const createMockCanvas = () => {
     isDrawingMode: false,
     width: 800,
     height: 600,
-    selection: true
+    selection: true,
+    sendObjectToBack: vi.fn()
   };
 };
 

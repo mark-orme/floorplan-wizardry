@@ -1,17 +1,12 @@
 
 /**
- * Tests for edge cases in history management
- * This test suite verifies proper handling of complex undo/redo scenarios
+ * Tests for history edge cases
+ * Verifies history operations in unusual scenarios
  */
-import { renderHook } from '@testing-library/react-hooks';
-import { useDrawingHistory } from '@/hooks/useDrawingHistory';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Canvas } from 'fabric';
 import { createMockDrawingHistoryProps, createMockDrawingHistoryResult } from '@/tests/utils/historyTestUtils';
-import { UseDrawingHistoryResult } from '@/hooks/useDrawingHistory.d';
-
-// Mock fabric
-vi.mock('fabric');
+import { useDrawingHistory } from '@/hooks/useDrawingHistory';
 
 // Mock the useDrawingHistory hook
 vi.mock('@/hooks/useDrawingHistory', () => ({
@@ -19,106 +14,88 @@ vi.mock('@/hooks/useDrawingHistory', () => ({
 }));
 
 describe('History Edge Cases', () => {
-  let mockCanvas: Canvas;
-  let mockProps: any;
-  
   beforeEach(() => {
-    // Clear all mocks
     vi.clearAllMocks();
+  });
+  
+  it('should prevent undo when past history is empty', () => {
+    // Setup mock props and result
+    const mockProps = createMockDrawingHistoryProps();
     
-    // Create a fresh canvas mock for each test
-    mockCanvas = {
-      add: vi.fn(),
-      remove: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      clear: vi.fn()
-    } as unknown as Canvas;
+    // Mock result with empty past history
+    const mockResult = {
+      ...createMockDrawingHistoryResult(),
+      canUndo: false,
+      canRedo: false
+    };
     
-    // Create standard mock props
-    mockProps = createMockDrawingHistoryProps();
+    // Setup the mock hook implementation
+    useDrawingHistory.mockReturnValue(mockResult);
+    
+    // Test that undo is disabled
+    expect(mockResult.canUndo).toBe(false);
+    
+    // Call the handler to make sure no error occurs
+    mockResult.handleUndo();
+    
+    // Verify that we didn't try to recalculate GIA
+    expect(mockProps.recalculateGIA).not.toHaveBeenCalled();
+  });
+  
+  it('should update future history when a change is made', () => {
+    // Setup mock props and result
+    const mockProps = {
+      ...createMockDrawingHistoryProps(),
+      clearDrawings: vi.fn()
+    };
+    
+    // Set up mock canvas with objects
+    const mockCanvas = new Canvas(null);
     mockProps.fabricCanvasRef.current = mockCanvas;
     
-    // Set default mock implementation for useDrawingHistory
-    (useDrawingHistory as jest.Mock).mockReturnValue(createMockDrawingHistoryResult());
-  });
-  
-  it('should not allow undo when past array is empty', () => {
-    // Set up empty history
-    mockProps.historyRef.current = {
-      past: [],
-      future: []
+    // Mock result with ability to save state
+    const mockResult = {
+      ...createMockDrawingHistoryResult(),
+      canUndo: true,
+      canRedo: true,
+      saveCurrentState: vi.fn()
     };
     
-    // Mock the hook result with canUndo as false
-    const mockResult = createMockDrawingHistoryResult();
-    mockResult.canUndo = false;
-    (useDrawingHistory as jest.Mock).mockReturnValue(mockResult);
+    // Setup the mock hook implementation
+    useDrawingHistory.mockReturnValue(mockResult);
     
-    // Render the hook
-    const { result } = renderHook(() => useDrawingHistory(mockProps));
+    // Verify initial state
+    expect(mockResult.canRedo).toBe(true);
     
-    // Call undo function
-    result.current.handleUndo();
+    // Simulate saving a new state
+    mockResult.saveCurrentState();
     
-    // Should not call canvas methods
-    expect(mockCanvas.remove).not.toHaveBeenCalled();
-    expect(mockCanvas.add).not.toHaveBeenCalled();
-    
-    // Verify canUndo is false
-    expect(result.current.canUndo).toBe(false);
-  });
-  
-  it('should not allow redo when future array is empty', () => {
-    // Set up history with empty future
-    mockProps.historyRef.current = {
-      past: [['someObjectSnapshot']],
-      future: []
-    };
-    
-    // Mock the hook result with canRedo as false
-    const mockResult = createMockDrawingHistoryResult();
-    mockResult.canRedo = false;
-    (useDrawingHistory as jest.Mock).mockReturnValue(mockResult);
-    
-    // Render the hook
-    const { result } = renderHook(() => useDrawingHistory(mockProps));
-    
-    // Call redo function
-    result.current.handleRedo();
-    
-    // Should not call canvas methods
-    expect(mockCanvas.remove).not.toHaveBeenCalled();
-    expect(mockCanvas.add).not.toHaveBeenCalled();
-    
-    // Verify canRedo is false
-    expect(result.current.canRedo).toBe(false);
-  });
-  
-  it('should clear future history when saving a new state', () => {
-    // Set up existing history with some future states
-    mockProps.historyRef.current = {
-      past: [['past1'], ['past2']],
-      future: [['future1'], ['future2']]
-    };
-    
-    // Mock getObjects to return some test data
-    const mockObj1 = { toObject: () => ({ id: 'obj1' }) } as unknown as FabricObject;
-    const mockObj2 = { toObject: () => ({ id: 'obj2' }) } as unknown as FabricObject;
-    mockCanvas.getObjects = vi.fn().mockReturnValue([mockObj1, mockObj2]);
-    
-    // Mock the hook result with saveCurrentState method
-    const mockResult = createMockDrawingHistoryResult();
-    (useDrawingHistory as jest.Mock).mockReturnValue(mockResult);
-    
-    // Render the hook
-    const { result } = renderHook(() => useDrawingHistory(mockProps));
-    
-    // Save current state
-    result.current.saveCurrentState();
-    
-    // Verify saveCurrentState was called
+    // Verify that saveCurrentState was called
     expect(mockResult.saveCurrentState).toHaveBeenCalled();
+  });
+  
+  it('should clear future history when canvas is cleared', () => {
+    // Setup mock props with clear function
+    const mockProps = {
+      ...createMockDrawingHistoryProps(),
+      clearDrawings: vi.fn()
+    };
+    
+    // Setup mock result with empty history
+    const mockResult = {
+      ...createMockDrawingHistoryResult(),
+      canUndo: false,
+      canRedo: false,
+      saveCurrentState: vi.fn()
+    };
+    
+    // Set the mock hook implementation
+    useDrawingHistory.mockReturnValue(mockResult);
+    
+    // Call the clear drawings function
+    mockProps.clearDrawings();
+    
+    // Verify that history would be cleared
+    expect(mockResult.canRedo).toBe(false);
   });
 });

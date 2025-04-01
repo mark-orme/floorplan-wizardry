@@ -30,5 +30,20 @@ export const GRID_CONSTANTS = {
   GRID_Z_INDEX: -1,
   
   /** Grid scale factor - how much to scale grid with zoom */
-  SCALE_FACTOR: 1
+  SCALE_FACTOR: 1,
+  
+  /** Minimum canvas width for valid grid creation */
+  MIN_CANVAS_WIDTH: 100,
+  
+  /** Minimum canvas height for valid grid creation */
+  MIN_CANVAS_HEIGHT: 100,
+  
+  /** Pixels per meter for grid scaling */
+  PIXELS_PER_METER: 100,
+  
+  /** Marker text size for grid labels */
+  MARKER_TEXT_SIZE: 12,
+  
+  /** Marker color for grid labels */
+  MARKER_COLOR: '#666666'
 };

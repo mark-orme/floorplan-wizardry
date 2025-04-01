@@ -49,6 +49,9 @@ module.exports = {
     'fabric-react/fabric-event-handlers': 'warn',
     'fabric-react/fabric-object-type-check': 'warn',
     
+    // Grid constants validation rules
+    './src/eslint/grid-constant-checker/ensure-valid-properties': 'error',
+    
     // Additional AI safety rules
     'no-undef': 'error',
     'no-unused-expressions': 'warn',
