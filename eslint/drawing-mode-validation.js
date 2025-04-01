@@ -48,10 +48,10 @@ module.exports = {
             
             if (drawingToolImport) {
               // Check if using the correct path
-              if (importPath === '@/constants/drawingModes') {
+              if (importPath !== '@/types/core/DrawingTool') {
                 context.report({
                   node,
-                  message: `Import 'DrawingTool' from '@/types/core/DrawingTool' instead of '@/constants/drawingModes'`
+                  message: `Import 'DrawingTool' from '@/types/core/DrawingTool' instead of '${importPath}'`
                 });
               }
             }
