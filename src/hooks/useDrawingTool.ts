@@ -8,6 +8,7 @@ import { useState, useCallback } from 'react';
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 /**
  * Interface for useDrawingTool hook returns
@@ -27,6 +28,8 @@ export interface UseDrawingToolResult {
   cancelDrawing: () => void;
   /** Whether drawing is currently in progress */
   isDrawing: boolean;
+  /** Validate if a tool is a valid DrawingTool */
+  isValidDrawingTool: (tool: unknown) => boolean;
 }
 
 /**
@@ -41,23 +44,36 @@ export function useDrawingTool(): UseDrawingToolResult {
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   
   /**
+   * Validate if a value is a valid DrawingTool
+   * 
+   * @param {unknown} value - Value to check
+   * @returns {boolean} Whether value is a valid DrawingTool
+   */
+  const isValidDrawingTool = useCallback((value: unknown): boolean => {
+    if (typeof value !== 'string') return false;
+    return Object.values(DrawingMode).includes(value as DrawingMode);
+  }, []);
+  
+  /**
    * Set the current drawing tool with validation
    * 
    * @param {DrawingTool} newTool - New drawing tool to set
    */
   const setTool = useCallback((newTool: DrawingTool) => {
     // Validate newTool is a valid DrawingTool
-    const isValid = Object.values(DrawingMode).includes(newTool as DrawingMode);
+    const isValid = isValidDrawingTool(newTool);
     
     if (isValid) {
       setToolState(newTool);
       // Show success message with tool name
       toast.success(`Changed to ${newTool} tool`);
+      logger.info("Tool changed", { previousTool: tool, newTool });
     } else {
-      console.error(`Invalid drawing tool: ${newTool}`);
+      console.warn(`Tool validation failed: ${newTool}`, { expected: Object.values(DrawingMode) });
+      logger.error("Invalid drawing tool selected", { invalidTool: newTool, allowedTools: Object.values(DrawingMode) });
       toast.error('Invalid drawing tool selected');
     }
-  }, []);
+  }, [tool, isValidDrawingTool]);
   
   /**
    * Start drawing at a point
@@ -106,6 +122,7 @@ export function useDrawingTool(): UseDrawingToolResult {
     continueDrawing,
     endDrawing,
     cancelDrawing,
-    isDrawing
+    isDrawing,
+    isValidDrawingTool
   };
 }

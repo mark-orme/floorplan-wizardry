@@ -28,6 +28,7 @@ jest.mock('../drawing/useDrawingToolManager', () => ({
   })
 }));
 
+// Mock useLineState hook
 jest.mock('../straightLineTool/useLineState', () => ({
   useLineState: () => ({
     isDrawing: false,
@@ -150,22 +151,21 @@ describe('useStraightLineTool', () => {
     const mockLine = new Line([0, 0, 100, 100]);
     const mockTooltip = { type: 'text', text: '100px' };
     
-    // Update the mock to return the objects
-    jest.mock('../straightLineTool/useLineState', () => ({
-      useLineState: () => ({
-        isDrawing: true,
-        isToolInitialized: true,
-        startPointRef: { current: { x: 0, y: 0 } },
-        currentLineRef: { current: mockLine },
-        distanceTooltipRef: { current: mockTooltip },
-        setIsDrawing: jest.fn(),
-        setStartPoint: jest.fn(),
-        setCurrentLine: jest.fn(),
-        setDistanceTooltip: jest.fn(),
-        initializeTool: jest.fn(),
-        resetDrawingState: jest.fn()
-      })
-    }));
+    // Create a mock implementation of useLineState that returns isDrawing as true
+    const useLineStateMock = jest.requireMock('../straightLineTool/useLineState');
+    (useLineStateMock.useLineState as jest.Mock).mockReturnValueOnce({
+      isDrawing: true,
+      isToolInitialized: true,
+      startPointRef: { current: { x: 0, y: 0 } },
+      currentLineRef: { current: mockLine },
+      distanceTooltipRef: { current: mockTooltip },
+      setIsDrawing: jest.fn(),
+      setStartPoint: jest.fn(),
+      setCurrentLine: jest.fn(),
+      setDistanceTooltip: jest.fn(),
+      initializeTool: jest.fn(),
+      resetDrawingState: jest.fn()
+    });
     
     const { result } = renderHook(() => useStraightLineTool({
       fabricCanvasRef: canvasRef,
@@ -214,22 +214,20 @@ describe('useStraightLineTool', () => {
   // Add any other specific test cases for isDrawing property
   it('should update isDrawing state properly', () => {
     // Setup a mock that returns isDrawing as true
-    const mockLineState = {
+    const useLineStateMock = jest.requireMock('../straightLineTool/useLineState');
+    (useLineStateMock.useLineState as jest.Mock).mockReturnValueOnce({
       isDrawing: true,
       isToolInitialized: true,
       startPointRef: { current: { x: 100, y: 100 } },
       currentLineRef: { current: null },
       distanceTooltipRef: { current: null },
+      setIsDrawing: jest.fn(),
       setStartPoint: jest.fn(),
       setCurrentLine: jest.fn(),
       setDistanceTooltip: jest.fn(),
       initializeTool: jest.fn(),
-      resetDrawingState: jest.fn(),
-      setIsDrawing: jest.fn()
-    };
-    
-    // Update the useLineState mock
-    (useLineState as jest.Mock).mockReturnValue(mockLineState);
+      resetDrawingState: jest.fn()
+    });
     
     const { result } = renderHook(() => useStraightLineTool({
       fabricCanvasRef: canvasRef,
