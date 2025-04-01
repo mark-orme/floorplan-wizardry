@@ -43,7 +43,7 @@ describe('useCanvasInteraction', () => {
     // Add some objects to the canvas
     const line1 = new Line([0, 0, 100, 100]);
     const line2 = new Line([0, 0, 200, 200]);
-    line1.active = true; // Mark as selected
+    line1.activeOn = true; // Mark as selected using activeOn instead of active
     
     canvas.add(line1, line2);
     

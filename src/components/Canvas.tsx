@@ -1,4 +1,3 @@
-
 /**
  * Main Canvas component that integrates with Fabric.js
  * @module components/Canvas

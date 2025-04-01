@@ -5,6 +5,7 @@
  * 
  * @module types/fabric-events
  */
+import { Object as FabricObject } from "fabric";
 
 /**
  * Enum for Fabric.js event types
@@ -63,6 +64,36 @@ export enum FabricEventTypes {
   GRID_CREATED = 'grid:created',
   /** Event for custom extended functionality */
   ZOOM_CHANGED = 'zoom:changed'
+}
+
+/**
+ * Fabric.js pointer event interface
+ * Standardized pointer event structure for Fabric.js
+ * @interface
+ */
+export interface FabricPointerEvent {
+  /** Original DOM event (MouseEvent or TouchEvent) */
+  e: MouseEvent | TouchEvent;
+  /** Canvas pointer coordinates */
+  pointer?: { x: number; y: number };
+  /** Object being targeted */
+  target?: FabricObject;
+  /** Absolute pointer coordinates */
+  absolutePointer?: { x: number; y: number };
+  /** Transformation matrix */
+  transform?: { 
+    corner?: string;
+    original?: FabricObject;
+    originX?: string;
+    originY?: string;
+    width?: number;
+  };
+  /** Whether it's a click vs. a drag */
+  isClick?: boolean;
+  /** List of currently targeted sub-objects (for groups) */
+  currentSubTargets?: FabricObject[];
+  /** Button number for mouse events */
+  button?: number;
 }
 
 /**

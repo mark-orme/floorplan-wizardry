@@ -51,12 +51,12 @@ export class Canvas {
   }
   
   getActiveObjects(): any[] {
-    return this._objects.filter(obj => obj.active);
+    return this._objects.filter(obj => obj.activeOn);
   }
   
   discardActiveObject(): Canvas {
     this._objects.forEach(obj => {
-      obj.active = false;
+      obj.activeOn = false;
     });
     return this;
   }
@@ -121,6 +121,7 @@ export class Line {
   strokeWidth: number;
   selectable: boolean;
   evented: boolean;
+  activeOn: boolean;
   
   constructor(points: number[], options?: any) {
     this.x1 = points[0] || 0;
@@ -131,10 +132,16 @@ export class Line {
     this.strokeWidth = options?.strokeWidth || 1;
     this.selectable = options?.selectable ?? true;
     this.evented = options?.evented ?? true;
+    this.activeOn = false;
   }
   
   set(options: any): Line {
-    Object.assign(this, options);
+    // Replace Object.assign with manual property assignment
+    if (options) {
+      Object.keys(options).forEach(key => {
+        (this as any)[key] = options[key];
+      });
+    }
     return this;
   }
 }
@@ -147,6 +154,7 @@ export class Circle {
   fill: string;
   stroke: string;
   strokeWidth: number;
+  activeOn: boolean;
   
   constructor(options?: any) {
     this.left = options?.left || 0;
@@ -155,10 +163,16 @@ export class Circle {
     this.fill = options?.fill || 'transparent';
     this.stroke = options?.stroke || '#000000';
     this.strokeWidth = options?.strokeWidth || 1;
+    this.activeOn = false;
   }
   
   set(options: any): Circle {
-    Object.assign(this, options);
+    // Replace Object.assign with manual property assignment
+    if (options) {
+      Object.keys(options).forEach(key => {
+        (this as any)[key] = options[key];
+      });
+    }
     return this;
   }
 }
@@ -170,6 +184,7 @@ export class Text {
   top: number;
   fontSize: number;
   fill: string;
+  activeOn: boolean;
   
   constructor(text: string, options?: any) {
     this.text = text;
@@ -177,10 +192,16 @@ export class Text {
     this.top = options?.top || 0;
     this.fontSize = options?.fontSize || 14;
     this.fill = options?.fill || '#000000';
+    this.activeOn = false;
   }
   
   set(options: any): Text {
-    Object.assign(this, options);
+    // Replace Object.assign with manual property assignment
+    if (options) {
+      Object.keys(options).forEach(key => {
+        (this as any)[key] = options[key];
+      });
+    }
     return this;
   }
 }

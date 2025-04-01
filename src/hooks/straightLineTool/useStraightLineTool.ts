@@ -12,6 +12,7 @@ import { useDrawingToolManager } from '../drawing/useDrawingToolManager';
 import { Point } from '@/types/core/Geometry';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
 import logger from '@/utils/logger';
+import { FabricPointerEvent } from '@/types/fabric-events';
 
 /**
  * Props for useStraightLineTool hook
@@ -37,6 +38,8 @@ interface UseStraightLineToolResult {
   isActive: boolean;
   /** Whether the line tool is initialized */
   isToolInitialized: boolean;
+  /** Whether user is currently drawing a line */
+  isDrawing: boolean;
   /** Current line being drawn */
   currentLine: Line | null;
   /** Cancel the current drawing */
@@ -272,20 +275,24 @@ export const useStraightLineTool = (
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    const handleMouseDown = (e: Event): void => {
+    const handleMouseDown = (options: FabricPointerEvent): void => {
       if (tool !== DrawingMode.STRAIGHT_LINE) return;
-      mouseHandlers.handleMouseDown(e as MouseEvent);
+      if (!options.e) return;
+      
+      mouseHandlers.handleMouseDown(options.e as MouseEvent);
     };
     
-    const handleMouseMove = (e: Event): void => {
+    const handleMouseMove = (options: FabricPointerEvent): void => {
       if (tool !== DrawingMode.STRAIGHT_LINE) return;
-      if (!isDrawing) return;
-      mouseHandlers.handleMouseMove(e as MouseEvent);
+      if (!isDrawing || !options.e) return;
+      
+      mouseHandlers.handleMouseMove(options.e as MouseEvent);
     };
     
-    const handleMouseUp = (e: Event): void => {
+    const handleMouseUp = (options: FabricPointerEvent): void => {
       if (tool !== DrawingMode.STRAIGHT_LINE) return;
-      if (!isDrawing) return;
+      if (!isDrawing || !options.e) return;
+      
       handleEndDrawing();
     };
     
@@ -305,6 +312,7 @@ export const useStraightLineTool = (
   return {
     isActive: tool === DrawingMode.STRAIGHT_LINE && isToolInitialized,
     isToolInitialized,
+    isDrawing,
     currentLine: currentLineRef.current,
     cancelDrawing: handleCancelDrawing
   };

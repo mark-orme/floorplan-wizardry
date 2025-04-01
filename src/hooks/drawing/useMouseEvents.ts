@@ -73,33 +73,6 @@ export const useMouseEvents = (
   const mouseUpListenerRef = useRef<((e: MouseEvent | TouchEvent) => void) | null>(null);
   
   /**
-   * Clean up event listeners and timeouts
-   */
-  const cleanup = useCallback(() => {
-    // Clean up timeouts
-    timeoutRef.current.forEach(id => window.clearTimeout(id));
-    timeoutRef.current = [];
-    
-    // Remove document event listeners
-    if (mouseMoveListenerRef.current) {
-      document.removeEventListener('mousemove', mouseMoveListenerRef.current);
-      document.removeEventListener('touchmove', mouseMoveListenerRef.current);
-      mouseMoveListenerRef.current = null;
-    }
-    
-    if (mouseUpListenerRef.current) {
-      document.removeEventListener('mouseup', mouseUpListenerRef.current);
-      document.removeEventListener('touchend', mouseUpListenerRef.current);
-      mouseUpListenerRef.current = null;
-    }
-  }, []);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
-
-  /**
    * Convert event coordinates to canvas point
    */
   const getCanvasPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
@@ -118,7 +91,8 @@ export const useMouseEvents = (
     if (!canvas) return;
     
     // Return early if tool is not a drawing tool
-    if (tool === DrawingMode.SELECT || tool === DrawingMode.HAND) {
+    const isSelectOrHand = tool === DrawingMode.SELECT || tool === DrawingMode.HAND;
+    if (isSelectOrHand) {
       return;
     }
     
@@ -126,7 +100,7 @@ export const useMouseEvents = (
     const point = getCanvasPoint(e);
     if (!point) return;
     
-    logger.info("Mouse down", { tool, point, isDrawingTool: tool !== DrawingMode.SELECT });
+    logger.info("Mouse down", { tool, point, isDrawingTool: !isSelectOrHand });
     
     // Start drawing at the point
     startDrawing(point);
@@ -155,7 +129,7 @@ export const useMouseEvents = (
     
     // Prevent default to avoid text selection during drawing
     e.preventDefault();
-  }, [fabricCanvasRef, tool, getCanvasPoint, startDrawing, handleMouseMove, handleMouseUp, cleanup]);
+  }, [fabricCanvasRef, tool, getCanvasPoint, startDrawing]);
 
   /**
    * Handle mouse move event
@@ -190,6 +164,33 @@ export const useMouseEvents = (
     // Prevent default
     e.preventDefault();
   }, [isDrawing, getCanvasPoint, endDrawing]);
+
+  /**
+   * Clean up event listeners and timeouts
+   */
+  const cleanup = useCallback(() => {
+    // Clean up timeouts
+    timeoutRef.current.forEach(id => window.clearTimeout(id));
+    timeoutRef.current = [];
+    
+    // Remove document event listeners
+    if (mouseMoveListenerRef.current) {
+      document.removeEventListener('mousemove', mouseMoveListenerRef.current);
+      document.removeEventListener('touchmove', mouseMoveListenerRef.current);
+      mouseMoveListenerRef.current = null;
+    }
+    
+    if (mouseUpListenerRef.current) {
+      document.removeEventListener('mouseup', mouseUpListenerRef.current);
+      document.removeEventListener('touchend', mouseUpListenerRef.current);
+      mouseUpListenerRef.current = null;
+    }
+  }, []);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
 
   return {
     handleMouseDown,
