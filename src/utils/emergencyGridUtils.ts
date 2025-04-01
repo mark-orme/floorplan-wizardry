@@ -32,7 +32,8 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    canvas.sendToBack(line);
+    // FIX: Use sendObjectToBack instead of sendToBack
+    canvas.sendObjectToBack(line);
   }
 
   // Create horizontal small grid lines
@@ -48,7 +49,8 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    canvas.sendToBack(line);
+    // FIX: Use sendObjectToBack instead of sendToBack
+    canvas.sendObjectToBack(line);
   }
 
   // Create vertical large grid lines
@@ -64,7 +66,8 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    canvas.sendToBack(line);
+    // FIX: Use sendObjectToBack instead of sendToBack
+    canvas.sendObjectToBack(line);
   }
 
   // Create horizontal large grid lines
@@ -80,7 +83,8 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
     
     gridLines.push(line);
     canvas.add(line);
-    canvas.sendToBack(line);
+    // FIX: Use sendObjectToBack instead of sendToBack
+    canvas.sendObjectToBack(line);
   }
 
   canvas.renderAll();
