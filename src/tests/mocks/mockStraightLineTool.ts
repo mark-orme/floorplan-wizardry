@@ -1,21 +1,20 @@
 
 import { vi } from 'vitest';
-import { UseStraightLineToolResult } from '@/hooks/straightLineTool/useStraightLineTool.d';
-import { Point } from '@/types/core/Geometry';
+import { UseStraightLineToolResult } from '@/hooks/useStraightLineTool.d';
 
 /**
- * Creates a mock implementation of the useStraightLineTool hook
- * @returns A mocked implementation of UseStraightLineToolResult
+ * Creates a mock implementation of useStraightLineTool hook
+ * @returns Mocked implementation
  */
 export const createMockStraightLineTool = (): UseStraightLineToolResult => {
   return {
     isActive: true,
+    currentLine: null,
     isToolInitialized: true,
     isDrawing: false,
-    currentLine: null,
-    startDrawing: vi.fn((point: Point) => {}),
-    continueDrawing: vi.fn((point: Point) => {}),
-    endDrawing: vi.fn(() => {}),
+    startDrawing: vi.fn(),
+    continueDrawing: vi.fn(),
+    endDrawing: vi.fn(),
     cancelDrawing: vi.fn()
   };
 };

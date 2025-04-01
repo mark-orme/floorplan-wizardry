@@ -1,153 +1,104 @@
 
 /**
- * History Edge Cases Tests
- * Tests edge cases and boundary conditions for undo/redo functionality
- * @module tests/regressions/historyEdgeCases
+ * Tests for edge cases in history management
+ * This test suite verifies proper handling of complex undo/redo scenarios
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { createMockCanvas, createMockHistoryRef } from '@/utils/test/mockFabricCanvas';
+import { renderHook } from '@testing-library/react-hooks';
 import { useDrawingHistory } from '@/hooks/useDrawingHistory';
-import { renderHook, act } from '@testing-library/react-hooks';
-import { MAX_HISTORY_STATES } from '@/constants/numerics';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { vi } from 'vitest';
+import { createMockDrawingHistoryProps } from '@/tests/utils/historyTestUtils';
 
-// Mock the useDrawingHistory hook for testing
-vi.mock('@/hooks/useDrawingHistory', () => ({
-  useDrawingHistory: vi.fn((props) => ({
-    handleUndo: vi.fn(),
-    handleRedo: vi.fn(),
-    saveCurrentState: vi.fn(),
-    canUndo: true,
-    canRedo: true
-  }))
-}));
+// Mock fabric
+vi.mock('fabric');
 
 describe('History Edge Cases', () => {
-  let canvas: Canvas;
-  let canvasRef: { current: Canvas | null };
-  let gridLayerRef: { current: any[] };
-  let mockRecalculateGIA: any;
+  let mockCanvas: Canvas;
+  let mockProps: any;
   
   beforeEach(() => {
-    canvas = createMockCanvas() as unknown as Canvas;
-    canvasRef = { current: canvas };
-    gridLayerRef = { current: [] };
-    mockRecalculateGIA = vi.fn();
-    
-    // Reset mock
+    // Clear all mocks
     vi.clearAllMocks();
+    
+    // Create a fresh canvas mock for each test
+    mockCanvas = {
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      renderAll: vi.fn(),
+      requestRenderAll: vi.fn(),
+      clear: vi.fn()
+    } as unknown as Canvas;
+    
+    // Create standard mock props
+    mockProps = createMockDrawingHistoryProps();
+    mockProps.fabricCanvasRef.current = mockCanvas;
   });
   
-  it('handles empty history stacks correctly', () => {
-    // Mock empty history
-    const emptyHistoryRef = createMockHistoryRef();
-    
-    // Mock the hook implementation for this test
-    const mockHandleUndo = vi.fn();
-    const mockHandleRedo = vi.fn();
-    
-    vi.mocked(useDrawingHistory).mockReturnValueOnce({
-      handleUndo: mockHandleUndo,
-      handleRedo: mockHandleRedo,
-      saveCurrentState: vi.fn(),
-      canUndo: false,
-      canRedo: false
-    });
-    
-    // Use the hook
-    const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      gridLayerRef,
-      historyRef: emptyHistoryRef,
-      recalculateGIA: mockRecalculateGIA
-    }));
-    
-    // Try to undo with empty history
-    act(() => {
-      result.current.handleUndo();
-    });
-    
-    // Should not cause errors but should be a no-op
-    expect(mockHandleUndo).toHaveBeenCalled();
-    
-    // Try to redo with empty future
-    act(() => {
-      result.current.handleRedo();
-    });
-    
-    // Should not cause errors but should be a no-op
-    expect(mockHandleRedo).toHaveBeenCalled();
-  });
-  
-  it('limits history size to MAX_HISTORY_STATES', () => {
-    // Create a history ref with many states
-    const largeHistoryRef = {
-      current: {
-        past: Array(MAX_HISTORY_STATES + 10).fill([{ id: 'test-obj' }]),
-        future: []
-      }
+  it('should not allow undo when past array is empty', () => {
+    // Set up empty history
+    mockProps.historyRef.current = {
+      past: [],
+      future: []
     };
     
-    // Mock the saveCurrentState function
-    const mockSaveCurrentState = vi.fn();
+    // Render the hook
+    const { result } = renderHook(() => useDrawingHistory(mockProps));
     
-    vi.mocked(useDrawingHistory).mockReturnValueOnce({
-      handleUndo: vi.fn(),
-      handleRedo: vi.fn(),
-      saveCurrentState: mockSaveCurrentState,
-      canUndo: true,
-      canRedo: false
-    });
+    // Call undo function
+    result.current.handleUndo();
     
-    // Use the hook
-    const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      gridLayerRef,
-      historyRef: largeHistoryRef,
-      recalculateGIA: mockRecalculateGIA
-    }));
+    // Should not call canvas methods
+    expect(mockCanvas.remove).not.toHaveBeenCalled();
+    expect(mockCanvas.add).not.toHaveBeenCalled();
     
-    // Save a new state
-    act(() => {
-      result.current.saveCurrentState();
-    });
-    
-    // Should call the mocked saveCurrentState
-    expect(mockSaveCurrentState).toHaveBeenCalled();
+    // Verify canUndo is false
+    expect(result.current.canUndo).toBe(false);
   });
   
-  it('preserves grid objects during undo/redo operations', () => {
-    // Setup mock canvas with grid objects
-    const gridObjects = [
-      { id: 'grid1', objectType: 'grid' },
-      { id: 'grid2', objectType: 'grid' }
-    ];
-    gridLayerRef.current = gridObjects;
+  it('should not allow redo when future array is empty', () => {
+    // Set up history with empty future
+    mockProps.historyRef.current = {
+      past: [['someObjectSnapshot']],
+      future: []
+    };
     
-    // Mock canvas.getObjects to return a mix of grid and drawing objects
-    canvas.getObjects = vi.fn().mockReturnValue([
-      ...gridObjects,
-      { id: 'drawing1', objectType: undefined },
-      { id: 'drawing2', objectType: undefined }
-    ]);
+    // Render the hook
+    const { result } = renderHook(() => useDrawingHistory(mockProps));
     
-    // Use the hook
-    const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      gridLayerRef,
-      historyRef: createMockHistoryRef(),
-      recalculateGIA: mockRecalculateGIA
-    }));
+    // Call redo function
+    result.current.handleRedo();
     
-    // Perform undo operation
-    act(() => {
-      result.current.handleUndo();
-    });
+    // Should not call canvas methods
+    expect(mockCanvas.remove).not.toHaveBeenCalled();
+    expect(mockCanvas.add).not.toHaveBeenCalled();
     
-    // Grid objects should be preserved in the canvas
-    expect(canvas.getObjects()).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'grid1' }),
-      expect.objectContaining({ id: 'grid2' })
-    ]));
+    // Verify canRedo is false
+    expect(result.current.canRedo).toBe(false);
+  });
+  
+  it('should clear future history when saving a new state', () => {
+    // Set up existing history with some future states
+    mockProps.historyRef.current = {
+      past: [['past1'], ['past2']],
+      future: [['future1'], ['future2']]
+    };
+    
+    // Mock getObjects to return some test data
+    const mockObj1 = { toObject: () => ({ id: 'obj1' }) } as unknown as FabricObject;
+    const mockObj2 = { toObject: () => ({ id: 'obj2' }) } as unknown as FabricObject;
+    mockCanvas.getObjects = vi.fn().mockReturnValue([mockObj1, mockObj2]);
+    
+    // Render the hook
+    const { result } = renderHook(() => useDrawingHistory(mockProps));
+    
+    // Save current state
+    result.current.saveCurrentState();
+    
+    // Future should be empty
+    expect(mockProps.historyRef.current.future).toEqual([]);
+    
+    // Past should have new state added
+    expect(mockProps.historyRef.current.past.length).toBe(3);
   });
 });

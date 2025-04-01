@@ -55,7 +55,7 @@ export const createMockCanvas = (): FabricCanvas => {
  * @param type Object type ('line', 'rect', etc.)
  * @param props Additional properties
  */
-export const createMockObject = (type: string, props: MockCanvasObject = {}): FabricObject => {
+export const createMockObject = (type: string, props: Partial<MockCanvasObject> = {}): FabricObject => {
   return {
     type,
     ...props,

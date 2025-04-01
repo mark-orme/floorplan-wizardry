@@ -53,6 +53,28 @@ module.exports = {
     'no-undef': 'error',
     'no-unused-expressions': 'warn',
     'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }],
-    'prefer-const': 'warn'
+    'prefer-const': 'warn',
+    
+    // Enhanced TypeScript strictness
+    '@typescript-eslint/strict-boolean-expressions': 'warn',
+    '@typescript-eslint/no-non-null-assertion': 'error',
+    '@typescript-eslint/ban-ts-comment': ['error', {
+      'ts-ignore': 'allow-with-description',
+      minimumDescriptionLength: 10
+    }],
+    '@typescript-eslint/no-misused-promises': 'error',
+    '@typescript-eslint/no-floating-promises': 'error',
+    '@typescript-eslint/naming-convention': [
+      'error',
+      {
+        selector: 'interface',
+        format: ['PascalCase'],
+        prefix: ['I']
+      },
+      {
+        selector: 'typeAlias',
+        format: ['PascalCase']
+      }
+    ]
   }
 };

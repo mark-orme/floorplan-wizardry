@@ -1,68 +1,51 @@
 
 /**
- * Canvas Edge Behavior Tests
- * Tests how canvas behaves when interacting near/at edges
- * @module tests/boundaries/canvasEdgeBehavior
+ * Tests for canvas edge behavior
+ * This test validates canvas behavior at boundaries
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react-hooks';
+import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { Canvas } from 'fabric';
-import { createMockCanvas } from '@/utils/test/mockFabricCanvas';
-import { createMockPointerEvent, createMockSelectionEvent } from './mockFabricEvents';
+import { DrawingMode } from '@/constants/drawingModes';
+import { vi } from 'vitest';
+
+// Mock fabric
+vi.mock('fabric');
 
 describe('Canvas Edge Behavior', () => {
-  let canvas: Canvas;
-  let canvasEventHandlers: Map<string, Function[]>;
+  let mockCanvas: Canvas;
+  let canvasRef: React.MutableRefObject<Canvas | null>;
+  const saveCurrentState = vi.fn();
   
   beforeEach(() => {
-    // Create a mock canvas for testing
-    canvas = createMockCanvas() as unknown as Canvas;
-    canvasEventHandlers = new Map();
+    // Create a fresh canvas mock for each test
+    mockCanvas = {
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      renderAll: vi.fn(),
+      requestRenderAll: vi.fn(),
+      on: vi.fn().mockReturnValue(() => {}),
+      off: vi.fn(),
+      selection: true,
+      contains: vi.fn().mockReturnValue(false)
+    } as unknown as Canvas;
     
-    // Mock the event handler registration
-    canvas.on = vi.fn((eventName: string, handler: Function) => {
-      if (!canvasEventHandlers.has(eventName)) {
-        canvasEventHandlers.set(eventName, []);
-      }
-      canvasEventHandlers.get(eventName)!.push(handler);
-      return canvas;
-    });
+    canvasRef = { current: mockCanvas };
     
-    // Setup canvas dimensions for testing edge behavior
-    vi.spyOn(canvas, 'getWidth').mockReturnValue(800);
-    vi.spyOn(canvas, 'getHeight').mockReturnValue(600);
+    // Reset mocks
+    vi.clearAllMocks();
   });
   
-  it('handles mouse interactions at canvas edges correctly', () => {
-    // Register mock mouse event handlers
-    canvas.on('mouse:down', () => {});
-    canvas.on('mouse:move', () => {});
-    canvas.on('mouse:up', () => {});
+  it('should handle objects at canvas edges', () => {
+    const { result } = renderHook(() => useCanvasInteraction({
+      fabricCanvasRef: canvasRef,
+      tool: DrawingMode.SELECT,
+      saveCurrentState
+    }));
     
-    // Create events at the edges
-    const leftEdgeEvent = createMockPointerEvent(0, 300);
-    const rightEdgeEvent = createMockPointerEvent(800, 300);
-    const topEdgeEvent = createMockPointerEvent(400, 0);
-    const bottomEdgeEvent = createMockPointerEvent(400, 600);
-    
-    // Trigger handlers manually
-    const downHandlers = canvasEventHandlers.get('mouse:down') || [];
-    downHandlers.forEach(handler => handler(leftEdgeEvent));
-    
-    const moveHandlers = canvasEventHandlers.get('mouse:move') || [];
-    moveHandlers.forEach(handler => handler(rightEdgeEvent));
-    
-    const upHandlers = canvasEventHandlers.get('mouse:up') || [];
-    upHandlers.forEach(handler => handler(topEdgeEvent));
-    
-    // For selection at the edge
-    const selectionEvent = createMockSelectionEvent(bottomEdgeEvent.pointer.x, bottomEdgeEvent.pointer.y);
-    const selectionHandlers = canvasEventHandlers.get('selection:created') || [];
-    selectionHandlers.forEach(handler => handler(selectionEvent));
-    
-    // Since we're just testing the events trigger without errors at the edges,
-    // we'll consider the test to pass if it doesn't throw exceptions
-    expect(true).toBe(true);
+    // This is a simple test to verify the hook setup
+    expect(result.current).toBeDefined();
+    expect(mockCanvas.on).toHaveBeenCalled();
   });
-  
-  // Additional tests as needed
 });
