@@ -22,6 +22,10 @@ describe('DrawingToolbar', () => {
     isDrawing: false,
     isDirty: false,
     showControls: true,
+    lineThickness: 2,
+    lineColor: '#000000',
+    onLineThicknessChange: vi.fn(),
+    onLineColorChange: vi.fn(),
     disabled: false
   };
   

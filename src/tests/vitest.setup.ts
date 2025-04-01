@@ -7,7 +7,7 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Make vi available globally for mock functions
-window.vi = vi;
+(window as any).vi = vi;
 
 // Mock canvas API for tests
 const originalGetContext = HTMLCanvasElement.prototype.getContext;

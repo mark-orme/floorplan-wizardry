@@ -6,7 +6,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Canvas } from '@/components/Canvas';
-import * as fabric from 'fabric';
+import * as fabricModule from 'fabric';
 
 // Mock fabric
 vi.mock('fabric', () => ({
@@ -77,7 +77,7 @@ describe('Canvas', () => {
     
     // Mock fabric.Canvas to throw an error
     const fabricError = new Error('Canvas initialization failed');
-    vi.mocked(fabric.Canvas).mockImplementationOnce(() => {
+    vi.mocked(fabricModule.Canvas).mockImplementationOnce(() => {
       throw fabricError;
     });
     
@@ -106,7 +106,7 @@ describe('Canvas', () => {
     );
     
     // Get the dispose method from the mocked canvas
-    const disposeMethod = vi.mocked(fabric.Canvas)().dispose;
+    const disposeMethod = vi.mocked(fabricModule.Canvas)().dispose;
     
     // Unmount the component
     unmount();
@@ -115,7 +115,6 @@ describe('Canvas', () => {
     expect(disposeMethod).toHaveBeenCalled();
   });
   
-  // Update the test to use only props that actually exist on the Canvas component
   it('applies additional styles when provided', () => {
     const style = { border: '1px solid black' };
     

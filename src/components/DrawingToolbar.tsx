@@ -15,8 +15,8 @@ interface DrawingToolbarProps {
   onToolChange: (tool: DrawingMode) => void;
   onUndo: () => void;
   onRedo: () => void;
-  onZoom: (direction: "in" | "out") => void;
   onClear: () => void;
+  onZoom: (direction: "in" | "out") => void;
   onSave: () => void;
   onDelete?: () => void;
   gia: number;
@@ -28,6 +28,10 @@ interface DrawingToolbarProps {
   onToggleGrid?: () => void;
   snapToGrid?: boolean;
   onToggleSnap?: () => void;
+  isDrawing?: boolean;
+  isDirty?: boolean;
+  showControls?: boolean;
+  disabled?: boolean;
 }
 
 /**
@@ -39,8 +43,8 @@ export const DrawingToolbar = ({
   onToolChange,
   onUndo,
   onRedo,
-  onZoom,
   onClear,
+  onZoom,
   onSave,
   onDelete,
   gia,
@@ -51,7 +55,11 @@ export const DrawingToolbar = ({
   showGrid,
   onToggleGrid,
   snapToGrid,
-  onToggleSnap
+  onToggleSnap,
+  isDrawing = false,
+  isDirty = false,
+  showControls = true,
+  disabled = false
 }: DrawingToolbarProps): JSX.Element => {
   return (
     <div className="flex flex-col space-y-2">

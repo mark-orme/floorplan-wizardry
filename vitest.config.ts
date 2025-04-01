@@ -1,29 +1,23 @@
 
-/**
- * Vitest configuration
- * @module vitest.config
- */
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import react from '@vitejs/plugin-react';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
+  plugins: [react(), tsconfigPaths()],
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/tests/vitest.setup.ts'],
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
-    // Add necessary DOM testing capabilities
-    deps: {
-      inline: [/@testing-library\/jest-dom/],
-    },
+    include: ['src/**/*.test.{ts,tsx}'],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: ['node_modules/', 'src/tests/']
+    }
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
+      '@': '/src'
+    }
+  }
 });

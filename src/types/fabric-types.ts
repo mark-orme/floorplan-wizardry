@@ -4,6 +4,7 @@
  * @module types/fabricTypes
  */
 import { Object as FabricObject } from "fabric";
+import { FabricEventNames as OriginalFabricEventNames } from './fabric-events';
 
 /**
  * Extended FabricObject with custom properties for grid
@@ -16,6 +17,11 @@ export interface ExtendedFabricObject extends FabricObject {
 }
 
 /**
- * Re-export FabricEventNames and FabricEventTypes from fabric-events
+ * Re-export FabricEventNames from fabric-events
  */
-export { FabricEventNames, FabricEventTypes } from './fabric-events';
+export { FabricEventNames } from './fabric-events';
+
+/**
+ * Re-export FabricEventTypes as an alias for FabricEventNames for compatibility
+ */
+export const FabricEventTypes = OriginalFabricEventNames;
