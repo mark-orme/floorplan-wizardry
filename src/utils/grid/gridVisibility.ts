@@ -50,6 +50,7 @@ export function ensureGridVisibility(
       // Always ensure grid objects are at the back
       // but only count as a fix if the object was not already at the back
       const originalIndex = canvas.getObjects().indexOf(obj);
+      // Fix: Use sendObjectToBack instead of sendToBack
       canvas.sendObjectToBack(obj);
       const newIndex = canvas.getObjects().indexOf(obj);
       

@@ -98,6 +98,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
         
         // Send all grid objects to the back
         gridObjects.forEach(obj => {
+          // Fix: Use sendObjectToBack instead of sendToBack
           canvas.sendObjectToBack(obj);
         });
         

@@ -77,7 +77,8 @@ export const Canvas: React.FC<CanvasProps> = ({
             });
             
             // Ensure the grid is at the back
-            canvas.sendToBack(obj);
+            // FIX: Use sendObjectToBack instead of sendToBack
+            canvas.sendObjectToBack(obj);
           });
           
           // Force render

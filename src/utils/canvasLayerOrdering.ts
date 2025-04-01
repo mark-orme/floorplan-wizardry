@@ -1,3 +1,4 @@
+
 /**
  * Canvas layer ordering utility module
  * Provides functions for managing z-index of canvas objects
@@ -38,6 +39,7 @@ export const arrangeGridElements = (
   // Process grid objects first (send to back)
   gridLayerRef.current.forEach(gridObject => {
     if (canvas.contains(gridObject)) {
+      // Fix: Use sendObjectToBack instead of sendToBack
       canvas.sendObjectToBack(gridObject);
     }
   });
