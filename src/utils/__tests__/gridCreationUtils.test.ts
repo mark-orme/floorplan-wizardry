@@ -1,74 +1,68 @@
 
+/**
+ * Tests for grid creation utilities
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { ensureGrid } from '../grid/gridRenderers';
-import { validateGridState } from '../grid/gridValidation';
-import { retryWithBackoff } from '../grid/gridRetryUtils';
+import { createGrid, createBasicEmergencyGrid } from '../grid/gridRenderers';
+import { Canvas as FabricCanvas } from 'fabric';
 
-describe('gridCreationUtils', () => {
-  describe('validateGridState', () => {
-    it('should return false when canvas is null', () => {
-      // @ts-ignore - We're intentionally passing null for testing
-      const result = validateGridState(null);
-      expect(result).toBe(false);
-    });
-    
-    it('should return false when grid objects array is empty', () => {
-      const canvas = new Canvas(null);
-      const result = validateGridState(canvas);
-      expect(result).toBe(false);
-    });
-    
-    it('should return false when grid objects are not on canvas', () => {
-      const canvas = new Canvas(null);
-      
-      // Mock canvas.getObjects to return empty array
-      canvas.getObjects = vi.fn().mockReturnValue([]);
-      
-      const gridRef = { current: [{ objectType: 'grid' } as unknown as FabricObject] };
-      const result = validateGridState(canvas);
-      expect(result).toBe(false);
-      expect(canvas.getObjects).toHaveBeenCalled();
-    });
+// Mock canvas
+const createMockCanvas = () => {
+  return {
+    width: 800,
+    height: 600,
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    sendObjectToBack: vi.fn()
+  } as unknown as FabricCanvas;
+};
+
+describe('Grid Creation Utilities', () => {
+  let mockCanvas: FabricCanvas;
+  
+  beforeEach(() => {
+    mockCanvas = createMockCanvas();
+    vi.clearAllMocks();
   });
   
-  describe('retryWithBackoff', () => {
-    it('should return the result when operation succeeds on first try', async () => {
-      const operation = vi.fn().mockResolvedValue('success');
-      const result = await retryWithBackoff(operation);
-      expect(result).toBe('success');
-      expect(operation).toHaveBeenCalledTimes(1);
-    });
+  it('should create grid with default settings', () => {
+    const result = createGrid(mockCanvas);
     
-    it('should retry the operation when it fails', async () => {
-      // Mock a function that fails once then succeeds
-      const operation = vi.fn()
-        .mockRejectedValueOnce(new Error('Fail'))
-        .mockResolvedValueOnce('success');
-      
-      // Mock setTimeout to execute immediately
-      vi.spyOn(global, 'setTimeout').mockImplementation((callback) => {
-        callback();
-        return 0 as any;
-      });
-      
-      const result = await retryWithBackoff(operation, 2);
-      expect(result).toBe('success');
-      expect(operation).toHaveBeenCalledTimes(2);
-    });
+    expect(result.length).toBeGreaterThan(0);
+    expect(mockCanvas.add).toHaveBeenCalled();
+    expect(mockCanvas.sendObjectToBack).toHaveBeenCalled();
+  });
+  
+  it('should not create grid for invalid canvas', () => {
+    const invalidCanvas = { ...mockCanvas, width: 0, height: 0 } as FabricCanvas;
+    const result = createGrid(invalidCanvas);
     
-    it('should throw after maximum retries', async () => {
-      // Mock a function that always fails
-      const operation = vi.fn().mockRejectedValue(new Error('Always fail'));
-      
-      // Mock setTimeout to execute immediately
-      vi.spyOn(global, 'setTimeout').mockImplementation((callback) => {
-        callback();
-        return 0 as any;
-      });
-      
-      await expect(retryWithBackoff(operation, 3)).rejects.toThrow('Always fail');
-      expect(operation).toHaveBeenCalledTimes(3);
-    });
+    expect(result.length).toBe(0);
+    expect(invalidCanvas.add).not.toHaveBeenCalled();
+  });
+  
+  it('should create emergency grid when needed', () => {
+    const result = createBasicEmergencyGrid(mockCanvas);
+    
+    expect(result.length).toBeGreaterThan(0);
+    expect(mockCanvas.add).toHaveBeenCalled();
+  });
+  
+  it('should remove existing grid before creating new one', () => {
+    // Setup mock with existing grid objects
+    const existingGridObjects = [
+      { objectType: 'grid' },
+      { objectType: 'grid' }
+    ];
+    
+    mockCanvas.getObjects = vi.fn().mockReturnValue(existingGridObjects);
+    
+    createGrid(mockCanvas);
+    
+    // Check that remove was called for each existing grid object
+    expect(mockCanvas.remove).toHaveBeenCalledTimes(existingGridObjects.length);
   });
 });

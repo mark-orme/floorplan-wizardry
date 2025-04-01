@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 import { DrawingMode } from '@/constants/drawingModes';
-import { createGrid } from '@/utils/canvasGrid';
+import { createCompleteGrid } from '@/utils/grid/gridRenderers';
 
 export interface CanvasProps {
   width: number;
@@ -49,7 +49,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Initialize grid on canvas
       if (!gridInitializedRef.current) {
         try {
-          const gridObjects = createGrid(canvas);
+          const gridObjects = createCompleteGrid(canvas);
           
           if (setDebugInfo && gridObjects.length > 0) {
             setDebugInfo(prev => ({

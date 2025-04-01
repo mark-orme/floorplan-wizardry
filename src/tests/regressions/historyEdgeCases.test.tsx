@@ -1,101 +1,112 @@
 
 /**
- * Tests for history edge cases
- * Verifies history operations in unusual scenarios
+ * History edge case regression tests
+ * Tests for the undo/redo functionality in edge cases
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Canvas } from 'fabric';
-import { createMockDrawingHistoryProps, createMockDrawingHistoryResult } from '@/tests/utils/historyTestUtils';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useDrawingHistory } from '@/hooks/useDrawingHistory';
+import { createMockCanvas } from '@/tests/utils/canvasTestUtils';
 
 // Mock the useDrawingHistory hook
 vi.mock('@/hooks/useDrawingHistory', () => ({
   useDrawingHistory: vi.fn()
 }));
 
-describe('History Edge Cases', () => {
+// Test component that uses the hook
+const TestComponent: React.FC = () => {
+  const {
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo,
+    saveCurrentState
+  } = useDrawingHistory({
+    fabricCanvasRef: { current: createMockCanvas() },
+    gridLayerRef: { current: [] },
+    historyRef: { current: { past: [], future: [] } },
+    clearDrawings: vi.fn(),
+    recalculateGIA: vi.fn()
+  });
+
+  return (
+    <div>
+      <button data-testid="undo-btn" onClick={handleUndo} disabled={!canUndo}>
+        Undo
+      </button>
+      <button data-testid="redo-btn" onClick={handleRedo} disabled={!canRedo}>
+        Redo
+      </button>
+      <button data-testid="save-state-btn" onClick={saveCurrentState}>
+        Save State
+      </button>
+    </div>
+  );
+};
+
+describe('Drawing History Edge Cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  
-  it('should prevent undo when past history is empty', () => {
-    // Setup mock props and result
-    const mockProps = createMockDrawingHistoryProps();
-    
-    // Mock result with empty past history
-    const mockResult = {
-      ...createMockDrawingHistoryResult(),
+
+  it('should disable Undo button when canUndo is false', () => {
+    const mockHistoryHook = {
+      handleUndo: vi.fn(),
+      handleRedo: vi.fn(),
       canUndo: false,
-      canRedo: false
+      canRedo: true,
+      saveCurrentState: vi.fn()
     };
     
-    // Setup the mock hook implementation
-    useDrawingHistory.mockReturnValue(mockResult);
+    (useDrawingHistory as any).mockReturnValue(mockHistoryHook);
     
-    // Test that undo is disabled
-    expect(mockResult.canUndo).toBe(false);
+    render(<TestComponent />);
     
-    // Call the handler to make sure no error occurs
-    mockResult.handleUndo();
+    const undoBtn = screen.getByTestId('undo-btn');
+    expect(undoBtn).toBeDisabled();
     
-    // Verify that we didn't try to recalculate GIA
-    expect(mockProps.recalculateGIA).not.toHaveBeenCalled();
+    // Click should not trigger the handler when disabled
+    fireEvent.click(undoBtn);
+    expect(mockHistoryHook.handleUndo).not.toHaveBeenCalled();
   });
   
-  it('should update future history when a change is made', () => {
-    // Setup mock props and result
-    const mockProps = {
-      ...createMockDrawingHistoryProps(),
-      clearDrawings: vi.fn()
+  it('should disable Redo button when canRedo is false', () => {
+    const mockHistoryHook = {
+      handleUndo: vi.fn(),
+      handleRedo: vi.fn(),
+      canUndo: true,
+      canRedo: false,
+      saveCurrentState: vi.fn()
     };
     
-    // Set up mock canvas with objects
-    const mockCanvas = new Canvas(null);
-    mockProps.fabricCanvasRef.current = mockCanvas;
+    (useDrawingHistory as any).mockReturnValue(mockHistoryHook);
     
-    // Mock result with ability to save state
-    const mockResult = {
-      ...createMockDrawingHistoryResult(),
+    render(<TestComponent />);
+    
+    const redoBtn = screen.getByTestId('redo-btn');
+    expect(redoBtn).toBeDisabled();
+    
+    // Click should not trigger the handler when disabled
+    fireEvent.click(redoBtn);
+    expect(mockHistoryHook.handleRedo).not.toHaveBeenCalled();
+  });
+  
+  it('should call saveCurrentState when save button is clicked', () => {
+    const mockHistoryHook = {
+      handleUndo: vi.fn(),
+      handleRedo: vi.fn(),
       canUndo: true,
       canRedo: true,
       saveCurrentState: vi.fn()
     };
     
-    // Setup the mock hook implementation
-    useDrawingHistory.mockReturnValue(mockResult);
+    (useDrawingHistory as any).mockReturnValue(mockHistoryHook);
     
-    // Verify initial state
-    expect(mockResult.canRedo).toBe(true);
+    render(<TestComponent />);
     
-    // Simulate saving a new state
-    mockResult.saveCurrentState();
-    
-    // Verify that saveCurrentState was called
-    expect(mockResult.saveCurrentState).toHaveBeenCalled();
-  });
-  
-  it('should clear future history when canvas is cleared', () => {
-    // Setup mock props with clear function
-    const mockProps = {
-      ...createMockDrawingHistoryProps(),
-      clearDrawings: vi.fn()
-    };
-    
-    // Setup mock result with empty history
-    const mockResult = {
-      ...createMockDrawingHistoryResult(),
-      canUndo: false,
-      canRedo: false,
-      saveCurrentState: vi.fn()
-    };
-    
-    // Set the mock hook implementation
-    useDrawingHistory.mockReturnValue(mockResult);
-    
-    // Call the clear drawings function
-    mockProps.clearDrawings();
-    
-    // Verify that history would be cleared
-    expect(mockResult.canRedo).toBe(false);
+    const saveBtn = screen.getByTestId('save-state-btn');
+    fireEvent.click(saveBtn);
+    expect(mockHistoryHook.saveCurrentState).toHaveBeenCalled();
   });
 });

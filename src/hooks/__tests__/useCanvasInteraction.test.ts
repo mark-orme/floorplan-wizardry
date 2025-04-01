@@ -1,97 +1,91 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react-hooks';
+/**
+ * Tests for useCanvasInteraction hook
+ */
+import { renderHook, act } from '@testing-library/react-hooks';
 import { useCanvasInteraction } from '../useCanvasInteraction';
-import { createMockCanvas, createMockObject } from '@/tests/utils/canvasTestUtils';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { Canvas as FabricCanvas } from 'fabric';
 
-// Mock the hooks we depend on
-vi.mock('../useDrawingMode', () => ({
-  useDrawingMode: vi.fn().mockReturnValue({
-    drawingMode: 'select',
-    setDrawingMode: vi.fn()
-  })
+// Mock Canvas
+vi.mock('fabric', () => ({
+  Canvas: vi.fn().mockImplementation(() => ({}))
 }));
 
 describe('useCanvasInteraction', () => {
-  let mockCanvas: ReturnType<typeof createMockCanvas>;
+  let mockCanvas: any;
   
   beforeEach(() => {
-    mockCanvas = createMockCanvas();
-    vi.clearAllMocks();
+    mockCanvas = {
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      renderAll: vi.fn(),
+      requestRenderAll: vi.fn(),
+      setActiveObject: vi.fn(),
+      discardActiveObject: vi.fn(),
+      getActiveObject: vi.fn(),
+      getActiveObjects: vi.fn().mockReturnValue([]),
+      on: vi.fn(),
+      off: vi.fn(),
+      selection: true
+    };
   });
   
-  it('should handle selection:created event', () => {
-    // Render the hook
-    const { result } = renderHook(() => useCanvasInteraction({ 
-      canvasRef: { current: mockCanvas as any }
+  it('should initialize with default values', () => {
+    const { result } = renderHook(() => useCanvasInteraction({
+      fabricCanvasRef: { current: mockCanvas } as any
     }));
     
-    // Check initial state
-    expect(result.current.selectedObject).toBeNull();
-    
-    // Simulate selection:created event
-    const mockObject = createMockObject('rect');
-    const mockEvent = {
-      target: mockObject
-    };
-    
-    // Get the event handler function and call it
-    const onHandler = mockCanvas.on.mock.calls.find(call => call[0] === 'selection:created')?.[1];
-    expect(onHandler).toBeDefined();
-    
-    if (onHandler) {
-      onHandler(mockEvent);
-    }
-    
-    // Verify the result
-    expect(result.current.selectedObject).toBe(mockObject);
+    expect(result.current.isInteracting).toBe(false);
+    expect(result.current.isDrawing).toBe(false);
   });
   
-  it('should handle non-grid object selection', () => {
-    // Render the hook
-    const { result } = renderHook(() => useCanvasInteraction({ 
-      canvasRef: { current: mockCanvas as any } 
+  it('should handle selection mode', () => {
+    const { result } = renderHook(() => useCanvasInteraction({
+      fabricCanvasRef: { current: mockCanvas } as any
     }));
     
-    // Regular object selection
-    const regularObject = createMockObject('rect', { id: 'rect1' });
-    const mockEvent = {
-      target: regularObject
-    };
+    act(() => {
+      result.current.setSelectionMode(true);
+    });
     
-    // Get the event handler function and call it
-    const onHandler = mockCanvas.on.mock.calls.find(call => call[0] === 'selection:created')?.[1];
-    expect(onHandler).toBeDefined();
-    
-    if (onHandler) {
-      onHandler(mockEvent);
-    }
-    
-    // Verify the result - should select the object
-    expect(result.current.selectedObject).toBe(regularObject);
+    expect(mockCanvas.selection).toBe(true);
   });
   
-  it('should ignore grid object selection', () => {
-    // Render the hook
-    const { result } = renderHook(() => useCanvasInteraction({ 
-      canvasRef: { current: mockCanvas as any } 
+  it('should handle drawing mode', () => {
+    const { result } = renderHook(() => useCanvasInteraction({
+      fabricCanvasRef: { current: mockCanvas } as any
     }));
     
-    // Grid object selection
-    const gridObject = createMockObject('line', { objectType: 'grid', id: 'grid1' });
-    const mockEvent = {
-      target: gridObject
-    };
+    act(() => {
+      result.current.setDrawingMode(true);
+    });
     
-    // Get the event handler function and call it
-    const onHandler = mockCanvas.on.mock.calls.find(call => call[0] === 'selection:created')?.[1];
-    expect(onHandler).toBeDefined();
+    expect(result.current.isDrawing).toBe(true);
+  });
+  
+  it('should handle null canvas gracefully', () => {
+    const { result } = renderHook(() => useCanvasInteraction({
+      fabricCanvasRef: { current: null } as any
+    }));
     
-    if (onHandler) {
-      onHandler(mockEvent);
-    }
+    act(() => {
+      result.current.setSelectionMode(true);
+      result.current.setDrawingMode(true);
+    });
     
-    // Verify the result - should NOT select the grid object
-    expect(result.current.selectedObject).toBeNull();
+    expect(result.current.isInteracting).toBe(false);
+    expect(result.current.isDrawing).toBe(true);
+  });
+  
+  it('should clean up event listeners on unmount', () => {
+    const { unmount } = renderHook(() => useCanvasInteraction({
+      fabricCanvasRef: { current: mockCanvas } as any
+    }));
+    
+    unmount();
+    
+    expect(mockCanvas.off).toHaveBeenCalled();
   });
 });

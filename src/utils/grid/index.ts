@@ -24,17 +24,15 @@ export {
   trackGridCreationPerformance 
 } from './performanceTracking';
 
-// Export from gridCreationUtils
-export {
-  ensureGrid
-} from './gridRenderers';
-
 // Export from gridRenderers
 export {
   createCompleteGrid,
   createSimpleGrid,
   createBasicEmergencyGrid,
-  createGrid
+  createGrid,
+  ensureGrid,
+  validateGrid,
+  GridOptions
 } from './gridRenderers';
 
 // Export from gridRetryUtils
@@ -50,11 +48,11 @@ export {
   reorderGridObjects
 } from './gridBasics';
 
-// Export from simpleGridCreator
+// Export from reliableGridCreation
 export {
   createReliableGrid,
   ensureGridVisibility
-} from './simpleGridCreator';
+} from './reliableGridCreation';
 
 // Export from gridDiagnostics
 export {
@@ -69,6 +67,3 @@ export {
   GridValidation,
   GridDebug
 } from './exports';
-
-// Export types - Note the "export type" syntax
-export type { GridOptions } from './gridRenderers';
