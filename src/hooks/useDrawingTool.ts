@@ -35,6 +35,34 @@ export interface UseDrawingToolResult {
 /**
  * Hook for managing drawing tool state and operations
  * 
+ * This hook centralizes drawing tool logic by:
+ * 1. Maintaining the current tool state (SELECT, DRAW, LINE, etc.)
+ * 2. Tracking whether drawing is in progress
+ * 3. Validating drawing tool values against the DrawingMode enum
+ * 4. Providing consistent drawing operation methods
+ * 5. Handling error states and user feedback
+ * 
+ * Usage example:
+ * ```tsx
+ * const {
+ *   tool,
+ *   setTool,
+ *   startDrawing,
+ *   continueDrawing, 
+ *   endDrawing,
+ *   isDrawing
+ * } = useDrawingTool();
+ * 
+ * // Set a tool using the DrawingMode enum
+ * setTool(DrawingMode.STRAIGHT_LINE);
+ * 
+ * // Handle drawing operations
+ * const handleMouseDown = (e) => {
+ *   const point = { x: e.clientX, y: e.clientY };
+ *   startDrawing(point);
+ * };
+ * ```
+ * 
  * @returns {UseDrawingToolResult} Drawing tool state and handlers
  */
 export function useDrawingTool(): UseDrawingToolResult {
@@ -46,6 +74,9 @@ export function useDrawingTool(): UseDrawingToolResult {
   /**
    * Validate if a value is a valid DrawingTool
    * 
+   * This validation ensures that only valid DrawingMode enum values are used
+   * throughout the application, preventing type mismatches and runtime errors.
+   * 
    * @param {unknown} value - Value to check
    * @returns {boolean} Whether value is a valid DrawingTool
    */
@@ -56,6 +87,12 @@ export function useDrawingTool(): UseDrawingToolResult {
   
   /**
    * Set the current drawing tool with validation
+   * 
+   * This method:
+   * 1. Validates the incoming tool against the DrawingMode enum
+   * 2. Updates the tool state if valid
+   * 3. Provides user feedback with toast notifications
+   * 4. Logs tool changes for debugging
    * 
    * @param {DrawingTool} newTool - New drawing tool to set
    */
@@ -78,6 +115,9 @@ export function useDrawingTool(): UseDrawingToolResult {
   /**
    * Start drawing at a point
    * 
+   * Initiates a drawing operation at the specified coordinates.
+   * Sets the isDrawing flag to true, which affects the behavior of other methods.
+   * 
    * @param {object} point - Start point coordinates
    */
   const startDrawing = useCallback((point: { x: number; y: number }) => {
@@ -87,6 +127,9 @@ export function useDrawingTool(): UseDrawingToolResult {
   
   /**
    * Continue drawing to a point
+   * 
+   * Updates an in-progress drawing operation as the pointer moves.
+   * Only has an effect if isDrawing is true.
    * 
    * @param {object} point - Current point coordinates
    */
@@ -98,6 +141,9 @@ export function useDrawingTool(): UseDrawingToolResult {
   /**
    * End drawing at a point
    * 
+   * Completes a drawing operation at the specified coordinates.
+   * Resets the isDrawing flag to false.
+   * 
    * @param {object} point - End point coordinates
    */
   const endDrawing = useCallback((point: { x: number; y: number }) => {
@@ -108,6 +154,9 @@ export function useDrawingTool(): UseDrawingToolResult {
   
   /**
    * Cancel the current drawing operation
+   * 
+   * Aborts an in-progress drawing operation without completing it.
+   * Resets the isDrawing flag to false.
    */
   const cancelDrawing = useCallback(() => {
     if (!isDrawing) return;

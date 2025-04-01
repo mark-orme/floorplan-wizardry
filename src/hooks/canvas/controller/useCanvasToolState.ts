@@ -32,6 +32,32 @@ interface UseCanvasToolStateProps {
 
 /**
  * Hook that manages canvas tool state and changes
+ * 
+ * This hook is responsible for:
+ * 1. Validating tool selections against the DrawingMode enum
+ * 2. Applying tool-specific settings to the fabric canvas
+ * 3. Managing zoom state
+ * 4. Providing user feedback through toast notifications
+ * 5. Handling errors during tool changes
+ * 
+ * Usage example:
+ * ```tsx
+ * const { handleToolChange, handleZoom } = useCanvasToolState({
+ *   fabricCanvasRef,
+ *   tool,
+ *   setTool,
+ *   lineThickness,
+ *   lineColor,
+ *   zoomLevel,
+ *   setZoomLevel
+ * });
+ * 
+ * // Change the current tool
+ * handleToolChange(DrawingMode.DRAW);
+ * 
+ * // Zoom the canvas
+ * handleZoom(1.2); // Zoom in 20%
+ * ```
  */
 export const useCanvasToolState = ({
   fabricCanvasRef,
@@ -45,6 +71,10 @@ export const useCanvasToolState = ({
   /**
    * Validate if a value is a valid DrawingTool
    * 
+   * Performs runtime type checking to ensure the value is:
+   * 1. A string
+   * 2. A valid value from the DrawingMode enum
+   * 
    * @param {unknown} value - Value to check
    * @returns {boolean} Whether value is a valid DrawingTool
    */
@@ -55,6 +85,19 @@ export const useCanvasToolState = ({
 
   /**
    * Handle tool change
+   * 
+   * This function:
+   * 1. Validates the new tool
+   * 2. Updates the tool state
+   * 3. Configures the fabric canvas based on the tool
+   * 4. Handles errors and provides user feedback
+   * 
+   * Each tool requires different canvas settings:
+   * - SELECT: Enables object selection, disables drawing mode
+   * - DRAW: Enables free drawing with the current brush settings
+   * - Other tools: Disables drawing mode, applies tool-specific settings
+   * 
+   * @param {DrawingTool} newTool - The tool to switch to
    */
   const handleToolChange = useCallback((newTool: DrawingTool): void => {
     logger.info("Tool change requested", { 
@@ -111,6 +154,17 @@ export const useCanvasToolState = ({
   
   /**
    * Handle zoom change
+   * 
+   * Applies a zoom factor to the current zoom level and updates the canvas view.
+   * A zoom factor > 1 zooms in, < 1 zooms out.
+   * 
+   * This function:
+   * 1. Calculates the new zoom level
+   * 2. Updates the zoom state
+   * 3. Applies zoom to the canvas
+   * 4. Provides user feedback
+   * 
+   * @param {number} zoomFactor - Multiplier for current zoom (e.g. 1.1 = zoom in 10%)
    */
   const handleZoom = useCallback((zoomFactor: number): void => {
     const canvas = fabricCanvasRef.current;

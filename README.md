@@ -11,6 +11,7 @@ A powerful web-based application for creating and editing floor plans with accur
 - [Getting Started](#-getting-started)
 - [Usage Guide](#-usage-guide)
 - [Code Structure](#-code-structure)
+- [Developer Documentation](#-developer-documentation)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -64,6 +65,51 @@ This application allows architects, designers, and homeowners to:
 - **Supabase** for cloud storage and user authentication
 - **React Query** for efficient data fetching and state management
 
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────┐
+│            React Components         │
+│                                     │
+│  ┌─────────────┐    ┌─────────────┐ │
+│  │ToolbarPanel │    │CanvasApp    │ │
+│  └─────────────┘    └─────────────┘ │
+│           │               │         │
+└───────────┼───────────────┼─────────┘
+            │               │
+            ▼               ▼
+┌─────────────────────────────────────┐
+│              Contexts               │
+│                                     │
+│ ┌─────────────┐   ┌──────────────┐  │
+│ │DrawingContext│  │CanvasContext │  │
+│ └─────────────┘   └──────────────┘  │
+│          │               │          │
+└──────────┼───────────────┼──────────┘
+           │               │
+           ▼               ▼
+┌─────────────────────────────────────┐
+│         Custom React Hooks          │
+│                                     │
+│ ┌─────────────┐   ┌──────────────┐  │
+│ │useCanvasInit│   │useTool       │  │
+│ └─────────────┘   └──────────────┘  │
+│         │                │          │
+└─────────┼────────────────┼──────────┘
+          │                │
+          ▼                ▼
+┌─────────────────────────────────────┐
+│           Fabric.js API             │
+│                                     │
+│  ┌─────────────┐   ┌─────────────┐  │
+│  │Canvas       │   │Objects      │  │
+│  └─────────────┘   └─────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+For more detailed architecture diagrams and state flows, see the [Architecture Documentation](./docs/architecture-diagram.md).
+
 ### Architecture Overview
 The application follows a component-based architecture with:
 
@@ -105,6 +151,8 @@ npm install
 # Start the development server
 npm run dev
 ```
+
+See the [Developer Onboarding Guide](./docs/developer-onboarding.md) for more detailed setup instructions, VS Code configurations, and development best practices.
 
 ## 📖 Usage Guide
 
@@ -154,44 +202,16 @@ src/
     └── floor-plan/ # Application floor plan type definitions
 ```
 
-### Key Modules
+## 📚 Developer Documentation
 
-#### Floor Plan Adapter
-The floor plan adapter system is implemented in `src/utils/floorPlanAdapter/` with these key files:
+Comprehensive documentation for developers is available in the `docs/` directory:
 
-- `index.ts`: Re-exports all adapter functionality
-- `converters.ts`: Functions to convert between app and core floor plan types
-- `validators.ts`: Validation utilities for floor plan data
-- `types.ts`: Type helpers and conversion utilities
-
-#### Grid System
-The grid system is implemented in `src/utils/grid/` with these key files:
-
-- `gridCreationUtils.ts`: Core grid creation functions
-- `simpleGrid.ts`: Basic grid implementation
-- `gridDiagnostics.ts`: Grid debugging tools
-- `gridDebugUtils.ts`: Developer tools for grid management
-- `gridValidator.ts`: Validation utilities for grid integrity
-
-The grid system provides:
-- Multiple grid types (basic, complete, enhanced)
-- Validation and verification mechanisms
-- Error recovery with retry logic
-- Diagnostic and debugging tools
-
-#### Canvas System
-The canvas system is built on Fabric.js and organized in:
-
-- `src/hooks/canvas/`: Canvas-related hooks
-- `src/utils/fabric/`: Fabric.js utility functions
-- `src/components/canvas/`: Canvas React components
-
-#### Drawing Tools
-Drawing tools are implemented in:
-
-- `src/hooks/drawing/`: Drawing-related hooks
-- `src/components/canvas/`: Tool-specific components
-- `src/utils/drawing/`: Drawing utility functions
+- [Developer Onboarding Guide](./docs/developer-onboarding.md) - Getting started guide with VS Code setup, debugging tips, and common issues
+- [Architecture Diagram](./docs/architecture-diagram.md) - Visual representation of the application architecture
+- [Grid System Documentation](./docs/grid-system.md) - Details on the grid implementation
+- [Floor Plan Adapter](./docs/floor-plan-adapter.md) - Guide to the floor plan data conversion system
+- [Type Safety Guidelines](./docs/type-safety-guidelines.md) - Best practices for maintaining type safety
+- [Common Pitfalls](./docs/common-pitfalls.md) - Solutions to common development issues
 
 ## 🤝 Contributing
 
