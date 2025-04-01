@@ -42,8 +42,8 @@ vi.mock('@/utils/canvasGrid', () => ({
 }));
 
 describe('Canvas Drawing Flow', () => {
-  let onCanvasReady: jest.Mock;
-  let onError: jest.Mock;
+  let onCanvasReady: ReturnType<typeof vi.fn>;
+  let onError: ReturnType<typeof vi.fn>;
   
   beforeEach(() => {
     // Reset mocks
@@ -77,7 +77,7 @@ describe('Canvas Drawing Flow', () => {
   
   it('should handle errors gracefully', () => {
     // Mock implementation to throw error
-    (FabricCanvas as jest.Mock).mockImplementationOnce(() => {
+    (FabricCanvas as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => {
       throw new Error('Test error');
     });
     
