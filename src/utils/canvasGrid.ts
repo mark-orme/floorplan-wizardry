@@ -4,6 +4,7 @@
  * @module utils/canvasGrid
  */
 import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
 /**
  * Grid options interface
@@ -59,6 +60,17 @@ export const createGrid = (
     return [];
   }
   
+  // Remove any existing grid objects
+  const existingGridObjects = canvas.getObjects().filter(obj => 
+    (obj as any).objectType === 'grid'
+  );
+  
+  if (existingGridObjects.length > 0) {
+    existingGridObjects.forEach(obj => {
+      canvas.remove(obj);
+    });
+  }
+  
   const gridObjects: FabricObject[] = [];
   const { 
     size, 
@@ -84,10 +96,12 @@ export const createGrid = (
       selectable: false,
       evented: false,
       objectCaching: false,
-      objectType: 'grid'
-    });
+      objectType: 'grid',
+      hoverCursor: 'default'
+    } as any);
     
     canvas.add(line);
+    canvas.sendToBack(line);
     gridObjects.push(line);
   }
   
@@ -101,10 +115,12 @@ export const createGrid = (
       selectable: false,
       evented: false,
       objectCaching: false,
-      objectType: 'grid'
-    });
+      objectType: 'grid',
+      hoverCursor: 'default'
+    } as any);
     
     canvas.add(line);
+    canvas.sendToBack(line);
     gridObjects.push(line);
   }
   
@@ -115,4 +131,46 @@ export const createGrid = (
   
   canvas.renderAll();
   return gridObjects;
+};
+
+/**
+ * Check if an object is a grid element
+ * @param obj - Fabric object to check
+ */
+export const isGridObject = (obj: FabricObject): boolean => {
+  return (obj as any).objectType === 'grid';
+};
+
+/**
+ * Toggle grid visibility
+ * @param canvas - Fabric canvas
+ * @param visible - Whether grid should be visible
+ */
+export const toggleGridVisibility = (canvas: FabricCanvas, visible: boolean): void => {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter(obj => isGridObject(obj));
+  
+  gridObjects.forEach(obj => {
+    obj.set('visible', visible);
+  });
+  
+  canvas.requestRenderAll();
+};
+
+/**
+ * Ensure grid is visible after operations like zoom/pan
+ * @param canvas - Fabric canvas
+ */
+export const ensureGridVisibility = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter(obj => isGridObject(obj));
+  
+  // Send all grid objects to back
+  gridObjects.forEach(obj => {
+    canvas.sendToBack(obj);
+  });
+  
+  canvas.requestRenderAll();
 };

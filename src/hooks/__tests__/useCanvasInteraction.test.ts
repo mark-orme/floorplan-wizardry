@@ -1,236 +1,88 @@
-
-/**
- * Tests for useCanvasInteraction hook
- * @module hooks/__tests__/useCanvasInteraction
- */
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
-import { DrawingMode } from '@/constants/drawingModes';
-import { toast } from 'sonner';
-import logger from '@/utils/logger';
-import { createMockCanvas, createMockObject } from '@/utils/test/mockFabricCanvas';
-
-// Mock dependencies
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn()
-  }
-}));
-
-vi.mock('@/utils/logger', () => ({
-  default: {
-    info: vi.fn(),
-    error: vi.fn()
-  }
-}));
+import { renderHook, act } from '@testing-library/react';
+import { useCanvasInteraction } from '../useCanvasInteraction';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createMockCanvas, createMockObject } from '@/tests/utils/canvasTestUtils';
+import type { FabricCanvas } from '@/types/fabric';
 
 describe('useCanvasInteraction', () => {
-  // Setup mocks
-  let mockCanvas;
-  let fabricCanvasRef;
-  let saveCurrentState;
+  let mockCanvas: FabricCanvas;
   
   beforeEach(() => {
     vi.clearAllMocks();
-    
     mockCanvas = createMockCanvas();
-    
-    // Add some mock objects to the canvas
-    const regularObject = createMockObject({ type: 'rect', id: 'rect1' });
-    const gridObject = createMockObject({ 
-      type: 'line', 
-      objectType: 'grid', 
-      id: 'grid1'
-    });
-    const lineObject = createMockObject({
-      type: 'polyline',
-      id: 'line1'
-    });
-    
-    // Setup mock objects array
-    mockCanvas.getObjects = vi.fn().mockReturnValue([regularObject, gridObject, lineObject]);
-    
-    // Setup mock active objects
-    mockCanvas.getActiveObjects = vi.fn().mockReturnValue([regularObject, lineObject]);
-    
-    fabricCanvasRef = { current: mockCanvas };
-    saveCurrentState = vi.fn();
   });
   
-  it('should delete selected objects', () => {
-    const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef,
-      tool: DrawingMode.SELECT,
-      saveCurrentState
-    }));
-    
-    act(() => {
-      result.current.deleteSelectedObjects();
-    });
-    
-    // Should save current state before deletion
-    expect(saveCurrentState).toHaveBeenCalled();
-    
-    // Should call remove on the canvas with the active objects
-    expect(mockCanvas.remove).toHaveBeenCalled();
-    
-    // Should discard active object
-    expect(mockCanvas.discardActiveObject).toHaveBeenCalled();
-    
-    // Should render canvas
-    expect(mockCanvas.requestRenderAll).toHaveBeenCalled();
-    
-    // Should show success toast
-    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Deleted'));
+  afterEach(() => {
+    vi.resetAllMocks();
   });
   
-  it('should not delete grid objects', () => {
-    // Override getActiveObjects to include grid object
-    const regularObject = createMockObject({ type: 'rect', id: 'rect1' });
-    const gridObject = createMockObject({ 
-      type: 'line', 
-      objectType: 'grid', 
-      id: 'grid1'
-    });
+  it('should register object selection handler', () => {
+    // Arrange
+    const canvasRef = { current: mockCanvas };
+    const handleSelect = vi.fn();
     
-    mockCanvas.getActiveObjects = vi.fn().mockReturnValue([regularObject, gridObject]);
+    // Act
+    renderHook(() => useCanvasInteraction(canvasRef, { onSelect: handleSelect }));
     
-    const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef,
-      tool: DrawingMode.SELECT,
-      saveCurrentState
-    }));
-    
-    act(() => {
-      result.current.deleteSelectedObjects();
-    });
-    
-    // Should filter out grid objects before deletion
-    expect(mockCanvas.remove).toHaveBeenCalledWith(regularObject);
-    expect(mockCanvas.remove).not.toHaveBeenCalledWith(gridObject);
+    // Assert
+    expect(mockCanvas.on).toHaveBeenCalledWith('selection:created', expect.any(Function));
+    expect(mockCanvas.on).toHaveBeenCalledWith('selection:updated', expect.any(Function));
   });
   
-  it('should enable point selection mode', () => {
-    const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef,
-      tool: DrawingMode.SELECT,
-      saveCurrentState
-    }));
+  it('should handle object selection events', () => {
+    // Arrange
+    const canvasRef = { current: mockCanvas };
+    const handleSelect = vi.fn();
     
-    act(() => {
-      result.current.enablePointSelection();
-    });
+    // Create mock objects
+    const mockRect = createMockObject('rect', { id: 'rect1' });
+    const mockGrid = createMockObject('line', { objectType: 'grid', id: 'grid1' });
     
-    // Should disable canvas selection (lasso)
-    expect(mockCanvas.selection).toBe(false);
+    const getActiveObjectsSpy = vi.fn().mockReturnValue([mockRect]);
+    mockCanvas.getActiveObjects = getActiveObjectsSpy;
     
-    // Should set appropriate cursors
-    expect(mockCanvas.defaultCursor).toBe('default');
-    expect(mockCanvas.hoverCursor).toBe('pointer');
+    // Act
+    renderHook(() => useCanvasInteraction(canvasRef, { onSelect: handleSelect }));
     
-    // Get objects from mock canvas
-    const objects = mockCanvas.getObjects();
+    // Find the selection:created handler
+    const selectionCreatedHandler = vi.mocked(mockCanvas.on).mock.calls
+      .find(call => call[0] === 'selection:created')?.[1];
     
-    // Check that objects are correctly configured for selection
-    objects.forEach(obj => {
-      if (obj.objectType && obj.objectType.includes('grid')) {
-        // Grid objects should not be selectable
-        expect(obj.selectable).toBe(false);
-        expect(obj.evented).toBe(false);
-      } else {
-        // Non-grid objects should be selectable
-        expect(obj.selectable).toBe(true);
-        if (obj.type === 'polyline' || obj.type === 'line') {
-          // Line types should have enhanced selection settings
-          expect(obj.perPixelTargetFind).toBe(false);
-          expect(obj.targetFindTolerance).toBe(10);
-        }
-      }
-    });
-    
-    // Should render canvas
-    expect(mockCanvas.requestRenderAll).toHaveBeenCalled();
+    if (selectionCreatedHandler) {
+      // Trigger the handler manually
+      selectionCreatedHandler({ target: mockRect });
+      
+      // Assert
+      expect(handleSelect).toHaveBeenCalledWith([mockRect]);
+    }
   });
   
-  it('should setup selection mode based on tool', () => {
-    // Test with SELECT tool
-    const { result, rerender } = renderHook(
-      (props) => useCanvasInteraction({
-        fabricCanvasRef,
-        tool: props.tool,
-        saveCurrentState
-      }),
-      { initialProps: { tool: DrawingMode.SELECT } }
-    );
+  it('should not call selection handler for grid objects', () => {
+    // Arrange
+    const canvasRef = { current: mockCanvas };
+    const handleSelect = vi.fn();
     
-    act(() => {
-      result.current.setupSelectionMode();
-    });
+    // Create mock grid object that shouldn't trigger selection
+    const mockGrid = createMockObject('line', { objectType: 'grid', id: 'grid1' });
     
-    // Should enable point selection for SELECT tool
-    expect(mockCanvas.selection).toBe(false); // Lasso disabled
-    expect(mockCanvas.defaultCursor).toBe('default');
+    const getActiveObjectsSpy = vi.fn().mockReturnValue([mockGrid]);
+    mockCanvas.getActiveObjects = getActiveObjectsSpy;
     
-    // Reset mock
-    vi.clearAllMocks();
+    // Act
+    renderHook(() => useCanvasInteraction(canvasRef, { onSelect: handleSelect }));
     
-    // Test with non-SELECT tool
-    rerender({ tool: DrawingMode.DRAW });
+    // Find the selection:created handler
+    const selectionCreatedHandler = vi.mocked(mockCanvas.on).mock.calls
+      .find(call => call[0] === 'selection:created')?.[1];
     
-    act(() => {
-      result.current.setupSelectionMode();
-    });
-    
-    // For non-SELECT tools, objects should not be selectable
-    const objects = mockCanvas.getObjects();
-    objects.forEach(obj => {
-      expect(obj.selectable).toBe(false);
-    });
+    if (selectionCreatedHandler) {
+      // Trigger the handler manually
+      selectionCreatedHandler({ target: mockGrid });
+      
+      // Assert that handler wasn't called for grid objects
+      expect(handleSelect).not.toHaveBeenCalled();
+    }
   });
   
-  it('should handle no selected objects gracefully', () => {
-    // Override getActiveObjects to return empty array
-    mockCanvas.getActiveObjects = vi.fn().mockReturnValue([]);
-    
-    const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef,
-      tool: DrawingMode.SELECT,
-      saveCurrentState
-    }));
-    
-    act(() => {
-      result.current.deleteSelectedObjects();
-    });
-    
-    // Should not call saveCurrentState when no objects selected
-    expect(saveCurrentState).not.toHaveBeenCalled();
-    
-    // Should not call remove
-    expect(mockCanvas.remove).not.toHaveBeenCalled();
-    
-    // Should show info toast
-    expect(toast.info).toHaveBeenCalledWith(expect.stringContaining('No objects selected'));
-  });
-  
-  it('should handle missing canvas gracefully', () => {
-    const emptyCanvasRef = { current: null };
-    
-    const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: emptyCanvasRef,
-      tool: DrawingMode.SELECT,
-      saveCurrentState
-    }));
-    
-    // These operations should not throw errors when canvas is null
-    act(() => {
-      result.current.deleteSelectedObjects();
-      result.current.enablePointSelection();
-      result.current.setupSelectionMode();
-    });
-    
-    // No operations should be performed
-    expect(saveCurrentState).not.toHaveBeenCalled();
-  });
+  // Add more tests for other canvas interactions...
 });

@@ -36,4 +36,10 @@ export interface UseDrawingHistoryResult {
   
   /** Save the current canvas state to history */
   saveCurrentState: () => void;
+  
+  /** Whether undo is available */
+  canUndo: boolean;
+  
+  /** Whether redo is available */
+  canRedo: boolean;
 }

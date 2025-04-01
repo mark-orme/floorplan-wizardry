@@ -26,9 +26,16 @@ export const ProfiledCanvas = ({
   onRender = profileRender,
   ...canvasProps
 }: ProfiledCanvasProps) => {
+  // Ensure required props are defined with default values if not provided
+  const defaultProps: Partial<CanvasProps> = {
+    width: canvasProps.width || 800,
+    height: canvasProps.height || 600,
+    onCanvasReady: canvasProps.onCanvasReady || (() => {})
+  };
+
   return (
     <Profiler id={profilerId} onRender={onRender}>
-      <Canvas {...canvasProps} />
+      <Canvas {...defaultProps} {...canvasProps} />
     </Profiler>
   );
 };

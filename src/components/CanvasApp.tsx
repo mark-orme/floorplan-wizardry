@@ -11,6 +11,10 @@ import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 import type { DebugInfoState } from "@/types/core/DebugInfo";
 
+// Default dimensions for the canvas
+const DEFAULT_CANVAS_WIDTH = 800;
+const DEFAULT_CANVAS_HEIGHT = 600;
+
 /**
  * Canvas application component
  * Wraps the canvas with necessary controllers and UI
@@ -35,9 +39,19 @@ export const CanvasApp = (): JSX.Element => {
     console.log('Canvas Initialized:', debugInfo.canvasInitialized);
   }, [debugInfo]);
   
+  // Mock handler for canvas ready event
+  const handleCanvasReady = (canvas: fabric.Canvas) => {
+    console.log('Canvas is ready');
+  };
+  
   return (
     <CanvasLayout>
-      <Canvas setDebugInfo={setDebugInfo} />
+      <Canvas 
+        width={DEFAULT_CANVAS_WIDTH}
+        height={DEFAULT_CANVAS_HEIGHT}
+        onCanvasReady={handleCanvasReady}
+        setDebugInfo={setDebugInfo}
+      />
       <DrawingToolbarModals />
     </CanvasLayout>
   );
