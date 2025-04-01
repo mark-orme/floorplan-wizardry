@@ -5,7 +5,8 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createReliableGrid, ensureGridVisibility } from '@/utils/grid/reliableGridCreation';
+import { createGrid } from '@/utils/grid/gridRenderers';
+import { ensureGridVisibility } from '@/utils/grid/gridVisibility';
 import { toast } from 'sonner';
 
 interface UseSimpleGridOptions {
@@ -33,7 +34,7 @@ export const useSimpleGrid = (
   const [objectCount, setObjectCount] = useState(0);
   const [creationAttempts, setCreationAttempts] = useState(0);
   
-  // Create grid
+  // Create grid synchronously (not using async anymore)
   const createGrid = () => {
     if (!canvas) {
       console.warn('Cannot create grid: No canvas provided');
@@ -43,8 +44,12 @@ export const useSimpleGrid = (
     try {
       setCreationAttempts(prev => prev + 1);
       
-      const gridObjects = createReliableGrid(canvas, gridLayerRef);
+      // Use synchronous grid creation
+      const gridObjects = createGrid(canvas);
       const success = gridObjects.length > 0;
+      
+      // Store grid objects in ref
+      gridLayerRef.current = gridObjects;
       
       setGridCreated(success);
       setObjectCount(gridObjects.length);
@@ -110,7 +115,8 @@ export const useSimpleGrid = (
     if (!canvas || !gridCreated) return;
     
     const intervalId = setInterval(() => {
-      const fixesApplied = ensureGridVisibility(canvas, gridLayerRef);
+      // Pass the actual grid objects, not the ref itself
+      const fixesApplied = ensureGridVisibility(canvas, gridLayerRef.current);
       
       if (fixesApplied) {
         setObjectCount(gridLayerRef.current.length);

@@ -1,70 +1,21 @@
 
 /**
- * Grid utilities module
- * Exports all grid-related functionality
+ * Grid utilities index
+ * Central export point for all grid-related utilities
  * @module utils/grid
  */
 
-// Export from error handling modules
-export { 
-  GridErrorSeverity, 
-  categorizeGridError, 
-  GRID_ERROR_MESSAGES 
-} from './errorTypes';
+// Re-export individual utility files for direct imports
+export { createGrid, createCompleteGrid, createBasicEmergencyGrid } from './gridRenderers';
+export { dumpGridState, forceCreateGrid } from './gridDebugUtils';
+export { ensureGridVisibility, setGridVisibility } from './gridVisibility';
+export { runGridDiagnostics, applyGridFixes } from './gridDiagnostics';
 
-export { 
-  handleGridCreationError 
-} from './errorHandlers';
+// Export types
+export type { GridDiagnosticResult } from './gridDiagnostics';
 
-export { 
-  createGridRecoveryPlan 
-} from './recoveryPlans';
+// Re-export utility namespaces from exports.ts
+export { GridCreation, GridValidation, GridDebug } from './exports';
 
-export { 
-  trackGridCreationPerformance 
-} from './performanceTracking';
-
-// Export from gridRenderers
-export {
-  createCompleteGrid,
-  createBasicEmergencyGrid
-} from './gridRenderers';
-
-// Use export type for type exports when isolatedModules is enabled
-export type { GridOptions } from './gridRenderers';
-
-// Export createGrid to support existing code
-export { createGrid } from './gridRenderers';
-
-// Export from gridRetryUtils
-export {
-  retryWithBackoff,
-  executeWithTimeout
-} from './gridRetryUtils';
-
-// Export from gridBasics
-export {
-  clearGrid,
-  isCanvasValidForGrid,
-  reorderGridObjects
-} from './gridBasics';
-
-// Export from reliableGridCreation
-export {
-  createReliableGrid,
-  ensureGridVisibility
-} from './reliableGridCreation';
-
-// Export from gridDiagnostics
-export {
-  runGridDiagnostics,
-  applyGridFixes,
-  emergencyGridFix
-} from './gridDiagnostics';
-
-// Export from exports
-export { 
-  GridCreation,
-  GridValidation,
-  GridDebug
-} from './exports';
+// Re-export type-safe utility functions
+export type { GridOptions } from './gridTypes';

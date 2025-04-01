@@ -27,7 +27,7 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
   // Function to dump grid state 
   const handleDumpGridState = () => {
     if (canvas) {
-      dumpGridState(canvas, true); // Pass both required parameters
+      dumpGridState(canvas); // Fixed: removed the second argument
       console.log("Grid state dumped to console");
     }
   };

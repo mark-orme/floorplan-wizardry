@@ -67,7 +67,7 @@ export const GridDebugPanel: React.FC<GridDebugPanelProps> = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    dumpGridState(canvas, true);
+    dumpGridState(canvas); // Fixed: removed second argument
     console.log("Grid layer ref:", gridLayerRef.current);
   }, [fabricCanvasRef, gridLayerRef]);
   

@@ -7,7 +7,7 @@
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
-import { createGrid } from './gridBasics';
+import { createGrid } from './gridRenderers';
 import { createBasicEmergencyGrid } from './gridRenderers';
 
 /**

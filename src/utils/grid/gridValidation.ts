@@ -1,9 +1,9 @@
 
 /**
  * Grid validation utilities
+ * @module utils/grid/gridValidation
  */
-import { Canvas as FabricCanvas } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import logger from '@/utils/logger';
 
 /**
@@ -43,53 +43,37 @@ export function isCanvasValidForGrid(canvas: FabricCanvas): boolean {
 }
 
 /**
- * Validate grid dimensions
- * @param width - Grid width
- * @param height - Grid height
- * @returns Whether dimensions are valid
- */
-export function validateGridDimensions(width: number, height: number): boolean {
-  const minWidth = 100;
-  const minHeight = 100;
-
-  return width >= minWidth && height >= minHeight;
-}
-
-/**
- * Check if grid exists on canvas
- * @param canvas - Fabric canvas
- * @returns Whether grid exists
- */
-export function doesGridExist(canvas: FabricCanvas): boolean {
-  if (!canvas) return false;
-
-  const objects = canvas.getObjects?.() || [];
-  return objects.some(obj => (obj as any).objectType === 'grid');
-}
-
-/**
- * Count grid objects on canvas
- * @param canvas - Fabric canvas
- * @returns Number of grid objects
- */
-export function countGridObjects(canvas: FabricCanvas): number {
-  if (!canvas) return 0;
-
-  const objects = canvas.getObjects?.() || [];
-  return objects.filter(obj => (obj as any).objectType === 'grid').length;
-}
-
-/**
- * Check if grid is valid
- * @param canvas - Fabric canvas
+ * Check if grid state is valid
+ * @param grid - Grid state or objects
  * @returns Whether grid is valid
  */
-export function isGridValid(canvas: FabricCanvas): boolean {
-  if (!isCanvasValidForGrid(canvas)) return false;
-  if (!doesGridExist(canvas)) return false;
+export function isGridValid(grid: FabricObject[] | null | undefined): boolean {
+  if (!grid) {
+    logger.warn('Grid is null or undefined');
+    return false;
+  }
 
-  // Check if there are enough grid objects
-  const gridObjectCount = countGridObjects(canvas);
-  // A minimal grid should have at least a few lines
-  return gridObjectCount >= 4;
+  if (!Array.isArray(grid)) {
+    logger.warn('Grid is not an array');
+    return false;
+  }
+
+  if (grid.length === 0) {
+    logger.warn('Grid is empty');
+    return false;
+  }
+
+  // Check if all objects have expected properties
+  const invalidObjects = grid.filter(obj => 
+    !obj || 
+    typeof obj !== 'object' || 
+    !(obj as any).objectType
+  );
+
+  if (invalidObjects.length > 0) {
+    logger.warn(`Grid contains ${invalidObjects.length} invalid objects`);
+    return false;
+  }
+
+  return true;
 }

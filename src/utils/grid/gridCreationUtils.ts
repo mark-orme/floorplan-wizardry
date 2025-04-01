@@ -4,7 +4,7 @@
  * @module utils/grid/gridCreationUtils
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createGrid } from './gridBasics';
+import { createGrid } from './gridRenderers';
 import { createCompleteGrid } from './gridRenderers';
 import { retryWithBackoff } from './gridRetryUtils';
 
