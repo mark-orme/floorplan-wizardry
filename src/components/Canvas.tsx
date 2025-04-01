@@ -33,7 +33,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     try {
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
-        height
+        height,
+        selection: true
       });
 
       // Update debug info if provided

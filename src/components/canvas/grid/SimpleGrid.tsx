@@ -1,83 +1,89 @@
 
-import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { SimpleGridClass } from './SimpleGridClass';
-import { Button } from '@/components/ui/button';
-import { Grid, X } from 'lucide-react';
-
 /**
- * Props for SimpleGrid component
+ * Simple Grid component
+ * Creates and manages a grid on the canvas
  */
+import React, { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { createGrid, toggleGridVisibility } from '@/utils/canvasGrid';
+
 interface SimpleGridProps {
   canvas: FabricCanvas;
-  showControls?: boolean;
   defaultVisible?: boolean;
+  showControls?: boolean;
   onGridCreated?: (objects: FabricObject[]) => void;
 }
 
-/**
- * SimpleGrid React component wrapper
- * Creates and manages a grid on the canvas
- * @param props Component props
- * @returns {JSX.Element} Rendered component
- */
 export const SimpleGrid: React.FC<SimpleGridProps> = ({
   canvas,
-  showControls = false,
   defaultVisible = true,
+  showControls = false,
   onGridCreated
 }) => {
-  const [visible, setVisible] = useState(defaultVisible);
-  const [gridInstance, setGridInstance] = useState<SimpleGridClass | null>(null);
+  const gridObjectsRef = useRef<FabricObject[]>([]);
+  const gridCreatedRef = useRef(false);
   
-  // Create grid on canvas mount
+  // Create grid on initial render
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || gridCreatedRef.current) return;
     
-    // Initialize grid
-    const grid = new SimpleGridClass({
-      canvas,
-      showControls,
-      defaultVisible
-    });
-    
-    setGridInstance(grid);
-    
-    // Call the callback if provided
-    if (onGridCreated) {
-      onGridCreated(grid.getObjects());
+    // Create the grid
+    try {
+      console.log('Creating grid on canvas');
+      const gridObjects = createGrid(canvas);
+      
+      if (gridObjects.length > 0) {
+        gridObjectsRef.current = gridObjects;
+        gridCreatedRef.current = true;
+        
+        // Set grid visibility
+        toggleGridVisibility(canvas, defaultVisible);
+        
+        // Notify parent component
+        if (onGridCreated) {
+          onGridCreated(gridObjects);
+        }
+        
+        console.log(`Grid created with ${gridObjects.length} objects`);
+      }
+    } catch (error) {
+      console.error('Error creating grid:', error);
     }
     
-    // Clean up grid on unmount
     return () => {
-      grid.destroy();
+      // Clean up grid on unmount
+      if (canvas && gridObjectsRef.current.length > 0) {
+        gridObjectsRef.current.forEach(obj => {
+          if (canvas.contains(obj)) {
+            canvas.remove(obj);
+          }
+        });
+        canvas.renderAll();
+      }
     };
-  }, [canvas]);
+  }, [canvas, defaultVisible, onGridCreated]);
   
-  // Update grid visibility when visible state changes
-  useEffect(() => {
-    if (!gridInstance) return;
-    
-    if (visible) {
-      gridInstance.show();
-    } else {
-      gridInstance.hide();
+  // Toggle grid visibility
+  const handleToggleGrid = () => {
+    if (canvas) {
+      const newVisibility = !gridObjectsRef.current[0]?.visible;
+      toggleGridVisibility(canvas, newVisibility);
     }
-  }, [visible, gridInstance]);
+  };
   
-  // Don't render anything if no canvas or controls aren't shown
-  if (!showControls) return null;
+  // Render toggle button if showControls is true
+  if (!showControls) {
+    return null;
+  }
   
   return (
     <div className="absolute bottom-4 right-4">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setVisible(!visible)}
-        title={visible ? "Hide Grid" : "Show Grid"}
+      <button 
+        className="bg-white border border-gray-300 px-3 py-1 rounded shadow text-sm"
+        onClick={handleToggleGrid}
       >
-        {visible ? <X className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
-      </Button>
+        {gridObjectsRef.current[0]?.visible ? 'Hide Grid' : 'Show Grid'}
+      </button>
     </div>
   );
 };

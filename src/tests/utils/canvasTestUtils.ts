@@ -1,7 +1,10 @@
 
-import { vi } from 'vitest';
+/**
+ * Canvas testing utilities
+ * Provides functions for creating mock canvas objects and test helpers
+ */
 import { Canvas, Object as FabricObject } from 'fabric';
-import { FabricCanvas } from '@/types/fabric';
+import { vi } from 'vitest';
 
 /**
  * Type for mock canvas objects
@@ -14,70 +17,69 @@ export interface MockCanvasObject {
 }
 
 /**
- * Creates a properly typed mock Canvas object for tests
+ * Create a mock fabric canvas for testing
+ * @returns Mock canvas object
  */
-export const createMockCanvas = (): FabricCanvas => {
+export const createMockCanvas = () => {
   return {
-    width: 800,
-    height: 600,
     add: vi.fn(),
     remove: vi.fn(),
     getObjects: vi.fn().mockReturnValue([]),
     renderAll: vi.fn(),
     requestRenderAll: vi.fn(),
-    contains: vi.fn().mockReturnValue(false),
-    sendToBack: vi.fn(),
-    on: vi.fn().mockReturnValue(() => {}),
-    off: vi.fn(),
-    dispose: vi.fn(),
-    getActiveObjects: vi.fn().mockReturnValue([]),
+    setActiveObject: vi.fn(),
     discardActiveObject: vi.fn(),
-    sendObjectToBack: vi.fn(),
-    bringObjectToFront: vi.fn(),
-    isDrawingMode: false,
-    freeDrawingBrush: {
-      color: '#000000',
-      width: 1
-    },
-    getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
-    getZoom: vi.fn().mockReturnValue(1),
-    setZoom: vi.fn(),
+    getActiveObject: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    on: vi.fn(),
+    off: vi.fn(),
+    fire: vi.fn(),
     setViewportTransform: vi.fn(),
-    viewportTransform: [1, 0, 0, 1, 0, 0],
-    setDimensions: vi.fn(),
-    moveTo: vi.fn(),
-    clone: vi.fn()
-  } as unknown as FabricCanvas;
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    zoomToPoint: vi.fn(),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    dispose: vi.fn(),
+    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+    contains: vi.fn().mockReturnValue(false),
+    toDataURL: vi.fn().mockReturnValue('data:image/png;base64,mockdata'),
+    isDrawingMode: false,
+    width: 800,
+    height: 600,
+    selection: true
+  };
 };
 
 /**
- * Creates a mock object for the canvas
- * @param type Object type ('line', 'rect', etc.)
+ * Create a mock canvas object for testing
+ * @param type Object type
  * @param props Additional properties
+ * @returns Mock fabric object
  */
-export const createMockObject = (type: string, props: Partial<MockCanvasObject> = {}): FabricObject => {
+export const createMockObject = (type: string, props: Partial<MockCanvasObject> = {}): MockCanvasObject => {
   return {
     type,
-    ...props,
-    set: vi.fn(),
-    setCoords: vi.fn(),
-    toObject: vi.fn().mockReturnValue({}),
-    getBoundingRect: vi.fn().mockReturnValue({ left: 0, top: 0, width: 100, height: 100 })
-  } as unknown as FabricObject;
+    id: `mock-${type}-${Math.random().toString(36).substr(2, 9)}`,
+    selectable: true,
+    evented: true,
+    visible: true,
+    ...props
+  };
 };
 
 /**
- * Creates a mock canvas event object
- * @param target Target object
- * @param pointer Pointer coordinates
+ * Create a mock event object for testing
+ * @param type Event type
+ * @param data Event data
+ * @returns Mock event object
  */
-export const createMockEvent = (target?: any, pointer = { x: 100, y: 100 }) => {
+export const createMockEvent = (type: string, data: any = {}) => {
   return {
-    target,
-    pointer,
-    e: {
-      stopPropagation: vi.fn(),
-      preventDefault: vi.fn()
-    }
+    type,
+    target: null,
+    ...data
   };
 };

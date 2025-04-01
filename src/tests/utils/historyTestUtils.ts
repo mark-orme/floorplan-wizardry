@@ -16,3 +16,17 @@ export const createMockDrawingHistoryProps = (): UseDrawingHistoryProps => {
     recalculateGIA: vi.fn()
   };
 };
+
+/**
+ * Create mock result for the useDrawingHistory hook
+ * @returns Mock result for testing
+ */
+export const createMockDrawingHistoryResult = () => {
+  return {
+    handleUndo: vi.fn(),
+    handleRedo: vi.fn(),
+    saveCurrentState: vi.fn(),
+    canUndo: false,
+    canRedo: false
+  };
+};

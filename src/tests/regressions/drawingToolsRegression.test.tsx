@@ -1,11 +1,12 @@
 
 /**
- * Tests for drawing tools regression
- * This test ensures that all drawing tools function as expected
+ * Regression tests for drawing tools
+ * Ensures that drawing tools work as expected and don't regress in future changes
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Canvas } from '@/components/Canvas';
+import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { vi } from 'vitest';
 
@@ -23,12 +24,12 @@ vi.mock('fabric', () => {
       setDimensions: vi.fn(),
       dispose: vi.fn(),
       getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
-      selection: true,
-      isDrawingMode: false,
       freeDrawingBrush: {
         color: '#000000',
-        width: 1
-      }
+        width: 2
+      },
+      isDrawingMode: false,
+      selection: true
     }))
   };
 });
@@ -41,21 +42,53 @@ vi.mock('@/utils/canvasGrid', () => ({
   ])
 }));
 
-describe('Drawing Tools Regression', () => {
-  it('should initialize canvas with tool prop', () => {
-    const onCanvasReady = vi.fn();
+describe('Drawing Tools Regression Tests', () => {
+  let onCanvasReady: ReturnType<typeof vi.fn>;
+  
+  beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks();
     
+    // Create fresh mocks for each test
+    onCanvasReady = vi.fn();
+  });
+  
+  it('should render the canvas with SELECT tool', () => {
     render(
       <Canvas 
-        width={800}
-        height={600}
+        width={800} 
+        height={600} 
+        onCanvasReady={onCanvasReady}
+        tool={DrawingMode.SELECT}
+      />
+    );
+    
+    // Canvas should be in the document
+    const canvasElement = screen.getByTestId('canvas');
+    expect(canvasElement).toBeInTheDocument();
+    
+    // Canvas should have the correct tool data attribute
+    expect(canvasElement).toHaveAttribute('data-canvas-tool', DrawingMode.SELECT);
+    
+    // FabricCanvas constructor should be called
+    expect(FabricCanvas).toHaveBeenCalled();
+  });
+
+  it('should render the canvas with DRAW tool', () => {
+    render(
+      <Canvas 
+        width={800} 
+        height={600} 
         onCanvasReady={onCanvasReady}
         tool={DrawingMode.DRAW}
       />
     );
     
+    // Canvas should be in the document
     const canvasElement = screen.getByTestId('canvas');
     expect(canvasElement).toBeInTheDocument();
-    expect(canvasElement.getAttribute('data-canvas-tool')).toBe(DrawingMode.DRAW);
+    
+    // Canvas should have the correct tool data attribute
+    expect(canvasElement).toHaveAttribute('data-canvas-tool', DrawingMode.DRAW);
   });
 });

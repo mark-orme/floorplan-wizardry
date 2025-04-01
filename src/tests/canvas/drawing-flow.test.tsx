@@ -4,7 +4,7 @@
  * This test validates the overall drawing workflow from start to end
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Canvas } from '@/components/Canvas';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { vi } from 'vitest';
