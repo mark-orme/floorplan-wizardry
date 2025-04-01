@@ -35,7 +35,7 @@ export const useSimpleGrid = (
   const [creationAttempts, setCreationAttempts] = useState(0);
   
   // Create grid synchronously (not using async anymore)
-  const createGrid = () => {
+  const createGridOnCanvas = () => {
     if (!canvas) {
       console.warn('Cannot create grid: No canvas provided');
       return false;
@@ -44,7 +44,7 @@ export const useSimpleGrid = (
     try {
       setCreationAttempts(prev => prev + 1);
       
-      // Use synchronous grid creation
+      // Use synchronous grid creation - Fix here: don't pass any arguments
       const gridObjects = createGrid(canvas);
       const success = gridObjects.length > 0;
       
@@ -103,7 +103,7 @@ export const useSimpleGrid = (
     if (canvas && !skipAutoCreation && !gridCreated) {
       // Short delay to ensure canvas is fully initialized
       const timeoutId = setTimeout(() => {
-        createGrid();
+        createGridOnCanvas();
       }, 100);
       
       return () => clearTimeout(timeoutId);
@@ -143,7 +143,7 @@ export const useSimpleGrid = (
     gridCreated,
     objectCount,
     creationAttempts,
-    createGrid,
+    createGrid: createGridOnCanvas, // Use our fixed function here
     clearGrid,
     gridLayerRef
   };
