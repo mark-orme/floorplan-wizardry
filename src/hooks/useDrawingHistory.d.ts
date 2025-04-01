@@ -1,39 +1,39 @@
 
-/**
- * Type definitions for drawing history hook
- */
+import { Canvas } from 'fabric';
 
 /**
- * Props for useDrawingHistory hook
+ * Props for the useDrawingHistory hook
  */
 export interface UseDrawingHistoryProps {
-  /** Reference to Fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<any>;
-  /** Reference to grid layer objects */
+  /** Reference to the Fabric canvas */
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+  
+  /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<any[]>;
-  /** Optional reference to history state */
-  historyRef?: React.MutableRefObject<{
-    past: any[];
-    future: any[];
+  
+  /** Reference to the history state */
+  historyRef: React.MutableRefObject<{
+    past: any[][];
+    future: any[][];
   }>;
-  /** Function to recalculate grid info area */
-  recalculateGIA?: () => void;
-  /** Function to clear all drawings */
-  clearDrawings?: () => void;
+  
+  /** Function to clear all drawings from the canvas */
+  clearDrawings: () => void;
+  
+  /** Function to recalculate Gross Internal Area */
+  recalculateGIA: () => void;
 }
 
 /**
- * Return type for useDrawingHistory hook
+ * Result interface for the useDrawingHistory hook
  */
 export interface UseDrawingHistoryResult {
-  /** Handle undo operation */
+  /** Undo the last drawing operation */
   handleUndo: () => void;
-  /** Handle redo operation */
+  
+  /** Redo a previously undone drawing operation */
   handleRedo: () => void;
-  /** Save current state for history */
+  
+  /** Save the current canvas state to history */
   saveCurrentState: () => void;
-  /** Whether undo is available */
-  canUndo: boolean;
-  /** Whether redo is available */
-  canRedo: boolean;
 }

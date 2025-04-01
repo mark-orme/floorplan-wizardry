@@ -13,9 +13,9 @@ export const createMockStraightLineTool = (): UseStraightLineToolResult => {
     isToolInitialized: true,
     isDrawing: false,
     currentLine: null,
-    cancelDrawing: vi.fn(),
     startDrawing: vi.fn((point: Point) => {}),
     continueDrawing: vi.fn((point: Point) => {}),
-    endDrawing: vi.fn(() => {})
+    endDrawing: vi.fn(() => {}),
+    cancelDrawing: vi.fn()
   };
 };

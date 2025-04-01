@@ -22,6 +22,8 @@ import {
 import typeScriptRules from './eslint/typescript-rules.js';
 import fabricTypesRules from './eslint/fabric-types-rules.js';
 import { aiDevRules } from './eslint/typescript/ai-dev-rules.js';
+import { aiCodeSafetyEnhancedRules } from './eslint/typescript/ai-code-safety-enhanced-rules.js';
+import { componentPropsValidationRules } from './eslint/typescript/component-props-validation.js';
 import { typeAdvancedSafetyRules } from './eslint/type-safety-advanced-rules.js';
 import { fabricEventTypingRules } from './eslint/typescript/fabric-event-typing-rules.js';
 import { strictFabricTypes } from './eslint/typescript/strict-fabric-types.js';
@@ -42,6 +44,8 @@ export default [
   gridRules,
   gridFabricRules,
   aiDevRules, // Add our new AI and Developer guidance rules
+  aiCodeSafetyEnhancedRules, // Add enhanced AI code safety rules
+  componentPropsValidationRules, // Add component props validation rules
   drawingModeValidation, // Add our new drawing mode validation rules
   fabricTypesRules, // Add our new Fabric.js type safety rules
   fabricEventTypingRules, // Add our fabric event typing rules

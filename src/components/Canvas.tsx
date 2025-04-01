@@ -1,6 +1,8 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { DebugInfoState } from '@/types/core/DebugInfo';
+import { DrawingMode } from '@/constants/drawingModes';
 
 export interface CanvasProps {
   width: number;
@@ -8,6 +10,8 @@ export interface CanvasProps {
   onCanvasReady: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
   style?: React.CSSProperties;
+  setDebugInfo?: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  tool?: DrawingMode;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({ 
@@ -15,7 +19,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   height,
   onCanvasReady,
   onError,
-  style
+  style,
+  setDebugInfo,
+  tool
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -28,6 +34,15 @@ export const Canvas: React.FC<CanvasProps> = ({
         height
       });
 
+      // Update debug info if provided
+      if (setDebugInfo) {
+        setDebugInfo(prev => ({
+          ...prev,
+          canvasInitialized: true,
+          canvasReady: true
+        }));
+      }
+
       onCanvasReady(canvas);
 
       return () => {
@@ -39,7 +54,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         onError(error);
       }
     }
-  }, [width, height, onCanvasReady, onError]);
+  }, [width, height, onCanvasReady, onError, setDebugInfo]);
 
   return (
     <canvas 
@@ -47,6 +62,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       width={width} 
       height={height} 
       data-testid="canvas"
+      data-canvas-tool={tool}
       style={style}
     />
   );

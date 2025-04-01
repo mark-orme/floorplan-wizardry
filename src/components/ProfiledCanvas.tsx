@@ -5,12 +5,12 @@
  * @module ProfiledCanvas
  */
 import { Profiler, ProfilerOnRenderCallback } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas, CanvasProps } from './Canvas';
 import { profileRender } from '@/utils/performance';
 
-interface ProfiledCanvasProps {
+interface ProfiledCanvasProps extends CanvasProps {
   /** Custom profiler id */
-  id?: string;
+  profilerId?: string;
   /** Custom profiler callback */
   onRender?: ProfilerOnRenderCallback;
 }
@@ -21,10 +21,14 @@ interface ProfiledCanvasProps {
  * @param {ProfiledCanvasProps} props - Component props
  * @returns {JSX.Element} Profiled Canvas component
  */
-export const ProfiledCanvas = ({ id = 'Canvas', onRender = profileRender }: ProfiledCanvasProps) => {
+export const ProfiledCanvas = ({ 
+  profilerId = 'Canvas', 
+  onRender = profileRender,
+  ...canvasProps
+}: ProfiledCanvasProps) => {
   return (
-    <Profiler id={id} onRender={onRender}>
-      <Canvas />
+    <Profiler id={profilerId} onRender={onRender}>
+      <Canvas {...canvasProps} />
     </Profiler>
   );
 };

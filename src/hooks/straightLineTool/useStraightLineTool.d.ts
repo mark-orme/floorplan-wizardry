@@ -1,25 +1,39 @@
 
-/**
- * Type definitions for the straight line tool hook
- */
-import { Line } from 'fabric';
 import { Point } from '@/types/core/Geometry';
+import { Line } from 'fabric';
 
+/**
+ * Result interface for the useStraightLineTool hook
+ */
 export interface UseStraightLineToolResult {
-  /** Whether the line tool is active */
+  /** Whether the straight line tool is active */
   isActive: boolean;
-  /** Whether the line tool is initialized */
+  
+  /** Whether the tool is initialized and ready to use */
   isToolInitialized: boolean;
-  /** Current line being drawn */
-  currentLine: Line | null;
-  /** Whether currently drawing a line */
+  
+  /** Whether a line is currently being drawn */
   isDrawing: boolean;
-  /** Cancel the current drawing */
+  
+  /** The current line being drawn, if any */
+  currentLine: Line | null;
+  
+  /** Start drawing a line from the given point */
+  startDrawing: (point: Point) => void;
+  
+  /** Continue drawing the line to the given point */
+  continueDrawing: (point: Point) => void;
+  
+  /** Complete drawing the line */
+  endDrawing: (point?: Point) => void;
+  
+  /** Cancel the current drawing operation */
   cancelDrawing: () => void;
-  /** Start drawing a line from a point */
-  startDrawing?: (point: Point) => void;
-  /** Continue drawing to a point */
-  continueDrawing?: (point: Point) => void;
-  /** End drawing at current point */
-  endDrawing?: () => void;
+}
+
+/**
+ * Props for the useStraightLineTool hook
+ */
+export interface UseStraightLineToolProps {
+  // Add necessary props
 }
