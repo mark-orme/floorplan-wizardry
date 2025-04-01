@@ -1,72 +1,54 @@
 
-import { Canvas as FabricCanvas } from "fabric";
-import logger from "@/utils/logger";
-import { captureMessage } from "@/utils/sentry";
-import { createGridRecoveryPlan } from "./recoveryPlans";
-
 /**
- * Grid error messages
+ * Grid error handlers
+ * @module utils/grid/errorHandlers
  */
-export const GRID_ERROR_MESSAGES = {
-  CANVAS_NULL: "Canvas is not available",
-  CANVAS_INVALID: "Canvas is not valid",
-  GRID_EMPTY: "Grid is empty",
-  GRID_CREATION_FAILED: "Failed to create grid",
-  GRID_VISIBILITY_FAILED: "Failed to set grid visibility",
-  CANVAS_INITIALIZATION_FAILED: "Canvas initialization failed",
-  GRID_RENDERING_ERROR: "Error rendering grid"
-};
-
-/**
- * Grid error severity levels
- */
-export enum GridErrorSeverity {
-  INFO = "info",
-  WARNING = "warning",
-  ERROR = "error",
-  FATAL = "fatal"
-}
+import { Canvas as FabricCanvas } from 'fabric';
+import { GridErrorSeverity, categorizeGridError } from './errorTypes';
+import { createGridRecoveryPlan } from './recoveryPlans';
+import logger from '@/utils/logger';
 
 /**
  * Handle grid creation error
- * @param canvas - Fabric canvas
  * @param error - Error that occurred
- * @returns Whether recovery was successful
+ * @param canvas - Fabric canvas
+ * @returns Whether the error was handled successfully
  */
-export const handleGridCreationError = async (canvas: FabricCanvas, error?: Error): Promise<boolean> => {
-  if (!canvas) {
-    logger.error(GRID_ERROR_MESSAGES.CANVAS_NULL);
-    return false;
+export async function handleGridCreationError(
+  error: Error,
+  canvas: FabricCanvas
+): Promise<boolean> {
+  // Categorize error
+  const severity = categorizeGridError(error);
+  
+  // Log error with appropriate level
+  switch (severity) {
+    case GridErrorSeverity.HIGH:
+      logger.error('Critical grid creation error:', error);
+      break;
+    case GridErrorSeverity.MEDIUM:
+      logger.warn('Grid creation error:', error);
+      break;
+    case GridErrorSeverity.LOW:
+      logger.info('Minor grid creation issue:', error);
+      break;
   }
   
-  // Log error
-  logger.error("Grid creation error:", error);
-  
-  // Capture error message
-  captureMessage("Grid creation error", "grid-error", {
-    tags: { component: "Grid", severity: GridErrorSeverity.ERROR },
-    extra: { 
-      errorMessage: error?.message,
-      canvasInfo: {
-        width: canvas.width,
-        height: canvas.height,
-        objectCount: canvas.getObjects().length
-      }
-    }
-  });
-  
-  // Create recovery plan
-  const recoveryPlan = createGridRecoveryPlan(error || new Error("Unknown grid error"));
-  
-  // Try each recovery action
-  for (const step of recoveryPlan.steps) {
-    const success = await step();
-    if (success) {
-      logger.info("Grid recovery successful");
-      return true;
+  // For high and medium severity, attempt recovery
+  if (severity === GridErrorSeverity.HIGH || severity === GridErrorSeverity.MEDIUM) {
+    try {
+      // Create and execute recovery plan
+      const recoveryPlan = createGridRecoveryPlan(error, canvas);
+      const success = await recoveryPlan.execute();
+      
+      logger.info(`Grid recovery ${success ? 'succeeded' : 'failed'}`);
+      return success;
+    } catch (recoveryError) {
+      logger.error('Error during grid recovery:', recoveryError);
+      return false;
     }
   }
   
-  logger.error("Grid recovery failed, all actions exhausted");
-  return false;
-};
+  // For low severity, just log and continue
+  return true;
+}

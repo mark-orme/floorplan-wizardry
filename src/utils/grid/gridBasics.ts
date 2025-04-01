@@ -1,208 +1,104 @@
 
 /**
- * Grid basics utilities
- * Provides core grid creation and management functions
+ * Grid basics module
+ * Core grid utility functions
  * @module utils/grid/gridBasics
  */
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
-import { GRID_CONSTANTS } from "@/constants/gridConstants";
-import logger from "@/utils/logger";
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import logger from '@/utils/logger';
 
 /**
- * Create a basic grid
- * @param {FabricCanvas} canvas - Fabric canvas
- * @returns {FabricObject[]} Grid objects
+ * Clear all grid objects from canvas
+ * @param canvas - Fabric canvas
  */
-export const createGrid = (canvas: FabricCanvas): FabricObject[] => {
+export function clearGrid(canvas: FabricCanvas): void {
   if (!canvas) {
-    logger.error("Cannot create grid: Canvas is null");
-    return [];
+    logger.warn('Cannot clear grid: Canvas is null');
+    return;
   }
-  
-  try {
-    const gridObjects: FabricObject[] = [];
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
-    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
-    
-    // Create horizontal lines
-    for (let i = 0; i <= height; i += gridSize) {
-      const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-        strokeWidth: 0.5,
-        selectable: false,
-        evented: false,
-        objectCaching: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add metadata to identify as grid object
-      (line as any).isGrid = true;
-      (line as any).objectType = 'grid';
-      
-      gridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    // Create vertical lines
-    for (let i = 0; i <= width; i += gridSize) {
-      const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-        strokeWidth: 0.5,
-        selectable: false,
-        evented: false,
-        objectCaching: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add metadata to identify as grid object
-      (line as any).isGrid = true;
-      (line as any).objectType = 'grid';
-      
-      gridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    return gridObjects;
-  } catch (error) {
-    logger.error("Error creating grid:", error);
-    return [];
-  }
-};
 
-/**
- * Create a simple grid on canvas
- * @param {FabricCanvas} canvas - Fabric canvas
- * @returns {FabricObject[]} Grid objects
- */
-export const createSimpleGrid = (canvas: FabricCanvas): FabricObject[] => {
-  if (!canvas) {
-    logger.error("Cannot create simple grid: Canvas is null");
-    return [];
-  }
+  // Find all grid objects
+  const gridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
   
-  try {
-    const gridObjects: FabricObject[] = [];
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
-    const gridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
-    
-    // Create horizontal lines
-    for (let i = 0; i <= height; i += gridSize) {
-      const line = new Line([0, i, width, i], {
-        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectCaching: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add metadata to identify as grid object
-      (line as any).isGrid = true;
-      (line as any).objectType = 'grid';
-      
-      gridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    // Create vertical lines
-    for (let i = 0; i <= width; i += gridSize) {
-      const line = new Line([i, 0, i, height], {
-        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectCaching: false,
-        hoverCursor: 'default'
-      });
-      
-      // Add metadata to identify as grid object
-      (line as any).isGrid = true;
-      (line as any).objectType = 'grid';
-      
-      gridObjects.push(line);
-      canvas.add(line);
-    }
-    
-    return gridObjects;
-  } catch (error) {
-    logger.error("Error creating simple grid:", error);
-    return [];
-  }
-};
-
-/**
- * Clear grid objects from canvas
- * @param {FabricCanvas} canvas - Fabric canvas
- * @returns {boolean} Whether cleanup was successful
- */
-export const clearGrid = (canvas: FabricCanvas): boolean => {
-  if (!canvas) {
-    return false;
-  }
+  // Remove each grid object
+  gridObjects.forEach(obj => {
+    canvas.remove(obj);
+  });
   
-  try {
-    // Find grid objects
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
-    
-    if (gridObjects.length === 0) {
-      return true;
-    }
-    
-    // Remove grid objects
-    gridObjects.forEach(obj => {
-      canvas.remove(obj);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  } catch (error) {
-    logger.error("Error cleaning up grid:", error);
-    return false;
-  }
-};
+  // Render canvas to update display
+  canvas.renderAll();
+  logger.debug(`Cleared ${gridObjects.length} grid objects`);
+}
 
 /**
  * Check if canvas is valid for grid creation
- * @param {FabricCanvas} canvas - Fabric canvas
- * @returns {boolean} Whether canvas is valid
+ * @param canvas - Fabric canvas
+ * @returns Whether canvas is valid
  */
-export const isCanvasValidForGrid = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) return false;
-  
-  return Boolean(
-    canvas && 
-    canvas.width && 
-    canvas.height && 
-    canvas.width > 0 && 
-    canvas.height > 0
-  );
-};
+export function isCanvasValidForGrid(canvas: FabricCanvas): boolean {
+  if (!canvas) {
+    logger.warn('Canvas is null or undefined');
+    return false;
+  }
+
+  // Check if canvas has width and height
+  const width = canvas.getWidth?.() ?? canvas.width;
+  const height = canvas.getHeight?.() ?? canvas.height;
+
+  const minWidth = 100;
+  const minHeight = 100;
+
+  if (!width || !height || width < minWidth || height < minHeight) {
+    logger.warn(`Canvas has invalid dimensions: ${width}x${height}`);
+    return false;
+  }
+
+  // Check if canvas has required methods
+  if (
+    typeof canvas.add !== 'function' ||
+    typeof canvas.remove !== 'function' ||
+    typeof canvas.renderAll !== 'function'
+  ) {
+    logger.warn('Canvas is missing required methods');
+    return false;
+  }
+
+  return true;
+}
 
 /**
- * Reorder grid objects to be at the back of canvas
- * @param {FabricCanvas} canvas - Fabric canvas
- * @param {FabricObject[]} gridObjects - Grid objects to reorder
+ * Create a simple grid with basic options
+ * @param canvas - Fabric canvas
+ * @returns Array of created grid objects
  */
-export const reorderGridObjects = (
+export function createSimpleGrid(canvas: FabricCanvas): FabricObject[] {
+  // This is a placeholder that redirects to the main createGrid function
+  // It exists for backward compatibility
+  logger.info('createSimpleGrid is deprecated, using createGrid instead');
+  
+  // Import dynamically to avoid circular dependencies
+  const { createGrid } = require('./gridRenderers');
+  return createGrid(canvas);
+}
+
+/**
+ * Reorder grid objects to ensure they appear behind other objects
+ * @param canvas - Fabric canvas
+ * @param gridObjects - Grid objects to reorder
+ */
+export function reorderGridObjects(
   canvas: FabricCanvas,
   gridObjects: FabricObject[]
-): void => {
-  if (!canvas) return;
-  
-  try {
-    // Move all grid objects to the back
-    gridObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.sendObjectToBack(obj);
-      }
-    });
-    
-    canvas.requestRenderAll();
-  } catch (error) {
-    console.error("Error reordering grid objects:", error);
+): void {
+  if (!canvas) {
+    logger.warn('Cannot reorder grid objects: Canvas is null');
+    return;
   }
-};
+
+  // Send each grid object to the back
+  gridObjects.forEach(obj => {
+    canvas.sendObjectToBack(obj);
+  });
+  
+  canvas.renderAll();
+}

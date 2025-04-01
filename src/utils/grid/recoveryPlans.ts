@@ -1,87 +1,85 @@
 
 /**
  * Grid recovery plans
- * Provides recovery strategies for grid creation failures
  * @module utils/grid/recoveryPlans
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import logger from '@/utils/logger';
 import { createBasicEmergencyGrid } from './gridRenderers';
+import logger from '@/utils/logger';
 
 /**
- * Create a recovery plan for grid creation failures
- * @param {Error} error - The error that triggered recovery
- * @param {Array<Function>} recoveryActions - Optional custom recovery actions
- * @returns {Object} Recovery plan with steps and execute function
+ * Grid recovery plan type
  */
-export const createGridRecoveryPlan = (
+interface GridRecoveryPlan {
+  /** Steps to execute for recovery */
+  steps: Array<() => Promise<boolean>>;
+  /** Execute the recovery plan */
+  execute: () => Promise<boolean>;
+}
+
+/**
+ * Create a recovery plan for grid creation errors
+ * @param error - Error that occurred
+ * @param canvas - Fabric canvas
+ * @returns Recovery plan
+ */
+export function createGridRecoveryPlan(
   error: Error,
-  recoveryActions: Array<() => Promise<boolean>> = []
-) => {
-  logger.info("Creating grid recovery plan for error:", error.message);
+  canvas: FabricCanvas
+): GridRecoveryPlan {
+  const recoverySteps: Array<() => Promise<boolean>> = [];
   
-  // Default recovery steps
-  const defaultSteps = [
-    // Try creating basic emergency grid
-    async () => {
-      try {
-        logger.info("Recovery step: Creating emergency grid");
-        // Note: We would need the canvas here, but since this is just a default step
-        // we'll rely on the execute function to provide it
-        return true;
-      } catch (err) {
-        logger.error("Emergency grid creation failed:", err);
-        return false;
-      }
-    },
-    
-    // Try with delayed recreation
-    async () => {
-      logger.info("Recovery step: Delayed grid creation");
-      return new Promise<boolean>(resolve => {
-        setTimeout(() => {
-          try {
-            resolve(true);
-          } catch (err) {
-            logger.error("Delayed emergency grid creation failed:", err);
-            resolve(false);
-          }
-        }, 500);
-      });
-    }
-  ];
-  
-  // Combine custom recovery actions with defaults
-  const allSteps = [...recoveryActions, ...defaultSteps];
-  
-  return {
-    error,
-    steps: allSteps,
-    async execute(canvas: FabricCanvas) {
-      logger.info("Executing grid recovery plan");
-      
-      for (const step of allSteps) {
+  // Add recovery steps based on error type
+  if (error.message.includes('dimensions') || error.message.includes('invalid')) {
+    // Canvas dimension issues
+    recoverySteps.push(
+      async () => {
         try {
-          const success = await step();
-          if (success) {
-            // If step succeeded, try to create an emergency grid on the canvas
-            try {
-              const gridObjects = createBasicEmergencyGrid(canvas);
-              logger.info(`Created ${gridObjects.length} emergency grid objects`);
-            } catch (err) {
-              logger.error("Failed to create emergency grid:", err);
-            }
-            
-            logger.info("Recovery step succeeded");
-            return true;
-          }
-        } catch (err) {
-          logger.error("Recovery step failed:", err);
+          if (!canvas) return false;
+          
+          // Try to reset canvas dimensions
+          const width = Math.max(canvas.width || 800, 800);
+          const height = Math.max(canvas.height || 600, 600);
+          
+          canvas.setDimensions({ width, height });
+          logger.info(`Reset canvas dimensions to ${width}x${height}`);
+          return true;
+        } catch (e) {
+          logger.error('Recovery step failed:', e);
+          return false;
         }
       }
-      
-      logger.error("All recovery steps failed");
+    );
+  }
+  
+  // Always include emergency grid creation as last resort
+  recoverySteps.push(
+    async () => {
+      try {
+        if (!canvas) return false;
+        
+        // Try to create emergency grid
+        const gridObjects = createBasicEmergencyGrid(canvas);
+        logger.info(`Created emergency grid with ${gridObjects.length} objects`);
+        return gridObjects.length > 0;
+      } catch (e) {
+        logger.error('Emergency grid creation failed:', e);
+        return false;
+      }
+    }
+  );
+  
+  // Create recovery plan
+  const plan: GridRecoveryPlan = {
+    steps: recoverySteps,
+    execute: async () => {
+      for (const step of recoverySteps) {
+        const success = await step();
+        if (success) return true;
+      }
       return false;
     }
   };
-};
+  
+  return plan;
+}

@@ -1,139 +1,67 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { captureMessage } from "@/utils/sentry";
-import logger from "@/utils/logger";
-
 /**
- * Dump grid state to console for debugging
- * @param canvas - Fabric canvas to analyze
- * @param verbose - Whether to output detailed grid info
+ * Grid debugging utilities
+ * @module utils/grid/gridDebugUtils
  */
-export const dumpGridState = (canvas: FabricCanvas, verbose: boolean = false): void => {
-  if (!canvas) {
-    logger.error("Cannot dump grid state: Canvas is null");
-    return;
-  }
-
-  try {
-    const allObjects = canvas.getObjects();
-    const gridObjects = allObjects.filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
-    
-    console.group("Grid State");
-    console.log(`Total objects: ${allObjects.length}`);
-    console.log(`Grid objects: ${gridObjects.length}`);
-    console.log(`Canvas dimensions: ${canvas.width} × ${canvas.height}`);
-    
-    if (verbose) {
-      console.group("Grid Objects");
-      gridObjects.forEach((obj, index) => {
-        console.log(`Object ${index}:`, {
-          type: obj.type,
-          visible: obj.visible,
-          left: obj.left,
-          top: obj.top,
-          width: obj.width,
-          height: obj.height,
-          metadata: (obj as any).metadata
-        });
-      });
-      console.groupEnd();
-      
-      console.group("Canvas State");
-      console.log("Zoom:", canvas.getZoom());
-      console.log("Viewport transform:", canvas.viewportTransform);
-      console.log("Selection:", canvas.getActiveObjects());
-      console.groupEnd();
-    }
-    
-    console.groupEnd();
-    
-    captureMessage("Grid state dumped", "grid-debug", {
-      tags: { component: "GridDebug" },
-      extra: { 
-        objectCount: allObjects.length,
-        gridObjectCount: gridObjects.length,
-        canvasDimensions: { width: canvas.width, height: canvas.height }
-      }
-    });
-  } catch (error) {
-    logger.error("Error dumping grid state:", error);
-  }
-};
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { createGrid } from './gridRenderers';
+import logger from '@/utils/logger';
 
 /**
- * Create a grid on the canvas, regardless of state
- * @param canvas - Fabric canvas to create grid on
+ * Dumps the current grid state to the console for debugging
+ * @param canvas - Fabric canvas
+ * @returns Object containing grid state information
+ */
+export function dumpGridState(canvas: FabricCanvas): Record<string, any> {
+  if (!canvas) {
+    logger.warn('Cannot dump grid state: Canvas is null');
+    return { error: 'Canvas is null' };
+  }
+
+  const allObjects = canvas.getObjects();
+  const gridObjects = allObjects.filter(obj => (obj as any).objectType === 'grid');
+  
+  const state = {
+    canvasWidth: canvas.width,
+    canvasHeight: canvas.height,
+    totalObjects: allObjects.length,
+    gridObjectCount: gridObjects.length,
+    gridTypes: {} as Record<string, number>
+  };
+  
+  // Count different grid types
+  gridObjects.forEach(obj => {
+    const type = (obj as any).gridType || 'unknown';
+    state.gridTypes[type] = (state.gridTypes[type] || 0) + 1;
+  });
+  
+  logger.debug('Grid state:', state);
+  return state;
+}
+
+/**
+ * Force creates a grid regardless of existing grid state
+ * This is mostly used for debugging and testing
+ * @param canvas - Fabric canvas
  * @returns Array of created grid objects
  */
-export const forceCreateGrid = (canvas: FabricCanvas): FabricObject[] => {
+export function forceCreateGrid(canvas: FabricCanvas): FabricObject[] {
   if (!canvas) {
-    logger.error("Cannot force create grid: Canvas is null");
+    logger.warn('Cannot force create grid: Canvas is null');
     return [];
   }
   
-  try {
-    logger.info("Force creating grid");
-    
-    // First, clear existing grid objects
-    const existingGridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
-    
-    if (existingGridObjects.length > 0) {
-      logger.info(`Removing ${existingGridObjects.length} existing grid objects`);
-      canvas.remove(...existingGridObjects);
-    }
-    
-    // Create basic grid lines
-    const gridSize = 20;
-    const canvasWidth = canvas.width || 800;
-    const canvasHeight = canvas.height || 600;
-    const gridObjects: FabricObject[] = [];
-    
-    // Create vertical lines
-    for (let i = 0; i <= canvasWidth; i += gridSize) {
-      const line = new FabricObject({
-        type: 'line',
-        points: [i, 0, i, canvasHeight],
-        stroke: '#CCCCCC',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false
-      } as any);
-      
-      (line as any).objectType = 'grid';
-      (line as any).isGrid = true;
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Create horizontal lines
-    for (let i = 0; i <= canvasHeight; i += gridSize) {
-      const line = new FabricObject({
-        type: 'line',
-        points: [0, i, canvasWidth, i],
-        stroke: '#CCCCCC',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false
-      } as any);
-      
-      (line as any).objectType = 'grid';
-      (line as any).isGrid = true;
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    canvas.renderAll();
-    logger.info(`Created ${gridObjects.length} grid objects`);
-    
-    return gridObjects;
-  } catch (error) {
-    logger.error("Error force creating grid:", error);
-    return [];
-  }
-};
+  logger.info('Force creating grid');
+  
+  // Remove all existing grid objects
+  const existingGridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
+  existingGridObjects.forEach(obj => {
+    canvas.remove(obj);
+  });
+  
+  // Create new grid
+  const gridObjects = createGrid(canvas);
+  logger.info(`Created ${gridObjects.length} grid objects`);
+  
+  return gridObjects;
+}

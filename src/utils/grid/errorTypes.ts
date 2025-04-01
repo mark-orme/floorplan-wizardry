@@ -1,56 +1,63 @@
 
 /**
- * Grid error types
+ * Grid error types and utilities
  * @module utils/grid/errorTypes
  */
 
 /**
- * Grid error severity enum
+ * Grid error severity levels
  */
 export enum GridErrorSeverity {
-  /** Low severity error */
-  LOW = "low",
-  /** Medium severity error */
-  MEDIUM = "medium",
-  /** High severity error */
-  HIGH = "high",
-  /** Critical severity error */
-  CRITICAL = "critical"
+  /** Low severity, non-critical errors */
+  LOW = 'low',
+  /** Medium severity, may affect functionality but not critical */
+  MEDIUM = 'medium',
+  /** High severity, critical errors that prevent grid functionality */
+  HIGH = 'high'
 }
 
 /**
- * Grid error messages
+ * Standard grid error messages
  */
 export const GRID_ERROR_MESSAGES = {
-  CANVAS_NULL: "Canvas is null",
-  CANVAS_INVALID: "Canvas has invalid dimensions",
-  GRID_EMPTY: "No grid objects created",
-  GRID_CREATION_FAILED: "Grid creation failed",
-  GRID_VISIBILITY_FAILED: "Failed to ensure grid visibility",
-  CANVAS_INITIALIZATION_FAILED: "Canvas initialization failed",
-  GRID_RENDERING_ERROR: "Error rendering grid"
+  CANVAS_NULL: 'Canvas is null or undefined',
+  CANVAS_INVALID: 'Canvas has invalid dimensions',
+  GRID_EMPTY: 'No grid objects found',
+  GRID_CREATION_FAILED: 'Failed to create grid',
+  GRID_VISIBILITY_FAILED: 'Failed to update grid visibility',
+  CANVAS_INITIALIZATION_FAILED: 'Canvas initialization failed',
+  GRID_RENDERING_ERROR: 'Error rendering grid',
+  GRID_MISSING_REQUIRED_METHODS: 'Canvas missing required methods',
+  MARKER_CREATION_FAILED: 'Failed to create grid markers'
 };
 
 /**
- * Categorize grid error by severity
- * 
- * @param {Error} error - The error to categorize
- * @returns {GridErrorSeverity} Error severity
+ * Categorize a grid error by severity
+ * @param error - Error to categorize
+ * @returns Error severity
  */
-export const categorizeGridError = (error: Error): GridErrorSeverity => {
-  const message = error.message.toLowerCase();
+export function categorizeGridError(error: Error): GridErrorSeverity {
+  const message = error.message || '';
   
-  if (message.includes("null") || message.includes("undefined")) {
+  // High severity errors
+  if (
+    message.includes('null') ||
+    message.includes('undefined') ||
+    message.includes('initialization failed')
+  ) {
     return GridErrorSeverity.HIGH;
   }
   
-  if (message.includes("dimensions") || message.includes("size")) {
+  // Medium severity errors
+  if (
+    message.includes('dimensions') ||
+    message.includes('grid') ||
+    message.includes('creation failed') ||
+    message.includes('rendering error')
+  ) {
     return GridErrorSeverity.MEDIUM;
   }
   
-  if (message.includes("grid") || message.includes("line")) {
-    return GridErrorSeverity.MEDIUM;
-  }
-  
+  // Default to low severity
   return GridErrorSeverity.LOW;
-};
+}

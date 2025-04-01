@@ -1,94 +1,67 @@
 
 /**
  * Grid retry utilities
- * Provides retry mechanisms for grid operations
+ * Functions to handle retries for grid creation
  * @module utils/grid/gridRetryUtils
  */
-
-import logger from "@/utils/logger";
+import logger from '@/utils/logger';
 
 /**
- * Retry an operation with exponential backoff
- * Useful for operations that might temporarily fail
- * 
- * @param {() => Promise<T>} operation - The async operation to retry
- * @param {number} [maxRetries=3] - Maximum number of retry attempts
- * @param {number} [initialDelay=100] - Initial delay in milliseconds
- * @returns {Promise<T>} Result of the operation
+ * Retry a function with exponential backoff
+ * @param fn - Function to retry
+ * @param maxRetries - Maximum number of retries
+ * @param baseDelay - Base delay between retries in ms
+ * @returns Promise that resolves with the function result or rejects after max retries
  */
-export const retryWithBackoff = async <T>(
-  operation: () => Promise<T>,
+export async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
   maxRetries: number = 3,
-  initialDelay: number = 100
-): Promise<T> => {
-  let lastError: Error | undefined;
+  baseDelay: number = 300
+): Promise<T> {
+  let retries = 0;
   
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
+  while (true) {
     try {
-      return await operation();
+      return await fn();
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      retries++;
       
-      if (attempt === maxRetries - 1) {
-        // Last attempt failed, don't need to wait
-        break;
+      if (retries >= maxRetries) {
+        logger.error(`Max retries (${maxRetries}) reached, giving up:`, error);
+        throw error;
       }
       
-      // Calculate delay with exponential backoff
-      const delay = initialDelay * Math.pow(2, attempt);
+      const delay = baseDelay * Math.pow(2, retries - 1);
+      logger.warn(`Retry ${retries}/${maxRetries} after ${delay}ms:`, error);
       
-      logger.warn(`Retry attempt ${attempt + 1}/${maxRetries} for operation, waiting ${delay}ms`, {
-        error: lastError.message
-      });
-      
-      // Wait for the calculated delay
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
-  // All retries failed
-  throw lastError || new Error("Operation failed after retries");
-};
+}
 
 /**
- * Execute an operation with a timeout
- * Prevents operations from hanging indefinitely
- * 
- * @param {() => Promise<T>} operation - The async operation to execute
- * @param {number} [timeoutMs=5000] - Timeout in milliseconds
- * @returns {Promise<T>} Result of the operation
+ * Execute a function with a timeout
+ * @param fn - Function to execute
+ * @param timeoutMs - Timeout in milliseconds
+ * @returns Promise that resolves with the function result or rejects on timeout
  */
-export const executeWithTimeout = async <T>(
-  operation: () => Promise<T>,
+export async function executeWithTimeout<T>(
+  fn: () => Promise<T>,
   timeoutMs: number = 5000
-): Promise<T> => {
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    // Track whether the operation has completed
-    let hasCompleted = false;
-    
-    // Set up timeout
     const timeoutId = setTimeout(() => {
-      if (!hasCompleted) {
-        hasCompleted = true;
-        reject(new Error(`Operation timed out after ${timeoutMs}ms`));
-      }
+      reject(new Error(`Operation timed out after ${timeoutMs}ms`));
     }, timeoutMs);
     
-    // Execute the operation
-    operation()
+    fn()
       .then(result => {
-        if (!hasCompleted) {
-          hasCompleted = true;
-          clearTimeout(timeoutId);
-          resolve(result);
-        }
+        clearTimeout(timeoutId);
+        resolve(result);
       })
       .catch(error => {
-        if (!hasCompleted) {
-          hasCompleted = true;
-          clearTimeout(timeoutId);
-          reject(error);
-        }
+        clearTimeout(timeoutId);
+        reject(error);
       });
   });
-};
+}
