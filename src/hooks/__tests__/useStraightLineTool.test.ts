@@ -95,7 +95,7 @@ describe('useStraightLineTool', () => {
     
     expect(result.current.isActive).toBeTruthy();
     expect(result.current.isToolInitialized).toBeTruthy();
-    expect(result.current.isDrawing).toBeFalsy();
+    expect(result.current.isDrawing).toBeFalsy(); // Updated to use isDrawing property
     expect(result.current.currentLine).toBeNull();
   });
   
@@ -209,5 +209,37 @@ describe('useStraightLineTool', () => {
     
     // Event handlers should be added again
     expect(canvas.on).toHaveBeenCalled();
+  });
+  
+  // Add any other specific test cases for isDrawing property
+  it('should update isDrawing state properly', () => {
+    // Setup a mock that returns isDrawing as true
+    const mockLineState = {
+      isDrawing: true,
+      isToolInitialized: true,
+      startPointRef: { current: { x: 100, y: 100 } },
+      currentLineRef: { current: null },
+      distanceTooltipRef: { current: null },
+      setStartPoint: jest.fn(),
+      setCurrentLine: jest.fn(),
+      setDistanceTooltip: jest.fn(),
+      initializeTool: jest.fn(),
+      resetDrawingState: jest.fn(),
+      setIsDrawing: jest.fn()
+    };
+    
+    // Update the useLineState mock
+    (useLineState as jest.Mock).mockReturnValue(mockLineState);
+    
+    const { result } = renderHook(() => useStraightLineTool({
+      fabricCanvasRef: canvasRef,
+      tool: DrawingMode.STRAIGHT_LINE,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState
+    }));
+    
+    // Check that isDrawing is properly exposed in the result
+    expect(result.current.isDrawing).toBe(true);
   });
 });

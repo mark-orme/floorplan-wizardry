@@ -1,3 +1,4 @@
+
 /**
  * Main Canvas component that integrates with Fabric.js
  * @module components/Canvas
@@ -205,7 +206,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   }, [canvas, tool, lineColor, lineThickness, updateDebugInfo]);
   
   // Initialize the straight line tool using the proper fabricCanvasRef
-  const { isDrawing: isStraightLineDrawing } = useStraightLineTool({
+  const straightLineTool = useStraightLineTool({
     fabricCanvasRef,
     tool,
     lineColor,
@@ -261,7 +262,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           <div>Grid Created: {localDebugInfo.gridCreated ? '✅' : '❌'}</div>
           <div>Grid Objects: {localDebugInfo.gridObjectCount}</div>
           <div>Tool: {tool}</div>
-          <div>Straight Line Status: {isStraightLineDrawing ? 'Drawing' : 'Inactive'}</div>
+          <div>Straight Line Status: {straightLineTool.isDrawing ? 'Drawing' : 'Inactive'}</div>
           <div>Canvas Ref Valid: {fabricCanvasRef.current ? '✅' : '❌'}</div>
         </div>
       )}

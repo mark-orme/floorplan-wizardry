@@ -1,4 +1,3 @@
-
 /**
  * Hook for drawing straight lines on canvas
  * @module hooks/straightLineTool/useStraightLineTool
@@ -40,6 +39,8 @@ interface UseStraightLineToolResult {
   isToolInitialized: boolean;
   /** Current line being drawn */
   currentLine: Line | null;
+  /** Whether currently drawing a line */
+  isDrawing: boolean;
   /** Cancel the current drawing */
   cancelDrawing: () => void;
 }
@@ -311,6 +312,7 @@ export const useStraightLineTool = (
     isActive: tool === DrawingMode.STRAIGHT_LINE && isToolInitialized,
     isToolInitialized,
     currentLine: currentLineRef.current,
+    isDrawing: isDrawing,
     cancelDrawing: handleCancelDrawing
   };
 };
