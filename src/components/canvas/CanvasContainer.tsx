@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { Canvas } from "@/components/Canvas";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
-import { GridLayer } from "./grid/GridLayer";
 import { toast } from "sonner";
 import { useCanvasContext } from "@/contexts/CanvasContext";
 import logger from "@/utils/logger";
@@ -11,11 +10,13 @@ import logger from "@/utils/logger";
 interface CanvasContainerProps {
   onCanvasRef?: (ref: any) => void;
   debugInfo?: DebugInfoState;
+  showGridDebug?: boolean;
 }
 
 export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   onCanvasRef,
-  debugInfo = DEFAULT_DEBUG_STATE
+  debugInfo = DEFAULT_DEBUG_STATE,
+  showGridDebug = true
 }) => {
   const [localDebugInfo, setLocalDebugInfo] = useState(debugInfo);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -60,6 +61,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   // Handle canvas ready
   const handleCanvasReady = (canvas: any) => {
     logger.info("Canvas ready event received");
+    console.log("CanvasContainer: Canvas ready event received");
     
     // Set canvas in context
     if (setCanvas) {
@@ -82,10 +84,11 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   };
 
   // Handle canvas error
-  const handleCanvasError = () => {
-    const errorMsg = "Error initializing canvas";
+  const handleCanvasError = (error: Error) => {
+    const errorMsg = `Error initializing canvas: ${error.message}`;
     setCanvasError(errorMsg);
     logger.error(errorMsg);
+    console.error(errorMsg);
     toast.error(errorMsg);
   };
 
@@ -101,15 +104,8 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
         height={dimensions.height}
         onCanvasReady={handleCanvasReady}
         onError={handleCanvasError}
+        showGridDebug={showGridDebug}
       />
-      
-      {canvas && (
-        <GridLayer 
-          fabricCanvas={canvas}
-          dimensions={dimensions}
-          showDebug={localDebugInfo.showDebugInfo}
-        />
-      )}
       
       {canvasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/10">

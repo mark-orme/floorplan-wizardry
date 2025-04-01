@@ -16,10 +16,14 @@ import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 
 interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
+  showGridDebug?: boolean;
 }
 
 // Inner component that uses DrawingContext
-const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
+const CanvasAppInner: React.FC<CanvasAppProps> = ({ 
+  setCanvas,
+  showGridDebug = true
+}) => {
   // State for debug info - fixed type consistency
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
   
@@ -145,6 +149,7 @@ const CanvasAppInner: React.FC<CanvasAppProps> = ({ setCanvas }) => {
         <CanvasContainer 
           onCanvasRef={handleCanvasRef}
           debugInfo={debugInfo}
+          showGridDebug={showGridDebug}
         />
       </div>
     </CanvasControllerEnhanced>
