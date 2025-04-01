@@ -1,4 +1,3 @@
-
 /**
  * Grid rendering utilities
  */
@@ -49,12 +48,16 @@ export function createGrid(
     largeGridColor = GRID_CONSTANTS.LARGE_GRID_COLOR,
     smallGridWidth = GRID_CONSTANTS.SMALL_GRID_WIDTH,
     largeGridWidth = GRID_CONSTANTS.LARGE_GRID_WIDTH,
-    showLabels = true
+    showLabels = true,
+    visible = true
   } = options;
 
   const gridObjects: FabricObject[] = [];
   const canvasWidth = canvas.getWidth() || 800;
   const canvasHeight = canvas.getHeight() || 600;
+
+  // Debug output for canvas dimensions
+  console.log(`Creating grid with dimensions: ${canvasWidth}x${canvasHeight}`);
 
   // Create small grid lines
   for (let i = 0; i <= canvasWidth; i += smallGridSize) {
@@ -65,7 +68,7 @@ export function createGrid(
       evented: false,
       objectType: 'grid',
       gridType: 'small',
-      visible: true
+      visible: visible
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -79,7 +82,7 @@ export function createGrid(
       evented: false,
       objectType: 'grid',
       gridType: 'small',
-      visible: true
+      visible: visible
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -94,7 +97,7 @@ export function createGrid(
       evented: false,
       objectType: 'grid',
       gridType: 'large',
-      visible: true
+      visible: visible
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -108,7 +111,7 @@ export function createGrid(
       evented: false,
       objectType: 'grid',
       gridType: 'large',
-      visible: true
+      visible: visible
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -128,7 +131,7 @@ export function createGrid(
         evented: false,
         objectType: 'grid',
         originX: 'center',
-        visible: true
+        visible: visible
       });
       canvas.add(label);
       gridObjects.push(label);
@@ -146,7 +149,7 @@ export function createGrid(
         evented: false,
         objectType: 'grid',
         originY: 'center',
-        visible: true
+        visible: visible
       });
       canvas.add(label);
       gridObjects.push(label);
@@ -155,11 +158,13 @@ export function createGrid(
 
   // Move grid objects to the back
   gridObjects.forEach(obj => {
+    // Use sendObjectToBack instead of sendToBack (which is deprecated)
     canvas.sendObjectToBack(obj);
   });
 
   // Force render to ensure grid is visible
   canvas.requestRenderAll();
+  console.log(`Grid created with ${gridObjects.length} objects`);
   return gridObjects;
 }
 
@@ -176,14 +181,24 @@ export function createCompleteGrid(
       return [];
     }
     
-    // This is just an alias for createGrid for now
-    // In the future it could include more complex grid features
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    
+    if (!width || !height || width <= 0 || height <= 0) {
+      console.error('Invalid canvas dimensions:', { width, height });
+      return [];
+    }
+    
+    console.log(`Creating complete grid with dimensions: ${width}x${height}`);
+    
+    // Create grid with visible option explicitly set to true
     return createGrid(canvas, { 
       ...options,
       visible: true, // Force visibility
     });
   } catch (err) {
     logger.error('Error creating complete grid:', err);
+    console.error('Error creating complete grid:', err);
     return [];
   }
 }

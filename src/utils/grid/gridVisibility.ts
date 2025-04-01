@@ -21,9 +21,9 @@ export function ensureGridVisibility(
   canvas: FabricCanvas,
   gridObjects?: FabricObject[]
 ): boolean {
-  // Throttle checks to once per second maximum
+  // Heavily throttle checks to once per 5 seconds maximum to reduce console spam
   const now = Date.now();
-  if (now - lastCheckTime.value < 1000) {
+  if (now - lastCheckTime.value < 5000) {
     return false;
   }
   lastCheckTime.value = now;
@@ -39,39 +39,33 @@ export function ensureGridVisibility(
     );
     
     if (gridItems.length === 0) {
-      // Only log at a reasonable interval
-      if (now % 10000 < 1000) { // Log roughly every 10 seconds
-        logger.warn('No grid objects found to ensure visibility');
-      }
       return false;
     }
     
     // Check if any grid object is not visible
-    let visibilityFixed = false;
-    let backOrderFixed = false;
+    let visibilityChanged = false;
     
     gridItems.forEach(obj => {
       // Fix visibility
       if (!obj.visible) {
         obj.set('visible', true);
-        visibilityFixed = true;
+        visibilityChanged = true;
       }
       
-      // Always ensure grid objects are at the back
-      // but only count as a fix if the object was not already at the back
+      // Ensure grid objects are at the back
+      // Use sendObjectToBack as sendToBack is deprecated
       if (canvas.getObjects().indexOf(obj) > 0) {
         canvas.sendObjectToBack(obj);
-        backOrderFixed = true;
       }
     });
     
     // Only render if changes were made
-    if (visibilityFixed || backOrderFixed) {
+    if (visibilityChanged) {
       canvas.requestRenderAll();
       logger.info(`Fixed visibility for ${gridItems.length} grid objects`);
     }
     
-    return visibilityFixed || backOrderFixed;
+    return visibilityChanged;
   } catch (error) {
     // Only log errors once per minute to avoid spam
     if (now % 60000 < 1000) {

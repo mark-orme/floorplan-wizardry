@@ -27,6 +27,7 @@ const Index = () => {
   // Reset canvas initialization state when the page loads
   useEffect(() => {
     resetInitializationState();
+    gridInitializedRef.current = false;
     
     // Log a welcome message
     toast.success("Floor Plan Editor loaded with enhanced drawing tools", {
@@ -42,6 +43,14 @@ const Index = () => {
     // Wait for canvas to be fully initialized
     const timer = setTimeout(() => {
       try {
+        // Validate canvas dimensions
+        if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
+          toast.error("Invalid canvas dimensions for grid creation");
+          return;
+        }
+
+        console.log("Creating grid with dimensions:", canvas.width, "x", canvas.height);
+        
         // Create grid with complete renderer
         const gridObjects = createCompleteGrid(canvas);
         
@@ -49,11 +58,18 @@ const Index = () => {
           gridInitializedRef.current = true;
           toast.success(`Grid created with ${gridObjects.length} objects`);
           
-          // Make sure grid is visible
-          setGridVisibility(canvas, true, gridObjects);
+          // Make sure grid is visible and force render
+          gridObjects.forEach(obj => {
+            obj.set('visible', true);
+          });
+          
           canvas.requestRenderAll();
+          console.log("Grid created and rendered");
+        } else {
+          toast.error("Failed to create grid objects");
         }
       } catch (error) {
+        console.error("Grid creation error:", error);
         toast.error("Failed to initialize grid");
       }
     }, 1000);
@@ -61,19 +77,19 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, [canvas]);
   
-  // Ensure grid visibility less frequently
+  // Check grid visibility much less frequently to prevent console spam
   useEffect(() => {
     if (!canvas) return;
     
-    // Check grid visibility once at initialization
+    // Check grid visibility once at initialization with a delay
     const initialCheck = setTimeout(() => {
       ensureGridVisibility(canvas);
-    }, 2000);
+    }, 3000);
     
-    // Then check much less frequently to reduce console spam
+    // Then check very infrequently
     const intervalId = setInterval(() => {
       ensureGridVisibility(canvas);
-    }, 30000); // Reduced from every 10 seconds to every 30 seconds
+    }, 60000); // Check only once per minute
     
     return () => {
       clearTimeout(initialCheck);
