@@ -1,67 +1,95 @@
 
 /**
  * Grid validation utilities
- * Provides functions for validating grid state and canvas
- * @module utils/grid/gridValidation
  */
 import { Canvas as FabricCanvas } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
 /**
- * Default minimum dimensions for a valid canvas
+ * Check if canvas is valid for grid creation
+ * @param canvas - Fabric canvas
+ * @returns Whether canvas is valid
  */
-const DEFAULT_MIN_CANVAS_WIDTH = 100;
-const DEFAULT_MIN_CANVAS_HEIGHT = 100;
+export function isCanvasValidForGrid(canvas: FabricCanvas): boolean {
+  if (!canvas) {
+    logger.warn('Canvas is null or undefined');
+    return false;
+  }
+
+  // Check if canvas has width and height
+  const width = canvas.getWidth?.() ?? canvas.width;
+  const height = canvas.getHeight?.() ?? canvas.height;
+
+  const minWidth = 100;
+  const minHeight = 100;
+
+  if (!width || !height || width < minWidth || height < minHeight) {
+    logger.warn(`Canvas has invalid dimensions: ${width}x${height}`);
+    return false;
+  }
+
+  // Check if canvas has required methods
+  if (
+    typeof canvas.add !== 'function' ||
+    typeof canvas.remove !== 'function' ||
+    typeof canvas.renderAll !== 'function'
+  ) {
+    logger.warn('Canvas is missing required methods');
+    return false;
+  }
+
+  return true;
+}
 
 /**
- * Validate that a canvas is ready for grid creation
- * @param canvas Fabric canvas to validate
- * @returns True if canvas is valid
+ * Validate grid dimensions
+ * @param width - Grid width
+ * @param height - Grid height
+ * @returns Whether dimensions are valid
  */
-export const validateCanvas = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) {
-    logger.warn('Cannot validate canvas: Canvas is null');
-    return false;
-  }
-  
-  // Check canvas dimensions
-  const minWidth = GRID_CONSTANTS.MIN_CANVAS_WIDTH || DEFAULT_MIN_CANVAS_WIDTH;
-  const minHeight = GRID_CONSTANTS.MIN_CANVAS_HEIGHT || DEFAULT_MIN_CANVAS_HEIGHT;
-  
-  if (!canvas.width || !canvas.height) {
-    logger.warn('Invalid canvas: Missing width or height properties');
-    return false;
-  }
-  
-  if (canvas.width < minWidth || canvas.height < minHeight) {
-    logger.warn(`Invalid canvas dimensions: ${canvas.width}x${canvas.height}, minimum required: ${minWidth}x${minHeight}`);
-    return false;
-  }
-  
-  return true;
-};
+export function validateGridDimensions(width: number, height: number): boolean {
+  const minWidth = 100;
+  const minHeight = 100;
+
+  return width >= minWidth && height >= minHeight;
+}
 
 /**
- * Validate that the grid state is correct
- * @param canvas Fabric canvas to check
- * @returns True if grid state is valid
+ * Check if grid exists on canvas
+ * @param canvas - Fabric canvas
+ * @returns Whether grid exists
  */
-export const validateGridState = (canvas: FabricCanvas | null): boolean => {
-  if (!canvas) {
-    logger.warn('Cannot validate grid state: Canvas is null');
-    return false;
-  }
-  
-  // Check for grid objects on canvas
-  const gridObjects = canvas.getObjects().filter(obj => 
-    (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-  );
-  
-  if (gridObjects.length === 0) {
-    logger.warn('Invalid grid state: No grid objects found on canvas');
-    return false;
-  }
-  
-  return true;
-};
+export function doesGridExist(canvas: FabricCanvas): boolean {
+  if (!canvas) return false;
+
+  const objects = canvas.getObjects?.() || [];
+  return objects.some(obj => (obj as any).objectType === 'grid');
+}
+
+/**
+ * Count grid objects on canvas
+ * @param canvas - Fabric canvas
+ * @returns Number of grid objects
+ */
+export function countGridObjects(canvas: FabricCanvas): number {
+  if (!canvas) return 0;
+
+  const objects = canvas.getObjects?.() || [];
+  return objects.filter(obj => (obj as any).objectType === 'grid').length;
+}
+
+/**
+ * Check if grid is valid
+ * @param canvas - Fabric canvas
+ * @returns Whether grid is valid
+ */
+export function isGridValid(canvas: FabricCanvas): boolean {
+  if (!isCanvasValidForGrid(canvas)) return false;
+  if (!doesGridExist(canvas)) return false;
+
+  // Check if there are enough grid objects
+  const gridObjectCount = countGridObjects(canvas);
+  // A minimal grid should have at least a few lines
+  return gridObjectCount >= 4;
+}

@@ -1,49 +1,35 @@
 
 /**
- * Constants for grid configuration
- * @module constants/gridConstants
+ * Grid constants
  */
-
 export const GRID_CONSTANTS = {
-  /** Small grid size in pixels (represents 0.1m) */
+  // Grid sizing
   SMALL_GRID_SIZE: 10,
-  
-  /** Large grid size in pixels (represents 1.0m) */
   LARGE_GRID_SIZE: 100,
   
-  /** Small grid line color */
+  // Grid styling
   SMALL_GRID_COLOR: '#e0e0e0',
-  
-  /** Large grid line color */
-  LARGE_GRID_COLOR: '#c0c0c0',
-  
-  /** Small grid line width */
+  LARGE_GRID_COLOR: '#a0a0a0',
   SMALL_GRID_WIDTH: 0.5,
-  
-  /** Large grid line width */
   LARGE_GRID_WIDTH: 1,
   
-  /** Default grid visibility */
+  // Grid visibility
   DEFAULT_VISIBLE: true,
   
-  /** Grid z-index (lower means more to the back) */
+  // Grid positioning
   GRID_Z_INDEX: -1,
   
-  /** Grid scale factor - how much to scale grid with zoom */
+  // Scaling
   SCALE_FACTOR: 1,
   
-  /** Minimum canvas width for valid grid creation */
+  // Canvas minimums
   MIN_CANVAS_WIDTH: 100,
-  
-  /** Minimum canvas height for valid grid creation */
   MIN_CANVAS_HEIGHT: 100,
   
-  /** Pixels per meter for grid scaling */
+  // Conversions
   PIXELS_PER_METER: 100,
   
-  /** Marker text size for grid labels */
-  MARKER_TEXT_SIZE: 12,
-  
-  /** Marker color for grid labels */
-  MARKER_COLOR: '#666666'
+  // Markers
+  MARKER_TEXT_SIZE: 10,
+  MARKER_COLOR: '#808080'
 };

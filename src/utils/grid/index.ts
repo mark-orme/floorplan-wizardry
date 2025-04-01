@@ -27,13 +27,14 @@ export {
 // Export from gridRenderers
 export {
   createCompleteGrid,
-  createSimpleGrid,
-  createBasicEmergencyGrid,
-  createGrid,
-  ensureGrid,
-  validateGrid,
-  GridOptions
+  createBasicEmergencyGrid
 } from './gridRenderers';
+
+// Use export type for type exports when isolatedModules is enabled
+export type { GridOptions } from './gridRenderers';
+
+// Export createGrid to support existing code
+export { createGrid } from './gridRenderers';
 
 // Export from gridRetryUtils
 export {

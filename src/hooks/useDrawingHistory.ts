@@ -3,7 +3,7 @@
  * @deprecated Use useCanvasHistory instead
  * This file is kept for reference and backward compatibility
  */
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 
@@ -25,6 +25,8 @@ export const useDrawingHistory = ({
   clearDrawings,
   recalculateGIA
 }: UseDrawingHistoryProps) => {
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
   /**
    * @deprecated Use useCanvasHistory instead
@@ -41,9 +43,19 @@ export const useDrawingHistory = ({
     toast.info("Using deprecated history management. Please refresh the page to use the improved version.");
     console.warn("useDrawingHistory is deprecated, please use useCanvasHistory instead");
   }, []);
+
+  /**
+   * @deprecated Use useCanvasHistory instead
+   */
+  const saveCurrentState = useCallback(() => {
+    console.warn("useDrawingHistory.saveCurrentState is deprecated, please use useCanvasHistory instead");
+  }, []);
   
   return {
     handleUndo,
-    handleRedo
+    handleRedo,
+    canUndo,
+    canRedo,
+    saveCurrentState
   };
 };
