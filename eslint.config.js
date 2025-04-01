@@ -22,6 +22,7 @@ import {
 import typeScriptRules from './eslint/typescript-rules.js';
 import fabricTypesRules from './eslint/fabric-types-rules.js';
 import { aiDevRules } from './eslint/typescript/ai-dev-rules.js';
+import { typeAdvancedSafetyRules } from './eslint/type-safety-advanced-rules.js';
 
 /**
  * Comprehensive ESLint configuration
@@ -34,6 +35,7 @@ export default [
   reactRules,
   ...typeScriptRules, // Use the new TypeScript rules collection including grid state property rules
   typeSafetyRules,
+  typeAdvancedSafetyRules, // Add our new advanced type safety rules
   gridRules,
   gridFabricRules,
   aiDevRules, // Add our new AI and Developer guidance rules

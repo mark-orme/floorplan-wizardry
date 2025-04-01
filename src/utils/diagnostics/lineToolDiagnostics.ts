@@ -1,4 +1,3 @@
-
 /**
  * Diagnostic utilities for straight line tool
  * @module utils/diagnostics/lineToolDiagnostics
@@ -109,8 +108,8 @@ export const runLineToolDiagnostics = (
       // Check event handlers
       // We need to access private properties to check event handlers
       // This is not ideal but necessary for diagnostics
-      // Use type assertion to access private property for diagnostics
-      const eventListeners = (canvas as any).__eventListeners || {};
+      // Use a safer approach with type casting for accessing private properties
+      const eventListeners = getCanvasEventListeners(canvas);
       
       diagnostics.eventHandlers.mouseDown = 
         Array.isArray(eventListeners['mouse:down']) && 
@@ -142,6 +141,23 @@ export const runLineToolDiagnostics = (
   
   return diagnostics;
 };
+
+/**
+ * Helper function to safely get canvas event listeners
+ * Uses type assertion in a contained function to prevent TypeScript errors
+ * 
+ * @param {FabricCanvas} canvas - The Fabric canvas instance
+ * @returns {Record<string, any[]>} Event listeners or empty object if not available
+ */
+function getCanvasEventListeners(canvas: FabricCanvas): Record<string, any[]> {
+  try {
+    // Use type assertion in a controlled way
+    return (canvas as any).__eventListeners || {};
+  } catch (error) {
+    logger.warn("Could not access canvas event listeners", error);
+    return {};
+  }
+}
 
 /**
  * Run diagnostics and send to Sentry

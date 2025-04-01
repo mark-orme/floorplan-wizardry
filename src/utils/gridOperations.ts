@@ -6,6 +6,7 @@
 import { Canvas, Object as FabricObject } from "fabric";
 import type { GridCreationState, GridCreationLock } from "@/types/core/GridTypes";
 import { DEFAULT_GRID_CREATION_STATE, DEFAULT_GRID_CREATION_LOCK } from "@/types/core/GridTypes";
+import { isGridCreationLock, validateGridCreationLock } from "@/types/grid/GridCreationLock";
 
 /**
  * Get initial grid creation state
