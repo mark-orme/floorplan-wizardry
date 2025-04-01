@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,8 @@ import { resetInitializationState } from "@/utils/canvas/safeCanvasInitializatio
 import { toast } from "sonner";
 import { CanvasProvider } from "@/contexts/CanvasContext";
 import { DrawingProvider } from "@/contexts/DrawingContext";
-import { ensureGridVisibility } from "@/utils/grid/gridVisibility";
+import { ensureGridVisibility, setGridVisibility } from "@/utils/grid/gridVisibility";
+import { createCompleteGrid } from "@/utils/grid/gridRenderers";
 
 /**
  * Main Index page component
@@ -21,6 +22,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [showGridDebug, setShowGridDebug] = useState<boolean>(true);
+  const gridInitializedRef = useRef<boolean>(false);
   
   // Reset canvas initialization state when the page loads
   useEffect(() => {
@@ -33,7 +35,33 @@ const Index = () => {
     });
   }, []);
   
-  // Ensure grid visibility less frequently (once every 10 seconds instead of 3)
+  // Force grid creation when canvas is available
+  useEffect(() => {
+    if (!canvas || gridInitializedRef.current) return;
+    
+    // Wait for canvas to be fully initialized
+    const timer = setTimeout(() => {
+      try {
+        // Create grid with complete renderer
+        const gridObjects = createCompleteGrid(canvas);
+        
+        if (gridObjects && gridObjects.length > 0) {
+          gridInitializedRef.current = true;
+          toast.success(`Grid created with ${gridObjects.length} objects`);
+          
+          // Make sure grid is visible
+          setGridVisibility(canvas, true, gridObjects);
+          canvas.requestRenderAll();
+        }
+      } catch (error) {
+        toast.error("Failed to initialize grid");
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [canvas]);
+  
+  // Ensure grid visibility less frequently
   useEffect(() => {
     if (!canvas) return;
     
@@ -42,10 +70,10 @@ const Index = () => {
       ensureGridVisibility(canvas);
     }, 2000);
     
-    // Then check less frequently
+    // Then check much less frequently to reduce console spam
     const intervalId = setInterval(() => {
       ensureGridVisibility(canvas);
-    }, 10000);
+    }, 30000); // Reduced from every 10 seconds to every 30 seconds
     
     return () => {
       clearTimeout(initialCheck);

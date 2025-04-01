@@ -1,3 +1,4 @@
+
 /**
  * Emergency grid utility functions
  * Provides backup grid functionality when main grid fails
@@ -5,6 +6,7 @@
  */
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { GRID_SPACING } from '@/constants/numerics';
+import logger from '@/utils/logger';
 
 /**
  * Creates a basic grid on the canvas
@@ -15,75 +17,96 @@ import { GRID_SPACING } from '@/constants/numerics';
  * @param height - Canvas height
  * @returns Array of grid lines
  */
-export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height: number) => {
+export const createEmergencyGrid = (canvas: FabricCanvas, width?: number, height?: number) => {
   const gridLines = [];
-
-  // Create vertical small grid lines
-  for (let x = 0; x <= width; x += GRID_SPACING.SMALL) {
-    const line = new Line([x, 0, x, height], {
-      stroke: '#eeeeee',
-      strokeWidth: 0.5,
-      selectable: false,
-      evented: false,
-      objectType: 'grid',
-      hoverCursor: 'default'
-    });
+  
+  try {
+    // Use provided dimensions or get from canvas
+    const canvasWidth = width || canvas.getWidth() || 800;
+    const canvasHeight = height || canvas.getHeight() || 600;
     
-    gridLines.push(line);
-    canvas.add(line);
-    canvas.sendObjectToBack(line);
-  }
+    if (!canvasWidth || !canvasHeight) {
+      logger.warn('Invalid canvas dimensions for emergency grid');
+      return [];
+    }
 
-  // Create horizontal small grid lines
-  for (let y = 0; y <= height; y += GRID_SPACING.SMALL) {
-    const line = new Line([0, y, width, y], {
-      stroke: '#eeeeee',
-      strokeWidth: 0.5,
-      selectable: false,
-      evented: false,
-      objectType: 'grid',
-      hoverCursor: 'default'
-    });
+    // Create vertical small grid lines
+    for (let x = 0; x <= canvasWidth; x += GRID_SPACING.SMALL) {
+      const line = new Line([x, 0, x, canvasHeight], {
+        stroke: '#eeeeee',
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        hoverCursor: 'default',
+        visible: true
+      });
+      
+      gridLines.push(line);
+      canvas.add(line);
+      canvas.sendObjectToBack(line);
+    }
+
+    // Create horizontal small grid lines
+    for (let y = 0; y <= canvasHeight; y += GRID_SPACING.SMALL) {
+      const line = new Line([0, y, canvasWidth, y], {
+        stroke: '#eeeeee',
+        strokeWidth: 0.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        hoverCursor: 'default',
+        visible: true
+      });
+      
+      gridLines.push(line);
+      canvas.add(line);
+      canvas.sendObjectToBack(line);
+    }
+
+    // Create vertical large grid lines
+    for (let x = 0; x <= canvasWidth; x += GRID_SPACING.LARGE) {
+      const line = new Line([x, 0, x, canvasHeight], {
+        stroke: '#dddddd',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        hoverCursor: 'default',
+        visible: true
+      });
+      
+      gridLines.push(line);
+      canvas.add(line);
+      canvas.sendObjectToBack(line);
+    }
+
+    // Create horizontal large grid lines
+    for (let y = 0; y <= canvasHeight; y += GRID_SPACING.LARGE) {
+      const line = new Line([0, y, canvasWidth, y], {
+        stroke: '#dddddd',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        hoverCursor: 'default',
+        visible: true
+      });
+      
+      gridLines.push(line);
+      canvas.add(line);
+      canvas.sendObjectToBack(line);
+    }
+
+    // Ensure visibility
+    canvas.requestRenderAll();
+    logger.info(`Created emergency grid with ${gridLines.length} lines`);
     
-    gridLines.push(line);
-    canvas.add(line);
-    canvas.sendObjectToBack(line);
+    return gridLines;
+  } catch (error) {
+    logger.error('Failed to create emergency grid:', error);
+    return [];
   }
-
-  // Create vertical large grid lines
-  for (let x = 0; x <= width; x += GRID_SPACING.LARGE) {
-    const line = new Line([x, 0, x, height], {
-      stroke: '#dddddd',
-      strokeWidth: 1,
-      selectable: false,
-      evented: false,
-      objectType: 'grid',
-      hoverCursor: 'default'
-    });
-    
-    gridLines.push(line);
-    canvas.add(line);
-    canvas.sendObjectToBack(line);
-  }
-
-  // Create horizontal large grid lines
-  for (let y = 0; y <= height; y += GRID_SPACING.LARGE) {
-    const line = new Line([0, y, width, y], {
-      stroke: '#dddddd',
-      strokeWidth: 1,
-      selectable: false,
-      evented: false,
-      objectType: 'grid',
-      hoverCursor: 'default'
-    });
-    
-    gridLines.push(line);
-    canvas.add(line);
-    canvas.sendObjectToBack(line);
-  }
-
-  canvas.renderAll();
-  return gridLines;
 };
 
 /**
@@ -93,12 +116,17 @@ export const createEmergencyGrid = (canvas: FabricCanvas, width: number, height:
 export const removeEmergencyGrid = (canvas: FabricCanvas) => {
   if (!canvas) return;
 
-  const gridObjects = canvas.getObjects().filter(obj => 
-    (obj as any).objectType === 'grid'
-  );
+  try {
+    const gridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid'
+    );
 
-  gridObjects.forEach(obj => canvas.remove(obj));
-  canvas.renderAll();
+    gridObjects.forEach(obj => canvas.remove(obj));
+    canvas.requestRenderAll();
+    logger.info(`Removed ${gridObjects.length} emergency grid lines`);
+  } catch (error) {
+    logger.error('Error removing emergency grid:', error);
+  }
 };
 
 /**
@@ -109,13 +137,18 @@ export const removeEmergencyGrid = (canvas: FabricCanvas) => {
 export const toggleEmergencyGridVisibility = (canvas: FabricCanvas, visible: boolean) => {
   if (!canvas) return;
 
-  const gridObjects = canvas.getObjects().filter(obj => 
-    (obj as any).objectType === 'grid'
-  );
+  try {
+    const gridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid'
+    );
 
-  gridObjects.forEach(obj => {
-    obj.set('visible', visible);
-  });
+    gridObjects.forEach(obj => {
+      obj.set('visible', visible);
+    });
 
-  canvas.renderAll();
+    canvas.requestRenderAll();
+    logger.info(`Set visibility to ${visible} for ${gridObjects.length} emergency grid lines`);
+  } catch (error) {
+    logger.error('Error toggling emergency grid visibility:', error);
+  }
 };

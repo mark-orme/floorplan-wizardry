@@ -53,8 +53,8 @@ export function createGrid(
   } = options;
 
   const gridObjects: FabricObject[] = [];
-  const canvasWidth = canvas.getWidth();
-  const canvasHeight = canvas.getHeight();
+  const canvasWidth = canvas.getWidth() || 800;
+  const canvasHeight = canvas.getHeight() || 600;
 
   // Create small grid lines
   for (let i = 0; i <= canvasWidth; i += smallGridSize) {
@@ -64,7 +64,8 @@ export function createGrid(
       selectable: false,
       evented: false,
       objectType: 'grid',
-      gridType: 'small'
+      gridType: 'small',
+      visible: true
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -77,7 +78,8 @@ export function createGrid(
       selectable: false,
       evented: false,
       objectType: 'grid',
-      gridType: 'small'
+      gridType: 'small',
+      visible: true
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -91,7 +93,8 @@ export function createGrid(
       selectable: false,
       evented: false,
       objectType: 'grid',
-      gridType: 'large'
+      gridType: 'large',
+      visible: true
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -104,7 +107,8 @@ export function createGrid(
       selectable: false,
       evented: false,
       objectType: 'grid',
-      gridType: 'large'
+      gridType: 'large',
+      visible: true
     });
     canvas.add(line);
     gridObjects.push(line);
@@ -123,7 +127,8 @@ export function createGrid(
         selectable: false,
         evented: false,
         objectType: 'grid',
-        originX: 'center'
+        originX: 'center',
+        visible: true
       });
       canvas.add(label);
       gridObjects.push(label);
@@ -140,7 +145,8 @@ export function createGrid(
         selectable: false,
         evented: false,
         objectType: 'grid',
-        originY: 'center'
+        originY: 'center',
+        visible: true
       });
       canvas.add(label);
       gridObjects.push(label);
@@ -152,7 +158,8 @@ export function createGrid(
     canvas.sendObjectToBack(obj);
   });
 
-  canvas.renderAll();
+  // Force render to ensure grid is visible
+  canvas.requestRenderAll();
   return gridObjects;
 }
 
@@ -163,9 +170,22 @@ export function createCompleteGrid(
   canvas: FabricCanvas,
   options: GridOptions = {}
 ): FabricObject[] {
-  // This is just an alias for createGrid for now
-  // In the future it could include more complex grid features
-  return createGrid(canvas, options);
+  try {
+    if (!canvas || !canvas.getWidth || !canvas.getHeight) {
+      logger.error('Invalid canvas for grid creation');
+      return [];
+    }
+    
+    // This is just an alias for createGrid for now
+    // In the future it could include more complex grid features
+    return createGrid(canvas, { 
+      ...options,
+      visible: true, // Force visibility
+    });
+  } catch (err) {
+    logger.error('Error creating complete grid:', err);
+    return [];
+  }
 }
 
 /**
@@ -175,47 +195,60 @@ export function createCompleteGrid(
 export function createBasicEmergencyGrid(
   canvas: FabricCanvas
 ): FabricObject[] {
-  // Simplified grid with minimal options
-  const gridObjects: FabricObject[] = [];
-  const canvasWidth = canvas.getWidth();
-  const canvasHeight = canvas.getHeight();
-  const gridSize = 100; // Larger grid size for emergency mode
+  try {
+    // Simplified grid with minimal options
+    const gridObjects: FabricObject[] = [];
+    const canvasWidth = canvas.getWidth() || 800;
+    const canvasHeight = canvas.getHeight() || 600;
+    const gridSize = 100; // Larger grid size for emergency mode
+    
+    if (!canvasWidth || !canvasHeight) {
+      logger.warn('Canvas has invalid dimensions for emergency grid');
+      return [];
+    }
 
-  // Create minimal grid lines
-  for (let i = 0; i <= canvasWidth; i += gridSize) {
-    const line = new Line([i, 0, i, canvasHeight], {
-      stroke: '#cccccc',
-      strokeWidth: 1,
-      selectable: false,
-      evented: false,
-      objectType: 'grid',
-      gridType: 'emergency'
+    // Create minimal grid lines
+    for (let i = 0; i <= canvasWidth; i += gridSize) {
+      const line = new Line([i, 0, i, canvasHeight], {
+        stroke: '#cccccc',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        gridType: 'emergency',
+        visible: true
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+
+    for (let i = 0; i <= canvasHeight; i += gridSize) {
+      const line = new Line([0, i, canvasWidth, i], {
+        stroke: '#cccccc',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        gridType: 'emergency',
+        visible: true
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+
+    // Move grid objects to the back
+    gridObjects.forEach(obj => {
+      canvas.sendObjectToBack(obj);
     });
-    canvas.add(line);
-    gridObjects.push(line);
+
+    // Force render
+    canvas.requestRenderAll();
+    logger.info('Created emergency grid as fallback');
+    return gridObjects;
+  } catch (error) {
+    logger.error('Failed to create emergency grid:', error);
+    return [];
   }
-
-  for (let i = 0; i <= canvasHeight; i += gridSize) {
-    const line = new Line([0, i, canvasWidth, i], {
-      stroke: '#cccccc',
-      strokeWidth: 1,
-      selectable: false,
-      evented: false,
-      objectType: 'grid',
-      gridType: 'emergency'
-    });
-    canvas.add(line);
-    gridObjects.push(line);
-  }
-
-  // Move grid objects to the back
-  gridObjects.forEach(obj => {
-    canvas.sendObjectToBack(obj);
-  });
-
-  canvas.renderAll();
-  logger.info('Created emergency grid as fallback');
-  return gridObjects;
 }
 
 /**

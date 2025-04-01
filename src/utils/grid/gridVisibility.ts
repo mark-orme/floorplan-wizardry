@@ -6,6 +6,11 @@
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import logger from '@/utils/logger';
 
+// Track the last time grid visibility was checked to prevent excessive checks
+const lastCheckTime = {
+  value: 0
+};
+
 /**
  * Ensure grid is visible on canvas
  * @param canvas - Fabric canvas
@@ -16,8 +21,14 @@ export function ensureGridVisibility(
   canvas: FabricCanvas,
   gridObjects?: FabricObject[]
 ): boolean {
+  // Throttle checks to once per second maximum
+  const now = Date.now();
+  if (now - lastCheckTime.value < 1000) {
+    return false;
+  }
+  lastCheckTime.value = now;
+
   if (!canvas) {
-    logger.warn('Cannot ensure grid visibility: Canvas is null');
     return false;
   }
   
@@ -28,7 +39,10 @@ export function ensureGridVisibility(
     );
     
     if (gridItems.length === 0) {
-      logger.warn('No grid objects found to ensure visibility');
+      // Only log at a reasonable interval
+      if (now % 10000 < 1000) { // Log roughly every 10 seconds
+        logger.warn('No grid objects found to ensure visibility');
+      }
       return false;
     }
     
@@ -45,11 +59,8 @@ export function ensureGridVisibility(
       
       // Always ensure grid objects are at the back
       // but only count as a fix if the object was not already at the back
-      const originalIndex = canvas.getObjects().indexOf(obj);
-      canvas.sendObjectToBack(obj);
-      const newIndex = canvas.getObjects().indexOf(obj);
-      
-      if (originalIndex !== newIndex) {
+      if (canvas.getObjects().indexOf(obj) > 0) {
+        canvas.sendObjectToBack(obj);
         backOrderFixed = true;
       }
     });
@@ -62,7 +73,10 @@ export function ensureGridVisibility(
     
     return visibilityFixed || backOrderFixed;
   } catch (error) {
-    logger.error('Error ensuring grid visibility:', error);
+    // Only log errors once per minute to avoid spam
+    if (now % 60000 < 1000) {
+      logger.error('Error ensuring grid visibility:', error);
+    }
     return false;
   }
 }
@@ -80,7 +94,6 @@ export function setGridVisibility(
   gridObjects?: FabricObject[]
 ): boolean {
   if (!canvas) {
-    logger.warn('Cannot set grid visibility: Canvas is null');
     return false;
   }
   
@@ -91,7 +104,6 @@ export function setGridVisibility(
     );
     
     if (gridItems.length === 0) {
-      logger.warn('No grid objects found to set visibility');
       return false;
     }
     
