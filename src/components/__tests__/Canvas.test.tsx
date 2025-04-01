@@ -1,148 +1,140 @@
 
 /**
- * Canvas component tests
- * Tests the functionality of the main Canvas component
+ * Tests for Canvas component
  * @module components/__tests__/Canvas
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Canvas } from '../Canvas';
-import { Canvas as FabricCanvas } from 'fabric';
-import * as gridUtils from '@/utils/gridUtils';
+import { render, screen, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { Canvas } from '@/components/Canvas';
 
-// Mock fabric library
-vi.mock('fabric', () => {
-  return {
-    Canvas: vi.fn().mockImplementation(() => ({
-      on: vi.fn(),
-      off: vi.fn(),
-      clear: vi.fn(),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      dispose: vi.fn(),
-      getWidth: vi.fn().mockReturnValue(800),
-      getHeight: vi.fn().mockReturnValue(600),
-      isDrawingMode: false,
-      freeDrawingBrush: {
-        color: '#000000',
-        width: 2
-      },
-      getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
-      getObjects: vi.fn().mockReturnValue([]),
-      getZoom: vi.fn().mockReturnValue(1),
-      setZoom: vi.fn()
-    })),
-    PencilBrush: vi.fn().mockImplementation(() => ({
+// Mock fabric
+vi.mock('fabric', () => ({
+  Canvas: vi.fn().mockImplementation(() => ({
+    add: vi.fn(),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    renderAll: vi.fn(),
+    dispose: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    clear: vi.fn(),
+    requestRenderAll: vi.fn(),
+    setZoom: vi.fn(),
+    isDrawingMode: false,
+    freeDrawingBrush: {
       color: '#000000',
       width: 2
-    }))
-  };
-});
-
-// Mock the grid utility functions
-vi.mock('@/utils/gridUtils', () => ({
-  createCompleteGrid: vi.fn().mockReturnValue({
-    gridObjects: [],
-    smallGridLines: [],
-    largeGridLines: [],
-    markers: []
-  }),
-  setGridVisibility: vi.fn()
+    }
+  }))
 }));
 
-// Mock the canvas controller (custom hook)
-vi.mock('../canvas/controller/CanvasController', () => ({
-  useCanvasController: vi.fn().mockReturnValue({
-    tool: 'select',
-    lineThickness: 2,
-    lineColor: '#000000'
-  })
-}));
-
-// Mock the canvas interactions hook
-vi.mock('@/hooks/useCanvasInteractions', () => ({
-  useCanvasInteractions: vi.fn().mockReturnValue({
-    drawingState: {
-      isDrawing: false,
-      startPoint: null,
-      currentPoint: null,
-      cursorPosition: null,
-      midPoint: null,
-      selectionActive: false
-    },
-    currentZoom: 1,
-    handleMouseDown: vi.fn(),
-    handleMouseMove: vi.fn(),
-    handleMouseUp: vi.fn(),
-    isSnappedToGrid: vi.fn().mockReturnValue(false),
-    isLineAutoStraightened: vi.fn().mockReturnValue(false)
-  })
-}));
-
-describe('Canvas Component', () => {
+describe('Canvas', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
   
-  afterEach(() => {
-    vi.resetAllMocks();
+  it('renders canvas element with correct dimensions', () => {
+    const width = 800;
+    const height = 600;
+    
+    render(
+      <Canvas
+        width={width}
+        height={height}
+        onCanvasReady={vi.fn()}
+      />
+    );
+    
+    // Find the canvas element
+    const canvasElement = screen.getByTestId('canvas');
+    
+    // Check that it has the correct dimensions
+    expect(canvasElement).toHaveAttribute('width', width.toString());
+    expect(canvasElement).toHaveAttribute('height', height.toString());
   });
   
-  it('renders the canvas element', () => {
-    render(<Canvas />);
-    const canvasElement = screen.getByTestId('canvas-element');
-    expect(canvasElement).toBeInTheDocument();
-  });
-  
-  it('initializes the grid when canvas is ready', () => {
+  it('calls onCanvasReady when canvas is initialized', async () => {
     const onCanvasReady = vi.fn();
     
-    render(<Canvas onCanvasReady={onCanvasReady} />);
+    render(
+      <Canvas
+        width={800}
+        height={600}
+        onCanvasReady={onCanvasReady}
+      />
+    );
     
-    // Check if the createCompleteGrid function was called
-    expect(gridUtils.createCompleteGrid).toHaveBeenCalled();
-    expect(gridUtils.setGridVisibility).toHaveBeenCalled();
-    
-    // Ensure onCanvasReady callback was called
-    expect(onCanvasReady).toHaveBeenCalled();
+    // onCanvasReady should be called after canvas initialization
+    await waitFor(() => {
+      expect(onCanvasReady).toHaveBeenCalled();
+    });
   });
   
-  it('handles canvas initialization errors properly', () => {
-    // Mock FabricCanvas constructor to throw an error
-    const originalFabricCanvas = (FabricCanvas as unknown as any);
-    
-    // Temporarily override the implementation
-    (FabricCanvas as unknown as any) = vi.fn().mockImplementation(() => {
-      throw new Error('Canvas initialization failed');
-    });
-    
+  it('handles onError callback when provided', async () => {
     const onError = vi.fn();
     
-    // Render with error handler
-    render(<Canvas onError={onError} />);
+    // Mock fabric.Canvas to throw an error
+    const fabricError = new Error('Canvas initialization failed');
+    vi.mocked(fabric.Canvas).mockImplementationOnce(() => {
+      throw fabricError;
+    });
     
-    // Should call the error callback
-    expect(onError).toHaveBeenCalled();
+    render(
+      <Canvas
+        width={800}
+        height={600}
+        onCanvasReady={vi.fn()}
+        onError={onError}
+      />
+    );
     
-    // Restore original implementation
-    (FabricCanvas as unknown as any) = originalFabricCanvas;
+    // onError should be called with the error
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(fabricError);
+    });
   });
   
-  it('does not initialize grid more than once', () => {
-    // First render should create the grid
-    const { unmount } = render(<Canvas />);
+  it('properly cleans up canvas on unmount', async () => {
+    const { unmount } = render(
+      <Canvas
+        width={800}
+        height={600}
+        onCanvasReady={vi.fn()}
+      />
+    );
     
-    // Reset the mock to track new calls
-    vi.clearAllMocks();
+    // Get the dispose method from the mocked canvas
+    const disposeMethod = vi.mocked(fabric.Canvas)().dispose;
     
-    // Unmount and render again
+    // Unmount the component
     unmount();
-    render(<Canvas />);
     
-    // Grid should be created again (since it's a new instance)
-    expect(gridUtils.createCompleteGrid).toHaveBeenCalledTimes(1);
+    // Canvas dispose should be called
+    expect(disposeMethod).toHaveBeenCalled();
+  });
+  
+  it('applies additional styles when provided', () => {
+    const className = 'test-class';
+    const style = { border: '1px solid black' };
     
-    // Cleanup
-    vi.clearAllMocks();
+    render(
+      <Canvas
+        width={800}
+        height={600}
+        onCanvasReady={vi.fn()}
+        className={className}
+        style={style}
+      />
+    );
+    
+    // Find the canvas element
+    const canvasElement = screen.getByTestId('canvas');
+    
+    // Check that it has the correct class
+    expect(canvasElement).toHaveClass(className);
+    
+    // Check that it has the correct style
+    expect(canvasElement).toHaveStyle(style);
   });
 });
