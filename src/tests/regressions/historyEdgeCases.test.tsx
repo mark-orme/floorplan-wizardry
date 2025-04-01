@@ -174,3 +174,4 @@ describe('History Edge Cases Regression Tests', () => {
     expect(mockHistoryRef.current.future).toHaveLength(0);
   });
 });
+

@@ -84,3 +84,4 @@ describe('Grid Scaling Regression Tests', () => {
     expect(sendToBackSpy).toHaveBeenCalledWith(gridObjects[1]);
   });
 });
+

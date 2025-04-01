@@ -101,6 +101,17 @@ export const createMockGridLayerRef = () => ({
 });
 
 /**
+ * Create a mock history reference for testing undo/redo
+ * @returns React ref with mock history state
+ */
+export const createMockHistoryRef = () => ({
+  current: {
+    past: [],
+    future: []
+  }
+});
+
+/**
  * Extract an event handler from a mock Fabric canvas
  * @param canvas - The mock canvas
  * @param eventName - The event name to extract handler for
@@ -122,3 +133,4 @@ export const extractFabricEventHandler = (
   
   return undefined;
 };
+

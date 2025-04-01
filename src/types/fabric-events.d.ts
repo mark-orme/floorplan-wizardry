@@ -119,3 +119,4 @@ export enum FabricEventTypes {
   /** Selection cleared event */
   SELECTION_CLEARED = 'selection:cleared'
 }
+

@@ -140,3 +140,4 @@ describe('Canvas Edge Behavior Tests', () => {
     expect(setActiveSpy).toHaveBeenCalledWith(edgeObject);
   });
 });
+

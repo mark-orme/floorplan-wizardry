@@ -110,3 +110,4 @@ export interface FabricEventOptions {
   /** Event target override */
   target?: any;
 }
+
