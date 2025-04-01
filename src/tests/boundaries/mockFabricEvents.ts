@@ -4,7 +4,8 @@
  * These provide simplified versions of Fabric event interfaces
  * @module tests/boundaries/mockFabricEvents
  */
-import { TPointerEventInfo, TPointerEvent } from '@/types/fabric-events';
+import { TPointerEventInfo, TPointerEvent, FabricEventNames } from '@/types/fabric-events';
+import { Object as FabricObject } from 'fabric';
 
 /**
  * Create a mock pointer event object for testing
@@ -37,7 +38,28 @@ export function createMockSelectionEvent(x: number, y: number) {
   return {
     ...createMockPointerEvent(x, y),
     isClick: true,
-    currentTarget: null,
-    currentSubTargets: []
+    currentTarget: null as unknown as FabricObject,
+    currentSubTargets: [] as FabricObject[]
+  };
+}
+
+/**
+ * Create a mock canvas for testing
+ */
+export function createMockCanvas() {
+  return {
+    on: vi.fn().mockReturnThis(),
+    off: vi.fn(),
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    setActiveObject: vi.fn(),
+    discardActiveObject: vi.fn(),
+    renderAll: vi.fn(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    getElement: vi.fn().mockReturnValue(document.createElement('canvas')),
+    selection: true,
+    contains: vi.fn().mockReturnValue(false)
   };
 }

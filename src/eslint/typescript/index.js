@@ -15,6 +15,9 @@ import { gridStatePropRules } from './grid-state-property-rules.js';
 import { gridTypeSafety } from './grid-type-safety.js';
 import { lineDrawingRules } from './line-drawing-rules.js';
 import { drawingToolRules } from './drawing-tool-rules.js';
+import { fabricEventTypingRules } from './fabric-event-typing-rules.js';
+import { strictFabricTypes } from './strict-fabric-types.js';
+import { aiCodeSafetyRules } from './ai-code-safety-rules.js';
 
 /**
  * Export all TypeScript rules as an array
@@ -31,5 +34,8 @@ export default [
   gridStatePropRules,
   gridTypeSafety,
   lineDrawingRules,
-  drawingToolRules
+  drawingToolRules,
+  fabricEventTypingRules,
+  strictFabricTypes,
+  aiCodeSafetyRules
 ];

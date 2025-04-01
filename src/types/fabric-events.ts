@@ -21,6 +21,9 @@ export enum FabricEventNames {
   OBJECT_REMOVED = 'object:removed'
 }
 
+// Alias for compatibility with existing code
+export const FabricEventTypes = FabricEventNames;
+
 /**
  * Pointer event information
  */
@@ -36,6 +39,9 @@ export interface TPointerEventInfo<T extends Event> {
  * Pointer event
  */
 export type TPointerEvent = MouseEvent | TouchEvent | PointerEvent;
+
+// Alias for compatibility with existing code
+export type FabricPointerEvent = TPointerEvent;
 
 /**
  * Selection event information
