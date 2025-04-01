@@ -18,6 +18,7 @@ const safetyRules = require('./safety-rules');
 const drawingToolRules = require('./drawing-tool-rules');
 const fabricEventRules = require('./fabric-event-rules');
 const lineDrawingRules = require('./line-drawing-rules');
+const fabricEventTypeSafety = require('./fabric-event-type-safety');
 
 module.exports = {
   rules: {
@@ -32,6 +33,7 @@ module.exports = {
     ...safetyRules.rules,
     ...drawingToolRules.rules,
     ...fabricEventRules.rules,
-    ...lineDrawingRules.rules
+    ...lineDrawingRules.rules,
+    ...fabricEventTypeSafety.rules
   }
 };

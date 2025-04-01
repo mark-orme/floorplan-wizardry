@@ -138,9 +138,12 @@ export class Line {
   set(options: any): Line {
     // Replace Object.assign with manual property assignment
     if (options) {
-      Object.keys(options).forEach(key => {
-        (this as any)[key] = options[key];
-      });
+      // Manual assignment of properties
+      for (const key in options) {
+        if (Object.prototype.hasOwnProperty.call(options, key)) {
+          (this as any)[key] = options[key];
+        }
+      }
     }
     return this;
   }
@@ -169,9 +172,12 @@ export class Circle {
   set(options: any): Circle {
     // Replace Object.assign with manual property assignment
     if (options) {
-      Object.keys(options).forEach(key => {
-        (this as any)[key] = options[key];
-      });
+      // Manual assignment of properties
+      for (const key in options) {
+        if (Object.prototype.hasOwnProperty.call(options, key)) {
+          (this as any)[key] = options[key];
+        }
+      }
     }
     return this;
   }
@@ -198,9 +204,12 @@ export class Text {
   set(options: any): Text {
     // Replace Object.assign with manual property assignment
     if (options) {
-      Object.keys(options).forEach(key => {
-        (this as any)[key] = options[key];
-      });
+      // Manual assignment of properties
+      for (const key in options) {
+        if (Object.prototype.hasOwnProperty.call(options, key)) {
+          (this as any)[key] = options[key];
+        }
+      }
     }
     return this;
   }

@@ -105,7 +105,7 @@ export const useMouseEvents = (
     // Start drawing at the point
     startDrawing(point);
     
-    // Bind move and up handlers to document
+    // Define handlers here to avoid reference errors
     const handleDocumentMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
       handleMouseMove(moveEvent);
     };

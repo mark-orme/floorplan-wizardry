@@ -83,7 +83,7 @@ export interface FabricPointerEvent {
   /** Transformation matrix */
   transform?: { 
     corner?: string;
-    original?: FabricObject;
+    original?: any; // Using any to avoid conflicts with Fabric's definition
     originX?: string;
     originY?: string;
     width?: number;

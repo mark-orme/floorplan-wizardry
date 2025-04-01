@@ -7,18 +7,32 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize } from '@/types/floorPlanTypes';
 
 // Mock fabric.js
 jest.mock('fabric');
 
-// Create a mock floor plan
-const mockFloorPlan = {
+// Create a mock floor plan that matches the FloorPlan interface
+const mockFloorPlan: FloorPlan = {
   id: 'floor-1',
   name: 'Floor 1',
+  label: 'First Floor',
   index: 0,
   strokes: [],
-  areas: [],
-  dimensions: { width: 800, height: 600 }
+  walls: [],
+  rooms: [],
+  level: 0,
+  gia: 0,
+  canvasData: null,
+  canvasJson: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  metadata: {
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    paperSize: PaperSize.A4,
+    level: 0
+  }
 };
 
 // Create mock setFloorPlan function
@@ -143,10 +157,10 @@ describe('useFloorPlanDrawing', () => {
       setFloorPlan: mockSetFloorPlan
     }));
     
-    const mockStroke = {
+    const mockStroke: Stroke = {
       id: 'test-stroke',
       points: [{ x: 100, y: 100 }, { x: 200, y: 200 }],
-      type: 'line',
+      type: 'line' as StrokeTypeLiteral,
       color: '#000000',
       thickness: 2,
       width: 2
