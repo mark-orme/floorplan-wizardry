@@ -17,8 +17,8 @@ export const typeAdvancedSafetyRules = {
     // Prevent missing properties in object literals
     "@typescript-eslint/consistent-type-assertions": "error",
     
-    // Ensure function calls include all required parameters
-    "@typescript-eslint/no-explicit-any": "warn",
+    // Prevent using 'any' type as requested by the user
+    "@typescript-eslint/no-explicit-any": "error",
     
     // Prevent using object properties without checking if they exist
     "@typescript-eslint/no-unnecessary-condition": "warn",
@@ -81,6 +81,22 @@ export const typeAdvancedSafetyRules = {
     "no-duplicate-imports": "error",
     
     // Ensure consistent return types
-    "consistent-return": "error"
+    "consistent-return": "error",
+    
+    // New stricter rules
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-return": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { 
+      "vars": "all", 
+      "args": "after-used",
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "caughtErrorsIgnorePattern": "^_"
+    }],
+    "@typescript-eslint/require-await": "error",
+    "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-for-in-array": "error"
   }
 };

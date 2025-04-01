@@ -17,3 +17,4 @@ export { reactRules } from './react-rules.js';
 export { sentryRules } from './sentry-rules.js';
 export { typescriptRules } from './typescript-rules.js';
 export { typeSafetyRules } from './type-safety-rules.js';
+export { typeAdvancedSafetyRules } from './type-safety-advanced-rules.js';
