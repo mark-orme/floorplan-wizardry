@@ -15,3 +15,7 @@ export interface ExtendedFabricObject extends FabricObject {
   gridType?: 'small' | 'large';
 }
 
+/**
+ * Re-export FabricEventNames from fabric-events
+ */
+export { FabricEventNames } from './fabric-events';

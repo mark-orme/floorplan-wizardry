@@ -7,23 +7,24 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { Canvas, Line } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { vi } from 'vitest';
 
 // Mock fabric.js
-jest.mock('fabric');
+vi.mock('fabric');
 
 // Mock toast
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: {
-    success: jest.fn(),
-    info: jest.fn(),
-    error: jest.fn()
+    success: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
   }
 }));
 
 describe('useCanvasInteraction', () => {
   let canvas: Canvas;
   let canvasRef: React.MutableRefObject<Canvas | null>;
-  const saveCurrentState = jest.fn();
+  const saveCurrentState = vi.fn();
   
   beforeEach(() => {
     // Create a new canvas instance for each test
@@ -41,12 +42,12 @@ describe('useCanvasInteraction', () => {
   
   it('should delete selected objects when deleteSelectedObjects is called', () => {
     // Add some objects to the canvas
-    const line1 = new Line([0, 0, 100, 100]);
-    const line2 = new Line([0, 0, 200, 200]);
+    const line1 = new Line([0, 0, 100, 100], {});
+    const line2 = new Line([0, 0, 200, 200], {});
     // Use "down" instead of true for activeOn
-    line1.activeOn = "down"; // Changed from true to "down"
+    (line1 as any).activeOn = "down"; // Changed from true to "down"
     
-    canvas.add(line1, line2);
+    canvas.add(line1 as any, line2 as any);
     
     const { result } = renderHook(() => useCanvasInteraction({
       fabricCanvasRef: canvasRef,
@@ -68,11 +69,11 @@ describe('useCanvasInteraction', () => {
   
   it('should enable point selection when enablePointSelection is called', () => {
     // Add some objects to the canvas
-    const line = new Line([0, 0, 100, 100]);
-    const gridLine = new Line([0, 0, 200, 200]);
+    const line = new Line([0, 0, 100, 100], {});
+    const gridLine = new Line([0, 0, 200, 200], {});
     (gridLine as any).objectType = 'grid'; // Mark as a grid object
     
-    canvas.add(line, gridLine);
+    canvas.add(line as any, gridLine as any);
     
     const { result } = renderHook(() => useCanvasInteraction({
       fabricCanvasRef: canvasRef,

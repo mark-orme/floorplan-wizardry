@@ -9,15 +9,20 @@ import { DrawingToolbar } from '@/components/DrawingToolbar';
 import { DrawingMode } from '@/constants/drawingModes';
 
 describe('DrawingToolbar', () => {
-  // Mock props
+  // Mock props matching the actual component interface
   const mockProps = {
-    activeTool: DrawingMode.SELECT,
+    tool: DrawingMode.SELECT,
     onToolChange: vi.fn(),
     onUndo: vi.fn(),
     onRedo: vi.fn(),
     onClear: vi.fn(),
-    canUndo: true,
-    canRedo: false
+    onZoom: vi.fn(),
+    onSave: vi.fn(),
+    gia: 0,
+    isDrawing: false,
+    isDirty: false,
+    showControls: true,
+    disabled: false
   };
   
   beforeEach(() => {
@@ -92,47 +97,27 @@ describe('DrawingToolbar', () => {
     expect(mockProps.onClear).toHaveBeenCalled();
   });
   
-  it('disables undo/redo buttons based on props', () => {
+  it('disables buttons when disabled prop is true', () => {
     render(
       <DrawingToolbar
         {...mockProps}
-        canUndo={false}
-        canRedo={false}
+        disabled={true}
       />
     );
     
-    // Check that Undo button is disabled
-    const undoButton = screen.getByTitle('Undo');
-    expect(undoButton).toBeDisabled();
-    
-    // Check that Redo button is disabled
-    const redoButton = screen.getByTitle('Redo');
-    expect(redoButton).toBeDisabled();
-    
-    // Render again with canUndo=true and canRedo=true
-    render(
-      <DrawingToolbar
-        {...mockProps}
-        canUndo={true}
-        canRedo={true}
-      />
-    );
-    
-    // Check that Undo button is enabled
-    const enabledUndoButton = screen.getByTitle('Undo');
-    expect(enabledUndoButton).not.toBeDisabled();
-    
-    // Check that Redo button is enabled
-    const enabledRedoButton = screen.getByTitle('Redo');
-    expect(enabledRedoButton).not.toBeDisabled();
+    // Check that buttons are disabled
+    const buttons = screen.getAllByRole('button');
+    buttons.forEach(button => {
+      expect(button).toBeDisabled();
+    });
   });
   
   it('renders with alternative props', () => {
-    // Test with different activeTool
+    // Test with different tool
     render(
       <DrawingToolbar
         {...mockProps}
-        activeTool={DrawingMode.DRAW}
+        tool={DrawingMode.DRAW}
       />
     );
     

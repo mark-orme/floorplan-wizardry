@@ -6,6 +6,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Canvas } from '@/components/Canvas';
+import * as fabric from 'fabric';
 
 // Mock fabric
 vi.mock('fabric', () => ({
@@ -114,8 +115,8 @@ describe('Canvas', () => {
     expect(disposeMethod).toHaveBeenCalled();
   });
   
+  // Update the test to use only props that actually exist on the Canvas component
   it('applies additional styles when provided', () => {
-    const className = 'test-class';
     const style = { border: '1px solid black' };
     
     render(
@@ -123,16 +124,12 @@ describe('Canvas', () => {
         width={800}
         height={600}
         onCanvasReady={vi.fn()}
-        className={className}
         style={style}
       />
     );
     
     // Find the canvas element
     const canvasElement = screen.getByTestId('canvas');
-    
-    // Check that it has the correct class
-    expect(canvasElement).toHaveClass(className);
     
     // Check that it has the correct style
     expect(canvasElement).toHaveStyle(style);
