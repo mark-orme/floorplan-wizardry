@@ -1,3 +1,4 @@
+
 /**
  * Hook for drawing straight lines on canvas
  * @module hooks/straightLineTool/useStraightLineTool
@@ -11,7 +12,7 @@ import { useDrawingToolManager } from '../drawing/useDrawingToolManager';
 import { Point } from '@/types/core/Geometry';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
 import logger from '@/utils/logger';
-import { FabricEventTypes, FabricPointerEvent } from '@/types/fabric-events';
+import { FabricEventNames, TPointerEventInfo, TPointerEvent } from '@/types/fabric-events';
 
 /**
  * Props for useStraightLineTool hook
@@ -274,37 +275,36 @@ export const useStraightLineTool = (
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    const handleMouseDown = (opt: FabricPointerEvent): void => {
+    const handleMouseDown = (opt: TPointerEventInfo<TPointerEvent>): void => {
       if (tool !== DrawingMode.STRAIGHT_LINE) return;
-      if (!opt.e) return;
       
       mouseHandlers.handleMouseDown(opt.e as MouseEvent);
     };
     
-    const handleMouseMove = (opt: FabricPointerEvent): void => {
+    const handleMouseMove = (opt: TPointerEventInfo<TPointerEvent>): void => {
       if (tool !== DrawingMode.STRAIGHT_LINE) return;
-      if (!isDrawing || !opt.e) return;
+      if (!isDrawing) return;
       
       mouseHandlers.handleMouseMove(opt.e as MouseEvent);
     };
     
-    const handleMouseUp = (opt: FabricPointerEvent): void => {
+    const handleMouseUp = (opt: TPointerEventInfo<TPointerEvent>): void => {
       if (tool !== DrawingMode.STRAIGHT_LINE) return;
-      if (!isDrawing || !opt.e) return;
+      if (!isDrawing) return;
       
       handleEndDrawing();
     };
     
-    // Add event listeners using fabric event types
-    canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown as any);
-    canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove as any);
-    canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp as any);
+    // Add event listeners using FabricEventNames enum
+    canvas.on(FabricEventNames.MOUSE_DOWN, handleMouseDown as any);
+    canvas.on(FabricEventNames.MOUSE_MOVE, handleMouseMove as any);
+    canvas.on(FabricEventNames.MOUSE_UP, handleMouseUp as any);
     
     return () => {
       // Remove event listeners
-      canvas.off(FabricEventTypes.MOUSE_DOWN, handleMouseDown as any);
-      canvas.off(FabricEventTypes.MOUSE_MOVE, handleMouseMove as any);
-      canvas.off(FabricEventTypes.MOUSE_UP, handleMouseUp as any);
+      canvas.off(FabricEventNames.MOUSE_DOWN, handleMouseDown as any);
+      canvas.off(FabricEventNames.MOUSE_MOVE, handleMouseMove as any);
+      canvas.off(FabricEventNames.MOUSE_UP, handleMouseUp as any);
     };
   }, [tool, isDrawing, fabricCanvasRef, mouseHandlers, handleEndDrawing]);
 

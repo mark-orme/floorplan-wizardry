@@ -39,6 +39,15 @@ module.exports = {
               (node.callee.object.name === 'canvas' || 
                node.callee.object.name === 'fabricCanvas')
             ) {
+              // Check if first argument is a string literal instead of enum
+              const firstArg = node.arguments[0];
+              if (firstArg && firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
+                context.report({
+                  node: firstArg,
+                  message: `Use FabricEventTypes or FabricEventNames enum instead of string literals for Fabric.js events. Example: FabricEventTypes.MOUSE_DOWN instead of '${firstArg.value}'`
+                });
+              }
+              
               // Check event handler parameter types
               const handler = node.arguments[1];
               if (handler?.type === 'ArrowFunctionExpression' || handler?.type === 'FunctionExpression') {

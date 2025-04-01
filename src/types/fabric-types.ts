@@ -16,6 +16,6 @@ export interface ExtendedFabricObject extends FabricObject {
 }
 
 /**
- * Re-export FabricEventNames from fabric-events
+ * Re-export FabricEventNames and FabricEventTypes from fabric-events
  */
-export { FabricEventNames } from './fabric-events';
+export { FabricEventNames, FabricEventTypes } from './fabric-events';

@@ -21,7 +21,10 @@ export enum FabricEventNames {
   OBJECT_REMOVED = 'object:removed'
 }
 
-// Alias for compatibility with existing code
+/**
+ * Alias for compatibility with existing code
+ * Export both as an enum and as a const for maximum compatibility
+ */
 export const FabricEventTypes = FabricEventNames;
 
 /**

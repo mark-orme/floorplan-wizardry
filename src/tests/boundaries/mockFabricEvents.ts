@@ -6,6 +6,7 @@
  */
 import { TPointerEventInfo, TPointerEvent, FabricEventNames } from '@/types/fabric-events';
 import { Object as FabricObject } from 'fabric';
+import { vi } from 'vitest';
 
 /**
  * Create a mock pointer event object for testing

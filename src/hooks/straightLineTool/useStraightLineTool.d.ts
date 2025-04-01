@@ -1,21 +1,25 @@
 
-import { DrawingMode } from "@/constants/drawingModes";
-import { Canvas } from "fabric";
-import { Point } from "@/types/core/Geometry";
-
-export interface UseStraightLineToolProps {
-  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
-  tool: DrawingMode;
-  lineColor: string;
-  lineThickness: number;
-  saveCurrentState: () => void;
-}
+/**
+ * Type definitions for the straight line tool hook
+ */
+import { Line } from 'fabric';
+import { Point } from '@/types/core/Geometry';
 
 export interface UseStraightLineToolResult {
+  /** Whether the line tool is active */
+  isActive: boolean;
+  /** Whether the line tool is initialized */
   isToolInitialized: boolean;
+  /** Current line being drawn */
+  currentLine: Line | null;
+  /** Whether currently drawing a line */
   isDrawing: boolean;
-  startDrawing: (point: Point) => void;
-  continueDrawing: (point: Point) => void;
-  endDrawing: (point: Point) => void;
+  /** Cancel the current drawing */
   cancelDrawing: () => void;
+  /** Start drawing a line from a point */
+  startDrawing?: (point: Point) => void;
+  /** Continue drawing to a point */
+  continueDrawing?: (point: Point) => void;
+  /** End drawing at current point */
+  endDrawing?: () => void;
 }
