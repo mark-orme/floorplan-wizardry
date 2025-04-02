@@ -5,6 +5,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import logger from '@/utils/logger';
+import { createBasicEmergencyGrid } from './gridRenderers';
 
 // Track the last time grid visibility was checked to prevent excessive checks
 const lastCheckTime = {
@@ -21,9 +22,9 @@ export function ensureGridVisibility(
   canvas: FabricCanvas,
   gridObjects?: FabricObject[]
 ): boolean {
-  // Heavily throttle checks to once per 10 seconds maximum to reduce console spam
+  // Throttle checks to once per 5 seconds maximum to reduce console spam
   const now = Date.now();
-  if (now - lastCheckTime.value < 10000) {
+  if (now - lastCheckTime.value < 5000) {
     return false;
   }
   lastCheckTime.value = now;
@@ -34,13 +35,21 @@ export function ensureGridVisibility(
   
   try {
     // Use provided grid objects or find them from canvas
-    const gridItems = gridObjects || canvas.getObjects().filter(obj => 
+    let gridItems = gridObjects || canvas.getObjects().filter(obj => 
       (obj as any).objectType === 'grid' || (obj as any).isGrid === true
     );
     
+    // If no grid items found, create an emergency grid
     if (gridItems.length === 0) {
-      // Don't log this to avoid spam
-      return false;
+      console.log('No grid found, creating emergency grid');
+      gridItems = createBasicEmergencyGrid(canvas);
+      
+      if (gridItems.length === 0) {
+        console.error('Failed to create emergency grid');
+        return false;
+      }
+      
+      console.log(`Created emergency grid with ${gridItems.length} items`);
     }
     
     // Check if any grid object is not visible
@@ -54,20 +63,19 @@ export function ensureGridVisibility(
       }
       
       // Ensure grid objects are at the back (only if needed)
-      // Use canvas.sendToBack for fabric.js v6 compatibility
       const index = canvas.getObjects().indexOf(obj);
       if (index > 0) {
         try {
           canvas.sendToBack(obj);
         } catch (err) {
-          // Fallback for older/newer versions where sendToBack might differ
+          console.warn('Error using sendToBack, trying alternative methods');
           try {
+            // For fabric.js v6
             canvas.sendObjectToBack(obj);
           } catch (innerErr) {
             // Last resort, manually move to back
             canvas.remove(obj);
             canvas.add(obj);
-            canvas.requestRenderAll();
           }
         }
       }
@@ -76,16 +84,15 @@ export function ensureGridVisibility(
     // Only render if changes were made
     if (visibilityChanged) {
       // Force render to ensure changes are applied
+      canvas.renderAll();
       canvas.requestRenderAll();
       logger.info(`Fixed visibility for ${gridItems.length} grid objects`);
     }
     
     return visibilityChanged;
   } catch (error) {
-    // Only log errors once per minute to avoid spam
-    if (now % 60000 < 1000) {
-      logger.error('Error ensuring grid visibility:', error);
-    }
+    console.error('Error ensuring grid visibility:', error);
+    logger.error('Error ensuring grid visibility:', error);
     return false;
   }
 }
@@ -108,12 +115,25 @@ export function setGridVisibility(
   
   try {
     // Use provided grid objects or find them from canvas
-    const gridItems = gridObjects || canvas.getObjects().filter(obj => 
+    let gridItems = gridObjects || canvas.getObjects().filter(obj => 
       (obj as any).objectType === 'grid' || (obj as any).isGrid === true
     );
     
     if (gridItems.length === 0) {
-      return false;
+      // If no grid items found and we want to make grid visible, create an emergency grid
+      if (visible) {
+        console.log('No grid found while setting visibility, creating emergency grid');
+        gridItems = createBasicEmergencyGrid(canvas);
+        
+        if (gridItems.length === 0) {
+          logger.error('Failed to create emergency grid while setting visibility');
+          return false;
+        }
+        
+        logger.info(`Created emergency grid with ${gridItems.length} items`);
+      } else {
+        return false;
+      }
     }
     
     // Set visibility for all grid objects
@@ -122,12 +142,68 @@ export function setGridVisibility(
     });
     
     // Force render to ensure changes are applied
+    canvas.renderAll();
     canvas.requestRenderAll();
     logger.info(`Set visibility to ${visible} for ${gridItems.length} grid objects`);
     
     return true;
   } catch (error) {
     logger.error('Error setting grid visibility:', error);
+    console.error('Error setting grid visibility:', error);
+    return false;
+  }
+}
+
+/**
+ * Force grid creation and visibility
+ * This is a more aggressive approach that ensures a grid exists and is visible
+ * @param canvas - Fabric canvas
+ * @returns Whether operation succeeded
+ */
+export function forceGridCreationAndVisibility(
+  canvas: FabricCanvas
+): boolean {
+  if (!canvas) {
+    console.error('Cannot force grid: Canvas is null');
+    return false;
+  }
+  
+  try {
+    // Clear any existing grid objects that might be problematic
+    const existingGrid = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    );
+    
+    if (existingGrid.length > 0) {
+      console.log(`Removing ${existingGrid.length} existing grid objects`);
+      existingGrid.forEach(obj => {
+        canvas.remove(obj);
+      });
+    }
+    
+    // Create new emergency grid
+    console.log('Creating forced emergency grid');
+    const gridItems = createBasicEmergencyGrid(canvas);
+    
+    if (gridItems.length === 0) {
+      console.error('Failed to create forced emergency grid');
+      return false;
+    }
+    
+    // Ensure grid items are visible and at the back
+    gridItems.forEach(obj => {
+      obj.set('visible', true);
+      canvas.sendToBack(obj);
+    });
+    
+    // Force render
+    canvas.renderAll();
+    canvas.requestRenderAll();
+    
+    console.log(`Successfully created forced grid with ${gridItems.length} objects`);
+    return true;
+  } catch (error) {
+    console.error('Error forcing grid creation:', error);
     return false;
   }
 }
