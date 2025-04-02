@@ -21,9 +21,9 @@ export function ensureGridVisibility(
   canvas: FabricCanvas,
   gridObjects?: FabricObject[]
 ): boolean {
-  // Heavily throttle checks to once per 5 seconds maximum to reduce console spam
+  // Heavily throttle checks to once per 10 seconds maximum to reduce console spam
   const now = Date.now();
-  if (now - lastCheckTime.value < 5000) {
+  if (now - lastCheckTime.value < 10000) {
     return false;
   }
   lastCheckTime.value = now;
@@ -39,6 +39,7 @@ export function ensureGridVisibility(
     );
     
     if (gridItems.length === 0) {
+      // Don't log this to avoid spam
       return false;
     }
     
@@ -52,15 +53,29 @@ export function ensureGridVisibility(
         visibilityChanged = true;
       }
       
-      // Ensure grid objects are at the back
-      // Use sendObjectToBack as sendToBack is deprecated
-      if (canvas.getObjects().indexOf(obj) > 0) {
-        canvas.sendObjectToBack(obj);
+      // Ensure grid objects are at the back (only if needed)
+      // Use canvas.sendToBack for fabric.js v6 compatibility
+      const index = canvas.getObjects().indexOf(obj);
+      if (index > 0) {
+        try {
+          canvas.sendToBack(obj);
+        } catch (err) {
+          // Fallback for older/newer versions where sendToBack might differ
+          try {
+            canvas.sendObjectToBack(obj);
+          } catch (innerErr) {
+            // Last resort, manually move to back
+            canvas.remove(obj);
+            canvas.add(obj);
+            canvas.requestRenderAll();
+          }
+        }
       }
     });
     
     // Only render if changes were made
     if (visibilityChanged) {
+      // Force render to ensure changes are applied
       canvas.requestRenderAll();
       logger.info(`Fixed visibility for ${gridItems.length} grid objects`);
     }
@@ -106,6 +121,7 @@ export function setGridVisibility(
       obj.set('visible', visible);
     });
     
+    // Force render to ensure changes are applied
     canvas.requestRenderAll();
     logger.info(`Set visibility to ${visible} for ${gridItems.length} grid objects`);
     

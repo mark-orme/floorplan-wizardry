@@ -1,162 +1,92 @@
 
-import React, { useEffect, useState, useCallback } from "react";
+/**
+ * Canvas application component
+ * Main component that wraps the canvas with necessary UI elements
+ * @module CanvasApp
+ */
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Canvas } from "@/components/Canvas";
+import CanvasLayout from "@/components/CanvasLayout"; 
+import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
+import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import type { DebugInfoState } from "@/types/core/DebugInfo";
 import { Canvas as FabricCanvas } from "fabric";
-import { CanvasControllerEnhanced } from "./controller/CanvasControllerEnhanced";
-import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
-import { resetGridProgress } from "@/utils/gridManager";
-import { DrawingMode } from "@/constants/drawingModes";
-import { useDrawingContext } from "@/contexts/DrawingContext";
-import { captureMessage } from "@/utils/sentry";
-import logger from "@/utils/logger";
-import { useCanvasOperations } from "@/hooks/canvas-operations";
-import { CanvasToolbar } from "./CanvasToolbar";
-import { CanvasContainer } from "./CanvasContainer";
-import { toast } from "sonner";
-import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+
+// Default dimensions for the canvas
+const DEFAULT_CANVAS_WIDTH = 800;
+const DEFAULT_CANVAS_HEIGHT = 600;
 
 interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
   showGridDebug?: boolean;
 }
 
-// Inner component that uses DrawingContext
-const CanvasAppInner: React.FC<CanvasAppProps> = ({ 
-  setCanvas,
-  showGridDebug = true
-}) => {
-  // State for debug info - fixed type consistency
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
+/**
+ * Canvas application component
+ * Wraps the canvas with necessary controllers and UI
+ * @returns {JSX.Element} Rendered component
+ */
+export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): JSX.Element => {
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({
+    ...DEFAULT_DEBUG_STATE,
+    hasError: false,
+    errorMessage: '',
+    lastInitTime: Date.now(),
+    lastGridCreationTime: 0,
+    canvasEventsRegistered: false,
+    gridRendered: false,
+    toolsInitialized: false
+  }));
   
-  // State for GIA (Gross Internal Area)
-  const [gia, setGia] = useState<number>(0);
+  const canvasRef = useRef<FabricCanvas | null>(null);
+  const mountedRef = useRef<boolean>(true);
   
-  // State for grid visibility
-  const [showGrid, setShowGrid] = useState<boolean>(true);
-  
-  // Get drawing context
-  const { 
-    tool, 
-    setTool, 
-    lineColor, 
-    lineThickness, 
-    setLineColor, 
-    setLineThickness,
-    canUndo,
-    canRedo,
-    setCanUndo,
-    setCanRedo
-  } = useDrawingContext();
-
-  // Get canvas operations from custom hook
-  const {
-    canvasComponentRef,
-    setCanvasRef,
-    cleanupCanvas,
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    handleClear,
-    handleSave,
-    handleDelete,
-    handleLineThicknessChange,
-    handleLineColorChange
-  } = useCanvasOperations({
-    setCanvas,
-    tool,
-    setTool,
-    lineColor,
-    lineThickness,
-    setLineColor,
-    setLineThickness,
-    canUndo,
-    canRedo,
-    setCanUndo,
-    setCanRedo
-  });
-  
-  // Toggle grid visibility
-  const handleToggleGrid = useCallback(() => {
-    setShowGrid(prev => !prev);
-  }, []);
-  
-  // Reset initialization state when component mounts
-  useEffect(() => {
-    resetInitializationState();
-    resetGridProgress();
+  // Stable handler for canvas ready event
+  const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
+    console.log('CanvasApp: Canvas is ready, dimensions:', canvas.width, 'x', canvas.height);
     
-    logger.info("CanvasApp mounted", { initialTool: tool });
-    captureMessage("CanvasApp initialized", "canvas-app-init", {
-      tags: { component: "CanvasApp" },
-      extra: { initialTool: tool }
-    });
+    // Save canvas reference locally
+    canvasRef.current = canvas;
     
-    // Welcome message
-    toast.success("Floor Plan Editor initialized", {
-      id: "canvas-welcome-toast",
-      duration: 3000
-    });
-    
-    // Clean up when component unmounts
-    return () => {
-      cleanupCanvas();
-    };
-  }, [tool, cleanupCanvas]);
-  
-  // Handle canvas ref setup
-  const handleCanvasRef = (ref: any) => {
-    logger.info("Canvas ref received");
-    
-    // Set the canvas ref
-    setCanvasRef(ref);
+    // Update parent component with canvas reference
+    if (setCanvas && mountedRef.current) {
+      setCanvas(canvas);
+    }
     
     // Update debug info
     setDebugInfo(prev => ({
       ...prev,
       canvasReady: true,
-      canvasInitialized: true
+      canvasInitialized: true,
+      dimensionsSet: true
     }));
+  }, [setCanvas]);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    mountedRef.current = true;
     
-    // Enable undo/redo based on history state
-    if (ref && ref.history) {
-      setCanUndo(ref.history.canUndo());
-      setCanRedo(ref.history.canRedo());
-    }
-  };
+    return () => {
+      mountedRef.current = false;
+      
+      // Clear parent canvas reference on unmount
+      if (setCanvas) {
+        console.log('CanvasApp: Component unmounting, clearing canvas reference');
+        setCanvas(null);
+      }
+    };
+  }, [setCanvas]);
   
   return (
-    <CanvasControllerEnhanced>
-      <div className="w-full h-full flex flex-col">
-        <CanvasToolbar
-          tool={tool}
-          onToolChange={handleToolChange}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onZoom={handleZoom}
-          onClear={handleClear}
-          onSave={handleSave}
-          onDelete={handleDelete}
-          gia={gia}
-          lineThickness={lineThickness}
-          lineColor={lineColor}
-          onLineThicknessChange={handleLineThicknessChange}
-          onLineColorChange={handleLineColorChange}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          showGrid={showGrid}
-          onToggleGrid={handleToggleGrid}
-        />
-        <CanvasContainer 
-          onCanvasRef={handleCanvasRef}
-          debugInfo={debugInfo}
-          showGridDebug={showGridDebug}
-        />
-      </div>
-    </CanvasControllerEnhanced>
+    <CanvasLayout>
+      <Canvas 
+        width={DEFAULT_CANVAS_WIDTH}
+        height={DEFAULT_CANVAS_HEIGHT}
+        onCanvasReady={handleCanvasReady}
+        setDebugInfo={setDebugInfo}
+        showGridDebug={showGridDebug}
+      />
+      <DrawingToolbarModals />
+    </CanvasLayout>
   );
-};
-
-// Export the CanvasApp component wrapped with DrawingProvider
-export const CanvasApp: React.FC<CanvasAppProps> = (props) => {
-  return <CanvasAppInner {...props} />;
 };

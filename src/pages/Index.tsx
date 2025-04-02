@@ -23,30 +23,63 @@ const Index = () => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [showGridDebug, setShowGridDebug] = useState<boolean>(true);
   const gridInitializedRef = useRef<boolean>(false);
+  const retryCountRef = useRef<number>(0);
+  const maxRetries = 3;
+  const canvasStableRef = useRef<boolean>(false);
   
   // Reset canvas initialization state when the page loads
   useEffect(() => {
+    console.log("Index page mounted - resetting initialization state");
     resetInitializationState();
     gridInitializedRef.current = false;
+    canvasStableRef.current = false;
+    retryCountRef.current = 0;
     
     // Log a welcome message
     toast.success("Floor Plan Editor loaded with enhanced drawing tools", {
       duration: 3000,
       id: "floor-plan-welcome"
     });
+    
+    return () => {
+      console.log("Index page unmounting - cleanup");
+      // Any additional cleanup
+    };
   }, []);
   
-  // Force grid creation when canvas is available
+  // Ensure canvas is properly tracked and stable before grid creation
   useEffect(() => {
-    if (!canvas || gridInitializedRef.current) return;
+    if (!canvas) {
+      console.log("Canvas not available yet");
+      return;
+    }
+
+    console.log("Canvas reference received:", !!canvas);
     
-    // Wait for canvas to be fully initialized
-    const timer = setTimeout(() => {
+    // Wait to confirm canvas is stable before attempting grid creation
+    const stabilityTimer = setTimeout(() => {
+      canvasStableRef.current = true;
+      console.log("Canvas marked as stable after delay");
+    }, 500);
+    
+    return () => {
+      clearTimeout(stabilityTimer);
+    };
+  }, [canvas]);
+  
+  // Separate effect for grid creation to ensure it only runs after canvas is stable
+  useEffect(() => {
+    if (!canvas || !canvasStableRef.current || gridInitializedRef.current) {
+      return;
+    }
+    
+    console.log("Attempting grid creation on stable canvas");
+    
+    const createGridWithRetry = () => {
       try {
         // Validate canvas dimensions
         if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
-          toast.error("Invalid canvas dimensions for grid creation");
-          return;
+          throw new Error("Invalid canvas dimensions for grid creation");
         }
 
         console.log("Creating grid with dimensions:", canvas.width, "x", canvas.height);
@@ -56,51 +89,67 @@ const Index = () => {
         
         if (gridObjects && gridObjects.length > 0) {
           gridInitializedRef.current = true;
-          toast.success(`Grid created with ${gridObjects.length} objects`);
+          console.log(`Grid created successfully with ${gridObjects.length} objects`);
           
-          // Make sure grid is visible and force render
+          // Force grid objects to be visible and bring to back
           gridObjects.forEach(obj => {
             obj.set('visible', true);
           });
           
+          // Re-render the canvas after setting visibility
           canvas.requestRenderAll();
-          console.log("Grid created and rendered");
+          
+          toast.success(`Grid created with ${gridObjects.length} objects`);
         } else {
-          toast.error("Failed to create grid objects");
+          throw new Error("Grid creation returned no objects");
         }
       } catch (error) {
         console.error("Grid creation error:", error);
-        toast.error("Failed to initialize grid");
+        
+        if (retryCountRef.current < maxRetries) {
+          retryCountRef.current++;
+          console.log(`Retrying grid creation (attempt ${retryCountRef.current}/${maxRetries})`);
+          
+          // Retry after a delay
+          setTimeout(createGridWithRetry, 1000);
+        } else {
+          toast.error("Failed to initialize grid after multiple attempts");
+        }
       }
-    }, 1000);
+    };
+    
+    // Start grid creation with 500ms delay to ensure canvas is ready
+    const timer = setTimeout(createGridWithRetry, 500);
     
     return () => clearTimeout(timer);
-  }, [canvas]);
+  }, [canvas, canvasStableRef.current]);
   
-  // Check grid visibility much less frequently to prevent console spam
+  // Infrequent grid visibility check
   useEffect(() => {
     if (!canvas) return;
     
     // Check grid visibility once at initialization with a delay
     const initialCheck = setTimeout(() => {
-      ensureGridVisibility(canvas);
-    }, 3000);
-    
-    // Then check very infrequently
-    const intervalId = setInterval(() => {
-      ensureGridVisibility(canvas);
-    }, 60000); // Check only once per minute
+      if (canvas && gridInitializedRef.current) {
+        console.log("Performing initial grid visibility check");
+        ensureGridVisibility(canvas);
+      }
+    }, 2000);
     
     return () => {
       clearTimeout(initialCheck);
-      clearInterval(intervalId);
     };
   }, [canvas]);
   
   // Toggle grid debug overlay
   const toggleGridDebug = () => {
     setShowGridDebug(prev => !prev);
-    toast.info(showGridDebug ? "Grid debug hidden" : "Grid debug visible");
+    
+    if (canvas) {
+      // Toggle grid visibility based on showGridDebug state
+      setGridVisibility(canvas, !showGridDebug);
+      toast.info(showGridDebug ? "Grid debug hidden" : "Grid debug visible");
+    }
   };
   
   return (
