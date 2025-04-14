@@ -103,7 +103,7 @@ if (typeof document !== 'undefined') {
 createRoot(rootElement).render(
   <ErrorBoundary 
     componentName="Root"
-    fallback={({ error, componentStack, resetError }) => (
+    fallback={
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="text-center p-6 max-w-md mx-auto">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -112,16 +112,17 @@ createRoot(rootElement).render(
           <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
           <p className="text-gray-600 mb-4">We've encountered an error and our team has been notified.</p>
           <button
-            onClick={resetError}
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
             Try Again
           </button>
         </div>
       </div>
-    )}
+    }
   >
     <SecurityInitializer />
     <App />
   </ErrorBoundary>
 );
+
