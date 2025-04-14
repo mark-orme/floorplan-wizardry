@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
@@ -16,6 +15,7 @@ export class GridRenderer {
   private gridObjects: FabricObject[] = [];
   private showGrid: boolean;
   private onGridCreated?: (gridObjects: FabricObject[]) => void;
+  private initialized = false;
 
   constructor({ 
     canvas, 
@@ -34,14 +34,27 @@ export class GridRenderer {
 
   private createGrid(): FabricObject[] {
     try {
+      // Skip if already initialized
+      if (this.initialized) {
+        this.checkAndFixGrid();
+        return this.gridObjects;
+      }
+      
       logger.info("Creating grid with 10x10 small grid and larger grid lines");
       
-      // Remove any existing grid
-      this.gridObjects.forEach(obj => {
+      // Remove any existing grid objects from canvas
+      const existingGrids = this.canvas.getObjects().filter(obj => 
+        (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      );
+      
+      existingGrids.forEach(obj => {
         if (this.canvas.contains(obj)) {
           this.canvas.remove(obj);
         }
       });
+      
+      // Clear our internal grid objects array
+      this.gridObjects = [];
       
       const gridObjects: FabricObject[] = [];
       const width = Math.max(this.canvas.width || 800, window.innerWidth * 2);
@@ -62,6 +75,7 @@ export class GridRenderer {
           objectType: 'grid',
           isGrid: true
         } as any);
+        
         this.canvas.add(line);
         gridObjects.push(line);
       }
@@ -76,6 +90,7 @@ export class GridRenderer {
           objectType: 'grid',
           isGrid: true
         } as any);
+        
         this.canvas.add(line);
         gridObjects.push(line);
       }
@@ -90,6 +105,7 @@ export class GridRenderer {
           objectType: 'grid',
           isGrid: true
         } as any);
+        
         this.canvas.add(line);
         gridObjects.push(line);
       }
@@ -103,6 +119,7 @@ export class GridRenderer {
           objectType: 'grid',
           isGrid: true
         } as any);
+        
         this.canvas.add(line);
         gridObjects.push(line);
       }
@@ -112,7 +129,6 @@ export class GridRenderer {
       
       // Send all grid objects to the back
       gridObjects.forEach(obj => {
-        // Use sendObjectToBack on each object rather than on the canvas
         this.canvas.sendObjectToBack(obj);
       });
       
@@ -129,17 +145,25 @@ export class GridRenderer {
       // Force visibility
       this.toggleVisibility(true);
       
+      this.initialized = true;
+      
       return gridObjects;
     } catch (error) {
       logger.error("Error creating grid:", error);
       console.error("[CRITICAL] Grid creation failed:", error);
-      toast.error("Grid creation failed. Please refresh the page.");
+      
+      // Only show toast if this is not a follow-up attempt
+      if (!this.initialized) {
+        toast.error("Grid creation failed. Please refresh the page.");
+      }
+      
       return [];
     }
   }
 
   // Method to update grid if canvas size changes
   public updateGrid(): void {
+    this.initialized = false; // Reset initialization flag
     this.createGrid();
   }
 
@@ -160,6 +184,7 @@ export class GridRenderer {
     
     if (visibleGridObjects.length < 10) {
       console.warn("[GRID SAFEGUARD] Grid objects missing or not visible. Recreating grid.");
+      this.initialized = false; // Reset initialization flag
       this.createGrid();
     }
   }
@@ -196,7 +221,8 @@ export const GridRendererComponent: React.FC<GridRendererProps> = ({
     return () => {
       clearInterval(intervalId);
       if (gridRendererRef.current) {
-        gridRendererRef.current.toggleVisibility(false);
+        // Do not hide grid on unmount - keep it visible
+        // gridRendererRef.current.toggleVisibility(false);
       }
     };
   }, [canvas, showGrid, onGridCreated]);

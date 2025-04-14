@@ -25,7 +25,7 @@ export interface CanvasProps {
   lineThickness?: number;
   wallColor?: string;
   wallThickness?: number;
-  forceGridVisible?: boolean; // Added this property to the interface
+  forceGridVisible?: boolean;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({ 
@@ -41,12 +41,13 @@ export const Canvas: React.FC<CanvasProps> = ({
   lineThickness = 2,
   wallColor = '#333333',
   wallThickness = 4,
-  forceGridVisible = false // Set a default value
+  forceGridVisible = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const [gridError, setGridError] = useState<string | null>(null);
   const mountedRef = useRef<boolean>(true);
+  const gridRenderedRef = useRef<boolean>(false);
 
   // Initialize the snap to grid functionality
   const { snapPointToGrid, snapLineToGrid, toggleSnapToGrid, snapEnabled } = useSnapToGrid({
@@ -153,65 +154,71 @@ export const Canvas: React.FC<CanvasProps> = ({
     canvas.renderAll();
   }, [tool, lineColor, lineThickness, wallColor, wallThickness]);
 
-  // Initialize canvas
+  // Initialize canvas - THIS WAS CAUSING THE INFINITE LOOP
   useEffect(() => {
+    // Set mounted flag to true
     mountedRef.current = true;
     
     if (!canvasRef.current) return;
 
-    try {
-      const canvas = new FabricCanvas(canvasRef.current, {
-        width: Math.max(width, window.innerWidth),
-        height: Math.max(height, window.innerHeight),
-        selection: true
-      });
-      
-      if (!canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush = new PencilBrush(canvas);
-      }
-      canvas.freeDrawingBrush.width = lineThickness;
-      canvas.freeDrawingBrush.color = lineColor;
-      
-      fabricCanvasRef.current = canvas;
-
-      if (setDebugInfo) {
-        setDebugInfo(prev => ({
-          ...prev,
-          canvasInitialized: true,
-          canvasReady: true
-        }));
-      }
-
-      // Make canvas globally available for debugging
-      if (typeof window !== 'undefined') {
-        (window as any).fabricCanvas = canvas;
-      }
-
-      onCanvasReady(canvas);
-
-      return () => {
-        mountedRef.current = false;
+    // Only create a new canvas if we don't already have one
+    if (!fabricCanvasRef.current) {
+      try {
+        const canvas = new FabricCanvas(canvasRef.current, {
+          width: Math.max(width, window.innerWidth),
+          height: Math.max(height, window.innerHeight),
+          selection: true
+        });
         
-        if (canvas) {
-          canvas.dispose();
-          fabricCanvasRef.current = null;
+        if (!canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush = new PencilBrush(canvas);
         }
-      };
-    } catch (error) {
-      if (onError && error instanceof Error) {
-        onError(error);
-      }
-      
-      if (setDebugInfo) {
-        setDebugInfo(prev => ({
-          ...prev,
-          hasError: true,
-          errorMessage: error instanceof Error ? error.message : String(error),
-          lastError: error instanceof Error ? error.message : String(error),
-          lastErrorTime: Date.now()
-        }));
+        canvas.freeDrawingBrush.width = lineThickness;
+        canvas.freeDrawingBrush.color = lineColor;
+        
+        fabricCanvasRef.current = canvas;
+
+        if (setDebugInfo) {
+          setDebugInfo(prev => ({
+            ...prev,
+            canvasInitialized: true,
+            canvasReady: true
+          }));
+        }
+
+        // Make canvas globally available for debugging
+        if (typeof window !== 'undefined') {
+          (window as any).fabricCanvas = canvas;
+        }
+
+        // Call onCanvasReady only once
+        onCanvasReady(canvas);
+      } catch (error) {
+        if (onError && error instanceof Error) {
+          onError(error);
+        }
+        
+        if (setDebugInfo) {
+          setDebugInfo(prev => ({
+            ...prev,
+            hasError: true,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            lastError: error instanceof Error ? error.message : String(error),
+            lastErrorTime: Date.now()
+          }));
+        }
       }
     }
+
+    return () => {
+      mountedRef.current = false;
+      
+      // Don't dispose the canvas on unmount - Let parent component handle disposal
+      // if (fabricCanvasRef.current) {
+      //   fabricCanvasRef.current.dispose();
+      //   fabricCanvasRef.current = null;
+      // }
+    };
   }, [width, height, onCanvasReady, onError, setDebugInfo, lineColor, lineThickness, wallColor, wallThickness]);
 
   // Handle window resize
@@ -251,9 +258,10 @@ export const Canvas: React.FC<CanvasProps> = ({
       {fabricCanvasRef.current && (
         <GridRendererComponent 
           canvas={fabricCanvasRef.current}
-          showGrid={forceGridVisible || true} // Use forceGridVisible here
+          showGrid={true} // Always show grid
           onGridCreated={(gridObjects) => {
             logger.info(`Grid created with ${gridObjects.length} objects`);
+            gridRenderedRef.current = true;
           }}
         />
       )}
