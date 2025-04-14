@@ -11,8 +11,13 @@ export default defineConfig({
     setupFiles: ['./src/tests/vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'src/tests/']
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: ['node_modules/', 'src/tests/'],
+      lines: 70,
+      functions: 70,
+      branches: 60,
+      statements: 70
     }
   },
   resolve: {

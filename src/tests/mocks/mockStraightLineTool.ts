@@ -1,20 +1,38 @@
 
 import { vi } from 'vitest';
-import { UseStraightLineToolResult } from '@/hooks/useStraightLineTool.d';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Geometry';
 
 /**
- * Creates a mock implementation of useStraightLineTool hook
- * @returns Mocked implementation
+ * Creates a mock straight line tool for testing
+ * @returns Mock straight line tool with key methods
  */
-export const createMockStraightLineTool = (): UseStraightLineToolResult => {
+export function createMockStraightLineTool() {
   return {
-    isActive: true,
-    currentLine: null,
-    isToolInitialized: true,
-    isDrawing: false,
-    startDrawing: vi.fn(),
-    continueDrawing: vi.fn(),
-    endDrawing: vi.fn(),
-    cancelDrawing: vi.fn()
+    startDrawing: vi.fn((canvas: FabricCanvas, point: Point) => {
+      // Mock implementation
+      return { x: point.x, y: point.y };
+    }),
+    
+    continueDrawing: vi.fn((canvas: FabricCanvas, point: Point) => {
+      // Mock implementation
+      return { x: point.x, y: point.y };
+    }),
+    
+    endDrawing: vi.fn((canvas: FabricCanvas) => {
+      // Mock implementation
+      return true;
+    }),
+    
+    cancelDrawing: vi.fn((canvas: FabricCanvas) => {
+      // Mock implementation
+      return true;
+    })
   };
-};
+}
+
+/**
+ * Creates the types required for straight line tool tests
+ * These should match your actual types if possible
+ */
+export type MockStraightLineTool = ReturnType<typeof createMockStraightLineTool>;

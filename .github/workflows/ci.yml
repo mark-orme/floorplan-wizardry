@@ -20,6 +20,23 @@ jobs:
       - run: npm run lint:ci
       - run: npm run type-check:strict
   
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test -- --coverage
+      - name: Check coverage thresholds
+        run: |
+          if ! npx vitest run --coverage; then
+            echo "Test coverage is below threshold"
+            exit 1
+          fi
+  
   build:
     runs-on: ubuntu-latest
     steps:
