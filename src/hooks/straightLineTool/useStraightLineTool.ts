@@ -354,24 +354,30 @@ export const useStraightLineTool = ({
       if (!isActive || !e) return;
       
       // Get position from fabric event using our helper
-      const point = getPointerCoordinates(e);
-      handlePointerDown(point);
+      if (hasValidCoordinates(e)) {
+        const point = getPointerCoordinates(e);
+        handlePointerDown(point);
+      }
     };
     
     const handleFabricMouseMove = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing || !e) return;
       
       // Get position from fabric event using our helper
-      const point = getPointerCoordinates(e);
-      handlePointerMove(point);
+      if (hasValidCoordinates(e)) {
+        const point = getPointerCoordinates(e);
+        handlePointerMove(point);
+      }
     };
     
     const handleFabricMouseUp = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing || !e) return;
       
       // Get position from fabric event using our helper
-      const point = getPointerCoordinates(e);
-      handlePointerUp(point);
+      if (hasValidCoordinates(e)) {
+        const point = getPointerCoordinates(e);
+        handlePointerUp(point);
+      }
     };
     
     // Add fabric canvas event listeners
@@ -434,3 +440,4 @@ export const useStraightLineTool = ({
     toggleGridSnapping
   };
 };
+
