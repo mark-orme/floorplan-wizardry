@@ -66,10 +66,13 @@ export function createUrlSchema(options: {
     maxLength = 2048 
   } = options;
   
-  // Create base schema with validations
-  const baseSchema = z.string()
+  // First create the base string schema with length constraints
+  const stringSchema = z.string()
     .min(minLength)
-    .max(maxLength)
+    .max(maxLength);
+  
+  // Then add the URL validation and protocol refinement
+  const urlSchema = stringSchema
     .url()
     .refine((url) => {
       try {
@@ -80,8 +83,8 @@ export function createUrlSchema(options: {
       }
     }, { message: `URL must use one of the following protocols: ${allowedProtocols.join(', ')}` });
   
-  // Apply a single transform for sanitization
-  return baseSchema.transform(sanitizeHtml);
+  // Apply sanitization as a single transform
+  return urlSchema.transform(sanitizeHtml);
 }
 
 /**
