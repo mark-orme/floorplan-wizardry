@@ -1,11 +1,26 @@
-
 /**
  * Mock Fabric.js canvas utilities for testing
  * @module utils/test/mockFabricCanvas
  */
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { vi } from 'vitest';
 import { FabricEventNames } from '@/types/fabric-events';
+
+/**
+ * Create a mock Fabric object for testing
+ * @param type Object type (e.g., 'rect', 'line', 'circle')
+ * @param props Additional properties for the mock object
+ * @returns Mocked Fabric object
+ */
+export function createMockObject(type: string, props: Record<string, any> = {}): FabricObject {
+  return {
+    type,
+    set: vi.fn(),
+    setCoords: vi.fn(),
+    get: vi.fn((prop) => props[prop] || null),
+    ...props
+  } as unknown as FabricObject;
+}
 
 /**
  * Create a mock canvas for testing
