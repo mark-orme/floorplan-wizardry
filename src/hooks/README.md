@@ -1,34 +1,60 @@
 
 # Hooks
 
-This directory contains custom React hooks that encapsulate reusable logic.
+This directory contains custom React hooks that provide reusable logic across the application.
 
-## Structure
+## Core Principles
 
-- `canvas/`: Hooks for canvas manipulation, initialization, and state management
-- `drawing/`: Hooks for drawing tools and operations
-- `query/`: Hooks for data fetching and state management
-- `straightLineTool/`: Hooks specific to the straight line drawing tool
+- **Single Responsibility**: Each hook should do one thing well
+- **Composition**: Complex hooks should compose simpler hooks
+- **Error Handling**: Hooks should gracefully handle errors and edge cases
+- **Performance**: Hooks should be optimized for performance using proper dependencies
 
-## Usage
+## Usage Patterns
 
-Hooks should:
-1. Follow the React hooks naming convention (use[HookName])
-2. Be properly typed with TypeScript
-3. Handle their own cleanup (useEffect return function)
-4. Be documented with JSDoc comments
-5. Be unit tested when possible
+### Rate Limiting
 
-When creating new hooks:
-- Place them in an appropriate subdirectory
-- Export them through the relevant barrel file (index.ts)
-- Keep them focused on a single responsibility
-- Use composition of hooks when building complex behaviors
-
-## Examples
+Use the `useRateLimitedUpdate` hook to prevent excessive state updates:
 
 ```tsx
-import { useCanvasInitialization } from '@/hooks/canvas';
-import { useDrawingActions } from '@/hooks/drawing';
-import { usePropertyQuery } from '@/hooks/query';
+const [canvasState, setCanvasState] = useState(initialState);
+const updateCanvasState = useRateLimitedUpdate(setCanvasState, { 
+  method: 'debounce', 
+  delay: 100 
+});
+
+// Use the rate-limited function instead of setState directly
+updateCanvasState(newState);
+```
+
+### Form Validation
+
+Use the `useValidatedForm` hook for form handling with Zod validation:
+
+```tsx
+const { 
+  values, errors, touched, 
+  setFieldValue, handleSubmit 
+} = useValidatedForm({
+  initialValues: { name: '', email: '' },
+  schema: userSchema,
+  onSubmit: (values) => {
+    // Handle form submission
+  }
+});
+```
+
+### Canvas Operations
+
+Canvas operations are composed of multiple specialized hooks:
+
+```tsx
+const { 
+  handleToolChange,
+  handleUndo,
+  handleRedo,
+  handleZoom
+} = useCanvasOperations({
+  // Configuration options
+});
 ```

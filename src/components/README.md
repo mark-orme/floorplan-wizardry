@@ -1,32 +1,50 @@
 
 # Components
 
-This directory contains all the React components used throughout the application.
+This directory contains reusable React components used throughout the application.
 
-## Structure
+## Organization
 
-- `ui/`: Contains reusable UI components like buttons, inputs, and other form elements
-- `canvas/`: Contains components related to canvas rendering and manipulation
-- `property/`: Contains components for property management and display
-- `security/`: Contains security-related components like authentication forms
+- **ui/**: UI components following the shadcn/ui pattern
+- **canvas/**: Canvas-specific components for drawing and rendering
+- **forms/**: Form-related components with validation
+- **layout/**: Layout components like containers, grids, etc.
+- **security/**: Security-related components for safe rendering
 
-## Usage
+## Component Guidelines
 
-Components should be:
-1. Small and focused
-2. Well-typed with proper prop interfaces
-3. Documented with JSDoc comments
+1. **Keep components small and focused** (preferably <100 lines)
+2. **Use composition over inheritance**
+3. **Follow the shadcn/ui pattern** for consistency
+4. **Apply proper error boundaries** for resilience
+5. **Implement proper TypeScript typing**
 
-When creating new components:
-- Create them in the appropriate subdirectory
-- Export them through the appropriate barrel file (index.ts)
-- Use composition over inheritance 
-- Consider making them pure functional components when possible
+## Example Usage
 
-## Examples
+### Security Components
 
 ```tsx
-import { Button } from '@/components/ui/button';
-import { PropertyHeader } from '@/components/property/PropertyHeader';
-import { CanvasApp } from '@/components/canvas/CanvasApp';
+// Using the SecureInput component
+<SecureInput
+  value={value}
+  onChange={setValue}
+  placeholder="Enter text"
+  sanitizationStrategy="basic"
+/>
+
+// Using the SafeHtml component
+<SafeHtml
+  html={userProvidedContent}
+  allowRich={false}
+/>
+```
+
+### Canvas Components
+
+Canvas components should be wrapped in proper error boundaries:
+
+```tsx
+<ErrorBoundary componentName="DrawingTool">
+  <DrawingManager />
+</ErrorBoundary>
 ```

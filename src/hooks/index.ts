@@ -1,25 +1,16 @@
+
 /**
- * Hooks barrel file
- * Re-exports all hooks for easier importing
- * @module hooks
+ * Hooks Barrel Export
+ * Re-exports all hooks from a central location
  */
 
-// Drawing hooks
-export * from './drawing';
+// Canvas operation hooks
+export * from './useRateLimitedUpdate';
+export * from './useValidatedForm';
+export * from './useFloorPlans';
 
-// Canvas-related hooks
-export {
-  useCanvasInitialization,
-  useCanvasHistory,
-  // We're explicitly choosing one of the useCanvasOperations to avoid ambiguity
-  useCanvasOperations,
-  useCanvasDimensions,
-  useGridSnapping
-} from './canvas';
-
-// Query hooks
-export * from './query';
-
-// Other hooks
-export * from './straightLineTool';
-export * from './useWallDrawing';
+// Canvas drawing hooks
+export * from './canvas-operations/useCanvasOperations';
+export * from './canvas-operations/useToolOperations';
+export * from './drawing/useDrawingActions';
+export * from './drawing/useDrawingHistory';
