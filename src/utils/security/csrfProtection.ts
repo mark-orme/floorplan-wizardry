@@ -59,24 +59,26 @@ export function protectForm(form: HTMLFormElement): void {
  * @param headers Headers object to augment
  * @returns Updated headers with CSRF token
  */
-export function addCSRFHeader(headers: Headers | Record<string, string> = {}): Headers {
+export function addCSRFHeader(headers: HeadersInit): HeadersInit {
   const token = getCSRFToken();
-  const newHeaders = new Headers();
   
-  // Copy existing headers
+  // Use the headers' native format if possible
   if (headers instanceof Headers) {
-    headers.forEach((value, key) => {
-      newHeaders.set(key, value);
-    });
-  } else {
-    Object.entries(headers).forEach(([key, value]) => {
-      newHeaders.set(key, value);
-    });
+    const newHeaders = new Headers(headers);
+    newHeaders.set('X-CSRF-Token', token);
+    return newHeaders;
+  } 
+  else if (Array.isArray(headers)) {
+    // For array format, add a new entry
+    return [...headers, ['X-CSRF-Token', token]];
   }
-  
-  // Add CSRF token
-  newHeaders.set('X-CSRF-Token', token);
-  return newHeaders;
+  else {
+    // For object format
+    return {
+      ...headers,
+      'X-CSRF-Token': token
+    };
+  }
 }
 
 /**
@@ -85,31 +87,10 @@ export function addCSRFHeader(headers: Headers | Record<string, string> = {}): H
  * @returns Updated fetch options with CSRF protection
  */
 export function createProtectedFetchOptions(options: RequestInit = {}): RequestInit {
-  // Extract existing headers
-  const headersInit = options.headers;
-  let processedHeaders: Headers | Record<string, string> = {};
-  
-  if (headersInit) {
-    if (headersInit instanceof Headers) {
-      processedHeaders = headersInit;
-    } else if (typeof headersInit === 'object') {
-      // Convert HeadersInit to Record<string, string>
-      processedHeaders = {};
-      Object.entries(headersInit).forEach(([key, value]) => {
-        if (value !== undefined) {
-          (processedHeaders as Record<string, string>)[key] = String(value);
-        }
-      });
-    }
-  }
-  
-  // Add CSRF token to headers
-  const headers = addCSRFHeader(processedHeaders);
-  
   return {
     ...options,
-    credentials: 'include', // Include cookies for auth
-    headers
+    credentials: 'include' as RequestCredentials, // Include cookies for auth
+    headers: addCSRFHeader(options.headers || {})
   };
 }
 

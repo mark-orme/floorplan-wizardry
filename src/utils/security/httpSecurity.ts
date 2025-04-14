@@ -72,7 +72,7 @@ function normalizeHeaders(headers: HeadersInit | Record<string, string> | undefi
       result.append(key, value);
     });
   } else if (Array.isArray(headers)) {
-    // Handle [string, string][] format
+    // Handle [string, string][] format - convert to Headers directly
     headers.forEach(([key, value]) => {
       result.append(key, value);
     });
@@ -94,7 +94,8 @@ function normalizeHeaders(headers: HeadersInit | Record<string, string> | undefi
  */
 export async function secureFetch(url: string, options: RequestInit = {}): Promise<Response> {
   // Start with CSRF protection
-  const csrfHeaders = addCSRFHeader(options.headers || {});
+  const initialHeaders = options.headers || {};
+  const csrfHeaders = addCSRFHeader(initialHeaders);
   const headers = normalizeHeaders(csrfHeaders);
   
   // Create secure options with proper type
