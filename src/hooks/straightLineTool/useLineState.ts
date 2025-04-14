@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing line drawing state
  * @module hooks/straightLineTool/useLineState
@@ -56,7 +57,9 @@ export const useLineState = ({
   });
   
   // Convert the inputMethod from grid to our consistent InputMethod type
-  const inputMethod: InputMethod = gridInputMethod === 'unknown' ? 'keyboard' : gridInputMethod;
+  // Ensure we handle 'unknown' properly by converting it to a valid InputMethod type
+  const inputMethod: InputMethod = gridInputMethod === 'unknown' ? 'keyboard' : 
+    (gridInputMethod as 'mouse' | 'touch' | 'stylus');
   
   // Get Apple Pencil support
   const { 

@@ -16,8 +16,10 @@ export * from './canvas-operations/useToolOperations';
 export * from './drawing/useDrawingActions';
 export * from './drawing/useDrawingHistory';
 
-// Straight line tool hooks
-export * from './straightLineTool/useLineState';
-export * from './straightLineTool/useApplePencilSupport';
-export * from './straightLineTool/useEnhancedGridSnapping';
+// Straight line tool hooks - explicitly re-export to avoid ambiguity
+export { 
+  useLineState,
+  useApplePencilSupport,
+  useEnhancedGridSnapping
+} from './straightLineTool';
 

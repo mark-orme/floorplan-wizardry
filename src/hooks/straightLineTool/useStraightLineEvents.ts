@@ -10,6 +10,9 @@ import { TPointerEvent } from '@/types/fabric-events';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 import { getPointerCoordinates, hasValidCoordinates } from '@/utils/fabric/eventHelpers';
 
+// Import the InputMethod type from useLineState to ensure consistency
+import { InputMethod } from './useLineState';
+
 interface UseStraightLineEventsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   isActive: boolean;
@@ -17,7 +20,7 @@ interface UseStraightLineEventsProps {
   handlePointerDown: (point: Point) => void;
   handlePointerMove: (point: Point) => void;
   handlePointerUp: (point: Point) => void;
-  inputMethod: 'mouse' | 'touch' | 'stylus' | 'keyboard';
+  inputMethod: InputMethod; // Use the consistent InputMethod type
 }
 
 /**

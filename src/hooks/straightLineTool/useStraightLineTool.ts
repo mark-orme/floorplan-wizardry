@@ -1,4 +1,3 @@
-
 /**
  * Straight line tool hook
  * Provides functionality for drawing straight lines on canvas
@@ -8,7 +7,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
-import { useLineState } from './useLineState';
+import { useLineState, InputMethod } from './useLineState';
 import { useStraightLineEvents } from './useStraightLineEvents';
 import logger from '@/utils/logger';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
@@ -259,7 +258,7 @@ export const useStraightLineTool = ({
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    inputMethod: inputMethod === 'unknown' ? 'keyboard' : inputMethod
+    inputMethod
   });
 
   // Cancel drawing (e.g. on Escape key)
@@ -386,7 +385,7 @@ export const useStraightLineTool = ({
     isDrawing,
     isToolInitialized: isToolInitializedRef.current,
     snapEnabled,
-    inputMethod: inputMethod === 'keyboard' ? 'mouse' : inputMethod,
+    inputMethod,
     isPencilMode,
     
     // Methods for direct manipulation
