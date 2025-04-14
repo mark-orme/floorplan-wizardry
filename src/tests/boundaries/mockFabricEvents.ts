@@ -1,3 +1,4 @@
+
 /**
  * Mock Fabric.js event utilities for testing
  * These provide simplified versions of Fabric event interfaces
