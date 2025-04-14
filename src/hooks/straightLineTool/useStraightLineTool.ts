@@ -5,15 +5,14 @@
  * @module hooks/straightLineTool/useStraightLineTool
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, TEvent } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
 import { useLineState } from './useLineState';
+import { useStraightLineEvents } from './useStraightLineEvents';
 import logger from '@/utils/logger';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 import { toast } from 'sonner';
-import { TPointerEvent } from '@/types/fabric-events';
-import { getPointerCoordinates, hasValidCoordinates } from '@/utils/fabric/eventHelpers';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -43,9 +42,6 @@ export const useStraightLineTool = ({
   const isActive = tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.LINE;
 
   // References
-  const tempLineRef = useRef<Line | null>(null);
-  const isDrawingRef = useRef<boolean>(false);
-  const previousDrawingModeRef = useRef<boolean>(false);
   const isToolInitializedRef = useRef<boolean>(false);
   
   // Use the shared line state
@@ -104,13 +100,6 @@ export const useStraightLineTool = ({
       
       // Set drawing state
       setIsDrawing(true);
-      isDrawingRef.current = true;
-      
-      // Disable regular drawing mode while using straight line tool
-      if (canvas.isDrawingMode) {
-        previousDrawingModeRef.current = true;
-        canvas.isDrawingMode = false;
-      }
       
       // Log event
       logDrawingEvent('Line drawing started', 'line-start', {
@@ -209,15 +198,8 @@ export const useStraightLineTool = ({
       // Add metadata for identification
       currentLineRef.current.set('objectType', 'straightLine');
       
-      // Restore previous drawing mode
-      if (previousDrawingModeRef.current) {
-        fabricCanvasRef.current.isDrawingMode = true;
-        previousDrawingModeRef.current = false;
-      }
-      
       // Reset state
       setIsDrawing(false);
-      isDrawingRef.current = false;
       
       // Save state for undo/redo
       if (saveCurrentState) {
@@ -264,6 +246,21 @@ export const useStraightLineTool = ({
     inputMethod
   ]);
 
+  // Use our event handlers hook
+  const {
+    handleFabricMouseDown,
+    handleFabricMouseMove,
+    handleFabricMouseUp
+  } = useStraightLineEvents({
+    fabricCanvasRef,
+    isActive,
+    isDrawing,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    inputMethod
+  });
+
   // Cancel drawing (e.g. on Escape key)
   const cancelDrawing = useCallback(() => {
     if (!fabricCanvasRef.current || !isDrawing) return;
@@ -281,13 +278,6 @@ export const useStraightLineTool = ({
       
       // Reset state
       setIsDrawing(false);
-      isDrawingRef.current = false;
-      
-      // Restore previous drawing mode
-      if (previousDrawingModeRef.current) {
-        fabricCanvasRef.current.isDrawingMode = true;
-        previousDrawingModeRef.current = false;
-      }
       
       // Reset drawing state
       resetDrawingState();
@@ -349,37 +339,6 @@ export const useStraightLineTool = ({
       });
     }
     
-    // Set up fabric.js event handlers
-    const handleFabricMouseDown = (e: TEvent<TPointerEvent>) => {
-      if (!isActive || !e) return;
-      
-      // Get position from fabric event using our helper
-      if (hasValidCoordinates(e)) {
-        const point = getPointerCoordinates(e);
-        handlePointerDown(point);
-      }
-    };
-    
-    const handleFabricMouseMove = (e: TEvent<TPointerEvent>) => {
-      if (!isActive || !isDrawing || !e) return;
-      
-      // Get position from fabric event using our helper
-      if (hasValidCoordinates(e)) {
-        const point = getPointerCoordinates(e);
-        handlePointerMove(point);
-      }
-    };
-    
-    const handleFabricMouseUp = (e: TEvent<TPointerEvent>) => {
-      if (!isActive || !isDrawing || !e) return;
-      
-      // Get position from fabric event using our helper
-      if (hasValidCoordinates(e)) {
-        const point = getPointerCoordinates(e);
-        handlePointerUp(point);
-      }
-    };
-    
     // Add fabric canvas event listeners
     canvas.on('mouse:down', handleFabricMouseDown);
     canvas.on('mouse:move', handleFabricMouseMove);
@@ -411,9 +370,9 @@ export const useStraightLineTool = ({
     isActive, 
     isDrawing, 
     initializeTool, 
-    handlePointerDown, 
-    handlePointerMove, 
-    handlePointerUp, 
+    handleFabricMouseDown, 
+    handleFabricMouseMove, 
+    handleFabricMouseUp, 
     cancelDrawing, 
     toggleGridSnapping,
     lineColor,
