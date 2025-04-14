@@ -61,7 +61,8 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
         // If in pencil mode, implement palm rejection
         if (isPencilMode && !pencilData.isApplePencil) {
           // If we have a recent pencil touch, reject finger touches to prevent palm interference
-          if (lastTouchRef.current && Date.now() - (lastTouchRef.current.timestamp || 0) < 1000) {
+          const enhancedTouch = lastTouchRef.current as EnhancedTouch | null;
+          if (enhancedTouch && enhancedTouch.timestamp && Date.now() - enhancedTouch.timestamp < 1000) {
             e.preventDefault();
             e.stopPropagation();
           }
