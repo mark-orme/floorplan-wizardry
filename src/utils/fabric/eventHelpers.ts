@@ -45,7 +45,7 @@ export function getPointerCoordinates(e: TEvent<TPointerEvent> | null): Point {
  * @returns {boolean} Whether the event has coordinates
  */
 export function hasValidCoordinates(e: TEvent<TPointerEvent> | null): boolean {
-  if (!e) return false;
+  if (!e || !e.e) return false;
   
   return (
     ('clientX' in e.e) ||

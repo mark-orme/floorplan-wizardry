@@ -440,4 +440,3 @@ export const useStraightLineTool = ({
     toggleGridSnapping
   };
 };
-
