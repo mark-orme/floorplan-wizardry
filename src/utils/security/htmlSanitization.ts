@@ -31,9 +31,9 @@ export function sanitizeRichHtml(html: string): string {
   
   return DOMPurify.sanitize(html, {
     USE_PROFILES: { html: true },
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
-    ALLOWED_ATTR: ['href', 'target', 'rel'],
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'span'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout'],
     ADD_ATTR: ['target="_blank"', 'rel="noopener noreferrer"']
   });
@@ -57,26 +57,19 @@ export function sanitizeCanvasHtml(html: string): string {
 }
 
 /**
- * Add CSP meta tag to document head
- * Sets up Content Security Policy through meta tag
+ * Sanitize CSS to prevent CSS-based injection attacks
+ * @param css CSS string to sanitize
+ * @returns Sanitized CSS string
  */
-export function addCSPMetaTag(): void {
-  if (typeof document === 'undefined') return;
+export function sanitizeCss(css: string): string {
+  if (!css || typeof css !== 'string') return '';
   
-  // Check if CSP meta tag already exists
-  if (document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
-    return;
-  }
-  
-  // Create CSP meta tag
-  const cspMeta = document.createElement('meta');
-  cspMeta.httpEquiv = 'Content-Security-Policy';
-  cspMeta.content = "default-src 'self'; img-src *; script-src 'self'; style-src 'self' 'unsafe-inline';";
-  document.head.appendChild(cspMeta);
-  
-  // Create frame-ancestors restriction (prevent clickjacking)
-  const frameAncestorsMeta = document.createElement('meta');
-  frameAncestorsMeta.httpEquiv = 'Content-Security-Policy';
-  frameAncestorsMeta.content = "frame-ancestors 'none';";
-  document.head.appendChild(frameAncestorsMeta);
+  // Remove potentially dangerous CSS constructs
+  return css
+    .replace(/expression\s*\(.*\)/g, '') // Remove CSS expressions
+    .replace(/@import/g, '') // Remove imports
+    .replace(/javascript:/g, '') // Remove javascript: protocol
+    .replace(/behavior:/g, '') // Remove behavior
+    .replace(/binding:/g, '') // Remove binding
+    .replace(/-moz-binding:/g, ''); // Remove Mozilla binding
 }

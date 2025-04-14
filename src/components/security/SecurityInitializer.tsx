@@ -4,8 +4,8 @@
  * Initializes security features when the application loads
  */
 import { useEffect } from 'react';
-import { initializeSecureStorage } from '@/utils/security/secureStorage';
 import { initializeCSP } from '@/utils/security/contentSecurityPolicy';
+import { applySecurityMetaTags } from '@/utils/security/httpSecurity';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
 
@@ -15,11 +15,12 @@ import { toast } from 'sonner';
  */
 export const SecurityInitializer = () => {
   useEffect(() => {
-    // Initialize Content Security Policy
+    // Initialize Content Security Policy with production settings in production mode
+    const isProduction = process.env.NODE_ENV === 'production';
     initializeCSP();
     
-    // Initialize secure storage
-    initializeSecureStorage();
+    // Apply additional security headers
+    applySecurityMetaTags();
     
     logger.info('Security features initialized');
     
@@ -45,23 +46,11 @@ export const SecurityInitializer = () => {
       });
       
       // Only show toast for significant violations in production
-      if (process.env.NODE_ENV === 'production' && 
+      if (isProduction && 
           (e.violatedDirective === 'script-src' || e.violatedDirective === 'frame-src')) {
         toast.error('Security policy violation detected and blocked');
       }
     });
-    
-    // Add referrer policy meta tag for privacy
-    const metaReferrer = document.createElement('meta');
-    metaReferrer.name = 'referrer';
-    metaReferrer.content = 'no-referrer';
-    document.head.appendChild(metaReferrer);
-    
-    // Add frame options to prevent clickjacking
-    const metaFrameOptions = document.createElement('meta');
-    metaFrameOptions.httpEquiv = 'X-Frame-Options';
-    metaFrameOptions.content = 'DENY';
-    document.head.appendChild(metaFrameOptions);
     
     return () => {
       // Clean up event listeners

@@ -38,7 +38,7 @@ export const SecureTooltip: React.FC<SecureTooltipProps> = ({
   align = 'center',
   className = ''
 }) => {
-  // Sanitize HTML content
+  // Always sanitize HTML content regardless of allowRich setting
   const sanitizedContent = sanitizeCanvasHtml(content);
   
   return (

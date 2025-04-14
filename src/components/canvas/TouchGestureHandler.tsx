@@ -69,12 +69,10 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
         
         // Store pencil touches for palm rejection
         if (pencilData.isApplePencil) {
-          const touch = e.touches[0];
+          const touch = e.touches[0] as EnhancedTouch;
           // Store touch with timestamp
-          lastTouchRef.current = { 
-            ...touch, 
-            timestamp: Date.now() 
-          } as EnhancedTouch;
+          touch.timestamp = Date.now();
+          lastTouchRef.current = touch;
         }
       } catch (error) {
         reportDrawingError(error, 'touch-gesture-handler', {

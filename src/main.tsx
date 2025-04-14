@@ -8,6 +8,7 @@ import { createRootElement } from './utils/domUtils.ts'
 import SecurityInitializer from './components/security/SecurityInitializer';
 import { initializeSecurity } from './utils/security';
 import { ErrorBoundary } from './utils/canvas/errorBoundary';
+import { initializeCSP } from './utils/security/contentSecurityPolicy';
 
 // Check if browser profiling is supported in this environment
 const isProfilingSupported = () => {
@@ -71,7 +72,7 @@ Sentry.init({
   }
 });
 
-// Initialize all security features 
+// Initialize all security features with production settings
 initializeSecurity();
 
 // Initialize Pusher
@@ -79,26 +80,6 @@ getPusher();
 
 // Create the root and render the application using our utility
 const rootElement = createRootElement("root");
-
-// Add no-referrer meta tag for privacy
-if (typeof document !== 'undefined') {
-  const metaReferrer = document.createElement('meta');
-  metaReferrer.setAttribute('name', 'referrer');
-  metaReferrer.content = 'no-referrer';
-  document.head.appendChild(metaReferrer);
-  
-  // Block iframe embedding
-  const metaFrameOptions = document.createElement('meta');
-  metaFrameOptions.httpEquiv = 'X-Frame-Options';
-  metaFrameOptions.content = 'DENY';
-  document.head.appendChild(metaFrameOptions);
-  
-  // Add CSP header
-  const metaCSP = document.createElement('meta');
-  metaCSP.httpEquiv = 'Content-Security-Policy';
-  metaCSP.content = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.sentry.io https://*.supabase.co wss://*.lovable.dev; frame-ancestors 'none'; object-src 'none'";
-  document.head.appendChild(metaCSP);
-}
 
 createRoot(rootElement).render(
   <ErrorBoundary 
@@ -125,4 +106,3 @@ createRoot(rootElement).render(
     <App />
   </ErrorBoundary>
 );
-

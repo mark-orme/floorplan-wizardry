@@ -2,6 +2,7 @@
 import * as React from "react"
 import { ChartConfig, THEMES } from "./chart-context"
 import DOMPurify from "dompurify"
+import { sanitizeCss } from "@/utils/security/htmlSanitization"
 
 export const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
@@ -31,8 +32,11 @@ ${colorConfig
     )
     .join("\n")
 
-  // Sanitize the CSS content
-  const sanitizedCss = DOMPurify.sanitize(cssContent, {
+  // First sanitize the generated CSS content
+  const sanitizedCss = sanitizeCss(cssContent)
+  
+  // Then sanitize with DOMPurify as an additional layer of protection
+  const fullySanitized = DOMPurify.sanitize(sanitizedCss, {
     USE_PROFILES: { html: true },
     ALLOWED_TAGS: [], // No HTML tags allowed
     ALLOWED_ATTR: []  // No attributes allowed
@@ -41,7 +45,7 @@ ${colorConfig
   return (
     <style
       dangerouslySetInnerHTML={{
-        __html: sanitizedCss
+        __html: fullySanitized
       }}
     />
   )
