@@ -8,8 +8,8 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_SIZE: 100,
   
   // Grid styling
-  SMALL_GRID_COLOR: '#9b87f5', // Changed to purple color instead of gray
-  LARGE_GRID_COLOR: '#7E69AB', // Changed to darker purple instead of gray
+  SMALL_GRID_COLOR: '#9b87f5', // Purple color for small grid
+  LARGE_GRID_COLOR: '#7E69AB', // Darker purple for large grid
   SMALL_GRID_WIDTH: 0.5,
   LARGE_GRID_WIDTH: 1,
   

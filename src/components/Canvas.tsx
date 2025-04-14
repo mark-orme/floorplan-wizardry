@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 import { DrawingMode } from '@/constants/drawingModes';
 import { createCompleteGrid } from '@/utils/grid/gridRenderers';
@@ -170,7 +170,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       
       // Initialize the drawing brush
       if (!canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+        canvas.freeDrawingBrush = new PencilBrush(canvas);
       }
       canvas.freeDrawingBrush.width = lineThickness;
       canvas.freeDrawingBrush.color = lineColor;
