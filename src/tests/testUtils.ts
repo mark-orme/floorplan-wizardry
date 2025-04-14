@@ -1,9 +1,4 @@
 
-/**
- * Test utility functions
- * Provides helper functions for testing React components
- */
-
 import { render, RenderOptions } from '@testing-library/react';
 import React, { ReactElement } from 'react';
 import { BrowserRouter } from 'react-router-dom';
@@ -55,5 +50,16 @@ export const createTestFabricCanvas = () => {
     setHeight: jest.fn(),
     getWidth: jest.fn().mockReturnValue(800),
     getHeight: jest.fn().mockReturnValue(600),
+    getElement: jest.fn().mockReturnValue(document.createElement('canvas')),
+    dispose: jest.fn(),
+    setBackgroundColor: jest.fn(),
+    isDrawingMode: false,
+    selection: true,
+    defaultCursor: 'default',
+    hoverCursor: 'move',
+    freeDrawingBrush: {
+      width: 1,
+      color: '#000000'
+    }
   };
 };
