@@ -1,60 +1,96 @@
 
-import { useCallback, useState, useRef } from 'react';
+/**
+ * Hook for managing line drawing state
+ * @module hooks/straightLineTool/useLineState
+ */
+import { useCallback, useRef, useState } from 'react';
 import { Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
+import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 
 /**
- * Hook for managing straight line drawing state
+ * Hook for managing line drawing state
+ * @returns Line state and state management functions
  */
 export const useLineState = () => {
-  // Drawing state
+  // Get the error reporting hook
+  const { reportDrawingError, logDrawingEvent } = useDrawingErrorReporting();
+  
+  // State tracking
   const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
   
-  // References for drawing objects
+  // References to drawing objects
   const startPointRef = useRef<Point | null>(null);
   const currentLineRef = useRef<Line | null>(null);
   const distanceTooltipRef = useRef<Text | null>(null);
   
-  // Initialize the tool
+  /**
+   * Initialize the line tool
+   */
   const initializeTool = useCallback(() => {
-    console.log('Initializing straight line tool state');
-    setIsToolInitialized(true);
-  }, []);
+    try {
+      setIsToolInitialized(true);
+      logDrawingEvent('Line tool initialized', 'tool-init', {
+        tool: 'line'
+      });
+    } catch (error) {
+      reportDrawingError(error, 'line-tool-init', {
+        tool: 'line'
+      });
+      // Initialize anyway to avoid blocking the user
+      setIsToolInitialized(true);
+    }
+  }, [logDrawingEvent, reportDrawingError]);
   
-  // Set the start point for drawing
-  const setStartPoint = useCallback((point: Point) => {
-    startPointRef.current = point;
-  }, []);
-  
-  // Set the current line being drawn
-  const setCurrentLine = useCallback((line: Line) => {
-    currentLineRef.current = line;
-  }, []);
-  
-  // Set the distance tooltip
-  const setDistanceTooltip = useCallback((tooltip: Text) => {
-    distanceTooltipRef.current = tooltip;
-  }, []);
-  
-  // Reset the drawing state
+  /**
+   * Reset the drawing state
+   */
   const resetDrawingState = useCallback(() => {
-    setIsDrawing(false);
     startPointRef.current = null;
     currentLineRef.current = null;
     distanceTooltipRef.current = null;
+    setIsDrawing(false);
+  }, []);
+  
+  /**
+   * Set the current line
+   */
+  const setCurrentLine = useCallback((line: Line | null) => {
+    currentLineRef.current = line;
+  }, []);
+  
+  /**
+   * Set the distance tooltip
+   */
+  const setDistanceTooltip = useCallback((tooltip: Text | null) => {
+    distanceTooltipRef.current = tooltip;
+  }, []);
+  
+  /**
+   * Set the start point
+   */
+  const setStartPoint = useCallback((point: Point | null) => {
+    startPointRef.current = point;
   }, []);
   
   return {
+    // State
     isDrawing,
     isToolInitialized,
+    
+    // Refs
     startPointRef,
     currentLineRef,
     distanceTooltipRef,
+    
+    // Setters
     setIsDrawing,
     setStartPoint,
     setCurrentLine,
     setDistanceTooltip,
+    
+    // Methods
     initializeTool,
     resetDrawingState
   };
