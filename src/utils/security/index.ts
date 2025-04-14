@@ -14,6 +14,11 @@ export * from './authGuard';
 // Export token storage utilities
 export * from './tokenStorage';
 
+// Export the isSecureConnection function directly
+export const isSecureConnection = (): boolean => {
+  return window.location.protocol === 'https:';
+};
+
 // Create a Security namespace for backwards compatibility
 export const Security = {
   isSecureConnection: (): boolean => {
@@ -31,6 +36,16 @@ export const Security = {
     csrfInput.name = 'csrf_token';
     csrfInput.value = csrfToken;
     formElement.appendChild(csrfInput);
+  },
+  Input: {
+    sanitizeHtml: (input: string): string => {
+      // Basic HTML sanitization
+      return input
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
   }
 };
 
@@ -40,7 +55,7 @@ export const initializeSecurity = (): void => {
   initializeCSRFProtection();
   
   // Set up other security measures as needed
-  if (process.env.NODE_ENV === 'production' && !Security.isSecureConnection()) {
+  if (process.env.NODE_ENV === 'production' && !isSecureConnection()) {
     console.warn('Warning: Application running without HTTPS in production mode');
   }
 };
