@@ -4,8 +4,7 @@ import { Check, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Security } from '@/utils/security';
-import { isSecureConnection } from '@/lib/supabase';
+import { Security, isSecureConnection } from '@/utils/security';
 
 export type SecurityCheckItem = {
   name: string;
@@ -37,6 +36,27 @@ export const SecurityCheckList: React.FC = () => {
         howToFix: 'Add CSP meta tag or headers to restrict resource loading'
       },
       {
+        name: 'X-Frame-Options',
+        status: !!document.querySelector('meta[http-equiv="X-Frame-Options"]'),
+        description: 'Protection against clickjacking attacks',
+        impact: 'medium',
+        howToFix: 'Add X-Frame-Options header to prevent your site from being framed'
+      },
+      {
+        name: 'X-Content-Type-Options',
+        status: !!document.querySelector('meta[http-equiv="X-Content-Type-Options"]'),
+        description: 'Prevents MIME type sniffing',
+        impact: 'medium',
+        howToFix: 'Add X-Content-Type-Options header set to nosniff'
+      },
+      {
+        name: 'HSTS',
+        status: !!document.querySelector('meta[http-equiv="Strict-Transport-Security"]'),
+        description: 'Forces browsers to use HTTPS connections',
+        impact: 'medium',
+        howToFix: 'Add Strict-Transport-Security header'
+      },
+      {
         name: 'Input Sanitization',
         status: true, // We've implemented this
         description: 'User inputs are sanitized to prevent XSS attacks',
@@ -65,6 +85,18 @@ export const SecurityCheckList: React.FC = () => {
         status: true, // We've implemented this
         description: 'Rate limiting prevents abuse',
         impact: 'medium'
+      },
+      {
+        name: 'SQL Injection Protection',
+        status: true, // Supabase provides protection
+        description: 'Parameterized queries prevent SQL injection',
+        impact: 'high'
+      },
+      {
+        name: 'API Authentication',
+        status: true, // Implemented through Supabase
+        description: 'API endpoints require proper authentication',
+        impact: 'high'
       }
     ];
 

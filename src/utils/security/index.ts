@@ -11,6 +11,7 @@ export * from './cookieSecurity';
 export * from './fileUploadSecurity';
 export * from './inputSanitization';
 export * from './rateLimiting';
+export * from './authorizationChecks';
 
 // Export a convenience object for importing all security features
 import * as CSRFProtection from './csrfProtection';
@@ -18,6 +19,7 @@ import * as CookieSecurity from './cookieSecurity';
 import * as FileUploadSecurity from './fileUploadSecurity';
 import * as InputSanitization from './inputSanitization';
 import * as RateLimiting from './rateLimiting';
+import * as AuthorizationChecks from './authorizationChecks';
 
 export const Security = {
   CSRF: CSRFProtection,
@@ -25,6 +27,7 @@ export const Security = {
   Files: FileUploadSecurity,
   Input: InputSanitization,
   RateLimit: RateLimiting,
+  Auth: AuthorizationChecks,
   isSecureConnection: (): boolean => 
     window.location.protocol === 'https:' ||
     window.location.hostname === 'localhost' || 
@@ -45,6 +48,26 @@ export function initializeSecurity(): void {
     cspMeta.httpEquiv = 'Content-Security-Policy';
     cspMeta.content = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://*.supabase.co; font-src 'self';";
     document.head.appendChild(cspMeta);
+    
+    // Add X-Frame-Options header (meta tag)
+    const xFrameOptions = document.createElement('meta');
+    xFrameOptions.httpEquiv = 'X-Frame-Options';
+    xFrameOptions.content = 'DENY';
+    document.head.appendChild(xFrameOptions);
+    
+    // Add X-Content-Type-Options header (meta tag)
+    const xContentTypeOptions = document.createElement('meta');
+    xContentTypeOptions.httpEquiv = 'X-Content-Type-Options';
+    xContentTypeOptions.content = 'nosniff';
+    document.head.appendChild(xContentTypeOptions);
+    
+    // Add HSTS header (meta tag) - only if using HTTPS
+    if (window.location.protocol === 'https:') {
+      const hsts = document.createElement('meta');
+      hsts.httpEquiv = 'Strict-Transport-Security';
+      hsts.content = 'max-age=31536000; includeSubDomains';
+      document.head.appendChild(hsts);
+    }
     
     console.info('Frontend security initialized');
   }

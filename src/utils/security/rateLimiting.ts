@@ -1,3 +1,4 @@
+
 /**
  * Rate Limiting Utilities
  * Provides client-side rate limiting to prevent abuse
@@ -76,9 +77,10 @@ export function isRateLimited(key: string, options: RateLimitOptions): boolean {
 /**
  * Get information about current rate limit status
  * @param key Unique identifier for the rate limited action
+ * @param options Rate limiting options to check against
  * @returns Rate limit status or null if not found
  */
-export function getRateLimitStatus(key: string): {
+export function getRateLimitStatus(key: string, options: RateLimitOptions): {
   remaining: number;
   reset: number;
   blocked: boolean;
