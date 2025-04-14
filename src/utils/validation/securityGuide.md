@@ -1,3 +1,4 @@
+
 # TypeScript Security & Validation Best Practices
 
 ## Core Security Rules
@@ -145,7 +146,7 @@ async function fetchData<T>(url: string): Promise<T | null> {
 When using multiple transforms on a Zod schema, avoid chaining them directly as it can lead to type mismatches. Instead:
 
 ```typescript
-// CORRECT: Apply a single transform that handles both operations
+// CORRECT: Apply a single transform that handles multiple operations
 const safeUrlSchema = z.string()
   .url()
   .transform(url => {
@@ -160,5 +161,29 @@ const problematicSchema = z.string()
   .transform(sanitizeHtml)
   .transform(url => new URL(url).toString());
 ```
+
+### Best Practices for Zod Transforms
+
+1. **Combine multiple operations in a single transform** to avoid nested ZodEffects types
+   ```typescript
+   // Good: Single transform with multiple operations
+   z.string().transform(val => {
+     const sanitized = sanitizeHtml(val);
+     return sanitized.toUpperCase();
+   });
+   ```
+
+2. **Be careful with return type annotations** - ensure they match the actual transformation chain
+   ```typescript
+   // Make sure the function's return type matches the actual schema being returned
+   function createCustomSchema(): z.ZodEffects<z.ZodString, string, string> {
+     return z.string().transform(val => val.trim());
+   }
+   ```
+
+3. **Use type assertions when necessary** - sometimes explicit typing helps TypeScript understand your intentions
+   ```typescript
+   const schema = z.string().transform(val => parseInt(val, 10)) as z.ZodEffects<z.ZodString, number, string>;
+   ```
 
 Remember: Security is a continuous process. Always validate and sanitize at every trusted boundary in your application.

@@ -46,7 +46,11 @@ export function validateAndSanitize<T>(schema: z.ZodSchema<T>, data: unknown): {
  * @returns Enhanced schema with sanitization
  */
 export function createSanitizedStringSchema(stringSchema: z.ZodString = z.string()): z.ZodEffects<z.ZodString, string, string> {
-  return stringSchema.transform((val) => sanitizeHtml(val));
+  // Apply a single transform to avoid nested ZodEffects types
+  return stringSchema.transform((val) => {
+    // Return the sanitized value
+    return sanitizeHtml(val);
+  });
 }
 
 /**
