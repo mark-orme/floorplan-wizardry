@@ -1,4 +1,3 @@
-
 /**
  * Mock Fabric.js event utilities for testing
  * These provide simplified versions of Fabric event interfaces
@@ -23,9 +22,7 @@ export function createMockPointerEvent(x: number, y: number): TPointerEventInfo<
       stopPropagation: () => {}
     } as unknown as TPointerEvent,
     pointer: { x, y },
-    absolutePointer: { x, y },
-    scenePoint: { x, y },
-    viewportPoint: { x, y }
+    absolutePointer: { x, y }
   };
 }
 

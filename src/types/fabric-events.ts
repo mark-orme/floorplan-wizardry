@@ -15,6 +15,11 @@ export enum FabricEventNames {
 }
 
 /**
+ * Fabric.js event types - alternative name for FabricEventNames for improved readability
+ */
+export const FabricEventTypes = FabricEventNames;
+
+/**
  * Fabric.js pointer event info
  */
 export interface TPointerEventInfo<T> {
@@ -23,6 +28,8 @@ export interface TPointerEventInfo<T> {
   absolutePointer: { x: number; y: number };
   button?: number;
   target?: unknown;
+  viewportPoint?: { x: number; y: number };
+  scenePoint?: { x: number; y: number };
 }
 
 /**

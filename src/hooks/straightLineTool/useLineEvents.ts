@@ -4,7 +4,7 @@ import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Geometry';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
-import { FabricEventTypes } from '@/types/fabric-events';
+import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
 import logger from '@/utils/logger';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import { captureError, captureMessage } from '@/utils/sentry';

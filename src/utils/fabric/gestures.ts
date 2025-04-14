@@ -7,7 +7,7 @@
 import { Canvas, PencilBrush, Point, Object as FabricObject } from 'fabric';
 import { CustomTouchEvent, FabricPointerEvent, isTouchEvent, isMouseEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
-import { FabricEventTypes } from '@/types/fabric-events';
+import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
 
 /**
  * Touch gesture constants for event handling

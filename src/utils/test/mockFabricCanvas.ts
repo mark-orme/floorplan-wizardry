@@ -1,11 +1,10 @@
-
 /**
  * Mock Fabric Canvas utilities for testing
  * @module utils/test/mockFabricCanvas
  */
 import { Canvas, Object as FabricObject } from 'fabric';
 import { vi } from 'vitest';
-import { FabricEventTypes } from '@/types/fabric-events';
+import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
 
 /**
  * Create a mock Fabric canvas for testing
@@ -133,4 +132,3 @@ export const extractFabricEventHandler = (
   
   return undefined;
 };
-

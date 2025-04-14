@@ -10,7 +10,7 @@ import { useStraightLineTool } from '../useStraightLineTool';
 import { useLineState } from '../useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-types';
-import { FabricEventTypes } from '@/types/fabric-events';
+import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
 import { Point } from '@/types/core/Geometry';
 
 // Mock the dependencies
