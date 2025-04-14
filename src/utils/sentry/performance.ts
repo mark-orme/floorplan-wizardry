@@ -40,7 +40,7 @@ export function startPerformanceTransaction(
       // Set any tags
       if (options.tags) {
         Object.entries(options.tags).forEach(([key, value]) => {
-          transaction?.setTag(key, value);
+          transaction?.setTag(key, String(value));
         });
       }
       

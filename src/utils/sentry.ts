@@ -5,10 +5,10 @@
  */
 
 // Import these directly to avoid circular dependencies
-import type { ErrorCaptureOptions } from './sentry/types';
+import type { CaptureErrorOptions, CaptureMessageOptions } from './sentry/types';
 
 // Re-export the types
-export type { ErrorCaptureOptions };
+export type { CaptureErrorOptions, CaptureMessageOptions };
 
 /**
  * Capture a message for Sentry reporting
@@ -16,9 +16,9 @@ export type { ErrorCaptureOptions };
  * 
  * @param {string} message - The message to capture
  * @param {string} [messageId] - Optional unique identifier for the message
- * @param {ErrorCaptureOptions} [options] - Optional configuration options
+ * @param {CaptureMessageOptions} [options] - Optional configuration options
  */
-export function captureMessage(message: string, messageId?: string, options?: ErrorCaptureOptions): void {
+export function captureMessage(message: string, messageId?: string, options?: CaptureMessageOptions): void {
   if (messageId) {
     console.log(`[${messageId}] ${message}`);
   } else {
@@ -39,9 +39,9 @@ export function captureMessage(message: string, messageId?: string, options?: Er
  * 
  * @param {Error} error - The error to capture
  * @param {string} [errorId] - Optional unique identifier for the error
- * @param {ErrorCaptureOptions} [options] - Optional configuration options
+ * @param {CaptureErrorOptions} [options] - Optional configuration options
  */
-export function captureError(error: Error, errorId?: string, options?: ErrorCaptureOptions): void {
+export function captureError(error: Error, errorId?: string, options?: CaptureErrorOptions): void {
   if (errorId) {
     console.error(`[${errorId}] ${error.message}`);
   } else {

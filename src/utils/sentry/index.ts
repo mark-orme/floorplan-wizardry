@@ -3,7 +3,7 @@
  * Sentry Utilities
  * Provides enhanced error tracking with Sentry
  */
-import * as Sentry from '@sentry/react';
+import * as SentrySDK from '@sentry/react';
 import { getDrawingSessionId } from '@/features/drawing/state/drawingMetrics';
 
 // Capture error with additional context
@@ -17,6 +17,7 @@ export function captureError(
     context?: Record<string, any>;
     user?: { id?: string; email?: string; username?: string };
     security?: { level?: 'low' | 'medium' | 'high'; details?: string; impact?: string };
+    showReportDialog?: boolean;
   }
 ) {
   // Default options
@@ -39,9 +40,9 @@ export function captureError(
   const drawingSessionId = getDrawingSessionId();
   
   // Create Sentry scope
-  Sentry.withScope((scope) => {
+  SentrySDK.withScope((scope) => {
     // Set severity level
-    scope.setLevel(mergedOptions.level as Sentry.SeverityLevel);
+    scope.setLevel(mergedOptions.level as SentrySDK.SeverityLevel);
     
     // Set tags
     scope.setTags({
@@ -64,9 +65,9 @@ export function captureError(
     
     // Capture the error
     if (error instanceof Error) {
-      Sentry.captureException(error);
+      SentrySDK.captureException(error);
     } else {
-      Sentry.captureMessage(
+      SentrySDK.captureMessage(
         typeof error === 'string' ? error : `Unknown error: ${JSON.stringify(error)}`
       );
     }
@@ -104,9 +105,9 @@ export function captureMessage(
   const drawingSessionId = getDrawingSessionId();
   
   // Create Sentry scope
-  Sentry.withScope((scope) => {
+  SentrySDK.withScope((scope) => {
     // Set severity level
-    scope.setLevel(mergedOptions.level as Sentry.SeverityLevel);
+    scope.setLevel(mergedOptions.level as SentrySDK.SeverityLevel);
     
     // Set tags
     scope.setTags({
@@ -128,7 +129,7 @@ export function captureMessage(
     }
     
     // Capture the message
-    Sentry.captureMessage(message);
+    SentrySDK.captureMessage(message);
   });
 }
 
@@ -140,4 +141,5 @@ export interface InputValidationResult {
   severity?: 'low' | 'medium' | 'high';
 }
 
-export const Sentry = Sentry;
+// Export the Sentry SDK with a different name to avoid conflicts
+export { SentrySDK };

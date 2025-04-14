@@ -65,27 +65,31 @@ export function useInputValidation<T>(schema: ZodSchema<T>): [
   const validateField = useCallback((field: keyof T, value: any): boolean => {
     try {
       // Create a partial schema for just this field
-      const fieldSchema = schema.pick({ [field]: true } as any);
-      fieldSchema.parse({ [field]: value });
+      // Use the shape method for Zod schema selection
+      const fieldSchema = schema.shape ? 
+        { [field]: schema.shape[field as string] } :
+        { [field]: schema }; 
       
-      // Update the errors state to remove any errors for this field
-      setValidationResult(prev => ({
-        ...prev,
-        errors: {
-          ...prev.errors,
-          [field as string]: []
-        }
-      }));
+      // Validate the field
+      const result = schema.safeParse({ [field]: value });
+      const isValid = result.success;
       
-      return true;
-    } catch (error) {
-      if (error instanceof ZodError) {
-        // Extract error messages for this field
-        const fieldErrors = error.errors
+      // Update the errors state based on validation result
+      if (isValid) {
+        setValidationResult(prev => ({
+          ...prev,
+          errors: {
+            ...prev.errors,
+            [field as string]: []
+          }
+        }));
+        return true;
+      } else {
+        const zodError = result.error;
+        const fieldErrors = zodError.errors
           .filter(err => err.path[0] === field)
           .map(err => err.message);
         
-        // Update the errors state
         setValidationResult(prev => ({
           ...prev,
           errors: {
@@ -93,9 +97,10 @@ export function useInputValidation<T>(schema: ZodSchema<T>): [
             [field as string]: fieldErrors
           }
         }));
-        
         return false;
       }
+    } catch (error) {
+      logger.error('Error validating field', { field, error });
       return false;
     }
   }, [schema]);
@@ -116,24 +121,24 @@ export function useInputValidation<T>(schema: ZodSchema<T>): [
     
     try {
       // Validate with Zod schema
-      const validData = schema.parse(sanitizedData);
+      const result = schema.safeParse(sanitizedData);
       
-      const result = {
-        isValid: true,
-        errors: {},
-        data: validData,
-        validateField,
-        reset
-      };
-      
-      setValidationResult(result);
-      return result;
-    } catch (error) {
-      if (error instanceof ZodError) {
+      if (result.success) {
+        const validResult = {
+          isValid: true,
+          errors: {},
+          data: result.data,
+          validateField,
+          reset
+        };
+        
+        setValidationResult(validResult);
+        return validResult;
+      } else {
         // Format ZodError into field-specific error messages
         const formattedErrors: Record<string, string[]> = {};
         
-        error.errors.forEach(err => {
+        result.error.errors.forEach(err => {
           const field = String(err.path[0]);
           if (!formattedErrors[field]) {
             formattedErrors[field] = [];
@@ -146,7 +151,7 @@ export function useInputValidation<T>(schema: ZodSchema<T>): [
           invalidData: sanitizedData
         });
         
-        const result = {
+        const errorResult = {
           isValid: false,
           errors: formattedErrors,
           data: null,
@@ -154,14 +159,14 @@ export function useInputValidation<T>(schema: ZodSchema<T>): [
           reset
         };
         
-        setValidationResult(result);
-        return result;
+        setValidationResult(errorResult);
+        return errorResult;
       }
-      
+    } catch (error) {
       // Handle unexpected errors
       logger.error('Unexpected validation error', { error });
       
-      const result = {
+      const errorResult = {
         isValid: false,
         errors: { _general: ['An unexpected error occurred during validation'] },
         data: null,
@@ -169,8 +174,8 @@ export function useInputValidation<T>(schema: ZodSchema<T>): [
         reset
       };
       
-      setValidationResult(result);
-      return result;
+      setValidationResult(errorResult);
+      return errorResult;
     }
   }, [schema, validateField, reset]);
   

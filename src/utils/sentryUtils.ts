@@ -9,10 +9,10 @@ import { captureMessage as sentryMessage } from './sentry/messageCapture';
 import { startPerformanceTransaction as sentryPerformance } from './sentry/performance';
 import { isSentryInitialized } from './sentry/core';
 import { monitorErrorRate } from './errorMonitoring';
-import type { ErrorCaptureOptions } from './sentry/types';
+import type { CaptureErrorOptions, CaptureMessageOptions } from './sentry/types';
 
 // Re-export the types
-export type { ErrorCaptureOptions };
+export type { CaptureErrorOptions, CaptureMessageOptions };
 export { isSentryInitialized };
 
 /**
@@ -21,9 +21,9 @@ export { isSentryInitialized };
  * 
  * @param {string} message - The message to capture
  * @param {string} [messageId] - Optional unique identifier for the message
- * @param {ErrorCaptureOptions} [options] - Optional configuration options
+ * @param {CaptureMessageOptions} [options] - Optional configuration options
  */
-export function captureMessage(message: string, messageId?: string, options?: ErrorCaptureOptions): void {
+export function captureMessage(message: string, messageId?: string, options?: CaptureMessageOptions): void {
   // Track for system monitoring if messageId provided
   if (messageId) {
     const context = options?.context?.component || 'unknown';
@@ -31,7 +31,7 @@ export function captureMessage(message: string, messageId?: string, options?: Er
   }
   
   // Forward to actual Sentry implementation
-  sentryMessage(message, messageId, options);
+  sentryMessage(message, messageId || 'generic', options || {});
 }
 
 /**
@@ -40,9 +40,9 @@ export function captureMessage(message: string, messageId?: string, options?: Er
  * 
  * @param {Error | unknown} error - The error to capture
  * @param {string} [errorId] - Optional unique identifier for the error
- * @param {ErrorCaptureOptions} [options] - Optional configuration options
+ * @param {CaptureErrorOptions} [options] - Optional configuration options
  */
-export function captureError(error: Error | unknown, errorId?: string, options?: ErrorCaptureOptions): void {
+export function captureError(error: Error | unknown, errorId?: string, options?: CaptureErrorOptions): void {
   // Track for system monitoring if errorId provided
   if (errorId) {
     const context = options?.context?.component || 'unknown';

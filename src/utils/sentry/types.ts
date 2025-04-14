@@ -49,6 +49,9 @@ export interface CaptureMessageOptions {
   };
 }
 
+// Alias for backward compatibility
+export type ErrorCaptureOptions = CaptureErrorOptions;
+
 // Drawing session context
 export interface DrawingSessionContext {
   sessionId: string;
@@ -72,4 +75,20 @@ export interface DrawingError extends Error {
     zoom: number;
     objectCount: number;
   };
+}
+
+// Transaction options for performance monitoring
+export interface TransactionOptions {
+  tags?: Record<string, string>;
+  data?: Record<string, any>;
+  context?: Record<string, any>;
+}
+
+// Transaction result with control methods
+export interface TransactionResult {
+  finish: (status?: string | number) => void;
+  setName: (name: string) => void;
+  setStatus: (status: string) => void;
+  setTag: (key: string, value: string) => void;
+  setData: (key: string, value: any) => void;
 }

@@ -1,6 +1,7 @@
 
 import * as React from "react"
 import { ChartConfig, THEMES } from "./chart-context"
+import DOMPurify from "dompurify"
 
 export const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
@@ -11,12 +12,10 @@ export const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) 
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
+  // Generate CSS content
+  const cssContent = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
@@ -25,11 +24,24 @@ ${colorConfig
       itemConfig.color
     return color ? `  --color-${key}: ${color};` : null
   })
+  .filter(Boolean)
   .join("\n")}
 }
 `
-          )
-          .join("\n"),
+    )
+    .join("\n")
+
+  // Sanitize the CSS content
+  const sanitizedCss = DOMPurify.sanitize(cssContent, {
+    USE_PROFILES: { html: true },
+    ALLOWED_TAGS: [], // No HTML tags allowed
+    ALLOWED_ATTR: []  // No attributes allowed
+  })
+
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: sanitizedCss
       }}
     />
   )

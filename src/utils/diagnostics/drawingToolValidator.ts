@@ -1,162 +1,100 @@
 
 /**
  * Drawing Tool Validator
- * Validates drawing tool configuration and state
+ * Validates drawing tool configurations
  */
-import { Canvas as FabricCanvas, BaseBrush } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { captureMessage } from '@/utils/sentry';
 import logger from '@/utils/logger';
+import { captureError } from '@/utils/sentryUtils';
 
 /**
- * Validate drawing tool configuration
- * @param canvas Canvas instance
- * @param tool Current drawing tool
+ * Check if the provided drawing tool is valid
  */
-export function validateDrawingTool(canvas: FabricCanvas, tool: DrawingMode): void {
-  if (!canvas) return;
-  
-  // Common validation issues to check
-  const issues: string[] = [];
-  
-  // Validate drawing mode matches tool
-  if (tool === DrawingMode.DRAW && !canvas.isDrawingMode) {
-    issues.push('Drawing mode not enabled for DRAW tool');
-  } else if (tool !== DrawingMode.DRAW && canvas.isDrawingMode) {
-    issues.push(`Drawing mode enabled for non-drawing tool: ${tool}`);
-  }
-  
-  // Validate brush exists when in drawing mode
-  if (tool === DrawingMode.DRAW && !canvas.freeDrawingBrush) {
-    issues.push('Free drawing brush not initialized');
-  }
-  
-  // Safe way to check for event listeners without accessing private properties
-  const validateEventListeners = () => {
-    try {
-      // Trigger a test event to see if listeners exist
-      const testEvent = new Event('test');
-      let hasListeners = false;
-      
-      // Temporarily override the fire method to detect if listeners exist
-      const originalFire = canvas.fire;
-      canvas.fire = function(eventName: string) {
-        if (eventName === 'test:event') {
-          hasListeners = true;
-        }
-        return this;
-      };
-      
-      // Try to fire a test event
-      canvas.fire('test:event', { test: true });
-      
-      // Restore original method
-      canvas.fire = originalFire;
-      
-      if (!hasListeners && (tool === DrawingMode.DRAW || tool === DrawingMode.STRAIGHT_LINE)) {
-        issues.push(`No event listeners detected for tool: ${tool}`);
-      }
-    } catch (error) {
-      logger.warn('Error checking event listeners', { error });
-    }
-  };
-  
-  validateEventListeners();
-  
-  // Check brush settings if applicable
-  if (canvas.freeDrawingBrush) {
-    const brush = canvas.freeDrawingBrush;
-    
-    // Check if brush has valid width
-    if (brush.width <= 0) {
-      issues.push('Invalid brush width: must be greater than 0');
-    }
-    
-    // Check if brush has valid color
-    if (!brush.color) {
-      issues.push('Invalid brush color: color not set');
-    }
-  }
-  
-  // Report any found issues
-  if (issues.length > 0) {
-    logger.warn('Drawing tool validation issues detected', { 
-      tool, 
-      issues,
-      canvasState: {
-        isDrawingMode: canvas.isDrawingMode,
-        brushExists: !!canvas.freeDrawingBrush,
-        brushWidth: canvas.freeDrawingBrush?.width,
-        brushColor: canvas.freeDrawingBrush?.color
-      }
-    });
-    
-    captureMessage(
-      'Drawing tool validation issues',
-      'drawing-tool-validation',
-      {
-        level: 'warning',
-        tags: {
-          tool
-        },
-        extra: {
-          issues,
-          canvasState: {
-            isDrawingMode: canvas.isDrawingMode,
-            brushExists: !!canvas.freeDrawingBrush,
-            brushWidth: canvas.freeDrawingBrush?.width,
-            brushColor: canvas.freeDrawingBrush?.color
-          }
-        }
-      }
-    );
+export function validateDrawingTool(tool: unknown): boolean {
+  try {
+    // Check if tool is a valid enum value
+    return Object.values(DrawingMode).includes(tool as DrawingMode);
+  } catch (error) {
+    logger.warn('Invalid drawing tool:', { tool, error });
+    return false;
   }
 }
 
 /**
- * Validate straight line drawing functionality
- * @param canvas Canvas instance
- * @param tool Current drawing tool
+ * Validate drawing tool options
  */
-export function validateStraightLineDrawing(canvas: FabricCanvas, tool: DrawingMode): void {
-  if (!canvas || tool !== DrawingMode.STRAIGHT_LINE) return;
-  
-  // Specific checks for straight line tool
-  const issues: string[] = [];
-  
-  // Check that selection is disabled (it should be for drawing tools)
-  if (canvas.selection) {
-    issues.push('Selection enabled in straight line mode');
-  }
-  
-  // Check cursor style
-  if (canvas.defaultCursor !== 'crosshair') {
-    issues.push(`Incorrect cursor in straight line mode: ${canvas.defaultCursor}`);
-  }
-  
-  // Report any found issues
-  if (issues.length > 0) {
-    logger.warn('Straight line drawing validation issues', { 
-      issues,
-      canvasState: {
-        selection: canvas.selection,
-        defaultCursor: canvas.defaultCursor
-      }
-    });
+export function validateDrawingOptions(options: Record<string, any>): boolean {
+  try {
+    // Validate required options
+    if (!options.tool || !validateDrawingTool(options.tool)) {
+      logger.warn('Invalid drawing options: missing or invalid tool', { options });
+      return false;
+    }
     
-    captureMessage(
-      'Straight line drawing validation issues',
-      'straight-line-validation',
-      {
-        level: 'warning',
-        extra: {
-          issues,
-          canvasState: {
-            selection: canvas.selection,
-            defaultCursor: canvas.defaultCursor
-          }
+    // Validate color format if provided
+    if (options.lineColor && !isValidColorFormat(options.lineColor)) {
+      logger.warn('Invalid drawing options: invalid line color format', { lineColor: options.lineColor });
+      return false;
+    }
+    
+    if (options.fillColor && !isValidColorFormat(options.fillColor)) {
+      logger.warn('Invalid drawing options: invalid fill color format', { fillColor: options.fillColor });
+      return false;
+    }
+    
+    // Validate numeric properties
+    if (options.lineThickness !== undefined && (typeof options.lineThickness !== 'number' || options.lineThickness <= 0)) {
+      logger.warn('Invalid drawing options: invalid line thickness', { lineThickness: options.lineThickness });
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    captureError(error, 'drawing-tool-validation', {
+      extra: { options }
+    });
+    return false;
+  }
+}
+
+/**
+ * Check if the provided string is a valid color format
+ */
+function isValidColorFormat(color: string): boolean {
+  // Support hex format
+  const hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+  
+  // Support rgb/rgba format
+  const rgbPattern = /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\)$/;
+  
+  return hexPattern.test(color) || rgbPattern.test(color);
+}
+
+/**
+ * Report a drawing tool error
+ */
+export function reportDrawingToolError(tool: string, error: Error, context?: Record<string, any>): void {
+  logger.error(`Drawing tool error for ${tool}:`, { error, context });
+  
+  captureError(error, 'drawing-tool-error', {
+    tags: { tool },
+    extra: context
+  });
+  
+  // Log a diagnostic event for the canvas event system
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    try {
+      const diagnosticEvent = new CustomEvent('canvas:diagnostic', {
+        detail: {
+          type: 'tool-error',
+          tool,
+          error: error.message,
+          timestamp: Date.now()
         }
-      }
-    );
+      });
+      window.dispatchEvent(diagnosticEvent);
+    } catch (eventError) {
+      logger.error('Failed to dispatch diagnostic event', { eventError });
+    }
   }
 }

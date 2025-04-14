@@ -2,7 +2,7 @@
 import * as Sentry from '@sentry/react';
 import logger from '../logger';
 import { isSentryInitialized } from './core';
-import { ErrorCaptureOptions } from './types';
+import { CaptureErrorOptions } from './types';
 import { throttle } from '../throttleUtils';
 
 const errorOccurrences: Record<string, { count: number; lastReported: number }> = {};
@@ -15,7 +15,7 @@ const ERROR_RATE_WINDOW = 60000; // Time window in ms (1 minute)
 export function captureError(
   error: Error | unknown, 
   errorId: string, 
-  options: ErrorCaptureOptions = {}
+  options: CaptureErrorOptions = {}
 ): void {
   // Sanitize and convert error to standard Error object
   const sanitizedError = error instanceof Error 
@@ -85,7 +85,7 @@ export function captureError(
       Sentry.setContext('drawingContext', drawingContext.context);
       
       // Add session information if available
-      if (window.sessionStorage?.getItem('drawingSessionId')) {
+      if (typeof window !== 'undefined' && window.sessionStorage?.getItem('drawingSessionId')) {
         Sentry.setContext('sessionInfo', {
           drawingSessionId: window.sessionStorage.getItem('drawingSessionId'),
           sessionStartTime: window.sessionStorage.getItem('sessionStartTime'),
@@ -235,12 +235,12 @@ function getDrawingContextInfo(): { tags: Record<string, string>, context: Recor
   
   try {
     // Try to get current tool from global window state if available
-    if (window.__app_state?.drawing?.currentTool) {
+    if (typeof window !== 'undefined' && window.__app_state?.drawing?.currentTool) {
       result.tags.currentTool = window.__app_state.drawing.currentTool;
     }
     
     // Try to get canvas dimensions if available
-    if (window.__canvas_state) {
+    if (typeof window !== 'undefined' && window.__canvas_state) {
       result.context.canvasInfo = {
         width: window.__canvas_state.width,
         height: window.__canvas_state.height,
@@ -250,15 +250,17 @@ function getDrawingContextInfo(): { tags: Record<string, string>, context: Recor
     }
     
     // Add device pixel ratio
-    result.context.devicePixelRatio = window.devicePixelRatio;
-    
-    // Add browser information
-    result.context.browser = {
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      vendor: navigator.vendor,
-      platform: navigator.platform
-    };
+    if (typeof window !== 'undefined') {
+      result.context.devicePixelRatio = window.devicePixelRatio;
+      
+      // Add browser information
+      result.context.browser = {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        vendor: navigator.vendor,
+        platform: navigator.platform
+      };
+    }
     
   } catch (error) {
     // Ignore errors from context gathering as they shouldn't 

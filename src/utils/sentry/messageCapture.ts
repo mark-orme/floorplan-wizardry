@@ -6,19 +6,19 @@
 import * as Sentry from '@sentry/react';
 import logger from '../logger';
 import { isSentryInitialized } from './core';
-import { ErrorCaptureOptions } from './types';
+import { CaptureMessageOptions } from './types';
 
 /**
  * Capture a message for Sentry reporting
  * 
  * @param {string} message - The message to capture
  * @param {string} messageId - Unique identifier for the message
- * @param {ErrorCaptureOptions} options - Additional options for the message
+ * @param {CaptureMessageOptions} options - Additional options for the message
  */
 export function captureMessage(
   message: string,
   messageId: string,
-  options: ErrorCaptureOptions = {}
+  options: CaptureMessageOptions = {}
 ): void {
   // Get the current environment
   const isProd = process.env.NODE_ENV === 'production';
