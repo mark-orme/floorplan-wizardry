@@ -1,28 +1,25 @@
 
 # Grid Feature
 
-This module handles the grid system for the canvas including:
+This directory contains all components, hooks, and utilities related to the grid system.
 
-- Grid creation and rendering
-- Grid visibility and scaling
-- Snapping functionality
+## Structure
 
-## Components
+- `components/`: Grid-related components
+- `hooks/`: Custom hooks for grid operations
+- `utils/`: Grid-specific utility functions
+- `types/`: TypeScript type definitions for grid data
 
-- `GridLayer` - Component for rendering grid lines
-- `GridManager` - Component for managing grid state
-- `GridDebugPanel` - Panel for debugging grid issues
+## Responsibilities
 
-## Hooks and Utilities
-
-- `useGridCreation` - Hook for grid creation
-- `useGridManagement` - Hook for grid state management
-- `createGrid` - Utility function to create grid objects
+- Grid rendering and management
+- Grid snapping functionality
+- Grid visibility and styling
+- Grid dimension calculations
 
 ## Usage
 
-Import components, hooks and utilities directly from the feature:
-
 ```tsx
-import { GridLayer, useGridCreation, createGrid } from '@/features/grid';
+import { GridDebugPanel, GridLayer, GridManager } from '@/features/grid';
+import { type Grid, type GridOptions } from '@/features/grid';
 ```

@@ -1,28 +1,26 @@
 
 # Property Feature
 
-This module handles all property management functionality including:
+This directory contains all components, hooks, and utilities related to property management.
 
-- Property listing and details
+## Structure
+
+- `components/`: Property-related components
+- `hooks/`: Custom hooks for property operations
+- `utils/`: Property-specific utility functions
+- `types/`: TypeScript type definitions for property data
+
+## Responsibilities
+
+- Property listing and details display
 - Property creation and editing
-- Property status management
-
-## Components
-
-- `PropertyList` - List of properties
-- `PropertyHeader` - Header for property pages
-- `PropertyDetailsTab` - Tab showing property details
-- `PropertyFloorPlanTab` - Tab showing property floor plans
-
-## Hooks
-
-- `usePropertyQuery` - Data fetching hook for properties
-- `usePropertyManagement` - Hook for property CRUD operations
+- Property search and filtering
+- Property data fetching and state management
 
 ## Usage
 
-Import components and hooks directly from the feature:
-
 ```tsx
-import { PropertyList, usePropertyQuery } from '@/features/property';
+import { PropertyHeader, PropertyDetailsTab, PropertyFloorPlanTab } from '@/features/property';
+import { useProperty, useListProperties } from '@/features/property';
+import { type Property, type PropertyStatus } from '@/features/property';
 ```

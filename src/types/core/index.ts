@@ -5,9 +5,8 @@
  * @module types/core
  */
 
-// Re-export from geometry
+// Re-export from geometry - fix Point ambiguity
 export * from './Geometry';
-export * from './Point';
 
 // Re-export from drawing
 export * from './DrawingTool';
@@ -15,6 +14,6 @@ export * from './DrawingTool';
 // Re-export floor plan types
 export * from './floor-plan';
 
-// Re-export canvas types
+// Re-export canvas types - fixed import paths
 export * from './Canvas';
 export * from './CanvasObject';

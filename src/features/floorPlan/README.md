@@ -1,28 +1,27 @@
 
 # Floor Plan Feature
 
-This module handles all floor plan functionality including:
+This directory contains all components, hooks, and utilities related to floor plan management.
+
+## Structure
+
+- `components/`: Floor plan related components
+- `hooks/`: Custom hooks for floor plan operations
+- `utils/`: Floor plan specific utility functions
+- `types/`: TypeScript type definitions for floor plan data
+
+## Responsibilities
 
 - Floor plan creation and editing
 - Floor plan storage and retrieval
-- Floor plan visualization and rendering
-
-## Components
-
-- `FloorPlanCanvas` - Canvas for drawing/editing floor plans
-- `FloorPlanList` - List of available floor plans
-- `FloorPlanControls` - UI controls for floor plan manipulation
-
-## Hooks
-
-- `useFloorPlanQuery` - Data fetching hook for floor plans
-- `useFloorPlanDrawing` - Hook for floor plan drawing operations
-- `useSyncedFloorPlans` - Hook for syncing floor plans across devices
+- GIA calculations
+- Floor plan visualization
+- Floor plan export and import
 
 ## Usage
 
-Import components and hooks directly from the feature:
-
 ```tsx
-import { FloorPlanCanvas, useFloorPlanDrawing } from '@/features/floorPlan';
+import { FloorPlanList, FloorPlanCanvas, FloorPlanActions } from '@/features/floorPlan';
+import { useFloorPlanQuery } from '@/features/floorPlan';
+import { type FloorPlan, type Room, type Wall } from '@/features/floorPlan';
 ```

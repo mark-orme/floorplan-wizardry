@@ -1,28 +1,26 @@
 
 # Authentication Feature
 
-This module handles all authentication-related functionality including:
+This directory contains all components, hooks, and utilities related to user authentication.
 
-- User login and registration
-- Session management
-- Auth context and hooks
+## Structure
+
+- `components/`: Authentication-related components like login forms
+- `hooks/`: Custom hooks for authentication state and operations
+- `utils/`: Authentication-specific utility functions
+- `types/`: TypeScript type definitions for authentication data
+
+## Responsibilities
+
+- User login/logout functionality
+- Authentication state management
 - Role-based access control
-
-## Components
-
-- `LoginForm` - Form for user login
-- `SignupForm` - Form for user registration
-- `AuthLayout` - Layout wrapper for auth pages
-
-## Hooks
-
-- `useAuth` - Hook for accessing authentication context
-- `useAuthGuard` - Hook for protecting routes
+- Token management and refresh
+- Security utilities related to authentication
 
 ## Usage
 
-Import components and hooks directly from the feature:
-
 ```tsx
-import { useAuth, LoginForm } from '@/features/auth';
+import { RoleGuard } from '@/features/auth';
+import { useAuth } from '@/features/auth';
 ```

@@ -8,4 +8,6 @@
 export { useCanvasContext, CanvasProvider } from './CanvasContext';
 export { useDrawingContext, DrawingProvider } from './DrawingContext';
 export { useAuth, AuthProvider } from './AuthContext';
-export { useTheme, ThemeProvider } from './ThemeContext';
+
+// ThemeContext is referenced but doesn't exist in the codebase
+// Removing this export to fix the build error

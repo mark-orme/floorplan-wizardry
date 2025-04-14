@@ -1,39 +1,32 @@
 
-# Components Directory
+# Components
 
-This directory contains shared UI components that are used across multiple features.
+This directory contains all the React components used throughout the application.
 
 ## Structure
 
-Components in this directory should be generic and reusable, not tied to specific business logic:
+- `ui/`: Contains reusable UI components like buttons, inputs, and other form elements
+- `canvas/`: Contains components related to canvas rendering and manipulation
+- `property/`: Contains components for property management and display
+- `security/`: Contains security-related components like authentication forms
 
-- `ui/` - UI primitives and base components (buttons, inputs, cards, etc.)
-- `layout/` - Layout components (containers, grids, etc.)
-- `form/` - Form-related components
-- `feedback/` - Feedback components (alerts, toasts, etc.)
-- `data/` - Data display components (tables, charts, etc.)
+## Usage
 
-## Usage Guidelines
+Components should be:
+1. Small and focused
+2. Well-typed with proper prop interfaces
+3. Documented with JSDoc comments
 
-1. Components here should be purely presentational or compositional
-2. Business logic should be provided via props
-3. Use Tailwind CSS for styling
-4. For conditional styling, use `clsx` or `class-variance-authority`
-5. Document props using TypeScript interfaces
-6. Export components through barrel files (index.ts)
+When creating new components:
+- Create them in the appropriate subdirectory
+- Export them through the appropriate barrel file (index.ts)
+- Use composition over inheritance 
+- Consider making them pure functional components when possible
 
-## Example
+## Examples
 
 ```tsx
-// Good example
-export interface ButtonProps {
-  variant?: 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
-  children: React.ReactNode;
-  onClick?: () => void;
-}
-
-const Button = ({ variant = 'primary', size = 'md', children, onClick }: ButtonProps) => {
-  // ...
-};
+import { Button } from '@/components/ui/button';
+import { PropertyHeader } from '@/components/property/PropertyHeader';
+import { CanvasApp } from '@/components/canvas/CanvasApp';
 ```

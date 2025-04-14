@@ -1,29 +1,34 @@
 
-# Utils Directory
+# Utilities
 
-This directory contains utility functions and helper modules used across the application.
+This directory contains utility functions and helpers used throughout the application.
 
 ## Structure
 
-- `geometry/` - Geometric calculations and operations
-- `grid/` - Grid-related utilities
-- `canvas/` - Canvas manipulation utilities
-- `fabric/` - Fabric.js specific utilities
-- `validation/` - Validation utilities
+- `fabric/`: Utilities specifically for fabric.js canvas manipulation
+- `geometry/`: Utilities for geometric calculations and operations
+- `grid/`: Utilities for grid creation and management
+- `security/`: Utilities for security features like CSRF protection
 
-## Usage Guidelines
+## Usage
 
-1. Utilities should be pure functions where possible
-2. Group related utilities into subdirectories
-3. Document function parameters and return values
-4. Add TypeScript types for parameters and return values
-5. Export utilities through barrel files (index.ts)
+Utilities should:
+1. Be pure functions when possible
+2. Be properly typed with TypeScript
+3. Handle edge cases gracefully
+4. Be documented with JSDoc comments
+5. Be unit tested
 
-## Example
+When creating new utilities:
+- Group related functions in appropriate subdirectories
+- Export them through the relevant barrel file (index.ts)
+- Keep functions small and focused
+- Use meaningful function and parameter names
+
+## Examples
 
 ```tsx
-// Good example
-export function calculateDistance(x1: number, y1: number, x2: number, y2: number): number {
-  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-}
+import { createCompleteGrid } from '@/utils/grid/gridRenderers';
+import { calculateArea } from '@/utils/geometry/areaCalculation';
+import { addCSRFToHeaders } from '@/utils/security/csrfProtection';
 ```

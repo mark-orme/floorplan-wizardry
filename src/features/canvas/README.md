@@ -1,28 +1,26 @@
 
 # Canvas Feature
 
-This module handles all canvas drawing functionality including:
+This directory contains all components, hooks, and utilities related to the canvas drawing system.
+
+## Structure
+
+- `components/`: Canvas-related components like toolbars and canvas containers
+- `hooks/`: Custom hooks for canvas manipulation and state
+- `utils/`: Canvas-specific utility functions
+- `types/`: TypeScript type definitions for canvas data
+
+## Responsibilities
 
 - Canvas initialization and rendering
-- Drawing tools and operations
-- Object selection and manipulation
-
-## Components
-
-- `CanvasApp` - Main canvas application component
-- `Toolbar` - Toolbar for canvas operations
-- `CanvasContainer` - Container with proper sizing for canvas
-
-## Hooks
-
-- `useCanvasOperations` - Hook for canvas operations
-- `useDrawingTool` - Hook for drawing tool state management
-- `useStraightLineTool` - Hook for drawing straight lines
+- Drawing tools and interactions
+- Canvas state management
+- Object manipulation
+- Canvas export and import functionality
 
 ## Usage
 
-Import components and hooks directly from the feature:
-
 ```tsx
-import { CanvasApp, useDrawingTool } from '@/features/canvas';
+import { CanvasApp, Toolbar, CanvasContainer } from '@/features/canvas';
+import { useCanvasContext, DrawingProvider } from '@/features/canvas';
 ```

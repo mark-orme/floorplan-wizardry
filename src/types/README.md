@@ -1,38 +1,33 @@
 
-# Types Directory
+# Types
 
-This directory contains shared TypeScript type definitions used across the application.
+This directory contains TypeScript type definitions used throughout the application.
 
 ## Structure
 
-- `core/` - Core domain types
-- `api/` - API and data transfer types
-- `ui/` - UI component types
-- `canvas/` - Canvas-related types
-- `fabric/` - Fabric.js specific types
+- `core/`: Core type definitions for the application
+- `floor-plan/`: Types related to floor plan data structures
+- `fabric-types.ts`: Type definitions for fabric.js
+- `drawingTypes.ts`: Types for drawing tools and operations
 
-## Usage Guidelines
+## Usage
 
-1. Group related types into subdirectories or files
-2. Use interfaces for objects that will be extended
-3. Use type aliases for unions, intersections, and simple objects
-4. Export types through barrel files (index.ts)
-5. Document complex types with JSDoc comments
+Types should:
+1. Be properly named following TypeScript conventions
+2. Be well-documented with JSDoc comments
+3. Be exported through the appropriate barrel files
+4. Use descriptive names and follow consistent conventions
 
-## Example
+When creating new types:
+- Group related types in appropriate subdirectories
+- Use interfaces for object shapes that will be implemented
+- Use type aliases for unions, intersections, and complex types
+- Consider using utility types (Partial, Omit, etc.) when appropriate
+
+## Examples
 
 ```tsx
-// Good example
-/**
- * Represents a point in 2D space
- */
-export interface Point {
-  x: number;
-  y: number;
-}
-
-/**
- * Supported line styles
- */
-export type LineStyle = 'solid' | 'dashed' | 'dotted';
+import { Point } from '@/types/core/Point';
+import { FloorPlan, Room, Wall } from '@/types/core/floor-plan';
+import { DrawingMode } from '@/constants/drawingModes';
 ```
