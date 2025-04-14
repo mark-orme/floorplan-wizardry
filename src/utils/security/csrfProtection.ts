@@ -85,22 +85,26 @@ export function addCSRFHeader(headers: Headers | Record<string, string> = {}): H
  * @returns Updated fetch options with CSRF protection
  */
 export function createProtectedFetchOptions(options: RequestInit = {}): RequestInit {
-  // Extract existing headers and convert to an accepted type
-  let headersInit: Headers | Record<string, string> = {};
+  // Extract existing headers
+  const headersInit = options.headers;
+  let processedHeaders: Headers | Record<string, string> = {};
   
-  if (options.headers) {
-    if (options.headers instanceof Headers) {
-      headersInit = options.headers;
-    } else if (typeof options.headers === 'object') {
+  if (headersInit) {
+    if (headersInit instanceof Headers) {
+      processedHeaders = headersInit;
+    } else if (typeof headersInit === 'object') {
       // Convert HeadersInit to Record<string, string>
-      headersInit = Object.fromEntries(
-        Object.entries(options.headers).filter(([_, v]) => v !== undefined)
-      );
+      processedHeaders = {};
+      Object.entries(headersInit).forEach(([key, value]) => {
+        if (value !== undefined) {
+          (processedHeaders as Record<string, string>)[key] = String(value);
+        }
+      });
     }
   }
   
   // Add CSRF token to headers
-  const headers = addCSRFHeader(headersInit);
+  const headers = addCSRFHeader(processedHeaders);
   
   return {
     ...options,

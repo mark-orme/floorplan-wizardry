@@ -1,6 +1,4 @@
 
-import { UserRole } from './supabase';
-
 /**
  * User roles in the application
  */
@@ -111,4 +109,3 @@ export type AuthResponse = {
   session: any | null;
   error: Error | null;
 };
-
