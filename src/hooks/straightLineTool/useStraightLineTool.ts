@@ -5,7 +5,7 @@
  * @module hooks/straightLineTool/useStraightLineTool
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, IEvent } from 'fabric';
+import { Canvas as FabricCanvas, Line, TEvent } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
 import { useLineState } from './useLineState';
@@ -112,11 +112,15 @@ export const useStraightLineTool = ({
       
       // Log event
       logDrawingEvent('Line drawing started', 'line-start', {
-        point: { x: point.x, y: point.y },
-        inputMethod
+        interaction: { 
+          type: inputMethod,
+          position: { x: point.x, y: point.y }
+        }
       });
     } catch (error) {
-      reportDrawingError(error, 'line-pointer-down');
+      reportDrawingError(error, 'line-pointer-down', {
+        interaction: { type: inputMethod }
+      });
     }
   }, [
     fabricCanvasRef, 
@@ -170,7 +174,9 @@ export const useStraightLineTool = ({
       // Render changes
       fabricCanvasRef.current.renderAll();
     } catch (error) {
-      reportDrawingError(error, 'line-pointer-move');
+      reportDrawingError(error, 'line-pointer-move', {
+        interaction: { type: inputMethod }
+      });
     }
   }, [
     fabricCanvasRef, 
@@ -181,7 +187,8 @@ export const useStraightLineTool = ({
     snapAngleDeg, 
     snapEnabled, 
     snapLineToGrid,
-    reportDrawingError
+    reportDrawingError,
+    inputMethod
   ]);
 
   // Event handler for pointer up
@@ -229,15 +236,19 @@ export const useStraightLineTool = ({
       
       // Log event
       logDrawingEvent('Line drawing completed', 'line-complete', {
-        start: startPointRef.current || { x: 0, y: 0 },
-        end: point,
-        inputMethod
+        interaction: { 
+          type: inputMethod,
+          startPoint: startPointRef.current || { x: 0, y: 0 },
+          endPoint: point
+        }
       });
       
       setStartPoint(null);
       
     } catch (error) {
-      reportDrawingError(error, 'line-pointer-up');
+      reportDrawingError(error, 'line-pointer-up', {
+        interaction: { type: inputMethod }
+      });
     }
   }, [
     fabricCanvasRef, 
@@ -288,12 +299,14 @@ export const useStraightLineTool = ({
       
       // Log event
       logDrawingEvent('Line drawing cancelled', 'line-cancel', {
-        inputMethod
+        interaction: { type: inputMethod }
       });
       
       toast.info("Line drawing cancelled");
     } catch (error) {
-      reportDrawingError(error, 'line-cancel');
+      reportDrawingError(error, 'line-cancel', {
+        interaction: { type: inputMethod }
+      });
     }
   }, [
     fabricCanvasRef, 
@@ -339,21 +352,21 @@ export const useStraightLineTool = ({
     }
     
     // Set up fabric.js event handlers
-    const handleFabricMouseDown = (e: IEvent) => {
+    const handleFabricMouseDown = (e: TEvent) => {
       if (!isActive) return;
       if (!e.pointer) return;
       
       handlePointerDown(e.pointer);
     };
     
-    const handleFabricMouseMove = (e: IEvent) => {
+    const handleFabricMouseMove = (e: TEvent) => {
       if (!isActive || !isDrawing) return;
       if (!e.pointer) return;
       
       handlePointerMove(e.pointer);
     };
     
-    const handleFabricMouseUp = (e: IEvent) => {
+    const handleFabricMouseUp = (e: TEvent) => {
       if (!isActive || !isDrawing) return;
       if (!e.pointer) return;
       
