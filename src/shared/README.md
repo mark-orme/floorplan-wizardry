@@ -1,21 +1,18 @@
 
-# Shared
+# Shared Directory
 
-This directory contains shared utilities, components, and constants used across multiple features.
+This directory contains shared utilities, components, and types used across multiple features.
 
 ## Structure
 
-- `ui/`: Shared UI components
-- `lib/`: Shared library code and utilities
-- `constants/`: Application-wide constants
-- `types/`: Shared TypeScript type definitions
+- `ui/` - Reusable UI components
+- `types/` - TypeScript types and interfaces
+- `utils/` - Shared utility functions
+- `hooks/` - Shared custom hooks
 
-## Usage
+## Guidelines
 
-The shared directory should only contain code that is truly shared across multiple features. Feature-specific code should be placed in the appropriate feature directory.
-
-```tsx
-import { Button, Card } from '@/shared/ui';
-import { cn } from '@/shared/lib/utils';
-import { GRID_CONSTANTS } from '@/shared/constants';
-```
+1. Code in this directory should be feature-agnostic
+2. Avoid dependencies on specific feature implementations
+3. Focus on reusability and composability
+4. Document APIs thoroughly

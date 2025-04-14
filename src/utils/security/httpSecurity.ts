@@ -1,4 +1,3 @@
-
 /**
  * HTTP Security Utilities
  * Provides utilities for secure HTTP interactions

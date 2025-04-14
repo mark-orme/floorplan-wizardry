@@ -55,3 +55,56 @@ export const initializeCSRFProtection = (): void => {
     storeCSRFToken(newToken);
   }
 };
+
+// Alias for addCSRFToHeaders for backward compatibility
+export const addCSRFHeader = addCSRFToHeaders;
+
+// Add CSRF protection to an HTML form
+export const protectForm = (form: HTMLFormElement): void => {
+  const token = getCSRFToken() || generateCSRFToken();
+  
+  if (!token) {
+    console.error('Failed to generate CSRF token for form protection');
+    return;
+  }
+  
+  // Store token if it doesn't exist
+  if (!getCSRFToken()) {
+    storeCSRFToken(token);
+  }
+  
+  // Check if token input already exists
+  let tokenInput = form.querySelector('input[name="csrf_token"]');
+  
+  // Create or update token input
+  if (!tokenInput) {
+    tokenInput = document.createElement('input');
+    tokenInput.setAttribute('type', 'hidden');
+    tokenInput.setAttribute('name', 'csrf_token');
+    form.appendChild(tokenInput);
+  }
+  
+  // Set token value
+  (tokenInput as HTMLInputElement).value = token;
+};
+
+// Create fetch options with CSRF protection
+export const createProtectedFetchOptions = (options: RequestInit = {}): RequestInit => {
+  const token = getCSRFToken();
+  if (!token) return options;
+  
+  // Create headers with token
+  const headers = new Headers(options.headers || {});
+  headers.append('X-CSRF-Token', token);
+  
+  return {
+    ...options,
+    headers
+  };
+};
+
+// Perform a fetch with CSRF protection
+export const protectedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const protectedOptions = createProtectedFetchOptions(options);
+  return fetch(url, protectedOptions);
+};

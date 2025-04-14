@@ -1,53 +1,31 @@
 
 /**
- * Global TypeScript declarations
- * Extends the Window interface with application-specific global properties
+ * Global type definitions
  */
 
-import { Canvas } from 'fabric';
-
-// Ensure these declarations are global
-declare global {
-  // Extend the Window interface with our custom properties
-  interface Window {
-    /**
-     * Global registry for Fabric.js canvas instances
-     * Used for emergency recovery when standard initialization fails
-     */
-    fabricCanvasInstances?: Canvas[];
-    
-    /**
-     * Reference to the current fabric canvas instance
-     * Used for debugging and testing purposes
-     */
-    fabricCanvas?: Canvas;
-    
-    /**
-     * Debug information exposed globally
-     */
-    canvasDebug?: {
-      lastInitTime: number;
-      gridCreated: boolean;
-      errorState: boolean;
-      version: string;
+// Extend Window interface with app-specific globals
+interface Window {
+  // Global app state for Sentry and debugging
+  __app_state?: {
+    drawing?: {
+      currentTool?: string;
+      lineColor?: string;
+      lineThickness?: number;
+      snapEnabled?: boolean;
     };
-  }
-
-  // Extend HTMLCanvasElement with custom properties
-  interface HTMLCanvasElement {
-    /**
-     * Reference to associated Fabric.js canvas instance
-     */
-    _fabric?: any;
-  }
+    user?: {
+      id?: string;
+      role?: string;
+    };
+  };
   
-  // Add type for Fabric.js pointer events
-  interface FabricPointerEvent {
-    e: MouseEvent | TouchEvent;
-    pointer?: { x: number; y: number };
-    target?: any;
-  }
+  // Canvas state for debugging and error reporting
+  __canvas_state?: {
+    width?: number;
+    height?: number;
+    zoom?: number;
+    objectCount?: number;
+    gridVisible?: boolean;
+    lastOperation?: string;
+  };
 }
-
-// Export an empty object to make this file a module
-export {};

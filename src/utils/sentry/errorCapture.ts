@@ -53,12 +53,16 @@ export function captureError(
 
   try {
     if (isSentryInitialized()) {
+      // Get drawing context info if available
+      const drawingContext = getDrawingContextInfo();
+      
       // Add security-focused tags
       const securityTags = {
         ...options.tags,
         errorId,
         severity: determineSeverity(sanitizedError),
-        environment: process.env.NODE_ENV
+        environment: process.env.NODE_ENV,
+        ...drawingContext.tags
       };
 
       // Set Sentry context with scrubbed information
@@ -76,7 +80,19 @@ export function captureError(
         Sentry.setUser(safeUserData);
       }
 
-      // Enhance error context
+      // Enhance error context with drawing/canvas info
+      Sentry.setContext('drawingContext', drawingContext.context);
+      
+      // Add session information if available
+      if (window.sessionStorage?.getItem('drawingSessionId')) {
+        Sentry.setContext('sessionInfo', {
+          drawingSessionId: window.sessionStorage.getItem('drawingSessionId'),
+          sessionStartTime: window.sessionStorage.getItem('sessionStartTime'),
+          canvasOperationsCount: window.sessionStorage.getItem('canvasOperationsCount') || '0'
+        });
+      }
+      
+      // Add error context
       if (options.context) {
         Sentry.setContext('errorContext', options.context);
       }
@@ -87,7 +103,8 @@ export function captureError(
         extra: {
           ...options.extra,
           errorSource: errorId,
-          rateInfo: errorOccurrences[errorId]
+          rateInfo: errorOccurrences[errorId],
+          ...drawingContext.extra
         }
       });
 
@@ -202,6 +219,53 @@ function determineSeverity(error: Error): 'low' | 'medium' | 'high' {
   }
   
   return 'low';
+}
+
+/**
+ * Get context information from the drawing/canvas state
+ * This enriches error reports with drawing tool state
+ */
+function getDrawingContextInfo(): { tags: Record<string, string>, context: Record<string, any>, extra: Record<string, any> } {
+  const result = {
+    tags: {},
+    context: {},
+    extra: {}
+  };
+  
+  try {
+    // Try to get current tool from global window state if available
+    if (window.__app_state?.drawing?.currentTool) {
+      result.tags.currentTool = window.__app_state.drawing.currentTool;
+    }
+    
+    // Try to get canvas dimensions if available
+    if (window.__canvas_state) {
+      result.context.canvasInfo = {
+        width: window.__canvas_state.width,
+        height: window.__canvas_state.height,
+        zoomLevel: window.__canvas_state.zoom,
+        objectCount: window.__canvas_state.objectCount
+      };
+    }
+    
+    // Add device pixel ratio
+    result.context.devicePixelRatio = window.devicePixelRatio;
+    
+    // Add browser information
+    result.context.browser = {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      vendor: navigator.vendor,
+      platform: navigator.platform
+    };
+    
+  } catch (error) {
+    // Ignore errors from context gathering as they shouldn't 
+    // prevent the main error from being reported
+    console.error('Error gathering context for Sentry:', error);
+  }
+  
+  return result;
 }
 
 // Create throttled version for high-frequency environments
