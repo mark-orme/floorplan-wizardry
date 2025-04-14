@@ -5,20 +5,13 @@
  */
 import * as SentrySDK from '@sentry/react';
 import { getDrawingSessionId } from '@/features/drawing/state/drawingMetrics';
+import { CaptureErrorOptions, CaptureMessageOptions } from './types';
 
 // Capture error with additional context
 export function captureError(
   error: Error | unknown,
   errorType: string,
-  options?: {
-    level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
-    tags?: Record<string, string>;
-    extra?: Record<string, any>;
-    context?: Record<string, any>;
-    user?: { id?: string; email?: string; username?: string };
-    security?: { level?: 'low' | 'medium' | 'high'; details?: string; impact?: string };
-    showReportDialog?: boolean;
-  }
+  options?: CaptureErrorOptions
 ) {
   // Default options
   const defaultOptions = {
@@ -78,13 +71,7 @@ export function captureError(
 export function captureMessage(
   message: string,
   category: string,
-  options?: {
-    level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
-    tags?: Record<string, string>;
-    extra?: Record<string, any>;
-    context?: Record<string, any>;
-    user?: { id?: string; email?: string; username?: string };
-  }
+  options?: CaptureMessageOptions
 ) {
   // Default options
   const defaultOptions = {
@@ -123,7 +110,7 @@ export function captureMessage(
       ...mergedOptions.extra
     });
     
-    // Set user context if provided
+    // Set user information if provided
     if (mergedOptions.user) {
       scope.setUser(mergedOptions.user);
     }

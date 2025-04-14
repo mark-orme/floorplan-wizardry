@@ -20,11 +20,25 @@ export interface SecurityContext {
   recommendations?: string[];
 }
 
+// Options for captureMessage
+export interface CaptureMessageOptions {
+  level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
+  tags?: Record<string, string>;
+  extra?: Record<string, any>; // Added this to match usage
+  context?: Record<string, any>;
+  user?: { 
+    id?: string; 
+    email?: string; 
+    username?: string;
+    role?: string;
+  };
+}
+
 // Options for captureError
 export interface CaptureErrorOptions {
   level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
   tags?: Record<string, string>;
-  extra?: Record<string, any>;
+  extra?: Record<string, any>; // Added this to match usage
   context?: Record<string, any>;
   user?: { 
     id?: string; 
@@ -33,21 +47,7 @@ export interface CaptureErrorOptions {
     role?: string;
   };
   security?: SecurityContext;
-  showReportDialog?: boolean; // Added the missing property
-}
-
-// Options for captureMessage
-export interface CaptureMessageOptions {
-  level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
-  tags?: Record<string, string>;
-  extra?: Record<string, any>;
-  context?: Record<string, any>;
-  user?: { 
-    id?: string; 
-    email?: string; 
-    username?: string;
-    role?: string;
-  };
+  showReportDialog?: boolean;
 }
 
 // Alias for backward compatibility
