@@ -15,4 +15,5 @@ export * from './canvas-operations/useCanvasOperations';
 export * from './canvas-operations/useToolOperations';
 export * from './drawing/useDrawingActions';
 export * from './drawing/useDrawingHistory';
+export * from './straightLineTool/useLineState';
 

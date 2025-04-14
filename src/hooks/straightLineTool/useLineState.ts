@@ -7,6 +7,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Hook for managing line drawing state
@@ -32,11 +33,11 @@ export const useLineState = () => {
     try {
       setIsToolInitialized(true);
       logDrawingEvent('Line tool initialized', 'tool-init', {
-        tool: 'line'
+        tool: DrawingMode.LINE
       });
     } catch (error) {
       reportDrawingError(error, 'line-tool-init', {
-        tool: 'line'
+        tool: DrawingMode.LINE
       });
       // Initialize anyway to avoid blocking the user
       setIsToolInitialized(true);

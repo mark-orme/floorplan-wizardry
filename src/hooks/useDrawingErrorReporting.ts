@@ -43,7 +43,7 @@ export const useDrawingErrorReporting = () => {
     error: Error | unknown,
     operation: string,
     context: DrawingErrorContext,
-    options: Omit<CaptureErrorOptions, 'context'> = {}
+    options: CaptureErrorOptions = {}
   ) => {
     // Extract drawing context for better error reporting
     const { tool, canvasDimensions, drawingState, interaction } = context;
@@ -83,7 +83,7 @@ export const useDrawingErrorReporting = () => {
     message: string,
     category: string,
     context: DrawingErrorContext,
-    options: Omit<CaptureMessageOptions, 'context'> = {}
+    options: CaptureMessageOptions = {}
   ) => {
     // Extract drawing context for better logging
     const { tool, canvasDimensions, drawingState, interaction } = context;
