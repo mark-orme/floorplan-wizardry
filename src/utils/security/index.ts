@@ -187,13 +187,16 @@ export const Security = {
       // Add CSRF token if available
       if (typeof window !== 'undefined' && window.sessionStorage) {
         const token = window.sessionStorage.getItem('csrf_token');
-        if (token && secureOptions.headers instanceof Headers) {
-          secureOptions.headers.append('X-CSRF-Token', token);
-        } else if (token && typeof secureOptions.headers === 'object') {
-          secureOptions.headers = {
-            ...secureOptions.headers,
-            'X-CSRF-Token': token
-          };
+        if (token) {
+          // Handle headers correctly based on their type
+          if (secureOptions.headers instanceof Headers) {
+            secureOptions.headers.append('X-CSRF-Token', token);
+          } else if (typeof secureOptions.headers === 'object') {
+            secureOptions.headers = {
+              ...secureOptions.headers,
+              'X-CSRF-Token': token
+            };
+          }
         }
       }
       
@@ -201,18 +204,23 @@ export const Security = {
     },
     applySecurityMetaTags: () => {
       if (typeof document !== 'undefined') {
-        // Add security meta tags
+        // Define security meta tags
         const securityTags = [
           { httpEquiv: 'X-Content-Type-Options', content: 'nosniff' },
           { httpEquiv: 'X-Frame-Options', content: 'DENY' },
           { name: 'referrer', content: 'no-referrer' }
         ];
         
+        // Add meta tags to document head
         securityTags.forEach(tagData => {
           const meta = document.createElement('meta');
-          Object.entries(tagData).forEach(([key, value]) => {
-            meta[key as keyof HTMLMetaElement] = value;
-          });
+          if (tagData.httpEquiv) {
+            meta.httpEquiv = tagData.httpEquiv;
+          }
+          if (tagData.name) {
+            meta.setAttribute('name', tagData.name);
+          }
+          meta.content = tagData.content;
           document.head.appendChild(meta);
         });
       }
@@ -247,7 +255,7 @@ export function initializeSecurity(): void {
     
     // Add no-referrer meta tag
     const metaReferrer = document.createElement('meta');
-    metaReferrer.name = 'referrer';
+    metaReferrer.setAttribute('name', 'referrer');
     metaReferrer.content = 'no-referrer';
     document.head.appendChild(metaReferrer);
     
