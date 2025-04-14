@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import logger from "@/utils/logger";
+import { toast } from "sonner";
 
 interface GridRendererProps {
   canvas: FabricCanvas;
@@ -124,9 +125,15 @@ export class GridRenderer {
       this.canvas.requestRenderAll();
       
       logger.info(`Grid created with ${gridObjects.length} lines`);
+      
+      // Force visibility
+      this.toggleVisibility(true);
+      
       return gridObjects;
     } catch (error) {
       logger.error("Error creating grid:", error);
+      console.error("[CRITICAL] Grid creation failed:", error);
+      toast.error("Grid creation failed. Please refresh the page.");
       return [];
     }
   }
@@ -143,6 +150,18 @@ export class GridRenderer {
       obj.set('visible', visible);
     });
     this.canvas.requestRenderAll();
+  }
+  
+  // DEV SAFEGUARD: Method to check grid existence and recreate if missing
+  public checkAndFixGrid(): void {
+    const visibleGridObjects = this.gridObjects.filter(obj => 
+      obj.visible && this.canvas.contains(obj)
+    );
+    
+    if (visibleGridObjects.length < 10) {
+      console.warn("[GRID SAFEGUARD] Grid objects missing or not visible. Recreating grid.");
+      this.createGrid();
+    }
   }
 }
 
@@ -166,8 +185,16 @@ export const GridRendererComponent: React.FC<GridRendererProps> = ({
       showGrid
     });
     
+    // Set up periodic grid check to ensure visibility
+    const intervalId = setInterval(() => {
+      if (gridRendererRef.current) {
+        gridRendererRef.current.checkAndFixGrid();
+      }
+    }, 2000);
+    
     // Clean up function
     return () => {
+      clearInterval(intervalId);
       if (gridRendererRef.current) {
         gridRendererRef.current.toggleVisibility(false);
       }

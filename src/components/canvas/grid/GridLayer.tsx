@@ -52,7 +52,30 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       logger.info("Requesting render for grid with dimensions", { width, height });
       fabricCanvas.requestRenderAll();
     }
-  }, [dimensions.width, dimensions.height, fabricCanvas, gridObjects.length]); // Explicit dependency on width/height
+  }, [dimensions.width, dimensions.height, fabricCanvas, gridObjects.length]);
+  
+  // Safeguard to verify grid exists and is visible
+  useEffect(() => {
+    const checkGridVisibility = () => {
+      if (fabricCanvas && gridObjects.length > 0) {
+        const visibleGridObjects = gridObjects.filter(obj => 
+          obj.visible && fabricCanvas.contains(obj)
+        );
+        
+        if (visibleGridObjects.length < gridObjects.length * 0.5) {
+          logger.warn("Grid visibility issue detected, forcing re-render");
+          fabricCanvas.requestRenderAll();
+        }
+      }
+    };
+    
+    // Check grid visibility periodically
+    const intervalId = setInterval(checkGridVisibility, 5000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [fabricCanvas, gridObjects]);
   
   return (
     <GridRendererComponent 

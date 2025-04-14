@@ -8,8 +8,8 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_SIZE: 100,
   
   // Grid styling
-  SMALL_GRID_COLOR: '#CCCCCC', // Light gray for small grid, more visible
-  LARGE_GRID_COLOR: '#8E9196', // Neutral gray for large grid
+  SMALL_GRID_COLOR: '#AAAAAA', // Darker gray for better visibility
+  LARGE_GRID_COLOR: '#666666', // Darker gray for large grid
   SMALL_GRID_WIDTH: 0.5, // Thin but visible width for small grid
   LARGE_GRID_WIDTH: 1.0, // Thicker width for large grid
   
@@ -31,5 +31,10 @@ export const GRID_CONSTANTS = {
   
   // Markers
   MARKER_TEXT_SIZE: 10,
-  MARKER_COLOR: '#8E9196'
+  MARKER_COLOR: '#8E9196',
+  
+  // Dev safeguards
+  GRID_CHECK_INTERVAL: 3000, // Check grid every 3 seconds
+  MIN_GRID_OBJECTS: 20, // Minimum number of grid objects that should exist
+  AUTO_RECREATE_ON_EMPTY: true // Automatically recreate grid if missing
 };
