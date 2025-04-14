@@ -1,3 +1,4 @@
+
 /**
  * Input Validation Hook
  * Provides Zod-based validation for user inputs
@@ -63,10 +64,11 @@ export function useInputValidation<T>(schema: ZodSchema<T>): [
   
   const validateField = useCallback((field: keyof T, value: any): boolean => {
     try {
-      // Create a partial object with just this field
+      // Create a partial schema for just this field
+      // Use the safeParse method instead of trying to access schema.shape
       const partialData = { [field as string]: value } as Partial<T>;
       
-      // Use pick to create a schema for just this field - safer than assuming shape exists
+      // Using safeParse to validate just this field's data
       const result = schema.safeParse(partialData);
       const isValid = result.success;
       

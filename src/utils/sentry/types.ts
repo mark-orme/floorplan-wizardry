@@ -33,7 +33,7 @@ export interface CaptureErrorOptions {
     role?: string;
   };
   security?: SecurityContext;
-  showReportDialog?: boolean;
+  showReportDialog?: boolean; // Added the missing property
 }
 
 // Options for captureMessage

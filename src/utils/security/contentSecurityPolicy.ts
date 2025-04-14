@@ -19,6 +19,10 @@ export const CSP_DIRECTIVES = {
   'form-action': ["'self'"],
   'frame-ancestors': ["'none'"],
   'upgrade-insecure-requests': [],
+  // Add more restrictive policies
+  'require-trusted-types-for': ["'script'"],
+  'trusted-types': ["'none'"], 
+  'sandbox': ['allow-forms', 'allow-scripts', 'allow-same-origin'],
 };
 
 /**

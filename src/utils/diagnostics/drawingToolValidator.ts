@@ -1,139 +1,181 @@
 
 /**
  * Drawing Tool Validator
- * Validates drawing tool configurations
+ * Validates drawing tool inputs and configurations
  */
+import { z } from 'zod';
 import { DrawingMode } from '@/constants/drawingModes';
-import logger from '@/utils/logger';
-import { captureError } from '@/utils/sentryUtils';
-import { Canvas as FabricCanvas } from 'fabric';
 
 /**
- * Check if the provided drawing tool is valid
+ * Schema for validating drawing tool configuration
  */
-export function validateDrawingTool(tool: unknown): boolean {
-  try {
-    // Check if tool is a valid enum value
-    return Object.values(DrawingMode).includes(tool as DrawingMode);
-  } catch (error) {
-    logger.warn('Invalid drawing tool:', { tool, error });
-    return false;
+export const drawingToolSchema = z.object({
+  tool: z.nativeEnum(DrawingMode),
+  lineThickness: z.number().positive().min(0.5).max(20).optional(),
+  lineColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/).optional(),
+  fillColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/).optional(),
+  opacity: z.number().min(0).max(1).optional()
+});
+
+/**
+ * Schema for validating line drawing parameters
+ */
+export const lineDrawingSchema = z.object({
+  startX: z.number(),
+  startY: z.number(),
+  endX: z.number(),
+  endY: z.number(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/),
+  thickness: z.number().positive().min(0.5).max(20),
+  snapToGrid: z.boolean().optional()
+});
+
+/**
+ * Schema for validating drawing canvas configuration
+ */
+export const canvasConfigSchema = z.object({
+  width: z.number().positive(),
+  height: z.number().positive(),
+  zoom: z.number().positive().min(0.1).max(10),
+  gridSize: z.number().positive().optional(),
+  snapToGrid: z.boolean().optional(),
+  backgroundColor: z.string().optional()
+});
+
+/**
+ * Validate straight line drawing parameters
+ * 
+ * @param startX - Starting X coordinate
+ * @param startY - Starting Y coordinate
+ * @param endX - Ending X coordinate
+ * @param endY - Ending Y coordinate
+ * @param options - Optional configuration
+ * @returns Validation result object with success status and error messages
+ */
+export function validateStraightLineDrawing(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  options: {
+    color?: string;
+    thickness?: number;
+    snapToGrid?: boolean;
+  } = {}
+): { 
+  valid: boolean; 
+  errors: string[]; 
+  sanitized?: {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    color: string;
+    thickness: number;
+    snapToGrid: boolean;
   }
-}
-
-/**
- * Validate drawing tool options
- */
-export function validateDrawingOptions(options: Record<string, any>): boolean {
+} {
+  // Default values
+  const color = options.color || '#000000';
+  const thickness = options.thickness || 1;
+  const snapToGrid = options.snapToGrid || false;
+  
   try {
-    // Validate required options
-    if (!options.tool || !validateDrawingTool(options.tool)) {
-      logger.warn('Invalid drawing options: missing or invalid tool', { options });
-      return false;
-    }
-    
-    // Validate color format if provided
-    if (options.lineColor && !isValidColorFormat(options.lineColor)) {
-      logger.warn('Invalid drawing options: invalid line color format', { lineColor: options.lineColor });
-      return false;
-    }
-    
-    if (options.fillColor && !isValidColorFormat(options.fillColor)) {
-      logger.warn('Invalid drawing options: invalid fill color format', { fillColor: options.fillColor });
-      return false;
-    }
-    
-    // Validate numeric properties
-    if (options.lineThickness !== undefined && (typeof options.lineThickness !== 'number' || options.lineThickness <= 0)) {
-      logger.warn('Invalid drawing options: invalid line thickness', { lineThickness: options.lineThickness });
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    captureError(error, 'drawing-tool-validation', {
-      extra: { options }
+    // Run validation with Zod schema
+    const result = lineDrawingSchema.safeParse({
+      startX,
+      startY,
+      endX,
+      endY,
+      color,
+      thickness,
+      snapToGrid
     });
-    return false;
-  }
-}
-
-/**
- * Check if the provided string is a valid color format
- */
-function isValidColorFormat(color: string): boolean {
-  // Support hex format
-  const hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-  
-  // Support rgb/rgba format
-  const rgbPattern = /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\)$/;
-  
-  return hexPattern.test(color) || rgbPattern.test(color);
-}
-
-/**
- * Report a drawing tool error
- */
-export function reportDrawingToolError(tool: string, error: Error, context?: Record<string, any>): void {
-  logger.error(`Drawing tool error for ${tool}:`, { error, context });
-  
-  captureError(error, 'drawing-tool-error', {
-    tags: { tool },
-    extra: context
-  });
-  
-  // Log a diagnostic event for the canvas event system
-  if (typeof window !== 'undefined' && window.dispatchEvent) {
-    try {
-      const diagnosticEvent = new CustomEvent('canvas:diagnostic', {
-        detail: {
-          type: 'tool-error',
-          tool,
-          error: error.message,
-          timestamp: Date.now()
-        }
-      });
-      window.dispatchEvent(diagnosticEvent);
-    } catch (eventError) {
-      logger.error('Failed to dispatch diagnostic event', { eventError });
-    }
-  }
-}
-
-/**
- * Validate straight line drawing tool and canvas configuration
- * @param canvas FabricCanvas instance
- * @param tool Current drawing tool
- * @returns Whether the straight line tool is configured correctly
- */
-export function validateStraightLineDrawing(canvas: FabricCanvas, tool: DrawingMode): boolean {
-  if (!canvas) {
-    logger.warn('Cannot validate straight line drawing: canvas is null');
-    return false;
-  }
-  
-  if (tool !== DrawingMode.STRAIGHT_LINE) {
-    // Only validate if the straight line tool is active
-    return true;
-  }
-  
-  try {
-    // Check that the canvas is configured correctly for straight line drawing
-    const isValid = !canvas.isDrawingMode && 
-                   !canvas.selection && 
-                   canvas.defaultCursor === 'crosshair';
     
-    if (!isValid) {
-      logger.warn('Straight line tool misconfiguration', {
-        isDrawingMode: canvas.isDrawingMode,
-        selection: canvas.selection,
-        defaultCursor: canvas.defaultCursor
-      });
+    if (result.success) {
+      return {
+        valid: true,
+        errors: [],
+        sanitized: result.data
+      };
+    } else {
+      return {
+        valid: false,
+        errors: result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      };
     }
-    
-    return isValid;
   } catch (error) {
-    logger.error('Error validating straight line drawing:', error);
-    return false;
+    return {
+      valid: false,
+      errors: ['Unexpected validation error']
+    };
+  }
+}
+
+/**
+ * Validate drawing tool configuration
+ * 
+ * @param config - Drawing tool configuration
+ * @returns Validation result
+ */
+export function validateDrawingTool(config: unknown): {
+  valid: boolean;
+  errors: string[];
+  sanitized?: z.infer<typeof drawingToolSchema>;
+} {
+  try {
+    const result = drawingToolSchema.safeParse(config);
+    
+    if (result.success) {
+      return {
+        valid: true,
+        errors: [],
+        sanitized: result.data
+      };
+    } else {
+      return {
+        valid: false,
+        errors: result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      };
+    }
+  } catch (error) {
+    return {
+      valid: false,
+      errors: ['Unexpected validation error']
+    };
+  }
+}
+
+/**
+ * Validate canvas configuration
+ * 
+ * @param config - Canvas configuration
+ * @returns Validation result
+ */
+export function validateCanvasConfig(config: unknown): {
+  valid: boolean;
+  errors: string[];
+  sanitized?: z.infer<typeof canvasConfigSchema>;
+} {
+  try {
+    const result = canvasConfigSchema.safeParse(config);
+    
+    if (result.success) {
+      return {
+        valid: true,
+        errors: [],
+        sanitized: result.data
+      };
+    } else {
+      return {
+        valid: false,
+        errors: result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      };
+    }
+  } catch (error) {
+    return {
+      valid: false,
+      errors: ['Unexpected validation error']
+    };
   }
 }
