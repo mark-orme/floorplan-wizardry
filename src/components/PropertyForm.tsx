@@ -110,10 +110,18 @@ const PropertyForm = () => {
 
     setIsSubmitting(true);
     try {
-      // Use sanitized data if available
+      // Ensure required fields are present before sending to API
       const formData = validationResult.sanitizedData || values;
       
-      const newProperty = await createProperty(formData);
+      // Make sure all required fields are present and not undefined
+      const propertyData = {
+        order_id: formData.order_id || '',
+        address: formData.address || '',
+        client_name: formData.client_name || '',
+        branch_name: formData.branch_name
+      };
+      
+      const newProperty = await createProperty(propertyData);
 
       if (newProperty) {
         toast.success('Property created successfully');

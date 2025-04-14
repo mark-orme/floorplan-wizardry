@@ -77,9 +77,9 @@ export const usePropertyQuery = () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select()
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Supabase error when fetching property:", error);

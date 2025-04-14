@@ -38,7 +38,7 @@ export function captureMessage(message: string, messageId?: string, options?: Er
  * Capture an error for Sentry reporting
  * Enhanced version with error monitoring integration
  * 
- * @param {Error} error - The error to capture
+ * @param {Error | unknown} error - The error to capture
  * @param {string} [errorId] - Optional unique identifier for the error
  * @param {ErrorCaptureOptions} [options] - Optional configuration options
  */
@@ -49,8 +49,15 @@ export function captureError(error: Error | unknown, errorId?: string, options?:
     monitorErrorRate(`error:${errorId}`, context);
   }
   
+  // Convert unknown errors to Error objects for proper handling
+  const normalizedError = error instanceof Error 
+    ? error 
+    : new Error(typeof error === 'string' 
+        ? error 
+        : JSON.stringify(error));
+  
   // Forward to actual Sentry implementation
-  sentryCapture(error, errorId, options);
+  sentryCapture(normalizedError, errorId, options);
 }
 
 /**

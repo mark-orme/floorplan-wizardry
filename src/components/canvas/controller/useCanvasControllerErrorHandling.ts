@@ -5,7 +5,7 @@
  */
 import { useCallback } from "react";
 import { DebugInfoState } from "@/types/core/DebugInfo";
-import { captureError } from "@/utils/sentryUtils";
+import { captureError, captureMessage } from "@/utils/sentryUtils";
 import { useLocation } from "react-router-dom";
 
 interface UseCanvasControllerErrorHandlingProps {
@@ -101,6 +101,3 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     handleRetry
   };
 };
-
-// Add missing import
-import { captureMessage } from "@/utils/sentryUtils";

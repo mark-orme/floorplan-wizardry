@@ -47,7 +47,7 @@ export const useSupabaseFloorPlans = () => {
         .from('floor_plans')
         .select()
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
         
       if (queryError && queryError.code !== 'PGRST116') {
         throw queryError;
@@ -115,7 +115,7 @@ export const useSupabaseFloorPlans = () => {
         .from('floor_plans')
         .select()
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === 'PGRST116') {

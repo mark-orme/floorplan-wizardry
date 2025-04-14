@@ -58,12 +58,16 @@ const fetchProperties = async ({ userId, userRole, filters }: ListPropertiesPara
 const fetchProperty = async (id: string): Promise<Property> => {
   const { data, error } = await supabase
     .from('properties')
-    .select('*')
+    .select()
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error('Property not found');
   }
 
   return data as Property;

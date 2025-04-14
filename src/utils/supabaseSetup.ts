@@ -11,8 +11,7 @@ export const insertTestData = async (): Promise<void> => {
     // Check if we have test data already
     const { data } = await supabase
       .from('properties')
-      .select()
-      .limit(1);
+      .select();
       
     if (data && data.length > 0) {
       toast.info('Test data already exists');

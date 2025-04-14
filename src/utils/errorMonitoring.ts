@@ -174,12 +174,20 @@ export function captureErrorWithMonitoring(
   // Track in monitoring system
   monitorErrorRate(errorId, context);
   
+  // Convert unknown errors to Error objects for proper handling
+  const normalizedError = error instanceof Error 
+    ? error 
+    : new Error(typeof error === 'string' 
+        ? error 
+        : 'Unknown error');
+  
   // Forward to Sentry
-  captureError(error, errorId, {
+  captureError(normalizedError, errorId, {
     ...options,
     extra: {
       ...(options.extra || {}),
-      monitoringContext: context
+      monitoringContext: context,
+      originalError: error // Keep the original error for reference
     }
   });
 }

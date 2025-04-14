@@ -30,13 +30,12 @@ export const usePropertyUpdate = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
 
       toast.success('Property updated successfully');
-      return data as Property;
+      return data[0] as Property;
     } catch (error: any) {
       toast.error(error.message || 'Error updating property');
       console.error('Error updating property:', error);

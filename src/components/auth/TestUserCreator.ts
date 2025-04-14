@@ -83,7 +83,7 @@ export const createTestUsers = async (): Promise<number> => {
           // User exists and can sign in - make sure they have a profile
           const { data: profileData }: SelectProfileResponse = await supabase
             .from('user_profiles')
-            .select('*')
+            .select()
             .eq('user_id', signInData.user.id)
             .single();
             
