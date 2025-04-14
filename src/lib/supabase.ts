@@ -1,5 +1,5 @@
 
-// Export supabase client functions and types
+import { UserRole } from './supabase';
 
 /**
  * User roles in the application
@@ -33,34 +33,12 @@ export const supabase = {
         single: () => ({ data: null, error: null }),
         maybeSingle: () => ({ data: null, error: null }),
         data: [],
-        error: null,
-        limit: (num: number) => ({
-          data: [],
-          error: null
-        }),
-        in: (field: string, values: any[]) => ({
-          data: [],
-          error: null,
-          order: (field: string, options: any) => ({
-            data: [],
-            error: null
-          })
-        }),
-        order: (field: string, options: any) => ({
-          data: [],
-          error: null
-        })
+        error: null
       }),
       single: () => ({ data: null, error: null }),
       maybeSingle: () => ({ data: null, error: null }),
       data: [],
       error: null,
-      eq: (field: string, value: any) => ({
-        data: [],
-        error: null,
-        single: () => ({ data: null, error: null }),
-        maybeSingle: () => ({ data: null, error: null })
-      }),
       in: (field: string, values: any[]) => ({
         data: [],
         error: null,
