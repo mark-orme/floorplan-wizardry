@@ -335,8 +335,7 @@ export const useStraightLineTool = ({
       isToolInitializedRef.current = true;
       
       // Fix: Add a second argument with context details
-      logger.info("Straight line tool initialized", { 
-        canvas, 
+      logger.info("Tool initialized", { 
         tool,
         isActive,
         lineColor,
