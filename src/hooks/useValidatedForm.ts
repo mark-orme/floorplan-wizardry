@@ -72,7 +72,7 @@ export function useValidatedForm<T extends Record<string, any>>(options: Validat
     setFormState(prev => {
       // Update values and mark as dirty
       const newValues = { ...prev.values, [field]: value };
-      const newTouched = { ...prev.touched, [field]: true };
+      const newTouched = { ...prev.touched, [String(field)]: true };
       
       // Validate if needed
       const newErrors = validateOnChange
@@ -94,7 +94,7 @@ export function useValidatedForm<T extends Record<string, any>>(options: Validat
   const handleBlur = useCallback((field: keyof T) => {
     setFormState(prev => {
       // Mark field as touched
-      const newTouched = { ...prev.touched, [field]: true };
+      const newTouched = { ...prev.touched, [String(field)]: true };
       
       // Validate if needed
       const newErrors = validateOnBlur 
@@ -180,8 +180,8 @@ export function useValidatedForm<T extends Record<string, any>>(options: Validat
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => 
       setFieldValue(field, e.target.value),
     onBlur: () => handleBlur(field),
-    'aria-invalid': !!(formState.touched[field as string] && formState.errors[field as string]),
-    'aria-describedby': formState.errors[field as string] ? `${field}-error` : undefined
+    'aria-invalid': !!(formState.touched[String(field)] && formState.errors[String(field)]),
+    'aria-describedby': formState.errors[String(field)] ? `${field}-error` : undefined
   }), [formState.errors, formState.touched, formState.values, handleBlur, setFieldValue]);
   
   // Initial validation

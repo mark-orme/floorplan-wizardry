@@ -113,6 +113,53 @@ export function validateStraightLineDrawing(
 }
 
 /**
+ * Overloaded version for canvas-specific validation
+ * 
+ * @param canvas - Fabric.js Canvas instance
+ * @param currentTool - Current drawing tool
+ * @returns Validation result object
+ */
+export function validateStraightLineDrawing(
+  canvas: any,
+  currentTool: DrawingMode
+): { valid: boolean; errors: string[] } {
+  // Canvas-specific validation logic
+  try {
+    // Basic validation - ensure we have a canvas and the correct tool
+    if (!canvas) {
+      return { valid: false, errors: ['Canvas is not available'] };
+    }
+    
+    if (currentTool !== DrawingMode.STRAIGHT_LINE) {
+      return { valid: true, errors: [] }; // Not applicable for other tools
+    }
+    
+    // Check if canvas has necessary properties for line drawing
+    const hasProperDrawingMode = canvas.isDrawingMode === false;
+    const hasProperCursor = canvas.defaultCursor === 'crosshair';
+    
+    const errors = [];
+    if (!hasProperDrawingMode) {
+      errors.push('Canvas drawing mode should be disabled for straight line tool');
+    }
+    
+    if (!hasProperCursor) {
+      errors.push('Canvas cursor should be set to crosshair for line drawing');
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  } catch (error) {
+    return {
+      valid: false,
+      errors: ['Unexpected error during straight line tool validation']
+    };
+  }
+}
+
+/**
  * Validate drawing tool configuration
  * 
  * @param config - Drawing tool configuration

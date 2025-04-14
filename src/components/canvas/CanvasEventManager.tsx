@@ -10,7 +10,7 @@ import {
   useBrushSettings 
 } from "@/hooks/canvas-events";
 import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
-import { useWallDrawing } from "@/hooks/useWallDrawing"; // Import the new hook
+import { useWallDrawing } from "@/hooks/useWallDrawing";
 import { validateStraightLineTool, scheduleStraightLineValidation } from "@/utils/diagnostics/straightLineValidator";
 import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
