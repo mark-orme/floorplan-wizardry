@@ -352,23 +352,32 @@ export const useStraightLineTool = ({
     // Set up fabric.js event handlers
     const handleFabricMouseDown = (e: TEvent<TPointerEvent>) => {
       if (!isActive) return;
-      if (!e.absolutePointer) return;
       
-      handlePointerDown(e.absolutePointer);
+      // Get position from fabric event
+      const pointer = e.pointer;
+      if (!pointer) return;
+      
+      handlePointerDown(pointer);
     };
     
     const handleFabricMouseMove = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing) return;
-      if (!e.absolutePointer) return;
       
-      handlePointerMove(e.absolutePointer);
+      // Get position from fabric event
+      const pointer = e.pointer;
+      if (!pointer) return;
+      
+      handlePointerMove(pointer);
     };
     
     const handleFabricMouseUp = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing) return;
-      if (!e.absolutePointer) return;
       
-      handlePointerUp(e.absolutePointer);
+      // Get position from fabric event
+      const pointer = e.pointer;
+      if (!pointer) return;
+      
+      handlePointerUp(pointer);
     };
     
     // Add fabric canvas event listeners
