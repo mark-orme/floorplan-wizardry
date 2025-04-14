@@ -1,3 +1,4 @@
+
 /**
  * Canvas application component
  * Main component that wraps the canvas with necessary UI elements
@@ -15,9 +16,11 @@ import { toast } from "sonner";
 import { DrawingToolbar } from "@/components/canvas/DrawingToolbar";
 import { DrawingMode } from "@/constants/drawingModes";
 
-// Default dimensions for the canvas
-const DEFAULT_CANVAS_WIDTH = 800;
-const DEFAULT_CANVAS_HEIGHT = 600;
+// Default dimensions for the canvas - use window dimensions for responsive behavior
+const getDefaultCanvasDimensions = () => ({
+  width: Math.max(window.innerWidth - 40, 800),
+  height: Math.max(window.innerHeight - 100, 600)
+});
 
 interface CanvasAppProps {
   setCanvas?: (canvas: FabricCanvas | null) => void;
@@ -30,6 +33,7 @@ interface CanvasAppProps {
  * @returns {JSX.Element} Rendered component
  */
 export const CanvasApp = ({ setCanvas, showGridDebug = false }: CanvasAppProps): JSX.Element => {
+  const [canvasDimensions, setCanvasDimensions] = useState(getDefaultCanvasDimensions());
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({
     ...DEFAULT_DEBUG_STATE,
     hasError: false,
@@ -50,6 +54,16 @@ export const CanvasApp = ({ setCanvas, showGridDebug = false }: CanvasAppProps):
   const canvasRef = useRef<FabricCanvas | null>(null);
   const mountedRef = useRef<boolean>(true);
   const [key, setKey] = useState<number>(0);
+  
+  // Update canvas dimensions when window resizes
+  useEffect(() => {
+    const handleResize = () => {
+      setCanvasDimensions(getDefaultCanvasDimensions());
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Stable handler for canvas ready event
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
@@ -111,9 +125,12 @@ export const CanvasApp = ({ setCanvas, showGridDebug = false }: CanvasAppProps):
           canvas.selection = true;
           break;
         case DrawingMode.WALL:
-          canvas.isDrawingMode = true;
-          canvas.freeDrawingBrush.width = wallThickness;
-          canvas.freeDrawingBrush.color = wallColor;
+          canvas.isDrawingMode = false;
+          canvas.selection = false;
+          break;
+        case DrawingMode.STRAIGHT_LINE:
+          canvas.isDrawingMode = false;
+          canvas.selection = false;
           break;
         default:
           canvas.isDrawingMode = false;
@@ -143,8 +160,8 @@ export const CanvasApp = ({ setCanvas, showGridDebug = false }: CanvasAppProps):
     <CanvasLayout>
       <Canvas 
         key={`canvas-${key}`}
-        width={DEFAULT_CANVAS_WIDTH}
-        height={DEFAULT_CANVAS_HEIGHT}
+        width={canvasDimensions.width}
+        height={canvasDimensions.height}
         onCanvasReady={handleCanvasReady}
         setDebugInfo={setDebugInfo}
         showGridDebug={showGridDebug}
@@ -154,7 +171,7 @@ export const CanvasApp = ({ setCanvas, showGridDebug = false }: CanvasAppProps):
         wallColor={wallColor}
         wallThickness={wallThickness}
       />
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 z-10">
         <DrawingToolbar 
           activeTool={activeTool} 
           onToolChange={handleToolChange}
@@ -168,9 +185,9 @@ export const CanvasApp = ({ setCanvas, showGridDebug = false }: CanvasAppProps):
           onWallThicknessChange={setWallThickness}
         />
       </div>
-      <div className="absolute bottom-4 right-4">
+      <div className="absolute bottom-4 right-4 z-10">
         <button 
-          className="px-4 py-2 bg-blue-500 text-white rounded"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors shadow-md"
           onClick={resetCanvas}
         >
           Reset Canvas

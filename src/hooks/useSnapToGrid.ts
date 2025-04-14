@@ -1,165 +1,78 @@
 
-/**
- * Hook for managing grid snapping functionality
- * @module hooks/useSnapToGrid
- */
-import { useCallback, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Geometry';
-import { DrawingMode } from '@/constants/drawingModes';
+import { useCallback } from 'react';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
-/**
- * Props interface for useSnapToGrid hook
- * @interface UseSnapToGridProps
- */
-export interface UseSnapToGridProps {
-  /** Reference to Fabric.js canvas */
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+// Define the Point interface if it doesn't exist
+interface Point {
+  x: number;
+  y: number;
 }
 
-/**
- * Line constraints for grid snapping
- * @interface LineConstraints
- */
-export interface LineConstraints {
-  start: Point;
-  end: Point;
-  isHorizontal?: boolean;
-  isVertical?: boolean;
-  isDiagonal?: boolean;
-  isAutoStraightened?: boolean;
-}
-
-/**
- * Hook for grid snapping functionality
- * 
- * @param {UseSnapToGridProps} props - Optional props including canvas reference
- * @returns Object with snapping functions and state
- */
-export const useSnapToGrid = (props?: UseSnapToGridProps) => {
-  const [snapEnabled, setSnapEnabled] = useState(true);
-  const [autoStraighten, setAutoStraighten] = useState(true);
-  const { fabricCanvasRef } = props || {};
-
-  /**
-   * Snap a point to the grid
-   * @param point - Point to snap
-   * @returns Snapped point
-   */
+export const useSnapToGrid = (props?: { fabricCanvasRef?: React.MutableRefObject<any> }) => {
+  // Snap a point to the nearest grid point
   const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return point;
-
     const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
-    const x = Math.round(point.x / gridSize) * gridSize;
-    const y = Math.round(point.y / gridSize) * gridSize;
-
-    return { x, y };
-  }, [snapEnabled]);
-
-  /**
-   * Snap a line to the grid, applying constraints
-   * @param start - Start point of the line
-   * @param end - End point of the line
-   * @returns Object with snapped end point and constraint flags
-   */
-  const snapLineToGrid = useCallback((start: Point, end: Point): LineConstraints => {
-    if (!snapEnabled) {
-      return { start, end };
-    }
-
-    const snappedStart = snapPointToGrid(start);
-    const snappedEnd = snapPointToGrid(end);
-
-    let isHorizontal = false;
-    let isVertical = false;
-    let isDiagonal = false;
-    let isAutoStraightened = false;
-
-    // Only auto-straighten if that feature is enabled
-    if (autoStraighten) {
-      // Check for horizontal constraint
-      if (Math.abs(snappedEnd.y - snappedStart.y) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
-        snappedEnd.y = snappedStart.y;
-        isHorizontal = true;
-        isAutoStraightened = true;
-      }
-      // Check for vertical constraint
-      else if (Math.abs(snappedEnd.x - snappedStart.x) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
-        snappedEnd.x = snappedStart.x;
-        isVertical = true;
-        isAutoStraightened = true;
-      }
-      // Check for diagonal constraint (45-degree angle)
-      else if (Math.abs(Math.abs(snappedEnd.x - snappedStart.x) - Math.abs(snappedEnd.y - snappedStart.y)) <= GRID_CONSTANTS.SMALL_GRID_SIZE / 2) {
-        // Make the diagonal precisely 45 degrees
-        const dx = Math.abs(snappedEnd.x - snappedStart.x);
-        const dy = Math.abs(snappedEnd.y - snappedStart.y);
-        const delta = (dx + dy) / 2;
-        
-        if (snappedEnd.x > snappedStart.x) {
-          snappedEnd.x = snappedStart.x + delta;
-        } else {
-          snappedEnd.x = snappedStart.x - delta;
-        }
-        
-        if (snappedEnd.y > snappedStart.y) {
-          snappedEnd.y = snappedStart.y + delta;
-        } else {
-          snappedEnd.y = snappedStart.y - delta;
-        }
-        
-        isDiagonal = true;
-        isAutoStraightened = true;
-      }
-    }
-
-    return {
-      start: snappedStart,
-      end: snappedEnd,
-      isHorizontal,
-      isVertical,
-      isDiagonal,
-      isAutoStraightened
-    };
-  }, [snapEnabled, autoStraighten, snapPointToGrid]);
-
-  /**
-   * Check if a point is snapped to the grid
-   * @param point - Point to check
-   * @returns Whether the point is snapped to the grid
-   */
-  const isSnappedToGrid = useCallback((point: Point): boolean => {
-    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
-    return point.x % gridSize === 0 && point.y % gridSize === 0;
+    
+    // Calculate the nearest grid points
+    const newX = Math.round(point.x / gridSize) * gridSize;
+    const newY = Math.round(point.y / gridSize) * gridSize;
+    
+    return { x: newX, y: newY };
   }, []);
   
-  /**
-   * Get snap enabled state based on tool
-   * @param tool - Current drawing tool
-   * @returns Whether snapping is enabled for this tool
-   */
-  const getSnapEnabledForTool = useCallback((tool: DrawingMode): boolean => {
-    // We could customize snap behavior per tool here
-    return snapEnabled;
-  }, [snapEnabled]);
-
-  /**
-   * Toggle auto-straightening of lines
-   */
-  const toggleAutoStraighten = useCallback(() => {
-    setAutoStraighten(prev => !prev);
-  }, []);
+  // Snap a line to be horizontal or vertical if it's close to those orientations
+  const snapLineToGrid = useCallback((start: Point, end: Point): { start: Point, end: Point } => {
+    // Already snapped start point
+    const snappedStart = start;
+    
+    // Snap end point to grid first
+    const snappedEnd = snapPointToGrid(end);
+    
+    // Calculate angle and distance to determine if we should straighten the line
+    const dx = snappedEnd.x - snappedStart.x;
+    const dy = snappedEnd.y - snappedStart.y;
+    const angle = Math.atan2(dy, dx);
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // If distance is very small, don't modify further
+    if (distance < 10) {
+      return { start: snappedStart, end: snappedEnd };
+    }
+    
+    // Determine if the line should be made perfectly horizontal or vertical
+    // If the angle is within 15 degrees (0.26 radians) of horizontal or vertical
+    const ANGLE_THRESHOLD = 0.26; // About 15 degrees
+    
+    let finalEnd = { ...snappedEnd };
+    
+    // Near horizontal
+    if (Math.abs(angle) < ANGLE_THRESHOLD || Math.abs(angle - Math.PI) < ANGLE_THRESHOLD || Math.abs(angle + Math.PI) < ANGLE_THRESHOLD) {
+      finalEnd.y = snappedStart.y; // Make perfectly horizontal
+    }
+    // Near vertical
+    else if (Math.abs(angle - Math.PI/2) < ANGLE_THRESHOLD || Math.abs(angle + Math.PI/2) < ANGLE_THRESHOLD) {
+      finalEnd.x = snappedStart.x; // Make perfectly vertical
+    }
+    // Near 45 degrees (optional, for diagonal lines)
+    else if (Math.abs(angle - Math.PI/4) < ANGLE_THRESHOLD || Math.abs(angle + Math.PI/4) < ANGLE_THRESHOLD || 
+             Math.abs(angle - 3*Math.PI/4) < ANGLE_THRESHOLD || Math.abs(angle + 3*Math.PI/4) < ANGLE_THRESHOLD) {
+      // Calculate the average of dx and dy for a perfect 45-degree line
+      const avg = Math.abs(dx) > Math.abs(dy) ? 
+                  Math.sign(dx) * Math.abs(dy) : 
+                  Math.sign(dy) * Math.abs(dx);
+      
+      finalEnd.x = snappedStart.x + Math.sign(dx) * Math.abs(avg);
+      finalEnd.y = snappedStart.y + Math.sign(dy) * Math.abs(avg);
+      
+      // Ensure the endpoint is still on the grid
+      finalEnd = snapPointToGrid(finalEnd);
+    }
+    
+    return { start: snappedStart, end: finalEnd };
+  }, [snapPointToGrid]);
   
   return {
-    snapEnabled,
-    setSnapEnabled,
     snapPointToGrid,
-    snapLineToGrid,
-    isSnappedToGrid,
-    toggleSnapToGrid: useCallback(() => setSnapEnabled(prev => !prev), []),
-    getSnapEnabledForTool,
-    isAutoStraightened: autoStraighten,
-    toggleAutoStraighten
+    snapLineToGrid
   };
 };

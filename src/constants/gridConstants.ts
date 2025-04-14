@@ -8,7 +8,7 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_SIZE: 100,
   
   // Grid styling
-  SMALL_GRID_COLOR: '#D3E4FD', // Light blue color for small grid
+  SMALL_GRID_COLOR: '#E0E0E0', // Light gray for small grid
   LARGE_GRID_COLOR: '#8E9196', // Neutral gray for large grid
   SMALL_GRID_WIDTH: 0.5,
   LARGE_GRID_WIDTH: 1,

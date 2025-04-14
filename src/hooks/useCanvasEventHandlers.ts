@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Point as FabricPoint, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -151,11 +152,11 @@ export const useCanvasEventHandlers = ({
       handleMouseDown(nativeEvent);
     }
     
-    // Save current state before starting new drawing
-    saveCurrentState();
-    
     // Handle straight line tool
     if (tool === DrawingMode.STRAIGHT_LINE) {
+      // Save current state before starting new drawing
+      saveCurrentState();
+      
       const pointer = canvas.getPointer(e.e);
       
       // Snap point to grid
@@ -185,7 +186,7 @@ export const useCanvasEventHandlers = ({
       
       canvas.requestRenderAll();
     }
-  }, [fabricCanvasRef, tool, lineColor, lineThickness, handleMouseDown, snapPointToGrid, updateDistanceTooltip, saveCurrentState]);
+  }, [fabricCanvasRef, tool, lineColor, lineThickness, snapPointToGrid, updateDistanceTooltip, saveCurrentState, handleMouseDown]);
   
   // Handle canvas mouse move
   const onCanvasMouseMove = useCallback((e: any) => {
@@ -220,7 +221,7 @@ export const useCanvasEventHandlers = ({
       
       canvas.requestRenderAll();
     }
-  }, [fabricCanvasRef, tool, handleMouseMove, snapPointToGrid, snapLineToGrid, updateDistanceTooltip]);
+  }, [fabricCanvasRef, tool, snapPointToGrid, snapLineToGrid, updateDistanceTooltip, handleMouseMove]);
   
   // Handle canvas mouse up
   const onCanvasMouseUp = useCallback((e: any) => {
@@ -268,7 +269,8 @@ export const useCanvasEventHandlers = ({
           distanceTooltipRef.current.set({
             selectable: false,
             evented: true,
-            objectType: 'measurement'
+            objectType: 'measurement',
+            backgroundColor: 'rgba(255,255,255,0.9)',
           });
         }
         
@@ -289,7 +291,7 @@ export const useCanvasEventHandlers = ({
       
       canvas.requestRenderAll();
     }
-  }, [fabricCanvasRef, tool, handleMouseUp, snapPointToGrid, snapLineToGrid, updateDistanceTooltip]);
+  }, [fabricCanvasRef, tool, snapPointToGrid, snapLineToGrid, updateDistanceTooltip, handleMouseUp]);
   
   // Set up event listeners when component mounts or tool changes
   useEffect(() => {
@@ -304,9 +306,18 @@ export const useCanvasEventHandlers = ({
     canvas.on('mouse:up', onCanvasMouseUp);
     
     // Determine cursor based on the tool
-    if (tool === DrawingMode.STRAIGHT_LINE) {
+    if (tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.WALL) {
       canvas.defaultCursor = 'crosshair';
       canvas.hoverCursor = 'crosshair';
+    } else if (tool === DrawingMode.SELECT) {
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
+    } else if (tool === DrawingMode.ERASER) {
+      canvas.defaultCursor = 'not-allowed';
+      canvas.hoverCursor = 'not-allowed';
+    } else {
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'default';
     }
     
     // Clean up function

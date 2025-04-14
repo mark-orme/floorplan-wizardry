@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -40,9 +41,9 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
     { icon: <MousePointer size={16} />, tool: DrawingMode.SELECT, label: "Select" },
     { icon: <Pencil size={16} />, tool: DrawingMode.DRAW, label: "Draw" },
     { icon: <Wall size={16} />, tool: DrawingMode.WALL, label: "Wall" },
+    { icon: <Minus size={16} />, tool: DrawingMode.STRAIGHT_LINE, label: "Measure" },
     { icon: <Square size={16} />, tool: DrawingMode.RECTANGLE, label: "Rectangle" },
     { icon: <Circle size={16} />, tool: DrawingMode.CIRCLE, label: "Circle" },
-    { icon: <Minus size={16} />, tool: DrawingMode.STRAIGHT_LINE, label: "Line" },
     { icon: <Eraser size={16} />, tool: DrawingMode.ERASER, label: "Erase" }
   ];
 
@@ -92,9 +93,38 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               </div>
             )}
           </>
-        ) : (
+        ) : activeTool === DrawingMode.STRAIGHT_LINE ? (
           <>
             {onLineColorChange && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600">Line Color:</span>
+                <input 
+                  type="color" 
+                  value={lineColor} 
+                  onChange={(e) => onLineColorChange(e.target.value)}
+                  className="w-8 h-6 border-none"
+                />
+              </div>
+            )}
+            
+            {onLineThicknessChange && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600">Line Thickness:</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={lineThickness}
+                  onChange={(e) => onLineThicknessChange(parseInt(e.target.value, 10))}
+                  className="w-24"
+                />
+                <span className="text-xs">{lineThickness}px</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {onLineColorChange && activeTool !== DrawingMode.SELECT && activeTool !== DrawingMode.ERASER && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-600">Color:</span>
                 <input 
@@ -106,7 +136,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               </div>
             )}
             
-            {onLineThicknessChange && (
+            {onLineThicknessChange && activeTool !== DrawingMode.SELECT && activeTool !== DrawingMode.ERASER && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-600">Thickness:</span>
                 <input

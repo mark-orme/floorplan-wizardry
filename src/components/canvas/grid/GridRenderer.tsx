@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
@@ -40,19 +39,6 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
         const height = canvas.height || 600;
         
         // Create small grid lines (10px = 0.1m)
-        for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
-          const line = new Line([0, i, width, i], {
-            stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-            strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-            selectable: false,
-            evented: false,
-            objectType: 'grid',
-            isGrid: true
-          } as any);
-          canvas.add(line);
-          gridObjects.push(line);
-        }
-        
         for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
           const line = new Line([i, 0, i, height], {
             stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
@@ -66,9 +52,22 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
           gridObjects.push(line);
         }
         
-        // Create larger grid lines (100px = 1.0m)
-        for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+        for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
           const line = new Line([0, i, width, i], {
+            stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+            strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+            selectable: false,
+            evented: false,
+            objectType: 'grid',
+            isGrid: true
+          } as any);
+          canvas.add(line);
+          gridObjects.push(line);
+        }
+        
+        // Create larger grid lines (100px = 1.0m)
+        for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+          const line = new Line([i, 0, i, height], {
             stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
             strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
             selectable: false,
@@ -80,8 +79,8 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
           gridObjects.push(line);
         }
         
-        for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-          const line = new Line([i, 0, i, height], {
+        for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+          const line = new Line([0, i, width, i], {
             stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
             strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
             selectable: false,
@@ -98,8 +97,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
         
         // Send all grid objects to the back
         gridObjects.forEach(obj => {
-          // Fix: Use sendObjectToBack instead of sendToBack
-          canvas.sendObjectToBack(obj);
+          canvas.sendToBack(obj);
         });
         
         // Call callback if provided
@@ -135,7 +133,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
       // Reset created flag on cleanup
       gridCreatedRef.current = false;
     };
-  }, [canvas, showGrid, onGridCreated]); // Don't include other dependencies that might change frequently
+  }, [canvas, showGrid, onGridCreated]);
   
   return null; // This component doesn't render anything
 };
