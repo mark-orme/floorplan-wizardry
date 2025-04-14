@@ -170,7 +170,7 @@ export function forceGridCreationAndVisibility(
       });
     }
     
-    // Create new emergency grid
+    // Create new emergency grid with both small and large grid lines
     const gridItems = createBasicEmergencyGrid(canvas);
     
     if (gridItems.length === 0) {

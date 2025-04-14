@@ -27,7 +27,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onError,
   style,
   setDebugInfo,
-  tool,
+  tool = DrawingMode.SELECT,
   showGridDebug = true
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,6 +108,40 @@ export const Canvas: React.FC<CanvasProps> = ({
       }
     }
   }, [setDebugInfo]);
+
+  // Apply tool when it changes
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Handle tool changes
+    switch (tool) {
+      case DrawingMode.DRAW:
+        canvas.isDrawingMode = true;
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.width = 2;
+          canvas.freeDrawingBrush.color = "#000000";
+        }
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case DrawingMode.SELECT:
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        break;
+      case DrawingMode.ERASER:
+        canvas.isDrawingMode = false;
+        canvas.defaultCursor = 'cell';
+        break;
+      default:
+        canvas.isDrawingMode = false;
+        canvas.defaultCursor = 'crosshair';
+        break;
+    }
+    
+    canvas.renderAll();
+  }, [tool]);
 
   // Initialize canvas when component mounts
   useEffect(() => {

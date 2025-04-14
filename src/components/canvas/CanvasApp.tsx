@@ -13,6 +13,8 @@ import type { DebugInfoState } from "@/types/core/DebugInfo";
 import { Canvas as FabricCanvas } from "fabric";
 import { forceGridCreationAndVisibility } from "@/utils/grid/gridVisibility";
 import { toast } from "sonner";
+import { DrawingToolbar } from "@/components/canvas/DrawingToolbar";
+import { DrawingMode } from "@/constants/drawingModes";
 
 // Default dimensions for the canvas
 const DEFAULT_CANVAS_WIDTH = 800;
@@ -39,6 +41,8 @@ export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): 
     gridRendered: false,
     toolsInitialized: false
   }));
+  
+  const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
   
   const canvasRef = useRef<FabricCanvas | null>(null);
   const mountedRef = useRef<boolean>(true);
@@ -85,6 +89,34 @@ export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): 
     }, 500);
   }, []);
   
+  // Handle tool change
+  const handleToolChange = useCallback((tool: DrawingMode) => {
+    setActiveTool(tool);
+    
+    if (canvasRef.current) {
+      // Apply tool settings to canvas
+      const canvas = canvasRef.current;
+      
+      switch (tool) {
+        case DrawingMode.DRAW:
+          canvas.isDrawingMode = true;
+          canvas.freeDrawingBrush.width = 2;
+          canvas.freeDrawingBrush.color = "#000000";
+          break;
+        case DrawingMode.SELECT:
+          canvas.isDrawingMode = false;
+          canvas.selection = true;
+          break;
+        default:
+          canvas.isDrawingMode = false;
+          break;
+      }
+      
+      canvas.renderAll();
+      toast.success(`Switched to ${tool} tool`);
+    }
+  }, []);
+  
   // Clean up on unmount
   useEffect(() => {
     mountedRef.current = true;
@@ -108,7 +140,14 @@ export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): 
         onCanvasReady={handleCanvasReady}
         setDebugInfo={setDebugInfo}
         showGridDebug={showGridDebug}
+        tool={activeTool}
       />
+      <div className="absolute top-4 left-4">
+        <DrawingToolbar 
+          activeTool={activeTool} 
+          onToolChange={handleToolChange}
+        />
+      </div>
       <div className="absolute bottom-4 right-4">
         <button 
           className="px-4 py-2 bg-blue-500 text-white rounded"
