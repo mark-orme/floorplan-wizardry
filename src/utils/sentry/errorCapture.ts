@@ -1,3 +1,4 @@
+
 import * as Sentry from '@sentry/react';
 import logger from '../logger';
 import { isSentryInitialized } from './core';
@@ -227,9 +228,9 @@ function determineSeverity(error: Error): 'low' | 'medium' | 'high' {
  */
 function getDrawingContextInfo(): { tags: Record<string, string>, context: Record<string, any>, extra: Record<string, any> } {
   const result = {
-    tags: {},
-    context: {},
-    extra: {}
+    tags: {} as Record<string, string>,
+    context: {} as Record<string, any>,
+    extra: {} as Record<string, any>
   };
   
   try {

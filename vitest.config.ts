@@ -1,28 +1,38 @@
 
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react()],
   test: {
-    globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/tests/vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    globals: true,
+    setupFiles: './src/__tests__/setup.ts',
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov'],
-      exclude: ['node_modules/', 'src/tests/'],
-      lines: 70,
-      functions: 70,
-      branches: 60,
-      statements: 70
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/types/',
+        '**/*.d.ts',
+        'src/__tests__/',
+        '**/__tests__/**',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/index.ts',
+      ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 60,
+        statements: 70
+      }
     }
   },
   resolve: {
     alias: {
-      '@': '/src'
+      '@': resolve(__dirname, './src')
     }
   }
 });

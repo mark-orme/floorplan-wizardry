@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -109,9 +108,13 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       
       // Run validation after a brief delay to allow tool initialization
       setTimeout(() => {
-        // This is just for debugging purposes - check if global fabricCanvas exists in the window
-        if (typeof window !== 'undefined' && window.fabricCanvas) {
-          validateStraightLineDrawing(window.fabricCanvas, newTool);
+        // This is just for debugging purposes
+        try {
+          if (typeof window !== 'undefined' && (window as any).fabricCanvas) {
+            validateStraightLineDrawing((window as any).fabricCanvas, newTool);
+          }
+        } catch (error) {
+          logger.error('Error validating straight line tool', { error });
         }
       }, 100);
     }

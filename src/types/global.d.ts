@@ -28,4 +28,7 @@ interface Window {
     gridVisible?: boolean;
     lastOperation?: string;
   };
+
+  // For debugging purposes - temporary reference to canvas instance
+  fabricCanvas?: any;
 }
