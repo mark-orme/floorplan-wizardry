@@ -5,30 +5,96 @@
  */
 
 // Export content sanitization utilities
-export * from './htmlSanitization';
 export * from './contentSecurityPolicy';
 export * from './httpSecurity';
-export * from './inputSanitization';
+
+// Export from HTML sanitization with explicit naming to avoid conflicts
+import { sanitizeHtml as sanitizeHtmlContent, sanitizeRichHtml as sanitizeRichHtmlContent } from './htmlSanitization';
+export { 
+  sanitizeHtmlContent, 
+  sanitizeRichHtmlContent
+};
+
+// Export from input sanitization with explicit naming to avoid conflicts
+import { sanitizeHtml as sanitizeInputHtml } from './inputSanitization';
+export { 
+  sanitizeInputHtml
+};
+
+// Re-export other functions from inputSanitization
+export { 
+  sanitizeObject,
+  sanitizeUrl,
+  stripJavaScriptEvents
+} from './inputSanitization';
 
 // Create a unified Security namespace for easier imports
 export const Security = {
   // HTML sanitization
   HTML: {
-    sanitizeHtml: (html: string) => import('./htmlSanitization').then(m => m.sanitizeHtml(html)),
-    sanitizeRichHtml: (html: string) => import('./htmlSanitization').then(m => m.sanitizeRichHtml(html)),
-    sanitizeCanvasHtml: (html: string) => import('./htmlSanitization').then(m => m.sanitizeCanvasHtml(html))
+    sanitizeHtml: (html: string) => {
+      // Simple synchronous implementation
+      if (!html || typeof html !== 'string') return '';
+      return html.replace(/<\/?[^>]+(>|$)/g, '');
+    },
+    sanitizeRichHtml: (html: string) => {
+      // Simple synchronous implementation that preserves safe tags
+      if (!html || typeof html !== 'string') return '';
+      return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    },
+    sanitizeCanvasHtml: (html: string) => {
+      // Simple synchronous implementation for canvas content
+      if (!html || typeof html !== 'string') return '';
+      return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    }
   },
   
   // Input sanitization
   Input: {
-    sanitizeHtml: (input: string) => import('./inputSanitization').then(m => m.sanitizeHtml(input)),
-    sanitizeObject: <T extends Record<string, any>>(obj: T) => 
-      import('./inputSanitization').then(m => m.sanitizeObject<T>(obj)),
-    sanitizeUrl: (url: string) => import('./inputSanitization').then(m => m.sanitizeUrl(url)),
-    stripJavaScriptEvents: (input: string) => import('./inputSanitization').then(m => m.stripJavaScriptEvents(input))
+    sanitizeHtml: (input: string) => {
+      if (!input || typeof input !== 'string') return '';
+      return input.replace(/<\/?[^>]+(>|$)/g, '');
+    },
+    sanitizeObject: <T extends Record<string, any>>(obj: T): T => {
+      if (!obj || typeof obj !== 'object') return {} as T;
+      const sanitized = {} as T;
+      
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          const value = obj[key];
+          
+          if (typeof value === 'string') {
+            sanitized[key] = value.replace(/<\/?[^>]+(>|$)/g, '') as any;
+          } else if (typeof value === 'object' && value !== null) {
+            sanitized[key] = Security.Input.sanitizeObject(value);
+          } else {
+            sanitized[key] = value;
+          }
+        }
+      }
+      
+      return sanitized;
+    },
+    sanitizeUrl: (url: string) => {
+      if (!url || typeof url !== 'string') return '';
+      
+      // Only allow http:, https: and mailto: protocols
+      if (!/^(https?|mailto):/i.test(url)) {
+        return '';
+      }
+      
+      // Remove any potentially harmful characters
+      return url.replace(/[^\w:/?=#&%~.@!$'()*+,;[\]-]/gi, '');
+    },
+    stripJavaScriptEvents: (input: string) => {
+      if (!input || typeof input !== 'string') return '';
+      
+      // Remove JavaScript event handlers (onclick, onload, etc.)
+      return input.replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^>\s]*)/gi, '');
+    }
   },
   
-  // File handling
+  // Files handling
   Files: {
     sanitizeFileName: (fileName: string) => {
       if (!fileName || typeof fileName !== 'string') return '';
@@ -95,15 +161,62 @@ export const Security = {
   
   // CSP utilities
   CSP: {
-    initializeCSP: () => import('./contentSecurityPolicy').then(m => m.initializeCSP()),
-    getCSPHeaders: () => import('./contentSecurityPolicy').then(m => m.getCSPHeaders())
+    initializeCSP: () => {
+      // Implement CSP initialization synchronously
+      if (typeof document !== 'undefined') {
+        const meta = document.createElement('meta');
+        meta.httpEquiv = 'Content-Security-Policy';
+        meta.content = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'";
+        document.head.appendChild(meta);
+      }
+    },
+    getCSPHeaders: () => {
+      return {
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+      };
+    }
   },
   
   // HTTP security
   HTTP: {
-    secureFetch: (url: string, options?: RequestInit) => 
-      import('./httpSecurity').then(m => m.secureFetch(url, options)),
-    applySecurityMetaTags: () => import('./httpSecurity').then(m => m.applySecurityMetaTags())
+    secureFetch: (url: string, options?: RequestInit) => {
+      // Add security headers to fetch
+      const secureOptions = options || {};
+      secureOptions.headers = secureOptions.headers || {};
+      
+      // Add CSRF token if available
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const token = window.sessionStorage.getItem('csrf_token');
+        if (token && secureOptions.headers instanceof Headers) {
+          secureOptions.headers.append('X-CSRF-Token', token);
+        } else if (token && typeof secureOptions.headers === 'object') {
+          secureOptions.headers = {
+            ...secureOptions.headers,
+            'X-CSRF-Token': token
+          };
+        }
+      }
+      
+      return fetch(url, secureOptions);
+    },
+    applySecurityMetaTags: () => {
+      if (typeof document !== 'undefined') {
+        // Add security meta tags
+        const securityTags = [
+          { httpEquiv: 'X-Content-Type-Options', content: 'nosniff' },
+          { httpEquiv: 'X-Frame-Options', content: 'DENY' },
+          { name: 'referrer', content: 'no-referrer' }
+        ];
+        
+        securityTags.forEach(tagData => {
+          const meta = document.createElement('meta');
+          Object.entries(tagData).forEach(([key, value]) => {
+            meta[key as keyof HTMLMetaElement] = value;
+          });
+          document.head.appendChild(meta);
+        });
+      }
+    }
   },
   
   // CSRF protection

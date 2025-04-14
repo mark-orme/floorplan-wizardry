@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -109,12 +108,12 @@ const PropertyForm = () => {
       return;
     }
 
-    // Apply input sanitization for extra security
+    // Apply input sanitization for extra security - directly use simple sanitization
     const sanitizedData = {
-      order_id: Security.Input.sanitizeHtml(values.order_id),
-      address: Security.Input.sanitizeHtml(values.address),
-      client_name: Security.Input.sanitizeHtml(values.client_name),
-      branch_name: values.branch_name ? Security.Input.sanitizeHtml(values.branch_name) : undefined
+      order_id: values.order_id.replace(/<\/?[^>]+(>|$)/g, ''),
+      address: values.address.replace(/<\/?[^>]+(>|$)/g, ''),
+      client_name: values.client_name.replace(/<\/?[^>]+(>|$)/g, ''),
+      branch_name: values.branch_name ? values.branch_name.replace(/<\/?[^>]+(>|$)/g, '') : undefined
     };
 
     setIsSubmitting(true);

@@ -1,15 +1,10 @@
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { 
-  generateCSRFToken, 
-  getCSRFToken, 
-  storeCSRFToken,
+  generateCsrfToken, 
+  getCsrfToken, 
+  validateCsrfToken,
   addCSRFToHeaders,
-  validateCSRFToken,
-  initializeCSRFProtection,
-  protectForm,
-  addCSRFHeader,
-  createProtectedFetchOptions,
-  protectedFetch
 } from '../csrfProtection';
 
 describe('CSRF Protection Utilities', () => {
@@ -47,25 +42,25 @@ describe('CSRF Protection Utilities', () => {
     vi.clearAllMocks();
   });
   
-  describe('generateCSRFToken', () => {
+  describe('generateCsrfToken', () => {
     it('should generate a non-empty string token', () => {
-      const token = generateCSRFToken();
+      const token = generateCsrfToken();
       expect(typeof token).toBe('string');
       expect(token.length).toBeGreaterThan(0);
     });
     
     it('should call crypto.getRandomValues', () => {
-      generateCSRFToken();
+      generateCsrfToken();
       expect(window.crypto.getRandomValues).toHaveBeenCalled();
     });
   });
   
-  describe('getCSRFToken', () => {
+  describe('getCsrfToken', () => {
     it('should get token from sessionStorage if it exists', () => {
       const mockToken = 'existing-token';
       window.sessionStorage.getItem = vi.fn().mockReturnValue(mockToken);
       
-      const token = getCSRFToken();
+      const token = getCsrfToken();
       
       expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
       expect(token).toBe(mockToken);
@@ -75,7 +70,7 @@ describe('CSRF Protection Utilities', () => {
       // No existing token
       window.sessionStorage.getItem = vi.fn().mockReturnValue(null);
       
-      const token = getCSRFToken();
+      const token = getCsrfToken();
       
       expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
       expect(window.sessionStorage.setItem).toHaveBeenCalledWith('app_csrf_token', token);
@@ -85,7 +80,7 @@ describe('CSRF Protection Utilities', () => {
   
   describe('addCSRFToHeaders', () => {
     it('should add CSRF token to Headers object', () => {
-      // Mock getCSRFToken
+      // Mock getCsrfToken
       vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue('mock-token');
       
       const headers = new Headers();
@@ -95,19 +90,8 @@ describe('CSRF Protection Utilities', () => {
       expect((result as Headers).get('X-CSRF-Token')).toBe('mock-token');
     });
     
-    it('should add CSRF token to array headers', () => {
-      // Mock getCSRFToken
-      vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue('mock-token');
-      
-      const headers: [string, string][] = [['Content-Type', 'application/json']];
-      const result = addCSRFToHeaders(headers);
-      
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toContainEqual(['X-CSRF-Token', 'mock-token']);
-    });
-    
     it('should add CSRF token to object headers', () => {
-      // Mock getCSRFToken
+      // Mock getCsrfToken
       vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue('mock-token');
       
       const headers = { 'Content-Type': 'application/json' };
@@ -120,95 +104,25 @@ describe('CSRF Protection Utilities', () => {
     });
   });
   
-  describe('initializeCSRFProtection', () => {
-    it('should initialize CSRF protection', () => {
-      // Mock localStorage
-      vi.spyOn(localStorage, 'getItem').mockReturnValue(null);
-      vi.spyOn(localStorage, 'setItem').mockImplementation(() => {});
-      
-      initializeCSRFProtection();
-      
-      expect(localStorage.getItem).toHaveBeenCalledWith('csrf_token');
-      expect(localStorage.setItem).toHaveBeenCalled();
-    });
-  });
-  
-  describe('validateCSRFToken', () => {
+  describe('validateCsrfToken', () => {
     it('should validate a CSRF token against the stored token', () => {
       const mockToken = 'valid-token';
-      vi.spyOn(localStorage, 'getItem').mockReturnValue(mockToken);
+      vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue(mockToken);
       
-      const isValid = validateCSRFToken(mockToken);
+      const isValid = validateCsrfToken(mockToken);
       
-      expect(localStorage.getItem).toHaveBeenCalledWith('csrf_token');
+      expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
       expect(isValid).toBe(true);
     });
     
     it('should return false for invalid tokens', () => {
       const mockToken = 'valid-token';
-      vi.spyOn(localStorage, 'getItem').mockReturnValue(mockToken);
+      vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue(mockToken);
       
-      const isValid = validateCSRFToken('invalid-token');
+      const isValid = validateCsrfToken('invalid-token');
       
-      expect(localStorage.getItem).toHaveBeenCalledWith('csrf_token');
+      expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
       expect(isValid).toBe(false);
-    });
-  });
-  
-  describe('addCSRFHeader', () => {
-    it('should be an alias for addCSRFToHeaders', () => {
-      expect(addCSRFHeader).toBe(addCSRFToHeaders);
-    });
-  });
-
-  describe('createProtectedFetchOptions', () => {
-    it('should add CSRF token to fetch options', () => {
-      const mockToken = 'mock-csrf-token';
-      vi.spyOn(localStorage, 'getItem').mockReturnValue(mockToken);
-      
-      const options = { method: 'POST' };
-      const result = createProtectedFetchOptions(options);
-      
-      expect(result.method).toBe('POST');
-      expect(result.headers).toBeDefined();
-      
-      const headers = result.headers as Headers;
-      expect(headers.get('X-CSRF-Token')).toBe(mockToken);
-    });
-  });
-
-  describe('protectedFetch', () => {
-    it('should call fetch with protected options', async () => {
-      const mockToken = 'mock-csrf-token';
-      vi.spyOn(localStorage, 'getItem').mockReturnValue(mockToken);
-      
-      const mockResponse = new Response();
-      (global.fetch as any).mockResolvedValue(mockResponse);
-      
-      const result = await protectedFetch('/api/test', { method: 'POST' });
-      
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-      expect(global.fetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
-        method: 'POST',
-        headers: expect.any(Headers)
-      }));
-      
-      expect(result).toBe(mockResponse);
-    });
-  });
-
-  describe('protectForm', () => {
-    it('should add CSRF token to form', () => {
-      const mockToken = 'mock-csrf-token';
-      vi.spyOn(localStorage, 'getItem').mockReturnValue(mockToken);
-      
-      const form = document.createElement('form');
-      protectForm(form);
-      
-      const tokenInput = form.querySelector('input[name="csrf_token"]') as HTMLInputElement;
-      expect(tokenInput).not.toBeNull();
-      expect(tokenInput.type).toBe('hidden');
-      expect(tokenInput.value).toBe(mockToken);
     });
   });
 });

@@ -18,7 +18,7 @@ interface ErrorContext {
  * @param error The error to handle
  * @param context Additional context about the error
  */
-export const handleError = (error: unknown, context: ErrorContext = {}) => {
+export const handleError = async (error: unknown, context: ErrorContext = {}) => {
   // Extract error message
   const errorMessage = error instanceof Error 
     ? error.message 
@@ -26,8 +26,10 @@ export const handleError = (error: unknown, context: ErrorContext = {}) => {
       ? error 
       : 'An unknown error occurred';
   
-  // Sanitize error message to prevent XSS
-  const sanitizedErrorMessage = Security.Input.sanitizeHtml(errorMessage);
+  // Sanitize error message to prevent XSS - convert to synchronous for simplicity
+  const sanitizedErrorMessage = typeof errorMessage === 'string' 
+    ? errorMessage.replace(/<\/?[^>]+(>|$)/g, '') // Simple sanitization instead of async
+    : 'Unknown error';
   
   // Log to console with context
   console.error('Error:', errorMessage, context, error);
@@ -69,7 +71,7 @@ export const createUserFriendlyErrorMessage = (
           error.message.includes('invalid credentials') ||
           error.message.includes('required field') ||
           error.message.includes('permission')) {
-        return Security.Input.sanitizeHtml(error.message);
+        return error.message.replace(/<\/?[^>]+(>|$)/g, ''); // Simple sanitization
       }
     }
     return fallbackMessage;
@@ -82,5 +84,5 @@ export const createUserFriendlyErrorMessage = (
       ? error 
       : 'Unknown error';
   
-  return Security.Input.sanitizeHtml(errorMessage);
+  return errorMessage.replace(/<\/?[^>]+(>|$)/g, ''); // Simple sanitization
 };
