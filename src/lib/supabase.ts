@@ -18,7 +18,6 @@ export const supabase = {
   auth: {
     getUser: async () => ({ data: { user: null }, error: null }),
     signIn: async () => ({ data: null, error: null }),
-    signUp: async () => ({ data: { user: null }, error: null }),
     signOut: async () => ({ error: null }),
     signInWithPassword: async () => ({ data: { user: null, session: null }, error: null }),
     getSession: async () => ({ data: { session: null }, error: null }),
@@ -58,21 +57,27 @@ export const supabase = {
       error: null,
       eq: (field: string, value: any) => ({
         data: [],
-        error: null
+        error: null,
+        single: () => ({ data: null, error: null }),
+        maybeSingle: () => ({ data: null, error: null })
       }),
       in: (field: string, values: any[]) => ({
         data: [],
         error: null,
         eq: (field: string, value: any) => ({
           data: [],
-          error: null
+          error: null,
+          single: () => ({ data: null, error: null }),
+          maybeSingle: () => ({ data: null, error: null })
         }),
         order: (field: string, options: any) => ({
           data: [],
           error: null,
           eq: (field: string, value: any) => ({
             data: [],
-            error: null
+            error: null,
+            single: () => ({ data: null, error: null }),
+            maybeSingle: () => ({ data: null, error: null })
           })
         })
       }),
@@ -81,11 +86,15 @@ export const supabase = {
         error: null,
         eq: (field: string, value: any) => ({
           data: [],
-          error: null
+          error: null,
+          single: () => ({ data: null, error: null }),
+          maybeSingle: () => ({ data: null, error: null })
         }),
         in: (field: string, values: any[]) => ({
           data: [],
-          error: null
+          error: null,
+          single: () => ({ data: null, error: null }),
+          maybeSingle: () => ({ data: null, error: null })
         })
       }),
       limit: (num: number) => ({
@@ -93,12 +102,16 @@ export const supabase = {
         error: null,
         eq: (field: string, value: any) => ({
           data: [],
-          error: null
-        })
+          error: null,
+          single: () => ({ data: null, error: null }),
+          maybeSingle: () => ({ data: null, error: null })
+        }),
+        single: () => ({ data: null, error: null }),
+        maybeSingle: () => ({ data: null, error: null })
       })
     }),
     insert: (data: any) => {
-      const result = { data: null, error: null };
+      const result = { data: [], error: null };
       return {
         ...result,
         select: () => ({ data: [], error: null })
@@ -106,10 +119,10 @@ export const supabase = {
     },
     update: (data: any) => {
       return {
-        data: null,
+        data: [],
         error: null,
         eq: (field: string, value: any) => ({
-          data: null,
+          data: [],
           error: null,
           select: () => ({ data: [], error: null })
         }),
@@ -126,7 +139,9 @@ export const supabase = {
     }),
     eq: (field: string, value: any) => ({
       data: [],
-      error: null
+      error: null,
+      single: () => ({ data: null, error: null }),
+      maybeSingle: () => ({ data: null, error: null })
     })
   })
 };

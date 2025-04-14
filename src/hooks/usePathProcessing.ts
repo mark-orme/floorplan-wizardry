@@ -1,3 +1,4 @@
+
 /**
  * Path processing hook
  * Handles processing of drawing paths
@@ -74,11 +75,11 @@ const drawingToolToStrokeType = (tool?: DrawingTool): StrokeTypeLiteral => {
     case 'wall':
       return 'wall';
     case 'room':
-      return 'room';
+      return 'line'; // Changed from 'room' to 'line' to match StrokeTypeLiteral
     case 'line':
       return 'line';
     case 'draw':
-      return 'freehand';
+      return 'line'; // Changed from 'freehand' to 'line' to match StrokeTypeLiteral
     default:
       return 'line';
   }

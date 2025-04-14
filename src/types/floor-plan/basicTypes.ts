@@ -20,8 +20,9 @@ export enum PaperSize {
 
 /**
  * Stroke type literal for drawing types
+ * Ensure this matches the main floorPlanTypes.ts StrokeTypeLiteral
  */
-export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
+export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
 
 /**
  * Stroke type (same as StrokeTypeLiteral for backward compatibility)

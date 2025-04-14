@@ -8,6 +8,7 @@
 import { useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DebugInfoState } from "@/types/debugTypes";
+import { StrokeTypeLiteral } from "@/types/floorPlanTypes";
 
 /**
  * Timeout duration for loading operations in milliseconds
@@ -102,9 +103,20 @@ export const useCanvasControllerLoader = ({
     });
   };
   
+  // Map of allowed stroke types matching StrokeTypeLiteral
+  const strokeTypeMap: Record<string, StrokeTypeLiteral> = {
+    'line': 'line',
+    'wall': 'wall',
+    'door': 'door',
+    'window': 'window',
+    'furniture': 'furniture',
+    'annotation': 'annotation'
+  };
+  
   return {
     isLoading,
     setIsLoading,
-    handleError
+    handleError,
+    strokeTypeMap
   };
 };

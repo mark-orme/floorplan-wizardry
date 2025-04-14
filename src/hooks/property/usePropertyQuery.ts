@@ -29,19 +29,22 @@ export const usePropertyQuery = () => {
     console.log("Fetching properties for user:", user.id, "with role:", userRole);
 
     try {
-      let query = supabase.from('properties').select();
+      const query = supabase.from('properties').select();
 
       // Apply filters based on role
+      let filteredQuery;
       if (userRole === UserRole.PHOTOGRAPHER) {
         // Photographers can only see their own properties
-        query = query.eq('created_by', user.id);
+        filteredQuery = query.eq('created_by', user.id);
       } else if (userRole === UserRole.PROCESSING_MANAGER) {
         // Processing managers can only see properties in review or completed
-        query = query.in('status', [PropertyStatus.PENDING_REVIEW, PropertyStatus.COMPLETED]);
+        filteredQuery = query.in('status', [PropertyStatus.PENDING_REVIEW, PropertyStatus.COMPLETED]);
+      } else {
+        // Managers can see all properties
+        filteredQuery = query;
       }
-      // Managers can see all properties
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      const { data, error } = await filteredQuery.order('created_at', { ascending: false });
 
       if (error) {
         console.error("Supabase error when loading properties:", error);

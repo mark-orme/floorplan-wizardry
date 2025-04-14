@@ -15,7 +15,7 @@ export enum PaperSize {
   LETTER = 'Letter'
 }
 
-export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation';
+export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
 export type StrokeType = StrokeTypeLiteral;
 
 export type RoomTypeLiteral = 'kitchen' | 'bathroom' | 'bedroom' | 'living' | 'dining' | 'office' | 'hallway' | 'other';

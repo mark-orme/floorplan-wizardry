@@ -30,21 +30,24 @@ const fetchProperties = async ({ userId, userRole, filters }: ListPropertiesPara
     return [];
   }
 
-  let query = supabase.from('properties').select();
+  const query = supabase.from('properties').select();
 
   // Apply filters based on role
+  let filteredQuery;
   if (userRole === 'photographer') {
-    query = query.eq('created_by', userId);
+    filteredQuery = query.eq('created_by', userId);
   } else if (userRole === 'processing_manager') {
     if (filters?.status?.length) {
-      query = query.in('status', filters.status);
+      filteredQuery = query.in('status', filters.status);
     } else {
-      query = query.in('status', [PropertyStatus.PENDING_REVIEW, PropertyStatus.COMPLETED]);
+      filteredQuery = query.in('status', [PropertyStatus.PENDING_REVIEW, PropertyStatus.COMPLETED]);
     }
+  } else {
+    filteredQuery = query;
   }
 
   // Execute the query
-  const { data, error } = await query.order('created_at', { ascending: false });
+  const { data, error } = await filteredQuery.order('created_at', { ascending: false });
 
   if (error) {
     throw new Error(error.message);

@@ -58,10 +58,7 @@ export const createTestUsers = async (): Promise<void> => {
       }
 
       // Create auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signInWithPassword({
-        email: testUser.email,
-        password: testUser.password
-      });
+      const { data: authData, error: signUpError } = await supabase.auth.signInWithPassword();
 
       if (signUpError) {
         console.error(`Error creating auth user ${testUser.email}:`, signUpError);
@@ -108,10 +105,7 @@ export const verifyTestUsers = async (): Promise<boolean[]> => {
   for (const testUser of testUsers) {
     try {
       // Try to sign in with each test user
-      const { error } = await supabase.auth.signInWithPassword({
-        email: testUser.email,
-        password: testUser.password
-      });
+      const { error } = await supabase.auth.signInWithPassword();
 
       if (error) {
         console.error(`Test user ${testUser.email} verification failed:`, error);

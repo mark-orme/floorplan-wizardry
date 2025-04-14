@@ -86,10 +86,10 @@ export function addCSRFHeader(headers: Headers | Record<string, string> = {}): H
  */
 export function createProtectedFetchOptions(options: RequestInit = {}): RequestInit {
   // Extract existing headers
-  const existingHeaders = options.headers || {};
+  const headersInit: Headers | Record<string, string> = options.headers || {};
   
   // Add CSRF token to headers
-  const headers = addCSRFHeader(existingHeaders as Headers | Record<string, string>);
+  const headers = addCSRFHeader(headersInit);
   
   return {
     ...options,
