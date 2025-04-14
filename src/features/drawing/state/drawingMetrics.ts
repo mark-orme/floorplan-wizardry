@@ -1,18 +1,13 @@
 
+/**
+ * Drawing metrics tracking
+ * Tracks drawing tool usage and object operations
+ */
 import { DrawingMode } from '@/constants/drawingModes';
 
-// Tracking metrics for drawing operations
-interface DrawingMetrics {
-  toolUsageDuration: Record<DrawingMode, number>;
-  toolSwitchCount: number;
-  objectsCreated: number;
-  objectsDeleted: number;
-  objectsModified: number;
-  lastActiveTimestamp: number;
-}
-
-// Global state for drawing metrics
-let metrics: DrawingMetrics = {
+// Initial state for drawing metrics
+const initialMetrics = {
+  toolSwitchCount: 0,
   toolUsageDuration: {
     [DrawingMode.SELECT]: 0,
     [DrawingMode.DRAW]: 0,
@@ -24,111 +19,145 @@ let metrics: DrawingMetrics = {
     [DrawingMode.HAND]: 0,
     [DrawingMode.WALL]: 0,
     [DrawingMode.ROOM]: 0,
+    [DrawingMode.LINE]: 0,
+    [DrawingMode.MEASURE]: 0,
+    [DrawingMode.PAN]: 0
   },
-  toolSwitchCount: 0,
   objectsCreated: 0,
-  objectsDeleted: 0,
   objectsModified: 0,
-  lastActiveTimestamp: Date.now()
+  objectsDeleted: 0,
+  lastToolChange: Date.now(),
+  currentTool: DrawingMode.SELECT,
+  sessionStart: Date.now(),
+  sessionId: `drawing-session-${Date.now()}`,
+  drawingEvents: [] as { timestamp: number; event: string; tool: DrawingMode }[]
 };
 
-// Tracking current tool state
-let currentTool: DrawingMode = DrawingMode.SELECT;
-let toolStartTime: number = Date.now();
+// Current metrics state
+let metricsState = { ...initialMetrics };
 
 /**
- * Register a tool change for metrics collection
- * @param tool The newly selected tool
+ * Register a tool change event
+ * @param tool New tool selected
  */
 export function registerToolChange(tool: DrawingMode): void {
   const now = Date.now();
+  const previousTool = metricsState.currentTool;
+  const usageDuration = now - metricsState.lastToolChange;
   
-  // Update duration for the previous tool
-  const duration = now - toolStartTime;
-  metrics.toolUsageDuration[currentTool] += duration;
+  // Update tool usage duration
+  metricsState.toolUsageDuration[previousTool] += usageDuration;
   
-  // Track the switch
-  metrics.toolSwitchCount++;
+  // Update metrics
+  metricsState.toolSwitchCount++;
+  metricsState.lastToolChange = now;
+  metricsState.currentTool = tool;
   
-  // Update state
-  currentTool = tool;
-  toolStartTime = now;
-  metrics.lastActiveTimestamp = now;
+  // Record drawing event
+  metricsState.drawingEvents.push({
+    timestamp: now,
+    event: 'tool-change',
+    tool
+  });
   
-  // Update global state for Sentry
-  if (typeof window !== 'undefined' && window.__app_state?.drawing) {
-    window.__app_state.drawing.currentTool = tool;
+  // Log to console for debugging
+  console.log(`Tool changed from ${previousTool} to ${tool} after ${usageDuration}ms of usage`);
+  
+  // Update window app state for debugging and error reporting
+  if (typeof window !== 'undefined' && window.__app_state) {
+    window.__app_state.drawing = {
+      ...window.__app_state.drawing,
+      currentTool: tool
+    };
   }
 }
 
 /**
- * Register object creation
+ * Register an object creation event
  */
 export function registerObjectCreated(): void {
-  metrics.objectsCreated++;
-  metrics.lastActiveTimestamp = Date.now();
+  metricsState.objectsCreated++;
+  
+  // Record drawing event
+  metricsState.drawingEvents.push({
+    timestamp: Date.now(),
+    event: 'object-created',
+    tool: metricsState.currentTool
+  });
 }
 
 /**
- * Register object deletion
- */
-export function registerObjectDeleted(): void {
-  metrics.objectsDeleted++;
-  metrics.lastActiveTimestamp = Date.now();
-}
-
-/**
- * Register object modification
+ * Register an object modification event
  */
 export function registerObjectModified(): void {
-  metrics.objectsModified++;
-  metrics.lastActiveTimestamp = Date.now();
+  metricsState.objectsModified++;
+  
+  // Record drawing event
+  metricsState.drawingEvents.push({
+    timestamp: Date.now(),
+    event: 'object-modified',
+    tool: metricsState.currentTool
+  });
 }
 
 /**
- * Get current drawing metrics
- * @returns Current metrics snapshot
+ * Register an object deletion event
  */
-export function getDrawingMetrics(): DrawingMetrics {
-  // Update the current tool's duration first
-  const now = Date.now();
-  const currentDuration = now - toolStartTime;
+export function registerObjectDeleted(): void {
+  metricsState.objectsDeleted++;
   
-  // Return a copy with the updated duration
+  // Record drawing event
+  metricsState.drawingEvents.push({
+    timestamp: Date.now(),
+    event: 'object-deleted',
+    tool: metricsState.currentTool
+  });
+}
+
+/**
+ * Get the current drawing metrics
+ * @returns Current metrics state
+ */
+export function getDrawingMetrics() {
+  // Calculate session duration
+  const sessionDuration = Date.now() - metricsState.sessionStart;
+  
   return {
-    ...metrics,
+    ...metricsState,
+    sessionDuration,
     toolUsageDuration: {
-      ...metrics.toolUsageDuration,
-      [currentTool]: metrics.toolUsageDuration[currentTool] + currentDuration
+      [DrawingMode.SELECT]: metricsState.toolUsageDuration[DrawingMode.SELECT],
+      [DrawingMode.DRAW]: metricsState.toolUsageDuration[DrawingMode.DRAW],
+      [DrawingMode.STRAIGHT_LINE]: metricsState.toolUsageDuration[DrawingMode.STRAIGHT_LINE],
+      [DrawingMode.RECTANGLE]: metricsState.toolUsageDuration[DrawingMode.RECTANGLE],
+      [DrawingMode.CIRCLE]: metricsState.toolUsageDuration[DrawingMode.CIRCLE],
+      [DrawingMode.TEXT]: metricsState.toolUsageDuration[DrawingMode.TEXT],
+      [DrawingMode.ERASER]: metricsState.toolUsageDuration[DrawingMode.ERASER],
+      [DrawingMode.HAND]: metricsState.toolUsageDuration[DrawingMode.HAND],
+      [DrawingMode.WALL]: metricsState.toolUsageDuration[DrawingMode.WALL],
+      [DrawingMode.ROOM]: metricsState.toolUsageDuration[DrawingMode.ROOM],
+      [DrawingMode.LINE]: metricsState.toolUsageDuration[DrawingMode.LINE],
+      [DrawingMode.MEASURE]: metricsState.toolUsageDuration[DrawingMode.MEASURE],
+      [DrawingMode.PAN]: metricsState.toolUsageDuration[DrawingMode.PAN]
     }
   };
 }
 
 /**
- * Reset drawing metrics (e.g., for a new session)
+ * Reset drawing metrics
  */
 export function resetDrawingMetrics(): void {
-  // Create fresh metrics object
-  metrics = {
-    toolUsageDuration: {
-      [DrawingMode.SELECT]: 0,
-      [DrawingMode.DRAW]: 0,
-      [DrawingMode.STRAIGHT_LINE]: 0,
-      [DrawingMode.RECTANGLE]: 0,
-      [DrawingMode.CIRCLE]: 0,
-      [DrawingMode.TEXT]: 0,
-      [DrawingMode.ERASER]: 0,
-      [DrawingMode.HAND]: 0,
-      [DrawingMode.WALL]: 0,
-      [DrawingMode.ROOM]: 0,
-    },
-    toolSwitchCount: 0,
-    objectsCreated: 0,
-    objectsDeleted: 0,
-    objectsModified: 0,
-    lastActiveTimestamp: Date.now()
+  metricsState = { 
+    ...initialMetrics,
+    sessionStart: Date.now(),
+    sessionId: `drawing-session-${Date.now()}`
   };
-  
-  // Reset timing info
-  toolStartTime = Date.now();
+}
+
+/**
+ * Get the current session ID
+ * @returns Current drawing session ID
+ */
+export function getDrawingSessionId(): string {
+  return metricsState.sessionId;
 }

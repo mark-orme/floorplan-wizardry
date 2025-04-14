@@ -1,292 +1,211 @@
 
-import { useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+/**
+ * Canvas Observability Hook
+ * Provides comprehensive monitoring and reporting for canvas activity
+ */
+import { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage, captureError } from '@/utils/sentry';
+import { getDrawingSessionId } from '@/features/drawing/state/drawingMetrics';
 import logger from '@/utils/logger';
-import { v4 as uuidv4 } from 'uuid';
+import { useToolMonitoring } from '@/features/drawing/hooks/useToolMonitoring';
+import DOMPurify from 'dompurify';
 
-export interface CanvasOperation {
-  type: 'create' | 'modify' | 'delete' | 'clear' | 'zoom' | 'pan' | 'tool-change';
-  timestamp: number;
-  tool?: DrawingMode;
-  objectCount?: number;
-  objectIds?: string[];
-  metadata?: Record<string, any>;
+// Define canvas event types for type safety
+interface CanvasEvents {
+  'object:added': { target: any };
+  'object:modified': { target: any };
+  'object:removed': { target: any };
+  'path:created': { path: any };
+  'selection:created': { selected: any[] };
+  'selection:updated': { selected: any[] };
+  'selection:cleared': { deselected: any[] };
+  'mouse:down': { e: MouseEvent; pointer: { x: number; y: number } };
+  'mouse:move': { e: MouseEvent; pointer: { x: number; y: number } };
+  'mouse:up': { e: MouseEvent; pointer: { x: number; y: number } };
+  'zoom:changed': { zoom: number };
+}
+
+interface UseCanvasObservabilityProps {
+  canvas: FabricCanvas | null;
+  tool: DrawingMode;
+  lineThickness?: number;
+  lineColor?: string;
+  wallThickness?: number;
+  wallColor?: string;
 }
 
 /**
- * Hook for tracking canvas operations and logging for observability
- * Enriches Sentry events with drawing context
+ * Hook to provide observability for canvas activities
  */
-export const useCanvasObservability = (
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  currentTool: DrawingMode
-) => {
-  // Create and maintain session ID for this drawing session
-  const sessionIdRef = useRef<string>('');
-  const operationsRef = useRef<CanvasOperation[]>([]);
-  const lastToolRef = useRef<DrawingMode>(currentTool);
+export const useCanvasObservability = ({
+  canvas,
+  tool,
+  lineThickness,
+  lineColor,
+  wallThickness,
+  wallColor
+}: UseCanvasObservabilityProps) => {
+  const sessionIdRef = useRef<string>(getDrawingSessionId());
+  const operationCountRef = useRef<Record<string, number>>({});
+  const errorCountRef = useRef<number>(0);
+  const lastRenderTimeRef = useRef<number>(0);
   
-  // Initialize session tracking
-  useEffect(() => {
-    // Generate unique session ID if not already set
-    if (!sessionIdRef.current) {
-      sessionIdRef.current = uuidv4();
-      
-      // Store in sessionStorage for Sentry context
-      window.sessionStorage.setItem('drawingSessionId', sessionIdRef.current);
-      window.sessionStorage.setItem('sessionStartTime', Date.now().toString());
-      window.sessionStorage.setItem('canvasOperationsCount', '0');
-      
-      // Initialize tracking in global window object for Sentry access
-      if (typeof window !== 'undefined') {
-        // Ensure app_state exists
-        window.__app_state = window.__app_state || {};
-        window.__app_state.drawing = window.__app_state.drawing || {};
-        window.__app_state.drawing.currentTool = currentTool;
-        
-        // Initialize canvas state
-        window.__canvas_state = window.__canvas_state || {};
-      }
-      
-      logger.info('Canvas session initialized', {
-        sessionId: sessionIdRef.current,
-        initialTool: currentTool
-      });
-      
-      // Log to Sentry for session tracking
-      captureMessage(
-        'Drawing session started',
-        'drawing-session-start',
-        {
-          tags: {
-            sessionId: sessionIdRef.current,
-            initialTool: currentTool
-          },
-          extra: {
-            timestamp: Date.now(),
-            userAgent: navigator.userAgent
-          }
-        }
-      );
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      // Log session end
-      const operationCount = operationsRef.current.length;
-      logger.info('Canvas session ended', {
-        sessionId: sessionIdRef.current,
-        operationCount,
-        sessionDuration: Date.now() - Number(window.sessionStorage.getItem('sessionStartTime') || 0)
-      });
-      
-      // Clear session storage
-      window.sessionStorage.removeItem('drawingSessionId');
-      window.sessionStorage.removeItem('sessionStartTime');
-      window.sessionStorage.removeItem('canvasOperationsCount');
-    };
-  }, [currentTool]);
+  // Use the tool monitoring hook
+  useToolMonitoring(tool);
   
-  // Track tool changes
+  // Initialize canvas monitoring
   useEffect(() => {
-    if (lastToolRef.current !== currentTool) {
-      // Update global state for Sentry
-      if (window.__app_state?.drawing) {
-        window.__app_state.drawing.currentTool = currentTool;
-      }
-      
-      // Log tool change
-      trackOperation({
-        type: 'tool-change',
-        timestamp: Date.now(),
-        tool: currentTool,
-        metadata: {
-          previousTool: lastToolRef.current
-        }
-      });
-      
-      lastToolRef.current = currentTool;
-    }
-  }, [currentTool]);
-  
-  // Update canvas dimensions for Sentry whenever the canvas changes
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    const updateCanvasDimensions = () => {
-      // Update global state for Sentry access
-      if (window.__canvas_state) {
-        window.__canvas_state.width = canvas.width;
-        window.__canvas_state.height = canvas.height;
-        window.__canvas_state.zoom = canvas.getZoom();
-        window.__canvas_state.objectCount = canvas.getObjects().length;
+    const now = Date.now();
+    lastRenderTimeRef.current = now;
+    
+    // Update window.__canvas_state for improved debugging
+    if (typeof window !== 'undefined') {
+      window.__canvas_state = {
+        width: canvas.width,
+        height: canvas.height,
+        zoom: canvas.getZoom(),
+        objectCount: canvas.getObjects().length,
+        gridVisible: canvas.getObjects().some((obj: any) => obj.isGrid),
+        lastOperation: 'initialize'
+      };
+    }
+    
+    logger.info('Canvas observability initialized', {
+      timestamp: now,
+      sessionId: sessionIdRef.current,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      initialZoom: canvas.getZoom(),
+      initialObjectCount: canvas.getObjects().length
+    });
+    
+    // Report canvas initialization to Sentry
+    captureMessage(
+      'Canvas initialized',
+      'canvas-initialized',
+      {
+        level: 'info',
+        tags: {
+          drawingSession: sessionIdRef.current,
+          initialTool: tool
+        },
+        extra: {
+          dimensions: `${canvas.width}x${canvas.height}`,
+          initialZoom: canvas.getZoom(),
+          timestamp: new Date().toISOString()
+        }
+      }
+    );
+  }, [canvas]);
+  
+  // Monitor canvas rendering performance
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const trackRenderingPerformance = () => {
+      const now = Date.now();
+      const renderTime = now - lastRenderTimeRef.current;
+      lastRenderTimeRef.current = now;
+      
+      // Log only if significant render time (> 16ms) to avoid noise
+      if (renderTime > 16) {
+        logger.info('Canvas render performance', {
+          renderTimeMs: renderTime,
+          objectCount: canvas.getObjects().length,
+          zoom: canvas.getZoom()
+        });
       }
     };
     
-    // Initial update
-    updateCanvasDimensions();
+    // Track after render event
+    canvas.on('after:render', trackRenderingPerformance);
     
-    // Set up event listeners for dimension changes
-    canvas.on('object:added', updateCanvasDimensions);
-    canvas.on('object:removed', updateCanvasDimensions);
-    canvas.on('canvas:resized', updateCanvasDimensions);
-    canvas.on('zoom:changed', updateCanvasDimensions);
+    // Handle resize events
+    const handleResize = () => {
+      if (canvas) {
+        logger.info('Canvas resized', {
+          width: canvas.width,
+          height: canvas.height,
+          sessionId: sessionIdRef.current
+        });
+        
+        // Update window.__canvas_state
+        if (typeof window !== 'undefined' && window.__canvas_state) {
+          window.__canvas_state.width = canvas.width;
+          window.__canvas_state.height = canvas.height;
+        }
+      }
+    };
+    
+    // Use standard event listener for resize
+    window.addEventListener('resize', handleResize);
     
     return () => {
-      // Remove event listeners on cleanup
-      canvas.off('object:added', updateCanvasDimensions);
-      canvas.off('object:removed', updateCanvasDimensions);
-      canvas.off('canvas:resized', updateCanvasDimensions);
-      canvas.off('zoom:changed', updateCanvasDimensions);
+      canvas.off('after:render', trackRenderingPerformance);
+      window.removeEventListener('resize', handleResize);
     };
-  }, [fabricCanvasRef.current]);
+  }, [canvas]);
   
-  /**
-   * Track a canvas operation for logging and observability
-   */
-  const trackOperation = useCallback((operation: CanvasOperation) => {
-    // Add to operations history
-    operationsRef.current.push(operation);
+  // Monitor canvas errors
+  useEffect(() => {
+    if (!canvas) return;
     
-    // Update session storage for Sentry access
-    const count = operationsRef.current.length;
-    window.sessionStorage.setItem('canvasOperationsCount', count.toString());
-    
-    // Log the operation
-    logger.info(`Canvas operation: ${operation.type}`, {
-      sessionId: sessionIdRef.current,
-      tool: operation.tool || currentTool,
-      objectCount: operation.objectCount,
-      operationCount: count,
-      ...operation.metadata
-    });
-    
-    // For significant operations, send to Sentry
-    if (['clear', 'tool-change'].includes(operation.type)) {
-      captureMessage(
-        `Canvas ${operation.type}`,
-        `canvas-${operation.type}`,
-        {
-          level: 'info',
-          tags: {
-            sessionId: sessionIdRef.current,
-            tool: operation.tool || currentTool,
-            operationType: operation.type
-          },
-          extra: {
-            operation,
-            operationCount: count,
-            timestamp: Date.now()
-          }
+    const handleError = (error: Error) => {
+      errorCountRef.current++;
+      
+      // Log the error
+      logger.error('Canvas operation error', {
+        error: error.message,
+        stack: error.stack,
+        tool,
+        sessionId: sessionIdRef.current,
+        errorCount: errorCountRef.current
+      });
+      
+      // Report to Sentry
+      captureError(error, 'canvas-operation-error', {
+        level: 'error',
+        tags: {
+          tool,
+          drawingSession: sessionIdRef.current
+        },
+        extra: {
+          errorCount: errorCountRef.current,
+          canvasState: window.__canvas_state || {}
         }
-      );
-    }
-  }, [currentTool]);
-  
-  /**
-   * Log an object creation event
-   */
-  const logObjectCreated = useCallback((object: FabricObject) => {
-    trackOperation({
-      type: 'create',
-      timestamp: Date.now(),
-      tool: currentTool,
-      objectIds: [object.id?.toString() || ''],
-      metadata: {
-        objectType: object.type,
-        properties: {
-          left: object.left,
-          top: object.top,
-          width: object.width,
-          height: object.height
-        }
-      }
-    });
-  }, [currentTool, trackOperation]);
-  
-  /**
-   * Log an object modification event
-   */
-  const logObjectModified = useCallback((object: FabricObject) => {
-    trackOperation({
-      type: 'modify',
-      timestamp: Date.now(),
-      tool: currentTool,
-      objectIds: [object.id?.toString() || ''],
-      metadata: {
-        objectType: object.type,
-        properties: {
-          left: object.left,
-          top: object.top,
-          width: object.width,
-          height: object.height
-        }
-      }
-    });
-  }, [currentTool, trackOperation]);
-  
-  /**
-   * Log a canvas cleared event
-   */
-  const logCanvasCleared = useCallback(() => {
-    trackOperation({
-      type: 'clear',
-      timestamp: Date.now(),
-      tool: currentTool,
-      objectCount: 0
-    });
-  }, [currentTool, trackOperation]);
-  
-  /**
-   * Log a zoom event
-   */
-  const logZoomChanged = useCallback((zoom: number) => {
-    trackOperation({
-      type: 'zoom',
-      timestamp: Date.now(),
-      tool: currentTool,
-      metadata: {
-        zoomLevel: zoom
-      }
-    });
-  }, [currentTool, trackOperation]);
-  
-  /**
-   * Get the current session ID
-   */
-  const getSessionId = useCallback(() => {
-    return sessionIdRef.current;
-  }, []);
-  
-  /**
-   * Get operation statistics
-   */
-  const getOperationStats = useCallback(() => {
-    const operations = operationsRef.current;
-    const createCount = operations.filter(op => op.type === 'create').length;
-    const modifyCount = operations.filter(op => op.type === 'modify').length;
-    const deleteCount = operations.filter(op => op.type === 'delete').length;
-    
-    return {
-      total: operations.length,
-      createCount,
-      modifyCount,
-      deleteCount,
-      toolChanges: operations.filter(op => op.type === 'tool-change').length,
-      sessionDuration: Date.now() - Number(window.sessionStorage.getItem('sessionStartTime') || 0)
+      });
     };
-  }, []);
+    
+    // Set up global error handlers related to canvas
+    const originalWindowErrorHandler = window.onerror;
+    window.onerror = function(message, source, lineno, colno, error) {
+      // Only capture errors that might be canvas-related
+      if (
+        error && 
+        (message.toString().includes('canvas') || 
+         message.toString().includes('fabric') ||
+         source?.includes('fabric'))
+      ) {
+        handleError(error);
+      }
+      
+      // Call original handler if exists
+      if (originalWindowErrorHandler) {
+        return originalWindowErrorHandler(message, source, lineno, colno, error);
+      }
+      return false;
+    };
+    
+    return () => {
+      window.onerror = originalWindowErrorHandler;
+    };
+  }, [canvas, tool]);
   
-  return {
-    trackOperation,
-    logObjectCreated,
-    logObjectModified,
-    logCanvasCleared,
-    logZoomChanged,
-    getSessionId,
-    getOperationStats
-  };
+  return null;
 };
+
+export default useCanvasObservability;

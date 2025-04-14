@@ -1,13 +1,143 @@
 
 /**
- * Sentry utilities index
- * Entry point for Sentry-related functionality
- * @module utils/sentry
+ * Sentry Utilities
+ * Provides enhanced error tracking with Sentry
  */
+import * as Sentry from '@sentry/react';
+import { getDrawingSessionId } from '@/features/drawing/state/drawingMetrics';
 
-// Re-export all functionality from their respective modules
-export { captureError } from './errorCapture';
-export { captureMessage } from './messageCapture';
-export { startPerformanceTransaction } from './performance';
-export { isSentryInitialized } from './core';
-export type { ErrorCaptureOptions } from './types';
+// Capture error with additional context
+export function captureError(
+  error: Error | unknown,
+  errorType: string,
+  options?: {
+    level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
+    tags?: Record<string, string>;
+    extra?: Record<string, any>;
+    context?: Record<string, any>;
+    user?: { id?: string; email?: string; username?: string };
+    security?: { level?: 'low' | 'medium' | 'high'; details?: string; impact?: string };
+  }
+) {
+  // Default options
+  const defaultOptions = {
+    level: 'error',
+    tags: {},
+    extra: {},
+    context: {},
+    security: {}
+  };
+  
+  // Merge options
+  const mergedOptions = { ...defaultOptions, ...options };
+  
+  // Get current app and canvas state
+  const appState = typeof window !== 'undefined' ? window.__app_state : {};
+  const canvasState = typeof window !== 'undefined' ? window.__canvas_state : {};
+  
+  // Get current drawing session
+  const drawingSessionId = getDrawingSessionId();
+  
+  // Create Sentry scope
+  Sentry.withScope((scope) => {
+    // Set severity level
+    scope.setLevel(mergedOptions.level as Sentry.SeverityLevel);
+    
+    // Set tags
+    scope.setTags({
+      errorType,
+      drawingSession: drawingSessionId,
+      ...mergedOptions.tags
+    });
+    
+    // Set extra context
+    scope.setExtras({
+      appState,
+      canvasState,
+      ...mergedOptions.extra
+    });
+    
+    // Set user context if provided
+    if (mergedOptions.user) {
+      scope.setUser(mergedOptions.user);
+    }
+    
+    // Capture the error
+    if (error instanceof Error) {
+      Sentry.captureException(error);
+    } else {
+      Sentry.captureMessage(
+        typeof error === 'string' ? error : `Unknown error: ${JSON.stringify(error)}`
+      );
+    }
+  });
+}
+
+// Capture message with additional context
+export function captureMessage(
+  message: string,
+  category: string,
+  options?: {
+    level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
+    tags?: Record<string, string>;
+    extra?: Record<string, any>;
+    context?: Record<string, any>;
+    user?: { id?: string; email?: string; username?: string };
+  }
+) {
+  // Default options
+  const defaultOptions = {
+    level: 'info',
+    tags: {},
+    extra: {},
+    context: {}
+  };
+  
+  // Merge options
+  const mergedOptions = { ...defaultOptions, ...options };
+  
+  // Get current app and canvas state
+  const appState = typeof window !== 'undefined' ? window.__app_state : {};
+  const canvasState = typeof window !== 'undefined' ? window.__canvas_state : {};
+  
+  // Get current drawing session
+  const drawingSessionId = getDrawingSessionId();
+  
+  // Create Sentry scope
+  Sentry.withScope((scope) => {
+    // Set severity level
+    scope.setLevel(mergedOptions.level as Sentry.SeverityLevel);
+    
+    // Set tags
+    scope.setTags({
+      category,
+      drawingSession: drawingSessionId,
+      ...mergedOptions.tags
+    });
+    
+    // Set extra context
+    scope.setExtras({
+      appState,
+      canvasState,
+      ...mergedOptions.extra
+    });
+    
+    // Set user context if provided
+    if (mergedOptions.user) {
+      scope.setUser(mergedOptions.user);
+    }
+    
+    // Capture the message
+    Sentry.captureMessage(message);
+  });
+}
+
+// Types for inputValidation error reporting
+export interface InputValidationResult {
+  valid: boolean;
+  message?: string;
+  fields?: Record<string, string[]>;
+  severity?: 'low' | 'medium' | 'high';
+}
+
+export const Sentry = Sentry;

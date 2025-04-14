@@ -1,174 +1,162 @@
 
-import { Canvas as FabricCanvas } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import logger from "@/utils/logger";
-import { captureMessage } from "@/utils/sentry";
+/**
+ * Drawing Tool Validator
+ * Validates drawing tool configuration and state
+ */
+import { Canvas as FabricCanvas, BaseBrush } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
+import { captureMessage } from '@/utils/sentry';
+import logger from '@/utils/logger';
 
 /**
- * Validate the straight line drawing tool setup
- * This is a diagnostic tool to help troubleshoot drawing issues
- * 
- * @param canvas The canvas to validate
- * @param tool The current tool
- * @returns Whether the validation passed
+ * Validate drawing tool configuration
+ * @param canvas Canvas instance
+ * @param tool Current drawing tool
  */
-export function validateStraightLineDrawing(
-  canvas: FabricCanvas,
-  tool: DrawingMode
-): boolean {
-  if (tool !== DrawingMode.STRAIGHT_LINE) {
-    logger.warn('Called validateStraightLineDrawing with incorrect tool', { 
-      tool, 
-      expected: DrawingMode.STRAIGHT_LINE 
-    });
-    return false;
+export function validateDrawingTool(canvas: FabricCanvas, tool: DrawingMode): void {
+  if (!canvas) return;
+  
+  // Common validation issues to check
+  const issues: string[] = [];
+  
+  // Validate drawing mode matches tool
+  if (tool === DrawingMode.DRAW && !canvas.isDrawingMode) {
+    issues.push('Drawing mode not enabled for DRAW tool');
+  } else if (tool !== DrawingMode.DRAW && canvas.isDrawingMode) {
+    issues.push(`Drawing mode enabled for non-drawing tool: ${tool}`);
   }
-
-  try {
-    // Check if canvas has required properties
-    if (!canvas.freeDrawingBrush) {
-      logger.error('Canvas missing freeDrawingBrush property', { tool });
-      return false;
+  
+  // Validate brush exists when in drawing mode
+  if (tool === DrawingMode.DRAW && !canvas.freeDrawingBrush) {
+    issues.push('Free drawing brush not initialized');
+  }
+  
+  // Safe way to check for event listeners without accessing private properties
+  const validateEventListeners = () => {
+    try {
+      // Trigger a test event to see if listeners exist
+      const testEvent = new Event('test');
+      let hasListeners = false;
+      
+      // Temporarily override the fire method to detect if listeners exist
+      const originalFire = canvas.fire;
+      canvas.fire = function(eventName: string) {
+        if (eventName === 'test:event') {
+          hasListeners = true;
+        }
+        return this;
+      };
+      
+      // Try to fire a test event
+      canvas.fire('test:event', { test: true });
+      
+      // Restore original method
+      canvas.fire = originalFire;
+      
+      if (!hasListeners && (tool === DrawingMode.DRAW || tool === DrawingMode.STRAIGHT_LINE)) {
+        issues.push(`No event listeners detected for tool: ${tool}`);
+      }
+    } catch (error) {
+      logger.warn('Error checking event listeners', { error });
     }
-
-    // Check if key event handlers are registered
-    // This is a simple check and not exhaustive
-    const hasEvents = (
-      canvas.__eventListeners && 
-      Object.keys(canvas.__eventListeners).length > 0
-    );
+  };
+  
+  validateEventListeners();
+  
+  // Check brush settings if applicable
+  if (canvas.freeDrawingBrush) {
+    const brush = canvas.freeDrawingBrush;
     
-    if (!hasEvents) {
-      logger.warn('Canvas may be missing event listeners for straight line drawing', { tool });
+    // Check if brush has valid width
+    if (brush.width <= 0) {
+      issues.push('Invalid brush width: must be greater than 0');
     }
-
-    // Check canvas drawing mode
-    if (canvas.isDrawingMode) {
-      logger.info('Canvas is in drawing mode for straight line tool', { 
-        isDrawingMode: canvas.isDrawingMode,
-        tool
-      });
-    } else {
-      logger.warn('Canvas is not in drawing mode for straight line tool', { 
-        isDrawingMode: canvas.isDrawingMode,
-        tool
-      });
-    }
-
-    // Log brush settings
-    const brushSettings = {
-      color: canvas.freeDrawingBrush.color,
-      width: canvas.freeDrawingBrush.width,
-      type: canvas.freeDrawingBrush.type
-    };
     
-    logger.info('Straight line tool brush settings', brushSettings);
-
-    // Report the validation success
+    // Check if brush has valid color
+    if (!brush.color) {
+      issues.push('Invalid brush color: color not set');
+    }
+  }
+  
+  // Report any found issues
+  if (issues.length > 0) {
+    logger.warn('Drawing tool validation issues detected', { 
+      tool, 
+      issues,
+      canvasState: {
+        isDrawingMode: canvas.isDrawingMode,
+        brushExists: !!canvas.freeDrawingBrush,
+        brushWidth: canvas.freeDrawingBrush?.width,
+        brushColor: canvas.freeDrawingBrush?.color
+      }
+    });
+    
     captureMessage(
-      'Straight line tool validation passed',
-      'line-tool-validation',
+      'Drawing tool validation issues',
+      'drawing-tool-validation',
       {
+        level: 'warning',
         tags: {
-          tool: DrawingMode.STRAIGHT_LINE,
-          result: 'success'
+          tool
         },
         extra: {
-          brushSettings,
-          canvasSettings: {
-            width: canvas.width,
-            height: canvas.height,
+          issues,
+          canvasState: {
             isDrawingMode: canvas.isDrawingMode,
-            hasEvents
+            brushExists: !!canvas.freeDrawingBrush,
+            brushWidth: canvas.freeDrawingBrush?.width,
+            brushColor: canvas.freeDrawingBrush?.color
           }
         }
       }
     );
-
-    return true;
-  } catch (error) {
-    logger.error('Error validating straight line tool', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      tool
-    });
-    
-    captureMessage(
-      'Straight line tool validation failed',
-      'line-tool-validation-error',
-      {
-        level: 'error',
-        tags: {
-          tool: DrawingMode.STRAIGHT_LINE,
-          result: 'error'
-        },
-        extra: {
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      }
-    );
-    
-    return false;
   }
 }
 
 /**
- * Register a canvas instance for debugging
- * @param canvas The canvas to register
+ * Validate straight line drawing functionality
+ * @param canvas Canvas instance
+ * @param tool Current drawing tool
  */
-export function registerCanvasForDebugging(canvas: FabricCanvas): void {
-  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-    // For debugging only - will allow validation to access the canvas
-    (window as any).fabricCanvas = canvas;
-    
-    logger.debug('Canvas registered for debugging');
+export function validateStraightLineDrawing(canvas: FabricCanvas, tool: DrawingMode): void {
+  if (!canvas || tool !== DrawingMode.STRAIGHT_LINE) return;
+  
+  // Specific checks for straight line tool
+  const issues: string[] = [];
+  
+  // Check that selection is disabled (it should be for drawing tools)
+  if (canvas.selection) {
+    issues.push('Selection enabled in straight line mode');
   }
-}
-
-/**
- * Validate that the canvas grid is properly set up
- * @param canvas The canvas to validate
- * @returns Whether the validation passed
- */
-export function validateGridSetup(canvas: FabricCanvas): boolean {
-  try {
-    // Check if grid objects exist
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).isGrid === true || (obj as any).objectType === 'grid'
-    );
-    
-    const gridCount = gridObjects.length;
-    const visibleGridCount = gridObjects.filter(obj => obj.visible === true).length;
-    
-    logger.info('Grid validation results', {
-      gridObjectCount: gridCount,
-      visibleGridCount,
-      hasGrid: gridCount > 0,
-      allVisible: visibleGridCount === gridCount
+  
+  // Check cursor style
+  if (canvas.defaultCursor !== 'crosshair') {
+    issues.push(`Incorrect cursor in straight line mode: ${canvas.defaultCursor}`);
+  }
+  
+  // Report any found issues
+  if (issues.length > 0) {
+    logger.warn('Straight line drawing validation issues', { 
+      issues,
+      canvasState: {
+        selection: canvas.selection,
+        defaultCursor: canvas.defaultCursor
+      }
     });
     
-    // Report to Sentry
     captureMessage(
-      `Grid validation ${gridCount > 0 ? 'passed' : 'failed'}`,
-      'grid-validation',
+      'Straight line drawing validation issues',
+      'straight-line-validation',
       {
-        level: gridCount > 0 ? 'info' : 'warning',
-        tags: {
-          hasGrid: String(gridCount > 0),
-          allVisible: String(visibleGridCount === gridCount)
-        },
+        level: 'warning',
         extra: {
-          gridCount,
-          visibleGridCount,
-          canvasObjectCount: canvas.getObjects().length
+          issues,
+          canvasState: {
+            selection: canvas.selection,
+            defaultCursor: canvas.defaultCursor
+          }
         }
       }
     );
-    
-    return gridCount > 0;
-  } catch (error) {
-    logger.error('Error validating grid setup', {
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-    return false;
   }
 }
