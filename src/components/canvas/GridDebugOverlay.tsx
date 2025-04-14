@@ -63,7 +63,8 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
         return;
       }
       
-      const result = ensureGridVisibility(canvas, gridObjects);
+      // Fix: Call ensureGridVisibility with only the canvas argument
+      const result = ensureGridVisibility(canvas);
       toast.success(`Grid visibility ${result ? "fixed" : "already OK"}`);
       refreshGridInfo();
     }

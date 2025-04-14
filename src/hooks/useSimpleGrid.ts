@@ -115,8 +115,8 @@ export const useSimpleGrid = (
     if (!canvas || !gridCreated) return;
     
     const intervalId = setInterval(() => {
-      // Pass the actual grid objects, not the ref itself
-      const fixesApplied = ensureGridVisibility(canvas, gridLayerRef.current);
+      // Fix: Pass just the canvas to ensureGridVisibility, not the grid objects
+      const fixesApplied = ensureGridVisibility(canvas);
       
       if (fixesApplied) {
         setObjectCount(gridLayerRef.current.length);
