@@ -334,6 +334,7 @@ export const useStraightLineTool = ({
       initializeTool();
       isToolInitializedRef.current = true;
       
+      // Fix: Add a second argument with context details
       logger.info("Straight line tool initialized", { 
         canvas, 
         tool,
