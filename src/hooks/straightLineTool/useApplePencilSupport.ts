@@ -1,3 +1,4 @@
+
 /**
  * Hook for enhanced Apple Pencil and touch support in drawing tools
  * @module hooks/straightLineTool/useApplePencilSupport
@@ -6,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/constants/drawingModes';
 
 export interface UseApplePencilSupportProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -108,7 +110,7 @@ export const useApplePencilSupport = ({
       };
     } catch (error) {
       reportDrawingError(error, 'process-pencil-data', {
-        tool: 'line',
+        tool: DrawingMode.LINE,
         interaction: { type: 'touch' }
       });
       return { isApplePencil: false, pressure: 1, tilt: null, position: null };

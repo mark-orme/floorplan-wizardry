@@ -1,196 +1,175 @@
 
+/**
+ * Tests for the straight line tool hook
+ * Ensures line drawing functionality works correctly
+ * @module hooks/straightLineTool/__tests__/useStraightLineTool
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
+import { useStraightLineTool } from '../useStraightLineTool';
+import { useLineState } from '../useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Canvas, Line } from 'fabric';
+import { FabricEventNames } from '@/types/fabric-types';
+import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
+import { Point } from '@/types/core/Geometry';
 
-// Mock fabric.js
-jest.mock('fabric');
-
-// Mock dependencies
-jest.mock('../drawing/useDrawingToolManager', () => ({
-  useDrawingToolManager: () => ({
-    drawingState: {
-      isDrawing: false,
-      startPoint: null,
-      currentPoint: null,
-      points: []
-    },
-    startDrawing: jest.fn(),
-    continueDrawing: jest.fn(),
-    endDrawing: jest.fn(),
-    cancelDrawing: jest.fn(),
-    mouseHandlers: {
-      handleMouseDown: jest.fn(),
-      handleMouseMove: jest.fn(),
-      handleMouseUp: jest.fn()
-    }
-  })
-}));
-
-// Mock useLineState hook
-jest.mock('../straightLineTool/useLineState', () => ({
-  useLineState: () => ({
+// Mock the dependencies
+vi.mock('../useLineState', () => ({
+  useLineState: vi.fn().mockReturnValue({
     isDrawing: false,
-    isToolInitialized: true,
+    isToolInitialized: false,
     startPointRef: { current: null },
     currentLineRef: { current: null },
     distanceTooltipRef: { current: null },
-    setIsDrawing: jest.fn(),
-    setStartPoint: jest.fn(),
-    setCurrentLine: jest.fn(),
-    setDistanceTooltip: jest.fn(),
-    initializeTool: jest.fn(),
-    resetDrawingState: jest.fn()
+    setStartPoint: vi.fn(),
+    setCurrentLine: vi.fn(),
+    setDistanceTooltip: vi.fn(),
+    initializeTool: vi.fn(),
+    resetDrawingState: vi.fn(),
+    setIsDrawing: vi.fn()
   })
 }));
 
-// Mock logger
-jest.mock('@/utils/logger', () => ({
-  __esModule: true,
+// Mock other necessary dependencies
+vi.mock('@/utils/sentry', () => ({
+  captureMessage: vi.fn(),
+  captureError: vi.fn()
+}));
+
+vi.mock('@/utils/logger', () => ({
   default: {
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
-    debug: jest.fn()
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn()
   }
 }));
 
-// Mock sentry
-jest.mock('@/utils/sentry', () => ({
-  captureError: jest.fn(),
-  captureMessage: jest.fn()
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn()
+  }
 }));
 
 describe('useStraightLineTool', () => {
-  let canvas: Canvas;
-  let canvasRef: React.MutableRefObject<Canvas | null>;
-  const saveCurrentState = jest.fn();
+  // Create mock canvas with event tracking
+  const createMockCanvas = () => {
+    const eventHandlers: Record<string, Function[]> = {};
+    
+    const mockCanvas = {
+      on: vi.fn((eventName: string, handler: Function) => {
+        if (!eventHandlers[eventName]) {
+          eventHandlers[eventName] = [];
+        }
+        eventHandlers[eventName].push(handler);
+        return mockCanvas;
+      }),
+      off: vi.fn((eventName: string, handler?: Function) => {
+        if (handler && eventHandlers[eventName]) {
+          const index = eventHandlers[eventName].indexOf(handler);
+          if (index !== -1) {
+            eventHandlers[eventName].splice(index, 1);
+          }
+        } else if (eventHandlers[eventName]) {
+          delete eventHandlers[eventName];
+        }
+        return mockCanvas;
+      }),
+      add: vi.fn(),
+      remove: vi.fn(),
+      requestRenderAll: vi.fn(),
+      discardActiveObject: vi.fn(),
+      getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+      getObjects: vi.fn().mockReturnValue([]),
+      contains: vi.fn().mockReturnValue(true),
+      isDrawingMode: false,
+      selection: true,
+      defaultCursor: 'default',
+      hoverCursor: 'default',
+      width: 800,
+      height: 600,
+      // Method to trigger an event for testing
+      triggerEvent: (eventName: string, eventData: any) => {
+        if (eventHandlers[eventName]) {
+          eventHandlers[eventName].forEach(handler => handler(eventData));
+        }
+      },
+      // Method to get handlers for a specific event
+      getHandlers: (eventName: string) => eventHandlers[eventName] || []
+    };
+    
+    return mockCanvas;
+  };
+  
+  let mockCanvas: ReturnType<typeof createMockCanvas>;
+  let fabricCanvasRef: { current: any };
+  let saveCurrentState: () => void;
   
   beforeEach(() => {
-    // Create a new canvas instance for each test
-    canvas = new Canvas(document.createElement('canvas'));
-    canvasRef = { current: canvas };
+    mockCanvas = createMockCanvas();
+    fabricCanvasRef = { current: mockCanvas };
+    saveCurrentState = vi.fn();
     
-    // Reset mocks
-    saveCurrentState.mockReset();
-    
-    // Add methods that might be missing in the mock
-    (canvas as any).on = jest.fn();
-    (canvas as any).off = jest.fn();
+    // Reset the useLineState mock
+    (useLineState as any).mockReturnValue({
+      isDrawing: false,
+      isToolInitialized: false,
+      startPointRef: { current: null },
+      currentLineRef: { current: null },
+      distanceTooltipRef: { current: null },
+      setStartPoint: vi.fn(),
+      setCurrentLine: vi.fn(),
+      setDistanceTooltip: vi.fn(),
+      initializeTool: vi.fn(),
+      resetDrawingState: vi.fn(),
+      setIsDrawing: vi.fn()
+    });
   });
   
-  afterEach(() => {
-    canvas = null as any;
-    canvasRef.current = null;
-  });
-  
-  it('should return the correct initial state', () => {
+  it('should initialize and set up event handlers correctly', () => {
     const { result } = renderHook(() => useStraightLineTool({
-      fabricCanvasRef: canvasRef,
+      fabricCanvasRef,
       tool: DrawingMode.STRAIGHT_LINE,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
     }));
     
-    expect(result.current.isActive).toBeTruthy();
-    expect(result.current.isToolInitialized).toBeTruthy();
-    expect(result.current.isDrawing).toBeFalsy(); // Updated to use isDrawing property
-    expect(result.current.currentLine).toBeNull();
-  });
-  
-  it('should not initialize if the tool is not straight line', () => {
-    const { result } = renderHook(() => useStraightLineTool({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.DRAW,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
+    // Verify event handlers are attached
+    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventTypes.MOUSE_DOWN, expect.any(Function));
+    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventTypes.MOUSE_MOVE, expect.any(Function));
+    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventTypes.MOUSE_UP, expect.any(Function));
     
-    expect(result.current.isActive).toBeFalsy();
+    // Verify canvas properties are set correctly for drawing
+    expect(mockCanvas.isDrawingMode).toBe(false);
+    expect(mockCanvas.selection).toBe(false);
+    expect(mockCanvas.defaultCursor).toBe('crosshair');
+    
+    // Verify the hook returns expected values
+    expect(result.current.isToolInitialized).toBe(true);
+    expect(result.current.isActive).toBe(true);
   });
   
-  it('should register event handlers when the tool is active', () => {
+  it('should not set up event handlers if tool is not STRAIGHT_LINE', () => {
     renderHook(() => useStraightLineTool({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      fabricCanvasRef,
+      tool: DrawingMode.SELECT,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
     }));
     
-    expect(canvas.on).toHaveBeenCalledWith('mouse:down', expect.any(Function));
-    expect(canvas.on).toHaveBeenCalledWith('mouse:move', expect.any(Function));
-    expect(canvas.on).toHaveBeenCalledWith('mouse:up', expect.any(Function));
+    // Verify no event handlers are attached for the wrong tool
+    expect(mockCanvas.on).not.toHaveBeenCalled();
   });
   
-  it('should remove event handlers when the hook unmounts', () => {
-    const { unmount } = renderHook(() => useStraightLineTool({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
-    
-    unmount();
-    
-    expect(canvas.off).toHaveBeenCalledWith('mouse:down', expect.any(Function));
-    expect(canvas.off).toHaveBeenCalledWith('mouse:move', expect.any(Function));
-    expect(canvas.off).toHaveBeenCalledWith('mouse:up', expect.any(Function));
-  });
-  
-  it('should cancel drawing when cancelDrawing is called', () => {
-    // Mock for testing removal of temporary objects
-    (canvas as any).contains = jest.fn().mockReturnValue(true);
-    (canvas as any).remove = jest.fn();
-    
-    // Create mock line and tooltip
-    const mockLine = new Line([0, 0, 100, 100]);
-    const mockTooltip = { type: 'text', text: '100px' };
-    
-    // Create a mock implementation of useLineState that returns isDrawing as true
-    const useLineStateMock = jest.requireMock('../straightLineTool/useLineState');
-    (useLineStateMock.useLineState as jest.Mock).mockReturnValueOnce({
-      isDrawing: true,
-      isToolInitialized: true,
-      startPointRef: { current: { x: 0, y: 0 } },
-      currentLineRef: { current: mockLine },
-      distanceTooltipRef: { current: mockTooltip },
-      setIsDrawing: jest.fn(),
-      setStartPoint: jest.fn(),
-      setCurrentLine: jest.fn(),
-      setDistanceTooltip: jest.fn(),
-      initializeTool: jest.fn(),
-      resetDrawingState: jest.fn()
-    });
-    
-    const { result } = renderHook(() => useStraightLineTool({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
-    
-    // Test isDrawing property is accessible
-    expect(result.current.isDrawing).toBeDefined();
-    
-    act(() => {
-      result.current.cancelDrawing();
-    });
-    
-    // Canvas render should be called
-    expect(canvas.renderAll).toHaveBeenCalled();
-  });
-  
-  it('should properly handle tool changes', () => {
+  it('should clean up event handlers when tool changes', () => {
     const { rerender } = renderHook(
-      ({ tool }) => useStraightLineTool({
-        fabricCanvasRef: canvasRef,
-        tool,
+      (props) => useStraightLineTool({
+        fabricCanvasRef,
+        tool: props.tool,
         lineColor: '#000000',
         lineThickness: 2,
         saveCurrentState
@@ -198,46 +177,154 @@ describe('useStraightLineTool', () => {
       { initialProps: { tool: DrawingMode.STRAIGHT_LINE } }
     );
     
+    // Verify event handlers are set up
+    expect(mockCanvas.on).toHaveBeenCalledTimes(3);
+    
     // Change tool
     rerender({ tool: DrawingMode.SELECT });
     
-    // Event handlers should be removed
-    expect(canvas.off).toHaveBeenCalled();
-    
-    // Change back to straight line
-    rerender({ tool: DrawingMode.STRAIGHT_LINE });
-    
-    // Event handlers should be added again
-    expect(canvas.on).toHaveBeenCalled();
+    // Verify event handlers are removed
+    expect(mockCanvas.off).toHaveBeenCalledTimes(3);
   });
   
-  // Add any other specific test cases for isDrawing property
-  it('should update isDrawing state properly', () => {
-    // Setup a mock that returns isDrawing as true
-    const useLineStateMock = jest.requireMock('../straightLineTool/useLineState');
-    (useLineStateMock.useLineState as jest.Mock).mockReturnValueOnce({
-      isDrawing: true,
-      isToolInitialized: true,
-      startPointRef: { current: { x: 100, y: 100 } },
+  it('should handle drawing operations correctly', () => {
+    // Mock setIsDrawing function
+    const mockSetIsDrawing = vi.fn();
+    const mockSetStartPoint = vi.fn();
+    const mockSetCurrentLine = vi.fn();
+    const mockSetDistanceTooltip = vi.fn();
+    
+    // Update useLineState mock with custom functions
+    (useLineState as any).mockReturnValue({
+      isDrawing: false,
+      isToolInitialized: false,
+      startPointRef: { current: null },
       currentLineRef: { current: null },
       distanceTooltipRef: { current: null },
-      setIsDrawing: jest.fn(),
-      setStartPoint: jest.fn(),
-      setCurrentLine: jest.fn(),
-      setDistanceTooltip: jest.fn(),
-      initializeTool: jest.fn(),
-      resetDrawingState: jest.fn()
+      setStartPoint: mockSetStartPoint,
+      setCurrentLine: mockSetCurrentLine,
+      setDistanceTooltip: mockSetDistanceTooltip,
+      initializeTool: vi.fn(),
+      resetDrawingState: vi.fn(),
+      setIsDrawing: mockSetIsDrawing
     });
     
-    const { result } = renderHook(() => useStraightLineTool({
-      fabricCanvasRef: canvasRef,
+    renderHook(() => useStraightLineTool({
+      fabricCanvasRef,
       tool: DrawingMode.STRAIGHT_LINE,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
     }));
     
-    // Check that isDrawing is properly exposed in the result
-    expect(result.current.isDrawing).toBe(true);
+    // Get mouse down handler
+    const mouseDownHandler = mockCanvas.getHandlers(FabricEventTypes.MOUSE_DOWN)[0];
+    expect(mouseDownHandler).toBeDefined();
+    
+    // Simulate mouse down event
+    const mouseDownEvent = {
+      e: { preventDefault: vi.fn() },
+      pointer: { x: 100, y: 100 }
+    };
+    
+    mouseDownHandler(mouseDownEvent);
+    
+    // Verify drawing is started
+    expect(mockSetIsDrawing).toHaveBeenCalledWith(true);
+    expect(mockSetStartPoint).toHaveBeenCalledWith(expect.objectContaining({ x: 100, y: 100 }));
+  });
+  
+  it('should handle Escape key to cancel drawing', () => {
+    // Mock cancelDrawing dependencies
+    const mockResetDrawingState = vi.fn();
+    const mockIsDrawing = true;
+    
+    // Override useLineState mock for this test
+    (useLineState as any).mockReturnValue({
+      isDrawing: mockIsDrawing,
+      isToolInitialized: true,
+      startPointRef: { current: { x: 100, y: 100 } },
+      currentLineRef: { current: { id: 'line1' } },
+      distanceTooltipRef: { current: { id: 'tooltip1' } },
+      setStartPoint: vi.fn(),
+      setCurrentLine: vi.fn(),
+      setDistanceTooltip: vi.fn(),
+      initializeTool: vi.fn(),
+      resetDrawingState: mockResetDrawingState,
+      setIsDrawing: vi.fn()
+    });
+    
+    const { result } = renderHook(() => useStraightLineTool({
+      fabricCanvasRef,
+      tool: DrawingMode.STRAIGHT_LINE,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState
+    }));
+    
+    // Verify cancel drawing function is returned
+    expect(result.current.cancelDrawing).toBeDefined();
+    
+    // Manually trigger the escape key event
+    act(() => {
+      // Simulate pressing Escape
+      const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+      window.dispatchEvent(escapeEvent);
+    });
+    
+    // Verify drawing is canceled
+    expect(mockResetDrawingState).toHaveBeenCalled();
+  });
+  
+  it('should complete a line drawing operation', () => {
+    // Mock drawing state
+    const mockStartPoint = { x: 100, y: 100 };
+    const mockCurrentLine = { 
+      id: 'line1', 
+      x1: 100, 
+      y1: 100, 
+      x2: 200, 
+      y2: 200,
+      set: vi.fn()
+    };
+    const mockDistanceTooltip = { 
+      id: 'tooltip1',
+      set: vi.fn()
+    };
+    const mockResetDrawingState = vi.fn();
+    
+    // Override useLineState mock for this test
+    (useLineState as any).mockReturnValue({
+      isDrawing: true,
+      isToolInitialized: true,
+      startPointRef: { current: mockStartPoint },
+      currentLineRef: { current: mockCurrentLine },
+      distanceTooltipRef: { current: mockDistanceTooltip },
+      setStartPoint: vi.fn(),
+      setCurrentLine: vi.fn(),
+      setDistanceTooltip: vi.fn(),
+      initializeTool: vi.fn(),
+      resetDrawingState: mockResetDrawingState,
+      setIsDrawing: vi.fn()
+    });
+    
+    renderHook(() => useStraightLineTool({
+      fabricCanvasRef,
+      tool: DrawingMode.STRAIGHT_LINE,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState
+    }));
+    
+    // Get mouse handlers
+    const mouseUpHandler = mockCanvas.getHandlers(FabricEventTypes.MOUSE_UP)[0];
+    expect(mouseUpHandler).toBeDefined();
+    
+    // Simulate completing the drawing
+    mouseUpHandler({});
+    
+    // Verify state is saved and drawing is reset
+    expect(saveCurrentState).toHaveBeenCalled();
+    expect(mockResetDrawingState).toHaveBeenCalled();
   });
 });

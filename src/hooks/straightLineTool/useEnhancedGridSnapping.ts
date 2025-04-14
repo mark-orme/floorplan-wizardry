@@ -22,7 +22,7 @@ interface UseEnhancedGridSnappingProps {
  */
 export const useEnhancedGridSnapping = ({
   fabricCanvasRef,
-  gridSize = GRID_CONSTANTS.GRID_SIZE || 20,
+  gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE || 20,
   snapThreshold = 10,
   sensitivityForTouch = 2 // Multiplier for touch events
 }: UseEnhancedGridSnappingProps) => {
@@ -208,7 +208,7 @@ export const useEnhancedGridSnapping = ({
       };
     } catch (error) {
       reportDrawingError(error, 'process-pointer-event', {
-        interaction: { type: 'unknown' }
+        interaction: { type: 'mouse' }
       });
       return { position: null, inputType: 'mouse' };
     }
