@@ -322,6 +322,7 @@ vi.mock('fabric', () => {
 - Use the Fabric object inspector
 - Log canvas state at critical points
 - Add visual debugging helpers when needed
+- Use the GridDebugOverlay for grid-related issues
 
 ```typescript
 // Good practice
@@ -330,11 +331,176 @@ const debugObject = new Rect({
   name: 'DebugRect-1', // Helpful for debugging
   data: { createdAt: new Date(), purpose: 'debug' } // Custom debug data
 });
+
+// For grid debugging
+window.diagnoseGrid(); // Provides detailed grid information
 ```
 
 ### Don't
 - Use console.log for entire objects (they're circular)
 - Leave debugging code in production
 - Ignore Fabric.js warnings
+- Forget to clean up debugging objects
 
 By following these best practices, we can ensure a robust and maintainable canvas drawing implementation.
+
+## Grid Implementation
+
+### Do
+- Use the grid utility functions for all grid operations
+- Set proper z-index for grid elements to keep them behind other objects
+- Make grid objects non-selectable and non-interactive
+- Use the GRID_CONSTANTS for all grid-related values
+- Add proper error handling around grid operations
+
+```typescript
+// Good practice
+try {
+  // Create grid using proper utilities
+  const gridObjects = createCompleteGrid(canvas);
+  
+  // Set proper properties on all grid objects
+  gridObjects.forEach(obj => {
+    obj.set({
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      hoverCursor: 'default'
+    });
+    canvas.sendObjectToBack(obj);
+  });
+  
+  // Use proper visibility management
+  setGridVisibility(canvas, true);
+} catch (error) {
+  logger.error("Error creating grid:", error);
+  // Implement fallback or retry mechanism
+}
+```
+
+### Don't
+- Directly modify grid objects after creation
+- Mix grid objects with regular drawing objects
+- Hardcode grid values that exist in GRID_CONSTANTS
+- Forget to add error handling around grid operations
+
+```typescript
+// Bad practice
+const gridSize = 10; // Hardcoded instead of using GRID_CONSTANTS
+for (let i = 0; i < canvas.width; i += gridSize) {
+  const line = new Line([i, 0, i, canvas.height]);
+  line.stroke = '#ccc'; // Hardcoded color
+  line.selectable = false;
+  canvas.add(line);
+}
+```
+
+## Drawing Tools Integration
+
+### Do
+- Separate tool state from tool event handling
+- Clean up all event handlers when tools change
+- Use proper refs for values that shouldn't trigger re-renders
+- Implement proper error handling in drawing operations
+
+```typescript
+// Good practice
+// State management hook
+const useToolState = () => {
+  const [isDrawing, setIsDrawing] = useState(false);
+  const startPointRef = useRef(null);
+  // other state...
+  
+  return {
+    isDrawing,
+    setIsDrawing,
+    startPointRef,
+    // other state and setters...
+  };
+};
+
+// Event handling hook
+const useToolEvents = (fabricCanvas, toolState) => {
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const handleMouseDown = (opt) => {
+      // implementation
+    };
+    
+    fabricCanvas.on('mouse:down', handleMouseDown);
+    
+    // Clean up event handlers
+    return () => {
+      fabricCanvas.off('mouse:down', handleMouseDown);
+    };
+  }, [fabricCanvas, toolState]);
+};
+```
+
+### Don't
+- Mix state management with event handling
+- Forget to clean up event handlers
+- Use the same logic for different drawing tools
+- Ignore error handling in drawing operations
+
+```typescript
+// Bad practice
+useEffect(() => {
+  if (!canvas) return;
+  
+  // Mixed state and event handling
+  const handleMouseDown = (opt) => {
+    setIsDrawing(true);
+    // More mixed logic...
+  };
+  
+  canvas.on('mouse:down', handleMouseDown);
+  // Missing cleanup function
+}, [canvas]);
+```
+
+## Measurement Tooltips
+
+### Do
+- Create tooltips only when needed
+- Position tooltips properly relative to drawing objects
+- Clean up tooltips when operations complete
+- Make tooltips non-selectable and non-interactive
+
+```typescript
+// Good practice
+const createDistanceTooltip = (points, distance) => {
+  const tooltip = new Text(`${distance.toFixed(2)}m`, {
+    left: (points[0].x + points[1].x) / 2,
+    top: (points[0].y + points[1].y) / 2,
+    fontSize: 14,
+    fill: '#333',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    selectable: false,
+    evented: false
+  });
+  
+  return tooltip;
+};
+
+// Clean up when done
+const cleanup = () => {
+  if (tooltipRef.current) {
+    canvas.remove(tooltipRef.current);
+    tooltipRef.current = null;
+  }
+};
+```
+
+### Don't
+- Leave tooltips on the canvas after operations
+- Create tooltips without proper positioning
+- Make tooltips selectable or interactive
+- Forget to update tooltips when measurements change
+
+```typescript
+// Bad practice
+const tooltip = new Text(`${distance}m`);
+canvas.add(tooltip); // No positioning, no cleanup
+```

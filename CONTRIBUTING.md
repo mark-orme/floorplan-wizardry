@@ -1,4 +1,3 @@
-
 # Contributing to Floor Plan Editor
 
 Welcome to the FloorPlan Designer project! This document provides guidelines for contributing to the project. For detailed documentation on the codebase, please refer to the [docs](./docs) directory.
@@ -19,6 +18,7 @@ Welcome to the FloorPlan Designer project! This document provides guidelines for
 12. 🧮 **Boolean Expression Safety** - Use explicit boolean checks rather than truthy/falsy coercion
 13. 🎨 **DrawingTool Consistency** - Always use the canonical DrawingTool type from '@/types/core/DrawingTool'
 14. 🔍 **Hook Contracts** - All hooks must have explicit return types
+15. 🔲 **Grid System Safety** - Use proper grid utility functions for all grid operations
 
 ## 📚 Documentation References
 
@@ -26,12 +26,14 @@ For detailed documentation on specific aspects of the codebase, please refer to:
 
 - [Project Overview](./docs/project-overview.md) - High-level architecture and directory structure
 - [Grid System](./docs/grid-system.md) - Detailed documentation on the grid architecture
+- [Grid Troubleshooting](./docs/grid-troubleshooting.md) - Solutions for common grid issues
 - [Floor Plan Adapter](./docs/floor-plan-adapter.md) - Documentation on the floor plan adapter module
 - [Development Guidelines](./docs/development-guidelines.md) - Coding standards and best practices
 - [Component Design](./docs/component-design.md) - Component architecture and patterns
 - [Testing Strategy](./docs/testing-strategy.md) - Testing approaches and tools
 - [Common Pitfalls](./docs/common-pitfalls.md) - Known issues and how to avoid them
 - [AI and Developer Guidelines](./AI_DEV_GUIDELINES.md) - Specific guidance for AI assistants and human developers
+- [Fabric.js Best Practices](./src/docs/FABRIC_BEST_PRACTICES.md) - Best practices for working with Fabric.js
 
 ## 📝 Pull Request Guidelines
 
@@ -54,6 +56,7 @@ Before submitting your PR, ensure:
 - [ ] All TypeScript types are properly defined with no `any`
 - [ ] DrawingTool usage is consistent with the canonical source
 - [ ] Hook return types are explicitly defined
+- [ ] Grid changes follow best practices in grid-system.md
 
 ## 💾 Pre-commit Hooks
 

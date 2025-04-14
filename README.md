@@ -1,4 +1,3 @@
-
 # FloorPlan Designer
 
 A powerful web-based application for creating and editing floor plans with accurate measurements and area calculations.
@@ -33,7 +32,7 @@ This application allows architects, designers, and homeowners to:
 - **Wall Tool**: Create walls with proper thickness and connections
 
 ### Measurement & Precision
-- **Advanced Grid System**: Precise 0.1m and 1.0m grid with multi-layered architecture and error recovery
+- **Enhanced Grid System**: Robust multi-layered grid with auto-recovery features and error handling
 - **Smart Snapping**: Objects snap to grid points for alignment
 - **Real-time Measurements**: Display distances and areas as you draw
 - **Scale Management**: Work in real-world measurements (meters)
@@ -54,6 +53,11 @@ This application allows architects, designers, and homeowners to:
 - **Responsive Design**: Works on desktop and tablet devices
 - **Touch & Stylus Support**: Optimized for drawing with stylus devices
 - **Local Storage**: Work is automatically saved locally
+
+### Reliability & Debugging
+- **Grid Diagnostics**: Built-in tools for diagnosing and fixing grid issues
+- **Auto-recovery**: Self-healing grid with automatic recreation when needed
+- **Developer Tools**: Extensive debugging information for troubleshooting
 
 ## 🔧 Technical Architecture
 
@@ -85,7 +89,7 @@ This application allows architects, designers, and homeowners to:
 │ │DrawingContext│  │CanvasContext │  │
 │ └─────────────┘   └──────────────┘  │
 │          │               │          │
-└──────────┼───────────────┼──────────┘
+└───���──────┼───────────────┼──────────┘
            │               │
            ▼               ▼
 ┌─────────────────────────────────────┐
@@ -132,7 +136,8 @@ The application implements a robust grid system with:
 - **Modular Design**: Specialized utility functions for different grid functionalities
 - **Error Recovery**: Automatic retry mechanisms and fallback grid rendering
 - **Performance Optimization**: Throttling and batched operations for smooth performance
-- **Safety Mechanisms**: Lock acquisition and timeout protection to prevent rendering issues
+- **Safety Mechanisms**: Lock acquisition, timeout protection, and automatic grid recreation
+- **Debugging Tools**: Real-time diagnostics and one-click fixes for grid issues
 
 ## 🚦 Getting Started
 

@@ -1,6 +1,7 @@
 
 /**
  * Grid constants
+ * Central configuration for all grid-related settings
  */
 export const GRID_CONSTANTS = {
   // Grid sizing
@@ -38,7 +39,7 @@ export const GRID_CONSTANTS = {
   MIN_GRID_OBJECTS: 20, // Minimum number of grid objects that should exist
   AUTO_RECREATE_ON_EMPTY: true, // Automatically recreate grid if missing
   
-  // New safeguard settings
+  // Enhanced safeguard settings
   GRID_VISIBILITY_CHECK_INTERVAL: 5000, // Check grid visibility every 5 seconds
   GRID_RECREATION_ATTEMPTS: 3, // Number of attempts to recreate grid if missing
   GRID_RECREATION_DELAY: 1000, // Delay between grid recreation attempts

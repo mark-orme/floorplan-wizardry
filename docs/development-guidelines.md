@@ -20,6 +20,7 @@
 - Split large components into smaller, reusable ones (max 200 lines)
 - Avoid unnecessary re-renders
 - Keep components focused on a single responsibility
+- Ensure proper cleanup in useEffect hooks to prevent memory leaks
 
 ### Documentation
 
@@ -41,6 +42,30 @@
 - Log errors with appropriate context
 - Provide user-friendly error messages and recovery options
 - Catch and handle all promise rejections
+- Add fallback mechanisms for critical features
+
+## Grid System Guidelines
+
+### Grid Rendering
+
+- Never directly modify grid objects after creation
+- Use utility functions from gridRenderers.ts for creating grid elements
+- Always set proper z-index to keep grid at the back
+- Ensure grid objects are not selectable or interactive
+
+### Grid Visibility
+
+- Use the gridVisibility.ts utility functions for managing grid visibility
+- Never manually toggle visibility of individual grid objects
+- Implement proper error handling around grid operations
+- Use diagnoseGridState for troubleshooting grid issues
+
+### Grid Reliability
+
+- Add visibility checks at appropriate intervals
+- Implement automatic recovery for missing grid elements
+- Use the emergency fix mechanisms only when necessary
+- Never remove grid objects without proper cleanup
 
 ## Module Design Patterns
 
@@ -83,6 +108,28 @@ The Floor Plan Adapter module follows these design patterns:
    - Implement try/catch blocks where appropriate
    - Return error states from hooks
    - Use error boundaries for component-level errors
+
+4. **Lifecycle Management**:
+   - Properly clean up resources in useEffect return functions
+   - Handle component unmounting scenarios
+   - Prevent memory leaks from event listeners
+
+## Drawing Tool Implementation
+
+1. **State Management**:
+   - Separate tool state from tool events
+   - Use refs for values that shouldn't trigger re-renders
+   - Maintain clean state transitions between drawing steps
+
+2. **Event Handling**:
+   - Use proper event types for Fabric.js events
+   - Clean up event handlers when tools change
+   - Implement proper coordinate transformations
+
+3. **Measurement Display**:
+   - Keep measurement tooltips synced with drawing actions
+   - Clean up tooltips when operations complete
+   - Ensure tooltips are properly positioned and visible
 
 ## File Size Management
 

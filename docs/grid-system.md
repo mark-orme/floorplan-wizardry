@@ -1,106 +1,115 @@
 
-# Grid System Architecture
+# Grid System Documentation
 
 ## Overview
 
-The grid system is a core feature of the application, providing a reliable framework for accurate drawing and measurement. It follows a layered architecture with multiple fallback mechanisms to ensure reliability.
+The grid system is a fundamental component of the floor plan designer that provides visual guidance and measurement reference for users. It consists of two main grid types:
 
-## Grid Architecture Overview
+- **Small Grid**: Finer grid lines (0.1m) for detailed placement
+- **Large Grid**: Major grid lines (1.0m) for primary measurements
 
-The application's grid system follows a layered architecture:
+## Architecture
 
-1. **Core Grid Creation** (`gridCreationUtils.ts`):
-   - Low-level grid creation functions
-   - Multiple grid types with different complexities
-   - Error recovery mechanisms
+The grid system is implemented using multiple layers:
 
-2. **Grid React Integration** (`SimpleGrid.tsx`):
-   - React component for grid management
-   - Grid state management
-   - Integration with canvas lifecycle
-
-3. **Grid Hooks** (`useGridCreation.ts`, `useGridRetry.ts`, etc.):
-   - React hooks for grid operations
-   - Safety and validation logic
-   - Performance optimization
-
-4. **Grid Diagnostics** (`gridDiagnostics.ts`):
-   - Tools for debugging grid issues
-   - Health check utilities
-   - Grid recovery functions
-
-## Key Modules
-
-The `/utils/grid` directory contains specialized modules for grid management:
-
-- `gridCreationUtils.ts`: Core functions for creating different types of grids
-- `gridRenderers.ts`: Specialized grid rendering implementations
-- `gridBasics.ts`: Basic grid utility functions
-- `gridRetryUtils.ts`: Retry mechanisms with backoff
-- `simpleGrid.ts`: Simple grid implementation
-- `gridDiagnostics.ts`: Tools for grid debugging and health checks
-- `gridDebugUtils.ts`: Developer-focused grid tools
-- `gridValidator.ts`: Grid validation utilities
-
-## Grid Creation Process
-
-The grid creation follows a reliable process:
-
-1. **Canvas Validation**:
-   - Check if the canvas exists and is properly initialized
-   - Validate canvas dimensions
-
-2. **Grid Creation**:
-   - Create grid objects (lines) based on canvas dimensions
-   - Apply proper styling and properties
-   - Add grid objects to canvas
-
-3. **Grid Validation**:
-   - Verify grid objects were properly created
-   - Check if grid objects exist on canvas
-   - Validate grid visibility
-
-4. **Error Recovery**:
-   - Retry grid creation with backoff if initial creation fails
-   - Fall back to emergency grid if standard grid fails
-   - Apply automatic fixes for common grid issues
-
-## Working with Grid Functions
-
-To work with the grid system, use these key functions:
-
-```typescript
-// Standard grid creation
-const gridObjects = createCompleteGrid(canvas);
-
-// Simple grid creation
-const simpleGrid = createSimpleGrid(canvas);
-
-// Reliable grid creation with safety checks
-const reliableGrid = ensureGrid(canvas, gridLayerRef);
-
-// Check if grid exists
-const exists = verifyGridExists(canvas, gridObjects);
-
-// Validate grid integrity
-const isValid = validateGrid(canvas, gridObjects);
-
-// Run diagnostics
-const diagnostics = runGridDiagnostics(canvas, gridObjects);
-
-// Clear grid
-clearGrid(canvas, gridObjects);
-
-// Fix grid issues
-const fixCount = applyGridFixes(canvas, gridObjects);
+```
+┌─────────────────────────────────────┐
+│           Grid Components           │
+│  ┌─────────────┐    ┌─────────────┐ │
+│  │GridDebugPanel│   │GridLayer    │ │
+│  └─────────────┘    └─────────────┘ │
+│           │               │         │
+└───────────┼───────────────┼─────────┘
+            │               │
+            ▼               ▼
+┌─────────────────────────────────────┐
+│           Grid Utilities            │
+│  ┌─────────────┐    ┌─────────────┐ │
+│  │gridVisibility│   │gridRenderers│ │
+│  └─────────────┘    └─────────────┘ │
+│           │               │         │
+└───────────┼───────────────┼─────────┘
+            │               │
+            ▼               ▼
+┌─────────────────────────────────────┐
+│        Fabric.js Integration        │
+│                                     │
+│      (Line, Text objects, etc)      │
+│                                     │
+└─────────────────────────────────────┘
 ```
 
-## Error Recovery System
+## Grid Constants
 
-The grid system includes multiple layers of protection:
+Grid appearance and behavior are configured through constants defined in `src/constants/gridConstants.ts`. These constants include:
 
-- Validation to prevent errors before they occur
-- Multiple fallback methods for grid creation
-- Automatic retries with exponential backoff
-- Emergency grid creation when all else fails
-- Detailed error logging and diagnostic information
+- Grid sizing (SMALL_GRID_SIZE, LARGE_GRID_SIZE)
+- Grid styling (colors, line widths)
+- Visibility settings
+- Safety mechanisms
+
+## Grid Rendering
+
+Grid rendering is handled by the `createCompleteGrid` function in `gridRenderers.ts`, which:
+
+1. Creates small grid lines
+2. Creates large grid lines
+3. Adds measurement markers
+4. Sets appropriate visual properties
+
+## Error Recovery
+
+The grid system implements robust error recovery mechanisms:
+
+- Automatic visibility checks
+- Grid recreation when missing
+- Multiple recreation attempts with delays
+- Diagnostic tools for troubleshooting
+
+## Grid Visibility Management
+
+Grid visibility is managed through:
+
+- `ensureGridVisibility`: Makes sure grid objects are visible
+- `setGridVisibility`: Explicitly sets grid visibility
+- `forceGridCreationAndVisibility`: Recreates grid from scratch
+- `diagnoseGridState`: Provides diagnostic information for troubleshooting
+
+## Debugging Tools
+
+The `GridDebugOverlay` component provides:
+
+- Real-time grid state information
+- Controls for debugging grid issues
+- One-click fixes for common problems
+- Diagnostics and analysis tools
+
+## Safeguards
+
+Several safeguards ensure grid reliability:
+
+- Regular visibility checks
+- Auto-recreation of missing grid elements
+- Emergency fix functions (window.fixGrid())
+- Tracking of grid operation statistics
+
+## Usage
+
+Grid visibility can be controlled programmatically:
+
+```typescript
+// Make grid visible/invisible
+setGridVisibility(canvas, true|false);
+
+// Force recreation of grid
+forceGridCreationAndVisibility(canvas);
+
+// Run diagnostics
+const gridState = diagnoseGridState(canvas);
+```
+
+For debugging emergencies, a global fix function is available:
+```javascript
+// In browser console:
+window.fixGrid()
+```
