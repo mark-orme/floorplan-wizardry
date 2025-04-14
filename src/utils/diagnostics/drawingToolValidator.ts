@@ -6,6 +6,7 @@
 import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import { captureError } from '@/utils/sentryUtils';
+import { Canvas as FabricCanvas } from 'fabric';
 
 /**
  * Check if the provided drawing tool is valid
@@ -96,5 +97,43 @@ export function reportDrawingToolError(tool: string, error: Error, context?: Rec
     } catch (eventError) {
       logger.error('Failed to dispatch diagnostic event', { eventError });
     }
+  }
+}
+
+/**
+ * Validate straight line drawing tool and canvas configuration
+ * @param canvas FabricCanvas instance
+ * @param tool Current drawing tool
+ * @returns Whether the straight line tool is configured correctly
+ */
+export function validateStraightLineDrawing(canvas: FabricCanvas, tool: DrawingMode): boolean {
+  if (!canvas) {
+    logger.warn('Cannot validate straight line drawing: canvas is null');
+    return false;
+  }
+  
+  if (tool !== DrawingMode.STRAIGHT_LINE) {
+    // Only validate if the straight line tool is active
+    return true;
+  }
+  
+  try {
+    // Check that the canvas is configured correctly for straight line drawing
+    const isValid = !canvas.isDrawingMode && 
+                   !canvas.selection && 
+                   canvas.defaultCursor === 'crosshair';
+    
+    if (!isValid) {
+      logger.warn('Straight line tool misconfiguration', {
+        isDrawingMode: canvas.isDrawingMode,
+        selection: canvas.selection,
+        defaultCursor: canvas.defaultCursor
+      });
+    }
+    
+    return isValid;
+  } catch (error) {
+    logger.error('Error validating straight line drawing:', error);
+    return false;
   }
 }

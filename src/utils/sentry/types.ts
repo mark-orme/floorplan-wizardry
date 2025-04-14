@@ -33,6 +33,7 @@ export interface CaptureErrorOptions {
     role?: string;
   };
   security?: SecurityContext;
+  showReportDialog?: boolean;
 }
 
 // Options for captureMessage
