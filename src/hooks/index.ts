@@ -22,5 +22,6 @@ export {
   useApplePencilSupport,
   useEnhancedGridSnapping,
   // Re-export InputMethod by renaming it to avoid conflicts
-  InputMethod as LineInputMethod
+  // Use 'export type' for type-only exports when isolatedModules is enabled
+  type InputMethod as LineInputMethod
 } from './straightLineTool';
