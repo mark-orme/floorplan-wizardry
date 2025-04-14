@@ -5,9 +5,11 @@ import '@testing-library/jest-dom';
 // This file runs before tests are executed
 
 // Setup test environment
-window.matchMedia = window.matchMedia || function() {
+window.matchMedia = window.matchMedia || function(query: string) {
   return {
     matches: false,
+    media: query,
+    onchange: null,
     addListener: () => {},
     removeListener: () => {},
     addEventListener: () => {},

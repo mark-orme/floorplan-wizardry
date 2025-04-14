@@ -91,10 +91,10 @@ describe('CSRF Protection Utilities', () => {
       protectForm(form);
       
       // Check if input was added
-      const input = form.querySelector('input[name="csrf_token"]');
+      const input = form.querySelector('input[name="csrf_token"]') as HTMLInputElement;
       expect(input).not.toBeNull();
       expect(input?.getAttribute('type')).toBe('hidden');
-      expect(input?.getAttribute('value')).toBe('mock-token');
+      expect(input?.value).toBe('mock-token');
     });
     
     it('should replace existing CSRF token input', () => {
@@ -114,7 +114,7 @@ describe('CSRF Protection Utilities', () => {
       // Check if input was replaced
       const inputs = form.querySelectorAll('input[name="csrf_token"]');
       expect(inputs.length).toBe(1);
-      expect(inputs[0].value).toBe('new-token');
+      expect((inputs[0] as HTMLInputElement).value).toBe('new-token');
     });
   });
   
@@ -134,7 +134,7 @@ describe('CSRF Protection Utilities', () => {
       // Mock getCSRFToken
       vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue('mock-token');
       
-      const headers = [['Content-Type', 'application/json']];
+      const headers: [string, string][] = [['Content-Type', 'application/json']];
       const result = addCSRFHeader(headers);
       
       expect(Array.isArray(result)).toBe(true);
