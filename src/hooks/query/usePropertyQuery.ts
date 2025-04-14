@@ -72,7 +72,7 @@ const fetchProperty = async (id: string): Promise<Property> => {
 // Create the hooks using our factory
 export const useListProperties = createQueryHook(
   fetchProperties,
-  (params: ListPropertiesParams): QueryKey => propertyKeys.list(params.filters || {})
+  (params: ListPropertiesParams): QueryKey => propertyKeys.list(params.filters || {} as any)
 );
 
 export const useProperty = createQueryHook(
