@@ -1,5 +1,5 @@
 
-import { useQuery, useMutation, UseMutationOptions, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, UseMutationOptions, UseQueryOptions, QueryKey } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 /**
@@ -10,18 +10,20 @@ import { toast } from 'sonner';
  */
 export function createQueryHook<TData, TParams = void, TError = Error>(
   queryFn: (params: TParams) => Promise<TData>,
-  queryKeyFn: (params: TParams) => string[]
+  queryKeyFn: (params: TParams) => QueryKey
 ) {
   return (
     params: TParams,
-    options?: Omit<UseQueryOptions<TData, TError, TData>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<TData, TError, TData, QueryKey>, 'queryKey' | 'queryFn'>
   ) => {
     return useQuery({
       queryKey: queryKeyFn(params),
       queryFn: () => queryFn(params),
-      onError: (error) => {
-        const message = error instanceof Error ? error.message : 'An error occurred';
-        toast.error(message);
+      meta: {
+        onError: (error: TError) => {
+          const message = error instanceof Error ? error.message : 'An error occurred';
+          toast.error(message);
+        }
       },
       ...options,
     });
@@ -35,16 +37,18 @@ export function createQueryHook<TData, TParams = void, TError = Error>(
  */
 export function createMutationHook<TData, TVariables, TError = Error>(
   mutationFn: (variables: TVariables) => Promise<TData>,
-  mutationKeyFn?: (variables: TVariables) => string[]
+  mutationKeyFn?: (variables: TVariables) => QueryKey
 ) {
   return (
     options?: Omit<UseMutationOptions<TData, TError, TVariables>, 'mutationFn'>
   ) => {
     return useMutation({
       mutationFn,
-      onError: (error) => {
-        const message = error instanceof Error ? error.message : 'An error occurred';
-        toast.error(message);
+      meta: {
+        onError: (error: TError) => {
+          const message = error instanceof Error ? error.message : 'An error occurred';
+          toast.error(message);
+        }
       },
       ...options,
     });

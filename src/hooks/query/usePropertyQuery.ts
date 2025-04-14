@@ -3,6 +3,7 @@ import { createQueryHook, createMutationHook } from './useQueryHook';
 import { supabase } from '@/lib/supabase';
 import { Property, PropertyListItem, PropertyStatus } from '@/types/propertyTypes';
 import { useAsyncState } from './useAsyncState';
+import { QueryKey } from '@tanstack/react-query';
 
 // Generate query keys for properties
 export const propertyKeys = {
@@ -71,12 +72,12 @@ const fetchProperty = async (id: string): Promise<Property> => {
 // Create the hooks using our factory
 export const useListProperties = createQueryHook(
   fetchProperties,
-  (params) => propertyKeys.list(params.filters || {})
+  (params: ListPropertiesParams): QueryKey => propertyKeys.list(params.filters || {})
 );
 
 export const useProperty = createQueryHook(
   fetchProperty,
-  (id) => propertyKeys.detail(id)
+  (id: string): QueryKey => propertyKeys.detail(id)
 );
 
 // Extended hook with additional functionality

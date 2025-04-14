@@ -1,5 +1,5 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, QueryKey } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { useAsyncState } from './useAsyncState';
@@ -23,7 +23,7 @@ export function useFloorPlanQuery(propertyId?: string) {
     defaultFloorIndex: 0
   });
 
-  const queryKey = propertyId 
+  const queryKey: QueryKey = propertyId 
     ? floorPlanKeys.detail(propertyId)
     : floorPlanKeys.lists();
   

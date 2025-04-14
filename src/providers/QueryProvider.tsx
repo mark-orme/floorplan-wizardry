@@ -11,9 +11,9 @@ const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 10, // 10 minutes
       refetchOnWindowFocus: import.meta.env.PROD, // Only in production
       retry: 1, // Retry failed queries once by default
-      useErrorBoundary: false, // Handle errors via onError by default
     },
     mutations: {
+      // Handle mutation errors consistently
       onError: (error: any) => {
         toast.error(
           error.message || 'An error occurred while processing your request'
