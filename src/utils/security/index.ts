@@ -49,6 +49,9 @@ export const Security = {
   }
 };
 
+// Import the initializeCSRFProtection function to make it available
+import { initializeCSRFProtection } from './csrfProtection';
+
 // Initialize all security features
 export const initializeSecurity = (): void => {
   // Initialize CSRF protection
@@ -59,3 +62,7 @@ export const initializeSecurity = (): void => {
     console.warn('Warning: Application running without HTTPS in production mode');
   }
 };
+
+// Re-export the secureForm function at the top level for more convenient imports
+export const secureForm = Security.secureForm;
+
