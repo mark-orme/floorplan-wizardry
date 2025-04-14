@@ -24,7 +24,11 @@ export const Security = {
   Cookies: CookieSecurity,
   Files: FileUploadSecurity,
   Input: InputSanitization,
-  RateLimit: RateLimiting
+  RateLimit: RateLimiting,
+  isSecureConnection: (): boolean => 
+    window.location.protocol === 'https:' ||
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1'
 };
 
 /**

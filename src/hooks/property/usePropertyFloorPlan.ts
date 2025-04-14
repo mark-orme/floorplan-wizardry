@@ -26,11 +26,10 @@ export const usePropertyFloorPlan = () => {
         updated_at: new Date().toISOString()
       };
 
-      const result = await supabase
+      const { error } = await supabase
         .from('properties')
-        .update(updateData);
-      
-      const { error } = result.eq('id', propertyId);
+        .update(updateData)
+        .eq('id', propertyId);
 
       if (error) throw error;
       

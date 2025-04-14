@@ -52,29 +52,70 @@ export const supabase = {
           error: null
         })
       }),
+      single: async () => ({ data: null, error: null }),
+      maybeSingle: async () => ({ data: null, error: null }),
       data: [],
       error: null,
       in: (field: string, values: any[]) => ({
         data: [],
         error: null,
-        order: (field: string, options: any) => ({
+        eq: (field: string, value: any) => ({
           data: [],
           error: null
+        }),
+        order: (field: string, options: any) => ({
+          data: [],
+          error: null,
+          eq: (field: string, value: any) => ({
+            data: [],
+            error: null
+          })
         })
       }),
       order: (field: string, options: any) => ({
         data: [],
-        error: null
+        error: null,
+        eq: (field: string, value: any) => ({
+          data: [],
+          error: null
+        }),
+        in: (field: string, values: any[]) => ({
+          data: [],
+          error: null
+        })
       }),
       limit: (num: number) => ({
         data: [],
-        error: null
-      }),
-      maybeSingle: async () => ({ data: null, error: null })
+        error: null,
+        eq: (field: string, value: any) => ({
+          data: [],
+          error: null
+        })
+      })
     }),
-    insert: async () => ({ data: null, error: null, select: () => ({ data: [], error: null }) }),
-    update: async () => ({ data: null, error: null, select: () => ({ data: [], error: null }), eq: (field: string, value: any) => ({ data: null, error: null }) }),
-    delete: async () => ({ data: null, error: null }),
+    insert: (data: any) => {
+      const result = { data: null, error: null };
+      return {
+        ...result,
+        select: () => ({ data: [], error: null })
+      };
+    },
+    update: (data: any) => {
+      const result = { data: null, error: null };
+      return {
+        ...result,
+        select: () => ({ data: [], error: null }),
+        eq: (field: string, value: any) => result
+      };
+    },
+    delete: () => ({
+      data: null,
+      error: null,
+      eq: (field: string, value: any) => ({
+        data: null,
+        error: null
+      })
+    }),
     eq: (field: string, value: any) => ({
       data: [],
       error: null

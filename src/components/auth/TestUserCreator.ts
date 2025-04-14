@@ -40,8 +40,11 @@ export const createTestUsers = async (): Promise<void> => {
   try {
     // Check if users already exist
     for (const testUser of testUsers) {
-      const query = supabase.from('users').select().eq('email', testUser.email);
-      const { data: existingUsers, error: fetchError } = await query.single();
+      const { data: existingUsers, error: fetchError } = await supabase
+        .from('users')
+        .select()
+        .eq('email', testUser.email)
+        .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error(`Error checking for existing user ${testUser.email}:`, fetchError);

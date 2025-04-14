@@ -32,7 +32,7 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
   const handleError = useCallback((error: Error) => {
     console.error("Canvas error:", error);
     setHasError(true);
-    setErrorMessage(error.message); // Using Error.message which is a string
+    setErrorMessage(error.message || "Unknown error occurred"); // Using Error.message which is a string
     
     // Create a proper update object that conforms to Partial<DebugInfoState>
     updateDebugInfo({
@@ -41,7 +41,7 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
         errorCount: 1 // Default to 1 if not previously set
       },
       hasError: true,
-      errorMessage: error.message,
+      errorMessage: error.message || "Unknown error occurred",
       lastErrorTime: Date.now()
     });
     

@@ -28,11 +28,11 @@ export const usePropertyUpdate = () => {
         updated_at: new Date().toISOString()
       };
       
-      const result = await supabase
+      const { data, error } = await supabase
         .from('properties')
-        .update(updateData);
-        
-      const { data, error } = result.eq('id', id).select();
+        .update(updateData)
+        .eq('id', id)
+        .select();
 
       if (error) throw error;
 
@@ -62,11 +62,10 @@ export const usePropertyUpdate = () => {
         updated_at: new Date().toISOString()
       };
       
-      const result = await supabase
+      const { error } = await supabase
         .from('properties')
-        .update(updateData);
-        
-      const { error } = result.eq('id', id);
+        .update(updateData)
+        .eq('id', id);
 
       if (error) throw error;
 

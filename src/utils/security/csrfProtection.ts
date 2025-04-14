@@ -61,8 +61,20 @@ export function protectForm(form: HTMLFormElement): void {
  */
 export function addCSRFHeader(headers: Headers | Record<string, string> = {}): Headers {
   const token = getCSRFToken();
-  const newHeaders = headers instanceof Headers ? headers : new Headers(headers);
+  const newHeaders = new Headers();
   
+  // Copy existing headers
+  if (headers instanceof Headers) {
+    headers.forEach((value, key) => {
+      newHeaders.set(key, value);
+    });
+  } else {
+    Object.entries(headers).forEach(([key, value]) => {
+      newHeaders.set(key, value);
+    });
+  }
+  
+  // Add CSRF token
   newHeaders.set('X-CSRF-Token', token);
   return newHeaders;
 }

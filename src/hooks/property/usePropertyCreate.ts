@@ -47,12 +47,10 @@ export const usePropertyCreate = () => {
       };
       
       // Fixed Supabase query syntax
-      const result = await supabase
+      const { data, error } = await supabase
         .from('properties')
-        .insert(newProperty);
-      
-      // Select result
-      const { data, error } = result.select();
+        .insert(newProperty)
+        .select();
         
       if (error) {
         logger.error("Error creating property:", error);
