@@ -51,6 +51,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     gridAttemptCountRef.current += 1;
     
     try {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      if (canvas.width && canvas.width < viewportWidth) {
+        canvas.setWidth(viewportWidth);
+      }
+      
+      if (canvas.height && canvas.height < viewportHeight) {
+        canvas.setHeight(viewportHeight);
+      }
+      
       let gridObjects = createCompleteGrid(canvas);
       
       if (!gridObjects || gridObjects.length === 0) {
@@ -159,8 +170,8 @@ export const Canvas: React.FC<CanvasProps> = ({
 
     try {
       const canvas = new FabricCanvas(canvasRef.current, {
-        width,
-        height,
+        width: Math.max(width, window.innerWidth),
+        height: Math.max(height, window.innerHeight),
         selection: true
       });
       
@@ -212,6 +223,28 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
   }, [width, height, onCanvasReady, onError, setDebugInfo, createGridWithRetry, lineColor, lineThickness, wallColor, wallThickness]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (!fabricCanvasRef.current) return;
+      
+      const canvas = fabricCanvasRef.current;
+      
+      canvas.setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+      
+      gridInitializedRef.current = false;
+      createGridWithRetry(canvas);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [createGridWithRetry]);
+
   return (
     <div className="relative w-full h-full">
       <canvas 
@@ -220,7 +253,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         height={height} 
         data-testid="canvas"
         data-canvas-tool={tool}
-        style={style}
+        style={{ ...style, position: 'absolute', top: 0, left: 0, zIndex: 1 }}
       />
       
       {gridError && (

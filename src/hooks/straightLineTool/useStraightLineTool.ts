@@ -9,10 +9,11 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { useLineState } from './useLineState';
 import { captureError } from '@/utils/sentry';
 import { useDrawingToolManager } from '../drawing/useDrawingToolManager';
-import { Point } from '@/types/core/Geometry';
+import { Point, createPoint } from '@/types/core/Point';
 import { calculateDistance, getMidpoint } from '@/utils/geometryUtils';
 import logger from '@/utils/logger';
 import { FabricEventNames, TPointerEventInfo, TPointerEvent } from '@/types/fabric-events';
+import { useSnapToGrid } from '../useSnapToGrid';
 
 /**
  * Props for useStraightLineTool hook
@@ -63,6 +64,9 @@ export const useStraightLineTool = (
     saveCurrentState
   } = props;
 
+  // Get snap to grid functionality
+  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid({ fabricCanvasRef });
+
   // Get line state from useLineState hook
   const {
     isDrawing,
@@ -80,7 +84,7 @@ export const useStraightLineTool = (
 
   // Initialize the tool when it becomes active
   useEffect(() => {
-    if (tool === DrawingMode.STRAIGHT_LINE && !isToolInitialized) {
+    if ((tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.LINE) && !isToolInitialized) {
       console.log("Initializing straight line tool");
       initializeTool();
     }
@@ -105,7 +109,7 @@ export const useStraightLineTool = (
   // Layer our line-specific logic on top of the drawing manager
   useEffect(() => {
     // Only run for straight line tool
-    if (tool !== DrawingMode.STRAIGHT_LINE) return;
+    if (tool !== DrawingMode.STRAIGHT_LINE && tool !== DrawingMode.LINE) return;
     
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -116,12 +120,15 @@ export const useStraightLineTool = (
       if (!startPoint) return;
       
       try {
+        // Snap start point to grid
+        const snappedStartPoint = snapPointToGrid(startPoint);
+        
         // Create initial line
         const line = new Line([
-          startPoint.x, 
-          startPoint.y, 
-          startPoint.x, 
-          startPoint.y
+          snappedStartPoint.x, 
+          snappedStartPoint.y, 
+          snappedStartPoint.x, 
+          snappedStartPoint.y
         ], {
           stroke: lineColor,
           strokeWidth: lineThickness,
@@ -131,8 +138,8 @@ export const useStraightLineTool = (
         
         // Create distance tooltip
         const tooltip = new Text('0 px', {
-          left: startPoint.x,
-          top: startPoint.y,
+          left: snappedStartPoint.x,
+          top: snappedStartPoint.y,
           fontSize: 12,
           fill: lineColor,
           selectable: false,
@@ -143,12 +150,12 @@ export const useStraightLineTool = (
         canvas.add(line, tooltip);
         
         // Update refs
-        setStartPoint(startPoint);
+        setStartPoint(snappedStartPoint);
         setCurrentLine(line);
         setDistanceTooltip(tooltip);
         
         logger.info('Created initial straight line', { 
-          startPoint,
+          startPoint: snappedStartPoint,
           lineColor,
           lineThickness
         });
@@ -168,18 +175,23 @@ export const useStraightLineTool = (
       if (!line || !tooltip || !startPoint || !currentPoint) return;
       
       try {
+        // Use snapLineToGrid to straighten the line
+        const { start, end } = snapLineToGrid(startPoint, currentPoint);
+        
         // Update line endpoints
         line.set({
-          x2: currentPoint.x,
-          y2: currentPoint.y
+          x2: end.x,
+          y2: end.y
         });
         
         // Calculate distance and update tooltip
-        const distance = calculateDistance(startPoint, currentPoint);
+        const distance = calculateDistance(start, end);
+        const distanceInMeters = (distance / 100).toFixed(2); // Convert pixels to meters (100px = 1m)
+        
         tooltip.set({
-          text: `${Math.round(distance)} px`,
-          left: getMidpoint(startPoint, currentPoint).x,
-          top: getMidpoint(startPoint, currentPoint).y - 15
+          text: `${distanceInMeters}m`,
+          left: getMidpoint(start, end).x,
+          top: getMidpoint(start, end).y - 15
         });
         
         // Render the updates
@@ -199,7 +211,8 @@ export const useStraightLineTool = (
         // Make the line selectable
         line.set({
           selectable: true,
-          evented: true
+          evented: true,
+          objectType: 'wall' // Mark as wall for future identification
         });
         
         // Remove the tooltip
@@ -231,7 +244,9 @@ export const useStraightLineTool = (
     setCurrentLine,
     setDistanceTooltip,
     setStartPoint,
-    resetDrawingState
+    resetDrawingState,
+    snapPointToGrid,
+    snapLineToGrid
   ]);
 
   // Override drawing behaviors with our specific implementations
@@ -270,26 +285,27 @@ export const useStraightLineTool = (
 
   // Hook up our event handlers
   useEffect(() => {
-    if (tool !== DrawingMode.STRAIGHT_LINE) return;
+    if (tool !== DrawingMode.STRAIGHT_LINE && tool !== DrawingMode.LINE) return;
     
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
     const handleMouseDown = (opt: TPointerEventInfo<TPointerEvent>): void => {
-      if (tool !== DrawingMode.STRAIGHT_LINE) return;
+      if (tool !== DrawingMode.STRAIGHT_LINE && tool !== DrawingMode.LINE) return;
       
+      // Use our grid-snapping mouseHandlers
       mouseHandlers.handleMouseDown(opt.e as MouseEvent);
     };
     
     const handleMouseMove = (opt: TPointerEventInfo<TPointerEvent>): void => {
-      if (tool !== DrawingMode.STRAIGHT_LINE) return;
+      if (tool !== DrawingMode.STRAIGHT_LINE && tool !== DrawingMode.LINE) return;
       if (!isDrawing) return;
       
       mouseHandlers.handleMouseMove(opt.e as MouseEvent);
     };
     
     const handleMouseUp = (opt: TPointerEventInfo<TPointerEvent>): void => {
-      if (tool !== DrawingMode.STRAIGHT_LINE) return;
+      if (tool !== DrawingMode.STRAIGHT_LINE && tool !== DrawingMode.LINE) return;
       if (!isDrawing) return;
       
       handleEndDrawing();
@@ -309,7 +325,7 @@ export const useStraightLineTool = (
   }, [tool, isDrawing, fabricCanvasRef, mouseHandlers, handleEndDrawing]);
 
   return {
-    isActive: tool === DrawingMode.STRAIGHT_LINE && isToolInitialized,
+    isActive: (tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.LINE) && isToolInitialized,
     isToolInitialized,
     currentLine: currentLineRef.current,
     isDrawing: isDrawing,

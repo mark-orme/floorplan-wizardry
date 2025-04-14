@@ -18,4 +18,3 @@ export interface Point {
 export const createPoint = (x: number, y: number): Point => {
   return { x, y };
 };
-

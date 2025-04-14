@@ -1,9 +1,9 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { useSnapToGrid } from './useSnapToGrid';
 
 interface UseWallDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -26,7 +26,8 @@ export const useWallDrawing = ({
   const startPointRef = useRef<{ x: number, y: number } | null>(null);
   const measureTooltipRef = useRef<any>(null);
   
-  // Straighten a line by snapping to horizontal or vertical if close enough
+  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid({ fabricCanvasRef });
+  
   const straightenLine = useCallback((line: Line) => {
     if (!line) return;
     
@@ -35,30 +36,24 @@ export const useWallDrawing = ({
     const x2 = line.x2 || 0;
     const y2 = line.y2 || 0;
     
-    // Calculate angle
     const angle = Math.atan2(y2 - y1, x2 - x1);
     
-    // Check if close to horizontal or vertical
     if (Math.abs(angle) < STRAIGHT_ANGLE_THRESHOLD || 
         Math.abs(angle - Math.PI) < STRAIGHT_ANGLE_THRESHOLD ||
         Math.abs(angle + Math.PI) < STRAIGHT_ANGLE_THRESHOLD) {
-      // Horizontal line
       line.set({ y2: y1 });
     } else if (
       Math.abs(angle - Math.PI/2) < STRAIGHT_ANGLE_THRESHOLD || 
       Math.abs(angle + Math.PI/2) < STRAIGHT_ANGLE_THRESHOLD
     ) {
-      // Vertical line
       line.set({ x2: x1 });
     }
   }, []);
   
-  // Calculate distance between two points
   const calculateDistance = useCallback((x1: number, y1: number, x2: number, y2: number) => {
     return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
   }, []);
   
-  // Update measurement tooltip
   const updateMeasurementTooltip = useCallback((line: Line, canvas: FabricCanvas) => {
     if (!line) return;
     
@@ -67,16 +62,13 @@ export const useWallDrawing = ({
     const x2 = line.x2 || 0;
     const y2 = line.y2 || 0;
     
-    // Calculate distance in pixels and convert to meters
     const distanceInPixels = calculateDistance(x1, y1, x2, y2);
     const distanceInMeters = (distanceInPixels / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
     
-    // Create or update tooltip position
     const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2 - 15; // Position above line
+    const midY = (y1 + y2) / 2 - 15;
     
     if (!measureTooltipRef.current) {
-      // Create new tooltip
       const tooltip = new Text(`${distanceInMeters}m`, {
         left: midX,
         top: midY,
@@ -91,7 +83,6 @@ export const useWallDrawing = ({
       canvas.add(tooltip);
       measureTooltipRef.current = tooltip;
     } else {
-      // Update existing tooltip
       measureTooltipRef.current.set({
         text: `${distanceInMeters}m`,
         left: midX,
@@ -102,15 +93,15 @@ export const useWallDrawing = ({
     canvas.renderAll();
   }, [calculateDistance, wallColor]);
   
-  // Start drawing a wall
   const startDrawing = useCallback((e: any) => {
     if (!fabricCanvasRef.current || tool !== DrawingMode.WALL) return;
     
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e.e);
     
-    // Create a new line
-    const line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+    const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
+    
+    const line = new Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
       stroke: wallColor,
       strokeWidth: wallThickness,
       selectable: true,
@@ -123,41 +114,41 @@ export const useWallDrawing = ({
     
     setIsDrawing(true);
     setCurrentWall(line);
-    startPointRef.current = pointer;
-  }, [fabricCanvasRef, tool, wallColor, wallThickness]);
+    startPointRef.current = snappedPoint;
+  }, [fabricCanvasRef, tool, wallColor, wallThickness, snapPointToGrid]);
   
-  // Continue drawing the wall
   const continueDrawing = useCallback((e: any) => {
     if (!fabricCanvasRef.current || !isDrawing || !currentWall || tool !== DrawingMode.WALL) return;
     
     const canvas = fabricCanvasRef.current;
     const pointer = canvas.getPointer(e.e);
     
-    // Update the end point of the line
+    if (!startPointRef.current) return;
+    
+    const { start, end } = snapLineToGrid(
+      startPointRef.current, 
+      { x: pointer.x, y: pointer.y }
+    );
+    
     currentWall.set({
-      x2: pointer.x,
-      y2: pointer.y
+      x2: end.x,
+      y2: end.y
     });
     
-    // Temporarily straighten line during drawing for preview
-    straightenLine(currentWall);
-    
-    // Update measurement tooltip
-    updateMeasurementTooltip(currentWall, canvas);
+    if (updateMeasurementTooltip) {
+      updateMeasurementTooltip(currentWall, canvas);
+    }
     
     canvas.renderAll();
-  }, [fabricCanvasRef, isDrawing, currentWall, tool, straightenLine, updateMeasurementTooltip]);
+  }, [fabricCanvasRef, isDrawing, currentWall, tool, snapLineToGrid, updateMeasurementTooltip]);
   
-  // End drawing the wall
   const endDrawing = useCallback(() => {
     if (!fabricCanvasRef.current || !isDrawing || !currentWall) return;
     
     const canvas = fabricCanvasRef.current;
     
-    // Straighten the line if needed
     straightenLine(currentWall);
     
-    // Calculate final length
     const x1 = currentWall.x1 || 0;
     const y1 = currentWall.y1 || 0;
     const x2 = currentWall.x2 || 0;
@@ -165,15 +156,11 @@ export const useWallDrawing = ({
     
     const distance = calculateDistance(x1, y1, x2, y2);
     
-    // Only keep walls with meaningful length
     if (distance > 5) {
-      // Update final measurement tooltip
       updateMeasurementTooltip(currentWall, canvas);
       
-      // Fire object:added event for history tracking
       canvas.fire('object:added', { target: currentWall });
       
-      // Keep measurement tooltip permanently
       if (measureTooltipRef.current) {
         measureTooltipRef.current.set({
           backgroundColor: 'rgba(255,255,255,0.9)',
@@ -183,7 +170,6 @@ export const useWallDrawing = ({
       
       toast.success('Wall created');
     } else {
-      // Remove too short walls
       canvas.remove(currentWall);
       if (measureTooltipRef.current) {
         canvas.remove(measureTooltipRef.current);
@@ -196,7 +182,6 @@ export const useWallDrawing = ({
     measureTooltipRef.current = null;
   }, [fabricCanvasRef, isDrawing, currentWall, straightenLine, calculateDistance, updateMeasurementTooltip]);
   
-  // Set up event listeners
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -206,7 +191,6 @@ export const useWallDrawing = ({
       canvas.on('mouse:move', continueDrawing);
       canvas.on('mouse:up', endDrawing);
       
-      // Set appropriate cursor
       canvas.defaultCursor = 'crosshair';
       
       return () => {
@@ -216,7 +200,6 @@ export const useWallDrawing = ({
         canvas.defaultCursor = 'default';
       };
     } else {
-      // Reset cursor when switching away from wall tool
       if (canvas.defaultCursor === 'crosshair') {
         canvas.defaultCursor = 'default';
       }

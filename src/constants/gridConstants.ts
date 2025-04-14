@@ -8,10 +8,10 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_SIZE: 100,
   
   // Grid styling
-  SMALL_GRID_COLOR: '#E0E0E0', // Light gray for small grid
+  SMALL_GRID_COLOR: '#CCCCCC', // Light gray for small grid, more visible
   LARGE_GRID_COLOR: '#8E9196', // Neutral gray for large grid
-  SMALL_GRID_WIDTH: 0.5,
-  LARGE_GRID_WIDTH: 1,
+  SMALL_GRID_WIDTH: 1, // Increased from 0.5 for better visibility
+  LARGE_GRID_WIDTH: 1.5, // Increased for better contrast
   
   // Grid visibility
   DEFAULT_VISIBLE: true,
