@@ -186,4 +186,35 @@ const problematicSchema = z.string()
    const schema = z.string().transform(val => parseInt(val, 10)) as z.ZodEffects<z.ZodString, number, string>;
    ```
 
+4. **Avoid refinements after transforms** - this can lead to type confusion, instead:
+   ```typescript
+   // Good: Do validation and refinement before the transform
+   z.string()
+     .url()
+     .refine(isValidUrl)
+     .transform(sanitizeHtml);
+   
+   // Better: Combine validation and transformation in one step
+   z.string().transform(val => {
+     if (!isValidUrl(val)) throw new Error("Invalid URL");
+     return sanitizeHtml(val);
+   });
+   ```
+
+5. **Be cautious with `.url()`** - Zod's `.url()` method is a refinement that returns a ZodString. When you add a transform after it, you get nested ZodEffects types that can cause type errors:
+   ```typescript
+   // Problematic pattern that causes nested ZodEffects:
+   z.string().url().transform(sanitizeHtml);
+   
+   // Better approach - handle URL validation within the transform:
+   z.string().transform(val => {
+     try {
+       new URL(val); // Validate URL
+       return sanitizeHtml(val);
+     } catch {
+       throw new Error("Invalid URL");
+     }
+   });
+   ```
+
 Remember: Security is a continuous process. Always validate and sanitize at every trusted boundary in your application.

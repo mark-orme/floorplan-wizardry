@@ -65,26 +65,27 @@ export function createUrlSchema(options: {
     minLength = 1,
     maxLength = 2048 
   } = options;
-  
-  // First create the base string schema with length constraints
-  const stringSchema = z.string()
+
+  // Create a custom validator function that handles everything in one go
+  return z.string()
     .min(minLength)
-    .max(maxLength);
-  
-  // Then add the URL validation and protocol refinement
-  const urlSchema = stringSchema
-    .url()
-    .refine((url) => {
+    .max(maxLength)
+    .transform((val) => {
+      // First sanitize the value
+      const sanitized = sanitizeHtml(val);
+      
+      // Then check if it's a valid URL with allowed protocol
       try {
-        const parsedUrl = new URL(url);
-        return allowedProtocols.includes(parsedUrl.protocol);
-      } catch {
-        return false;
+        const url = new URL(sanitized);
+        if (!allowedProtocols.includes(url.protocol)) {
+          throw new Error(`URL must use one of the following protocols: ${allowedProtocols.join(', ')}`);
+        }
+        return sanitized;
+      } catch (error) {
+        // Re-throw with a clear error message (this will be caught by Zod)
+        throw new Error(`Invalid URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    }, { message: `URL must use one of the following protocols: ${allowedProtocols.join(', ')}` });
-  
-  // Apply sanitization as a single transform
-  return urlSchema.transform(sanitizeHtml);
+    });
 }
 
 /**
