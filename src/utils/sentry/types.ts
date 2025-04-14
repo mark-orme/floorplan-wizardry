@@ -24,7 +24,7 @@ export interface SecurityContext {
 export interface CaptureMessageOptions {
   level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
   tags?: Record<string, string>;
-  extra?: Record<string, any>; // Added this to match usage
+  extra?: Record<string, any>; // Define extra for message capture
   context?: Record<string, any>;
   user?: { 
     id?: string; 
@@ -38,7 +38,7 @@ export interface CaptureMessageOptions {
 export interface CaptureErrorOptions {
   level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
   tags?: Record<string, string>;
-  extra?: Record<string, any>; // Added this to match usage
+  extra?: Record<string, any>; // Define extra for error capture
   context?: Record<string, any>;
   user?: { 
     id?: string; 

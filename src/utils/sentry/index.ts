@@ -120,13 +120,8 @@ export function captureMessage(
   });
 }
 
-// Types for inputValidation error reporting
-export interface InputValidationResult {
-  valid: boolean;
-  message?: string;
-  fields?: Record<string, string[]>;
-  severity?: 'low' | 'medium' | 'high';
-}
+// Export the types
+export type { CaptureErrorOptions, CaptureMessageOptions, InputValidationResult } from './types';
 
 // Export the Sentry SDK with a different name to avoid conflicts
 export { SentrySDK };

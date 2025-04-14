@@ -4,6 +4,7 @@
  * Utilities for error tracking and monitoring with Sentry
  */
 import * as Sentry from '@sentry/react';
+import { CaptureErrorOptions, CaptureMessageOptions } from './sentry/types';
 
 /**
  * Set canvas context for better error tracking
@@ -71,13 +72,9 @@ export function setUserContext(user: {
 export function captureError(
   error: Error | unknown,
   operation: string,
-  options: {
-    tags?: Record<string, string>;
-    context?: Record<string, any>;
-    level?: Sentry.SeverityLevel;
-  } = {}
+  options: CaptureErrorOptions = {}
 ): void {
-  const { tags = {}, context = {}, level = 'error' } = options;
+  const { tags = {}, context = {}, level = 'error', extra = {} } = options;
   
   // Set tags for filtering
   Object.entries(tags).forEach(([key, value]) => {
@@ -93,15 +90,20 @@ export function captureError(
     ...context
   });
   
+  // Set extra data
+  if (Object.keys(extra).length > 0) {
+    Sentry.setContext('extra_data', extra);
+  }
+  
   // Capture the error with the configured level
   if (error instanceof Error) {
     Sentry.captureException(error, {
-      level
+      level: level as Sentry.SeverityLevel
     });
   } else {
     Sentry.captureMessage(
       `Error in ${operation}: ${error}`,
-      level
+      level as Sentry.SeverityLevel
     );
   }
 }
@@ -115,11 +117,7 @@ export function captureError(
 export function captureMessage(
   message: string,
   category: string,
-  options: {
-    tags?: Record<string, string>;
-    extra?: Record<string, any>;
-    level?: Sentry.SeverityLevel;
-  } = {}
+  options: CaptureMessageOptions = {}
 ): void {
   const { tags = {}, extra = {}, level = 'info' } = options;
   
@@ -131,11 +129,15 @@ export function captureMessage(
   // Set category tag
   Sentry.setTag('category', category);
   
+  // Set extra data
+  if (Object.keys(extra).length > 0) {
+    Sentry.setContext('extra_data', extra);
+  }
+  
   // Capture the message with context
   Sentry.captureMessage(message, {
-    level,
-    tags,
-    extra
+    level: level as Sentry.SeverityLevel,
+    tags
   });
 }
 
