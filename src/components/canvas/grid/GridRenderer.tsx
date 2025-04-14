@@ -111,7 +111,7 @@ export class GridRenderer {
       
       // Send all grid objects to the back
       gridObjects.forEach(obj => {
-        // Use sendToBack on each object rather than on the canvas
+        // Use sendObjectToBack on each object rather than on the canvas
         this.canvas.sendObjectToBack(obj);
       });
       

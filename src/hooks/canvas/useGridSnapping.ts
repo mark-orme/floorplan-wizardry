@@ -10,15 +10,7 @@ export const useGridSnapping = (fabricCanvasRef: React.MutableRefObject<any>) =>
   const snapToGridHook = useSnapToGrid({ fabricCanvasRef });
   
   // Destructure the hook to get all the functions
-  const { snapPointToGrid, snapLineToGrid, snapEnabled, isSnappedToGrid, toggleSnapToGrid } = snapToGridHook;
-  
-  // Provide a wrapper function that can be used with event coordinates
-  const snapEventToGrid = useCallback((e: any) => {
-    if (!fabricCanvasRef.current) return null;
-    
-    const pointer = fabricCanvasRef.current.getPointer(e);
-    return snapPointToGrid({ x: pointer.x, y: pointer.y });
-  }, [fabricCanvasRef, snapPointToGrid]);
+  const { snapPointToGrid, snapLineToGrid, isSnappedToGrid, toggleSnapToGrid, snapEnabled, snapEventToGrid } = snapToGridHook;
   
   return {
     snapPointToGrid,

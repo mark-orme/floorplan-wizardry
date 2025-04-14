@@ -3,13 +3,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 import { DrawingMode } from '@/constants/drawingModes';
-import { GridRenderer } from './canvas/grid/GridRenderer';
+import { GridRendererComponent } from './canvas/grid/GridRenderer';
 import { GridDebugOverlay } from './canvas/GridDebugOverlay';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
 import { forceGridCreationAndVisibility } from '@/utils/grid/gridVisibility';
 import { useWallDrawing } from '@/hooks/useWallDrawing';
 import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
+import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 
 export interface CanvasProps {
   width: number;
@@ -45,6 +46,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [gridError, setGridError] = useState<string | null>(null);
   const mountedRef = useRef<boolean>(true);
 
+  // Initialize the snap to grid functionality
+  const { snapPointToGrid, snapLineToGrid, toggleSnapToGrid, snapEnabled } = useSnapToGrid({
+    fabricCanvasRef
+  });
+
   // Use wall drawing hook
   const { isDrawing: isDrawingWall } = useWallDrawing({
     fabricCanvasRef,
@@ -53,7 +59,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     wallThickness
   });
 
-  // Use straight line tool hook
+  // Use straight line tool hook with save state function
   const { isActive: isStraightLineActive } = useStraightLineTool({
     fabricCanvasRef,
     tool,
@@ -65,6 +71,42 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
   });
 
+  // Handle selection and deletion functionality
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Delete or Backspace key pressed
+    if ((e.key === 'Delete' || e.key === 'Backspace') && tool === DrawingMode.SELECT) {
+      const selectedObjects = canvas.getActiveObjects();
+      
+      if (selectedObjects.length > 0) {
+        // Filter out grid objects
+        const nonGridObjects = selectedObjects.filter(obj => 
+          !(obj as any).isGrid && (obj as any).objectType !== 'grid'
+        );
+        
+        if (nonGridObjects.length > 0) {
+          canvas.remove(...nonGridObjects);
+          canvas.discardActiveObject();
+          canvas.requestRenderAll();
+          toast.success(`Deleted ${nonGridObjects.length} object(s)`);
+        }
+      }
+    }
+  };
+
+  // Set up key event listeners
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [tool]);
+
+  // Handle tool changes
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -78,6 +120,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           canvas.freeDrawingBrush.color = lineColor;
         }
         canvas.defaultCursor = 'crosshair';
+        canvas.selection = false;
         break;
       case DrawingMode.SELECT:
         canvas.isDrawingMode = false;
@@ -89,6 +132,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         canvas.defaultCursor = 'cell';
         break;
       case DrawingMode.STRAIGHT_LINE:
+      case DrawingMode.LINE:
         canvas.isDrawingMode = false;
         canvas.defaultCursor = 'crosshair';
         canvas.selection = false;
@@ -97,10 +141,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         canvas.isDrawingMode = false;
         canvas.defaultCursor = 'crosshair';
         canvas.selection = false;
-        if (canvas.freeDrawingBrush) {
-          canvas.freeDrawingBrush.width = wallThickness;
-          canvas.freeDrawingBrush.color = wallColor;
-        }
         break;
       default:
         canvas.isDrawingMode = false;
@@ -111,6 +151,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     canvas.renderAll();
   }, [tool, lineColor, lineThickness, wallColor, wallThickness]);
 
+  // Initialize canvas
   useEffect(() => {
     mountedRef.current = true;
     
@@ -139,11 +180,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         }));
       }
 
-      // Create grid immediately
-      const gridRenderer = new GridRenderer({
-        canvas,
-        showGrid: true
-      });
+      // Make canvas globally available for debugging
+      if (typeof window !== 'undefined') {
+        (window as any).fabricCanvas = canvas;
+      }
 
       onCanvasReady(canvas);
 
@@ -164,12 +204,15 @@ export const Canvas: React.FC<CanvasProps> = ({
         setDebugInfo(prev => ({
           ...prev,
           hasError: true,
-          errorMessage: error instanceof Error ? error.message : String(error)
+          errorMessage: error instanceof Error ? error.message : String(error),
+          lastError: error instanceof Error ? error.message : String(error),
+          lastErrorTime: Date.now()
         }));
       }
     }
   }, [width, height, onCanvasReady, onError, setDebugInfo, lineColor, lineThickness, wallColor, wallThickness]);
 
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       if (!fabricCanvasRef.current) return;
@@ -182,10 +225,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       });
       
       // Re-render grid after resize
-      const gridRenderer = new GridRenderer({
-        canvas,
-        showGrid: true
-      });
+      forceGridCreationAndVisibility(canvas);
     };
     
     window.addEventListener('resize', handleResize);
@@ -205,6 +245,16 @@ export const Canvas: React.FC<CanvasProps> = ({
         data-canvas-tool={tool}
         style={{ ...style, position: 'absolute', top: 0, left: 0, zIndex: 1 }}
       />
+      
+      {fabricCanvasRef.current && (
+        <GridRendererComponent 
+          canvas={fabricCanvasRef.current}
+          showGrid={true}
+          onGridCreated={(gridObjects) => {
+            logger.info(`Grid created with ${gridObjects.length} objects`);
+          }}
+        />
+      )}
       
       {gridError && (
         <div className="absolute bottom-2 left-2 bg-red-100 text-red-800 p-2 rounded text-xs z-50">

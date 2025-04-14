@@ -1,4 +1,3 @@
-
 /**
  * Hook for drawing straight lines on canvas
  * @module hooks/straightLineTool/useStraightLineTool

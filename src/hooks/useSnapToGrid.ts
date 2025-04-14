@@ -89,6 +89,16 @@ export const useSnapToGrid = (props?: { fabricCanvasRef?: React.MutableRefObject
     return { start: snappedStart, end: finalEnd };
   }, [snapEnabled, snapPointToGrid]);
   
+  // Helper to snap event coordinates to grid
+  const snapEventToGrid = useCallback((e: any): Point | null => {
+    if (!props?.fabricCanvasRef?.current) return null;
+    
+    const canvas = props.fabricCanvasRef.current;
+    const pointer = canvas.getPointer(e);
+    
+    return snapPointToGrid({ x: pointer.x, y: pointer.y });
+  }, [props?.fabricCanvasRef, snapPointToGrid]);
+  
   // Check if a point is on the grid (within a small threshold)
   const isSnappedToGrid = useCallback((point: Point, threshold: number = 0.5): boolean => {
     if (!snapEnabled) return false;
@@ -109,6 +119,7 @@ export const useSnapToGrid = (props?: { fabricCanvasRef?: React.MutableRefObject
     toggleSnapToGrid,
     snapPointToGrid,
     snapLineToGrid,
+    snapEventToGrid,
     isSnappedToGrid
   };
 };

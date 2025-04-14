@@ -5,6 +5,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { useGridSnapping } from './canvas/useGridSnapping';
+import logger from '@/utils/logger';
 
 interface UseWallDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -25,7 +26,7 @@ export const useWallDrawing = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentWall, setCurrentWall] = useState<Line | null>(null);
   const startPointRef = useRef<{ x: number, y: number } | null>(null);
-  const measureTooltipRef = useRef<any>(null);
+  const measureTooltipRef = useRef<Text | null>(null);
   
   // Use the grid snapping hook
   const { snapPointToGrid, snapEventToGrid, snapLineToGrid } = useGridSnapping(fabricCanvasRef);
@@ -98,6 +99,7 @@ export const useWallDrawing = ({
   const startDrawing = useCallback((e: any) => {
     if (!fabricCanvasRef.current || tool !== DrawingMode.WALL) return;
     
+    logger.info("Starting wall drawing");
     const canvas = fabricCanvasRef.current;
     const snappedPoint = snapEventToGrid(e);
     
@@ -137,9 +139,7 @@ export const useWallDrawing = ({
       y2: end.y
     });
     
-    if (updateMeasurementTooltip) {
-      updateMeasurementTooltip(currentWall, canvas);
-    }
+    updateMeasurementTooltip(currentWall, canvas);
     
     canvas.renderAll();
   }, [fabricCanvasRef, isDrawing, currentWall, tool, snapLineToGrid, updateMeasurementTooltip]);
@@ -147,6 +147,7 @@ export const useWallDrawing = ({
   const endDrawing = useCallback(() => {
     if (!fabricCanvasRef.current || !isDrawing || !currentWall) return;
     
+    logger.info("Ending wall drawing");
     const canvas = fabricCanvasRef.current;
     
     straightenLine(currentWall);
@@ -170,7 +171,7 @@ export const useWallDrawing = ({
         canvas.renderAll();
       }
       
-      toast.success('Wall created');
+      toast.success(`Wall created (${(distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2)}m)`);
     } else {
       canvas.remove(currentWall);
       if (measureTooltipRef.current) {
@@ -189,6 +190,7 @@ export const useWallDrawing = ({
     if (!canvas) return;
     
     if (tool === DrawingMode.WALL) {
+      logger.info("Setting up wall drawing event handlers");
       canvas.on('mouse:down', startDrawing);
       canvas.on('mouse:move', continueDrawing);
       canvas.on('mouse:up', endDrawing);
@@ -202,7 +204,7 @@ export const useWallDrawing = ({
         canvas.defaultCursor = 'default';
       };
     } else {
-      if (canvas.defaultCursor === 'crosshair') {
+      if (canvas.defaultCursor === 'crosshair' && tool !== DrawingMode.STRAIGHT_LINE && tool !== DrawingMode.DRAW) {
         canvas.defaultCursor = 'default';
       }
     }

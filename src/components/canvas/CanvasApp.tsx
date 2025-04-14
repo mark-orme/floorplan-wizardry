@@ -40,7 +40,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
       width: 0,
       height: 0
     },
-    lastError: null,
+    lastError: '',
     lastRefresh: Date.now()
   });
 
@@ -77,6 +77,8 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
         tool={tool}
         lineThickness={lineThickness}
         lineColor={lineColor}
+        wallColor="#444444"
+        wallThickness={4}
         style={{ width: '100%', height: '100%' }}
       />
     </div>
