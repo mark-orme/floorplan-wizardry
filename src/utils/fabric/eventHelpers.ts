@@ -18,22 +18,6 @@ export function getPointerCoordinates(e: TEvent<TPointerEvent> | null): Point {
     return { x: 0, y: 0 };
   }
   
-  // Try absolute pointer (Fabric v6)
-  if (e.absolutePointer && typeof e.absolutePointer.x === 'number' && typeof e.absolutePointer.y === 'number') {
-    return {
-      x: e.absolutePointer.x,
-      y: e.absolutePointer.y
-    };
-  }
-  
-  // Try regular pointer
-  if (e.pointer && typeof e.pointer.x === 'number' && typeof e.pointer.y === 'number') {
-    return {
-      x: e.pointer.x,
-      y: e.pointer.y
-    };
-  }
-  
   // Extract from original event as fallback
   const nativeEvent = e.e;
   if ('clientX' in nativeEvent && 'clientY' in nativeEvent) {
@@ -64,8 +48,6 @@ export function hasValidCoordinates(e: TEvent<TPointerEvent> | null): boolean {
   if (!e) return false;
   
   return (
-    (e.absolutePointer && typeof e.absolutePointer.x === 'number') ||
-    (e.pointer && typeof e.pointer.x === 'number') ||
     ('clientX' in e.e) ||
     ('touches' in e.e && e.e.touches.length > 0)
   );
