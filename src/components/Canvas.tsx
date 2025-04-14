@@ -1,12 +1,15 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 import { DrawingMode } from '@/constants/drawingModes';
-import { createCompleteGrid } from '@/utils/grid/gridRenderers';
+import { GridRenderer } from './canvas/grid/GridRenderer';
 import { GridDebugOverlay } from './canvas/GridDebugOverlay';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
 import { forceGridCreationAndVisibility } from '@/utils/grid/gridVisibility';
+import { useWallDrawing } from '@/hooks/useWallDrawing';
+import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 
 export interface CanvasProps {
   width: number;
@@ -39,85 +42,28 @@ export const Canvas: React.FC<CanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const gridInitializedRef = useRef<boolean>(false);
-  const gridAttemptCountRef = useRef<number>(0);
   const [gridError, setGridError] = useState<string | null>(null);
   const mountedRef = useRef<boolean>(true);
 
-  const createGridWithRetry = React.useCallback((canvas: FabricCanvas) => {
-    if (!canvas || gridInitializedRef.current || !mountedRef.current) return;
-    
-    const maxAttempts = 3;
-    gridAttemptCountRef.current += 1;
-    
-    try {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      if (canvas.width && canvas.width < viewportWidth) {
-        canvas.setWidth(viewportWidth);
-      }
-      
-      if (canvas.height && canvas.height < viewportHeight) {
-        canvas.setHeight(viewportHeight);
-      }
-      
-      let gridObjects = createCompleteGrid(canvas);
-      
-      if (!gridObjects || gridObjects.length === 0) {
-        if (forceGridCreationAndVisibility(canvas)) {
-          gridInitializedRef.current = true;
-          
-          if (setDebugInfo) {
-            setDebugInfo(prev => ({
-              ...prev,
-              gridCreated: true,
-              gridRendered: true,
-              gridObjectCount: canvas.getObjects().filter(obj => 
-                (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-              ).length
-            }));
-          }
-          
-          return;
-        }
-      } else {
-        gridObjects.forEach(obj => {
-          obj.set({
-            visible: true,
-            selectable: false,
-            evented: false
-          });
-          
-          canvas.sendObjectToBack(obj);
-        });
-        
-        canvas.renderAll();
-        
-        if (setDebugInfo && gridObjects.length > 0) {
-          setDebugInfo(prev => ({
-            ...prev,
-            gridCreated: true,
-            gridRendered: true,
-            gridObjectCount: gridObjects.length
-          }));
-        }
-        
-        gridInitializedRef.current = true;
-        return;
-      }
-      
-      if (gridAttemptCountRef.current < maxAttempts && mountedRef.current) {
-        setTimeout(() => createGridWithRetry(canvas), 500);
-      } else {
-        setGridError('Failed to create grid after multiple attempts');
-      }
-    } catch (error) {
-      if (gridAttemptCountRef.current < maxAttempts && mountedRef.current) {
-        setTimeout(() => createGridWithRetry(canvas), 500);
-      }
+  // Use wall drawing hook
+  const { isDrawing: isDrawingWall } = useWallDrawing({
+    fabricCanvasRef,
+    tool,
+    wallColor,
+    wallThickness
+  });
+
+  // Use straight line tool hook
+  const { isActive: isStraightLineActive } = useStraightLineTool({
+    fabricCanvasRef,
+    tool,
+    lineColor,
+    lineThickness,
+    saveCurrentState: () => {
+      // This would normally save the state for undo/redo
+      console.log("Saving canvas state");
     }
-  }, [setDebugInfo]);
+  });
 
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
@@ -151,8 +97,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         canvas.isDrawingMode = false;
         canvas.defaultCursor = 'crosshair';
         canvas.selection = false;
-        canvas.freeDrawingBrush.width = wallThickness;
-        canvas.freeDrawingBrush.color = wallColor;
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.width = wallThickness;
+          canvas.freeDrawingBrush.color = wallColor;
+        }
         break;
       default:
         canvas.isDrawingMode = false;
@@ -191,17 +139,16 @@ export const Canvas: React.FC<CanvasProps> = ({
         }));
       }
 
-      const gridTimer = setTimeout(() => {
-        if (mountedRef.current) {
-          createGridWithRetry(canvas);
-        }
-      }, 100);
+      // Create grid immediately
+      const gridRenderer = new GridRenderer({
+        canvas,
+        showGrid: true
+      });
 
       onCanvasReady(canvas);
 
       return () => {
         mountedRef.current = false;
-        clearTimeout(gridTimer);
         
         if (canvas) {
           canvas.dispose();
@@ -221,7 +168,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         }));
       }
     }
-  }, [width, height, onCanvasReady, onError, setDebugInfo, createGridWithRetry, lineColor, lineThickness, wallColor, wallThickness]);
+  }, [width, height, onCanvasReady, onError, setDebugInfo, lineColor, lineThickness, wallColor, wallThickness]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -234,8 +181,11 @@ export const Canvas: React.FC<CanvasProps> = ({
         height: window.innerHeight
       });
       
-      gridInitializedRef.current = false;
-      createGridWithRetry(canvas);
+      // Re-render grid after resize
+      const gridRenderer = new GridRenderer({
+        canvas,
+        showGrid: true
+      });
     };
     
     window.addEventListener('resize', handleResize);
@@ -243,7 +193,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [createGridWithRetry]);
+  }, []);
 
   return (
     <div className="relative w-full h-full">

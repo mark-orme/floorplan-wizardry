@@ -1,9 +1,10 @@
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { useSnapToGrid } from './useSnapToGrid';
+import { useGridSnapping } from './canvas/useGridSnapping';
 
 interface UseWallDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -26,7 +27,8 @@ export const useWallDrawing = ({
   const startPointRef = useRef<{ x: number, y: number } | null>(null);
   const measureTooltipRef = useRef<any>(null);
   
-  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid({ fabricCanvasRef });
+  // Use the grid snapping hook
+  const { snapPointToGrid, snapEventToGrid, snapLineToGrid } = useGridSnapping(fabricCanvasRef);
   
   const straightenLine = useCallback((line: Line) => {
     if (!line) return;
@@ -97,9 +99,9 @@ export const useWallDrawing = ({
     if (!fabricCanvasRef.current || tool !== DrawingMode.WALL) return;
     
     const canvas = fabricCanvasRef.current;
-    const pointer = canvas.getPointer(e.e);
+    const snappedPoint = snapEventToGrid(e);
     
-    const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
+    if (!snappedPoint) return;
     
     const line = new Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
       stroke: wallColor,
@@ -115,7 +117,7 @@ export const useWallDrawing = ({
     setIsDrawing(true);
     setCurrentWall(line);
     startPointRef.current = snappedPoint;
-  }, [fabricCanvasRef, tool, wallColor, wallThickness, snapPointToGrid]);
+  }, [fabricCanvasRef, tool, wallColor, wallThickness, snapEventToGrid]);
   
   const continueDrawing = useCallback((e: any) => {
     if (!fabricCanvasRef.current || !isDrawing || !currentWall || tool !== DrawingMode.WALL) return;

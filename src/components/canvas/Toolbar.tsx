@@ -98,7 +98,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   };
 
   return (
-    <div className="p-2 border-b flex flex-wrap gap-2 bg-white">
+    <div className="flex flex-wrap gap-2 bg-white">
       <div className="flex items-center gap-1">
         <Button 
           size="sm" 
@@ -107,14 +107,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           title="Select Tool"
         >
           <Pointer className="h-4 w-4" />
+          <span className="ml-1">Select</span>
         </Button>
         <Button 
           size="sm" 
           variant={activeTool === DrawingMode.DRAW ? 'default' : 'outline'} 
           onClick={() => onToolChange(DrawingMode.DRAW)}
-          title="Draw Tool"
+          title="Freehand Wall Tool"
         >
           <Pencil className="h-4 w-4" />
+          <span className="ml-1">Freehand Wall</span>
         </Button>
         <Button 
           size="sm" 
@@ -124,15 +126,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           data-test-id="straight-line-button"
           className={activeTool === DrawingMode.STRAIGHT_LINE ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
         >
-          <Ruler className="h-4 w-4" />
+          <Minus className="h-4 w-4" />
+          <span className="ml-1">Straight Line</span>
         </Button>
         <Button 
           size="sm" 
-          variant={activeTool === DrawingMode.RECTANGLE ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.RECTANGLE)}
-          title="Rectangle Tool"
+          variant={activeTool === DrawingMode.WALL ? 'default' : 'outline'} 
+          onClick={() => onToolChange(DrawingMode.WALL)}
+          title="Wall Tool"
         >
-          <Square className="h-4 w-4" />
+          <Ruler className="h-4 w-4" />
+          <span className="ml-1">Wall</span>
         </Button>
         <Button 
           size="sm" 
@@ -141,6 +145,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           title="Eraser Tool"
         >
           <Eraser className="h-4 w-4" />
+          <span className="ml-1">Eraser</span>
         </Button>
         
         {/* Add a button to report line tool issues */}
@@ -172,14 +177,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <Separator orientation="vertical" className="h-8" />
       
       <div className="flex items-center gap-1">
-        <Button size="sm" variant="outline" onClick={onClear} title="Clear Canvas">
-          <Trash className="h-4 w-4" />
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={onDelete} 
+          title="Delete Selected"
+          className="bg-red-50 border-red-200 hover:bg-red-100"
+        >
+          <Trash className="h-4 w-4 text-red-500" />
+          <span className="ml-1 text-red-500">Delete Selected</span>
         </Button>
         <Button size="sm" variant="outline" onClick={onSave} title="Save Canvas">
           <Save className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="outline" onClick={onDelete} title="Delete Selected">
-          <Trash className="h-4 w-4" />
         </Button>
       </div>
       
