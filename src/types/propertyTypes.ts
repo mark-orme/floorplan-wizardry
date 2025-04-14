@@ -10,7 +10,8 @@ export enum PropertyStatus {
   PENDING_REVIEW = 'pending_review',
   APPROVED = 'approved',
   REJECTED = 'rejected',
-  PUBLISHED = 'published'
+  PUBLISHED = 'published',
+  COMPLETED = 'completed'
 }
 
 export interface Property {
@@ -26,6 +27,24 @@ export interface Property {
   updatedAt?: string;
   notes?: string;
   user_id?: string;
+  name: string;
+  type: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  userId: string;
+  floorPlans?: string; // Added for PropertyDetail.tsx
+}
+
+export interface PropertyListItem {
+  id: string;
+  order_id?: string;
+  address: string;
+  client_name?: string;
+  status: PropertyStatus;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
 }
 
 /**

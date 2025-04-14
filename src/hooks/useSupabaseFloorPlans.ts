@@ -45,7 +45,7 @@ export const useSupabaseFloorPlans = () => {
       // Check for existing floor plans in Supabase
       const { data: existingPlans, error: queryError } = await supabase
         .from('floor_plans')
-        .select('id')
+        .select()
         .eq('user_id', user.id)
         .single();
         
@@ -113,7 +113,7 @@ export const useSupabaseFloorPlans = () => {
       
       const { data, error } = await supabase
         .from('floor_plans')
-        .select('data')
+        .select()
         .eq('user_id', user.id)
         .single();
 

@@ -1,3 +1,4 @@
+
 // Export supabase client functions and types
 
 /**
@@ -8,7 +9,8 @@ export enum UserRole {
   MANAGER = 'manager',
   PHOTOGRAPHER = 'photographer',
   CLIENT = 'client',
-  GUEST = 'guest'
+  GUEST = 'guest',
+  PROCESSING_MANAGER = 'processing_manager'
 }
 
 // Placeholder for actual Supabase client
@@ -16,21 +18,71 @@ export const supabase = {
   auth: {
     getUser: async () => ({ data: { user: null }, error: null }),
     signIn: async () => ({ data: null, error: null }),
-    signOut: async () => ({ error: null })
+    signOut: async () => ({ error: null }),
+    signInWithPassword: async () => ({ data: { user: null, session: null }, error: null }),
+    getSession: async () => ({ data: { session: null }, error: null })
   },
   from: (table: string) => ({
     select: () => ({
-      eq: () => ({
+      eq: (field: string, value: any) => ({
         single: async () => ({ data: null, error: null }),
-        data: []
+        data: [],
+        limit: (num: number) => ({
+          data: [],
+          error: null
+        }),
+        in: (field: string, values: any[]) => ({
+          data: [],
+          error: null,
+          order: (field: string, options: any) => ({
+            data: [],
+            error: null
+          })
+        }),
+        order: (field: string, options: any) => ({
+          data: [],
+          error: null
+        })
       }),
-      data: []
+      data: [],
+      in: (field: string, values: any[]) => ({
+        data: [],
+        error: null,
+        order: (field: string, options: any) => ({
+          data: [],
+          error: null
+        })
+      }),
+      order: (field: string, options: any) => ({
+        data: [],
+        error: null
+      }),
+      limit: (num: number) => ({
+        data: [],
+        error: null
+      })
     }),
     insert: async () => ({ data: null, error: null }),
     update: async () => ({ data: null, error: null }),
-    delete: async () => ({ data: null, error: null })
-  })
+    delete: async () => ({ data: null, error: null }),
+    eq: (field: string, value: any) => ({
+      data: [],
+      error: null
+    })
+  }),
+  // Mock admin methods
+  auth: {
+    ...supabase.auth,
+    admin: {
+      listUsers: async () => ({ data: { users: [] }, error: null }),
+      deleteUser: async () => ({ error: null }),
+      createUser: async () => ({ data: { user: null }, error: null })
+    }
+  }
 };
+
+// Define function to check if Supabase is configured
+export const isSupabaseConfigured = () => true;
 
 // Define type for authentication
 export type AuthResponse = {

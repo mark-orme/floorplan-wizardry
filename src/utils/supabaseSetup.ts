@@ -1,169 +1,102 @@
 
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { UserRole } from '@/lib/supabase';
+import { PropertyStatus } from '@/types/propertyTypes';
 
 /**
- * Checks if the user_profiles table exists in Supabase
- * @returns Promise<boolean> True if the table exists
- */
-const checkIfTableExists = async (tableName: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from(tableName)
-      .select('id')
-      .limit(1);
-    
-    // If no error, table exists
-    return !error;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Creates necessary database tables in Supabase if they don't exist
- * This is a temporary solution for development environments
- */
-export const setupSupabaseTables = async (): Promise<void> => {
-  try {
-    console.info('Checking if necessary Supabase tables exist...');
-    
-    // Check if user_profiles table exists
-    const tableExists = await checkIfTableExists('user_profiles');
-    
-    // If table exists, we're good to go
-    if (tableExists) {
-      console.info('user_profiles table already exists');
-      return;
-    }
-    
-    console.info('user_profiles table does not exist, notifying user...');
-    
-    // Instead of trying to create the table (which fails due to permission issues),
-    // provide clear guidance to the user
-    toast.info(
-      'The user_profiles table needs to be created in your Supabase dashboard. Please run the SQL provided in the console.',
-      { duration: 10000 }
-    );
-    
-    // Log the SQL needed to create the table
-    console.info('Please run this SQL in your Supabase dashboard:');
-    console.info(`
-CREATE TABLE IF NOT EXISTS public.user_profiles (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) NOT NULL UNIQUE,
-  role TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
-);
-
--- Optional: Set up Row Level Security
-ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-
--- Optional: Create policies
-CREATE POLICY "Users can view their own profile"
-  ON public.user_profiles
-  FOR SELECT
-  USING (auth.uid() = user_id);
-  
-CREATE POLICY "Users can update their own profile"
-  ON public.user_profiles
-  FOR UPDATE
-  USING (auth.uid() = user_id);
-`);
-    
-  } catch (error) {
-    console.error('Error checking Supabase tables:', error);
-    toast.error('Could not connect to Supabase. Please check your connection settings.');
-  }
-};
-
-/**
- * Insert test data directly into Supabase tables
- * This is for development purposes only
+ * Insert test data into Supabase for development purposes
  */
 export const insertTestData = async (): Promise<void> => {
   try {
-    console.info('Inserting test data into Supabase...');
-    
-    // Check if user is logged in first
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast.error('You must be logged in to insert test data');
+    // Check if we have test data already
+    const { data } = await supabase
+      .from('properties')
+      .select()
+      .limit(1);
+      
+    if (data && data.length > 0) {
+      toast.info('Test data already exists');
       return;
     }
 
-    // 1. Add test properties
-    const { data: propertyData, error: propertyError } = await supabase
-      .from('properties')
-      .insert([
-        {
-          order_id: 'TEST-001',
-          address: '123 Test Street, Test City',
-          client_name: 'Test Client 1',
-          branch_name: 'Test Branch',
-          created_by: session.user.id,
-          status: 'draft',
-          floor_plans: [
-            {
-              strokes: [],
-              label: 'Ground Floor',
-              paperSize: 'infinite',
-              id: `floor-${Date.now()}-1`,
-              name: 'Ground Floor',
-              gia: 0
-            }
-          ]
-        },
-        {
-          order_id: 'TEST-002',
-          address: '456 Sample Avenue, Example Town',
-          client_name: 'Test Client 2',
-          created_by: session.user.id,
-          status: 'pending_review',
-          floor_plans: [
-            {
-              strokes: [],
-              label: 'First Floor',
-              paperSize: 'infinite',
-              id: `floor-${Date.now()}-2`,
-              name: 'First Floor',
-              gia: 0
-            }
-          ]
-        }
-      ])
-      .select();
-
-    if (propertyError) {
-      throw propertyError;
-    }
-
-    // Add current user to user_profiles if they don't exist
-    const { data: userExists } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .single();
-
-    if (!userExists) {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          user_id: session.user.id,
-          role: UserRole.PHOTOGRAPHER,
-          created_at: new Date().toISOString()
-        });
-
-      if (profileError) {
-        console.error('Error adding user profile:', profileError);
+    // Sample properties for testing
+    const testProperties = [
+      {
+        order_id: 'ORD-2023-001',
+        address: '123 Main Street, London',
+        client_name: 'John Smith',
+        branch_name: 'Central London',
+        status: PropertyStatus.DRAFT,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        notes: 'Large Victorian property with garden',
+        user_id: 'current-user-id', // This will be replaced below
+        name: '123 Main Street',
+        type: 'residential',
+        bedrooms: 3,
+        bathrooms: 2,
+        area: 1500,
+        floorPlans: JSON.stringify([])
+      },
+      {
+        order_id: 'ORD-2023-002',
+        address: '456 Park Avenue, Manchester',
+        client_name: 'Jane Doe',
+        branch_name: 'Manchester North',
+        status: PropertyStatus.PENDING_REVIEW,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        notes: 'Modern apartment in city center',
+        user_id: 'current-user-id', // This will be replaced below
+        name: '456 Park Avenue',
+        type: 'apartment',
+        bedrooms: 2,
+        bathrooms: 1,
+        area: 850,
+        floorPlans: JSON.stringify([])
+      },
+      {
+        order_id: 'ORD-2023-003',
+        address: '789 River Road, Birmingham',
+        client_name: 'Robert Johnson',
+        branch_name: 'Birmingham South',
+        status: PropertyStatus.COMPLETED,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        notes: 'Commercial property with parking',
+        user_id: 'current-user-id', // This will be replaced below
+        name: '789 River Road',
+        type: 'commercial',
+        bedrooms: 0,
+        bathrooms: 2,
+        area: 2500,
+        floorPlans: JSON.stringify([])
       }
+    ];
+
+    // Get current user ID
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id || 'anonymous-user';
+
+    // Update properties with the current user ID
+    const propertiesWithUserId = testProperties.map(property => ({
+      ...property,
+      user_id: userId,
+      userId: userId
+    }));
+
+    // Insert the test properties
+    const { error } = await supabase
+      .from('properties')
+      .insert(propertiesWithUserId);
+
+    if (error) {
+      throw error;
     }
 
-    toast.success('Test data inserted successfully!');
-    console.info('Test data inserted:', propertyData);
+    toast.success('Test data inserted successfully');
   } catch (error: any) {
     console.error('Error inserting test data:', error);
-    toast.error(`Failed to insert test data: ${error.message}`);
+    toast.error(`Failed to insert test data: ${error.message || 'Unknown error'}`);
   }
 };

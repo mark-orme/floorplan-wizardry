@@ -1,12 +1,42 @@
 
 /**
- * Floor Plan Types
- * Type definitions for floor plans and related entities
- * @module types/floorPlanTypes
- * 
- * @deprecated This file is being refactored. Import from '@/types/floor-plan' instead.
+ * Floor plan type definitions
  */
-import { Point } from './core/Point';
 
-// Re-export all types from the new structure
-export * from './floor-plan';
+export interface FloorPlan {
+  id?: string;
+  name?: string;
+  rooms?: Room[];
+  walls?: Wall[];
+  metadata?: FloorPlanMetadata;
+  [key: string]: any;
+}
+
+export interface Room {
+  id: string;
+  name?: string;
+  walls: Wall[];
+  area?: number;
+  [key: string]: any;
+}
+
+export interface Wall {
+  id: string;
+  points: Point[];
+  length?: number;
+  thickness?: number;
+  [key: string]: any;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface FloorPlanMetadata {
+  createdAt?: string;
+  updatedAt?: string;
+  scale?: number;
+  units?: 'meters' | 'feet';
+  [key: string]: any;
+}
