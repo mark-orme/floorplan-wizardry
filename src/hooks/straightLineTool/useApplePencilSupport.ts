@@ -110,7 +110,7 @@ export const useApplePencilSupport = ({
       };
     } catch (error) {
       reportDrawingError(error, 'process-pencil-data', {
-        tool: DrawingMode.LINE,
+        tool: DrawingMode.STRAIGHT_LINE,
         interaction: { type: 'touch' }
       });
       return { isApplePencil: false, pressure: 1, tilt: null, position: null };

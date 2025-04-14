@@ -1,3 +1,4 @@
+
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -5,7 +6,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useStraightLineTool } from '../useStraightLineTool';
+import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 import { useLineState } from '../straightLineTool/useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-types';
@@ -13,7 +14,7 @@ import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
 import { Point } from '@/types/core/Geometry';
 
 // Mock the dependencies
-vi.mock('../useLineState', () => ({
+vi.mock('../straightLineTool/useLineState', () => ({
   useLineState: vi.fn().mockReturnValue({
     isDrawing: false,
     isToolInitialized: false,
@@ -25,7 +26,13 @@ vi.mock('../useLineState', () => ({
     setDistanceTooltip: vi.fn(),
     initializeTool: vi.fn(),
     resetDrawingState: vi.fn(),
-    setIsDrawing: vi.fn()
+    setIsDrawing: vi.fn(),
+    inputMethod: 'mouse',
+    isPencilMode: false,
+    snapEnabled: true,
+    snapPointToGrid: vi.fn(),
+    snapLineToGrid: vi.fn(),
+    toggleSnap: vi.fn()
   })
 }));
 

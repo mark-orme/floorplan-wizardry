@@ -1,3 +1,4 @@
+
 /**
  * Enhanced straight line drawing tool with touch and Apple Pencil support
  * @module hooks/straightLineTool/useStraightLineTool
@@ -9,6 +10,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 import { useLineState } from './useLineState';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { toast } from 'sonner';
 
 export interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -58,6 +60,7 @@ export const useStraightLineTool = ({
   
   // Track initialization status
   const [isActive, setIsActive] = useState(false);
+  const eventHandlersAttachedRef = useRef(false);
   
   // Initialize the tool when it becomes active
   useEffect(() => {
@@ -65,15 +68,134 @@ export const useStraightLineTool = ({
       if (!isToolInitialized) {
         const success = initializeTool();
         setIsActive(success);
+        
+        if (success) {
+          toast.success("Line tool ready! Click and drag to draw a line.", {
+            id: "line-tool-ready",
+            duration: 2000
+          });
+        }
       } else {
         setIsActive(true);
       }
+      
+      // Set up Fabric.js event handlers
+      setupEventHandlers();
     } else {
       setIsActive(false);
       // Clean up if switching away from this tool
       cancelDrawing();
+      cleanupEventHandlers();
     }
+    
+    // Clean up on unmount
+    return () => {
+      cleanupEventHandlers();
+    };
   }, [tool, isToolInitialized, initializeTool]);
+  
+  /**
+   * Set up Fabric.js event handlers
+   */
+  const setupEventHandlers = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || eventHandlersAttachedRef.current) return;
+    
+    // Set canvas properties for drawing
+    canvas.selection = false;
+    canvas.defaultCursor = 'crosshair';
+    canvas.hoverCursor = 'crosshair';
+    
+    // Disable selection for all objects (except those we've just drawn)
+    canvas.getObjects().forEach(obj => {
+      if ((obj as any).objectType !== 'straight-line') {
+        obj.selectable = false;
+      }
+    });
+    
+    // Attach event handlers through Fabric.js
+    canvas.on('mouse:down', handleCanvasMouseDown);
+    canvas.on('mouse:move', handleCanvasMouseMove);
+    canvas.on('mouse:up', handleCanvasMouseUp);
+    
+    eventHandlersAttachedRef.current = true;
+    
+    logDrawingEvent('Line drawing event handlers attached', 'setup-event-handlers', {
+      tool: DrawingMode.STRAIGHT_LINE
+    });
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Clean up Fabric.js event handlers
+   */
+  const cleanupEventHandlers = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !eventHandlersAttachedRef.current) return;
+    
+    // Remove event handlers
+    canvas.off('mouse:down', handleCanvasMouseDown);
+    canvas.off('mouse:move', handleCanvasMouseMove);
+    canvas.off('mouse:up', handleCanvasMouseUp);
+    
+    // Reset canvas properties
+    canvas.selection = true;
+    canvas.defaultCursor = 'default';
+    canvas.hoverCursor = 'default';
+    
+    eventHandlersAttachedRef.current = false;
+    
+    logDrawingEvent('Line drawing event handlers removed', 'cleanup-event-handlers', {
+      tool: DrawingMode.STRAIGHT_LINE
+    });
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Handle canvas mouse down event
+   */
+  const handleCanvasMouseDown = useCallback((e: any) => {
+    if (!fabricCanvasRef.current || tool !== DrawingMode.STRAIGHT_LINE) return;
+    
+    try {
+      const pointer = fabricCanvasRef.current.getPointer(e.e);
+      handlePointerDown({ x: pointer.x, y: pointer.y });
+    } catch (error) {
+      reportDrawingError(error, 'canvas-mouse-down', {
+        tool: DrawingMode.STRAIGHT_LINE
+      });
+    }
+  }, [tool, fabricCanvasRef, handlePointerDown]);
+  
+  /**
+   * Handle canvas mouse move event
+   */
+  const handleCanvasMouseMove = useCallback((e: any) => {
+    if (!fabricCanvasRef.current || !isDrawing || tool !== DrawingMode.STRAIGHT_LINE) return;
+    
+    try {
+      const pointer = fabricCanvasRef.current.getPointer(e.e);
+      handlePointerMove({ x: pointer.x, y: pointer.y });
+    } catch (error) {
+      reportDrawingError(error, 'canvas-mouse-move', {
+        tool: DrawingMode.STRAIGHT_LINE
+      });
+    }
+  }, [tool, fabricCanvasRef, isDrawing, handlePointerMove]);
+  
+  /**
+   * Handle canvas mouse up event
+   */
+  const handleCanvasMouseUp = useCallback((e: any) => {
+    if (!fabricCanvasRef.current || !isDrawing || tool !== DrawingMode.STRAIGHT_LINE) return;
+    
+    try {
+      const pointer = fabricCanvasRef.current.getPointer(e.e);
+      handlePointerUp({ x: pointer.x, y: pointer.y });
+    } catch (error) {
+      reportDrawingError(error, 'canvas-mouse-up', {
+        tool: DrawingMode.STRAIGHT_LINE
+      });
+    }
+  }, [tool, fabricCanvasRef, isDrawing, handlePointerUp]);
   
   /**
    * Handle mouse down or touch start to begin drawing
@@ -140,12 +262,12 @@ export const useStraightLineTool = ({
       canvas.requestRenderAll();
       
       logDrawingEvent('Started line drawing', 'line-drawing-start', {
-        tool: DrawingMode.LINE,
+        tool: DrawingMode.STRAIGHT_LINE,
         interaction: { type: inputMethod }
       });
     } catch (error) {
       reportDrawingError(error, 'start-line-drawing', {
-        tool: DrawingMode.LINE,
+        tool: DrawingMode.STRAIGHT_LINE,
         interaction: { type: inputMethod }
       });
       resetDrawingState();
@@ -185,7 +307,9 @@ export const useStraightLineTool = ({
       const snappedEnd = snapEnabled ? snapPointToGrid(point) : point;
       
       // Check if shift is pressed for angle constraints
-      if (window.event && (window.event as KeyboardEvent).shiftKey) {
+      const isShiftPressed = window.event && (window.event as KeyboardEvent).shiftKey;
+      
+      if (isShiftPressed) {
         // Use snapLineToGrid which handles angle snapping with shift key
         const snappedPoints = snapLineToGrid(snappedStart, snappedEnd);
         
@@ -255,7 +379,7 @@ export const useStraightLineTool = ({
       }
     } catch (error) {
       reportDrawingError(error, 'update-line-drawing', {
-        tool: DrawingMode.LINE,
+        tool: DrawingMode.STRAIGHT_LINE,
         interaction: { type: inputMethod }
       });
     }
@@ -324,7 +448,7 @@ export const useStraightLineTool = ({
         }
         
         logDrawingEvent('Completed line drawing', 'line-drawing-complete', {
-          tool: DrawingMode.LINE,
+          tool: DrawingMode.STRAIGHT_LINE,
           drawingState: {
             isDrawing: true,
             pointCount: 2,
@@ -332,6 +456,9 @@ export const useStraightLineTool = ({
           },
           interaction: { type: inputMethod }
         });
+        
+        // Trigger completion indicator
+        toast.success(`Line drawn: ${distanceInMeters} m`);
       } else {
         // Line too short, remove it
         if (currentLineRef.current) {
@@ -343,7 +470,7 @@ export const useStraightLineTool = ({
         }
         
         logDrawingEvent('Cancelled line (too short)', 'line-drawing-discard', {
-          tool: DrawingMode.LINE,
+          tool: DrawingMode.STRAIGHT_LINE,
           interaction: { type: inputMethod }
         });
       }
@@ -355,7 +482,7 @@ export const useStraightLineTool = ({
       canvas.requestRenderAll();
     } catch (error) {
       reportDrawingError(error, 'complete-line-drawing', {
-        tool: DrawingMode.LINE,
+        tool: DrawingMode.STRAIGHT_LINE,
         interaction: { type: inputMethod }
       });
       resetDrawingState();
@@ -402,12 +529,12 @@ export const useStraightLineTool = ({
       canvas.requestRenderAll();
       
       logDrawingEvent('Cancelled line drawing', 'line-drawing-cancel', {
-        tool: DrawingMode.LINE,
+        tool: DrawingMode.STRAIGHT_LINE,
         interaction: { type: inputMethod }
       });
     } catch (error) {
       reportDrawingError(error, 'cancel-line-drawing', {
-        tool: DrawingMode.LINE,
+        tool: DrawingMode.STRAIGHT_LINE,
         interaction: { type: inputMethod }
       });
       resetDrawingState();
@@ -426,6 +553,24 @@ export const useStraightLineTool = ({
   const toggleGridSnapping = useCallback(() => {
     toggleSnap();
   }, [toggleSnap]);
+  
+  // Set up keyboard event listeners for Escape key to cancel drawing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDrawing) {
+        cancelDrawing();
+      }
+      if (e.key === 'g') {
+        toggleGridSnapping();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDrawing, cancelDrawing, toggleGridSnapping]);
   
   return {
     isActive,

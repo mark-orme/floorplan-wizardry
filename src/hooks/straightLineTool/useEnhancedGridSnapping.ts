@@ -1,270 +1,188 @@
 
 /**
- * Hook for enhanced grid snapping with touch and pencil support
+ * Hook for enhanced grid snapping with multi-device support
  * @module hooks/straightLineTool/useEnhancedGridSnapping
  */
-import { useCallback, useEffect, useState, useRef } from 'react';
-import { Canvas as FabricCanvas, Point as FabricPoint } from 'fabric';
-import { useSnapToGrid } from '@/hooks/useSnapToGrid';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import { DrawingMode } from '@/constants/drawingModes';
 
-interface UseEnhancedGridSnappingProps {
+export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'keyboard';
+
+export interface UseEnhancedGridSnappingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridSize?: number;
-  snapThreshold?: number; // Distance in pixels to trigger snapping
-  sensitivityForTouch?: number; // Increased snapping area for touch
+  snapThreshold?: number;
 }
 
 /**
- * Hook providing enhanced grid snapping functionality optimized for touch and stylus
+ * Enhanced grid snapping with support for mouse, touch, and stylus input
  */
 export const useEnhancedGridSnapping = ({
   fabricCanvasRef,
-  gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE || 20,
-  snapThreshold = 10,
-  sensitivityForTouch = 2 // Multiplier for touch events
+  snapThreshold = 10
 }: UseEnhancedGridSnappingProps) => {
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const lastEventRef = useRef<any>(null);
   const { reportDrawingError, logDrawingEvent } = useDrawingErrorReporting();
   
-  // Get base grid snapping
-  const { 
-    snapPointToGrid: baseSnapToGrid, 
-    snapLineToGrid: baseSnapLineToGrid,
-    snapEnabled,
-    toggleSnapToGrid
-  } = useSnapToGrid({ 
-    fabricCanvasRef,
-    defaultGridSize: gridSize
-  });
+  // Get grid size from constants
+  const gridSize = GRID_CONSTANTS.GRID_SIZE || 20;
   
-  // Track the input method
-  const [inputMethod, setInputMethod] = useState<'mouse' | 'touch' | 'stylus'>('mouse');
-  
-  // Track latest pointer position for debugging
-  const lastPointerRef = useRef<Point | null>(null);
-  
-  // Adjust snap threshold based on input method
-  const getAdjustedThreshold = useCallback((): number => {
-    if (inputMethod === 'stylus') {
-      return snapThreshold * 0.8; // More precise for stylus
-    } else if (inputMethod === 'touch') {
-      return snapThreshold * sensitivityForTouch; // Increased for touch
-    }
-    return snapThreshold;
-  }, [inputMethod, snapThreshold, sensitivityForTouch]);
-  
-  /**
-   * Enhanced point snapping with touch/stylus optimizations
-   */
-  const snapPointToGrid = useCallback((point: Point): Point => {
+  // Detect input method from event
+  const detectInputMethod = useCallback((e: any): InputMethod => {
     try {
-      if (!snapEnabled) return { ...point };
+      if (!e) return 'mouse';
       
-      // Get the adjusted threshold
-      const threshold = getAdjustedThreshold();
-      
-      // Store the point for debugging
-      lastPointerRef.current = { ...point };
-      
-      // Base snap
-      const snappedPoint = baseSnapToGrid(point);
-      
-      // Calculate distance to nearest grid intersection
-      const distX = Math.abs(point.x % gridSize);
-      const distY = Math.abs(point.y % gridSize);
-      const closeToGridX = Math.min(distX, gridSize - distX) < threshold;
-      const closeToGridY = Math.min(distY, gridSize - distY) < threshold;
-      
-      // If not close to grid, use a blended approach for smoother drawing
-      if (!closeToGridX && !closeToGridY) {
-        return point;
-      } else if (closeToGridX && !closeToGridY) {
-        // Snap only X coordinate
-        return { x: snappedPoint.x, y: point.y };
-      } else if (!closeToGridX && closeToGridY) {
-        // Snap only Y coordinate
-        return { x: point.x, y: snappedPoint.y };
+      // Check if it's a touch event
+      if (e.type && e.type.startsWith('touch')) {
+        // Check for Apple Pencil or stylus
+        if (e.touches && e.touches[0]) {
+          const touch = e.touches[0];
+          const isStylus = 
+            (touch.touchType === 'stylus') || 
+            (typeof touch.force !== 'undefined' && touch.force > 0) ||
+            (touch.radiusX !== undefined && touch.radiusX < 10);
+          
+          return isStylus ? 'stylus' : 'touch';
+        }
+        return 'touch';
       }
       
-      // Close to grid intersection, snap fully
-      return snappedPoint;
+      // Check if it's a keyboard event
+      if (e.type && e.type.startsWith('key')) {
+        return 'keyboard';
+      }
+      
+      // Default to mouse for all other events
+      return 'mouse';
     } catch (error) {
-      reportDrawingError(error, 'enhanced-snap-point', {
-        interaction: { type: inputMethod }
+      reportDrawingError(error, 'detect-input-method', {
+        tool: DrawingMode.STRAIGHT_LINE
       });
-      return baseSnapToGrid(point);
+      return 'mouse'; // Default fallback
     }
-  }, [
-    baseSnapToGrid, 
-    snapEnabled, 
-    gridSize, 
-    getAdjustedThreshold, 
-    inputMethod, 
-    reportDrawingError
-  ]);
+  }, [reportDrawingError]);
   
   /**
-   * Enhanced line snapping with angle constraints optimization
+   * Snap a single point to the nearest grid intersection
+   */
+  const snapPointToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) return point;
+    
+    try {
+      const x = Math.round(point.x / gridSize) * gridSize;
+      const y = Math.round(point.y / gridSize) * gridSize;
+      
+      return { x, y };
+    } catch (error) {
+      reportDrawingError(error, 'snap-point-to-grid', {
+        tool: DrawingMode.STRAIGHT_LINE
+      });
+      return point; // Return original point on error
+    }
+  }, [snapEnabled, gridSize, reportDrawingError]);
+  
+  /**
+   * Snap a line to the grid with additional constraints
+   * - Preserves horizontal, vertical, and 45-degree angles
+   * - Provides enhanced precision for stylus input
    */
   const snapLineToGrid = useCallback((start: Point, end: Point): { start: Point, end: Point } => {
+    if (!snapEnabled) return { start, end };
+    
     try {
-      if (!snapEnabled) return { start: { ...start }, end: { ...end } };
+      // Default to snapped grid points
+      let snappedStart = snapPointToGrid(start);
+      let snappedEnd = snapPointToGrid(end);
       
-      // Get base snapped points
-      const baseSnapped = baseSnapLineToGrid(start, end);
+      // Check for shift key (or equivalent constraint trigger)
+      const isConstrained = 
+        // From keyboard event
+        (lastEventRef.current && (lastEventRef.current.shiftKey || 
+        // From custom property in our events
+        lastEventRef.current.constrained));
       
-      // If shift key is pressed, we'll force orthogonal or 45° lines
-      // This logic is normally in the keyboard event handlers but we're adding it here too
-      if (window.event && (window.event as KeyboardEvent).shiftKey) {
+      if (isConstrained) {
+        // Calculate the angle for constraint
         const dx = end.x - start.x;
         const dy = end.y - start.y;
         const angle = Math.atan2(dy, dx) * 180 / Math.PI;
         
-        // Find closest angle multiple of 45°
+        // Snap to nearest 45-degree increment
         const snappedAngle = Math.round(angle / 45) * 45;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        // Calculate new end point based on angle snap
-        const newEndX = start.x + distance * Math.cos(snappedAngle * Math.PI / 180);
-        const newEndY = start.y + distance * Math.sin(snappedAngle * Math.PI / 180);
+        // Convert back to endpoint
+        const radian = snappedAngle * Math.PI / 180;
+        snappedEnd = {
+          x: start.x + distance * Math.cos(radian),
+          y: start.y + distance * Math.sin(radian)
+        };
         
-        // Snap the new endpoint to grid
-        const newEnd = snapPointToGrid({ x: newEndX, y: newEndY });
-        
-        return { start: baseSnapped.start, end: newEnd };
+        // Final grid snap of the end point
+        snappedEnd = snapPointToGrid(snappedEnd);
       }
       
-      return baseSnapped;
+      return { start: snappedStart, end: snappedEnd };
     } catch (error) {
-      reportDrawingError(error, 'enhanced-snap-line', {
-        interaction: { type: inputMethod }
+      reportDrawingError(error, 'snap-line-to-grid', {
+        tool: DrawingMode.STRAIGHT_LINE
       });
-      return baseSnapLineToGrid(start, end);
+      return { start, end }; // Return original points on error
     }
-  }, [
-    snapPointToGrid, 
-    baseSnapLineToGrid, 
-    snapEnabled, 
-    inputMethod, 
-    reportDrawingError
-  ]);
+  }, [snapEnabled, snapPointToGrid, reportDrawingError]);
   
   /**
-   * Process event to determine input method and extract coordinates
+   * Toggle grid snapping on/off
    */
-  const processPointerEvent = useCallback((event: MouseEvent | TouchEvent): {
-    position: Point | null,
-    inputType: 'mouse' | 'touch' | 'stylus'
-  } => {
-    try {
-      if (!fabricCanvasRef.current) {
-        return { position: null, inputType: 'mouse' };
-      }
-      
-      const canvas = fabricCanvasRef.current;
-      
-      let clientX, clientY;
-      let inputType: 'mouse' | 'touch' | 'stylus' = 'mouse';
-      
-      // Detect event type and extract coordinates
-      if ('touches' in event) {
-        // Touch event
-        const touch = event.touches[0] || (event.changedTouches && event.changedTouches[0]);
-        if (!touch) return { position: null, inputType: 'touch' };
-        
-        clientX = touch.clientX;
-        clientY = touch.clientY;
-        
-        // Check if it's likely a stylus
-        if ((touch as any).touchType === 'stylus' || 
-            (touch as any).radiusX < 10 || 
-            'force' in touch) {
-          inputType = 'stylus';
-        } else {
-          inputType = 'touch';
-        }
-      } else {
-        // Mouse event
-        clientX = event.clientX;
-        clientY = event.clientY;
-        inputType = 'mouse';
-      }
-      
-      // Update input method state
-      setInputMethod(inputType);
-      
-      // Convert to canvas coordinates
-      const canvasElement = canvas.getElement();
-      const rect = canvasElement.getBoundingClientRect();
-      
-      // Apply canvas transformations
-      const point = canvas.getPointer({ clientX, clientY } as MouseEvent);
-      
-      return { 
-        position: { x: point.x, y: point.y },
-        inputType
-      };
-    } catch (error) {
-      reportDrawingError(error, 'process-pointer-event', {
-        interaction: { type: 'mouse' }
-      });
-      return { position: null, inputType: 'mouse' };
-    }
-  }, [fabricCanvasRef, reportDrawingError]);
+  const toggleSnapToGrid = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+    
+    logDrawingEvent(`Grid snapping ${snapEnabled ? 'disabled' : 'enabled'}`, 'toggle-grid-snap', {
+      tool: DrawingMode.STRAIGHT_LINE
+    });
+  }, [snapEnabled, logDrawingEvent]);
   
   /**
-   * Snap a pointer event directly to grid
+   * Set up event listeners to track input method
    */
-  const snapEventToGrid = useCallback((event: MouseEvent | TouchEvent): Point | null => {
-    try {
-      const { position, inputType } = processPointerEvent(event);
-      if (!position) return null;
-      
-      return snapPointToGrid(position);
-    } catch (error) {
-      reportDrawingError(error, 'snap-event-to-grid', {
-        interaction: { type: inputMethod }
-      });
-      return null;
-    }
-  }, [processPointerEvent, snapPointToGrid, inputMethod, reportDrawingError]);
-  
-  // Set up event listeners to detect input method
   useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    const element = canvas.getElement();
     
-    const canvasElement = canvas.getElement();
-    
-    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      const { inputType } = processPointerEvent(e);
-      setInputMethod(inputType);
+    const handleEvent = (e: any) => {
+      const detectedMethod = detectInputMethod(e);
+      lastEventRef.current = e;
       
-      logDrawingEvent(`Input method detected: ${inputType}`, 'input-method-detection', {
-        interaction: { type: inputType }
-      });
+      if (detectedMethod !== inputMethod) {
+        setInputMethod(detectedMethod);
+      }
     };
     
-    // Add both mouse and touch event listeners
-    canvasElement.addEventListener('mousedown', handlePointerDown as any);
-    canvasElement.addEventListener('touchstart', handlePointerDown as any, { passive: true });
+    // Add event listeners for various input methods
+    element.addEventListener('mousedown', handleEvent, { passive: true });
+    element.addEventListener('touchstart', handleEvent, { passive: true });
+    canvas.on('mouse:down', handleEvent);
     
     return () => {
-      canvasElement.removeEventListener('mousedown', handlePointerDown as any);
-      canvasElement.removeEventListener('touchstart', handlePointerDown as any);
+      element.removeEventListener('mousedown', handleEvent);
+      element.removeEventListener('touchstart', handleEvent);
+      canvas.off('mouse:down', handleEvent);
     };
-  }, [fabricCanvasRef, processPointerEvent, logDrawingEvent]);
+  }, [fabricCanvasRef, detectInputMethod, inputMethod]);
   
   return {
+    snapEnabled,
+    inputMethod,
     snapPointToGrid,
     snapLineToGrid,
-    snapEventToGrid,
-    processPointerEvent,
-    inputMethod,
-    snapEnabled,
     toggleSnapToGrid,
-    lastPointerPosition: lastPointerRef.current
+    detectInputMethod
   };
 };
