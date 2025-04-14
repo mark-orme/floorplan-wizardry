@@ -18,13 +18,15 @@ module.exports = {
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended'
+    'plugin:react-hooks/recommended',
+    'plugin:security/recommended'  // Add security plugin
   ],
   plugins: [
     'react',
     '@typescript-eslint',
     'react-hooks',
-    'fabric-react'  // Add our custom plugin
+    'fabric-react',  // Add our custom plugin
+    'security'       // Add security plugin
   ],
   rules: {
     // React rules
@@ -51,6 +53,19 @@ module.exports = {
     
     // Grid constants validation rules
     './src/eslint/grid-constant-checker/ensure-valid-properties': 'error',
+    
+    // Security rules
+    'security/detect-object-injection': 'warn',
+    'security/detect-non-literal-regexp': 'error',
+    'security/detect-unsafe-regex': 'error',
+    'security/detect-buffer-noassert': 'error',
+    'security/detect-child-process': 'error',
+    'security/detect-disable-mustache-escape': 'error',
+    'security/detect-eval-with-expression': 'error',
+    'security/detect-no-csrf-before-method-override': 'error',
+    'security/detect-non-literal-fs-filename': 'warn',
+    'security/detect-pseudo-random-bytes': 'error',
+    'security/detect-possible-timing-attacks': 'warn',
     
     // Additional AI safety rules
     'no-undef': 'error',
