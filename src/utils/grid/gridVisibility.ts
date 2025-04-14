@@ -12,6 +12,13 @@ const lastCheckTime = {
   value: 0
 };
 
+// Track whether grid has been successfully created to avoid repeated attempts
+const gridCreationState = {
+  created: false,
+  attempts: 0,
+  maxAttempts: 5
+};
+
 /**
  * Ensure grid is visible on canvas
  * @param canvas - Fabric canvas
@@ -41,15 +48,18 @@ export function ensureGridVisibility(
     
     // If no grid items found, create an emergency grid
     if (gridItems.length === 0) {
-      console.log('No grid found, creating emergency grid');
+      if (gridCreationState.attempts >= gridCreationState.maxAttempts) {
+        return false; // Stop trying after too many attempts
+      }
+      
+      gridCreationState.attempts++;
       gridItems = createBasicEmergencyGrid(canvas);
       
       if (gridItems.length === 0) {
-        console.error('Failed to create emergency grid');
         return false;
       }
       
-      console.log(`Created emergency grid with ${gridItems.length} items`);
+      gridCreationState.created = true;
     }
     
     // Check if any grid object is not visible
@@ -62,22 +72,11 @@ export function ensureGridVisibility(
         visibilityChanged = true;
       }
       
-      // Ensure grid objects are at the back (only if needed)
-      const index = canvas.getObjects().indexOf(obj);
-      if (index > 0) {
-        try {
-          canvas.sendToBack(obj);
-        } catch (err) {
-          console.warn('Error using sendToBack, trying alternative methods');
-          try {
-            // For fabric.js v6
-            canvas.sendObjectToBack(obj);
-          } catch (innerErr) {
-            // Last resort, manually move to back
-            canvas.remove(obj);
-            canvas.add(obj);
-          }
-        }
+      // Ensure grid objects are at the back
+      try {
+        canvas.sendObjectToBack(obj);
+      } catch (err) {
+        // If sendObjectToBack fails, it's likely the object is already at the back
       }
     });
     
@@ -85,14 +84,11 @@ export function ensureGridVisibility(
     if (visibilityChanged) {
       // Force render to ensure changes are applied
       canvas.renderAll();
-      canvas.requestRenderAll();
-      logger.info(`Fixed visibility for ${gridItems.length} grid objects`);
     }
     
     return visibilityChanged;
   } catch (error) {
-    console.error('Error ensuring grid visibility:', error);
-    logger.error('Error ensuring grid visibility:', error);
+    // Silently handle errors to reduce console spam
     return false;
   }
 }
@@ -122,15 +118,11 @@ export function setGridVisibility(
     if (gridItems.length === 0) {
       // If no grid items found and we want to make grid visible, create an emergency grid
       if (visible) {
-        console.log('No grid found while setting visibility, creating emergency grid');
         gridItems = createBasicEmergencyGrid(canvas);
         
         if (gridItems.length === 0) {
-          logger.error('Failed to create emergency grid while setting visibility');
           return false;
         }
-        
-        logger.info(`Created emergency grid with ${gridItems.length} items`);
       } else {
         return false;
       }
@@ -143,13 +135,8 @@ export function setGridVisibility(
     
     // Force render to ensure changes are applied
     canvas.renderAll();
-    canvas.requestRenderAll();
-    logger.info(`Set visibility to ${visible} for ${gridItems.length} grid objects`);
-    
     return true;
   } catch (error) {
-    logger.error('Error setting grid visibility:', error);
-    console.error('Error setting grid visibility:', error);
     return false;
   }
 }
@@ -164,46 +151,45 @@ export function forceGridCreationAndVisibility(
   canvas: FabricCanvas
 ): boolean {
   if (!canvas) {
-    console.error('Cannot force grid: Canvas is null');
     return false;
   }
   
   try {
+    // Reset grid creation state
+    gridCreationState.created = false;
+    gridCreationState.attempts = 0;
+    
     // Clear any existing grid objects that might be problematic
     const existingGrid = canvas.getObjects().filter(obj => 
       (obj as any).objectType === 'grid' || (obj as any).isGrid === true
     );
     
     if (existingGrid.length > 0) {
-      console.log(`Removing ${existingGrid.length} existing grid objects`);
       existingGrid.forEach(obj => {
         canvas.remove(obj);
       });
     }
     
     // Create new emergency grid
-    console.log('Creating forced emergency grid');
     const gridItems = createBasicEmergencyGrid(canvas);
     
     if (gridItems.length === 0) {
-      console.error('Failed to create forced emergency grid');
       return false;
     }
     
     // Ensure grid items are visible and at the back
     gridItems.forEach(obj => {
       obj.set('visible', true);
-      canvas.sendToBack(obj);
+      canvas.sendObjectToBack(obj);
     });
     
     // Force render
     canvas.renderAll();
-    canvas.requestRenderAll();
     
-    console.log(`Successfully created forced grid with ${gridItems.length} objects`);
+    // Mark as created
+    gridCreationState.created = true;
     return true;
   } catch (error) {
-    console.error('Error forcing grid creation:', error);
     return false;
   }
 }

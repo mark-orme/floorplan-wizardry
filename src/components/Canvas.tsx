@@ -35,27 +35,22 @@ export const Canvas: React.FC<CanvasProps> = ({
   const gridInitializedRef = useRef<boolean>(false);
   const gridAttemptCountRef = useRef<number>(0);
   const [gridError, setGridError] = useState<string | null>(null);
+  const mountedRef = useRef<boolean>(true);
 
   // Create grid with retry mechanism
   const createGridWithRetry = React.useCallback((canvas: FabricCanvas) => {
-    if (!canvas || gridInitializedRef.current) return;
+    if (!canvas || gridInitializedRef.current || !mountedRef.current) return;
     
     const maxAttempts = 3;
     gridAttemptCountRef.current += 1;
     
     try {
-      console.log(`Canvas: Creating grid (attempt ${gridAttemptCountRef.current}/${maxAttempts})`);
-      const startTime = performance.now();
-      
       // Try to create grid
       let gridObjects = createCompleteGrid(canvas);
-      const endTime = performance.now();
       
       // If grid creation failed, try emergency approach
       if (!gridObjects || gridObjects.length === 0) {
-        console.warn('Standard grid creation failed, forcing emergency grid');
         if (forceGridCreationAndVisibility(canvas)) {
-          console.log('Emergency grid created successfully');
           gridInitializedRef.current = true;
           
           if (setDebugInfo) {
@@ -72,8 +67,6 @@ export const Canvas: React.FC<CanvasProps> = ({
           return;
         }
       } else {
-        console.log(`Canvas: Grid created with ${gridObjects.length} objects in ${(endTime - startTime).toFixed(2)}ms`);
-        
         // Force grid objects to be visible and non-selectable
         gridObjects.forEach(obj => {
           obj.set({
@@ -83,12 +76,11 @@ export const Canvas: React.FC<CanvasProps> = ({
           });
           
           // Ensure the grid is at the back
-          canvas.sendToBack(obj);
+          canvas.sendObjectToBack(obj);
         });
         
         // Force render
         canvas.renderAll();
-        canvas.requestRenderAll();
         
         if (setDebugInfo && gridObjects.length > 0) {
           setDebugInfo(prev => ({
@@ -100,47 +92,39 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
         
         gridInitializedRef.current = true;
-        logger.info(`Grid created with ${gridObjects.length} objects`);
         return;
       }
       
       // If we get here, both methods failed but we still have attempts left
-      if (gridAttemptCountRef.current < maxAttempts) {
-        console.log(`Scheduling retry ${gridAttemptCountRef.current + 1}/${maxAttempts}`);
+      if (gridAttemptCountRef.current < maxAttempts && mountedRef.current) {
         setTimeout(() => createGridWithRetry(canvas), 500);
       } else {
         setGridError('Failed to create grid after multiple attempts');
-        console.error('Failed to create grid after multiple attempts');
-        toast.error('Failed to create grid after multiple attempts');
       }
     } catch (error) {
-      console.error('Error in grid creation:', error);
-      setGridError(error instanceof Error ? error.message : String(error));
-      
       // Try one more time with emergency approach
-      if (gridAttemptCountRef.current < maxAttempts) {
-        console.log(`Scheduling retry after error ${gridAttemptCountRef.current + 1}/${maxAttempts}`);
+      if (gridAttemptCountRef.current < maxAttempts && mountedRef.current) {
         setTimeout(() => createGridWithRetry(canvas), 500);
-      } else {
-        console.error('Failed to create grid after error retries');
-        toast.error('Failed to create grid');
       }
     }
   }, [setDebugInfo]);
 
   // Initialize canvas when component mounts
   useEffect(() => {
+    mountedRef.current = true;
+    
+    // Only proceed if we have a valid canvas element
     if (!canvasRef.current) return;
 
     try {
-      console.log("Canvas: Initializing fabric canvas");
-      
+      // Initialize Fabric.js canvas
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
         selection: true
       });
       
+      // Store canvas reference
       fabricCanvasRef.current = canvas;
 
       // Update debug info if provided
@@ -153,19 +137,27 @@ export const Canvas: React.FC<CanvasProps> = ({
       }
 
       // Initialize grid with retry mechanism
-      createGridWithRetry(canvas);
+      const gridTimer = setTimeout(() => {
+        if (mountedRef.current) {
+          createGridWithRetry(canvas);
+        }
+      }, 100);
 
       // Notify parent that canvas is ready
       onCanvasReady(canvas);
 
       // Cleanup when component unmounts
       return () => {
-        console.log("Canvas: Disposing fabric canvas");
-        canvas.dispose();
-        fabricCanvasRef.current = null;
+        mountedRef.current = false;
+        clearTimeout(gridTimer);
+        
+        // Cleanup canvas
+        if (canvas) {
+          canvas.dispose();
+          fabricCanvasRef.current = null;
+        }
       };
     } catch (error) {
-      console.error('Error initializing canvas:', error);
       if (onError && error instanceof Error) {
         onError(error);
       }
@@ -177,11 +169,10 @@ export const Canvas: React.FC<CanvasProps> = ({
           errorMessage: error instanceof Error ? error.message : String(error)
         }));
       }
-      
-      toast.error("Failed to initialize canvas");
     }
   }, [width, height, onCanvasReady, onError, setDebugInfo, createGridWithRetry]);
 
+  // Simplified render to avoid unnecessary elements
   return (
     <div className="relative w-full h-full">
       <canvas 
