@@ -77,14 +77,7 @@ export function createUrlSchema(options: {
         return false;
       }
     }, { message: `URL must use one of the following protocols: ${allowedProtocols.join(', ')}` })
-    .transform((url) => {
-      try {
-        // Additional URL sanitization if needed
-        return new URL(url).toString();
-      } catch {
-        return url; // Fall back to original if parsing fails (though refine should have caught this)
-      }
-    });
+    .transform(sanitizeHtml);
 }
 
 /**

@@ -58,6 +58,35 @@ export function applySecurityMetaTags(): void {
 }
 
 /**
+ * Convert different header types to a unified Headers object
+ * @param headers Headers in any supported format
+ * @returns Standardized Headers object
+ */
+function normalizeHeaders(headers: HeadersInit | Record<string, string> | undefined): Headers {
+  const result = new Headers();
+  
+  if (!headers) return result;
+  
+  if (headers instanceof Headers) {
+    headers.forEach((value, key) => {
+      result.append(key, value);
+    });
+  } else if (Array.isArray(headers)) {
+    // Handle [string, string][] format
+    headers.forEach(([key, value]) => {
+      result.append(key, value);
+    });
+  } else {
+    // Handle Record<string, string> format
+    Object.entries(headers).forEach(([key, value]) => {
+      result.append(key, value);
+    });
+  }
+  
+  return result;
+}
+
+/**
  * Create a fetch request with security headers
  * @param url URL to fetch
  * @param options Fetch options
@@ -65,17 +94,21 @@ export function applySecurityMetaTags(): void {
  */
 export async function secureFetch(url: string, options: RequestInit = {}): Promise<Response> {
   // Start with CSRF protection
-  const secureOptions = {
+  const csrfHeaders = addCSRFHeader(options.headers || {});
+  const headers = normalizeHeaders(csrfHeaders);
+  
+  // Create secure options with proper type
+  const secureOptions: RequestInit = {
     ...options,
-    credentials: 'include', // Include cookies
-    headers: addCSRFHeader(options.headers || {})
+    credentials: 'include' as RequestCredentials, // Type-safe credentials
+    headers
   };
   
   // Check if we need to add content type
   if (secureOptions.method?.toUpperCase() !== 'GET' && 
       secureOptions.body && 
-      !secureOptions.headers.has('Content-Type')) {
-    secureOptions.headers.set('Content-Type', 'application/json');
+      !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
   
   return fetch(url, secureOptions);
