@@ -64,50 +64,18 @@ export const supabase = {
       in: (field: string, values: any[]) => ({
         data: [],
         error: null,
-        eq: (field: string, value: any) => ({
-          data: [],
-          error: null,
-          single: () => ({ data: null, error: null }),
-          maybeSingle: () => ({ data: null, error: null })
-        }),
         order: (field: string, options: any) => ({
           data: [],
-          error: null,
-          eq: (field: string, value: any) => ({
-            data: [],
-            error: null,
-            single: () => ({ data: null, error: null }),
-            maybeSingle: () => ({ data: null, error: null })
-          })
+          error: null
         })
       }),
       order: (field: string, options: any) => ({
         data: [],
-        error: null,
-        eq: (field: string, value: any) => ({
-          data: [],
-          error: null,
-          single: () => ({ data: null, error: null }),
-          maybeSingle: () => ({ data: null, error: null })
-        }),
-        in: (field: string, values: any[]) => ({
-          data: [],
-          error: null,
-          single: () => ({ data: null, error: null }),
-          maybeSingle: () => ({ data: null, error: null })
-        })
+        error: null
       }),
       limit: (num: number) => ({
         data: [],
-        error: null,
-        eq: (field: string, value: any) => ({
-          data: [],
-          error: null,
-          single: () => ({ data: null, error: null }),
-          maybeSingle: () => ({ data: null, error: null })
-        }),
-        single: () => ({ data: null, error: null }),
-        maybeSingle: () => ({ data: null, error: null })
+        error: null
       })
     }),
     insert: (data: any) => {
@@ -165,3 +133,4 @@ export type AuthResponse = {
   session: any | null;
   error: Error | null;
 };
+
