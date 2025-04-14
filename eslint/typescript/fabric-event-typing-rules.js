@@ -15,11 +15,11 @@ module.exports = {
       "error",
       {
         "selector": "MemberExpression[object.name='e'][property.name='pointer']",
-        "message": "Don't access e.pointer directly. Access the correct property based on Fabric.js version and add type guards."
+        "message": "Don't access e.pointer directly. Use getPointerCoordinates() helper instead."
       },
       {
         "selector": "MemberExpression[object.name='e'][property.name='absolutePointer']",
-        "message": "Don't access e.absolutePointer directly. Add proper type guards before accessing."
+        "message": "Don't access e.absolutePointer directly. Use getPointerCoordinates() helper instead."
       },
       {
         "selector": "TSTypeReference[typeName.name='IEvent']",
@@ -32,6 +32,14 @@ module.exports = {
       {
         "selector": "ArrowFunctionExpression[params.0.typeAnnotation.typeAnnotation.typeName.name=/Event/] > BlockStatement:not(:has(IfStatement[test.type='UnaryExpression'][test.operator='!'][test.argument.type='Identifier']))",
         "message": "Always check event objects before use with a guard like 'if (!e) return;'"
+      },
+      {
+        "selector": "MemberExpression[object.object.name='e'][object.property.name='e'][property.name=/clientX|clientY/]",
+        "message": "Don't access e.e.clientX/Y directly. Use getPointerCoordinates() helper for cross-browser compatibility."
+      },
+      {
+        "selector": "MemberExpression[object.name='event'][property.name=/pointer|absolutePointer/]",
+        "message": "Use getPointerCoordinates() helper instead of accessing event.pointer or event.absolutePointer directly."
       }
     ],
 

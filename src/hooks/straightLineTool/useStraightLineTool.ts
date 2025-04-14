@@ -13,6 +13,7 @@ import logger from '@/utils/logger';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 import { toast } from 'sonner';
 import { TPointerEvent } from '@/types/fabric-events';
+import { getPointerCoordinates, hasValidCoordinates } from '@/utils/fabric/eventHelpers';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -350,33 +351,27 @@ export const useStraightLineTool = ({
     
     // Set up fabric.js event handlers
     const handleFabricMouseDown = (e: TEvent<TPointerEvent>) => {
-      if (!isActive) return;
+      if (!isActive || !e) return;
       
-      // Get position from fabric event
-      if (!e) return;
-      const extractedPoint = { x: e.e.clientX, y: e.e.clientY };
-      
-      handlePointerDown(extractedPoint);
+      // Get position from fabric event using our helper
+      const point = getPointerCoordinates(e);
+      handlePointerDown(point);
     };
     
     const handleFabricMouseMove = (e: TEvent<TPointerEvent>) => {
-      if (!isActive || !isDrawing) return;
+      if (!isActive || !isDrawing || !e) return;
       
-      // Get position from fabric event
-      if (!e) return;
-      const extractedPoint = { x: e.e.clientX, y: e.e.clientY };
-      
-      handlePointerMove(extractedPoint);
+      // Get position from fabric event using our helper
+      const point = getPointerCoordinates(e);
+      handlePointerMove(point);
     };
     
     const handleFabricMouseUp = (e: TEvent<TPointerEvent>) => {
-      if (!isActive || !isDrawing) return;
+      if (!isActive || !isDrawing || !e) return;
       
-      // Get position from fabric event
-      if (!e) return;
-      const extractedPoint = { x: e.e.clientX, y: e.e.clientY };
-      
-      handlePointerUp(extractedPoint);
+      // Get position from fabric event using our helper
+      const point = getPointerCoordinates(e);
+      handlePointerUp(point);
     };
     
     // Add fabric canvas event listeners
