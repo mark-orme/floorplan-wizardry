@@ -13,6 +13,7 @@ import { useStraightLineEvents } from './useStraightLineEvents';
 import logger from '@/utils/logger';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 import { toast } from 'sonner';
+import { useLineKeyboardShortcuts } from './useLineKeyboardShortcuts';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -104,12 +105,12 @@ export const useStraightLineTool = ({
       // Log event
       logDrawingEvent('Line drawing started', 'line-start', {
         interaction: { 
-          type: inputMethod
+          type: inputMethod === 'keyboard' ? 'mouse' : inputMethod
         }
       });
     } catch (error) {
       reportDrawingError(error, 'line-pointer-down', {
-        interaction: { type: inputMethod }
+        interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
       });
     }
   }, [
@@ -165,7 +166,7 @@ export const useStraightLineTool = ({
       fabricCanvasRef.current.renderAll();
     } catch (error) {
       reportDrawingError(error, 'line-pointer-move', {
-        interaction: { type: inputMethod }
+        interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
       });
     }
   }, [
@@ -220,7 +221,7 @@ export const useStraightLineTool = ({
       // Log event
       logDrawingEvent('Line drawing completed', 'line-complete', {
         interaction: { 
-          type: inputMethod
+          type: inputMethod === 'keyboard' ? 'mouse' : inputMethod
         }
       });
       
@@ -228,7 +229,7 @@ export const useStraightLineTool = ({
       
     } catch (error) {
       reportDrawingError(error, 'line-pointer-up', {
-        interaction: { type: inputMethod }
+        interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
       });
     }
   }, [
@@ -258,7 +259,7 @@ export const useStraightLineTool = ({
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
-    inputMethod
+    inputMethod: inputMethod === 'unknown' ? 'keyboard' : inputMethod
   });
 
   // Cancel drawing (e.g. on Escape key)
@@ -287,13 +288,13 @@ export const useStraightLineTool = ({
       
       // Log event
       logDrawingEvent('Line drawing cancelled', 'line-cancel', {
-        interaction: { type: inputMethod }
+        interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
       });
       
       toast.info("Line drawing cancelled");
     } catch (error) {
       reportDrawingError(error, 'line-cancel', {
-        interaction: { type: inputMethod }
+        interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
       });
     }
   }, [
@@ -312,6 +313,15 @@ export const useStraightLineTool = ({
   const toggleGridSnapping = useCallback(() => {
     toggleSnap();
   }, [toggleSnap]);
+
+  // Use the keyboard shortcuts hook
+  const { handleKeyDown } = useLineKeyboardShortcuts({
+    isActive,
+    isDrawing,
+    cancelDrawing,
+    toggleGridSnapping,
+    tool
+  });
 
   // Set up canvas event handlers when tool becomes active
   useEffect(() => {
@@ -345,17 +355,6 @@ export const useStraightLineTool = ({
     canvas.on('mouse:up', handleFabricMouseUp);
     
     // Handle escape key to cancel drawing
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isDrawing) {
-        cancelDrawing();
-      }
-      
-      // Toggle grid snapping with 'g' key
-      if (e.key === 'g' && isActive) {
-        toggleGridSnapping();
-      }
-    };
-    
     window.addEventListener('keydown', handleKeyDown);
     
     // Cleanup function
@@ -373,8 +372,7 @@ export const useStraightLineTool = ({
     handleFabricMouseDown, 
     handleFabricMouseMove, 
     handleFabricMouseUp, 
-    cancelDrawing, 
-    toggleGridSnapping,
+    handleKeyDown,
     lineColor,
     lineThickness,
     snapToAngle,
@@ -388,7 +386,7 @@ export const useStraightLineTool = ({
     isDrawing,
     isToolInitialized: isToolInitializedRef.current,
     snapEnabled,
-    inputMethod,
+    inputMethod: inputMethod === 'keyboard' ? 'mouse' : inputMethod,
     isPencilMode,
     
     // Methods for direct manipulation

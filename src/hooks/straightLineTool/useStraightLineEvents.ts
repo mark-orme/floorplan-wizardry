@@ -17,7 +17,7 @@ interface UseStraightLineEventsProps {
   handlePointerDown: (point: Point) => void;
   handlePointerMove: (point: Point) => void;
   handlePointerUp: (point: Point) => void;
-  inputMethod: 'mouse' | 'touch' | 'stylus' | 'unknown';
+  inputMethod: 'mouse' | 'touch' | 'stylus' | 'keyboard';
 }
 
 /**

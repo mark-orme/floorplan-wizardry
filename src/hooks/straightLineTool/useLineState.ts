@@ -10,6 +10,9 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useApplePencilSupport } from './useApplePencilSupport';
 
+// Define a consistent InputMethod type that can be used across the whole tool
+export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'keyboard';
+
 export interface UseLineStateProps {
   fabricCanvasRef: React.MutableRefObject<any>;
   lineThickness?: number;
@@ -45,12 +48,15 @@ export const useLineState = ({
   const { 
     snapPointToGrid, 
     snapLineToGrid, 
-    inputMethod, 
+    inputMethod: gridInputMethod, 
     snapEnabled, 
     toggleSnapToGrid 
   } = useEnhancedGridSnapping({
     fabricCanvasRef
   });
+  
+  // Convert the inputMethod from grid to our consistent InputMethod type
+  const inputMethod: InputMethod = gridInputMethod === 'unknown' ? 'keyboard' : gridInputMethod;
   
   // Get Apple Pencil support
   const { 
