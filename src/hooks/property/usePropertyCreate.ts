@@ -1,77 +1,60 @@
-
-import { useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Property, PropertyStatus } from '@/types/propertyTypes';
-import { FloorPlan } from '@/types/floorPlanTypes';
-import { toast } from 'sonner';
-import { usePropertyBase } from './usePropertyBase';
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Property, PropertyStatus } from "@/types/propertyTypes";
+import { toast } from "sonner";
+import logger from "@/utils/logger";
+import { usePropertyBase } from "./usePropertyBase";
 
 /**
- * Hook for property creation operations
+ * Hook for creating new properties
  */
 export const usePropertyCreate = () => {
-  // Always call hooks unconditionally at the top level
-  const { user, isLoading, setIsLoading, checkAuthentication } = usePropertyBase();
+  const [isLoading, setIsLoading] = useState(false);
+  const { checkAuthentication } = usePropertyBase();
 
-  /**
-   * Create a new property
-   */
-  const createProperty = useCallback(async (
-    orderID: string,
-    address: string,
-    clientName: string,
-    branchName: string = '',
-    floorPlans: FloorPlan[] = []
-  ): Promise<Property | null> => {
-    if (!checkAuthentication()) return null;
-
+  // Fix the created_by property which should be created_at
+  const createProperty = async (propertyData: Omit<Property, "id">) => {
     setIsLoading(true);
-
+    
     try {
-      const newProperty: Omit<Property, 'id'> = {
-        // Required properties from Property interface
-        name: address, // Use address as name
-        type: 'residential', // Default type
-        bedrooms: 0, // Default value
-        bathrooms: 0, // Default value
-        area: 0, // Default value
+      logger.info("Creating property...", propertyData);
+      
+      // Get current user if logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Create property in Supabase
+      const newProperty = {
+        ...propertyData,
+        user_id: user?.id || propertyData.userId || "anonymous",
         status: PropertyStatus.DRAFT,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: user!.id,
-        
-        // Additional properties specific to the application
-        order_id: orderID,
-        address,
-        client_name: clientName,
-        branch_name: branchName,
-        created_by: user!.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        floorPlans: JSON.stringify(floorPlans)  // Convert FloorPlan array to JSON string
+        name: propertyData.address.split(',')[0]
       };
-
+      
       const { data, error } = await supabase
         .from('properties')
-        .insert(newProperty)
+        .insert([newProperty])
         .select()
         .single();
-
-      if (error) throw error;
-
-      toast.success('Property created successfully');
-      return data as Property;
+        
+      if (error) {
+        logger.error("Error creating property:", error);
+        throw error;
+      }
+      
+      logger.info("Property created successfully:", data);
+      toast.success("Property created successfully!");
+      
+      return data;
     } catch (error: any) {
-      toast.error(error.message || 'Error creating property');
-      console.error('Error creating property:', error);
+      logger.error("Error creating property:", error);
+      toast.error(error.message || "Error creating property");
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [user, setIsLoading, checkAuthentication]);
-
-  return {
-    isLoading,
-    createProperty
   };
+
+  return { createProperty, isLoading, checkAuthentication };
 };

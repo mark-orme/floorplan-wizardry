@@ -20,7 +20,12 @@ export const supabase = {
     signIn: async () => ({ data: null, error: null }),
     signOut: async () => ({ error: null }),
     signInWithPassword: async () => ({ data: { user: null, session: null }, error: null }),
-    getSession: async () => ({ data: { session: null }, error: null })
+    getSession: async () => ({ data: { session: null }, error: null }),
+    admin: {
+      listUsers: async () => ({ data: { users: [] }, error: null }),
+      deleteUser: async () => ({ error: null }),
+      createUser: async () => ({ data: { user: null }, error: null })
+    }
   },
   from: (table: string) => ({
     select: () => ({
@@ -69,16 +74,7 @@ export const supabase = {
       data: [],
       error: null
     })
-  }),
-  // Mock admin methods
-  auth: {
-    ...supabase.auth,
-    admin: {
-      listUsers: async () => ({ data: { users: [] }, error: null }),
-      deleteUser: async () => ({ error: null }),
-      createUser: async () => ({ data: { user: null }, error: null })
-    }
-  }
+  })
 };
 
 // Define function to check if Supabase is configured

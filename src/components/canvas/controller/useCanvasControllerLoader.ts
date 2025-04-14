@@ -5,7 +5,7 @@
  */
 import { useEffect, useCallback } from "react";
 import { useFloorPlanLoader } from "@/hooks/useFloorPlanLoader";
-import { FloorPlan, Wall, StrokeType, StrokeTypeLiteral, RoomTypeLiteral } from "@/types/floorPlanTypes";
+import { FloorPlan, Wall, Room, StrokeType, StrokeTypeLiteral, RoomTypeLiteral } from "@/types/floorPlanTypes";
 import { adaptFloorPlans } from "@/utils/typeAdapters";
 import { Point } from "@/types/geometryTypes";
 
@@ -68,6 +68,24 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
       
       // Convert each plan to the required FloorPlan type with all required properties
       const typedPlans: FloorPlan[] = plans.map(plan => {
+        const typedWalls = plan.walls?.map(wall => {
+          const start = wall.start || { x: 0, y: 0 } as Point;
+          const end = wall.end || { x: 0, y: 0 } as Point;
+          
+          return {
+            id: wall.id,
+            points: [start, end],
+            startPoint: start,
+            endPoint: end,
+            start: start,
+            end: end,
+            thickness: wall.thickness || 1,
+            height: wall.height || 0,
+            color: wall.color || '#000000',
+            roomIds: wall.roomIds || []
+          } as Wall;
+        }) || [];
+        
         // Create a properly typed FloorPlan with all required fields
         const typedPlan: FloorPlan = {
           id: plan.id || '',
@@ -82,33 +100,17 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
             thickness: stroke.thickness,
             width: stroke.width || stroke.thickness || 1
           })) : [],
-          walls: plan.walls?.map(wall => {
-            // Extract start and end points with proper validation
-            const start = wall.start || { x: 0, y: 0 } as Point;
-            const end = wall.end || { x: 0, y: 0 } as Point;
-            
-            return {
-              id: wall.id,
-              points: [start, end], // Ensure points are present
-              startPoint: start, // Set startPoint from start
-              endPoint: end, // Set endPoint from end
-              start: start, // Ensure start is present
-              end: end, // Ensure end is present
-              thickness: wall.thickness || 1, // Ensure thickness is present
-              height: wall.height || 0,
-              color: wall.color || '#000000',
-              roomIds: wall.roomIds || []
-            } as Wall;
-          }) || [],
+          walls: typedWalls,
           rooms: plan.rooms?.map(room => ({
             id: room.id,
-            name: room.name || 'Unnamed Room', // Ensure name is always set
-            type: mapRoomType(room.type), // Ensure type is properly mapped
+            name: room.name || 'Unnamed Room',
+            type: mapRoomType(room.type), 
             points: room.points,
-            color: room.color || '#ffffff', // Ensure color is always provided with default
-            area: room.area || 0, // Ensure area is always provided
-            level: plan.level || 0  // Set level from the plan level
-          })) || [],
+            color: room.color || '#ffffff',
+            area: room.area || 0,
+            level: plan.level || 0,
+            walls: [] // Add empty walls array to satisfy the Room type
+          })) as Room[] || [],
           metadata: plan.metadata ? {
             createdAt: typeof plan.metadata.createdAt === 'string' 
               ? plan.metadata.createdAt 

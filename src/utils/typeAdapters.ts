@@ -1,10 +1,11 @@
+
 /**
  * Type Adapters
  * Provides utility functions to adapt between incompatible type definitions
  * @module utils/typeAdapters
  */
 import { FloorPlan as CoreFloorPlan, Wall as CoreWall, RoomType } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall, RoomTypeLiteral } from '@/types/floorPlanTypes';
+import { FloorPlan as AppFloorPlan, Wall as AppWall, RoomTypeLiteral, Room as AppRoom } from '@/types/floorPlanTypes';
 
 /**
  * Convert a core wall to app wall format
@@ -60,19 +61,23 @@ function adaptRoomType(type: RoomType): RoomTypeLiteral {
  * @returns App floor plan
  */
 export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
+  const walls = corePlan.walls.map(adaptWall);
+  
   return {
     id: corePlan.id,
     name: corePlan.name,
     label: corePlan.label || corePlan.name,
-    walls: corePlan.walls.map(adaptWall),
+    walls: walls,
     rooms: corePlan.rooms.map(room => ({
-      ...room,
+      id: room.id,
       name: room.name || 'Unnamed Room', // Ensure name is always provided
       type: adaptRoomType(room.type), // Convert room type
       area: room.area || 0, // Ensure area is always provided
       color: room.color || '#ffffff', // Ensure color is always provided
-      level: corePlan.level || 0 // Set the level from the floor plan
-    })),
+      level: corePlan.level || 0, // Set the level from the floor plan
+      points: room.points || [],
+      walls: [] // Add empty walls array to satisfy the type requirement
+    })) as AppRoom[], // Cast to AppRoom[] to satisfy TypeScript
     strokes: corePlan.strokes,
     index: corePlan.index || corePlan.level,
     gia: corePlan.gia,
