@@ -46,11 +46,8 @@ export function validateAndSanitize<T>(schema: z.ZodSchema<T>, data: unknown): {
  * @returns Enhanced schema with sanitization
  */
 export function createSanitizedStringSchema(stringSchema: z.ZodString = z.string()): z.ZodEffects<z.ZodString, string, string> {
-  // Apply a single transform to avoid nested ZodEffects types
-  return stringSchema.transform((val) => {
-    // Return the sanitized value
-    return sanitizeHtml(val);
-  });
+  // Return a single transform to avoid nested ZodEffects types
+  return stringSchema.transform(sanitizeHtml);
 }
 
 /**
@@ -69,7 +66,8 @@ export function createUrlSchema(options: {
     maxLength = 2048 
   } = options;
   
-  return z.string()
+  // Create base schema with validations
+  const baseSchema = z.string()
     .min(minLength)
     .max(maxLength)
     .url()
@@ -80,8 +78,10 @@ export function createUrlSchema(options: {
       } catch {
         return false;
       }
-    }, { message: `URL must use one of the following protocols: ${allowedProtocols.join(', ')}` })
-    .transform(sanitizeHtml);
+    }, { message: `URL must use one of the following protocols: ${allowedProtocols.join(', ')}` });
+  
+  // Apply a single transform for sanitization
+  return baseSchema.transform(sanitizeHtml);
 }
 
 /**
