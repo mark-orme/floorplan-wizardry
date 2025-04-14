@@ -1,4 +1,3 @@
-
 /**
  * Grid renderers module
  * Provides functions for creating grid visualizations on the canvas
@@ -122,4 +121,49 @@ export function createCompleteGrid(canvas: FabricCanvas): FabricObject[] {
     logger.error('Error creating complete grid:', error);
     return [];
   }
+}
+
+/**
+ * Add the missing functions that were referenced in other files
+ */
+
+/**
+ * Create a standard grid on the canvas
+ * @param canvas - Fabric canvas
+ * @returns Array of created grid objects
+ */
+export function createGrid(canvas: FabricCanvas): FabricObject[] {
+  // This is now an alias for createCompleteGrid for compatibility
+  return createCompleteGrid(canvas);
+}
+
+/**
+ * Validate grid creation parameters
+ * @param canvas - Fabric canvas
+ * @returns Boolean indicating if grid can be created
+ */
+export function validateGrid(canvas: FabricCanvas): boolean {
+  return !!(canvas && canvas.width && canvas.height);
+}
+
+/**
+ * Ensure grid exists on canvas, create if missing
+ * @param canvas - Fabric canvas
+ * @returns Array of grid objects
+ */
+export function ensureGrid(canvas: FabricCanvas): FabricObject[] {
+  if (!canvas) return [];
+  
+  // Look for existing grid
+  const existingGrid = canvas.getObjects().filter(obj => 
+    (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+  );
+  
+  // If grid already exists, return it
+  if (existingGrid.length > 0) {
+    return existingGrid;
+  }
+  
+  // Otherwise create new grid
+  return createGrid(canvas);
 }

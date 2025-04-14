@@ -153,9 +153,9 @@ export const DrawingToolbar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant={tool === DrawingMode.ERASE ? "default" : "outline"} 
+                variant={tool === DrawingMode.ERASER ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.ERASE)}
+                onClick={() => onToolChange(DrawingMode.ERASER)}
               >
                 <Eraser className="h-4 w-4" />
               </Button>

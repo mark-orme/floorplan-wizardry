@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -6,7 +5,7 @@ import {
   Pencil, 
   Square, 
   Circle, 
-  LineHorizontal, 
+  Minus, // Changed from LineHorizontal to Minus
   Eraser 
 } from "lucide-react";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -25,7 +24,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
     { icon: <Pencil size={16} />, tool: DrawingMode.DRAW, label: "Draw" },
     { icon: <Square size={16} />, tool: DrawingMode.RECTANGLE, label: "Rectangle" },
     { icon: <Circle size={16} />, tool: DrawingMode.CIRCLE, label: "Circle" },
-    { icon: <LineHorizontal size={16} />, tool: DrawingMode.STRAIGHT_LINE, label: "Line" },
+    { icon: <Minus size={16} />, tool: DrawingMode.STRAIGHT_LINE, label: "Line" },
     { icon: <Eraser size={16} />, tool: DrawingMode.ERASER, label: "Erase" }
   ];
 

@@ -1,4 +1,3 @@
-
 /**
  * Hook for handling path drawing events on canvas
  * Provides handlers for mouse/touch events during drawing
@@ -114,7 +113,6 @@ export function usePathEvents({
     
     // Return early if tool is select or not a drawing tool
     if (tool === DrawingMode.SELECT || 
-        tool === DrawingMode.PAN || 
         tool === DrawingMode.HAND) {
       return;
     }

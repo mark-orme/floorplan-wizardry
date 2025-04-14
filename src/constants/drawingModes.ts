@@ -15,5 +15,6 @@ export enum DrawingMode {
   RECTANGLE = "rectangle",
   CIRCLE = "circle",
   STRAIGHT_LINE = "straight_line",
-  TEXT = "text"
+  TEXT = "text",
+  PAN = "pan" // Adding PAN mode that was missing
 }
