@@ -70,7 +70,7 @@ export const calculateAngle = (p1: Point, p2: Point): number => {
  * @param gridSize Grid size
  * @returns True if value is an exact multiple
  */
-export const isExactGridMultiple = (value: number, gridSize: number = GRID_SPACING.SMALL): boolean => {
+export const isExactGridMultiple = (value: number, gridSize: number = GRID_SPACING.DEFAULT): boolean => {
   const remainder = value % gridSize;
   return remainder < 0.001 || (gridSize - remainder) < 0.001;
 };
@@ -82,10 +82,29 @@ export const isExactGridMultiple = (value: number, gridSize: number = GRID_SPACI
  * @param gridSize Grid size
  * @returns True if line is aligned
  */
-export const isLineAlignedWithGrid = (p1: Point, p2: Point, gridSize: number = GRID_SPACING.SMALL): boolean => {
+export const isLineAlignedWithGrid = (p1: Point, p2: Point, gridSize: number = GRID_SPACING.DEFAULT): boolean => {
   // Check if both points are on grid intersections
   const isP1OnGrid = isExactGridMultiple(p1.x, gridSize) && isExactGridMultiple(p1.y, gridSize);
   const isP2OnGrid = isExactGridMultiple(p2.x, gridSize) && isExactGridMultiple(p2.y, gridSize);
   
   return isP1OnGrid && isP2OnGrid;
+};
+
+/**
+ * Snap a line to grid
+ * @param line Line with start and end points
+ * @param gridSize Grid size to snap to
+ * @returns Snapped line
+ */
+export const snapToGrid = (line: { start: Point, end: Point }, gridSize: number = GRID_SPACING.DEFAULT): { start: Point, end: Point } => {
+  return {
+    start: {
+      x: Math.round(line.start.x / gridSize) * gridSize,
+      y: Math.round(line.start.y / gridSize) * gridSize
+    },
+    end: {
+      x: Math.round(line.end.x / gridSize) * gridSize,
+      y: Math.round(line.end.y / gridSize) * gridSize
+    }
+  };
 };

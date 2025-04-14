@@ -35,7 +35,7 @@ export const isPointNear = (p1: Point, p2: Point, threshold: number = SNAP_THRES
  * @param threshold Threshold for comparison
  * @returns True if point is on grid
  */
-export const isPointOnGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL, threshold: number = 0.001): boolean => {
+export const isPointOnGrid = (point: Point, gridSize: number = GRID_SPACING.DEFAULT, threshold: number = 0.001): boolean => {
   const xMod = point.x % gridSize;
   const yMod = point.y % gridSize;
   
@@ -51,9 +51,44 @@ export const isPointOnGrid = (point: Point, gridSize: number = GRID_SPACING.SMAL
  * @param gridSize Grid size
  * @returns Snapped point
  */
-export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
+export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.DEFAULT): Point => {
   return {
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
+  };
+};
+
+/**
+ * Round a point to the nearest grid intersection
+ * @param point Point to round
+ * @param gridSize Grid size
+ * @returns Rounded point
+ */
+export const roundToGrid = (point: Point, gridSize: number = GRID_SPACING.DEFAULT): Point => {
+  return snapPointToGrid(point, gridSize);
+};
+
+/**
+ * Calculate the distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance in pixels
+ */
+export const calculateDistance = (p1: Point, p2: Point): number => {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+/**
+ * Calculate midpoint between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Midpoint coordinates
+ */
+export const calculateMidpoint = (p1: Point, p2: Point): Point => {
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
   };
 };

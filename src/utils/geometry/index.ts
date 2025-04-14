@@ -16,7 +16,8 @@ export {
 export {
   isPointNear,
   roundToGrid,
-  arePointsEqual
+  arePointsEqual,
+  snapPointToGrid
 } from './pointOperations';
 
 // Explicitly export with aliasing to avoid conflicts
