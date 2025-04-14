@@ -6,7 +6,6 @@
  */
 
 // Re-export constants - fix DrawingMode ambiguity by explicitly exporting
-export { default as drawingConstants } from './drawingConstants';
 export * from './drawingConstants';
 export * from './canvasConstants';
 export * from './errorMessages';

@@ -30,12 +30,22 @@ export const validateCSRFToken = (token: string): boolean => {
 };
 
 // Add CSRF token to headers for fetch requests
-export const addCSRFToHeaders = (headers: Headers): Headers => {
+export const addCSRFToHeaders = (headers: HeadersInit): HeadersInit => {
   const token = getCSRFToken();
-  if (token) {
-    headers.append('X-CSRF-Token', token);
+  if (!token) return headers;
+  
+  if (headers instanceof Headers) {
+    const newHeaders = new Headers(headers);
+    newHeaders.append('X-CSRF-Token', token);
+    return newHeaders;
+  } else if (Array.isArray(headers)) {
+    return [...headers, ['X-CSRF-Token', token]];
+  } else {
+    return {
+      ...headers,
+      'X-CSRF-Token': token
+    };
   }
-  return headers;
 };
 
 // Initialize CSRF protection for the application

@@ -5,7 +5,7 @@
  * @module utils/security/httpSecurity
  */
 
-import { addCSRFHeader } from './csrfProtection';
+import { addCSRFToHeaders } from './csrfProtection';
 
 /**
  * Security headers to apply to HTTP responses
@@ -95,7 +95,7 @@ function normalizeHeaders(headers: HeadersInit | Record<string, string> | undefi
 export async function secureFetch(url: string, options: RequestInit = {}): Promise<Response> {
   // Start with CSRF protection
   const initialHeaders = options.headers || {};
-  const csrfHeaders = addCSRFHeader(initialHeaders);
+  const csrfHeaders = addCSRFToHeaders(initialHeaders);
   const headers = normalizeHeaders(csrfHeaders);
   
   // Create secure options with proper type

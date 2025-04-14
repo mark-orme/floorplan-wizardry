@@ -14,6 +14,9 @@ export * from './authGuard';
 // Export token storage utilities
 export * from './tokenStorage';
 
+// Export file security utilities
+export * from './fileUploadSecurity';
+
 // Export the isSecureConnection function directly
 export const isSecureConnection = (): boolean => {
   return window.location.protocol === 'https:';
@@ -46,6 +49,28 @@ export const Security = {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }
+  },
+  // Add Files namespace with re-exported functions from fileUploadSecurity
+  Files: {
+    createSecureFileUploadHandler: (
+      onValidFile: (file: File, sanitizedFileName: string) => void,
+      onInvalidFile: (error: string) => void,
+      options?: any
+    ) => {
+      // Import at runtime to avoid circular dependency
+      const { createSecureFileUploadHandler } = require('./fileUploadSecurity');
+      return createSecureFileUploadHandler(onValidFile, onInvalidFile, options);
+    },
+    sanitizeFileName: (fileName: string, maxLength?: number): string => {
+      // Import at runtime to avoid circular dependency
+      const { sanitizeFileName } = require('./fileUploadSecurity');
+      return sanitizeFileName(fileName, maxLength);
+    },
+    validateFile: (file: File, options?: any) => {
+      // Import at runtime to avoid circular dependency
+      const { validateFile } = require('./fileUploadSecurity');
+      return validateFile(file, options);
+    }
   }
 };
 
@@ -65,4 +90,3 @@ export const initializeSecurity = (): void => {
 
 // Re-export the secureForm function at the top level for more convenient imports
 export const secureForm = Security.secureForm;
-
