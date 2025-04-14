@@ -1,9 +1,4 @@
-/**
- * Straight line tool hook
- * Provides functionality for drawing straight lines on canvas
- * @module hooks/straightLineTool/useStraightLineTool
- */
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
@@ -339,8 +334,10 @@ export const useStraightLineTool = ({
       initializeTool();
       isToolInitializedRef.current = true;
       
-      logger.info("Straight line tool initialized", {
-        active: isActive,
+      logger.info("Straight line tool initialized", { 
+        canvas, 
+        tool,
+        isActive,
         lineColor,
         lineThickness,
         snapToAngle,
@@ -375,7 +372,8 @@ export const useStraightLineTool = ({
     lineColor,
     lineThickness,
     snapToAngle,
-    snapAngleDeg
+    snapAngleDeg,
+    tool
   ]);
 
   // Return the hook API
