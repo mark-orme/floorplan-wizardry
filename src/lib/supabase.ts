@@ -18,6 +18,7 @@ export const supabase = {
   auth: {
     getUser: async () => ({ data: { user: null }, error: null }),
     signIn: async () => ({ data: null, error: null }),
+    signUp: async () => ({ data: { user: null }, error: null }),
     signOut: async () => ({ error: null }),
     signInWithPassword: async () => ({ data: { user: null, session: null }, error: null }),
     getSession: async () => ({ data: { session: null }, error: null }),
@@ -31,7 +32,9 @@ export const supabase = {
     select: () => ({
       eq: (field: string, value: any) => ({
         single: async () => ({ data: null, error: null }),
+        maybeSingle: async () => ({ data: null, error: null }),
         data: [],
+        error: null,
         limit: (num: number) => ({
           data: [],
           error: null
@@ -50,6 +53,7 @@ export const supabase = {
         })
       }),
       data: [],
+      error: null,
       in: (field: string, values: any[]) => ({
         data: [],
         error: null,
@@ -65,10 +69,11 @@ export const supabase = {
       limit: (num: number) => ({
         data: [],
         error: null
-      })
+      }),
+      maybeSingle: async () => ({ data: null, error: null })
     }),
-    insert: async () => ({ data: null, error: null }),
-    update: async () => ({ data: null, error: null }),
+    insert: async () => ({ data: null, error: null, select: () => ({ data: [], error: null }) }),
+    update: async () => ({ data: null, error: null, select: () => ({ data: [], error: null }), eq: (field: string, value: any) => ({ data: null, error: null }) }),
     delete: async () => ({ data: null, error: null }),
     eq: (field: string, value: any) => ({
       data: [],
@@ -79,6 +84,12 @@ export const supabase = {
 
 // Define function to check if Supabase is configured
 export const isSupabaseConfigured = () => true;
+
+// Function to check if connection is secure
+export const isSecureConnection = (): boolean => 
+  window.location.protocol === 'https:' ||
+  window.location.hostname === 'localhost' || 
+  window.location.hostname === '127.0.0.1';
 
 // Define type for authentication
 export type AuthResponse = {

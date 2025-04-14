@@ -43,11 +43,8 @@ export const useSupabaseFloorPlans = () => {
       logger.info('Saving floor plans to Supabase');
 
       // Check for existing floor plans in Supabase
-      const { data: existingPlans, error: queryError } = await supabase
-        .from('floor_plans')
-        .select()
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const query = supabase.from('floor_plans').select().eq('user_id', user.id);
+      const { data: existingPlans, error: queryError } = await query.single();
         
       if (queryError && queryError.code !== 'PGRST116') {
         throw queryError;
@@ -111,11 +108,8 @@ export const useSupabaseFloorPlans = () => {
     try {
       logger.info('Loading floor plans from Supabase');
       
-      const { data, error } = await supabase
-        .from('floor_plans')
-        .select()
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const query = supabase.from('floor_plans').select().eq('user_id', user.id);
+      const { data, error } = await query.single();
 
       if (error) {
         if (error.code === 'PGRST116') {

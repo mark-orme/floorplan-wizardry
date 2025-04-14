@@ -23,15 +23,16 @@ export const usePropertyUpdate = () => {
     setIsLoading(true);
 
     try {
-      // Fixed Supabase query syntax - remove 'from' argument
-      const { data, error } = await supabase
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+      
+      const result = await supabase
         .from('properties')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select();
+        .update(updateData);
+        
+      const { data, error } = result.eq('id', id).select();
 
       if (error) throw error;
 
@@ -56,14 +57,16 @@ export const usePropertyUpdate = () => {
     if (!checkAuthentication()) return false;
 
     try {
-      // Fixed Supabase query syntax - remove 'from' argument  
-      const { error } = await supabase
+      const updateData = {
+        status,
+        updated_at: new Date().toISOString()
+      };
+      
+      const result = await supabase
         .from('properties')
-        .update({
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+        .update(updateData);
+        
+      const { error } = result.eq('id', id);
 
       if (error) throw error;
 

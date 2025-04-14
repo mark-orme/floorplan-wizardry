@@ -32,7 +32,7 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
   const handleError = useCallback((error: Error) => {
     console.error("Canvas error:", error);
     setHasError(true);
-    setErrorMessage(error.message); // This is correctly using Error.message, not passing Error to string
+    setErrorMessage(error.message); // Using Error.message which is a string
     
     // Create a proper update object that conforms to Partial<DebugInfoState>
     updateDebugInfo({
@@ -42,7 +42,6 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
       },
       hasError: true,
       errorMessage: error.message,
-      lastError: error,
       lastErrorTime: Date.now()
     });
     

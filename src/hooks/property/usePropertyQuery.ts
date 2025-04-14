@@ -31,7 +31,7 @@ export const usePropertyQuery = () => {
     try {
       let query = supabase
         .from('properties')
-        .select('id, order_id, address, client_name, status, created_at, updated_at, created_by');
+        .select();
 
       // Apply filters based on role
       if (userRole === 'photographer') {
@@ -79,7 +79,7 @@ export const usePropertyQuery = () => {
         .from('properties')
         .select()
         .eq('id', id)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error("Supabase error when fetching property:", error);

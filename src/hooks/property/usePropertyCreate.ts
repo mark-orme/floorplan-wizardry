@@ -46,11 +46,13 @@ export const usePropertyCreate = () => {
         name: propertyData.address.split(',')[0] // Create a name from address
       };
       
-      // Fixed Supabase query syntax - remove 'from' argument
-      const { data, error } = await supabase
+      // Fixed Supabase query syntax
+      const result = await supabase
         .from('properties')
-        .insert(newProperty)
-        .select();
+        .insert(newProperty);
+      
+      // Select result
+      const { data, error } = result.select();
         
       if (error) {
         logger.error("Error creating property:", error);

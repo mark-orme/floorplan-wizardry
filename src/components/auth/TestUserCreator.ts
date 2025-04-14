@@ -40,28 +40,25 @@ export const createTestUsers = async (): Promise<void> => {
   try {
     // Check if users already exist
     for (const testUser of testUsers) {
-      const { data: existingUsers, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', testUser.email);
+      const query = supabase.from('users').select().eq('email', testUser.email);
+      const { data: existingUsers, error: fetchError } = await query.single();
 
-      if (fetchError) {
+      if (fetchError && fetchError.code !== 'PGRST116') {
         console.error(`Error checking for existing user ${testUser.email}:`, fetchError);
         continue;
       }
 
       // Skip if user already exists
-      if (existingUsers && existingUsers.length > 0) {
+      if (existingUsers) {
         console.log(`Test user ${testUser.email} already exists`);
         continue;
       }
 
       // Create auth user
-      const { data: authData, error: signUpError } = await supabase.auth
-        .signUp({
-          email: testUser.email,
-          password: testUser.password
-        });
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: testUser.email,
+        password: testUser.password
+      });
 
       if (signUpError) {
         console.error(`Error creating auth user ${testUser.email}:`, signUpError);
@@ -108,11 +105,10 @@ export const verifyTestUsers = async (): Promise<boolean[]> => {
   for (const testUser of testUsers) {
     try {
       // Try to sign in with each test user
-      const { error } = await supabase.auth
-        .signInWithPassword({
-          email: testUser.email,
-          password: testUser.password
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: testUser.email,
+        password: testUser.password
+      });
 
       if (error) {
         console.error(`Test user ${testUser.email} verification failed:`, error);

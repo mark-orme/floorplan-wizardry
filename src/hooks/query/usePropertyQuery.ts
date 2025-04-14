@@ -30,9 +30,7 @@ const fetchProperties = async ({ userId, userRole, filters }: ListPropertiesPara
     return [];
   }
 
-  let query = supabase
-    .from('properties')
-    .select('id, order_id, address, client_name, status, created_at, updated_at, created_by');
+  let query = supabase.from('properties').select();
 
   // Apply filters based on role
   if (userRole === 'photographer') {
@@ -56,11 +54,8 @@ const fetchProperties = async ({ userId, userRole, filters }: ListPropertiesPara
 
 // Define the get property function
 const fetchProperty = async (id: string): Promise<Property> => {
-  const { data, error } = await supabase
-    .from('properties')
-    .select()
-    .eq('id', id)
-    .maybeSingle();
+  const query = supabase.from('properties').select().eq('id', id);
+  const { data, error } = await query.single();
 
   if (error) {
     throw new Error(error.message);

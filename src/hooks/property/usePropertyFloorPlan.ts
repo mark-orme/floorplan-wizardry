@@ -21,13 +21,16 @@ export const usePropertyFloorPlan = () => {
     if (!checkAuthentication()) return false;
 
     try {
-      const { error } = await supabase
+      const updateData = {
+        floor_plans: floorPlans,
+        updated_at: new Date().toISOString()
+      };
+
+      const result = await supabase
         .from('properties')
-        .update({
-          floor_plans: floorPlans,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', propertyId);
+        .update(updateData);
+      
+      const { error } = result.eq('id', propertyId);
 
       if (error) throw error;
       
