@@ -25,6 +25,7 @@ export interface CanvasProps {
   lineThickness?: number;
   wallColor?: string;
   wallThickness?: number;
+  forceGridVisible?: boolean; // Added this property to the interface
 }
 
 export const Canvas: React.FC<CanvasProps> = ({ 
@@ -39,7 +40,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   lineColor = '#000000',
   lineThickness = 2,
   wallColor = '#333333',
-  wallThickness = 4
+  wallThickness = 4,
+  forceGridVisible = false // Set a default value
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -249,7 +251,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       {fabricCanvasRef.current && (
         <GridRendererComponent 
           canvas={fabricCanvasRef.current}
-          showGrid={true}
+          showGrid={forceGridVisible || true} // Use forceGridVisible here
           onGridCreated={(gridObjects) => {
             logger.info(`Grid created with ${gridObjects.length} objects`);
           }}
