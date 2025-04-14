@@ -43,7 +43,7 @@ export const canvasConfigSchema = z.object({
 });
 
 /**
- * Function overloads for validateStraightLineDrawing
+ * Function overload declarations for validateStraightLineDrawing
  */
 
 /**
@@ -180,10 +180,20 @@ export function validateStraightLineDrawing(
       });
       
       if (result.success) {
+        // The problem was here - we need to ensure all properties are defined
+        // in the sanitized output to match the return type
         return {
           valid: true,
           errors: [],
-          sanitized: result.data
+          sanitized: {
+            startX: result.data.startX,
+            startY: result.data.startY,
+            endX: result.data.endX,
+            endY: result.data.endY,
+            color: result.data.color,
+            thickness: result.data.thickness,
+            snapToGrid: result.data.snapToGrid === undefined ? false : result.data.snapToGrid
+          }
         };
       } else {
         return {
