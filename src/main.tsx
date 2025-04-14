@@ -5,6 +5,7 @@ import App from './App.tsx'
 import './index.css'
 import { getPusher } from './utils/pusher.ts'
 import { createRootElement } from './utils/domUtils.ts'
+import SecurityInitializer from './components/security/SecurityInitializer';
 
 // Check if browser profiling is supported in this environment
 const isProfilingSupported = () => {
@@ -93,6 +94,7 @@ createRoot(rootElement).render(
       </div>
     )}
   >
+    <SecurityInitializer />
     <App />
   </Sentry.ErrorBoundary>
 );

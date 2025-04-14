@@ -4,8 +4,8 @@
  * Initializes security features when the application loads
  */
 import { useEffect } from 'react';
-import { addCSPMetaTag } from '@/utils/security/htmlSanitization';
 import { initializeSecureStorage } from '@/utils/security/secureStorage';
+import { initializeCSP } from '@/utils/security/contentSecurityPolicy';
 import logger from '@/utils/logger';
 
 /**
@@ -14,8 +14,8 @@ import logger from '@/utils/logger';
  */
 export const SecurityInitializer = () => {
   useEffect(() => {
-    // Add Content Security Policy meta tags
-    addCSPMetaTag();
+    // Initialize Content Security Policy
+    initializeCSP();
     
     // Initialize secure storage
     initializeSecureStorage();

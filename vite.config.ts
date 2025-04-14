@@ -4,7 +4,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { terser } from "rollup-plugin-terser";
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -26,33 +25,6 @@ export default defineConfig(({ mode }) => ({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       telemetry: false,
     }),
-    // Add Terser for JavaScript minification and basic obfuscation
-    mode !== 'development' && terser({
-      compress: {
-        drop_console: true,
-        dead_code: true,
-        conditionals: true,
-        evaluate: true,
-        booleans: true,
-        loops: true,
-        unused: true,
-        hoist_funs: true,
-        keep_fargs: false,
-        hoist_vars: true,
-        if_return: true,
-        join_vars: true,
-        cascade: true,
-        side_effects: true,
-        warnings: false,
-      },
-      mangle: {
-        toplevel: true,
-        eval: true
-      },
-      output: {
-        comments: false
-      }
-    })
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -62,8 +34,8 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Enable source maps in production for Sentry error tracking
     sourcemap: mode === 'production' ? 'hidden' : true,
-    // Minify with Terser
-    minify: 'terser',
+    // Minify with esbuild (built into Vite)
+    minify: true,
     // Reduce bundle size
     rollupOptions: {
       output: {

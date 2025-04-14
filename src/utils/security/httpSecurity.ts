@@ -5,21 +5,14 @@
  */
 
 import { addCSRFToHeaders } from './csrfProtection';
+import { getCSPHeaders } from './contentSecurityPolicy';
 
 /**
  * Security headers to apply to HTTP responses
  * These are primarily useful for reference, as they should be set on the server
  */
 export const SECURITY_HEADERS = {
-  'Content-Security-Policy': 
-    "default-src 'self'; " +
-    "script-src 'self'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data:; " +
-    "font-src 'self'; " +
-    "connect-src 'self' https://*.supabase.co; " +
-    "frame-src 'none'; " +
-    "object-src 'none'",
+  ...getCSPHeaders(),
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'X-XSS-Protection': '1; mode=block',
@@ -96,6 +89,20 @@ export async function secureFetch(url: string, options: RequestInit = {}): Promi
   const initialHeaders = options.headers || {};
   const csrfHeaders = addCSRFToHeaders(initialHeaders);
   const headers = normalizeHeaders(csrfHeaders);
+  
+  // Add additional security headers for same-origin requests
+  try {
+    const requestUrl = new URL(url, window.location.origin);
+    if (requestUrl.origin === window.location.origin) {
+      Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+        if (!headers.has(key)) {
+          headers.set(key, value);
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error applying security headers:', error);
+  }
   
   // Create secure options with proper type
   const secureOptions: RequestInit = {
