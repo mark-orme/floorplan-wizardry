@@ -5,7 +5,7 @@
  * @module utils/errorMonitoring
  */
 
-import { captureError, captureMessage } from './sentry';
+import { captureError, captureMessage } from './sentryUtils';
 import logger from './logger';
 
 // Track error occurrences for global monitoring

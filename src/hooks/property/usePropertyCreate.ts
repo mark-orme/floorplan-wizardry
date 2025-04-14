@@ -5,7 +5,7 @@ import { Property, PropertyStatus } from "@/types/propertyTypes";
 import { toast } from "sonner";
 import logger from "@/utils/logger";
 import { usePropertyBase } from "./usePropertyBase";
-import { captureError } from "@/utils/sentry";
+import { captureError } from "@/utils/sentryUtils";
 
 /**
  * Hook for creating new properties
@@ -46,7 +46,7 @@ export const usePropertyCreate = () => {
         name: propertyData.address.split(',')[0] // Create a name from address
       };
       
-      // Fixed Supabase query syntax
+      // Fixed Supabase query syntax - remove 'from' argument
       const { data, error } = await supabase
         .from('properties')
         .insert(newProperty)

@@ -12,8 +12,9 @@ import { PropertyFormHeader } from '@/components/property/PropertyFormHeader';
 import { PropertyFormFields, PropertyFormSchema, PropertyFormValues } from '@/components/property/PropertyFormFields';
 import { PropertyFormActions } from '@/components/property/PropertyFormActions';
 import { usePropertyCreate } from '@/hooks/property/usePropertyCreate';
-import { captureError } from '@/utils/sentry';
+import { captureError } from '@/utils/sentryUtils';
 import { validateAndSanitizeForm, appSchemas, trackValidationFailure } from '@/utils/validation/inputValidation';
+import { Security } from '@/utils/security';
 
 const PropertyForm = () => {
   const { createProperty } = usePropertyCreate();
@@ -74,7 +75,7 @@ const PropertyForm = () => {
       return;
     }
 
-    // Validate and sanitize input data
+    // Sanitize and validate input data
     const validationResult = validateAndSanitizeForm(
       values, 
       appSchemas.property.create
@@ -108,17 +109,22 @@ const PropertyForm = () => {
       return;
     }
 
+    // Apply input sanitization for extra security
+    const sanitizedData = {
+      order_id: Security.Input.sanitizeHtml(values.order_id),
+      address: Security.Input.sanitizeHtml(values.address),
+      client_name: Security.Input.sanitizeHtml(values.client_name),
+      branch_name: values.branch_name ? Security.Input.sanitizeHtml(values.branch_name) : undefined
+    };
+
     setIsSubmitting(true);
     try {
-      // Ensure required fields are present before sending to API
-      const formData = validationResult.sanitizedData || values;
-      
       // Make sure all required fields are present and not undefined
       const propertyData = {
-        order_id: formData.order_id || '',
-        address: formData.address || '',
-        client_name: formData.client_name || '',
-        branch_name: formData.branch_name
+        order_id: sanitizedData.order_id,
+        address: sanitizedData.address,
+        client_name: sanitizedData.client_name,
+        branch_name: sanitizedData.branch_name
       };
       
       const newProperty = await createProperty(propertyData);

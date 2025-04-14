@@ -23,6 +23,7 @@ export const usePropertyUpdate = () => {
     setIsLoading(true);
 
     try {
+      // Fixed Supabase query syntax - remove 'from' argument
       const { data, error } = await supabase
         .from('properties')
         .update({
@@ -55,6 +56,7 @@ export const usePropertyUpdate = () => {
     if (!checkAuthentication()) return false;
 
     try {
+      // Fixed Supabase query syntax - remove 'from' argument  
       const { error } = await supabase
         .from('properties')
         .update({
