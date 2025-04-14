@@ -1,92 +1,190 @@
 
 /**
- * Security utilities index
- * Re-exports all security-related functions
- * @module utils/security
+ * Security Utilities Index
+ * Centralized exports for all security-related functionality
  */
 
-// Export CSRF protection utilities
-export * from './csrfProtection';
+// Export content sanitization utilities
+export * from './htmlSanitization';
+export * from './contentSecurityPolicy';
+export * from './httpSecurity';
+export * from './inputSanitization';
 
-// Export authentication guard utilities
-export * from './authGuard';
-
-// Export token storage utilities
-export * from './tokenStorage';
-
-// Export file security utilities
-export * from './fileUploadSecurity';
-
-// Export the isSecureConnection function directly
-export const isSecureConnection = (): boolean => {
-  return window.location.protocol === 'https:';
-};
-
-// Create a Security namespace for backwards compatibility
+// Create a unified Security namespace for easier imports
 export const Security = {
-  isSecureConnection: (): boolean => {
-    return window.location.protocol === 'https:';
+  // HTML sanitization
+  HTML: {
+    sanitizeHtml: (html: string) => import('./htmlSanitization').then(m => m.sanitizeHtml(html)),
+    sanitizeRichHtml: (html: string) => import('./htmlSanitization').then(m => m.sanitizeRichHtml(html)),
+    sanitizeCanvasHtml: (html: string) => import('./htmlSanitization').then(m => m.sanitizeCanvasHtml(html))
   },
-  secureForm: (formElement: HTMLFormElement): void => {
-    // Add security attributes to form
-    formElement.setAttribute('autocomplete', 'off');
-    formElement.setAttribute('novalidate', 'true');
-    
-    // Add CSRF token
-    const csrfToken = localStorage.getItem('csrf_token') || '';
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = 'csrf_token';
-    csrfInput.value = csrfToken;
-    formElement.appendChild(csrfInput);
-  },
-  Input: {
-    sanitizeHtml: (input: string): string => {
-      // Basic HTML sanitization
-      return input
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-  },
-  // Add Files namespace with re-exported functions from fileUploadSecurity
-  Files: {
-    createSecureFileUploadHandler: (
-      onValidFile: (file: File, sanitizedFileName: string) => void,
-      onInvalidFile: (error: string) => void,
-      options?: any
-    ) => {
-      // Import at runtime to avoid circular dependency
-      const { createSecureFileUploadHandler } = require('./fileUploadSecurity');
-      return createSecureFileUploadHandler(onValidFile, onInvalidFile, options);
-    },
-    sanitizeFileName: (fileName: string, maxLength?: number): string => {
-      // Import at runtime to avoid circular dependency
-      const { sanitizeFileName } = require('./fileUploadSecurity');
-      return sanitizeFileName(fileName, maxLength);
-    },
-    validateFile: (file: File, options?: any) => {
-      // Import at runtime to avoid circular dependency
-      const { validateFile } = require('./fileUploadSecurity');
-      return validateFile(file, options);
-    }
-  }
-};
-
-// Import the initializeCSRFProtection function to make it available
-import { initializeCSRFProtection } from './csrfProtection';
-
-// Initialize all security features
-export const initializeSecurity = (): void => {
-  // Initialize CSRF protection
-  initializeCSRFProtection();
   
-  // Set up other security measures as needed
-  if (process.env.NODE_ENV === 'production' && !isSecureConnection()) {
-    console.warn('Warning: Application running without HTTPS in production mode');
+  // Input sanitization
+  Input: {
+    sanitizeHtml: (input: string) => import('./inputSanitization').then(m => m.sanitizeHtml(input)),
+    sanitizeObject: <T extends Record<string, any>>(obj: T) => 
+      import('./inputSanitization').then(m => m.sanitizeObject<T>(obj)),
+    sanitizeUrl: (url: string) => import('./inputSanitization').then(m => m.sanitizeUrl(url)),
+    stripJavaScriptEvents: (input: string) => import('./inputSanitization').then(m => m.stripJavaScriptEvents(input))
+  },
+  
+  // File handling
+  Files: {
+    sanitizeFileName: (fileName: string) => {
+      if (!fileName || typeof fileName !== 'string') return '';
+      // Remove path traversal sequences and potentially dangerous characters
+      return fileName
+        .replace(/[/\\?%*:|"<>]/g, '_') // Replace unsafe characters with underscore
+        .replace(/\.{2,}/g, '.'); // Replace multiple dots with a single dot
+    },
+    
+    // Secure file upload handler
+    createSecureFileUploadHandler: (
+      onValidFile: (file: File, sanitizedName: string) => void,
+      onInvalidFile: (error: string) => void,
+      options: {
+        allowedTypes?: string[];
+        allowedExtensions?: string[];
+        maxSizeBytes?: number;
+        validateContent?: boolean;
+      } = {}
+    ) => {
+      return (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { 
+          allowedTypes = [],
+          allowedExtensions = [],
+          maxSizeBytes = 5 * 1024 * 1024, // 5MB default
+          validateContent = true
+        } = options;
+        
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        
+        Array.from(files).forEach(file => {
+          // Check file size
+          if (file.size > maxSizeBytes) {
+            onInvalidFile(`File too large: ${file.name}`);
+            return;
+          }
+          
+          // Check file type if specified
+          if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
+            onInvalidFile(`Invalid file type: ${file.type}`);
+            return;
+          }
+          
+          // Check extension if specified
+          if (allowedExtensions.length > 0) {
+            const extension = file.name.split('.').pop()?.toLowerCase() || '';
+            if (!allowedExtensions.includes(extension)) {
+              onInvalidFile(`Invalid file extension: ${extension}`);
+              return;
+            }
+          }
+          
+          // Validate file name
+          const sanitizedFileName = Security.Files.sanitizeFileName(file.name);
+          
+          // Content validation would normally go here (e.g. checking for malicious content)
+          // For now, we'll accept the file if we've made it this far
+          onValidFile(file, sanitizedFileName);
+        });
+      };
+    }
+  },
+  
+  // CSP utilities
+  CSP: {
+    initializeCSP: () => import('./contentSecurityPolicy').then(m => m.initializeCSP()),
+    getCSPHeaders: () => import('./contentSecurityPolicy').then(m => m.getCSPHeaders())
+  },
+  
+  // HTTP security
+  HTTP: {
+    secureFetch: (url: string, options?: RequestInit) => 
+      import('./httpSecurity').then(m => m.secureFetch(url, options)),
+    applySecurityMetaTags: () => import('./httpSecurity').then(m => m.applySecurityMetaTags())
+  },
+  
+  // CSRF protection
+  CSRF: {
+    getCsrfToken: () => {
+      // This would typically generate or retrieve a CSRF token
+      // For now, we'll use a simple implementation
+      return `csrf-${Math.random().toString(36).substring(2, 15)}`;
+    },
+    
+    validateCsrfToken: (token: string, storedToken: string) => {
+      return token === storedToken;
+    }
   }
 };
 
-// Re-export the secureForm function at the top level for more convenient imports
-export const secureForm = Security.secureForm;
+/**
+ * Initialize all security features
+ * Call this during application startup
+ */
+export function initializeSecurity(): void {
+  if (typeof window !== 'undefined') {
+    // Initialize Content Security Policy
+    Security.CSP.initializeCSP();
+    
+    // Apply security-related meta tags
+    Security.HTTP.applySecurityMetaTags();
+    
+    // Add no-referrer meta tag
+    const metaReferrer = document.createElement('meta');
+    metaReferrer.name = 'referrer';
+    metaReferrer.content = 'no-referrer';
+    document.head.appendChild(metaReferrer);
+    
+    // Block iframe embedding via CSP
+    const metaFrameOptions = document.createElement('meta');
+    metaFrameOptions.httpEquiv = 'X-Frame-Options';
+    metaFrameOptions.content = 'DENY';
+    document.head.appendChild(metaFrameOptions);
+    
+    console.info('Security features initialized');
+  }
+}
+
+/**
+ * Apply security measures to a form element
+ * @param form Form element to secure
+ */
+export function secureForm(form: HTMLFormElement): void {
+  // Add CSRF token
+  const csrfToken = Security.CSRF.getCsrfToken();
+  
+  // Store token in a hidden field
+  const tokenInput = document.createElement('input');
+  tokenInput.type = 'hidden';
+  tokenInput.name = 'csrf_token';
+  tokenInput.value = csrfToken;
+  form.appendChild(tokenInput);
+  
+  // Store in session storage for validation
+  try {
+    sessionStorage.setItem('csrf_token', csrfToken);
+  } catch (e) {
+    console.error('Failed to store CSRF token');
+  }
+  
+  // Add event listener to sanitize inputs on submit
+  form.addEventListener('submit', (e) => {
+    const formData = new FormData(form);
+    const hasInvalidData = Array.from(formData.entries()).some(([key, value]) => {
+      if (typeof value === 'string' && value.includes('<script')) {
+        console.error(`Potentially malicious input detected in field: ${key}`);
+        e.preventDefault();
+        return true;
+      }
+      return false;
+    });
+    
+    if (hasInvalidData) {
+      console.error('Form submission blocked due to potentially malicious input');
+      e.preventDefault();
+    }
+  });
+}

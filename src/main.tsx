@@ -6,6 +6,7 @@ import './index.css'
 import { getPusher } from './utils/pusher.ts'
 import { createRootElement } from './utils/domUtils.ts'
 import SecurityInitializer from './components/security/SecurityInitializer';
+import { initializeSecurity } from './utils/security';
 
 // Check if browser profiling is supported in this environment
 const isProfilingSupported = () => {
@@ -69,11 +70,23 @@ Sentry.init({
   }
 });
 
+// Initialize all security features 
+initializeSecurity();
+
 // Initialize Pusher
 getPusher();
 
 // Create the root and render the application using our utility
 const rootElement = createRootElement("root");
+
+// Add no-referrer meta tag for privacy
+if (typeof document !== 'undefined') {
+  const metaReferrer = document.createElement('meta');
+  metaReferrer.name = 'referrer';
+  metaReferrer.content = 'no-referrer';
+  document.head.appendChild(metaReferrer);
+}
+
 createRoot(rootElement).render(
   <Sentry.ErrorBoundary 
     fallback={({ error, componentStack, resetError }) => (

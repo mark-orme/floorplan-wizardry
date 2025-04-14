@@ -1,110 +1,130 @@
 
 /**
- * CSRF Protection utilities
- * Provides functions for CSRF token generation and validation
+ * CSRF Protection Utilities
+ * Provides CSRF token generation and validation
  */
+import logger from '@/utils/logger';
 
-// Generate a random CSRF token
-export const generateCSRFToken = (): string => {
-  const randomBytes = new Uint8Array(32);
-  window.crypto.getRandomValues(randomBytes);
-  return Array.from(randomBytes)
-    .map(byte => byte.toString(16).padStart(2, '0'))
-    .join('');
-};
+// Storage key for CSRF token
+const CSRF_TOKEN_KEY = 'app_csrf_token';
+const CSRF_HEADER_NAME = 'X-CSRF-Token';
 
-// Store a CSRF token in localStorage
-export const storeCSRFToken = (token: string): void => {
-  localStorage.setItem('csrf_token', token);
-};
-
-// Retrieve the CSRF token from localStorage
-export const getCSRFToken = (): string | null => {
-  return localStorage.getItem('csrf_token');
-};
-
-// Validate a CSRF token against the stored one
-export const validateCSRFToken = (token: string): boolean => {
-  const storedToken = getCSRFToken();
-  return storedToken !== null && token === storedToken;
-};
-
-// Add CSRF token to headers for fetch requests
-export const addCSRFToHeaders = (headers: HeadersInit): HeadersInit => {
-  const token = getCSRFToken();
-  if (!token) return headers;
+/**
+ * Generate a CSRF token
+ * @returns Generated CSRF token
+ */
+export function generateCsrfToken(): string {
+  const token = `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
   
+  try {
+    // Store in session storage (preferred) or localStorage as fallback
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(CSRF_TOKEN_KEY, token);
+    } else if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(CSRF_TOKEN_KEY, token);
+    }
+  } catch (error) {
+    logger.error('Failed to store CSRF token', { error });
+  }
+  
+  return token;
+}
+
+/**
+ * Get the stored CSRF token
+ * @returns Stored CSRF token or null if not found
+ */
+export function getCsrfToken(): string | null {
+  try {
+    // Try sessionStorage first, then localStorage
+    let token: string | null = null;
+    
+    if (typeof sessionStorage !== 'undefined') {
+      token = sessionStorage.getItem(CSRF_TOKEN_KEY);
+    }
+    
+    if (!token && typeof localStorage !== 'undefined') {
+      token = localStorage.getItem(CSRF_TOKEN_KEY);
+    }
+    
+    if (!token) {
+      // Generate new token if none exists
+      token = generateCsrfToken();
+    }
+    
+    return token;
+  } catch (error) {
+    logger.error('Failed to retrieve CSRF token', { error });
+    return null;
+  }
+}
+
+/**
+ * Validate a CSRF token against the stored token
+ * @param token Token to validate
+ * @returns Whether the token is valid
+ */
+export function validateCsrfToken(token: string): boolean {
+  const storedToken = getCsrfToken();
+  return !!storedToken && token === storedToken;
+}
+
+/**
+ * Add CSRF token to request headers
+ * @param headers Existing headers object
+ * @returns Headers with CSRF token added
+ */
+export function addCSRFToHeaders(
+  headers: Record<string, string> | Headers = {}
+): Record<string, string> | Headers {
+  const token = getCsrfToken();
+  
+  if (!token) {
+    logger.warn('No CSRF token available for request');
+    return headers;
+  }
+  
+  // Add token to headers
   if (headers instanceof Headers) {
-    const newHeaders = new Headers(headers);
-    newHeaders.append('X-CSRF-Token', token);
-    return newHeaders;
-  } else if (Array.isArray(headers)) {
-    return [...headers, ['X-CSRF-Token', token]];
+    headers.append(CSRF_HEADER_NAME, token);
+    return headers;
   } else {
     return {
       ...headers,
-      'X-CSRF-Token': token
+      [CSRF_HEADER_NAME]: token
     };
   }
-};
+}
 
-// Initialize CSRF protection for the application
-export const initializeCSRFProtection = (): void => {
-  if (!getCSRFToken()) {
-    const newToken = generateCSRFToken();
-    storeCSRFToken(newToken);
-  }
-};
-
-// Alias for addCSRFToHeaders for backward compatibility
-export const addCSRFHeader = addCSRFToHeaders;
-
-// Add CSRF protection to an HTML form
-export const protectForm = (form: HTMLFormElement): void => {
-  const token = getCSRFToken() || generateCSRFToken();
+/**
+ * Add CSRF token to form data
+ * @param formData Form data to augment
+ * @returns Form data with CSRF token added
+ */
+export function addCSRFToFormData(formData: FormData): FormData {
+  const token = getCsrfToken();
   
   if (!token) {
-    console.error('Failed to generate CSRF token for form protection');
-    return;
+    logger.warn('No CSRF token available for form submission');
+    return formData;
   }
   
-  // Store token if it doesn't exist
-  if (!getCSRFToken()) {
-    storeCSRFToken(token);
-  }
-  
-  // Check if token input already exists
-  let tokenInput = form.querySelector('input[name="csrf_token"]');
-  
-  // Create or update token input
-  if (!tokenInput) {
-    tokenInput = document.createElement('input');
-    tokenInput.setAttribute('type', 'hidden');
-    tokenInput.setAttribute('name', 'csrf_token');
-    form.appendChild(tokenInput);
-  }
-  
-  // Set token value
-  (tokenInput as HTMLInputElement).value = token;
-};
+  // Add token to form data
+  formData.append('csrf_token', token);
+  return formData;
+}
 
-// Create fetch options with CSRF protection
-export const createProtectedFetchOptions = (options: RequestInit = {}): RequestInit => {
-  const token = getCSRFToken();
-  if (!token) return options;
+/**
+ * Get HTML for a CSRF input field
+ * @returns HTML string for CSRF input
+ */
+export function getCsrfInputHtml(): string {
+  const token = getCsrfToken();
   
-  // Create headers with token
-  const headers = new Headers(options.headers || {});
-  headers.append('X-CSRF-Token', token);
+  if (!token) {
+    logger.warn('No CSRF token available for form');
+    return '';
+  }
   
-  return {
-    ...options,
-    headers
-  };
-};
-
-// Perform a fetch with CSRF protection
-export const protectedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  const protectedOptions = createProtectedFetchOptions(options);
-  return fetch(url, protectedOptions);
-};
+  return `<input type="hidden" name="csrf_token" value="${token}">`;
+}
