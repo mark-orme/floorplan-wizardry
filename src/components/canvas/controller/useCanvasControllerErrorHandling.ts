@@ -5,6 +5,8 @@
  */
 import { useCallback } from "react";
 import { DebugInfoState } from "@/types/core/DebugInfo";
+import { captureError } from "@/utils/sentryUtils";
+import { useLocation } from "react-router-dom";
 
 interface UseCanvasControllerErrorHandlingProps {
   setHasError: (value: boolean) => void;
@@ -22,8 +24,11 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     setErrorMessage,
     updateDebugInfo
   } = props;
+  
+  const location = useLocation();
+  const currentRoute = location.pathname;
 
-  // Handle error
+  // Handle error with enhanced reporting
   const handleError = useCallback((error: Error) => {
     console.error("Canvas error:", error);
     setHasError(true);
@@ -34,9 +39,31 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
       performanceStats: {
         // This is optional in DebugInfoState, so we can safely increment it
         errorCount: 1 // Default to 1 if not previously set
+      },
+      hasError: true,
+      errorMessage: error.message,
+      lastError: error,
+      lastErrorTime: Date.now()
+    });
+    
+    // Report to monitoring system with additional context
+    captureError(error, 'canvas-controller-error', {
+      level: 'error',
+      tags: {
+        component: 'CanvasController',
+        route: currentRoute
+      },
+      context: {
+        component: 'CanvasController',
+        operation: 'rendering',
+        route: currentRoute
+      },
+      extra: {
+        message: error.message,
+        stack: error.stack
       }
     });
-  }, [setHasError, setErrorMessage, updateDebugInfo]);
+  }, [setHasError, setErrorMessage, updateDebugInfo, currentRoute]);
 
   // Handle retry attempt
   const handleRetry = useCallback(() => {
@@ -49,12 +76,31 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
         // These are optional in DebugInfoState, so we can safely update them
         retryCount: 1 // Default to 1 if not previously set
       },
-      lastInitTime: Date.now()
+      lastInitTime: Date.now(),
+      hasError: false,
+      errorMessage: ""
     });
-  }, [setHasError, setErrorMessage, updateDebugInfo]);
+    
+    // Report retry attempt
+    captureMessage(
+      "Canvas controller retry attempt",
+      "canvas-retry-attempt",
+      {
+        level: 'info',
+        tags: {
+          component: 'CanvasController',
+          operation: 'retry',
+          route: currentRoute
+        }
+      }
+    );
+  }, [setHasError, setErrorMessage, updateDebugInfo, currentRoute]);
 
   return {
     handleError,
     handleRetry
   };
 };
+
+// Add missing import
+import { captureMessage } from "@/utils/sentryUtils";

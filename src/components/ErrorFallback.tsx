@@ -7,7 +7,9 @@
 import { useEffect } from 'react';
 import { Button } from './ui/button';
 import { captureError } from '@/utils/sentryUtils';
+import { captureErrorWithMonitoring } from '@/utils/errorMonitoring';
 import { FallbackProps } from 'react-error-boundary';
+import { useLocation } from 'react-router-dom';
 
 /**
  * ErrorFallback component that displays when an uncaught error occurs
@@ -15,15 +17,30 @@ import { FallbackProps } from 'react-error-boundary';
  * @returns {JSX.Element} Error fallback UI
  */
 export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
+  const location = useLocation();
+  const currentRoute = location.pathname;
+
   // Report error to Sentry when the component mounts
   useEffect(() => {
-    captureError(error, 'error-boundary', {
-      tags: {
-        component: 'ErrorBoundary',
-        level: 'critical'
+    // Enhanced error reporting with monitoring
+    captureErrorWithMonitoring(
+      error, 
+      'error-boundary', 
+      `route:${currentRoute}`,
+      {
+        tags: {
+          component: 'ErrorBoundary',
+          level: 'critical',
+          route: currentRoute
+        },
+        context: {
+          component: 'ErrorBoundary',
+          route: currentRoute,
+          operation: 'rendering'
+        }
       }
-    });
-  }, [error]);
+    );
+  }, [error, currentRoute]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
@@ -59,4 +76,3 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
     </div>
   );
 };
-

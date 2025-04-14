@@ -1,3 +1,4 @@
+
 /**
  * Sentry shared types
  * Type definitions for Sentry error reporting and monitoring
@@ -43,7 +44,42 @@ export interface ErrorCaptureOptions {
     component?: string;
     operation?: string;
     route?: string;
+    userAction?: string;
+    inputValidation?: InputValidationResult;
   };
+  
+  /** Rate limiting options */
+  rateLimit?: {
+    /** Override default rate limit for this error type */
+    maxOccurrences?: number;
+    /** Override default time window in ms */
+    timeWindow?: number;
+  };
+  
+  /** Security classification */
+  security?: {
+    /** Classification level */
+    level?: 'low' | 'medium' | 'high' | 'critical';
+    /** Additional security context */
+    details?: string;
+    /** Impact assessment */
+    impact?: string;
+  };
+}
+
+/**
+ * Input validation result
+ * Contains information about validation failures
+ */
+export interface InputValidationResult {
+  /** Whether validation passed */
+  valid: boolean;
+  /** Field with validation errors */
+  fields?: Record<string, string[]>;
+  /** Overall validation message */
+  message?: string;
+  /** Severity of validation failure */
+  severity?: 'low' | 'medium' | 'high';
 }
 
 /**

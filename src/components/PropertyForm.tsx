@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { usePropertyManagement } from '@/hooks/usePropertyManagement';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
@@ -12,14 +11,16 @@ import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
 import { PropertyFormHeader } from '@/components/property/PropertyFormHeader';
 import { PropertyFormFields, PropertyFormSchema, PropertyFormValues } from '@/components/property/PropertyFormFields';
 import { PropertyFormActions } from '@/components/property/PropertyFormActions';
+import { usePropertyCreate } from '@/hooks/property/usePropertyCreate';
+import { captureError } from '@/utils/sentry';
+import { validateAndSanitizeForm, appSchemas, trackValidationFailure } from '@/utils/validation/inputValidation';
 
 const PropertyForm = () => {
-  const { createProperty } = usePropertyManagement();
+  const { createProperty } = usePropertyCreate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   
   const [authContextError, setAuthContextError] = useState(false);
   let authData = { user: null, loading: true };
@@ -29,6 +30,12 @@ const PropertyForm = () => {
   } catch (error) {
     console.error('Auth context error in PropertyForm:', error);
     setAuthContextError(true);
+    captureError(error, 'property-form-auth-context-error', {
+      context: {
+        component: 'PropertyForm',
+        operation: 'initialization'
+      }
+    });
   }
   
   const { user, loading: authLoading } = authData;
@@ -67,14 +74,46 @@ const PropertyForm = () => {
       return;
     }
 
+    // Validate and sanitize input data
+    const validationResult = validateAndSanitizeForm(
+      values, 
+      appSchemas.property.create
+    );
+
+    if (!validationResult.valid) {
+      // Track validation failure
+      if (user) {
+        trackValidationFailure(user.id, validationResult, {
+          component: 'PropertyForm',
+          operation: 'create-property',
+          route: '/properties/new'
+        });
+      }
+
+      // Show toast with validation errors
+      toast.error(validationResult.message || 'Please check the form for errors');
+      
+      // Update form errors
+      if (validationResult.fields) {
+        Object.entries(validationResult.fields).forEach(([field, errors]) => {
+          if (errors.length > 0) {
+            form.setError(field as any, { 
+              type: 'manual', 
+              message: errors[0] 
+            });
+          }
+        });
+      }
+      
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const newProperty = await createProperty(
-        values.order_id,
-        values.address,
-        values.client_name,
-        values.branch_name || ''
-      );
+      // Use sanitized data if available
+      const formData = validationResult.sanitizedData || values;
+      
+      const newProperty = await createProperty(formData);
 
       if (newProperty) {
         toast.success('Property created successfully');
@@ -84,6 +123,17 @@ const PropertyForm = () => {
         setHasError(true);
       }
     } catch (error) {
+      captureError(error, 'property-create-error', {
+        context: {
+          component: 'PropertyForm',
+          operation: 'create-property',
+          route: '/properties/new'
+        },
+        extra: {
+          formValues: JSON.stringify(values)
+        }
+      });
+      
       console.error('Error creating property:', error);
       toast.error('Failed to create property');
       setHasError(true);
