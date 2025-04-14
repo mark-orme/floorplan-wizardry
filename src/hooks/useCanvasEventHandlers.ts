@@ -1,11 +1,11 @@
-
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Point as FabricPoint, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import type { Point } from '@/types/core/Point';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
 interface UseCanvasEventHandlersProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -43,11 +43,11 @@ export const useCanvasEventHandlers = ({
   // Get snapping functionality
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
   
-  // Variables for tracking straight line drawing
-  let isDrawingStraightLine = false;
-  let straightLineStartPoint: FabricPoint | null = null;
-  let currentStraightLine: Line | null = null;
-  let distanceTooltip: Text | null = null;
+  // Use refs to track drawing state across events
+  const isDrawingRef = useRef(false);
+  const startPointRef = useRef<FabricPoint | null>(null);
+  const currentLineRef = useRef<Line | null>(null);
+  const distanceTooltipRef = useRef<Text | null>(null);
   
   // Handle keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -81,16 +81,16 @@ export const useCanvasEventHandlers = ({
       const canvas = fabricCanvasRef.current;
       
       // Cancel straight line drawing if active
-      if (tool === DrawingMode.STRAIGHT_LINE && isDrawingStraightLine && currentStraightLine) {
-        canvas.remove(currentStraightLine);
-        if (distanceTooltip) {
-          canvas.remove(distanceTooltip);
-          distanceTooltip = null;
+      if (tool === DrawingMode.STRAIGHT_LINE && isDrawingRef.current && currentLineRef.current) {
+        canvas.remove(currentLineRef.current);
+        if (distanceTooltipRef.current) {
+          canvas.remove(distanceTooltipRef.current);
+          distanceTooltipRef.current = null;
         }
         canvas.requestRenderAll();
-        isDrawingStraightLine = false;
-        straightLineStartPoint = null;
-        currentStraightLine = null;
+        isDrawingRef.current = false;
+        startPointRef.current = null;
+        currentLineRef.current = null;
       }
       
       // Clear selection
@@ -106,20 +106,20 @@ export const useCanvasEventHandlers = ({
     const dy = end.y - start.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Convert to meters (assuming 100 pixels = 1 meter, adjust as needed)
-    const distanceInMeters = (distance / 100).toFixed(1);
+    // Convert to meters (using the grid constant)
+    const distanceInMeters = (distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
     
     // Calculate midpoint for tooltip position
     const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2 - 10; // Position slightly above the line
+    const midY = (start.y + end.y) / 2 - 15; // Position above the line
     
     // Create or update tooltip
-    if (!distanceTooltip) {
-      distanceTooltip = new Text(`${distanceInMeters} m`, {
+    if (!distanceTooltipRef.current) {
+      distanceTooltipRef.current = new Text(`${distanceInMeters} m`, {
         left: midX,
         top: midY,
         fontSize: 14,
-        fill: '#000000',
+        fill: lineColor,
         backgroundColor: 'rgba(255,255,255,0.7)',
         padding: 2,
         objectType: 'measurement',
@@ -127,17 +127,18 @@ export const useCanvasEventHandlers = ({
         originX: 'center',
         originY: 'bottom'
       });
-      canvas.add(distanceTooltip);
+      canvas.add(distanceTooltipRef.current);
     } else {
-      distanceTooltip.set({
+      distanceTooltipRef.current.set({
         text: `${distanceInMeters} m`,
         left: midX,
-        top: midY
+        top: midY,
+        fill: lineColor
       });
     }
     
     return { distance, distanceInMeters };
-  }, []);
+  }, [lineColor]);
   
   // Handle canvas mouse down
   const onCanvasMouseDown = useCallback((e: any) => {
@@ -150,6 +151,9 @@ export const useCanvasEventHandlers = ({
       handleMouseDown(nativeEvent);
     }
     
+    // Save current state before starting new drawing
+    saveCurrentState();
+    
     // Handle straight line tool
     if (tool === DrawingMode.STRAIGHT_LINE) {
       const pointer = canvas.getPointer(e.e);
@@ -157,12 +161,11 @@ export const useCanvasEventHandlers = ({
       // Snap point to grid
       const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
       
-      isDrawingStraightLine = true;
-      // Convert our app Point to FabricPoint
-      straightLineStartPoint = new FabricPoint(snappedPoint.x, snappedPoint.y);
+      isDrawingRef.current = true;
+      startPointRef.current = new FabricPoint(snappedPoint.x, snappedPoint.y);
       
       // Create a new line
-      currentStraightLine = new Line([
+      currentLineRef.current = new Line([
         snappedPoint.x, 
         snappedPoint.y, 
         snappedPoint.x, 
@@ -175,10 +178,14 @@ export const useCanvasEventHandlers = ({
         objectType: 'straight-line'
       });
       
-      canvas.add(currentStraightLine);
+      canvas.add(currentLineRef.current);
+      
+      // Create initial tooltip
+      updateDistanceTooltip(snappedPoint, snappedPoint, canvas);
+      
       canvas.requestRenderAll();
     }
-  }, [fabricCanvasRef, tool, lineColor, lineThickness, handleMouseDown, snapPointToGrid]);
+  }, [fabricCanvasRef, tool, lineColor, lineThickness, handleMouseDown, snapPointToGrid, updateDistanceTooltip, saveCurrentState]);
   
   // Handle canvas mouse move
   const onCanvasMouseMove = useCallback((e: any) => {
@@ -192,20 +199,18 @@ export const useCanvasEventHandlers = ({
     }
     
     // Update straight line during drawing
-    if (tool === DrawingMode.STRAIGHT_LINE && isDrawingStraightLine && straightLineStartPoint && currentStraightLine) {
+    if (tool === DrawingMode.STRAIGHT_LINE && isDrawingRef.current && startPointRef.current && currentLineRef.current) {
       const pointer = canvas.getPointer(e.e);
       
       // Snap point to grid
       const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
       
       // Apply additional constraints (like straight horizontal/vertical lines if needed)
-      const { start, end } = snapLineToGrid(
-        { x: straightLineStartPoint.x, y: straightLineStartPoint.y },
-        { x: snappedPoint.x, y: snappedPoint.y }
-      );
+      const startPoint = { x: startPointRef.current.x, y: startPointRef.current.y };
+      const { start, end } = snapLineToGrid(startPoint, snappedPoint);
       
       // Update the end point of the line
-      currentStraightLine.set({
+      currentLineRef.current.set({
         x2: end.x,
         y2: end.y
       });
@@ -229,17 +234,15 @@ export const useCanvasEventHandlers = ({
     }
     
     // Complete straight line drawing
-    if (tool === DrawingMode.STRAIGHT_LINE && isDrawingStraightLine && straightLineStartPoint && currentStraightLine) {
+    if (tool === DrawingMode.STRAIGHT_LINE && isDrawingRef.current && startPointRef.current && currentLineRef.current) {
       const pointer = canvas.getPointer(e.e);
       
       // Snap point to grid
       const snappedPoint = snapPointToGrid({ x: pointer.x, y: pointer.y });
       
       // Apply additional constraints
-      const { start, end } = snapLineToGrid(
-        { x: straightLineStartPoint.x, y: straightLineStartPoint.y },
-        { x: snappedPoint.x, y: snappedPoint.y }
-      );
+      const startPoint = { x: startPointRef.current.x, y: startPointRef.current.y };
+      const { start, end } = snapLineToGrid(startPoint, snappedPoint);
       
       // Calculate distance
       const dx = end.x - start.x;
@@ -248,13 +251,11 @@ export const useCanvasEventHandlers = ({
       
       // Only keep the line if it has a meaningful length
       if (distance > 5) {
-        saveCurrentState();
-        
-        // Convert to meters (assuming 100 pixels = 1 meter, adjust as needed)
-        const distanceInMeters = (distance / 100).toFixed(1);
+        // Convert to meters
+        const distanceInMeters = (distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
         
         // Update the line properties for final rendering
-        currentStraightLine.set({
+        currentLineRef.current.set({
           x2: end.x,
           y2: end.y,
           selectable: true,
@@ -263,53 +264,34 @@ export const useCanvasEventHandlers = ({
         });
         
         // Finalize the tooltip
-        if (distanceTooltip) {
-          distanceTooltip.set({
+        if (distanceTooltipRef.current) {
+          distanceTooltipRef.current.set({
             selectable: false,
             evented: true,
             objectType: 'measurement'
           });
-        } else {
-          // Create a new measurement label if it doesn't exist
-          const midX = (start.x + end.x) / 2;
-          const midY = (start.y + end.y) / 2 - 10;
-          
-          const measurementText = new Text(`${distanceInMeters} m`, {
-            left: midX,
-            top: midY,
-            fontSize: 14,
-            fill: '#000000',
-            backgroundColor: 'rgba(255,255,255,0.7)',
-            padding: 2,
-            objectType: 'measurement',
-            selectable: false,
-            originX: 'center',
-            originY: 'bottom'
-          });
-          
-          canvas.add(measurementText);
         }
         
         toast.success(`Line drawn: ${distanceInMeters} m`);
       } else {
         // Line too short, remove it
-        canvas.remove(currentStraightLine);
-        if (distanceTooltip) {
-          canvas.remove(distanceTooltip);
+        canvas.remove(currentLineRef.current);
+        if (distanceTooltipRef.current) {
+          canvas.remove(distanceTooltipRef.current);
         }
       }
       
+      // Reset state
+      isDrawingRef.current = false;
+      startPointRef.current = null;
+      currentLineRef.current = null;
+      distanceTooltipRef.current = null;
+      
       canvas.requestRenderAll();
     }
-    
-    // Reset straight line drawing state
-    isDrawingStraightLine = false;
-    straightLineStartPoint = null;
-    currentStraightLine = null;
-    distanceTooltip = null;
-  }, [fabricCanvasRef, tool, saveCurrentState, handleMouseUp, snapPointToGrid, snapLineToGrid]);
+  }, [fabricCanvasRef, tool, handleMouseUp, snapPointToGrid, snapLineToGrid, updateDistanceTooltip]);
   
-  // Set up event listeners when component mounts
+  // Set up event listeners when component mounts or tool changes
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -336,17 +318,25 @@ export const useCanvasEventHandlers = ({
         canvas.off('mouse:up', onCanvasMouseUp);
       }
       
+      // Clean up any other resources
       if (cleanupTimeouts) {
         cleanupTimeouts();
       }
     };
   }, [
-    fabricCanvasRef,
-    tool,
-    handleKeyDown,
-    onCanvasMouseDown,
-    onCanvasMouseMove,
-    onCanvasMouseUp,
+    fabricCanvasRef, 
+    tool, 
+    handleKeyDown, 
+    onCanvasMouseDown, 
+    onCanvasMouseMove, 
+    onCanvasMouseUp, 
     cleanupTimeouts
   ]);
+
+  return {
+    isDrawing: isDrawingRef.current,
+    currentLine: currentLineRef.current,
+    startPoint: startPointRef.current,
+    handleKeyDown
+  };
 };

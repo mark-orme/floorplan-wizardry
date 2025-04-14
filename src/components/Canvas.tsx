@@ -18,6 +18,8 @@ export interface CanvasProps {
   setDebugInfo?: React.Dispatch<React.SetStateAction<DebugInfoState>>;
   tool?: DrawingMode;
   showGridDebug?: boolean;
+  lineColor?: string;
+  lineThickness?: number;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({ 
@@ -28,7 +30,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   style,
   setDebugInfo,
   tool = DrawingMode.SELECT,
-  showGridDebug = true
+  showGridDebug = true,
+  lineColor = '#000000',
+  lineThickness = 2
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -120,8 +124,8 @@ export const Canvas: React.FC<CanvasProps> = ({
       case DrawingMode.DRAW:
         canvas.isDrawingMode = true;
         if (canvas.freeDrawingBrush) {
-          canvas.freeDrawingBrush.width = 2;
-          canvas.freeDrawingBrush.color = "#000000";
+          canvas.freeDrawingBrush.width = lineThickness;
+          canvas.freeDrawingBrush.color = lineColor;
         }
         canvas.defaultCursor = 'crosshair';
         break;
@@ -134,6 +138,12 @@ export const Canvas: React.FC<CanvasProps> = ({
         canvas.isDrawingMode = false;
         canvas.defaultCursor = 'cell';
         break;
+      case DrawingMode.STRAIGHT_LINE:
+        canvas.isDrawingMode = false;
+        canvas.defaultCursor = 'crosshair';
+        // Make sure objects are selectable for straight line measurements
+        canvas.selection = false;
+        break;
       default:
         canvas.isDrawingMode = false;
         canvas.defaultCursor = 'crosshair';
@@ -141,7 +151,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
     
     canvas.renderAll();
-  }, [tool]);
+  }, [tool, lineColor, lineThickness]);
 
   // Initialize canvas when component mounts
   useEffect(() => {
@@ -157,6 +167,13 @@ export const Canvas: React.FC<CanvasProps> = ({
         height,
         selection: true
       });
+      
+      // Initialize the drawing brush
+      if (!canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+      }
+      canvas.freeDrawingBrush.width = lineThickness;
+      canvas.freeDrawingBrush.color = lineColor;
       
       // Store canvas reference
       fabricCanvasRef.current = canvas;
@@ -204,7 +221,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         }));
       }
     }
-  }, [width, height, onCanvasReady, onError, setDebugInfo, createGridWithRetry]);
+  }, [width, height, onCanvasReady, onError, setDebugInfo, createGridWithRetry, lineColor, lineThickness]);
 
   // Simplified render to avoid unnecessary elements
   return (
