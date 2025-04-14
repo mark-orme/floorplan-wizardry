@@ -1,96 +1,111 @@
 
-/**
- * Sentry error capture functionality
- * @module utils/sentry/errorCapture
- */
 import * as Sentry from '@sentry/react';
 import logger from '../logger';
 import { isSentryInitialized } from './core';
 import { ErrorCaptureOptions } from './types';
 
 /**
- * Capture an error for Sentry reporting
- * Fall back to console logging when Sentry is not available
- * 
- * @param {Error} error - The error to capture
- * @param {string} errorId - Unique identifier for the error
- * @param {ErrorCaptureOptions} options - Additional options for the error report
+ * Enhanced error capture with improved security and context
  */
 export function captureError(
   error: Error | unknown, 
   errorId: string, 
   options: ErrorCaptureOptions = {}
 ): void {
-  // Convert unknown error to proper Error object
-  const errorObj = error instanceof Error 
+  // Sanitize and convert error to standard Error object
+  const sanitizedError = error instanceof Error 
     ? error 
-    : new Error(typeof error === 'string' ? error : 'Unknown error');
+    : new Error(
+        typeof error === 'string' 
+          ? error 
+          : error instanceof Object 
+            ? JSON.stringify(error) 
+            : 'Unknown error'
+      );
   
-  // Get the current environment
-  const isProd = process.env.NODE_ENV === 'production';
-  const isTest = process.env.NODE_ENV === 'test';
-  
-  // Add error ID to the error message
-  errorObj.message = `[${errorId}] ${errorObj.message}`;
-  
-  // Log the error to console (with different levels in dev/prod)
-  if (isProd) {
-    console.error(`[${errorId}]`, errorObj.message);
-  } else {
-    console.error(`[${errorId}]`, errorObj, options);
-  }
-  
-  // Skip further Sentry reporting in test environment
-  if (isTest) return;
-  
-  // Log using application logger
-  logger.error(`Capturing error: ${errorObj.message}`, {
-    errorId,
-    stack: errorObj.stack,
-    level: options.level || 'error',
-    tags: options.tags
+  // Scrub potentially sensitive information
+  const scrubbedMessage = sanitizeErrorMessage(sanitizedError.message);
+  sanitizedError.message = `[${errorId}] ${scrubbedMessage}`;
+
+  // Log error with different levels based on environment
+  const logError = process.env.NODE_ENV === 'production' 
+    ? logger.error 
+    : console.error;
+
+  logError(`Error Capture [${errorId}]:`, {
+    message: sanitizedError.message,
+    stack: sanitizedError.stack,
+    context: options.extra
   });
-  
-  // Report to Sentry if available
+
+  // Skip Sentry reporting in test environments
+  if (process.env.NODE_ENV === 'test') return;
+
   try {
     if (isSentryInitialized()) {
-      // Set additional context for the error
-      if (options.tags) {
-        Object.entries(options.tags).forEach(([key, value]) => {
-          Sentry.setTag(key, value);
-        });
-      }
-      
-      // Set additional context data
-      if (options.extra) {
-        Sentry.setContext('additional', options.extra);
-      }
-      
-      // Set user information if provided
-      if (options.user) {
-        Sentry.setUser(options.user);
-      }
-      
-      // Capture the error with appropriate level
-      const eventId = Sentry.captureException(errorObj);
-      
-      // Log the Sentry event ID
+      // Add security-focused tags
+      const securityTags = {
+        ...options.tags,
+        errorId,
+        severity: determineSeverity(sanitizedError),
+        environment: process.env.NODE_ENV
+      };
+
+      // Set Sentry context with scrubbed information
+      Object.entries(securityTags).forEach(([key, value]) => {
+        Sentry.setTag(key, String(value));
+      });
+
+      // Capture with additional context
+      const eventId = Sentry.captureException(sanitizedError, {
+        tags: securityTags,
+        extra: {
+          ...options.extra,
+          errorSource: errorId
+        }
+      });
+
       logger.info(`Sentry event captured: ${eventId}`, { errorId });
-      
-      // Show report dialog if requested
-      if (options.showReportDialog) {
+
+      // Optionally show report dialog in production
+      if (options.showReportDialog && process.env.NODE_ENV === 'production') {
         Sentry.showReportDialog({ eventId });
       }
-    } else {
-      // Sentry not initialized, log as info
-      logger.info(`Sentry not initialized. Would have reported: [${errorId}] ${errorObj.message}`);
     }
   } catch (sentryError) {
-    // Failure in Sentry reporting should not break the application
-    console.error('Failed to capture error in Sentry:', sentryError);
-    logger.error('Failed to capture error in Sentry', { 
-      originalError: errorObj.message,
-      sentryError: sentryError instanceof Error ? sentryError.message : 'Unknown Sentry error'
-    });
+    console.error('Sentry reporting failed:', sentryError);
   }
 }
+
+/**
+ * Sanitize error messages to remove potentially sensitive information
+ */
+function sanitizeErrorMessage(message: string): string {
+  // Remove email addresses
+  const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
+  message = message.replace(emailRegex, '[EMAIL REDACTED]');
+
+  // Remove potential secret/token patterns
+  const secretRegex = /(secret|token|key|password)[\s:=]+\S+/gi;
+  message = message.replace(secretRegex, '$1: [REDACTED]');
+
+  return message;
+}
+
+/**
+ * Determine error severity based on error characteristics
+ */
+function determineSeverity(error: Error): 'low' | 'medium' | 'high' {
+  const message = error.message.toLowerCase();
+  
+  if (message.includes('unauthorized') || message.includes('authentication')) {
+    return 'high';
+  }
+  
+  if (message.includes('network') || message.includes('connection')) {
+    return 'medium';
+  }
+  
+  return 'low';
+}
+

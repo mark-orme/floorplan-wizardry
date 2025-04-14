@@ -1,4 +1,3 @@
-
 /**
  * Sentry shared types
  * Type definitions for Sentry error reporting and monitoring
@@ -19,7 +18,7 @@ export interface ErrorCaptureOptions {
   level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
   
   /** Key-value pairs for categorizing the event */
-  tags?: Record<string, string>;
+  tags?: Record<string, string | number | boolean>;
   
   /** Additional context data to include with the event */
   extra?: Record<string, any>;
@@ -33,11 +32,18 @@ export interface ErrorCaptureOptions {
     [key: string]: any;
   };
   
-  /** Whether to show the report dialog to the user */
+  /** Whether to show the report dialog to the user in production */
   showReportDialog?: boolean;
   
   /** Whether to capture console output with the error */
   captureConsole?: boolean;
+
+  /** Runtime context of the error */
+  context?: {
+    component?: string;
+    operation?: string;
+    route?: string;
+  };
 }
 
 /**
