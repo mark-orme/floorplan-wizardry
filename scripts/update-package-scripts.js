@@ -12,7 +12,9 @@ packageJson.scripts = {
   "depcheck": "sh scripts/run-depcheck.sh",
   "setup:husky": "sh scripts/setup-husky.sh",
   "build:enhanced": "vite build --config vite.config.enhanced.ts",
-  "dev:enhanced": "vite --config vite.config.enhanced.ts"
+  "dev:enhanced": "vite --config vite.config.enhanced.ts",
+  "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+  "lint:ci": "eslint . --ext ts,tsx"
 };
 
 // Write the updated package.json
