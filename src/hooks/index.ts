@@ -20,6 +20,7 @@ export * from './drawing/useDrawingHistory';
 export { 
   useLineState,
   useApplePencilSupport,
-  useEnhancedGridSnapping
+  useEnhancedGridSnapping,
+  // Re-export InputMethod by renaming it to avoid conflicts
+  InputMethod as LineInputMethod
 } from './straightLineTool';
-

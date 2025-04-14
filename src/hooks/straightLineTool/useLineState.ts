@@ -57,9 +57,16 @@ export const useLineState = ({
   });
   
   // Convert the inputMethod from grid to our consistent InputMethod type
-  // Ensure we handle 'unknown' properly by converting it to a valid InputMethod type
-  const inputMethod: InputMethod = gridInputMethod === 'unknown' ? 'keyboard' : 
-    (gridInputMethod as 'mouse' | 'touch' | 'stylus');
+  // Since "unknown" isn't in our InputMethod type, we need to map it to a valid type
+  const convertToValidInputMethod = (method: string): InputMethod => {
+    if (method === 'mouse' || method === 'touch' || method === 'stylus') {
+      return method;
+    }
+    // Default to keyboard for 'unknown' or any other value
+    return 'keyboard';
+  };
+  
+  const inputMethod: InputMethod = convertToValidInputMethod(gridInputMethod);
   
   // Get Apple Pencil support
   const { 
