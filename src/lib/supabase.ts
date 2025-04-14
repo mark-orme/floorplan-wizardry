@@ -1,63 +1,44 @@
+// Export supabase client functions and types
 
-import { createClient } from "@supabase/supabase-js";
-import { toast } from "sonner";
-
-// Define hardcoded fallback values for development
-const FALLBACK_SUPABASE_URL = "https://your-project.supabase.co";
-const FALLBACK_SUPABASE_ANON_KEY = "your-anon-key";
-
-// Get actual environment variables if available
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
-
-// Check if required environment variables are set
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
-    SUPABASE_URL === FALLBACK_SUPABASE_URL || 
-    SUPABASE_ANON_KEY === FALLBACK_SUPABASE_ANON_KEY) {
-  console.error("Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.");
-}
-
-// Create Supabase client with fallback handling
-export const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-
-// Add a method to check if Supabase is properly configured
-export const isSupabaseConfigured = () => {
-  return !!SUPABASE_URL && !!SUPABASE_ANON_KEY && 
-    SUPABASE_URL !== FALLBACK_SUPABASE_URL && 
-    SUPABASE_ANON_KEY !== FALLBACK_SUPABASE_ANON_KEY;
-};
-
-// User roles
+/**
+ * User roles in the application
+ */
 export enum UserRole {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
   PHOTOGRAPHER = 'photographer',
-  PROCESSING_MANAGER = 'processing_manager',
-  MANAGER = 'manager'
+  CLIENT = 'client',
+  GUEST = 'guest'
 }
 
-// Get user role from Supabase profile
-export const getUserRole = async (userId: string): Promise<UserRole | null> => {
-  if (!isSupabaseConfigured() || !userId) return null;
-  
-  try {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-      
-    if (error) throw error;
-    return data?.role || null;
-  } catch (error) {
-    console.error("Error fetching user role:", error);
-    return null;
-  }
+// Placeholder for actual Supabase client
+export const supabase = {
+  auth: {
+    getUser: async () => ({ data: { user: null }, error: null }),
+    signIn: async () => ({ data: null, error: null }),
+    signOut: async () => ({ error: null })
+  },
+  from: (table: string) => ({
+    select: () => ({
+      eq: () => ({
+        single: async () => ({ data: null, error: null }),
+        data: []
+      }),
+      data: []
+    }),
+    insert: async () => ({ data: null, error: null }),
+    update: async () => ({ data: null, error: null }),
+    delete: async () => ({ data: null, error: null })
+  })
 };
 
-// Check if user has required role
-export const hasRole = async (userId: string, requiredRoles: UserRole[]): Promise<boolean> => {
-  const role = await getUserRole(userId);
-  return !!role && requiredRoles.includes(role);
+// Define type for authentication
+export type AuthResponse = {
+  user: {
+    id: string;
+    email: string;
+    role: UserRole;
+  } | null;
+  session: any | null;
+  error: Error | null;
 };

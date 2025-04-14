@@ -4,28 +4,11 @@
  * @module features/grid
  */
 
-// Re-export components
-export { default as GridLayer } from './components/GridLayer';
-export { default as GridManager } from './components/GridManager';
-export { default as GridDebugPanel } from './components/GridDebugPanel';
+// Import from existing components
+export { GridDebugPanel } from '@/components/canvas/grid/GridDebugPanel';
+export { GridLayer } from '@/components/canvas/grid/GridLayer';
+export { GridRenderer as GridManager } from '@/components/canvas/grid/GridRenderer';
 
-// Re-export hooks
-export { useGridCreation } from './hooks/useGridCreation';
-export { useGridManagement } from './hooks/useGridManagement';
-export { useGridValidation } from './hooks/useGridValidation';
-export { useGridSafety } from './hooks/useGridSafety';
-
-// Re-export utilities
-export { 
-  createGrid, 
-  createCompleteGrid, 
-  createBasicEmergencyGrid 
-} from './utils/gridRenderers';
-export { 
-  ensureGridVisibility, 
-  setGridVisibility,
-  forceGridCreationAndVisibility 
-} from './utils/gridVisibility';
-
-// Re-export types
-export type { GridOptions } from './types';
+// Grid types
+export type Grid = any;
+export type GridOptions = any;

@@ -4,16 +4,15 @@
  * @module features/floorPlan
  */
 
-// Re-export components
-export { default as FloorPlanList } from './components/FloorPlanList'; 
-export { default as FloorPlanCanvas } from './components/FloorPlanCanvas';
-export { default as FloorPlanActions } from './components/FloorPlanActions';
+// Import from existing component locations
+export { default as FloorPlanList } from '@/components/FloorPlanList'; 
+export { FloorPlanCanvas } from '@/components/property/FloorPlanCanvas';
+export { FloorPlanActions } from '@/components/property/FloorPlanActions';
 
-// Re-export hooks
-export { useFloorPlanQuery } from './hooks/useFloorPlanQuery';
-export { useFloorPlanDrawing } from './hooks/useFloorPlanDrawing';
-export { useSyncedFloorPlans } from './hooks/useSyncedFloorPlans';
-export { useFloorPlanLoader } from './hooks/useFloorPlanLoader';
+// Re-export from hooks
+export { useFloorPlanQuery } from '@/hooks/query/useFloorPlanQuery';
 
-// Re-export types
-export type { FloorPlan, Room, Wall } from './types';
+// Types (will need to be defined or imported from existing types)
+export type FloorPlan = any;
+export type Room = any;
+export type Wall = any;

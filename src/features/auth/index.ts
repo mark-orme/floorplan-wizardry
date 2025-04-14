@@ -4,15 +4,12 @@
  * @module features/auth
  */
 
-// Re-export components
-export { LoginForm } from './components/LoginForm';
-export { SignupForm } from './components/SignupForm';
-export { AuthLayout } from './components/AuthLayout';
-export { AuthHeader } from './components/AuthHeader';
+// Import existing components from their current locations
+export { default as RoleGuard } from '@/components/RoleGuard';
 
-// Re-export context and hooks
-export { useAuth, AuthProvider } from './context/AuthContext';
-export { default as RoleGuard } from './components/RoleGuard';
+// Re-export from existing contexts
+export { useCanvasContext } from '@/contexts/CanvasContext';
 
-// Re-export types
-export type { User, UserRole } from './types';
+// Types (these will need to be updated when the actual types are defined)
+export type User = any;
+export type UserRole = any;

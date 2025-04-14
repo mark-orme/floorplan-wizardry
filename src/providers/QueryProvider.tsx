@@ -1,24 +1,15 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import { toast } from 'sonner';
 
-// Create a client with consistent defaults
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      retry: 1,
       staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
       gcTime: 1000 * 60 * 10, // 10 minutes
-      refetchOnWindowFocus: import.meta.env.PROD, // Only in production
-      retry: 1, // Retry failed queries once by default
-    },
-    mutations: {
-      // Handle mutation errors consistently
-      onError: (error: any) => {
-        toast.error(
-          error.message || 'An error occurred while processing your request'
-        );
-      },
     },
   },
 });
@@ -27,10 +18,6 @@ interface QueryProviderProps {
   children: ReactNode;
 }
 
-/**
- * Provider for React Query with consistent configuration
- * Wraps the application with QueryClientProvider
- */
 export function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
