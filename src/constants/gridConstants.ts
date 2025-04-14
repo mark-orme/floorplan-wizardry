@@ -8,8 +8,8 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_SIZE: 100,
   
   // Grid styling
-  SMALL_GRID_COLOR: '#9b87f5', // Purple color for small grid
-  LARGE_GRID_COLOR: '#7E69AB', // Darker purple for large grid
+  SMALL_GRID_COLOR: '#D3E4FD', // Light blue color for small grid
+  LARGE_GRID_COLOR: '#8E9196', // Neutral gray for large grid
   SMALL_GRID_WIDTH: 0.5,
   LARGE_GRID_WIDTH: 1,
   
@@ -31,5 +31,5 @@ export const GRID_CONSTANTS = {
   
   // Markers
   MARKER_TEXT_SIZE: 10,
-  MARKER_COLOR: '#7E69AB'
+  MARKER_COLOR: '#8E9196'
 };

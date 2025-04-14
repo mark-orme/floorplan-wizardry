@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { DebugInfoState } from '@/types/core/DebugInfo';
@@ -20,6 +19,8 @@ export interface CanvasProps {
   showGridDebug?: boolean;
   lineColor?: string;
   lineThickness?: number;
+  wallColor?: string;
+  wallThickness?: number;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({ 
@@ -30,9 +31,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   style,
   setDebugInfo,
   tool = DrawingMode.SELECT,
-  showGridDebug = true,
+  showGridDebug = false,
   lineColor = '#000000',
-  lineThickness = 2
+  lineThickness = 2,
+  wallColor = '#333333',
+  wallThickness = 4
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -41,7 +44,6 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [gridError, setGridError] = useState<string | null>(null);
   const mountedRef = useRef<boolean>(true);
 
-  // Create grid with retry mechanism
   const createGridWithRetry = React.useCallback((canvas: FabricCanvas) => {
     if (!canvas || gridInitializedRef.current || !mountedRef.current) return;
     
@@ -49,10 +51,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     gridAttemptCountRef.current += 1;
     
     try {
-      // Try to create grid
       let gridObjects = createCompleteGrid(canvas);
       
-      // If grid creation failed, try emergency approach
       if (!gridObjects || gridObjects.length === 0) {
         if (forceGridCreationAndVisibility(canvas)) {
           gridInitializedRef.current = true;
@@ -71,7 +71,6 @@ export const Canvas: React.FC<CanvasProps> = ({
           return;
         }
       } else {
-        // Force grid objects to be visible and non-selectable
         gridObjects.forEach(obj => {
           obj.set({
             visible: true,
@@ -79,11 +78,9 @@ export const Canvas: React.FC<CanvasProps> = ({
             evented: false
           });
           
-          // Ensure the grid is at the back
           canvas.sendObjectToBack(obj);
         });
         
-        // Force render
         canvas.renderAll();
         
         if (setDebugInfo && gridObjects.length > 0) {
@@ -99,27 +96,23 @@ export const Canvas: React.FC<CanvasProps> = ({
         return;
       }
       
-      // If we get here, both methods failed but we still have attempts left
       if (gridAttemptCountRef.current < maxAttempts && mountedRef.current) {
         setTimeout(() => createGridWithRetry(canvas), 500);
       } else {
         setGridError('Failed to create grid after multiple attempts');
       }
     } catch (error) {
-      // Try one more time with emergency approach
       if (gridAttemptCountRef.current < maxAttempts && mountedRef.current) {
         setTimeout(() => createGridWithRetry(canvas), 500);
       }
     }
   }, [setDebugInfo]);
 
-  // Apply tool when it changes
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
     const canvas = fabricCanvasRef.current;
     
-    // Handle tool changes
     switch (tool) {
       case DrawingMode.DRAW:
         canvas.isDrawingMode = true;
@@ -141,8 +134,14 @@ export const Canvas: React.FC<CanvasProps> = ({
       case DrawingMode.STRAIGHT_LINE:
         canvas.isDrawingMode = false;
         canvas.defaultCursor = 'crosshair';
-        // Make sure objects are selectable for straight line measurements
         canvas.selection = false;
+        break;
+      case DrawingMode.WALL:
+        canvas.isDrawingMode = false;
+        canvas.defaultCursor = 'crosshair';
+        canvas.selection = false;
+        canvas.freeDrawingBrush.width = wallThickness;
+        canvas.freeDrawingBrush.color = wallColor;
         break;
       default:
         canvas.isDrawingMode = false;
@@ -151,34 +150,28 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
     
     canvas.renderAll();
-  }, [tool, lineColor, lineThickness]);
+  }, [tool, lineColor, lineThickness, wallColor, wallThickness]);
 
-  // Initialize canvas when component mounts
   useEffect(() => {
     mountedRef.current = true;
     
-    // Only proceed if we have a valid canvas element
     if (!canvasRef.current) return;
 
     try {
-      // Initialize Fabric.js canvas
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
         selection: true
       });
       
-      // Initialize the drawing brush
       if (!canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
       }
       canvas.freeDrawingBrush.width = lineThickness;
       canvas.freeDrawingBrush.color = lineColor;
       
-      // Store canvas reference
       fabricCanvasRef.current = canvas;
 
-      // Update debug info if provided
       if (setDebugInfo) {
         setDebugInfo(prev => ({
           ...prev,
@@ -187,22 +180,18 @@ export const Canvas: React.FC<CanvasProps> = ({
         }));
       }
 
-      // Initialize grid with retry mechanism
       const gridTimer = setTimeout(() => {
         if (mountedRef.current) {
           createGridWithRetry(canvas);
         }
       }, 100);
 
-      // Notify parent that canvas is ready
       onCanvasReady(canvas);
 
-      // Cleanup when component unmounts
       return () => {
         mountedRef.current = false;
         clearTimeout(gridTimer);
         
-        // Cleanup canvas
         if (canvas) {
           canvas.dispose();
           fabricCanvasRef.current = null;
@@ -221,9 +210,8 @@ export const Canvas: React.FC<CanvasProps> = ({
         }));
       }
     }
-  }, [width, height, onCanvasReady, onError, setDebugInfo, createGridWithRetry, lineColor, lineThickness]);
+  }, [width, height, onCanvasReady, onError, setDebugInfo, createGridWithRetry, lineColor, lineThickness, wallColor, wallThickness]);
 
-  // Simplified render to avoid unnecessary elements
   return (
     <div className="relative w-full h-full">
       <canvas 

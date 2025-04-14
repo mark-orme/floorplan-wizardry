@@ -1,4 +1,3 @@
-
 /**
  * Canvas application component
  * Main component that wraps the canvas with necessary UI elements
@@ -30,7 +29,7 @@ interface CanvasAppProps {
  * Wraps the canvas with necessary controllers and UI
  * @returns {JSX.Element} Rendered component
  */
-export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): JSX.Element => {
+export const CanvasApp = ({ setCanvas, showGridDebug = false }: CanvasAppProps): JSX.Element => {
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({
     ...DEFAULT_DEBUG_STATE,
     hasError: false,
@@ -43,6 +42,10 @@ export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): 
   }));
   
   const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState<string>('#000000');
+  const [lineThickness, setLineThickness] = useState<number>(2);
+  const [wallColor, setWallColor] = useState<string>('#333333');
+  const [wallThickness, setWallThickness] = useState<number>(4);
   
   const canvasRef = useRef<FabricCanvas | null>(null);
   const mountedRef = useRef<boolean>(true);
@@ -100,12 +103,17 @@ export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): 
       switch (tool) {
         case DrawingMode.DRAW:
           canvas.isDrawingMode = true;
-          canvas.freeDrawingBrush.width = 2;
-          canvas.freeDrawingBrush.color = "#000000";
+          canvas.freeDrawingBrush.width = lineThickness;
+          canvas.freeDrawingBrush.color = lineColor;
           break;
         case DrawingMode.SELECT:
           canvas.isDrawingMode = false;
           canvas.selection = true;
+          break;
+        case DrawingMode.WALL:
+          canvas.isDrawingMode = true;
+          canvas.freeDrawingBrush.width = wallThickness;
+          canvas.freeDrawingBrush.color = wallColor;
           break;
         default:
           canvas.isDrawingMode = false;
@@ -115,7 +123,7 @@ export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): 
       canvas.renderAll();
       toast.success(`Switched to ${tool} tool`);
     }
-  }, []);
+  }, [lineColor, lineThickness, wallColor, wallThickness]);
   
   // Clean up on unmount
   useEffect(() => {
@@ -141,11 +149,23 @@ export const CanvasApp = ({ setCanvas, showGridDebug = true }: CanvasAppProps): 
         setDebugInfo={setDebugInfo}
         showGridDebug={showGridDebug}
         tool={activeTool}
+        lineColor={lineColor}
+        lineThickness={lineThickness}
+        wallColor={wallColor}
+        wallThickness={wallThickness}
       />
       <div className="absolute top-4 left-4">
         <DrawingToolbar 
           activeTool={activeTool} 
           onToolChange={handleToolChange}
+          lineColor={lineColor}
+          lineThickness={lineThickness}
+          wallColor={wallColor}
+          wallThickness={wallThickness}
+          onLineColorChange={setLineColor}
+          onLineThicknessChange={setLineThickness}
+          onWallColorChange={setWallColor}
+          onWallThicknessChange={setWallThickness}
         />
       </div>
       <div className="absolute bottom-4 right-4">

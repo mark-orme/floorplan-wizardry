@@ -10,6 +10,7 @@ import {
   useBrushSettings 
 } from "@/hooks/canvas-events";
 import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
+import { useWallDrawing } from "@/hooks/useWallDrawing"; // Import the new hook
 import { validateStraightLineTool, scheduleStraightLineValidation } from "@/utils/diagnostics/straightLineValidator";
 import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
@@ -23,6 +24,8 @@ interface CanvasEventManagerProps {
   tool: DrawingMode;
   lineThickness: number;
   lineColor: string;
+  wallThickness?: number;
+  wallColor?: string;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   saveCurrentState: () => void;
   undo: () => void;
@@ -39,6 +42,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   tool,
   lineThickness,
   lineColor,
+  wallThickness = 4,
+  wallColor = "#333333",
   gridLayerRef,
   saveCurrentState,
   undo,
@@ -90,7 +95,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   }, [tool]);
   
   // Initialize straight line tool
-  const { cancelDrawing, isToolInitialized, isActive: isLineToolActive } = useStraightLineTool({
+  const { cancelDrawing: cancelStraightLine, isToolInitialized: isStraightLineToolInitialized } = useStraightLineTool({
     fabricCanvasRef: canvasRef,
     tool,
     lineColor,
@@ -98,30 +103,38 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     saveCurrentState
   });
   
+  // Initialize wall drawing tool
+  const { isDrawing: isDrawingWall } = useWallDrawing({
+    fabricCanvasRef: canvasRef,
+    tool,
+    wallColor: wallColor,
+    wallThickness: wallThickness
+  });
+  
   // Log changes to line tool state
   useEffect(() => {
     logger.info("Line tool state change", {
-      isLineToolActive,
-      isToolInitialized,
+      isDrawingWall,
+      isStraightLineToolInitialized,
       tool,
       canvas: !!canvas
     });
     
     // Track initialization status for this tool
-    if (isToolInitialized && tool === DrawingMode.STRAIGHT_LINE) {
+    if (isStraightLineToolInitialized && tool === DrawingMode.STRAIGHT_LINE) {
       toolInitializedRef.current.STRAIGHT_LINE = true;
     }
     
     // Show status toast for straight line tool
     if (tool === DrawingMode.STRAIGHT_LINE) {
-      if (isLineToolActive && isToolInitialized) {
+      if (isStraightLineToolInitialized) {
         toast.success("Line tool ready! Click and drag to draw a line.", {
           id: "line-tool-ready",
           duration: 2000
         });
       }
     }
-  }, [isLineToolActive, isToolInitialized, tool, canvas]);
+  }, [isDrawingWall, isStraightLineToolInitialized, tool, canvas]);
   
   // Run validation tools on tool change
   useEffect(() => {
@@ -173,8 +186,8 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       tool, 
       lineThickness, 
       lineColor,
-      isLineToolActive,
-      isToolInitialized
+      wallThickness,
+      wallColor
     });
     
     try {
@@ -233,6 +246,28 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           logger.info("Hand tool activated");
           break;
           
+        case DrawingMode.WALL:
+          canvas.defaultCursor = 'crosshair';
+          canvas.hoverCursor = 'crosshair';
+          canvas.selection = false;
+          
+          // Make objects non-selectable when in wall mode
+          canvas.getObjects().forEach(obj => {
+            obj.selectable = false;
+            if ((obj as any).objectType !== 'grid') {
+              obj.evented = true;
+            }
+          });
+          
+          // Discard any active object
+          canvas.discardActiveObject();
+          
+          logger.info("Wall tool activated", {
+            wallColor,
+            wallThickness
+          });
+          break;
+          
         case DrawingMode.STRAIGHT_LINE:
           canvas.defaultCursor = 'crosshair';
           canvas.hoverCursor = 'crosshair';
@@ -250,36 +285,17 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
           canvas.discardActiveObject();
           
           logger.info("Straight line tool activated in CanvasEventManager", { 
-            isToolInitialized,
-            isLineToolActive,
-            wasInitializedBefore: toolInitializedRef.current.STRAIGHT_LINE
-          });
-          
-          // Enhanced logging for straight line tool
-          captureMessage("Straight line tool activated", "straight-line-tool-active", {
-            tags: { component: "CanvasEventManager" },
-            extra: {
-              initialized: isToolInitialized,
-              active: isLineToolActive,
-              canvasState: {
-                isDrawingMode: canvas.isDrawingMode,
-                selection: canvas.selection,
-                defaultCursor: canvas.defaultCursor
-              },
-              lineSettings: {
-                color: lineColor,
-                thickness: lineThickness
-              }
+            isToolInitialized: isStraightLineToolInitialized,
+            canvasState: {
+              isDrawingMode: canvas.isDrawingMode,
+              selection: canvas.selection,
+              defaultCursor: canvas.defaultCursor
+            },
+            lineSettings: {
+              color: lineColor,
+              thickness: lineThickness
             }
           });
-          
-          if (!isLineToolActive && !isToolInitialized) {
-            // If the tool isn't active yet, show a loading toast
-            toast.loading("Initializing line tool...", {
-              id: "line-tool-initializing",
-              duration: 1000
-            });
-          }
           break;
           
         case DrawingMode.ERASER:
@@ -324,14 +340,14 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       captureError(error as Error, "apply-tool-settings-error");
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }
-  }, [tool, lineThickness, lineColor, canvas, gridLayerRef, isToolInitialized, isLineToolActive]);
+  }, [tool, lineThickness, lineColor, wallThickness, wallColor, canvas, gridLayerRef, isStraightLineToolInitialized]);
   
   // Effect to handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cancel line drawing on escape
       if (e.key === 'Escape' && tool === DrawingMode.STRAIGHT_LINE) {
-        cancelDrawing();
+        cancelStraightLine();
       }
     };
     
@@ -340,7 +356,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [tool, cancelDrawing]);
+  }, [tool, cancelStraightLine]);
   
   // Effect to save initial state - using a ref to ensure it only runs once
   useEffect(() => {

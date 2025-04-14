@@ -3,6 +3,7 @@ import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { DrawingMode } from "@/constants/drawingModes";
 import { LineSettings } from "./LineSettings";
+import { Wall } from "@/components/icons/Wall"; // Import our custom Wall icon
 import { 
   MousePointerSquareDashed, Pencil, 
   Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser, Ruler,
@@ -24,6 +25,10 @@ interface DrawingToolbarProps {
   lineColor: string;
   onLineThicknessChange: (thickness: number) => void;
   onLineColorChange: (color: string) => void;
+  wallThickness?: number;
+  wallColor?: string;
+  onWallThicknessChange?: (thickness: number) => void;
+  onWallColorChange?: (color: string) => void;
   showGrid?: boolean;
   onToggleGrid?: () => void;
   snapToGrid?: boolean;
@@ -52,6 +57,10 @@ export const DrawingToolbar = ({
   lineColor,
   onLineThicknessChange,
   onLineColorChange,
+  wallThickness = 4,
+  wallColor = "#333333",
+  onWallThicknessChange,
+  onWallColorChange,
   showGrid,
   onToggleGrid,
   snapToGrid,
@@ -111,6 +120,23 @@ export const DrawingToolbar = ({
             </TooltipTrigger>
             <TooltipContent>
               <p>Freehand Draw</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant={tool === DrawingMode.WALL ? "default" : "outline"} 
+                size="sm"
+                onClick={() => onToolChange(DrawingMode.WALL)}
+              >
+                <Wall className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Wall Drawing Tool</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -276,12 +302,33 @@ export const DrawingToolbar = ({
       </div>
       
       <div className="flex flex-wrap items-center space-x-2">
-        <LineSettings 
-          thickness={lineThickness}
-          color={lineColor}
-          onThicknessChange={onLineThicknessChange}
-          onColorChange={onLineColorChange}
-        />
+        {tool === DrawingMode.WALL && onWallColorChange && onWallThicknessChange ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600">Wall:</span>
+            <input 
+              type="color" 
+              value={wallColor} 
+              onChange={(e) => onWallColorChange(e.target.value)}
+              className="w-8 h-6 border-none"
+            />
+            <input
+              type="range"
+              min="2"
+              max="20"
+              value={wallThickness}
+              onChange={(e) => onWallThicknessChange(parseInt(e.target.value, 10))}
+              className="w-24"
+            />
+            <span className="text-xs">{wallThickness}px</span>
+          </div>
+        ) : (
+          <LineSettings 
+            thickness={lineThickness}
+            color={lineColor}
+            onThicknessChange={onLineThicknessChange}
+            onColorChange={onLineColorChange}
+          />
+        )}
         
         <div className="border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 px-3 py-2 rounded-md text-sm flex items-center gap-2 shadow-sm">
           <PanelRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
