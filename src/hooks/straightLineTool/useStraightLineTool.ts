@@ -12,6 +12,7 @@ import { useLineState } from './useLineState';
 import logger from '@/utils/logger';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 import { toast } from 'sonner';
+import { TPointerEvent } from '@/types/fabric-events';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -113,8 +114,7 @@ export const useStraightLineTool = ({
       // Log event
       logDrawingEvent('Line drawing started', 'line-start', {
         interaction: { 
-          type: inputMethod,
-          position: { x: point.x, y: point.y }
+          type: inputMethod
         }
       });
     } catch (error) {
@@ -237,9 +237,7 @@ export const useStraightLineTool = ({
       // Log event
       logDrawingEvent('Line drawing completed', 'line-complete', {
         interaction: { 
-          type: inputMethod,
-          startPoint: startPointRef.current || { x: 0, y: 0 },
-          endPoint: point
+          type: inputMethod
         }
       });
       
@@ -352,25 +350,25 @@ export const useStraightLineTool = ({
     }
     
     // Set up fabric.js event handlers
-    const handleFabricMouseDown = (e: TEvent) => {
+    const handleFabricMouseDown = (e: TEvent<TPointerEvent>) => {
       if (!isActive) return;
-      if (!e.pointer) return;
+      if (!e.absolutePointer) return;
       
-      handlePointerDown(e.pointer);
+      handlePointerDown(e.absolutePointer);
     };
     
-    const handleFabricMouseMove = (e: TEvent) => {
+    const handleFabricMouseMove = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing) return;
-      if (!e.pointer) return;
+      if (!e.absolutePointer) return;
       
-      handlePointerMove(e.pointer);
+      handlePointerMove(e.absolutePointer);
     };
     
-    const handleFabricMouseUp = (e: TEvent) => {
+    const handleFabricMouseUp = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing) return;
-      if (!e.pointer) return;
+      if (!e.absolutePointer) return;
       
-      handlePointerUp(e.pointer);
+      handlePointerUp(e.absolutePointer);
     };
     
     // Add fabric canvas event listeners
