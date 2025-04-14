@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -7,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../useStraightLineTool';
-import { useLineState } from '../useLineState';
+import { useLineState } from '../straightLineTool/useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-types';
 import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
