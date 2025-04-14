@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas interactions
  * Manages zooming, panning, and keyboard shortcuts
@@ -9,8 +8,7 @@ import { Canvas as FabricCanvas, Point } from "fabric";
 import { useCanvasState } from "./useCanvasState";
 import { useZoom } from "./useZoom";
 import { ZoomOptions } from "@/types/zoomTypes";
-import { Point as CorePoint } from "@/types/core/Point";
-import { createPoint } from "@/types/core/Point";
+import { Point as CorePoint, createPoint } from "@/types/core/Point";
 import { DrawingState } from "@/types/core/DrawingState";
 
 /**

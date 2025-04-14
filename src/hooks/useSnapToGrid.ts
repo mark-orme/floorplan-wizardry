@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
 // Define the Point interface if it doesn't exist
@@ -9,8 +9,21 @@ interface Point {
 }
 
 export const useSnapToGrid = (props?: { fabricCanvasRef?: React.MutableRefObject<any> }) => {
+  // Add state for snap enabled
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  
+  // Toggle snap to grid function
+  const toggleSnapToGrid = useCallback(() => {
+    setSnapEnabled(prevState => !prevState);
+  }, []);
+  
   // Snap a point to the nearest grid point
   const snapPointToGrid = useCallback((point: Point): Point => {
+    // If snapping is disabled, return the original point
+    if (!snapEnabled) {
+      return { ...point };
+    }
+    
     const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
     
     // Calculate the nearest grid points
@@ -18,12 +31,17 @@ export const useSnapToGrid = (props?: { fabricCanvasRef?: React.MutableRefObject
     const newY = Math.round(point.y / gridSize) * gridSize;
     
     return { x: newX, y: newY };
-  }, []);
+  }, [snapEnabled]);
   
   // Snap a line to be horizontal or vertical if it's close to those orientations
   const snapLineToGrid = useCallback((start: Point, end: Point): { start: Point, end: Point } => {
+    // If snapping is disabled, return the original points
+    if (!snapEnabled) {
+      return { start: { ...start }, end: { ...end } };
+    }
+    
     // Already snapped start point
-    const snappedStart = start;
+    const snappedStart = snapPointToGrid(start);
     
     // Snap end point to grid first
     const snappedEnd = snapPointToGrid(end);
@@ -69,10 +87,28 @@ export const useSnapToGrid = (props?: { fabricCanvasRef?: React.MutableRefObject
     }
     
     return { start: snappedStart, end: finalEnd };
-  }, [snapPointToGrid]);
+  }, [snapEnabled, snapPointToGrid]);
+  
+  // Check if a point is on the grid (within a small threshold)
+  const isSnappedToGrid = useCallback((point: Point, threshold: number = 0.5): boolean => {
+    if (!snapEnabled) return false;
+    
+    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+    
+    // Check if the point's coordinates are close to multiples of the grid size
+    const xOnGrid = Math.abs(point.x % gridSize) < threshold || 
+                    Math.abs(point.x % gridSize - gridSize) < threshold;
+    const yOnGrid = Math.abs(point.y % gridSize) < threshold || 
+                    Math.abs(point.y % gridSize - gridSize) < threshold;
+    
+    return xOnGrid && yOnGrid;
+  }, [snapEnabled]);
   
   return {
+    snapEnabled,
+    toggleSnapToGrid,
     snapPointToGrid,
-    snapLineToGrid
+    snapLineToGrid,
+    isSnappedToGrid
   };
 };

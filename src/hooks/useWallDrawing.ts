@@ -1,5 +1,6 @@
+
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
@@ -76,7 +77,7 @@ export const useWallDrawing = ({
     
     if (!measureTooltipRef.current) {
       // Create new tooltip
-      const tooltip = new fabric.Text(`${distanceInMeters}m`, {
+      const tooltip = new Text(`${distanceInMeters}m`, {
         left: midX,
         top: midY,
         fontSize: 12,
