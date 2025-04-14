@@ -31,7 +31,7 @@ export const lineDrawingSchema = z.object({
 });
 
 /**
- * Schema for validating drawing canvas configuration
+ * Schema for validating canvas configuration
  */
 export const canvasConfigSchema = z.object({
   width: z.number().positive(),
@@ -180,8 +180,7 @@ export function validateStraightLineDrawing(
       });
       
       if (result.success) {
-        // The problem was here - we need to ensure all properties are defined
-        // in the sanitized output to match the return type
+        // Ensure all properties are defined in the sanitized output to match the return type
         return {
           valid: true,
           errors: [],

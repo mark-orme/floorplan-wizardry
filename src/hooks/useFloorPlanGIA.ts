@@ -1,62 +1,76 @@
 
-/**
- * Floor Plan GIA Calculation Hook
- * @module useFloorPlanGIA
- */
+import { useCallback, useEffect, useState } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { calculateGIA } from '@/utils/geometryUtils';
+import { Point } from '@/types/core/Point';
 
-import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { extractPolygonsFromObjects } from '@/utils/pathProcessingUtils';
-import { calculatePolygonArea, calculateTotalAreaInPixels, pixelsToSquareMeters } from '@/utils/areaCalculation';
-
-/**
- * Props for useFloorPlanGIA hook
- * @interface UseFloorPlanGIAProps
- */
 interface UseFloorPlanGIAProps {
-  /** Reference to fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Function to set GIA value */
   setGia: React.Dispatch<React.SetStateAction<number>>;
 }
 
 /**
  * Hook for calculating Gross Internal Area (GIA) of a floor plan
- * @param props Hook properties
- * @returns GIA calculation utilities
  */
-export const useFloorPlanGIA = (props: UseFloorPlanGIAProps) => {
-  const { fabricCanvasRef, setGia } = props;
-
-  /**
-   * Recalculate Gross Internal Area based on canvas objects
-   */
+export const useFloorPlanGIA = ({ fabricCanvasRef, setGia }: UseFloorPlanGIAProps) => {
+  // Recalculate GIA based on walls on the canvas
   const recalculateGIA = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-
-    // Get all objects except grid
-    const objects = canvas.getObjects().filter((obj: any) => !obj.isGrid);
     
-    // Extract polygons from objects
-    const polygons = extractPolygonsFromObjects(objects);
+    // Get all wall objects
+    const walls = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'wall'
+    );
     
-    if (polygons.length === 0) {
+    if (walls.length === 0) {
       setGia(0);
       return;
     }
     
-    // Calculate total area in pixels
-    const areaInPixels = calculateTotalAreaInPixels(polygons);
+    // Extract points from walls to form a polygon
+    // This is a simplified approach - in a real app, you'd need to
+    // properly detect closed rooms from wall segments
+    const points: Point[] = [];
+    walls.forEach(wall => {
+      if (wall.type === 'line') {
+        points.push({ x: (wall as any).x1, y: (wall as any).y1 });
+        points.push({ x: (wall as any).x2, y: (wall as any).y2 });
+      }
+    });
     
-    // Convert to square meters
-    const areaInSquareMeters = pixelsToSquareMeters(areaInPixels);
+    // Calculate GIA
+    const area = calculateGIA(points);
     
-    // Update state
+    // Convert to square meters (assuming 100px = 1m)
+    const areaInSquareMeters = area / 10000;
+    
+    // Update GIA state
     setGia(areaInSquareMeters);
   }, [fabricCanvasRef, setGia]);
-
-  return {
-    recalculateGIA
-  };
+  
+  // Listen for changes to the canvas
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const handleObjectAdded = () => recalculateGIA();
+    const handleObjectRemoved = () => recalculateGIA();
+    const handleObjectModified = () => recalculateGIA();
+    
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:removed', handleObjectRemoved);
+    canvas.on('object:modified', handleObjectModified);
+    
+    // Initial calculation
+    recalculateGIA();
+    
+    return () => {
+      canvas.off('object:added', handleObjectAdded);
+      canvas.off('object:removed', handleObjectRemoved);
+      canvas.off('object:modified', handleObjectModified);
+    };
+  }, [fabricCanvasRef, recalculateGIA]);
+  
+  return { recalculateGIA };
 };

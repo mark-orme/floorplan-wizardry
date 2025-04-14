@@ -1,80 +1,61 @@
 
-/**
- * Geometry utility functions
- * @module utils/geometryUtils
- */
-import { Point } from '@/types/core/Geometry';
+import { Point } from '@/types/core/Point';
 
 /**
  * Calculate the distance between two points
- * @param p1 First point
- * @param p2 Second point
+ * 
+ * @param point1 - First point
+ * @param point2 - Second point
  * @returns Distance between the points
  */
-export const calculateDistance = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
+export const calculateDistance = (point1: Point, point2: Point): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
  * Calculate the midpoint between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Midpoint
+ * 
+ * @param point1 - First point
+ * @param point2 - Second point
+ * @returns Midpoint between the points
  */
-export const getMidpoint = (p1: Point, p2: Point): Point => {
+export const getMidpoint = (point1: Point, point2: Point): Point => {
   return {
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
+    x: (point1.x + point2.x) / 2,
+    y: (point1.y + point2.y) / 2
   };
 };
 
 /**
  * Calculate the angle between two points in degrees
- * @param p1 First point
- * @param p2 Second point
+ * 
+ * @param point1 - First point
+ * @param point2 - Second point
  * @returns Angle in degrees
  */
-export const calculateAngle = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.atan2(dy, dx) * (180 / Math.PI);
+export const calculateAngle = (point1: Point, point2: Point): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
+  return Math.atan2(dy, dx) * 180 / Math.PI;
 };
 
 /**
- * Check if two points are close to each other
- * @param p1 First point
- * @param p2 Second point
- * @param threshold Maximum distance to be considered close
- * @returns True if points are close
+ * Calculate the Gross Internal Area (GIA) of a polygon
+ * 
+ * @param points - Array of points forming the polygon
+ * @returns Area in square units
  */
-export const arePointsClose = (p1: Point, p2: Point, threshold: number = 5): boolean => {
-  return calculateDistance(p1, p2) <= threshold;
-};
-
-/**
- * Check if a point is close to being on a straight line
- * @param lineStart Start point of the line
- * @param lineEnd End point of the line
- * @param point Point to check
- * @param threshold Maximum distance to be considered on the line
- * @returns True if point is close to the line
- */
-export const isPointNearLine = (lineStart: Point, lineEnd: Point, point: Point, threshold: number = 5): boolean => {
-  const lengthSquared = Math.pow(calculateDistance(lineStart, lineEnd), 2);
-  if (lengthSquared === 0) return calculateDistance(lineStart, point) <= threshold;
+export const calculateGIA = (points: Point[]): number => {
+  if (points.length < 3) return 0;
   
-  // Calculate the projection of the point onto the line
-  const t = Math.max(0, Math.min(1, (
-    ((point.x - lineStart.x) * (lineEnd.x - lineStart.x) + 
-     (point.y - lineStart.y) * (lineEnd.y - lineStart.y)) / lengthSquared
-  )));
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
+  }
   
-  const projection: Point = {
-    x: lineStart.x + t * (lineEnd.x - lineStart.x),
-    y: lineStart.y + t * (lineEnd.y - lineStart.y)
-  };
-  
-  return calculateDistance(point, projection) <= threshold;
+  return Math.abs(area / 2);
 };

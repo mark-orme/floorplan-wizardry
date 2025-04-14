@@ -1,4 +1,3 @@
-
 /**
  * Validated Form Hook
  * Provides form handling with enhanced validation
