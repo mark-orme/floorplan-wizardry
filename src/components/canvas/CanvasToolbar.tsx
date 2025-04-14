@@ -111,6 +111,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         // This is just for debugging purposes
         try {
           if (typeof window !== 'undefined' && (window as any).fabricCanvas) {
+            // Use the canvas overload with the correct parameters
             validateStraightLineDrawing((window as any).fabricCanvas, newTool);
           }
         } catch (error) {

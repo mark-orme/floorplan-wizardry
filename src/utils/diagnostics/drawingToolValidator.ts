@@ -43,6 +43,10 @@ export const canvasConfigSchema = z.object({
 });
 
 /**
+ * Function overloads for validateStraightLineDrawing
+ */
+
+/**
  * Validate straight line drawing parameters
  * 
  * @param startX - Starting X coordinate
@@ -57,6 +61,45 @@ export function validateStraightLineDrawing(
   startY: number,
   endX: number,
   endY: number,
+  options?: {
+    color?: string;
+    thickness?: number;
+    snapToGrid?: boolean;
+  }
+): { 
+  valid: boolean; 
+  errors: string[]; 
+  sanitized?: {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    color: string;
+    thickness: number;
+    snapToGrid: boolean;
+  }
+};
+
+/**
+ * Overloaded version for canvas-specific validation
+ * 
+ * @param canvas - Fabric.js Canvas instance
+ * @param currentTool - Current drawing tool
+ * @returns Validation result object
+ */
+export function validateStraightLineDrawing(
+  canvas: any,
+  currentTool: DrawingMode
+): { valid: boolean; errors: string[] };
+
+/**
+ * Implementation of validateStraightLineDrawing
+ */
+export function validateStraightLineDrawing(
+  startXOrCanvas: number | any,
+  startYOrTool: number | DrawingMode,
+  endX?: number,
+  endY?: number,
   options: {
     color?: string;
     thickness?: number;
@@ -74,88 +117,86 @@ export function validateStraightLineDrawing(
     thickness: number;
     snapToGrid: boolean;
   }
-} {
-  // Default values
-  const color = options.color || '#000000';
-  const thickness = options.thickness || 1;
-  const snapToGrid = options.snapToGrid || false;
-  
-  try {
-    // Run validation with Zod schema
-    const result = lineDrawingSchema.safeParse({
-      startX,
-      startY,
-      endX,
-      endY,
-      color,
-      thickness,
-      snapToGrid
-    });
+} | { valid: boolean; errors: string[] } {
+  // Check if we're calling the canvas-specific overload
+  if (typeof startXOrCanvas === 'object' && typeof startYOrTool === 'string') {
+    const canvas = startXOrCanvas;
+    const currentTool = startYOrTool;
     
-    if (result.success) {
+    // Canvas-specific validation logic
+    try {
+      // Basic validation - ensure we have a canvas and the correct tool
+      if (!canvas) {
+        return { valid: false, errors: ['Canvas is not available'] };
+      }
+      
+      if (currentTool !== DrawingMode.STRAIGHT_LINE) {
+        return { valid: true, errors: [] }; // Not applicable for other tools
+      }
+      
+      // Check if canvas has necessary properties for line drawing
+      const hasProperDrawingMode = canvas.isDrawingMode === false;
+      const hasProperCursor = canvas.defaultCursor === 'crosshair';
+      
+      const errors = [];
+      if (!hasProperDrawingMode) {
+        errors.push('Canvas drawing mode should be disabled for straight line tool');
+      }
+      
+      if (!hasProperCursor) {
+        errors.push('Canvas cursor should be set to crosshair for line drawing');
+      }
+      
       return {
-        valid: true,
-        errors: [],
-        sanitized: result.data
+        valid: errors.length === 0,
+        errors
       };
-    } else {
+    } catch (error) {
       return {
         valid: false,
-        errors: result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+        errors: ['Unexpected error during straight line tool validation']
       };
     }
-  } catch (error) {
-    return {
-      valid: false,
-      errors: ['Unexpected validation error']
-    };
-  }
-}
-
-/**
- * Overloaded version for canvas-specific validation
- * 
- * @param canvas - Fabric.js Canvas instance
- * @param currentTool - Current drawing tool
- * @returns Validation result object
- */
-export function validateStraightLineDrawing(
-  canvas: any,
-  currentTool: DrawingMode
-): { valid: boolean; errors: string[] } {
-  // Canvas-specific validation logic
-  try {
-    // Basic validation - ensure we have a canvas and the correct tool
-    if (!canvas) {
-      return { valid: false, errors: ['Canvas is not available'] };
+  } else {
+    // We're calling the coordinate-based overload
+    const startX = startXOrCanvas as number;
+    const startY = startYOrTool as number;
+    
+    // Default values
+    const color = options.color || '#000000';
+    const thickness = options.thickness || 1;
+    const snapToGrid = options.snapToGrid || false;
+    
+    try {
+      // Run validation with Zod schema
+      const result = lineDrawingSchema.safeParse({
+        startX,
+        startY,
+        endX,
+        endY,
+        color,
+        thickness,
+        snapToGrid
+      });
+      
+      if (result.success) {
+        return {
+          valid: true,
+          errors: [],
+          sanitized: result.data
+        };
+      } else {
+        return {
+          valid: false,
+          errors: result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+        };
+      }
+    } catch (error) {
+      return {
+        valid: false,
+        errors: ['Unexpected validation error']
+      };
     }
-    
-    if (currentTool !== DrawingMode.STRAIGHT_LINE) {
-      return { valid: true, errors: [] }; // Not applicable for other tools
-    }
-    
-    // Check if canvas has necessary properties for line drawing
-    const hasProperDrawingMode = canvas.isDrawingMode === false;
-    const hasProperCursor = canvas.defaultCursor === 'crosshair';
-    
-    const errors = [];
-    if (!hasProperDrawingMode) {
-      errors.push('Canvas drawing mode should be disabled for straight line tool');
-    }
-    
-    if (!hasProperCursor) {
-      errors.push('Canvas cursor should be set to crosshair for line drawing');
-    }
-    
-    return {
-      valid: errors.length === 0,
-      errors
-    };
-  } catch (error) {
-    return {
-      valid: false,
-      errors: ['Unexpected error during straight line tool validation']
-    };
   }
 }
 

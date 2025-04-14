@@ -181,7 +181,7 @@ export function useValidatedForm<T extends Record<string, any>>(options: Validat
       setFieldValue(field, e.target.value),
     onBlur: () => handleBlur(field),
     'aria-invalid': !!(formState.touched[String(field)] && formState.errors[String(field)]),
-    'aria-describedby': formState.errors[String(field)] ? `${field}-error` : undefined
+    'aria-describedby': formState.errors[String(field)] ? `${String(field)}-error` : undefined
   }), [formState.errors, formState.touched, formState.values, handleBlur, setFieldValue]);
   
   // Initial validation

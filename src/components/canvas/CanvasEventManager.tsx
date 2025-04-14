@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -161,6 +162,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       // Delay validation to ensure tool has time to initialize
       const validationTimer = setTimeout(() => {
+        // Use the canvas overload with correct parameters
         validateStraightLineDrawing(canvas, tool);
         validateStraightLineTool(canvas, tool);
       }, 200);
