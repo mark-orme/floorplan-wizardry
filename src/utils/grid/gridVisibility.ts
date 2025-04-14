@@ -1,4 +1,3 @@
-
 /**
  * Grid visibility utilities
  * Functions to ensure grid is always visible

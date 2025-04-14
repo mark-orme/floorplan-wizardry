@@ -13,11 +13,16 @@ interface TouchGestureHandlerProps {
   lineThickness?: number;
 }
 
+// Define custom Touch interface with timestamp
+interface EnhancedTouch extends Touch {
+  timestamp?: number;
+}
+
 export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({ 
   fabricCanvasRef, 
   lineThickness = 2 
 }) => {
-  const lastTouchRef = useRef<Touch | null>(null);
+  const lastTouchRef = useRef<EnhancedTouch | null>(null);
   const { reportDrawingError } = useDrawingErrorReporting();
   
   // Use Apple Pencil support hook
@@ -56,7 +61,7 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
         // If in pencil mode, implement palm rejection
         if (isPencilMode && !pencilData.isApplePencil) {
           // If we have a recent pencil touch, reject finger touches to prevent palm interference
-          if (lastTouchRef.current && Date.now() - lastTouchRef.current.timestamp < 1000) {
+          if (lastTouchRef.current && Date.now() - (lastTouchRef.current.timestamp || 0) < 1000) {
             e.preventDefault();
             e.stopPropagation();
           }
@@ -65,7 +70,11 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
         // Store pencil touches for palm rejection
         if (pencilData.isApplePencil) {
           const touch = e.touches[0];
-          lastTouchRef.current = { ...touch, timestamp: Date.now() } as any;
+          // Store touch with timestamp
+          lastTouchRef.current = { 
+            ...touch, 
+            timestamp: Date.now() 
+          } as EnhancedTouch;
         }
       } catch (error) {
         reportDrawingError(error, 'touch-gesture-handler', {

@@ -33,5 +33,12 @@ export const GRID_CONSTANTS = {
   GRID_AUTO_RESIZE: true,
   GRID_MAX_ZOOM: 3,
   GRID_MIN_ZOOM: 0.5,
-  GRID_AUTO_FIX: true
+  GRID_AUTO_FIX: true,
+  
+  // Additional grid constants needed for stability
+  MIN_GRID_OBJECTS: 10,
+  AUTO_RECREATE_ON_EMPTY: true,
+  GRID_CHECK_INTERVAL: 10000, // 10 seconds
+  GRID_RECREATION_ATTEMPTS: 3,
+  GRID_RECREATION_DELAY: 1000 // 1 second
 };

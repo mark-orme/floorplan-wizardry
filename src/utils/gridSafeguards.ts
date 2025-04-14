@@ -1,4 +1,3 @@
-
 /**
  * Grid safeguards utility
  * Contains functions to ensure grid is always visible and properly created
@@ -27,10 +26,10 @@ export function verifyGridVisibility(
     );
     
     // Check if grid exists with sufficient objects
-    if (gridObjects.length < GRID_CONSTANTS.MIN_GRID_OBJECTS) {
+    if (gridObjects.length < 10) { // Default for MIN_GRID_OBJECTS
       logger.warn(`Grid missing or insufficient: ${gridObjects.length} objects found`);
       
-      if (createGrid && GRID_CONSTANTS.AUTO_RECREATE_ON_EMPTY) {
+      if (createGrid && true) { // Default for AUTO_RECREATE_ON_EMPTY
         logger.info("Auto-recreating grid");
         createGrid();
         return true;
@@ -110,7 +109,7 @@ export function setupGridMonitoring(
       toast.error("Grid visibility issue detected, attempting to fix");
       createGrid();
     }
-  }, GRID_CONSTANTS.GRID_CHECK_INTERVAL);
+  }, 10000); // Default for GRID_CHECK_INTERVAL
   
   // Return cleanup function
   return () => {

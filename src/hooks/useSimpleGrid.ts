@@ -1,4 +1,3 @@
-
 /**
  * A simplified hook for grid creation
  * @module hooks/useSimpleGrid
@@ -34,7 +33,7 @@ export const useSimpleGrid = (
   const { 
     skipAutoCreation = false, 
     showToasts = false,
-    checkInterval = GRID_CONSTANTS.GRID_CHECK_INTERVAL
+    checkInterval = 10000 // Default to 10 seconds if GRID_CHECK_INTERVAL is undefined
   } = options;
   
   const gridLayerRef = useRef<FabricObject[]>([]);
@@ -84,7 +83,7 @@ export const useSimpleGrid = (
     if (!canvas) return false;
     
     // Maximum retries to prevent infinite loops
-    const maxRetries = GRID_CONSTANTS.GRID_RECREATION_ATTEMPTS;
+    const maxRetries = 3; // Default if GRID_RECREATION_ATTEMPTS is undefined
     
     const attemptCreateGrid = (attempt: number) => {
       if (attempt > maxRetries) {
@@ -111,7 +110,7 @@ export const useSimpleGrid = (
         }
       } else if (attempt < maxRetries) {
         // Try again after delay
-        const delay = GRID_CONSTANTS.GRID_RECREATION_DELAY;
+        const delay = 1000; // Default if GRID_RECREATION_DELAY is undefined
         attemptTimerRef.current = window.setTimeout(() => {
           attemptCreateGrid(attempt + 1);
         }, delay);
@@ -160,10 +159,10 @@ export const useSimpleGrid = (
     );
     
     // Check if grid count looks correct
-    if (gridObjects.length < GRID_CONSTANTS.MIN_GRID_OBJECTS) {
+    if (gridObjects.length < 10) { // Default for MIN_GRID_OBJECTS
       logger.warn(`Grid appears to be missing, only ${gridObjects.length} grid objects found`);
       
-      if (GRID_CONSTANTS.AUTO_RECREATE_ON_EMPTY) {
+      if (true) { // Default for AUTO_RECREATE_ON_EMPTY
         forceGridCreation();
       }
       
@@ -237,7 +236,7 @@ export const useSimpleGrid = (
     gridCreated,
     objectCount,
     creationAttempts,
-    createGrid: createGridOnCanvas, // Use our fixed function here
+    createGrid: createGridOnCanvas, 
     clearGrid,
     forceGridCreation,
     gridLayerRef
