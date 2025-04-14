@@ -39,6 +39,9 @@ export {
   gridUnitsToPixels
 } from './coordinateTransforms';
 
+// Export new GIA calculation utility
+export { calculateGIA } from './calculateGIA';
+
 // Conditionally export from modules
 try {
   const straightening = require('./straightening');

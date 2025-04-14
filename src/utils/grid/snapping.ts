@@ -4,7 +4,18 @@
  * @module utils/grid/snapping
  */
 import { Point } from '@/types/core/Point';
-import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
+import { GRID_SPACING, SNAP_THRESHOLD, ANGLE_SNAP_THRESHOLD } from '@/constants/numerics';
+
+/**
+ * Snap a single value to the nearest grid line
+ * 
+ * @param value - The value to snap
+ * @param gridSize - The grid size to snap to
+ * @returns Value snapped to the nearest grid line
+ */
+export const snap = (value: number, gridSize: number = GRID_SPACING.SMALL): number => {
+  return Math.round(value / gridSize) * gridSize;
+};
 
 /**
  * Snap a point to the nearest grid intersection
@@ -14,8 +25,8 @@ import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
  * @returns Point snapped to the nearest grid intersection
  */
 export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
-  const x = Math.round(point.x / gridSize) * gridSize;
-  const y = Math.round(point.y / gridSize) * gridSize;
+  const x = snap(point.x, gridSize);
+  const y = snap(point.y, gridSize);
   
   return { x, y } as Point;
 };
@@ -73,7 +84,7 @@ export const distanceToGridLine = (point: Point, gridSize: number = GRID_SPACING
 export const snapLineToStandardAngles = (
   start: Point, 
   end: Point, 
-  angleThreshold: number = 10
+  angleThreshold: number = ANGLE_SNAP_THRESHOLD
 ): Point => {
   // Calculate dx and dy
   const dx = end.x - start.x;
@@ -122,24 +133,31 @@ export const snapLineToStandardAngles = (
 };
 
 /**
- * Snap a point to the nearest grid point
- * 
- * @param point - Point to snap
- * @param gridSize - Grid size (defaults to SMALL grid)
- * @returns Snapped point
- */
-export const snapToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
-  return snapPointToGrid(point, gridSize);
-};
-
-/**
- * Snap a line to standard angles
+ * Snap a line to grid
  * 
  * @param start - Start point
  * @param end - End point
- * @param threshold - Angle threshold in degrees
- * @returns Snapped end point
+ * @param gridSize - Grid size (defaults to SMALL grid)
+ * @returns Object with snapped start and end points
  */
-export const snapToAngle = (start: Point, end: Point, threshold: number = 10): Point => {
-  return snapLineToStandardAngles(start, end, threshold);
+export const snapLineToGrid = (
+  start: Point, 
+  end: Point, 
+  gridSize: number = GRID_SPACING.SMALL
+): { start: Point, end: Point } => {
+  // Snap both points to grid
+  const snappedStart = snapPointToGrid(start, gridSize);
+  const snappedEnd = snapPointToGrid(end, gridSize);
+  
+  // Now check if we need to straighten the line
+  const snappedEndWithAngle = snapLineToStandardAngles(snappedStart, snappedEnd);
+  
+  return {
+    start: snappedStart,
+    end: snappedEndWithAngle
+  };
 };
+
+// Alias functions for backward compatibility
+export const snapToGrid = snapPointToGrid;
+export const snapToAngle = snapLineToStandardAngles;

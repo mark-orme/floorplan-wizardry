@@ -1,3 +1,4 @@
+
 /**
  * Mock Fabric.js canvas utilities for testing
  * @module utils/test/mockFabricCanvas
@@ -77,3 +78,36 @@ export const createMockHistoryRef = (
     future: futureStates
   }
 });
+
+/**
+ * Create a test Fabric canvas with controlled environment
+ * @param width Canvas width
+ * @param height Canvas height
+ * @returns Test canvas for accurate drawing tests
+ */
+export function createTestFabricCanvas(width = 800, height = 600) {
+  // Create a mock canvas element
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  
+  // Create a mock container
+  const container = document.createElement('div');
+  container.appendChild(canvas);
+  
+  // Create the FabricCanvas instance with controlled dimensions
+  const fabricCanvas = new FabricCanvas(canvas, {
+    width,
+    height,
+    renderOnAddRemove: false,
+    stateful: false
+  });
+  
+  return {
+    canvas: fabricCanvas,
+    cleanup: () => {
+      fabricCanvas.dispose();
+      container.remove();
+    }
+  };
+}
