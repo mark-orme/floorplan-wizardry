@@ -29,15 +29,13 @@ export const usePropertyQuery = () => {
     console.log("Fetching properties for user:", user.id, "with role:", userRole);
 
     try {
-      let query = supabase
-        .from('properties')
-        .select();
+      let query = supabase.from('properties').select();
 
       // Apply filters based on role
-      if (userRole === 'photographer') {
+      if (userRole === UserRole.PHOTOGRAPHER) {
         // Photographers can only see their own properties
         query = query.eq('created_by', user.id);
-      } else if (userRole === 'processing_manager') {
+      } else if (userRole === UserRole.PROCESSING_MANAGER) {
         // Processing managers can only see properties in review or completed
         query = query.in('status', [PropertyStatus.PENDING_REVIEW, PropertyStatus.COMPLETED]);
       }

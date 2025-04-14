@@ -43,6 +43,7 @@ const fetchProperties = async ({ userId, userRole, filters }: ListPropertiesPara
     }
   }
 
+  // Execute the query
   const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
