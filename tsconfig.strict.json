@@ -1,0 +1,24 @@
+
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "paths": {
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/constants/*": ["./src/constants/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/contexts/*": ["./src/contexts/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/store/*": ["./src/store/*"]
+    }
+  }
+}

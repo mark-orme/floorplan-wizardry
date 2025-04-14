@@ -1,0 +1,17 @@
+
+{
+  "ignores": [
+    "@testing-library/*",
+    "husky",
+    "vitest",
+    "lint-staged",
+    "eslint-*"
+  ],
+  "ignore-patterns": [
+    "dist",
+    "node_modules",
+    "*.d.ts",
+    "eslint"
+  ],
+  "skip-missing": true
+}
