@@ -258,7 +258,6 @@ export const useStraightLineTool = ({
     onChange, 
     resetDrawingState, 
     logDrawingEvent, 
-    startPointRef, 
     setStartPoint,
     reportDrawingError,
     inputMethod
@@ -354,30 +353,30 @@ export const useStraightLineTool = ({
       if (!isActive) return;
       
       // Get position from fabric event
-      const pointer = e.pointer;
-      if (!pointer) return;
+      if (!e) return;
+      const extractedPoint = { x: e.e.clientX, y: e.e.clientY };
       
-      handlePointerDown(pointer);
+      handlePointerDown(extractedPoint);
     };
     
     const handleFabricMouseMove = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing) return;
       
       // Get position from fabric event
-      const pointer = e.pointer;
-      if (!pointer) return;
+      if (!e) return;
+      const extractedPoint = { x: e.e.clientX, y: e.e.clientY };
       
-      handlePointerMove(pointer);
+      handlePointerMove(extractedPoint);
     };
     
     const handleFabricMouseUp = (e: TEvent<TPointerEvent>) => {
       if (!isActive || !isDrawing) return;
       
       // Get position from fabric event
-      const pointer = e.pointer;
-      if (!pointer) return;
+      if (!e) return;
+      const extractedPoint = { x: e.e.clientX, y: e.e.clientY };
       
-      handlePointerUp(pointer);
+      handlePointerUp(extractedPoint);
     };
     
     // Add fabric canvas event listeners
