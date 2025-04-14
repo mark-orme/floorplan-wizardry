@@ -7,6 +7,7 @@ import { getPusher } from './utils/pusher.ts'
 import { createRootElement } from './utils/domUtils.ts'
 import SecurityInitializer from './components/security/SecurityInitializer';
 import { initializeSecurity } from './utils/security';
+import { ErrorBoundary } from './utils/canvas/errorBoundary';
 
 // Check if browser profiling is supported in this environment
 const isProfilingSupported = () => {
@@ -82,13 +83,26 @@ const rootElement = createRootElement("root");
 // Add no-referrer meta tag for privacy
 if (typeof document !== 'undefined') {
   const metaReferrer = document.createElement('meta');
-  metaReferrer.name = 'referrer';
+  metaReferrer.setAttribute('name', 'referrer');
   metaReferrer.content = 'no-referrer';
   document.head.appendChild(metaReferrer);
+  
+  // Block iframe embedding
+  const metaFrameOptions = document.createElement('meta');
+  metaFrameOptions.httpEquiv = 'X-Frame-Options';
+  metaFrameOptions.content = 'DENY';
+  document.head.appendChild(metaFrameOptions);
+  
+  // Add CSP header
+  const metaCSP = document.createElement('meta');
+  metaCSP.httpEquiv = 'Content-Security-Policy';
+  metaCSP.content = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.sentry.io https://*.supabase.co wss://*.lovable.dev; frame-ancestors 'none'; object-src 'none'";
+  document.head.appendChild(metaCSP);
 }
 
 createRoot(rootElement).render(
-  <Sentry.ErrorBoundary 
+  <ErrorBoundary 
+    componentName="Root"
     fallback={({ error, componentStack, resetError }) => (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="text-center p-6 max-w-md mx-auto">
@@ -109,5 +123,5 @@ createRoot(rootElement).render(
   >
     <SecurityInitializer />
     <App />
-  </Sentry.ErrorBoundary>
+  </ErrorBoundary>
 );

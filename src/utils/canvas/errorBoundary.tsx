@@ -11,6 +11,8 @@ interface ErrorBoundaryProps {
   fallback?: ReactNode;
   /** Component name for error reporting */
   componentName?: string;
+  /** Whether to capture errors from this component */
+  captureErrors?: boolean;
 }
 
 interface ErrorBoundaryState {
@@ -27,6 +29,11 @@ interface ErrorBoundaryState {
  * Catches JavaScript errors in its child component tree and displays a fallback UI
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  static defaultProps = {
+    componentName: 'unknown',
+    captureErrors: true
+  };
+  
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -46,13 +53,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log the error to an error reporting service
-    const { componentName = 'unknown' } = this.props;
+    const { componentName = 'unknown', captureErrors = true } = this.props;
     
-    handleError(error, {
-      component: componentName,
-      operation: 'render',
-      context: { errorInfo: errorInfo.componentStack }
-    });
+    console.error(`Error caught in ${componentName}:`, error);
+    console.error('Component stack:', errorInfo.componentStack);
+    
+    if (captureErrors) {
+      handleError(error, {
+        component: componentName,
+        operation: 'render',
+        context: { errorInfo: errorInfo.componentStack }
+      });
+    }
     
     this.setState({
       error,
