@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { GridRenderer } from "./GridRenderer";
+import { GridRendererComponent } from "./GridRenderer";
 import { captureMessage } from "@/utils/sentry";
 import logger from "@/utils/logger";
 
@@ -52,10 +52,10 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       logger.info("Requesting render for grid with dimensions", { width, height });
       fabricCanvas.requestRenderAll();
     }
-  }, [dimensions.width, dimensions.height, fabricCanvas]); // Explicit dependency on width/height
+  }, [dimensions.width, dimensions.height, fabricCanvas, gridObjects.length]); // Explicit dependency on width/height
   
   return (
-    <GridRenderer 
+    <GridRendererComponent 
       canvas={fabricCanvas}
       onGridCreated={handleGridCreated}
       showGrid={true}

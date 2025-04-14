@@ -60,7 +60,8 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
       ...prev,
       hasError: true,
       errorMessage: error.message,
-      lastError: error
+      lastError: error.message, // Convert Error to string by using error.message
+      lastErrorTime: Date.now()
     }));
   };
 

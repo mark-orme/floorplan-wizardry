@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
@@ -110,7 +111,8 @@ export class GridRenderer {
       
       // Send all grid objects to the back
       gridObjects.forEach(obj => {
-        this.canvas.sendToBack(obj);
+        // Use sendToBack on each object rather than on the canvas
+        this.canvas.sendObjectToBack(obj);
       });
       
       // Call callback if provided

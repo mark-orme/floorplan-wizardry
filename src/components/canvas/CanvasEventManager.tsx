@@ -14,7 +14,7 @@ import { useWallDrawing } from "@/hooks/useWallDrawing"; // Import the new hook
 import { validateStraightLineTool, scheduleStraightLineValidation } from "@/utils/diagnostics/straightLineValidator";
 import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
-import { GridRenderer } from "./grid/GridRenderer";
+import { GridRendererComponent } from "./grid/GridRenderer";
 
 /**
  * Props for CanvasEventManager component
@@ -380,11 +380,12 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   return (
     <>
       {canvas && gridLayerRef.current.length === 0 && (
-        <GridRenderer 
+        <GridRendererComponent 
           canvas={canvas}
           onGridCreated={(gridObjects) => {
             gridLayerRef.current = gridObjects;
           }}
+          showGrid={true}
         />
       )}
     </>
