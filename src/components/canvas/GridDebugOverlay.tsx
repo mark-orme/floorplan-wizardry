@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { dumpGridState } from "@/utils/grid/gridDebugUtils";
-import { ensureGridVisibility } from "@/utils/grid/gridVisibility";
+import { ensureGridVisibility, forceGridCreationAndVisibility } from "@/utils/grid/gridVisibility";
 import { analyzeGridIssues } from "@/utils/grid/errorReporting";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
 interface GridDebugOverlayProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -18,10 +19,14 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
 }) => {
   const [gridInfo, setGridInfo] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [autoFixEnabled, setAutoFixEnabled] = useState(GRID_CONSTANTS.GRID_AUTO_FIX);
 
   useEffect(() => {
     // Refresh grid info every 2 seconds when visible
     if (!visible) return;
+    
+    // Initial refresh
+    refreshGridInfo();
     
     const intervalId = setInterval(() => {
       refreshGridInfo();
@@ -66,6 +71,15 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
       // Fix: Call ensureGridVisibility with only the canvas argument
       const result = ensureGridVisibility(canvas);
       toast.success(`Grid visibility ${result ? "fixed" : "already OK"}`);
+      refreshGridInfo();
+    }
+  };
+  
+  // Function to force grid creation
+  const handleForceGridCreation = () => {
+    if (canvas) {
+      const result = forceGridCreationAndVisibility(canvas);
+      toast.success(`Grid creation ${result ? "successful" : "failed"}`);
       refreshGridInfo();
     }
   };
@@ -117,8 +131,20 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
       totalObjects: canvas.getObjects().length,
       gridObjects: gridObjects.length,
       visibleGridObjects: gridObjects.filter(obj => obj.visible).length,
+      invisibleGridObjects: gridObjects.filter(obj => !obj.visible).length,
       timestamp: new Date().toISOString()
     });
+    
+    // Auto-fix if enabled and invisible grid objects are found
+    if (autoFixEnabled && gridObjects.filter(obj => !obj.visible).length > 0) {
+      handleForceVisibility();
+    }
+  };
+  
+  // Toggle auto-fix
+  const toggleAutoFix = () => {
+    setAutoFixEnabled(prev => !prev);
+    toast.info(`Auto-fix ${!autoFixEnabled ? "enabled" : "disabled"}`);
   };
 
   return (
@@ -135,6 +161,9 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
           <div>Grid Objects: {gridInfo.gridObjects}</div>
           {gridInfo.visibleGridObjects !== undefined && (
             <div>Visible Grid: {gridInfo.visibleGridObjects}</div>
+          )}
+          {gridInfo.invisibleGridObjects > 0 && (
+            <div className="text-red-500">Invisible Grid: {gridInfo.invisibleGridObjects}</div>
           )}
           {gridInfo.hasIssues && (
             <div className="text-red-500">Issues: {gridInfo.issues?.length || 0}</div>
@@ -162,6 +191,15 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
         </Button>
         
         <Button 
+          onClick={handleForceGridCreation} 
+          variant="outline"
+          size="sm"
+          className="text-xs h-7"
+        >
+          Recreate Grid
+        </Button>
+        
+        <Button 
           onClick={handleAnalyzeGrid} 
           variant="outline"
           size="sm"
@@ -178,6 +216,15 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
           className="text-xs h-7"
         >
           Refresh Info
+        </Button>
+        
+        <Button 
+          onClick={toggleAutoFix} 
+          variant={autoFixEnabled ? "default" : "outline"}
+          size="sm"
+          className="text-xs h-7"
+        >
+          Auto-Fix {autoFixEnabled ? "ON" : "OFF"}
         </Button>
       </div>
     </div>

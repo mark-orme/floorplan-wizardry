@@ -80,7 +80,8 @@ export const useWallDrawing = ({
         backgroundColor: 'rgba(255,255,255,0.7)',
         padding: 3,
         selectable: false,
-        evented: false
+        evented: false,
+        objectType: 'measurementTooltip'
       });
       
       canvas.add(tooltip);
@@ -89,7 +90,8 @@ export const useWallDrawing = ({
       measureTooltipRef.current.set({
         text: `${distanceInMeters}m`,
         left: midX,
-        top: midY
+        top: midY,
+        opacity: 1
       });
     }
     
@@ -108,6 +110,8 @@ export const useWallDrawing = ({
     const line = new Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
       stroke: wallColor,
       strokeWidth: wallThickness,
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round',
       selectable: true,
       evented: true,
       objectType: 'wall'
@@ -167,7 +171,16 @@ export const useWallDrawing = ({
       if (measureTooltipRef.current) {
         measureTooltipRef.current.set({
           backgroundColor: 'rgba(255,255,255,0.9)',
+          opacity: 1,
+          selectable: false,
+          evented: false
         });
+        
+        // Ensure tooltip stays visible with wall
+        measureTooltipRef.current.set({
+          objectType: 'measurementTooltip'
+        });
+        
         canvas.renderAll();
       }
       
