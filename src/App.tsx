@@ -3,9 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Index from './pages/Index';
 import FloorPlans from './pages/FloorPlans';
-import { CanvasProvider } from './contexts/CanvasContext';
-import { DrawingProvider } from './contexts/DrawingContext';
 import { QueryProvider } from './providers/QueryProvider';
+import { CanvasProvider, DrawingProvider } from './features/canvas';
 
 function App() {
   return (
