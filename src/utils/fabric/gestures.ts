@@ -1,4 +1,3 @@
-
 /**
  * Gesture utilities for fabric.js
  * Provides helpers for handling touch and mouse gestures
@@ -7,7 +6,7 @@
 import { Canvas, PencilBrush, Point, Object as FabricObject } from 'fabric';
 import { CustomTouchEvent, FabricPointerEvent, isTouchEvent, isMouseEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
-import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
+import { FabricEventNames } from '@/types/fabric-events';
 
 /**
  * Touch gesture constants for event handling
@@ -208,7 +207,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       };
       
       // Use the canvas.fire with the EventInfo
-      canvas.fire(FabricEventTypes.MOUSE_DOWN, eventInfo as any);
+      canvas.fire(FabricEventNames.MOUSE_DOWN, eventInfo as any);
 
       console.log(`${TOUCH_CONSTANTS.DRAWING_STARTED_MSG}:`, isPencil ? "Apple Pencil/Stylus" : "Touch");
     }
@@ -263,7 +262,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       };
       
       // Use the canvas.fire with the EventInfo
-      canvas.fire(FabricEventTypes.MOUSE_MOVE, eventInfo as any);
+      canvas.fire(FabricEventNames.MOUSE_MOVE, eventInfo as any);
     }
 
     // Update the position of ongoing touches
@@ -318,7 +317,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
       };
       
       // Use the canvas.fire with the EventInfo
-      canvas.fire(FabricEventTypes.MOUSE_UP, eventInfo as any);
+      canvas.fire(FabricEventNames.MOUSE_UP, eventInfo as any);
 
       console.log(TOUCH_CONSTANTS.DRAWING_ENDED_MSG);
     }
@@ -371,7 +370,7 @@ export const initializeCanvasGestures = (canvas: Canvas): void => {
         };
         
         // Use the canvas.fire with the EventInfo
-        canvas.fire(FabricEventTypes.MOUSE_UP, eventInfo as any);
+        canvas.fire(FabricEventNames.MOUSE_UP, eventInfo as any);
       }
     }
 

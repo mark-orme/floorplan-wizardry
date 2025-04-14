@@ -1,86 +1,59 @@
 
-/**
- * Point operations utilities
- * @module utils/geometry/pointOperations
- */
-import { Point } from '@/types/geometryTypes';
-import { GRID_SPACING } from '@/constants/numerics';
+import { Point } from '@/types/core/Point';
+import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
 
 /**
- * Calculate distance between two points
+ * Check if two points are equal
  * @param p1 First point
  * @param p2 Second point
- * @returns Distance between points
+ * @param threshold Optional threshold for comparison
+ * @returns True if points are equal
  */
-export const calculateDistance = (p1: Point, p2: Point): number => {
+export const arePointsEqual = (p1: Point, p2: Point, threshold: number = 0.001): boolean => {
+  return Math.abs(p1.x - p2.x) < threshold && Math.abs(p1.y - p2.y) < threshold;
+};
+
+/**
+ * Check if a point is near another point
+ * @param p1 First point
+ * @param p2 Second point
+ * @param threshold Distance threshold
+ * @returns True if points are within threshold
+ */
+export const isPointNear = (p1: Point, p2: Point, threshold: number = SNAP_THRESHOLD): boolean => {
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
+  const distSquared = dx * dx + dy * dy;
+  
+  return distSquared <= threshold * threshold;
 };
 
 /**
- * Calculate midpoint between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Midpoint
+ * Check if a point is on a grid intersection
+ * @param point Point to check
+ * @param gridSize Grid size
+ * @param threshold Threshold for comparison
+ * @returns True if point is on grid
  */
-export const calculateMidpoint = (p1: Point, p2: Point): Point => {
-  return {
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
-  };
+export const isPointOnGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL, threshold: number = 0.001): boolean => {
+  const xMod = point.x % gridSize;
+  const yMod = point.y % gridSize;
+  
+  const xOnGrid = xMod < threshold || (gridSize - xMod) < threshold;
+  const yOnGrid = yMod < threshold || (gridSize - yMod) < threshold;
+  
+  return xOnGrid && yOnGrid;
 };
 
 /**
- * Check if a point is near another point within a threshold
- * @param p1 First point
- * @param p2 Second point
- * @param threshold Maximum distance to be considered "near"
- * @returns True if points are near each other
+ * Snap a point to grid
+ * @param point Point to snap
+ * @param gridSize Grid size
+ * @returns Snapped point
  */
-export const isPointNear = (p1: Point, p2: Point, threshold: number = 5): boolean => {
-  return calculateDistance(p1, p2) <= threshold;
-};
-
-/**
- * Format distance for display with units
- * @param distance Distance in pixels
- * @param precision Number of decimal places
- * @returns Formatted distance string
- */
-export const formatDistance = (distance: number, precision: number = 2): string => {
-  return `${distance.toFixed(precision)} px`;
-};
-
-/**
- * Check if a value is an exact multiple of the grid spacing
- * @param value Value to check
- * @returns True if value is an exact grid multiple
- */
-export const isExactGridMultiple = (value: number): boolean => {
-  const gridSize = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
-  return Math.abs(value % gridSize) < 0.0001;
-};
-
-/**
- * Round a point to the nearest grid position
- * @param point Point to round
- * @returns Rounded point
- */
-export const roundToGrid = (point: Point): Point => {
-  const gridSize = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
+export const snapPointToGrid = (point: Point, gridSize: number = GRID_SPACING.SMALL): Point => {
   return {
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
   };
-};
-
-/**
- * Check if two points are the same
- * @param p1 First point
- * @param p2 Second point
- * @returns True if points are the same
- */
-export const arePointsEqual = (p1: Point, p2: Point): boolean => {
-  return p1.x === p2.x && p1.y === p2.y;
 };

@@ -50,7 +50,7 @@ export function calculateGridDimensions(
  */
 export function calculateGridSpacing(zoomLevel: number = 1): number {
   // Base small grid size
-  const baseSmallGrid = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
+  const baseSmallGrid = GRID_SPACING.SMALL;
   
   // Adjust grid size based on zoom level
   if (zoomLevel < 0.5) {
@@ -193,8 +193,8 @@ export function renderGridComponents(
   width: number,
   height: number
 ) {
-  // Use GRID_SPACING as the cell size
-  const cellSize = typeof GRID_SPACING === 'number' ? GRID_SPACING : GRID_SPACING.DEFAULT;
+  // Use GRID_SPACING.SMALL as the cell size
+  const cellSize = GRID_SPACING.SMALL;
   
   return createCompleteGrid(canvas, width, height, cellSize);
 }

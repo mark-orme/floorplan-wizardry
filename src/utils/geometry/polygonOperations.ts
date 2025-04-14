@@ -1,66 +1,15 @@
 
-/**
- * Polygon operation utilities
- * @module utils/geometry/polygonOperations
- */
-import { Point } from '@/types/geometryTypes';
-import { AREA_PRECISION } from '@/constants/numerics';
+import { Point } from '@/types/core/Point';
+import { calculatePolygonArea } from '@/utils/areaCalculation';
+import { PIXELS_PER_METER, AREA_PRECISION } from '@/constants/numerics';
 
 /**
- * Calculate the area of a polygon
- * @param points Points defining the polygon
- * @returns Area of the polygon in square units
- */
-export const calculatePolygonArea = (points: Point[]): number => {
-  if (points.length < 3) return 0;
-  
-  let area = 0;
-  
-  // Calculate area using the Shoelace formula (Gauss's area formula)
-  for (let i = 0; i < points.length; i++) {
-    const j = (i + 1) % points.length;
-    area += points[i].x * points[j].y;
-    area -= points[j].x * points[i].y;
-  }
-  
-  // Take the absolute value and divide by 2
-  area = Math.abs(area) / 2;
-  
-  // Round to specified precision
-  return Number(area.toFixed(AREA_PRECISION));
-};
-
-/**
- * Check if a point is inside a polygon
- * @param point Point to check
- * @param polygon Points defining the polygon
- * @returns True if the point is inside the polygon
- */
-export const isPointInPolygon = (point: Point, polygon: Point[]): boolean => {
-  if (polygon.length < 3) return false;
-  
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x;
-    const yi = polygon[i].y;
-    const xj = polygon[j].x;
-    const yj = polygon[j].y;
-    
-    const intersect = ((yi > point.y) !== (yj > point.y))
-        && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  
-  return inside;
-};
-
-/**
- * Get the centroid of a polygon
- * @param points Points defining the polygon
+ * Calculate the centroid of a polygon
+ * @param points Array of points forming the polygon
  * @returns Centroid point
  */
-export const getPolygonCentroid = (points: Point[]): Point => {
-  if (points.length < 3) return { x: 0, y: 0 };
+export const calculateCentroid = (points: Point[]): Point => {
+  if (points.length === 0) return { x: 0, y: 0 };
   
   let sumX = 0;
   let sumY = 0;
@@ -77,21 +26,32 @@ export const getPolygonCentroid = (points: Point[]): Point => {
 };
 
 /**
- * Calculate the perimeter of a polygon
- * @param points Points defining the polygon
- * @returns Perimeter length
+ * Format area with appropriate units
+ * @param areaInPixels Area in square pixels
+ * @returns Formatted area string
  */
-export const calculatePolygonPerimeter = (points: Point[]): number => {
-  if (points.length < 2) return 0;
+export const formatAreaWithUnits = (areaInPixels: number): string => {
+  // Convert from pixels to square meters
+  const areaInSquareMeters = areaInPixels / (PIXELS_PER_METER * PIXELS_PER_METER);
   
-  let perimeter = 0;
+  // Round to specified precision
+  return `${areaInSquareMeters.toFixed(AREA_PRECISION)} m²`;
+};
+
+/**
+ * Check if a polygon is clockwise
+ * @param points Array of points forming the polygon
+ * @returns True if clockwise, false if counterclockwise
+ */
+export const isPolygonClockwise = (points: Point[]): boolean => {
+  if (points.length < 3) return false;
   
+  let sum = 0;
   for (let i = 0; i < points.length; i++) {
-    const j = (i + 1) % points.length;
-    const dx = points[j].x - points[i].x;
-    const dy = points[j].y - points[i].y;
-    perimeter += Math.sqrt(dx * dx + dy * dy);
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length];
+    sum += (p2.x - p1.x) * (p2.y + p1.y);
   }
   
-  return perimeter;
+  return sum > 0;
 };

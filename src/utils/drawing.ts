@@ -1,4 +1,3 @@
-
 /**
  * Drawing utilities
  * @module drawing
@@ -76,3 +75,58 @@ export type * from '@/types/drawingTypes';
 export * from './geometry'; // This now re-exports from all geometry modules
 export * from './fabricPath'; // Use new modular path utilities
 export * from './floorPlanStorage';
+
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Point } from '@/types/core/Point';
+
+/**
+ * Drawing utility functions
+ */
+
+/**
+ * Add object to canvas with history tracking
+ * @param canvas Fabric canvas
+ * @param obj Object to add
+ * @param historyRef History reference
+ */
+export const addObjectWithHistory = (
+  canvas: FabricCanvas,
+  obj: FabricObject,
+  historyRef?: React.MutableRefObject<{past: any[], future: any[]}>
+) => {
+  // Add object to canvas
+  canvas.add(obj);
+  
+  // Send to appropriate layer
+  if (obj.type === 'line' || obj.type === 'polyline') {
+    canvas.sendToBack(obj);
+  }
+  
+  // Save state if history ref provided
+  if (historyRef) {
+    // Save current state
+    const state = canvas.getObjects().filter(o => (o as any).objectType !== 'grid');
+    
+    // Add to history, limiting size
+    historyRef.current.past.push(state);
+    if (historyRef.current.past.length > MAX_HISTORY_STATES) {
+      historyRef.current.past.shift();
+    }
+    
+    // Clear future history
+    historyRef.current.future = [];
+  }
+  
+  // Render canvas
+  canvas.requestRenderAll();
+};
+
+/**
+ * Check if canvas is at object limit
+ * @param canvas Fabric canvas
+ * @returns True if at limit
+ */
+export const isCanvasAtObjectLimit = (canvas: FabricCanvas): boolean => {
+  const nonGridObjects = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid');
+  return nonGridObjects.length >= MAX_OBJECTS_PER_CANVAS;
+};

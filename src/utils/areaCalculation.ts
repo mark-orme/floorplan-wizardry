@@ -1,4 +1,3 @@
-
 /**
  * Area calculation utilities
  * @module utils/areaCalculation
@@ -69,5 +68,5 @@ export const calculateAreaInSquareMeters = (points: Point[]): number => {
  * @returns Formatted area string
  */
 export const formatArea = (area: number): string => {
-  return `${area.toFixed(AREA_PRECISION || 2)} m²`;
+  return `${area.toFixed(AREA_PRECISION)} m²`;
 };
