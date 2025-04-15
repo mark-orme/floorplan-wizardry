@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { useLocalStorage } from './useLocalStorage';
-import { debounce } from '@/utils/debounce';
+import { debounce } from '@/utils/throttleUtils';
 import { saveCanvasToIDB, loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
 import { validateCanvasData, sanitizeCanvasData } from '@/utils/validation/canvasValidation';
 import { handleError } from '@/utils/errorHandling';
@@ -123,9 +123,11 @@ export const useAutoSaveCanvas = ({
     }
   }, [canvas, canvasId, setSavedCanvas, setSavedTimestamp, onSave]);
   
-  // Create the debounced function correctly
+  // Create the debounced function correctly - fixed the issue by using the right function signature
   const debouncedSave = useRef(
-    debounce(saveCanvas, debounceMs)
+    debounce(() => {
+      saveCanvas();
+    }, debounceMs)
   );
   
   // Restore canvas state
