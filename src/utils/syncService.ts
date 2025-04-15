@@ -129,16 +129,13 @@ export const broadcastFloorPlanUpdate = (floorPlans: SyncFloorPlan[], userId?: s
 /**
  * Notify other users about presence change
  */
-export const notifyPresenceChange = () => {
+export const broadcastPresenceUpdate = (count: number) => {
   logger.info('Broadcasting presence update');
   
   try {
     const channel = getPusher().channel(SYNC_CHANNEL);
     
     if (channel && channel.subscribed) {
-      // Using a simple count since members isn't available
-      const count = 1; // Default to 1 (self)
-      
       channel.trigger(`client-${PRESENCE_EVENT}`, {
         count,
         timestamp: Date.now(),
@@ -165,8 +162,9 @@ export default {
   subscribeSyncChannel,
   broadcastFloorPlanUpdate,
   isUpdateFromThisDevice,
-  notifyPresenceChange,
+  broadcastPresenceUpdate,
   SYNC_CHANNEL,
   UPDATE_EVENT,
   PRESENCE_EVENT
 };
+

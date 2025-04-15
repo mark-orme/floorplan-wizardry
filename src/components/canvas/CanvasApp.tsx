@@ -8,7 +8,7 @@ import { ConnectedDrawingCanvas } from './ConnectedDrawingCanvas';
 import { updateCanvasDimensions } from '@/utils/canvas/safeDimensions';
 import { captureError } from '@/utils/sentryUtils';
 import { createFloorPlanDataForSync, setupRealtimeSync } from '@/utils/realtime/syncUtils';
-import { broadcastFloorPlanUpdate, broadcastPresenceUpdate } from '@/utils/syncService';
+import { broadcastFloorPlanUpdate, notifyPresenceChange } from '@/utils/syncService';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
@@ -92,7 +92,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
         channelRef.current = channel;
         
         // Broadcast initial presence
-        broadcastPresenceUpdate(1);
+        notifyPresenceChange();
         
         // Create initial sync data (using a temporary user name)
         const initialFloorPlans = createFloorPlanDataForSync(canvas, 'User');
@@ -180,3 +180,4 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     </div>
   );
 };
+

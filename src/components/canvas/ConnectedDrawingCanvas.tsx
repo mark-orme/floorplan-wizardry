@@ -15,9 +15,12 @@ import { useCanvasOperations } from "@/hooks/canvas/useCanvasOperations";
  * Props for ConnectedDrawingCanvas component
  */
 interface ConnectedDrawingCanvasProps {
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   onCanvasRef?: (ref: any) => void;
+  tool?: DrawingMode;
+  lineColor?: string;
+  lineThickness?: number;
 }
 
 /**
@@ -25,16 +28,24 @@ interface ConnectedDrawingCanvasProps {
  * Manages canvas state and provides drawing functionality
  */
 export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
-  width,
-  height,
-  onCanvasRef
+  width = 800,
+  height = 600,
+  onCanvasRef,
+  tool = DrawingMode.SELECT,
+  lineColor = "#000000",
+  lineThickness = 2
 }) => {
   // Access drawing context
   const { 
-    tool, 
-    lineColor, 
-    lineThickness 
+    tool: contextTool, 
+    lineColor: contextLineColor, 
+    lineThickness: contextLineThickness 
   } = useDrawingContext();
+  
+  // Use props or context values
+  const activeTool = tool || contextTool;
+  const activeLineColor = lineColor || contextLineColor;
+  const activeLineThickness = lineThickness || contextLineThickness;
   
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,7 +62,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     canvasRef,
     width,
     height,
-    tool
+    tool: activeTool
   });
 
   // Create grid when canvas is initialized
@@ -74,11 +85,11 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       }
       
       // Configure the brush
-      canvas.freeDrawingBrush.color = lineColor;
-      canvas.freeDrawingBrush.width = lineThickness;
-      logger.info("Configured drawing brush", { color: lineColor, width: lineThickness });
+      canvas.freeDrawingBrush.color = activeLineColor;
+      canvas.freeDrawingBrush.width = activeLineThickness;
+      logger.info("Configured drawing brush", { color: activeLineColor, width: activeLineThickness });
     }
-  }, [canvas, initialized, lineColor, lineThickness]);
+  }, [canvas, initialized, activeLineColor, activeLineThickness]);
 
   const {
     historyStack,
@@ -131,9 +142,9 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       {canvas && (
         <CanvasEventManager
           canvas={canvas}
-          tool={tool}
-          lineThickness={lineThickness}
-          lineColor={lineColor}
+          tool={activeTool}
+          lineThickness={activeLineThickness}
+          lineColor={activeLineColor}
           gridLayerRef={gridLayerRef}
           saveCurrentState={saveCurrentState}
           undo={undo}
@@ -144,3 +155,4 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     </>
   );
 };
+
