@@ -90,6 +90,7 @@ export const useAutoSaveCanvas = ({
       
       try {
         await saveCanvasToIDB(canvasId, sanitizedData);
+        canvas.renderAll();
       } catch (idbError) {
         console.warn('Failed to save to IndexedDB, using localStorage only:', idbError);
       }
@@ -110,12 +111,9 @@ export const useAutoSaveCanvas = ({
     }
   }, [canvas, canvasId, setSavedCanvas, setSavedTimestamp, onSave]);
   
-  // Create debounced save function
   const debouncedSaveRef = useRef<() => void>();
   
-  // Update the debounced function when its dependencies change
   useEffect(() => {
-    // Create a wrapper function that doesn't take arguments
     const saveFn = () => {
       saveCanvas();
     };
