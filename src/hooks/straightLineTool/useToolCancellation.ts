@@ -71,7 +71,7 @@ export const useToolCancellation = ({
     inputMethod
   ]);
   
-  // Function to toggle grid snapping
+  // Function to toggle grid snapping - modified to return a boolean
   const toggleGridSnapping = useCallback((): boolean => {
     // Call the toggle function
     toggleSnap();

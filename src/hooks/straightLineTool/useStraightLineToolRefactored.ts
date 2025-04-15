@@ -1,3 +1,4 @@
+
 /**
  * Refactored hook for using the straight line drawing tool
  * This hook orchestrates all the line drawing functionality by composing smaller hooks
@@ -163,7 +164,7 @@ export const useStraightLineToolRefactored = ({
     inputMethod
   });
 
-  // Update the toggle function to return a boolean
+  // Use the tool cancellation hook - make sure we properly handle the return type
   const {
     cancelDrawing,
     toggleGridSnapping

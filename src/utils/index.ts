@@ -17,15 +17,36 @@ export * from './fabric';
 // Re-export from fabricPath utilities
 export * from './fabricPath';
 
-// Re-export from geometry utilities
-export * from './geometry';
+// Re-export from geometry utilities but explicitly rename potentially ambiguous exports
+export { 
+  calculateArea,
+  calculateGIA,
+  rotatePoint,
+  translatePoint,
+  scalePoint,
+  validatePolygon,
+  isPolygonClosed,
+  getBoundingBox,
+  getMidpoint,
+  pixelsToMeters,
+  metersToPixels,
+  simplifyPath,
+  smoothPath,
+  calculateDistance,
+  formatDistance,
+  isExactGridMultiple,
+  calculateMidpoint,
+  calculateAngle,
+  getDistance,
+  formatDisplayDistance
+} from './geometry';
 
-// Re-export grid utilities with explicit naming
+// Re-export grid utilities with explicit naming to avoid ambiguity
 export {
-  snapPointToGrid, 
-  snapLineToGrid,
+  snapPointToGrid as gridSnapPointToGrid, 
+  snapLineToGrid as gridSnapLineToGrid,
   snapLineToStandardAngles,
-  snapToAngle,
+  snapToAngle as gridSnapToAngle,
   isPointOnGrid,
   getNearestGridPoint,
   distanceToGrid,
