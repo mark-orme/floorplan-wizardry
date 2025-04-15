@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas autosave
  * @module hooks/useCanvasAutosave
@@ -9,6 +10,7 @@ import {
   loadCanvasFromLocalStorage 
 } from '@/utils/autosave/canvasAutoSave';
 import logger from '@/utils/logger';
+import { FabricEventTypes } from '@/types/fabric-events';
 
 // Default autosave interval in milliseconds (5 seconds)
 const DEFAULT_AUTOSAVE_INTERVAL = 5000;
@@ -83,9 +85,9 @@ export const useCanvasAutosave = ({
     
     // Add listeners for events that indicate canvas changes
     const events = [
-      'object:added', 
-      'object:removed', 
-      'object:modified',
+      FabricEventTypes.OBJECT_ADDED, 
+      FabricEventTypes.OBJECT_REMOVED, 
+      FabricEventTypes.OBJECT_MODIFIED,
       'path:created'
     ];
     

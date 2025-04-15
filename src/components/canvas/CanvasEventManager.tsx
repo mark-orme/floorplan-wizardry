@@ -45,7 +45,7 @@ export const CanvasEventManager = ({
   // Initialize straight line tool
   useStraightLineTool({
     fabricCanvasRef: { current: canvas },
-    isActive: tool === DrawingMode.STRAIGHT_LINE,
+    enabled: tool === DrawingMode.STRAIGHT_LINE,
     lineColor,
     lineThickness,
     saveCurrentState
