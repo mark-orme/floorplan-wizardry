@@ -1,3 +1,4 @@
+
 /**
  * A simplified hook for grid creation
  * @module hooks/useSimpleGrid
@@ -200,15 +201,16 @@ export const useSimpleGrid = (
     if (!canvas || !gridCreated) return;
     
     const intervalId = setInterval(() => {
-      // Use ensureGridVisibility function
-      const fixesApplied = ensureGridVisibility(canvas);
+      // Call ensureGridVisibility but don't check its return value
+      ensureGridVisibility(canvas);
+      
+      // Check grid health which returns a boolean
+      const fixesApplied = checkGridHealth();
       
       if (fixesApplied) {
         setObjectCount(gridLayerRef.current.length);
       }
       
-      // Also run our more thorough grid health check
-      checkGridHealth();
     }, checkInterval);
     
     return () => clearInterval(intervalId);
