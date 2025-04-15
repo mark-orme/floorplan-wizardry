@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -155,7 +154,12 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       }
       
       if (showGrid) {
-        forceGridCreationAndVisibility(canvas);
+        import('@/utils/grid/gridVisibility').then(({ forceGridCreationAndVisibility }) => {
+          forceGridCreationAndVisibility(canvas);
+          console.log("Grid creation forced during canvas initialization");
+        }).catch(err => {
+          console.error("Error importing grid visibility utility:", err);
+        });
       }
       
       onCanvasReady(canvas);

@@ -1,247 +1,173 @@
+
 /**
- * Grid visibility utilities
- * Functions to ensure grid is always visible
+ * Grid Visibility Utilities
+ * Helper functions to ensure grid is created and visible
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createCompleteGrid } from './gridRenderers';
-import logger from '@/utils/logger';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { toast } from 'sonner';
-
-// Track visibility checks to avoid too many console warnings
-const visibilityChecks = {
-  lastWarningTime: 0,
-  warningCount: 0,
-  fixCount: 0
-};
+import logger from '@/utils/logger';
 
 /**
- * Find all grid objects in canvas
+ * Force grid creation and visibility if it doesn't exist or isn't visible
  * @param canvas Fabric canvas instance
- * @returns Array of grid objects
+ * @returns Array of created grid objects or empty array if creation failed
  */
-function findGridObjects(canvas: FabricCanvas): FabricObject[] {
-  return canvas.getObjects().filter(obj => 
-    (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+export function forceGridCreationAndVisibility(canvas: FabricCanvas): FabricObject[] {
+  if (!canvas) {
+    logger.warn('Cannot create grid: Canvas is null');
+    return [];
+  }
+
+  // Check if grid exists
+  const existingGridObjects = canvas.getObjects().filter(
+    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
   );
-}
 
-/**
- * Ensure grid is visible
- * @param canvas Fabric canvas instance
- * @returns Whether operation was successful
- */
-export function ensureGridVisibility(canvas: FabricCanvas): boolean {
-  if (!canvas) {
-    return false;
-  }
-  
-  try {
-    // Find all grid objects
-    const gridObjects = findGridObjects(canvas);
+  // If grid already exists, make sure it's visible
+  if (existingGridObjects.length > 0) {
+    logger.info(`Found ${existingGridObjects.length} existing grid objects, ensuring visibility`);
     
-    // Check if enough grid objects
-    if (gridObjects.length < GRID_CONSTANTS.MIN_GRID_OBJECTS) {
-      // Throttle warnings to avoid console spam
-      const now = Date.now();
-      if (now - visibilityChecks.lastWarningTime > 5000) {
-        logger.warn(`Grid appears to be missing, only ${gridObjects.length} grid objects found`);
-        visibilityChecks.lastWarningTime = now;
-        visibilityChecks.warningCount++;
-      }
-      
-      // Only recreate automatically if enabled and not too many warnings
-      if (GRID_CONSTANTS.AUTO_RECREATE_ON_EMPTY && visibilityChecks.warningCount < 10) {
-        return forceGridCreationAndVisibility(canvas);
-      }
-      
-      return false;
-    }
-    
-    // Make sure all grid objects are visible
-    let visibilityChanged = false;
-    
-    gridObjects.forEach(obj => {
-      if (!obj.visible) {
-        obj.set('visible', true);
-        visibilityChanged = true;
-      }
-    });
-    
-    if (visibilityChanged) {
-      logger.info("Some grid objects were invisible, fixed visibility");
-      canvas.requestRenderAll();
-      visibilityChecks.fixCount++;
-    }
-    
-    // Ensure grid objects are at the back
-    gridObjects.forEach(obj => {
-      canvas.sendObjectToBack(obj);
-    });
-    
-    return visibilityChanged;
-  } catch (error) {
-    logger.error("Error ensuring grid visibility:", error);
-    return false;
-  }
-}
-
-/**
- * Set grid visibility
- * @param canvas Fabric canvas instance
- * @param visible Whether grid should be visible
- */
-export function setGridVisibility(canvas: FabricCanvas, visible: boolean): void {
-  if (!canvas) return;
-  
-  try {
-    const gridObjects = findGridObjects(canvas);
-    
-    if (gridObjects.length === 0 && visible) {
-      // If grid doesn't exist but should be visible, create it
-      forceGridCreationAndVisibility(canvas);
-      return;
-    }
-    
-    gridObjects.forEach(obj => {
-      obj.set('visible', visible);
-    });
-    
-    canvas.requestRenderAll();
-  } catch (error) {
-    logger.error("Error setting grid visibility:", error);
-  }
-}
-
-/**
- * Force grid creation and visibility
- * @param canvas Fabric canvas instance
- * @returns Whether operation was successful
- */
-export function forceGridCreationAndVisibility(canvas: FabricCanvas): boolean {
-  if (!canvas) {
-    return false;
-  }
-  
-  try {
-    // Remove any existing grid objects
-    const existingGrids = findGridObjects(canvas);
-    
-    if (existingGrids.length > 0) {
-      logger.info(`Removing ${existingGrids.length} existing grid objects`);
-      
-      existingGrids.forEach(obj => {
-        canvas.remove(obj);
-      });
-    }
-    
-    // Create new grid
-    const gridObjects = createCompleteGrid(canvas);
-    
-    if (gridObjects.length === 0) {
-      logger.error("Failed to create grid");
-      return false;
-    }
-    
-    // Ensure all grid objects are visible
-    gridObjects.forEach(obj => {
+    existingGridObjects.forEach(obj => {
       obj.set('visible', true);
-      obj.set('selectable', false); // Ensure grid is not selectable
-      obj.set('evented', false); // Ensure grid doesn't receive events
-      obj.set('hasControls', false); // No controls
-      obj.set('hasBorders', false); // No borders
-      canvas.sendObjectToBack(obj);
+      canvas.sendToBack(obj);
     });
     
-    // Force render
     canvas.requestRenderAll();
-    
-    // Reset visibility check counters
-    visibilityChecks.warningCount = 0;
-    visibilityChecks.fixCount = 0;
-    
-    logger.info(`Created new grid with ${gridObjects.length} objects`);
-    
-    return true;
+    return existingGridObjects;
+  }
+
+  // If no grid exists, create it
+  logger.info('No grid found, creating new grid');
+  try {
+    return createBasicGrid(canvas);
   } catch (error) {
-    logger.error("Error forcing grid creation:", error);
-    return false;
+    logger.error('Failed to create grid:', error);
+    console.error('Failed to create grid:', error);
+    toast.error('Failed to create grid');
+    return [];
   }
 }
 
 /**
- * Helper function to diagnose grid state
+ * Create a basic grid for the canvas
+ * Simple implementation to ensure grid is always available
  * @param canvas Fabric canvas instance
- * @returns Diagnostic information
+ * @returns Array of created grid objects
  */
-export function diagnoseGridState(canvas: FabricCanvas): any {
-  if (!canvas) {
-    return { error: "No canvas provided" };
+function createBasicGrid(canvas: FabricCanvas): FabricObject[] {
+  const gridObjects: FabricObject[] = [];
+  
+  if (!canvas.width || !canvas.height) {
+    logger.error('Canvas dimensions are invalid, cannot create grid');
+    return [];
   }
   
-  try {
-    const allObjects = canvas.getObjects();
-    const gridObjects = findGridObjects(canvas);
-    const visibleGridObjects = gridObjects.filter(obj => obj.visible);
-    const invisibleGridObjects = gridObjects.filter(obj => !obj.visible);
-    
-    return {
-      totalObjects: allObjects.length,
-      gridObjectsCount: gridObjects.length,
-      visibleGridCount: visibleGridObjects.length,
-      invisibleGridCount: invisibleGridObjects.length,
-      otherObjectsCount: allObjects.length - gridObjects.length,
-      canvasDimensions: {
-        width: canvas.width,
-        height: canvas.height
-      },
-      warningCount: visibilityChecks.warningCount,
-      fixCount: visibilityChecks.fixCount,
-      gridSamples: gridObjects.slice(0, 3).map(obj => ({
-        type: (obj as any).objectType || "unknown",
-        visible: obj.visible,
-        selectable: obj.selectable,
-        coords: {
-          left: obj.left,
-          top: obj.top
-        }
-      }))
+  const width = canvas.width;
+  const height = canvas.height;
+  
+  // Create horizontal grid lines
+  for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+    const lineProps = {
+      left: 0,
+      top: i,
+      stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      isGrid: true
     };
-  } catch (error) {
-    return { error: String(error) };
+    
+    // @ts-ignore - Adding custom property
+    const line = new fabric.Line([0, i, width, i], lineProps);
+    canvas.add(line);
+    gridObjects.push(line);
   }
+  
+  // Create vertical grid lines
+  for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+    const lineProps = {
+      left: i,
+      top: 0,
+      stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      isGrid: true
+    };
+    
+    // @ts-ignore - Adding custom property
+    const line = new fabric.Line([i, 0, i, height], lineProps);
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  // Create larger grid lines
+  for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+    const lineProps = {
+      left: i,
+      top: 0,
+      stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      isGrid: true
+    };
+    
+    // @ts-ignore - Adding custom property
+    const line = new fabric.Line([i, 0, i, height], lineProps);
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+    const lineProps = {
+      left: 0,
+      top: i,
+      stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+      strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      isGrid: true
+    };
+    
+    // @ts-ignore - Adding custom property
+    const line = new fabric.Line([0, i, i, height], lineProps);
+    canvas.add(line);
+    gridObjects.push(line);
+  }
+  
+  // Make sure grid is at the back
+  gridObjects.forEach(obj => canvas.sendToBack(obj));
+  
+  // Ensure visibility
+  canvas.requestRenderAll();
+  
+  logger.info(`Created ${gridObjects.length} grid objects`);
+  return gridObjects;
 }
 
-// Expose emergency grid fix function to window for debugging
+/**
+ * Create a simple util function to create grid via console
+ * For emergency use when grid isn't visible
+ */
 if (typeof window !== 'undefined') {
-  (window as any).fixGrid = () => {
-    if (!(window as any).fabricCanvas) {
-      toast.error("No canvas found for emergency fix");
-      return false;
-    }
-    
-    const canvas = (window as any).fabricCanvas;
-    const result = forceGridCreationAndVisibility(canvas);
-    
-    if (result) {
-      toast.success("Grid fixed successfully!");
+  (window as any).fixGrid = function() {
+    if ((window as any).fabricCanvas) {
+      const canvas = (window as any).fabricCanvas;
+      console.log('Fixing grid with emergency utility...');
+      const gridObjects = forceGridCreationAndVisibility(canvas);
+      console.log(`Emergency grid fix: created/fixed ${gridObjects.length} grid objects`);
+      toast.success(`Grid fixed with ${gridObjects.length} objects`);
+      return gridObjects;
     } else {
-      toast.error("Failed to fix grid");
+      console.error('No fabric canvas found on window');
+      toast.error('No fabric canvas found');
+      return [];
     }
-    
-    return result;
-  };
-  
-  // Also expose grid diagnostics
-  (window as any).diagnoseGrid = () => {
-    if (!(window as any).fabricCanvas) {
-      console.error("No canvas found for diagnostics");
-      return null;
-    }
-    
-    const canvas = (window as any).fabricCanvas;
-    const diagnostics = diagnoseGridState(canvas);
-    console.log("Grid diagnostics:", diagnostics);
-    return diagnostics;
   };
 }
