@@ -47,7 +47,7 @@ export function useThrottledCanvasUpdate<T extends (...args: any[]) => any>(
     debounce((...args: Parameters<T>) => {
       updateFnRef.current(...args);
     }, debounceMs),
-    [debounceMs, immediate]
+    [debounceMs]
   );
   
   // Hybrid function that uses both throttling and debouncing
