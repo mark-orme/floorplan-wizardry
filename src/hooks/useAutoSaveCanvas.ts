@@ -77,8 +77,8 @@ export const useAutoSaveCanvas = ({
     }
   }, [canvas, setSavedCanvas, setSavedTimestamp, onSave]);
   
-  // Debounced save function
-  const debouncedSave = useRef(debounce(saveCanvas, debounceMs));
+  // Debounced save function - Fix: Create the debounced function without passing arguments
+  const debouncedSave = useRef(debounce(() => saveCanvas(), debounceMs));
   
   // Restore canvas state
   const restoreCanvas = useCallback(() => {
@@ -153,7 +153,7 @@ export const useAutoSaveCanvas = ({
         });
       }
     };
-  }, [canvas, debouncedSave]);
+  }, [canvas]);
   
   return {
     isSaving,
