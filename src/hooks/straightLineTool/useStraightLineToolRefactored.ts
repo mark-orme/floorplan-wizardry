@@ -36,6 +36,19 @@ interface MeasurementData {
 }
 
 /**
+ * Custom interface for Fabric Line with data property
+ */
+interface CustomFabricLine extends Line {
+  data?: {
+    type?: string;
+    createdAt?: string;
+    length?: number;
+    completed?: boolean;
+    [key: string]: any;
+  };
+}
+
+/**
  * Props for the useStraightLineToolRefactored hook
  * @interface UseStraightLineToolRefactoredProps
  */
@@ -94,7 +107,7 @@ interface UseStraightLineToolRefactoredResult {
   /** Reference to the start point of the line */
   startPointRef: React.MutableRefObject<Point | null>;
   /** Reference to the current line object */
-  currentLineRef: React.MutableRefObject<Line | null>;
+  currentLineRef: React.MutableRefObject<CustomFabricLine | null>;
   /** Whether the tool has been fully initialized */
   isToolInitialized: boolean;
 }
@@ -163,7 +176,7 @@ export const useStraightLineToolRefactored = ({
   
   // References
   const startPointRef = useRef<Point | null>(null);
-  const currentLineRef = useRef<Line | null>(null);
+  const currentLineRef = useRef<CustomFabricLine | null>(null);
   const distanceTooltipRef = useRef<Text | null>(null);
   const isActive = tool === DrawingMode.STRAIGHT_LINE;
   
@@ -310,18 +323,20 @@ export const useStraightLineToolRefactored = ({
       
       logger.info(`Starting line at point: x=${snappedPoint.x}, y=${snappedPoint.y}`);
       
-      // Create the line object
+      // Create the line object with proper type casting
       const line = new Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
         stroke: lineColor,
         strokeWidth: lineThickness,
         selectable: true,
         strokeLineCap: 'round',
-        evented: true,
-        data: {
-          type: 'straight-line',
-          createdAt: new Date().toISOString()
-        }
-      } as any);
+        evented: true
+      }) as CustomFabricLine;
+      
+      // Set data property after creation
+      line.data = {
+        type: 'straight-line',
+        createdAt: new Date().toISOString()
+      };
       
       canvas.add(line);
       currentLineRef.current = line;
@@ -467,13 +482,12 @@ export const useStraightLineToolRefactored = ({
         const distance = calculateDistance(start, end);
         if (distance > 1) {
           // Add final data to the line
-          currentLineRef.current.set({
-            data: {
-              ...(currentLineRef.current.data || {}),
-              length: distance,
-              completed: true
-            }
-          } as any);
+          if (!currentLineRef.current.data) {
+            currentLineRef.current.data = {};
+          }
+          
+          currentLineRef.current.data.length = distance;
+          currentLineRef.current.data.completed = true;
         
           // Save current state to undo history
           saveCurrentState();
