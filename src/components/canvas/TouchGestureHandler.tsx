@@ -1,62 +1,48 @@
 
-/**
- * Touch gesture handler component for fabric canvas
- * Optimizes touch and Apple Pencil interactions
- */
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useApplePencilSupport } from '@/hooks/straightLineTool/useApplePencilSupport';
-import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import { useApplePencilSupport } from '@/hooks/canvas/useApplePencilSupport';
 import { toast } from 'sonner';
 
 interface TouchGestureHandlerProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas: FabricCanvas | null;
   lineThickness?: number;
 }
 
-// Define custom Touch interface with timestamp
-interface EnhancedTouch extends Touch {
-  timestamp?: number;
-}
-
 export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({ 
-  fabricCanvasRef, 
+  canvas, 
   lineThickness = 2 
 }) => {
-  const lastTouchRef = useRef<EnhancedTouch | null>(null);
-  const lastPencilTimestampRef = useRef<number>(0);
-  const { reportDrawingError } = useDrawingErrorReporting();
+  const lastTouchRef = useRef<Touch | null>(null);
   const [isPencilActive, setIsPencilActive] = useState(false);
   
   // Use Apple Pencil support hook
   const { 
-    isPencilMode, 
     isApplePencil,
     processPencilTouchEvent,
     snapPencilPointToGrid 
   } = useApplePencilSupport({
-    fabricCanvasRef,
+    canvas,
     lineThickness
   });
   
   // Set up touch gesture handling
   useEffect(() => {
-    if (!fabricCanvasRef.current) return;
+    if (!canvas) return;
     
-    const canvas = fabricCanvasRef.current;
     const canvasElement = canvas.getElement();
     
     // Handle gesture events to prevent unwanted behaviors
     const preventPinchZoom = (e: TouchEvent) => {
-      // Only prevent if we're in drawing mode to allow pinch-zoom in view mode
-      if (canvas.isDrawingMode || isPencilMode) {
+      // Only prevent if we're in drawing mode
+      if (canvas.isDrawingMode) {
         if (e.touches.length > 1) {
           e.preventDefault();
         }
       }
     };
     
-    // Handle palm rejection for Apple Pencil with improved logic
+    // Handle palm rejection for Apple Pencil
     const handleTouchStart = (e: TouchEvent) => {
       try {
         // Process the event to detect Apple Pencil
@@ -65,37 +51,18 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
         // Update state based on detection
         setIsPencilActive(pencilData.isApplePencil);
         
-        // Track time for enhanced palm rejection
-        const currentTime = Date.now();
-        
-        // Enhanced palm rejection logic
-        if (isPencilMode || pencilData.isApplePencil) {
-          // If this is a pencil touch, store it for palm rejection
-          if (pencilData.isApplePencil) {
-            const touch = e.touches[0] as EnhancedTouch;
-            touch.timestamp = currentTime;
-            lastTouchRef.current = touch;
-            lastPencilTimestampRef.current = currentTime;
-            
-            // Allow apple pencil interaction
-            return;
-          } 
-          // If we have a recent pencil touch, reject finger touches to prevent palm interference
-          else if (currentTime - lastPencilTimestampRef.current < 2000) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
+        // Store touch for palm rejection
+        if (pencilData.isApplePencil && e.touches[0]) {
+          lastTouchRef.current = e.touches[0];
         }
       } catch (error) {
-        reportDrawingError(error, 'touch-gesture-handler', {
-          interaction: { type: 'touch' }
-        });
+        console.error('Error in touch handler:', error);
       }
     };
     
     // Improve pencil precision by snapping to grid
     const handlePencilMove = (e: TouchEvent) => {
-      if (!isPencilMode && !isApplePencil) return;
+      if (!isApplePencil) return;
       
       try {
         // Process touch to confirm it's a pencil
@@ -104,85 +71,49 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
         if (pencilData.isApplePencil && e.touches && e.touches[0]) {
           const touch = e.touches[0];
           
-          // Get canvas-relative position
-          const rect = canvasElement.getBoundingClientRect();
-          const x = touch.clientX - rect.left;
-          const y = touch.clientY - rect.top;
-          
-          // Convert to canvas coordinates
+          // Get position
           const point = canvas.getPointer({ clientX: touch.clientX, clientY: touch.clientY } as any);
           
           // Snap to grid if needed
           const snappedPoint = snapPencilPointToGrid(point);
           
           // Store for palm rejection
-          lastPencilTimestampRef.current = Date.now();
+          lastTouchRef.current = touch;
         }
       } catch (error) {
-        // Silent error handling to not disturb drawing
+        // Silent handling to not disturb drawing
         console.error('Error in pencil move handler:', error);
       }
     };
     
-    // Disable iOS-specific gestures when in drawing mode
-    const preventIOSGestures = () => {
-      // Check if running on iOS
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      
-      if (isIOS) {
-        // Add meta viewport to disable scaling if not already present
-        let viewport = document.querySelector('meta[name="viewport"]');
-        const viewportContent = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-        
-        if (!viewport) {
-          viewport = document.createElement('meta');
-          viewport.setAttribute('name', 'viewport');
-          document.head.appendChild(viewport);
-        }
-        
-        // Store original content to restore later
-        const originalContent = viewport.getAttribute('content') || '';
-        viewport.setAttribute('content', viewportContent);
-        
-        // Disable elastic scrolling
-        document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.height = '100%';
-        document.body.style.width = '100%';
-        
-        // Display Apple Pencil guidance once
-        const hasShownPencilGuidance = localStorage.getItem('shownPencilGuidance');
-        if (isIOS && !hasShownPencilGuidance) {
-          toast.info("Using Apple Pencil? Press G to toggle grid snapping", {
-            duration: 4000,
-            id: "apple-pencil-guide"
-          });
-          localStorage.setItem('shownPencilGuidance', 'true');
-        }
-        
-        return () => {
-          // Restore original settings
-          viewport?.setAttribute('content', originalContent);
-          document.body.style.overflow = '';
-          document.body.style.position = '';
-          document.body.style.height = '';
-          document.body.style.width = '';
-        };
-      }
-      
-      return () => {}; // No-op for non-iOS
-    };
-    
-    // Set up event listeners for touch handling
+    // Set up event listeners
     canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvasElement.addEventListener('touchmove', handlePencilMove, { passive: true });
     canvasElement.addEventListener('touchmove', preventPinchZoom, { passive: false });
     canvasElement.addEventListener('gesturestart', preventPinchZoom, { passive: false });
     canvasElement.addEventListener('gesturechange', preventPinchZoom, { passive: false });
     
-    // Handle iOS-specific settings
-    const cleanupIOSSettings = preventIOSGestures();
+    // iOS-specific fixes
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      // Add meta viewport to disable scaling
+      let viewport = document.querySelector('meta[name="viewport"]');
+      if (!viewport) {
+        viewport = document.createElement('meta');
+        viewport.setAttribute('name', 'viewport');
+        document.head.appendChild(viewport);
+      }
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      
+      // Display guidance once
+      const hasShownPencilGuidance = localStorage.getItem('shownPencilGuidance');
+      if (!hasShownPencilGuidance) {
+        toast.info("Using Apple Pencil? Press lightly for thinner lines, firmly for thicker lines", {
+          duration: 5000,
+          id: "apple-pencil-guide"
+        });
+        localStorage.setItem('shownPencilGuidance', 'true');
+      }
+    }
     
     return () => {
       canvasElement.removeEventListener('touchstart', handleTouchStart);
@@ -190,11 +121,8 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
       canvasElement.removeEventListener('touchmove', preventPinchZoom);
       canvasElement.removeEventListener('gesturestart', preventPinchZoom);
       canvasElement.removeEventListener('gesturechange', preventPinchZoom);
-      
-      // Clean up iOS-specific settings
-      cleanupIOSSettings();
     };
-  }, [fabricCanvasRef, isPencilMode, isApplePencil, processPencilTouchEvent, reportDrawingError, snapPencilPointToGrid]);
+  }, [canvas, isApplePencil, processPencilTouchEvent, snapPencilPointToGrid]);
   
   // Visual indicator when pencil is active
   if (isPencilActive) {
@@ -205,6 +133,6 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
     );
   }
   
-  // This is a non-visual component that just manages event handlers
+  // No visual output when not active
   return null;
 };

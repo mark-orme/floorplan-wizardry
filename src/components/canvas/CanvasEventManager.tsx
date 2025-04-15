@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
