@@ -7,6 +7,7 @@
 import React from 'react';
 import { Point } from '@/types/core/Point';
 import { PIXELS_PER_METER, DISTANCE_PRECISION, STANDARD_ANGLES } from '@/constants/numerics';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MeasurementTooltipProps {
   /** Start point of measurement */
@@ -112,20 +113,25 @@ export const MeasurementTooltip: React.FC<MeasurementTooltipProps> = ({
         <div className="flex items-center gap-2">
           <span className="font-bold">{formattedDistance}</span>
           {showAngle && (
-            <span className={nearestStandardAngle !== null ? "text-green-600 font-bold" : ""}>
+            <span className={nearestStandardAngle !== null ? "text-green-600" : "text-gray-600"}>
               {formattedAngle}
+              {nearestStandardAngle !== null && (
+                <span className="ml-1 text-[8px] bg-green-100 px-1 rounded">
+                  ≈{nearestStandardAngle}°
+                </span>
+              )}
             </span>
           )}
         </div>
         
         {showGridPosition && (
-          <div className="text-gray-500 text-[10px]">
-            ({(endPoint.x / PIXELS_PER_METER).toFixed(1)}m, {(endPoint.y / PIXELS_PER_METER).toFixed(1)}m)
+          <div className="text-[9px] text-gray-500 mt-0.5">
+            ({(startPoint.x / PIXELS_PER_METER).toFixed(1)},{(startPoint.y / PIXELS_PER_METER).toFixed(1)}) 
+            → 
+            ({(endPoint.x / PIXELS_PER_METER).toFixed(1)},{(endPoint.y / PIXELS_PER_METER).toFixed(1)})
           </div>
         )}
       </div>
     </div>
   );
 };
-
-export default MeasurementTooltip;

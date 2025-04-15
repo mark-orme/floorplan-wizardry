@@ -1,59 +1,135 @@
 
 /**
- * Hook for keyboard shortcuts specific to the straight line tool
+ * Hook for handling keyboard shortcuts related to line drawing
+ * @module hooks/straightLineTool/useLineKeyboardShortcuts
  */
 import { useCallback, useEffect } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
+import { toast } from 'sonner';
+import * as Sentry from '@sentry/react';
 
 interface UseLineKeyboardShortcutsProps {
   isActive: boolean;
   isDrawing: boolean;
-  cancelDrawing: () => boolean;
-  toggleGridSnapping: () => boolean;
+  cancelDrawing: () => void;
+  toggleGridSnapping: () => void;
+  toggleAngles?: () => void;
+  toggleStraightening?: () => void;
   tool: DrawingMode;
 }
 
-/**
- * Hook for keyboard shortcuts specific to the line tool
- */
 export const useLineKeyboardShortcuts = ({
   isActive,
   isDrawing,
   cancelDrawing,
   toggleGridSnapping,
+  toggleAngles,
+  toggleStraightening,
   tool
 }: UseLineKeyboardShortcutsProps) => {
-  // Handle keyboard events - primarily for ESC to cancel and G for grid snapping
+
+  // Handle keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Only process shortcuts when tool is active
     if (!isActive) return;
     
-    // Cancel drawing on Escape key
-    if (e.key === 'Escape') {
-      if (isDrawing) {
-        const cancelled = cancelDrawing();
-        if (cancelled) {
-          console.log('Drawing cancelled via keyboard shortcut');
+    try {
+      // Cancel drawing with Escape key
+      if (e.key === 'Escape') {
+        if (isDrawing) {
+          cancelDrawing();
+          toast.info('Drawing cancelled', { id: 'drawing-cancelled' });
+          
+          // Log to Sentry
+          Sentry.addBreadcrumb({
+            category: 'user-action',
+            message: 'Line drawing cancelled with Escape key',
+            level: 'info'
+          });
         }
       }
+      
+      // Toggle grid snapping with G key
+      if (e.key === 'g' || e.key === 'G') {
+        if (!e.repeat) { // Avoid repeat events when key is held down
+          toggleGridSnapping();
+          
+          // Log to Sentry
+          Sentry.addBreadcrumb({
+            category: 'user-action',
+            message: 'Grid snapping toggled with G key',
+            level: 'info'
+          });
+        }
+      }
+      
+      // Toggle angle snapping with A key
+      if ((e.key === 'a' || e.key === 'A') && toggleAngles) {
+        if (!e.repeat) { // Avoid repeat events when key is held down
+          toggleAngles();
+          
+          // Log to Sentry
+          Sentry.addBreadcrumb({
+            category: 'user-action',
+            message: 'Angle snapping toggled with A key',
+            level: 'info'
+          });
+        }
+      }
+      
+      // Toggle line straightening with S key
+      if ((e.key === 's' || e.key === 'S') && toggleStraightening) {
+        if (!e.repeat) { // Avoid repeat events when key is held down
+          toggleStraightening();
+          
+          // Log to Sentry
+          Sentry.addBreadcrumb({
+            category: 'user-action',
+            message: 'Line straightening toggled with S key',
+            level: 'info'
+          });
+        }
+      }
+    } catch (error) {
+      // Log error to Sentry
+      Sentry.captureException(error);
+      console.error('Error handling keyboard shortcut:', error);
     }
-    
-    // Toggle grid snapping on G key
-    if (e.key === 'g' || e.key === 'G') {
-      const isEnabled = toggleGridSnapping();
-      console.log(`Grid snapping ${isEnabled ? 'enabled' : 'disabled'} via keyboard shortcut`);
-    }
-  }, [isActive, isDrawing, cancelDrawing, toggleGridSnapping]);
+  }, [
+    isActive, 
+    isDrawing, 
+    cancelDrawing, 
+    toggleGridSnapping, 
+    toggleAngles,
+    toggleStraightening
+  ]);
   
-  // Add and remove keyboard event listener
+  // Set up and clean up keyboard event listeners
   useEffect(() => {
     if (isActive) {
       window.addEventListener('keydown', handleKeyDown);
       
+      // Log to Sentry that shortcuts are active
+      Sentry.addBreadcrumb({
+        category: 'component-lifecycle',
+        message: `Line drawing keyboard shortcuts activated for tool: ${tool}`,
+        level: 'info'
+      });
+      
       return () => {
         window.removeEventListener('keydown', handleKeyDown);
+        
+        // Log to Sentry that shortcuts are deactivated
+        Sentry.addBreadcrumb({
+          category: 'component-lifecycle',
+          message: `Line drawing keyboard shortcuts deactivated for tool: ${tool}`,
+          level: 'info'
+        });
       };
     }
-  }, [isActive, handleKeyDown]);
+  }, [isActive, handleKeyDown, tool]);
   
-  return { handleKeyDown };
+  return {
+    handleKeyDown
+  };
 };
