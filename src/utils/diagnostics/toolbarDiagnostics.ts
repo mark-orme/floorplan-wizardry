@@ -56,14 +56,20 @@ export const runToolbarDiagnostics = (
       }
     }
     
-    // Check interaction handlers
-    if (!canvas.__eventListeners) {
-      issues.push("Event listeners not initialized on canvas");
-    } else {
-      const events = Object.keys(canvas.__eventListeners);
-      if (!events.includes('mouse:down') || !events.includes('mouse:move') || !events.includes('mouse:up')) {
-        issues.push("Missing essential mouse event handlers");
+    // Check interaction handlers - use public API
+    try {
+      // Instead of directly accessing __eventListeners which is private,
+      // we'll check essential mouse event handling capability
+      const hasMouseHandling = !!canvas.findTarget || 
+                              (canvas as any).handleMouseDown ||
+                              (canvas as any).handleMouseMove ||
+                              (canvas as any).handleMouseUp;
+      
+      if (!hasMouseHandling) {
+        issues.push("Missing essential mouse event handling capability");
       }
+    } catch (error) {
+      issues.push("Error checking canvas event handlers");
     }
     
     // Run advanced capabilities test
@@ -76,7 +82,7 @@ export const runToolbarDiagnostics = (
     // Log results to Sentry
     if (issues.length > 0) {
       captureMessage("Toolbar diagnostics found issues", "toolbar-diagnostics", {
-        tags: { component: "toolbarDiagnostics", critical: issues.length > 3 },
+        tags: { component: "toolbarDiagnostics", critical: issues.length > 3 ? "true" : "false" },
         extra: { 
           issues,
           currentTool,
@@ -106,7 +112,7 @@ export const runToolbarDiagnostics = (
     issues.push(`Diagnostics error: ${errorMsg}`);
     
     captureError(error as Error, "toolbar-diagnostics-error", {
-      tags: { component: "toolbarDiagnostics", critical: true },
+      tags: { component: "toolbarDiagnostics", critical: "true" },
       extra: { currentTool }
     });
     

@@ -161,7 +161,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
           const lastCommand = pathData[pathData.length - 1];
           
           if (firstCommand[0] === 'M' && 
-             (lastCommand[0] === 'z' || lastCommand[0] === 'Z' || 
+             (lastCommand[0] === 'Z' || 
              (lastCommand[0] === 'L' && lastCommand[1] === firstCommand[1] && lastCommand[2] === firstCommand[2]))) {
             isClosed = true;
           }

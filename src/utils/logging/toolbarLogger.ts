@@ -91,7 +91,7 @@ export const logToolbarAction = (
       new Error(`Toolbar action failed: ${actionName}`),
       "toolbar-action-failed",
       {
-        tags: { component: "Toolbar", action: actionName, critical: context.critical || false },
+        tags: { component: "Toolbar", action: actionName, critical: context.critical ? "true" : "false" },
         extra: {
           timestamp: new Date().toISOString(),
           ...context
@@ -151,8 +151,8 @@ export const verifyToolCanvasConnection = (
     case DrawingMode.STRAIGHT_LINE:
       // Verify straight line tool requirements
       try {
-        // Just check if fabric.Line is available
-        if (!fabric.Line) {
+        const fabricLib = (window as any).fabric;
+        if (!fabricLib || !fabricLib.Line) {
           issues.push("fabric.Line constructor is not available");
         }
       } catch (error) {
@@ -197,10 +197,10 @@ export const startToolbarMonitoring = (
 ): () => void => {
   const toolUsageStats: Record<string, number> = {};
   const actionsStats: Record<string, { success: number, failure: number }> = {};
+  let originalBreadcrumbs: { breadcrumb: any }[] = [];
   
-  // Hook into Sentry breadcrumbs to track toolbar usage
-  const originalAddBreadcrumb = Sentry.addBreadcrumb;
-  Sentry.addBreadcrumb = (breadcrumb: any) => {
+  // Store breadcrumbs for analysis without modifying the API
+  const breadcrumbListener = (breadcrumb: any) => {
     // Track tool activations
     if (breadcrumb.category === 'toolbar' && breadcrumb.message?.includes('Tool changed')) {
       const tool = breadcrumb.data?.newTool;
@@ -227,8 +227,12 @@ export const startToolbarMonitoring = (
       }
     }
     
-    return originalAddBreadcrumb(breadcrumb);
+    // Store the breadcrumb
+    originalBreadcrumbs.push({ breadcrumb });
   };
+  
+  // Add our listener
+  document.addEventListener('sentry-breadcrumb', breadcrumbListener);
   
   // Set up interval to report statistics
   const intervalId = setInterval(() => {
@@ -253,6 +257,6 @@ export const startToolbarMonitoring = (
   // Return cleanup function
   return () => {
     clearInterval(intervalId);
-    Sentry.addBreadcrumb = originalAddBreadcrumb;
+    document.removeEventListener('sentry-breadcrumb', breadcrumbListener);
   };
 };

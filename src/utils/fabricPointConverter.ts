@@ -66,7 +66,13 @@ export const testStraightLineDrawing = (canvas: any): void => {
   
   try {
     // Test if the canvas can create and add a line
-    const testLine = new fabric.Line([50, 50, 200, 200], {
+    if (!(window as any).fabric || !(window as any).fabric.Line) {
+      console.error("fabric.Line not available");
+      return;
+    }
+    
+    const fabricLib = (window as any).fabric;
+    const testLine = new fabricLib.Line([50, 50, 200, 200], {
       stroke: 'red',
       strokeWidth: 5
     });
@@ -83,10 +89,7 @@ export const testStraightLineDrawing = (canvas: any): void => {
       console.log("Test line removed");
     }, 1000);
     
-    // Return test result
-    return { success: true, message: "Line test successful" };
   } catch (error) {
     console.error("Failed to test straight line:", error);
-    return { success: false, message: "Line test failed", error };
   }
 };
