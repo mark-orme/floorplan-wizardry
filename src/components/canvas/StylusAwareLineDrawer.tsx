@@ -90,7 +90,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   
   // Update tooltip position when drawing
   useEffect(() => {
-    if (isDrawing && startPointRef.current && currentLineRef.current) {
+    if (isDrawing && startPointRef && startPointRef.current && currentLineRef && currentLineRef.current) {
       const points = currentLineRef.current.calcLinePoints();
       if (points) {
         const start = { x: points.x1, y: points.y1 };
@@ -100,7 +100,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     } else if (!isDrawing) {
       setActiveTooltip(null);
     }
-  }, [isDrawing, currentLineRef.current]);
+  }, [isDrawing, currentLineRef, startPointRef]);
   
   // Monitor shift key state for angle constraints
   useEffect(() => {

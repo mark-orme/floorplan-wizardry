@@ -143,13 +143,23 @@ export const useLineState = ({
       return snapPencilPointToGrid(point);
     }
     
+    // If custom snap function is provided, use it
+    if (snapPointToGrid) {
+      return snapPointToGrid(point);
+    }
+    
     // Use enhanced precision snapping by default
     return snapPointToGridPrecise(point);
-  }, [snapEnabled, isPencilMode, snapPencilPointToGrid]);
+  }, [snapEnabled, isPencilMode, snapPencilPointToGrid, snapPointToGrid]);
   
   // Function to snap line to grid
   const handleSnapLineToGrid = useCallback((start: Point, end: Point) => {
     if (!snapEnabled) return { start: { ...start }, end: { ...end } };
+    
+    // If custom snap function is provided, use it
+    if (snapLineToGrid) {
+      return snapLineToGrid(start, end);
+    }
     
     // Get basic grid-snapped points
     const gridSnapped = snapLineToPreciseGrid(start, end);
@@ -163,7 +173,7 @@ export const useLineState = ({
     }
     
     return gridSnapped;
-  }, [snapEnabled, anglesEnabled]);
+  }, [snapEnabled, anglesEnabled, snapLineToGrid]);
   
   // Calculate and update measurement data
   const updateMeasurementData = useCallback((start: Point, end: Point) => {

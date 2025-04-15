@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for straight line drawing tool with enhanced features
  * @module hooks/straightLineTool/useStraightLineTool
@@ -50,6 +51,8 @@ export const useStraightLineTool = ({
   const [isActive, setIsActive] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
   const [currentLine, setCurrentLineState] = useState<Line | null>(null);
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
+  const [measurementData, setMeasurementData] = useState<any>(null);
   
   // Set Sentry context for the hook
   useEffect(() => {
@@ -101,7 +104,8 @@ export const useStraightLineTool = ({
     isToolInitialized: isLineStateInitialized,
     setIsToolInitialized: setLineStateToolInitialized,
     snapPointToGrid: lineStateSnapPointToGrid,
-    snapLineToGrid: lineStateSnapLineToGrid
+    snapLineToGrid: lineStateSnapLineToGrid,
+    updateMeasurementData
   } = useLineState({
     fabricCanvasRef,
     snapPointToGrid,
@@ -149,6 +153,16 @@ export const useStraightLineTool = ({
     return snapLineToGrid(processedPoints.start, processedPoints.end);
   }, [snapLineToGrid, useShiftConstraint]);
   
+  // Toggle angle constraints
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+    
+    // Show feedback to user
+    toast.info(!anglesEnabled ? 'Angle snapping enabled' : 'Angle snapping disabled', {
+      id: 'angle-snap-toggle'
+    });
+  }, [anglesEnabled]);
+  
   // Initialize line tool handlers with shift constraint support
   const { handlePointerDown, handlePointerMove, handlePointerUp } = useLineToolHandlers({
     fabricCanvasRef,
@@ -165,7 +179,7 @@ export const useStraightLineTool = ({
     onChange,
     lineColor,
     lineThickness,
-    snapToAngle: false,
+    snapToAngle: anglesEnabled,
     snapAngleDeg: 45,
     snapEnabled,
     snapLineToGrid: enhancedSnapLineToGrid,
@@ -180,6 +194,11 @@ export const useStraightLineTool = ({
           message,
           data: data
         });
+      }
+      
+      // Update measurement data
+      if (eventType === 'line-move' && data.start && data.end) {
+        updateMeasurementData(data.start, data.end);
       }
     }
   });
@@ -224,11 +243,16 @@ export const useStraightLineTool = ({
     inputMethod,
     isPencilMode,
     snapEnabled,
+    anglesEnabled,
+    measurementData,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
     cancelDrawing,
     toggleGridSnapping,
-    currentLine: currentLineRef.current
+    toggleAngles,
+    currentLine: currentLineRef.current,
+    startPointRef,
+    currentLineRef
   };
 };
