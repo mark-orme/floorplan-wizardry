@@ -1,61 +1,48 @@
 
 /**
- * Drawing Tool type definitions
- * Defines the central type for drawing tools across the application
+ * Drawing tool type definitions
  * @module types/core/DrawingTool
  */
-
-import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingMode } from "@/constants/drawingModes";
 
 /**
- * DrawingTool type
- * Uses DrawingMode enum for consistency and type safety
+ * DrawingTool type alias for DrawingMode
+ * Represents the current drawing tool
  */
 export type DrawingTool = DrawingMode;
 
 /**
- * Validates if a value is a valid DrawingTool
- * 
- * @param {unknown} value - Value to validate
- * @returns {boolean} Whether the value is a valid DrawingTool
+ * Tool operation interface
+ * Represents a drawing tool operation
  */
-export function isValidDrawingTool(value: unknown): value is DrawingTool {
-  if (typeof value !== 'string') return false;
-  return Object.values(DrawingMode).includes(value as DrawingMode);
+export interface ToolOperation {
+  /** Tool identifier */
+  tool: DrawingTool;
+  /** Start drawing at a point */
+  startDrawing: (x: number, y: number) => void;
+  /** Continue drawing to a point */
+  continueDrawing: (x: number, y: number) => void;
+  /** End drawing at a point */
+  endDrawing: (x: number, y: number) => void;
+  /** Cancel the current drawing */
+  cancelDrawing: () => void;
 }
 
 /**
- * Gets a display name for a drawing tool
- * 
- * @param {DrawingTool} tool - Tool to get display name for
- * @returns {string} Display name for the tool
+ * Tool configuration interface
+ * Represents configuration options for a drawing tool
  */
-export function getToolDisplayName(tool: DrawingTool): string {
-  const toolString = String(tool);
-  return toolString
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
-/**
- * Parses a string into a DrawingTool
- * 
- * @param {string} value - String to parse
- * @returns {DrawingTool} Parsed DrawingTool, or SELECT if invalid
- */
-export function parseDrawingTool(value: string): DrawingTool {
-  if (isValidDrawingTool(value)) {
-    return value;
-  }
-  return DrawingMode.SELECT; // Default to SELECT
-}
-
-/**
- * Gets the default drawing tool
- * 
- * @returns {DrawingTool} Default drawing tool (SELECT)
- */
-export function getDefaultDrawingTool(): DrawingTool {
-  return DrawingMode.SELECT;
+export interface ToolConfig {
+  /** Line color */
+  lineColor: string;
+  /** Line thickness */
+  lineThickness: number;
+  /** Fill color (for shapes) */
+  fillColor?: string;
+  /** Whether shape is filled */
+  filled?: boolean;
+  /** Whether snapping to grid is enabled */
+  snapToGrid?: boolean;
+  /** Whether straightening is enabled */
+  straighten?: boolean;
 }

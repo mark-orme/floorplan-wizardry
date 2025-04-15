@@ -1,219 +1,182 @@
 
 /**
- * Hook for managing line drawing state
+ * Hook for managing straight line drawing state
  * @module hooks/straightLineTool/useLineState
  */
-import { useCallback, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { useApplePencilSupport } from './useApplePencilSupport';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { toast } from 'sonner';
-import { 
-  snapPointToGridPrecise, 
-  snapLineToPreciseGrid, 
-  snapLineToStandardAngles,
-  formatMeasurementData
-} from '@/utils/grid/enhancedSnapping';
-
-// Input method for drawing - changed to include all possible values
-export type InputMethod = 'mouse' | 'touch' | 'pencil' | 'stylus' | 'keyboard';
+import { useCallback, useRef, useState } from "react";
+import { Object as FabricObject, Line, Text } from "fabric";
+import { Point } from "@/types/core/Geometry";
+import { calculateDistance } from "@/utils/geometry/lineOperations";
+import logger from "@/utils/logger";
 
 interface UseLineStateProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  lineThickness?: number;
-  lineColor?: string;
-  snapPointToGrid?: (point: Point) => Point;
-  snapLineToGrid?: (start: Point, end: Point) => { start: Point, end: Point };
-  isToolActive?: boolean;
+  lineColor: string;
+  lineThickness: number;
 }
 
-export const useLineState = ({
-  fabricCanvasRef,
-  lineThickness,
-  lineColor,
-  snapPointToGrid,
-  snapLineToGrid,
-  isToolActive
-}: UseLineStateProps) => {
-  // State for drawing
+export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) => {
+  // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
-  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
-  const [snapEnabled, setSnapEnabled] = useState(true);
-  const [anglesEnabled, setAnglesEnabled] = useState(true);
-  const [measurementData, setMeasurementData] = useState<any>(null);
   
-  // Refs for current drawing objects
+  // Refs for persistent state
   const startPointRef = useRef<Point | null>(null);
-  const currentLineRef = useRef<Line | null>(null);
-  const distanceTooltipRef = useRef<HTMLDivElement | null>(null);
+  const currentLineRef = useRef<FabricObject | null>(null);
+  const distanceTooltipRef = useRef<FabricObject | null>(null);
   
-  // Use Apple Pencil support
-  const { 
-    isPencilMode, 
-    isApplePencil, 
-    snapPencilPointToGrid 
-  } = useApplePencilSupport({
-    fabricCanvasRef,
-    lineThickness: lineThickness || 2
-  });
+  // Grid and snapping state
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const snapGridSizeRef = useRef(20); // Default grid size
   
-  // Function to set start point
-  const setStartPoint = useCallback((point: Point | null) => {
+  /**
+   * Set the start point for the line
+   */
+  const setStartPoint = useCallback((point: Point) => {
     startPointRef.current = point;
   }, []);
   
-  // Function to set current line
-  const setCurrentLine = useCallback((line: Line | null) => {
+  /**
+   * Set the current line object
+   */
+  const setCurrentLine = useCallback((line: FabricObject | null) => {
     currentLineRef.current = line;
   }, []);
   
-  // Function to set distance tooltip
-  const setDistanceTooltip = useCallback((tooltip: HTMLDivElement | null) => {
+  /**
+   * Set the distance tooltip object
+   */
+  const setDistanceTooltip = useCallback((tooltip: FabricObject | null) => {
     distanceTooltipRef.current = tooltip;
   }, []);
   
-  // Function to initialize the tool
-  const initializeTool = useCallback(() => {
-    setIsToolInitialized(true);
-    console.log('Line tool initialized with enhanced precision');
-    
-    // Check for touch/stylus support
-    if (navigator.maxTouchPoints > 0) {
-      setInputMethod('touch');
-      console.log('Touch input detected, optimizing for touch');
-    }
-    
-    toast.info(snapEnabled ? 'Precise grid snapping enabled (0.1m increments)' : 'Grid snapping disabled (press G to toggle)', {
-      id: 'grid-snap-status',
-      duration: 3000
+  /**
+   * Create a new line object
+   */
+  const createLine = useCallback((x1: number, y1: number, x2: number, y2: number): Line => {
+    return new Line([x1, y1, x2, y2], {
+      stroke: lineColor,
+      strokeWidth: lineThickness,
+      selectable: false,
+      evented: false,
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round'
     });
-    
-    toast.info(anglesEnabled ? 'Angle snapping enabled (press A to toggle)' : 'Angle snapping disabled (press A to toggle)', {
-      id: 'angle-snap-status',
-      duration: 3000
-    });
-  }, [snapEnabled, anglesEnabled]);
+  }, [lineColor, lineThickness]);
   
-  // Function to reset drawing state
-  const resetDrawingState = useCallback(() => {
-    // Keep start point for reference
-    currentLineRef.current = null;
-    
-    // Clean up tooltip if exists
-    if (distanceTooltipRef.current) {
-      const parent = distanceTooltipRef.current.parentElement;
-      if (parent) {
-        parent.removeChild(distanceTooltipRef.current);
-      }
-      distanceTooltipRef.current = null;
-    }
-    
-    // Reset measurement data
-    setMeasurementData(null);
+  /**
+   * Create a distance tooltip text object
+   */
+  const createDistanceTooltip = useCallback((x: number, y: number, distance: number): Text => {
+    return new Text(`${Math.round(distance)}px`, {
+      left: x,
+      top: y,
+      fontSize: 12,
+      fill: '#333333',
+      backgroundColor: 'rgba(255, 255, 255, 0.7)',
+      padding: 5,
+      selectable: false,
+      evented: false
+    });
   }, []);
   
-  // Toggle snap to grid
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
+  /**
+   * Update line and tooltip based on current points
+   */
+  const updateLineAndTooltip = useCallback((startPoint: Point, currentPoint: Point) => {
+    if (!currentLineRef.current || !distanceTooltipRef.current) return;
     
-    // Show feedback to user
-    toast.info(!snapEnabled ? 'Grid snapping enabled (0.1m increments)' : 'Grid snapping disabled', {
-      id: 'grid-snap-toggle'
+    // Update line points
+    (currentLineRef.current as Line).set({
+      x2: currentPoint.x,
+      y2: currentPoint.y
     });
+    
+    // Calculate distance for tooltip
+    const distance = calculateDistance(startPoint, currentPoint);
+    
+    // Update tooltip position and text
+    const midX = (startPoint.x + currentPoint.x) / 2;
+    const midY = (startPoint.y + currentPoint.y) / 2;
+    (distanceTooltipRef.current as Text).set({
+      left: midX,
+      top: midY - 15, // Position above the line
+      text: `${Math.round(distance)}px`
+    });
+    
+    // Update objects
+    (currentLineRef.current as Line).setCoords();
+    (distanceTooltipRef.current as Text).setCoords();
+  }, []);
+  
+  /**
+   * Initialize the tool state
+   */
+  const initializeTool = useCallback(() => {
+    setIsToolInitialized(true);
+    logger.info("Straight line tool initialized");
+  }, []);
+  
+  /**
+   * Reset the drawing state
+   */
+  const resetDrawingState = useCallback(() => {
+    setIsDrawing(false);
+    startPointRef.current = null;
+    currentLineRef.current = null;
+    distanceTooltipRef.current = null;
+    logger.info("Straight line drawing state reset");
+  }, []);
+  
+  /**
+   * Snap a point to the grid
+   */
+  const snapPointToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) return point;
+    
+    const gridSize = snapGridSizeRef.current;
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
   }, [snapEnabled]);
   
-  // Toggle angle constraints
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
+  /**
+   * Snap a line to the grid
+   */
+  const snapLineToGrid = useCallback((startPoint: Point, endPoint: Point): { start: Point, end: Point } => {
+    if (!snapEnabled) return { start: startPoint, end: endPoint };
     
-    // Show feedback to user
-    toast.info(!anglesEnabled ? 'Angle snapping enabled' : 'Angle snapping disabled', {
-      id: 'angle-snap-toggle'
-    });
-  }, [anglesEnabled]);
+    return {
+      start: snapPointToGrid(startPoint),
+      end: snapPointToGrid(endPoint)
+    };
+  }, [snapEnabled, snapPointToGrid]);
   
-  // Function to snap point to grid
-  const handleSnapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return { ...point };
-    
-    // For Apple Pencil, use specialized snap function
-    if (isPencilMode) {
-      return snapPencilPointToGrid(point);
-    }
-    
-    // If custom snap function is provided, use it
-    if (snapPointToGrid) {
-      return snapPointToGrid(point);
-    }
-    
-    // Use enhanced precision snapping by default
-    return snapPointToGridPrecise(point);
-  }, [snapEnabled, isPencilMode, snapPencilPointToGrid, snapPointToGrid]);
-  
-  // Function to snap line to grid
-  const handleSnapLineToGrid = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled) return { start: { ...start }, end: { ...end } };
-    
-    // If custom snap function is provided, use it
-    if (snapLineToGrid) {
-      return snapLineToGrid(start, end);
-    }
-    
-    // Get basic grid-snapped points
-    const gridSnapped = snapLineToPreciseGrid(start, end);
-    
-    // Add angle snapping if enabled
-    if (anglesEnabled) {
-      return {
-        start: gridSnapped.start,
-        end: snapLineToStandardAngles(gridSnapped.start, gridSnapped.end)
-      };
-    }
-    
-    return gridSnapped;
-  }, [snapEnabled, anglesEnabled, snapLineToGrid]);
-  
-  // Calculate and update measurement data
-  const updateMeasurementData = useCallback((start: Point, end: Point) => {
-    if (start && end) {
-      const data = formatMeasurementData(start, end);
-      setMeasurementData(data);
-    } else {
-      setMeasurementData(null);
-    }
+  /**
+   * Toggle grid snapping
+   */
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
   }, []);
   
   return {
-    // State
     isDrawing,
     isToolInitialized,
-    snapEnabled,
-    anglesEnabled,
-    inputMethod,
-    isPencilMode,
-    measurementData,
-    
-    // Setters
-    setIsDrawing,
-    setStartPoint,
-    setCurrentLine,
-    setDistanceTooltip,
-    setIsToolInitialized,
-    
-    // Refs
     startPointRef,
     currentLineRef,
     distanceTooltipRef,
-    
-    // Methods
+    setStartPoint,
+    setCurrentLine,
+    setDistanceTooltip,
+    setIsDrawing,
+    createLine,
+    createDistanceTooltip,
+    updateLineAndTooltip,
     initializeTool,
     resetDrawingState,
-    snapPointToGrid: handleSnapPointToGrid,
-    snapLineToGrid: handleSnapLineToGrid,
-    toggleSnap,
-    toggleAngles,
-    updateMeasurementData
+    snapEnabled,
+    snapPointToGrid,
+    snapLineToGrid,
+    toggleSnap
   };
 };

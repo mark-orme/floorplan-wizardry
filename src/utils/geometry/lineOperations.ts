@@ -1,110 +1,150 @@
 
-import { Point } from '@/types/core/Point';
-import { PIXELS_PER_METER, GRID_SPACING, DISTANCE_PRECISION } from '@/constants/numerics';
+/**
+ * Line operations utility functions
+ * @module utils/geometry/lineOperations
+ */
+
+import { Point } from '@/types/core/Geometry';
 
 /**
- * Calculate distance between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Distance in pixels
+ * Calculate the distance between two points
+ * @param {Point} point1 - First point
+ * @param {Point} point2 - Second point
+ * @returns {number} Distance in pixels
  */
-export const calculateDistance = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
+export function calculateDistance(point1: Point, point2: Point): number {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
-};
+}
 
 /**
- * Format distance for display with unit
- * @param distanceInPixels Distance in pixels
- * @returns Formatted string with unit
+ * Calculate the angle between two points in degrees
+ * @param {Point} start - Starting point
+ * @param {Point} end - Ending point
+ * @returns {number} Angle in degrees
  */
-export const formatDistance = (distanceInPixels: number): string => {
-  // Convert pixels to meters
-  const distanceInMeters = distanceInPixels / PIXELS_PER_METER;
-  
-  // Round to specified precision
-  return `${distanceInMeters.toFixed(DISTANCE_PRECISION)} m`;
-};
-
-/**
- * Calculate midpoint between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Midpoint
- */
-export const calculateMidpoint = (p1: Point, p2: Point): Point => {
-  return {
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
-  };
-};
-
-/**
- * Calculate angle between two points in degrees
- * @param p1 First point
- * @param p2 Second point
- * @returns Angle in degrees
- */
-export const calculateAngle = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
+export function calculateAngle(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
   
   // Calculate angle in radians
-  const angleRad = Math.atan2(dy, dx);
+  let angle = Math.atan2(dy, dx);
   
   // Convert to degrees
-  let angleDeg = angleRad * (180 / Math.PI);
+  angle = angle * (180 / Math.PI);
   
   // Normalize to 0-360
-  if (angleDeg < 0) {
-    angleDeg += 360;
+  if (angle < 0) {
+    angle += 360;
   }
   
-  return angleDeg;
-};
+  return angle;
+}
 
 /**
- * Check if value is an exact multiple of grid size
- * @param value Value to check
- * @param gridSize Grid size
- * @returns True if value is an exact multiple
+ * Get the midpoint between two points
+ * @param {Point} point1 - First point
+ * @param {Point} point2 - Second point
+ * @returns {Point} Midpoint
  */
-export const isExactGridMultiple = (value: number, gridSize: number = GRID_SPACING.DEFAULT): boolean => {
-  const remainder = value % gridSize;
-  return remainder < 0.001 || (gridSize - remainder) < 0.001;
-};
-
-/**
- * Check if line is aligned with grid
- * @param p1 First point
- * @param p2 Second point
- * @param gridSize Grid size
- * @returns True if line is aligned
- */
-export const isLineAlignedWithGrid = (p1: Point, p2: Point, gridSize: number = GRID_SPACING.DEFAULT): boolean => {
-  // Check if both points are on grid intersections
-  const isP1OnGrid = isExactGridMultiple(p1.x, gridSize) && isExactGridMultiple(p1.y, gridSize);
-  const isP2OnGrid = isExactGridMultiple(p2.x, gridSize) && isExactGridMultiple(p2.y, gridSize);
-  
-  return isP1OnGrid && isP2OnGrid;
-};
-
-/**
- * Snap a line to grid
- * @param line Line with start and end points
- * @param gridSize Grid size to snap to
- * @returns Snapped line
- */
-export const snapToGrid = (line: { start: Point, end: Point }, gridSize: number = GRID_SPACING.DEFAULT): { start: Point, end: Point } => {
+export function getMidpoint(point1: Point, point2: Point): Point {
   return {
-    start: {
-      x: Math.round(line.start.x / gridSize) * gridSize,
-      y: Math.round(line.start.y / gridSize) * gridSize
-    },
-    end: {
-      x: Math.round(line.end.x / gridSize) * gridSize,
-      y: Math.round(line.end.y / gridSize) * gridSize
-    }
+    x: (point1.x + point2.x) / 2,
+    y: (point1.y + point2.y) / 2
   };
-};
+}
+
+/**
+ * Check if two line segments intersect
+ * @param {Point} line1Start - First line start point
+ * @param {Point} line1End - First line end point
+ * @param {Point} line2Start - Second line start point
+ * @param {Point} line2End - Second line end point
+ * @returns {boolean} True if lines intersect
+ */
+export function doLinesIntersect(
+  line1Start: Point, 
+  line1End: Point, 
+  line2Start: Point, 
+  line2End: Point
+): boolean {
+  // Calculate line directions
+  const dir1 = {
+    x: line1End.x - line1Start.x,
+    y: line1End.y - line1Start.y
+  };
+  
+  const dir2 = {
+    x: line2End.x - line2Start.x,
+    y: line2End.y - line2Start.y
+  };
+  
+  // Calculate determinant
+  const det = dir1.x * dir2.y - dir1.y * dir2.x;
+  
+  // Lines are parallel if determinant is zero
+  if (Math.abs(det) < 0.001) return false;
+  
+  // Calculate differences
+  const d1 = {
+    x: line2Start.x - line1Start.x,
+    y: line2Start.y - line1Start.y
+  };
+  
+  // Calculate intersection parameters
+  const t1 = (d1.x * dir2.y - d1.y * dir2.x) / det;
+  const t2 = (d1.x * dir1.y - d1.y * dir1.x) / det;
+  
+  // Check if intersection occurs within line segments
+  return t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
+}
+
+/**
+ * Find the intersection point of two line segments
+ * @param {Point} line1Start - First line start point
+ * @param {Point} line1End - First line end point 
+ * @param {Point} line2Start - Second line start point
+ * @param {Point} line2End - Second line end point
+ * @returns {Point | null} Intersection point or null if no intersection
+ */
+export function findIntersectionPoint(
+  line1Start: Point,
+  line1End: Point,
+  line2Start: Point,
+  line2End: Point
+): Point | null {
+  // First check if lines intersect
+  if (!doLinesIntersect(line1Start, line1End, line2Start, line2End)) {
+    return null;
+  }
+  
+  // Calculate line directions
+  const dir1 = {
+    x: line1End.x - line1Start.x,
+    y: line1End.y - line1Start.y
+  };
+  
+  const dir2 = {
+    x: line2End.x - line2Start.x,
+    y: line2End.y - line2Start.y
+  };
+  
+  // Calculate determinant
+  const det = dir1.x * dir2.y - dir1.y * dir2.x;
+  
+  // Calculate differences
+  const d1 = {
+    x: line2Start.x - line1Start.x,
+    y: line2Start.y - line1Start.y
+  };
+  
+  // Calculate intersection parameter
+  const t1 = (d1.x * dir2.y - d1.y * dir2.x) / det;
+  
+  // Calculate intersection point
+  return {
+    x: line1Start.x + t1 * dir1.x,
+    y: line1Start.y + t1 * dir1.y
+  };
+}
