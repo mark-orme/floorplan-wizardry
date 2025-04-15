@@ -186,8 +186,7 @@ describe('useStraightLineTool', () => {
         enabled: props.enabled,
         lineColor: '#000000',
         lineThickness: 2,
-        saveCurrentState,
-        tool: props.enabled ? DrawingMode.STRAIGHT_LINE : DrawingMode.SELECT
+        saveCurrentState
       }),
       { initialProps: { enabled: true } }
     );
@@ -221,7 +220,12 @@ describe('useStraightLineTool', () => {
       setDistanceTooltip: mockSetDistanceTooltip,
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: mockSetIsDrawing
+      setIsDrawing: mockSetIsDrawing,
+      createLine: vi.fn(),
+      createDistanceTooltip: vi.fn(),
+      updateLineAndTooltip: vi.fn(),
+      snapPointToGrid: vi.fn(point => point),
+      snapLineToGrid: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
@@ -229,8 +233,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Get mouse down handler
@@ -275,8 +278,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Verify cancel drawing function is returned
@@ -330,8 +332,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Get mouse handlers

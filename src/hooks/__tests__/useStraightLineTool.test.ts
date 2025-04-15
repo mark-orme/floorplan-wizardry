@@ -185,8 +185,7 @@ describe('useStraightLineTool', () => {
         enabled: props.enabled,
         lineColor: '#000000',
         lineThickness: 2,
-        saveCurrentState,
-        tool: props.enabled ? DrawingMode.STRAIGHT_LINE : DrawingMode.SELECT
+        saveCurrentState
       }),
       { initialProps: { enabled: true } }
     );
