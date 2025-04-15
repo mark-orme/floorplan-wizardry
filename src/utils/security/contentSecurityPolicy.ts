@@ -6,44 +6,10 @@
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
 
-// Define Content Security Policy directives for production
-export const PRODUCTION_CSP_DIRECTIVES = {
-  'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
-  'style-src': ["'self'", "'unsafe-inline'"],
-  'img-src': ["'self'", "data:", "blob:"],
-  'font-src': ["'self'"],
-  'connect-src': [
-    "'self'", 
-    "https://*.supabase.co", 
-    "wss://*.lovable.dev",
-    "https://*.lovable.dev",
-    // Make sure all Sentry domains are properly included
-    "https://o4508914471927808.ingest.de.sentry.io",
-    "https://*.ingest.de.sentry.io",
-    "https://*.ingest.sentry.io",
-    "https://*.sentry.io",
-    "https://sentry.io",
-    "https://api.sentry.io",
-    "https://ingest.sentry.io",
-    // Make sure all Pusher domains are properly included
-    "wss://ws-eu.pusher.com",
-    "https://sockjs-eu.pusher.com",
-    "wss://*.pusher.com",
-    "https://*.pusher.com",
-    "https://*.lovable.app"
-  ],
-  'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
-  'object-src': ["'none'"],
-  'base-uri': ["'self'"],
-  'form-action': ["'self'"],
-  // Add explicit worker-src with 'unsafe-inline' to allow blob URLs for workers
-  'worker-src': ["'self'", "blob:", "'unsafe-inline'"],
-  'child-src': ["'self'", "blob:"],
-  'upgrade-insecure-requests': [],
-};
+// Master CSP string with all required domains - this is the source of truth
+export const MASTER_CSP_STRING = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:* http://*:* ws://*:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
 
-// Define Content Security Policy directives for development (much less restrictive)
+// Define Content Security Policy directives (kept for backward compatibility)
 export const DEVELOPMENT_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
   'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
@@ -84,33 +50,19 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'child-src': ["'self'", "blob:"],
 };
 
+// Production directives are same as development for simplicity
+export const PRODUCTION_CSP_DIRECTIVES = DEVELOPMENT_CSP_DIRECTIVES;
+
 /**
  * Build CSP string from directives
  */
 export function buildCSPString(isProduction = false): string {
-  // Always use development CSP which is less restrictive
-  const directives = DEVELOPMENT_CSP_DIRECTIVES;
-  
-  return Object.entries(directives)
-    .map(([directive, sources]) => {
-      if (sources.length === 0) return directive;
-      return `${directive} ${sources.join(' ')}`;
-    })
-    .join('; ');
+  // Always return the master CSP string for consistency
+  return MASTER_CSP_STRING;
 }
 
 /**
- * Generate a random nonce for CSP
- */
-export function generateCSPNonce(): string {
-  const array = new Uint8Array(16);
-  window.crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Apply CSP as meta tag in document head
- * Completely replaces existing CSP meta tag to ensure fresh values
+ * Apply CSP as meta tag in document head - direct approach
  */
 export function applyCSPMetaTag(isProduction = false): void {
   if (typeof document === 'undefined') return;
@@ -120,34 +72,18 @@ export function applyCSPMetaTag(isProduction = false): void {
     const existingCspTags = document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]');
     existingCspTags.forEach(tag => tag.remove());
     
-    // Generate nonce for scripts if in production
-    const nonce = isProduction ? generateCSPNonce() : '';
-    
     // Create and apply CSP meta tag
     const cspMeta = document.createElement('meta');
     cspMeta.httpEquiv = 'Content-Security-Policy';
-    
-    // Build CSP content with nonce if in production
-    let cspContent = buildCSPString(isProduction);
-    if (isProduction && nonce) {
-      cspContent = cspContent.replace('{NONCE}', nonce);
-      
-      // Store nonce on window for script tags
-      (window as any).__CSP_NONCE__ = nonce;
-    }
-    
-    cspMeta.content = cspContent;
+    cspMeta.content = MASTER_CSP_STRING;
     document.head.appendChild(cspMeta);
     
     // Add a data attribute to indicate CSP was applied
     document.documentElement.setAttribute('data-csp-applied', 'true');
+    document.documentElement.setAttribute('data-csp-timestamp', Date.now().toString());
     
     // Log the applied CSP
-    console.log('Content Security Policy applied:', cspContent);
-    logger.info('Content Security Policy applied via meta tag', {
-      mode: isProduction ? 'production' : 'development',
-      content: cspContent
-    });
+    logger.info('Content Security Policy applied via meta tag');
   } catch (error) {
     logger.error('Failed to apply CSP meta tag', { error });
   }
@@ -156,23 +92,20 @@ export function applyCSPMetaTag(isProduction = false): void {
 /**
  * Get CSP headers for server-side implementation
  */
-export function getCSPHeaders(isProduction = false): Record<string, string> {
+export function getCSPHeaders(): Record<string, string> {
   return {
-    'Content-Security-Policy': buildCSPString(isProduction),
+    'Content-Security-Policy': MASTER_CSP_STRING,
   };
 }
 
 /**
  * Initialize Content Security Policy
- * Should be called during app initialization BEFORE any Sentry initialization
+ * Should be called during app initialization
  */
 export function initializeCSP(forceRefresh = false): void {
   // Apply CSP as meta tag for client-side enforcement
   if (typeof window !== 'undefined') {
-    // Always use development CSP for now which is less restrictive
-    const isProduction = false;
-    
-    // Force application of CSP meta tag if refresh requested
+    // Force removal if requested
     if (forceRefresh) {
       const existingCspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
       if (existingCspTag) {
@@ -181,17 +114,17 @@ export function initializeCSP(forceRefresh = false): void {
       }
     }
     
-    applyCSPMetaTag(isProduction);
+    // Apply the CSP meta tag directly
+    applyCSPMetaTag();
     
     // Log successful initialization
-    logger.info('Content Security Policy initialized with Sentry domains', {
-      mode: isProduction ? 'production' : 'development',
-      allowedConnections: DEVELOPMENT_CSP_DIRECTIVES['connect-src'].join(', ')
-    });
+    logger.info('Content Security Policy initialized with Sentry domains');
   }
 }
 
-// Simple function to check if CSP is properly applied
+/**
+ * Simple function to check if CSP is properly applied
+ */
 export function checkCSPApplied(): boolean {
   if (typeof document === 'undefined') return false;
   
@@ -205,26 +138,31 @@ export function checkCSPApplied(): boolean {
          content.includes('pusher.com');
 }
 
-// Export a simple fix function that we can call anywhere to correct CSP issues
+/**
+ * Emergency fix function for Sentry CSP issues
+ */
 export function fixSentryCSP(): void {
   if (!checkCSPApplied()) {
     console.warn('CSP missing Sentry domains, forcing refresh...');
-    // Force a completely fresh application of the CSP meta tag
+    
+    // Remove existing CSP
     const existingCspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
     if (existingCspTag) {
       existingCspTag.remove();
     }
     
-    // Directly inject a meta tag with all possible domains needed
-    const cspString = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:* http://*:* ws://*:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
-    
+    // Apply the master CSP directly
     const meta = document.createElement('meta');
     meta.httpEquiv = 'Content-Security-Policy';
-    meta.content = cspString;
+    meta.content = MASTER_CSP_STRING;
     document.head.appendChild(meta);
     
+    // Set data attribute
+    document.documentElement.setAttribute('data-csp-applied', 'true');
+    document.documentElement.setAttribute('data-csp-timestamp', Date.now().toString());
+    
     // Log the emergency fix
-    console.info('Emergency CSP fix applied with content:', cspString);
+    logger.info('Emergency CSP fix applied');
     toast.info('Security policy refreshed to allow error reporting');
   }
 }
