@@ -89,7 +89,7 @@ export const useLineToolHandlers = ({
         tooltipElement.style.zIndex = '1000';
         
         document.body.appendChild(tooltipElement);
-        setDistanceTooltip(tooltipElement);
+        distanceTooltipRef.current = tooltipElement;
       }
       
       // Update tooltip content and position
@@ -123,7 +123,7 @@ export const useLineToolHandlers = ({
       });
       return null;
     }
-  }, [fabricCanvasRef, distanceTooltipRef, setDistanceTooltip, logDrawingEvent, reportDrawingError]);
+  }, [fabricCanvasRef, distanceTooltipRef, logDrawingEvent, reportDrawingError]);
 
   // Event handler for pointer down
   const handlePointerDown = useCallback((point: Point) => {
@@ -296,7 +296,7 @@ export const useLineToolHandlers = ({
         if (parent) {
           parent.removeChild(distanceTooltipRef.current);
         }
-        setDistanceTooltip(null);
+        distanceTooltipRef.current = null;
       }
       
       // Save state for undo/redo
@@ -346,8 +346,7 @@ export const useLineToolHandlers = ({
     snapLineToGrid,
     snapToAngle,
     snapAngleDeg,
-    distanceTooltipRef,
-    setDistanceTooltip
+    distanceTooltipRef
   ]);
   
   return {

@@ -432,7 +432,11 @@ export const useStraightLineTool = ({
       
       // Remove distance tooltip if it exists
       if (distanceTooltipRef.current) {
-        fabricCanvasRef.current.remove(distanceTooltipRef.current);
+        const parent = distanceTooltipRef.current.parentElement;
+        if (parent) {
+          parent.removeChild(distanceTooltipRef.current);
+        }
+        distanceTooltipRef.current = null;
       }
       
       // Reset state

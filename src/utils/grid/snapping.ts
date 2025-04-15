@@ -186,9 +186,4 @@ export const distanceToGridLine = (
   return { x: distX, y: distY };
 };
 
-/**
- * Fix import name compatibility issue
- */
-export { distanceToGridLine as distanceToGrid };
-
 // Add any other needed grid utilities here to ensure compatibility
