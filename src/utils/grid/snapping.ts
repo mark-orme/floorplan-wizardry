@@ -67,13 +67,13 @@ export const snapLineToGrid = (
  * @param start Starting point
  * @param end Ending point
  * @param snapAngleDeg Angle in degrees to snap to (default: 45)
- * @returns Object with start point and snapped end point
+ * @returns Snapped end point with the original start point
  */
 export const snapLineToStandardAngles = (
   start: Point,
   end: Point,
   snapAngleDeg: number = 45
-): { start: Point, end: Point } => {
+): Point => {
   // Calculate the angle of the line
   const dx = end.x - start.x;
   const dy = end.y - start.y;
@@ -89,14 +89,9 @@ export const snapLineToStandardAngles = (
   const radians = snappedAngle * (Math.PI / 180);
   
   // Calculate new endpoint based on snapped angle
-  const snappedEnd = {
+  return {
     x: start.x + distance * Math.cos(radians),
     y: start.y + distance * Math.sin(radians)
-  };
-  
-  return {
-    start: { ...start },
-    end: snappedEnd
   };
 };
 
@@ -107,13 +102,13 @@ export const snapLineToStandardAngles = (
  * @param start Starting point
  * @param end Ending point
  * @param angleDeg Angle in degrees to snap to (default: 45)
- * @returns Snapped angle as start and end points
+ * @returns Snapped end point
  */
 export const snapToAngle = (
   start: Point,
   end: Point,
   angleDeg: number = 45
-): { start: Point, end: Point } => {
+): Point => {
   return snapLineToStandardAngles(start, end, angleDeg);
 };
 

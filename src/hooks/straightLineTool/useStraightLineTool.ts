@@ -91,12 +91,16 @@ export const useStraightLineTool = ({
     inputMethod,
     isPencilMode,
     isToolInitialized: isLineStateInitialized,
-    setIsToolInitialized: setLineStateInitialized
+    setIsToolInitialized,
+    snapPointToGrid: lineStateSnapPointToGrid,
+    snapLineToGrid: lineStateSnapLineToGrid
   } = useLineState({
     fabricCanvasRef,
     snapPointToGrid,
     snapLineToGrid,
-    isToolActive: isActive
+    isToolActive: isActive,
+    lineColor,
+    lineThickness
   });
   
   // Set current line for external access
@@ -177,7 +181,7 @@ export const useStraightLineTool = ({
     // Initialize tool when activated
     if (isStraightLineTool && !isToolInitialized) {
       setIsToolInitialized(true);
-      setLineStateInitialized(true);
+      setIsToolInitialized(true);
       
       // Log tool initialization
       logger.info("Straight line tool initialized", {
@@ -197,7 +201,7 @@ export const useStraightLineTool = ({
     if (!isStraightLineTool && isDrawing) {
       cancelDrawing();
     }
-  }, [tool, isToolInitialized, isDrawing, cancelDrawing, setLineStateInitialized]);
+  }, [tool, isToolInitialized, isDrawing, cancelDrawing, setIsToolInitialized]);
   
   return {
     isActive,

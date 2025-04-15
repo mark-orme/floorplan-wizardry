@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing line drawing state
  * @module hooks/straightLineTool/useLineState
@@ -14,14 +15,20 @@ export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'keyboard';
 
 interface UseLineStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  lineThickness: number;
-  lineColor: string;
+  lineThickness?: number;
+  lineColor?: string;
+  snapPointToGrid?: (point: Point) => Point;
+  snapLineToGrid?: (start: Point, end: Point) => { start: Point, end: Point };
+  isToolActive?: boolean;
 }
 
 export const useLineState = ({
   fabricCanvasRef,
   lineThickness,
-  lineColor
+  lineColor,
+  snapPointToGrid,
+  snapLineToGrid,
+  isToolActive
 }: UseLineStateProps) => {
   // State for drawing
   const [isDrawing, setIsDrawing] = useState(false);
@@ -41,7 +48,7 @@ export const useLineState = ({
     snapPencilPointToGrid 
   } = useApplePencilSupport({
     fabricCanvasRef,
-    lineThickness
+    lineThickness: lineThickness || 2
   });
   
   // Function to set start point
@@ -102,32 +109,24 @@ export const useLineState = ({
   }, [snapEnabled]);
   
   // Function to snap point to grid
-  const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return { ...point };
+  const handleSnapPointToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled || !snapPointToGrid) return { ...point };
     
     // For Apple Pencil, use specialized snap function
     if (isPencilMode) {
       return snapPencilPointToGrid(point);
     }
     
-    // Regular grid snap
-    const gridSize = GRID_CONSTANTS.GRID_SIZE;
-    
-    return {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    };
-  }, [snapEnabled, isPencilMode, snapPencilPointToGrid]);
+    // Use provided snap function
+    return snapPointToGrid(point);
+  }, [snapEnabled, isPencilMode, snapPencilPointToGrid, snapPointToGrid]);
   
   // Function to snap line to grid
-  const snapLineToGrid = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled) return { start: { ...start }, end: { ...end } };
+  const handleSnapLineToGrid = useCallback((start: Point, end: Point) => {
+    if (!snapEnabled || !snapLineToGrid) return { start: { ...start }, end: { ...end } };
     
-    return {
-      start: snapPointToGrid(start),
-      end: snapPointToGrid(end)
-    };
-  }, [snapEnabled, snapPointToGrid]);
+    return snapLineToGrid(start, end);
+  }, [snapEnabled, snapLineToGrid]);
   
   return {
     // State
@@ -142,6 +141,7 @@ export const useLineState = ({
     setStartPoint,
     setCurrentLine,
     setDistanceTooltip,
+    setIsToolInitialized,
     
     // Refs
     startPointRef,
@@ -151,8 +151,8 @@ export const useLineState = ({
     // Methods
     initializeTool,
     resetDrawingState,
-    snapPointToGrid,
-    snapLineToGrid,
+    snapPointToGrid: handleSnapPointToGrid,
+    snapLineToGrid: handleSnapLineToGrid,
     toggleSnap
   };
 };

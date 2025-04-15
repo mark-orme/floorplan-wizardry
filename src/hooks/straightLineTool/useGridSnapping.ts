@@ -71,7 +71,7 @@ export const useGridSnapping = ({
     return gridSnapPointToGrid(point);
   }, [snapEnabled]);
   
-  // Function to snap a line to the grid - fixed argument handling
+  // Function to snap a line to the grid
   const snapLineToGrid = useCallback((start: Point, end: Point) => {
     if (!snapEnabled) return { start: { ...start }, end: { ...end } };
     

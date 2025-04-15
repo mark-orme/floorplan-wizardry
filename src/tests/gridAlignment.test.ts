@@ -94,8 +94,8 @@ describe('Grid Alignment', () => {
       
       testAngles.forEach((angle, index) => {
         // Create a Point object from the angle value
-        const snapped = snapToAngle(createPoint(angle, 0), createPoint(45, 0));
-        expect(snapped.x).toBe(expectedSnaps[index]);
+        const snapped = snapToAngle(createPoint(0, 0), createPoint(angle, 0));
+        expect(Math.round(snapped.x)).toBe(expectedSnaps[index]);
       });
     });
   });

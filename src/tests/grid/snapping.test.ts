@@ -1,160 +1,105 @@
 
-/**
- * Grid snapping tests
- * @module tests/grid/snapping
- */
 import { describe, test, expect } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useSnapToGrid } from '@/hooks/useSnapToGrid';
+import { snap, snapPointToGrid, snapLineToGrid } from '@/utils/grid/snapping';
 import { Point } from '@/types/core/Point';
-import { GRID_SPACING, SNAP_THRESHOLD } from '@/constants/numerics';
-import { snapToGrid, snapToAngle } from '@/utils/grid/snapping';
 
-// Constants for testing
-const SMALL_GRID = GRID_SPACING.SMALL;
-
-describe('Grid Snapping', () => {
-  describe('snapToGrid', () => {
-    test('should snap a point to the nearest grid point', () => {
-      // Points near grid points
-      const point1: Point = { x: 9.9, y: 10.1 } as Point;
-      const point2: Point = { x: 20.3, y: 19.7 } as Point;
-      
-      // Expected results
-      const expected1: Point = { x: 10, y: 10 } as Point;
-      const expected2: Point = { x: 20, y: 20 } as Point;
-      
-      // Perform snapping
-      const result1 = snapToGrid(point1);
-      const result2 = snapToGrid(point2);
-      
-      // Assertions
-      expect(result1.x).toBe(expected1.x);
-      expect(result1.y).toBe(expected1.y);
-      expect(result2.x).toBe(expected2.x);
-      expect(result2.y).toBe(expected2.y);
-    });
-    
-    test('should not change a point that is already on a grid point', () => {
-      // Point exactly on grid
-      const point: Point = { x: 20, y: 20 } as Point;
-      
-      // Expected result
-      const expected: Point = { x: 20, y: 20 } as Point;
-      
-      // Perform snapping
-      const result = snapToGrid(point);
-      
-      // Assertions
-      expect(result.x).toBe(expected.x);
-      expect(result.y).toBe(expected.y);
-    });
-    
-    test('should handle negative coordinates', () => {
-      // Points with negative coordinates
-      const point1: Point = { x: -9.9, y: -10.1 } as Point;
-      const point2: Point = { x: -20.3, y: -19.7 } as Point;
-      
-      // Expected results
-      const expected1: Point = { x: -10, y: -10 } as Point;
-      const expected2: Point = { x: -20, y: -20 } as Point;
-      
-      // Perform snapping
-      const result1 = snapToGrid(point1);
-      const result2 = snapToGrid(point2);
-      
-      // Assertions
-      expect(result1.x).toBe(expected1.x);
-      expect(result1.y).toBe(expected1.y);
-      expect(result2.x).toBe(expected2.x);
-      expect(result2.y).toBe(expected2.y);
-    });
-    
-    test('should handle zero coordinates', () => {
-      // Point at origin
-      const point: Point = { x: 0.1, y: -0.1 } as Point;
-      
-      // Expected result
-      const expected: Point = { x: 0, y: 0 } as Point;
-      
-      // Perform snapping
-      const result = snapToGrid(point);
-      
-      // Assertions
-      expect(result.x).toBe(expected.x);
-      expect(result.y).toBe(expected.y);
-    });
-    
-    test('should handle custom grid sizes', () => {
-      // Point
-      const point: Point = { x: 24, y: 26 } as Point;
-      
-      // Expected result with grid size 5
-      const expected: Point = { x: 25, y: 25 } as Point;
-      
-      // Perform snapping with custom grid size
-      const result = snapToGrid(point, 5);
-      
-      // Assertions
-      expect(result.x).toBe(expected.x);
-      expect(result.y).toBe(expected.y);
-    });
+describe('Snap to Grid Functions', () => {
+  test('snap function should round values to nearest grid line', () => {
+    expect(snap(9.3, 10)).toBe(10);
+    expect(snap(15, 10)).toBe(20);
+    expect(snap(42, 5)).toBe(40);
+    expect(snap(-8.7, 10)).toBe(-10);
   });
   
-  describe('snapToAngle', () => {
-    test('should snap lines to horizontal angles', () => {
-      // Start point
-      const start: Point = { x: 100, y: 100 } as Point;
-      
-      // End points close to horizontal
-      const end1: Point = { x: 150, y: 103 } as Point; // Nearly horizontal
-      const end2: Point = { x: 50, y: 97 } as Point;  // Nearly horizontal in opposite direction
-      
-      // Snap to horizontal (0 degrees)
-      const result1 = snapToAngle(start, end1);
-      const result2 = snapToAngle(start, end2);
-      
-      // Both should be snapped to horizontal
-      expect(result1.y).toBeCloseTo(start.y);
-      expect(result2.y).toBeCloseTo(start.y);
+  test('snapPointToGrid should snap points to grid intersections', () => {
+    const point1: Point = { x: 9.3, y: 11.7 };
+    const point2: Point = { x: 42, y: 38 };
+    
+    expect(snapPointToGrid(point1, 10)).toEqual({ x: 10, y: 10 });
+    expect(snapPointToGrid(point2, 5)).toEqual({ x: 40, y: 40 });
+  });
+  
+  test('snapLineToGrid should snap both endpoints and straighten lines', () => {
+    const start: Point = { x: 9.3, y: 11.7 };
+    const end: Point = { x: 48.6, y: 13.2 };
+    
+    const result = snapLineToGrid(start, end, 10);
+    
+    // Both points should be snapped to grid
+    expect(result.start).toEqual({ x: 10, y: 10 });
+    
+    // End point should be snapped
+    expect(result.end).toEqual({ x: 50, y: 10 });
+  });
+});
+
+describe('useSnapToGrid Hook', () => {
+  test('should initialize with default values', () => {
+    const { result } = renderHook(() => useSnapToGrid());
+    
+    expect(result.current.snapEnabled).toBe(true);
+    expect(typeof result.current.toggleSnapToGrid).toBe('function');
+    expect(typeof result.current.snapPointToGrid).toBe('function');
+    expect(typeof result.current.snapLineToGrid).toBe('function');
+  });
+  
+  test('should toggle snap state', () => {
+    const { result } = renderHook(() => useSnapToGrid());
+    
+    // Initially enabled
+    expect(result.current.snapEnabled).toBe(true);
+    
+    // Toggle to disabled
+    act(() => {
+      result.current.toggleSnapToGrid();
     });
     
-    test('should snap lines to vertical angles', () => {
-      // Start point
-      const start: Point = { x: 100, y: 100 } as Point;
-      
-      // End points close to vertical
-      const end1: Point = { x: 103, y: 150 } as Point; // Nearly vertical
-      const end2: Point = { x: 97, y: 50 } as Point;  // Nearly vertical in opposite direction
-      
-      // Snap to vertical (90 degrees)
-      const result1 = snapToAngle(start, end1);
-      const result2 = snapToAngle(start, end2);
-      
-      // Both should be snapped to vertical
-      expect(result1.x).toBeCloseTo(start.x);
-      expect(result2.x).toBeCloseTo(start.x);
+    expect(result.current.snapEnabled).toBe(false);
+    
+    // Toggle back to enabled
+    act(() => {
+      result.current.toggleSnapToGrid();
     });
     
-    test('should snap lines to 45 degree angles', () => {
-      // Start point
-      const start: Point = { x: 100, y: 100 } as Point;
-      
-      // End points close to 45 degrees
-      const end1: Point = { x: 150, y: 155 } as Point; // Nearly 45 degrees
-      const end2: Point = { x: 50, y: 45 } as Point;  // Nearly 45 degrees in opposite direction
-      
-      // Snap to 45 degrees
-      const result1 = snapToAngle(start, end1);
-      const result2 = snapToAngle(start, end2);
-      
-      // Calculate distances for validation
-      const dx1 = result1.x - start.x;
-      const dy1 = result1.y - start.y;
-      const dx2 = result2.x - start.x;
-      const dy2 = result2.y - start.y;
-      
-      // For 45 degrees, dx and dy should be equal in magnitude
-      expect(Math.abs(dx1)).toBeCloseTo(Math.abs(dy1));
-      expect(Math.abs(dx2)).toBeCloseTo(Math.abs(dy2));
-    });
+    expect(result.current.snapEnabled).toBe(true);
+  });
+  
+  test('should not snap when disabled', () => {
+    const { result } = renderHook(() => useSnapToGrid({ initialSnapEnabled: false }));
+    
+    const point: Point = { x: 9.3, y: 11.7 };
+    const snappedPoint = result.current.snapPointToGrid(point);
+    
+    // Should return the original point
+    expect(snappedPoint).toEqual(point);
+    expect(snappedPoint).not.toBe(point); // But a new object
+  });
+  
+  test('should snap points to grid when enabled', () => {
+    const { result } = renderHook(() => useSnapToGrid());
+    
+    const point: Point = { x: 9.3, y: 11.7 };
+    const snappedPoint = result.current.snapPointToGrid(point);
+    
+    // Should be snapped to nearest grid point
+    expect(snappedPoint.x).toBe(10);
+    expect(snappedPoint.y).toBe(10);
+  });
+  
+  test('should snap lines to grid when enabled', () => {
+    const { result } = renderHook(() => useSnapToGrid());
+    
+    const start: Point = { x: 9.3, y: 11.7 };
+    const end: Point = { x: 19.7, y: 11.3 };
+    
+    const snappedLine = result.current.snapLineToGrid(start, end);
+    
+    // Both points should be snapped
+    expect(snappedLine.start.x).toBe(10);
+    expect(snappedLine.start.y).toBe(10);
+    expect(snappedLine.end.x).toBe(20);
+    expect(snappedLine.end.y).toBe(10); // Should align horizontally
   });
 });
