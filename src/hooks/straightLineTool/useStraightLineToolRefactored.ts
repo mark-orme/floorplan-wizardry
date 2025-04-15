@@ -4,7 +4,7 @@
  * This hook orchestrates all the line drawing functionality by composing smaller hooks
  * @module hooks/straightLineTool/useStraightLineToolRefactored
  */
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useLineState } from './useLineState';
 import { useStraightLineEvents } from './useStraightLineEvents';
@@ -13,6 +13,7 @@ import { useLineToolHandlers } from './useLineToolHandlers';
 import { useToolCancellation } from './useToolCancellation';
 import { useLineToolSetup } from './useLineToolSetup';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import { Point } from '@/types/core/Point';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -43,7 +44,7 @@ export const useStraightLineToolRefactored = ({
   const isActive = tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.LINE;
   
   // Get the error reporting hook for logging events
-  const { logDrawingEvent } = useDrawingErrorReporting();
+  const { logDrawingEvent, reportDrawingError } = useDrawingErrorReporting();
   
   // Use the shared line state
   const {
@@ -60,7 +61,6 @@ export const useStraightLineToolRefactored = ({
     resetDrawingState,
     snapEnabled,
     snapPointToGrid,
-    snapLineToGrid,
     inputMethod,
     isPencilMode,
     toggleSnap
@@ -69,6 +69,36 @@ export const useStraightLineToolRefactored = ({
     lineThickness,
     lineColor
   });
+
+  // Custom function to adapt the snapLineToGrid function for different signatures
+  const adaptedSnapLineToGrid = (lineOrStart: Line | Point, end?: Point) => {
+    if (end) {
+      // Called with two points
+      return {
+        start: snapPointToGrid(lineOrStart as Point),
+        end: snapPointToGrid(end)
+      };
+    } else if (lineOrStart instanceof Line) {
+      // Called with a Line object
+      const line = lineOrStart;
+      const x1 = line.x1 || 0;
+      const y1 = line.y1 || 0;
+      const x2 = line.x2 || 0;
+      const y2 = line.y2 || 0;
+      
+      // Snap both endpoints
+      const snappedStart = snapPointToGrid({ x: x1, y: y1 });
+      const snappedEnd = snapPointToGrid({ x: x2, y: y2 });
+      
+      // Update line with snapped points
+      line.set({
+        x1: snappedStart.x,
+        y1: snappedStart.y,
+        x2: snappedEnd.x,
+        y2: snappedEnd.y
+      });
+    }
+  };
 
   // Use the line tool handlers
   const {
@@ -93,7 +123,7 @@ export const useStraightLineToolRefactored = ({
     snapToAngle,
     snapAngleDeg,
     snapEnabled,
-    snapLineToGrid,
+    snapLineToGrid: adaptedSnapLineToGrid,
     inputMethod,
     logDrawingEvent
   });

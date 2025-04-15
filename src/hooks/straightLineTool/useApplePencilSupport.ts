@@ -1,9 +1,11 @@
+
 /**
  * Hook for Apple Pencil and stylus support in drawing tools
  * @module hooks/straightLineTool/useApplePencilSupport
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
 interface PencilState {
   pressure: number;
@@ -39,13 +41,20 @@ export const useApplePencilSupport = ({
   // Calculate adjusted line thickness based on pressure
   const adjustedLineThickness = pencilState.pressure * lineThickness;
   
-  // Handle pointer pressure events
+  // Handle pointer pressure events with improved precision
   const handlePointerEvent = useCallback((e: PointerEvent) => {
     // Check if it's a pen/stylus
     if (e.pointerType === 'pen') {
       setIsApplePencil(true);
+      
+      // Use precise pressure values or default to 1
+      const pressure = e.pressure || 1;
+      
+      // Prevent extremely thin lines by setting minimum pressure
+      const normalizedPressure = Math.max(pressure, 0.5);
+      
       setPencilState({
-        pressure: e.pressure || 1,  // Default to 1 if not available
+        pressure: normalizedPressure,
         tiltX: e.tiltX || 0,
         tiltY: e.tiltY || 0,
         twist: (e as any).twist || 0  // Not supported in all browsers
@@ -79,7 +88,8 @@ export const useApplePencilSupport = ({
         
         // Apple Pencil provides force data on iOS
         if (typeof touch.force !== 'undefined') {
-          pressure = touch.force;
+          // Get force with fallback to 1
+          pressure = Math.max(touch.force || 1, 0.5);
           
           // Force values > 0 typically indicate stylus
           if (pressure > 0) {
@@ -112,7 +122,27 @@ export const useApplePencilSupport = ({
           if (isSmallRadius) {
             // Additional evidence of stylus
             isApplePencil = isApplePencil || isSmallRadius;
+            
+            // If we detect a stylus by radius and no pressure data,
+            // set a default pressure that feels good
+            if (pressure === 1 && typeof touch.force === 'undefined') {
+              pressure = 0.8; // Good default for precision drawing
+              setPencilState(prev => ({
+                ...prev,
+                pressure
+              }));
+            }
           }
+        }
+        
+        // Check for precise touches (another stylus indicator)
+        if (touch.clientX && typeof touch.clientX === 'number' && 
+            touch.clientX % 1 !== 0 && !isApplePencil) {
+          // Sub-pixel precision often indicates a stylus
+          isApplePencil = true;
+          touchType = 'precise-touch';
+          setIsApplePencil(true);
+          setIsPencilMode(true);
         }
       }
     } catch (error) {
@@ -121,6 +151,19 @@ export const useApplePencilSupport = ({
     
     return { isApplePencil, pressure, touchType };
   }, []);
+  
+  // Snap drawing point to grid when using Apple Pencil
+  const snapPencilPointToGrid = useCallback((point: { x: number, y: number }) => {
+    if (!isApplePencil) return point;
+    
+    // Use Grid constants for grid size
+    const gridSize = GRID_CONSTANTS.GRID_SIZE;
+    
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [isApplePencil]);
   
   // Set up event listeners when the canvas is available
   useEffect(() => {
@@ -133,21 +176,28 @@ export const useApplePencilSupport = ({
     const canvasElement = fabricCanvasRef.current.getElement();
     
     if (canvasElement) {
-      canvasElement.addEventListener('pointerdown', handlePointerDown);
-      canvasElement.addEventListener('pointermove', handlePointerMove);
+      canvasElement.addEventListener('pointerdown', handlePointerDown, { passive: false });
+      canvasElement.addEventListener('pointermove', handlePointerMove, { passive: false });
+      
+      // Additional event to improve Apple Pencil detection on iOS
+      canvasElement.addEventListener('touchstart', (e: TouchEvent) => {
+        processPencilTouchEvent(e);
+      }, { passive: false });
       
       return () => {
         canvasElement.removeEventListener('pointerdown', handlePointerDown);
         canvasElement.removeEventListener('pointermove', handlePointerMove);
+        canvasElement.removeEventListener('touchstart', processPencilTouchEvent as any);
       };
     }
-  }, [fabricCanvasRef, handlePointerEvent]);
+  }, [fabricCanvasRef, handlePointerEvent, processPencilTouchEvent]);
   
   return {
     pencilState,
     isPencilMode,
     isApplePencil,
     adjustedLineThickness,
-    processPencilTouchEvent
+    processPencilTouchEvent,
+    snapPencilPointToGrid
   };
 };
