@@ -1,23 +1,24 @@
 
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { createRoot } from 'react-dom/client'
+import * as Sentry from "@sentry/react";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import FloorPlans from '@/pages/FloorPlans';
-import Index from '@/pages/Index';
-import NotFound from '@/pages/NotFound';
-import { PerformanceBadge } from '@/components/performance/PerformanceBadge';
+import Index from './pages/Index';
+import { AuthProvider } from './contexts/AuthContext';
+import NotFound from './pages/NotFound';
+import './index.css';
 
 function App() {
   return (
-    <>
-      <Toaster position="top-right" richColors />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/floor-plans" element={<FloorPlans />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <PerformanceBadge />
-    </>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+      <Toaster position="top-right" />
+    </AuthProvider>
   );
 }
 
