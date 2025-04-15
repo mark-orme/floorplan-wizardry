@@ -25,11 +25,30 @@ export const getPusher = (): Pusher => {
   if (!pusherInstance) {
     logger.info('Initializing Pusher connection');
     
-    // Ensure CSP is initialized for Pusher
-    try {
-      initializeCSP(true);
-    } catch (error) {
-      logger.warn('Failed to refresh CSP before Pusher initialization', { error });
+    // Check if CSP is properly configured with Pusher domains
+    const checkCspForPusher = () => {
+      const cspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      if (!cspTag) {
+        logger.warn('No CSP meta tag found before Pusher initialization');
+        return false;
+      }
+      
+      const cspContent = cspTag.getAttribute('content') || '';
+      const hasPusherDomain = cspContent.includes('pusher.com');
+      logger.info('CSP check for Pusher domains', { hasPusherDomain, cspContent });
+      return hasPusherDomain;
+    };
+    
+    // First check if CSP has Pusher domains
+    if (!checkCspForPusher()) {
+      logger.warn('CSP missing Pusher domains, attempting to refresh CSP');
+      try {
+        // Force refresh CSP to ensure it has Pusher domains
+        initializeCSP(true);
+        logger.info('CSP refreshed before Pusher initialization');
+      } catch (error) {
+        logger.warn('Failed to refresh CSP before Pusher initialization', { error });
+      }
     }
     
     // Don't try more than MAX_RECONNECT_ATTEMPTS times to connect
@@ -56,6 +75,12 @@ export const getPusher = (): Pusher => {
             // Force reinitialization of CSP
             initializeCSP(true);
             logger.info('CSP refreshed to try to allow Pusher connectivity');
+            
+            // Check if refresh worked
+            setTimeout(() => {
+              const refreshWorked = checkCspForPusher();
+              logger.info('CSP refresh result for Pusher domains', { refreshWorked });
+            }, 100);
           }
         } catch (fixError) {
           logger.error('Failed to refresh CSP settings:', fixError);
@@ -66,19 +91,29 @@ export const getPusher = (): Pusher => {
       
       // If we've had multiple failures, switch to mock implementation
       if (connectionAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        logger.warn(`Switching to mock Pusher after ${connectionAttempts} failed connection attempts`);
         pusherInstance = createMockPusherInstance();
       }
     };
     
     // Configure Pusher with error handling
     try {
+      // First verify CSP has been applied with Pusher domains
+      setTimeout(() => {
+        // Log CSP state right before Pusher instance creation
+        logger.info('CSP state at Pusher initialization:', 
+          document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content') || 'No CSP found');
+      }, 0);
+      
+      // Create the Pusher instance with detailed configuration
       pusherInstance = new Pusher(PUSHER_KEY, {
         cluster: PUSHER_CLUSTER,
         forceTLS: true,
         enabledTransports: ['ws', 'wss'],
         wsHost: 'ws-eu.pusher.com',
         httpHost: 'sockjs-eu.pusher.com',
-        disableStats: true // Reduce network requests
+        disableStats: true, // Reduce network requests
+        authEndpoint: undefined, // No authentication endpoint needed for public channels
       });
       
       // Add connection status handlers
@@ -92,6 +127,8 @@ export const getPusher = (): Pusher => {
       });
       
       pusherInstance.connection.bind('error', handlePusherError);
+      
+      logger.info('Pusher instance created successfully');
     } catch (err) {
       logger.error('Failed to initialize Pusher:', err);
       pusherInstance = createMockPusherInstance();
@@ -108,14 +145,58 @@ export const getPusher = (): Pusher => {
 function createMockPusherInstance(): Pusher {
   logger.info('Creating mock Pusher instance to prevent errors');
   
-  // Create a dummy Pusher instance to prevent errors
+  // Create a more complete mock Pusher instance
   const mockPusher = {} as Pusher;
+  
+  // Mock connection
   mockPusher.connection = {
-    bind: () => {},
+    bind: (event: string, callback: Function) => {
+      if (event === 'connected') {
+        // Simulate connected event
+        setTimeout(() => callback(), 100);
+      }
+      return mockPusher.connection;
+    },
+    unbind: () => mockPusher.connection,
+    state: 'connected'
   } as any;
-  mockPusher.subscribe = () => ({ bind: () => {} }) as any;
-  mockPusher.unsubscribe = () => {};
-  mockPusher.disconnect = () => {};
+  
+  // Mock channel management
+  const channels: Record<string, any> = {};
+  
+  mockPusher.subscribe = (channelName: string) => {
+    logger.info(`[MOCK] Subscribing to channel: ${channelName}`);
+    
+    if (!channels[channelName]) {
+      channels[channelName] = {
+        bind: (event: string, callback: Function) => {
+          logger.info(`[MOCK] Event bound on channel ${channelName}: ${event}`);
+          return channels[channelName];
+        },
+        unbind: () => channels[channelName],
+        trigger: (eventName: string, data: any) => {
+          logger.info(`[MOCK] Event triggered on channel ${channelName}: ${eventName}`);
+        },
+        subscribed: true,
+        name: channelName
+      };
+    }
+    
+    return channels[channelName];
+  };
+  
+  mockPusher.unsubscribe = (channelName: string) => {
+    logger.info(`[MOCK] Unsubscribing from channel: ${channelName}`);
+    delete channels[channelName];
+  };
+  
+  mockPusher.disconnect = () => {
+    logger.info(`[MOCK] Disconnecting Pusher`);
+  };
+  
+  mockPusher.channel = (channelName: string) => {
+    return channels[channelName] || null;
+  };
   
   return mockPusher;
 }

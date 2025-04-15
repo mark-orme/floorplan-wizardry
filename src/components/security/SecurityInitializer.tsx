@@ -18,14 +18,36 @@ export const SecurityInitializer = () => {
     // Force initialize Content Security Policy with a direct meta tag
     // This ensures CSP is enforced immediately
     try {
-      initializeCSP(true); // Force refresh parameter
+      // Apply with force refresh
+      initializeCSP(true); 
       
       // Apply additional security headers
       applySecurityMetaTags();
       
-      logger.info('Security features initialized');
+      logger.info('Security features initialized successfully');
+      
+      // Extra check to verify CSP was applied
+      const cspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      if (!cspTag) {
+        logger.warn('CSP meta tag not found after initialization, retrying...');
+        setTimeout(() => initializeCSP(true), 100);
+      } else {
+        logger.info('CSP meta tag verified', { 
+          content: cspTag.getAttribute('content')
+        });
+      }
     } catch (initError) {
       logger.error('Failed to initialize security features', { error: initError });
+      
+      // Emergency retry with timeout in case of failure
+      setTimeout(() => {
+        try {
+          initializeCSP(true);
+          logger.info('Security features initialized on second attempt');
+        } catch (retryError) {
+          logger.error('Second attempt to initialize security features failed', { error: retryError });
+        }
+      }, 500);
     }
     
     // Add iframe protection with better error handling
@@ -113,21 +135,14 @@ export const SecurityInitializer = () => {
           
           // Attempt to auto-fix common CSP issues
           if (e.violatedDirective === 'connect-src') {
-            // Refresh CSP to ensure it has the latest domains
+            // If we get connect-src violations, it likely means our CSP isn't applied correctly
+            // or doesn't include necessary domains. Force refresh CSP.
+            logger.info('Auto-refreshing CSP after connect-src violation');
             setTimeout(() => {
               initializeCSP(true);
-              logger.info('CSP refreshed after violation');
             }, 100);
           }
         }
-      }
-      
-      // Only show toast for significant violations in production
-      if (isProduction && 
-          (e.violatedDirective === 'script-src' || e.violatedDirective === 'frame-src') &&
-          !e.blockedURI.includes('sentry.io') &&
-          !e.blockedURI.includes('pusher.com')) {
-        toast.error('Security policy violation detected and blocked');
       }
     };
     

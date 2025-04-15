@@ -23,7 +23,7 @@ export const PRODUCTION_CSP_DIRECTIVES = {
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
     "https://*.pusher.com",
-    "https://*.lovable.app", // Adding lovable.app domain
+    "https://*.lovable.app", 
     "https://api.sentry.io",
     "https://ingest.sentry.io"
   ],
@@ -31,7 +31,7 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'"],
-  'worker-src': ["'self'", "blob:"], // Add worker-src to allow blob URLs for workers
+  'worker-src': ["'self'", "blob:"], // Allow blob URLs for workers
   'upgrade-insecure-requests': [],
 };
 
@@ -53,7 +53,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
     "https://*.pusher.com",
-    "https://*.lovable.app", // Adding lovable.app domain
+    "https://*.lovable.app", 
     "https://api.sentry.io",
     "https://ingest.sentry.io",
     "ws:", 
@@ -62,7 +62,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
-  'worker-src': ["'self'", "blob:"], // Add worker-src to allow blob URLs for workers
+  'worker-src': ["'self'", "blob:"], // Allow worker-src to allow blob URLs for workers
 };
 
 /**
@@ -70,7 +70,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
  * @param isProduction Whether to use production CSP directives
  * @returns Formatted CSP header value
  */
-export function buildCSPString(isProduction = false): string {  // Default to development CSP
+export function buildCSPString(isProduction = false): string {
   const directives = isProduction ? PRODUCTION_CSP_DIRECTIVES : DEVELOPMENT_CSP_DIRECTIVES;
   
   return Object.entries(directives)
@@ -96,7 +96,7 @@ export function generateCSPNonce(): string {
  * Completely replaces existing CSP meta tag to ensure fresh values
  * @param isProduction Whether to use production CSP directives
  */
-export function applyCSPMetaTag(isProduction = false): void {  // Default to development CSP
+export function applyCSPMetaTag(isProduction = false): void {
   if (typeof document === 'undefined') return;
   
   try {
@@ -123,9 +123,12 @@ export function applyCSPMetaTag(isProduction = false): void {  // Default to dev
     cspMeta.content = cspContent;
     document.head.appendChild(cspMeta);
     
+    // Add a data attribute to indicate CSP was applied
+    document.documentElement.setAttribute('data-csp-applied', 'true');
+    
     logger.info('Content Security Policy applied via meta tag', {
       mode: isProduction ? 'production' : 'development',
-      hasConnectSrc: cspContent.includes('connect-src')
+      content: cspContent
     });
   } catch (error) {
     logger.error('Failed to apply CSP meta tag', { error });
@@ -137,7 +140,7 @@ export function applyCSPMetaTag(isProduction = false): void {  // Default to dev
  * @param isProduction Whether to use production CSP directives
  * @returns Object with CSP headers
  */
-export function getCSPHeaders(isProduction = false): Record<string, string> {  // Default to development CSP
+export function getCSPHeaders(isProduction = false): Record<string, string> {
   return {
     'Content-Security-Policy': buildCSPString(isProduction),
   };

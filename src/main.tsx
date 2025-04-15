@@ -13,11 +13,15 @@ import { initializeCSP } from './utils/security/contentSecurityPolicy';
 // This must happen before any network requests
 initializeCSP(true);
 
+// Add console log to verify CSP was applied
+console.log('Initial CSP applied with these connect-src domains:', 
+  document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content'));
+
 // Wait a short time for CSP to apply before initializing services
 setTimeout(() => {
   // Initialize Sentry and other services after CSP is applied
   initializeServices();
-}, 100);
+}, 200);  // Increased timeout to ensure CSP is fully applied
 
 function initializeServices() {
   // Check if browser profiling is supported in this environment
@@ -86,6 +90,7 @@ function initializeServices() {
            error.message.includes('violates') ||
            error.message.includes('blocked by CSP'))) {
         // Don't report CSP errors to avoid noise - handle locally
+        console.warn('Suppressing CSP error report to Sentry:', error.message);
         return null;
       }
       
@@ -110,6 +115,13 @@ function initializeServices() {
       return event;
     }
   });
+  
+  // Verify CSP is still applied before initializing Pusher
+  const cspContent = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
+  console.log('CSP state before Pusher initialization:', cspContent || 'No CSP found');
+  
+  // Force reapply CSP to ensure it's set with pusher domains
+  initializeCSP(true);
   
   // Initialize Pusher after a delay to ensure CSP is applied
   setTimeout(() => {
