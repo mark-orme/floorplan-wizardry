@@ -57,15 +57,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Use wall drawing hook
   const { isDrawing: isDrawingWall } = useWallDrawing({
     fabricCanvasRef,
-    tool,
+    enabled: tool === DrawingMode.WALL,
     wallColor,
     wallThickness
   });
 
   // Use straight line tool hook with save state function
-  const { isActive: isStraightLineActive } = useStraightLineTool({
+  const { isDrawing: isStraightLineDrawing } = useStraightLineTool({
     fabricCanvasRef,
-    tool,
+    enabled: tool === DrawingMode.STRAIGHT_LINE,
     lineColor,
     lineThickness,
     saveCurrentState: () => {

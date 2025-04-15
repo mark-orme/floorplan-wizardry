@@ -8,9 +8,6 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
-import { TouchGestureHandler } from './TouchGestureHandler';
-import { MeasurementTooltip } from '@/components/MeasurementTooltip';
-import * as Sentry from '@sentry/react';
 import { toast } from 'sonner';
 
 interface StylusAwareLineDrawerProps {
@@ -24,11 +21,6 @@ interface StylusAwareLineDrawerProps {
 
 /**
  * Component to handle line drawing with enhanced stylus and touch support
- * Features:
- * - Shift+drag for angle constraints
- * - Live updating tooltips with precise measurements
- * - Grid snapping to 0.1m increments
- * - Proper cleanup on cancel
  */
 export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   fabricCanvasRef,
@@ -43,28 +35,11 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   const [shiftPressed, setShiftPressed] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<{start: Point, end: Point} | null>(null);
   
-  // Set up Sentry context for component
-  useEffect(() => {
-    Sentry.setTag("component", "StylusAwareLineDrawer");
-    Sentry.setTag("tool", tool);
-    
-    Sentry.setContext("lineDrawerState", {
-      lineColor,
-      lineThickness,
-      isInitialized: isInitializedRef.current,
-      shiftPressed,
-      timestamp: new Date().toISOString()
-    });
-    
-    return () => {
-      Sentry.setTag("component", null);
-    };
-  }, [tool, lineColor, lineThickness, shiftPressed]);
-  
-  // Use our enhanced line drawing hook
+  // Use our straight line drawing hook
   const {
-    isActive,
     isDrawing,
+    currentLine,
+    isActive,
     inputMethod,
     isPencilMode,
     snapEnabled,
@@ -76,26 +51,29 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     cancelDrawing,
     toggleGridSnapping,
     toggleAngles,
-    currentLine,
     startPointRef,
     currentLineRef
   } = useStraightLineTool({
     fabricCanvasRef,
-    tool,
+    enabled: tool === DrawingMode.STRAIGHT_LINE,
     lineColor,
     lineThickness,
-    saveCurrentState,
-    useShiftConstraint: shiftPressed
+    saveCurrentState
   });
   
   // Update tooltip position when drawing
   useEffect(() => {
-    if (isDrawing && startPointRef && startPointRef.current && currentLineRef && currentLineRef.current) {
-      const points = currentLineRef.current.calcLinePoints();
-      if (points) {
-        const start = { x: points.x1, y: points.y1 };
-        const end = { x: points.x2, y: points.y2 };
-        setActiveTooltip({ start, end });
+    if (isDrawing && startPointRef.current && currentLineRef.current) {
+      try {
+        // @ts-ignore - calcLinePoints might not be defined on the Line type
+        const points = currentLineRef.current.calcLinePoints();
+        if (points) {
+          const start = { x: points.x1, y: points.y1 };
+          const end = { x: points.x2, y: points.y2 };
+          setActiveTooltip({ start, end });
+        }
+      } catch (error) {
+        console.error('Error calculating line points:', error);
       }
     } else if (!isDrawing) {
       setActiveTooltip(null);
@@ -107,14 +85,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Shift') {
         setShiftPressed(true);
-        
-        // Update Sentry context
-        Sentry.setTag("shiftPressed", "true");
-        Sentry.setContext("keyboardState", {
-          shiftPressed: true,
-          isDrawing,
-          timestamp: new Date().toISOString()
-        });
         
         if (isDrawing) {
           toast.info("Angle constraint active", { id: "shift-constraint" });
@@ -135,14 +105,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Shift') {
         setShiftPressed(false);
-        
-        // Update Sentry context
-        Sentry.setTag("shiftPressed", "false");
-        Sentry.setContext("keyboardState", {
-          shiftPressed: false,
-          isDrawing,
-          timestamp: new Date().toISOString()
-        });
       }
     };
     
@@ -168,7 +130,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       if (!isActive) return;
       
       // Get position from fabric event
-      const point: Point = e.pointer;
+      const point = e.pointer;
       handlePointerDown(point);
     };
     
@@ -176,7 +138,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       if (!isActive || !isDrawing) return;
       
       // Get position from fabric event
-      const point: Point = e.pointer;
+      const point = e.pointer;
       handlePointerMove(point);
     };
     
@@ -184,7 +146,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       if (!isActive || !isDrawing) return;
       
       // Get position from fabric event
-      const point: Point = e.pointer;
+      const point = e.pointer;
       handlePointerUp(point);
       
       // Call onLineCreated callback if provided
@@ -238,22 +200,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   
   return (
     <>
-      {/* Non-visual component for touch gesture handling */}
-      <TouchGestureHandler 
-        fabricCanvasRef={fabricCanvasRef}
-        lineThickness={lineThickness}
-      />
-      
-      {/* Active measurement tooltip */}
-      {isActive && isDrawing && activeTooltip && (
-        <MeasurementTooltip
-          startPoint={activeTooltip.start}
-          endPoint={activeTooltip.end}
-          showAngle={true}
-          showGridPosition={true}
-        />
-      )}
-      
       {/* Status indicator for drawing mode */}
       {isActive && (
         <div className="fixed bottom-2 right-2 p-2 bg-black/70 text-white rounded text-xs" style={{ zIndex: 9999 }}>

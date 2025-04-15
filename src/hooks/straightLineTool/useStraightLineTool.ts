@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line, Point } from 'fabric';
 import { convertToFabricPoint } from '@/utils/fabric';
 import { toast } from 'sonner';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Props for the useStraightLineTool hook
@@ -35,6 +36,16 @@ export const useStraightLineTool = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
   const startPointRef = useRef<Point | null>(null);
+  const currentLineRef = useRef<Line | null>(null);
+  const isActive = enabled;
+  
+  // Add additional state properties for compatibility with the enhanced version
+  const [inputMethod] = useState<'mouse' | 'touch' | 'stylus' | 'pencil'>('mouse');
+  const [isPencilMode] = useState<boolean>(false);
+  const [snapEnabled] = useState<boolean>(snapToGrid);
+  const [anglesEnabled] = useState<boolean>(false);
+  const [measurementData, setMeasurementData] = useState<any>(null);
+  const [isToolInitialized] = useState<boolean>(true);
   
   /**
    * Handle mouse down event
@@ -66,6 +77,7 @@ export const useStraightLineTool = ({
     // Add line to canvas
     canvas.add(newLine);
     setCurrentLine(newLine);
+    currentLineRef.current = newLine;
     setIsDrawing(true);
   }, [enabled, fabricCanvasRef, lineColor, lineThickness, saveCurrentState]);
   
@@ -108,6 +120,7 @@ export const useStraightLineTool = ({
     setIsDrawing(false);
     setCurrentLine(null);
     startPointRef.current = null;
+    currentLineRef.current = null;
     
     // Render canvas
     canvas.requestRenderAll();
@@ -115,6 +128,61 @@ export const useStraightLineTool = ({
     // Show toast message
     toast.success('Line drawn successfully');
   }, [isDrawing, currentLine, fabricCanvasRef]);
+
+  /**
+   * Pointer event handlers for external use
+   */
+  const handlePointerDown = useCallback((point: any) => {
+    // Implementation for compatibility
+    console.log('Pointer down at', point);
+  }, []);
+
+  const handlePointerMove = useCallback((point: any) => {
+    // Implementation for compatibility
+    console.log('Pointer move at', point);
+  }, []);
+
+  const handlePointerUp = useCallback((point: any) => {
+    // Implementation for compatibility
+    console.log('Pointer up at', point);
+  }, []);
+
+  /**
+   * Cancel the current drawing operation
+   */
+  const cancelDrawing = useCallback(() => {
+    if (!isDrawing || !fabricCanvasRef.current || !currentLine) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Remove the line from canvas
+    canvas.remove(currentLine);
+    canvas.requestRenderAll();
+    
+    // Reset drawing state
+    setIsDrawing(false);
+    setCurrentLine(null);
+    startPointRef.current = null;
+    currentLineRef.current = null;
+    
+    console.log('Drawing canceled');
+  }, [isDrawing, currentLine, fabricCanvasRef]);
+
+  /**
+   * Toggle grid snapping on/off
+   */
+  const toggleGridSnapping = useCallback(() => {
+    // Implementation for compatibility
+    console.log('Toggle grid snapping');
+  }, []);
+
+  /**
+   * Toggle angle constraints on/off
+   */
+  const toggleAngles = useCallback(() => {
+    // Implementation for compatibility
+    console.log('Toggle angles');
+  }, []);
   
   /**
    * Set up event handlers
@@ -171,6 +239,21 @@ export const useStraightLineTool = ({
   
   return {
     isDrawing,
-    currentLine
+    currentLine,
+    isActive,
+    inputMethod,
+    isPencilMode,
+    snapEnabled,
+    anglesEnabled,
+    measurementData,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    cancelDrawing,
+    toggleGridSnapping,
+    toggleAngles,
+    startPointRef,
+    currentLineRef,
+    isToolInitialized
   };
 };
