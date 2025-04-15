@@ -1,4 +1,3 @@
-
 /**
  * Hook for efficient undo/redo functionality with canvas snapshots
  * Uses throttled/debounced state capture for better performance
@@ -31,7 +30,6 @@ export const useCanvasUndoRedo = ({
   const ignoreNextSnapshotRef = useRef<boolean>(false);
   
   // Create throttled/debounced canvas state capture
-  // Fix: Remove the parameter from debouncedUpdate call if it doesn't accept one
   const { debouncedUpdate: debouncedCapture } = useThrottledCanvasUpdate(() => {
     if (!canvas || ignoreNextSnapshotRef.current) {
       ignoreNextSnapshotRef.current = false;
@@ -198,7 +196,6 @@ export const useCanvasUndoRedo = ({
     if (!canvas) return;
     
     // Events that should trigger state capture
-    // Fix: Use the FabricEventTypes enum instead of string literals
     const captureEvents = [
       FabricEventTypes.OBJECT_ADDED,
       FabricEventTypes.OBJECT_MODIFIED,
@@ -212,13 +209,11 @@ export const useCanvasUndoRedo = ({
     
     // Add event listeners
     captureEvents.forEach(event => {
-      // Fix: Use properly typed event names
       canvas.on(event, handleModification);
     });
     
     // Capture initial state
     if (historyRef.current.length === 0) {
-      // Delay initial capture to ensure canvas is fully loaded
       setTimeout(() => {
         captureCurrentState();
       }, 500);
@@ -228,7 +223,6 @@ export const useCanvasUndoRedo = ({
     return () => {
       if (canvas) {
         captureEvents.forEach(event => {
-          // Fix: Use properly typed event names
           canvas.off(event, handleModification);
         });
       }
