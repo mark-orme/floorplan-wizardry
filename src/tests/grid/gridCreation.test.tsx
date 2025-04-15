@@ -40,7 +40,8 @@ describe('Grid Creation', () => {
   it('should create a grid with custom options', () => {
     // Define custom grid options
     const options: GridOptions = {
-      size: 30,
+      // Fixed: Replaced 'size' with appropriate property names from GridOptions
+      gridSize: 30,
       stroke: '#ff0000',
       strokeWidth: 2,
       showMajorLines: true,
