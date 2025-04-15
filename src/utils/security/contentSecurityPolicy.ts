@@ -1,4 +1,3 @@
-
 /**
  * Content Security Policy Utilities
  * Provides CSP configuration and implementation
@@ -31,7 +30,7 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'"],
-  'worker-src': ["'self'", "blob:"], // Allow blob URLs for workers
+  'worker-src': ["'self'", "blob:"], // Explicitly allow blob URLs for workers
   'upgrade-insecure-requests': [],
 };
 
@@ -62,7 +61,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
-  'worker-src': ["'self'", "blob:"], // Allow worker-src to allow blob URLs for workers
+  'worker-src': ["'self'", "blob:"], // Explicitly allow worker-src to allow blob URLs for workers
 };
 
 /**

@@ -21,7 +21,7 @@ console.log('Initial CSP applied with these connect-src domains:',
 setTimeout(() => {
   // Initialize Sentry and other services after CSP is applied
   initializeServices();
-}, 300);  // Increased timeout for better sequencing
+}, 500);  // Increased timeout for better sequencing
 
 function initializeServices() {
   // Check if browser profiling is supported in this environment
@@ -39,8 +39,9 @@ function initializeServices() {
   // Create integrations array based on browser support
   const sentryIntegrations = [
     Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
-  ];
+    // Only add replay integration in production to avoid CSP issues in development
+    process.env.NODE_ENV === 'production' ? Sentry.replayIntegration() : null,
+  ].filter(Boolean);
   
   // Verify CSP is still applied before initializing Sentry
   const cspContent = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
@@ -63,9 +64,9 @@ function initializeServices() {
     // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
     tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/, /^https:\/\/.*lovable\.app/],
     
-    // Session Replay
-    replaysSessionSampleRate: 0.02, // This sets the sample rate at 2%
-    replaysOnErrorSampleRate: 0.2, // 20% when sampling sessions where errors occur
+    // Session Replay - disabled in development to avoid CSP issues
+    replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.02 : 0, // 2% in production, 0% in dev
+    replaysOnErrorSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 0, // 20% in production, 0% in dev
     
     // Disable performance profiling to avoid document policy violations
     profilesSampleRate: 0, 
@@ -129,20 +130,6 @@ function initializeServices() {
   
   // Force reapply CSP to ensure it's set with pusher domains
   initializeCSP(true);
-  
-  // Initialize Pusher after a delay to ensure CSP is applied
-  setTimeout(() => {
-    // Use promise-based import instead of await since we're in a non-async function
-    import('./utils/pusher.ts')
-      .then(module => {
-        const { getPusher } = module;
-        console.log('Pusher module loaded successfully');
-        getPusher();
-      })
-      .catch(error => {
-        console.error('Failed to load Pusher module:', error);
-      });
-  }, 500);
 }
 
 // Create the root and render the application using our utility

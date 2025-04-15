@@ -68,42 +68,6 @@ export const SecurityInitializer = () => {
       }, 500);
     }
     
-    // Add iframe protection with better error handling
-    if (window.top !== window.self) {
-      logger.info('Application loaded in iframe - checking if allowed origin');
-      
-      // Handle iframes more gracefully
-      try {
-        // Only check referrer if available
-        if (document.referrer) {
-          // Check if parent origin is allowed (lovable.dev, lovable.app, or our own domain)
-          const parentUrl = new URL(document.referrer);
-          const isAllowedOrigin = 
-            parentUrl.hostname.endsWith('lovable.dev') || 
-            parentUrl.hostname === window.location.hostname ||
-            parentUrl.hostname.includes('lovable.app');
-          
-          if (!isAllowedOrigin) {
-            logger.warn('Application loaded in iframe from disallowed origin', {
-              referrer: document.referrer
-            });
-            
-            toast.error('This application cannot be displayed in an iframe from this origin for security reasons.');
-          } else {
-            logger.info('Application loaded in iframe from allowed origin', {
-              referrer: document.referrer
-            });
-          }
-        }
-      } catch (e) {
-        // Log the error without showing a toast to users
-        logger.error('Failed to check iframe origin - possible cross-origin restriction', { 
-          error: e,
-          message: e instanceof Error ? e.message : 'Unknown error'
-        });
-      }
-    }
-    
     // Create a more refined CSP violation handler that doesn't log every single violation
     // This reduces noise in the console
     const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
@@ -152,10 +116,10 @@ export const SecurityInitializer = () => {
           });
           
           // Attempt to auto-fix common CSP issues
-          if (e.violatedDirective === 'connect-src') {
-            // If we get connect-src violations, it likely means our CSP isn't applied correctly
+          if (e.violatedDirective === 'connect-src' || e.violatedDirective === 'worker-src') {
+            // If we get connect-src or worker-src violations, it likely means our CSP isn't applied correctly
             // or doesn't include necessary domains. Force refresh CSP.
-            logger.info('Auto-refreshing CSP after connect-src violation');
+            logger.info('Auto-refreshing CSP after violation');
             setTimeout(() => {
               initializeCSP(true);
             }, 100);
