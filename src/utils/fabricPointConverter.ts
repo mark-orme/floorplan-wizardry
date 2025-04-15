@@ -122,3 +122,23 @@ export const viewportToCanvasPoint = (point: Point, canvas: FabricCanvas): Point
 
   return new Point(canvasX, canvasY);
 };
+
+/**
+ * Creates a Fabric.js point from a plain Point object
+ * 
+ * @param {Point} point - Plain point object with x,y coordinates
+ * @returns {fabric.Point} Fabric.js Point instance
+ */
+export const toFabricPoint = (point: { x: number, y: number }): Point => {
+  return new Point(point.x, point.y);
+};
+
+/**
+ * Converts a Fabric.js Point to a plain Point object
+ * 
+ * @param {fabric.Point} fabricPoint - Fabric.js Point instance
+ * @returns {Object} Plain object with x,y coordinates
+ */
+export const fromFabricPoint = (fabricPoint: Point): { x: number, y: number } => {
+  return { x: fabricPoint.x, y: fabricPoint.y };
+};

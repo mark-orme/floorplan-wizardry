@@ -50,3 +50,6 @@ export {
 // Re-export any additional fabric utilities
 export * from './fabric/canvasObjectUtils';
 export * from './fabric/canvasSerializationUtils';
+
+// Re-export point converter utilities
+export * from './fabricPointConverter';
