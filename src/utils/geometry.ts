@@ -11,8 +11,8 @@ import { getBoundingBox, getMidpoint } from './geometry/boundingBox';
 import { pixelsToMeters, metersToPixels } from './geometry/conversion';
 import { simplifyPath, smoothPath } from './geometry/pathProcessing';
 import { 
-  snapPointToGrid, 
-  snapToAngle 
+  snapPointToGrid as gridSnapPointToGrid, 
+  snapToAngle as gridSnapToAngle 
 } from './grid/snapping';
 
 // Import line operations
@@ -58,9 +58,9 @@ export {
   calculateMidpoint,
   calculateAngle,
   
-  // Grid operations
-  snapPointToGrid as snapToGrid,
-  snapToAngle
+  // Grid operations - renamed to avoid ambiguity
+  gridSnapPointToGrid as snapToGrid,
+  gridSnapToAngle
 };
 
 /**
