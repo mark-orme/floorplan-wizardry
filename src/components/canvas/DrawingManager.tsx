@@ -8,7 +8,7 @@ import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
 import { ToolbarContainer } from "./ToolbarContainer";
 import { CanvasEventManager } from "./CanvasEventManager";
-import { useCanvasAutosave } from "@/hooks/useCanvasAutosave"; 
+import { useAutoSaveCanvas } from "@/hooks/useAutoSaveCanvas"; 
 import { useRestorePrompt } from "@/hooks/useRestorePrompt"; 
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { RestoreDrawingPrompt } from "./RestoreDrawingPrompt";
@@ -61,8 +61,8 @@ export const DrawingManager = () => {
     }
   });
   
-  // Initialize autosave
-  const { saveCanvas, lastSaved } = useCanvasAutosave({
+  // Initialize autosave using our refactored hook
+  const { saveCanvas, restoreCanvas, lastSaved } = useAutoSaveCanvas({
     canvas,
     canvasId,
     onSave: (success) => {
@@ -70,10 +70,11 @@ export const DrawingManager = () => {
         console.log("Canvas autosaved successfully");
       }
     },
-    onLoad: (success) => {
+    onRestore: (success) => {
       if (success) {
         // After loading from autosave, update the history state
         updateHistoryState();
+        toast.success('Drawing restored successfully');
       }
     }
   });
@@ -208,6 +209,12 @@ export const DrawingManager = () => {
     }
   }, [isOnline]);
   
+  // Handle the restore action from prompt
+  const onRestoreFromPrompt = async () => {
+    const success = await restoreCanvas();
+    handleRestore(success);
+  };
+  
   return (
     <div className="flex flex-col gap-2">
       <ToolbarContainer 
@@ -261,7 +268,7 @@ export const DrawingManager = () => {
       {showPrompt && (
         <RestoreDrawingPrompt
           timeElapsed={timeElapsed}
-          onRestore={handleRestore}
+          onRestore={onRestoreFromPrompt}
           onDismiss={handleDismiss}
           isRestoring={isRestoring}
         />

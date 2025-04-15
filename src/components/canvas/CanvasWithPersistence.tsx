@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useCanvasAutosave } from '@/hooks/useCanvasAutosave';
+import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { toast } from 'sonner';
 
@@ -55,8 +55,8 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     };
   }, [width, height, onCanvasReady]);
   
-  // Set up auto-save
-  const { saveCanvas, loadCanvas } = useCanvasAutosave({
+  // Set up auto-save with refactored hook
+  const { saveCanvas, restoreCanvas, canRestore, lastSaved } = useAutoSaveCanvas({
     canvas: fabricCanvasRef.current,
     canvasId,
     onSave: (success) => {
@@ -64,7 +64,7 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
         toast.error('Failed to save canvas');
       }
     },
-    onLoad: (success) => {
+    onRestore: (success) => {
       if (success) {
         toast.success('Canvas restored from local storage');
       }
@@ -93,7 +93,7 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   
   // Example of manual load button handler
   const handleLoad = () => {
-    loadCanvas();
+    restoreCanvas();
   };
   
   return (
@@ -115,6 +115,7 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
         <button 
           onClick={handleLoad}
           className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+          disabled={!canRestore}
         >
           Restore
         </button>
@@ -124,6 +125,12 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
         <div className="absolute top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-1 rounded flex items-center">
           <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></div>
           Offline Mode
+        </div>
+      )}
+      
+      {lastSaved && (
+        <div className="absolute top-4 left-4 text-xs text-gray-500">
+          Last saved: {lastSaved.toLocaleTimeString()}
         </div>
       )}
     </div>
