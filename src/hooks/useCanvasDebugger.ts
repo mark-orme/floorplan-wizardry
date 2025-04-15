@@ -89,7 +89,7 @@ export function useCanvasDebugger({
           zoom: canvas.getZoom(),
           viewportTransform: canvas.viewportTransform,
           renderOnAddRemove: canvas.renderOnAddRemove,
-          objectCaching: canvas.objectCaching,
+          // Remove reference to objectCaching which doesn't exist on Canvas type
           backgroundColor: canvas.backgroundColor
         },
         objects: {
@@ -114,7 +114,8 @@ export function useCanvasDebugger({
           invisible: gridOnCanvas.length - visibleGridObjects.length,
         },
         history: {
-          renderCount: canvas._renderCounter || 0
+          // Replace _renderCounter with custom render count tracking
+          renderCount: (canvas as any).renderCount || 0
         }
       };
       

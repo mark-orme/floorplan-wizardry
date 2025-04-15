@@ -116,9 +116,11 @@ export const useAutoSaveCanvas = ({
   
   // Update the debounced function when its dependencies change
   useEffect(() => {
-    debouncedSaveRef.current = debounce(() => {
+    // Create a wrapper function that doesn't take arguments
+    const saveFn = () => {
       saveCanvas();
-    }, debounceMs);
+    };
+    debouncedSaveRef.current = debounce(saveFn, debounceMs);
   }, [saveCanvas, debounceMs]);
   
   const restoreCanvas = useCallback(async () => {
