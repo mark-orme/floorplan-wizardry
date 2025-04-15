@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for real-time canvas synchronization
  */
@@ -113,7 +114,7 @@ export const setupRealtimeSync = (
   onRemoteUpdate?: (sender: string, timestamp: number) => void
 ) => {
   // Subscribe to sync channel WITHOUT passing any arguments
-  const channel = subscribeSyncChannel();
+  const channel = subscribeSyncChannel(); // Ensure NO arguments are passed
   let firstSync = true;
   const firstSyncRef = { current: firstSync };
   
