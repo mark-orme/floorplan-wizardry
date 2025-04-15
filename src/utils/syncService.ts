@@ -54,7 +54,7 @@ export const subscribeSyncChannel = () => {
       const connectedUsers = 1; // Default to 1 (self)
       
       if (connectedUsers > 1) {
-        toast.info(`${connectedUsers - 1} other ${connectedUsers === 2 ? 'user' : 'users'} connected`);
+        toast.info(`${connectedUsers - 1} other ${connectedUsers === 1 ? 'user' : 'users'} connected`);
         
         // Broadcast presence
         channel.trigger(`client-${PRESENCE_EVENT}`, {
@@ -76,8 +76,9 @@ export const subscribeSyncChannel = () => {
  * Sends the updated floor plans to other devices via Pusher
  * 
  * @param {FloorPlan[]} floorPlans - The updated floor plans to broadcast
+ * @param {string} userId - Optional user ID for tracking changes by user
  */
-export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[]) => {
+export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[], userId?: string) => {
   logger.info('Broadcasting floor plan update');
   
   // In a real production app, you would send this to your server
@@ -93,6 +94,7 @@ export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[]) => {
         floorPlans,
         timestamp: Date.now(),
         deviceId: DEVICE_ID,
+        userId: userId || 'anonymous',
       });
       logger.info('Floor plan update broadcast successful');
     } else {
@@ -105,6 +107,7 @@ export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[]) => {
           floorPlans,
           timestamp: Date.now(),
           deviceId: DEVICE_ID,
+          userId: userId || 'anonymous',
         });
       }, 1000);
     }

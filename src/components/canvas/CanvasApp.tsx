@@ -5,6 +5,7 @@ import { CanvasEventManager } from './CanvasEventManager';
 import { TouchGestureHandler } from './TouchGestureHandler';
 import { ToolVisualizer } from './ToolVisualizer';
 import { useCanvasHistory } from '@/hooks/canvas/useCanvasHistory';
+import { usePerUserCanvasHistory } from '@/hooks/usePerUserCanvasHistory';
 import { useDrawingContext } from '@/contexts/DrawingContext';
 import { useApplePencilSupport } from '@/hooks/canvas/useApplePencilSupport';
 import { updateGridWithZoom } from '@/utils/grid/gridVisibility';
@@ -13,6 +14,7 @@ import { optimizeCanvasPerformance, requestOptimizedRender } from '@/utils/canva
 import { usePusher } from '@/hooks/usePusher';
 import { toast } from 'sonner';
 import { SYNC_CHANNEL } from '@/utils/syncService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
@@ -38,6 +40,10 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   const { tool: contextTool, lineColor: contextLineColor, lineThickness: contextLineThickness } = useDrawingContext();
   const gridLayerRef = useRef<any[]>([]);
   const [collaborators, setCollaborators] = useState(0);
+  
+  // Get user information
+  const { user } = useAuth();
+  const userId = user?.id || 'anonymous';
   
   // Use external props if provided, otherwise use context values
   const tool = externalTool || contextTool;
@@ -128,15 +134,32 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     requestOptimizedRender(fabricCanvas, 'delete');
   };
   
-  // Set up canvas history management
+  // Set up per-user canvas history management when collaboration is enabled
   const { 
-    undo, 
-    redo, 
-    saveCurrentState,
-    deleteSelectedObjects: historyDeleteSelectedObjects
+    undo: perUserUndo, 
+    redo: perUserRedo, 
+    saveCurrentState: perUserSaveState,
+    deleteSelectedObjects: perUserDeleteSelectedObjects
+  } = usePerUserCanvasHistory({
+    canvas: fabricCanvas,
+    userId: userId
+  });
+  
+  // Set up regular canvas history when collaboration is disabled
+  const { 
+    undo: regularUndo, 
+    redo: regularRedo, 
+    saveCurrentState: regularSaveState,
+    deleteSelectedObjects: regularDeleteSelectedObjects
   } = useCanvasHistory({
     canvas: fabricCanvas
   });
+  
+  // Use the appropriate history management based on enableSync
+  const undo = enableSync ? perUserUndo : regularUndo;
+  const redo = enableSync ? perUserRedo : regularRedo;
+  const saveCurrentState = enableSync ? perUserSaveState : regularSaveState;
+  const historyDeleteSelectedObjects = enableSync ? perUserDeleteSelectedObjects : regularDeleteSelectedObjects;
   
   // Get Apple Pencil support
   const { isApplePencil } = useApplePencilSupport({
@@ -192,7 +215,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
             saveCurrentState={saveCurrentState}
             undo={undo}
             redo={redo}
-            deleteSelectedObjects={deleteSelectedObjects}
+            deleteSelectedObjects={historyDeleteSelectedObjects}
             enableSync={enableSync}
           />
           

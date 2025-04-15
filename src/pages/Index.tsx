@@ -11,6 +11,9 @@ import { useToolbarActions } from "@/hooks/useToolbarActions";
 import { DrawingMode } from "@/constants/drawingModes";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /**
  * Main Index page component
@@ -39,6 +42,9 @@ const Index = () => {
     mountedRef
   } = useCanvasState();
   
+  // Get user information
+  const { user, login } = useAuth();
+  
   // Real-time collaboration state
   const [enableSync, setEnableSync] = useState(true);
   
@@ -61,6 +67,17 @@ const Index = () => {
     handleSave,
     handleDelete
   } = useToolbarActions(canvas);
+  
+  // Login as test user for demo
+  const handleLoginAsTestUser = () => {
+    login('photographer@example.com', 'password123')
+      .then(() => {
+        toast.success('Logged in as test user');
+      })
+      .catch(error => {
+        toast.error('Login failed: ' + (error.message || 'Unknown error'));
+      });
+  };
   
   // Handler functions that combine state updates with actions
   const onToolChange = (tool: DrawingMode) => setActiveTool(handleToolChange(tool));
@@ -89,7 +106,19 @@ const Index = () => {
         onLineColorChange={setLineColor}
       />
       
-      <div className="bg-muted/30 border-b px-4 py-2 flex items-center justify-end space-x-4">
+      <div className="bg-muted/30 border-b px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          {user ? (
+            <div className="text-sm text-muted-foreground">
+              Editing as: <span className="font-medium text-foreground">{user.name || user.email}</span>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" onClick={handleLoginAsTestUser}>
+              Login as Test User
+            </Button>
+          )}
+        </div>
+        
         <div className="flex items-center space-x-2">
           <Switch
             id="collaboration-mode"

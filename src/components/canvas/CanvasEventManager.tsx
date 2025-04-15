@@ -8,6 +8,7 @@ import { useApplePencilSupport } from "@/hooks/canvas/useApplePencilSupport";
 import { requestOptimizedRender, createSmoothEventHandler, createCompletionHandler } from "@/utils/canvas/renderOptimizer";
 import { broadcastFloorPlanUpdate, subscribeSyncChannel, isUpdateFromThisDevice } from "@/utils/syncService";
 import { FloorPlan } from "@/types/floorPlanTypes";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Props for the CanvasEventManager
@@ -58,6 +59,10 @@ export const CanvasEventManager = ({
     lineThickness
   });
   
+  // Get user information for per-user history tracking
+  const { user } = useAuth();
+  const userId = user?.id || 'anonymous';
+  
   // Create a debounced state save function
   const debouncedSaveState = useRef(
     createCompletionHandler(() => {
@@ -93,7 +98,8 @@ export const CanvasEventManager = ({
             }
           }];
           
-          broadcastFloorPlanUpdate(floorPlanData);
+          // Pass the user ID with the update for tracking ownership
+          broadcastFloorPlanUpdate(floorPlanData, userId);
         } catch (error) {
           console.error('Failed to broadcast canvas update:', error);
         }
@@ -140,6 +146,8 @@ export const CanvasEventManager = ({
         
         // Apply remote canvas state
         const remoteCanvasJson = remotePlans[0].canvasJson;
+        const remoteUserId = data.userId || 'anonymous';
+        
         if (remoteCanvasJson) {
           // Keep track of the current selection
           const activeObject = canvas.getActiveObject();
@@ -150,7 +158,7 @@ export const CanvasEventManager = ({
           );
           
           // Apply the remote canvas state
-          canvas.loadFromJSON(remoteCanvasJson, () => {
+          canvas.loadFromJSON(JSON.parse(remoteCanvasJson), () => {
             // Restore grid objects
             gridObjects.forEach(obj => {
               if (!canvas.contains(obj)) {
@@ -171,7 +179,7 @@ export const CanvasEventManager = ({
             
             // Render the updated canvas
             requestOptimizedRender(canvas, 'remote-update');
-            console.log('Applied remote canvas update');
+            console.log(`Applied remote canvas update from user ${remoteUserId}`);
           });
         }
       } catch (error) {
@@ -182,7 +190,7 @@ export const CanvasEventManager = ({
     return () => {
       channel.unbind('client-floorplan-update');
     };
-  }, [canvas, enableSync]);
+  }, [canvas, enableSync, userId]);
   
   // Set up event listeners
   useEffect(() => {
