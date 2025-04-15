@@ -7,3 +7,5 @@
 export * from './useCanvasPersistence';
 export * from './useCanvasAutoSave';
 export * from './useCanvasRestoreCheck';
+export * from './useCanvasHistory';
+export * from './useCanvasKeyboardShortcuts';

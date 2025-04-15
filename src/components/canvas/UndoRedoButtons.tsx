@@ -31,7 +31,7 @@ export const UndoRedoButtons: React.FC<UndoRedoButtonsProps> = ({
         size="icon"
         onClick={onUndo}
         disabled={!canUndo}
-        title="Undo"
+        title="Undo (Ctrl+Z)"
         aria-label="Undo"
       >
         <RefreshCw className="h-4 w-4 rotate-[225deg]" />
@@ -42,7 +42,7 @@ export const UndoRedoButtons: React.FC<UndoRedoButtonsProps> = ({
         size="icon"
         onClick={onRedo}
         disabled={!canRedo}
-        title="Redo"
+        title="Redo (Ctrl+Shift+Z)"
         aria-label="Redo"
       >
         <RefreshCw className="h-4 w-4 rotate-[135deg]" />

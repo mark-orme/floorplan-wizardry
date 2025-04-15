@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useCanvasHistory } from '@/hooks/canvas/useCanvasHistory';
+import { useCanvasKeyboardShortcuts } from '@/hooks/canvas/useCanvasKeyboardShortcuts';
 
 interface CanvasHistoryManagerProps {
   canvas: FabricCanvas | null;
@@ -20,6 +21,13 @@ export const CanvasHistoryManager: React.FC<CanvasHistoryManagerProps> = ({
   // Initialize history manager
   const { canUndo, canRedo, undo, redo } = useCanvasHistory({
     canvas
+  });
+
+  // Register keyboard shortcuts
+  useCanvasKeyboardShortcuts({
+    canvas,
+    undo,
+    redo
   });
 
   // Update parent component with undo/redo state
@@ -52,6 +60,13 @@ export const useCanvasHistoryManager = (props: CanvasHistoryManagerProps) => {
       setTimeout(() => props.onSaveRequired(), 100);
     }
   };
+
+  // Add keyboard shortcuts
+  useCanvasKeyboardShortcuts({
+    canvas: props.canvas,
+    undo: handleUndo,
+    redo: handleRedo
+  });
 
   return {
     canUndo,

@@ -1,9 +1,8 @@
-
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
-import { useCanvasKeyboardShortcuts } from "@/hooks/useCanvasKeyboardShortcuts";
+import { useCanvasKeyboardShortcuts } from "@/hooks/canvas/useCanvasKeyboardShortcuts";
 
 /**
  * Props for the CanvasEventManager
@@ -53,10 +52,10 @@ export const CanvasEventManager = ({
   
   // Initialize keyboard shortcuts
   useCanvasKeyboardShortcuts({
-    fabricCanvasRef: { current: canvas },
+    canvas,
     undo,
     redo,
-    deleteSelectedObjects
+    deleteSelected: deleteSelectedObjects
   });
   
   // Set up event listeners
