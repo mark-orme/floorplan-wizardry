@@ -105,7 +105,7 @@ export const usePusherConnection = (floorplanId?: string): UsePusherConnectionRe
       setChannel(floorplanChannel);
       
     } catch (err) {
-      handleError(err, {
+      handleError(err, 'error', {
         component: 'usePusherConnection',
         operation: 'connect-to-pusher'
       });

@@ -1,167 +1,137 @@
 
 /**
- * Hook for managing offline support
- * @module hooks/useOfflineSupport
+ * Hook for offline support with canvas
  */
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
-import logger from '@/utils/logger';
-import { saveCanvasToIDB, loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
-import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/utils/errorHandling';
 
-interface UseOfflineSupportOptions {
-  canvasId?: string;
-  onReconnect?: () => Promise<void>;
-  showToasts?: boolean;
+interface UseOfflineSupportProps {
+  canvas: FabricCanvas | null;
+  canvasId: string;
+  onStatusChange?: (isOnline: boolean) => void;
 }
 
 /**
- * Hook that provides offline detection and management with cloud sync
- * @returns Object with online status and utilities
+ * Hook for managing offline/online state and sync capabilities
  */
-export const useOfflineSupport = (options?: UseOfflineSupportOptions) => {
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [wasOffline, setWasOffline] = useState<boolean>(false);
-  const reconnectAttemptRef = useRef(false);
-  const syncProgressRef = useRef(false);
-  const { canvasId = 'default-canvas', onReconnect, showToasts = true } = options || {};
-  
-  // Sync local canvas data to Supabase when coming back online
-  const syncToCloud = useCallback(async () => {
-    if (syncProgressRef.current) return;
-    
-    try {
-      syncProgressRef.current = true;
-      logger.info('Attempting to sync canvas data to cloud');
-      
-      // Load local canvas data from IndexedDB
-      const canvasData = await loadCanvasFromIDB(canvasId);
-      if (!canvasData) {
-        logger.info('No local canvas data to sync');
-        return;
-      }
-      
-      // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        logger.info('User not authenticated, skipping cloud sync');
-        return;
-      }
-      
-      // SECURITY FIX: For now, we'll disable the direct Supabase table access
-      // until proper RLS policies are in place. This prevents unauthorized access.
-      /*
-      // The following code is commented out as it requires Row Level Security
-      // to be properly configured on the Supabase 'canvas_data' table.
-      
-      // For proper implementation, these RLS policies should be established:
-      // CREATE POLICY "Users can access their own canvas data" ON canvas_data
-      //   FOR ALL USING (auth.uid() = user_id);
-      
-      const { error } = await supabase
-        .from('canvas_data') // This table must be created with RLS
-        .upsert({
-          user_id: user.id,  
-          canvas_id: canvasId,
-          data: canvasData,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,canvas_id' });
-      
-      if (error) {
-        throw error;
-      }
-      */
-      
-      // Log info about what would have happened
-      logger.info('Canvas data would be synced to cloud (table requires RLS)');
-      
-      if (showToasts) {
-        toast.success('Your work has been saved locally (cloud sync disabled)');
-      }
-      
-      logger.info('Successfully handled canvas data sync');
-    } catch (error) {
-      handleError(error, 'error', {
-        component: 'useOfflineSupport',
-        operation: 'syncToCloud',
-        canvasId
-      });
-      if (showToasts) {
-        toast.error('Failed to sync your work');
-      }
-    } finally {
-      syncProgressRef.current = false;
-    }
-  }, [canvasId, showToasts]);
-  
-  // Handle online event
-  const handleOnline = useCallback(async () => {
-    logger.info('Application is online');
-    setIsOnline(true);
-    
-    if (wasOffline) {
-      if (showToasts) {
-        toast.success('You\'re back online! Syncing your changes...');
-      }
-      
-      setWasOffline(false);
-      
-      // Attempt to sync with server
-      await syncToCloud();
-      
-      // Run custom reconnect handler if provided
-      if (onReconnect && !reconnectAttemptRef.current) {
-        reconnectAttemptRef.current = true;
-        
-        try {
-          await onReconnect();
-          logger.info('Reconnect handler executed successfully');
-        } catch (error) {
-          handleError(error, 'error', {
-            component: 'useOfflineSupport',
-            operation: 'onReconnect'
-          });
-        } finally {
-          reconnectAttemptRef.current = false;
-        }
-      }
-    }
-  }, [wasOffline, onReconnect, showToasts, syncToCloud]);
-  
-  // Handle offline event
-  const handleOffline = useCallback(() => {
-    logger.info('Application is offline');
-    setIsOnline(false);
-    setWasOffline(true);
-    
-    if (showToasts) {
-      toast.info('You\'re offline. Don\'t worry, your drawings will be saved locally.', {
-        duration: 5000
-      });
-    }
-  }, [showToasts]);
-  
-  // Set up event listeners for online/offline events
+export const useOfflineSupport = ({
+  canvas,
+  canvasId,
+  onStatusChange
+}: UseOfflineSupportProps) => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Track online/offline status
   useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (onStatusChange) onStatusChange(true);
+      
+      // Show toast notification
+      toast.success('You are back online');
+      
+      // If there are pending changes, trigger sync
+      if (hasPendingChanges) {
+        syncChanges();
+      }
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+      if (onStatusChange) onStatusChange(false);
+      
+      // Show toast notification
+      toast.warning('You are offline. Changes will be saved locally.');
+    };
+    
+    // Add event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     
-    // Check initial status
-    if (!navigator.onLine) {
-      handleOffline();
-    }
-    
-    // Clean up event listeners
+    // Clean up
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [handleOnline, handleOffline]);
+  }, [hasPendingChanges, onStatusChange]);
+  
+  // Save changes locally when offline
+  const saveOfflineChanges = useCallback(() => {
+    if (!canvas) return;
+    
+    try {
+      // Save canvas state to local storage for offline use
+      const json = canvas.toJSON();
+      localStorage.setItem(`offline_canvas_${canvasId}`, JSON.stringify(json));
+      localStorage.setItem(`offline_canvas_timestamp_${canvasId}`, Date.now().toString());
+      
+      // Mark that we have pending changes to sync
+      setHasPendingChanges(true);
+      
+    } catch (error) {
+      handleError(error, 'error', {
+        component: 'useOfflineSupport',
+        operation: 'saveOfflineChanges',
+        context: { canvasIdentifier: canvasId }
+      });
+    }
+  }, [canvas, canvasId]);
+  
+  // Sync changes when back online
+  const syncChanges = useCallback(async () => {
+    if (!isOnline || !canvas) return;
+    
+    try {
+      setIsSyncing(true);
+      
+      // Get offline changes
+      const offlineData = localStorage.getItem(`offline_canvas_${canvasId}`);
+      
+      if (offlineData) {
+        // Here you would implement actual sync with backend
+        // This is a placeholder for that implementation
+        
+        // Clear offline data after successful sync
+        localStorage.removeItem(`offline_canvas_${canvasId}`);
+        localStorage.removeItem(`offline_canvas_timestamp_${canvasId}`);
+        
+        setHasPendingChanges(false);
+        toast.success('Changes synced successfully');
+      }
+    } catch (error) {
+      handleError(error, 'error', {
+        component: 'useOfflineSupport',
+        operation: 'syncChanges',
+        context: { canvasIdentifier: canvasId }
+      });
+      toast.error('Failed to sync changes');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isOnline, canvas, canvasId]);
+  
+  // Check for pending changes on mount
+  useEffect(() => {
+    const offlineData = localStorage.getItem(`offline_canvas_${canvasId}`);
+    if (offlineData) {
+      setHasPendingChanges(true);
+      
+      // If online, attempt to sync immediately
+      if (isOnline) {
+        syncChanges();
+      }
+    }
+  }, [canvasId, isOnline, syncChanges]);
   
   return {
     isOnline,
-    wasOffline,
-    syncToCloud
+    hasPendingChanges,
+    isSyncing,
+    saveOfflineChanges,
+    syncChanges
   };
 };

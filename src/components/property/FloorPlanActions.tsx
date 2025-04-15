@@ -37,7 +37,7 @@ export const FloorPlanActions = ({
       await onStatusChange(newStatus);
       toast.success("Status updated successfully");
     } catch (error) {
-      handleError(error, {
+      handleError(error, 'error', {
         component: 'FloorPlanActions',
         operation: 'status-change',
         context: { newStatus }

@@ -68,7 +68,7 @@ export function useCanvasAutosave({
       handleError(error, 'error', {
         component: 'useCanvasAutosave',
         operation: 'saveCanvas',
-        canvasId
+        context: { canvasIdentifier: canvasId }
       });
       onSave?.(false);
       return false;
@@ -118,7 +118,7 @@ export function useCanvasAutosave({
       handleError(error, 'error', {
         component: 'useCanvasAutosave',
         operation: 'loadCanvas',
-        canvasId
+        context: { canvasIdentifier: canvasId }
       });
       onLoad?.(false);
       return false;

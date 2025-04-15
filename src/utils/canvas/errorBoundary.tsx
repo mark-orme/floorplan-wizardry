@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     console.error('Component stack:', errorInfo.componentStack);
     
     if (captureErrors) {
-      handleError(error, {
+      handleError(error, 'error', {
         component: componentName,
         operation: 'render',
         context: { errorInfo: errorInfo.componentStack }
