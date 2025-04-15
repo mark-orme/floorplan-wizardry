@@ -1,93 +1,114 @@
 
-import React, { useState, useEffect } from 'react';
-import { Download, BarChart2 } from 'lucide-react';
-import { downloadPerformanceReport } from '@/utils/performanceReporter';
+import React, { useEffect, useState } from 'react';
+import { collectPerformanceMetrics } from '@/utils/performanceReporter';
+import { formatSize } from '@/utils/buildReporter';
+
+interface PerformanceBadgeProps {
+  showMetrics?: boolean;
+  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  variant?: 'minimal' | 'detailed';
+}
 
 /**
- * Performance badge component
- * Shows load time and bundle size information
+ * Performance Badge component
+ * Displays performance metrics in the UI
  */
-export const PerformanceBadge: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [loadTime, setLoadTime] = useState<number | null>(null);
-  const [bundleSize, setBundleSize] = useState<number | null>(null);
+export const PerformanceBadge: React.FC<PerformanceBadgeProps> = ({
+  showMetrics = true,
+  position = 'bottom-right',
+  variant = 'minimal'
+}) => {
+  const [metrics, setMetrics] = useState<any>(null);
   
   useEffect(() => {
-    // Wait for page to fully load
-    if (document.readyState === 'complete') {
-      measurePerformance();
-    } else {
-      window.addEventListener('load', measurePerformance);
-      return () => window.removeEventListener('load', measurePerformance);
-    }
-  }, []);
+    if (!showMetrics) return;
+    
+    // Collect metrics after page load
+    const timer = setTimeout(() => {
+      const collectedMetrics = collectPerformanceMetrics();
+      setMetrics(collectedMetrics);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [showMetrics]);
   
-  const measurePerformance = () => {
-    // Calculate load time
-    const perfEntries = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-    if (perfEntries) {
-      setLoadTime(Math.round(perfEntries.loadEventEnd));
-    }
-    
-    // Estimate bundle size from resource entries
-    const jsEntries = performance.getEntriesByType('resource')
-      .filter(entry => entry.name.endsWith('.js'));
-    
-    if (jsEntries.length > 0) {
-      const totalSize = jsEntries.reduce((sum, entry) => sum + (entry.transferSize || 0), 0);
-      setBundleSize(Math.round(totalSize / 1024)); // KB
-    }
-    
-    // Show badge after measurement
-    setIsVisible(true);
+  if (!showMetrics || !metrics) return null;
+  
+  // Position classes
+  const positionClasses = {
+    'top-right': 'top-2 right-2',
+    'top-left': 'top-2 left-2',
+    'bottom-right': 'bottom-2 right-2',
+    'bottom-left': 'bottom-2 left-2'
   };
   
-  // Badge colors based on performance
-  const getLoadTimeColor = (ms: number) => {
-    if (ms < 1000) return 'bg-green-500';
-    if (ms < 3000) return 'bg-yellow-500';
-    return 'bg-red-500';
+  // Color based on performance scores
+  const getScoreColor = (value: number, good: number, bad: number, inverse = false) => {
+    if (inverse) {
+      return value < good ? 'text-green-500' : value < bad ? 'text-yellow-500' : 'text-red-500';
+    }
+    return value > good ? 'text-green-500' : value > bad ? 'text-yellow-500' : 'text-red-500';
   };
-  
-  const getBundleSizeColor = (kb: number) => {
-    if (kb < 300) return 'bg-green-500';
-    if (kb < 800) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-  
-  if (!isVisible) return null;
   
   return (
-    <div 
-      className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center bg-white dark:bg-gray-800 rounded-full shadow-lg px-2 py-1 text-xs z-50 border border-gray-200 dark:border-gray-700"
-      title="Performance metrics"
-    >
-      <div className="flex items-center mr-3">
-        <BarChart2 size={14} className="mr-1 text-gray-500" />
-        <span className="text-gray-700 dark:text-gray-300 font-medium">Performance</span>
-      </div>
-      
-      {loadTime !== null && (
-        <div className="flex items-center mr-2" title="Page load time">
-          <div className={`w-2 h-2 rounded-full ${getLoadTimeColor(loadTime)} mr-1`}></div>
-          <span>{loadTime}ms</span>
+    <div className={`fixed ${positionClasses[position]} bg-gray-800/80 text-white rounded-md shadow p-2 z-50 text-xs`}>
+      {variant === 'minimal' ? (
+        <div className="flex flex-col gap-1">
+          <div className="flex justify-between gap-2">
+            <span>FCP:</span>
+            <span className={getScoreColor(metrics.timeToFirstContentfulPaint, 1800, 3000, true)}>
+              {Math.round(metrics.timeToFirstContentfulPaint)}ms
+            </span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span>Resources:</span>
+            <span className={getScoreColor(metrics.resourceStats.totalRequests, 30, 50, true)}>
+              {metrics.resourceStats.totalRequests}
+            </span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span>Size:</span>
+            <span className={getScoreColor(metrics.resourceStats.totalSize / 1024, 1000, 2000, true)}>
+              {formatSize(metrics.resourceStats.totalSize)}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <div className="font-bold border-b border-gray-600 pb-1">Performance Metrics</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <span>First Paint:</span>
+            <span className={getScoreColor(metrics.timeToFirstPaint, 1000, 2500, true)}>
+              {Math.round(metrics.timeToFirstPaint)}ms
+            </span>
+            
+            <span>First Contentful Paint:</span>
+            <span className={getScoreColor(metrics.timeToFirstContentfulPaint, 1800, 3000, true)}>
+              {Math.round(metrics.timeToFirstContentfulPaint)}ms
+            </span>
+            
+            <span>DOM Content Loaded:</span>
+            <span className={getScoreColor(metrics.domContentLoaded, 2000, 4000, true)}>
+              {Math.round(metrics.domContentLoaded)}ms
+            </span>
+            
+            <span>Load Complete:</span>
+            <span className={getScoreColor(metrics.loadComplete, 3000, 6000, true)}>
+              {Math.round(metrics.loadComplete)}ms
+            </span>
+            
+            <span>Total Requests:</span>
+            <span className={getScoreColor(metrics.resourceStats.totalRequests, 30, 50, true)}>
+              {metrics.resourceStats.totalRequests}
+            </span>
+            
+            <span>Total Size:</span>
+            <span className={getScoreColor(metrics.resourceStats.totalSize / 1024, 1000, 2000, true)}>
+              {formatSize(metrics.resourceStats.totalSize)}
+            </span>
+          </div>
         </div>
       )}
-      
-      {bundleSize !== null && (
-        <div className="flex items-center mr-2" title="JavaScript bundle size">
-          <div className={`w-2 h-2 rounded-full ${getBundleSizeColor(bundleSize)} mr-1`}></div>
-          <span>{bundleSize}KB</span>
-        </div>
-      )}
-      
-      <button 
-        className="ml-1 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" 
-        title="Download performance report"
-        onClick={downloadPerformanceReport}
-      >
-        <Download size={12} className="text-gray-500" />
-      </button>
     </div>
   );
 };

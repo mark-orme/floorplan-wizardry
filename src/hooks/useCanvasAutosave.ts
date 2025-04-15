@@ -1,9 +1,9 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { saveCanvasToIDB, loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
 import { debounce } from '@/utils/debounce';
 import { toast } from 'sonner';
-import { FabricEventTypes } from '@/types/fabric-events';
 
 interface UseCanvasAutosaveProps {
   canvas: FabricCanvas | null;
@@ -28,20 +28,24 @@ export function useCanvasAutosave({
 }: UseCanvasAutosaveProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const setupDoneRef = useRef(false);
   
   // Save canvas state to IndexedDB
   const saveCanvas = async () => {
-    if (!canvas) return;
+    if (!canvas) return false;
     
     try {
       setIsSaving(true);
       const json = canvas.toJSON();
       await saveCanvasToIDB(canvasId, json);
+      setLastSaved(new Date());
       onSave?.(true);
+      return true;
     } catch (error) {
       console.error('Error auto-saving canvas:', error);
       onSave?.(false);
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -52,7 +56,7 @@ export function useCanvasAutosave({
   
   // Load canvas state from IndexedDB
   const loadCanvas = async () => {
-    if (!canvas) return;
+    if (!canvas) return false;
     
     try {
       setIsLoading(true);
@@ -74,12 +78,15 @@ export function useCanvasAutosave({
           toast.success('Canvas restored from local storage');
           onLoad?.(true);
         });
+        return true;
       } else {
         onLoad?.(false);
+        return false;
       }
     } catch (error) {
       console.error('Error loading canvas:', error);
       onLoad?.(false);
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -95,19 +102,16 @@ export function useCanvasAutosave({
     
     // Events that should trigger an auto-save
     const saveEvents = [
-      FabricEventTypes.OBJECT_ADDED,
-      FabricEventTypes.OBJECT_MODIFIED,
-      FabricEventTypes.OBJECT_REMOVED,
-      FabricEventTypes.PATH_CREATED
+      'object:added',
+      'object:modified',
+      'object:removed',
+      'path:created'
     ];
     
     // Add event listeners
     saveEvents.forEach(event => {
       canvas.on(event, handleChange);
     });
-    
-    // Try to load saved state on mount
-    loadCanvas();
     
     setupDoneRef.current = true;
     
@@ -125,6 +129,7 @@ export function useCanvasAutosave({
     saveCanvas,
     loadCanvas,
     isSaving,
-    isLoading
+    isLoading,
+    lastSaved
   };
 }

@@ -72,10 +72,42 @@ export function secureFetch(url: string, options: RequestInit = {}): Promise<Res
 }
 
 /**
+ * Apply security meta tags to document head
+ * Note: X-Frame-Options cannot be set via meta tags, it must be sent as an HTTP header
+ */
+export function applySecurityMetaTags(): void {
+  if (typeof window === 'undefined') return;
+  
+  // Remove any existing security meta tags
+  const existingTags = document.querySelectorAll(
+    'meta[http-equiv="Content-Security-Policy"], meta[http-equiv="X-Content-Type-Options"]'
+  );
+  existingTags.forEach(tag => tag.remove());
+  
+  // Add Content-Security-Policy meta tag
+  const cspTag = document.createElement('meta');
+  cspTag.httpEquiv = 'Content-Security-Policy';
+  cspTag.content = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.pusher.com https://*.pusher.com; worker-src 'self' blob:;";
+  document.head.appendChild(cspTag);
+  
+  // Add X-Content-Type-Options meta tag
+  const xctoTag = document.createElement('meta');
+  xctoTag.httpEquiv = 'X-Content-Type-Options';
+  xctoTag.content = 'nosniff';
+  document.head.appendChild(xctoTag);
+  
+  // X-Frame-Options cannot be set via meta tags, this must be done server-side
+  logger.info('Security meta tags applied, X-Frame-Options must be set via HTTP headers');
+}
+
+/**
  * Get CSP headers for server-side implementation
  */
 export function getCSPHeaders(): Record<string, string> {
   return {
-    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:* http://*:* ws://*:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;",
+    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:* http://*:* ws://*:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;",
+    'X-Frame-Options': 'SAMEORIGIN',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin'
   };
 }

@@ -5,9 +5,10 @@
  */
 import { saveAs } from 'file-saver';
 
-// Define a more specific interface for PerformanceResourceTiming
-interface EnhancedPerformanceResourceTiming extends PerformanceResourceTiming {
-  transferSize?: number;
+interface ResourceStats {
+  name: string;
+  size: number;
+  type: string;
 }
 
 interface PerformanceMetrics {
@@ -30,7 +31,7 @@ interface PerformanceMetrics {
 export const collectPerformanceMetrics = (): PerformanceMetrics => {
   const perfEntries = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
   const paintEntries = performance.getEntriesByType('paint');
-  const resourceEntries = performance.getEntriesByType('resource') as EnhancedPerformanceResourceTiming[];
+  const resourceEntries = performance.getEntriesByType('resource');
   
   // Extract paint timing
   const firstPaint = paintEntries.find(entry => entry.name === 'first-paint')?.startTime || 0;
@@ -39,13 +40,18 @@ export const collectPerformanceMetrics = (): PerformanceMetrics => {
   // Process resource stats
   const resourceStats = {
     totalRequests: resourceEntries.length,
-    totalSize: resourceEntries.reduce((total, entry) => total + (entry.transferSize || 0), 0),
+    totalSize: resourceEntries.reduce((total, entry) => {
+      // Using type assertion with a runtime check for transferSize
+      const resourceEntry = entry as PerformanceResourceTiming;
+      return total + (resourceEntry.transferSize || 0);
+    }, 0),
     byType: {} as Record<string, { count: number, size: number }>
   };
   
   // Group resources by type
   resourceEntries.forEach(entry => {
-    const url = entry.name;
+    const resourceEntry = entry as PerformanceResourceTiming;
+    const url = resourceEntry.name;
     const extension = url.split('.').pop()?.split('?')[0] || 'unknown';
     const type = getResourceType(extension);
     
@@ -54,7 +60,7 @@ export const collectPerformanceMetrics = (): PerformanceMetrics => {
     }
     
     resourceStats.byType[type].count += 1;
-    resourceStats.byType[type].size += (entry.transferSize || 0);
+    resourceStats.byType[type].size += (resourceEntry.transferSize || 0);
   });
   
   return {
