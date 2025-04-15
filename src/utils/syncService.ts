@@ -7,7 +7,6 @@
 import { subscribeToChannel, getPusher } from './pusher';
 import logger from './logger';
 import { toast } from 'sonner';
-import { FloorPlan } from '@/types/floorPlanTypes';
 
 // Constants
 export const SYNC_CHANNEL = 'floorplan-sync';
@@ -72,13 +71,24 @@ export const subscribeSyncChannel = () => {
 };
 
 /**
+ * Floor plan type with required properties
+ */
+interface SyncFloorPlan {
+  id: string;
+  name: string;
+  canvasJson: any;
+  updatedAt: string;
+  [key: string]: any; // Allow additional properties
+}
+
+/**
  * Broadcast floor plan update to all connected devices
  * Sends the updated floor plans to other devices via Pusher
  * 
- * @param {FloorPlan[]} floorPlans - The updated floor plans to broadcast
+ * @param {SyncFloorPlan[]} floorPlans - The updated floor plans to broadcast
  * @param {string} userId - Optional user ID for tracking changes by user
  */
-export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[], userId?: string) => {
+export const broadcastFloorPlanUpdate = (floorPlans: SyncFloorPlan[], userId?: string) => {
   logger.info('Broadcasting floor plan update');
   
   // In a real production app, you would send this to your server

@@ -1,178 +1,245 @@
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import logger from '@/utils/logger';
 
 /**
- * Forces the creation and visibility of the grid
- * @param canvas - Fabric canvas instance
- * @returns {boolean} True if grid created successfully
- */
-export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean => {
-  try {
-    // Check if canvas is valid
-    if (!canvas || typeof canvas.getObjects !== 'function') {
-      console.warn('Invalid canvas for grid creation');
-      return false;
-    }
-    
-    // Clear existing grid
-    const existingGrids = canvas.getObjects().filter(obj => 
-      obj.objectType === 'grid');
-    
-    existingGrids.forEach(grid => {
-      canvas.remove(grid);
-    });
-    
-    const canvasWidth = canvas.getWidth();
-    const canvasHeight = canvas.getHeight();
-    const zoom = canvas.getZoom();
-    
-    // Scale grid size based on zoom
-    const scaleFactor = 1 / zoom;
-    const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE * scaleFactor;
-    const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE * scaleFactor;
-    
-    // Calculate grid lines needed
-    const smallGridLines = Math.ceil(Math.max(canvasWidth, canvasHeight) * zoom / smallGridSize) + 10;
-    const largeGridLines = Math.ceil(Math.max(canvasWidth, canvasHeight) * zoom / largeGridSize) + 10;
-    
-    // Create small grid lines
-    for (let i = -smallGridLines; i <= smallGridLines; i++) {
-      // Vertical lines
-      canvas.add(new Line(
-        [i * smallGridSize, -canvasHeight * zoom, i * smallGridSize, canvasHeight * zoom],
-        {
-          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          excludeFromExport: true
-        }
-      ));
-      
-      // Horizontal lines
-      canvas.add(new Line(
-        [-canvasWidth * zoom, i * smallGridSize, canvasWidth * zoom, i * smallGridSize],
-        {
-          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          excludeFromExport: true
-        }
-      ));
-    }
-    
-    // Create large grid lines
-    for (let i = -largeGridLines; i <= largeGridLines; i++) {
-      // Vertical lines
-      canvas.add(new Line(
-        [i * largeGridSize, -canvasHeight * zoom, i * largeGridSize, canvasHeight * zoom],
-        {
-          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          excludeFromExport: true
-        }
-      ));
-      
-      // Horizontal lines
-      canvas.add(new Line(
-        [-canvasWidth * zoom, i * largeGridSize, canvasWidth * zoom, i * largeGridSize],
-        {
-          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          excludeFromExport: true
-        }
-      ));
-    }
-    
-    // Send grid to back
-    canvas.getObjects().filter(obj => obj.objectType === 'grid').forEach(grid => {
-      canvas.sendToBack(grid);
-    });
-    
-    canvas.renderAll();
-    return true;
-  } catch (error) {
-    console.error('Error creating grid:', error);
-    return false;
-  }
-};
-
-/**
- * Updates the grid visibility based on zoom level
- * @param canvas - Fabric canvas instance
+ * Updates grid appearance based on current zoom level
+ * @param canvas The fabric canvas instance
  */
 export const updateGridWithZoom = (canvas: FabricCanvas): void => {
   if (!canvas) return;
-  
-  const zoom = canvas.getZoom();
-  
-  // Add lastRecordedZoom property to canvas as any to resolve type issue
-  const canvasAny = canvas as any;
-  
-  // Only redraw grid if zoom change is significant
-  if (canvasAny.lastRecordedZoom && 
-      Math.abs(zoom - canvasAny.lastRecordedZoom) < 0.1) {
-    return;
+
+  try {
+    const zoom = canvas.getZoom() || 1;
+    
+    // Find grid objects
+    const gridObjects = canvas.getObjects().filter(
+      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    );
+    
+    if (gridObjects.length === 0) {
+      return; // No grid to update
+    }
+    
+    // Adjust grid appearance based on zoom
+    gridObjects.forEach(obj => {
+      // For small grid lines
+      if ((obj as any).isSmallGrid) {
+        // Hide small grid lines when zoomed out too far
+        if (zoom < 0.4) {
+          obj.set('visible', false);
+        } else {
+          obj.set('visible', true);
+          // Adjust stroke width inversely to zoom
+          obj.set('strokeWidth', GRID_CONSTANTS.SMALL_GRID_WIDTH / Math.max(0.5, Math.min(2, zoom)));
+        }
+      } 
+      // For large grid lines
+      else if ((obj as any).isLargeGrid) {
+        obj.set('visible', true);
+        // Adjust stroke width inversely to zoom
+        obj.set('strokeWidth', GRID_CONSTANTS.LARGE_GRID_WIDTH / Math.max(0.5, Math.min(2, zoom)));
+      }
+    });
+    
+    // Request render to update the grid
+    canvas.requestRenderAll();
+    
+  } catch (error) {
+    logger.error('Error updating grid with zoom:', error);
   }
-  
-  // Store current zoom level
-  canvasAny.lastRecordedZoom = zoom;
-  
-  // Force grid recreation
-  forceGridCreationAndVisibility(canvas);
 };
 
 /**
- * Ensures grid is visible on the canvas
- * @param canvas - Fabric canvas instance
- * @returns True if grid needed fixing, false if already visible
+ * Ensures grid is visible and properly created on the canvas
+ * @param canvas The fabric canvas instance
+ * @returns An object with the result of the operation
  */
-export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
-  if (!canvas) return false;
+export const forceGridCreationAndVisibility = (canvas: FabricCanvas): {
+  success: boolean;
+  gridObjects: FabricObject[];
+  action: 'created' | 'fixed' | 'none';
+} => {
+  if (!canvas) return { success: false, gridObjects: [], action: 'none' };
   
-  const gridObjects = canvas.getObjects().filter(obj => 
-    (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+  try {
+    // Check if grid exists
+    const existingGridObjects = canvas.getObjects().filter(
+      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    );
+    
+    // If grid already exists, ensure visibility
+    if (existingGridObjects.length > 0) {
+      existingGridObjects.forEach(obj => {
+        obj.set('visible', true);
+        canvas.sendToBack(obj);
+      });
+      
+      canvas.requestRenderAll();
+      return { 
+        success: true, 
+        gridObjects: existingGridObjects,
+        action: 'fixed'
+      };
+    }
+    
+    // Otherwise create grid from scratch
+    const width = canvas.width || 800;
+    const height = canvas.height || 600;
+    const gridObjects: FabricObject[] = [];
+    
+    // Create small grid lines
+    for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+      const line = new Line([i, 0, i, height], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isSmallGrid: true
+      } as any);
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isSmallGrid: true
+      } as any);
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create large grid lines
+    for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+      const line = new Line([i, 0, i, height], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isLargeGrid: true
+      } as any);
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isLargeGrid: true
+      } as any);
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Put grid at the back
+    gridObjects.forEach(obj => canvas.sendToBack(obj));
+    
+    // Apply zoom adjustment
+    updateGridWithZoom(canvas);
+    
+    canvas.requestRenderAll();
+    return { 
+      success: true, 
+      gridObjects,
+      action: 'created'
+    };
+    
+  } catch (error) {
+    logger.error('Error creating grid:', error);
+    return { 
+      success: false, 
+      gridObjects: [],
+      action: 'none'
+    };
+  }
+};
+
+/**
+ * Sets up monitoring to ensure grid stays visible
+ * @param canvas The fabric canvas instance
+ * @param interval Check interval in milliseconds
+ * @returns Cleanup function to stop monitoring
+ */
+export const setupGridMonitoring = (canvas: FabricCanvas, interval = 5000): (() => void) => {
+  const intervalId = setInterval(() => {
+    if (!canvas) return;
+    
+    const gridObjects = canvas.getObjects().filter(
+      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    );
+    
+    // If grid is missing or count is too low, recreate it
+    if (gridObjects.length < GRID_CONSTANTS.MIN_GRID_OBJECTS && GRID_CONSTANTS.AUTO_RECREATE_ON_EMPTY) {
+      logger.info('Grid missing or incomplete, recreating...');
+      forceGridCreationAndVisibility(canvas);
+    }
+    
+    // Update grid with current zoom
+    updateGridWithZoom(canvas);
+    
+  }, interval);
+  
+  return () => clearInterval(intervalId);
+};
+
+/**
+ * Ensures grid is present on the canvas
+ * @param canvas The fabric canvas instance
+ * @returns Result of the grid check/creation operation
+ */
+export const ensureGridIsPresent = (canvas: FabricCanvas): {
+  success: boolean;
+  gridObjects: FabricObject[];
+  action: 'created' | 'fixed' | 'none';
+} => {
+  if (!canvas) return { success: false, gridObjects: [], action: 'none' };
+  
+  // Check if grid exists
+  const existingGridObjects = canvas.getObjects().filter(
+    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
   );
   
-  let needsFixing = false;
-  
-  gridObjects.forEach(obj => {
-    if (!obj.visible) {
-      obj.set('visible', true);
-      needsFixing = true;
+  // If we have enough grid objects and they're all visible, we're good
+  if (existingGridObjects.length >= GRID_CONSTANTS.MIN_GRID_OBJECTS) {
+    const allVisible = existingGridObjects.every(obj => obj.visible);
+    
+    if (allVisible) {
+      return { 
+        success: true, 
+        gridObjects: existingGridObjects,
+        action: 'none'
+      };
     }
-  });
-  
-  if (needsFixing) {
-    canvas.renderAll();
-    return true;
+    
+    // Fix visibility
+    existingGridObjects.forEach(obj => {
+      obj.set('visible', true);
+      canvas.sendToBack(obj);
+    });
+    
+    canvas.requestRenderAll();
+    return { 
+      success: true, 
+      gridObjects: existingGridObjects,
+      action: 'fixed'
+    };
   }
   
-  return false;
-};
-
-/**
- * Sets the visibility of grid objects on the canvas
- * @param canvas - Fabric canvas instance
- * @param visible - Whether grid should be visible
- */
-export const setGridVisibility = (canvas: FabricCanvas, visible: boolean): void => {
-  if (!canvas) return;
-  
-  const gridObjects = canvas.getObjects().filter(obj => obj.objectType === 'grid');
-  
-  gridObjects.forEach(obj => {
-    obj.visible = visible;
-  });
-  
-  canvas.renderAll();
+  // Need to create the grid
+  return forceGridCreationAndVisibility(canvas);
 };

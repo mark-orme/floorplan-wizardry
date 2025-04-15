@@ -15,6 +15,7 @@ import { usePusher } from '@/hooks/usePusher';
 import { toast } from 'sonner';
 import { SYNC_CHANNEL } from '@/utils/syncService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWindowSize } from '@/hooks/useWindowSize';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
@@ -28,8 +29,8 @@ interface CanvasAppProps {
 
 export const CanvasApp: React.FC<CanvasAppProps> = ({ 
   setCanvas,
-  width = 800,
-  height = 600,
+  width: propWidth,
+  height: propHeight,
   tool: externalTool,
   lineColor: externalLineColor,
   lineThickness: externalLineThickness,
@@ -40,6 +41,11 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   const { tool: contextTool, lineColor: contextLineColor, lineThickness: contextLineThickness } = useDrawingContext();
   const gridLayerRef = useRef<any[]>([]);
   const [collaborators, setCollaborators] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: propWidth || 800, height: propHeight || 600 });
+  
+  // Get window size for responsive behavior
+  const { width: windowWidth, height: windowHeight } = useWindowSize();
   
   // Get user information
   const { user } = useAuth();
@@ -49,6 +55,46 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   const tool = externalTool || contextTool;
   const lineColor = externalLineColor || contextLineColor;
   const lineThickness = externalLineThickness || contextLineThickness;
+  
+  // Update canvas dimensions based on container size
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const updateDimensions = () => {
+      if (!containerRef.current) return;
+      
+      // Use container dimensions if props not provided
+      const newWidth = propWidth || containerRef.current.clientWidth;
+      const newHeight = propHeight || containerRef.current.clientHeight;
+      
+      setDimensions({
+        width: Math.max(newWidth, 100), // min width 100px
+        height: Math.max(newHeight, 100) // min height 100px
+      });
+      
+      // Update canvas size if it exists
+      if (fabricCanvas) {
+        fabricCanvas.setDimensions({
+          width: Math.max(newWidth, 100),
+          height: Math.max(newHeight, 100)
+        });
+        
+        // Update grid with new dimensions
+        updateGridWithZoom(fabricCanvas);
+        requestOptimizedRender(fabricCanvas, 'resize');
+      }
+    };
+    
+    // Initial update
+    updateDimensions();
+    
+    // Listen for window resize
+    window.addEventListener('resize', updateDimensions);
+    
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, [fabricCanvas, containerRef, propWidth, propHeight, windowWidth, windowHeight]);
   
   // Set up Pusher real-time connection
   const { isConnected } = usePusher({
@@ -88,8 +134,8 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     if (!canvasRef.current) return;
     
     const canvas = new FabricCanvas(canvasRef.current, {
-      width,
-      height,
+      width: dimensions.width,
+      height: dimensions.height,
       backgroundColor: '#ffffff',
       preserveObjectStacking: true,
       enableRetinaScaling: true,
@@ -111,7 +157,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     return () => {
       canvas.dispose();
     };
-  }, [setCanvas, width, height]);
+  }, [setCanvas, dimensions.width, dimensions.height]);
   
   // Create a deleteSelectedObjects function
   const deleteSelectedObjects = () => {
@@ -190,7 +236,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   }, [fabricCanvas, tool]);
   
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div ref={containerRef} className="relative w-full h-full overflow-hidden">
       {enableSync && isConnected && collaborators > 0 && (
         <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
           <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
@@ -200,7 +246,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
       
       <canvas 
         ref={canvasRef} 
-        className="touch-manipulation border border-gray-200"
+        className="touch-manipulation border border-gray-200 w-full h-full"
         data-testid="canvas"
       />
       

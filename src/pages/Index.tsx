@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasProvider } from "@/contexts/CanvasContext";
 import { DrawingProvider } from "@/contexts/DrawingContext";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useWindowSize } from "@/hooks/useWindowSize";
 
 /**
  * Main Index page component
@@ -47,6 +48,11 @@ const Index = () => {
   
   // Real-time collaboration state
   const [enableSync, setEnableSync] = useState(true);
+  
+  // Get window size for responsive behavior
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 640; // sm breakpoint
+  const isTablet = windowWidth >= 640 && windowWidth < 1024; // md-lg breakpoint
   
   // Use grid management hook
   const { toggleGridDebug, handleForceRefresh } = useGridManagement(
@@ -87,6 +93,16 @@ const Index = () => {
   };
   const onForceRefresh = () => handleForceRefresh(canvas, setForceRefreshKey);
   
+  // Update interface based on screen size
+  useEffect(() => {
+    if (isMobile) {
+      // Adjust for mobile: larger line thickness for touch
+      if (lineThickness < 3) {
+        setLineThickness(3);
+      }
+    }
+  }, [isMobile, lineThickness, setLineThickness]);
+  
   return (
     <main className="flex flex-col w-full min-h-screen bg-background">
       <EditorHeader
@@ -104,16 +120,18 @@ const Index = () => {
         onDelete={handleDelete}
         onLineThicknessChange={setLineThickness}
         onLineColorChange={setLineColor}
+        isMobile={isMobile}
+        isTablet={isTablet}
       />
       
-      <div className="bg-muted/30 border-b px-4 py-2 flex items-center justify-between">
+      <div className={`bg-muted/30 border-b px-4 py-2 flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'}`}>
         <div className="flex items-center space-x-2">
           {user ? (
             <div className="text-sm text-muted-foreground">
               Editing as: <span className="font-medium text-foreground">{user.name || user.email}</span>
             </div>
           ) : (
-            <Button variant="outline" size="sm" onClick={handleLoginAsTestUser}>
+            <Button variant="outline" size={isMobile ? "sm" : "default"} onClick={handleLoginAsTestUser}>
               Login as Test User
             </Button>
           )}
@@ -125,7 +143,7 @@ const Index = () => {
             checked={enableSync}
             onCheckedChange={setEnableSync}
           />
-          <Label htmlFor="collaboration-mode">
+          <Label htmlFor="collaboration-mode" className={isMobile ? "text-sm" : ""}>
             Real-time Collaboration
           </Label>
         </div>
