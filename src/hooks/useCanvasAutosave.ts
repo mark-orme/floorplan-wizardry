@@ -11,6 +11,7 @@ interface UseCanvasAutosaveProps {
   debounceMs?: number;
   onSave?: (success: boolean) => void;
   onLoad?: (success: boolean) => void;
+  onRestore?: (success: boolean) => void; // Added this missing property
 }
 
 /**
@@ -24,7 +25,8 @@ export function useCanvasAutosave({
   canvasId = 'default-canvas',
   debounceMs = 2000,
   onSave,
-  onLoad
+  onLoad,
+  onRestore
 }: UseCanvasAutosaveProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -110,7 +112,8 @@ export function useCanvasAutosave({
     
     // Add event listeners
     saveEvents.forEach(event => {
-      canvas.on(event, handleChange);
+      // Fix: Use type assertion to handle the string-based event types
+      canvas.on(event as any, handleChange);
     });
     
     setupDoneRef.current = true;
@@ -119,7 +122,8 @@ export function useCanvasAutosave({
     return () => {
       if (canvas) {
         saveEvents.forEach(event => {
-          canvas.off(event, handleChange);
+          // Fix: Use type assertion here as well
+          canvas.off(event as any, handleChange);
         });
       }
     };

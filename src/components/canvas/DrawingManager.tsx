@@ -66,7 +66,7 @@ export const DrawingManager = () => {
         console.log("Canvas autosaved successfully");
       }
     },
-    onRestore: (success) => {
+    onLoad: (success) => {
       if (success) {
         // After loading from autosave, update the history state
         updateHistoryState();
