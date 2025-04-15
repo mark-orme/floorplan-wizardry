@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
@@ -75,8 +76,8 @@ export const useCanvasPersistence = ({
       }
 
       canvas.loadFromJSON(json, () => {
-        // Removed argument from renderAll()
-        canvas.requestRenderAll();
+        // Changed from requestRenderAll(true) to renderAll()
+        canvas.renderAll();
         logger.info('Canvas state restored from localStorage');
         setIsLoading(false);
         if (onRestore) onRestore(true);
