@@ -19,6 +19,7 @@ export interface UseStraightLineToolProps {
   lineThickness: number;
   saveCurrentState: () => void;
   snapToGrid?: boolean;
+  tool?: DrawingMode;
 }
 
 /**
@@ -30,7 +31,8 @@ export const useStraightLineTool = ({
   lineColor,
   lineThickness,
   saveCurrentState,
-  snapToGrid = true
+  snapToGrid = true,
+  tool = DrawingMode.STRAIGHT_LINE
 }: UseStraightLineToolProps) => {
   // Line drawing state
   const [isDrawing, setIsDrawing] = useState(false);

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
 import { DebugInfoState } from '@/types/core/DebugInfo';
@@ -57,7 +56,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Use wall drawing hook
   const { isDrawing: isDrawingWall } = useWallDrawing({
     fabricCanvasRef,
-    enabled: tool === DrawingMode.WALL,
+    tool,
     wallColor,
     wallThickness
   });
@@ -71,7 +70,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     saveCurrentState: () => {
       // This would normally save the state for undo/redo
       console.log("Saving canvas state");
-    }
+    },
+    tool // Pass the tool for compatibility
   });
 
   // Handle selection and deletion functionality

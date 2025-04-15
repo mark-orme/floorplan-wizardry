@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -137,10 +136,11 @@ describe('useStraightLineTool', () => {
   it('should initialize and set up event handlers correctly', () => {
     const { result } = renderHook(() => useStraightLineTool({
       fabricCanvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState
+      saveCurrentState,
+      tool: DrawingMode.STRAIGHT_LINE
     }));
     
     // Verify event handlers are attached
@@ -161,10 +161,11 @@ describe('useStraightLineTool', () => {
   it('should not set up event handlers if tool is not STRAIGHT_LINE', () => {
     renderHook(() => useStraightLineTool({
       fabricCanvasRef,
-      tool: DrawingMode.SELECT,
+      enabled: false,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState
+      saveCurrentState,
+      tool: DrawingMode.SELECT
     }));
     
     // Verify no event handlers are attached for the wrong tool
@@ -175,19 +176,20 @@ describe('useStraightLineTool', () => {
     const { rerender } = renderHook(
       (props) => useStraightLineTool({
         fabricCanvasRef,
-        tool: props.tool,
+        enabled: props.enabled,
         lineColor: '#000000',
         lineThickness: 2,
-        saveCurrentState
+        saveCurrentState,
+        tool: props.enabled ? DrawingMode.STRAIGHT_LINE : DrawingMode.SELECT
       }),
-      { initialProps: { tool: DrawingMode.STRAIGHT_LINE } }
+      { initialProps: { enabled: true } }
     );
     
     // Verify event handlers are set up
     expect(mockCanvas.on).toHaveBeenCalledTimes(3);
     
     // Change tool
-    rerender({ tool: DrawingMode.SELECT });
+    rerender({ enabled: false });
     
     // Verify event handlers are removed
     expect(mockCanvas.off).toHaveBeenCalledTimes(3);
@@ -217,10 +219,11 @@ describe('useStraightLineTool', () => {
     
     renderHook(() => useStraightLineTool({
       fabricCanvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState
+      saveCurrentState,
+      tool: DrawingMode.STRAIGHT_LINE
     }));
     
     // Get mouse down handler
@@ -262,10 +265,11 @@ describe('useStraightLineTool', () => {
     
     const { result } = renderHook(() => useStraightLineTool({
       fabricCanvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState
+      saveCurrentState,
+      tool: DrawingMode.STRAIGHT_LINE
     }));
     
     // Verify cancel drawing function is returned
@@ -316,10 +320,11 @@ describe('useStraightLineTool', () => {
     
     renderHook(() => useStraightLineTool({
       fabricCanvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState
+      saveCurrentState,
+      tool: DrawingMode.STRAIGHT_LINE
     }));
     
     // Get mouse handlers
