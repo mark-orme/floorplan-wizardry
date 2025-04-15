@@ -1,141 +1,127 @@
 
-/**
- * Grid Visibility Utilities
- * Helper functions to ensure grid is created and visible
- */
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { toast } from 'sonner';
-import logger from '@/utils/logger';
-import { createGrid } from '@/utils/canvasGrid';
 
 /**
- * Ensure grid visibility - creates grid if none exists or makes existing grid visible
- * @param canvas Fabric canvas instance
- * @returns Array of created grid objects or empty array if creation failed
+ * Forces the creation and visibility of the grid
+ * @param canvas - Fabric canvas instance
  */
-export const ensureGridVisibility = (canvas: FabricCanvas): FabricObject[] => {
-  if (!canvas) {
-    logger.warn('Cannot ensure grid visibility: Canvas is null');
-    return [];
-  }
-
-  // Check if grid exists
-  const existingGridObjects = canvas.getObjects().filter(
-    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-  );
-
-  // If grid already exists, make sure it's visible
-  if (existingGridObjects.length > 0) {
-    logger.info(`Found ${existingGridObjects.length} existing grid objects, ensuring visibility`);
+export const forceGridCreationAndVisibility = (canvas: FabricCanvas): void => {
+  try {
+    // Check if canvas is valid
+    if (!canvas || typeof canvas.getObjects !== 'function') {
+      console.warn('Invalid canvas for grid creation');
+      return;
+    }
     
-    existingGridObjects.forEach(obj => {
-      obj.set('visible', true);
-      canvas.sendToBack(obj);
+    // Clear existing grid
+    const existingGrids = canvas.getObjects().filter(obj => 
+      obj.objectType === 'grid');
+    
+    existingGrids.forEach(grid => {
+      canvas.remove(grid);
     });
     
-    canvas.requestRenderAll();
-    return existingGridObjects;
-  }
-
-  // If no grid exists, create it
-  logger.info('No grid found, creating new grid');
-  try {
-    return createGrid(canvas);
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+    const zoom = canvas.getZoom();
+    
+    // Scale grid size based on zoom
+    const scaleFactor = 1 / zoom;
+    const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE * scaleFactor;
+    const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE * scaleFactor;
+    
+    // Calculate grid lines needed
+    const smallGridLines = Math.ceil(Math.max(canvasWidth, canvasHeight) * zoom / smallGridSize) + 10;
+    const largeGridLines = Math.ceil(Math.max(canvasWidth, canvasHeight) * zoom / largeGridSize) + 10;
+    
+    // Create small grid lines
+    for (let i = -smallGridLines; i <= smallGridLines; i++) {
+      // Vertical lines
+      canvas.add(new fabric.Line(
+        [i * smallGridSize, -canvasHeight * zoom, i * smallGridSize, canvasHeight * zoom],
+        {
+          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          excludeFromExport: true
+        }
+      ));
+      
+      // Horizontal lines
+      canvas.add(new fabric.Line(
+        [-canvasWidth * zoom, i * smallGridSize, canvasWidth * zoom, i * smallGridSize],
+        {
+          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          excludeFromExport: true
+        }
+      ));
+    }
+    
+    // Create large grid lines
+    for (let i = -largeGridLines; i <= largeGridLines; i++) {
+      // Vertical lines
+      canvas.add(new fabric.Line(
+        [i * largeGridSize, -canvasHeight * zoom, i * largeGridSize, canvasHeight * zoom],
+        {
+          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          excludeFromExport: true
+        }
+      ));
+      
+      // Horizontal lines
+      canvas.add(new fabric.Line(
+        [-canvasWidth * zoom, i * largeGridSize, canvasWidth * zoom, i * largeGridSize],
+        {
+          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          excludeFromExport: true
+        }
+      ));
+    }
+    
+    // Send grid to back
+    canvas.getObjects().filter(obj => obj.objectType === 'grid').forEach(grid => {
+      canvas.sendToBack(grid);
+    });
+    
+    canvas.renderAll();
   } catch (error) {
-    logger.error('Failed to create grid:', error);
-    console.error('Failed to create grid:', error);
-    toast.error('Failed to create grid');
-    return [];
+    console.error('Error creating grid:', error);
   }
 };
 
 /**
- * Set grid visibility
- * @param canvas Fabric canvas instance
- * @param visible Whether grid should be visible
+ * Updates the grid visibility based on zoom level
+ * @param canvas - Fabric canvas instance
  */
-export const setGridVisibility = (
-  canvas: FabricCanvas,
-  visible: boolean
-): void => {
+export const updateGridWithZoom = (canvas: FabricCanvas): void => {
   if (!canvas) return;
   
-  const gridObjects = canvas.getObjects().filter(
-    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-  );
+  const zoom = canvas.getZoom();
   
-  gridObjects.forEach(obj => {
-    obj.set('visible', visible);
-  });
+  // Only redraw grid if zoom change is significant
+  if (canvas.lastRecordedZoom && 
+      Math.abs(zoom - canvas.lastRecordedZoom) < 0.1) {
+    return;
+  }
   
-  canvas.requestRenderAll();
-  logger.info(`Grid visibility set to ${visible}`);
+  // Store current zoom level
+  canvas.lastRecordedZoom = zoom;
+  
+  // Force grid recreation
+  forceGridCreationAndVisibility(canvas);
 };
-
-/**
- * Force grid creation and visibility if it doesn't exist or isn't visible
- * @param canvas Fabric canvas instance
- * @returns Array of created grid objects or empty array if creation failed
- */
-export const forceGridCreationAndVisibility = (canvas: FabricCanvas): FabricObject[] => {
-  if (!canvas) {
-    logger.warn('Cannot create grid: Canvas is null');
-    return [];
-  }
-
-  // Check if grid exists
-  const existingGridObjects = canvas.getObjects().filter(
-    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-  );
-
-  // If grid already exists, make sure it's visible
-  if (existingGridObjects.length > 0) {
-    logger.info(`Found ${existingGridObjects.length} existing grid objects, ensuring visibility`);
-    
-    existingGridObjects.forEach(obj => {
-      obj.set('visible', true);
-      canvas.sendToBack(obj);
-    });
-    
-    canvas.requestRenderAll();
-    return existingGridObjects;
-  }
-
-  // If no grid exists, create it
-  logger.info('No grid found, creating new grid');
-  try {
-    return createGrid(canvas);
-  } catch (error) {
-    logger.error('Failed to create grid:', error);
-    console.error('Failed to create grid:', error);
-    toast.error('Failed to create grid');
-    return [];
-  }
-};
-
-/**
- * Create a global utility for fixing grid issues via console
- */
-if (typeof window !== 'undefined') {
-  (window as any).fixGrid = function(canvas?: FabricCanvas) {
-    try {
-      const targetCanvas = canvas || (window as any).fabricCanvas;
-      if (!targetCanvas) {
-        console.error('No fabric canvas found');
-        toast.error('No fabric canvas found');
-        return [];
-      }
-      
-      console.log('Fixing grid with emergency utility...');
-      const gridObjects = forceGridCreationAndVisibility(targetCanvas);
-      console.log(`Emergency grid fix: created/fixed ${gridObjects.length} grid objects`);
-      toast.success(`Grid fixed with ${gridObjects.length} objects`);
-      return gridObjects;
-    } catch (error) {
-      console.error('Error running grid fix utility:', error);
-      toast.error('Error fixing grid');
-      return [];
-    }
-  };
-}

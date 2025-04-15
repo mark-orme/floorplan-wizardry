@@ -1,107 +1,126 @@
 
-import React, { useState, useEffect } from 'react';
-import { Canvas } from '@/components/Canvas';
+import React, { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { DebugInfoState } from '@/types/core/DebugInfo';
-import { DrawingMode } from '@/constants/drawingModes';
-import { toast } from 'sonner';
+import { CanvasEventManager } from './CanvasEventManager';
+import { TouchGestureHandler } from './TouchGestureHandler';
+import { ToolVisualizer } from './ToolVisualizer';
+import { useCanvasHistory } from '@/hooks/canvas/useCanvasHistory';
+import { useDrawingContext } from '@/contexts/DrawingContext';
+import { useApplePencilSupport } from '@/hooks/canvas/useApplePencilSupport';
+import { updateGridWithZoom } from '@/utils/grid/gridVisibility';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
-  showGridDebug?: boolean;
-  tool?: DrawingMode;
-  lineThickness?: number;
-  lineColor?: string;
+  width?: number;
+  height?: number;
 }
 
 export const CanvasApp: React.FC<CanvasAppProps> = ({ 
-  setCanvas, 
-  showGridDebug = false,
-  tool = DrawingMode.SELECT,
-  lineThickness = 2,
-  lineColor = '#000000' 
+  setCanvas,
+  width = 800,
+  height = 600
 }) => {
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
-    hasError: false,
-    errorMessage: '',
-    lastInitTime: 0,
-    lastGridCreationTime: 0,
-    eventHandlersSet: false,
-    canvasEventsRegistered: false,
-    gridRendered: false,
-    toolsInitialized: false,
-    gridCreated: false,
-    canvasInitialized: false,
-    dimensionsSet: false,
-    brushInitialized: false,
-    canvasReady: false,
-    canvasCreated: false,
-    gridObjectCount: 0,
-    canvasDimensions: {
-      width: 0,
-      height: 0
-    },
-    lastError: '',
-    lastRefresh: Date.now()
-  });
-
-  const handleCanvasReady = (canvas: FabricCanvas) => {
-    console.log('Canvas is ready');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const { tool, lineColor, lineThickness } = useDrawingContext();
+  const gridLayerRef = useRef<any[]>([]);
+  
+  // Initialize canvas
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    const canvas = new FabricCanvas(canvasRef.current, {
+      width,
+      height,
+      backgroundColor: '#ffffff',
+      preserveObjectStacking: true
+    });
+    
+    // Add zoom event listener for grid scaling
+    canvas.on('zoom:changed', () => {
+      updateGridWithZoom(canvas);
+    });
+    
+    setFabricCanvas(canvas);
     setCanvas(canvas);
     
-    // Ensure grid is visible by forcing a re-render
-    setTimeout(() => {
-      canvas.requestRenderAll();
-      console.log('Forcing canvas re-render to ensure grid visibility');
-    }, 100);
-    
-    // Store canvas in window for debugging
-    if (typeof window !== 'undefined') {
-      (window as any).fabricCanvas = canvas;
-    }
-  };
-
-  const handleCanvasError = (error: Error) => {
-    console.error('Canvas error:', error);
-    setDebugInfo(prev => ({
-      ...prev,
-      hasError: true,
-      errorMessage: error.message,
-      lastError: error.message, // Use string instead of Error object
-      lastErrorTime: Date.now()
-    }));
-    
-    toast.error(`Canvas error: ${error.message}`);
-  };
-
-  // Monitor grid state and log warnings if grid isn't created
+    return () => {
+      canvas.dispose();
+    };
+  }, [setCanvas, width, height]);
+  
+  // Set up canvas history management
+  const { 
+    undo, 
+    redo, 
+    saveCurrentState,
+    deleteSelectedObjects 
+  } = useCanvasHistory({
+    canvas: fabricCanvas
+  });
+  
+  // Get Apple Pencil support
+  const { isApplePencil } = useApplePencilSupport({
+    canvas: fabricCanvas,
+    lineThickness
+  });
+  
+  // Set cursor based on current tool
   useEffect(() => {
-    if (debugInfo.canvasCreated && !debugInfo.gridCreated) {
-      console.warn('Grid not created but canvas exists - this may indicate a problem');
-    }
+    if (!fabricCanvas) return;
     
-    if (debugInfo.gridObjectCount === 0 && debugInfo.canvasCreated) {
-      console.warn('Grid has 0 objects - grid may be invisible');
+    switch (tool) {
+      case 'SELECT':
+        canvasRef.current!.style.cursor = 'default';
+        break;
+      case 'DRAW':
+        canvasRef.current!.style.cursor = 'crosshair';
+        break;
+      case 'HAND':
+        canvasRef.current!.style.cursor = 'grab';
+        break;
+      case 'ERASER':
+        canvasRef.current!.style.cursor = 'cell';
+        break;
+      default:
+        canvasRef.current!.style.cursor = 'crosshair';
     }
-  }, [debugInfo]);
-
+  }, [fabricCanvas, tool]);
+  
   return (
-    <div className="w-full h-full">
-      <Canvas
-        width={window.innerWidth}
-        height={window.innerHeight}
-        onCanvasReady={handleCanvasReady}
-        onError={handleCanvasError}
-        setDebugInfo={setDebugInfo}
-        showGridDebug={showGridDebug}
-        tool={tool}
-        lineThickness={lineThickness}
-        lineColor={lineColor}
-        wallColor="#444444"
-        wallThickness={4}
-        style={{ width: '100%', height: '100%' }}
-        forceGridVisible={true} // Force grid to be always visible
+    <div className="relative w-full h-full overflow-hidden">
+      <canvas 
+        ref={canvasRef} 
+        className="touch-manipulation border border-gray-200"
+        data-testid="canvas"
       />
+      
+      {fabricCanvas && (
+        <>
+          <CanvasEventManager
+            canvas={fabricCanvas}
+            tool={tool}
+            lineColor={lineColor}
+            lineThickness={lineThickness}
+            gridLayerRef={gridLayerRef}
+            saveCurrentState={saveCurrentState}
+            undo={undo}
+            redo={redo}
+            deleteSelectedObjects={deleteSelectedObjects}
+          />
+          
+          <TouchGestureHandler 
+            canvas={fabricCanvas} 
+            lineThickness={lineThickness}
+            tool={tool}
+          />
+          
+          <ToolVisualizer 
+            tool={tool}
+            isApplePencil={isApplePencil}
+          />
+        </>
+      )}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
 import { useCanvasKeyboardShortcuts } from "@/hooks/canvas/useCanvasKeyboardShortcuts";
+import { useApplePencilSupport } from "@/hooks/canvas/useApplePencilSupport";
 
 /**
  * Props for the CanvasEventManager
@@ -18,7 +19,7 @@ interface CanvasEventManagerProps {
   undo: () => void;
   redo: () => void;
   deleteSelectedObjects: () => void;
-  onDrawingComplete?: () => void; // New callback for drawing completion
+  onDrawingComplete?: () => void; // Callback for drawing completion
 }
 
 /**
@@ -42,12 +43,23 @@ export const CanvasEventManager = ({
   // Track if we need to save state
   const needsSaveRef = useRef(false);
   
+  // Use Apple Pencil support
+  const { 
+    isApplePencil,
+    adjustedLineThickness,
+    processPencilTouchEvent
+  } = useApplePencilSupport({
+    canvas,
+    lineThickness
+  });
+  
   // Initialize straight line tool
   useStraightLineTool({
     fabricCanvasRef: { current: canvas },
     enabled: tool === DrawingMode.STRAIGHT_LINE,
     lineColor,
-    lineThickness,
+    // Use pressure-adjusted thickness for Apple Pencil
+    lineThickness: isApplePencil ? adjustedLineThickness : lineThickness,
     saveCurrentState
   });
   
@@ -85,7 +97,8 @@ export const CanvasEventManager = ({
     // Configure free drawing brush
     if (canvas.freeDrawingBrush) {
       canvas.freeDrawingBrush.color = lineColor;
-      canvas.freeDrawingBrush.width = lineThickness;
+      // Use pressure-adjusted thickness for Apple Pencil
+      canvas.freeDrawingBrush.width = isApplePencil ? adjustedLineThickness : lineThickness;
     }
     
     // Event handlers
@@ -141,7 +154,7 @@ export const CanvasEventManager = ({
       canvas.off('mouse:up', handleMouseUp);
       canvas.off('selection:cleared', handleMouseUp);
     };
-  }, [canvas, tool, lineColor, lineThickness, saveCurrentState, onDrawingComplete]);
+  }, [canvas, tool, lineColor, lineThickness, saveCurrentState, onDrawingComplete, isApplePencil, adjustedLineThickness]);
   
   // Empty render as this is just an event manager
   return null;
