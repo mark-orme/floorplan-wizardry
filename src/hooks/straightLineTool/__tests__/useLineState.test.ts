@@ -33,7 +33,14 @@ describe('useLineState', () => {
   });
   
   it('should initialize with correct default values', () => {
-    const { result } = renderHook(() => useLineState());
+    // Create mock props required by the hook
+    const mockProps = {
+      fabricCanvasRef: { current: null },
+      lineThickness: 2,
+      lineColor: '#000000'
+    };
+    
+    const { result } = renderHook(() => useLineState(mockProps));
     
     // Check default state
     expect(result.current.isDrawing).toBe(false);
@@ -44,7 +51,14 @@ describe('useLineState', () => {
   });
   
   it('should set the start point and activate drawing', () => {
-    const { result } = renderHook(() => useLineState());
+    // Create mock props required by the hook
+    const mockProps = {
+      fabricCanvasRef: { current: null },
+      lineThickness: 2,
+      lineColor: '#000000'
+    };
+    
+    const { result } = renderHook(() => useLineState(mockProps));
     
     const testPoint: Point = { x: 100, y: 100 };
     
@@ -58,7 +72,14 @@ describe('useLineState', () => {
   });
   
   it('should set current line reference', () => {
-    const { result } = renderHook(() => useLineState());
+    // Create mock props required by the hook
+    const mockProps = {
+      fabricCanvasRef: { current: null },
+      lineThickness: 2,
+      lineColor: '#000000'
+    };
+    
+    const { result } = renderHook(() => useLineState(mockProps));
     
     // Create a mock line with proper constructor arguments
     // Fabric.js Line requires an array of 4 numbers: [x1, y1, x2, y2]
@@ -73,10 +94,17 @@ describe('useLineState', () => {
   });
   
   it('should set tooltip reference', () => {
-    const { result } = renderHook(() => useLineState());
+    // Create mock props required by the hook
+    const mockProps = {
+      fabricCanvasRef: { current: null },
+      lineThickness: 2,
+      lineColor: '#000000'
+    };
     
-    // Create a mock tooltip with proper arguments
-    const mockTooltip = new Text('Distance: 100px', {});
+    const { result } = renderHook(() => useLineState(mockProps));
+    
+    // Create a mock HTML div element for the tooltip
+    const mockTooltip = document.createElement('div');
     
     act(() => {
       result.current.setDistanceTooltip(mockTooltip);
@@ -87,7 +115,14 @@ describe('useLineState', () => {
   });
   
   it('should initialize tool state', () => {
-    const { result } = renderHook(() => useLineState());
+    // Create mock props required by the hook
+    const mockProps = {
+      fabricCanvasRef: { current: null },
+      lineThickness: 2,
+      lineColor: '#000000'
+    };
+    
+    const { result } = renderHook(() => useLineState(mockProps));
     
     act(() => {
       result.current.initializeTool();
@@ -98,12 +133,19 @@ describe('useLineState', () => {
   });
   
   it('should reset drawing state completely', () => {
-    const { result } = renderHook(() => useLineState());
+    // Create mock props required by the hook
+    const mockProps = {
+      fabricCanvasRef: { current: null },
+      lineThickness: 2,
+      lineColor: '#000000'
+    };
+    
+    const { result } = renderHook(() => useLineState(mockProps));
     
     // Set up initial state
     const testPoint: Point = { x: 100, y: 100 };
     const mockLine = new Line([0, 0, 100, 100], {}); // Using proper Line constructor params
-    const mockTooltip = new Text('Distance: 100px', {});
+    const mockTooltip = document.createElement('div');
     
     act(() => {
       result.current.setStartPoint(testPoint);

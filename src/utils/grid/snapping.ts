@@ -7,6 +7,20 @@ import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { Point } from '@/types/core/Point';
 
 /**
+ * Snap a value to the grid
+ * 
+ * @param value Value to snap
+ * @param gridSize Grid size to snap to
+ * @returns Snapped value
+ */
+export const snap = (
+  value: number, 
+  gridSize: number = GRID_CONSTANTS.GRID_SIZE
+): number => {
+  return Math.round(value / gridSize) * gridSize;
+};
+
+/**
  * Snap a point to the grid
  * 
  * @param point Point to snap
@@ -22,6 +36,11 @@ export const snapPointToGrid = (
     y: Math.round(point.y / gridSize) * gridSize
   };
 };
+
+/**
+ * Alternative naming for snapPointToGrid for compatibility
+ */
+export const snapToGrid = snapPointToGrid;
 
 /**
  * Snap a line's endpoints to the grid
@@ -43,6 +62,52 @@ export const snapLineToGrid = (
 };
 
 /**
+ * Snap line to standard angles (0, 45, 90, 135, 180...)
+ * 
+ * @param start Starting point
+ * @param end Ending point
+ * @returns Object with start point and snapped end point
+ */
+export const snapLineToStandardAngles = (
+  start: Point,
+  end: Point
+): Point => {
+  // Calculate the angle of the line
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  
+  // Calculate the distance between points
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Snap angle to nearest 45 degrees
+  const snappedAngle = Math.round(angle / 45) * 45;
+  
+  // Convert back to radians
+  const radians = snappedAngle * (Math.PI / 180);
+  
+  // Calculate new endpoint based on snapped angle
+  return {
+    x: start.x + distance * Math.cos(radians),
+    y: start.y + distance * Math.sin(radians)
+  };
+};
+
+/**
+ * Snap an angle to nearest multiple of specified degrees
+ * 
+ * @param start Starting point
+ * @param end Ending point
+ * @returns Snapped angle end point
+ */
+export const snapToAngle = (
+  start: Point,
+  end: Point
+): Point => {
+  return snapLineToStandardAngles(start, end);
+};
+
+/**
  * Check if a point is already on a grid intersection
  * 
  * @param point Point to check
@@ -61,20 +126,6 @@ export const isPointOnGrid = (
                   Math.abs(point.y % gridSize - gridSize) < threshold;
   
   return xOnGrid && yOnGrid;
-};
-
-/**
- * Snap an angle to nearest multiple of specified degrees
- * 
- * @param angleDegrees Angle in degrees
- * @param snapAngleDeg Angle increment to snap to
- * @returns Snapped angle in degrees
- */
-export const snapAngleToIncrement = (
-  angleDegrees: number, 
-  snapAngleDeg: number = GRID_CONSTANTS.SNAP_ANGLE
-): number => {
-  return Math.round(angleDegrees / snapAngleDeg) * snapAngleDeg;
 };
 
 /**
@@ -112,3 +163,32 @@ export const distanceToGrid = (
   
   return Math.sqrt(dx * dx + dy * dy);
 };
+
+/**
+ * Calculate distance to nearest grid lines
+ * 
+ * @param point Point to check  
+ * @param gridSize Grid size
+ * @returns Distance to nearest horizontal and vertical grid lines
+ */
+export const distanceToGridLine = (
+  point: Point,
+  gridSize: number = GRID_CONSTANTS.GRID_SIZE
+): { x: number, y: number } => {
+  // Find nearest grid lines
+  const gridX = Math.round(point.x / gridSize) * gridSize;
+  const gridY = Math.round(point.y / gridSize) * gridSize;
+  
+  // Calculate distances
+  const distX = Math.abs(point.x - gridX);
+  const distY = Math.abs(point.y - gridY);
+  
+  return { x: distX, y: distY };
+};
+
+/**
+ * Fix import name compatibility issue
+ */
+export { distanceToGridLine as distanceToGrid };
+
+// Add any other needed grid utilities here to ensure compatibility

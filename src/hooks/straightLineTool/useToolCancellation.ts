@@ -1,19 +1,15 @@
 
-/**
- * Hook for managing drawing cancellation
- * @module hooks/straightLineTool/useToolCancellation
- */
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
-import { toast } from 'sonner';
-import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Line } from 'fabric';
 import { InputMethod } from './useLineState';
+import { toast } from 'sonner';
 
 interface UseToolCancellationProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   isDrawing: boolean;
   currentLineRef: React.MutableRefObject<Line | null>;
-  distanceTooltipRef: React.MutableRefObject<any | null>;
+  distanceTooltipRef: React.MutableRefObject<HTMLDivElement | null>;
   setIsDrawing: (isDrawing: boolean) => void;
   resetDrawingState: () => void;
   inputMethod: InputMethod;
@@ -21,9 +17,6 @@ interface UseToolCancellationProps {
   snapEnabled: boolean;
 }
 
-/**
- * Hook for managing drawing cancellation and grid snapping
- */
 export const useToolCancellation = ({
   fabricCanvasRef,
   isDrawing,
@@ -35,65 +28,46 @@ export const useToolCancellation = ({
   toggleSnap,
   snapEnabled
 }: UseToolCancellationProps) => {
-  // Get the error reporting hook
-  const { reportDrawingError, logDrawingEvent } = useDrawingErrorReporting();
-
-  // Cancel drawing (e.g. on Escape key)
+  // Cancel the drawing operation
   const cancelDrawing = useCallback(() => {
-    if (!fabricCanvasRef.current || !isDrawing) return;
+    if (!isDrawing) return;
     
-    try {
-      // Remove temporary line
-      if (currentLineRef.current) {
-        fabricCanvasRef.current.remove(currentLineRef.current);
-      }
-      
-      // Remove distance tooltip if it exists
-      if (distanceTooltipRef.current) {
-        fabricCanvasRef.current.remove(distanceTooltipRef.current);
-      }
-      
-      // Reset state
-      setIsDrawing(false);
-      
-      // Reset drawing state
-      resetDrawingState();
-      
-      // Render changes
+    console.log('Cancelling drawing operation');
+    
+    // Reset the drawing state
+    setIsDrawing(false);
+    
+    // Remove the current line from the canvas
+    if (currentLineRef.current && fabricCanvasRef.current) {
+      fabricCanvasRef.current.remove(currentLineRef.current);
       fabricCanvasRef.current.renderAll();
-      
-      // Log event
-      logDrawingEvent('Line drawing cancelled', 'line-cancel', {
-        interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
-      });
-      
-      toast.info("Line drawing cancelled");
-    } catch (error) {
-      reportDrawingError(error, 'line-cancel', {
-        interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
-      });
     }
-  }, [
-    fabricCanvasRef, 
-    isDrawing, 
-    currentLineRef, 
-    distanceTooltipRef, 
-    setIsDrawing, 
-    resetDrawingState, 
-    logDrawingEvent,
-    reportDrawingError,
-    inputMethod
-  ]);
+    
+    // Clean up the tooltip if it exists
+    if (distanceTooltipRef.current) {
+      const parent = distanceTooltipRef.current.parentElement;
+      if (parent) {
+        parent.removeChild(distanceTooltipRef.current);
+      }
+    }
+    
+    // Reset all references
+    resetDrawingState();
+    
+    // Show feedback to user
+    toast.info('Drawing cancelled', {
+      id: 'drawing-cancelled',
+      duration: 2000
+    });
+  }, [isDrawing, setIsDrawing, currentLineRef, fabricCanvasRef, distanceTooltipRef, resetDrawingState]);
 
-  // Toggle grid snapping
+  // Toggle grid snapping and return current state
   const toggleGridSnapping = useCallback(() => {
     toggleSnap();
-    
-    logDrawingEvent(`Grid snapping ${snapEnabled ? 'disabled' : 'enabled'}`, 'toggle-grid-snap', {
-      interaction: { type: inputMethod }
-    });
-  }, [toggleSnap, snapEnabled, logDrawingEvent, inputMethod]);
-
+    // Return the new state (opposite of current snapEnabled value)
+    return !snapEnabled;
+  }, [toggleSnap, snapEnabled]);
+  
   return {
     cancelDrawing,
     toggleGridSnapping

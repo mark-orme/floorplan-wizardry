@@ -10,7 +10,10 @@ import { validatePolygon, isPolygonClosed } from './geometry/validation';
 import { getBoundingBox, getMidpoint } from './geometry/boundingBox';
 import { pixelsToMeters, metersToPixels } from './geometry/conversion';
 import { simplifyPath, smoothPath } from './geometry/pathProcessing';
-import { snapToGrid, snapToAngle } from './grid/snapping';
+import { 
+  snapPointToGrid as snapToGrid, 
+  snapToAngle 
+} from './grid/snapping';
 
 // Import line operations
 import {

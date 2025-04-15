@@ -13,13 +13,14 @@ export { useStraightLineEvents } from './useStraightLineEvents';
 export { useLineKeyboardShortcuts } from './useLineKeyboardShortcuts';
 export { useToolCancellation } from './useToolCancellation';
 export { useLineToolSetup } from './useLineToolSetup';
+export { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 
-// Export the enhanced grid snapping hook
-export const useEnhancedGridSnapping = () => {
-  return {
-    // Placeholder implementation to fix type errors
-    snapToGrid: (point: any) => point,
-    isSnapEnabled: true,
-    toggleSnap: () => {}
-  };
-};
+// This export is now handled by the actual hook implementation
+// export const useEnhancedGridSnapping = () => {
+//   return {
+//     // Placeholder implementation to fix type errors
+//     snapToGrid: (point: any) => point,
+//     isSnapEnabled: true,
+//     toggleSnap: () => {}
+//   };
+// };
