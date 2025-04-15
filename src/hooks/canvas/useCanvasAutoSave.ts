@@ -39,9 +39,25 @@ export const useCanvasAutoSave = ({
       
       // We need to format this as a FloorPlan for Supabase
       const floorPlans: FloorPlan[] = [{ 
-        data: canvasState,
+        id: HISTORY_KEY,
         name: `Floor Plan (${new Date().toLocaleDateString()})`,
-        id: HISTORY_KEY
+        label: `Floor Plan (${new Date().toLocaleDateString()})`,
+        walls: [],
+        rooms: [],
+        strokes: [],
+        canvasData: null,
+        canvasJson: canvasState,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        gia: 0,
+        level: 0,
+        index: 0,
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          paperSize: 'A4',
+          level: 0
+        }
       }];
       
       saveToSupabase(floorPlans);

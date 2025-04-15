@@ -1,5 +1,5 @@
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { FabricEventTypes } from '@/types/fabric-events';
 import logger from '@/utils/logger';
