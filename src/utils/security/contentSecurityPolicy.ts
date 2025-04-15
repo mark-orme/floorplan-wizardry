@@ -34,7 +34,8 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'"],
-  'worker-src': ["'self'", "blob:"],
+  // Add explicit worker-src with 'unsafe-inline' to allow blob URLs for workers
+  'worker-src': ["'self'", "blob:", "'unsafe-inline'"],
   'child-src': ["'self'", "blob:"],
   'upgrade-insecure-requests': [],
 };
@@ -68,7 +69,8 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
-  'worker-src': ["'self'", "blob:"],
+  // Add explicit worker-src with 'unsafe-inline' to allow blob URLs for workers
+  'worker-src': ["'self'", "blob:", "'unsafe-inline'"],
   'child-src': ["'self'", "blob:"],
 };
 
@@ -188,6 +190,7 @@ export function checkCSPApplied(): boolean {
   if (!cspTag) return false;
   
   const content = cspTag.getAttribute('content') || '';
+  // Make sure we specifically check for the sentry.io domain in the CSP
   return content.includes('sentry.io') && content.includes('o4508914471927808.ingest.de.sentry.io');
 }
 
@@ -195,7 +198,21 @@ export function checkCSPApplied(): boolean {
 export function fixSentryCSP(): void {
   if (!checkCSPApplied()) {
     console.warn('CSP missing Sentry domains, forcing refresh...');
-    initializeCSP(true);
+    // Force a completely fresh application of the CSP meta tag
+    const existingCspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+    if (existingCspTag) {
+      existingCspTag.remove();
+    }
+    
+    // Use the development directives which are less restrictive
+    const isProduction = false;
+    const cspMeta = document.createElement('meta');
+    cspMeta.httpEquiv = 'Content-Security-Policy';
+    cspMeta.content = buildCSPString(isProduction);
+    document.head.appendChild(cspMeta);
+    
+    // Log the emergency fix
+    console.info('Emergency CSP fix applied with content:', cspMeta.content);
     toast.info('Security policy refreshed to allow error reporting');
   }
 }

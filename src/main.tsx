@@ -58,7 +58,7 @@ setTimeout(() => {
       <App />
     </ErrorBoundary>
   );
-}, 800); // Increased timeout to ensure CSP is applied
+}, 1000); // Increased timeout to ensure CSP is applied
 
 function initializeServices() {
   console.log('Initializing services with CSP state:', checkCSPApplied() ? 'Valid' : 'Invalid');
@@ -104,10 +104,16 @@ function initializeServices() {
       }
       
       return event;
+    },
+    
+    // Use our own error handler for failures
+    errorHandler: (error) => {
+      console.error("Sentry error:", error);
+      // Don't show errors to users, just log them
     }
   });
   
-  // Verify CSP after Sentry init
+  // Verify CSP after Sentry init and reapply if needed
   setTimeout(() => {
     if (!checkCSPApplied()) {
       console.warn('CSP was overwritten after Sentry init, reapplying');
