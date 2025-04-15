@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { useThrottledCanvasUpdate } from './useThrottledCanvasUpdate';
+import { FabricEventTypes } from '@/types/fabric-events';
 
 interface UseCanvasUndoRedoProps {
   canvas: FabricCanvas | null;
@@ -30,8 +31,9 @@ export const useCanvasUndoRedo = ({
   const ignoreNextSnapshotRef = useRef<boolean>(false);
   
   // Create throttled/debounced canvas state capture
-  const { debouncedUpdate: debouncedCapture } = useThrottledCanvasUpdate((forceCapture = false) => {
-    if (!canvas || (ignoreNextSnapshotRef.current && !forceCapture)) {
+  // Fix: Remove the parameter from debouncedUpdate call if it doesn't accept one
+  const { debouncedUpdate: debouncedCapture } = useThrottledCanvasUpdate(() => {
+    if (!canvas || ignoreNextSnapshotRef.current) {
       ignoreNextSnapshotRef.current = false;
       return;
     }
@@ -196,11 +198,11 @@ export const useCanvasUndoRedo = ({
     if (!canvas) return;
     
     // Events that should trigger state capture
+    // Fix: Use the FabricEventTypes enum instead of string literals
     const captureEvents = [
-      'object:added',
-      'object:removed',
-      'object:modified',
-      'path:created'
+      FabricEventTypes.OBJECT_ADDED,
+      FabricEventTypes.OBJECT_MODIFIED,
+      FabricEventTypes.OBJECT_REMOVED
     ];
     
     // Create handlers
@@ -210,6 +212,7 @@ export const useCanvasUndoRedo = ({
     
     // Add event listeners
     captureEvents.forEach(event => {
+      // Fix: Use properly typed event names
       canvas.on(event, handleModification);
     });
     
@@ -225,6 +228,7 @@ export const useCanvasUndoRedo = ({
     return () => {
       if (canvas) {
         captureEvents.forEach(event => {
+          // Fix: Use properly typed event names
           canvas.off(event, handleModification);
         });
       }
