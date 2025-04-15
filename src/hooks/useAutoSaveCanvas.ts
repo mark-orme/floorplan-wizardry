@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
@@ -123,7 +123,7 @@ export function useAutoSaveCanvas({
       }
       
       canvas.loadFromJSON(savedState, () => {
-        canvas.requestRenderAll();
+        canvas.renderAll();
         setIsLoading(false);
         if (onRestore) onRestore(true);
       });

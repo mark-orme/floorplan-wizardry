@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
@@ -76,7 +75,7 @@ export const useCanvasPersistence = ({
       }
 
       canvas.loadFromJSON(json, () => {
-        // Remove the argument from requestRenderAll()
+        // Removed argument from renderAll()
         canvas.requestRenderAll();
         logger.info('Canvas state restored from localStorage');
         setIsLoading(false);
