@@ -1,3 +1,4 @@
+
 /**
  * Pusher service for handling real-time communication
  * @module pusher
@@ -38,8 +39,23 @@ export const getPusher = (): Pusher => {
           error?.message?.includes('violated Content Security Policy directive')) {
         logger.warn('Pusher connection blocked by CSP - check CSP settings to allow Pusher domains', {
           attempt: connectionAttempts,
-          error: error?.message
+          error: error?.message,
+          recommendation: 'Ensure connect-src directive includes Pusher domains'
         });
+        
+        // Automatically try to fix CSP if possible
+        try {
+          if (typeof window !== 'undefined') {
+            // Force reinitialization of CSP
+            const cspModule = require('./security/contentSecurityPolicy');
+            if (cspModule && cspModule.initializeCSP) {
+              logger.info('Attempting to refresh CSP settings for Pusher connectivity');
+              cspModule.initializeCSP();
+            }
+          }
+        } catch (fixError) {
+          logger.error('Failed to refresh CSP settings:', fixError);
+        }
       } else {
         logger.error('Pusher connection error:', error);
       }

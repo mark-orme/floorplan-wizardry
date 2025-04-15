@@ -1,3 +1,4 @@
+
 /**
  * Content Security Policy Utilities
  * Provides CSP configuration and implementation
@@ -22,7 +23,9 @@ export const PRODUCTION_CSP_DIRECTIVES = {
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
     "https://*.pusher.com",
-    "https://*.lovable.app" // Adding lovable.app domain
+    "https://*.lovable.app", // Adding lovable.app domain
+    "https://api.sentry.io",
+    "https://ingest.sentry.io"
   ],
   'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
@@ -51,6 +54,8 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "wss://*.pusher.com",
     "https://*.pusher.com",
     "https://*.lovable.app", // Adding lovable.app domain
+    "https://api.sentry.io",
+    "https://ingest.sentry.io",
     "ws:", 
     "http://localhost:*"
   ],
@@ -142,6 +147,14 @@ export function initializeCSP(): void {
   // Apply CSP as meta tag for client-side enforcement
   if (typeof window !== 'undefined') {
     const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Force application of CSP meta tag
+    const existingCspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+    if (existingCspTag) {
+      existingCspTag.remove();
+      logger.info('Removed existing CSP meta tag for refresh');
+    }
+    
     applyCSPMetaTag(isProduction);
     
     // Log successful initialization
@@ -153,3 +166,4 @@ export function initializeCSP(): void {
     });
   }
 }
+

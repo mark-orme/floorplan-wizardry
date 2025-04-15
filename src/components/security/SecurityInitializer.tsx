@@ -15,7 +15,7 @@ import { toast } from 'sonner';
  */
 export const SecurityInitializer = () => {
   useEffect(() => {
-    // Initialize Content Security Policy with production settings in production mode
+    // Initialize Content Security Policy 
     initializeCSP();
     
     // Apply additional security headers
@@ -68,16 +68,23 @@ export const SecurityInitializer = () => {
         { domain: 'pusher.com', directive: 'connect-src' },
         { domain: 'sockjs-eu.pusher.com', directive: 'connect-src' },
         { domain: 'ws-eu.pusher.com', directive: 'connect-src' },
+        { domain: 'ingest.sentry.io', directive: 'connect-src' },
+        { domain: 'api.sentry.io', directive: 'connect-src' },
         { source: 'blob', directive: 'worker-src' }
       ];
       
       // Check if this is a known violation we want to filter
       const shouldSkipLogging = knownViolations.some(violation => 
-        e.blockedURI.includes(violation.domain || '') && 
-        e.violatedDirective === violation.directive
+        (e.blockedURI.includes(violation.domain || '') && 
+        e.violatedDirective === violation.directive) ||
+        (violation.source && e.blockedURI === violation.source && 
+        e.violatedDirective === violation.directive)
       );
       
-      if (!shouldSkipLogging) {
+      // Log all violations during development, but filter in production
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      if (!shouldSkipLogging || !isProduction) {
         logger.warn('CSP violation detected', {
           directive: e.violatedDirective,
           blockedURI: e.blockedURI,
@@ -86,7 +93,6 @@ export const SecurityInitializer = () => {
       }
       
       // Only show toast for significant violations in production
-      const isProduction = process.env.NODE_ENV === 'production';
       if (isProduction && 
           (e.violatedDirective === 'script-src' || e.violatedDirective === 'frame-src') &&
           !e.blockedURI.includes('sentry.io') &&

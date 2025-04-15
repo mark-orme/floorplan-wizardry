@@ -75,11 +75,11 @@ Sentry.init({
          error.message.includes('Refused to connect') ||
          error.message.includes('violates') ||
          error.message.includes('blocked by CSP'))) {
-      // Don't report CSP errors to avoid noise
+      // Don't report CSP errors to avoid noise - handle locally
       return null;
     }
     
-    // Rate limit error reporting to avoid flooding Sentry
+    // Rate limit error reporting for network errors to avoid flooding Sentry
     if (event.exception && 
         event.exception.values && 
         event.exception.values.length > 0 && 
@@ -101,11 +101,14 @@ Sentry.init({
   }
 });
 
-// Initialize all security features with production settings
+// Force initialize all security features with fresh CSP
+initializeCSP();
 initializeSecurity();
 
-// Initialize Pusher
-getPusher();
+// Initialize Pusher with a delay to ensure CSP is applied
+setTimeout(() => {
+  getPusher();
+}, 500);
 
 // Create the root and render the application using our utility
 const rootElement = createRootElement("root");
