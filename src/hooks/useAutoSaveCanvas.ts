@@ -135,7 +135,6 @@ export function useAutoSaveCanvas({
       }
       
       canvas.loadFromJSON(savedState, () => {
-        // Fixed: Remove the argument from requestRenderAll
         canvas.requestRenderAll();
         setIsLoading(false);
         if (onRestore) onRestore(true);
