@@ -8,12 +8,12 @@ import logger from './logger';
 
 // Pusher configuration
 const PUSHER_CONFIG = {
-  key: process.env.NEXT_PUBLIC_PUSHER_APP_KEY || 'demo-key',
-  cluster: process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER || 'eu',
+  key: import.meta.env.VITE_PUSHER_APP_KEY || 'demo-key',
+  cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'eu',
   forceTLS: true,
   // Use proper types for transport configuration
-  enabledTransports: ['ws', 'wss'] as Pusher.Transport[],
-  disabledTransports: [] as Pusher.Transport[]
+  enabledTransports: ['ws', 'wss'] as ('ws' | 'wss')[],
+  disabledTransports: [] as string[]
 };
 
 // Singleton instance of Pusher
