@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
@@ -25,11 +24,9 @@ export function useAutoSaveCanvas({
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Generate storage keys
   const stateKey = `canvas_${canvasId}_state`;
   const timestampKey = `canvas_${canvasId}_timestamp`;
   
-  // Check if we have a saved state
   useEffect(() => {
     const savedState = localStorage.getItem(stateKey);
     const savedTimestamp = localStorage.getItem(timestampKey);
@@ -40,7 +37,6 @@ export function useAutoSaveCanvas({
     }
   }, [stateKey, timestampKey]);
   
-  // Set up auto-save interval
   useEffect(() => {
     if (!canvas) return;
     
@@ -56,10 +52,7 @@ export function useAutoSaveCanvas({
     
     autoSaveIntervalRef.current = setInterval(saveCanvas, autoSaveInterval);
     
-    // Listen for object modifications
     const handleModification = () => {
-      // Don't actually save here - just let the interval do its job
-      // This prevents saving on every tiny change
       logger.debug('Canvas modified, will be saved on next interval');
     };
     
@@ -80,7 +73,6 @@ export function useAutoSaveCanvas({
     };
   }, [canvas, autoSaveInterval]);
   
-  // Save current canvas state
   const saveCurrentCanvas = async () => {
     if (!canvas) {
       if (onSave) onSave(false);
@@ -90,13 +82,10 @@ export function useAutoSaveCanvas({
     try {
       setIsSaving(true);
       
-      // Convert canvas to JSON
       const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps']));
       
-      // Save to localStorage
       localStorage.setItem(stateKey, json);
       
-      // Save timestamp
       const now = new Date();
       localStorage.setItem(timestampKey, now.toISOString());
       
@@ -117,7 +106,6 @@ export function useAutoSaveCanvas({
     }
   };
   
-  // Restore canvas from saved state
   const restoreCanvas = async () => {
     if (!canvas) {
       if (onRestore) onRestore(false);
@@ -152,7 +140,6 @@ export function useAutoSaveCanvas({
     }
   };
   
-  // Clear saved canvas state
   const clearSavedCanvas = () => {
     try {
       localStorage.removeItem(stateKey);

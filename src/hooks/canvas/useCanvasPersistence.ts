@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
@@ -28,23 +27,19 @@ export const useCanvasPersistence = ({
   const [isLoading, setIsLoading] = useState(false);
   const [canRestore, setCanRestore] = useState(false);
 
-  // Check if there's data to restore
   useEffect(() => {
     const hasData = localStorage.getItem(canvasStorageKey) !== null;
     setCanRestore(hasData);
   }, [canvasStorageKey]);
 
-  // Save canvas state to localStorage
   const saveCanvasState = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return false;
 
     try {
       setIsSaving(true);
-      // Convert canvas to JSON
       const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps', 'measurement']));
       
-      // Only save if something has changed
       if (json !== lastSavedJsonRef.current) {
         localStorage.setItem(canvasStorageKey, json);
         lastSavedJsonRef.current = json;
@@ -66,7 +61,6 @@ export const useCanvasPersistence = ({
     }
   }, [fabricCanvasRef, canvasStorageKey, onSave]);
 
-  // Load canvas state from localStorage
   const loadCanvasState = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return false;
@@ -97,7 +91,6 @@ export const useCanvasPersistence = ({
     }
   }, [fabricCanvasRef, canvasStorageKey, onRestore]);
 
-  // Clear saved canvas state
   const clearCanvasState = useCallback(() => {
     try {
       localStorage.removeItem(canvasStorageKey);
@@ -111,17 +104,14 @@ export const useCanvasPersistence = ({
     }
   }, [canvasStorageKey]);
 
-  // Reset canvas
   const resetCanvas = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return false;
     
     try {
-      // Remove all objects
       canvas.clear();
       canvas.requestRenderAll();
       
-      // Clear saved state
       clearCanvasState();
       
       return true;
@@ -131,16 +121,13 @@ export const useCanvasPersistence = ({
     }
   }, [fabricCanvasRef, clearCanvasState]);
 
-  // Start auto-save timer
   const startAutoSave = useCallback(() => {
     if (!enableAutoSave) return;
     
-    // Clear any existing timer
     if (autoSaveTimerRef.current) {
       clearInterval(autoSaveTimerRef.current);
     }
     
-    // Set new timer
     autoSaveTimerRef.current = setInterval(() => {
       const saved = saveCanvasState();
       if (saved) {
@@ -151,7 +138,6 @@ export const useCanvasPersistence = ({
     logger.info(`Auto-save started (interval: ${autoSaveInterval}ms)`);
   }, [enableAutoSave, autoSaveInterval, saveCanvasState]);
 
-  // Stop auto-save timer
   const stopAutoSave = useCallback(() => {
     if (autoSaveTimerRef.current) {
       clearInterval(autoSaveTimerRef.current);
@@ -160,19 +146,16 @@ export const useCanvasPersistence = ({
     }
   }, []);
 
-  // Set up auto-save when component mounts
   useEffect(() => {
     if (enableAutoSave) {
       startAutoSave();
     }
     
-    // Clean up timer when component unmounts
     return () => {
       stopAutoSave();
     };
   }, [enableAutoSave, startAutoSave, stopAutoSave]);
 
-  // For compatibility with older code
   const saveCanvas = saveCanvasState;
   const restoreCanvas = loadCanvasState;
   const clearSavedCanvas = clearCanvasState;
@@ -184,7 +167,6 @@ export const useCanvasPersistence = ({
     resetCanvas,
     startAutoSave,
     stopAutoSave,
-    // Compatibility properties
     saveCanvas,
     restoreCanvas,
     clearSavedCanvas,
