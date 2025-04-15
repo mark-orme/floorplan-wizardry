@@ -1,6 +1,7 @@
 
 import { createRoot } from 'react-dom/client'
 import * as Sentry from "@sentry/react";
+import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx'
 import './index.css'
 import { createRootElement } from './utils/domUtils.ts'
@@ -76,8 +77,10 @@ setTimeout(() => {
         </div>
       }
     >
-      <SecurityInitializer forceRefresh={true} />
-      <App />
+      <BrowserRouter>
+        <SecurityInitializer forceRefresh={true} />
+        <App />
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }, 300);

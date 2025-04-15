@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import FloorPlans from '@/pages/FloorPlans';
 import Index from '@/pages/Index';
+import NotFound from '@/pages/NotFound';
 import { PerformanceBadge } from '@/components/performance/PerformanceBadge';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/floor-plans" element={<FloorPlans />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <PerformanceBadge />
     </>
