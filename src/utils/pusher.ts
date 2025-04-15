@@ -13,7 +13,7 @@ const PUSHER_CONFIG = {
   forceTLS: true,
   // Use proper types for transport configuration
   enabledTransports: ['ws', 'wss'] as ('ws' | 'wss')[],
-  disabledTransports: [] as string[]
+  disabledTransports: [] as ('ws' | 'wss')[] // Fixed type to match enabledTransports
 };
 
 // Singleton instance of Pusher
