@@ -40,7 +40,7 @@ Sentry.init({
   // Tracing
   tracesSampleRate: 0.05, // Reduce to 5% of the transactions to avoid excessive requests
   // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
-  tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/],
+  tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/, /^https:\/\/.*lovable\.app/],
   
   // Session Replay
   replaysSessionSampleRate: 0.02, // This sets the sample rate at 2%
@@ -73,9 +73,28 @@ Sentry.init({
     if (error instanceof Error && 
         (error.message.includes('Content Security Policy') || 
          error.message.includes('Refused to connect') ||
-         error.message.includes('violates'))) {
+         error.message.includes('violates') ||
+         error.message.includes('blocked by CSP'))) {
       // Don't report CSP errors to avoid noise
       return null;
+    }
+    
+    // Rate limit error reporting to avoid flooding Sentry
+    if (event.exception && 
+        event.exception.values && 
+        event.exception.values.length > 0 && 
+        event.exception.values[0].value) {
+      const errorValue = event.exception.values[0].value;
+      
+      // Check for known errors that should be throttled
+      if (errorValue.includes('Failed to fetch') || 
+          errorValue.includes('Network Error') ||
+          errorValue.includes('timeout')) {
+        // Only send 1 in 10 of these common errors
+        if (Math.random() > 0.1) {
+          return null;
+        }
+      }
     }
     
     return event;

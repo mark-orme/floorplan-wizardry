@@ -32,7 +32,7 @@ export const SecurityInitializer = () => {
       try {
         // Only check referrer if available
         if (document.referrer) {
-          // Check if parent origin is allowed (lovable.dev or our own domain)
+          // Check if parent origin is allowed (lovable.dev, lovable.app, or our own domain)
           const parentUrl = new URL(document.referrer);
           const isAllowedOrigin = 
             parentUrl.hostname.endsWith('lovable.dev') || 
@@ -62,13 +62,23 @@ export const SecurityInitializer = () => {
     
     // Filter CSP violations to reduce noise
     const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
-      // Skip logging Sentry and Pusher connection errors to reduce noise
-      const skipLogging = 
-        (e.blockedURI.includes('sentry.io') || 
-         e.blockedURI.includes('pusher.com')) && 
-        e.violatedDirective === 'connect-src';
+      // Create a list of domains and sources to filter out noise
+      const knownViolations = [
+        { domain: 'sentry.io', directive: 'connect-src' },
+        { domain: 'o4508914471927808.ingest.de.sentry.io', directive: 'connect-src' },
+        { domain: 'pusher.com', directive: 'connect-src' },
+        { domain: 'sockjs-eu.pusher.com', directive: 'connect-src' },
+        { domain: 'ws-eu.pusher.com', directive: 'connect-src' },
+        { source: 'blob', directive: 'worker-src' }
+      ];
       
-      if (!skipLogging) {
+      // Check if this is a known violation we want to filter
+      const shouldSkipLogging = knownViolations.some(violation => 
+        e.blockedURI.includes(violation.domain || '') && 
+        e.violatedDirective === violation.directive
+      );
+      
+      if (!shouldSkipLogging) {
         logger.warn('CSP violation detected', {
           directive: e.violatedDirective,
           blockedURI: e.blockedURI,

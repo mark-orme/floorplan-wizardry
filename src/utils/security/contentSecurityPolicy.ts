@@ -1,4 +1,3 @@
-
 /**
  * Content Security Policy Utilities
  * Provides CSP configuration and implementation
@@ -22,12 +21,14 @@ export const PRODUCTION_CSP_DIRECTIVES = {
     "wss://ws-eu.pusher.com",
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
-    "https://*.pusher.com"
+    "https://*.pusher.com",
+    "https://*.lovable.app" // Adding lovable.app domain
   ],
-  'frame-src': ["'self'", "https://*.lovable.dev"],
+  'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'"],
+  'worker-src': ["'self'", "blob:"], // Add worker-src to allow blob URLs for workers
   'upgrade-insecure-requests': [],
 };
 
@@ -49,12 +50,14 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
     "https://*.pusher.com",
+    "https://*.lovable.app", // Adding lovable.app domain
     "ws:", 
     "http://localhost:*"
   ],
-  'frame-src': ["'self'", "https://*.lovable.dev"],
+  'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
+  'worker-src': ["'self'", "blob:"], // Add worker-src to allow blob URLs for workers
 };
 
 /**
@@ -140,5 +143,13 @@ export function initializeCSP(): void {
   if (typeof window !== 'undefined') {
     const isProduction = process.env.NODE_ENV === 'production';
     applyCSPMetaTag(isProduction);
+    
+    // Log successful initialization
+    logger.info('Content Security Policy initialized', {
+      mode: isProduction ? 'production' : 'development',
+      allowedConnections: isProduction ? 
+        PRODUCTION_CSP_DIRECTIVES['connect-src'].join(', ') : 
+        DEVELOPMENT_CSP_DIRECTIVES['connect-src'].join(', ')
+    });
   }
 }
