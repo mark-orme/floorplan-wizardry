@@ -103,7 +103,7 @@ export function useCanvasAutosave({
     
     // Add event listeners
     saveEvents.forEach(event => {
-      canvas.on(event, handleChange);
+      canvas.on(event as any, handleChange);
     });
     
     // Try to load saved state on mount
@@ -115,7 +115,7 @@ export function useCanvasAutosave({
     return () => {
       if (canvas) {
         saveEvents.forEach(event => {
-          canvas.off(event, handleChange);
+          canvas.off(event as any, handleChange);
         });
       }
     };

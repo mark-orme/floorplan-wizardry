@@ -26,7 +26,9 @@ export default defineConfig(({ mode }) => ({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       telemetry: false,
       include: './dist',
-      release: process.env.RELEASE_VERSION || 'development'
+      release: {
+        name: process.env.RELEASE_VERSION || 'development'
+      }
     }),
     visualizer({
       open: true,
