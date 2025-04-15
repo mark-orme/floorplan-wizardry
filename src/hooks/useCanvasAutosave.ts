@@ -1,164 +1,130 @@
 
-/**
- * Hook for managing canvas autosave
- * @module hooks/useCanvasAutosave
- */
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { 
-  saveCanvasToLocalStorage, 
-  loadCanvasFromLocalStorage 
-} from '@/utils/autosave/canvasAutoSave';
-import logger from '@/utils/logger';
-
-// Define the custom event types to fix TypeScript errors
-type CustomCanvasEvents = 'object:added' | 'object:removed' | 'object:modified' | 'path:created';
-
-// Default autosave interval in milliseconds (5 seconds)
-const DEFAULT_AUTOSAVE_INTERVAL = 5000;
+import { saveCanvasToIDB, loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
+import { debounce } from '@/utils/debounce';
+import { toast } from 'sonner';
 
 interface UseCanvasAutosaveProps {
   canvas: FabricCanvas | null;
-  enabled?: boolean;
-  interval?: number;
+  canvasId?: string;
+  debounceMs?: number;
   onSave?: (success: boolean) => void;
   onLoad?: (success: boolean) => void;
 }
 
 /**
- * Hook that provides automatic canvas saving functionality
- * @param props Configuration for the autosave
- * @returns Functions to manually trigger save and load
+ * Hook for automatically saving and loading canvas state from IndexedDB
+ * 
+ * @param props Canvas and configuration options
+ * @returns Object with save and load functions
  */
-export const useCanvasAutosave = ({
+export function useCanvasAutosave({
   canvas,
-  enabled = true,
-  interval = DEFAULT_AUTOSAVE_INTERVAL,
+  canvasId = 'default-canvas',
+  debounceMs = 2000,
   onSave,
   onLoad
-}: UseCanvasAutosaveProps) => {
-  // Keep track of timer
-  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  // Keep track of modification count
-  const modificationCountRef = useRef<number>(0);
-  // Track if initial load has been attempted
-  const initialLoadAttemptedRef = useRef<boolean>(false);
+}: UseCanvasAutosaveProps) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const setupDoneRef = useRef(false);
   
-  /**
-   * Save canvas state
-   */
-  const saveCanvas = useCallback(() => {
-    if (!canvas || !enabled) return false;
+  // Save canvas state to IndexedDB
+  const saveCanvas = async () => {
+    if (!canvas) return;
     
-    const success = saveCanvasToLocalStorage(canvas);
-    
-    if (onSave) {
-      onSave(success);
+    try {
+      setIsSaving(true);
+      const json = canvas.toJSON(['objectType']);
+      await saveCanvasToIDB(canvasId, json);
+      onSave?.(true);
+    } catch (error) {
+      console.error('Error auto-saving canvas:', error);
+      onSave?.(false);
+    } finally {
+      setIsSaving(false);
     }
-    
-    return success;
-  }, [canvas, enabled, onSave]);
+  };
   
-  /**
-   * Load canvas state
-   */
-  const loadCanvas = useCallback(() => {
-    if (!canvas || !enabled) return false;
+  // Create a debounced version of saveCanvas
+  const debouncedSave = useRef(debounce(saveCanvas, debounceMs));
+  
+  // Load canvas state from IndexedDB
+  const loadCanvas = async () => {
+    if (!canvas) return;
     
-    const success = loadCanvasFromLocalStorage(canvas);
-    
-    if (onLoad) {
-      onLoad(success);
+    try {
+      setIsLoading(true);
+      const json = await loadCanvasFromIDB(canvasId);
+      
+      if (json) {
+        // Store grid objects to preserve them
+        const gridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
+        
+        // Load the saved state
+        canvas.loadFromJSON(json, () => {
+          // Restore grid objects
+          gridObjects.forEach(obj => canvas.add(obj));
+          
+          // Send grid objects to back
+          gridObjects.forEach(obj => canvas.sendToBack(obj));
+          
+          canvas.renderAll();
+          toast.success('Canvas restored from local storage');
+          onLoad?.(true);
+        });
+      } else {
+        onLoad?.(false);
+      }
+    } catch (error) {
+      console.error('Error loading canvas:', error);
+      onLoad?.(false);
+    } finally {
+      setIsLoading(false);
     }
-    
-    return success;
-  }, [canvas, enabled, onLoad]);
+  };
   
-  /**
-   * Handle object modifications
-   */
-  const handleModification = useCallback(() => {
-    modificationCountRef.current += 1;
-  }, []);
-  
-  // Set up event listeners for canvas modifications
+  // Set up auto-save event listeners
   useEffect(() => {
-    if (!canvas || !enabled) return;
+    if (!canvas || setupDoneRef.current) return;
     
-    // Add listeners for events that indicate canvas changes
-    const events: CustomCanvasEvents[] = [
-      'object:added', 
-      'object:removed', 
+    const handleChange = () => {
+      debouncedSave.current();
+    };
+    
+    // Events that should trigger an auto-save
+    const saveEvents = [
+      'object:added',
       'object:modified',
+      'object:removed',
       'path:created'
     ];
     
-    events.forEach(event => {
-      canvas.on(event as any, handleModification);
+    // Add event listeners
+    saveEvents.forEach(event => {
+      canvas.on(event, handleChange);
     });
+    
+    // Try to load saved state on mount
+    loadCanvas();
+    
+    setupDoneRef.current = true;
     
     // Clean up event listeners
     return () => {
       if (canvas) {
-        events.forEach(event => {
-          canvas.off(event as any, handleModification);
+        saveEvents.forEach(event => {
+          canvas.off(event, handleChange);
         });
       }
     };
-  }, [canvas, enabled, handleModification]);
-  
-  // Load canvas state on initialization
-  useEffect(() => {
-    if (!canvas || !enabled || initialLoadAttemptedRef.current) return;
-    
-    // Attempt to load on first mount
-    setTimeout(() => {
-      loadCanvas();
-      initialLoadAttemptedRef.current = true;
-    }, 1000); // Delay to ensure canvas is fully initialized
-    
-  }, [canvas, enabled, loadCanvas]);
-  
-  // Set up autosave timer
-  useEffect(() => {
-    if (!canvas || !enabled) return;
-    
-    // Clear any existing timer
-    if (autosaveTimerRef.current) {
-      clearInterval(autosaveTimerRef.current);
-    }
-    
-    // Create new timer
-    autosaveTimerRef.current = setInterval(() => {
-      // Only save if there have been modifications
-      if (modificationCountRef.current > 0) {
-        logger.info(`Autosaving canvas (${modificationCountRef.current} modifications)`);
-        saveCanvas();
-        modificationCountRef.current = 0;
-      }
-    }, interval);
-    
-    // Clean up timer
-    return () => {
-      if (autosaveTimerRef.current) {
-        clearInterval(autosaveTimerRef.current);
-        autosaveTimerRef.current = null;
-      }
-    };
-  }, [canvas, enabled, interval, saveCanvas]);
-  
-  // Force save when component unmounts
-  useEffect(() => {
-    return () => {
-      if (enabled && modificationCountRef.current > 0) {
-        logger.info('Saving canvas on unmount');
-        saveCanvas();
-      }
-    };
-  }, [enabled, saveCanvas]);
+  }, [canvas, canvasId]);
   
   return {
     saveCanvas,
-    loadCanvas
+    loadCanvas,
+    isSaving,
+    isLoading
   };
-};
+}
