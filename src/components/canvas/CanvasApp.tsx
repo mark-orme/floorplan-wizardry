@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas, ActiveSelection } from 'fabric';
 import { CanvasEventManager } from './CanvasEventManager';
@@ -40,7 +41,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const { tool: contextTool, lineColor: contextLineColor, lineThickness: contextLineThickness } = useDrawingContext();
   const gridLayerRef = useRef<any[]>([]);
-  const [collaborators, setCollaborators] = useState(0);
+  const [localCollaborators, setLocalCollaborators] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: propWidth || 800, height: propHeight || 600 });
   

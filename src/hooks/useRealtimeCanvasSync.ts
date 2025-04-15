@@ -170,13 +170,15 @@ export const useRealtimeCanvasSync = ({
         
         // Remember current viewport and selection
         const currentZoom = canvas.getZoom();
-        const currentViewport = canvas.viewportTransform ? [...canvas.viewportTransform] : null;
+        // Store the current viewportTransform as a new array to avoid reference issues
+        const currentViewport = canvas.viewportTransform ? [...canvas.viewportTransform] : undefined;
         const activeObject = canvas.getActiveObject();
         
         // Load remote canvas data
         canvas.loadFromJSON(JSON.parse(remoteCanvasJson), () => {
           // Restore viewport position and zoom if available
           if (currentViewport && canvas.viewportTransform) {
+            // Create a proper copy of the array
             canvas.viewportTransform = currentViewport;
             canvas.setZoom(currentZoom);
           }
