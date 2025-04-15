@@ -1,4 +1,3 @@
-
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
@@ -130,6 +129,35 @@ export const updateGridWithZoom = (canvas: FabricCanvas): void => {
   
   // Force grid recreation
   forceGridCreationAndVisibility(canvas);
+};
+
+/**
+ * Ensures grid is visible on the canvas
+ * @param canvas - Fabric canvas instance
+ * @returns True if grid needed fixing, false if already visible
+ */
+export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
+  if (!canvas) return false;
+  
+  const gridObjects = canvas.getObjects().filter(obj => 
+    (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+  );
+  
+  let needsFixing = false;
+  
+  gridObjects.forEach(obj => {
+    if (!obj.visible) {
+      obj.set('visible', true);
+      needsFixing = true;
+    }
+  });
+  
+  if (needsFixing) {
+    canvas.renderAll();
+    return true;
+  }
+  
+  return false;
 };
 
 /**
