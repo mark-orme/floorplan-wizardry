@@ -1,3 +1,4 @@
+
 /**
  * Hook for efficient undo/redo functionality with canvas snapshots
  * Uses throttled/debounced state capture for better performance
@@ -45,7 +46,7 @@ export const useCanvasUndoRedo = ({
   }, { 
     debounceMs: captureDelay, 
     throttleMs: 50,
-    immediate: false // Ensure no unnecessary arguments
+    immediate: false
   });
   
   /**
@@ -208,6 +209,7 @@ export const useCanvasUndoRedo = ({
     
     // Create handlers
     const handleModification = () => {
+      // Call debouncedCapture without arguments
       debouncedCapture();
     };
     
