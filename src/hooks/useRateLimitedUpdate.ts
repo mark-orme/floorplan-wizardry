@@ -62,14 +62,16 @@ export function useRateLimitedUpdate<T>(
   
   // Create a memoized rate-limited function
   const rateLimitedFn = useCallback((value: T) => {
+    const currentUpdateFn = updateFnRef.current;
+    
     if (method === 'debounce') {
       const debouncedFn = debounce(() => {
-        updateFnRef.current(value);
+        currentUpdateFn(value);
       }, delay);
       debouncedFn();
     } else {
       const throttledFn = throttle(() => {
-        updateFnRef.current(value);
+        currentUpdateFn(value);
       }, delay);
       throttledFn();
     }

@@ -112,9 +112,7 @@ export const useAutoSaveCanvas = ({
   }, [canvas, canvasId, setSavedCanvas, setSavedTimestamp, onSave]);
   
   // Create debounced save function
-  const debouncedSaveRef = useRef(() => {
-    saveCanvas();
-  });
+  const debouncedSaveRef = useRef<() => void>();
   
   // Update the debounced function when its dependencies change
   useEffect(() => {
@@ -199,7 +197,9 @@ export const useAutoSaveCanvas = ({
     ];
     
     const handleChange = () => {
-      debouncedSaveRef.current();
+      if (debouncedSaveRef.current) {
+        debouncedSaveRef.current();
+      }
     };
     
     saveEvents.forEach(event => {
