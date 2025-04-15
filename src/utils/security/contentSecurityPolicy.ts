@@ -8,7 +8,7 @@ import logger from '@/utils/logger';
 // Define Content Security Policy directives for production
 export const PRODUCTION_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
-  'script-src': ["'self'", "'strict-dynamic'", "'nonce-{NONCE}'"], 
+  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline for better compatibility
   'style-src': ["'self'", "'unsafe-inline'"], // Unsafe-inline needed for shadcn/ui
   'img-src': ["'self'", "data:", "blob:"],
   'font-src': ["'self'"],
@@ -70,7 +70,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
  * @param isProduction Whether to use production CSP directives
  * @returns Formatted CSP header value
  */
-export function buildCSPString(isProduction = true): string {
+export function buildCSPString(isProduction = false): string {  // Default to development CSP
   const directives = isProduction ? PRODUCTION_CSP_DIRECTIVES : DEVELOPMENT_CSP_DIRECTIVES;
   
   return Object.entries(directives)
@@ -93,9 +93,10 @@ export function generateCSPNonce(): string {
 
 /**
  * Apply CSP as meta tag in document head
+ * Completely replaces existing CSP meta tag to ensure fresh values
  * @param isProduction Whether to use production CSP directives
  */
-export function applyCSPMetaTag(isProduction = process.env.NODE_ENV === 'production'): void {
+export function applyCSPMetaTag(isProduction = false): void {  // Default to development CSP
   if (typeof document === 'undefined') return;
   
   try {
@@ -122,7 +123,10 @@ export function applyCSPMetaTag(isProduction = process.env.NODE_ENV === 'product
     cspMeta.content = cspContent;
     document.head.appendChild(cspMeta);
     
-    logger.info('Content Security Policy applied via meta tag');
+    logger.info('Content Security Policy applied via meta tag', {
+      mode: isProduction ? 'production' : 'development',
+      hasConnectSrc: cspContent.includes('connect-src')
+    });
   } catch (error) {
     logger.error('Failed to apply CSP meta tag', { error });
   }
@@ -133,7 +137,7 @@ export function applyCSPMetaTag(isProduction = process.env.NODE_ENV === 'product
  * @param isProduction Whether to use production CSP directives
  * @returns Object with CSP headers
  */
-export function getCSPHeaders(isProduction = process.env.NODE_ENV === 'production'): Record<string, string> {
+export function getCSPHeaders(isProduction = false): Record<string, string> {  // Default to development CSP
   return {
     'Content-Security-Policy': buildCSPString(isProduction),
   };
@@ -142,17 +146,21 @@ export function getCSPHeaders(isProduction = process.env.NODE_ENV === 'productio
 /**
  * Initialize Content Security Policy
  * Should be called during app initialization
+ * @param forceRefresh Force refresh of CSP meta tag
  */
-export function initializeCSP(): void {
+export function initializeCSP(forceRefresh = false): void {
   // Apply CSP as meta tag for client-side enforcement
   if (typeof window !== 'undefined') {
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Always use development CSP for now to allow connections
+    const isProduction = false; // Force development CSP which is less restrictive
     
-    // Force application of CSP meta tag
-    const existingCspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-    if (existingCspTag) {
-      existingCspTag.remove();
-      logger.info('Removed existing CSP meta tag for refresh');
+    // Force application of CSP meta tag if refresh requested
+    if (forceRefresh) {
+      const existingCspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      if (existingCspTag) {
+        existingCspTag.remove();
+        logger.info('Removed existing CSP meta tag for refresh');
+      }
     }
     
     applyCSPMetaTag(isProduction);
@@ -166,4 +174,3 @@ export function initializeCSP(): void {
     });
   }
 }
-

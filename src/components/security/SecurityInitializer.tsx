@@ -15,13 +15,18 @@ import { toast } from 'sonner';
  */
 export const SecurityInitializer = () => {
   useEffect(() => {
-    // Initialize Content Security Policy 
-    initializeCSP();
-    
-    // Apply additional security headers
-    applySecurityMetaTags();
-    
-    logger.info('Security features initialized');
+    // Force initialize Content Security Policy with a direct meta tag
+    // This ensures CSP is enforced immediately
+    try {
+      initializeCSP(true); // Force refresh parameter
+      
+      // Apply additional security headers
+      applySecurityMetaTags();
+      
+      logger.info('Security features initialized');
+    } catch (initError) {
+      logger.error('Failed to initialize security features', { error: initError });
+    }
     
     // Add iframe protection with better error handling
     if (window.top !== window.self) {
@@ -59,7 +64,8 @@ export const SecurityInitializer = () => {
       }
     }
     
-    // Filter CSP violations to reduce noise
+    // Create a more refined CSP violation handler that doesn't log every single violation
+    // This reduces noise in the console
     const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
       // Create a list of domains and sources to filter out noise
       const knownViolations = [
@@ -81,15 +87,39 @@ export const SecurityInitializer = () => {
         e.violatedDirective === violation.directive)
       );
       
-      // Log all violations during development, but filter in production
+      // Only log new violations in development mode
       const isProduction = process.env.NODE_ENV === 'production';
       
       if (!shouldSkipLogging || !isProduction) {
-        logger.warn('CSP violation detected', {
-          directive: e.violatedDirective,
-          blockedURI: e.blockedURI,
-          originalPolicy: e.originalPolicy
-        });
+        // Log at most once per minute per endpoint to reduce noise
+        const violationKey = `${e.violatedDirective}:${e.blockedURI}`;
+        const lastReported = window.__csp_violations?.[violationKey] || 0;
+        const now = Date.now();
+        
+        // Initialize violations object if it doesn't exist
+        if (!window.__csp_violations) {
+          window.__csp_violations = {};
+        }
+        
+        // Only log if more than 60 seconds since last report for this violation
+        if (now - lastReported > 60000) {
+          window.__csp_violations[violationKey] = now;
+          
+          logger.warn('CSP violation detected', {
+            directive: e.violatedDirective,
+            blockedURI: e.blockedURI,
+            originalPolicy: e.originalPolicy
+          });
+          
+          // Attempt to auto-fix common CSP issues
+          if (e.violatedDirective === 'connect-src') {
+            // Refresh CSP to ensure it has the latest domains
+            setTimeout(() => {
+              initializeCSP(true);
+              logger.info('CSP refreshed after violation');
+            }, 100);
+          }
+        }
       }
       
       // Only show toast for significant violations in production
@@ -100,6 +130,11 @@ export const SecurityInitializer = () => {
         toast.error('Security policy violation detected and blocked');
       }
     };
+    
+    // Declare the CSP violations object on window
+    if (typeof window !== 'undefined' && !window.__csp_violations) {
+      window.__csp_violations = {};
+    }
     
     window.addEventListener('securitypolicyviolation', handleSecurityViolation);
     
@@ -112,5 +147,12 @@ export const SecurityInitializer = () => {
   // This component doesn't render anything
   return null;
 };
+
+// Add the __csp_violations property to the Window interface
+declare global {
+  interface Window {
+    __csp_violations?: Record<string, number>;
+  }
+}
 
 export default SecurityInitializer;

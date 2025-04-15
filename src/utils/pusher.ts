@@ -5,11 +5,11 @@
  */
 import Pusher from 'pusher-js';
 import logger from './logger';
+import { initializeCSP } from './security/contentSecurityPolicy';
 
 // Pusher credentials
 const PUSHER_APP_ID = "1964045";
 const PUSHER_KEY = "223ca3179f24cb01f737";
-const PUSHER_SECRET = "f4744666044ab457d92a"; // Note: This is typically only used server-side
 const PUSHER_CLUSTER = "eu";
 
 // Initialize Pusher
@@ -24,6 +24,13 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 export const getPusher = (): Pusher => {
   if (!pusherInstance) {
     logger.info('Initializing Pusher connection');
+    
+    // Ensure CSP is initialized for Pusher
+    try {
+      initializeCSP(true);
+    } catch (error) {
+      logger.warn('Failed to refresh CSP before Pusher initialization', { error });
+    }
     
     // Don't try more than MAX_RECONNECT_ATTEMPTS times to connect
     if (connectionAttempts >= MAX_RECONNECT_ATTEMPTS) {
@@ -47,11 +54,8 @@ export const getPusher = (): Pusher => {
         try {
           if (typeof window !== 'undefined') {
             // Force reinitialization of CSP
-            const cspModule = require('./security/contentSecurityPolicy');
-            if (cspModule && cspModule.initializeCSP) {
-              logger.info('Attempting to refresh CSP settings for Pusher connectivity');
-              cspModule.initializeCSP();
-            }
+            initializeCSP(true);
+            logger.info('CSP refreshed to try to allow Pusher connectivity');
           }
         } catch (fixError) {
           logger.error('Failed to refresh CSP settings:', fixError);
