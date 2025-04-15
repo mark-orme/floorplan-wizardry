@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react';
 import { GRID_SPACING } from '@/constants/numerics';
 import { Point } from '@/types/core/Point';
@@ -11,6 +10,8 @@ export interface UseSnapToGridProps {
   fabricCanvasRef?: React.MutableRefObject<any>;
   /** Default grid size */
   defaultGridSize?: number;
+  /** Whether to enforce angle constraints */
+  angleConstraints?: boolean;
 }
 
 export interface UseSnapToGridResult {
@@ -32,7 +33,8 @@ export const useSnapToGrid = (props?: UseSnapToGridProps): UseSnapToGridResult =
   const {
     initialSnapEnabled = true,
     fabricCanvasRef,
-    defaultGridSize = GRID_SPACING.SMALL
+    defaultGridSize = GRID_SPACING.SMALL,
+    angleConstraints = false
   } = props || {};
   
   // Add state for snap enabled

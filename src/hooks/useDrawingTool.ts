@@ -1,10 +1,9 @@
-
 /**
  * Custom hook for managing drawing tool state
  * Provides consistent tool handling across the application
  * @module hooks/useDrawingTool
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
@@ -102,7 +101,7 @@ export function useDrawingTool(): UseDrawingToolResult {
     // Set detailed tool usage metrics
     Sentry.setContext("toolUsageMetrics", {
       ...toolUsageRef.current,
-      timeSinceLastToolChange: Date.now() - parseInt(toolUsageRef.current.lastToolChange)
+      timeSinceLastToolChange: Date.now() - Number(toolUsageRef.current.lastToolChange)
     });
     
     return () => {

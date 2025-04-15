@@ -1,4 +1,3 @@
-
 /**
  * Enhanced straight line drawing tool hook with advanced functionality
  * @module hooks/straightLineTool/useStraightLineToolRefactored
@@ -171,7 +170,7 @@ export const useStraightLineToolRefactored = ({
   // Use the grid snapping functionality
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid({
     fabricCanvasRef,
-    enabled: snapEnabled,
+    initialSnapEnabled: snapEnabled,
     angleConstraints: anglesEnabled || useShiftConstraint
   });
   
@@ -318,11 +317,11 @@ export const useStraightLineToolRefactored = ({
         selectable: true,
         strokeLineCap: 'round',
         evented: true,
-        metadata: {
+        data: {
           type: 'straight-line',
           createdAt: new Date().toISOString()
         }
-      });
+      } as any);
       
       canvas.add(line);
       currentLineRef.current = line;
@@ -467,15 +466,15 @@ export const useStraightLineToolRefactored = ({
         // Only save if the line has some length
         const distance = calculateDistance(start, end);
         if (distance > 1) {
-          // Add final metadata to the line
+          // Add final data to the line
           currentLineRef.current.set({
-            metadata: {
-              ...(currentLineRef.current.metadata || {}),
+            data: {
+              ...(currentLineRef.current.data || {}),
               length: distance,
               completed: true
             }
-          });
-          
+          } as any);
+        
           // Save current state to undo history
           saveCurrentState();
           
