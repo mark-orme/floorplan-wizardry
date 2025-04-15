@@ -88,6 +88,7 @@ export const useCanvasPersistence = ({
       logger.error('Error loading canvas state:', error);
       setIsLoading(false);
       if (onRestore) onRestore(false);
+      
       return false;
     }
   }, [fabricCanvasRef, canvasStorageKey, onRestore]);
