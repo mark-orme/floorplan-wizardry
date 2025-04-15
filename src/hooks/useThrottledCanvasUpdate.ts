@@ -46,7 +46,7 @@ export function useThrottledCanvasUpdate<T extends (...args: any[]) => any>(
   const debouncedUpdate = useCallback(
     debounce((...args: Parameters<T>) => {
       updateFnRef.current(...args);
-    }, debounceMs, immediate),
+    }, debounceMs),
     [debounceMs, immediate]
   );
   

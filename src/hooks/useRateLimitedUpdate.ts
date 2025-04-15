@@ -1,3 +1,4 @@
+
 /**
  * useRateLimitedUpdate Hook
  * Custom hook for rate-limiting state updates and expensive calculations
@@ -5,7 +6,7 @@
  * @module hooks/useRateLimitedUpdate
  */
 import { useCallback, useRef, useEffect } from 'react';
-import { debounce, throttle } from '@/utils/canvas/rateLimit';
+import { debounce, throttle } from '@/utils/throttleUtils';
 
 type UpdateFunction<T> = (value: T) => void;
 type Method = 'debounce' | 'throttle';
