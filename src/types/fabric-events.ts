@@ -8,7 +8,7 @@
  * @module types/fabric-events
  */
 
-import { TPointerEvent, Point as FabricPoint } from 'fabric';
+import { Point as FabricPoint } from 'fabric';
 
 /**
  * Fabric.js event names

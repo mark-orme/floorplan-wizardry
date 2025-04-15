@@ -140,11 +140,14 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       
       // Set start point and create line
       setIsDrawing(true);
+      
       // Convert to the simple Point type from Geometry not the Fabric Point
-      setStartPoint({ 
+      const geometryPoint: Point = { 
         x: pointer.x, 
         y: pointer.y 
-      });
+      };
+      
+      setStartPoint(geometryPoint);
       
       const line = createLine(pointer.x, pointer.y, pointer.x, pointer.y);
       setCurrentLine(line);
@@ -167,11 +170,14 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       // Snap to grid if enabled
       pointer = snapPointToGrid(pointer);
       
-      // Update line and tooltip
-      updateLineAndTooltip(startPointRef.current, {
+      // Convert to our geometry Point type
+      const geometryPoint: Point = {
         x: pointer.x,
         y: pointer.y
-      });
+      };
+      
+      // Update line and tooltip
+      updateLineAndTooltip(startPointRef.current, geometryPoint);
       
       // Request render
       canvas.requestRenderAll();
