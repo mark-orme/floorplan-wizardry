@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { dumpGridState } from "@/utils/grid/gridDebugUtils";
-import { ensureGridVisibility, forceGridCreationAndVisibility } from "@/utils/grid/gridVisibility";
+import { forceGridCreationAndVisibility, ensureGridVisibility } from "@/utils/grid/gridVisibility";
 import { analyzeGridIssues } from "@/utils/grid/errorReporting";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -69,8 +69,8 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
       }
       
       // Fix: Call ensureGridVisibility with only the canvas argument
-      const result = ensureGridVisibility(canvas);
-      toast.success(`Grid visibility ${result ? "fixed" : "already OK"}`);
+      ensureGridVisibility(canvas);
+      toast.success("Grid visibility updated");
       refreshGridInfo();
     }
   };
@@ -78,8 +78,8 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
   // Function to force grid creation
   const handleForceGridCreation = () => {
     if (canvas) {
-      const result = forceGridCreationAndVisibility(canvas);
-      toast.success(`Grid creation ${result ? "successful" : "failed"}`);
+      const success = forceGridCreationAndVisibility(canvas);
+      toast.success(`Grid creation ${success ? "successful" : "failed"}`);
       refreshGridInfo();
     }
   };

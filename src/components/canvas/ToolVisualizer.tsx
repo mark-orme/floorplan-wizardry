@@ -5,7 +5,7 @@ import {
   Pencil, 
   MousePointer, 
   Square, 
-  Line, 
+  ArrowRight, 
   Hand, 
   Type, 
   Eraser, 
@@ -82,7 +82,7 @@ export const ToolVisualizer: React.FC<ToolVisualizerProps> = ({
         return <Pencil className="h-5 w-5" />;
       case DrawingMode.STRAIGHT_LINE:
       case DrawingMode.WALL:
-        return <Line className="h-5 w-5" />;
+        return <ArrowRight className="h-5 w-5" />;
       case DrawingMode.ROOM:
         return <Square className="h-5 w-5" />;
       case DrawingMode.ERASER:

@@ -8,7 +8,12 @@
 // Re-export individual utility files for direct imports
 export { createGrid, setGridVisibility } from '../canvasGrid';
 export { createBasicEmergencyGrid, resetGridProgress } from '../gridCreationUtils';
-export { ensureGridVisibility, forceGridCreationAndVisibility } from './gridVisibility';
+export { 
+  ensureGridVisibility, 
+  forceGridCreationAndVisibility,
+  updateGridWithZoom,
+  setGridVisibility
+} from './gridVisibility';
 export { runGridDiagnostics, applyGridFixes } from './gridDiagnostics';
 
 // Export utility namespaces from exports.ts

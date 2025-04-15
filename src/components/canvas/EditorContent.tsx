@@ -26,11 +26,17 @@ export const EditorContent: React.FC<EditorContentProps> = ({
       <CanvasApp 
         key={`canvas-app-${forceRefreshKey}`}
         setCanvas={setCanvas}
-        showGridDebug={showGridDebug}
         tool={tool}
         lineThickness={lineThickness}
         lineColor={lineColor}
       />
+      
+      {/* Grid Debug Panel - only shown when showGridDebug is true */}
+      {showGridDebug && (
+        <div className="absolute top-0 right-0 bg-white/90 p-2 text-xs">
+          Grid Debug Active
+        </div>
+      )}
     </div>
   );
 };

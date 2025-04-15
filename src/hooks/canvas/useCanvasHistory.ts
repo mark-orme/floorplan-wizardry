@@ -5,11 +5,6 @@ import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
 import { MAX_HISTORY_STATES } from "@/utils/storage/historyStorage";
-import { 
-  useCanvasPersistence, 
-  useCanvasAutoSave, 
-  useCanvasRestoreCheck 
-} from './index';
 
 // History key for storage
 const HISTORY_KEY = 'canvas-v1';
@@ -27,8 +22,8 @@ export const useCanvasHistory = ({
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [isPerformingUndoRedo, setIsPerformingUndoRedo] = useState(false);
   
-  // Setup canvas restore check
   const saveCurrentState = useCallback(() => {
     if (!canvas) return;
     
@@ -62,36 +57,50 @@ export const useCanvasHistory = ({
     }
   }, [canvas, historyStack, historyIndex, maxHistoryStates]);
 
-  // Setup canvas history persistence
-  const { persistHistory } = useCanvasPersistence({
-    canvas,
-    historyStack,
-    historyIndex,
-    onHistoryLoaded: (history, index) => {
-      setHistoryStack(history);
-      setHistoryIndex(index);
-      setCanUndo(index > 0);
-      setCanRedo(index < history.length - 1);
-    }
-  });
-
-  // Setup canvas auto-save
-  useCanvasAutoSave({
-    canvas,
-    historyStack,
-    historyIndex
-  });
-  
-  // Setup change handlers
-  const { 
-    setIsPerformingUndoRedo,
-    registerCanvasChangeHandlers 
-  } = useCanvasRestoreCheck({
-    canvas,
-    saveCurrentState
-  });
-  
   // Register canvas change handlers
+  const registerCanvasChangeHandlers = useCallback(() => {
+    if (!canvas) return () => {};
+    
+    const handleObjectAdded = (e: any) => {
+      if (isPerformingUndoRedo) return;
+      // Don't save for grid objects
+      if (e.target && (e.target as any).objectType === 'grid') return;
+      
+      saveCurrentState();
+    };
+    
+    const handleObjectModified = (e: any) => {
+      if (isPerformingUndoRedo) return;
+      // Don't save for grid objects
+      if (e.target && (e.target as any).objectType === 'grid') return;
+      
+      saveCurrentState();
+    };
+    
+    const handleObjectRemoved = (e: any) => {
+      if (isPerformingUndoRedo) return;
+      // Don't save for grid objects
+      if (e.target && (e.target as any).objectType === 'grid') return;
+      
+      saveCurrentState();
+    };
+    
+    // Add event listeners
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('object:removed', handleObjectRemoved);
+    
+    // Return cleanup function
+    return () => {
+      if (canvas) {
+        canvas.off('object:added', handleObjectAdded);
+        canvas.off('object:modified', handleObjectModified);
+        canvas.off('object:removed', handleObjectRemoved);
+      }
+    };
+  }, [canvas, isPerformingUndoRedo, saveCurrentState]);
+  
+  // Register event listeners
   useEffect(() => {
     const cleanup = registerCanvasChangeHandlers();
     
@@ -105,7 +114,10 @@ export const useCanvasHistory = ({
 
   // Undo last action
   const undo = useCallback(() => {
-    if (!canvas || historyIndex <= 0) return;
+    if (!canvas || historyIndex <= 0) {
+      toast.info('Nothing to undo');
+      return;
+    }
     
     try {
       setIsPerformingUndoRedo(true);
@@ -121,6 +133,7 @@ export const useCanvasHistory = ({
         setCanRedo(true);
         
         setIsPerformingUndoRedo(false);
+        toast.success('Undo successful');
       });
       
       captureMessage("Undo performed on canvas", "canvas-undo");
@@ -131,11 +144,14 @@ export const useCanvasHistory = ({
       captureError(error as Error, "canvas-undo-error");
       toast.error(`Failed to undo: ${errorMsg}`);
     }
-  }, [canvas, historyStack, historyIndex, setIsPerformingUndoRedo]);
+  }, [canvas, historyStack, historyIndex]);
 
   // Redo last undone action
   const redo = useCallback(() => {
-    if (!canvas || historyIndex >= historyStack.length - 1) return;
+    if (!canvas || historyIndex >= historyStack.length - 1) {
+      toast.info('Nothing to redo');
+      return;
+    }
     
     try {
       setIsPerformingUndoRedo(true);
@@ -151,6 +167,7 @@ export const useCanvasHistory = ({
         setCanRedo(historyIndex + 1 < historyStack.length - 1);
         
         setIsPerformingUndoRedo(false);
+        toast.success('Redo successful');
       });
       
       captureMessage("Redo performed on canvas", "canvas-redo");
@@ -161,7 +178,51 @@ export const useCanvasHistory = ({
       captureError(error as Error, "canvas-redo-error");
       toast.error(`Failed to redo: ${errorMsg}`);
     }
-  }, [canvas, historyStack, historyIndex, setIsPerformingUndoRedo]);
+  }, [canvas, historyStack, historyIndex]);
+
+  // Delete selected objects
+  const deleteSelectedObjects = useCallback(() => {
+    if (!canvas) return;
+    
+    try {
+      const activeObject = canvas.getActiveObject();
+      if (!activeObject) {
+        logger.info("No active object to delete");
+        return;
+      }
+      
+      // Save current state before deleting
+      saveCurrentState();
+      
+      if (activeObject.type === 'activeSelection') {
+        // Delete multiple selected objects
+        const activeSelection = activeObject as fabric.ActiveSelection;
+        
+        activeSelection.forEachObject((obj: any) => {
+          canvas.remove(obj);
+        });
+        
+        canvas.discardActiveObject();
+        logger.info(`Deleted multiple objects`);
+        
+        captureMessage("Objects deleted", "objects-deleted");
+      } else {
+        // Delete single object
+        canvas.remove(activeObject);
+        canvas.discardActiveObject();
+        logger.info("Deleted single object");
+        
+        captureMessage("Object deleted", "object-deleted");
+      }
+      
+      canvas.requestRenderAll();
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      logger.error("Failed to delete objects", { error: errorMsg });
+      captureError(error as Error, "delete-objects-error");
+      toast.error(`Failed to delete objects: ${errorMsg}`);
+    }
+  }, [canvas, saveCurrentState]);
 
   return {
     historyStack,
@@ -170,6 +231,9 @@ export const useCanvasHistory = ({
     canRedo,
     saveCurrentState,
     undo,
-    redo
+    redo,
+    deleteSelectedObjects,
+    setIsPerformingUndoRedo,
+    registerCanvasChangeHandlers
   };
 };

@@ -8,22 +8,34 @@ import { useCanvasHistory } from '@/hooks/canvas/useCanvasHistory';
 import { useDrawingContext } from '@/contexts/DrawingContext';
 import { useApplePencilSupport } from '@/hooks/canvas/useApplePencilSupport';
 import { updateGridWithZoom } from '@/utils/grid/gridVisibility';
+import { DrawingMode } from '@/constants/drawingModes';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
   width?: number;
   height?: number;
+  tool?: DrawingMode;
+  lineColor?: string;
+  lineThickness?: number;
 }
 
 export const CanvasApp: React.FC<CanvasAppProps> = ({ 
   setCanvas,
   width = 800,
-  height = 600
+  height = 600,
+  tool: externalTool,
+  lineColor: externalLineColor,
+  lineThickness: externalLineThickness
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const { tool, lineColor, lineThickness } = useDrawingContext();
+  const { tool: contextTool, lineColor: contextLineColor, lineThickness: contextLineThickness } = useDrawingContext();
   const gridLayerRef = useRef<any[]>([]);
+  
+  // Use external props if provided, otherwise use context values
+  const tool = externalTool || contextTool;
+  const lineColor = externalLineColor || contextLineColor;
+  const lineThickness = externalLineThickness || contextLineThickness;
   
   // Initialize canvas
   useEffect(() => {
@@ -49,12 +61,31 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     };
   }, [setCanvas, width, height]);
   
+  // Create a deleteSelectedObjects function
+  const deleteSelectedObjects = () => {
+    if (!fabricCanvas) return;
+    
+    const activeObject = fabricCanvas.getActiveObject();
+    if (!activeObject) return;
+    
+    if (activeObject.type === 'activeSelection') {
+      const activeSelection = activeObject as fabric.ActiveSelection;
+      activeSelection.forEachObject((obj) => {
+        fabricCanvas.remove(obj);
+      });
+      fabricCanvas.discardActiveObject();
+    } else {
+      fabricCanvas.remove(activeObject);
+    }
+    
+    fabricCanvas.requestRenderAll();
+  };
+  
   // Set up canvas history management
   const { 
     undo, 
     redo, 
-    saveCurrentState,
-    deleteSelectedObjects 
+    saveCurrentState
   } = useCanvasHistory({
     canvas: fabricCanvas
   });
@@ -67,23 +98,23 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   
   // Set cursor based on current tool
   useEffect(() => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas || !canvasRef.current) return;
     
     switch (tool) {
-      case 'SELECT':
-        canvasRef.current!.style.cursor = 'default';
+      case DrawingMode.SELECT:
+        canvasRef.current.style.cursor = 'default';
         break;
-      case 'DRAW':
-        canvasRef.current!.style.cursor = 'crosshair';
+      case DrawingMode.DRAW:
+        canvasRef.current.style.cursor = 'crosshair';
         break;
-      case 'HAND':
-        canvasRef.current!.style.cursor = 'grab';
+      case DrawingMode.HAND:
+        canvasRef.current.style.cursor = 'grab';
         break;
-      case 'ERASER':
-        canvasRef.current!.style.cursor = 'cell';
+      case DrawingMode.ERASER:
+        canvasRef.current.style.cursor = 'cell';
         break;
       default:
-        canvasRef.current!.style.cursor = 'crosshair';
+        canvasRef.current.style.cursor = 'crosshair';
     }
   }, [fabricCanvas, tool]);
   
