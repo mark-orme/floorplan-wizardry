@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
@@ -123,7 +124,7 @@ export function useAutoSaveCanvas({
       }
       
       canvas.loadFromJSON(savedState, () => {
-        canvas.renderAll();
+        canvas.renderAll(); // Fixed: No arguments
         setIsLoading(false);
         if (onRestore) onRestore(true);
       });
