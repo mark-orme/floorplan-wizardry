@@ -37,3 +37,11 @@ export interface Line {
   start: Point;
   end: Point;
 }
+
+/**
+ * Canvas dimensions interface
+ */
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}

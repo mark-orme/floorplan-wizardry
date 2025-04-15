@@ -1,19 +1,13 @@
 
 /**
- * Interface for simple 2D points
+ * Point type definition
+ * @module types/core/Point
+ */
+
+/**
+ * Point interface
  */
 export interface Point {
   x: number;
   y: number;
 }
-
-/**
- * Creates a new Point object
- * 
- * @param x The x coordinate
- * @param y The y coordinate
- * @returns A new Point object
- */
-export const createPoint = (x: number, y: number): Point => {
-  return { x, y };
-};

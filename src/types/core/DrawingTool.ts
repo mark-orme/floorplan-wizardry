@@ -12,6 +12,61 @@ import { DrawingMode } from "@/constants/drawingModes";
 export type DrawingTool = DrawingMode;
 
 /**
+ * Check if a value is a valid drawing tool
+ * @param {any} value - Value to check
+ * @returns {boolean} True if valid drawing tool
+ */
+export function isValidDrawingTool(value: any): value is DrawingTool {
+  return Object.values(DrawingMode).includes(value);
+}
+
+/**
+ * Get display name for a drawing tool
+ * @param {DrawingTool} tool - Drawing tool
+ * @returns {string} Display name
+ */
+export function getToolDisplayName(tool: DrawingTool): string {
+  const names: Record<DrawingTool, string> = {
+    [DrawingMode.SELECT]: 'Select',
+    [DrawingMode.PENCIL]: 'Pencil',
+    [DrawingMode.LINE]: 'Line',
+    [DrawingMode.RECT]: 'Rectangle',
+    [DrawingMode.ELLIPSE]: 'Ellipse',
+    [DrawingMode.TRIANGLE]: 'Triangle',
+    [DrawingMode.TEXT]: 'Text',
+    [DrawingMode.PATH]: 'Path',
+    [DrawingMode.STRAIGHT_LINE]: 'Straight Line',
+    [DrawingMode.ARROW]: 'Arrow',
+    [DrawingMode.MEASURE]: 'Measure',
+    [DrawingMode.AREA]: 'Area',
+    [DrawingMode.POLYGON]: 'Polygon',
+    [DrawingMode.ERASER]: 'Eraser'
+  };
+  
+  return names[tool] || 'Unknown Tool';
+}
+
+/**
+ * Parse a string to a drawing tool
+ * @param {string} value - String value to parse
+ * @returns {DrawingTool} Parsed drawing tool or default
+ */
+export function parseDrawingTool(value: string): DrawingTool {
+  if (isValidDrawingTool(value)) {
+    return value;
+  }
+  return getDefaultDrawingTool();
+}
+
+/**
+ * Get default drawing tool
+ * @returns {DrawingTool} Default drawing tool
+ */
+export function getDefaultDrawingTool(): DrawingTool {
+  return DrawingMode.SELECT;
+}
+
+/**
  * Tool operation interface
  * Represents a drawing tool operation
  */

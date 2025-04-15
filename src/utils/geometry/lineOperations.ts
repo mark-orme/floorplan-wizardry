@@ -1,4 +1,3 @@
-
 /**
  * Line operations utility functions
  * @module utils/geometry/lineOperations
@@ -52,6 +51,67 @@ export function getMidpoint(point1: Point, point2: Point): Point {
   return {
     x: (point1.x + point2.x) / 2,
     y: (point1.y + point2.y) / 2
+  };
+}
+
+/**
+ * Calculate midpoint between two points
+ * @param {Point} point1 - First point
+ * @param {Point} point2 - Second point 
+ * @returns {Point} Midpoint coordinates
+ */
+export function calculateMidpoint(point1: Point, point2: Point): Point {
+  return getMidpoint(point1, point2);
+}
+
+/**
+ * Format distance for display
+ * @param {number} distance - Distance in pixels
+ * @returns {string} Formatted distance string
+ */
+export function formatDistance(distance: number): string {
+  return `${Math.round(distance)}px`;
+}
+
+/**
+ * Check if a value is an exact multiple of the grid size
+ * @param {number} value - Value to check
+ * @param {number} gridSize - Grid size
+ * @returns {boolean} True if value is exact multiple of grid size
+ */
+export function isExactGridMultiple(value: number, gridSize: number = 20): boolean {
+  return Math.abs(value % gridSize) < 0.001;
+}
+
+/**
+ * Check if a line is aligned with the grid
+ * @param {Point} start - Start point
+ * @param {Point} end - End point
+ * @param {number} gridSize - Grid size
+ * @returns {boolean} True if line is aligned with grid
+ */
+export function isLineAlignedWithGrid(
+  start: Point, 
+  end: Point, 
+  gridSize: number = 20
+): boolean {
+  // Check if both points are on grid intersections
+  const startOnGrid = isExactGridMultiple(start.x, gridSize) && isExactGridMultiple(start.y, gridSize);
+  const endOnGrid = isExactGridMultiple(end.x, gridSize) && isExactGridMultiple(end.y, gridSize);
+  
+  return startOnGrid && endOnGrid;
+}
+
+/**
+ * Snap a point to the nearest grid intersection
+ * @param {Point} point - Point to snap
+ * @param {number} gridSize - Grid size
+ * @returns {Point} Snapped point
+ */
+export function snapToGrid(point: Point, gridSize: number = 20): Point {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
   };
 }
 

@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing straight line drawing state
  * @module hooks/straightLineTool/useLineState
@@ -8,6 +7,11 @@ import { Object as FabricObject, Line, Text } from "fabric";
 import { Point } from "@/types/core/Geometry";
 import { calculateDistance } from "@/utils/geometry/lineOperations";
 import logger from "@/utils/logger";
+
+/**
+ * Input method type for determining drawing interaction method
+ */
+export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'pencil';
 
 interface UseLineStateProps {
   lineColor: string;
@@ -27,6 +31,9 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
   // Grid and snapping state
   const [snapEnabled, setSnapEnabled] = useState(true);
   const snapGridSizeRef = useRef(20); // Default grid size
+  
+  // Add input method state
+  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
   
   /**
    * Set the start point for the line
@@ -177,6 +184,8 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
     snapEnabled,
     snapPointToGrid,
     snapLineToGrid,
-    toggleSnap
+    toggleSnap,
+    inputMethod,
+    setInputMethod
   };
 };

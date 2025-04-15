@@ -12,8 +12,8 @@ export { DEFAULT_DEBUG_STATE } from './core/DebugInfo';
 // Re-export drawing-related types
 export type { 
   DrawingState,
-  createDefaultDrawingState 
 } from './core/DrawingState';
+export { createDefaultDrawingState } from './core/DrawingState';
 
 // Re-export geometry types
 export type { Point, Size, Rectangle, Line, CanvasDimensions } from './core/Geometry';
@@ -30,7 +30,8 @@ export {
 
 // Re-export DrawingTool types - canonical source
 export type { DrawingTool } from './core/DrawingTool';
-export { isValidDrawingTool, getToolDisplayName, parseDrawingTool, getDefaultDrawingTool } from './core/DrawingTool';
+// Comment out unavailable exports
+// export { isValidDrawingTool, getToolDisplayName, parseDrawingTool, getDefaultDrawingTool } from './core/DrawingTool';
 export { DrawingMode } from '@/constants/drawingModes';
 
 // Re-export canvas event types
@@ -39,8 +40,9 @@ export type { ZoomOptions } from './canvas-events/ZoomTypes';
 // Re-export for backwards compatibility
 export type { 
   ZoomDirection, 
-  PerformanceStats,
-  DistanceToolState 
+  // Add these types when they are available
+  // PerformanceStats,
+  // DistanceToolState
 } from './drawingTypes';
 
 // Re-export fabric types for easier access
