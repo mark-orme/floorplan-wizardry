@@ -9,6 +9,12 @@ import { Point } from '@/types/core/Point';
 import { useApplePencilSupport } from './useApplePencilSupport';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { toast } from 'sonner';
+import { 
+  snapPointToGridPrecise, 
+  snapLineToPreciseGrid, 
+  snapLineToStandardAngles,
+  formatMeasurementData
+} from '@/utils/grid/enhancedSnapping';
 
 // Input method for drawing - changed to include all possible values
 export type InputMethod = 'mouse' | 'touch' | 'pencil' | 'stylus' | 'keyboard';
@@ -35,6 +41,8 @@ export const useLineState = ({
   const [isToolInitialized, setIsToolInitialized] = useState(false);
   const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
+  const [measurementData, setMeasurementData] = useState<any>(null);
   
   // Refs for current drawing objects
   const startPointRef = useRef<Point | null>(null);
@@ -69,7 +77,7 @@ export const useLineState = ({
   // Function to initialize the tool
   const initializeTool = useCallback(() => {
     setIsToolInitialized(true);
-    console.log('Line tool initialized');
+    console.log('Line tool initialized with enhanced precision');
     
     // Check for touch/stylus support
     if (navigator.maxTouchPoints > 0) {
@@ -77,11 +85,16 @@ export const useLineState = ({
       console.log('Touch input detected, optimizing for touch');
     }
     
-    toast.info(snapEnabled ? 'Grid snapping enabled (press G to toggle)' : 'Grid snapping disabled (press G to toggle)', {
+    toast.info(snapEnabled ? 'Precise grid snapping enabled (0.1m increments)' : 'Grid snapping disabled (press G to toggle)', {
       id: 'grid-snap-status',
       duration: 3000
     });
-  }, [snapEnabled]);
+    
+    toast.info(anglesEnabled ? 'Angle snapping enabled (press A to toggle)' : 'Angle snapping disabled (press A to toggle)', {
+      id: 'angle-snap-status',
+      duration: 3000
+    });
+  }, [snapEnabled, anglesEnabled]);
   
   // Function to reset drawing state
   const resetDrawingState = useCallback(() => {
@@ -96,6 +109,9 @@ export const useLineState = ({
       }
       distanceTooltipRef.current = null;
     }
+    
+    // Reset measurement data
+    setMeasurementData(null);
   }, []);
   
   // Toggle snap to grid
@@ -103,38 +119,71 @@ export const useLineState = ({
     setSnapEnabled(prev => !prev);
     
     // Show feedback to user
-    toast.info(!snapEnabled ? 'Grid snapping enabled' : 'Grid snapping disabled', {
+    toast.info(!snapEnabled ? 'Grid snapping enabled (0.1m increments)' : 'Grid snapping disabled', {
       id: 'grid-snap-toggle'
     });
   }, [snapEnabled]);
   
+  // Toggle angle constraints
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+    
+    // Show feedback to user
+    toast.info(!anglesEnabled ? 'Angle snapping enabled' : 'Angle snapping disabled', {
+      id: 'angle-snap-toggle'
+    });
+  }, [anglesEnabled]);
+  
   // Function to snap point to grid
   const handleSnapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled || !snapPointToGrid) return { ...point };
+    if (!snapEnabled) return { ...point };
     
     // For Apple Pencil, use specialized snap function
     if (isPencilMode) {
       return snapPencilPointToGrid(point);
     }
     
-    // Use provided snap function
-    return snapPointToGrid(point);
-  }, [snapEnabled, isPencilMode, snapPencilPointToGrid, snapPointToGrid]);
+    // Use enhanced precision snapping by default
+    return snapPointToGridPrecise(point);
+  }, [snapEnabled, isPencilMode, snapPencilPointToGrid]);
   
   // Function to snap line to grid
   const handleSnapLineToGrid = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled || !snapLineToGrid) return { start: { ...start }, end: { ...end } };
+    if (!snapEnabled) return { start: { ...start }, end: { ...end } };
     
-    return snapLineToGrid(start, end);
-  }, [snapEnabled, snapLineToGrid]);
+    // Get basic grid-snapped points
+    const gridSnapped = snapLineToPreciseGrid(start, end);
+    
+    // Add angle snapping if enabled
+    if (anglesEnabled) {
+      return {
+        start: gridSnapped.start,
+        end: snapLineToStandardAngles(gridSnapped.start, gridSnapped.end)
+      };
+    }
+    
+    return gridSnapped;
+  }, [snapEnabled, anglesEnabled]);
+  
+  // Calculate and update measurement data
+  const updateMeasurementData = useCallback((start: Point, end: Point) => {
+    if (start && end) {
+      const data = formatMeasurementData(start, end);
+      setMeasurementData(data);
+    } else {
+      setMeasurementData(null);
+    }
+  }, []);
   
   return {
     // State
     isDrawing,
     isToolInitialized,
     snapEnabled,
+    anglesEnabled,
     inputMethod,
     isPencilMode,
+    measurementData,
     
     // Setters
     setIsDrawing,
@@ -153,6 +202,8 @@ export const useLineState = ({
     resetDrawingState,
     snapPointToGrid: handleSnapPointToGrid,
     snapLineToGrid: handleSnapLineToGrid,
-    toggleSnap
+    toggleSnap,
+    toggleAngles,
+    updateMeasurementData
   };
 };

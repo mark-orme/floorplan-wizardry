@@ -9,17 +9,20 @@ export const GRID_SPACING = {
   SMALL: 10,   // 10px grid (0.1m at 100px/m scale)
   MEDIUM: 50,  // 50px grid (0.5m at 100px/m scale)
   LARGE: 100,  // 100px grid (1m at 100px/m scale)
-  DEFAULT: 20  // Default grid spacing when not specified
+  DEFAULT: 10  // Default grid spacing when not specified - changed to 10 for 0.1m precision
 };
 
-// Scale conversions
-export const PIXELS_PER_METER = 100;
+// Scale conversions - strictly defined for precision
+export const PIXELS_PER_METER = 100; // Exactly 100px = 1m, so 10px = 0.1m
 
 // Grid snap threshold in pixels
 export const SNAP_THRESHOLD = 5;
 
 // Angle snap threshold in degrees
 export const ANGLE_SNAP_THRESHOLD = 5;
+
+// Standard angles for snapping in degrees
+export const STANDARD_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
 // Default line properties
 export const DEFAULT_LINE_THICKNESS = 2;
@@ -31,8 +34,8 @@ export const SMALL_GRID = GRID_SPACING.SMALL;
 // Large grid (minor grid)
 export const LARGE_GRID = GRID_SPACING.LARGE;
 
-// Grid colors
-export const SMALL_GRID_COLOR = "#cccccc";
+// Grid colors - enhanced for better visibility
+export const SMALL_GRID_COLOR = "#dddddd";
 export const LARGE_GRID_COLOR = "#aaaaaa";
 
 // Default geometry
@@ -43,9 +46,9 @@ export const DEFAULT_POINT_RADIUS = 4;
 export const SMALL_GRID_LINE_WIDTH = 0.7;
 export const LARGE_GRID_LINE_WIDTH = 1.0;
 
-// Precision settings
+// Precision settings for measurements
 export const AREA_PRECISION = 2;
-export const DISTANCE_PRECISION = 2;
+export const DISTANCE_PRECISION = 1; // Show distance to 0.1m precision
 
 // Tolerance for floating point comparisons
 export const FLOATING_POINT_TOLERANCE = 0.0001;
@@ -73,4 +76,13 @@ export const ZOOM_CONSTRAINTS = {
   MAX: 10,
   DEFAULT: 1,
   STEP: 0.1
+};
+
+// Measurement display options
+export const MEASUREMENT_DISPLAY = {
+  SHOW_DISTANCE: true,
+  SHOW_ANGLE: true,
+  SHOW_GRID_POSITION: true,
+  UNITS: 'm', // meters
+  ANGLE_UNITS: '°' // degrees
 };

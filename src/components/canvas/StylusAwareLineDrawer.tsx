@@ -1,3 +1,4 @@
+
 /**
  * Stylus-aware line drawer component
  * @module components/canvas/StylusAwareLineDrawer
@@ -8,6 +9,7 @@ import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineToo
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
 import { TouchGestureHandler } from './TouchGestureHandler';
+import { MeasurementTooltip } from '@/components/MeasurementTooltip';
 import * as Sentry from '@sentry/react';
 import { toast } from 'sonner';
 
@@ -24,8 +26,8 @@ interface StylusAwareLineDrawerProps {
  * Component to handle line drawing with enhanced stylus and touch support
  * Features:
  * - Shift+drag for angle constraints
- * - Live updating tooltips
- * - Grid snapping
+ * - Live updating tooltips with precise measurements
+ * - Grid snapping to 0.1m increments
  * - Proper cleanup on cancel
  */
 export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
@@ -39,6 +41,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   // Track initialized state
   const isInitializedRef = useRef(false);
   const [shiftPressed, setShiftPressed] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState<{start: Point, end: Point} | null>(null);
   
   // Set up Sentry context for component
   useEffect(() => {
@@ -65,12 +68,17 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     inputMethod,
     isPencilMode,
     snapEnabled,
+    anglesEnabled,
+    measurementData,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
     cancelDrawing,
     toggleGridSnapping,
-    currentLine
+    toggleAngles,
+    currentLine,
+    startPointRef,
+    currentLineRef
   } = useStraightLineTool({
     fabricCanvasRef,
     tool,
@@ -79,6 +87,20 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     saveCurrentState,
     useShiftConstraint: shiftPressed
   });
+  
+  // Update tooltip position when drawing
+  useEffect(() => {
+    if (isDrawing && startPointRef.current && currentLineRef.current) {
+      const points = currentLineRef.current.calcLinePoints();
+      if (points) {
+        const start = { x: points.x1, y: points.y1 };
+        const end = { x: points.x2, y: points.y2 };
+        setActiveTooltip({ start, end });
+      }
+    } else if (!isDrawing) {
+      setActiveTooltip(null);
+    }
+  }, [isDrawing, currentLineRef.current]);
   
   // Monitor shift key state for angle constraints
   useEffect(() => {
@@ -97,6 +119,16 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
         if (isDrawing) {
           toast.info("Angle constraint active", { id: "shift-constraint" });
         }
+      }
+      
+      // Toggle grid snapping with 'g' key
+      if (e.key === 'g' || e.key === 'G') {
+        toggleGridSnapping();
+      }
+      
+      // Toggle angle snapping with 'a' key
+      if (e.key === 'a' || e.key === 'A') {
+        toggleAngles();
       }
     };
     
@@ -121,7 +153,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isDrawing]);
+  }, [isDrawing, toggleGridSnapping, toggleAngles]);
   
   // Process canvas events
   useEffect(() => {
@@ -163,11 +195,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     
     // Handle key press for grid snapping toggle and cancellation
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Toggle grid snapping with 'g' key
-      if (e.key === 'g') {
-        toggleGridSnapping();
-      }
-      
       // Cancel with escape key
       if (e.key === 'Escape') {
         cancelDrawing();
@@ -205,7 +232,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     handlePointerMove, 
     handlePointerUp, 
     cancelDrawing,
-    toggleGridSnapping,
     currentLine,
     onLineCreated
   ]);
@@ -218,13 +244,24 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
         lineThickness={lineThickness}
       />
       
+      {/* Active measurement tooltip */}
+      {isActive && isDrawing && activeTooltip && (
+        <MeasurementTooltip
+          startPoint={activeTooltip.start}
+          endPoint={activeTooltip.end}
+          showAngle={true}
+          showGridPosition={true}
+        />
+      )}
+      
       {/* Status indicator for drawing mode */}
       {isActive && (
         <div className="fixed bottom-2 right-2 p-2 bg-black/70 text-white rounded text-xs" style={{ zIndex: 9999 }}>
           {inputMethod === 'pencil' || inputMethod === 'stylus' ? '✏️ ' : inputMethod === 'touch' ? '👆 ' : '🖱️ '}
           {snapEnabled ? '📏' : ''}
+          {anglesEnabled ? '📐' : ''}
           {isPencilMode && '✨'}
-          {shiftPressed && '📐'}
+          {shiftPressed && '📏📐'}
         </div>
       )}
     </>
