@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
+import { FabricEventTypes } from "@/types/fabric-events";
 
 interface UseCanvasHistoryProps {
   canvas: FabricCanvas | null;
@@ -30,7 +31,12 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     };
     
     // Track relevant canvas events
-    const trackableEvents = ['object:added', 'object:removed', 'object:modified', 'path:created'];
+    const trackableEvents = [
+      FabricEventTypes.OBJECT_ADDED, 
+      FabricEventTypes.OBJECT_REMOVED, 
+      FabricEventTypes.OBJECT_MODIFIED, 
+      FabricEventTypes.PATH_CREATED
+    ];
     
     // Add event listeners
     trackableEvents.forEach(event => {
