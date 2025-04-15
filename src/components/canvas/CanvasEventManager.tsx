@@ -5,6 +5,7 @@ import { DrawingMode } from "@/constants/drawingModes";
 import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
 import { useCanvasKeyboardShortcuts } from "@/hooks/canvas/useCanvasKeyboardShortcuts";
 import { useApplePencilSupport } from "@/hooks/canvas/useApplePencilSupport";
+import { requestOptimizedRender, createSmoothEventHandler, createCompletionHandler } from "@/utils/canvas/renderOptimizer";
 
 /**
  * Props for the CanvasEventManager
@@ -53,6 +54,16 @@ export const CanvasEventManager = ({
     lineThickness
   });
   
+  // Create a debounced state save function
+  const debouncedSaveState = useRef(
+    createCompletionHandler(() => {
+      saveCurrentState();
+      if (onDrawingComplete) {
+        onDrawingComplete();
+      }
+    }, 300)
+  ).current;
+  
   // Initialize straight line tool
   useStraightLineTool({
     fabricCanvasRef: { current: canvas },
@@ -60,7 +71,7 @@ export const CanvasEventManager = ({
     lineColor,
     // Use pressure-adjusted thickness for Apple Pencil
     lineThickness: isApplePencil ? adjustedLineThickness : lineThickness,
-    saveCurrentState
+    saveCurrentState: debouncedSaveState
   });
   
   // Initialize keyboard shortcuts
@@ -82,10 +93,7 @@ export const CanvasEventManager = ({
         lastToolRef.current === DrawingMode.DRAW ||
         lastToolRef.current === DrawingMode.STRAIGHT_LINE
       ) {
-        saveCurrentState();
-        if (onDrawingComplete) {
-          onDrawingComplete();
-        }
+        debouncedSaveState();
       }
       
       lastToolRef.current = tool;
@@ -99,43 +107,45 @@ export const CanvasEventManager = ({
       canvas.freeDrawingBrush.color = lineColor;
       // Use pressure-adjusted thickness for Apple Pencil
       canvas.freeDrawingBrush.width = isApplePencil ? adjustedLineThickness : lineThickness;
+      
+      // Improve brush smoothness
+      if (canvas.freeDrawingBrush.decimate) {
+        // Simplify path for better performance
+        canvas.freeDrawingBrush.decimate = 2;
+      }
     }
     
-    // Event handlers
+    // Optimized event handlers
     const handlePathCreated = () => {
-      saveCurrentState();
-      if (onDrawingComplete) {
-        onDrawingComplete();
-      }
+      requestOptimizedRender(canvas, 'pathCreated');
+      debouncedSaveState();
     };
     
-    const handleObjectModified = () => {
-      saveCurrentState();
+    const handleObjectModified = createSmoothEventHandler(() => {
+      requestOptimizedRender(canvas, 'objectModified');
       needsSaveRef.current = true;
-    };
+    }, 100);
     
     const handleObjectAdded = (e: any) => {
       // Don't save state for drawing tools as they already save when path is created
       if (tool !== DrawingMode.DRAW && tool !== DrawingMode.STRAIGHT_LINE) {
-        saveCurrentState();
+        requestOptimizedRender(canvas, 'objectAdded');
         needsSaveRef.current = true;
       }
     };
     
     const handleObjectRemoved = () => {
-      saveCurrentState();
+      requestOptimizedRender(canvas, 'objectRemoved');
       needsSaveRef.current = true;
     };
     
-    const handleMouseUp = () => {
+    const handleMouseUp = createCompletionHandler(() => {
       // If we need to save, invoke the callback
       if (needsSaveRef.current) {
-        if (onDrawingComplete) {
-          onDrawingComplete();
-        }
+        debouncedSaveState();
         needsSaveRef.current = false;
       }
-    };
+    }, 250);
     
     // Register event listeners
     canvas.on('path:created', handlePathCreated);
@@ -154,7 +164,7 @@ export const CanvasEventManager = ({
       canvas.off('mouse:up', handleMouseUp);
       canvas.off('selection:cleared', handleMouseUp);
     };
-  }, [canvas, tool, lineColor, lineThickness, saveCurrentState, onDrawingComplete, isApplePencil, adjustedLineThickness]);
+  }, [canvas, tool, lineColor, lineThickness, debouncedSaveState, isApplePencil, adjustedLineThickness]);
   
   // Empty render as this is just an event manager
   return null;

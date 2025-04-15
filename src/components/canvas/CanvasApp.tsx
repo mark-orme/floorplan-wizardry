@@ -9,6 +9,7 @@ import { useDrawingContext } from '@/contexts/DrawingContext';
 import { useApplePencilSupport } from '@/hooks/canvas/useApplePencilSupport';
 import { updateGridWithZoom } from '@/utils/grid/gridVisibility';
 import { DrawingMode } from '@/constants/drawingModes';
+import { optimizeCanvasPerformance, requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
@@ -37,7 +38,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   const lineColor = externalLineColor || contextLineColor;
   const lineThickness = externalLineThickness || contextLineThickness;
   
-  // Initialize canvas
+  // Initialize canvas with performance optimizations
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -45,13 +46,19 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
       width,
       height,
       backgroundColor: '#ffffff',
-      preserveObjectStacking: true
+      preserveObjectStacking: true,
+      enableRetinaScaling: true,
+      renderOnAddRemove: false // Disable automatic rendering for better control
     });
     
     // Add zoom event listener for grid scaling
     canvas.on('zoom:changed', () => {
       updateGridWithZoom(canvas);
+      requestOptimizedRender(canvas, 'zoom');
     });
+    
+    // Apply performance optimizations
+    optimizeCanvasPerformance(canvas);
     
     setFabricCanvas(canvas);
     setCanvas(canvas);
@@ -78,7 +85,8 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
       fabricCanvas.remove(activeObject);
     }
     
-    fabricCanvas.requestRenderAll();
+    // Use optimized render instead of direct rendering
+    requestOptimizedRender(fabricCanvas, 'delete');
   };
   
   // Set up canvas history management
