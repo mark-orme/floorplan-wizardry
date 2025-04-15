@@ -1,4 +1,3 @@
-
 /**
  * useRateLimitedUpdate Hook
  * Custom hook for rate-limiting state updates and expensive calculations
@@ -60,19 +59,18 @@ export function useRateLimitedUpdate<T>(
     updateFnRef.current = updateFn;
   }, [updateFn]);
   
-  // Create a memoized rate-limited function
+  // Create a memoized rate-limited function that captures the value
   const rateLimitedFn = useCallback((value: T) => {
-    const currentUpdateFn = updateFnRef.current;
+    // Store the value in a closure for the debounced/throttled function
+    const executeUpdate = () => {
+      updateFnRef.current(value);
+    };
     
     if (method === 'debounce') {
-      const debouncedFn = debounce(() => {
-        currentUpdateFn(value);
-      }, delay);
+      const debouncedFn = debounce(executeUpdate, delay);
       debouncedFn();
     } else {
-      const throttledFn = throttle(() => {
-        currentUpdateFn(value);
-      }, delay);
+      const throttledFn = throttle(executeUpdate, delay);
       throttledFn();
     }
   }, [method, delay]);

@@ -3,7 +3,7 @@
  * Grid visibility helper utility
  * Provides functions for ensuring grid is visible and property maintained
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
 
@@ -254,11 +254,11 @@ if (typeof window !== 'undefined') {
       
       // Create grid lines
       const gridSize = 20;
-      const gridObjects = [];
+      const gridObjects: FabricObject[] = [];
       
       // Create vertical grid lines
       for (let i = 0; i <= width; i += gridSize) {
-        const line = new fabric.Line([i, 0, i, height], {
+        const line = new Line([i, 0, i, height], {
           stroke: '#e0e0e0',
           strokeWidth: 0.5,
           selectable: false,
@@ -274,7 +274,7 @@ if (typeof window !== 'undefined') {
       
       // Create horizontal grid lines
       for (let i = 0; i <= height; i += gridSize) {
-        const line = new fabric.Line([0, i, width, i], {
+        const line = new Line([0, i, width, i], {
           stroke: '#e0e0e0',
           strokeWidth: 0.5,
           selectable: false,
