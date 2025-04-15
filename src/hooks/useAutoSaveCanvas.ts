@@ -1,196 +1,181 @@
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
 
 interface UseAutoSaveCanvasProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  canvasStorageKey?: string;
+  canvas: FabricCanvas | null;
+  canvasId: string;
   autoSaveInterval?: number;
-  showToasts?: boolean;
+  onSave?: (success: boolean) => void;
+  onRestore?: (success: boolean) => void;
 }
 
-export const useAutoSaveCanvas = ({
-  fabricCanvasRef,
-  canvasStorageKey = 'canvas_state',
+export function useAutoSaveCanvas({
+  canvas,
+  canvasId,
   autoSaveInterval = 30000,
-  showToasts = true
-}: UseAutoSaveCanvasProps) => {
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedRef = useRef<string | null>(null);
+  onSave,
+  onRestore
+}: UseAutoSaveCanvasProps) {
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [canRestore, setCanRestore] = useState(false);
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Save canvas state to localStorage
-  const saveCanvasState = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return false;
+  // Generate storage keys
+  const stateKey = `canvas_${canvasId}_state`;
+  const timestampKey = `canvas_${canvasId}_timestamp`;
+  
+  // Check if we have a saved state
+  useEffect(() => {
+    const savedState = localStorage.getItem(stateKey);
+    const savedTimestamp = localStorage.getItem(timestampKey);
     
-    try {
-      // Convert canvas to JSON
-      const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps', 'measurement']));
-      
-      // Only save if something has changed
-      if (json !== lastSavedRef.current) {
-        localStorage.setItem(canvasStorageKey, json);
-        lastSavedRef.current = json;
-        
-        if (showToasts) {
-          toast.success('Canvas state saved');
-        }
-        
-        logger.info('Canvas state saved to localStorage');
-        return true;
+    if (savedState && savedTimestamp) {
+      setCanRestore(true);
+      setLastSaved(new Date(savedTimestamp));
+    }
+  }, [stateKey, timestampKey]);
+  
+  // Set up auto-save interval
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const saveCanvas = () => {
+      if (canvas) {
+        saveCurrentCanvas();
+      }
+    };
+    
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current);
+    }
+    
+    autoSaveIntervalRef.current = setInterval(saveCanvas, autoSaveInterval);
+    
+    // Listen for object modifications
+    const handleModification = () => {
+      // Don't actually save here - just let the interval do its job
+      // This prevents saving on every tiny change
+      logger.debug('Canvas modified, will be saved on next interval');
+    };
+    
+    canvas.on('object:added', handleModification);
+    canvas.on('object:modified', handleModification);
+    canvas.on('object:removed', handleModification);
+    
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
       }
       
-      return false;
-    } catch (error) {
-      logger.error('Error saving canvas state:', error);
-      
-      if (showToasts) {
-        toast.error('Failed to save canvas state');
+      if (canvas) {
+        canvas.off('object:added', handleModification);
+        canvas.off('object:modified', handleModification);
+        canvas.off('object:removed', handleModification);
       }
-      
+    };
+  }, [canvas, autoSaveInterval]);
+  
+  // Save current canvas state
+  const saveCurrentCanvas = async () => {
+    if (!canvas) {
+      if (onSave) onSave(false);
       return false;
     }
-  }, [fabricCanvasRef, canvasStorageKey, showToasts]);
-  
-  // Load canvas state from localStorage
-  const loadCanvasState = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return false;
     
     try {
-      const json = localStorage.getItem(canvasStorageKey);
-      if (!json) return false;
+      setIsSaving(true);
       
-      canvas.loadFromJSON(json, () => {
-        canvas.requestRenderAll();
-        
-        if (showToasts) {
-          toast.success('Canvas state restored');
-        }
-        
-        logger.info('Canvas state restored from localStorage');
-      });
+      // Convert canvas to JSON
+      const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps']));
       
-      lastSavedRef.current = json;
+      // Save to localStorage
+      localStorage.setItem(stateKey, json);
+      
+      // Save timestamp
+      const now = new Date();
+      localStorage.setItem(timestampKey, now.toISOString());
+      
+      setLastSaved(now);
+      setCanRestore(true);
+      setIsSaving(false);
+      
+      logger.info(`Canvas saved to localStorage (id: ${canvasId})`);
+      if (onSave) onSave(true);
+      
       return true;
     } catch (error) {
-      logger.error('Error loading canvas state:', error);
-      
-      if (showToasts) {
-        toast.error('Failed to restore canvas state');
-      }
+      logger.error('Error saving canvas:', error);
+      setIsSaving(false);
+      if (onSave) onSave(false);
       
       return false;
     }
-  }, [fabricCanvasRef, canvasStorageKey, showToasts]);
+  };
   
-  // Clear saved canvas state
-  const clearCanvasState = useCallback(() => {
+  // Restore canvas from saved state
+  const restoreCanvas = async () => {
+    if (!canvas) {
+      if (onRestore) onRestore(false);
+      return false;
+    }
+    
     try {
-      localStorage.removeItem(canvasStorageKey);
-      lastSavedRef.current = null;
+      setIsLoading(true);
       
-      if (showToasts) {
-        toast.success('Canvas state cleared');
+      const savedState = localStorage.getItem(stateKey);
+      if (!savedState) {
+        setIsLoading(false);
+        if (onRestore) onRestore(false);
+        return false;
       }
       
-      logger.info('Canvas state cleared from localStorage');
+      canvas.loadFromJSON(savedState, () => {
+        canvas.requestRenderAll();
+        setIsLoading(false);
+        if (onRestore) onRestore(true);
+      });
+      
+      logger.info(`Canvas restored from localStorage (id: ${canvasId})`);
+      
+      return true;
+    } catch (error) {
+      logger.error('Error restoring canvas:', error);
+      setIsLoading(false);
+      if (onRestore) onRestore(false);
+      
+      return false;
+    }
+  };
+  
+  // Clear saved canvas state
+  const clearSavedCanvas = () => {
+    try {
+      localStorage.removeItem(stateKey);
+      localStorage.removeItem(timestampKey);
+      setCanRestore(false);
+      setLastSaved(null);
+      
+      logger.info(`Canvas state cleared from localStorage (id: ${canvasId})`);
+      
       return true;
     } catch (error) {
       logger.error('Error clearing canvas state:', error);
-      
-      if (showToasts) {
-        toast.error('Failed to clear canvas state');
-      }
-      
       return false;
     }
-  }, [canvasStorageKey, showToasts]);
-  
-  // Reset canvas to empty state
-  const resetCanvas = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return false;
-    
-    try {
-      // Clear all objects except grid
-      const objects = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid');
-      objects.forEach(obj => canvas.remove(obj));
-      
-      // Reset zoom and pan
-      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-      
-      // Render changes
-      canvas.requestRenderAll();
-      
-      // Clear saved state
-      clearCanvasState();
-      
-      if (showToasts) {
-        toast.success('Canvas reset to empty state');
-      }
-      
-      logger.info('Canvas reset to empty state');
-      return true;
-    } catch (error) {
-      logger.error('Error resetting canvas:', error);
-      
-      if (showToasts) {
-        toast.error('Failed to reset canvas');
-      }
-      
-      return false;
-    }
-  }, [fabricCanvasRef, clearCanvasState, showToasts]);
-  
-  // Start auto-save timer
-  const startAutoSave = useCallback(() => {
-    // Clear any existing timer
-    if (autoSaveTimerRef.current) {
-      clearInterval(autoSaveTimerRef.current);
-    }
-    
-    // Set new timer
-    autoSaveTimerRef.current = setInterval(() => {
-      saveCanvasState();
-    }, autoSaveInterval);
-    
-    logger.info(`Auto-save started (interval: ${autoSaveInterval}ms)`);
-  }, [autoSaveInterval, saveCanvasState]);
-  
-  // Stop auto-save timer
-  const stopAutoSave = useCallback(() => {
-    if (autoSaveTimerRef.current) {
-      clearInterval(autoSaveTimerRef.current);
-      autoSaveTimerRef.current = null;
-      logger.info('Auto-save stopped');
-    }
-  }, []);
-  
-  // Set up auto-save when component mounts
-  useEffect(() => {
-    startAutoSave();
-    
-    // Attempt to load saved state
-    const loaded = loadCanvasState();
-    if (!loaded) {
-      logger.info('No saved canvas state found');
-    }
-    
-    // Clean up timer when component unmounts
-    return () => {
-      stopAutoSave();
-    };
-  }, [startAutoSave, loadCanvasState, stopAutoSave]);
+  };
   
   return {
-    saveCanvasState,
-    loadCanvasState,
-    clearCanvasState,
-    resetCanvas,
-    startAutoSave,
-    stopAutoSave
+    saveCanvas: saveCurrentCanvas,
+    restoreCanvas,
+    clearSavedCanvas,
+    canRestore,
+    lastSaved,
+    isSaving,
+    isLoading
   };
-};
+}

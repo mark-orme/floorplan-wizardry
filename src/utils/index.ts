@@ -41,12 +41,15 @@ export {
   formatDisplayDistance
 } from './geometry';
 
-// Re-export grid utilities with explicit naming to avoid ambiguity
-export {
-  snapPointToGrid as gridSnapPointToGrid, 
-  snapLineToGrid as gridSnapLineToGrid,
+// Re-export grid-related functions from their exports file
+export { 
+  GridCreation, 
+  GridValidation, 
+  GridDebug,
+  snapPointToGrid,
+  snapLineToGrid,
   snapLineToStandardAngles,
-  snapToAngle as gridSnapToAngle,
+  snapToAngle,
   isPointOnGrid,
   getNearestGridPoint,
   distanceToGrid,
@@ -54,4 +57,5 @@ export {
 } from './grid/exports';
 
 // Re-export remaining grid utilities
-export * from './grid/exports';
+export * from './grid';
+

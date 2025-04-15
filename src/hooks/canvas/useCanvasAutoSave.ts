@@ -28,21 +28,33 @@ export function useCanvasAutoSave({
 }: UseCanvasAutoSaveProps) {
   const setupDoneRef = useRef(false);
   const debouncedSaveRef = useRef<() => void>();
+  const canvasStorageKey = `canvas_state_${canvasId}`;
   
   const {
+    saveCanvasState,
+    loadCanvasState,
+    clearCanvasState,
+    startAutoSave,
+    stopAutoSave,
+    saveCanvas,
+    restoreCanvas,
+    clearSavedCanvas,
     isSaving,
     isLoading,
     lastSaved,
-    saveCanvas,
-    restoreCanvas,
-    clearSavedCanvas
-  } = useCanvasPersistence({ canvasId, onSave, onRestore });
+    canRestore
+  } = useCanvasPersistence({ 
+    fabricCanvasRef: { current: canvas },
+    canvasStorageKey,
+    onSave,
+    onRestore
+  });
   
   // Create a wrapper function for saving the current canvas
   const saveCurrentCanvas = useCallback(async () => {
     if (!canvas) return false;
-    return saveCanvas(canvas);
-  }, [canvas, saveCanvas]);
+    return saveCanvas ? saveCanvas() : saveCanvasState();
+  }, [canvas, saveCanvas, saveCanvasState]);
   
   // Set up debounced save function
   useEffect(() => {
@@ -87,15 +99,21 @@ export function useCanvasAutoSave({
   // Wrapper for restoring the current canvas
   const restoreCurrentCanvas = useCallback(async () => {
     if (!canvas) return false;
-    return restoreCanvas(canvas);
-  }, [canvas, restoreCanvas]);
+    return restoreCanvas ? restoreCanvas() : loadCanvasState();
+  }, [canvas, restoreCanvas, loadCanvasState]);
+  
+  // Wrap clear canvas for consistency
+  const clearCurrentCanvas = useCallback(() => {
+    return clearSavedCanvas ? clearSavedCanvas() : clearCanvasState();
+  }, [clearSavedCanvas, clearCanvasState]);
   
   return {
     isSaving,
     isLoading,
     lastSaved,
+    canRestore,
     saveCanvas: saveCurrentCanvas,
     restoreCanvas: restoreCurrentCanvas,
-    clearSavedCanvas
+    clearSavedCanvas: clearCurrentCanvas
   };
 }

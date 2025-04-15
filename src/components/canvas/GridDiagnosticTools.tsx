@@ -55,14 +55,8 @@ export const GridDiagnosticTools: React.FC<GridDiagnosticToolsProps> = ({
     setLoading(true);
     
     try {
-      const diagnostics = runGridDiagnostics(canvas);
-      const fixedGrid = applyGridFixes(canvas, diagnostics);
-      
-      setResults({
-        ...diagnostics,
-        fixedGrid: fixedGrid.length,
-        fixApplied: true
-      });
+      const fixResult = applyGridFixes(canvas);
+      setResults(fixResult);
     } catch (error) {
       logger.error("Error applying grid fixes:", error);
       setResults({ error: error instanceof Error ? error.message : String(error) });
@@ -146,8 +140,13 @@ export const GridDiagnosticTools: React.FC<GridDiagnosticToolsProps> = ({
           ) : (
             <div className="space-y-1">
               <div>Canvas: {results.canvasDimensions?.width ? '✅' : '❌'}</div>
-              <div>Grid exists: {results.gridExists ? '✅' : '❌'}</div>
+              <div>Grid exists: {results.hasGrid ? '✅' : '❌'}</div>
               <div>Grid count: {results.gridObjectCount}</div>
+              {results.fixedGrid && (
+                <div className="text-green-500">
+                  Fixed grid: {results.fixedGrid.length} objects
+                </div>
+              )}
               {results.issues && results.issues.length > 0 && (
                 <div className="text-red-500">
                   Issues: {results.issues.join(', ')}
@@ -155,7 +154,7 @@ export const GridDiagnosticTools: React.FC<GridDiagnosticToolsProps> = ({
               )}
               {results.fixApplied && (
                 <div className="text-green-500">
-                  Fixes applied: {results.fixedGrid} objects
+                  Fixes applied: {results.fixResult}
                 </div>
               )}
               {results.emergencyFixApplied && (

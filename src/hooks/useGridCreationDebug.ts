@@ -5,14 +5,28 @@
  */
 
 import { useCallback, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { 
   runGridDiagnostics, 
   applyGridFixes,
   emergencyGridFix 
 } from "@/utils/grid/gridDiagnostics";
-import { dumpGridState } from "@/utils/grid/gridDebugUtils";
 import logger from "@/utils/logger";
+
+// Add utility function since it's missing
+const dumpGridState = (canvas: FabricCanvas) => {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter(
+    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+  );
+  
+  console.log("Grid state:", {
+    gridObjectCount: gridObjects.length,
+    canvasDimensions: { width: canvas.width, height: canvas.height },
+    visibleGridObjects: gridObjects.filter(obj => obj.visible).length
+  });
+};
 
 /**
  * Interface for useGridCreationDebug hook props
@@ -70,22 +84,18 @@ export const useGridCreationDebug = ({ fabricCanvasRef }: UseGridCreationDebugPr
     }
     
     try {
-      // Run diagnostics first
-      const diagnostics = runGridDiagnostics(canvas);
-      
       // Apply fixes
-      const fixedGrid = applyGridFixes(canvas, diagnostics);
+      const fixedResult = applyGridFixes(canvas);
       
-      logger.info(`Applied fixes to grid, created/fixed ${fixedGrid.length} objects`);
+      logger.info("Applied fixes to grid:", fixedResult);
       
       // Update diagnostic results
       setDiagnosticResults({
-        ...diagnostics,
-        fixedGrid: fixedGrid.length,
-        fixApplied: true
+        ...fixedResult,
+        fixedGridCount: fixedResult.fixedGrid ? fixedResult.fixedGrid.length : 0
       });
       
-      return fixedGrid;
+      return fixedResult.fixedGrid;
     } catch (error) {
       logger.error("Error applying grid fixes:", error);
       return null;
