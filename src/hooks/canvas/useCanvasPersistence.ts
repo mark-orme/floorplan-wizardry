@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
@@ -39,7 +38,7 @@ export const useCanvasPersistence = ({
 
     try {
       setIsSaving(true);
-      const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps', 'measurement']));
+      const json = JSON.stringify(canvas.toJSON());
       
       if (json !== lastSavedJsonRef.current) {
         localStorage.setItem(canvasStorageKey, json);
@@ -76,7 +75,7 @@ export const useCanvasPersistence = ({
       }
 
       canvas.loadFromJSON(json, () => {
-        canvas.renderAll(); // Removed argument
+        canvas.renderAll();
         logger.info('Canvas state restored from localStorage');
         setIsLoading(false);
         if (onRestore) onRestore(true);

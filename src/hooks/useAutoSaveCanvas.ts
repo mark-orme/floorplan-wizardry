@@ -82,7 +82,7 @@ export function useAutoSaveCanvas({
     try {
       setIsSaving(true);
       
-      const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps']));
+      const json = JSON.stringify(canvas.toJSON());
       
       localStorage.setItem(stateKey, json);
       
