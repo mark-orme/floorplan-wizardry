@@ -8,8 +8,10 @@ import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
 import { ToolbarContainer } from "./ToolbarContainer";
 import { CanvasEventManager } from "./CanvasEventManager";
-import { useCanvasAutosave } from "@/hooks/useCanvasAutosave";
+import { useAutoSaveCanvas } from "@/hooks/useAutoSaveCanvas";
+import { useRestorePrompt } from "@/hooks/useRestorePrompt";
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
+import { RestoreDrawingPrompt } from "./RestoreDrawingPrompt";
 
 /**
  * Drawing manager component
@@ -18,6 +20,9 @@ import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 export const DrawingManager = () => {
   // Get canvas from context
   const { canvas } = useCanvasController();
+  
+  // Generate a stable canvas ID based on user session or use default
+  const canvasId = useRef<string>(`default-${Math.random().toString(36).substring(2, 9)}`).current;
   
   // State for drawing tools
   const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
@@ -47,16 +52,35 @@ export const DrawingManager = () => {
   const { isOnline } = useOfflineSupport();
   
   // Initialize autosave
-  const { saveCanvas } = useCanvasAutosave({
+  const { saveCanvas, lastSaved } = useAutoSaveCanvas({
     canvas,
+    canvasId,
     onSave: (success) => {
       if (success) {
         console.log("Canvas autosaved successfully");
       }
     },
-    onLoad: (success) => {
+    onRestore: (success) => {
       if (success) {
         // After loading from autosave, update the history state
+        updateHistoryState();
+      }
+    }
+  });
+  
+  // Initialize restore prompt hook
+  const { 
+    showPrompt, 
+    timeElapsed, 
+    isRestoring, 
+    handleRestore, 
+    handleDismiss 
+  } = useRestorePrompt({
+    canvas,
+    canvasId,
+    onRestore: (success) => {
+      if (success) {
+        // After restoring, update history state
         updateHistoryState();
       }
     }
@@ -194,6 +218,7 @@ export const DrawingManager = () => {
         canUndo={canUndo}
         canRedo={canRedo}
         isOffline={!isOnline}
+        lastSaved={lastSaved}
       />
       
       {canvas && (
@@ -220,6 +245,16 @@ export const DrawingManager = () => {
             }}
           />
         </>
+      )}
+      
+      {/* Restore drawing prompt */}
+      {showPrompt && (
+        <RestoreDrawingPrompt
+          timeElapsed={timeElapsed}
+          onRestore={handleRestore}
+          onDismiss={handleDismiss}
+          isRestoring={isRestoring}
+        />
       )}
       
       {!isOnline && (

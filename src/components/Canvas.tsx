@@ -1,281 +1,71 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
-import { DebugInfoState } from '@/types/core/DebugInfo';
-import { DrawingMode } from '@/constants/drawingModes';
-import { GridRendererComponent } from './canvas/grid/GridRenderer';
-import { GridDebugOverlay } from './canvas/GridDebugOverlay';
-import { toast } from 'sonner';
-import logger from '@/utils/logger';
-import { forceGridCreationAndVisibility } from '@/utils/grid/gridVisibility';
-import { useWallDrawing } from '@/hooks/useWallDrawing';
-import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
-import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 
-export interface CanvasProps {
+import React, { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
+import { useRestorePrompt } from '@/hooks/useRestorePrompt';
+
+interface CanvasProps {
   width: number;
   height: number;
-  onCanvasReady: (canvas: FabricCanvas) => void;
+  onCanvasReady?: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
-  style?: React.CSSProperties;
-  setDebugInfo?: React.Dispatch<React.SetStateAction<DebugInfoState>>;
-  tool?: DrawingMode;
   showGridDebug?: boolean;
-  lineColor?: string;
-  lineThickness?: number;
-  wallColor?: string;
-  wallThickness?: number;
-  forceGridVisible?: boolean;
 }
 
-export const Canvas: React.FC<CanvasProps> = ({ 
+export const Canvas: React.FC<CanvasProps> = ({
   width,
   height,
   onCanvasReady,
   onError,
-  style,
-  setDebugInfo,
-  tool = DrawingMode.SELECT,
-  showGridDebug = false,
-  lineColor = '#000000',
-  lineThickness = 2,
-  wallColor = '#333333',
-  wallThickness = 4,
-  forceGridVisible = false
+  showGridDebug = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const [gridError, setGridError] = useState<string | null>(null);
-  const mountedRef = useRef<boolean>(true);
-  const gridRenderedRef = useRef<boolean>(false);
-
-  // Initialize the snap to grid functionality
-  const { snapPointToGrid, snapLineToGrid, toggleSnapToGrid, snapEnabled } = useSnapToGrid({
-    fabricCanvasRef
-  });
-
-  // Use wall drawing hook
-  const { isDrawing: isDrawingWall } = useWallDrawing({
-    fabricCanvasRef,
-    tool,
-    wallColor,
-    wallThickness
-  });
-
-  // Use straight line tool hook with save state function
-  const { isDrawing: isStraightLineDrawing } = useStraightLineTool({
-    fabricCanvasRef,
-    enabled: tool === DrawingMode.STRAIGHT_LINE,
-    lineColor,
-    lineThickness,
-    saveCurrentState: () => {
-      // This would normally save the state for undo/redo
-      console.log("Saving canvas state");
-    }
-  });
-
-  // Handle selection and deletion functionality
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    
-    // Delete or Backspace key pressed
-    if ((e.key === 'Delete' || e.key === 'Backspace') && tool === DrawingMode.SELECT) {
-      const selectedObjects = canvas.getActiveObjects();
-      
-      if (selectedObjects.length > 0) {
-        // Filter out grid objects
-        const nonGridObjects = selectedObjects.filter(obj => 
-          !(obj as any).isGrid && (obj as any).objectType !== 'grid'
-        );
-        
-        if (nonGridObjects.length > 0) {
-          canvas.remove(...nonGridObjects);
-          canvas.discardActiveObject();
-          canvas.requestRenderAll();
-          toast.success(`Deleted ${nonGridObjects.length} object(s)`);
-        }
-      }
-    }
-  };
-
-  // Set up key event listeners
+  const canvasId = useRef<string>(`canvas-${Math.random().toString(36).substring(2, 9)}`).current;
+  
+  // Initialize canvas
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [tool]);
-
-  // Handle tool changes
-  useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    
-    switch (tool) {
-      case DrawingMode.DRAW:
-        canvas.isDrawingMode = true;
-        if (canvas.freeDrawingBrush) {
-          canvas.freeDrawingBrush.width = lineThickness;
-          canvas.freeDrawingBrush.color = lineColor;
-        }
-        canvas.defaultCursor = 'crosshair';
-        canvas.selection = false;
-        break;
-      case DrawingMode.SELECT:
-        canvas.isDrawingMode = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        break;
-      case DrawingMode.ERASER:
-        canvas.isDrawingMode = false;
-        canvas.defaultCursor = 'cell';
-        break;
-      case DrawingMode.STRAIGHT_LINE:
-      case DrawingMode.LINE:
-        canvas.isDrawingMode = false;
-        canvas.defaultCursor = 'crosshair';
-        canvas.selection = false;
-        break;
-      case DrawingMode.WALL:
-        canvas.isDrawingMode = false;
-        canvas.defaultCursor = 'crosshair';
-        canvas.selection = false;
-        break;
-      default:
-        canvas.isDrawingMode = false;
-        canvas.defaultCursor = 'crosshair';
-        break;
-    }
-    
-    canvas.renderAll();
-  }, [tool, lineColor, lineThickness, wallColor, wallThickness]);
-
-  // Initialize canvas - THIS WAS CAUSING THE INFINITE LOOP
-  useEffect(() => {
-    // Set mounted flag to true
-    mountedRef.current = true;
-    
     if (!canvasRef.current) return;
-
-    // Only create a new canvas if we don't already have one
-    if (!fabricCanvasRef.current) {
-      try {
-        const canvas = new FabricCanvas(canvasRef.current, {
-          width: Math.max(width, window.innerWidth),
-          height: Math.max(height, window.innerHeight),
-          selection: true
-        });
-        
-        if (!canvas.freeDrawingBrush) {
-          canvas.freeDrawingBrush = new PencilBrush(canvas);
-        }
-        canvas.freeDrawingBrush.width = lineThickness;
-        canvas.freeDrawingBrush.color = lineColor;
-        
-        fabricCanvasRef.current = canvas;
-
-        if (setDebugInfo) {
-          setDebugInfo(prev => ({
-            ...prev,
-            canvasInitialized: true,
-            canvasReady: true
-          }));
-        }
-
-        // Make canvas globally available for debugging
-        if (typeof window !== 'undefined') {
-          (window as any).fabricCanvas = canvas;
-        }
-
-        // Call onCanvasReady only once
-        onCanvasReady(canvas);
-      } catch (error) {
-        if (onError && error instanceof Error) {
-          onError(error);
-        }
-        
-        if (setDebugInfo) {
-          setDebugInfo(prev => ({
-            ...prev,
-            hasError: true,
-            errorMessage: error instanceof Error ? error.message : String(error),
-            lastError: error instanceof Error ? error.message : String(error),
-            lastErrorTime: Date.now()
-          }));
-        }
-      }
-    }
-
-    return () => {
-      mountedRef.current = false;
-      
-      // Don't dispose the canvas on unmount - Let parent component handle disposal
-      // if (fabricCanvasRef.current) {
-      //   fabricCanvasRef.current.dispose();
-      //   fabricCanvasRef.current = null;
-      // }
-    };
-  }, [width, height, onCanvasReady, onError, setDebugInfo, lineColor, lineThickness, wallColor, wallThickness]);
-
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (!fabricCanvasRef.current) return;
-      
-      const canvas = fabricCanvasRef.current;
-      
-      canvas.setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
+    
+    try {
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: '#ffffff',
+        selection: true
       });
       
-      // Re-render grid after resize
-      forceGridCreationAndVisibility(canvas);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
+      if (onCanvasReady) {
+        onCanvasReady(canvas);
+      }
+      
+      return () => {
+        canvas.dispose();
+      };
+    } catch (error) {
+      console.error('Error initializing canvas:', error);
+      
+      if (onError && error instanceof Error) {
+        onError(error);
+      }
+    }
+  }, [width, height, onCanvasReady, onError]);
+  
   return (
-    <div className="relative w-full h-full">
-      <canvas 
-        ref={canvasRef} 
-        width={width} 
-        height={height} 
-        data-testid="canvas"
-        data-canvas-tool={tool}
-        style={{ ...style, position: 'absolute', top: 0, left: 0, zIndex: 1 }}
+    <div className="canvas-wrapper relative" data-testid="canvas-element">
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="border border-gray-200 dark:border-gray-700 shadow-sm"
+        data-canvas-id={canvasId}
+        data-show-grid-debug={showGridDebug ? 'true' : 'false'}
       />
       
-      {fabricCanvasRef.current && (
-        <GridRendererComponent 
-          canvas={fabricCanvasRef.current}
-          showGrid={true} // Always show grid
-          onGridCreated={(gridObjects) => {
-            logger.info(`Grid created with ${gridObjects.length} objects`);
-            gridRenderedRef.current = true;
-          }}
-        />
-      )}
-      
-      {gridError && (
-        <div className="absolute bottom-2 left-2 bg-red-100 text-red-800 p-2 rounded text-xs z-50">
-          Grid Error: {gridError}
+      {/* Debug overlay */}
+      {showGridDebug && (
+        <div className="absolute top-0 right-0 bg-red-100 text-red-800 p-1 text-xs rounded m-1 opacity-75">
+          Debug Mode
         </div>
-      )}
-      
-      {showGridDebug && fabricCanvasRef.current && (
-        <GridDebugOverlay 
-          fabricCanvasRef={fabricCanvasRef} 
-          visible={showGridDebug} 
-        />
       )}
     </div>
   );
