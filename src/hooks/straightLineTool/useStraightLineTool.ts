@@ -91,7 +91,7 @@ export const useStraightLineTool = ({
     inputMethod,
     isPencilMode,
     isToolInitialized: isLineStateInitialized,
-    setIsToolInitialized,
+    setIsToolInitialized: setLineStateToolInitialized,  // Renamed to avoid collision
     snapPointToGrid: lineStateSnapPointToGrid,
     snapLineToGrid: lineStateSnapLineToGrid
   } = useLineState({
@@ -181,7 +181,7 @@ export const useStraightLineTool = ({
     // Initialize tool when activated
     if (isStraightLineTool && !isToolInitialized) {
       setIsToolInitialized(true);
-      setIsToolInitialized(true);
+      setLineStateToolInitialized(true);  // Use the renamed function
       
       // Log tool initialization
       logger.info("Straight line tool initialized", {
@@ -201,7 +201,7 @@ export const useStraightLineTool = ({
     if (!isStraightLineTool && isDrawing) {
       cancelDrawing();
     }
-  }, [tool, isToolInitialized, isDrawing, cancelDrawing, setIsToolInitialized]);
+  }, [tool, isToolInitialized, isDrawing, cancelDrawing, setIsToolInitialized, setLineStateToolInitialized]);
   
   return {
     isActive,
