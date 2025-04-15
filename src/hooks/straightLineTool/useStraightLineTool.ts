@@ -1,4 +1,8 @@
 
+/**
+ * Custom hook for straight line drawing tool with enhanced features
+ * @module hooks/straightLineTool/useStraightLineTool
+ */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -6,7 +10,7 @@ import { Point } from '@/types/core/Point';
 import { useLineState } from './useLineState';
 import { useLineToolHandlers } from './useLineToolHandlers';
 import { useToolCancellation } from './useToolCancellation';
-import { useGridSnapping } from './useGridSnapping';
+import { useGridSnapping } from '../canvas/useGridSnapping';
 import { toast } from 'sonner';
 import * as Sentry from '@sentry/react';
 import { constrainToMajorAngles } from '@/utils/grid/snapping';
@@ -29,6 +33,9 @@ interface UseStraightLineToolProps {
  * - Proper tooltips
  * - Cancellation support
  * - Undo/redo compatibility
+ * 
+ * @param {UseStraightLineToolProps} props - Configuration for the straight line tool
+ * @returns {Object} Tool state and handler functions
  */
 export const useStraightLineTool = ({
   fabricCanvasRef,
@@ -71,7 +78,7 @@ export const useStraightLineTool = ({
     snapEnabled, 
     snapPointToGrid, 
     snapLineToGrid, 
-    toggleGridSnapping 
+    toggleSnapToGrid: toggleGridSnapping 
   } = useGridSnapping({
     fabricCanvasRef,
     initialSnapEnabled: true
@@ -91,7 +98,7 @@ export const useStraightLineTool = ({
     inputMethod,
     isPencilMode,
     isToolInitialized: isLineStateInitialized,
-    setIsToolInitialized: setLineStateToolInitialized,  // Renamed to avoid collision
+    setIsToolInitialized: setLineStateToolInitialized, // Rename to avoid duplicate
     snapPointToGrid: lineStateSnapPointToGrid,
     snapLineToGrid: lineStateSnapLineToGrid
   } = useLineState({
@@ -111,7 +118,7 @@ export const useStraightLineTool = ({
   }, [currentLineRef.current]);
   
   // Initialize tool cancellation
-  const { cancelDrawing, toggleGridSnapping: toggleSnapFromCancellation } = useToolCancellation({
+  const { cancelDrawing, toggleSnap: toggleSnapFromCancellation } = useToolCancellation({
     fabricCanvasRef,
     isDrawing,
     currentLineRef,
@@ -181,7 +188,7 @@ export const useStraightLineTool = ({
     // Initialize tool when activated
     if (isStraightLineTool && !isToolInitialized) {
       setIsToolInitialized(true);
-      setLineStateToolInitialized(true);  // Use the renamed function
+      setLineStateToolInitialized(true); // Update to use the renamed variable
       
       // Log tool initialization
       logger.info("Straight line tool initialized", {
@@ -201,7 +208,7 @@ export const useStraightLineTool = ({
     if (!isStraightLineTool && isDrawing) {
       cancelDrawing();
     }
-  }, [tool, isToolInitialized, isDrawing, cancelDrawing, setIsToolInitialized, setLineStateToolInitialized]);
+  }, [tool, isToolInitialized, isDrawing, cancelDrawing, setLineStateToolInitialized]);
   
   return {
     isActive,
