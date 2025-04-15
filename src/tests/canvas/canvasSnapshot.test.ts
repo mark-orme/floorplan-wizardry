@@ -1,6 +1,6 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Canvas, Rect, Circle } from 'fabric';
+import { Canvas, Object as FabricObject, Rect, Circle } from 'fabric';
 
 describe('Canvas snapshot serialization', () => {
   let canvas: Canvas;
@@ -108,3 +108,4 @@ describe('Canvas snapshot serialization', () => {
     expect(restoredRect.left).toBe(originalRect.left);
     expect(restoredRect.top).toBe(originalRect.top);
   });
+});
