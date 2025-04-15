@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { collectPerformanceMetrics } from '@/utils/performanceReporter';
-import { formatSize } from '@/utils/buildReporter';
+import { collectPerformanceMetrics } from '@/utils/performance/collector';
+import { formatBytes } from '@/utils/performance/resourceUtils';
 
 interface PerformanceBadgeProps {
   showMetrics?: boolean;
@@ -69,7 +69,7 @@ export const PerformanceBadge: React.FC<PerformanceBadgeProps> = ({
           <div className="flex justify-between gap-2">
             <span>Size:</span>
             <span className={getScoreColor(metrics.resourceStats.totalSize / 1024, 1000, 2000, true)}>
-              {formatSize(metrics.resourceStats.totalSize)}
+              {formatBytes(metrics.resourceStats.totalSize)}
             </span>
           </div>
         </div>
@@ -104,7 +104,7 @@ export const PerformanceBadge: React.FC<PerformanceBadgeProps> = ({
             
             <span>Total Size:</span>
             <span className={getScoreColor(metrics.resourceStats.totalSize / 1024, 1000, 2000, true)}>
-              {formatSize(metrics.resourceStats.totalSize)}
+              {formatBytes(metrics.resourceStats.totalSize)}
             </span>
           </div>
         </div>
