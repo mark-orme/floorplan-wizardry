@@ -7,7 +7,7 @@ import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
-interface GridOptions {
+export interface GridOptions {
   showMajorLines?: boolean;
   majorInterval?: number;
   gridSize?: number;

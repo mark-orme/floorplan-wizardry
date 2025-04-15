@@ -6,16 +6,13 @@
  */
 
 // Re-export individual utility files for direct imports
-export { createGrid, createCompleteGrid, createBasicEmergencyGrid } from './gridRenderers';
-export { dumpGridState, forceCreateGrid } from './gridDebugUtils';
-export { ensureGridVisibility, setGridVisibility } from './gridVisibility';
+export { createGrid, setGridVisibility } from '../canvasGrid';
+export { createBasicEmergencyGrid, resetGridProgress } from '../gridCreationUtils';
+export { ensureGridVisibility, forceGridCreationAndVisibility } from './gridVisibility';
 export { runGridDiagnostics, applyGridFixes } from './gridDiagnostics';
 
-// Export types
-export type { GridDiagnosticResult } from './gridDiagnostics';
-
-// Re-export utility namespaces from exports.ts
+// Export utility namespaces from exports.ts
 export { GridCreation, GridValidation, GridDebug } from './exports';
 
-// Re-export type-safe utility functions
-export type { GridOptions } from './gridTypes';
+// Export types
+export type { GridOptions } from '../canvasGrid';

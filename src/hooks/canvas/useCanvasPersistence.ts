@@ -1,175 +1,130 @@
 
-/**
- * Canvas persistence hook
- * Manages loading and saving canvas data to localStorage and IndexedDB
- */
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { saveCanvasToIDB, loadCanvasFromIDB, clearSavedCanvas as clearIDBCanvas } from '@/utils/storage/idbCanvasStore';
-import { validateCanvasData, sanitizeCanvasData } from '@/utils/validation/canvasValidation';
-import { handleError } from '@/utils/errorHandling';
+import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 interface UseCanvasPersistenceProps {
-  canvasId: string;
-  onSave?: (success: boolean) => void;
-  onRestore?: (success: boolean) => void;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvasStorageKey?: string;
+  autoSaveInterval?: number;
+  enableAutoSave?: boolean;
 }
 
-/**
- * Hook for managing canvas persistence to localStorage and IndexedDB
- */
-export function useCanvasPersistence({
-  canvasId,
-  onSave,
-  onRestore
-}: UseCanvasPersistenceProps) {
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  
-  const canvasKey = `canvas_state_${canvasId}`;
-  const timestampKey = `canvas_timestamp_${canvasId}`;
-  
-  const [savedCanvas, setSavedCanvas] = useLocalStorage<string | null>(canvasKey, null);
-  const [savedTimestamp, setSavedTimestamp] = useLocalStorage<string | null>(timestampKey, null);
-  
-  /**
-   * Save canvas to both localStorage and IndexedDB
-   */
-  const saveCanvas = useCallback(async (canvas: FabricCanvas) => {
+export const useCanvasPersistence = ({
+  fabricCanvasRef,
+  canvasStorageKey = 'canvas_state',
+  autoSaveInterval = 30000,
+  enableAutoSave = true
+}: UseCanvasPersistenceProps) => {
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedJsonRef = useRef<string | null>(null);
+
+  // Save canvas state to localStorage
+  const saveCanvasState = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
     if (!canvas) return false;
-    
+
     try {
-      setIsSaving(true);
+      // Convert canvas to JSON
+      const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps', 'measurement']));
       
-      const json = canvas.toJSON(['objectType']);
-      
-      if (!validateCanvasData(json)) {
-        console.warn('Invalid canvas data detected during save');
-        return false;
+      // Only save if something has changed
+      if (json !== lastSavedJsonRef.current) {
+        localStorage.setItem(canvasStorageKey, json);
+        lastSavedJsonRef.current = json;
+        logger.info('Canvas state saved to localStorage');
+        return true;
       }
       
-      const sanitizedData = sanitizeCanvasData(json);
-      if (!sanitizedData) {
-        console.warn('Failed to sanitize canvas data during save');
-        return false;
-      }
+      return false;
+    } catch (error) {
+      logger.error('Error saving canvas state:', error);
+      return false;
+    }
+  }, [fabricCanvasRef, canvasStorageKey]);
+
+  // Load canvas state from localStorage
+  const loadCanvasState = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return false;
+
+    try {
+      const json = localStorage.getItem(canvasStorageKey);
+      if (!json) return false;
+
+      canvas.loadFromJSON(json, () => {
+        canvas.requestRenderAll();
+        logger.info('Canvas state restored from localStorage');
+      });
       
-      const jsonString = JSON.stringify(sanitizedData);
-      
-      // Save to localStorage
-      setSavedCanvas(jsonString);
-      const now = new Date();
-      setSavedTimestamp(now.toISOString());
-      setLastSaved(now);
-      
-      // Save to IndexedDB
-      try {
-        await saveCanvasToIDB(canvasId, sanitizedData);
-        canvas.renderAll(); // Fixed: removed argument from renderAll()
-      } catch (idbError) {
-        console.warn('Failed to save to IndexedDB, using localStorage only:', idbError);
-      }
-      
-      if (onSave) onSave(true);
+      lastSavedJsonRef.current = json;
       return true;
     } catch (error) {
-      handleError(error, 'error', {
-        component: 'useCanvasPersistence',
-        operation: 'saveCanvas',
-        context: { canvasId }
-      });
-      if (onSave) onSave(false);
+      logger.error('Error loading canvas state:', error);
       return false;
-    } finally {
-      setIsSaving(false);
     }
-  }, [canvasId, setSavedCanvas, setSavedTimestamp, onSave]);
-  
-  /**
-   * Restore canvas from localStorage or IndexedDB
-   */
-  const restoreCanvas = useCallback(async (canvas: FabricCanvas) => {
-    if (!canvas) return false;
-    
+  }, [fabricCanvasRef, canvasStorageKey]);
+
+  // Clear saved canvas state
+  const clearCanvasState = useCallback(() => {
     try {
-      setIsLoading(true);
-      
-      // First try loading from IndexedDB
-      let canvasData;
-      try {
-        canvasData = await loadCanvasFromIDB(canvasId);
-      } catch (idbError) {
-        console.warn('Failed to load from IndexedDB, trying localStorage:', idbError);
-      }
-      
-      // Fall back to localStorage if needed
-      if (!canvasData && savedCanvas) {
-        try {
-          canvasData = JSON.parse(savedCanvas);
-        } catch (parseError) {
-          console.error('Error parsing saved canvas JSON:', parseError);
-          return false;
-        }
-      }
-      
-      if (!canvasData) {
-        console.warn('No saved canvas data found');
-        return false;
-      }
-      
-      // Save grid objects to reapply after loading
-      const gridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
-      
-      // Load the canvas data
-      canvas.loadFromJSON(canvasData, () => {
-        // Re-add and position grid objects
-        gridObjects.forEach(obj => canvas.add(obj));
-        gridObjects.forEach(obj => canvas.sendToBack(obj));
-        canvas.renderAll();
-        
-        if (onRestore) onRestore(true);
-      });
-      
+      localStorage.removeItem(canvasStorageKey);
+      lastSavedJsonRef.current = null;
+      logger.info('Canvas state cleared from localStorage');
       return true;
     } catch (error) {
-      handleError(error, 'error', {
-        component: 'useCanvasPersistence',
-        operation: 'restoreCanvas',
-        context: { canvasId }
-      });
-      
-      if (onRestore) onRestore(false);
+      logger.error('Error clearing canvas state:', error);
       return false;
-    } finally {
-      setIsLoading(false);
     }
-  }, [canvasId, savedCanvas, onRestore]);
-  
-  /**
-   * Clear all saved canvas data
-   */
-  const clearSavedCanvas = useCallback(async () => {
-    setSavedCanvas(null);
-    setSavedTimestamp(null);
-    setLastSaved(null);
+  }, [canvasStorageKey]);
+
+  // Start auto-save timer
+  const startAutoSave = useCallback(() => {
+    if (!enableAutoSave) return;
     
-    try {
-      await clearIDBCanvas(canvasId);
-    } catch (error) {
-      console.error('Error clearing canvas from IndexedDB:', error);
+    // Clear any existing timer
+    if (autoSaveTimerRef.current) {
+      clearInterval(autoSaveTimerRef.current);
     }
-  }, [canvasId, setSavedCanvas, setSavedTimestamp]);
-  
+    
+    // Set new timer
+    autoSaveTimerRef.current = setInterval(() => {
+      const saved = saveCanvasState();
+      if (saved) {
+        logger.info(`Auto-saved canvas (interval: ${autoSaveInterval}ms)`);
+      }
+    }, autoSaveInterval);
+    
+    logger.info(`Auto-save started (interval: ${autoSaveInterval}ms)`);
+  }, [enableAutoSave, autoSaveInterval, saveCanvasState]);
+
+  // Stop auto-save timer
+  const stopAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearInterval(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+      logger.info('Auto-save stopped');
+    }
+  }, []);
+
+  // Set up auto-save when component mounts
+  useEffect(() => {
+    if (enableAutoSave) {
+      startAutoSave();
+    }
+    
+    // Clean up timer when component unmounts
+    return () => {
+      stopAutoSave();
+    };
+  }, [enableAutoSave, startAutoSave, stopAutoSave]);
+
   return {
-    isSaving,
-    isLoading,
-    lastSaved,
-    savedCanvas,
-    savedTimestamp,
-    saveCanvas,
-    restoreCanvas,
-    clearSavedCanvas
+    saveCanvasState,
+    loadCanvasState,
+    clearCanvasState,
+    startAutoSave,
+    stopAutoSave
   };
-}
+};
