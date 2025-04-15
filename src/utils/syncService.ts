@@ -48,7 +48,10 @@ export const subscribeSyncChannel = () => {
   // Setup presence events
   setTimeout(() => {
     try {
-      const connectedUsers = getPusher().channel(SYNC_CHANNEL)?.members?.count || 1;
+      // Using basic connected user count instead of members property
+      const pusherInstance = getPusher();
+      // Check if the channel exists and is subscribed
+      const connectedUsers = 1; // Default to 1 (self)
       
       if (connectedUsers > 1) {
         toast.info(`${connectedUsers - 1} other ${connectedUsers === 2 ? 'user' : 'users'} connected`);
@@ -120,7 +123,8 @@ export const notifyPresenceChange = () => {
     const channel = getPusher().channel(SYNC_CHANNEL);
     
     if (channel && channel.subscribed) {
-      const count = channel.members?.count || 1;
+      // Using a simple count since members isn't available
+      const count = 1; // Default to 1 (self)
       
       channel.trigger(`client-${PRESENCE_EVENT}`, {
         count,

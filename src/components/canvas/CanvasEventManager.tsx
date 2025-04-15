@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -6,6 +7,7 @@ import { useCanvasKeyboardShortcuts } from "@/hooks/canvas/useCanvasKeyboardShor
 import { useApplePencilSupport } from "@/hooks/canvas/useApplePencilSupport";
 import { requestOptimizedRender, createSmoothEventHandler, createCompletionHandler } from "@/utils/canvas/renderOptimizer";
 import { broadcastFloorPlanUpdate, subscribeSyncChannel, isUpdateFromThisDevice } from "@/utils/syncService";
+import { FloorPlan } from "@/types/floorPlanTypes";
 
 /**
  * Props for the CanvasEventManager
@@ -67,11 +69,28 @@ export const CanvasEventManager = ({
       // Broadcast canvas state for real-time sync
       if (enableSync && canvas) {
         try {
-          const floorPlanData = [{
+          // Create a proper FloorPlan object that complies with the type
+          const now = new Date().toISOString();
+          const floorPlanData: FloorPlan[] = [{
             id: 'current-canvas',
             name: 'Shared Canvas',
-            canvasJson: JSON.parse(JSON.stringify(canvas.toJSON())),
-            updatedAt: new Date().toISOString()
+            label: 'Shared Canvas', 
+            walls: [],
+            rooms: [],
+            strokes: [],
+            createdAt: now,
+            updatedAt: now,
+            gia: 0,
+            level: 0,
+            index: 0,
+            canvasData: null,
+            canvasJson: JSON.stringify(canvas.toJSON()),
+            metadata: {
+              createdAt: now,
+              updatedAt: now,
+              paperSize: 'A4',
+              level: 0
+            }
           }];
           
           broadcastFloorPlanUpdate(floorPlanData);
@@ -193,7 +212,7 @@ export const CanvasEventManager = ({
       
       // Improve brush smoothness
       if (canvas.freeDrawingBrush instanceof PencilBrush) {
-        // Simplify path for better performance (TypeScript safe)
+        // Using type assertion to set the decimate property
         (canvas.freeDrawingBrush as any).decimate = 2;
       }
     }
