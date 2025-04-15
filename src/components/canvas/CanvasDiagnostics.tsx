@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
-import { runToolbarDiagnostics, setupToolbarMonitoring } from "@/utils/diagnostics/toolbarDiagnostics";
+import { runToolbarDiagnostics, setupToolbarMonitoring } from "@/utils/diagnostics/toolbar";
 import { captureMessage } from "@/utils/sentry";
 import * as Sentry from '@sentry/react';
 import logger from "@/utils/logger";

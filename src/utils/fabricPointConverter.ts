@@ -1,95 +1,124 @@
-
-import { Point as FabricPoint } from 'fabric';
-import { Point } from '@/types/core/Point';
-
-/**
- * Converts a simple {x, y} point to a Fabric.js Point
- * This is necessary because Fabric expects its own Point object for certain operations
- * 
- * @param point A simple point with x and y coordinates
- * @returns A Fabric.js Point object
- */
-export const toFabricPoint = (point: { x: number; y: number }): FabricPoint => {
-  return new FabricPoint(point.x, point.y);
-};
+// Add the imported functions here
+import { Canvas as FabricCanvas, Point } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
+import logger from '@/utils/logger';
 
 /**
- * Tests if a canvas has drawing capabilities properly set up
- * Use this for debugging canvas issues
- * 
- * @param canvas The Fabric.js canvas to test
+ * Test canvas drawing capabilities
+ * @param canvas The fabric canvas to test
  */
-export const testCanvasDrawingCapabilities = (canvas: any): void => {
-  if (!canvas) {
-    console.error("Canvas is null or undefined");
-    return;
-  }
-  
-  console.log("Canvas dimensions:", canvas.width, "x", canvas.height);
-  console.log("Canvas drawing mode:", canvas.isDrawingMode);
-  console.log("Canvas selection enabled:", canvas.selection);
-  console.log("Canvas object count:", canvas.getObjects().length);
-  
+export const testCanvasDrawingCapabilities = (canvas: FabricCanvas): void => {
   try {
-    // Try to add a test line
-    const line = new FabricPoint(50, 50);
-    console.log("Test point created", line);
-    
-    // Test if drawing tools are working
-    if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
-      console.log("Drawing brush:", {
-        width: canvas.freeDrawingBrush.width,
-        color: canvas.freeDrawingBrush.color,
-        type: canvas.freeDrawingBrush.type
-      });
+    // Basic capability check
+    if (!canvas.getObjects || typeof canvas.getObjects !== 'function') {
+      throw new Error("Canvas API not properly available");
     }
     
-    // Log active tool if available
-    if (canvas._activeObject) {
-      console.log("Active object:", canvas._activeObject.type);
-    }
+    // Test object creation
+    const objectCount = canvas.getObjects().length;
+    logger.info("Canvas has objects", { count: objectCount });
+    
   } catch (error) {
-    console.error("Failed during canvas test:", error);
+    logger.error("Error testing canvas drawing capabilities", { error });
+    throw error;
   }
 };
 
 /**
- * Verifies straight line drawing functionality
- * 
- * @param canvas The Fabric.js canvas to test
+ * Test straight line drawing functionality
+ * @param canvas The fabric canvas
+ * @param mode The drawing mode to check
+ * @returns Test result information
  */
-export const testStraightLineDrawing = (canvas: any): void => {
-  if (!canvas) {
-    console.error("Canvas is null or undefined");
-    return;
-  }
-  
+export const testStraightLineDrawing = (
+  canvas: FabricCanvas, 
+  mode: DrawingMode
+): { success: boolean; message: string; error?: any } => {
   try {
-    // Test if the canvas can create and add a line
-    if (!(window as any).fabric || !(window as any).fabric.Line) {
-      console.error("fabric.Line not available");
-      return;
+    if (mode !== DrawingMode.STRAIGHT_LINE) {
+      return { success: true, message: "Not in straight line mode, test skipped" };
     }
     
-    const fabricLib = (window as any).fabric;
-    const testLine = new fabricLib.Line([50, 50, 200, 200], {
-      stroke: 'red',
-      strokeWidth: 5
-    });
+    // Check for necessary fabric properties
+    const fabric = (window as any).fabric;
+    if (!fabric || !fabric.Line) {
+      return { success: false, message: "fabric.Line constructor not available" };
+    }
     
-    canvas.add(testLine);
-    canvas.renderAll();
+    // Check canvas state for line drawing
+    if (canvas.isDrawingMode) {
+      return { success: false, message: "isDrawingMode should be false for straight line tool" };
+    }
     
-    console.log("Test line added successfully");
-    
-    // Remove the test line after 1 second
-    setTimeout(() => {
-      canvas.remove(testLine);
-      canvas.renderAll();
-      console.log("Test line removed");
-    }, 1000);
-    
+    return { success: true, message: "Straight line capabilities verified" };
   } catch (error) {
-    console.error("Failed to test straight line:", error);
+    return { 
+      success: false, 
+      message: "Error testing straight line capabilities", 
+      error 
+    };
   }
+};
+
+/**
+ * Converts a point from the canvas coordinate system to the viewport coordinate system.
+ * @param {fabric.Point} point - The point in canvas coordinates.
+ * @param {fabric.Canvas} canvas - The fabric.js canvas instance.
+ * @returns {fabric.Point} The converted point in viewport coordinates.
+ */
+export const canvasToViewportPoint = (point: Point, canvas: FabricCanvas): Point => {
+  const zoom = canvas.getZoom();
+  const viewportTransform = canvas.viewportTransform;
+
+  if (!viewportTransform) {
+    console.warn("Viewport transform is not available. Returning original point.");
+    return point;
+  }
+
+  const a = viewportTransform[0];
+  const b = viewportTransform[1];
+  const c = viewportTransform[2];
+  const d = viewportTransform[3];
+  const e = viewportTransform[4];
+  const f = viewportTransform[5];
+
+  const canvasX = point.x;
+  const canvasY = point.y;
+
+  const viewportX = (canvasX * a + canvasY * c + e) / zoom;
+  const viewportY = (canvasX * b + canvasY * d + f) / zoom;
+
+  return new Point(viewportX, viewportY);
+};
+
+/**
+ * Converts a point from the viewport coordinate system to the canvas coordinate system.
+ *
+ * @param {fabric.Point} point - The point in viewport coordinates.
+ * @param {fabric.Canvas} canvas - The fabric.js canvas instance.
+ * @returns {fabric.Point} The converted point in canvas coordinates.
+ */
+export const viewportToCanvasPoint = (point: Point, canvas: FabricCanvas): Point => {
+  const zoom = canvas.getZoom();
+  const viewportTransform = canvas.viewportTransform;
+
+  if (!viewportTransform) {
+    console.warn("Viewport transform is not available. Returning original point.");
+    return point;
+  }
+
+  const a = viewportTransform[0];
+  const b = viewportTransform[1];
+  const c = viewportTransform[2];
+  const d = viewportTransform[3];
+  const e = viewportTransform[4];
+  const f = viewportTransform[5];
+
+  const viewportX = point.x;
+  const viewportY = point.y;
+
+  const canvasX = (viewportX - e / zoom) / a;
+  const canvasY = (viewportY - f / zoom) / d;
+
+  return new Point(canvasX, canvasY);
 };
