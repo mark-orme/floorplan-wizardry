@@ -6,6 +6,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { captureError } from "../sentryUtils";
+import * as Sentry from '@sentry/react';
 import logger from "../logger";
 import { toast } from "sonner";
 
@@ -61,6 +62,22 @@ export const trackGridError = (
     errorStats[errorKey].lastOccurred = Date.now();
     errorStats[errorKey].contexts.add(context);
   }
+  
+  // Set Sentry context for grid errors
+  Sentry.setTag("errorType", "grid");
+  Sentry.setTag("gridErrorContext", context);
+  Sentry.setTag("recurring", String(errorStats[errorKey].count > 1));
+  Sentry.setTag("errorCount", String(errorStats[errorKey].count));
+  
+  Sentry.setContext("gridErrorDetails", {
+    message: errorMessage,
+    context,
+    occurrences: errorStats[errorKey].count,
+    firstSeen: new Date(errorStats[errorKey].firstOccurred).toISOString(),
+    lastSeen: new Date(errorStats[errorKey].lastOccurred).toISOString(),
+    contexts: Array.from(errorStats[errorKey].contexts),
+    ...metadata
+  });
   
   // Log to console
   console.error(`Grid Error in ${context}: ${errorMessage}`, metadata);
@@ -125,6 +142,19 @@ export const recordGridCreationAttempt = (
   };
   
   creationAttempts.unshift(attempt);
+  
+  // Set Sentry context for grid creation
+  Sentry.setTag("gridOperation", "creation");
+  Sentry.setTag("gridCreationSuccess", String(successful));
+  
+  Sentry.setContext("gridCreation", {
+    successful,
+    objectCount,
+    durationMs: duration,
+    timestamp: new Date(attempt.timestamp).toISOString(),
+    dimensions: options.canvasDimensions,
+    error: options.error
+  });
   
   // Limit stored attempts
   if (creationAttempts.length > MAX_STORED_ATTEMPTS) {

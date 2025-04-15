@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -8,6 +7,7 @@ import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
 import logger from '@/utils/logger';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import { captureError, captureMessage } from '@/utils/sentry';
+import * as Sentry from '@sentry/react';
 
 interface LineState {
   isDrawing: boolean;
@@ -59,12 +59,35 @@ export const useLineEvents = (
     lastEventTimestamp: Date.now()
   });
   
+  // Set up Sentry context for the component
+  useEffect(() => {
+    Sentry.setTag("component", "useLineEvents");
+    Sentry.setTag("tool", tool);
+    
+    Sentry.setContext("drawing_settings", {
+      lineColor,
+      lineThickness,
+      tool
+    });
+    
+    return () => {
+      // Clear component-specific tags when component unmounts
+      Sentry.setTag("component", null);
+      Sentry.setTag("tool", null);
+    };
+  }, [tool, lineColor, lineThickness]);
+  
   // Send diagnostic metrics to Sentry periodically
   useEffect(() => {
     if (tool !== DrawingMode.STRAIGHT_LINE) return;
     
     const intervalId = setInterval(() => {
       if (metricsRef.current.linesStarted > 0) {
+        Sentry.setContext("line_metrics", {
+          ...metricsRef.current,
+          timeSinceLastEvent: Date.now() - metricsRef.current.lastEventTimestamp
+        });
+        
         captureMessage("Straight line metrics", "line-tool-metrics", {
           extra: { 
             ...metricsRef.current,

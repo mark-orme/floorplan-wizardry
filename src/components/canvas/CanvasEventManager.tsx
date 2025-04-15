@@ -1,9 +1,9 @@
-
 import React, { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
+import * as Sentry from '@sentry/react';
 import logger from "@/utils/logger";
 import { 
   useKeyboardEvents, 
@@ -63,8 +63,32 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     // Add global reference for debugging (will be removed in production)
     if (canvas && typeof window !== 'undefined') {
       (window as any).fabricCanvas = canvas;
+      
+      // Set Sentry canvas context when canvas is available
+      Sentry.setTag("canvasAvailable", "true");
+      Sentry.setContext("canvas", {
+        width: canvas.width,
+        height: canvas.height,
+        objectCount: canvas.getObjects().length,
+        selectionEnabled: canvas.selection,
+        drawingMode: canvas.isDrawingMode
+      });
+    } else {
+      Sentry.setTag("canvasAvailable", "false");
     }
   }, [canvas]);
+  
+  // Set active tool in Sentry context
+  useEffect(() => {
+    Sentry.setTag("activeTool", tool);
+    Sentry.setContext("toolSettings", {
+      lineThickness,
+      lineColor,
+      wallThickness,
+      wallColor,
+      previousTool: previousToolRef.current
+    });
+  }, [tool, lineThickness, lineColor, wallThickness, wallColor]);
   
   // Initialize object events (history tracking)
   useObjectEvents({
@@ -181,8 +205,12 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   useEffect(() => {
     if (!canvas) {
       logger.warn("Canvas not available for tool change");
+      Sentry.setTag("canvasStatus", "unavailable");
       return;
     }
+    
+    Sentry.setTag("canvasStatus", "available");
+    Sentry.setTag("toolChange", tool);
     
     logger.info("Applying tool settings to canvas", { 
       tool, 
@@ -327,6 +355,16 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       
       canvas.renderAll();
       
+      // Update Sentry context with new canvas state after tool change
+      Sentry.setContext("canvasState", {
+        isDrawingMode: canvas.isDrawingMode,
+        selection: canvas.selection,
+        defaultCursor: canvas.defaultCursor,
+        hoverCursor: canvas.hoverCursor,
+        objectCount: canvas.getObjects().length,
+        activeObjectExists: !!canvas.getActiveObject()
+      });
+      
       captureMessage("Tool applied to canvas", "tool-applied", {
         tags: { toolName: tool },
         extra: { lineThickness, lineColor }
@@ -339,6 +377,15 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
         lineThickness, 
         lineColor 
       });
+      
+      Sentry.setTag("errorSource", "toolChange");
+      Sentry.setContext("errorState", {
+        tool,
+        error: errorMsg,
+        lineThickness,
+        lineColor
+      });
+      
       captureError(error as Error, "apply-tool-settings-error");
       toast.error(`Failed to apply tool settings: ${errorMsg}`);
     }

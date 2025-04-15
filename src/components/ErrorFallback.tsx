@@ -7,6 +7,7 @@
 import { useEffect } from 'react';
 import { Button } from './ui/button';
 import { captureError } from '@/utils/sentryUtils';
+import * as Sentry from '@sentry/react';
 import { captureErrorWithMonitoring } from '@/utils/errorMonitoring';
 import { FallbackProps } from 'react-error-boundary';
 import { useLocation } from 'react-router-dom';
@@ -22,6 +23,19 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
 
   // Report error to Sentry when the component mounts
   useEffect(() => {
+    // Set Sentry context for critical errors
+    Sentry.setTag("errorType", "critical");
+    Sentry.setTag("errorBoundary", "triggered");
+    Sentry.setTag("route", currentRoute);
+    
+    Sentry.setContext("errorBoundaryDetails", {
+      message: error.message,
+      stack: error.stack,
+      route: currentRoute,
+      time: new Date().toISOString(),
+      userAgent: navigator.userAgent
+    });
+    
     // Enhanced error reporting with monitoring
     captureErrorWithMonitoring(
       error, 
@@ -58,7 +72,11 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
         
         <div className="flex flex-col gap-2">
           <Button 
-            onClick={resetErrorBoundary}
+            onClick={() => {
+              // Set recovery attempt in Sentry
+              Sentry.setTag("recovery", "attempted");
+              resetErrorBoundary();
+            }}
             className="w-full"
           >
             Try Again
@@ -66,7 +84,11 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
           
           <Button 
             variant="outline"
-            onClick={() => window.location.href = '/'}
+            onClick={() => {
+              // Set navigation recovery in Sentry
+              Sentry.setTag("recovery", "navigation");
+              window.location.href = '/';
+            }}
             className="w-full"
           >
             Go to Home Page

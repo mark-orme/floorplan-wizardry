@@ -4,11 +4,12 @@
  * Provides tool change handling with error reporting
  * @module hooks/canvas-operations/useToolOperations
  */
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { DrawingMode } from "@/constants/drawingModes";
 import { DrawingTool } from "@/types/core/DrawingTool";
 import { captureMessage, captureError } from "@/utils/sentry";
+import * as Sentry from '@sentry/react';
 import logger from "@/utils/logger";
 
 /**
@@ -44,10 +45,33 @@ export const useToolOperations = ({
   tool,
   setTool
 }: UseToolOperationsProps): UseToolOperationsResult => {
+  // Set Sentry context for the component
+  useEffect(() => {
+    Sentry.setTag("component", "useToolOperations");
+    Sentry.setTag("currentTool", tool);
+    
+    Sentry.setContext("toolState", {
+      currentTool: tool
+    });
+    
+    return () => {
+      // Clear component-specific tags when unmounting
+      Sentry.setTag("component", null);
+    };
+  }, [tool]);
+  
   const handleToolChange = useCallback((newTool: DrawingTool) => {
     logger.info("Tool change requested", { 
       previousTool: tool, 
       newTool 
+    });
+    
+    // Update Sentry context for tool change
+    Sentry.setTag("action", "toolChange");
+    Sentry.setContext("toolChange", {
+      previousTool: tool,
+      newTool,
+      timestamp: new Date().toISOString()
     });
     
     try {
@@ -64,6 +88,15 @@ export const useToolOperations = ({
         error: errorMsg, 
         previousTool: tool, 
         newTool 
+      });
+      
+      // Set error context in Sentry
+      Sentry.setTag("errorSource", "toolChange");
+      Sentry.setContext("toolChangeError", {
+        error: errorMsg,
+        previousTool: tool,
+        newTool,
+        timestamp: new Date().toISOString()
       });
       
       captureError(error as Error, "tool-change-error", {
