@@ -1,4 +1,3 @@
-
 /**
  * Synchronization service for floor plan data
  * Uses Pusher for real-time data synchronization
@@ -53,7 +52,7 @@ export const subscribeSyncChannel = () => {
       const connectedUsers = 1; // Default to 1 (self)
       
       if (connectedUsers > 1) {
-        toast.info(`${connectedUsers - 1} other ${connectedUsers === 2 ? 'user' : 'users'} connected`);
+        toast.info(`${connectedUsers - 1} other ${connectedUsers - 1 === 1 ? 'user' : 'users'} connected`);
         
         // Broadcast presence
         channel.trigger(`client-${PRESENCE_EVENT}`, {
