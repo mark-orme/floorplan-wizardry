@@ -76,7 +76,7 @@ export const useCanvasPersistence = ({
       }
 
       canvas.loadFromJSON(json, () => {
-        canvas.requestRenderAll(); // Removed unnecessary argument
+        canvas.requestRenderAll();
         logger.info('Canvas state restored from localStorage');
         setIsLoading(false);
         if (onRestore) onRestore(true);

@@ -45,6 +45,8 @@ export const useCanvasGridInitialization = ({
 }: UseCanvasGridInitializationProps): UseCanvasGridInitializationResult => {
   // Grid layer reference to track grid objects
   const gridLayerRef = useRef<FabricObject[]>([]);
+  // Track if grid has been initialized
+  const gridInitializedRef = useRef(false);
   
   /**
    * Initialize grid on canvas with error handling
@@ -53,9 +55,13 @@ export const useCanvasGridInitialization = ({
     canvas: FabricCanvas,
     createGrid: (canvas: FabricCanvas) => FabricObject[]
   ): FabricObject[] => {
+    // Only initialize grid once
+    if (gridInitializedRef.current) {
+      return gridLayerRef.current;
+    }
+    
     try {
       logger.info("Creating grid on initialized canvas");
-      console.log("🔲 Creating grid on initialized canvas");
       
       // CRITICAL CHECK: First verify canvas has valid dimensions before creating grid
       if (!canvas || 
@@ -63,16 +69,12 @@ export const useCanvasGridInitialization = ({
           !canvas.height || 
           canvas.width === 0 || 
           canvas.height === 0) {
-        logger.error("⛔️ Grid creation blocked: Canvas has zero dimensions");
-        console.error("⛔️ Grid creation blocked: Canvas has zero dimensions", {
-          width: canvas?.width,
-          height: canvas?.height
-        });
+        logger.error("Grid creation blocked: Canvas has zero dimensions");
         
         // Set error to trigger emergency canvas
         setHasError(true);
         setErrorMessage("Grid creation failed: Canvas has zero dimensions");
-        toast.error("⚠️ Grid creation failed: Canvas has zero dimensions");
+        toast.error("Grid creation failed: Canvas has zero dimensions");
         return [];
       }
       
@@ -88,26 +90,25 @@ export const useCanvasGridInitialization = ({
         if (Array.isArray(result) && result.length > 0) {
           gridObjects = result;
           gridLayerRef.current = result;
-          console.log("✅ Grid created using provided createGrid function:", gridObjects.length, "objects");
+          gridInitializedRef.current = true;
         }
       } catch (createGridError) {
-        console.error("Error using provided createGrid function:", createGridError);
+        logger.error("Error using provided createGrid function:", createGridError);
       }
       
       // If the provided function didn't work, try emergency grid
       if (gridObjects.length === 0) {
-        logger.info("⚠️ No grid objects created, trying basic emergency grid");
-        console.log("⚠️ No grid objects created, trying emergency grid");
+        logger.info("No grid objects created, trying basic emergency grid");
         
-        toast.error("⚠️ Grid failed to render - switching to emergency mode");
+        toast.error("Grid failed to render - switching to emergency mode");
         
         gridObjects = createBasicEmergencyGrid(canvas);
         gridLayerRef.current = gridObjects;
+        gridInitializedRef.current = true;
       }
       
       // Force render after grid is created
       canvas.requestRenderAll();
-      console.log("🔄 Requesting canvas render");
       
       // Set debug info for grid creation
       setDebugInfo(prev => ({
@@ -120,7 +121,6 @@ export const useCanvasGridInitialization = ({
       return gridLayerRef.current;
     } catch (error) {
       logger.error("Error creating grid:", error);
-      console.error("❌ Error creating grid:", error);
       
       // Show error toast
       toast.error("Grid creation failed with error");
@@ -128,14 +128,14 @@ export const useCanvasGridInitialization = ({
       // Try emergency grid on error
       try {
         if (canvas) {
-          console.log("🚨 Attempting emergency grid creation");
+          logger.info("Attempting emergency grid creation");
           const emergencyGrid = createBasicEmergencyGrid(canvas);
           gridLayerRef.current = emergencyGrid;
+          gridInitializedRef.current = true;
           return emergencyGrid;
         }
       } catch (emergencyError) {
         logger.error("Emergency grid creation also failed:", emergencyError);
-        console.error("❌ Emergency grid creation also failed:", emergencyError);
       }
       
       return [];

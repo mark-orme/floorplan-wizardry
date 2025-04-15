@@ -13,19 +13,19 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
  */
 export const logGridState = (canvas: FabricCanvas, gridObjects: FabricObject[]): void => {
   if (!canvas) {
-    console.error("Cannot log grid state: Canvas is null");
+    // console.error("Cannot log grid state: Canvas is null");
     return;
   }
   
   // Count grid objects on canvas
   const gridObjectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
   
-  console.debug("Grid State:", {
-    canvasDimensions: `${canvas.width}x${canvas.height}`,
-    gridObjectsTotal: gridObjects.length,
-    gridObjectsOnCanvas: gridObjectsOnCanvas.length,
-    missingGridObjects: gridObjects.length - gridObjectsOnCanvas.length
-  });
+  // console.debug("Grid State:", {
+  //   canvasDimensions: `${canvas.width}x${canvas.height}`,
+  //   gridObjectsTotal: gridObjects.length,
+  //   gridObjectsOnCanvas: gridObjectsOnCanvas.length,
+  //   missingGridObjects: gridObjects.length - gridObjectsOnCanvas.length
+  // });
 };
 
 /**
@@ -37,18 +37,18 @@ export const setupGridDiagnosticMonitoring = (canvas: FabricCanvas): void => {
   
   // Log when objects are added/removed
   canvas.on('object:added', () => {
-    console.debug("Canvas: Object added", {
-      objectCount: canvas.getObjects().length
-    });
+    // console.debug("Canvas: Object added", {
+    //   objectCount: canvas.getObjects().length
+    // });
   });
   
   canvas.on('object:removed', () => {
-    console.debug("Canvas: Object removed", {
-      objectCount: canvas.getObjects().length
-    });
+    // console.debug("Canvas: Object removed", {
+    //   objectCount: canvas.getObjects().length
+    // });
   });
   
-  console.debug("Grid diagnostic monitoring set up");
+  // console.debug("Grid diagnostic monitoring set up");
 };
 
 /**

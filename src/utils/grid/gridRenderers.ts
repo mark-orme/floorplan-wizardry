@@ -11,7 +11,7 @@ import logger from '@/utils/logger';
  */
 export function createCompleteGrid(canvas: FabricCanvas): FabricObject[] {
   if (!canvas || !canvas.width || !canvas.height) {
-    logger.warn('Invalid canvas dimensions for grid creation');
+    // logger.warn('Invalid canvas dimensions for grid creation');
     return [];
   }
   
@@ -87,7 +87,7 @@ export function createCompleteGrid(canvas: FabricCanvas): FabricObject[] {
     
     return gridObjects;
   } catch (error) {
-    logger.error('Error creating complete grid:', error);
+    // logger.error('Error creating complete grid:', error);
     return [];
   }
 }
@@ -143,7 +143,7 @@ export function createBasicEmergencyGrid(canvas: FabricCanvas): FabricObject[] {
     
     return gridObjects;
   } catch (error) {
-    logger.error('Error creating emergency grid:', error);
+    // logger.error('Error creating emergency grid:', error);
     return [];
   }
 }

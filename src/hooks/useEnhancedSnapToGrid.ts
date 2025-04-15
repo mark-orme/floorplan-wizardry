@@ -78,6 +78,39 @@ export const useEnhancedSnapToGrid = ({
     }
   }, [fabricCanvasRef, snapPoint]);
   
+  // Set up canvas event listeners for object movement snapping
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !snapEnabled) return;
+    
+    const handleObjectMoving = (e: any) => {
+      if (!snapEnabled) return;
+      
+      const obj = e.target;
+      if (!obj) return;
+      
+      // Get current position
+      const p = { x: obj.left, y: obj.top };
+      
+      // Snap to grid
+      const snapped = snapPoint(p);
+      
+      // Apply snapped position
+      obj.set({
+        left: snapped.x,
+        top: snapped.y
+      });
+    };
+    
+    // Add the event listener
+    canvas.on('object:moving', handleObjectMoving);
+    
+    // Clean up
+    return () => {
+      canvas.off('object:moving', handleObjectMoving);
+    };
+  }, [fabricCanvasRef, snapEnabled, snapPoint]);
+  
   return {
     snapEnabled,
     straightenEnabled,
