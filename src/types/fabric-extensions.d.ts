@@ -1,3 +1,4 @@
+
 /**
  * Type definitions to extend the Fabric.js library
  * Adds custom properties and events specific to our application
@@ -76,7 +77,7 @@ declare module 'fabric' {
     forEachObject?: (callback: (obj: FabricObject) => void) => void;
     
     /** Explicitly override toJSON to take no arguments */
-    toJSON?: () => object;
+    toJSON?: (propertiesToInclude?: string[]) => object;
   }
   
   /**
@@ -84,8 +85,8 @@ declare module 'fabric' {
    * @interface Canvas
    */
   interface Canvas {
-    /** Explicitly override toJSON to take no arguments */
-    toJSON: () => object;
+    /** Explicitly override toJSON to accept optional property names to include */
+    toJSON: (propertiesToInclude?: string[]) => object;
     
     /** Handle undo operation */
     handleUndo?: () => void;

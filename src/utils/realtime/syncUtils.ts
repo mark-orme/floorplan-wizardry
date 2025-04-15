@@ -15,7 +15,8 @@ export const createFloorPlanDataForSync = (
   const syncTimestamp = Date.now();
   
   // Export canvas as JSON
-  const canvasJson = JSON.stringify(canvas.toJSON(['id', 'selectable']));
+  // Cast to any to bypass TypeScript's limitation with toJSON arguments
+  const canvasJson = JSON.stringify((canvas as any).toJSON(['id', 'selectable']));
   
   // Create floor plan data for sync
   return [{
