@@ -1,3 +1,4 @@
+
 /**
  * Synchronization service for floor plan data
  * Uses Pusher for real-time data synchronization
