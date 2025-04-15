@@ -11,5 +11,9 @@ export enum DrawingMode {
   HAND = 'hand',
   ERASER = 'eraser',
   PAN = 'pan',
-  LINE = 'line'
+  LINE = 'line',
+  RECTANGLE = 'rectangle',
+  CIRCLE = 'circle',
+  TEXT = 'text',
+  MEASURE = 'measure'
 }

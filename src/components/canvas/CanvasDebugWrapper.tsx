@@ -34,7 +34,11 @@ export const CanvasDebugWrapper: React.FC<CanvasDebugWrapperProps> = ({
   children
 }) => {
   // Only show in development mode and when debug is enabled
-  if (process.env.NODE_ENV !== 'development' || !debugInfo.showDebugInfo) {
+  // In case showDebugInfo isn't defined, default to true in development mode
+  const shouldShowDebug = process.env.NODE_ENV === 'development' && 
+    (debugInfo.showDebugInfo === undefined ? true : debugInfo.showDebugInfo);
+  
+  if (!shouldShowDebug) {
     return null;
   }
 

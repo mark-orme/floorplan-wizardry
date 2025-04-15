@@ -124,6 +124,7 @@ export const useAutoSaveCanvas = ({
   useEffect(() => {
     if (!canvas || setupDoneRef.current) return;
     
+    // Define save events - use type assertion for fabric.js events
     const saveEvents = [
       'object:added',
       'object:modified',
@@ -135,9 +136,10 @@ export const useAutoSaveCanvas = ({
       debouncedSave.current();
     };
     
-    // Add event listeners
+    // Add event listeners with type assertion
     saveEvents.forEach(event => {
-      canvas.on(event, handleChange);
+      // Using 'on' with a string event name is safe for Fabric.js
+      canvas.on(event as any, handleChange);
     });
     
     setupDoneRef.current = true;
@@ -146,7 +148,8 @@ export const useAutoSaveCanvas = ({
     return () => {
       if (canvas) {
         saveEvents.forEach(event => {
-          canvas.off(event, handleChange);
+          // Using 'off' with a string event name is safe for Fabric.js
+          canvas.off(event as any, handleChange);
         });
       }
     };

@@ -77,15 +77,12 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
       route: currentRoute
     });
     
-    // Create a proper update object that conforms to Partial<DebugInfoState>
+    // Update debug info with error details
     updateDebugInfo({
-      performanceStats: {
-        // This is optional in DebugInfoState, so we can safely increment it
-        errorCount: 1 // Default to 1 if not previously set
-      },
       hasError: true,
       errorMessage: error.message || "Unknown error occurred",
-      lastErrorTime: Date.now()
+      lastErrorTime: Date.now(),
+      lastError: error.message
     });
     
     // Report to monitoring system with additional context
@@ -122,12 +119,8 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
       route: currentRoute
     });
     
-    // Create a proper update object that conforms to Partial<DebugInfoState>
+    // Update debug info with retry details
     updateDebugInfo({
-      performanceStats: {
-        // These are optional in DebugInfoState, so we can safely update them
-        retryCount: 1 // Default to 1 if not previously set
-      },
       lastInitTime: Date.now(),
       hasError: false,
       errorMessage: ""

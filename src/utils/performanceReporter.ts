@@ -5,6 +5,11 @@
  */
 import { saveAs } from 'file-saver';
 
+// Define a more specific interface for PerformanceResourceTiming
+interface EnhancedPerformanceResourceTiming extends PerformanceResourceTiming {
+  transferSize?: number;
+}
+
 interface PerformanceMetrics {
   timeToFirstByte: number;
   timeToFirstPaint: number;
@@ -25,7 +30,7 @@ interface PerformanceMetrics {
 export const collectPerformanceMetrics = (): PerformanceMetrics => {
   const perfEntries = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
   const paintEntries = performance.getEntriesByType('paint');
-  const resourceEntries = performance.getEntriesByType('resource');
+  const resourceEntries = performance.getEntriesByType('resource') as EnhancedPerformanceResourceTiming[];
   
   // Extract paint timing
   const firstPaint = paintEntries.find(entry => entry.name === 'first-paint')?.startTime || 0;
