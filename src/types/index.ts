@@ -1,3 +1,4 @@
+
 /**
  * Centralized type exports
  * All types should be exported from this file to prevent duplication and ensure consistency
@@ -29,8 +30,12 @@ export {
 
 // Re-export DrawingTool types - canonical source
 export type { DrawingTool } from './core/DrawingTool';
-// Comment out unavailable exports
-// export { isValidDrawingTool, getToolDisplayName, parseDrawingTool, getDefaultDrawingTool } from './core/DrawingTool';
+export { 
+  isValidDrawingTool, 
+  getToolDisplayName, 
+  parseDrawingTool, 
+  getDefaultDrawingTool 
+} from './core/DrawingTool';
 export { DrawingMode } from '@/constants/drawingModes';
 
 // Re-export canvas event types
@@ -39,9 +44,8 @@ export type { ZoomOptions } from './canvas-events/ZoomTypes';
 // Re-export for backwards compatibility
 export type { 
   ZoomDirection, 
-  // Add these types when they are available
-  // PerformanceStats,
-  // DistanceToolState
+  PerformanceStats,
+  DistanceToolState
 } from './drawingTypes';
 
 // Re-export fabric types for easier access
@@ -58,4 +62,3 @@ export type {
   CanvasReferences
 } from './fabric';
 export { isTouchEvent, isMouseEvent } from './fabric';
-export { isValidDrawingTool, getToolDisplayName, parseDrawingTool, getDefaultDrawingTool } from './core/DrawingTool';

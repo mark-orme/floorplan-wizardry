@@ -1,4 +1,3 @@
-
 /**
  * Drawing tool type definitions
  * @module types/core/DrawingTool
@@ -26,20 +25,12 @@ export function isValidDrawingTool(value: any): value is DrawingTool {
  * @returns {string} Display name
  */
 export function getToolDisplayName(tool: DrawingTool): string {
-  const names: Record<DrawingTool, string> = {
+  const names: Partial<Record<DrawingMode, string>> = {
     [DrawingMode.SELECT]: 'Select',
-    [DrawingMode.PENCIL]: 'Pencil',
     [DrawingMode.LINE]: 'Line',
-    [DrawingMode.RECT]: 'Rectangle',
-    [DrawingMode.ELLIPSE]: 'Ellipse',
-    [DrawingMode.TRIANGLE]: 'Triangle',
     [DrawingMode.TEXT]: 'Text',
-    [DrawingMode.PATH]: 'Path',
     [DrawingMode.STRAIGHT_LINE]: 'Straight Line',
-    [DrawingMode.ARROW]: 'Arrow',
     [DrawingMode.MEASURE]: 'Measure',
-    [DrawingMode.AREA]: 'Area',
-    [DrawingMode.POLYGON]: 'Polygon',
     [DrawingMode.ERASER]: 'Eraser'
   };
   

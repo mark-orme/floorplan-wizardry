@@ -62,4 +62,29 @@ export interface PathSegment {
   length: number;
 }
 
-export { Point };
+/**
+ * Performance statistics interface
+ */
+export interface PerformanceStats {
+  fps: number;
+  frameTime: number;
+  maxFrameTime: number;
+  droppedFrames: number;
+  longFrames: number;
+  errorCount?: number;
+  retryCount?: number;
+}
+
+/**
+ * Distance tool state interface
+ */
+export interface DistanceToolState {
+  isActive: boolean;
+  startPoint: Point | null;
+  endPoint: Point | null;
+  distance: number | null;
+  angle: number | null;
+}
+
+// Using proper export type syntax
+export type { Point };

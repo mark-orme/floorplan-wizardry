@@ -11,7 +11,7 @@ import logger from "@/utils/logger";
 /**
  * Input method type for determining drawing interaction method
  */
-export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'pencil';
+export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'pencil' | 'keyboard';
 
 interface UseLineStateProps {
   lineColor: string;

@@ -43,16 +43,20 @@ export interface DebugInfoState {
   canvasDimensions?: { width: number; height: number };
   devicePixelRatio?: number;
   performanceStats?: {
+    fps?: number;
     droppedFrames?: number;
     frameTime?: number;
     maxFrameTime?: number;
     longFrames?: number;
+    errorCount?: number;
+    retryCount?: number;
   };
   lastInitTime?: number;
   lastError?: string;
   lastErrorTime?: number;
   showDebugInfo?: boolean;
   eventHandlersSet?: boolean;
+  lastGridCreationTime?: number;
 }
 
 /**
@@ -66,5 +70,14 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   // Initialize additional properties with sensible defaults
   hasError: false,
   showDebugInfo: false,
-  eventHandlersSet: false
+  eventHandlersSet: false,
+  performanceStats: {
+    fps: 0,
+    droppedFrames: 0,
+    frameTime: 0,
+    maxFrameTime: 0,
+    longFrames: 0,
+    errorCount: 0,
+    retryCount: 0
+  }
 };
