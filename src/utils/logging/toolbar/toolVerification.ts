@@ -1,0 +1,82 @@
+
+import { DrawingMode } from '@/constants/drawingModes';
+import logger from '@/utils/logger';
+import * as Sentry from '@sentry/react';
+
+/**
+ * Verifies toolbar item is properly connected to the canvas
+ * 
+ * @param toolName Name of the tool to verify
+ * @param canvas The Fabric.js canvas reference
+ * @returns Object indicating if connection is valid
+ */
+export const verifyToolCanvasConnection = (
+  toolName: DrawingMode,
+  canvas: any
+): { connected: boolean; issues: string[] } => {
+  const issues: string[] = [];
+  
+  if (!canvas) {
+    issues.push("Canvas is null or undefined");
+    return { connected: false, issues };
+  }
+  
+  // Check if canvas API is accessible
+  if (!canvas.getObjects || typeof canvas.getObjects !== 'function') {
+    issues.push("Canvas API is not properly accessible");
+  }
+  
+  // Tool-specific verification
+  switch (toolName) {
+    case DrawingMode.DRAW:
+      if (!canvas.isDrawingMode) {
+        issues.push("Canvas drawing mode is not enabled for draw tool");
+      }
+      if (!canvas.freeDrawingBrush) {
+        issues.push("Free drawing brush is not available");
+      }
+      break;
+      
+    case DrawingMode.SELECT:
+      if (!canvas.selection) {
+        issues.push("Canvas selection is not enabled for select tool");
+      }
+      break;
+      
+    case DrawingMode.STRAIGHT_LINE:
+      // Verify straight line tool requirements
+      try {
+        const fabricLib = (window as any).fabric;
+        if (!fabricLib || !fabricLib.Line) {
+          issues.push("fabric.Line constructor is not available");
+        }
+      } catch (error) {
+        issues.push(`Error testing straight line tool: ${error}`);
+      }
+      break;
+      
+    case DrawingMode.WALL:
+    case DrawingMode.RECTANGLE:
+    case DrawingMode.CIRCLE:
+    case DrawingMode.ERASER:
+      // Tool-specific checks could be added here
+      break;
+  }
+  
+  // Log issues if any were found
+  if (issues.length > 0) {
+    logger.warn(`Tool verification issues for ${toolName}:`, { issues });
+    
+    Sentry.addBreadcrumb({
+      category: 'toolbar',
+      message: `Tool connection issues: ${toolName}`,
+      level: 'warning',
+      data: { tool: toolName, issues }
+    });
+  }
+  
+  return {
+    connected: issues.length === 0,
+    issues
+  };
+};

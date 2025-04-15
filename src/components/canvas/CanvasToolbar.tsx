@@ -25,7 +25,7 @@ import { ZoomDirection } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
 import { captureMessage, captureError } from "@/utils/sentry";
-import { logToolActivation, logToolbarAction, verifyToolCanvasConnection } from "@/utils/logging/toolbarLogger";
+import { logToolActivation, logToolbarAction, verifyToolCanvasConnection } from "@/utils/logging/toolbar";
 import * as Sentry from '@sentry/react';
 
 /**

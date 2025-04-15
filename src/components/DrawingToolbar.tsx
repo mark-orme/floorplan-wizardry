@@ -12,7 +12,7 @@ import {
   MoveHorizontal, Minus 
 } from "lucide-react";
 import { formatGIA } from "@/utils/display";
-import { logToolActivation, logToolbarAction } from "@/utils/logging/toolbarLogger";
+import { logToolActivation, logToolbarAction } from "@/utils/logging/toolbar";
 import * as Sentry from '@sentry/react';
 import { captureMessage } from "@/utils/sentry";
 
