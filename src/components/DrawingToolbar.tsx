@@ -3,13 +3,16 @@ import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { DrawingMode } from "@/constants/drawingModes";
 import { LineSettings } from "./LineSettings";
-import { Wall } from "@/components/icons/Wall"; // Import our custom Wall icon
+import { Wall } from "@/components/icons/Wall";
 import { 
   MousePointerSquareDashed, Pencil, 
   Undo2, Redo2, ZoomIn, ZoomOut, PanelRight, Hand, Save, Trash, Eraser, Ruler,
   MoveHorizontal, Minus 
 } from "lucide-react";
 import { formatGIA } from "@/utils/display";
+import { logToolActivation, logToolbarAction } from "@/utils/logging/toolbarLogger";
+import * as Sentry from '@sentry/react';
+import { captureMessage } from "@/utils/sentry";
 
 interface DrawingToolbarProps {
   tool: DrawingMode;
@@ -70,6 +73,150 @@ export const DrawingToolbar = ({
   showControls = true,
   disabled = false
 }: DrawingToolbarProps): JSX.Element => {
+  React.useEffect(() => {
+    Sentry.setTag("component", "DrawingToolbar");
+    Sentry.setContext("toolbarState", {
+      currentTool: tool,
+      lineThickness,
+      lineColor,
+      wallThickness,
+      wallColor,
+      showGrid,
+      snapToGrid,
+      isDrawing,
+      isDirty
+    });
+    
+    captureMessage("DrawingToolbar initialized", "toolbar-init", {
+      tags: { component: "DrawingToolbar" },
+      extra: { 
+        tool, 
+        lineThickness, 
+        lineColor,
+        wallThickness,
+        wallColor
+      }
+    });
+    
+    return () => {
+      Sentry.setTag("component", null);
+    };
+  }, [
+    tool, 
+    lineThickness, 
+    lineColor, 
+    wallThickness, 
+    wallColor, 
+    showGrid, 
+    snapToGrid, 
+    isDrawing, 
+    isDirty
+  ]);
+  
+  const handleToolChange = (newTool: DrawingMode) => {
+    const previousTool = tool;
+    
+    try {
+      onToolChange(newTool);
+      
+      logToolActivation(newTool, previousTool, {
+        lineThickness,
+        lineColor,
+        wallThickness,
+        wallColor
+      });
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      Sentry.captureException(error, {
+        tags: { component: "DrawingToolbar", action: "toolChange" },
+        extra: { 
+          previousTool, 
+          newTool,
+          error: errorMsg
+        }
+      });
+      
+      console.error(`Failed to change tool to ${newTool}:`, error);
+    }
+  };
+  
+  const handleUndo = () => {
+    try {
+      onUndo();
+      logToolbarAction("undo", true, { tool });
+    } catch (error) {
+      logToolbarAction("undo", false, { tool, error });
+    }
+  };
+  
+  const handleRedo = () => {
+    try {
+      onRedo();
+      logToolbarAction("redo", true, { tool });
+    } catch (error) {
+      logToolbarAction("redo", false, { tool, error });
+    }
+  };
+  
+  const handleClear = () => {
+    try {
+      onClear();
+      logToolbarAction("clear", true, { tool });
+    } catch (error) {
+      logToolbarAction("clear", false, { tool, error, critical: true });
+    }
+  };
+  
+  const handleZoomIn = () => {
+    try {
+      onZoom("in");
+      logToolbarAction("zoom-in", true, { tool });
+    } catch (error) {
+      logToolbarAction("zoom-in", false, { tool, error });
+    }
+  };
+  
+  const handleZoomOut = () => {
+    try {
+      onZoom("out");
+      logToolbarAction("zoom-out", true, { tool });
+    } catch (error) {
+      logToolbarAction("zoom-out", false, { tool, error });
+    }
+  };
+  
+  const handleSave = () => {
+    try {
+      onSave();
+      logToolbarAction("save", true, { tool, isDirty });
+    } catch (error) {
+      logToolbarAction("save", false, { tool, error, isDirty, critical: true });
+    }
+  };
+  
+  const handleDelete = () => {
+    if (onDelete) {
+      try {
+        onDelete();
+        logToolbarAction("delete", true, { tool });
+      } catch (error) {
+        logToolbarAction("delete", false, { tool, error });
+      }
+    }
+  };
+  
+  const handleToggleSnap = () => {
+    if (onToggleSnap) {
+      try {
+        onToggleSnap();
+        logToolbarAction("toggle-snap", true, { newState: !snapToGrid });
+      } catch (error) {
+        logToolbarAction("toggle-snap", false, { error, currentState: snapToGrid });
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col space-y-2">
       <div className="flex flex-wrap gap-1">
@@ -79,7 +226,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === DrawingMode.SELECT ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.SELECT)}
+                onClick={() => handleToolChange(DrawingMode.SELECT)}
               >
                 <MousePointerSquareDashed className="h-4 w-4" />
               </Button>
@@ -96,7 +243,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === DrawingMode.HAND ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.HAND)}
+                onClick={() => handleToolChange(DrawingMode.HAND)}
               >
                 <Hand className="h-4 w-4" />
               </Button>
@@ -113,7 +260,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === DrawingMode.DRAW ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.DRAW)}
+                onClick={() => handleToolChange(DrawingMode.DRAW)}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -130,7 +277,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === DrawingMode.WALL ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.WALL)}
+                onClick={() => handleToolChange(DrawingMode.WALL)}
               >
                 <Wall className="h-4 w-4" />
               </Button>
@@ -147,7 +294,8 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === DrawingMode.STRAIGHT_LINE ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.STRAIGHT_LINE)}
+                onClick={() => handleToolChange(DrawingMode.STRAIGHT_LINE)}
+                data-test-id="straight-line-button"
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -164,7 +312,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === DrawingMode.WALL ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.WALL)}
+                onClick={() => handleToolChange(DrawingMode.WALL)}
               >
                 <Ruler className="h-4 w-4" />
               </Button>
@@ -181,7 +329,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant={tool === DrawingMode.ERASER ? "default" : "outline"} 
                 size="sm"
-                onClick={() => onToolChange(DrawingMode.ERASER)}
+                onClick={() => handleToolChange(DrawingMode.ERASER)}
               >
                 <Eraser className="h-4 w-4" />
               </Button>
@@ -200,7 +348,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={onUndo}
+                onClick={handleUndo}
               >
                 <Undo2 className="h-4 w-4" />
               </Button>
@@ -217,7 +365,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={onRedo}
+                onClick={handleRedo}
               >
                 <Redo2 className="h-4 w-4" />
               </Button>
@@ -234,7 +382,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={onClear}
+                onClick={handleClear}
               >
                 <Trash className="h-4 w-4" />
               </Button>
@@ -253,7 +401,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => onZoom("in")}
+                onClick={handleZoomIn}
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
@@ -270,7 +418,7 @@ export const DrawingToolbar = ({
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => onZoom("out")}
+                onClick={handleZoomOut}
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
@@ -288,7 +436,7 @@ export const DrawingToolbar = ({
                 <Button 
                   variant={snapToGrid ? "default" : "outline"} 
                   size="sm"
-                  onClick={onToggleSnap}
+                  onClick={handleToggleSnap}
                 >
                   <MoveHorizontal className="h-4 w-4" />
                 </Button>

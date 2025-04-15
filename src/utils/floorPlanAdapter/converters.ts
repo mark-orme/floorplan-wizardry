@@ -1,4 +1,3 @@
-
 /**
  * Floor Plan Adapter Converters
  * Conversion functions between app and core floor plan types
@@ -6,10 +5,10 @@
  */
 import { FloorPlan as CoreFloorPlan, Wall as CoreWall, Stroke as CoreStroke, Room as CoreRoom } from '@/types/core/FloorPlan';
 import { FloorPlan as AppFloorPlan, Wall as AppWall, Stroke as AppStroke, Room as AppRoom, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floorPlanTypes';
-import { createPoint } from '@/types/core/Point';
+import { Point, createPoint } from '@/types/core/Point';
 import { validateStrokeType, mapRoomType, validateRoomType } from './types';
 import { validatePoint, validateTimestamp, validateColor } from './validators';
-import { Point } from '@/types/geometryTypes';
+import { Point as GeometryPoint } from '@/types/geometryTypes';
 
 /**
  * Calculate distance between two points
@@ -198,4 +197,3 @@ export function appToCoreFloorPlans(appPlans: AppFloorPlan[]): CoreFloorPlan[] {
 export function coreToAppFloorPlans(corePlans: CoreFloorPlan[]): AppFloorPlan[] {
   return corePlans.map(coreToAppFloorPlan);
 }
-

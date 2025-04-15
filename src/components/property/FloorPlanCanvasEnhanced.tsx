@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, Path } from "fabric"; 
 import { EnhancedCanvas } from "@/components/EnhancedCanvas";
@@ -13,6 +12,7 @@ import { toast } from "sonner";
 import { DrawingMode } from "@/constants/drawingModes";
 import { PaperSizeSelector } from "@/components/canvas/PaperSizeSelector";
 import { Point } from "@/types/core/Point";
+import { CanvasDiagnostics } from "@/components/canvas/CanvasDiagnostics";
 
 interface FloorPlanCanvasEnhancedProps {
   /** Callback for canvas error */
@@ -246,6 +246,16 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
           infiniteCanvas={infiniteCanvas}
           paperSize={infiniteCanvas ? undefined : currentPaperSize}
         />
+        
+        {/* Canvas diagnostics component */}
+        {fabricCanvasRef.current && (
+          <CanvasDiagnostics 
+            canvas={fabricCanvasRef.current}
+            currentTool={tool}
+            runOnMount={true}
+            monitoringInterval={30000}
+          />
+        )}
         
         {/* Layer management */}
         <DrawingLayers

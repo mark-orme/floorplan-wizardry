@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DrawingMode } from "@/constants/drawingModes";
 import { 
@@ -23,7 +24,9 @@ import { ColorPicker } from "./ColorPicker";
 import { ZoomDirection } from "@/types/drawingTypes";
 import logger from "@/utils/logger";
 import { validateStraightLineDrawing } from "@/utils/diagnostics/drawingToolValidator";
-import { captureMessage } from "@/utils/sentry";
+import { captureMessage, captureError } from "@/utils/sentry";
+import { logToolActivation, logToolbarAction, verifyToolCanvasConnection } from "@/utils/logging/toolbarLogger";
+import * as Sentry from '@sentry/react';
 
 /**
  * Props for Canvas Toolbar component
@@ -63,6 +66,8 @@ export interface CanvasToolbarProps {
   showGrid: boolean;
   /** Function to toggle grid visibility */
   onToggleGrid: () => void;
+  /** Canvas reference for tool verification */
+  canvasRef?: React.MutableRefObject<any>;
 }
 
 /**
@@ -86,38 +91,185 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   canUndo,
   canRedo,
   showGrid,
-  onToggleGrid
+  onToggleGrid,
+  canvasRef
 }) => {
+  // Set up Sentry monitoring on component mount
+  useEffect(() => {
+    Sentry.setTag("component", "CanvasToolbar");
+    Sentry.setContext("toolbarState", {
+      currentTool: tool,
+      lineThickness,
+      lineColor,
+      canUndo,
+      canRedo,
+      showGrid
+    });
+    
+    // Report toolbar initialization
+    captureMessage("Toolbar initialized", "toolbar-init", {
+      tags: { component: "CanvasToolbar" },
+      extra: { tool, lineThickness, lineColor }
+    });
+    
+    return () => {
+      // Clear component-specific tags when unmounting
+      Sentry.setTag("component", null);
+    };
+  }, [tool, lineThickness, lineColor, canUndo, canRedo, showGrid]);
+  
+  // Effect to log state changes for better error tracking
+  useEffect(() => {
+    Sentry.setContext("toolbarState", {
+      currentTool: tool,
+      lineThickness,
+      lineColor,
+      canUndo,
+      canRedo,
+      showGrid
+    });
+  }, [tool, lineThickness, lineColor, canUndo, canRedo, showGrid]);
+  
   // Handle tool change with verification and logging
   const handleToolChange = (newTool: DrawingMode) => {
+    const previousTool = tool;
+    
     logger.info(`Toolbar: changing tool from ${tool} to ${newTool}`, {
       previousTool: tool,
       newTool
     });
     
-    // Call the tool change handler
-    onToolChange(newTool);
+    // Verify the tool can be properly used with the canvas
+    if (canvasRef?.current) {
+      const verificationResult = verifyToolCanvasConnection(newTool, canvasRef.current);
+      
+      if (!verificationResult.connected) {
+        // Log issues but still change the tool
+        captureMessage(
+          `Tool changed with connection issues: ${newTool}`,
+          "tool-connection-warning", 
+          {
+            tags: { component: "CanvasToolbar", tool: newTool, warning: true },
+            extra: { 
+              issues: verificationResult.issues,
+              previousTool: tool
+            }
+          }
+        );
+      }
+    }
     
-    // For debugging - will run validation on the next render
-    if (newTool === DrawingMode.STRAIGHT_LINE) {
-      // Log the change
-      captureMessage('Straight line tool selected from toolbar', 'straight-line-tool-selected', {
-        tags: { component: 'CanvasToolbar' },
-        extra: { previousTool: tool, lineThickness, lineColor }
+    // Call the tool change handler
+    try {
+      onToolChange(newTool);
+      
+      // Log successful tool change
+      logToolActivation(newTool, previousTool, {
+        lineThickness,
+        lineColor,
+        hasCanvas: !!canvasRef?.current
       });
       
-      // Run validation after a brief delay to allow tool initialization
-      setTimeout(() => {
-        // This is just for debugging purposes
-        try {
-          if (typeof window !== 'undefined' && (window as any).fabricCanvas) {
-            // Use the canvas overload with the correct parameters
-            validateStraightLineDrawing((window as any).fabricCanvas, newTool);
+      // For debugging - will run validation on the next render
+      if (newTool === DrawingMode.STRAIGHT_LINE) {
+        // Run validation after a brief delay to allow tool initialization
+        setTimeout(() => {
+          try {
+            if (canvasRef?.current) {
+              validateStraightLineDrawing(canvasRef.current, newTool);
+            }
+          } catch (error) {
+            logger.error('Error validating straight line tool', { error });
+            
+            // Report validation failure
+            captureError(error as Error, "straight-line-validation-error", {
+              tags: { component: "CanvasToolbar", critical: true },
+              extra: { previousTool, newTool }
+            });
           }
-        } catch (error) {
-          logger.error('Error validating straight line tool', { error });
-        }
-      }, 100);
+        }, 100);
+      }
+    } catch (error) {
+      // Log error if tool change fails
+      logger.error(`Failed to change tool to ${newTool}`, { error });
+      
+      captureError(error as Error, "tool-change-error", {
+        tags: { component: "CanvasToolbar", critical: true },
+        extra: { previousTool, newTool }
+      });
+    }
+  };
+  
+  // Enhanced handlers for toolbar actions with logging
+  const handleUndo = () => {
+    try {
+      onUndo();
+      logToolbarAction("undo", true, { canUndo });
+    } catch (error) {
+      logToolbarAction("undo", false, { error, canUndo });
+    }
+  };
+  
+  const handleRedo = () => {
+    try {
+      onRedo();
+      logToolbarAction("redo", true, { canRedo });
+    } catch (error) {
+      logToolbarAction("redo", false, { error, canRedo });
+    }
+  };
+  
+  const handleZoomIn = () => {
+    try {
+      onZoom("in");
+      logToolbarAction("zoom-in", true);
+    } catch (error) {
+      logToolbarAction("zoom-in", false, { error });
+    }
+  };
+  
+  const handleZoomOut = () => {
+    try {
+      onZoom("out");
+      logToolbarAction("zoom-out", true);
+    } catch (error) {
+      logToolbarAction("zoom-out", false, { error });
+    }
+  };
+  
+  const handleClear = () => {
+    try {
+      onClear();
+      logToolbarAction("clear", true);
+    } catch (error) {
+      logToolbarAction("clear", false, { error, critical: true });
+    }
+  };
+  
+  const handleSave = () => {
+    try {
+      onSave();
+      logToolbarAction("save", true);
+    } catch (error) {
+      logToolbarAction("save", false, { error, critical: true });
+    }
+  };
+  
+  const handleDelete = () => {
+    try {
+      onDelete();
+      logToolbarAction("delete", true);
+    } catch (error) {
+      logToolbarAction("delete", false, { error });
+    }
+  };
+  
+  const handleToggleGrid = () => {
+    try {
+      onToggleGrid();
+      logToolbarAction("toggle-grid", true, { newState: !showGrid });
+    } catch (error) {
+      logToolbarAction("toggle-grid", false, { error, currentState: showGrid });
     }
   };
   
@@ -209,7 +361,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={onUndo}
+        onClick={handleUndo}
         disabled={!canUndo}
         aria-label="Undo"
       >
@@ -219,7 +371,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={onRedo}
+        onClick={handleRedo}
         disabled={!canRedo}
         aria-label="Redo"
       >
@@ -232,7 +384,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={() => onZoom("in")}
+        onClick={handleZoomIn}
         aria-label="Zoom in"
       >
         <ZoomIn className="h-4 w-4" />
@@ -241,7 +393,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={() => onZoom("out")}
+        onClick={handleZoomOut}
         aria-label="Zoom out"
       >
         <ZoomOut className="h-4 w-4" />
@@ -252,7 +404,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       {/* Grid controls */}
       <Toggle 
         pressed={showGrid} 
-        onPressedChange={onToggleGrid}
+        onPressedChange={handleToggleGrid}
         aria-label="Toggle grid"
         size="sm"
       >
@@ -265,7 +417,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={onClear}
+        onClick={handleClear}
         aria-label="Clear canvas"
       >
         <Trash2 className="h-4 w-4" />
@@ -274,7 +426,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={onSave}
+        onClick={handleSave}
         aria-label="Save canvas"
       >
         <Save className="h-4 w-4" />
@@ -283,7 +435,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={onDelete}
+        onClick={handleDelete}
         aria-label="Delete selected"
       >
         <Trash2 className="h-4 w-4 text-red-500" />

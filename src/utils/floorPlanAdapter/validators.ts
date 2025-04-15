@@ -1,11 +1,9 @@
-
 /**
  * Floor Plan Adapter Validators
  * Validation utilities for floor plan data
  * @module utils/floorPlanAdapter/validators
  */
-import { Point } from '@/types/core/Point';
-import { createPoint } from '@/types/core/Point';
+import { Point, createPoint } from '@/types/core/Point';
 
 /**
  * Validate and ensure a point object is properly formed
