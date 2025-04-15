@@ -1,9 +1,10 @@
 
+/**
+ * Hook for cancelling the drawing tool and handling ESC key
+ */
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { Line } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { InputMethod } from './useLineState';
-import { toast } from 'sonner';
 
 interface UseToolCancellationProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -17,6 +18,10 @@ interface UseToolCancellationProps {
   snapEnabled: boolean;
 }
 
+/**
+ * Hook for cancelling the current drawing operation
+ * Also handles toggling grid snapping
+ */
 export const useToolCancellation = ({
   fabricCanvasRef,
   isDrawing,
@@ -28,43 +33,50 @@ export const useToolCancellation = ({
   toggleSnap,
   snapEnabled
 }: UseToolCancellationProps) => {
-  // Cancel the drawing operation
+  // Function to cancel the current drawing operation
   const cancelDrawing = useCallback(() => {
     if (!isDrawing) return;
     
-    console.log('Cancelling drawing operation');
-    
-    // Reset the drawing state
-    setIsDrawing(false);
-    
-    // Remove the current line from the canvas
-    if (currentLineRef.current && fabricCanvasRef.current) {
-      fabricCanvasRef.current.remove(currentLineRef.current);
-      fabricCanvasRef.current.renderAll();
-    }
-    
-    // Clean up the tooltip if it exists
-    if (distanceTooltipRef.current) {
-      const parent = distanceTooltipRef.current.parentElement;
-      if (parent) {
-        parent.removeChild(distanceTooltipRef.current);
+    try {
+      // If we have a current line being drawn, remove it
+      if (currentLineRef.current && fabricCanvasRef.current) {
+        fabricCanvasRef.current.remove(currentLineRef.current);
+        fabricCanvasRef.current.renderAll();
       }
+      
+      // Remove distance tooltip
+      if (distanceTooltipRef.current) {
+        const parent = distanceTooltipRef.current.parentElement;
+        if (parent) {
+          parent.removeChild(distanceTooltipRef.current);
+        }
+        distanceTooltipRef.current = null;
+      }
+      
+      // Reset state
+      setIsDrawing(false);
+      resetDrawingState();
+      
+      console.log(`Drawing cancelled via ESC key (input: ${inputMethod})`);
+    } catch (error) {
+      console.error('Error cancelling drawing:', error);
     }
-    
-    // Reset all references
-    resetDrawingState();
-    
-    // Show feedback to user
-    toast.info('Drawing cancelled', {
-      id: 'drawing-cancelled',
-      duration: 2000
-    });
-  }, [isDrawing, setIsDrawing, currentLineRef, fabricCanvasRef, distanceTooltipRef, resetDrawingState]);
-
-  // Toggle grid snapping and return current state
-  const toggleGridSnapping = useCallback(() => {
+  }, [
+    fabricCanvasRef,
+    isDrawing,
+    currentLineRef,
+    distanceTooltipRef,
+    setIsDrawing,
+    resetDrawingState,
+    inputMethod
+  ]);
+  
+  // Function to toggle grid snapping
+  const toggleGridSnapping = useCallback((): boolean => {
+    // Call the toggle function
     toggleSnap();
-    // Return the new state (opposite of current snapEnabled value)
+    
+    // Return the NEW state (after toggle)
     return !snapEnabled;
   }, [toggleSnap, snapEnabled]);
   
