@@ -118,6 +118,12 @@ export const useStraightLineTool = ({
     }
   }, [currentLineRef.current]);
   
+  // Get simplified input method for useToolCancellation which doesn't accept all types
+  const simplifiedInputMethod = (): 'mouse' | 'touch' | 'pencil' | 'stylus' | 'keyboard' => {
+    if (inputMethod === 'keyboard') return 'mouse'; // Map keyboard to mouse for cancel operations
+    return inputMethod;
+  };
+  
   // Initialize tool cancellation
   const { cancelDrawing, toggleGridSnapping: toggleSnapFromCancellation } = useToolCancellation({
     fabricCanvasRef,
@@ -126,7 +132,7 @@ export const useStraightLineTool = ({
     distanceTooltipRef,
     setIsDrawing,
     resetDrawingState,
-    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
+    inputMethod: simplifiedInputMethod(),
     toggleSnap: toggleGridSnapping,
     snapEnabled
   });
@@ -215,7 +221,7 @@ export const useStraightLineTool = ({
     isActive,
     isToolInitialized,
     isDrawing,
-    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
+    inputMethod,
     isPencilMode,
     snapEnabled,
     handlePointerDown,

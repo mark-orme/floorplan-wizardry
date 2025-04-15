@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing line drawing state
  * @module hooks/straightLineTool/useLineState
@@ -9,8 +10,8 @@ import { useApplePencilSupport } from './useApplePencilSupport';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { toast } from 'sonner';
 
-// Input method for drawing - updated to match useToolCancellation expectations
-export type InputMethod = 'mouse' | 'touch' | 'pencil' | 'keyboard';
+// Input method for drawing - changed to include all possible values
+export type InputMethod = 'mouse' | 'touch' | 'pencil' | 'stylus' | 'keyboard';
 
 interface UseLineStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;

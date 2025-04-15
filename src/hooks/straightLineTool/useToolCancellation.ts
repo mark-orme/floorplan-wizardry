@@ -10,7 +10,7 @@ interface UseToolCancellationProps {
   distanceTooltipRef: React.MutableRefObject<any | null>;
   setIsDrawing: (isDrawing: boolean) => void;
   resetDrawingState: () => void;
-  inputMethod: 'mouse' | 'touch' | 'pencil'; // Explicitly specify allowed values
+  inputMethod: 'mouse' | 'touch' | 'pencil' | 'stylus' | 'keyboard'; // Updated to include all values
   toggleSnap: () => void;
   snapEnabled: boolean;
 }

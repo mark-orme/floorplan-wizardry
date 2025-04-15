@@ -106,6 +106,12 @@ export const useStraightLineToolRefactored = ({
     return { start, end };
   };
 
+  // Get simplified input method for useToolCancellation which doesn't accept all types
+  const simplifiedInputMethod = (): 'mouse' | 'touch' | 'pencil' | 'stylus' | 'keyboard' => {
+    if (inputMethod === 'keyboard') return 'mouse'; // Map keyboard to mouse for cancel operations
+    return inputMethod;
+  };
+
   // Use the tool cancellation hook - make sure inputMethod is compatible
   const {
     cancelDrawing,
@@ -117,7 +123,7 @@ export const useStraightLineToolRefactored = ({
     distanceTooltipRef,
     setIsDrawing,
     resetDrawingState,
-    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
+    inputMethod: simplifiedInputMethod(),
     toggleSnap,
     snapEnabled
   });
@@ -208,7 +214,7 @@ export const useStraightLineToolRefactored = ({
     isDrawing,
     isToolInitialized: isToolInitializedResult || isToolInitialized,
     snapEnabled,
-    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
+    inputMethod,
     isPencilMode,
     
     // Methods for direct manipulation
