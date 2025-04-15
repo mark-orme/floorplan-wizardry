@@ -95,15 +95,15 @@ function initializeServices() {
   Sentry.init({
     dsn: "https://abae2c559058eb2bbcd15686dac558ed@o4508914471927808.ingest.de.sentry.io/4509038014234704",
     
-    // Disable ALL integrations to avoid CSP issues
+    // Carefully selected integrations to avoid CSP issues
     integrations: [],
     
     // Basic configuration
     release: import.meta.env.VITE_SENTRY_RELEASE || "development",
     environment: import.meta.env.MODE,
     
-    // COMPLETELY DISABLE all features that could cause CSP issues
-    tracesSampleRate: 0,
+    // Set sample rates low to minimize potential CSP issues
+    tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
     profilesSampleRate: 0,
@@ -114,7 +114,7 @@ function initializeServices() {
       if (!checkCSPApplied()) {
         console.warn('CSP still invalid during Sentry send, applying emergency fix');
         applyFullCSP(); 
-        return null; // Don't send this event
+        // Continue with the event anyway
       }
       
       // Filter out CSP errors to avoid noise

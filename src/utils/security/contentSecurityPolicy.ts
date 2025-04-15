@@ -21,7 +21,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://*.supabase.co", 
     "wss://*.lovable.dev",
     "https://*.lovable.dev", 
-    // ALL Sentry domains
+    // ALL Sentry domains - expanded for maximum compatibility
     "https://o4508914471927808.ingest.de.sentry.io",
     "https://*.ingest.de.sentry.io",
     "https://*.ingest.sentry.io",
