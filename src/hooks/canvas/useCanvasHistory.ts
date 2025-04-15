@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
 import { FabricEventTypes } from "@/types/fabric-events";
+import { saveCanvasHistory, loadCanvasHistory } from "@/utils/storage/historyStorage";
+
+// History key for storage
+const HISTORY_KEY = 'canvas-v1';
 
 interface UseCanvasHistoryProps {
   canvas: FabricCanvas | null;
@@ -18,6 +22,51 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
   
   // Track if events are being registered to prevent duplicate snapshots
   const isPerformingUndoRedoRef = useRef(false);
+  const initialLoadDoneRef = useRef(false);
+  
+  // Initialize history from storage
+  useEffect(() => {
+    if (!canvas || initialLoadDoneRef.current) return;
+    
+    const loadInitialHistory = async () => {
+      try {
+        const savedHistory = await loadCanvasHistory(HISTORY_KEY);
+        
+        if (savedHistory && savedHistory.length > 0) {
+          setHistoryStack(savedHistory);
+          setHistoryIndex(savedHistory.length - 1);
+          setCanUndo(savedHistory.length > 1);
+          setCanRedo(false);
+          
+          // Load the last state into the canvas
+          const lastState = savedHistory[savedHistory.length - 1];
+          const lastStateObj = JSON.parse(lastState);
+          
+          canvas.loadFromJSON(lastStateObj, () => {
+            canvas.renderAll();
+            logger.debug("Restored canvas from saved history");
+            captureMessage("Canvas restored from history", "canvas-restore");
+          });
+        } else {
+          // Create initial snapshot if no history exists
+          saveCurrentState();
+        }
+        
+        initialLoadDoneRef.current = true;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Unknown error";
+        logger.error("Failed to load history", { error: errorMsg });
+        captureError(error as Error, "history-load-error");
+        toast.error(`Failed to load history: ${errorMsg}`);
+        
+        // Fallback to empty history
+        saveCurrentState();
+        initialLoadDoneRef.current = true;
+      }
+    };
+    
+    loadInitialHistory();
+  }, [canvas]);
   
   // Automatically save state when changes occur
   useEffect(() => {
@@ -43,8 +92,8 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       canvas.on(event, handleCanvasChange);
     });
     
-    // Create initial state
-    if (historyStack.length === 0) {
+    // Create initial state if no history exists
+    if (historyStack.length === 0 && initialLoadDoneRef.current) {
       saveCurrentState();
     }
     
@@ -54,10 +103,10 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         canvas.off(event, handleCanvasChange);
       });
     };
-  }, [canvas]);
+  }, [canvas, historyStack, historyIndex]);
   
-  // Save current canvas state to history
-  const saveCurrentState = useCallback(() => {
+  // Save current canvas state to history and persist it
+  const saveCurrentState = useCallback(async () => {
     if (!canvas) return;
     
     try {
@@ -72,6 +121,9 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       setHistoryIndex(newHistory.length - 1);
       setCanUndo(newHistory.length > 1);
       setCanRedo(false);
+      
+      // Persist history to IndexedDB
+      await saveCanvasHistory(HISTORY_KEY, newHistory);
       
       const objectCount = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid').length;
       logger.debug(`Canvas snapshot saved. Object count: ${objectCount}`);
