@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for automatic canvas saving and restoring
  * @module hooks/useAutoSaveCanvas
@@ -112,6 +113,11 @@ export const useAutoSaveCanvas = ({
   
   // Create debounced save function with proper typing
   const debouncedSave = useRef(debounce(saveCanvas, debounceMs));
+  
+  // Update the debounced function when its dependencies change
+  useEffect(() => {
+    debouncedSave.current = debounce(saveCanvas, debounceMs);
+  }, [saveCanvas, debounceMs]);
   
   const restoreCanvas = useCallback(async () => {
     if (!canvas) return false;
