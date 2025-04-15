@@ -4,7 +4,7 @@
  * Initializes security features when the application loads
  */
 import { useEffect, useState } from 'react';
-import { initializeCSP } from '@/utils/security/contentSecurityPolicy';
+import { initializeCSP, checkCSPApplied, fixSentryCSP } from '@/utils/security/contentSecurityPolicy';
 import { applySecurityMetaTags } from '@/utils/security/httpSecurity';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
@@ -14,176 +14,89 @@ import { toast } from 'sonner';
  * Should be rendered at the root level of the application
  */
 export const SecurityInitializer = () => {
-  const [cspApplied, setCspApplied] = useState(false);
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
     // Force initialize Content Security Policy with a direct meta tag
-    // This ensures CSP is enforced immediately
     try {
-      // Apply with force refresh
-      initializeCSP(true); 
+      // Apply CSP with force refresh
+      initializeCSP(true);
       
       // Apply additional security headers
       applySecurityMetaTags();
       
-      logger.info('Security features initialized successfully');
+      logger.info('Security features initialized from component');
       
-      // Extra check to verify CSP was applied
-      const cspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-      if (!cspTag) {
-        logger.warn('CSP meta tag not found after initialization, retrying...');
+      // Verify CSP was properly applied
+      const isValid = checkCSPApplied();
+      
+      if (!isValid) {
+        logger.warn('Initial CSP verification failed, applying emergency fix');
+        // Try an emergency fix - apply directly
+        fixSentryCSP();
         
-        // Try again after a delay - use setTimeout for more reliable execution
+        // Recheck after a delay
         setTimeout(() => {
-          initializeCSP(true);
-          const retryTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-          if (retryTag) {
-            logger.info('CSP meta tag applied on second attempt');
-            setCspApplied(true);
-            
-            // Log the content for verification
-            const content = retryTag.getAttribute('content');
-            console.log('Applied CSP on retry:', content);
+          const recheckValid = checkCSPApplied();
+          if (recheckValid) {
+            logger.info('CSP fixed successfully on second attempt');
+            setVerified(true);
           } else {
-            logger.error('Failed to apply CSP meta tag after retry');
-            toast.error('Security initialization issue detected');
+            logger.error('Failed to apply proper CSP after multiple attempts');
+            toast.error('Security initialization issue detected, some features may be limited');
           }
-        }, 500);
+        }, 300);
       } else {
-        // Log the actual content to verify
-        const content = cspTag.getAttribute('content');
-        logger.info('CSP meta tag verified', { content });
-        console.log('Applied CSP:', content);
-        setCspApplied(true);
-        
-        // Check if Sentry domains are included
-        if (content) {
-          const hasSentryDomains = content.includes('sentry.io');
-          const hasSpecificSentryDomain = content.includes('o4508914471927808.ingest.de.sentry.io');
-          
-          logger.info('CSP domains verification', { 
-            hasSentryDomains, 
-            hasSpecificSentryDomain 
+        logger.info('CSP verified successfully on first attempt');
+        setVerified(true);
+      }
+      
+      // Set up a continuous monitor for CSP
+      const monitorInterval = setInterval(() => {
+        if (!checkCSPApplied()) {
+          logger.warn('CSP validation failed during runtime check, reapplying');
+          fixSentryCSP();
+        }
+      }, 3000);
+      
+      // Set up security violation handler that's focused on fixing issues
+      const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
+        // Only care about Sentry domain issues
+        if (e.blockedURI.includes('sentry.io') || 
+            e.blockedURI.includes('ingest.sentry.io')) {
+          logger.warn('Sentry domain blocked by CSP, attempting fix', {
+            domain: e.blockedURI,
+            directive: e.violatedDirective
           });
           
-          // If domains are missing, try to reapply
-          if (!hasSentryDomains || !hasSpecificSentryDomain) {
-            logger.warn('CSP missing required Sentry domains, reapplying...');
-            setTimeout(() => {
-              initializeCSP(true);
-              toast.info('Security policies refreshed');
-            }, 200);
-          }
+          // Immediate fix attempt
+          fixSentryCSP();
         }
-      }
-    } catch (initError) {
-      logger.error('Failed to initialize security features', { error: initError });
+      };
       
-      // Emergency retry with timeout in case of failure
+      window.addEventListener('securitypolicyviolation', handleSecurityViolation);
+      
+      return () => {
+        clearInterval(monitorInterval);
+        window.removeEventListener('securitypolicyviolation', handleSecurityViolation);
+      };
+    } catch (error) {
+      logger.error('Error initializing security features', { error });
+      
+      // Try one more time
       setTimeout(() => {
         try {
           initializeCSP(true);
-          logger.info('Security features initialized on second attempt');
-          setCspApplied(true);
+          logger.info('Emergency CSP applied after error');
         } catch (retryError) {
-          logger.error('Second attempt to initialize security features failed', { error: retryError });
-          toast.error('Security features failed to initialize');
+          logger.error('Failed to initialize security features on retry', { error: retryError });
         }
       }, 500);
     }
-    
-    // Create a more refined CSP violation handler that doesn't log every single violation
-    // This reduces noise in the console
-    const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
-      // Create a list of domains and sources to filter out noise
-      const knownViolations = [
-        { domain: 'sentry.io', directive: 'connect-src' },
-        { domain: 'o4508914471927808.ingest.de.sentry.io', directive: 'connect-src' },
-        { domain: 'pusher.com', directive: 'connect-src' },
-        { domain: 'sockjs-eu.pusher.com', directive: 'connect-src' },
-        { domain: 'ws-eu.pusher.com', directive: 'connect-src' },
-        { domain: 'ingest.sentry.io', directive: 'connect-src' },
-        { domain: 'api.sentry.io', directive: 'connect-src' },
-        { source: 'blob', directive: 'worker-src' }
-      ];
-      
-      // Check if this is a known violation we want to filter
-      const shouldSkipLogging = knownViolations.some(violation => 
-        (e.blockedURI.includes(violation.domain || '') && 
-        e.violatedDirective === violation.directive) ||
-        (violation.source && e.blockedURI === violation.source && 
-        e.violatedDirective === violation.directive)
-      );
-      
-      // Only log new violations in development mode
-      const isProduction = process.env.NODE_ENV === 'production';
-      
-      if (!shouldSkipLogging || !isProduction) {
-        // Log at most once per minute per endpoint to reduce noise
-        const violationKey = `${e.violatedDirective}:${e.blockedURI}`;
-        const lastReported = window.__csp_violations?.[violationKey] || 0;
-        const now = Date.now();
-        
-        // Initialize violations object if it doesn't exist
-        if (!window.__csp_violations) {
-          window.__csp_violations = {};
-        }
-        
-        // Only log if more than 60 seconds since last report for this violation
-        if (now - lastReported > 60000) {
-          window.__csp_violations[violationKey] = now;
-          
-          logger.warn('CSP violation detected', {
-            directive: e.violatedDirective,
-            blockedURI: e.blockedURI,
-            originalPolicy: e.originalPolicy
-          });
-          
-          // Show user-facing notification for persistent CSP issues
-          if (cspApplied && e.blockedURI.includes('sentry.io')) {
-            toast.error('Security policy conflict detected', {
-              description: 'Some monitoring features may be limited'
-            });
-            
-            // Try to fix by reapplying CSP if it's a Sentry issue
-            setTimeout(() => initializeCSP(true), 100);
-          }
-          
-          // Attempt to auto-fix common CSP issues
-          if (e.violatedDirective === 'connect-src' || e.violatedDirective === 'worker-src') {
-            // If we get connect-src or worker-src violations, it likely means our CSP isn't applied correctly
-            // or doesn't include necessary domains. Force refresh CSP.
-            logger.info('Auto-refreshing CSP after violation');
-            setTimeout(() => {
-              initializeCSP(true);
-            }, 100);
-          }
-        }
-      }
-    };
-    
-    // Declare the CSP violations object on window
-    if (typeof window !== 'undefined' && !window.__csp_violations) {
-      window.__csp_violations = {};
-    }
-    
-    window.addEventListener('securitypolicyviolation', handleSecurityViolation);
-    
-    return () => {
-      // Clean up event listeners
-      window.removeEventListener('securitypolicyviolation', handleSecurityViolation);
-    };
-  }, [cspApplied]);
+  }, []);
   
   // This component doesn't render anything
   return null;
 };
-
-// Add the __csp_violations property to the Window interface
-declare global {
-  interface Window {
-    __csp_violations?: Record<string, number>;
-  }
-}
 
 export default SecurityInitializer;

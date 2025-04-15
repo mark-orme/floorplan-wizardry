@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 // Define Content Security Policy directives for production
 export const PRODUCTION_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"], // Allow blob for workers
-  'style-src': ["'self'", "'unsafe-inline'"], // Unsafe-inline needed for shadcn/ui
+  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
+  'style-src': ["'self'", "'unsafe-inline'"],
   'img-src': ["'self'", "data:", "blob:"],
   'font-src': ["'self'"],
   'connect-src': [
@@ -34,15 +34,15 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'"],
-  'worker-src': ["'self'", "blob:"], // Explicitly allow blob URLs for workers
-  'child-src': ["'self'", "blob:"],  // Add child-src for legacy browsers
+  'worker-src': ["'self'", "blob:"],
+  'child-src': ["'self'", "blob:"],
   'upgrade-insecure-requests': [],
 };
 
 // Define Content Security Policy directives for development (less strict)
 export const DEVELOPMENT_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"], // Allow blob for workers
+  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
   'style-src': ["'self'", "'unsafe-inline'"],
   'img-src': ["'self'", "data:", "blob:"],
   'font-src': ["'self'"],
@@ -68,14 +68,12 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
-  'worker-src': ["'self'", "blob:"], // Explicitly allow worker-src to allow blob URLs for workers
-  'child-src': ["'self'", "blob:"],  // Add child-src for legacy browsers
+  'worker-src': ["'self'", "blob:"],
+  'child-src': ["'self'", "blob:"],
 };
 
 /**
  * Build CSP string from directives
- * @param isProduction Whether to use production CSP directives
- * @returns Formatted CSP header value
  */
 export function buildCSPString(isProduction = false): string {
   const directives = isProduction ? PRODUCTION_CSP_DIRECTIVES : DEVELOPMENT_CSP_DIRECTIVES;
@@ -90,7 +88,6 @@ export function buildCSPString(isProduction = false): string {
 
 /**
  * Generate a random nonce for CSP
- * @returns Random nonce string
  */
 export function generateCSPNonce(): string {
   const array = new Uint8Array(16);
@@ -101,7 +98,6 @@ export function generateCSPNonce(): string {
 /**
  * Apply CSP as meta tag in document head
  * Completely replaces existing CSP meta tag to ensure fresh values
- * @param isProduction Whether to use production CSP directives
  */
 export function applyCSPMetaTag(isProduction = false): void {
   if (typeof document === 'undefined') return;
@@ -139,11 +135,6 @@ export function applyCSPMetaTag(isProduction = false): void {
       mode: isProduction ? 'production' : 'development',
       content: cspContent
     });
-    
-    // Show toast notification if CSP was applied successfully
-    if (typeof window !== 'undefined') {
-      toast.success('Security policies applied successfully');
-    }
   } catch (error) {
     logger.error('Failed to apply CSP meta tag', { error });
   }
@@ -151,8 +142,6 @@ export function applyCSPMetaTag(isProduction = false): void {
 
 /**
  * Get CSP headers for server-side implementation
- * @param isProduction Whether to use production CSP directives
- * @returns Object with CSP headers
  */
 export function getCSPHeaders(isProduction = false): Record<string, string> {
   return {
@@ -162,14 +151,13 @@ export function getCSPHeaders(isProduction = false): Record<string, string> {
 
 /**
  * Initialize Content Security Policy
- * Should be called during app initialization
- * @param forceRefresh Force refresh of CSP meta tag
+ * Should be called during app initialization BEFORE any Sentry initialization
  */
 export function initializeCSP(forceRefresh = false): void {
   // Apply CSP as meta tag for client-side enforcement
   if (typeof window !== 'undefined') {
-    // Always use development CSP for now to allow connections
-    const isProduction = false; // Force development CSP which is less restrictive
+    // Always use development CSP for now which is less restrictive
+    const isProduction = false;
     
     // Force application of CSP meta tag if refresh requested
     if (forceRefresh) {
@@ -183,7 +171,7 @@ export function initializeCSP(forceRefresh = false): void {
     applyCSPMetaTag(isProduction);
     
     // Log successful initialization
-    logger.info('Content Security Policy initialized', {
+    logger.info('Content Security Policy initialized with Sentry domains', {
       mode: isProduction ? 'production' : 'development',
       allowedConnections: isProduction ? 
         PRODUCTION_CSP_DIRECTIVES['connect-src'].join(', ') : 
@@ -192,3 +180,22 @@ export function initializeCSP(forceRefresh = false): void {
   }
 }
 
+// Simple function to check if CSP is properly applied
+export function checkCSPApplied(): boolean {
+  if (typeof document === 'undefined') return false;
+  
+  const cspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+  if (!cspTag) return false;
+  
+  const content = cspTag.getAttribute('content') || '';
+  return content.includes('sentry.io') && content.includes('o4508914471927808.ingest.de.sentry.io');
+}
+
+// Export a simple fix function that we can call anywhere to correct CSP issues
+export function fixSentryCSP(): void {
+  if (!checkCSPApplied()) {
+    console.warn('CSP missing Sentry domains, forcing refresh...');
+    initializeCSP(true);
+    toast.info('Security policy refreshed to allow error reporting');
+  }
+}

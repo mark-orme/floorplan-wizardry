@@ -7,28 +7,29 @@ import { createRootElement } from './utils/domUtils.ts'
 import SecurityInitializer from './components/security/SecurityInitializer';
 import { initializeSecurity } from './utils/security';
 import { ErrorBoundary } from './utils/canvas/errorBoundary';
-import { initializeCSP } from './utils/security/contentSecurityPolicy';
+import { initializeCSP, checkCSPApplied, fixSentryCSP } from './utils/security/contentSecurityPolicy';
 import { toast } from 'sonner';
 
-// IMPORTANT: Force initialize CSP with development settings first
-// This must happen before any network requests
+// IMPORTANT: Apply CSP first, before any network requests
 initializeCSP(true);
+console.log('Initial CSP applied with Sentry domains included');
 
-// Add console log to verify CSP was applied
-console.log('Initial CSP applied with these connect-src domains:', 
-  document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content'));
-
-// Create the root and render the SecurityInitializer first to ensure CSP is set
-// before other components try to initialize
+// Create the root element
 const rootElement = createRootElement("root");
 const root = createRoot(rootElement);
 
-// First render only the SecurityInitializer to ensure CSP is properly applied
+// First render the SecurityInitializer to ensure the CSP is properly set
 root.render(<SecurityInitializer />);
 
-// Increased timeout to ensure CSP is fully applied before services are initialized
+// Wait to ensure CSP is fully applied before Sentry initialization
 setTimeout(() => {
-  // Initialize Sentry and other services after CSP is applied
+  // Double-check CSP is applied correctly before initializing services
+  if (!checkCSPApplied()) {
+    console.warn('CSP check failed, applying emergency fix');
+    fixSentryCSP();
+  }
+  
+  // Initialize services (including Sentry)
   initializeServices();
   
   // Render the full application
@@ -57,120 +58,60 @@ setTimeout(() => {
       <App />
     </ErrorBoundary>
   );
-}, 1000);  // Increased timeout for better sequencing
+}, 800); // Increased timeout to ensure CSP is applied
 
 function initializeServices() {
-  // Check if browser profiling is supported in this environment
-  const isProfilingSupported = () => {
-    try {
-      // Using a feature detection approach instead of direct Profiler access
-      return typeof window !== 'undefined' && 
-             typeof window.performance !== 'undefined' && 
-             typeof window.performance.mark === 'function';
-    } catch (e) {
-      return false;
-    }
-  };
+  console.log('Initializing services with CSP state:', checkCSPApplied() ? 'Valid' : 'Invalid');
   
-  // Verify CSP is still applied before initializing Sentry
-  const cspContent = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
-  console.log('CSP state before Sentry initialization:', cspContent || 'No CSP found');
-  
-  // If CSP is missing or doesn't include Sentry, force reapply it
-  if (!cspContent || !cspContent.includes('sentry.io')) {
-    console.warn('CSP missing or does not include Sentry domains, reapplying...');
-    initializeCSP(true);
-    toast.info('Security policies refreshed before services initialization');
-  }
-  
-  // Create integrations array based on browser support
-  const sentryIntegrations = [
-    Sentry.browserTracingIntegration(),
-    // Disable replay integration to avoid worker-src CSP issues
-    // process.env.NODE_ENV === 'production' ? Sentry.replayIntegration() : null,
-  ].filter(Boolean);
-  
-  // Initialize Sentry for error tracking and monitoring
+  // Initialize Sentry with minimal configuration - disable features that might cause CSP issues
   Sentry.init({
     dsn: "https://abae2c559058eb2bbcd15686dac558ed@o4508914471927808.ingest.de.sentry.io/4509038014234704",
-    integrations: sentryIntegrations,
-    // Enable automatic release tracking and source maps
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      // Disable replay to avoid worker-src CSP issues
+    ],
+    
+    // Basic configuration
     release: import.meta.env.VITE_SENTRY_RELEASE || "development",
-    dist: import.meta.env.VITE_SENTRY_DIST,
     environment: import.meta.env.MODE,
     
-    // Tracing
-    tracesSampleRate: 0.05, // Reduce to 5% of the transactions to avoid excessive requests
-    // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
+    // Reduce sampling to avoid excessive requests
+    tracesSampleRate: 0.05,
     tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/, /^https:\/\/.*lovable\.app/],
     
-    // Session Replay - DISABLED to avoid CSP issues
-    replaysSessionSampleRate: 0, // Disable session replay
-    replaysOnErrorSampleRate: 0, // Disable error replay
+    // COMPLETELY DISABLE features that cause CSP issues
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: 0,
+    profilesSampleRate: 0,
     
-    // Disable performance profiling to avoid document policy violations
-    profilesSampleRate: 0, 
-    
-    // Ensure we capture breadcrumbs for better debugging context
-    beforeBreadcrumb(breadcrumb) {
-      return breadcrumb;
-    },
-    
-    // Add custom context to all errors
+    // Only send errors if CSP allows it
     beforeSend(event, hint) {
-      // Add app-specific tags
-      event.tags = {
-        ...event.tags,
-        appVersion: import.meta.env.VITE_APP_VERSION || 'unknown',
-        appBuild: import.meta.env.VITE_APP_BUILD || 'unknown'
-      };
-      
-      // Filter out sensitive data if needed
-      if (event.request && event.request.headers) {
-        delete event.request.headers['Authorization'];
-      }
-      
-      // Check if CSP blocked the request and don't report those errors
-      const error = hint?.originalException;
-      if (error instanceof Error && 
-          (error.message.includes('Content Security Policy') || 
-           error.message.includes('Refused to connect') ||
-           error.message.includes('violates') ||
-           error.message.includes('blocked by CSP'))) {
-        // Don't report CSP errors to avoid noise - handle locally
-        console.warn('Suppressing CSP error report to Sentry:', error.message);
+      // Do a final check to make sure CSP is set correctly
+      if (!checkCSPApplied()) {
+        console.warn('CSP still invalid during Sentry send, applying emergency fix');
+        fixSentryCSP();
+        // This send will fail, but future ones might work
         return null;
       }
       
-      // Rate limit error reporting for network errors to avoid flooding Sentry
-      if (event.exception && 
-          event.exception.values && 
-          event.exception.values.length > 0 && 
-          event.exception.values[0].value) {
-        const errorValue = event.exception.values[0].value;
-        
-        // Check for known errors that should be throttled
-        if (errorValue.includes('Failed to fetch') || 
-            errorValue.includes('Network Error') ||
-            errorValue.includes('timeout')) {
-          // Only send 1 in 10 of these common errors
-          if (Math.random() > 0.1) {
-            return null;
-          }
-        }
+      // Filter out CSP errors to avoid noise
+      const error = hint?.originalException;
+      if (error instanceof Error && 
+          (error.message.includes('Content Security Policy') || 
+           error.message.includes('CSP') ||
+           error.message.includes('Refused to connect'))) {
+        return null;
       }
       
       return event;
     }
   });
   
-  // Verify CSP is still applied after initializing Sentry
-  const cspContentAfterSentry = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
-  console.log('CSP state after Sentry initialization:', cspContentAfterSentry || 'No CSP found');
-  
-  // Force reapply CSP to ensure it's set with all necessary domains
-  if (!cspContentAfterSentry || !cspContentAfterSentry.includes('sentry.io')) {
-    initializeCSP(true);
-    toast.info('Security policies refreshed after services initialization');
-  }
+  // Verify CSP after Sentry init
+  setTimeout(() => {
+    if (!checkCSPApplied()) {
+      console.warn('CSP was overwritten after Sentry init, reapplying');
+      fixSentryCSP();
+    }
+  }, 200);
 }
