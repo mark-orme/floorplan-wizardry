@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useEnhancedGridSnapping } from '../hooks/straightLineTool/useEnhancedGridSnapping';
 import { Button } from '../components/ui/button';
-import { Grid, GridOff } from 'lucide-react';
+import { Grid } from 'lucide-react';
 
 const meta = {
   title: 'Hooks/useEnhancedGridSnapping',
@@ -41,12 +41,12 @@ const GridSnappingDemo = () => {
     // Draw grid lines
     const gridSize = 20;
     for (let i = 0; i <= 400; i += gridSize) {
-      fabricCanvas.add(new fabric.Line([i, 0, i, 400], {
+      fabricCanvas.add(new FabricCanvas.Line([i, 0, i, 400], {
         stroke: '#e9ecef',
         selectable: false,
         evented: false,
       }));
-      fabricCanvas.add(new fabric.Line([0, i, 400, i], {
+      fabricCanvas.add(new FabricCanvas.Line([0, i, 400, i], {
         stroke: '#e9ecef',
         selectable: false,
         evented: false,
@@ -62,9 +62,9 @@ const GridSnappingDemo = () => {
   }, []);
   
   // Use grid snapping hook
-  const { snapEnabled, toggleGridSnapping, snapPointToGrid } = useEnhancedGridSnapping({
-    fabricCanvasRef,
-    gridSize: 20,
+  const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping({
+    initialSnapEnabled: true,
+    snapThreshold: 10
   });
   
   // Add a point when clicking on the canvas
@@ -77,9 +77,9 @@ const GridSnappingDemo = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    const point = snapEnabled ? snapPointToGrid({ x, y }) : { x, y };
+    const point = snapEnabled ? snapToGrid({ x, y }) : { x, y };
     
-    const circle = new fabric.Circle({
+    const circle = new FabricCanvas.Circle({
       left: point.x - 5,
       top: point.y - 5,
       radius: 5,
@@ -102,12 +102,12 @@ const GridSnappingDemo = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={toggleGridSnapping}
+          onClick={toggleSnap}
           className="flex items-center gap-2"
         >
           {snapEnabled ? (
             <>
-              <GridOff className="h-4 w-4" />
+              <Grid className="h-4 w-4" />
               Disable Grid
             </>
           ) : (
