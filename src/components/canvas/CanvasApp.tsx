@@ -109,6 +109,13 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     lineThickness
   });
   
+  // Create a wrapper function to handle the syncCanvas call with the user ID
+  const handleDrawingComplete = () => {
+    if (syncCanvas && userId) {
+      syncCanvas(userId);
+    }
+  };
+  
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
       <CanvasCollaborationIndicator 
@@ -142,7 +149,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
           deleteSelectedObjects={historyDeleteSelectedObjects}
           isApplePencil={isApplePencil}
           enableSync={enableSync}
-          onDrawingComplete={syncCanvas}
+          onDrawingComplete={handleDrawingComplete}
         />
       )}
     </div>
