@@ -12,16 +12,20 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'style-src': ["'self'", "'unsafe-inline'"], // Unsafe-inline needed for shadcn/ui
   'img-src': ["'self'", "data:", "blob:"],
   'font-src': ["'self'"],
-  'connect-src': ["'self'", "https://*.supabase.co", "wss://*.lovable.dev", "https://*.sentry.io"],
-  'frame-src': ["'none'"],
+  'connect-src': [
+    "'self'", 
+    "https://*.supabase.co", 
+    "wss://*.lovable.dev", 
+    "https://*.sentry.io",
+    "https://o4508914471927808.ingest.de.sentry.io",
+    "wss://ws-eu.pusher.com",
+    "https://sockjs-eu.pusher.com"
+  ],
+  'frame-src': ["'self'", "https://*.lovable.dev"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'"],
-  'frame-ancestors': ["'none'"],
   'upgrade-insecure-requests': [],
-  'require-trusted-types-for': ["'script'"],
-  'trusted-types': ["'none'"], 
-  'sandbox': ['allow-forms', 'allow-scripts', 'allow-same-origin'],
 };
 
 // Define Content Security Policy directives for development (less strict)
@@ -31,8 +35,18 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'style-src': ["'self'", "'unsafe-inline'"],
   'img-src': ["'self'", "data:", "blob:"],
   'font-src': ["'self'"],
-  'connect-src': ["'self'", "https://*.supabase.co", "wss://*.lovable.dev", "https://*.sentry.io", "ws:", "http://localhost:*"],
-  'frame-src': ["'self'"],
+  'connect-src': [
+    "'self'", 
+    "https://*.supabase.co", 
+    "wss://*.lovable.dev", 
+    "https://*.sentry.io",
+    "https://o4508914471927808.ingest.de.sentry.io",
+    "wss://ws-eu.pusher.com",
+    "https://sockjs-eu.pusher.com",
+    "ws:", 
+    "http://localhost:*"
+  ],
+  'frame-src': ["'self'", "https://*.lovable.dev"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
 };

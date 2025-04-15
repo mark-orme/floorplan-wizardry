@@ -38,9 +38,9 @@ Sentry.init({
   environment: import.meta.env.MODE,
   
   // Tracing
-  tracesSampleRate: 1.0, // Capture 100% of the transactions
+  tracesSampleRate: 0.2, // Reduce to 20% of the transactions to avoid excessive requests
   // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
-  tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
+  tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/],
   
   // Session Replay
   replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%
@@ -55,7 +55,7 @@ Sentry.init({
   },
   
   // Add custom context to all errors
-  beforeSend(event) {
+  beforeSend(event, hint) {
     // Add app-specific tags
     event.tags = {
       ...event.tags,
@@ -66,6 +66,14 @@ Sentry.init({
     // Filter out sensitive data if needed
     if (event.request && event.request.headers) {
       delete event.request.headers['Authorization'];
+    }
+    
+    // Check if CSP blocked the request and don't report those errors
+    const error = hint?.originalException;
+    if (error instanceof Error && 
+        (error.message.includes('Content Security Policy') || 
+         error.message.includes('Refused to connect'))) {
+      return null;
     }
     
     return event;

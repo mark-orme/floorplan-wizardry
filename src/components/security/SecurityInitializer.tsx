@@ -24,21 +24,55 @@ export const SecurityInitializer = () => {
     
     logger.info('Security features initialized');
     
-    // Add iframe protection
+    // Add iframe protection with better error handling
     if (window.top !== window.self) {
-      logger.warn('Application loaded in iframe - potential security risk');
-      toast.error('This application cannot be displayed in an iframe for security reasons.');
+      logger.warn('Application loaded in iframe - checking if allowed origin');
       
-      // Force breaking out of iframes for better security
+      // Handle iframes more gracefully
       try {
-        window.top.location.href = window.self.location.href;
+        // Check if parent origin is allowed (lovable.dev or our own domain)
+        const parentUrl = new URL(document.referrer);
+        const isAllowedOrigin = 
+          parentUrl.hostname.endsWith('lovable.dev') || 
+          parentUrl.hostname === window.location.hostname;
+        
+        if (!isAllowedOrigin) {
+          logger.warn('Application loaded in iframe from disallowed origin', {
+            referrer: document.referrer
+          });
+          
+          toast.error('This application cannot be displayed in an iframe from this origin for security reasons.');
+          
+          // Attempt to break out of iframe if not from allowed origin
+          // This will now be a more controlled attempt that won't cause console errors
+          if (window.top.location.href !== window.self.location.href) {
+            const newLocation = window.self.location.href;
+            // Use user-triggered timeout to avoid navigation blocking
+            setTimeout(() => {
+              try {
+                window.top.location.href = newLocation;
+              } catch (e) {
+                // If blocked, at least we tried and didn't throw an error
+                logger.info('Navigation to top frame was blocked by browser security policy');
+              }
+            }, 100);
+          }
+        } else {
+          logger.info('Application loaded in iframe from allowed origin', {
+            referrer: document.referrer
+          });
+        }
       } catch (e) {
-        logger.error('Failed to break out of iframe - possible clickjacking risk', { error: e });
+        // Just log the error without showing a toast to users
+        logger.error('Failed to check iframe origin - possible cross-origin restriction', { 
+          error: e,
+          message: e instanceof Error ? e.message : 'Unknown error'
+        });
       }
     }
     
-    // Add event listener for security violations
-    window.addEventListener('securitypolicyviolation', (e) => {
+    // Add event listener for security violations with better error handling
+    const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
       logger.warn('CSP violation detected', {
         directive: e.violatedDirective,
         blockedURI: e.blockedURI,
@@ -50,11 +84,13 @@ export const SecurityInitializer = () => {
           (e.violatedDirective === 'script-src' || e.violatedDirective === 'frame-src')) {
         toast.error('Security policy violation detected and blocked');
       }
-    });
+    };
+    
+    window.addEventListener('securitypolicyviolation', handleSecurityViolation);
     
     return () => {
       // Clean up event listeners
-      window.removeEventListener('securitypolicyviolation', () => {});
+      window.removeEventListener('securitypolicyviolation', handleSecurityViolation);
     };
   }, []);
   

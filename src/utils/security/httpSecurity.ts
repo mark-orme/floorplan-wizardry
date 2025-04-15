@@ -15,9 +15,8 @@ export function applySecurityMetaTags(): void {
   
   const metaTags = [
     { httpEquiv: 'X-Content-Type-Options', content: 'nosniff' },
-    { httpEquiv: 'X-Frame-Options', content: 'DENY' },
-    { httpEquiv: 'Strict-Transport-Security', content: 'max-age=31536000; includeSubDomains' },
     { name: 'referrer', content: 'no-referrer' }
+    // X-Frame-Options and HSTS should be set via actual HTTP headers, not meta tags
   ];
   
   metaTags.forEach(tagInfo => {
@@ -70,7 +69,6 @@ export function addSecurityHeaders(options: RequestInit = {}): RequestInit {
   
   // Add security headers
   headers.append('X-Content-Type-Options', 'nosniff');
-  headers.append('X-Frame-Options', 'DENY');
   
   // Add CSRF token if available
   const csrfToken = getCsrfToken();
