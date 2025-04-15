@@ -1,7 +1,4 @@
 
-/**
- * Hook for cancelling the drawing tool and handling ESC key
- */
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { InputMethod } from './useLineState';
@@ -18,10 +15,6 @@ interface UseToolCancellationProps {
   snapEnabled: boolean;
 }
 
-/**
- * Hook for cancelling the current drawing operation
- * Also handles toggling grid snapping
- */
 export const useToolCancellation = ({
   fabricCanvasRef,
   isDrawing,
@@ -33,9 +26,9 @@ export const useToolCancellation = ({
   toggleSnap,
   snapEnabled
 }: UseToolCancellationProps) => {
-  // Function to cancel the current drawing operation
-  const cancelDrawing = useCallback(() => {
-    if (!isDrawing) return;
+  // Function to cancel the current drawing operation - now returns a boolean
+  const cancelDrawing = useCallback((): boolean => {
+    if (!isDrawing) return false;
     
     try {
       // If we have a current line being drawn, remove it
@@ -61,8 +54,13 @@ export const useToolCancellation = ({
       resetDrawingState();
       
       console.log(`Drawing cancelled via ESC key (input: ${inputMethod})`);
+      
+      // Return true to indicate successful cancellation
+      return true;
     } catch (error) {
       console.error('Error cancelling drawing:', error);
+      // Return false if cancellation fails
+      return false;
     }
   }, [
     fabricCanvasRef,
