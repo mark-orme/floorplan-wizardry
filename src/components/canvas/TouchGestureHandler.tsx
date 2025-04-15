@@ -28,7 +28,7 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
   // Use Apple Pencil support hook
   const { 
     isPencilMode, 
-    isApplePencil, 
+    isApplePencil,
     processPencilTouchEvent 
   } = useApplePencilSupport({
     fabricCanvasRef,

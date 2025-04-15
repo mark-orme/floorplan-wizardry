@@ -1,4 +1,3 @@
-
 /**
  * Hook for Apple Pencil and stylus support in drawing tools
  * @module hooks/straightLineTool/useApplePencilSupport
@@ -58,6 +57,71 @@ export const useApplePencilSupport = ({
     }
   }, []);
   
+  /**
+   * Process a touch event to extract Apple Pencil data
+   * @param e Touch event to process
+   * @returns Object containing pencil data and detection status
+   */
+  const processPencilTouchEvent = useCallback((e: TouchEvent): { 
+    isApplePencil: boolean;
+    pressure: number;
+    touchType: string;
+  } => {
+    // Default values
+    let isApplePencil = false;
+    let pressure = 1;
+    let touchType = 'touch';
+    
+    try {
+      // Check if this is potentially an Apple Pencil touch
+      if (e.touches && e.touches[0]) {
+        const touch = e.touches[0] as any;
+        
+        // Apple Pencil provides force data on iOS
+        if (typeof touch.force !== 'undefined') {
+          pressure = touch.force;
+          
+          // Force values > 0 typically indicate stylus
+          if (pressure > 0) {
+            isApplePencil = true;
+            touchType = 'stylus';
+            
+            // Update pencil state
+            setPencilState(prev => ({
+              ...prev,
+              pressure,
+              // Other properties might not be available via touch API
+            }));
+            
+            setIsApplePencil(true);
+            setIsPencilMode(true);
+          }
+        }
+        
+        // Some browsers provide touchType property
+        if (touch.touchType && touch.touchType === 'stylus') {
+          isApplePencil = true;
+          touchType = 'stylus';
+          setIsApplePencil(true);
+          setIsPencilMode(true);
+        }
+        
+        // Radius is often smaller for stylus vs finger
+        if (touch.radiusX && touch.radiusY) {
+          const isSmallRadius = touch.radiusX < 10 && touch.radiusY < 10;
+          if (isSmallRadius) {
+            // Additional evidence of stylus
+            isApplePencil = isApplePencil || isSmallRadius;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting Apple Pencil:', error);
+    }
+    
+    return { isApplePencil, pressure, touchType };
+  }, []);
+  
   // Set up event listeners when the canvas is available
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
@@ -83,6 +147,7 @@ export const useApplePencilSupport = ({
     pencilState,
     isPencilMode,
     isApplePencil,
-    adjustedLineThickness
+    adjustedLineThickness,
+    processPencilTouchEvent
   };
 };
