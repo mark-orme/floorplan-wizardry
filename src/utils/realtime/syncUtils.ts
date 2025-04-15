@@ -2,7 +2,7 @@
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { SyncFloorPlan } from './types';
-import { subscribeSyncChannel, broadcastFloorPlanUpdate, isUpdateFromThisDevice, UPDATE_EVENT } from '@/utils/syncService';
+import { subscribeSyncChannel, broadcastFloorPlanUpdate, isUpdateFromThisDevice, UPDATE_EVENT, notifyPresenceChange } from '@/utils/syncService';
 
 /**
  * Create floor plan data for syncing

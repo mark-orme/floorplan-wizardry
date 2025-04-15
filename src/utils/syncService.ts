@@ -128,6 +128,19 @@ export const broadcastFloorPlanUpdate = (floorPlans: SyncFloorPlan[], userId?: s
 
 /**
  * Notify other users about presence change
+ * A simple function to broadcast presence without requiring a count parameter
+ */
+export const notifyPresenceChange = () => {
+  logger.info('Notifying about presence change');
+  // Just call broadcastPresenceUpdate with a default count of 1 (self)
+  broadcastPresenceUpdate(1);
+};
+
+/**
+ * Broadcast presence update to other users
+ * Sends presence information to other connected users
+ * 
+ * @param {number} count - The number of users to report
  */
 export const broadcastPresenceUpdate = (count: number) => {
   logger.info('Broadcasting presence update');
@@ -163,8 +176,8 @@ export default {
   broadcastFloorPlanUpdate,
   isUpdateFromThisDevice,
   broadcastPresenceUpdate,
+  notifyPresenceChange,
   SYNC_CHANNEL,
   UPDATE_EVENT,
   PRESENCE_EVENT
 };
-
