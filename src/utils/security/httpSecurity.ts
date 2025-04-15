@@ -1,4 +1,3 @@
-
 /**
  * HTTP Security Utilities
  * Functions for securing HTTP requests and responses
@@ -32,6 +31,9 @@ export function applySecurityMetaTags(): void {
       document.head.appendChild(meta);
     }
   });
+  
+  // Log successful application of security meta tags
+  logger.debug('Security meta tags applied to document head');
 }
 
 /**

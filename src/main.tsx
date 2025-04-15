@@ -38,13 +38,13 @@ Sentry.init({
   environment: import.meta.env.MODE,
   
   // Tracing
-  tracesSampleRate: 0.2, // Reduce to 20% of the transactions to avoid excessive requests
+  tracesSampleRate: 0.1, // Reduce to 10% of the transactions to avoid excessive requests
   // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
   tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/],
   
   // Session Replay
-  replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%
-  replaysOnErrorSampleRate: 1.0, // 100% when sampling sessions where errors occur
+  replaysSessionSampleRate: 0.05, // This sets the sample rate at 5%
+  replaysOnErrorSampleRate: 0.5, // 50% when sampling sessions where errors occur
   
   // Disable performance profiling to avoid document policy violations
   profilesSampleRate: 0, 
@@ -72,7 +72,9 @@ Sentry.init({
     const error = hint?.originalException;
     if (error instanceof Error && 
         (error.message.includes('Content Security Policy') || 
-         error.message.includes('Refused to connect'))) {
+         error.message.includes('Refused to connect') ||
+         error.message.includes('violates'))) {
+      // Don't report CSP errors to avoid noise
       return null;
     }
     

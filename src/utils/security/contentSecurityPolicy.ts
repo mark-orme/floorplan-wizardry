@@ -15,7 +15,8 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'connect-src': [
     "'self'", 
     "https://*.supabase.co", 
-    "wss://*.lovable.dev", 
+    "wss://*.lovable.dev",
+    "https://*.lovable.dev",
     "https://*.sentry.io",
     "https://o4508914471927808.ingest.de.sentry.io",
     "wss://ws-eu.pusher.com",
@@ -38,7 +39,8 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'connect-src': [
     "'self'", 
     "https://*.supabase.co", 
-    "wss://*.lovable.dev", 
+    "wss://*.lovable.dev",
+    "https://*.lovable.dev", 
     "https://*.sentry.io",
     "https://o4508914471927808.ingest.de.sentry.io",
     "wss://ws-eu.pusher.com",
