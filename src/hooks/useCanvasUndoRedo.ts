@@ -1,4 +1,3 @@
-
 /**
  * Hook for efficient undo/redo functionality with canvas snapshots
  * Uses throttled/debounced state capture for better performance
