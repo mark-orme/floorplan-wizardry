@@ -82,7 +82,10 @@ export const runToolbarDiagnostics = (
     // Log results to Sentry
     if (issues.length > 0) {
       captureMessage("Toolbar diagnostics found issues", "toolbar-diagnostics", {
-        tags: { component: "toolbarDiagnostics", critical: issues.length > 3 ? "true" : "false" },
+        tags: { 
+          component: "toolbarDiagnostics", 
+          critical: issues.length > 3 ? "true" : "false" 
+        },
         extra: { 
           issues,
           currentTool,
@@ -172,7 +175,10 @@ export const setupToolbarMonitoring = (
       // Report critical issues after multiple consecutive failures
       if (state.consecutiveFailures >= 3 && !state.hasReportedCritical) {
         captureMessage("Critical toolbar issues detected", "toolbar-critical", {
-          tags: { component: "toolbarMonitoring", critical: true },
+          tags: { 
+            component: "toolbarMonitoring", 
+            critical: "true" // Convert boolean to string
+          },
           extra: { 
             issues: result.issues,
             state,

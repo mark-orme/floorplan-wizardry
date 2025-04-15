@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -148,7 +149,11 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
           `Tool changed with connection issues: ${newTool}`,
           "tool-connection-warning", 
           {
-            tags: { component: "CanvasToolbar", tool: newTool, warning: true },
+            tags: { 
+              component: "CanvasToolbar", 
+              tool: newTool, 
+              warning: "true" // Convert boolean to string
+            },
             extra: { 
               issues: verificationResult.issues,
               previousTool: tool
@@ -182,7 +187,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
             
             // Report validation failure
             captureError(error as Error, "straight-line-validation-error", {
-              tags: { component: "CanvasToolbar", critical: true },
+              tags: { component: "CanvasToolbar", critical: "true" }, // Convert boolean to string
               extra: { previousTool, newTool }
             });
           }
@@ -193,7 +198,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       logger.error(`Failed to change tool to ${newTool}`, { error });
       
       captureError(error as Error, "tool-change-error", {
-        tags: { component: "CanvasToolbar", critical: true },
+        tags: { component: "CanvasToolbar", critical: "true" }, // Convert boolean to string
         extra: { previousTool, newTool }
       });
     }
@@ -448,3 +453,4 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     </div>
   );
 };
+
