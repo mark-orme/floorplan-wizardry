@@ -1,5 +1,5 @@
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
@@ -8,6 +8,8 @@ import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
 import { ToolbarContainer } from "./ToolbarContainer";
 import { CanvasEventManager } from "./CanvasEventManager";
+import { useCanvasAutosave } from "@/hooks/useCanvasAutosave";
+import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 
 /**
  * Drawing manager component
@@ -41,6 +43,25 @@ export const DrawingManager = () => {
     historyRef
   });
   
+  // Initialize offline support
+  const { isOnline } = useOfflineSupport();
+  
+  // Initialize autosave
+  const { saveCanvas } = useCanvasAutosave({
+    canvas,
+    onSave: (success) => {
+      if (success) {
+        console.log("Canvas autosaved successfully");
+      }
+    },
+    onLoad: (success) => {
+      if (success) {
+        // After loading from autosave, update the history state
+        updateHistoryState();
+      }
+    }
+  });
+  
   // Update canUndo/canRedo based on history state
   const updateHistoryState = () => {
     setCanUndo(historyRef.current.past.length > 0);
@@ -51,12 +72,16 @@ export const DrawingManager = () => {
   const handleUndo = () => {
     undo();
     updateHistoryState();
+    // Save the state after undoing
+    setTimeout(saveCanvas, 100);
   };
 
   // Enhanced redo function with state update
   const handleRedo = () => {
     redo();
     updateHistoryState();
+    // Save the state after redoing
+    setTimeout(saveCanvas, 100);
   };
   
   // Handle zoom
@@ -92,6 +117,9 @@ export const DrawingManager = () => {
     // Update history state
     updateHistoryState();
     
+    // Save the cleared state
+    saveCanvas();
+    
     toast('Canvas cleared');
   };
   
@@ -113,6 +141,9 @@ export const DrawingManager = () => {
     // Update history state
     updateHistoryState();
     
+    // Save after deletion
+    saveCanvas();
+    
     toast(`Deleted ${selectedObjects.length} object(s)`);
   };
   
@@ -133,6 +164,16 @@ export const DrawingManager = () => {
     toast(showGrid ? 'Grid hidden' : 'Grid shown');
   };
   
+  // Notify user about offline status
+  useEffect(() => {
+    if (!isOnline) {
+      toast.info(
+        'You are currently offline. Don\'t worry - your drawings will be saved locally.',
+        { duration: 5000, id: 'offline-notice' }
+      );
+    }
+  }, [isOnline]);
+  
   return (
     <div className="flex flex-col gap-2">
       <ToolbarContainer 
@@ -152,6 +193,7 @@ export const DrawingManager = () => {
         onLineColorChange={setLineColor}
         canUndo={canUndo}
         canRedo={canRedo}
+        isOffline={!isOnline}
       />
       
       {canvas && (
@@ -166,6 +208,7 @@ export const DrawingManager = () => {
             undo={handleUndo}
             redo={handleRedo}
             deleteSelectedObjects={deleteSelectedObjects}
+            onDrawingComplete={saveCanvas}
           />
           
           <SimpleGrid
@@ -177,6 +220,16 @@ export const DrawingManager = () => {
             }}
           />
         </>
+      )}
+      
+      {!isOnline && (
+        <div className="fixed bottom-4 left-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md shadow-md z-50 flex items-center">
+          <span className="relative flex h-3 w-3 mr-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+          </span>
+          <span>Offline Mode - Your work is saved locally</span>
+        </div>
       )}
     </div>
   );
