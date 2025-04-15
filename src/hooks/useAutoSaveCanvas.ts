@@ -124,11 +124,8 @@ export const useAutoSaveCanvas = ({
   }, [canvas, canvasId, setSavedCanvas, setSavedTimestamp, onSave]);
   
   // Create the debounced function correctly
-  // This is where the error was - we were passing an argument to debounce() incorrectly
   const debouncedSave = useRef(
-    debounce(() => {
-      saveCanvas();
-    }, debounceMs)
+    debounce(saveCanvas, debounceMs)
   );
   
   // Restore canvas state
