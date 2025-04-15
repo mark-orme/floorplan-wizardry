@@ -36,7 +36,8 @@ export const SecurityInitializer = () => {
           const parentUrl = new URL(document.referrer);
           const isAllowedOrigin = 
             parentUrl.hostname.endsWith('lovable.dev') || 
-            parentUrl.hostname === window.location.hostname;
+            parentUrl.hostname === window.location.hostname ||
+            parentUrl.hostname.includes('lovable.app');
           
           if (!isAllowedOrigin) {
             logger.warn('Application loaded in iframe from disallowed origin', {
@@ -59,17 +60,27 @@ export const SecurityInitializer = () => {
       }
     }
     
-    // Add event listener for security violations with better error handling
+    // Filter CSP violations to reduce noise
     const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
-      logger.warn('CSP violation detected', {
-        directive: e.violatedDirective,
-        blockedURI: e.blockedURI,
-        originalPolicy: e.originalPolicy
-      });
+      // Skip logging Sentry and Pusher connection errors to reduce noise
+      const skipLogging = 
+        (e.blockedURI.includes('sentry.io') || 
+         e.blockedURI.includes('pusher.com')) && 
+        e.violatedDirective === 'connect-src';
+      
+      if (!skipLogging) {
+        logger.warn('CSP violation detected', {
+          directive: e.violatedDirective,
+          blockedURI: e.blockedURI,
+          originalPolicy: e.originalPolicy
+        });
+      }
       
       // Only show toast for significant violations in production
       if (isProduction && 
-          (e.violatedDirective === 'script-src' || e.violatedDirective === 'frame-src')) {
+          (e.violatedDirective === 'script-src' || e.violatedDirective === 'frame-src') &&
+          !e.blockedURI.includes('sentry.io') &&
+          !e.blockedURI.includes('pusher.com')) {
         toast.error('Security policy violation detected and blocked');
       }
     };

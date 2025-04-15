@@ -20,7 +20,9 @@ export const PRODUCTION_CSP_DIRECTIVES = {
     "https://*.sentry.io",
     "https://o4508914471927808.ingest.de.sentry.io",
     "wss://ws-eu.pusher.com",
-    "https://sockjs-eu.pusher.com"
+    "https://sockjs-eu.pusher.com",
+    "wss://*.pusher.com",
+    "https://*.pusher.com"
   ],
   'frame-src': ["'self'", "https://*.lovable.dev"],
   'object-src': ["'none'"],
@@ -45,6 +47,8 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://o4508914471927808.ingest.de.sentry.io",
     "wss://ws-eu.pusher.com",
     "https://sockjs-eu.pusher.com",
+    "wss://*.pusher.com",
+    "https://*.pusher.com",
     "ws:", 
     "http://localhost:*"
   ],

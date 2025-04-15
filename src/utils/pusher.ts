@@ -23,23 +23,47 @@ export const getPusher = (): Pusher => {
   if (!pusherInstance) {
     logger.info('Initializing Pusher connection');
     
-    pusherInstance = new Pusher(PUSHER_KEY, {
-      cluster: PUSHER_CLUSTER,
-      forceTLS: true
-    });
+    // Add logging for CSP failures
+    const handlePusherError = (error: any) => {
+      if (error?.message?.includes('Refused to connect') || 
+          error?.message?.includes('violated Content Security Policy directive')) {
+        logger.warn('Pusher connection blocked by CSP - check CSP settings to allow Pusher domains');
+      } else {
+        logger.error('Pusher connection error:', error);
+      }
+    };
     
-    // Add connection status handlers
-    pusherInstance.connection.bind('connected', () => {
-      logger.info('Connected to Pusher');
-    });
-    
-    pusherInstance.connection.bind('disconnected', () => {
-      logger.info('Disconnected from Pusher');
-    });
-    
-    pusherInstance.connection.bind('error', (err: any) => {
-      logger.error('Pusher connection error:', err);
-    });
+    // Configure Pusher with error handling
+    try {
+      pusherInstance = new Pusher(PUSHER_KEY, {
+        cluster: PUSHER_CLUSTER,
+        forceTLS: true,
+        enabledTransports: ['ws', 'wss'],
+        wsHost: 'ws-eu.pusher.com',
+        httpHost: 'sockjs-eu.pusher.com'
+      });
+      
+      // Add connection status handlers
+      pusherInstance.connection.bind('connected', () => {
+        logger.info('Connected to Pusher');
+      });
+      
+      pusherInstance.connection.bind('disconnected', () => {
+        logger.info('Disconnected from Pusher');
+      });
+      
+      pusherInstance.connection.bind('error', handlePusherError);
+    } catch (err) {
+      logger.error('Failed to initialize Pusher:', err);
+      // Create a dummy Pusher instance to prevent errors
+      pusherInstance = {} as Pusher;
+      pusherInstance.connection = {
+        bind: () => {},
+      } as any;
+      pusherInstance.subscribe = () => ({ bind: () => {} }) as any;
+      pusherInstance.unsubscribe = () => {};
+      pusherInstance.disconnect = () => {};
+    }
   }
   
   return pusherInstance;
