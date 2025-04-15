@@ -1,65 +1,59 @@
 
 /**
- * Hook for handling keyboard shortcuts for line drawing
- * @module hooks/straightLineTool/useLineKeyboardShortcuts
+ * Hook for keyboard shortcuts specific to the straight line tool
  */
-import { useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { toast } from 'sonner';
 
 interface UseLineKeyboardShortcutsProps {
   isActive: boolean;
   isDrawing: boolean;
-  cancelDrawing: () => void;
-  toggleGridSnapping: () => void;
+  cancelDrawing: () => boolean;
+  toggleGridSnapping: () => boolean;
   tool: DrawingMode;
 }
 
 /**
- * Hook for handling keyboard shortcuts for line tools
+ * Hook for keyboard shortcuts specific to the line tool
  */
-export function useLineKeyboardShortcuts({
+export const useLineKeyboardShortcuts = ({
   isActive,
   isDrawing,
   cancelDrawing,
   toggleGridSnapping,
   tool
-}: UseLineKeyboardShortcutsProps) {
-  // Handle keyboard shortcuts
+}: UseLineKeyboardShortcutsProps) => {
+  // Handle keyboard events - primarily for ESC to cancel and G for grid snapping
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Cancel drawing with Escape key
-    if (e.key === 'Escape' && isDrawing) {
-      cancelDrawing();
-    }
-    
-    // Only handle shortcuts when the line tool is active
     if (!isActive) return;
     
-    // Toggle grid snapping with 'g' key
-    if (e.key === 'g') {
-      toggleGridSnapping();
-      toast.info('Grid snapping toggled');
+    // Cancel drawing on Escape key
+    if (e.key === 'Escape') {
+      if (isDrawing) {
+        const cancelled = cancelDrawing();
+        if (cancelled) {
+          console.log('Drawing cancelled via keyboard shortcut');
+        }
+      }
     }
     
-    // Toggle angle snapping with 'a' key
-    if (e.key === 'a' && tool === DrawingMode.STRAIGHT_LINE) {
-      // This would be implemented with additional props
-      // toggleAngleSnapping();
-      // toast.info('Angle snapping toggled');
+    // Toggle grid snapping on G key
+    if (e.key === 'g' || e.key === 'G') {
+      const isEnabled = toggleGridSnapping();
+      console.log(`Grid snapping ${isEnabled ? 'enabled' : 'disabled'} via keyboard shortcut`);
     }
-  }, [isActive, isDrawing, cancelDrawing, toggleGridSnapping, tool]);
+  }, [isActive, isDrawing, cancelDrawing, toggleGridSnapping]);
   
-  // Set up keyboard event listeners
+  // Add and remove keyboard event listener
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    
-    // Clean up
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleKeyDown]);
+    if (isActive) {
+      window.addEventListener('keydown', handleKeyDown);
+      
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isActive, handleKeyDown]);
   
-  return {
-    handleKeyDown
-  };
-}
+  return { handleKeyDown };
+};
