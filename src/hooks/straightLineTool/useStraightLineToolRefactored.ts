@@ -72,52 +72,21 @@ export const useStraightLineToolRefactored = ({
   });
 
   // Custom function to adapt the snapLineToGrid function for different signatures
-  const adaptedSnapLineToGrid = (lineOrStart: Line | Point, end?: Point) => {
+  const adaptedSnapLineToGrid = (start: Point, end: Point) => {
     try {
-      if (end) {
-        // Called with two points
+      if (snapEnabled) {
         return {
-          start: snapPointToGrid(lineOrStart as Point),
+          start: snapPointToGrid(start),
           end: snapPointToGrid(end)
         };
-      } else if (lineOrStart instanceof Line) {
-        // Called with a Line object
-        const line = lineOrStart;
-        const x1 = line.x1 || 0;
-        const y1 = line.y1 || 0;
-        const x2 = line.x2 || 0;
-        const y2 = line.y2 || 0;
-        
-        // Snap both endpoints
-        const snappedStart = snapPointToGrid({ x: x1, y: y1 });
-        const snappedEnd = snapPointToGrid({ x: x2, y: y2 });
-        
-        // Update line with snapped points
-        line.set({
-          x1: snappedStart.x,
-          y1: snappedStart.y,
-          x2: snappedEnd.x,
-          y2: snappedEnd.y
-        });
-        
-        // Log successful snapping for debugging
-        logDrawingEvent('Line snapped to grid', 'line-snap', {
-          before: { x1, y1, x2, y2 },
-          after: { x1: snappedStart.x, y1: snappedStart.y, x2: snappedEnd.x, y2: snappedEnd.y }
-        });
-      } else {
-        reportDrawingError(new Error('Invalid arguments to adaptedSnapLineToGrid'), 'snap-line', {
-          input: { type: typeof lineOrStart, hasEnd: end !== undefined }
-        });
       }
+      return { start, end };
     } catch (error) {
       reportDrawingError(error, 'snap-line-error', {
-        input: { type: typeof lineOrStart, isLine: lineOrStart instanceof Line }
+        input: { startPoint: start, endPoint: end }
       });
       // Return original values if there's an error to prevent crashing
-      if (end) {
-        return { start: lineOrStart as Point, end };
-      }
+      return { start, end };
     }
   };
 

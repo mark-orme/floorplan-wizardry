@@ -44,6 +44,9 @@ export const useToolCancellation = ({
         fabricCanvasRef.current.renderAll();
       }
       
+      // Clear the current line reference to avoid artifacts
+      currentLineRef.current = null;
+      
       // Remove distance tooltip
       if (distanceTooltipRef.current) {
         const parent = distanceTooltipRef.current.parentElement;

@@ -27,7 +27,7 @@ interface UseLineToolHandlersProps {
   snapToAngle: boolean;
   snapAngleDeg: number;
   snapEnabled: boolean;
-  snapLineToGrid: (lineOrStart: Line | Point, end?: Point) => any;
+  snapLineToGrid: (start: Point, end: Point) => { start: Point, end: Point };
   inputMethod: InputMethod;
   logDrawingEvent: (message: string, eventType: string, data?: any) => void;
 }
@@ -131,7 +131,7 @@ export const useLineToolHandlers = ({
     
     try {
       // Apply grid snapping immediately to the starting point
-      const snappedPoint = snapEnabled ? snapLineToGrid(point) : point;
+      const snappedPoint = snapEnabled ? snapLineToGrid(point, point).start : point;
       
       // Store starting point
       setStartPoint(snappedPoint);
@@ -217,7 +217,9 @@ export const useLineToolHandlers = ({
       
       // Apply grid snapping if enabled
       if (snapEnabled) {
-        endPoint = snapLineToGrid(startPoint, endPoint).end;
+        const snappedPoints = snapLineToGrid(startPoint, endPoint);
+        // Only update end point, keep start point fixed
+        endPoint = snappedPoints.end;
       }
       
       // Update line coordinates
@@ -226,7 +228,7 @@ export const useLineToolHandlers = ({
         y2: endPoint.y
       });
       
-      // Update the distance tooltip
+      // Update the distance tooltip on every frame
       displayDistanceTooltip(startPoint, endPoint);
       
       // Render changes
@@ -261,10 +263,6 @@ export const useLineToolHandlers = ({
       // Apply final snapping to end point
       let endPoint = { ...point };
       
-      if (snapEnabled) {
-        endPoint = snapLineToGrid(startPoint, endPoint).end;
-      }
-      
       // Apply angle snapping for final position if enabled
       if (snapToAngle) {
         const angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x) * (180 / Math.PI);
@@ -280,6 +278,13 @@ export const useLineToolHandlers = ({
           x: startPoint.x + distance * Math.cos(radians),
           y: startPoint.y + distance * Math.sin(radians)
         };
+      }
+      
+      // Apply grid snapping if enabled
+      if (snapEnabled) {
+        const snappedPoints = snapLineToGrid(startPoint, endPoint);
+        // Only update end point, keep start point fixed
+        endPoint = snappedPoints.end;
       }
       
       // Final update to the line
@@ -303,6 +308,9 @@ export const useLineToolHandlers = ({
       if (saveCurrentState) {
         saveCurrentState();
       }
+      
+      // Clear the current line reference to avoid artifacts
+      setCurrentLine(null);
       
       // Trigger canvas update
       canvas.renderAll();
@@ -346,7 +354,8 @@ export const useLineToolHandlers = ({
     snapLineToGrid,
     snapToAngle,
     snapAngleDeg,
-    distanceTooltipRef
+    distanceTooltipRef,
+    setCurrentLine
   ]);
   
   return {
