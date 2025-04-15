@@ -15,13 +15,13 @@
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
+): () => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   
-  return function(...args: Parameters<T>): void {
+  return function(): void {
     const later = () => {
       timeout = null;
-      func(...args);
+      func();
     };
     
     if (timeout !== null) {
@@ -42,14 +42,14 @@ export function debounce<T extends (...args: any[]) => any>(
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
+): () => void {
   let lastCall = 0;
   
-  return function(...args: Parameters<T>): void {
+  return function(): void {
     const now = Date.now();
     if (now - lastCall < wait) return;
     
     lastCall = now;
-    func(...args);
+    func();
   };
 }

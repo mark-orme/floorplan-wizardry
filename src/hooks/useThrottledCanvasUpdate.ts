@@ -36,24 +36,30 @@ export function useThrottledCanvasUpdate<T extends (...args: any[]) => any>(
   
   // Create throttled version for continuous updates (e.g., during drag)
   const throttledUpdate = useCallback(
-    throttle((...args: Parameters<T>) => {
-      updateFnRef.current(...args);
-    }, throttleMs),
+    () => {
+      const throttledFn = throttle(() => {
+        updateFnRef.current();
+      }, throttleMs);
+      throttledFn();
+    },
     [throttleMs]
   );
   
   // Create debounced version for final update (e.g., after drag ends)
   const debouncedUpdate = useCallback(
-    debounce((...args: Parameters<T>) => {
-      updateFnRef.current(...args);
-    }, debounceMs),
+    () => {
+      const debouncedFn = debounce(() => {
+        updateFnRef.current();
+      }, debounceMs);
+      debouncedFn();
+    },
     [debounceMs]
   );
   
   // Hybrid function that uses both throttling and debouncing
-  const throttledCanvasUpdate = useCallback((...args: Parameters<T>) => {
-    throttledUpdate(...args);
-    debouncedUpdate(...args);
+  const throttledCanvasUpdate = useCallback(() => {
+    throttledUpdate();
+    debouncedUpdate();
   }, [throttledUpdate, debouncedUpdate]);
   
   return {
