@@ -55,7 +55,7 @@ export const SecurityInitializer = ({ forceRefresh = false }: SecurityInitialize
     // Immediately apply the full CSP
     applyFullCSP();
     
-    // Apply additional security headers
+    // Apply additional security headers (excluding X-Frame-Options which must be via HTTP header)
     applySecurityMetaTags();
     
     // Log initialization

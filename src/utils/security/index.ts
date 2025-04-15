@@ -204,11 +204,11 @@ export const Security = {
     },
     applySecurityMetaTags: () => {
       if (typeof document !== 'undefined') {
-        // Define security meta tags
+        // Define security meta tags (removing X-Frame-Options which must be set via HTTP header)
         const securityTags = [
           { httpEquiv: 'X-Content-Type-Options', content: 'nosniff' },
-          { httpEquiv: 'X-Frame-Options', content: 'DENY' },
           { name: 'referrer', content: 'no-referrer' }
+          // X-Frame-Options removed as it can only be set via HTTP header
         ];
         
         // Add meta tags to document head
@@ -259,11 +259,7 @@ export function initializeSecurity(): void {
     metaReferrer.content = 'no-referrer';
     document.head.appendChild(metaReferrer);
     
-    // Block iframe embedding via CSP
-    const metaFrameOptions = document.createElement('meta');
-    metaFrameOptions.httpEquiv = 'X-Frame-Options';
-    metaFrameOptions.content = 'DENY';
-    document.head.appendChild(metaFrameOptions);
+    // Note: X-Frame-Options cannot be set via meta tags, only HTTP headers
     
     console.info('Security features initialized');
   }

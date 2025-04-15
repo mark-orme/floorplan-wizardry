@@ -1,3 +1,4 @@
+
 /**
  * HTTP Security Utilities
  * Functions for securing HTTP requests and responses
@@ -8,6 +9,7 @@ import logger from '@/utils/logger';
 
 /**
  * Apply security related meta tags to document head
+ * Note: X-Frame-Options is excluded as it can only be set via HTTP headers
  */
 export function applySecurityMetaTags(): void {
   if (typeof document === 'undefined') return;
@@ -15,7 +17,7 @@ export function applySecurityMetaTags(): void {
   const metaTags = [
     { httpEquiv: 'X-Content-Type-Options', content: 'nosniff' },
     { name: 'referrer', content: 'no-referrer' }
-    // X-Frame-Options and HSTS should be set via actual HTTP headers, not meta tags
+    // X-Frame-Options should only be set via actual HTTP headers, not meta tags
   ];
   
   metaTags.forEach(tagInfo => {
