@@ -92,7 +92,6 @@ export const optimizeCanvasPerformance = (canvas: FabricCanvas): void => {
   
   // Performance configuration
   canvas.enableRetinaScaling = true;
-  canvas.antialiase = true;
   canvas.skipOffscreen = true;
   
   // Use optimized render on specific events

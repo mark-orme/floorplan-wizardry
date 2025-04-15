@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineTool";
 import { useCanvasKeyboardShortcuts } from "@/hooks/canvas/useCanvasKeyboardShortcuts";
@@ -109,9 +109,9 @@ export const CanvasEventManager = ({
       canvas.freeDrawingBrush.width = isApplePencil ? adjustedLineThickness : lineThickness;
       
       // Improve brush smoothness
-      if (canvas.freeDrawingBrush.decimate) {
-        // Simplify path for better performance
-        canvas.freeDrawingBrush.decimate = 2;
+      if (canvas.freeDrawingBrush instanceof PencilBrush) {
+        // Simplify path for better performance (TypeScript safe)
+        (canvas.freeDrawingBrush as any).decimate = 2;
       }
     }
     
