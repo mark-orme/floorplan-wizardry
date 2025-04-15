@@ -20,5 +20,17 @@ export * from './fabricPath';
 // Re-export from geometry utilities
 export * from './geometry';
 
-// Re-export grid utilities
+// Re-export grid utilities with explicit naming
+export {
+  snapPointToGrid, 
+  snapLineToGrid,
+  snapLineToStandardAngles,
+  snapToAngle,
+  isPointOnGrid,
+  getNearestGridPoint,
+  distanceToGrid,
+  distanceToGridLine
+} from './grid/exports';
+
+// Re-export remaining grid utilities
 export * from './grid/exports';
