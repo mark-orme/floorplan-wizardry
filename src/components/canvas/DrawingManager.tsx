@@ -4,15 +4,14 @@ import { Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasController } from "@/components/canvas/controller/CanvasController";
 import { toast } from "sonner";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { useAutoSaveCanvas } from "@/hooks/useAutoSaveCanvas"; 
-import { useRestorePrompt } from "@/hooks/useRestorePrompt"; 
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
-import { RestoreDrawingPrompt } from "./RestoreDrawingPrompt";
 import { DrawingControls } from "./DrawingControls";
 import { OfflineIndicator } from "./OfflineIndicator";
+import { GridLayerManager } from "./GridLayerManager";
+import { RestorePromptManager } from "./RestorePromptManager";
 
 /**
  * Drawing manager component
@@ -52,14 +51,7 @@ export const DrawingManager = () => {
   // Initialize offline support
   const { isOnline } = useOfflineSupport({
     canvas, 
-    canvasId,
-    onStatusChange: (status) => {
-      console.log('Online status changed:', status);
-    },
-    onReconnect: async () => {
-      // When coming back online, attempt to sync
-      console.log('Reconnected, syncing data');
-    }
+    canvasId
   });
   
   // Initialize autosave using our refactored hook
@@ -76,24 +68,6 @@ export const DrawingManager = () => {
         // After loading from autosave, update the history state
         updateHistoryState();
         toast.success('Drawing restored successfully');
-      }
-    }
-  });
-  
-  // Initialize restore prompt hook
-  const { 
-    showPrompt, 
-    timeElapsed, 
-    isRestoring, 
-    handleRestore, 
-    handleDismiss 
-  } = useRestorePrompt({
-    canvas,
-    canvasId,
-    onRestore: (success) => {
-      if (success) {
-        // After restoring, update history state
-        updateHistoryState();
       }
     }
   });
@@ -210,12 +184,6 @@ export const DrawingManager = () => {
     }
   }, [isOnline]);
   
-  // Handle the restore action from prompt
-  const onRestoreFromPrompt = async () => {
-    const success = await restoreCanvas();
-    handleRestore(success);
-  };
-  
   return (
     <div className="flex flex-col gap-2">
       <DrawingControls 
@@ -251,13 +219,12 @@ export const DrawingManager = () => {
             undo={handleUndo}
             redo={handleRedo}
             deleteSelectedObjects={deleteSelectedObjects}
-            onDrawingComplete={saveCanvas}
+            onDrawingComplete={() => saveCanvas()}
           />
           
-          <SimpleGrid
+          <GridLayerManager
             canvas={canvas}
-            showControls={false}
-            defaultVisible={showGrid}
+            showGrid={showGrid}
             onGridCreated={(objects) => {
               gridLayerRef.current = objects;
             }}
@@ -266,12 +233,11 @@ export const DrawingManager = () => {
       )}
       
       {/* Restore drawing prompt */}
-      {showPrompt && (
-        <RestoreDrawingPrompt
-          timeElapsed={timeElapsed}
-          onRestore={onRestoreFromPrompt}
-          onDismiss={handleDismiss}
-          isRestoring={isRestoring}
+      {canvas && (
+        <RestorePromptManager
+          canvas={canvas}
+          canvasId={canvasId}
+          onRestore={() => restoreCanvas()}
         />
       )}
       

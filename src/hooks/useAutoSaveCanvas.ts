@@ -168,7 +168,6 @@ export const useAutoSaveCanvas = ({
         gridObjects.forEach(obj => canvas.sendToBack(obj));
         
         canvas.renderAll();
-        toast.success('Your drawing has been restored');
         
         if (onRestore) onRestore(true);
       });
@@ -180,7 +179,6 @@ export const useAutoSaveCanvas = ({
         operation: 'restoreCanvas',
         context: { canvasId }
       });
-      toast.error('Failed to restore your drawing');
       
       if (onRestore) onRestore(false);
       return false;
