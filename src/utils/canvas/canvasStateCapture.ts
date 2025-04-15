@@ -1,3 +1,4 @@
+
 import { Canvas as FabricCanvas } from 'fabric';
 
 /**
@@ -10,7 +11,7 @@ export const captureCanvasState = (canvas: FabricCanvas): string => {
   
   try {
     // Serialize canvas to JSON, excluding grid objects
-    const json = canvas.toJSON(['objectType']);
+    const json = canvas.toJSON();
     const jsonString = JSON.stringify(json);
     return jsonString;
   } catch (error) {

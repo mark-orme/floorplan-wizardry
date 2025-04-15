@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       telemetry: false,
       sourcemaps: {
-        include: ['./dist']
+        assets: ['./dist/**/*']
       },
       release: {
         name: process.env.RELEASE_VERSION || 'development'

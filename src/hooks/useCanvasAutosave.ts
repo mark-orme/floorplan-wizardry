@@ -36,7 +36,7 @@ export function useCanvasAutosave({
     
     try {
       setIsSaving(true);
-      const json = canvas.toJSON(['objectType']);
+      const json = canvas.toJSON();
       await saveCanvasToIDB(canvasId, json);
       onSave?.(true);
     } catch (error) {
@@ -103,7 +103,7 @@ export function useCanvasAutosave({
     
     // Add event listeners
     saveEvents.forEach(event => {
-      canvas.on(event as any, handleChange);
+      canvas.on(event, handleChange);
     });
     
     // Try to load saved state on mount
@@ -115,7 +115,7 @@ export function useCanvasAutosave({
     return () => {
       if (canvas) {
         saveEvents.forEach(event => {
-          canvas.off(event as any, handleChange);
+          canvas.off(event, handleChange);
         });
       }
     };
