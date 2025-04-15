@@ -10,9 +10,6 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:coverage": "vitest run --coverage"
-}
-
-
   },
   "dependencies": {
     "@commitlint/cli": "^19.8.0",
