@@ -72,6 +72,20 @@ export function useDrawingTool(): UseDrawingToolResult {
   const [tool, setToolState] = useState<DrawingTool>(DrawingMode.SELECT);
   // Drawing in progress state
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  // Track tool usage metrics
+  const toolUsageRef = useRef<{
+    toolChanges: Record<string, number>;
+    lastToolChange: string;
+    drawingsStarted: number;
+    drawingsCompleted: number;
+    drawingsCancelled: number;
+  }>({
+    toolChanges: {},
+    lastToolChange: Date.now().toString(),
+    drawingsStarted: 0,
+    drawingsCompleted: 0,
+    drawingsCancelled: 0
+  });
   
   // Set Sentry context for the component
   useEffect(() => {
@@ -83,6 +97,12 @@ export function useDrawingTool(): UseDrawingToolResult {
       currentTool: tool,
       isDrawing,
       timestamp: new Date().toISOString()
+    });
+    
+    // Set detailed tool usage metrics
+    Sentry.setContext("toolUsageMetrics", {
+      ...toolUsageRef.current,
+      timeSinceLastToolChange: Date.now() - parseInt(toolUsageRef.current.lastToolChange)
     });
     
     return () => {
@@ -131,6 +151,22 @@ export function useDrawingTool(): UseDrawingToolResult {
     });
     
     if (isValid) {
+      // Track tool usage
+      toolUsageRef.current.toolChanges[newTool] = (toolUsageRef.current.toolChanges[newTool] || 0) + 1;
+      toolUsageRef.current.lastToolChange = Date.now().toString();
+      
+      // Add a breadcrumb for tool change
+      Sentry.addBreadcrumb({
+        category: 'tool',
+        message: `Changed tool from ${tool} to ${newTool}`,
+        level: 'info',
+        data: {
+          previousTool: tool,
+          newTool,
+          totalToolChanges: Object.values(toolUsageRef.current.toolChanges).reduce((a, b) => a + b, 0)
+        }
+      });
+      
       setToolState(newTool);
       // Show success message with tool name
       toast.success(`Changed to ${newTool} tool`);
@@ -147,6 +183,17 @@ export function useDrawingTool(): UseDrawingToolResult {
         allowedTools: Object.values(DrawingMode),
         timestamp: new Date().toISOString()
       });
+      
+      // Capture an exception for invalid tool
+      Sentry.captureException(new Error(`Invalid drawing tool selected: ${newTool}`), {
+        tags: {
+          errorType: 'invalidTool'
+        },
+        extra: {
+          invalidTool: newTool,
+          allowedTools: Object.values(DrawingMode)
+        }
+      });
     }
   }, [tool, isValidDrawingTool]);
   
@@ -161,13 +208,29 @@ export function useDrawingTool(): UseDrawingToolResult {
   const startDrawing = useCallback((point: { x: number; y: number }) => {
     setIsDrawing(true);
     
+    // Track metrics
+    toolUsageRef.current.drawingsStarted++;
+    
     // Set Sentry context for drawing start
     Sentry.setTag("action", "startDrawing");
     Sentry.setContext("drawingEvent", {
       event: "start",
       tool,
       point,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      drawingsStarted: toolUsageRef.current.drawingsStarted
+    });
+    
+    // Add breadcrumb for drawing start
+    Sentry.addBreadcrumb({
+      category: 'drawing',
+      message: `Started drawing with ${tool} tool`,
+      level: 'info',
+      data: {
+        tool,
+        point,
+        drawingsStarted: toolUsageRef.current.drawingsStarted
+      }
     });
     
     console.log('Started drawing with tool:', tool, 'at point:', point);
@@ -201,13 +264,29 @@ export function useDrawingTool(): UseDrawingToolResult {
   const endDrawing = useCallback((point: { x: number; y: number }) => {
     if (!isDrawing) return;
     
+    // Track metrics
+    toolUsageRef.current.drawingsCompleted++;
+    
     // Set Sentry context for drawing end
     Sentry.setTag("action", "endDrawing");
     Sentry.setContext("drawingEvent", {
       event: "end",
       tool,
       point,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      drawingsCompleted: toolUsageRef.current.drawingsCompleted
+    });
+    
+    // Add breadcrumb for drawing completion
+    Sentry.addBreadcrumb({
+      category: 'drawing',
+      message: `Completed drawing with ${tool} tool`,
+      level: 'info',
+      data: {
+        tool,
+        endPoint: point,
+        drawingsCompleted: toolUsageRef.current.drawingsCompleted
+      }
     });
     
     setIsDrawing(false);
@@ -223,12 +302,27 @@ export function useDrawingTool(): UseDrawingToolResult {
   const cancelDrawing = useCallback(() => {
     if (!isDrawing) return;
     
+    // Track metrics
+    toolUsageRef.current.drawingsCancelled++;
+    
     // Set Sentry context for drawing cancellation
     Sentry.setTag("action", "cancelDrawing");
     Sentry.setContext("drawingEvent", {
       event: "cancel",
       tool,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      drawingsCancelled: toolUsageRef.current.drawingsCancelled
+    });
+    
+    // Add breadcrumb for drawing cancellation
+    Sentry.addBreadcrumb({
+      category: 'drawing',
+      message: `Drawing cancelled with ${tool} tool`,
+      level: 'warning',
+      data: {
+        tool,
+        drawingsCancelled: toolUsageRef.current.drawingsCancelled
+      }
     });
     
     setIsDrawing(false);

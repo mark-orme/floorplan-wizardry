@@ -1,64 +1,81 @@
 
-# Hooks Directory
+# Hooks
 
-This directory contains React hooks used throughout the application for various functionality.
+## Overview
 
-## Structure
+This directory contains React hooks that provide reusable logic across the application. These hooks follow React's conventions and are designed to be composable, performant, and well-typed.
 
-- `canvas/` - Hooks related to canvas initialization and management
-- `drawing/` - General drawing-related hooks 
-- `straightLineTool/` - Specialized hooks for the straight line drawing tool
+## Core Hooks
 
-## Key Hooks
+### Canvas Hooks
 
-### Straight Line Tool
+- **useCanvasState**: Manages the state of the canvas, including selected tools, zoom level, and object selection.
+- **useCanvasInteraction**: Handles user interactions with the canvas like selection, deletion, and modification.
+- **useCanvasInitialization**: Manages the initialization of a Fabric.js canvas instance.
+- **useCanvasPan**: Implements panning functionality for navigating large canvases.
+- **useCanvasZoom**: Manages zoom functionality with mouse wheel and touch gestures.
 
-The straight line tool functionality has been refactored into smaller, composable hooks:
+### Drawing Hooks
 
-- `useStraightLineTool.ts` - Original implementation with all functionality in one hook
-- `useStraightLineToolRefactored.ts` - Refactored version that composes smaller hooks
-- `useLineState.ts` - Manages line drawing state
-- `useStraightLineEvents.ts` - Handles Fabric.js events for line drawing
-- `useLineKeyboardShortcuts.ts` - Keyboard shortcuts for line tools
-- `useLineToolHandlers.ts` - Core logic for handling line drawing
-- `useToolCancellation.ts` - Logic for canceling drawing operations
-- `useApplePencilSupport.ts` - Enhanced support for Apple Pencil and other stylus inputs
+- **useDrawingTool**: Provides a consistent interface for all drawing tools.
+- **useStraightLineTool**: Specialized hook for drawing straight lines with measurements.
+- **useWallDrawing**: Specialized hook for architectural wall drawing.
+- **useSnapToGrid**: Provides grid snapping functionality for precise drawing.
 
-### Input Handling
+### Data Hooks
 
-- `useMouseEvents.ts` - Abstracts mouse event handling for drawing tools
-- `usePointProcessing.ts` - Converts DOM events to canvas coordinates
-- `useStylusDetection.ts` - Detects and configures stylus input devices
+- **usePusherConnection**: Manages real-time connections with Pusher.
+- **useLocalStorage**: Manages persistent state in browser local storage.
+- **useFloorPlans**: Manages floor plan data and operations.
 
-## Usage Guidelines
+### UI Hooks
 
-### Composing Hooks
+- **useToolOperations**: Manages tool selection and operations.
+- **useKeyboardShortcuts**: Provides keyboard shortcut functionality.
+- **useContextMenu**: Manages context menu state and positioning.
 
-Our hook architecture follows a composable pattern where smaller, specialized hooks are combined to create more complex functionality. This approach:
+## Best Practices
 
-1. Improves testability by isolating functionality
-2. Enhances maintainability by reducing hook complexity
-3. Enables reuse of common functionality
+When creating hooks in this directory, follow these guidelines:
 
-### Apple Pencil Support
+1. **Single Responsibility**: Each hook should do one thing well.
+2. **Composability**: Hooks should be designed to work well together.
+3. **Performance**: Be mindful of excessive re-renders and memoize when appropriate.
+4. **Type Safety**: All hooks should be fully typed with TypeScript.
+5. **Error Handling**: Include appropriate error handling and logging.
+6. **Documentation**: Include JSDoc comments and usage examples.
 
-When using drawing tools with stylus support:
+## Monitoring
 
-1. Import and use `useApplePencilSupport` to handle pressure sensitivity
-2. Use the `processPencilTouchEvent` function to detect Apple Pencil events
-3. Consider grid snapping with `snapPencilPointToGrid` for precision
+Many hooks in this directory include Sentry integration for monitoring:
 
-Example:
+- Usage metrics
+- Performance tracking
+- Error reporting with context
+- User interaction breadcrumbs
 
-```typescript
-const { 
-  isPencilMode, 
-  isApplePencil, 
-  adjustedLineThickness 
-} = useApplePencilSupport({
-  fabricCanvasRef,
-  lineThickness
-});
+This helps us understand how the application is being used and identify issues.
 
-// Use adjustedLineThickness for pressure-sensitive drawing
+## Example Usage
+
+```tsx
+import { useDrawingTool } from '@/hooks/useDrawingTool';
+import { DrawingMode } from '@/constants/drawingModes';
+
+function MyComponent() {
+  const {
+    tool,
+    setTool,
+    startDrawing,
+    continueDrawing,
+    endDrawing,
+    isDrawing
+  } = useDrawingTool();
+  
+  const handleToolSelect = (newTool: DrawingMode) => {
+    setTool(newTool);
+  };
+  
+  // ... component logic and JSX
+}
 ```

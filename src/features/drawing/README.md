@@ -1,131 +1,91 @@
 
-# Drawing Tools Documentation
+# Drawing Feature
 
-This document outlines the usage patterns, design decisions, and best practices for the drawing tools within this application.
+## Overview
 
-## Tool Architecture
+The drawing feature provides interactive canvas-based tools for creating and manipulating vector and raster graphics. This module is designed for floor plan editing, architectural drawing, and general-purpose vector graphics creation.
 
-The drawing functionality follows a modular design pattern with clear separation of concerns:
+## Key Components
 
-```
-features/drawing/
-├── components/       # UI components for drawing tools
-├── hooks/            # Custom hooks for tool functionality
-├── state/            # State management for drawings
-├── tools/            # Individual drawing tool implementations
-├── utils/            # Utility functions for drawing operations
-└── types/            # TypeScript type definitions
-```
+### Tools
 
-## Rate Limiting Canvas Operations
+- **Selection Tool**: Select, move, resize and rotate objects
+- **Drawing Tool**: Freehand drawing with pressure sensitivity support
+- **Straight Line Tool**: Create precise straight lines with measurements
+- **Wall Tool**: Specialized tool for architectural walls with thickness
+- **Eraser Tool**: Remove drawing elements
+- **Hand Tool**: Pan and navigate around the canvas
 
-Canvas operations are rate-limited to prevent performance issues:
+### Utilities
 
-- **Real-time drawing**: Throttled at ~60fps (16ms)
-- **Shape manipulation**: Throttled at ~20fps (50ms)
-- **Expensive operations**: Debounced at 100ms
-- **Very expensive operations**: Debounced at 250ms
-- **Auto-save**: Debounced at 2000ms (2 seconds)
+- **Grid System**: Customizable grid with snapping capabilities
+- **Measurement System**: Real-time measurements for drawing operations
+- **Layer Management**: Organize drawings with multiple layers
+- **History Management**: Undo/redo support for all operations
 
-Example usage:
+## Technology
 
-```typescript
-import { createRateLimitedCanvasOperation } from '@/utils/canvas/rateLimit';
+The drawing feature is built using:
 
-// Create a rate-limited version of your function
-const updateCanvasState = createRateLimitedCanvasOperation(
-  (newState) => {
-    // Update canvas state logic
-  },
-  'expensiveOperation'
-);
+- **Fabric.js**: Core canvas manipulation library
+- **React**: Component-based UI architecture
+- **TypeScript**: Type-safe development
+- **Sentry**: Error tracking and performance monitoring
 
-// Use the rate-limited function directly
-updateCanvasState(newData);
-```
+## Usage
 
-## Error Handling
-
-Each drawing tool implements error handling with error boundaries:
+The drawing feature is typically used through the `CanvasApp` component, which provides a complete drawing environment. Individual tools can be accessed through the `Toolbar` component.
 
 ```tsx
-<ErrorBoundary componentName="PencilTool">
-  <PencilToolComponent />
-</ErrorBoundary>
-```
+import { CanvasApp } from "@/components/canvas/CanvasApp";
+import { Toolbar } from "@/components/canvas/Toolbar";
+import { DrawingMode } from "@/constants/drawingModes";
+import { useState } from "react";
 
-Additionally, all tool operations use structured error handling:
-
-```typescript
-try {
-  // Tool operation
-} catch (error) {
-  handleError(error, {
-    component: 'PencilTool',
-    operation: 'draw',
-    context: { /* relevant context */ }
-  });
+function DrawingPage() {
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineThickness, setLineThickness] = useState(2);
+  const [lineColor, setLineColor] = useState("#000000");
+  
+  return (
+    <div className="flex flex-col h-screen">
+      <Toolbar
+        activeTool={tool}
+        onToolChange={setTool}
+        lineThickness={lineThickness}
+        onLineThicknessChange={setLineThickness}
+        lineColor={lineColor}
+        onLineColorChange={setLineColor}
+      />
+      <div className="flex-1">
+        <CanvasApp 
+          tool={tool}
+          lineThickness={lineThickness}
+          lineColor={lineColor}
+        />
+      </div>
+    </div>
+  );
 }
 ```
 
-## Security Considerations
+## Architecture
 
-1. **Input Validation**: All user inputs are validated using Zod schemas
-2. **Content Sanitization**: HTML content is sanitized before rendering
-3. **CSP Enforcement**: Content Security Policy headers protect against XSS
+The drawing feature follows a modular architecture:
 
-## Performance Optimization
+1. **Components**: UI elements for interaction
+2. **Hooks**: Reusable logic for canvas manipulation
+3. **Utils**: Helper functions for geometry, measurement, etc.
+4. **Contexts**: State management for drawing operations
+5. **Constants**: Configuration values for consistent behavior
 
-1. **Canvas Initialization**: Optimized with lazy loading
-2. **Tool Switching**: Uses React.memo and useCallback for efficient re-renders
-3. **Large Canvas Rendering**: Implements virtualization for large canvases
+## Monitoring
 
-## Best Practices
+The drawing feature has comprehensive Sentry integration for monitoring:
 
-1. Always wrap tool components in error boundaries
-2. Rate-limit expensive canvas operations
-3. Validate all user input with proper schemas
-4. Use the appropriate tool hooks for consistent behavior
-5. Follow the established state management pattern
+- Tool usage metrics
+- Drawing operations
+- Performance metrics
+- Error tracking with detailed context
 
-## Common Tool Patterns
-
-### Creating a New Tool
-
-1. Define the tool interface in `types/tools.ts`
-2. Implement the tool in `tools/MyNewTool.tsx`
-3. Create a custom hook in `hooks/useMyNewTool.ts`
-4. Add the tool to the toolbar in `components/Toolbar.tsx`
-5. Register the tool in `state/toolRegistry.ts`
-
-### Working with Canvas Objects
-
-```typescript
-// Creating objects
-const object = createObject({
-  type: 'rectangle',
-  x: 100,
-  y: 100,
-  width: 200,
-  height: 150,
-  // Properties
-});
-
-// Adding to canvas
-canvas.add(object);
-
-// Rate-limited updates
-const updateObject = createRateLimitedCanvasOperation(
-  (obj, props) => {
-    obj.set(props);
-    canvas.renderAll();
-  },
-  'shapeManipulation'
-);
-```
-
-## Debugging Tools
-
-1. Enable debug mode: `localStorage.setItem('CANVAS_DEBUG', 'true')`
-2. Use the canvas inspector: Press Ctrl+Shift+D
-3. View performance metrics: Enable the FPS counter in settings
+Each drawing operation and tool change is tracked with appropriate context to help debug issues and understand user behavior.

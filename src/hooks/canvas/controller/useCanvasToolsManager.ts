@@ -1,8 +1,9 @@
+
 /**
  * Hook for managing canvas tools and operations
  * @module canvas/controller/useCanvasToolsManager
  */
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { DrawingTool } from "@/hooks/useCanvasState";
@@ -11,6 +12,7 @@ import { usePusherConnection } from "@/hooks/usePusherConnection";
 import { useCanvasControllerTools } from "@/hooks/canvas/controller/useCanvasControllerTools";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
 import { createFloorPlan } from "@/utils/floorPlanUtils";
+import * as Sentry from '@sentry/react';
 
 /**
  * Props for the useCanvasToolsManager hook
@@ -85,6 +87,50 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     createGrid
   } = props;
   
+  // Set up Sentry context for the component and tool usage
+  useEffect(() => {
+    // Set primary tags for filtering
+    Sentry.setTag("component", "CanvasToolsManager");
+    Sentry.setTag("tool", tool);
+    Sentry.setTag("zoomLevel", zoomLevel.toString());
+    
+    // Set detailed tool context
+    Sentry.setContext("toolState", {
+      currentTool: tool,
+      lineThickness,
+      lineColor,
+      zoomLevel,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Set canvas context if available
+    if (fabricCanvasRef.current) {
+      const canvas = fabricCanvasRef.current;
+      Sentry.setContext("canvas", {
+        objectCount: canvas.getObjects().length,
+        width: canvas.width,
+        height: canvas.height,
+        selection: canvas.selection,
+        isDrawingMode: canvas.isDrawingMode,
+        gridObjects: gridLayerRef.current?.length || 0
+      });
+    }
+    
+    // Set floor plan context
+    Sentry.setContext("floorPlans", {
+      count: floorPlans.length,
+      currentFloor,
+      currentFloorName: floorPlans[currentFloor]?.name || 'unknown'
+    });
+    
+    return () => {
+      // Clear component-specific tags when unmounting
+      Sentry.setTag("component", null);
+      Sentry.setTag("tool", null);
+      Sentry.setTag("zoomLevel", null);
+    };
+  }, [tool, zoomLevel, lineThickness, lineColor, fabricCanvasRef, gridLayerRef, floorPlans, currentFloor]);
+  
   // Get drawing tools from controller tools hook
   const {
     clearDrawings,
@@ -141,6 +187,33 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
   const floorplanId = floorPlans[0]?.id;
   const { isConnected: isPusherConnected } = usePusherConnection(floorplanId);
   
+  // Add Sentry breadcrumb when snap state changes
+  useEffect(() => {
+    Sentry.addBreadcrumb({
+      category: 'grid',
+      message: `Grid snap ${snapEnabled ? 'enabled' : 'disabled'}`,
+      level: 'info',
+      data: {
+        snapEnabled,
+        tool,
+        currentZoom
+      }
+    });
+    
+    Sentry.setTag("gridSnap", snapEnabled.toString());
+  }, [snapEnabled, tool, currentZoom]);
+  
+  // Update Sentry context whenever Pusher connection changes
+  useEffect(() => {
+    Sentry.setTag("pusherConnected", isPusherConnected.toString());
+    
+    Sentry.setContext("realtime", {
+      pusherConnected: isPusherConnected,
+      floorplanId,
+      timestamp: new Date().toISOString()
+    });
+  }, [isPusherConnected, floorplanId]);
+  
   /**
    * Handle selection of a floor plan
    * @param {number} index - Floor plan index
@@ -148,6 +221,18 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
   const handleFloorSelect = useCallback((index: number) => {
     // Only switch if valid index and different from current
     if (index >= 0 && index < floorPlans.length && index !== currentFloor) {
+      // Add Sentry breadcrumb for floor change
+      Sentry.addBreadcrumb({
+        category: 'floorplan',
+        message: `Changed to floor ${index + 1} (${floorPlans[index]?.name})`,
+        level: 'info',
+        data: {
+          previousFloor: currentFloor,
+          newFloor: index,
+          floorName: floorPlans[index]?.name
+        }
+      });
+      
       // Clear history when switching floors
       historyRef.current = { past: [], future: [] };
       
