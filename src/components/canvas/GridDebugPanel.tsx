@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import logger from '@/utils/logger';
 import { createGridEmergencyFix } from '@/utils/grid/gridVisibilityHelper';
+import { getRenderCount } from '@/utils/canvas/renderTracker';
 
 interface GridDebugPanelProps {
   canvas: FabricCanvas | null;
@@ -105,7 +106,7 @@ export function GridDebugPanel({
           width: canvas.width,
           height: canvas.height,
           objectCount: canvasObjects.length,
-          isRendering: canvas._renderCounter || false
+          isRendering: getRenderCount(canvas) > 0 // Use our render tracking utility instead
         },
         grid: {
           total: gridObjects.length,
