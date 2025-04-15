@@ -1,5 +1,5 @@
 
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
 /**
@@ -39,7 +39,7 @@ export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean =>
     // Create small grid lines
     for (let i = -smallGridLines; i <= smallGridLines; i++) {
       // Vertical lines
-      canvas.add(new fabric.Line(
+      canvas.add(new Line(
         [i * smallGridSize, -canvasHeight * zoom, i * smallGridSize, canvasHeight * zoom],
         {
           stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
@@ -52,7 +52,7 @@ export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean =>
       ));
       
       // Horizontal lines
-      canvas.add(new fabric.Line(
+      canvas.add(new Line(
         [-canvasWidth * zoom, i * smallGridSize, canvasWidth * zoom, i * smallGridSize],
         {
           stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
@@ -68,7 +68,7 @@ export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean =>
     // Create large grid lines
     for (let i = -largeGridLines; i <= largeGridLines; i++) {
       // Vertical lines
-      canvas.add(new fabric.Line(
+      canvas.add(new Line(
         [i * largeGridSize, -canvasHeight * zoom, i * largeGridSize, canvasHeight * zoom],
         {
           stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
@@ -81,7 +81,7 @@ export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean =>
       ));
       
       // Horizontal lines
-      canvas.add(new fabric.Line(
+      canvas.add(new Line(
         [-canvasWidth * zoom, i * largeGridSize, canvasWidth * zoom, i * largeGridSize],
         {
           stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
@@ -130,32 +130,6 @@ export const updateGridWithZoom = (canvas: FabricCanvas): void => {
   
   // Force grid recreation
   forceGridCreationAndVisibility(canvas);
-};
-
-/**
- * Ensures grid is visible on the canvas
- * @param canvas - Fabric canvas instance
- * @returns True if grid needed fixing, false if already visible
- */
-export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
-  if (!canvas) return false;
-  
-  const gridObjects = canvas.getObjects().filter(obj => obj.objectType === 'grid');
-  let needsFixing = false;
-  
-  gridObjects.forEach(obj => {
-    if (!obj.visible) {
-      obj.visible = true;
-      needsFixing = true;
-    }
-  });
-  
-  if (needsFixing) {
-    canvas.renderAll();
-    return true;
-  }
-  
-  return false;
 };
 
 /**

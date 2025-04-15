@@ -6,10 +6,9 @@
  */
 
 // Re-export individual utility files for direct imports
-export { createGrid, setGridVisibility } from '../canvasGrid';
+export { createGrid } from '../canvasGrid';
 export { createBasicEmergencyGrid, resetGridProgress } from '../gridCreationUtils';
 export { 
-  ensureGridVisibility, 
   forceGridCreationAndVisibility,
   updateGridWithZoom,
   setGridVisibility

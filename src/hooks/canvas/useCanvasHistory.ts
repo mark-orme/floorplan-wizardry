@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { Canvas as FabricCanvas, ActiveSelection } from "fabric";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
 import logger from "@/utils/logger";
@@ -196,7 +196,7 @@ export const useCanvasHistory = ({
       
       if (activeObject.type === 'activeSelection') {
         // Delete multiple selected objects
-        const activeSelection = activeObject as fabric.ActiveSelection;
+        const activeSelection = activeObject as ActiveSelection;
         
         activeSelection.forEachObject((obj: any) => {
           canvas.remove(obj);

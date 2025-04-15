@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, ActiveSelection } from 'fabric';
 import { CanvasEventManager } from './CanvasEventManager';
 import { TouchGestureHandler } from './TouchGestureHandler';
 import { ToolVisualizer } from './ToolVisualizer';
@@ -69,7 +69,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     if (!activeObject) return;
     
     if (activeObject.type === 'activeSelection') {
-      const activeSelection = activeObject as fabric.ActiveSelection;
+      const activeSelection = activeObject as ActiveSelection;
       activeSelection.forEachObject((obj) => {
         fabricCanvas.remove(obj);
       });
@@ -85,7 +85,8 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   const { 
     undo, 
     redo, 
-    saveCurrentState
+    saveCurrentState,
+    deleteSelectedObjects: historyDeleteSelectedObjects
   } = useCanvasHistory({
     canvas: fabricCanvas
   });
