@@ -90,7 +90,48 @@ export const CanvasHistoryManager: React.FC<CanvasHistoryManagerProps> = ({
     }
   };
 
-  // Expose the functions
+  // Return an empty fragment - this component only provides functionality
+  return (
+    <>{/* This component doesn't render anything visible */}</>
+  );
+};
+
+// Export the functions for use in other components
+export const useCanvasHistoryManager = (props: CanvasHistoryManagerProps) => {
+  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
+    past: [],
+    future: []
+  });
+  
+  const { saveCurrentState, undo, redo } = useCanvasHistory({
+    fabricCanvasRef: { current: props.canvas },
+    historyRef
+  });
+
+  const handleUndo = () => {
+    undo();
+    props.onHistoryStateUpdate(
+      historyRef.current.past.length > 0,
+      historyRef.current.future.length > 0
+    );
+    
+    if (props.onSaveRequired) {
+      setTimeout(() => props.onSaveRequired(), 100);
+    }
+  };
+
+  const handleRedo = () => {
+    redo();
+    props.onHistoryStateUpdate(
+      historyRef.current.past.length > 0,
+      historyRef.current.future.length > 0
+    );
+    
+    if (props.onSaveRequired) {
+      setTimeout(() => props.onSaveRequired(), 100);
+    }
+  };
+
   return {
     saveCurrentState,
     undo: handleUndo,

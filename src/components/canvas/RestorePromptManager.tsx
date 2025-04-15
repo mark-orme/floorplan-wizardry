@@ -7,7 +7,7 @@ import { RestoreDrawingPrompt } from './RestoreDrawingPrompt';
 interface RestorePromptManagerProps {
   canvas: FabricCanvas | null;
   canvasId: string;
-  onRestore: (success: boolean) => void;
+  onRestore: () => void;
 }
 
 /**
@@ -37,7 +37,7 @@ export const RestorePromptManager: React.FC<RestorePromptManagerProps> = ({
   return (
     <RestoreDrawingPrompt
       timeElapsed={timeElapsed}
-      onRestore={onRestore}
+      onRestore={handleRestore}
       onDismiss={handleDismiss}
       isRestoring={isRestoring}
     />

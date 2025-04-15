@@ -237,7 +237,7 @@ export const DrawingManager = () => {
         <RestorePromptManager
           canvas={canvas}
           canvasId={canvasId}
-          onRestore={() => restoreCanvas()}
+          onRestore={restoreCanvas}
         />
       )}
       
