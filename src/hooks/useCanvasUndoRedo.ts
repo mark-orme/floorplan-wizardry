@@ -42,7 +42,11 @@ export const useCanvasUndoRedo = ({
     } catch (error) {
       console.error('Error capturing canvas state:', error);
     }
-  }, { debounceMs: captureDelay, throttleMs: 50 });
+  }, { 
+    debounceMs: captureDelay, 
+    throttleMs: 50,
+    immediate: false // Ensure no unnecessary arguments
+  });
   
   /**
    * Capture the current canvas state as a JSON string
