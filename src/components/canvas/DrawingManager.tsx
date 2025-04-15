@@ -6,12 +6,13 @@ import { useCanvasController } from "@/components/canvas/controller/CanvasContro
 import { toast } from "sonner";
 import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
-import { ToolbarContainer } from "./ToolbarContainer";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { useAutoSaveCanvas } from "@/hooks/useAutoSaveCanvas"; 
 import { useRestorePrompt } from "@/hooks/useRestorePrompt"; 
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { RestoreDrawingPrompt } from "./RestoreDrawingPrompt";
+import { DrawingControls } from "./DrawingControls";
+import { OfflineIndicator } from "./OfflineIndicator";
 
 /**
  * Drawing manager component
@@ -108,7 +109,7 @@ export const DrawingManager = () => {
     undo();
     updateHistoryState();
     // Save the state after undoing
-    setTimeout(saveCanvas, 100);
+    setTimeout(() => saveCanvas(), 100);
   };
 
   // Enhanced redo function with state update
@@ -116,7 +117,7 @@ export const DrawingManager = () => {
     redo();
     updateHistoryState();
     // Save the state after redoing
-    setTimeout(saveCanvas, 100);
+    setTimeout(() => saveCanvas(), 100);
   };
   
   // Handle zoom
@@ -217,7 +218,7 @@ export const DrawingManager = () => {
   
   return (
     <div className="flex flex-col gap-2">
-      <ToolbarContainer 
+      <DrawingControls 
         tool={tool}
         setTool={setTool}
         onUndo={handleUndo}
@@ -274,15 +275,7 @@ export const DrawingManager = () => {
         />
       )}
       
-      {!isOnline && (
-        <div className="fixed bottom-4 left-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md shadow-md z-50 flex items-center">
-          <span className="relative flex h-3 w-3 mr-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-          </span>
-          <span>Offline Mode - Your work is saved locally</span>
-        </div>
-      )}
+      <OfflineIndicator isOffline={!isOnline} />
     </div>
   );
 };
