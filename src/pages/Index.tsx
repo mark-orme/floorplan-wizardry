@@ -15,6 +15,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useWindowSize } from "@/hooks/useWindowSize";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
+import logger from "@/utils/logger";
+import { trackComponentLoad, markPerformance, reportHealthMetrics } from "@/utils/healthMonitoring";
 
 /**
  * Main Index page component
@@ -22,6 +25,42 @@ import { useWindowSize } from "@/hooks/useWindowSize";
  * @returns {JSX.Element} Rendered component
  */
 const Index = () => {
+  // Track page load in health monitoring
+  useEffect(() => {
+    trackComponentLoad('IndexPage');
+    markPerformance('index-page-mounted');
+    
+    // Log loading start
+    logger.info('Index page mounted - resetting initialization state');
+    
+    // Report page load to Sentry
+    captureMessage('Index page loaded', 'page-load', {
+      level: 'info',
+      tags: {
+        component: 'IndexPage',
+        operation: 'mount'
+      },
+      extra: {
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        referrer: document.referrer || 'direct'
+      }
+    });
+    
+    // Report health metrics after 5 seconds to capture initial state
+    const healthTimer = setTimeout(() => {
+      reportHealthMetrics();
+    }, 5000);
+    
+    return () => {
+      logger.info('Index page unmounting - cleanup');
+      clearTimeout(healthTimer);
+      
+      // Mark page exit performance
+      markPerformance('index-page-unmounted');
+    };
+  }, []);
+  
   // Use our custom hooks for state management
   const {
     canvas,
@@ -76,22 +115,89 @@ const Index = () => {
   
   // Login as test user for demo
   const handleLoginAsTestUser = () => {
-    login('photographer@example.com', 'password123')
-      .then(() => {
-        toast.success('Logged in as test user');
-      })
-      .catch(error => {
-        toast.error('Login failed: ' + (error.message || 'Unknown error'));
+    try {
+      login('photographer@example.com', 'password123')
+        .then(() => {
+          toast.success('Logged in as test user');
+          captureMessage('Test user login successful', 'auth-success', {
+            level: 'info',
+            tags: {
+              component: 'IndexPage',
+              operation: 'login'
+            }
+          });
+        })
+        .catch(error => {
+          toast.error('Login failed: ' + (error.message || 'Unknown error'));
+          captureError(error, 'test-login-failed', {
+            level: 'error',
+            tags: {
+              component: 'IndexPage',
+              operation: 'login'
+            }
+          });
+        });
+    } catch (error) {
+      captureError(error, 'login-execution-error', {
+        level: 'error',
+        tags: {
+          component: 'IndexPage',
+          operation: 'login'
+        }
       });
+      toast.error('An error occurred during login');
+    }
   };
   
   // Handler functions that combine state updates with actions
-  const onToolChange = (tool: DrawingMode) => setActiveTool(handleToolChange(tool));
-  const onToggleGridDebug = () => {
-    toggleGridDebug(showGridDebug);
-    setShowGridDebug(prev => !prev);
+  const onToolChange = (tool: DrawingMode) => {
+    try {
+      logger.info(`Active tool changing to: ${tool}`);
+      return setActiveTool(handleToolChange(tool));
+    } catch (error) {
+      captureError(error, 'tool-change-error', {
+        level: 'error',
+        tags: {
+          component: 'IndexPage',
+          operation: 'toolChange'
+        },
+        extra: {
+          previousTool: activeTool,
+          attemptedTool: tool
+        }
+      });
+      return activeTool; // Return existing tool on error
+    }
   };
-  const onForceRefresh = () => handleForceRefresh(canvas, setForceRefreshKey);
+  
+  const onToggleGridDebug = () => {
+    try {
+      toggleGridDebug(showGridDebug);
+      setShowGridDebug(prev => !prev);
+    } catch (error) {
+      captureError(error, 'grid-debug-toggle-error', {
+        level: 'error',
+        tags: {
+          component: 'IndexPage',
+          operation: 'toggleGridDebug'
+        }
+      });
+    }
+  };
+  
+  const onForceRefresh = () => {
+    try {
+      handleForceRefresh(canvas, setForceRefreshKey);
+    } catch (error) {
+      captureError(error, 'force-refresh-error', {
+        level: 'error',
+        tags: {
+          component: 'IndexPage',
+          operation: 'forceRefresh'
+        }
+      });
+    }
+  };
   
   // Update interface based on screen size
   useEffect(() => {
@@ -105,8 +211,26 @@ const Index = () => {
   
   // Handle collaboration toggle
   const handleCollaborationToggle = (enabled: boolean) => {
-    setEnableSync(enabled);
-    toast.info(enabled ? 'Real-time collaboration enabled' : 'Real-time collaboration disabled');
+    try {
+      setEnableSync(enabled);
+      toast.info(enabled ? 'Real-time collaboration enabled' : 'Real-time collaboration disabled');
+      captureMessage(`Collaboration ${enabled ? 'enabled' : 'disabled'}`, 'collaboration-toggle', {
+        level: 'info',
+        tags: {
+          component: 'IndexPage',
+          operation: 'toggleCollaboration',
+          status: enabled ? 'enabled' : 'disabled'
+        }
+      });
+    } catch (error) {
+      captureError(error, 'collaboration-toggle-error', {
+        level: 'error',
+        tags: {
+          component: 'IndexPage',
+          operation: 'toggleCollaboration'
+        }
+      });
+    }
   };
   
   return (

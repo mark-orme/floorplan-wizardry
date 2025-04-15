@@ -7,6 +7,7 @@
 import { subscribeToChannel, getPusher } from './pusher';
 import logger from './logger';
 import { toast } from 'sonner';
+import { captureError, captureMessage } from './sentryUtils';
 
 // Constants
 export const SYNC_CHANNEL = 'floorplan-sync';
@@ -42,32 +43,57 @@ const DEVICE_ID = getDeviceId();
  */
 export const subscribeSyncChannel = () => {
   logger.info('Subscribing to floor plan sync channel');
-  const channel = subscribeToChannel(SYNC_CHANNEL);
   
-  // Setup presence events
-  setTimeout(() => {
-    try {
-      // Using basic connected user count instead of members property
-      const pusherInstance = getPusher();
-      // Check if the channel exists and is subscribed
-      const connectedUsers = 1; // Default to 1 (self)
-      
-      if (connectedUsers > 1) {
-        toast.info(`${connectedUsers - 1} other ${connectedUsers - 1 === 1 ? 'user' : 'users'} connected`);
+  try {
+    const channel = subscribeToChannel(SYNC_CHANNEL);
+    
+    // Setup presence events
+    setTimeout(() => {
+      try {
+        // Using basic connected user count instead of members property
+        const pusherInstance = getPusher();
+        // Check if the channel exists and is subscribed
+        const connectedUsers = 1; // Default to 1 (self)
         
-        // Broadcast presence
-        channel.trigger(`client-${PRESENCE_EVENT}`, {
-          count: connectedUsers,
-          timestamp: Date.now(),
-          deviceId: DEVICE_ID,
+        if (connectedUsers > 1) {
+          toast.info(`${connectedUsers - 1} other ${connectedUsers - 1 === 1 ? 'user' : 'users'} connected`);
+          
+          // Broadcast presence
+          channel.trigger(`client-${PRESENCE_EVENT}`, {
+            count: connectedUsers,
+            timestamp: Date.now(),
+            deviceId: DEVICE_ID,
+          });
+        }
+      } catch (err) {
+        logger.error('Error counting connected users:', err);
+        captureError(err, 'sync-channel-presence-error', {
+          level: 'error',
+          tags: {
+            component: 'syncService',
+            operation: 'subscribeSyncChannel'
+          }
         });
       }
-    } catch (err) {
-      logger.error('Error counting connected users:', err);
-    }
-  }, 1500);
-  
-  return channel;
+    }, 1500);
+    
+    return channel;
+  } catch (error) {
+    logger.error('Fatal error subscribing to sync channel:', error);
+    captureError(error, 'sync-channel-subscription-failure', {
+      level: 'fatal',
+      tags: {
+        component: 'syncService',
+        operation: 'subscribeSyncChannel'
+      },
+      extra: {
+        channel: SYNC_CHANNEL
+      }
+    });
+    
+    // Rethrow to allow callers to handle the error
+    throw error;
+  }
 };
 
 /**
@@ -109,20 +135,47 @@ export const broadcastFloorPlanUpdate = (floorPlans: SyncFloorPlan[], userId?: s
       logger.info('Floor plan update broadcast successful');
     } else {
       logger.warn('Cannot broadcast update: Channel not subscribed');
+      captureMessage('Failed to broadcast update - channel not subscribed', 'sync-broadcast-warning', {
+        level: 'warning',
+        tags: {
+          component: 'syncService',
+          operation: 'broadcastFloorPlanUpdate'
+        }
+      });
       
       // Try subscribing and then sending
-      const newChannel = subscribeSyncChannel();
-      setTimeout(() => {
-        newChannel.trigger(`client-${UPDATE_EVENT}`, {
-          floorPlans,
-          timestamp: Date.now(),
-          deviceId: DEVICE_ID,
-          userId: userId || 'anonymous',
+      try {
+        const newChannel = subscribeSyncChannel();
+        setTimeout(() => {
+          newChannel.trigger(`client-${UPDATE_EVENT}`, {
+            floorPlans,
+            timestamp: Date.now(),
+            deviceId: DEVICE_ID,
+            userId: userId || 'anonymous',
+          });
+        }, 1000);
+      } catch (subError) {
+        captureError(subError, 'sync-recovery-failed', {
+          level: 'error',
+          tags: {
+            component: 'syncService',
+            operation: 'broadcastFloorPlanUpdate-recovery'
+          }
         });
-      }, 1000);
+      }
     }
   } catch (error) {
     logger.error('Error broadcasting floor plan update:', error);
+    captureError(error, 'sync-broadcast-error', {
+      level: 'error',
+      tags: {
+        component: 'syncService',
+        operation: 'broadcastFloorPlanUpdate'
+      },
+      extra: {
+        userId: userId || 'anonymous'
+      }
+    });
   }
 };
 
@@ -132,8 +185,19 @@ export const broadcastFloorPlanUpdate = (floorPlans: SyncFloorPlan[], userId?: s
  */
 export const notifyPresenceChange = () => {
   logger.info('Notifying about presence change');
-  // Just call broadcastPresenceUpdate with a default count of 1 (self)
-  broadcastPresenceUpdate(1);
+  try {
+    // Just call broadcastPresenceUpdate with a default count of 1 (self)
+    broadcastPresenceUpdate(1);
+  } catch (error) {
+    logger.error('Error in notifyPresenceChange:', error);
+    captureError(error, 'presence-notification-error', {
+      level: 'error',
+      tags: {
+        component: 'syncService',
+        operation: 'notifyPresenceChange'
+      }
+    });
+  }
 };
 
 /**
@@ -154,9 +218,24 @@ export const broadcastPresenceUpdate = (count: number) => {
         timestamp: Date.now(),
         deviceId: DEVICE_ID,
       });
+    } else {
+      captureMessage('Failed to broadcast presence - channel not subscribed', 'presence-broadcast-warning', {
+        level: 'warning',
+        tags: {
+          component: 'syncService',
+          operation: 'broadcastPresenceUpdate'
+        }
+      });
     }
   } catch (error) {
     logger.error('Error broadcasting presence update:', error);
+    captureError(error, 'presence-broadcast-error', {
+      level: 'error',
+      tags: {
+        component: 'syncService',
+        operation: 'broadcastPresenceUpdate'
+      }
+    });
   }
 };
 

@@ -6,7 +6,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { CanvasInitializer } from './CanvasInitializer';
 import { ConnectedDrawingCanvas } from './ConnectedDrawingCanvas';
 import { updateCanvasDimensions } from '@/utils/canvas/safeDimensions';
-import { captureError } from '@/utils/sentryUtils';
+import { captureError, captureMessage } from '@/utils/sentryUtils';
 import { createFloorPlanDataForSync, setupRealtimeSync } from '@/utils/realtime/syncUtils';
 import { broadcastFloorPlanUpdate, notifyPresenceChange } from '@/utils/syncService';
 
@@ -35,35 +35,96 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   const lastSyncTimeRef = useRef<number>(0);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const channelRef = useRef<any>(null);
+  const initTimeRef = useRef<number>(Date.now());
   
-  // Update dimensions when container size changes
+  // Log application startup
   useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Get container dimensions
-    const { width, height } = containerRef.current.getBoundingClientRect();
-    setDimensions({ width, height });
-    
-    // Set up resize observer
-    const observer = new ResizeObserver(() => {
-      if (!containerRef.current) return;
-      
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      setDimensions({ width, height });
-      
-      // Update canvas dimensions if canvas exists
-      if (fabricCanvasRef.current) {
-        try {
-          updateCanvasDimensions(fabricCanvasRef.current, containerRef);
-        } catch (err) {
-          console.error('Error updating canvas dimensions:', err);
-        }
+    captureMessage('CanvasApp component mounted', 'canvas-app-init', {
+      level: 'info',
+      tags: {
+        component: 'CanvasApp',
+        operation: 'mount'
+      },
+      extra: {
+        enableSync,
+        timestamp: new Date().toISOString()
       }
     });
     
-    observer.observe(containerRef.current);
+    // Track page load performance
+    const loadTime = performance.now();
     
-    return () => observer.disconnect();
+    return () => {
+      captureMessage('CanvasApp component unmounted', 'canvas-app-cleanup', {
+        level: 'info',
+        tags: {
+          component: 'CanvasApp',
+          operation: 'unmount'
+        },
+        extra: {
+          sessionDuration: Date.now() - initTimeRef.current
+        }
+      });
+    };
+  }, [enableSync]);
+  
+  // Update dimensions when container size changes
+  useEffect(() => {
+    if (!containerRef.current) {
+      captureMessage('Container ref not available', 'canvas-container-missing', {
+        level: 'warning',
+        tags: {
+          component: 'CanvasApp',
+          operation: 'resize-observer'
+        }
+      });
+      return;
+    }
+    
+    try {
+      // Get container dimensions
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      setDimensions({ width, height });
+      
+      // Set up resize observer
+      const observer = new ResizeObserver(() => {
+        if (!containerRef.current) return;
+        
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setDimensions({ width, height });
+        
+        // Update canvas dimensions if canvas exists
+        if (fabricCanvasRef.current) {
+          try {
+            updateCanvasDimensions(fabricCanvasRef.current, containerRef);
+          } catch (err) {
+            console.error('Error updating canvas dimensions:', err);
+            captureError(err, 'canvas-dimension-update-error', {
+              level: 'error',
+              tags: {
+                component: 'CanvasApp',
+                operation: 'resize'
+              },
+              extra: {
+                dimensions: { width, height }
+              }
+            });
+          }
+        }
+      });
+      
+      observer.observe(containerRef.current);
+      
+      return () => observer.disconnect();
+    } catch (error) {
+      captureError(error, 'resize-observer-error', {
+        level: 'error',
+        tags: {
+          component: 'CanvasApp',
+          operation: 'resize-observer'
+        }
+      });
+    }
   }, []);
   
   // Handle canvas ready
@@ -72,43 +133,91 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
       // Store reference to canvas
       fabricCanvasRef.current = canvas;
       
+      // Track canvas initialization time
+      const initTime = Date.now() - initTimeRef.current;
+      captureMessage(`Canvas initialized successfully in ${initTime}ms`, 'canvas-ready', {
+        level: 'info',
+        tags: {
+          component: 'CanvasApp',
+          operation: 'canvas-init'
+        },
+        extra: {
+          initTime,
+          dimensions,
+          canvasType: canvas.constructor.name
+        }
+      });
+      
       // Pass canvas to parent component
       setCanvas(canvas);
       
       // Set up collaboration if enabled
       if (enableSync) {
-        // Set up realtime sync
-        const channel = setupRealtimeSync(
-          canvas,
-          lastSyncTimeRef,
-          setLastSyncTime,
-          setCollaboratorCount,
-          (sender, timestamp) => {
-            console.log(`Received update from ${sender} at ${new Date(timestamp).toLocaleTimeString()}`);
-          }
-        );
-        
-        // Store channel reference
-        channelRef.current = channel;
-        
-        // Broadcast initial presence
-        notifyPresenceChange();
-        
-        // Create initial sync data (using a temporary user name)
-        const initialFloorPlans = createFloorPlanDataForSync(canvas, 'User');
-        
-        // Broadcast initial state
-        setTimeout(() => {
-          if (canvas) {
-            broadcastFloorPlanUpdate(initialFloorPlans);
-          }
-        }, 1000);
+        try {
+          // Set up realtime sync
+          const channel = setupRealtimeSync(
+            canvas,
+            lastSyncTimeRef,
+            setLastSyncTime,
+            setCollaboratorCount,
+            (sender, timestamp) => {
+              console.log(`Received update from ${sender} at ${new Date(timestamp).toLocaleTimeString()}`);
+            }
+          );
+          
+          // Store channel reference
+          channelRef.current = channel;
+          
+          // Broadcast initial presence
+          notifyPresenceChange();
+          
+          // Create initial sync data (using a temporary user name)
+          const initialFloorPlans = createFloorPlanDataForSync(canvas, 'User');
+          
+          // Broadcast initial state
+          setTimeout(() => {
+            if (canvas) {
+              broadcastFloorPlanUpdate(initialFloorPlans);
+            }
+          }, 1000);
+          
+          captureMessage('Collaboration setup complete', 'sync-init-success', {
+            level: 'info',
+            tags: {
+              component: 'CanvasApp',
+              operation: 'sync-init'
+            }
+          });
+        } catch (syncError) {
+          captureError(syncError, 'sync-init-error', {
+            level: 'error',
+            tags: {
+              component: 'CanvasApp',
+              operation: 'sync-init'
+            }
+          });
+        }
       }
       
       toast.success('Canvas initialized');
     } catch (error) {
       console.error('Error initializing canvas:', error);
-      captureError(error, 'canvas-init-error');
+      captureError(error, 'canvas-init-error', {
+        level: 'error',
+        tags: {
+          component: 'CanvasApp',
+          operation: 'canvas-init'
+        },
+        extra: {
+          dimensions,
+          browserInfo: {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            vendor: navigator.vendor
+          }
+        }
+      });
       setHasCanvasError(true);
     }
   };
@@ -116,7 +225,26 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   // Handle canvas error
   const handleCanvasError = (error: Error) => {
     console.error('Canvas error:', error);
-    captureError(error, 'canvas-error');
+    captureError(error, 'canvas-error', {
+      level: 'error',
+      tags: {
+        component: 'CanvasApp',
+        operation: 'canvas-operation'
+      },
+      extra: {
+        dimensions,
+        timeElapsed: Date.now() - initTimeRef.current,
+        hasCanvasRef: !!fabricCanvasRef.current,
+        browserInfo: {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+          vendor: navigator.vendor,
+          screenSize: `${window.screen.width}x${window.screen.height}`,
+          devicePixelRatio: window.devicePixelRatio
+        }
+      }
+    });
     setHasCanvasError(true);
   };
   
@@ -129,6 +257,13 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
           channelRef.current.unsubscribe();
         } catch (error) {
           console.error('Error unsubscribing from channel:', error);
+          captureError(error, 'channel-unsubscribe-error', {
+            level: 'warning',
+            tags: {
+              component: 'CanvasApp',
+              operation: 'cleanup'
+            }
+          });
         }
       }
     };
@@ -180,4 +315,3 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     </div>
   );
 };
-

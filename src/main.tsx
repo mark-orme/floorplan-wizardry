@@ -1,3 +1,4 @@
+
 import { createRoot } from 'react-dom/client'
 import * as Sentry from "@sentry/react";
 import App from './App.tsx'
@@ -8,6 +9,12 @@ import { initializeSecurity } from './utils/security';
 import { ErrorBoundary } from './utils/canvas/errorBoundary';
 import { initializeCSP, checkCSPApplied, fixSentryCSP, MASTER_CSP_STRING } from './utils/security/contentSecurityPolicy';
 import { toast } from 'sonner';
+
+// Track application load performance
+const startTime = performance.now();
+
+// Log initial load event
+console.log(`Application loading started at ${new Date().toISOString()}`);
 
 // First step: directly apply CSP with meta tag BEFORE any other operations
 function applyDirectCSP() {
@@ -39,6 +46,59 @@ console.log('Initial direct CSP applied:', cspApplied);
 const rootElement = createRootElement("root");
 const root = createRoot(rootElement);
 
+// Track DOM ready state
+document.addEventListener('DOMContentLoaded', () => {
+  console.log(`DOM content loaded at ${new Date().toISOString()}`);
+});
+
+// Track window load state
+window.addEventListener('load', () => {
+  const loadTime = performance.now() - startTime;
+  console.log(`Window fully loaded in ${loadTime.toFixed(2)}ms`);
+  
+  // Report this to Sentry when available
+  setTimeout(() => {
+    if (Sentry && typeof Sentry.captureMessage === 'function') {
+      Sentry.setTag('page_load_time_ms', Math.round(loadTime));
+      Sentry.captureMessage(`Application fully loaded in ${loadTime.toFixed(0)}ms`, 'info');
+    }
+  }, 1000);
+});
+
+// Track unhandled global errors
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error || event.message);
+  
+  // We'll report this to Sentry once it's initialized
+  const errorInfo = {
+    message: event.message || 'Unknown error',
+    source: event.filename || 'unknown',
+    line: event.lineno,
+    column: event.colno,
+    stack: event.error && event.error.stack,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Store for later reporting once Sentry is initialized
+  window.__earlyErrors = window.__earlyErrors || [];
+  window.__earlyErrors.push(errorInfo);
+});
+
+// Track unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+  
+  // Store for later reporting
+  const rejectionInfo = {
+    message: event.reason?.message || 'Unknown promise rejection',
+    stack: event.reason?.stack,
+    timestamp: new Date().toISOString()
+  };
+  
+  window.__earlyRejections = window.__earlyRejections || [];
+  window.__earlyRejections.push(rejectionInfo);
+});
+
 // First render the SecurityInitializer to ensure the CSP is properly set
 root.render(<SecurityInitializer forceRefresh={true} />);
 
@@ -65,6 +125,9 @@ setTimeout(() => {
             </div>
             <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
             <p className="text-gray-600 mb-4">We've encountered an error and our team has been notified.</p>
+            <div className="text-sm text-gray-500 mb-4">
+              <p>Error information has been logged. Please try refreshing the page.</p>
+            </div>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
@@ -82,6 +145,7 @@ setTimeout(() => {
 
 function initializeServices() {
   console.log('Initializing services with CSP state:', checkCSPApplied() ? 'Valid' : 'Invalid');
+  const serviceStartTime = performance.now();
   
   // IMPORTANT: Check one more time and fix if needed
   if (!checkCSPApplied()) {
@@ -115,6 +179,34 @@ function initializeServices() {
         // Continue with the event anyway
       }
       
+      // Add page load context to errors
+      event.tags = event.tags || {};
+      event.tags.page_url = window.location.href;
+      event.tags.referrer = document.referrer || 'direct';
+      
+      // Add performance metrics if available
+      if (window.performance) {
+        try {
+          const performanceMetrics = {
+            navigationStart: 0,
+            loadEventEnd: 0,
+            domComplete: 0
+          };
+          
+          const perfTiming = performance.timing;
+          if (perfTiming) {
+            performanceMetrics.navigationStart = perfTiming.navigationStart;
+            performanceMetrics.loadEventEnd = perfTiming.loadEventEnd;
+            performanceMetrics.domComplete = perfTiming.domComplete;
+          }
+          
+          event.extra = event.extra || {};
+          event.extra.performance = performanceMetrics;
+        } catch (e) {
+          console.error('Error collecting performance metrics:', e);
+        }
+      }
+      
       // Filter out CSP errors to avoid noise
       const error = hint?.originalException;
       if (error instanceof Error && 
@@ -129,6 +221,35 @@ function initializeServices() {
     }
   });
   
+  // Report any early errors that occurred before Sentry was initialized
+  setTimeout(() => {
+    if (window.__earlyErrors && window.__earlyErrors.length > 0) {
+      window.__earlyErrors.forEach(error => {
+        Sentry.captureMessage(`Early error: ${error.message}`, {
+          level: 'error',
+          extra: error
+        });
+      });
+      console.log(`Reported ${window.__earlyErrors.length} early errors to Sentry`);
+    }
+    
+    if (window.__earlyRejections && window.__earlyRejections.length > 0) {
+      window.__earlyRejections.forEach(rejection => {
+        Sentry.captureMessage(`Early promise rejection: ${rejection.message}`, {
+          level: 'error',
+          extra: rejection
+        });
+      });
+      console.log(`Reported ${window.__earlyRejections.length} early rejections to Sentry`);
+    }
+    
+    // Report initialization duration
+    const serviceInitTime = performance.now() - serviceStartTime;
+    Sentry.captureMessage(`Services initialized in ${serviceInitTime.toFixed(0)}ms`, {
+      level: 'info'
+    });
+  }, 1000);
+  
   // Verify CSP after Sentry init and reapply if needed
   setTimeout(() => {
     if (!checkCSPApplied()) {
@@ -136,6 +257,27 @@ function initializeServices() {
       applyFullCSP();
     }
   }, 100);
+}
+
+// Declare global types for early error tracking
+declare global {
+  interface Window {
+    __earlyErrors?: Array<{
+      message: string;
+      source?: string;
+      line?: number;
+      column?: number;
+      stack?: string;
+      timestamp: string;
+    }>;
+    __earlyRejections?: Array<{
+      message: string;
+      stack?: string;
+      timestamp: string;
+    }>;
+    __app_state?: any;
+    __canvas_state?: any;
+  }
 }
 
 export default root;
