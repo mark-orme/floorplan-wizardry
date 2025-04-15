@@ -48,3 +48,10 @@ export interface CanvasEvents {
   'object:added': any;
   'object:removed': any;
 }
+
+// Extend fabric.js Object to include id property
+declare module 'fabric' {
+  interface Object {
+    id?: string;
+  }
+}
