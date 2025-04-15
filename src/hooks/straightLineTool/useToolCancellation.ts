@@ -1,17 +1,16 @@
 
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
-import { InputMethod } from './useLineState';
-import * as Sentry from '@sentry/react';
+import { Point } from '@/types/core/Point';
 
 interface UseToolCancellationProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   isDrawing: boolean;
   currentLineRef: React.MutableRefObject<Line | null>;
-  distanceTooltipRef: React.MutableRefObject<HTMLDivElement | null>;
+  distanceTooltipRef: React.MutableRefObject<any | null>;
   setIsDrawing: (isDrawing: boolean) => void;
   resetDrawingState: () => void;
-  inputMethod: InputMethod;
+  inputMethod: 'mouse' | 'touch' | 'pencil';
   toggleSnap: () => void;
   snapEnabled: boolean;
 }
@@ -27,82 +26,38 @@ export const useToolCancellation = ({
   toggleSnap,
   snapEnabled
 }: UseToolCancellationProps) => {
-  // Function to cancel the current drawing operation - now returns a boolean
-  const cancelDrawing = useCallback((): boolean => {
+  // Cancel the current drawing operation
+  const cancelDrawing = useCallback(() => {
     if (!isDrawing) return false;
     
-    try {
-      // Set Sentry context for cancellation action
-      Sentry.setTag("action", "cancelDrawing");
-      Sentry.setContext("cancellationContext", {
-        inputMethod,
-        hasCurrentLine: !!currentLineRef.current,
-        hasTooltip: !!distanceTooltipRef.current,
-        timestamp: new Date().toISOString()
-      });
-      
-      // If we have a current line being drawn, remove it
-      if (currentLineRef.current && fabricCanvasRef.current) {
-        fabricCanvasRef.current.remove(currentLineRef.current);
-        fabricCanvasRef.current.renderAll();
-      }
-      
-      // Clear the current line reference to avoid artifacts
-      currentLineRef.current = null;
-      
-      // Remove distance tooltip
-      if (distanceTooltipRef.current) {
-        const parent = distanceTooltipRef.current.parentElement;
-        if (parent) {
-          parent.removeChild(distanceTooltipRef.current);
-        }
-        distanceTooltipRef.current = null;
-      }
-      
-      // Reset state
-      setIsDrawing(false);
-      resetDrawingState();
-      
-      console.log(`Drawing cancelled via ESC key (input: ${inputMethod})`);
-      
-      // Return true to indicate successful cancellation
-      return true;
-    } catch (error) {
-      console.error('Error cancelling drawing:', error);
-      
-      // Log error in Sentry
-      Sentry.setTag("errorSource", "drawingCancellation");
-      Sentry.captureException(error);
-      
-      // Return false if cancellation fails
-      return false;
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return false;
+    
+    // Remove the current line object if it exists
+    if (currentLineRef.current && canvas.contains(currentLineRef.current)) {
+      canvas.remove(currentLineRef.current);
     }
-  }, [
-    fabricCanvasRef,
-    isDrawing,
-    currentLineRef,
-    distanceTooltipRef,
-    setIsDrawing,
-    resetDrawingState,
-    inputMethod
-  ]);
+    
+    // Remove the distance tooltip if it exists
+    if (distanceTooltipRef.current && canvas.contains(distanceTooltipRef.current)) {
+      canvas.remove(distanceTooltipRef.current);
+    }
+    
+    // Reset drawing state
+    setIsDrawing(false);
+    resetDrawingState();
+    
+    // Refresh the canvas
+    canvas.requestRenderAll();
+    
+    return true;
+  }, [fabricCanvasRef, isDrawing, currentLineRef, distanceTooltipRef, setIsDrawing, resetDrawingState]);
   
-  // Function to toggle grid snapping - explicitly return a boolean
-  const toggleGridSnapping = useCallback((): boolean => {
-    // Call the toggle function
+  // Toggle grid snapping
+  const toggleGridSnapping = useCallback(() => {
     toggleSnap();
-    
-    // Set Sentry context for grid snapping action
-    Sentry.setTag("action", "toggleGridSnapping");
-    Sentry.setContext("gridSnapping", {
-      previousState: snapEnabled,
-      newState: !snapEnabled,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Return the NEW state (after toggle)
-    return !snapEnabled;
-  }, [toggleSnap, snapEnabled]);
+    return true;
+  }, [toggleSnap]);
   
   return {
     cancelDrawing,

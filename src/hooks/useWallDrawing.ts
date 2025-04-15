@@ -1,12 +1,12 @@
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Line, Text } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
-import { toast } from 'sonner';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { useGridSnapping } from './canvas/useGridSnapping';
-import logger from '@/utils/logger';
+// Import necessary modules
+import { useCallback, useState, useRef, useEffect } from "react";
+import { Canvas as FabricCanvas, Line } from "fabric";
+import { DrawingMode } from "@/constants/drawingModes";
+import { Point } from "@/types/core/Point";
+import { useGridSnapping } from "./canvas/useGridSnapping";
 
+// Define hook props interface
 interface UseWallDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool: DrawingMode;
@@ -14,220 +14,155 @@ interface UseWallDrawingProps {
   wallThickness: number;
 }
 
-const STRAIGHTEN_THRESHOLD = 10; // Pixels
-const STRAIGHT_ANGLE_THRESHOLD = Math.PI / 12; // 15 degrees
-
+/**
+ * Custom hook for wall drawing functionality
+ */
 export const useWallDrawing = ({
   fabricCanvasRef,
   tool,
   wallColor,
   wallThickness
 }: UseWallDrawingProps) => {
+  // State for drawing
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentWall, setCurrentWall] = useState<Line | null>(null);
-  const startPointRef = useRef<{ x: number, y: number } | null>(null);
-  const measureTooltipRef = useRef<Text | null>(null);
+  const startPointRef = useRef<Point | null>(null);
+  const currentWallRef = useRef<Line | null>(null);
   
-  // Use the grid snapping hook
-  const { snapPointToGrid, snapEventToGrid, snapLineToGrid } = useGridSnapping(fabricCanvasRef);
+  // Initialize grid snapping
+  const { snapPointToGrid, snapLineToGrid, snapEnabled } = useGridSnapping({
+    fabricCanvasRef,
+    initialSnapEnabled: true
+  });
   
-  const straightenLine = useCallback((line: Line) => {
-    if (!line) return;
-    
-    const x1 = line.x1 || 0;
-    const y1 = line.y1 || 0;
-    const x2 = line.x2 || 0;
-    const y2 = line.y2 || 0;
-    
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    
-    if (Math.abs(angle) < STRAIGHT_ANGLE_THRESHOLD || 
-        Math.abs(angle - Math.PI) < STRAIGHT_ANGLE_THRESHOLD ||
-        Math.abs(angle + Math.PI) < STRAIGHT_ANGLE_THRESHOLD) {
-      line.set({ y2: y1 });
-    } else if (
-      Math.abs(angle - Math.PI/2) < STRAIGHT_ANGLE_THRESHOLD || 
-      Math.abs(angle + Math.PI/2) < STRAIGHT_ANGLE_THRESHOLD
-    ) {
-      line.set({ x2: x1 });
-    }
-  }, []);
+  // Custom function to handle point snapping for wall lines
+  const snapWallPointToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) return { ...point };
+    return snapPointToGrid(point);
+  }, [snapEnabled, snapPointToGrid]);
   
-  const calculateDistance = useCallback((x1: number, y1: number, x2: number, y2: number) => {
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  }, []);
-  
-  const updateMeasurementTooltip = useCallback((line: Line, canvas: FabricCanvas) => {
-    if (!line) return;
+  // Effect to initialize or clean up based on tool change
+  useEffect(() => {
+    // Determine if tool is active
+    const isWallTool = tool === DrawingMode.WALL;
     
-    const x1 = line.x1 || 0;
-    const y1 = line.y1 || 0;
-    const x2 = line.x2 || 0;
-    const y2 = line.y2 || 0;
-    
-    const distanceInPixels = calculateDistance(x1, y1, x2, y2);
-    const distanceInMeters = (distanceInPixels / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
-    
-    const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2 - 15;
-    
-    if (!measureTooltipRef.current) {
-      const tooltip = new Text(`${distanceInMeters}m`, {
-        left: midX,
-        top: midY,
-        fontSize: 12,
-        fill: wallColor,
-        backgroundColor: 'rgba(255,255,255,0.7)',
-        padding: 3,
-        selectable: false,
-        evented: false,
-        objectType: 'measurementTooltip'
-      });
+    // Clean up any active drawing when tool changes
+    if (!isWallTool && isDrawing) {
+      // Cancel drawing logic here
+      setIsDrawing(false);
+      startPointRef.current = null;
       
-      canvas.add(tooltip);
-      measureTooltipRef.current = tooltip;
-    } else {
-      measureTooltipRef.current.set({
-        text: `${distanceInMeters}m`,
-        left: midX,
-        top: midY,
-        opacity: 1
-      });
+      if (currentWallRef.current && fabricCanvasRef.current) {
+        fabricCanvasRef.current.remove(currentWallRef.current);
+        currentWallRef.current = null;
+      }
     }
-    
-    canvas.renderAll();
-  }, [calculateDistance, wallColor]);
+  }, [tool, isDrawing, fabricCanvasRef]);
   
-  const startDrawing = useCallback((e: any) => {
-    if (!fabricCanvasRef.current || tool !== DrawingMode.WALL) return;
+  /**
+   * Handler for starting a wall drawing
+   */
+  const handleWallStart = useCallback((point: Point) => {
+    if (tool !== DrawingMode.WALL || !fabricCanvasRef.current) return;
     
-    logger.info("Starting wall drawing");
-    const canvas = fabricCanvasRef.current;
-    const snappedPoint = snapEventToGrid(e);
+    // Snap the start point to grid if enabled
+    const snappedPoint = snapWallPointToGrid(point);
+    startPointRef.current = snappedPoint;
+    setIsDrawing(true);
     
-    if (!snappedPoint) return;
-    
-    const line = new Line([snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y], {
+    // Create initial wall line
+    const newWall = new Line([
+      snappedPoint.x, snappedPoint.y, 
+      snappedPoint.x, snappedPoint.y
+    ], {
       stroke: wallColor,
       strokeWidth: wallThickness,
-      strokeLineCap: 'round',
-      strokeLineJoin: 'round',
       selectable: true,
-      evented: true,
       objectType: 'wall'
     });
     
-    canvas.add(line);
-    canvas.renderAll();
+    fabricCanvasRef.current.add(newWall);
+    currentWallRef.current = newWall;
     
-    setIsDrawing(true);
-    setCurrentWall(line);
-    startPointRef.current = snappedPoint;
-  }, [fabricCanvasRef, tool, wallColor, wallThickness, snapEventToGrid]);
+  }, [tool, fabricCanvasRef, wallColor, wallThickness, snapWallPointToGrid]);
   
-  const continueDrawing = useCallback((e: any) => {
-    if (!fabricCanvasRef.current || !isDrawing || !currentWall || tool !== DrawingMode.WALL) return;
+  /**
+   * Handler for updating a wall while drawing
+   */
+  const handleWallUpdate = useCallback((point: Point) => {
+    if (!isDrawing || !startPointRef.current || !currentWallRef.current || !fabricCanvasRef.current) return;
     
-    const canvas = fabricCanvasRef.current;
-    const pointer = canvas.getPointer(e.e);
+    // Snap the end point to grid if enabled
+    const snappedPoint = snapWallPointToGrid(point);
     
-    if (!startPointRef.current) return;
-    
-    const { start, end } = snapLineToGrid(
-      startPointRef.current, 
-      { x: pointer.x, y: pointer.y }
-    );
-    
-    currentWall.set({
-      x2: end.x,
-      y2: end.y
+    // Update the current wall line
+    currentWallRef.current.set({
+      x2: snappedPoint.x,
+      y2: snappedPoint.y
     });
     
-    updateMeasurementTooltip(currentWall, canvas);
+    fabricCanvasRef.current.requestRenderAll();
     
-    canvas.renderAll();
-  }, [fabricCanvasRef, isDrawing, currentWall, tool, snapLineToGrid, updateMeasurementTooltip]);
+  }, [isDrawing, snapWallPointToGrid, fabricCanvasRef]);
   
-  const endDrawing = useCallback(() => {
-    if (!fabricCanvasRef.current || !isDrawing || !currentWall) return;
+  /**
+   * Handler for completing a wall drawing
+   */
+  const handleWallComplete = useCallback(() => {
+    if (!isDrawing || !fabricCanvasRef.current) return;
     
-    logger.info("Ending wall drawing");
-    const canvas = fabricCanvasRef.current;
-    
-    straightenLine(currentWall);
-    
-    const x1 = currentWall.x1 || 0;
-    const y1 = currentWall.y1 || 0;
-    const x2 = currentWall.x2 || 0;
-    const y2 = currentWall.y2 || 0;
-    
-    const distance = calculateDistance(x1, y1, x2, y2);
-    
-    if (distance > 5) {
-      updateMeasurementTooltip(currentWall, canvas);
-      
-      canvas.fire('object:added', { target: currentWall });
-      
-      if (measureTooltipRef.current) {
-        measureTooltipRef.current.set({
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          opacity: 1,
-          selectable: false,
-          evented: false
-        });
-        
-        // Ensure tooltip stays visible with wall
-        measureTooltipRef.current.set({
-          objectType: 'measurementTooltip'
-        });
-        
-        canvas.renderAll();
-      }
-      
-      toast.success(`Wall created (${(distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2)}m)`);
-    } else {
-      canvas.remove(currentWall);
-      if (measureTooltipRef.current) {
-        canvas.remove(measureTooltipRef.current);
-      }
-    }
-    
+    // Reset drawing state
     setIsDrawing(false);
-    setCurrentWall(null);
     startPointRef.current = null;
-    measureTooltipRef.current = null;
-  }, [fabricCanvasRef, isDrawing, currentWall, straightenLine, calculateDistance, updateMeasurementTooltip]);
+    currentWallRef.current = null;
+    
+    // Save canvas state for undo/redo
+    
+  }, [isDrawing, fabricCanvasRef]);
   
+  // Set up canvas event handlers
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || tool !== DrawingMode.WALL) return;
     
-    if (tool === DrawingMode.WALL) {
-      logger.info("Setting up wall drawing event handlers");
-      canvas.on('mouse:down', startDrawing);
-      canvas.on('mouse:move', continueDrawing);
-      canvas.on('mouse:up', endDrawing);
+    // Mouse down handler
+    const handleMouseDown = (e: any) => {
+      if (e.target) return; // Skip if clicking on an object
       
-      canvas.defaultCursor = 'crosshair';
+      const pointer = canvas.getPointer(e);
+      handleWallStart({ x: pointer.x, y: pointer.y });
+    };
+    
+    // Mouse move handler
+    const handleMouseMove = (e: any) => {
+      if (!isDrawing) return;
       
-      return () => {
-        canvas.off('mouse:down', startDrawing);
-        canvas.off('mouse:move', continueDrawing);
-        canvas.off('mouse:up', endDrawing);
-        canvas.defaultCursor = 'default';
-      };
-    } else {
-      if (canvas.defaultCursor === 'crosshair' && tool !== DrawingMode.STRAIGHT_LINE && tool !== DrawingMode.DRAW) {
-        canvas.defaultCursor = 'default';
+      const pointer = canvas.getPointer(e);
+      handleWallUpdate({ x: pointer.x, y: pointer.y });
+    };
+    
+    // Mouse up handler
+    const handleMouseUp = () => {
+      if (isDrawing) {
+        handleWallComplete();
       }
-    }
-  }, [fabricCanvasRef, tool, startDrawing, continueDrawing, endDrawing]);
+    };
+    
+    // Add event listeners
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
+    
+    // Clean up
+    return () => {
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
+    };
+    
+  }, [tool, isDrawing, fabricCanvasRef, handleWallStart, handleWallUpdate, handleWallComplete]);
   
   return {
     isDrawing,
-    currentWall,
-    startDrawing,
-    continueDrawing,
-    endDrawing
+    currentWall: currentWallRef.current
   };
 };

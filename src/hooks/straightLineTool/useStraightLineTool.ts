@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for straight line drawing tool with enhanced features
  * @module hooks/straightLineTool/useStraightLineTool
@@ -15,6 +14,7 @@ import { toast } from 'sonner';
 import * as Sentry from '@sentry/react';
 import { constrainToMajorAngles } from '@/utils/grid/snapping';
 import logger from '@/utils/logger';
+import { GRID_SPACING } from '@/constants/numerics';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -81,7 +81,8 @@ export const useStraightLineTool = ({
     toggleSnapToGrid: toggleGridSnapping 
   } = useGridSnapping({
     initialSnapEnabled: true,
-    fabricCanvasRef
+    fabricCanvasRef,
+    defaultGridSize: GRID_SPACING.SMALL
   });
   
   // Initialize the line state

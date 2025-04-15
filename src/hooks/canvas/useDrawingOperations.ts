@@ -13,7 +13,10 @@ export const useDrawingOperations = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>
 ) => {
   const { tool, lineColor, lineThickness, setCanUndo, setCanRedo } = useDrawingContext();
-  const { snapPointToGrid } = useGridSnapping(fabricCanvasRef); // Pass the fabricCanvasRef argument
+  const { snapPointToGrid } = useGridSnapping({ 
+    fabricCanvasRef,
+    initialSnapEnabled: true
+  }); 
   
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
