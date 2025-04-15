@@ -4,7 +4,7 @@
  * Provides type guards and event handling helpers
  * @module fabric/events
  */
-import { CustomTouchEvent, isTouchEvent, isMouseEvent } from "@/types/fabric";
+import { isTouchEvent, isMouseEvent } from "@/types/fabric";
 
 /**
  * Type guard to check if an event is a keyboard event

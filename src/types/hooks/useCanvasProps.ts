@@ -1,13 +1,9 @@
-
 /**
- * Type definitions for Canvas hook props
- * Defines interfaces for canvas-related hooks
+ * Canvas Props Interface
  * @module types/hooks/useCanvasProps
  */
-import { FabricCanvas } from '@/types/fabric';
-import { DrawingTool } from '@/types/core/DrawingTool';
-import { DebugInfoState } from '@/types/core/DebugInfo';
-import { MutableRefObject } from 'react';
+import { FabricCanvas } from "@/types/fabric";
+import { DrawingTool } from "@/types/core/DrawingTool";
 
 /**
  * Props for useCanvasOperations hook

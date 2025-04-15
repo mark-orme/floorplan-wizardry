@@ -1,10 +1,11 @@
+
 /**
  * Gesture utilities for fabric.js
  * Provides helpers for handling touch and mouse gestures
  * @module utils/fabric/gestures
  */
 import { Canvas, PencilBrush, Point, Object as FabricObject } from 'fabric';
-import { CustomTouchEvent, FabricPointerEvent, isTouchEvent, isMouseEvent } from '@/types/fabric';
+import { FabricPointerEvent, isTouchEvent, isMouseEvent } from '@/types/fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { FabricEventNames } from '@/types/fabric-events';
 

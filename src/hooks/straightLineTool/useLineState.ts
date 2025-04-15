@@ -1,93 +1,78 @@
 /**
- * Hook for managing straight line drawing state
+ * State management for straight line tool
  * @module hooks/straightLineTool/useLineState
  */
-import { useCallback, useRef, useState } from "react";
-import { Object as FabricObject, Line, Text } from "fabric";
+import { useRef, useState, useCallback } from "react";
+import { Canvas, Line, Object as FabricObject, Text } from "fabric";
 import { Point } from "@/types/core/Geometry";
-import { FabricLine } from "@/types/fabric";
 import { calculateDistance } from "@/utils/geometry/lineOperations";
 import logger from "@/utils/logger";
 
 /**
- * Input method for drawing lines
+ * Input methods for drawing
  */
 export enum InputMethod {
   MOUSE = "mouse",
   TOUCH = "touch",
-  STYLUS = "stylus",
+  KEYBOARD = "keyboard",
   PENCIL = "pencil",
-  KEYBOARD = "keyboard"
+  STYLUS = "stylus"
 }
 
 /**
- * Line drawing state
- */
-export interface LineState {
-  isActive: boolean;
-  isToolInitialized: boolean;
-  isDrawing: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  currentLine: FabricLine | null;
-  inputMethod: InputMethod;
-  isPencilMode: boolean;
-  anglesEnabled: boolean;
-  snapEnabled: boolean;
-  measurementData: {
-    distance: number | null;
-    angle: number | null;
-  };
-}
-
-/**
- * Create default line state
- */
-export const createDefaultLineState = (): LineState => ({
-  isActive: false,
-  isToolInitialized: false,
-  isDrawing: false,
-  startPoint: null,
-  currentPoint: null,
-  currentLine: null,
-  inputMethod: InputMethod.MOUSE,
-  isPencilMode: false,
-  anglesEnabled: true,
-  snapEnabled: true,
-  measurementData: {
-    distance: null,
-    angle: null
-  }
-});
-
-/**
- * Props for the useLineState hook
+ * Props for useLineState hook
  */
 export interface UseLineStateProps {
-  fabricCanvasRef: React.MutableRefObject<any>;
+  /**
+   * Reference to the fabric canvas
+   */
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+  /**
+   * Line thickness
+   * @default 2
+   */
   lineThickness?: number;
+  /**
+   * Line color
+   * @default "#000000"
+   */
   lineColor?: string;
 }
 
 /**
- * Hook for managing straight line drawing state
+ * Hook for managing straight line tool state
+ * @param props - Hook properties
  */
-export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) => {
-  // Drawing state
+export const useLineState = (props: UseLineStateProps) => {
+  const { fabricCanvasRef, lineThickness = 2, lineColor = "#000000" } = props;
+  
+  // State for tracking drawing status
   const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
   
-  // Refs for persistent state
+  // Input method
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  
+  // References for line drawing
   const startPointRef = useRef<Point | null>(null);
-  const currentLineRef = useRef<FabricObject | null>(null);
+  const currentLineRef = useRef<Line | null>(null);
   const distanceTooltipRef = useRef<FabricObject | null>(null);
   
   // Grid and snapping state
   const [snapEnabled, setSnapEnabled] = useState(true);
   const snapGridSizeRef = useRef(20); // Default grid size
   
-  // Add input method state
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  // Add pencil mode state
+  const [isPencilMode, setIsPencilMode] = useState(false);
+  
+  // Add angles enabled state
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
+  
+  // Add measurement data state
+  const [measurementData, setMeasurementData] = useState({
+    distance: null,
+    angle: null
+  });
   
   /**
    * Set the start point for the line
@@ -99,7 +84,7 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
   /**
    * Set the current line object
    */
-  const setCurrentLine = useCallback((line: FabricObject | null) => {
+  const setCurrentLine = useCallback((line: Line | null) => {
     currentLineRef.current = line;
   }, []);
   
@@ -147,7 +132,7 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
     if (!currentLineRef.current || !distanceTooltipRef.current) return;
     
     // Update line points
-    (currentLineRef.current as Line).set({
+    currentLineRef.current.set({
       x2: currentPoint.x,
       y2: currentPoint.y
     });
@@ -158,15 +143,15 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
     // Update tooltip position and text
     const midX = (startPoint.x + currentPoint.x) / 2;
     const midY = (startPoint.y + currentPoint.y) / 2;
-    (distanceTooltipRef.current as Text).set({
+    distanceTooltipRef.current.set({
       left: midX,
       top: midY - 15, // Position above the line
       text: `${Math.round(distance)}px`
     });
     
     // Update objects
-    (currentLineRef.current as Line).setCoords();
-    (distanceTooltipRef.current as Text).setCoords();
+    currentLineRef.current.setCoords();
+    distanceTooltipRef.current.setCoords();
   }, []);
   
   /**
@@ -220,19 +205,24 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
     setSnapEnabled(prev => !prev);
   }, []);
   
+  /**
+   * Toggle angles
+   */
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
+  
   return {
     isDrawing,
+    setIsDrawing,
     isToolInitialized,
+    setIsToolInitialized,
     startPointRef,
     currentLineRef,
     distanceTooltipRef,
     setStartPoint,
     setCurrentLine,
     setDistanceTooltip,
-    setIsDrawing,
-    createLine,
-    createDistanceTooltip,
-    updateLineAndTooltip,
     initializeTool,
     resetDrawingState,
     snapEnabled,
@@ -240,6 +230,12 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
     snapLineToGrid,
     toggleSnap,
     inputMethod,
-    setInputMethod
+    setInputMethod,
+    isPencilMode,
+    setIsPencilMode,
+    anglesEnabled,
+    toggleAngles,
+    measurementData,
+    setMeasurementData
   };
 };

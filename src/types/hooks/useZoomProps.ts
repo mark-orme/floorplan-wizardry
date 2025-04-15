@@ -1,10 +1,8 @@
-
 /**
- * Type definitions for Zoom hook props
- * Defines interfaces for zoom-related hooks
+ * Zoom Props Interface
  * @module types/hooks/useZoomProps
  */
-import { FabricCanvas } from '@/types/fabric';
+import { FabricCanvas } from "@/types/fabric";
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { MutableRefObject } from 'react';
 

@@ -1,4 +1,3 @@
-
 /**
  * Canvas Controller Setup Hook
  * Handles initialization and setup of the canvas controller
@@ -8,11 +7,11 @@
 import { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useCanvasInitialization } from "@/hooks/canvas-initialization";
-import { DebugInfoState } from "@/types/drawingTypes";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DebugInfoState } from "@/types/core/DebugInfo";
+import { DrawingTool } from "@/types/core/DrawingTool";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
-import type { CanvasReferences } from "@/types/fabric";
+import { CanvasReferences } from "@/types/fabric";
 
 /**
  * Canvas controller setup properties
