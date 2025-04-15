@@ -67,7 +67,7 @@ export function useCanvasPersistence({
       // Save to IndexedDB
       try {
         await saveCanvasToIDB(canvasId, sanitizedData);
-        canvas.renderAll();
+        canvas.renderAll(); // Fixed: removed argument from renderAll()
       } catch (idbError) {
         console.warn('Failed to save to IndexedDB, using localStorage only:', idbError);
       }
