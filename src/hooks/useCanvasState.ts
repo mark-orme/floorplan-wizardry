@@ -1,139 +1,62 @@
 
-/**
- * Canvas state hook
- * Manages the core state for canvas operations
- * @module hooks/useCanvasState
- */
-import { useState } from 'react';
-import { BRUSH_CONSTANTS } from '@/constants/brushConstants';
-import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
-import { DrawingTool } from '@/types/core/DrawingTool';
-import { DrawingMode } from '@/constants/drawingModes';
+import { useState, useEffect, useRef } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { DrawingMode } from "@/constants/drawingModes";
+import { toast } from "sonner";
+import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 
-/**
- * Re-export DrawingMode from the canonical source
- * This ensures consistency across the application
- */
-export { DrawingMode };
-export type { DrawingTool };
-
-/**
- * Canvas state interface
- * Defines the complete state for the canvas
- * 
- * @interface CanvasState
- */
-export interface CanvasState {
-  /** Active drawing tool */
-  tool: DrawingMode;
-  /** Current zoom level */
-  zoomLevel: number;
-  /** Line thickness */
-  lineThickness: number;
-  /** Line color */
-  lineColor: string;
-  /** Whether to snap to grid */
-  snapToGrid: boolean;
-}
-
-/**
- * Result interface for useCanvasState hook
- * Includes state values and setter functions
- * 
- * @interface UseCanvasStateResult
- * @extends CanvasState
- */
-export interface UseCanvasStateResult extends CanvasState {
-  /** Set active drawing tool */
-  setTool: (tool: DrawingMode) => void;
-  /** Set zoom level */
-  setZoomLevel: (zoomLevel: number) => void;
-  /** Set line thickness */
-  setLineThickness: (lineThickness: number) => void;
-  /** Set line color */
-  setLineColor: (lineColor: string) => void;
-  /** Set snap to grid */
-  setSnapToGrid: (snapToGrid: boolean) => void;
-  /** Toggle snap to grid */
-  toggleSnapToGrid: () => void;
-}
-
-/**
- * Default canvas state values
- * Initial state for the canvas
- * 
- * @constant {CanvasState} DEFAULT_CANVAS_STATE
- */
-export const DEFAULT_CANVAS_STATE: CanvasState = {
-  tool: DrawingMode.SELECT,
-  zoomLevel: ZOOM_CONSTANTS.DEFAULT_ZOOM,
-  lineThickness: BRUSH_CONSTANTS.DEFAULT_PENCIL_WIDTH,
-  lineColor: BRUSH_CONSTANTS.DEFAULT_PENCIL_COLOR,
-  snapToGrid: true
-};
-
-/**
- * Hook for managing canvas state
- * 
- * @returns {UseCanvasStateResult} Canvas state and setter functions
- */
-export function useCanvasState(): UseCanvasStateResult {
-  const [state, setState] = useState<CanvasState>(DEFAULT_CANVAS_STATE);
+export const useCanvasState = () => {
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [showGridDebug, setShowGridDebug] = useState<boolean>(false);
+  const [forceRefreshKey, setForceRefreshKey] = useState<number>(0);
+  const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineThickness, setLineThickness] = useState<number>(2);
+  const [lineColor, setLineColor] = useState<string>("#000000");
   
-  /**
-   * Set active drawing tool
-   * @param {DrawingMode} tool - Drawing tool to set
-   */
-  const setTool = (tool: DrawingMode): void => {
-    setState(prev => ({ ...prev, tool }));
-  };
+  const gridInitializedRef = useRef<boolean>(false);
+  const retryCountRef = useRef<number>(0);
+  const maxRetries = 3;
+  const canvasStableRef = useRef<boolean>(false);
+  const mountedRef = useRef<boolean>(true);
   
-  /**
-   * Set zoom level
-   * @param {number} zoomLevel - Zoom level to set
-   */
-  const setZoomLevel = (zoomLevel: number): void => {
-    setState(prev => ({ ...prev, zoomLevel }));
-  };
-  
-  /**
-   * Set line thickness
-   * @param {number} lineThickness - Line thickness to set
-   */
-  const setLineThickness = (lineThickness: number): void => {
-    setState(prev => ({ ...prev, lineThickness }));
-  };
-  
-  /**
-   * Set line color
-   * @param {string} lineColor - Line color to set
-   */
-  const setLineColor = (lineColor: string): void => {
-    setState(prev => ({ ...prev, lineColor }));
-  };
-  
-  /**
-   * Set snap to grid
-   * @param {boolean} snapToGrid - Whether to snap to grid
-   */
-  const setSnapToGrid = (snapToGrid: boolean): void => {
-    setState(prev => ({ ...prev, snapToGrid }));
-  };
-  
-  /**
-   * Toggle snap to grid
-   */
-  const toggleSnapToGrid = (): void => {
-    setState(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }));
-  };
+  // Reset canvas initialization state when the page loads
+  useEffect(() => {
+    console.log("Index page mounted - resetting initialization state");
+    resetInitializationState();
+    gridInitializedRef.current = false;
+    canvasStableRef.current = false;
+    retryCountRef.current = 0;
+    mountedRef.current = true;
+    
+    // Log a welcome message
+    toast.success("Floor Plan Editor loaded with enhanced grid system", {
+      duration: 3000,
+      id: "floor-plan-welcome"
+    });
+    
+    return () => {
+      console.log("Index page unmounting - cleanup");
+      mountedRef.current = false;
+    };
+  }, [forceRefreshKey]);
   
   return {
-    ...state,
-    setTool,
-    setZoomLevel,
+    canvas,
+    setCanvas,
+    showGridDebug,
+    setShowGridDebug,
+    forceRefreshKey,
+    setForceRefreshKey,
+    activeTool,
+    setActiveTool,
+    lineThickness,
     setLineThickness,
+    lineColor,
     setLineColor,
-    setSnapToGrid,
-    toggleSnapToGrid
+    gridInitializedRef,
+    retryCountRef,
+    maxRetries,
+    canvasStableRef,
+    mountedRef
   };
-}
+};

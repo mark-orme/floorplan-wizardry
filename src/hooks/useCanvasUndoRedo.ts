@@ -1,8 +1,4 @@
 
-/**
- * Hook for efficient undo/redo functionality with canvas snapshots
- * Uses throttled/debounced state capture for better performance
- */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useThrottledCanvasUpdate } from './useThrottledCanvasUpdate';
