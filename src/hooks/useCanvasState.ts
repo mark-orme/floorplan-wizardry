@@ -63,5 +63,6 @@ export const useCanvasState = (): UseCanvasStateResult => {
 };
 
 // Re-export the types for backward compatibility
-export { DrawingTool, CanvasState, DEFAULT_CANVAS_STATE } from "@/types/canvasStateTypes";
-export type { UseCanvasStateResult } from "@/types/canvasStateTypes";
+export type { DrawingTool, CanvasState, UseCanvasStateResult } from "@/types/canvasStateTypes";
+export { DEFAULT_CANVAS_STATE } from "@/types/canvasStateTypes";
+

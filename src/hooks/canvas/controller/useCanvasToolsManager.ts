@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas tools and operations
  * @module canvas/controller/useCanvasToolsManager
@@ -56,11 +55,11 @@ import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
 
 // Custom interface for canvas interactions that matches what we use
 interface CanvasInteractionsResult {
-  resetViewport: () => void;
   drawingState?: any;
   currentZoom: number;
   toggleSnap: () => void;
   snapEnabled: boolean;
+  resetViewport?: () => void; // Make this optional since our implementation doesn't provide it
 }
 
 /**
