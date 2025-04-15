@@ -11,7 +11,8 @@ export enum FabricEventNames {
   OBJECT_REMOVED = 'object:removed',
   SELECTION_CREATED = 'selection:created',
   SELECTION_UPDATED = 'selection:updated',
-  SELECTION_CLEARED = 'selection:cleared'
+  SELECTION_CLEARED = 'selection:cleared',
+  PATH_CREATED = 'path:created'
 }
 
 /**

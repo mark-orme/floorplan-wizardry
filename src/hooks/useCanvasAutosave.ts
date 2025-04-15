@@ -1,10 +1,9 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { saveCanvasToIDB, loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
 import { debounce } from '@/utils/debounce';
 import { toast } from 'sonner';
-import { FabricEventTypes } from '@/types/fabric-types';
+import { FabricEventTypes } from '@/types/fabric-events';
 
 interface UseCanvasAutosaveProps {
   canvas: FabricCanvas | null;

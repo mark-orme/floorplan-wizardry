@@ -25,3 +25,4 @@ export { FabricEventNames } from './fabric-events';
  * Re-export FabricEventTypes as an alias for FabricEventNames for compatibility
  */
 export const FabricEventTypes = OriginalFabricEventNames;
+
