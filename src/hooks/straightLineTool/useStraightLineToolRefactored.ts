@@ -1,4 +1,3 @@
-
 /**
  * Refactored hook for using the straight line drawing tool
  * This hook orchestrates all the line drawing functionality by composing smaller hooks
@@ -107,7 +106,7 @@ export const useStraightLineToolRefactored = ({
     return { start, end };
   };
 
-  // Use the tool cancellation hook
+  // Use the tool cancellation hook - make sure inputMethod is compatible
   const {
     cancelDrawing,
     toggleGridSnapping
@@ -118,7 +117,7 @@ export const useStraightLineToolRefactored = ({
     distanceTooltipRef,
     setIsDrawing,
     resetDrawingState,
-    inputMethod,
+    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
     toggleSnap,
     snapEnabled
   });
@@ -209,7 +208,7 @@ export const useStraightLineToolRefactored = ({
     isDrawing,
     isToolInitialized: isToolInitializedResult || isToolInitialized,
     snapEnabled,
-    inputMethod,
+    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
     isPencilMode,
     
     // Methods for direct manipulation

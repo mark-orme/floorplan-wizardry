@@ -99,7 +99,7 @@ export const useStraightLineTool = ({
     inputMethod,
     isPencilMode,
     isToolInitialized: isLineStateInitialized,
-    setIsToolInitialized: setLineStateToolInitialized, // Rename to avoid duplicate
+    setIsToolInitialized: setLineStateToolInitialized,
     snapPointToGrid: lineStateSnapPointToGrid,
     snapLineToGrid: lineStateSnapLineToGrid
   } = useLineState({
@@ -126,7 +126,7 @@ export const useStraightLineTool = ({
     distanceTooltipRef,
     setIsDrawing,
     resetDrawingState,
-    inputMethod,
+    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
     toggleSnap: toggleGridSnapping,
     snapEnabled
   });
@@ -159,10 +159,10 @@ export const useStraightLineTool = ({
     onChange,
     lineColor,
     lineThickness,
-    snapToAngle: false, // We're handling this with shift constraint
+    snapToAngle: false,
     snapAngleDeg: 45,
     snapEnabled,
-    snapLineToGrid: enhancedSnapLineToGrid, // Use enhanced function with shift support
+    snapLineToGrid: enhancedSnapLineToGrid,
     inputMethod,
     logDrawingEvent: (message, eventType, data) => {
       logger.info(message, { eventType, ...data });
@@ -189,7 +189,7 @@ export const useStraightLineTool = ({
     // Initialize tool when activated
     if (isStraightLineTool && !isToolInitialized) {
       setIsToolInitialized(true);
-      setLineStateToolInitialized(true); // Update to use the renamed variable
+      setLineStateToolInitialized(true);
       
       // Log tool initialization
       logger.info("Straight line tool initialized", {
@@ -215,7 +215,7 @@ export const useStraightLineTool = ({
     isActive,
     isToolInitialized,
     isDrawing,
-    inputMethod,
+    inputMethod: inputMethod === 'stylus' ? 'pencil' : inputMethod,
     isPencilMode,
     snapEnabled,
     handlePointerDown,
