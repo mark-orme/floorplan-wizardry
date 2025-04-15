@@ -1,16 +1,17 @@
 
 import React from 'react';
-import { CanvasApp } from "@/components/canvas/CanvasApp";
-import { Canvas as FabricCanvas } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
+import { CanvasApp } from './CanvasApp';
+import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 
 interface EditorContentProps {
-  forceRefreshKey: number;
+  forceRefreshKey?: number;
   setCanvas: (canvas: FabricCanvas) => void;
-  showGridDebug: boolean;
+  showGridDebug?: boolean;
   tool: DrawingMode;
   lineThickness: number;
   lineColor: string;
+  enableSync?: boolean; // Added enableSync prop
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -19,24 +20,21 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   showGridDebug,
   tool,
   lineThickness,
-  lineColor
+  lineColor,
+  enableSync = true // Default to true
 }) => {
   return (
-    <div className="flex-1 overflow-hidden relative">
-      <CanvasApp 
-        key={`canvas-app-${forceRefreshKey}`}
-        setCanvas={setCanvas}
-        tool={tool}
-        lineThickness={lineThickness}
-        lineColor={lineColor}
-      />
-      
-      {/* Grid Debug Panel - only shown when showGridDebug is true */}
-      {showGridDebug && (
-        <div className="absolute top-0 right-0 bg-white/90 p-2 text-xs">
-          Grid Debug Active
-        </div>
-      )}
+    <div className="flex-1 overflow-hidden">
+      <div className="w-full h-full">
+        <CanvasApp
+          key={forceRefreshKey}
+          setCanvas={setCanvas}
+          tool={tool}
+          lineThickness={lineThickness}
+          lineColor={lineColor}
+          enableSync={enableSync}
+        />
+      </div>
     </div>
   );
 };

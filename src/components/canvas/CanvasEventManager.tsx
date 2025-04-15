@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -6,6 +5,7 @@ import { useStraightLineTool } from "@/hooks/straightLineTool/useStraightLineToo
 import { useCanvasKeyboardShortcuts } from "@/hooks/canvas/useCanvasKeyboardShortcuts";
 import { useApplePencilSupport } from "@/hooks/canvas/useApplePencilSupport";
 import { requestOptimizedRender, createSmoothEventHandler, createCompletionHandler } from "@/utils/canvas/renderOptimizer";
+import { broadcastFloorPlanUpdate, subscribeSyncChannel, isUpdateFromThisDevice } from "@/utils/syncService";
 
 /**
  * Props for the CanvasEventManager
@@ -21,6 +21,7 @@ interface CanvasEventManagerProps {
   redo: () => void;
   deleteSelectedObjects: () => void;
   onDrawingComplete?: () => void; // Callback for drawing completion
+  enableSync?: boolean; // Enable real-time sync
 }
 
 /**
@@ -36,7 +37,8 @@ export const CanvasEventManager = ({
   undo,
   redo,
   deleteSelectedObjects,
-  onDrawingComplete
+  onDrawingComplete,
+  enableSync = true
 }: CanvasEventManagerProps) => {
   // Track last active tool
   const lastToolRef = useRef<DrawingMode>(tool);
@@ -61,6 +63,22 @@ export const CanvasEventManager = ({
       if (onDrawingComplete) {
         onDrawingComplete();
       }
+      
+      // Broadcast canvas state for real-time sync
+      if (enableSync && canvas) {
+        try {
+          const floorPlanData = [{
+            id: 'current-canvas',
+            name: 'Shared Canvas',
+            canvasJson: JSON.parse(JSON.stringify(canvas.toJSON())),
+            updatedAt: new Date().toISOString()
+          }];
+          
+          broadcastFloorPlanUpdate(floorPlanData);
+        } catch (error) {
+          console.error('Failed to broadcast canvas update:', error);
+        }
+      }
     }, 300)
   ).current;
   
@@ -81,6 +99,71 @@ export const CanvasEventManager = ({
     redo,
     deleteSelected: deleteSelectedObjects
   });
+  
+  // Set up real-time sync
+  useEffect(() => {
+    if (!canvas || !enableSync) return;
+    
+    // Subscribe to sync channel for real-time updates
+    const channel = subscribeSyncChannel();
+    
+    // Handle remote updates
+    channel.bind('client-floorplan-update', (data: any) => {
+      // Skip if this is our own update
+      if (isUpdateFromThisDevice(data.deviceId)) {
+        return;
+      }
+      
+      try {
+        // Get floor plan and canvas data
+        const remotePlans = data.floorPlans;
+        if (!remotePlans || remotePlans.length === 0) return;
+        
+        // Apply remote canvas state
+        const remoteCanvasJson = remotePlans[0].canvasJson;
+        if (remoteCanvasJson) {
+          // Keep track of the current selection
+          const activeObject = canvas.getActiveObject();
+          
+          // Load new state, preserving grid
+          const gridObjects = canvas.getObjects().filter(obj => 
+            (obj as any).objectType === 'grid'
+          );
+          
+          // Apply the remote canvas state
+          canvas.loadFromJSON(remoteCanvasJson, () => {
+            // Restore grid objects
+            gridObjects.forEach(obj => {
+              if (!canvas.contains(obj)) {
+                canvas.add(obj);
+                canvas.sendToBack(obj);
+              }
+            });
+            
+            // Restore selection if possible
+            if (activeObject && !canvas.contains(activeObject)) {
+              const similarObjects = canvas.getObjects().filter(obj => 
+                obj.type === activeObject.type
+              );
+              if (similarObjects.length > 0) {
+                canvas.setActiveObject(similarObjects[0]);
+              }
+            }
+            
+            // Render the updated canvas
+            requestOptimizedRender(canvas, 'remote-update');
+            console.log('Applied remote canvas update');
+          });
+        }
+      } catch (error) {
+        console.error('Error applying remote canvas update:', error);
+      }
+    });
+    
+    return () => {
+      channel.unbind('client-floorplan-update');
+    };
+  }, [canvas, enableSync]);
   
   // Set up event listeners
   useEffect(() => {

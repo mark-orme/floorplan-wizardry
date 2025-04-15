@@ -1,3 +1,4 @@
+
 /**
  * Synchronization service for floor plan data
  * Uses Pusher for real-time data synchronization
@@ -5,12 +6,14 @@
  */
 import { subscribeToChannel, getPusher } from './pusher';
 import logger from './logger';
+import { toast } from 'sonner';
 import { FloorPlan } from '@/types/floorPlanTypes';
 
 // Constants
 export const SYNC_CHANNEL = 'floorplan-sync';
 export const SAVE_EVENT = 'save-floorplan';
 export const UPDATE_EVENT = 'update-floorplan';
+export const PRESENCE_EVENT = 'presence-update';
 
 /**
  * Generate a unique device ID to identify this client
@@ -40,7 +43,29 @@ const DEVICE_ID = getDeviceId();
  */
 export const subscribeSyncChannel = () => {
   logger.info('Subscribing to floor plan sync channel');
-  return subscribeToChannel(SYNC_CHANNEL);
+  const channel = subscribeToChannel(SYNC_CHANNEL);
+  
+  // Setup presence events
+  setTimeout(() => {
+    try {
+      const connectedUsers = getPusher().channel(SYNC_CHANNEL)?.members?.count || 1;
+      
+      if (connectedUsers > 1) {
+        toast.info(`${connectedUsers - 1} other ${connectedUsers === 2 ? 'user' : 'users'} connected`);
+        
+        // Broadcast presence
+        channel.trigger(`client-${PRESENCE_EVENT}`, {
+          count: connectedUsers,
+          timestamp: Date.now(),
+          deviceId: DEVICE_ID,
+        });
+      }
+    } catch (err) {
+      logger.error('Error counting connected users:', err);
+    }
+  }, 1500);
+  
+  return channel;
 };
 
 /**
@@ -86,6 +111,29 @@ export const broadcastFloorPlanUpdate = (floorPlans: FloorPlan[]) => {
 };
 
 /**
+ * Notify other users about presence change
+ */
+export const notifyPresenceChange = () => {
+  logger.info('Broadcasting presence update');
+  
+  try {
+    const channel = getPusher().channel(SYNC_CHANNEL);
+    
+    if (channel && channel.subscribed) {
+      const count = channel.members?.count || 1;
+      
+      channel.trigger(`client-${PRESENCE_EVENT}`, {
+        count,
+        timestamp: Date.now(),
+        deviceId: DEVICE_ID,
+      });
+    }
+  } catch (error) {
+    logger.error('Error broadcasting presence update:', error);
+  }
+};
+
+/**
  * Check if an update is from this device
  * Used to prevent processing own updates in sync mechanisms
  * 
@@ -100,6 +148,8 @@ export default {
   subscribeSyncChannel,
   broadcastFloorPlanUpdate,
   isUpdateFromThisDevice,
+  notifyPresenceChange,
   SYNC_CHANNEL,
-  UPDATE_EVENT
+  UPDATE_EVENT,
+  PRESENCE_EVENT
 };

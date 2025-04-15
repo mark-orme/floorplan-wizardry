@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasProvider } from "@/contexts/CanvasContext";
 import { DrawingProvider } from "@/contexts/DrawingContext";
@@ -9,6 +9,8 @@ import { useCanvasState } from "@/hooks/useCanvasState";
 import { useGridManagement } from "@/hooks/useGridManagement";
 import { useToolbarActions } from "@/hooks/useToolbarActions";
 import { DrawingMode } from "@/constants/drawingModes";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 /**
  * Main Index page component
@@ -36,6 +38,9 @@ const Index = () => {
     canvasStableRef,
     mountedRef
   } = useCanvasState();
+  
+  // Real-time collaboration state
+  const [enableSync, setEnableSync] = useState(true);
   
   // Use grid management hook
   const { toggleGridDebug, handleForceRefresh } = useGridManagement(
@@ -84,6 +89,19 @@ const Index = () => {
         onLineColorChange={setLineColor}
       />
       
+      <div className="bg-muted/30 border-b px-4 py-2 flex items-center justify-end space-x-4">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="collaboration-mode"
+            checked={enableSync}
+            onCheckedChange={setEnableSync}
+          />
+          <Label htmlFor="collaboration-mode">
+            Real-time Collaboration
+          </Label>
+        </div>
+      </div>
+      
       <DrawingProvider>
         <CanvasProvider>
           <CanvasControllerProvider>
@@ -94,6 +112,7 @@ const Index = () => {
               tool={activeTool}
               lineThickness={lineThickness}
               lineColor={lineColor}
+              enableSync={enableSync}
             />
           </CanvasControllerProvider>
         </CanvasProvider>

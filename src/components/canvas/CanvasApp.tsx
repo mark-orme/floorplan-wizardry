@@ -10,6 +10,9 @@ import { useApplePencilSupport } from '@/hooks/canvas/useApplePencilSupport';
 import { updateGridWithZoom } from '@/utils/grid/gridVisibility';
 import { DrawingMode } from '@/constants/drawingModes';
 import { optimizeCanvasPerformance, requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
+import { usePusher } from '@/hooks/usePusher';
+import { toast } from 'sonner';
+import { SYNC_CHANNEL } from '@/utils/syncService';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
@@ -18,6 +21,7 @@ interface CanvasAppProps {
   tool?: DrawingMode;
   lineColor?: string;
   lineThickness?: number;
+  enableSync?: boolean; // Enable real-time collaboration
 }
 
 export const CanvasApp: React.FC<CanvasAppProps> = ({ 
@@ -26,17 +30,52 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   height = 600,
   tool: externalTool,
   lineColor: externalLineColor,
-  lineThickness: externalLineThickness
+  lineThickness: externalLineThickness,
+  enableSync = true
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const { tool: contextTool, lineColor: contextLineColor, lineThickness: contextLineThickness } = useDrawingContext();
   const gridLayerRef = useRef<any[]>([]);
+  const [collaborators, setCollaborators] = useState(0);
   
   // Use external props if provided, otherwise use context values
   const tool = externalTool || contextTool;
   const lineColor = externalLineColor || contextLineColor;
   const lineThickness = externalLineThickness || contextLineThickness;
+  
+  // Set up Pusher real-time connection
+  const { isConnected } = usePusher({
+    channelName: SYNC_CHANNEL,
+    events: {
+      'presence': (data: any) => {
+        if (data && data.count !== undefined) {
+          setCollaborators(Math.max(0, data.count - 1)); // Exclude self
+        }
+      }
+    },
+    enableSubscription: enableSync
+  });
+  
+  // Show collaboration status
+  useEffect(() => {
+    if (enableSync && isConnected) {
+      toast.success('Real-time collaboration enabled', {
+        id: 'collab-status',
+        duration: 3000
+      });
+    }
+  }, [isConnected, enableSync]);
+  
+  // Update collaboration count
+  useEffect(() => {
+    if (collaborators > 0) {
+      toast.info(`${collaborators} other ${collaborators === 1 ? 'user' : 'users'} editing`, {
+        id: 'collab-count',
+        duration: 3000
+      });
+    }
+  }, [collaborators]);
   
   // Initialize canvas with performance optimizations
   useEffect(() => {
@@ -129,6 +168,13 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   
   return (
     <div className="relative w-full h-full overflow-hidden">
+      {enableSync && isConnected && collaborators > 0 && (
+        <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
+          <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+          {collaborators} {collaborators === 1 ? 'user' : 'users'} collaborating
+        </div>
+      )}
+      
       <canvas 
         ref={canvasRef} 
         className="touch-manipulation border border-gray-200"
@@ -147,6 +193,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
             undo={undo}
             redo={redo}
             deleteSelectedObjects={deleteSelectedObjects}
+            enableSync={enableSync}
           />
           
           <TouchGestureHandler 
