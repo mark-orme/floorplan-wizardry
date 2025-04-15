@@ -1,65 +1,62 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { updateGridWithZoom } from '@/utils/grid/gridVisibility';
-import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
+import { useCanvasController } from '@/components/canvas/controller/CanvasController';
+import { useWindowSize } from '@/hooks/useWindowSize';
+import { setSafeDimensions } from '@/utils/canvas/safeDimensions';
 
-interface UseDimensionsManagerProps {
-  containerRef: React.RefObject<HTMLDivElement>;
-  fabricCanvas: FabricCanvas | null;
-  propWidth?: number;
-  propHeight?: number;
-  windowWidth: number;
-  windowHeight: number;
-  setDimensions: React.Dispatch<React.SetStateAction<{ width: number; height: number }>>;
-}
-
-export const useDimensionsManager = ({
-  containerRef,
-  fabricCanvas,
-  propWidth,
-  propHeight,
-  windowWidth, 
-  windowHeight,
-  setDimensions
-}: UseDimensionsManagerProps) => {
-  // Update canvas dimensions based on container size
+export function useDimensionsManager(containerRef: React.RefObject<HTMLDivElement>) {
+  const { canvas } = useCanvasController();
+  const { width: windowWidth, height: windowHeight } = useWindowSize();
+  const dimensionsSetRef = useRef(false);
+  
+  // Update canvas dimensions when container size changes
+  const updateDimensions = () => {
+    if (!canvas || !containerRef.current) return;
+    
+    try {
+      // Get container dimensions
+      const rect = containerRef.current.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      
+      // Only update if dimensions actually changed
+      if (canvas.width !== width || canvas.height !== height) {
+        // Use our safe dimensions setter to avoid destructuring issues
+        setSafeDimensions(canvas, width, height);
+        dimensionsSetRef.current = true;
+        console.log('Canvas dimensions updated:', width, height);
+      }
+    } catch (error) {
+      console.error('Error updating canvas dimensions:', error);
+    }
+  };
+  
+  // Set up resize observer
   useEffect(() => {
     if (!containerRef.current) return;
     
-    const updateDimensions = () => {
-      if (!containerRef.current) return;
-      
-      // Use container dimensions if props not provided
-      const newWidth = propWidth || containerRef.current.clientWidth;
-      const newHeight = propHeight || containerRef.current.clientHeight;
-      
-      setDimensions({
-        width: Math.max(newWidth, 100), // min width 100px
-        height: Math.max(newHeight, 100) // min height 100px
-      });
-      
-      // Update canvas size if it exists
-      if (fabricCanvas) {
-        fabricCanvas.setDimensions({
-          width: Math.max(newWidth, 100),
-          height: Math.max(newHeight, 100)
-        });
-        
-        // Update grid with new dimensions
-        updateGridWithZoom(fabricCanvas);
-        requestOptimizedRender(fabricCanvas, 'resize');
-      }
-    };
-    
-    // Initial update
+    // Update dimensions initially
     updateDimensions();
     
-    // Listen for window resize
-    window.addEventListener('resize', updateDimensions);
+    // Set up resize observer for continuous updates
+    const observer = new ResizeObserver(() => {
+      updateDimensions();
+    });
     
-    return () => {
-      window.removeEventListener('resize', updateDimensions);
-    };
-  }, [fabricCanvas, containerRef, propWidth, propHeight, windowWidth, windowHeight, setDimensions]);
-};
+    observer.observe(containerRef.current);
+    
+    // Clean up observer on unmount
+    return () => observer.disconnect();
+  }, [canvas, containerRef.current]);
+  
+  // Also update when window size changes
+  useEffect(() => {
+    updateDimensions();
+  }, [windowWidth, windowHeight, canvas]);
+  
+  return {
+    updateDimensions,
+    dimensionsSet: dimensionsSetRef.current
+  };
+}
