@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasProvider } from "@/contexts/CanvasContext";
@@ -102,6 +103,12 @@ const Index = () => {
     }
   }, [isMobile, lineThickness, setLineThickness]);
   
+  // Handle collaboration toggle
+  const handleCollaborationToggle = (enabled: boolean) => {
+    setEnableSync(enabled);
+    toast.info(enabled ? 'Real-time collaboration enabled' : 'Real-time collaboration disabled');
+  };
+  
   return (
     <main className="flex flex-col w-full min-h-screen bg-background">
       <EditorHeader
@@ -140,7 +147,7 @@ const Index = () => {
           <Switch
             id="collaboration-mode"
             checked={enableSync}
-            onCheckedChange={setEnableSync}
+            onCheckedChange={handleCollaborationToggle}
           />
           <Label htmlFor="collaboration-mode" className={isMobile ? "text-sm" : ""}>
             Real-time Collaboration

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Canvas as FabricCanvas, ActiveSelection } from 'fabric';
 import { CanvasEventManager } from './CanvasEventManager';
@@ -16,6 +15,7 @@ import { toast } from 'sonner';
 import { SYNC_CHANNEL } from '@/utils/syncService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { useRealtimeCanvasSync } from '@/hooks/useRealtimeCanvasSync';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas) => void;
@@ -96,38 +96,24 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     };
   }, [fabricCanvas, containerRef, propWidth, propHeight, windowWidth, windowHeight]);
   
-  // Set up Pusher real-time connection
-  const { isConnected } = usePusher({
-    channelName: SYNC_CHANNEL,
-    events: {
-      'presence': (data: any) => {
-        if (data && data.count !== undefined) {
-          setCollaborators(Math.max(0, data.count - 1)); // Exclude self
-        }
-      }
-    },
-    enableSubscription: enableSync
+  // Set up real-time canvas synchronization
+  const { collaborators, lastSyncTime, syncCanvas } = useRealtimeCanvasSync({
+    canvas: fabricCanvas,
+    enabled: enableSync,
+    onRemoteUpdate: (sender, timestamp) => {
+      console.log(`Received canvas update from ${sender} at ${new Date(timestamp).toLocaleTimeString()}`);
+    }
   });
   
   // Show collaboration status
   useEffect(() => {
-    if (enableSync && isConnected) {
-      toast.success('Real-time collaboration enabled', {
+    if (enableSync && collaborators > 0) {
+      toast.success(`${collaborators} other ${collaborators === 1 ? 'user' : 'users'} editing`, {
         id: 'collab-status',
         duration: 3000
       });
     }
-  }, [isConnected, enableSync]);
-  
-  // Update collaboration count
-  useEffect(() => {
-    if (collaborators > 0) {
-      toast.info(`${collaborators} other ${collaborators === 1 ? 'user' : 'users'} editing`, {
-        id: 'collab-count',
-        duration: 3000
-      });
-    }
-  }, [collaborators]);
+  }, [collaborators, enableSync]);
   
   // Initialize canvas with performance optimizations
   useEffect(() => {
@@ -237,7 +223,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
-      {enableSync && isConnected && collaborators > 0 && (
+      {enableSync && collaborators > 0 && (
         <div className="absolute top-2 right-2 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
           <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
           {collaborators} {collaborators === 1 ? 'user' : 'users'} collaborating
@@ -263,6 +249,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
             redo={redo}
             deleteSelectedObjects={historyDeleteSelectedObjects}
             enableSync={enableSync}
+            onDrawingComplete={syncCanvas}
           />
           
           <TouchGestureHandler 
