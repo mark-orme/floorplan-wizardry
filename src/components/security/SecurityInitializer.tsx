@@ -3,7 +3,7 @@
  * SecurityInitializer Component
  * Initializes security features when the application loads
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { initializeCSP } from '@/utils/security/contentSecurityPolicy';
 import { applySecurityMetaTags } from '@/utils/security/httpSecurity';
 import logger from '@/utils/logger';
@@ -14,6 +14,8 @@ import { toast } from 'sonner';
  * Should be rendered at the root level of the application
  */
 export const SecurityInitializer = () => {
+  const [cspApplied, setCspApplied] = useState(false);
+
   useEffect(() => {
     // Force initialize Content Security Policy with a direct meta tag
     // This ensures CSP is enforced immediately
@@ -30,27 +32,47 @@ export const SecurityInitializer = () => {
       const cspTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
       if (!cspTag) {
         logger.warn('CSP meta tag not found after initialization, retrying...');
-        setTimeout(() => initializeCSP(true), 100);
+        
+        // Try again after a delay - use setTimeout for more reliable execution
+        setTimeout(() => {
+          initializeCSP(true);
+          const retryTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+          if (retryTag) {
+            logger.info('CSP meta tag applied on second attempt');
+            setCspApplied(true);
+            
+            // Log the content for verification
+            const content = retryTag.getAttribute('content');
+            console.log('Applied CSP on retry:', content);
+          } else {
+            logger.error('Failed to apply CSP meta tag after retry');
+            toast.error('Security initialization issue detected');
+          }
+        }, 500);
       } else {
         // Log the actual content to verify
         const content = cspTag.getAttribute('content');
         logger.info('CSP meta tag verified', { content });
         console.log('Applied CSP:', content);
+        setCspApplied(true);
         
-        // Check if Sentry and Pusher domains are included
+        // Check if Sentry domains are included
         if (content) {
           const hasSentryDomains = content.includes('sentry.io');
-          const hasPusherDomains = content.includes('pusher.com');
+          const hasSpecificSentryDomain = content.includes('o4508914471927808.ingest.de.sentry.io');
           
           logger.info('CSP domains verification', { 
             hasSentryDomains, 
-            hasPusherDomains 
+            hasSpecificSentryDomain 
           });
           
           // If domains are missing, try to reapply
-          if (!hasSentryDomains || !hasPusherDomains) {
-            logger.warn('CSP missing required domains, reapplying...');
-            setTimeout(() => initializeCSP(true), 200);
+          if (!hasSentryDomains || !hasSpecificSentryDomain) {
+            logger.warn('CSP missing required Sentry domains, reapplying...');
+            setTimeout(() => {
+              initializeCSP(true);
+              toast.info('Security policies refreshed');
+            }, 200);
           }
         }
       }
@@ -62,8 +84,10 @@ export const SecurityInitializer = () => {
         try {
           initializeCSP(true);
           logger.info('Security features initialized on second attempt');
+          setCspApplied(true);
         } catch (retryError) {
           logger.error('Second attempt to initialize security features failed', { error: retryError });
+          toast.error('Security features failed to initialize');
         }
       }, 500);
     }
@@ -115,6 +139,16 @@ export const SecurityInitializer = () => {
             originalPolicy: e.originalPolicy
           });
           
+          // Show user-facing notification for persistent CSP issues
+          if (cspApplied && e.blockedURI.includes('sentry.io')) {
+            toast.error('Security policy conflict detected', {
+              description: 'Some monitoring features may be limited'
+            });
+            
+            // Try to fix by reapplying CSP if it's a Sentry issue
+            setTimeout(() => initializeCSP(true), 100);
+          }
+          
           // Attempt to auto-fix common CSP issues
           if (e.violatedDirective === 'connect-src' || e.violatedDirective === 'worker-src') {
             // If we get connect-src or worker-src violations, it likely means our CSP isn't applied correctly
@@ -139,7 +173,7 @@ export const SecurityInitializer = () => {
       // Clean up event listeners
       window.removeEventListener('securitypolicyviolation', handleSecurityViolation);
     };
-  }, []);
+  }, [cspApplied]);
   
   // This component doesn't render anything
   return null;

@@ -8,6 +8,7 @@ import SecurityInitializer from './components/security/SecurityInitializer';
 import { initializeSecurity } from './utils/security';
 import { ErrorBoundary } from './utils/canvas/errorBoundary';
 import { initializeCSP } from './utils/security/contentSecurityPolicy';
+import { toast } from 'sonner';
 
 // IMPORTANT: Force initialize CSP with development settings first
 // This must happen before any network requests
@@ -17,11 +18,46 @@ initializeCSP(true);
 console.log('Initial CSP applied with these connect-src domains:', 
   document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content'));
 
+// Create the root and render the SecurityInitializer first to ensure CSP is set
+// before other components try to initialize
+const rootElement = createRootElement("root");
+const root = createRoot(rootElement);
+
+// First render only the SecurityInitializer to ensure CSP is properly applied
+root.render(<SecurityInitializer />);
+
 // Increased timeout to ensure CSP is fully applied before services are initialized
 setTimeout(() => {
   // Initialize Sentry and other services after CSP is applied
   initializeServices();
-}, 500);  // Increased timeout for better sequencing
+  
+  // Render the full application
+  root.render(
+    <ErrorBoundary 
+      componentName="Root"
+      fallback={
+        <div className="flex flex-col items-center justify-center h-screen">
+          <div className="text-center p-6 max-w-md mx-auto">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-red-500 text-2xl">!</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+            <p className="text-gray-600 mb-4">We've encountered an error and our team has been notified.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <SecurityInitializer />
+      <App />
+    </ErrorBoundary>
+  );
+}, 1000);  // Increased timeout for better sequencing
 
 function initializeServices() {
   // Check if browser profiling is supported in this environment
@@ -36,19 +72,23 @@ function initializeServices() {
     }
   };
   
-  // Create integrations array based on browser support
-  const sentryIntegrations = [
-    Sentry.browserTracingIntegration(),
-    // Only add replay integration in production to avoid CSP issues in development
-    process.env.NODE_ENV === 'production' ? Sentry.replayIntegration() : null,
-  ].filter(Boolean);
-  
   // Verify CSP is still applied before initializing Sentry
   const cspContent = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
   console.log('CSP state before Sentry initialization:', cspContent || 'No CSP found');
   
-  // Force reapply CSP to ensure it's set correctly
-  initializeCSP(true);
+  // If CSP is missing or doesn't include Sentry, force reapply it
+  if (!cspContent || !cspContent.includes('sentry.io')) {
+    console.warn('CSP missing or does not include Sentry domains, reapplying...');
+    initializeCSP(true);
+    toast.info('Security policies refreshed before services initialization');
+  }
+  
+  // Create integrations array based on browser support
+  const sentryIntegrations = [
+    Sentry.browserTracingIntegration(),
+    // Disable replay integration to avoid worker-src CSP issues
+    // process.env.NODE_ENV === 'production' ? Sentry.replayIntegration() : null,
+  ].filter(Boolean);
   
   // Initialize Sentry for error tracking and monitoring
   Sentry.init({
@@ -64,9 +104,9 @@ function initializeServices() {
     // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
     tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/, /^https:\/\/.*lovable\.app/],
     
-    // Session Replay - disabled in development to avoid CSP issues
-    replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.02 : 0, // 2% in production, 0% in dev
-    replaysOnErrorSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 0, // 20% in production, 0% in dev
+    // Session Replay - DISABLED to avoid CSP issues
+    replaysSessionSampleRate: 0, // Disable session replay
+    replaysOnErrorSampleRate: 0, // Disable error replay
     
     // Disable performance profiling to avoid document policy violations
     profilesSampleRate: 0, 
@@ -124,39 +164,13 @@ function initializeServices() {
     }
   });
   
-  // Verify CSP is still applied before initializing Pusher
+  // Verify CSP is still applied after initializing Sentry
   const cspContentAfterSentry = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
-  console.log('CSP state before Pusher initialization:', cspContentAfterSentry || 'No CSP found');
+  console.log('CSP state after Sentry initialization:', cspContentAfterSentry || 'No CSP found');
   
-  // Force reapply CSP to ensure it's set with pusher domains
-  initializeCSP(true);
+  // Force reapply CSP to ensure it's set with all necessary domains
+  if (!cspContentAfterSentry || !cspContentAfterSentry.includes('sentry.io')) {
+    initializeCSP(true);
+    toast.info('Security policies refreshed after services initialization');
+  }
 }
-
-// Create the root and render the application using our utility
-const rootElement = createRootElement("root");
-
-createRoot(rootElement).render(
-  <ErrorBoundary 
-    componentName="Root"
-    fallback={
-      <div className="flex flex-col items-center justify-center h-screen">
-        <div className="text-center p-6 max-w-md mx-auto">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-500 text-2xl">!</span>
-          </div>
-          <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-          <p className="text-gray-600 mb-4">We've encountered an error and our team has been notified.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    }
-  >
-    <SecurityInitializer />
-    <App />
-  </ErrorBoundary>
-);

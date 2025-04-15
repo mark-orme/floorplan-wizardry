@@ -1,13 +1,15 @@
+
 /**
  * Content Security Policy Utilities
  * Provides CSP configuration and implementation
  */
 import logger from '@/utils/logger';
+import { toast } from 'sonner';
 
 // Define Content Security Policy directives for production
 export const PRODUCTION_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline for better compatibility
+  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"], // Allow blob for workers
   'style-src': ["'self'", "'unsafe-inline'"], // Unsafe-inline needed for shadcn/ui
   'img-src': ["'self'", "data:", "blob:"],
   'font-src': ["'self'"],
@@ -17,7 +19,9 @@ export const PRODUCTION_CSP_DIRECTIVES = {
     "wss://*.lovable.dev",
     "https://*.lovable.dev",
     "https://o4508914471927808.ingest.de.sentry.io",
+    "https://*.ingest.sentry.io",
     "https://*.sentry.io",
+    "https://sentry.io",
     "https://api.sentry.io",
     "https://ingest.sentry.io",
     "wss://ws-eu.pusher.com",
@@ -31,13 +35,14 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'base-uri': ["'self'"],
   'form-action': ["'self'"],
   'worker-src': ["'self'", "blob:"], // Explicitly allow blob URLs for workers
+  'child-src': ["'self'", "blob:"],  // Add child-src for legacy browsers
   'upgrade-insecure-requests': [],
 };
 
 // Define Content Security Policy directives for development (less strict)
 export const DEVELOPMENT_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts and eval in dev
+  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"], // Allow blob for workers
   'style-src': ["'self'", "'unsafe-inline'"],
   'img-src': ["'self'", "data:", "blob:"],
   'font-src': ["'self'"],
@@ -47,7 +52,9 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "wss://*.lovable.dev",
     "https://*.lovable.dev", 
     "https://o4508914471927808.ingest.de.sentry.io",
+    "https://*.ingest.sentry.io",
     "https://*.sentry.io",
+    "https://sentry.io",
     "https://api.sentry.io",
     "https://ingest.sentry.io",
     "wss://ws-eu.pusher.com",
@@ -62,6 +69,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'worker-src': ["'self'", "blob:"], // Explicitly allow worker-src to allow blob URLs for workers
+  'child-src': ["'self'", "blob:"],  // Add child-src for legacy browsers
 };
 
 /**
@@ -131,6 +139,11 @@ export function applyCSPMetaTag(isProduction = false): void {
       mode: isProduction ? 'production' : 'development',
       content: cspContent
     });
+    
+    // Show toast notification if CSP was applied successfully
+    if (typeof window !== 'undefined') {
+      toast.success('Security policies applied successfully');
+    }
   } catch (error) {
     logger.error('Failed to apply CSP meta tag', { error });
   }
@@ -178,3 +191,4 @@ export function initializeCSP(forceRefresh = false): void {
     });
   }
 }
+
