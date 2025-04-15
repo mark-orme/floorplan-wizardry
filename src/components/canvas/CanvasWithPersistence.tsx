@@ -73,6 +73,11 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   
   // Set up offline support with reconnect handler
   const { isOnline } = useOfflineSupport({
+    canvas: fabricCanvasRef.current,
+    canvasId,
+    onStatusChange: (isOnline) => {
+      console.log('Online status changed:', isOnline);
+    },
     onReconnect: async () => {
       toast.info('Reconnected! Syncing your changes...');
       // Here you would implement server sync logic

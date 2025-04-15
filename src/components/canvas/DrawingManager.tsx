@@ -8,8 +8,8 @@ import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
 import { ToolbarContainer } from "./ToolbarContainer";
 import { CanvasEventManager } from "./CanvasEventManager";
-import { useCanvasAutosave } from "@/hooks/useCanvasAutosave"; // Updated import
-import { useRestorePrompt } from "@/hooks/useRestorePrompt"; // New import
+import { useCanvasAutosave } from "@/hooks/useCanvasAutosave"; 
+import { useRestorePrompt } from "@/hooks/useRestorePrompt"; 
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { RestoreDrawingPrompt } from "./RestoreDrawingPrompt";
 
@@ -50,7 +50,11 @@ export const DrawingManager = () => {
   
   // Initialize offline support
   const { isOnline } = useOfflineSupport({
-    canvasId, // Pass canvasId for cloud sync
+    canvas, 
+    canvasId,
+    onStatusChange: (status) => {
+      console.log('Online status changed:', status);
+    },
     onReconnect: async () => {
       // When coming back online, attempt to sync
       console.log('Reconnected, syncing data');

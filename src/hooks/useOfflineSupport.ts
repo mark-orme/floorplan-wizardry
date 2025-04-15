@@ -8,9 +8,10 @@ import { toast } from 'sonner';
 import { handleError } from '@/utils/errorHandling';
 
 interface UseOfflineSupportProps {
-  canvas: FabricCanvas | null;
-  canvasId: string;
+  canvas?: FabricCanvas | null;
+  canvasId?: string;
   onStatusChange?: (isOnline: boolean) => void;
+  onReconnect?: () => Promise<void>; // Added this property
 }
 
 /**
@@ -19,7 +20,8 @@ interface UseOfflineSupportProps {
 export const useOfflineSupport = ({
   canvas,
   canvasId,
-  onStatusChange
+  onStatusChange,
+  onReconnect
 }: UseOfflineSupportProps) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
@@ -37,6 +39,13 @@ export const useOfflineSupport = ({
       // If there are pending changes, trigger sync
       if (hasPendingChanges) {
         syncChanges();
+      }
+      
+      // Call onReconnect callback if provided
+      if (onReconnect) {
+        onReconnect().catch(error => {
+          console.error('Error during reconnect handler:', error);
+        });
       }
     };
     
@@ -57,7 +66,7 @@ export const useOfflineSupport = ({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [hasPendingChanges, onStatusChange]);
+  }, [hasPendingChanges, onStatusChange, onReconnect]);
   
   // Save changes locally when offline
   const saveOfflineChanges = useCallback(() => {
@@ -75,8 +84,7 @@ export const useOfflineSupport = ({
     } catch (error) {
       handleError(error, 'error', {
         component: 'useOfflineSupport',
-        operation: 'saveOfflineChanges',
-        context: { canvasIdentifier: canvasId }
+        operation: 'saveOfflineChanges'
       });
     }
   }, [canvas, canvasId]);
@@ -105,8 +113,7 @@ export const useOfflineSupport = ({
     } catch (error) {
       handleError(error, 'error', {
         component: 'useOfflineSupport',
-        operation: 'syncChanges',
-        context: { canvasIdentifier: canvasId }
+        operation: 'syncChanges'
       });
       toast.error('Failed to sync changes');
     } finally {
