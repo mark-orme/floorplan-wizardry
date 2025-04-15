@@ -15,6 +15,18 @@ import { useLineToolSetup } from './useLineToolSetup';
 import { useToolInitialization } from './useToolInitialization';
 import { Point } from '@/types/core/Point';
 
+/**
+ * Props for the useStraightLineToolRefactored hook
+ * @interface UseStraightLineToolProps
+ * @property {React.MutableRefObject<FabricCanvas | null>} fabricCanvasRef - Reference to the fabric canvas
+ * @property {DrawingMode} tool - Current drawing tool mode
+ * @property {string} [lineColor] - Color of the line being drawn
+ * @property {number} [lineThickness] - Thickness of the line in pixels
+ * @property {boolean} [snapToAngle] - Whether to snap the line to standard angles
+ * @property {number} [snapAngleDeg] - Angle in degrees to snap to
+ * @property {function} [saveCurrentState] - Function to save the current canvas state for undo/redo
+ * @property {function} [onChange] - Callback triggered when the canvas changes
+ */
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool: DrawingMode;
@@ -28,7 +40,21 @@ interface UseStraightLineToolProps {
 
 /**
  * Hook for using the straight line drawing tool
- * This refactored version coordinates smaller, specialized hooks
+ * This refactored version coordinates smaller, specialized hooks for better maintainability
+ * 
+ * @param {UseStraightLineToolProps} props - Configuration props for the hook
+ * @returns {Object} An object containing the hook state and methods
+ * @property {boolean} isActive - Whether the straight line tool is currently active
+ * @property {boolean} isDrawing - Whether a line is currently being drawn
+ * @property {boolean} isToolInitialized - Whether the tool has been properly initialized
+ * @property {boolean} snapEnabled - Whether grid snapping is enabled
+ * @property {string} inputMethod - Current input method (mouse, touch, or stylus)
+ * @property {boolean} isPencilMode - Whether Apple Pencil mode is active for iPad
+ * @property {function} handlePointerDown - Handler for starting a line
+ * @property {function} handlePointerMove - Handler for updating a line during drawing
+ * @property {function} handlePointerUp - Handler for completing a line
+ * @property {function} cancelDrawing - Function to cancel the current line drawing
+ * @property {function} toggleGridSnapping - Function to toggle grid snapping on/off
  */
 export const useStraightLineToolRefactored = ({
   fabricCanvasRef,
@@ -65,7 +91,12 @@ export const useStraightLineToolRefactored = ({
     lineColor
   });
 
-  // Custom function to adapt the snapLineToGrid function for different signatures
+  /**
+   * Custom function to adapt the snapLineToGrid function for different signatures
+   * @param {Point} start - Starting point of the line
+   * @param {Point} end - Ending point of the line
+   * @returns {Object} Object containing snapped start and end points
+   */
   const adaptedSnapLineToGrid = (start: Point, end: Point) => {
     if (snapEnabled) {
       return {

@@ -9,9 +9,9 @@ import { Point } from '@/types/core/Point';
 /**
  * Snap a value to the grid
  * 
- * @param value Value to snap
- * @param gridSize Grid size to snap to
- * @returns Snapped value
+ * @param {number} value - Value to snap
+ * @param {number} [gridSize] - Grid size to snap to (defaults to constant)
+ * @returns {number} Snapped value
  */
 export const snap = (
   value: number, 
@@ -23,9 +23,9 @@ export const snap = (
 /**
  * Snap a point to the grid
  * 
- * @param point Point to snap
- * @param gridSize Grid size to snap to (defaults to constant)
- * @returns Snapped point
+ * @param {Point} point - Point to snap to grid
+ * @param {number} [gridSize] - Grid size to snap to (defaults to constant)
+ * @returns {Point} Point with coordinates snapped to nearest grid intersection
  */
 export const snapPointToGrid = (
   point: Point, 
@@ -38,17 +38,21 @@ export const snapPointToGrid = (
 };
 
 /**
- * Alternative naming for snapPointToGrid for compatibility
+ * Alternative naming for snapPointToGrid for compatibility with older code
+ * 
+ * @param {Point} point - Point to snap to grid
+ * @param {number} [gridSize] - Grid size to snap to
+ * @returns {Point} Point with coordinates snapped to nearest grid intersection
  */
 export const snapToGrid = snapPointToGrid;
 
 /**
  * Snap a line's endpoints to the grid
  * 
- * @param start Starting point
- * @param end Ending point
- * @param gridSize Grid size to snap to
- * @returns Object with snapped start and end points
+ * @param {Point} start - Starting point of the line
+ * @param {Point} end - Ending point of the line
+ * @param {number} [gridSize] - Grid size to snap to
+ * @returns {Object} Object containing snapped start and end points
  */
 export const snapLineToGrid = (
   start: Point, 
@@ -63,11 +67,12 @@ export const snapLineToGrid = (
 
 /**
  * Snap line to standard angles (0, 45, 90, 135, 180...)
+ * Keeps the starting point fixed and adjusts the ending point
  * 
- * @param start Starting point
- * @param end Ending point
- * @param snapAngleDeg Angle in degrees to snap to (default: 45)
- * @returns Snapped end point with the original start point
+ * @param {Point} start - Starting point of the line (fixed)
+ * @param {Point} end - Ending point of the line (will be adjusted)
+ * @param {number} [snapAngleDeg] - Angle in degrees to snap to (default: 45)
+ * @returns {Point} Snapped end point while maintaining the original start point
  */
 export const snapLineToStandardAngles = (
   start: Point,
@@ -97,12 +102,12 @@ export const snapLineToStandardAngles = (
 
 /**
  * Snap an angle to nearest multiple of specified degrees
- * Enhanced version that preserves the start point
+ * Enhanced version that preserves the start point and only adjusts the end point
  * 
- * @param start Starting point
- * @param end Ending point
- * @param angleDeg Angle in degrees to snap to (default: 45)
- * @returns Snapped end point
+ * @param {Point} start - Starting point of the line (fixed)
+ * @param {Point} end - Ending point of the line (will be adjusted)
+ * @param {number} [angleDeg] - Angle in degrees to snap to (default: 45)
+ * @returns {Point} Snapped end point
  */
 export const snapToAngle = (
   start: Point,
@@ -114,11 +119,11 @@ export const snapToAngle = (
 
 /**
  * Constrain line to horizontal, vertical, or 45-degree angles
- * Used for shift-key drawing constraint
+ * Used for shift-key drawing constraint to create precise lines
  * 
- * @param start Starting point
- * @param end Current end point (from mouse)
- * @returns Constrained end point
+ * @param {Point} start - Starting point of the line
+ * @param {Point} end - Current end point (from mouse/touch position)
+ * @returns {Object} Object containing the original start point and constrained end point
  */
 export const constrainToMajorAngles = (
   start: Point,
