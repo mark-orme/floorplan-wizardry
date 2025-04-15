@@ -21,6 +21,8 @@ interface EditorHeaderProps {
   onDelete: () => void;
   onLineThicknessChange: (thickness: number) => void;
   onLineColorChange: (color: string) => void;
+  isMobile?: boolean;  // Added optional mobile prop
+  isTablet?: boolean;  // Added optional tablet prop
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -37,30 +39,34 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onSave,
   onDelete,
   onLineThicknessChange,
-  onLineColorChange
+  onLineColorChange,
+  isMobile = false,
+  isTablet = false
 }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col p-2 bg-muted/30 border-b">
-      <div className="flex items-center mb-2">
+    <div className={`flex flex-col p-2 bg-muted/30 border-b ${isMobile ? 'space-y-2' : ''}`}>
+      <div className={`flex ${isMobile ? 'flex-col items-start' : 'items-center'} mb-2`}>
         <Button 
           variant="outline" 
-          size="sm" 
+          size={isMobile ? "sm" : "default"} 
           onClick={() => navigate('/properties')}
-          className="mr-2"
+          className={isMobile ? 'mb-2 w-full' : 'mr-2'}
         >
           <Home className="h-4 w-4 mr-1" />
           Back to Properties
         </Button>
-        <h1 className="text-xl font-bold">Floor Plan Editor</h1>
+        <h1 className={`text-xl font-bold ${isMobile ? 'w-full text-center' : ''}`}>
+          Floor Plan Editor
+        </h1>
         
-        <div className="ml-auto flex gap-2">
+        <div className={`${isMobile ? 'w-full flex flex-col space-y-2' : 'ml-auto flex gap-2'}`}>
           <Button
             variant="outline"
-            size="sm"
+            size={isMobile ? "sm" : "default"}
             onClick={toggleGridDebug}
-            className="flex items-center"
+            className={`flex items-center ${isMobile ? 'w-full' : ''}`}
           >
             {showGridDebug ? (
               <>
@@ -77,9 +83,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           
           <Button
             variant="outline"
-            size="sm"
+            size={isMobile ? "sm" : "default"}
             onClick={handleForceRefresh}
-            className="flex items-center"
+            className={`flex items-center ${isMobile ? 'w-full' : ''}`}
           >
             <RefreshCw className="h-4 w-4 mr-1" />
             Force Refresh
@@ -87,7 +93,6 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         </div>
       </div>
       
-      {/* Place the toolbar in the top banner */}
       <Toolbar
         activeTool={activeTool}
         lineThickness={lineThickness}

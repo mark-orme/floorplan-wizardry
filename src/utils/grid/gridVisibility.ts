@@ -243,3 +243,31 @@ export const ensureGridIsPresent = (canvas: FabricCanvas): {
   // Need to create the grid
   return forceGridCreationAndVisibility(canvas);
 };
+
+export const ensureGridVisibility = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter(
+    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+  );
+  
+  gridObjects.forEach(obj => {
+    obj.set('visible', true);
+  });
+  
+  canvas.requestRenderAll();
+};
+
+export const setGridVisibility = (canvas: FabricCanvas, isVisible: boolean): void => {
+  if (!canvas) return;
+  
+  const gridObjects = canvas.getObjects().filter(
+    obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+  );
+  
+  gridObjects.forEach(obj => {
+    obj.set('visible', isVisible);
+  });
+  
+  canvas.requestRenderAll();
+};
