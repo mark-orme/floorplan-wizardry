@@ -17,15 +17,15 @@ export const PRODUCTION_CSP_DIRECTIVES = {
     "https://*.supabase.co", 
     "wss://*.lovable.dev",
     "https://*.lovable.dev",
-    "https://*.sentry.io",
     "https://o4508914471927808.ingest.de.sentry.io",
+    "https://*.sentry.io",
+    "https://api.sentry.io",
+    "https://ingest.sentry.io",
     "wss://ws-eu.pusher.com",
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
     "https://*.pusher.com",
-    "https://*.lovable.app", 
-    "https://api.sentry.io",
-    "https://ingest.sentry.io"
+    "https://*.lovable.app"
   ],
   'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
   'object-src': ["'none'"],
@@ -47,15 +47,15 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://*.supabase.co", 
     "wss://*.lovable.dev",
     "https://*.lovable.dev", 
-    "https://*.sentry.io",
     "https://o4508914471927808.ingest.de.sentry.io",
+    "https://*.sentry.io",
+    "https://api.sentry.io",
+    "https://ingest.sentry.io",
     "wss://ws-eu.pusher.com",
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
     "https://*.pusher.com",
-    "https://*.lovable.app", 
-    "https://api.sentry.io",
-    "https://ingest.sentry.io",
+    "https://*.lovable.app",
     "ws:", 
     "http://localhost:*"
   ],
@@ -126,6 +126,8 @@ export function applyCSPMetaTag(isProduction = false): void {
     // Add a data attribute to indicate CSP was applied
     document.documentElement.setAttribute('data-csp-applied', 'true');
     
+    // Log the applied CSP
+    console.log('Content Security Policy applied:', cspContent);
     logger.info('Content Security Policy applied via meta tag', {
       mode: isProduction ? 'production' : 'development',
       content: cspContent

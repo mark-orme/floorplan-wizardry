@@ -17,11 +17,11 @@ initializeCSP(true);
 console.log('Initial CSP applied with these connect-src domains:', 
   document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content'));
 
-// Wait a short time for CSP to apply before initializing services
+// Increased timeout to ensure CSP is fully applied before services are initialized
 setTimeout(() => {
   // Initialize Sentry and other services after CSP is applied
   initializeServices();
-}, 200);  // Increased timeout to ensure CSP is fully applied
+}, 300);  // Increased timeout for better sequencing
 
 function initializeServices() {
   // Check if browser profiling is supported in this environment
@@ -41,6 +41,13 @@ function initializeServices() {
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
   ];
+  
+  // Verify CSP is still applied before initializing Sentry
+  const cspContent = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
+  console.log('CSP state before Sentry initialization:', cspContent || 'No CSP found');
+  
+  // Force reapply CSP to ensure it's set correctly
+  initializeCSP(true);
   
   // Initialize Sentry for error tracking and monitoring
   Sentry.init({
@@ -117,8 +124,8 @@ function initializeServices() {
   });
   
   // Verify CSP is still applied before initializing Pusher
-  const cspContent = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
-  console.log('CSP state before Pusher initialization:', cspContent || 'No CSP found');
+  const cspContentAfterSentry = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content');
+  console.log('CSP state before Pusher initialization:', cspContentAfterSentry || 'No CSP found');
   
   // Force reapply CSP to ensure it's set with pusher domains
   initializeCSP(true);
@@ -129,6 +136,7 @@ function initializeServices() {
     import('./utils/pusher.ts')
       .then(module => {
         const { getPusher } = module;
+        console.log('Pusher module loaded successfully');
         getPusher();
       })
       .catch(error => {

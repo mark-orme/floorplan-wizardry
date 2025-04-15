@@ -32,9 +32,27 @@ export const SecurityInitializer = () => {
         logger.warn('CSP meta tag not found after initialization, retrying...');
         setTimeout(() => initializeCSP(true), 100);
       } else {
-        logger.info('CSP meta tag verified', { 
-          content: cspTag.getAttribute('content')
-        });
+        // Log the actual content to verify
+        const content = cspTag.getAttribute('content');
+        logger.info('CSP meta tag verified', { content });
+        console.log('Applied CSP:', content);
+        
+        // Check if Sentry and Pusher domains are included
+        if (content) {
+          const hasSentryDomains = content.includes('sentry.io');
+          const hasPusherDomains = content.includes('pusher.com');
+          
+          logger.info('CSP domains verification', { 
+            hasSentryDomains, 
+            hasPusherDomains 
+          });
+          
+          // If domains are missing, try to reapply
+          if (!hasSentryDomains || !hasPusherDomains) {
+            logger.warn('CSP missing required domains, reapplying...');
+            setTimeout(() => initializeCSP(true), 200);
+          }
+        }
       }
     } catch (initError) {
       logger.error('Failed to initialize security features', { error: initError });
