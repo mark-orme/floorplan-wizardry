@@ -4,35 +4,88 @@
  * Centralized exports for all security-related functionality
  */
 
-// Export content security policy utilities
-export * from './contentSecurityPolicy';
-export * from './httpSecurity';
+// Import from HttpSecurityUtils with explicit naming to avoid conflicts
+import { 
+  secureFetch as httpSecureFetch,
+  addSecurityHeaders as httpAddSecurityHeaders,
+  isConnectionSecure as httpIsConnectionSecure,
+  getCSPHeaders as httpGetCSPHeaders
+} from './HttpSecurityUtils';
 
-// Export from HTML sanitization with explicit naming to avoid conflicts
-import { sanitizeHtml as sanitizeHtmlContent, sanitizeRichHtml as sanitizeRichHtmlContent } from './htmlSanitization';
-export { 
-  sanitizeHtmlContent, 
-  sanitizeRichHtmlContent
-};
+// Import from ContentSecurityPolicy
+import {
+  initializeCSP,
+  checkCSPApplied,
+  fixSentryCSP,
+  MASTER_CSP_STRING
+} from './contentSecurityPolicy';
 
-// Export from input sanitization with explicit naming to avoid conflicts
-import { sanitizeHtml as sanitizeInputHtml } from './inputSanitization';
-export { 
-  sanitizeInputHtml
-};
+// Import from httpSecurity
+import {
+  applySecurityMetaTags
+} from './httpSecurity';
 
-// Export newly refactored utilities
-export * from './SecurityUtils';
-export * from './FileSecurityUtils';
-export * from './InputSanitizationUtils';
-export * from './HttpSecurityUtils';
-
-// Re-export other functions from inputSanitization
-export { 
+// Import from InputSanitizationUtils
+import {
+  sanitizeHtml,
   sanitizeObject,
   sanitizeUrl,
   stripJavaScriptEvents
-} from './inputSanitization';
+} from './InputSanitizationUtils';
+
+// Import from FileSecurityUtils
+import {
+  sanitizeFileName,
+  createSecureFileUploadHandler
+} from './FileSecurityUtils';
+
+// Import from SecurityUtils
+import {
+  secureForm,
+  initializeSecurity
+} from './SecurityUtils';
+
+// Import from htmlSanitization with explicit naming to avoid conflicts
+import { 
+  sanitizeHtml as sanitizeHtmlContent, 
+  sanitizeRichHtml as sanitizeRichHtmlContent 
+} from './htmlSanitization';
+
+// Direct exports with explicit naming
+export { 
+  // From HttpSecurityUtils
+  httpSecureFetch as secureFetch,
+  httpAddSecurityHeaders as addSecurityHeaders,
+  httpIsConnectionSecure as isConnectionSecure,
+  httpGetCSPHeaders as getCSPHeaders,
+  
+  // From ContentSecurityPolicy
+  initializeCSP,
+  checkCSPApplied,
+  fixSentryCSP,
+  MASTER_CSP_STRING,
+  
+  // From httpSecurity
+  applySecurityMetaTags,
+  
+  // From htmlSanitization
+  sanitizeHtmlContent, 
+  sanitizeRichHtmlContent,
+  
+  // From InputSanitizationUtils
+  sanitizeHtml,
+  sanitizeObject,
+  sanitizeUrl,
+  stripJavaScriptEvents,
+  
+  // From FileSecurityUtils
+  sanitizeFileName,
+  createSecureFileUploadHandler,
+  
+  // From SecurityUtils
+  secureForm,
+  initializeSecurity
+};
 
 // Create a unified Security namespace for easier imports
 export const Security = {
@@ -76,12 +129,12 @@ export const Security = {
         document.head.appendChild(meta);
       }
     },
-    getCSPHeaders: getCSPHeaders
+    getCSPHeaders: httpGetCSPHeaders
   },
   
   // HTTP security - reusing refactored functions
   HTTP: {
-    secureFetch: secureFetch,
+    secureFetch: httpSecureFetch,
     applySecurityMetaTags: () => {
       if (typeof document !== 'undefined') {
         // Define security meta tags (removing X-Frame-Options which must be set via HTTP header)
@@ -119,4 +172,4 @@ export const Security = {
 };
 
 // Re-export the secureForm and initializeSecurity functions
-export { secureForm, initializeSecurity } from './SecurityUtils';
+export { secureForm, initializeSecurity };
