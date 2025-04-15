@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { saveCanvasToIDB, loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
 import { debounce } from '@/utils/debounce';
 import { toast } from 'sonner';
+import { FabricEventTypes } from '@/types/fabric-types';
 
 interface UseCanvasAutosaveProps {
   canvas: FabricCanvas | null;
@@ -95,10 +96,10 @@ export function useCanvasAutosave({
     
     // Events that should trigger an auto-save
     const saveEvents = [
-      'object:added',
-      'object:modified',
-      'object:removed',
-      'path:created'
+      FabricEventTypes.OBJECT_ADDED,
+      FabricEventTypes.OBJECT_MODIFIED,
+      FabricEventTypes.OBJECT_REMOVED,
+      FabricEventTypes.PATH_CREATED
     ];
     
     // Add event listeners
