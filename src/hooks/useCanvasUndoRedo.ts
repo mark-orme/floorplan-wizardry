@@ -5,8 +5,18 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { toast } from 'sonner';
 import { useThrottledCanvasUpdate } from './useThrottledCanvasUpdate';
+import { captureCanvasState, applyCanvasState } from '@/utils/canvas/canvasStateCapture';
+import { 
+  HistoryState, 
+  createInitialHistoryState, 
+  addStateToHistory, 
+  moveBackInHistory, 
+  moveForwardInHistory,
+  canUndo as getCanUndo,
+  canRedo as getCanRedo,
+  showHistoryActionToast
+} from '@/utils/canvas/historyStateManager';
 import { FabricEventTypes } from '@/types/fabric-events';
 
 interface UseCanvasUndoRedoProps {
@@ -24,9 +34,8 @@ export const useCanvasUndoRedo = ({
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   
-  // Use refs for the history to avoid re-renders when history changes
-  const historyRef = useRef<string[]>([]);
-  const currentIndexRef = useRef<number>(-1);
+  // Use ref for the history to avoid re-renders when history changes
+  const historyRef = useRef<HistoryState>(createInitialHistoryState());
   const isManualCaptureRef = useRef<boolean>(false);
   const ignoreNextSnapshotRef = useRef<boolean>(false);
   
@@ -50,40 +59,27 @@ export const useCanvasUndoRedo = ({
   });
   
   /**
-   * Capture the current canvas state as a JSON string
+   * Capture the current canvas state
    */
   const captureCurrentState = useCallback(() => {
     if (!canvas) return;
     
     try {
       // Get canvas as JSON
-      const json = JSON.stringify(canvas.toJSON(['id', 'objectType', 'customProps']));
+      const json = captureCanvasState(canvas);
+      if (!json) return;
       
       // If this is a manual capture, or the state is different from the current state
-      const currentStateIndex = currentIndexRef.current;
-      const currentState = currentStateIndex >= 0 ? historyRef.current[currentStateIndex] : null;
+      const currentStateIndex = historyRef.current.current;
+      const currentState = currentStateIndex >= 0 ? historyRef.current.past[currentStateIndex] : null;
       
       if (isManualCaptureRef.current || json !== currentState) {
-        // Remove future states if we're not at the end of history
-        if (currentStateIndex < historyRef.current.length - 1) {
-          historyRef.current = historyRef.current.slice(0, currentStateIndex + 1);
-        }
-        
-        // Add new state to history
-        historyRef.current.push(json);
-        
-        // Update current index
-        currentIndexRef.current = historyRef.current.length - 1;
-        
-        // Limit history size
-        if (historyRef.current.length > maxHistoryStates) {
-          historyRef.current.shift();
-          currentIndexRef.current--;
-        }
+        // Update history state
+        historyRef.current = addStateToHistory(historyRef.current, json, maxHistoryStates);
         
         // Update undo/redo availability
-        setCanUndo(currentIndexRef.current > 0);
-        setCanRedo(false);
+        setCanUndo(getCanUndo(historyRef.current));
+        setCanRedo(getCanRedo(historyRef.current));
         
         // Reset manual capture flag
         isManualCaptureRef.current = false;
@@ -108,88 +104,84 @@ export const useCanvasUndoRedo = ({
   }, [canvas, captureCurrentState]);
   
   /**
-   * Apply a state from history to the canvas
-   */
-  const applyState = useCallback((stateJson: string) => {
-    if (!canvas) return;
-    
-    try {
-      // Prevent capturing this change as a new history state
-      ignoreNextSnapshotRef.current = true;
-      
-      // Parse the JSON state
-      const state = JSON.parse(stateJson);
-      
-      // Load state into canvas
-      canvas.loadFromJSON(state, () => {
-        canvas.renderAll();
-      });
-    } catch (error) {
-      console.error('Error applying canvas state:', error);
-      toast.error('Failed to apply canvas state');
-    }
-  }, [canvas]);
-  
-  /**
    * Undo the last action
    */
   const undo = useCallback(() => {
-    if (!canUndo) {
-      toast.info('Nothing to undo');
+    if (!canUndo || !canvas) {
+      showHistoryActionToast('undo', false);
       return;
     }
     
     try {
-      // Move to previous state
-      currentIndexRef.current--;
+      // Move back in history
+      const { newHistory, previousState } = moveBackInHistory(historyRef.current);
       
-      // Apply the previous state
-      applyState(historyRef.current[currentIndexRef.current]);
-      
-      // Update undo/redo availability
-      setCanUndo(currentIndexRef.current > 0);
-      setCanRedo(true);
-      
-      toast.success('Undo successful');
+      if (previousState) {
+        // Update history reference
+        historyRef.current = newHistory;
+        
+        // Prevent capturing this change as a new history state
+        ignoreNextSnapshotRef.current = true;
+        
+        // Apply the previous state
+        applyCanvasState(canvas, previousState);
+        
+        // Update undo/redo availability
+        setCanUndo(getCanUndo(historyRef.current));
+        setCanRedo(getCanRedo(historyRef.current));
+        
+        showHistoryActionToast('undo', true);
+      } else {
+        showHistoryActionToast('undo', false);
+      }
     } catch (error) {
       console.error('Error during undo:', error);
-      toast.error('Failed to undo');
+      showHistoryActionToast('undo', false);
     }
-  }, [canUndo, applyState]);
+  }, [canUndo, canvas]);
   
   /**
    * Redo the last undone action
    */
   const redo = useCallback(() => {
-    if (!canRedo) {
-      toast.info('Nothing to redo');
+    if (!canRedo || !canvas) {
+      showHistoryActionToast('redo', false);
       return;
     }
     
     try {
-      // Move to next state
-      currentIndexRef.current++;
+      // Move forward in history
+      const { newHistory, nextState } = moveForwardInHistory(historyRef.current);
       
-      // Apply the next state
-      applyState(historyRef.current[currentIndexRef.current]);
-      
-      // Update undo/redo availability
-      setCanUndo(true);
-      setCanRedo(currentIndexRef.current < historyRef.current.length - 1);
-      
-      toast.success('Redo successful');
+      if (nextState) {
+        // Update history reference
+        historyRef.current = newHistory;
+        
+        // Prevent capturing this change as a new history state
+        ignoreNextSnapshotRef.current = true;
+        
+        // Apply the next state
+        applyCanvasState(canvas, nextState);
+        
+        // Update undo/redo availability
+        setCanUndo(getCanUndo(historyRef.current));
+        setCanRedo(getCanRedo(historyRef.current));
+        
+        showHistoryActionToast('redo', true);
+      } else {
+        showHistoryActionToast('redo', false);
+      }
     } catch (error) {
       console.error('Error during redo:', error);
-      toast.error('Failed to redo');
+      showHistoryActionToast('redo', false);
     }
-  }, [canRedo, applyState]);
+  }, [canRedo, canvas]);
   
   /**
    * Clear all history
    */
   const clearHistory = useCallback(() => {
-    historyRef.current = [];
-    currentIndexRef.current = -1;
+    historyRef.current = createInitialHistoryState();
     setCanUndo(false);
     setCanRedo(false);
   }, []);
@@ -219,7 +211,7 @@ export const useCanvasUndoRedo = ({
     });
     
     // Capture initial state
-    if (historyRef.current.length === 0) {
+    if (historyRef.current.past.length === 0) {
       setTimeout(() => {
         captureCurrentState();
       }, 500);
