@@ -1,50 +1,78 @@
 
-/**
- * Canvas restore check hook
- * Checks if there is saved canvas data available to restore
- */
-import { useState, useEffect } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
+import { useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { FabricEventTypes } from '@/types/fabric-events';
+import logger from '@/utils/logger';
 
 interface UseCanvasRestoreCheckProps {
-  canvasId: string;
+  canvas: FabricCanvas | null;
+  saveCurrentState: () => void;
 }
 
 /**
- * Hook to check if canvas data is available for restoration
+ * Hook for managing the check if canvas needs a state save after operations
  */
-export function useCanvasRestoreCheck({ canvasId }: UseCanvasRestoreCheckProps) {
-  const [canRestore, setCanRestore] = useState(false);
+export const useCanvasRestoreCheck = ({
+  canvas,
+  saveCurrentState
+}: UseCanvasRestoreCheckProps) => {
+  // Track if events are being registered to prevent duplicate snapshots
+  const isPerformingUndoRedoRef = useRef(false);
   
-  const canvasKey = `canvas_state_${canvasId}`;
-  const timestampKey = `canvas_timestamp_${canvasId}`;
-  
-  const [savedCanvas] = useLocalStorage<string | null>(canvasKey, null);
-  const [savedTimestamp] = useLocalStorage<string | null>(timestampKey, null);
-  
-  // Check if we have data to restore from either localStorage or IndexedDB
-  useEffect(() => {
-    const checkCanRestore = async () => {
-      // First check localStorage
-      if (savedCanvas && savedTimestamp) {
-        setCanRestore(true);
-        return;
-      }
+  /**
+   * Set the performing undo/redo flag
+   */
+  const setIsPerformingUndoRedo = useCallback((value: boolean) => {
+    isPerformingUndoRedoRef.current = value;
+  }, []);
+
+  /**
+   * Check if we're currently performing undo/redo
+   */
+  const isPerformingUndoRedo = useCallback(() => {
+    return isPerformingUndoRedoRef.current;
+  }, []);
+
+  /**
+   * Register event handlers for tracking canvas changes
+   */
+  const registerCanvasChangeHandlers = useCallback(() => {
+    if (!canvas) return () => {};
+    
+    const handleCanvasChange = () => {
+      // Don't create snapshot if we're in the middle of undo/redo
+      if (isPerformingUndoRedoRef.current) return;
       
-      // Then check IndexedDB
-      try {
-        const idbData = await loadCanvasFromIDB(canvasId);
-        if (idbData) {
-          setCanRestore(true);
-        }
-      } catch (error) {
-        console.error('Error checking IndexedDB for canvas data:', error);
-      }
+      saveCurrentState();
     };
     
-    checkCanRestore();
-  }, [savedCanvas, savedTimestamp, canvasId]);
-  
-  return { canRestore };
-}
+    // Track relevant canvas events
+    const trackableEvents = [
+      FabricEventTypes.OBJECT_ADDED, 
+      FabricEventTypes.OBJECT_REMOVED, 
+      FabricEventTypes.OBJECT_MODIFIED, 
+      FabricEventTypes.PATH_CREATED
+    ];
+    
+    // Add event listeners
+    trackableEvents.forEach(event => {
+      canvas.on(event, handleCanvasChange);
+    });
+    
+    logger.debug("Registered canvas change handlers");
+    
+    // Return cleanup function
+    return () => {
+      trackableEvents.forEach(event => {
+        canvas.off(event, handleCanvasChange);
+      });
+      logger.debug("Cleaned up canvas change handlers");
+    };
+  }, [canvas, saveCurrentState]);
+
+  return {
+    setIsPerformingUndoRedo,
+    isPerformingUndoRedo,
+    registerCanvasChangeHandlers
+  };
+};

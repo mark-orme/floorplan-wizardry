@@ -1,119 +1,58 @@
 
-/**
- * Canvas auto-save hook
- * Automatically saves canvas when changes are detected
- */
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { debounce } from '@/utils/throttleUtils';
-import { useCanvasPersistence } from './useCanvasPersistence';
+import { useSupabaseFloorPlans } from '@/hooks/useSupabaseFloorPlans';
+import logger from '@/utils/logger';
+import { HISTORY_KEY } from './useCanvasPersistence';
+import { FloorPlan } from '@/types/floorPlanTypes';
 
 interface UseCanvasAutoSaveProps {
   canvas: FabricCanvas | null;
-  canvasId: string;
-  debounceMs?: number;
-  onSave?: (success: boolean) => void;
-  onRestore?: (success: boolean) => void;
+  historyStack: string[];
+  historyIndex: number;
 }
 
 /**
- * Hook for automatically saving canvas changes
+ * Hook to handle auto-saving the canvas to Supabase
  */
-export function useCanvasAutoSave({
+export const useCanvasAutoSave = ({
   canvas,
-  canvasId,
-  debounceMs = 2000,
-  onSave,
-  onRestore
-}: UseCanvasAutoSaveProps) {
-  const setupDoneRef = useRef(false);
-  const debouncedSaveRef = useRef<() => void>();
-  const canvasStorageKey = `canvas_state_${canvasId}`;
-  
-  const {
-    saveCanvasState,
-    loadCanvasState,
-    clearCanvasState,
-    startAutoSave,
-    stopAutoSave,
-    saveCanvas,
-    restoreCanvas,
-    clearSavedCanvas,
-    isSaving,
-    isLoading,
-    lastSaved,
-    canRestore
-  } = useCanvasPersistence({ 
-    fabricCanvasRef: { current: canvas },
-    canvasStorageKey,
-    onSave,
-    onRestore
-  });
-  
-  // Create a wrapper function for saving the current canvas
-  const saveCurrentCanvas = useCallback(async () => {
-    if (!canvas) return false;
-    return saveCanvas ? saveCanvas() : saveCanvasState();
-  }, [canvas, saveCanvas, saveCanvasState]);
-  
-  // Set up debounced save function
+  historyStack,
+  historyIndex
+}: UseCanvasAutoSaveProps) => {
+  const { saveToSupabase, isLoggedIn } = useSupabaseFloorPlans();
+  const syncTimeoutRef = useRef<number | null>(null);
+
+  // Debounced sync with Supabase if user is logged in
   useEffect(() => {
-    const saveFn = () => {
-      saveCurrentCanvas();
-    };
-    debouncedSaveRef.current = debounce(saveFn, debounceMs);
-  }, [saveCurrentCanvas, debounceMs]);
-  
-  // Set up canvas event listeners for auto-saving
-  useEffect(() => {
-    if (!canvas || setupDoneRef.current) return;
+    if (!canvas || !isLoggedIn || historyStack.length === 0) return;
+
+    // Clear existing timeout
+    if (syncTimeoutRef.current) {
+      window.clearTimeout(syncTimeoutRef.current);
+    }
     
-    const saveEvents = [
-      'object:added',
-      'object:modified',
-      'object:removed',
-      'path:created'
-    ];
+    // Set new timeout for cloud sync
+    syncTimeoutRef.current = window.setTimeout(() => {
+      // Use the most recent canvas state for cloud sync
+      const canvasState = JSON.parse(historyStack[historyIndex]);
+      
+      // We need to format this as a FloorPlan for Supabase
+      const floorPlans: FloorPlan[] = [{ 
+        data: canvasState,
+        name: `Floor Plan (${new Date().toLocaleDateString()})`,
+        id: HISTORY_KEY
+      }];
+      
+      saveToSupabase(floorPlans);
+      logger.debug("Canvas state synced to cloud");
+    }, 5000); // Sync after 5 seconds of inactivity
     
-    const handleChange = () => {
-      if (debouncedSaveRef.current) {
-        debouncedSaveRef.current();
-      }
-    };
-    
-    saveEvents.forEach(event => {
-      canvas.on(event as any, handleChange);
-    });
-    
-    setupDoneRef.current = true;
-    
+    // Cleanup timeout on unmount/dependency change
     return () => {
-      if (canvas) {
-        saveEvents.forEach(event => {
-          canvas.off(event as any, handleChange);
-        });
+      if (syncTimeoutRef.current) {
+        window.clearTimeout(syncTimeoutRef.current);
       }
     };
-  }, [canvas]);
-  
-  // Wrapper for restoring the current canvas
-  const restoreCurrentCanvas = useCallback(async () => {
-    if (!canvas) return false;
-    return restoreCanvas ? restoreCanvas() : loadCanvasState();
-  }, [canvas, restoreCanvas, loadCanvasState]);
-  
-  // Wrap clear canvas for consistency
-  const clearCurrentCanvas = useCallback(() => {
-    return clearSavedCanvas ? clearSavedCanvas() : clearCanvasState();
-  }, [clearSavedCanvas, clearCanvasState]);
-  
-  return {
-    isSaving,
-    isLoading,
-    lastSaved,
-    canRestore,
-    saveCanvas: saveCurrentCanvas,
-    restoreCanvas: restoreCurrentCanvas,
-    clearSavedCanvas: clearCurrentCanvas
-  };
-}
+  }, [canvas, historyStack, historyIndex, isLoggedIn, saveToSupabase]);
+};

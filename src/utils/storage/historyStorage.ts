@@ -2,10 +2,10 @@
 import { openDB } from 'idb';
 
 // Constants
-const DB_NAME = 'floorplan-history';
-const STORE_NAME = 'history';
-const SCHEMA_VERSION = 2; // Increment when schema changes
-const MAX_HISTORY_STATES = 50; // Maximum number of history states to keep
+export const DB_NAME = 'floorplan-history';
+export const STORE_NAME = 'history';
+export const SCHEMA_VERSION = 2; // Increment when schema changes
+export const MAX_HISTORY_STATES = 50; // Maximum number of history states to keep
 
 /**
  * Get or create the IndexedDB database for history storage
