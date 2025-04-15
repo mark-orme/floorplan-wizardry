@@ -33,6 +33,26 @@ export interface DebugInfoState {
     /** Object count */
     objectCount: number;
   };
+  
+  // Added missing properties from error messages
+  brushInitialized?: boolean;
+  gridObjectCount?: number;
+  objectCount?: number;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  canvasDimensions?: { width: number; height: number };
+  devicePixelRatio?: number;
+  performanceStats?: {
+    droppedFrames?: number;
+    frameTime?: number;
+    maxFrameTime?: number;
+    longFrames?: number;
+  };
+  lastInitTime?: number;
+  lastError?: string;
+  lastErrorTime?: number;
+  showDebugInfo?: boolean;
+  eventHandlersSet?: boolean;
 }
 
 /**
@@ -42,5 +62,9 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   canvasReady: false,
   canvasInitialized: false,
   canvasCreated: false,
-  dimensionsSet: false
+  dimensionsSet: false,
+  // Initialize additional properties with sensible defaults
+  hasError: false,
+  showDebugInfo: false,
+  eventHandlersSet: false
 };

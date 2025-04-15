@@ -1,4 +1,3 @@
-
 /**
  * Centralized type exports
  * All types should be exported from this file to prevent duplication and ensure consistency
@@ -59,3 +58,4 @@ export type {
   CanvasReferences
 } from './fabric';
 export { isTouchEvent, isMouseEvent } from './fabric';
+export { isValidDrawingTool, getToolDisplayName, parseDrawingTool, getDefaultDrawingTool } from './core/DrawingTool';

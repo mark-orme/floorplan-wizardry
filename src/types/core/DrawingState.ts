@@ -15,7 +15,8 @@ export interface DrawingState {
   currentPoint: Point | null;
   points: Point[];
   isEnabled: boolean;
-  // Add missing properties referenced in tests
+  
+  // Added missing properties
   distance: number | null;
   cursorPosition: Point | null;
   currentZoom: number;
