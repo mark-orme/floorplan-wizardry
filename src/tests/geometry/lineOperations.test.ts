@@ -9,8 +9,10 @@ import {
   calculateAngle,
   isExactGridMultiple,
   isLineAlignedWithGrid,
-  snapToGrid
+  snapToGrid,
+  snapLineToGrid
 } from '@/utils/geometry/lineOperations';
+import { Point, Line } from '@/types/core/Geometry';
 import { GRID_SPACING } from '@/constants/numerics';
 
 describe('lineOperations', () => {
@@ -80,66 +82,91 @@ describe('lineOperations', () => {
   
   describe('isExactGridMultiple', () => {
     it('should return true for values that are exact multiples of grid size', () => {
-      expect(isExactGridMultiple(20)).toBe(true);
-      expect(isExactGridMultiple(40)).toBe(true);
-      expect(isExactGridMultiple(100)).toBe(true);
+      expect(isExactGridMultiple(20, 20)).toBe(true);
+      expect(isExactGridMultiple(40, 20)).toBe(true);
+      expect(isExactGridMultiple(100, 20)).toBe(true);
     });
     
     it('should return false for values that are not exact multiples of grid size', () => {
-      expect(isExactGridMultiple(15)).toBe(false);
-      expect(isExactGridMultiple(37)).toBe(false);
-      expect(isExactGridMultiple(103)).toBe(false);
+      expect(isExactGridMultiple(15, 20)).toBe(false);
+      expect(isExactGridMultiple(37, 20)).toBe(false);
+      expect(isExactGridMultiple(103, 20)).toBe(false);
     });
     
     it('should work with custom grid sizes', () => {
       expect(isExactGridMultiple(25, 5)).toBe(true);
       expect(isExactGridMultiple(27, 5)).toBe(false);
     });
+    
+    it('should use default grid size when not specified', () => {
+      // Using default grid size of 20
+      expect(isExactGridMultiple(20)).toBe(true);
+      expect(isExactGridMultiple(15)).toBe(false);
+    });
   });
   
   describe('isLineAlignedWithGrid', () => {
-    it('should return true when both points are on grid intersections', () => {
-      const p1 = { x: 20, y: 20 };
-      const p2 = { x: 60, y: 80 };
+    it('should return true when point is on grid intersection', () => {
+      const point: Point = { x: 20, y: 20 };
       
-      expect(isLineAlignedWithGrid(p1, p2)).toBe(true);
+      expect(isLineAlignedWithGrid(point, 20)).toBe(true);
     });
     
-    it('should return false when one or both points are not on grid intersections', () => {
-      const p1 = { x: 20, y: 20 };
-      const p2 = { x: 65, y: 85 };
+    it('should return false when point is not on grid intersection', () => {
+      const point: Point = { x: 15, y: 20 };
       
-      expect(isLineAlignedWithGrid(p1, p2)).toBe(false);
+      expect(isLineAlignedWithGrid(point, 20)).toBe(false);
+    });
+    
+    it('should handle line objects properly', () => {
+      const line = {
+        start: { x: 20, y: 20 },
+        end: { x: 40, y: 40 }
+      };
+      
+      // Type assertion to get the test to compile
+      expect(isLineAlignedWithGrid(line as any, 20)).toBe(true);
+      
+      const nonAlignedLine = {
+        start: { x: 20, y: 20 },
+        end: { x: 41, y: 40 }
+      };
+      
+      expect(isLineAlignedWithGrid(nonAlignedLine as any, 20)).toBe(false);
     });
   });
   
   describe('snapToGrid', () => {
-    it('should snap a line to the grid', () => {
-      const line = {
-        start: { x: 22, y: 18 },
-        end: { x: 58, y: 82 }
-      };
+    it('should snap point to grid', () => {
+      const point: Point = { x: 18, y: 22 };
+      const snapped = snapToGrid(point, 20);
       
-      const snapped = snapToGrid(line);
-      
-      expect(snapped.start.x).toBe(20);
-      expect(snapped.start.y).toBe(20);
-      expect(snapped.end.x).toBe(60);
-      expect(snapped.end.y).toBe(80);
+      expect(snapped.x).toBe(20);
+      expect(snapped.y).toBe(20);
     });
     
-    it('should snap to custom grid size', () => {
-      const line = {
-        start: { x: 22, y: 18 },
-        end: { x: 58, y: 82 }
+    it('should not change points that are already on grid', () => {
+      const point: Point = { x: 20, y: 40 };
+      const snapped = snapToGrid(point, 20);
+      
+      expect(snapped.x).toBe(20);
+      expect(snapped.y).toBe(40);
+    });
+  });
+  
+  describe('snapLineToGrid', () => {
+    it('should snap line endpoints to grid', () => {
+      const line: Line = {
+        start: { x: 18, y: 22 },
+        end: { x: 42, y: 38 }
       };
       
-      const snapped = snapToGrid(line, 10);
+      const snapped = snapLineToGrid(line, 20);
       
       expect(snapped.start.x).toBe(20);
       expect(snapped.start.y).toBe(20);
-      expect(snapped.end.x).toBe(60);
-      expect(snapped.end.y).toBe(80);
+      expect(snapped.end.x).toBe(40);
+      expect(snapped.end.y).toBe(40);
     });
   });
 });

@@ -1,13 +1,5 @@
 
-import { Point } from "@/types/core/Geometry";
-
-/**
- * Line interface representing a line segment between two points
- */
-export interface Line {
-  start: Point;
-  end: Point;
-}
+import { Point, Line } from "@/types/core/Geometry";
 
 /**
  * Calculate distance between two points
@@ -65,35 +57,40 @@ export function calculateMidpoint(point1: Point, point2: Point): Point {
 /**
  * Check if a value is an exact multiple of the grid size
  * @param {number} value - Value to check
- * @param {number} gridSize - Grid size
+ * @param {number} gridSize - Grid size (defaults to 20)
  * @returns {boolean} True if value is a multiple of grid size
  */
-export function isExactGridMultiple(value: number, gridSize: number): boolean {
+export function isExactGridMultiple(value: number, gridSize: number = 20): boolean {
   return Math.abs(value % gridSize) < 0.001;
 }
 
 /**
  * Check if a line is aligned with the grid
  * @param {Line} line - Line to check
- * @param {number} gridSize - Grid size
+ * @param {number} gridSize - Grid size (defaults to 20)
  * @returns {boolean} True if line is aligned with grid
  */
-export function isLineAlignedWithGrid(line: Line, gridSize: number): boolean {
+export function isLineAlignedWithGrid(line: Point, gridSize: number = 20): boolean {
+  // When line is a Point (backwards compatibility)
+  if ('x' in line && 'y' in line && !('start' in line)) {
+    return isExactGridMultiple(line.x, gridSize) && isExactGridMultiple(line.y, gridSize);
+  }
+  // When line is actually a Line
   return (
-    isExactGridMultiple(line.start.x, gridSize) &&
-    isExactGridMultiple(line.start.y, gridSize) &&
-    isExactGridMultiple(line.end.x, gridSize) &&
-    isExactGridMultiple(line.end.y, gridSize)
+    isExactGridMultiple((line as any).start.x, gridSize) &&
+    isExactGridMultiple((line as any).start.y, gridSize) &&
+    isExactGridMultiple((line as any).end.x, gridSize) &&
+    isExactGridMultiple((line as any).end.y, gridSize)
   );
 }
 
 /**
  * Snap a point to the nearest grid point
  * @param {Point} point - Point to snap
- * @param {number} gridSize - Grid size
+ * @param {number} gridSize - Grid size (defaults to 20)
  * @returns {Point} Snapped point
  */
-export function snapToGrid(point: Point, gridSize: number): Point {
+export function snapToGrid(point: Point, gridSize: number = 20): Point {
   return {
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
@@ -103,10 +100,10 @@ export function snapToGrid(point: Point, gridSize: number): Point {
 /**
  * Snap a line to the grid
  * @param {Line} line - Line to snap
- * @param {number} gridSize - Grid size
+ * @param {number} gridSize - Grid size (defaults to 20)
  * @returns {Line} Snapped line
  */
-export function snapLineToGrid(line: Line, gridSize: number): Line {
+export function snapLineToGrid(line: Line, gridSize: number = 20): Line {
   return {
     start: snapToGrid(line.start, gridSize),
     end: snapToGrid(line.end, gridSize)

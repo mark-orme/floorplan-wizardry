@@ -16,6 +16,7 @@ export enum InputMethod {
   MOUSE = "mouse",
   TOUCH = "touch",
   STYLUS = "stylus",
+  PENCIL = "pencil",
   KEYBOARD = "keyboard"
 }
 
@@ -60,6 +61,15 @@ export const createDefaultLineState = (): LineState => ({
 });
 
 /**
+ * Props for the useLineState hook
+ */
+export interface UseLineStateProps {
+  fabricCanvasRef: React.MutableRefObject<any>;
+  lineThickness?: number;
+  lineColor?: string;
+}
+
+/**
  * Hook for managing straight line drawing state
  */
 export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) => {
@@ -77,7 +87,7 @@ export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) =>
   const snapGridSizeRef = useRef(20); // Default grid size
   
   // Add input method state
-  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
   
   /**
    * Set the start point for the line

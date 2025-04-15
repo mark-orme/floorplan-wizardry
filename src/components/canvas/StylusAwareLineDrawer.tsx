@@ -1,3 +1,4 @@
+
 /**
  * Stylus-aware line drawer component
  * @module components/canvas/StylusAwareLineDrawer
@@ -8,6 +9,7 @@ import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineToo
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Geometry';
 import { toast } from 'sonner';
+import { InputMethod } from '@/hooks/straightLineTool/useLineState';
 
 interface StylusAwareLineDrawerProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -202,7 +204,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       {/* Status indicator for drawing mode */}
       {isActive && (
         <div className="fixed bottom-2 right-2 p-2 bg-black/70 text-white rounded text-xs" style={{ zIndex: 9999 }}>
-          {inputMethod === 'pencil' || inputMethod === 'stylus' ? '✏️ ' : inputMethod === 'touch' ? '👆 ' : '🖱️ '}
+          {inputMethod === InputMethod.PENCIL || inputMethod === InputMethod.STYLUS ? '✏️ ' : inputMethod === InputMethod.TOUCH ? '👆 ' : '🖱️ '}
           {snapEnabled ? '📏' : ''}
           {anglesEnabled ? '📐' : ''}
           {isPencilMode && '✨'}
