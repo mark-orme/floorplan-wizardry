@@ -1,7 +1,7 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { useRef, useState, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line, Circle } from 'fabric';
 import { useEnhancedGridSnapping } from '../hooks/straightLineTool/useEnhancedGridSnapping';
 import { Button } from '../components/ui/button';
 import { Grid } from 'lucide-react';
@@ -41,12 +41,12 @@ const GridSnappingDemo = () => {
     // Draw grid lines
     const gridSize = 20;
     for (let i = 0; i <= 400; i += gridSize) {
-      fabricCanvas.add(new FabricCanvas.Line([i, 0, i, 400], {
+      fabricCanvas.add(new Line([i, 0, i, 400], {
         stroke: '#e9ecef',
         selectable: false,
         evented: false,
       }));
-      fabricCanvas.add(new FabricCanvas.Line([0, i, 400, i], {
+      fabricCanvas.add(new Line([0, i, 400, i], {
         stroke: '#e9ecef',
         selectable: false,
         evented: false,
@@ -79,7 +79,7 @@ const GridSnappingDemo = () => {
     
     const point = snapEnabled ? snapToGrid({ x, y }) : { x, y };
     
-    const circle = new FabricCanvas.Circle({
+    const circle = new Circle({
       left: point.x - 5,
       top: point.y - 5,
       radius: 5,
