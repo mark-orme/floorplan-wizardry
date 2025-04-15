@@ -1,257 +1,347 @@
-
-/**
- * Custom hook for straight line drawing tool with enhanced features
- * @module hooks/straightLineTool/useStraightLineTool
- */
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas, Line, Point as FabricPoint } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
-import { useLineState } from './useLineState';
-import { useLineToolHandlers } from './useLineToolHandlers';
-import { useToolCancellation } from './useToolCancellation';
-import { useGridSnapping } from '../canvas/useGridSnapping';
 import { toast } from 'sonner';
-import * as Sentry from '@sentry/react';
-import { constrainToMajorAngles } from '@/utils/grid/snapping';
-import logger from '@/utils/logger';
-import { GRID_SPACING } from '@/constants/numerics';
+import { useLineEvents } from './useLineEvents';
+import { toFabricPoint } from '@/utils/fabricPointConverter';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool: DrawingMode;
-  lineColor: string;
-  lineThickness: number;
-  saveCurrentState: () => void;
-  onChange?: (canvas: FabricCanvas) => void;
+  lineColor?: string;
+  lineThickness?: number;
+  saveCurrentState?: () => void;
   useShiftConstraint?: boolean;
 }
 
-/**
- * Custom hook for straight line drawing tool with enhanced features:
- * - Grid snapping
- * - Shift key constraints
- * - Proper tooltips
- * - Cancellation support
- * - Undo/redo compatibility
- * 
- * @param {UseStraightLineToolProps} props - Configuration for the straight line tool
- * @returns {Object} Tool state and handler functions
- */
 export const useStraightLineTool = ({
   fabricCanvasRef,
   tool,
-  lineColor,
-  lineThickness,
-  saveCurrentState,
-  onChange,
+  lineColor = '#000000',
+  lineThickness = 2,
+  saveCurrentState = () => {},
   useShiftConstraint = false
 }: UseStraightLineToolProps) => {
-  // Store tool state
-  const [isActive, setIsActive] = useState(false);
-  const [isToolInitialized, setIsToolInitialized] = useState(false);
-  const [currentLine, setCurrentLineState] = useState<Line | null>(null);
+  const isActive = tool === DrawingMode.STRAIGHT_LINE;
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [inputMethod, setInputMethod] = useState<'mouse' | 'touch' | 'pencil' | 'stylus'>('mouse');
+  const [isPencilMode, setIsPencilMode] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(true);
   const [anglesEnabled, setAnglesEnabled] = useState(true);
-  const [measurementData, setMeasurementData] = useState<any>(null);
+  const [isToolInitialized, setIsToolInitialized] = useState(false);
+  const [currentLine, setCurrentLine] = useState<Line | null>(null);
+  const [measurementData, setMeasurementData] = useState<{
+    length: number;
+    angle: number;
+    start: Point;
+    end: Point;
+  } | null>(null);
   
-  // Set Sentry context for the hook
+  // Refs for tracking state across renders
+  const startPointRef = useRef<Point | null>(null);
+  const currentLineRef = useRef<Line | null>(null);
+  const isActiveRef = useRef(false);
+  
+  // Update active ref whenever tool changes
   useEffect(() => {
-    Sentry.setTag("component", "useStraightLineTool");
-    Sentry.setTag("straightLineTool", tool === DrawingMode.STRAIGHT_LINE ? "active" : "inactive");
+    isActiveRef.current = isActive;
     
-    Sentry.setContext("straightLineState", {
-      isToolInitialized,
-      isActive,
-      currentTool: tool,
-      lineColor,
-      lineThickness,
-      hasCurrentLine: !!currentLine,
-      shiftConstraintActive: useShiftConstraint,
-      timestamp: new Date().toISOString()
-    });
-    
-    return () => {
-      Sentry.setTag("component", null);
-      Sentry.setTag("straightLineTool", null);
-    };
-  }, [tool, isToolInitialized, isActive, lineColor, lineThickness, currentLine, useShiftConstraint]);
+    // Debug logging
+    if (isActive) {
+      console.log("Straight line tool activated in hook");
+      
+      // Initialize tool after a delay to ensure canvas is ready
+      const timer = setTimeout(() => {
+        setIsToolInitialized(true);
+        console.log("Straight line tool initialized", { 
+          tool, 
+          lineColor, 
+          lineThickness 
+        });
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setIsToolInitialized(false);
+    }
+  }, [isActive, tool, lineColor, lineThickness]);
   
-  // Initialize grid snapping
-  const { 
-    snapEnabled, 
-    snapPointToGrid, 
-    snapLineToGrid, 
-    toggleSnapToGrid: toggleGridSnapping 
-  } = useGridSnapping({
-    initialSnapEnabled: true,
-    fabricCanvasRef,
-    defaultGridSize: GRID_SPACING.SMALL
-  });
-  
-  // Initialize the line state
-  const {
+  // Definition of line state for hooks
+  const lineState = {
     isDrawing,
+    isToolInitialized,
     startPointRef,
     currentLineRef,
-    distanceTooltipRef,
-    setStartPoint,
-    setCurrentLine,
-    setDistanceTooltip,
-    resetDrawingState,
-    setIsDrawing,
-    inputMethod,
-    isPencilMode,
-    isToolInitialized: isLineStateInitialized,
-    setIsToolInitialized: setLineStateToolInitialized,
-    snapPointToGrid: lineStateSnapPointToGrid,
-    snapLineToGrid: lineStateSnapLineToGrid,
-    updateMeasurementData
-  } = useLineState({
-    fabricCanvasRef,
-    snapPointToGrid,
-    snapLineToGrid,
-    isToolActive: isActive,
-    lineColor,
-    lineThickness
-  });
-  
-  // Set current line for external access
-  useEffect(() => {
-    if (currentLineRef.current !== currentLine) {
-      setCurrentLineState(currentLineRef.current);
-    }
-  }, [currentLineRef.current]);
-  
-  // Get simplified input method for useToolCancellation which doesn't accept all types
-  const simplifiedInputMethod = (): 'mouse' | 'touch' | 'pencil' | 'stylus' | 'keyboard' => {
-    if (inputMethod === 'keyboard') return 'mouse'; // Map keyboard to mouse for cancel operations
-    return inputMethod;
+    distanceTooltipRef: useRef<any>(null),
+    setStartPoint: (point: Point) => {
+      startPointRef.current = point;
+    },
+    setCurrentLine: (line: Line) => {
+      currentLineRef.current = line;
+      setCurrentLine(line);
+    },
+    setDistanceTooltip: (tooltip: any) => {
+      // Not used directly in this hook, but required for useLineEvents
+    },
+    initializeTool: () => {
+      setIsToolInitialized(true);
+    },
+    resetDrawingState: () => {
+      startPointRef.current = null;
+      currentLineRef.current = null;
+      setCurrentLine(null);
+      setIsDrawing(false);
+      setMeasurementData(null);
+    },
+    setIsDrawing
   };
   
-  // Initialize tool cancellation
-  const { cancelDrawing, toggleGridSnapping: toggleSnapFromCancellation } = useToolCancellation({
+  // Get line event handlers
+  const {
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    cancelDrawing,
+    cleanupEventHandlers
+  } = useLineEvents(
     fabricCanvasRef,
-    isDrawing,
-    currentLineRef,
-    distanceTooltipRef,
-    setIsDrawing,
-    resetDrawingState,
-    inputMethod: simplifiedInputMethod(),
-    toggleSnap: toggleGridSnapping,
-    snapEnabled
-  });
-  
-  // Extend snapLineToGrid with shift key constraints
-  const enhancedSnapLineToGrid = useCallback((start: Point, end: Point) => {
-    // First apply shift constraint if active
-    let processedPoints = { start, end };
-    if (useShiftConstraint) {
-      processedPoints = constrainToMajorAngles(start, end);
-    }
-    
-    // Then apply grid snapping if enabled
-    return snapLineToGrid(processedPoints.start, processedPoints.end);
-  }, [snapLineToGrid, useShiftConstraint]);
-  
-  // Toggle angle constraints
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
-    
-    // Show feedback to user
-    toast.info(!anglesEnabled ? 'Angle snapping enabled' : 'Angle snapping disabled', {
-      id: 'angle-snap-toggle'
-    });
-  }, [anglesEnabled]);
-  
-  // Initialize line tool handlers with shift constraint support
-  const { handlePointerDown, handlePointerMove, handlePointerUp } = useLineToolHandlers({
-    fabricCanvasRef,
-    isActive,
-    isDrawing,
-    startPointRef,
-    currentLineRef,
-    distanceTooltipRef,
-    setIsDrawing,
-    setStartPoint,
-    setCurrentLine,
-    resetDrawingState,
-    saveCurrentState,
-    onChange,
+    tool,
     lineColor,
     lineThickness,
-    snapToAngle: anglesEnabled,
-    snapAngleDeg: 45,
-    snapEnabled,
-    snapLineToGrid: enhancedSnapLineToGrid,
-    inputMethod,
-    logDrawingEvent: (message, eventType, data) => {
-      logger.info(message, { eventType, ...data });
+    saveCurrentState,
+    lineState
+  );
+  
+  // Custom handlers for external event integration
+  const handlePointerDown = useCallback((point: Point) => {
+    console.log("Pointer down in useStraightLineTool", point);
+    if (!isActiveRef.current || !fabricCanvasRef.current) return;
+    
+    try {
+      // Start drawing from this point
+      startPointRef.current = point;
+      setIsDrawing(true);
       
-      // Log to Sentry for important events
-      if (eventType === 'line-start' || eventType === 'line-complete' || eventType === 'line-cancel') {
-        Sentry.addBreadcrumb({
-          category: 'drawing',
-          message,
-          data: data
-        });
-      }
+      // Create a new line
+      const canvas = fabricCanvasRef.current;
+      const line = new Line([point.x, point.y, point.x, point.y], {
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        selectable: false,
+        evented: false
+      });
+      
+      canvas.add(line);
+      currentLineRef.current = line;
+      setCurrentLine(line);
       
       // Update measurement data
-      if (eventType === 'line-move' && data.start && data.end) {
-        updateMeasurementData(data.start, data.end);
-      }
+      setMeasurementData({
+        length: 0,
+        angle: 0,
+        start: point,
+        end: point
+      });
+      
+      console.log("Line created:", line);
+      
+      // Force canvas render
+      canvas.requestRenderAll();
+    } catch (error) {
+      console.error("Error in handlePointerDown:", error);
+      toast.error("Failed to start drawing line");
     }
-  });
+  }, [fabricCanvasRef, lineColor, lineThickness]);
   
-  // Effect to initialize or clean up based on tool change
+  const handlePointerMove = useCallback((point: Point) => {
+    if (!isActiveRef.current || !isDrawing || !startPointRef.current || !currentLineRef.current) return;
+    
+    try {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      // Update the line's end point
+      currentLineRef.current.set({
+        x2: point.x,
+        y2: point.y
+      });
+      
+      // Calculate measurements
+      const dx = point.x - startPointRef.current.x;
+      const dy = point.y - startPointRef.current.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      
+      setMeasurementData({
+        length,
+        angle,
+        start: startPointRef.current,
+        end: point
+      });
+      
+      // Force canvas render
+      canvas.requestRenderAll();
+    } catch (error) {
+      console.error("Error in handlePointerMove:", error);
+    }
+  }, [isDrawing, fabricCanvasRef]);
+  
+  const handlePointerUp = useCallback((point: Point) => {
+    console.log("Pointer up in useStraightLineTool", point);
+    if (!isActiveRef.current || !isDrawing || !startPointRef.current || !currentLineRef.current) return;
+    
+    try {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      // Finalize the line
+      currentLineRef.current.set({
+        x2: point.x,
+        y2: point.y,
+        selectable: true,
+        evented: true
+      });
+      
+      // Calculate length
+      const dx = point.x - startPointRef.current.x;
+      const dy = point.y - startPointRef.current.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      
+      console.log("Completing line with length:", length);
+      
+      // Only keep the line if it's long enough
+      if (length > 1) {
+        // Save to history
+        saveCurrentState();
+        
+        // Indicate success
+        toast.success(`Line drawn: ${Math.round(length)} px`);
+      } else {
+        // Line too short, remove it
+        canvas.remove(currentLineRef.current);
+        toast.info("Line too short, discarded");
+      }
+      
+      // Reset state
+      startPointRef.current = null;
+      currentLineRef.current = null;
+      setCurrentLine(null);
+      setIsDrawing(false);
+      setMeasurementData(null);
+      
+      // Force canvas render
+      canvas.requestRenderAll();
+    } catch (error) {
+      console.error("Error in handlePointerUp:", error);
+      toast.error("Failed to complete line");
+      
+      // Reset state on error
+      setIsDrawing(false);
+    }
+  }, [isDrawing, fabricCanvasRef, saveCurrentState]);
+  
+  // Toggle functions
+  const toggleGridSnapping = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+    toast.info(snapEnabled ? "Grid snapping disabled" : "Grid snapping enabled");
+  }, [snapEnabled]);
+  
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+    toast.info(anglesEnabled ? "Angle constraints disabled" : "Angle constraints enabled");
+  }, [anglesEnabled]);
+  
+  // Attach event handlers directly to canvas when tool is active
   useEffect(() => {
-    // Determine if tool is active
-    const isStraightLineTool = tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.LINE;
-    setIsActive(isStraightLineTool);
+    // Only run this effect when the tool is active and canvas is available
+    if (!isActive || !fabricCanvasRef.current || !isToolInitialized) return;
     
-    Sentry.setTag("straightLineTool", isStraightLineTool ? "active" : "inactive");
+    const canvas = fabricCanvasRef.current;
     
-    // Initialize tool when activated
-    if (isStraightLineTool && !isToolInitialized) {
-      setIsToolInitialized(true);
-      setLineStateToolInitialized(true);
+    console.log("Attaching straight line event handlers to canvas", {
+      isActive,
+      isToolInitialized
+    });
+    
+    // Create bound handlers
+    const mouseDownHandler = (e: any) => {
+      if (!isActive) return;
+      console.log("Mouse down on canvas", e);
+      const pointer = canvas.getPointer(e.e);
+      handlePointerDown({ x: pointer.x, y: pointer.y });
+    };
+    
+    const mouseMoveHandler = (e: any) => {
+      if (!isActive || !isDrawing) return;
+      const pointer = canvas.getPointer(e.e);
+      handlePointerMove({ x: pointer.x, y: pointer.y });
+    };
+    
+    const mouseUpHandler = (e: any) => {
+      if (!isActive || !isDrawing) return;
+      console.log("Mouse up on canvas", e);
+      const pointer = canvas.getPointer(e.e);
+      handlePointerUp({ x: pointer.x, y: pointer.y });
+    };
+    
+    // Attach handlers
+    canvas.on('mouse:down', mouseDownHandler);
+    canvas.on('mouse:move', mouseMoveHandler);
+    canvas.on('mouse:up', mouseUpHandler);
+    
+    // Clean up on unmount or tool change
+    return () => {
+      canvas.off('mouse:down', mouseDownHandler);
+      canvas.off('mouse:move', mouseMoveHandler);
+      canvas.off('mouse:up', mouseUpHandler);
       
-      // Log tool initialization
-      logger.info("Straight line tool initialized", {
-        tool,
-        lineColor,
-        lineThickness
-      });
+      // Cancel any active drawing
+      if (isDrawing && currentLineRef.current) {
+        canvas.remove(currentLineRef.current);
+      }
       
-      Sentry.addBreadcrumb({
-        category: 'tool',
-        message: 'Straight line tool initialized',
-        data: { lineColor, lineThickness }
-      });
-    }
-    
-    // Clean up any active drawing when tool changes
-    if (!isStraightLineTool && isDrawing) {
-      cancelDrawing();
-    }
-  }, [tool, isToolInitialized, isDrawing, cancelDrawing, setLineStateToolInitialized]);
+      // Reset state
+      setIsDrawing(false);
+      startPointRef.current = null;
+      currentLineRef.current = null;
+      setCurrentLine(null);
+    };
+  }, [
+    isActive, 
+    fabricCanvasRef,
+    isToolInitialized,
+    isDrawing,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp
+  ]);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (isDrawing && currentLineRef.current && fabricCanvasRef.current) {
+        fabricCanvasRef.current.remove(currentLineRef.current);
+      }
+    };
+  }, [isDrawing, fabricCanvasRef]);
   
   return {
     isActive,
-    isToolInitialized,
     isDrawing,
     inputMethod,
     isPencilMode,
     snapEnabled,
     anglesEnabled,
     measurementData,
+    isToolInitialized,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
     cancelDrawing,
     toggleGridSnapping,
     toggleAngles,
-    currentLine: currentLineRef.current,
+    currentLine,
     startPointRef,
     currentLineRef
   };

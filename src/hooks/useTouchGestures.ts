@@ -81,7 +81,7 @@ export const useTouchGestures = ({
     const canvasCenterX = (centerX - rect.left) / currentZoom;
     const canvasCenterY = (centerY - rect.top) / currentZoom;
     
-    // Create a proper fabric point using our utility function
+    // Convert to fabric point for zoom operation
     const zoomPoint = toFabricPoint({ x: canvasCenterX, y: canvasCenterY });
     
     // Apply zoom

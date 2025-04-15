@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -87,6 +88,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     
     newZoom = Math.max(ZOOM_CONSTANTS.MIN_ZOOM, Math.min(ZOOM_CONSTANTS.MAX_ZOOM, newZoom));
     
+    // Convert pointer coordinates to fabric point
     const zoomPoint = toFabricPoint({ x: pointer.x, y: pointer.y });
     
     canvas.zoomToPoint(zoomPoint, newZoom);
@@ -125,6 +127,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     if (!canvasRef.current || canvasInitialized) return;
     
     try {
+      console.log("Initializing canvas with dimensions:", width, "x", height);
       const canvas = new FabricCanvas(canvasRef.current, {
         width: paperSize?.width || width,
         height: paperSize?.height || height,
@@ -204,6 +207,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       canvas.freeDrawingBrush.width = lineThickness;
     }
     
+    console.log(`Canvas tool changed to: ${tool}`);
     canvas.renderAll();
   }, [tool, lineColor, lineThickness, fabricCanvasRef]);
   

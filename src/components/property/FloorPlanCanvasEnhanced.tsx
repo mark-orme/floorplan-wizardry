@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, Path } from "fabric"; 
 import { EnhancedCanvas } from "@/components/EnhancedCanvas";
@@ -150,9 +151,24 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     canvas.getObjects().forEach((obj, index) => {
       if (obj.type === 'path') {
         const path = obj as Path;
-        if (path.closed) {
+        // Check if the path is closed by examining its path data
+        const pathData = path.path;
+        let isClosed = false;
+        
+        if (pathData && pathData.length > 2) {
+          // A path is considered closed if the last point connects back to the first point
+          const firstCommand = pathData[0];
+          const lastCommand = pathData[pathData.length - 1];
+          
+          if (firstCommand[0] === 'M' && 
+             (lastCommand[0] === 'z' || lastCommand[0] === 'Z' || 
+             (lastCommand[0] === 'L' && lastCommand[1] === firstCommand[1] && lastCommand[2] === firstCommand[2]))) {
+            isClosed = true;
+          }
+        }
+        
+        if (isClosed) {
           const points: Point[] = [];
-          const pathData = path.path;
           
           if (pathData) {
             for (let i = 0; i < pathData.length; i++) {
@@ -199,6 +215,13 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
       }
     };
   }, []);
+  
+  // Log debugging information for straight line tool
+  useEffect(() => {
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      console.log("Straight line tool activated in FloorPlanCanvasEnhanced");
+    }
+  }, [tool]);
   
   return (
     <div 
@@ -249,6 +272,11 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
           onChangePaperSize={changePaperSize}
           onToggleInfiniteCanvas={toggleInfiniteCanvas}
         />
+        
+        {/* Tool selection indicators */}
+        <div className="absolute top-4 left-4 bg-white/90 p-2 rounded shadow-md z-10">
+          <div className="text-sm font-medium">Active Tool: {tool}</div>
+        </div>
         
         {/* Calculate Area button */}
         <button
