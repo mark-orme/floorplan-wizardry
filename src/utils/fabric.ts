@@ -1,4 +1,3 @@
-
 /**
  * Fabric.js utilities
  * Central export for all fabric-related utility functions
@@ -51,5 +50,8 @@ export {
 export * from './fabric/canvasObjectUtils';
 export * from './fabric/canvasSerializationUtils';
 
-// Re-export point converter utilities
-export * from './fabricPointConverter';
+// Re-export point converter utilities with explicit renaming to avoid conflicts
+export { 
+  toFabricPoint as convertToFabricPoint, 
+  fromFabricPoint as convertFromFabricPoint 
+} from './fabricPointConverter';
