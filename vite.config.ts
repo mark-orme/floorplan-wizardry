@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -25,6 +26,12 @@ export default defineConfig(({ mode }) => ({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       telemetry: false,
     }),
+    visualizer({
+      open: true,
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true
+    })
   ].filter(Boolean),
   resolve: {
     alias: {

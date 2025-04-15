@@ -1,104 +1,81 @@
 
 /**
  * HTTP Security Utilities
- * Functions for securing HTTP requests and responses
+ * Functions for adding security headers to the application
  */
 
-import { getCsrfToken } from './csrfProtection';
-import logger from '@/utils/logger';
-
 /**
- * Apply security related meta tags to document head
- * Note: X-Frame-Options is excluded as it can only be set via HTTP headers
+ * Apply security meta tags to the document head
+ * These simulate HTTP headers for development and some production environments
  */
 export function applySecurityMetaTags(): void {
-  if (typeof document === 'undefined') return;
-  
-  const metaTags = [
-    { httpEquiv: 'X-Content-Type-Options', content: 'nosniff' },
-    { name: 'referrer', content: 'no-referrer' }
-    // X-Frame-Options should only be set via actual HTTP headers, not meta tags
-  ];
-  
-  metaTags.forEach(tagInfo => {
-    const existingTag = tagInfo.httpEquiv 
-      ? document.querySelector(`meta[http-equiv="${tagInfo.httpEquiv}"]`)
-      : document.querySelector(`meta[name="${tagInfo.name}"]`);
-    
-    if (!existingTag) {
-      const meta = document.createElement('meta');
-      if (tagInfo.httpEquiv) meta.httpEquiv = tagInfo.httpEquiv;
-      if (tagInfo.name) meta.name = tagInfo.name;
-      meta.content = tagInfo.content;
-      document.head.appendChild(meta);
+  // Remove any existing security meta tags
+  document.querySelectorAll('meta[http-equiv]').forEach(tag => {
+    if (
+      tag.getAttribute('http-equiv') === 'Content-Security-Policy' ||
+      tag.getAttribute('http-equiv') === 'X-Content-Type-Options' ||
+      tag.getAttribute('http-equiv') === 'X-Frame-Options' ||
+      tag.getAttribute('http-equiv') === 'Referrer-Policy' ||
+      tag.getAttribute('http-equiv') === 'Permissions-Policy'
+    ) {
+      tag.remove();
     }
   });
-  
-  // Log successful application of security meta tags
-  logger.debug('Security meta tags applied to document head');
+
+  // Define security headers as meta tags
+  const securityMeta = [
+    {
+      httpEquiv: 'X-Content-Type-Options',
+      content: 'nosniff'
+    },
+    {
+      httpEquiv: 'X-Frame-Options',
+      content: 'DENY'
+    },
+    {
+      httpEquiv: 'Referrer-Policy',
+      content: 'strict-origin-when-cross-origin'
+    },
+    {
+      httpEquiv: 'Permissions-Policy',
+      content: 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()'
+    }
+  ];
+
+  // Add security meta tags to document head
+  securityMeta.forEach(meta => {
+    const metaTag = document.createElement('meta');
+    metaTag.httpEquiv = meta.httpEquiv;
+    metaTag.content = meta.content;
+    document.head.appendChild(metaTag);
+  });
+
+  // Add Strict-Transport-Security meta tag (HSTS)
+  // Note: This is most effective when applied as an actual HTTP header by the server
+  const hstsTag = document.createElement('meta');
+  hstsTag.httpEquiv = 'Strict-Transport-Security';
+  hstsTag.content = 'max-age=63072000; includeSubDomains; preload';
+  document.head.appendChild(hstsTag);
+
+  // Log that security meta tags have been applied
+  console.log('Security meta tags applied to document');
 }
 
 /**
- * Check if the current connection is secure (HTTPS or localhost)
+ * Check if a specific meta tag exists in the document head
+ * @param httpEquiv The http-equiv attribute value
+ * @returns boolean indicating if the tag exists
  */
-export function isConnectionSecure(): boolean {
-  if (typeof window === 'undefined') return true;
-  
-  return window.location.protocol === 'https:' || 
-    window.location.hostname === 'localhost' || 
-    window.location.hostname === '127.0.0.1';
+export function checkMetaTagExists(httpEquiv: string): boolean {
+  return !!document.querySelector(`meta[http-equiv="${httpEquiv}"]`);
 }
 
 /**
- * Add security headers to fetch options
- * @param options Original fetch options
- * @returns Fetch options with security headers
+ * Get the content of a specific meta tag
+ * @param httpEquiv The http-equiv attribute value
+ * @returns The content attribute value or null if the tag doesn't exist
  */
-export function addSecurityHeaders(options: RequestInit = {}): RequestInit {
-  const secureOptions = { ...options };
-  secureOptions.headers = secureOptions.headers || {};
-  
-  // Convert different header formats to a Headers object
-  let headers: Headers;
-  if (secureOptions.headers instanceof Headers) {
-    headers = secureOptions.headers;
-  } else if (Array.isArray(secureOptions.headers)) {
-    headers = new Headers();
-    secureOptions.headers.forEach(([key, value]) => {
-      headers.append(key, value);
-    });
-  } else {
-    headers = new Headers(secureOptions.headers);
-  }
-  
-  // Add security headers
-  headers.append('X-Content-Type-Options', 'nosniff');
-  
-  // Add CSRF token if available
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers.append('X-CSRF-Token', csrfToken);
-  }
-  
-  secureOptions.headers = headers;
-  return secureOptions;
-}
-
-/**
- * Secure fetch wrapper with additional security headers
- * @param url URL to fetch
- * @param options Fetch options
- * @returns Fetch promise
- */
-export function secureFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  // Check if URL is secure
-  if (url.startsWith('http:') && isConnectionSecure()) {
-    logger.warn('Secure application attempting to load insecure resource:', { url });
-  }
-  
-  // Add security headers
-  const secureOptions = addSecurityHeaders(options);
-  
-  // Perform fetch with enhanced security
-  return fetch(url, secureOptions);
+export function getMetaTagContent(httpEquiv: string): string | null {
+  const tag = document.querySelector(`meta[http-equiv="${httpEquiv}"]`);
+  return tag ? tag.getAttribute('content') : null;
 }
