@@ -16,7 +16,7 @@ export interface DrawingState {
   points: Point[];
   isEnabled: boolean;
   
-  // Added missing properties
+  // Required properties for proper typing
   distance: number | null;
   cursorPosition: Point | null;
   currentZoom: number;

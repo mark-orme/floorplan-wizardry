@@ -22,6 +22,25 @@ export function calculateDistance(point1: Point, point2: Point): number {
 }
 
 /**
+ * Calculate angle between two points in degrees
+ * @param {Point} point1 - First point
+ * @param {Point} point2 - Second point
+ * @returns {number} Angle in degrees
+ */
+export function calculateAngle(point1: Point, point2: Point): number {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
+  let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  
+  // Normalize angle to 0-360 degrees
+  if (angle < 0) {
+    angle += 360;
+  }
+  
+  return angle;
+}
+
+/**
  * Format distance for display
  * @param {number} distance - Distance to format
  * @returns {string} Formatted distance string

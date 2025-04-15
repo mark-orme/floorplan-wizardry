@@ -1,11 +1,11 @@
 
 /**
- * Core geometry types
+ * Geometry type definitions
  * @module types/core/Geometry
  */
 
 /**
- * Point interface representing x,y coordinates
+ * Basic point interface
  */
 export interface Point {
   x: number;
@@ -13,7 +13,7 @@ export interface Point {
 }
 
 /**
- * Size interface representing width and height
+ * Size interface
  */
 export interface Size {
   width: number;
@@ -21,7 +21,7 @@ export interface Size {
 }
 
 /**
- * Rectangle interface representing position and size
+ * Rectangle interface
  */
 export interface Rectangle {
   x: number;
@@ -31,7 +31,7 @@ export interface Rectangle {
 }
 
 /**
- * Line interface representing start and end points
+ * Line interface
  */
 export interface Line {
   start: Point;

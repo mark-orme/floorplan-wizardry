@@ -34,7 +34,7 @@ export interface DebugInfoState {
     objectCount: number;
   };
   
-  // Added missing properties from error messages
+  // Additional properties required by various components
   brushInitialized?: boolean;
   gridObjectCount?: number;
   objectCount?: number;
@@ -52,11 +52,16 @@ export interface DebugInfoState {
     retryCount?: number;
   };
   lastInitTime?: number;
-  lastError?: string;
+  lastError?: string | null;
   lastErrorTime?: number;
   showDebugInfo?: boolean;
   eventHandlersSet?: boolean;
   lastGridCreationTime?: number;
+  canvasEventsRegistered?: boolean;
+  gridRendered?: boolean;
+  toolsInitialized?: boolean;
+  canvasLoaded?: boolean;
+  lastRefresh?: number;
 }
 
 /**
@@ -67,10 +72,17 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   canvasInitialized: false,
   canvasCreated: false,
   dimensionsSet: false,
-  // Initialize additional properties with sensible defaults
+  gridCreated: false,
   hasError: false,
+  errorMessage: '',
   showDebugInfo: false,
   eventHandlersSet: false,
+  canvasEventsRegistered: false,
+  gridRendered: false,
+  toolsInitialized: false,
+  lastInitTime: 0,
+  lastGridCreationTime: 0,
+  lastRefresh: Date.now(),
   performanceStats: {
     fps: 0,
     droppedFrames: 0,

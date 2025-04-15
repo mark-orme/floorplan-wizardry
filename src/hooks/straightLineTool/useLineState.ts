@@ -5,19 +5,63 @@
 import { useCallback, useRef, useState } from "react";
 import { Object as FabricObject, Line, Text } from "fabric";
 import { Point } from "@/types/core/Geometry";
+import { FabricLine } from "@/types/fabric";
 import { calculateDistance } from "@/utils/geometry/lineOperations";
 import logger from "@/utils/logger";
 
 /**
- * Input method type for determining drawing interaction method
+ * Input method for drawing lines
  */
-export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'pencil' | 'keyboard';
-
-interface UseLineStateProps {
-  lineColor: string;
-  lineThickness: number;
+export enum InputMethod {
+  MOUSE = "mouse",
+  TOUCH = "touch",
+  STYLUS = "stylus",
+  KEYBOARD = "keyboard"
 }
 
+/**
+ * Line drawing state
+ */
+export interface LineState {
+  isActive: boolean;
+  isToolInitialized: boolean;
+  isDrawing: boolean;
+  startPoint: Point | null;
+  currentPoint: Point | null;
+  currentLine: FabricLine | null;
+  inputMethod: InputMethod;
+  isPencilMode: boolean;
+  anglesEnabled: boolean;
+  snapEnabled: boolean;
+  measurementData: {
+    distance: number | null;
+    angle: number | null;
+  };
+}
+
+/**
+ * Create default line state
+ */
+export const createDefaultLineState = (): LineState => ({
+  isActive: false,
+  isToolInitialized: false,
+  isDrawing: false,
+  startPoint: null,
+  currentPoint: null,
+  currentLine: null,
+  inputMethod: InputMethod.MOUSE,
+  isPencilMode: false,
+  anglesEnabled: true,
+  snapEnabled: true,
+  measurementData: {
+    distance: null,
+    angle: null
+  }
+});
+
+/**
+ * Hook for managing straight line drawing state
+ */
 export const useLineState = ({ lineColor, lineThickness }: UseLineStateProps) => {
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);

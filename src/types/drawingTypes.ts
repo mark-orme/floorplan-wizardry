@@ -4,7 +4,9 @@
  * @module types/drawingTypes
  */
 import { DrawingMode } from "@/constants/drawingModes";
-import { Point } from "@/types/core/Geometry";
+import { Point, CanvasDimensions } from "@/types/core/Geometry";
+import { DebugInfoState } from "@/types/core/DebugInfo";
+import { DrawingTool } from "@/types/core/DrawingTool";
 
 /**
  * Drawing state interface
@@ -16,6 +18,9 @@ export interface DrawingState {
   currentPoint: Point | null;
   points: Point[];
   isEnabled: boolean;
+  distance: number | null;
+  cursorPosition: Point | null;
+  currentZoom: number;
 }
 
 /**
@@ -27,7 +32,10 @@ export const createDefaultDrawingState = (): DrawingState => ({
   startPoint: null,
   currentPoint: null,
   points: [],
-  isEnabled: true
+  isEnabled: true,
+  distance: null,
+  cursorPosition: null,
+  currentZoom: 1
 });
 
 /**
@@ -86,5 +94,6 @@ export interface DistanceToolState {
   angle: number | null;
 }
 
-// Using proper export type syntax
-export type { Point };
+// Re-export important types for backward compatibility
+export type { Point, CanvasDimensions, DebugInfoState, DrawingTool };
+export { DrawingMode };
