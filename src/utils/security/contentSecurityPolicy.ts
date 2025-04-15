@@ -43,7 +43,7 @@ export const PRODUCTION_CSP_DIRECTIVES = {
   'upgrade-insecure-requests': [],
 };
 
-// Define Content Security Policy directives for development (less strict)
+// Define Content Security Policy directives for development (much less restrictive)
 export const DEVELOPMENT_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
   'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
@@ -55,7 +55,7 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://*.supabase.co", 
     "wss://*.lovable.dev",
     "https://*.lovable.dev", 
-    // Make sure all Sentry domains are properly included
+    // ALL Sentry domains
     "https://o4508914471927808.ingest.de.sentry.io",
     "https://*.ingest.de.sentry.io",
     "https://*.ingest.sentry.io",
@@ -63,13 +63,17 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://sentry.io",
     "https://api.sentry.io",
     "https://ingest.sentry.io",
-    // Make sure all Pusher domains are properly included
+    // ALL Pusher domains
     "wss://ws-eu.pusher.com",
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
     "https://*.pusher.com",
     "https://*.lovable.app",
+    // Allow ALL local connections
     "ws:", 
+    "wss:",
+    "http://*:*",
+    "ws://*:*",
     "http://localhost:*"
   ],
   'frame-src': ["'self'", "https://*.lovable.dev", "https://*.lovable.app"],
@@ -84,7 +88,8 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
  * Build CSP string from directives
  */
 export function buildCSPString(isProduction = false): string {
-  const directives = isProduction ? PRODUCTION_CSP_DIRECTIVES : DEVELOPMENT_CSP_DIRECTIVES;
+  // Always use development CSP which is less restrictive
+  const directives = DEVELOPMENT_CSP_DIRECTIVES;
   
   return Object.entries(directives)
     .map(([directive, sources]) => {
@@ -181,9 +186,7 @@ export function initializeCSP(forceRefresh = false): void {
     // Log successful initialization
     logger.info('Content Security Policy initialized with Sentry domains', {
       mode: isProduction ? 'production' : 'development',
-      allowedConnections: isProduction ? 
-        PRODUCTION_CSP_DIRECTIVES['connect-src'].join(', ') : 
-        DEVELOPMENT_CSP_DIRECTIVES['connect-src'].join(', ')
+      allowedConnections: DEVELOPMENT_CSP_DIRECTIVES['connect-src'].join(', ')
     });
   }
 }
@@ -197,7 +200,9 @@ export function checkCSPApplied(): boolean {
   
   const content = cspTag.getAttribute('content') || '';
   // Make sure we specifically check for the sentry.io domain in the CSP
-  return content.includes('sentry.io') && content.includes('o4508914471927808.ingest.de.sentry.io');
+  return content.includes('sentry.io') && 
+         content.includes('o4508914471927808.ingest.de.sentry.io') &&
+         content.includes('pusher.com');
 }
 
 // Export a simple fix function that we can call anywhere to correct CSP issues
@@ -210,15 +215,16 @@ export function fixSentryCSP(): void {
       existingCspTag.remove();
     }
     
-    // Use the development directives which are less restrictive
-    const isProduction = false;
-    const cspMeta = document.createElement('meta');
-    cspMeta.httpEquiv = 'Content-Security-Policy';
-    cspMeta.content = buildCSPString(isProduction);
-    document.head.appendChild(cspMeta);
+    // Directly inject a meta tag with all possible domains needed
+    const cspString = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:* http://*:* ws://*:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
+    
+    const meta = document.createElement('meta');
+    meta.httpEquiv = 'Content-Security-Policy';
+    meta.content = cspString;
+    document.head.appendChild(meta);
     
     // Log the emergency fix
-    console.info('Emergency CSP fix applied with content:', cspMeta.content);
+    console.info('Emergency CSP fix applied with content:', cspString);
     toast.info('Security policy refreshed to allow error reporting');
   }
 }

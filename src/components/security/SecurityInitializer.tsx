@@ -9,16 +9,48 @@ import { applySecurityMetaTags } from '@/utils/security/httpSecurity';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
 
+interface SecurityInitializerProps {
+  forceRefresh?: boolean;
+}
+
 /**
  * Component that initializes security features
  * Should be rendered at the root level of the application
  */
-export const SecurityInitializer = () => {
+export const SecurityInitializer = ({ forceRefresh = false }: SecurityInitializerProps) => {
   const [verified, setVerified] = useState(false);
+
+  // Function to directly apply CSP meta tag with all domains
+  const applyDirectCSPMetaTag = () => {
+    try {
+      // Remove existing CSP meta tags
+      const existingTags = document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]');
+      existingTags.forEach(tag => tag.remove());
+      
+      // Full CSP with ALL possible domains needed
+      const cspString = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:* http://*:* ws://*:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
+      
+      const meta = document.createElement('meta');
+      meta.httpEquiv = 'Content-Security-Policy';
+      meta.content = cspString;
+      document.head.appendChild(meta);
+      
+      logger.info('Direct CSP meta tag applied with ALL domains');
+      return true;
+    } catch (error) {
+      logger.error('Failed to apply direct CSP meta tag', { error });
+      return false;
+    }
+  };
 
   useEffect(() => {
     // Force initialize Content Security Policy with a direct meta tag
     try {
+      // If forceRefresh, apply direct CSP first
+      if (forceRefresh) {
+        applyDirectCSPMetaTag();
+      }
+      
       // Apply CSP with force refresh
       initializeCSP(true);
       
@@ -32,8 +64,8 @@ export const SecurityInitializer = () => {
       
       if (!isValid) {
         logger.warn('Initial CSP verification failed, applying emergency fix');
-        // Try an emergency fix - apply directly
-        fixSentryCSP();
+        // Try direct application
+        applyDirectCSPMetaTag();
         
         // Recheck after a delay
         setTimeout(() => {
@@ -41,16 +73,11 @@ export const SecurityInitializer = () => {
           if (recheckValid) {
             logger.info('CSP fixed successfully on second attempt');
             setVerified(true);
+            toast.success('Security features initialized successfully');
           } else {
             logger.error('Failed to apply proper CSP after multiple attempts');
-            // Apply one more desperate attempt - direct injection with ALL domains
-            const cspString = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
-            
-            const meta = document.createElement('meta');
-            meta.httpEquiv = 'Content-Security-Policy';
-            meta.content = cspString;
-            document.head.appendChild(meta);
-            
+            // Apply one more desperate attempt - direct injection with ALL domains including localhost
+            applyDirectCSPMetaTag();
             logger.info('Emergency direct CSP injection applied');
             toast.info('Security policy updated to allow external connections');
           }
@@ -64,7 +91,7 @@ export const SecurityInitializer = () => {
       const monitorInterval = setInterval(() => {
         if (!checkCSPApplied()) {
           logger.warn('CSP validation failed during runtime check, reapplying');
-          fixSentryCSP();
+          applyDirectCSPMetaTag();
         }
       }, 3000);
       
@@ -80,7 +107,7 @@ export const SecurityInitializer = () => {
           });
           
           // Immediate fix attempt
-          fixSentryCSP();
+          applyDirectCSPMetaTag();
         }
         
         // Also check for Pusher-related blocks
@@ -91,7 +118,7 @@ export const SecurityInitializer = () => {
           });
           
           // Immediate fix attempt
-          fixSentryCSP();
+          applyDirectCSPMetaTag();
         }
       };
       
@@ -104,17 +131,17 @@ export const SecurityInitializer = () => {
     } catch (error) {
       logger.error('Error initializing security features', { error });
       
-      // Try one more time
+      // Try one more time with direct application
       setTimeout(() => {
         try {
-          initializeCSP(true);
+          applyDirectCSPMetaTag();
           logger.info('Emergency CSP applied after error');
         } catch (retryError) {
           logger.error('Failed to initialize security features on retry', { error: retryError });
         }
       }, 500);
     }
-  }, []);
+  }, [forceRefresh]);
   
   // This component doesn't render anything
   return null;

@@ -10,18 +10,40 @@ import { ErrorBoundary } from './utils/canvas/errorBoundary';
 import { initializeCSP, checkCSPApplied, fixSentryCSP } from './utils/security/contentSecurityPolicy';
 import { toast } from 'sonner';
 
-// IMPORTANT: Apply CSP first, before any network requests
+// CRITICAL: First, directly apply a meta tag with the correct domains BEFORE any Sentry initialization
+const addDirectCSPMetaTag = () => {
+  // Force remove any existing CSP meta tag
+  const existingTags = document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]');
+  existingTags.forEach(tag => tag.remove());
+  
+  // Most permissive CSP that includes ALL required domains
+  const cspContent = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
+  
+  const meta = document.createElement('meta');
+  meta.httpEquiv = 'Content-Security-Policy';
+  meta.content = cspContent;
+  document.head.appendChild(meta);
+  
+  console.log('Direct CSP meta tag applied with ALL domains:', cspContent);
+  return true;
+};
+
+// Apply CSP directly BEFORE any other operations
+const cspApplied = addDirectCSPMetaTag();
+console.log('Initial direct CSP applied:', cspApplied);
+
+// Also apply through the utility for completeness
 initializeCSP(true);
-console.log('Initial CSP applied with Sentry domains included');
+console.log('Secondary CSP application completed');
 
 // Create the root element
 const rootElement = createRootElement("root");
 const root = createRoot(rootElement);
 
 // First render the SecurityInitializer to ensure the CSP is properly set
-root.render(<SecurityInitializer />);
+root.render(<SecurityInitializer forceRefresh={true} />);
 
-// Wait to ensure CSP is fully applied before Sentry initialization
+// Shorter wait to ensure CSP is fully applied before Sentry initialization
 setTimeout(() => {
   // Double-check CSP is applied correctly before initializing services
   if (!checkCSPApplied()) {
@@ -54,44 +76,48 @@ setTimeout(() => {
         </div>
       }
     >
-      <SecurityInitializer />
+      <SecurityInitializer forceRefresh={true} />
       <App />
     </ErrorBoundary>
   );
-}, 1000); // Increased timeout to ensure CSP is applied
+}, 500); // Shorter timeout but still enough to ensure CSP is applied
 
 function initializeServices() {
   console.log('Initializing services with CSP state:', checkCSPApplied() ? 'Valid' : 'Invalid');
+  
+  // IMPORTANT: Check one more time and fix if needed
+  if (!checkCSPApplied()) {
+    console.warn('CSP still invalid before Sentry init, applying final emergency fix');
+    addDirectCSPMetaTag();
+  }
   
   // Initialize Sentry with minimal configuration - disable features that might cause CSP issues
   Sentry.init({
     dsn: "https://abae2c559058eb2bbcd15686dac558ed@o4508914471927808.ingest.de.sentry.io/4509038014234704",
     integrations: [
-      Sentry.browserTracingIntegration(),
-      // Disable replay to avoid worker-src CSP issues
+      // Disable all integrations to avoid CSP issues
+      // Sentry.browserTracingIntegration(),
     ],
     
     // Basic configuration
     release: import.meta.env.VITE_SENTRY_RELEASE || "development",
     environment: import.meta.env.MODE,
     
-    // Reduce sampling to avoid excessive requests
-    tracesSampleRate: 0.05,
-    tracePropagationTargets: ["localhost", /^https:\/\/.*lovable\.dev/, /^https:\/\/.*lovable\.app/],
+    // REDUCE to bare minimum to avoid CSP issues
+    tracesSampleRate: 0.01, // Reduce sample rate significantly
     
-    // COMPLETELY DISABLE features that cause CSP issues
+    // COMPLETELY DISABLE all features that cause CSP issues
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
     profilesSampleRate: 0,
     
-    // Only send errors if CSP allows it
+    // Filter out CSP errors and check CSP before sending
     beforeSend(event, hint) {
       // Do a final check to make sure CSP is set correctly
       if (!checkCSPApplied()) {
         console.warn('CSP still invalid during Sentry send, applying emergency fix');
-        fixSentryCSP();
-        // This send will fail, but future ones might work
-        return null;
+        addDirectCSPMetaTag(); // Apply directly
+        return null; // Don't send this event
       }
       
       // Filter out CSP errors to avoid noise
@@ -111,10 +137,10 @@ function initializeServices() {
   // Verify CSP after Sentry init and reapply if needed
   setTimeout(() => {
     if (!checkCSPApplied()) {
-      console.warn('CSP was overwritten after Sentry init, reapplying');
-      fixSentryCSP();
+      console.warn('CSP was overwritten after Sentry init, reapplying direct meta tag');
+      addDirectCSPMetaTag();
     }
-  }, 200);
+  }, 100);
 }
 
 export default root;
