@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for real-time canvas synchronization
  */
@@ -113,7 +112,7 @@ export const setupRealtimeSync = (
   setCollaborators: (count: number) => void,
   onRemoteUpdate?: (sender: string, timestamp: number) => void
 ) => {
-  // Subscribe to sync channel
+  // Subscribe to sync channel WITHOUT passing any arguments
   const channel = subscribeSyncChannel();
   let firstSync = true;
   const firstSyncRef = { current: firstSync };
