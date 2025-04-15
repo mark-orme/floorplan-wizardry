@@ -3,10 +3,11 @@
  * Hook for reliable grid management
  * @module hooks/useReliableGrid
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { createBasicEmergencyGrid } from "@/utils/gridCreationUtils";
 import logger from "@/utils/logger";
+import { ensureGridIsPresent, setupGridMonitoring } from "@/utils/grid/gridVisibilityManager";
 
 /**
  * Props for the useReliableGrid hook
@@ -28,6 +29,28 @@ export const useReliableGrid = ({
   const gridLayerRef = useRef<FabricObject[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const isCreatingRef = useRef(false);
+  const monitoringCleanupRef = useRef<(() => void) | null>(null);
+  
+  // Set up grid monitoring when canvas is available
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Clean up any existing monitoring
+    if (monitoringCleanupRef.current) {
+      monitoringCleanupRef.current();
+    }
+    
+    // Set up new monitoring
+    monitoringCleanupRef.current = setupGridMonitoring(canvas, 5000);
+    
+    // Clean up when unmounting
+    return () => {
+      if (monitoringCleanupRef.current) {
+        monitoringCleanupRef.current();
+      }
+    };
+  }, [fabricCanvasRef.current]);
   
   /**
    * Create grid on canvas
@@ -40,29 +63,23 @@ export const useReliableGrid = ({
       isCreatingRef.current = true;
       logger.info("Creating grid in useReliableGrid");
       
-      // Clear any existing grid first
-      if (gridLayerRef.current.length > 0) {
-        gridLayerRef.current.forEach(obj => {
-          if (canvas.contains(obj)) {
-            canvas.remove(obj);
-          }
-        });
-        gridLayerRef.current = [];
-      }
+      // Use our robust grid visibility manager
+      const result = ensureGridIsPresent(canvas);
       
-      // Create new grid
-      const gridObjects = createBasicEmergencyGrid(canvas);
-      
-      if (gridObjects.length > 0) {
-        gridLayerRef.current = gridObjects;
+      if (result.success) {
+        gridLayerRef.current = result.gridObjects;
         setIsInitialized(true);
-        logger.info(`Grid created with ${gridObjects.length} objects`);
+        logger.info(`Grid ${result.action === 'created' ? 'created' : 'managed'} with ${result.gridObjects.length} objects`);
       } else {
-        logger.warn("No grid objects created");
-        setIsInitialized(false);
+        logger.warn("Grid creation failed in ensureGridIsPresent");
+        
+        // Fallback to emergency grid
+        const gridObjects = createBasicEmergencyGrid(canvas);
+        gridLayerRef.current = gridObjects;
+        setIsInitialized(gridObjects.length > 0);
       }
       
-      return gridObjects;
+      return gridLayerRef.current;
     } catch (error) {
       logger.error("Error creating grid:", error);
       setIsInitialized(false);
@@ -80,33 +97,19 @@ export const useReliableGrid = ({
     if (!canvas) return false;
     
     try {
-      let fixesApplied = false;
+      const result = ensureGridIsPresent(canvas);
       
-      gridLayerRef.current.forEach(obj => {
-        // Re-add if not on canvas
-        if (!canvas.contains(obj)) {
-          canvas.add(obj);
-          canvas.sendToBack(obj);
-          fixesApplied = true;
-        }
-        
-        // Ensure visibility property is set
-        if (!obj.visible) {
-          obj.visible = true;
-          fixesApplied = true;
-        }
-      });
-      
-      if (fixesApplied) {
-        canvas.requestRenderAll();
+      if (result.success && result.action !== 'none') {
+        gridLayerRef.current = result.gridObjects;
+        return true;
       }
       
-      return fixesApplied;
+      return false;
     } catch (error) {
       logger.error("Error ensuring grid visibility:", error);
       return false;
     }
-  }, [fabricCanvasRef, gridLayerRef]);
+  }, [fabricCanvasRef]);
   
   /**
    * Clear grid from canvas

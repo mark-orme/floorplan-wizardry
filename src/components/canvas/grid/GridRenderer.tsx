@@ -3,6 +3,7 @@ import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
+import { ensureGridIsPresent, setupGridMonitoring } from "@/utils/grid/gridVisibilityManager";
 
 interface GridRendererProps {
   canvas: FabricCanvas;
@@ -16,6 +17,7 @@ export class GridRenderer {
   private showGrid: boolean;
   private onGridCreated?: (gridObjects: FabricObject[]) => void;
   private initialized = false;
+  private monitoringCleanup: (() => void) | null = null;
 
   constructor({ 
     canvas, 
@@ -29,125 +31,36 @@ export class GridRenderer {
     // Create grid immediately
     if (this.showGrid) {
       this.createGrid();
+      
+      // Set up monitoring
+      this.monitoringCleanup = setupGridMonitoring(this.canvas, 3000);
     }
   }
 
   private createGrid(): FabricObject[] {
     try {
-      // Skip if already initialized
-      if (this.initialized) {
-        this.checkAndFixGrid();
-        return this.gridObjects;
-      }
-      
-      logger.info("Creating grid with 10x10 small grid and larger grid lines");
-      
-      // Remove any existing grid objects from canvas
-      const existingGrids = this.canvas.getObjects().filter(obj => 
-        (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-      );
-      
-      existingGrids.forEach(obj => {
-        if (this.canvas.contains(obj)) {
-          this.canvas.remove(obj);
-        }
-      });
-      
-      // Clear our internal grid objects array
-      this.gridObjects = [];
-      
-      const gridObjects: FabricObject[] = [];
-      const width = Math.max(this.canvas.width || 800, window.innerWidth * 2);
-      const height = Math.max(this.canvas.height || 600, window.innerHeight * 2);
-      
-      // Calculate how many grid lines we need (make sure the grid covers the entire viewport)
-      const hLines = Math.ceil(height / GRID_CONSTANTS.SMALL_GRID_SIZE) + 5; // Add extra lines
-      const vLines = Math.ceil(width / GRID_CONSTANTS.SMALL_GRID_SIZE) + 5;
-      
-      // Create small grid lines (10px = 0.1m)
-      for (let i = 0; i <= vLines; i++) {
-        const xPos = i * GRID_CONSTANTS.SMALL_GRID_SIZE;
-        const line = new Line([xPos, 0, xPos, height], {
-          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        } as any);
-        
-        this.canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      for (let i = 0; i <= hLines; i++) {
-        const yPos = i * GRID_CONSTANTS.SMALL_GRID_SIZE;
-        const line = new Line([0, yPos, width, yPos], {
-          stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        } as any);
-        
-        this.canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      // Create larger grid lines (100px = 1.0m)
-      for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-        const line = new Line([i, 0, i, height], {
-          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        } as any);
-        
-        this.canvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-        const line = new Line([0, i, width, i], {
-          stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        } as any);
-        
-        this.canvas.add(line);
-        gridObjects.push(line);
-      }
+      // Use our ensureGridIsPresent utility for robust grid creation
+      const result = ensureGridIsPresent(this.canvas);
       
       // Store grid objects reference
-      this.gridObjects = gridObjects;
+      this.gridObjects = result.gridObjects;
       
-      // Send all grid objects to the back
-      gridObjects.forEach(obj => {
-        this.canvas.sendObjectToBack(obj);
-      });
+      // Set initialization flag
+      this.initialized = result.success && result.gridObjects.length > 0;
       
       // Call callback if provided
-      if (this.onGridCreated) {
-        this.onGridCreated(gridObjects);
+      if (this.initialized && this.onGridCreated) {
+        this.onGridCreated(this.gridObjects);
       }
       
-      // Ensure grid is visible by rendering the canvas
-      this.canvas.requestRenderAll();
+      // Log result
+      if (result.action === 'created') {
+        logger.info(`Grid created with ${result.gridObjects.length} lines`);
+      } else if (result.action === 'fixed') {
+        logger.info(`Fixed visibility for ${result.gridObjects.length} grid objects`);
+      }
       
-      logger.info(`Grid created with ${gridObjects.length} lines`);
-      
-      // Force visibility
-      this.toggleVisibility(true);
-      
-      this.initialized = true;
-      
-      return gridObjects;
+      return this.gridObjects;
     } catch (error) {
       logger.error("Error creating grid:", error);
       console.error("[CRITICAL] Grid creation failed:", error);
@@ -176,16 +89,23 @@ export class GridRenderer {
     this.canvas.requestRenderAll();
   }
   
-  // DEV SAFEGUARD: Method to check grid existence and recreate if missing
+  // Method to check grid existence and recreate if missing
   public checkAndFixGrid(): void {
-    const visibleGridObjects = this.gridObjects.filter(obj => 
-      obj.visible && this.canvas.contains(obj)
-    );
+    // Use our grid visibility manager to check and fix
+    const result = ensureGridIsPresent(this.canvas);
     
-    if (visibleGridObjects.length < 10) {
-      console.warn("[GRID SAFEGUARD] Grid objects missing or not visible. Recreating grid.");
-      this.initialized = false; // Reset initialization flag
-      this.createGrid();
+    if (result.action !== 'none') {
+      // Update grid objects reference
+      this.gridObjects = result.gridObjects;
+      logger.info(`Grid ${result.action === 'created' ? 'created' : 'fixed'} with ${result.gridObjects.length} objects`);
+    }
+  }
+  
+  // Clean up resources
+  public destroy(): void {
+    if (this.monitoringCleanup) {
+      this.monitoringCleanup();
+      this.monitoringCleanup = null;
     }
   }
 }
@@ -210,19 +130,10 @@ export const GridRendererComponent: React.FC<GridRendererProps> = ({
       showGrid
     });
     
-    // Set up periodic grid check to ensure visibility
-    const intervalId = setInterval(() => {
-      if (gridRendererRef.current) {
-        gridRendererRef.current.checkAndFixGrid();
-      }
-    }, 2000);
-    
     // Clean up function
     return () => {
-      clearInterval(intervalId);
       if (gridRendererRef.current) {
-        // Do not hide grid on unmount - keep it visible
-        // gridRendererRef.current.toggleVisibility(false);
+        gridRendererRef.current.destroy();
       }
     };
   }, [canvas, showGrid, onGridCreated]);
