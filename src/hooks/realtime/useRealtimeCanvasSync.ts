@@ -1,123 +1,116 @@
 
 /**
  * Hook for real-time canvas synchronization
- * Handles sending and receiving canvas updates via Pusher
  * @module hooks/realtime/useRealtimeCanvasSync
  */
-import { useEffect, useRef, useState } from 'react';
-import { RealtimeCanvasSyncProps, RealtimeCanvasSyncResult } from '@/utils/realtime/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { RealtimeCanvasSyncResult } from '@/utils/realtime/types';
 import { createFloorPlanDataForSync, setupRealtimeSync } from '@/utils/realtime/syncUtils';
-import { broadcastFloorPlanUpdate } from '@/utils/syncService';
-import { useThrottledSync } from './useThrottledSync';
+import { broadcastFloorPlanUpdate, notifyPresenceChange } from '@/utils/syncService';
+import { toast } from 'sonner';
+import logger from '@/utils/logger';
+
+interface UseRealtimeCanvasSyncProps {
+  /** Canvas instance to synchronize */
+  canvas: FabricCanvas | null;
+  
+  /** Whether synchronization is enabled */
+  enabled: boolean;
+  
+  /** Callback when remote updates are received */
+  onRemoteUpdate?: (sender: string, timestamp: number) => void;
+}
 
 /**
- * Hook for real-time canvas synchronization via Pusher
+ * Hook for real-time canvas synchronization
+ * Handles bidirectional sync between canvas instances
  */
 export const useRealtimeCanvasSync = ({
   canvas,
-  enabled = true,
-  onRemoteUpdate,
-  throttleTime = 1500 // Default throttle time
-}: RealtimeCanvasSyncProps): RealtimeCanvasSyncResult => {
-  // Track connected collaborators
-  const [collaborators, setCollaborators] = useState<number>(0);
-  
-  // Track sync status
+  enabled,
+  onRemoteUpdate
+}: UseRealtimeCanvasSyncProps): RealtimeCanvasSyncResult => {
   const [lastSyncTime, setLastSyncTime] = useState<number>(0);
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [collaborators, setCollaborators] = useState<number>(0);
+  const lastSyncTimeRef = useRef<number>(0);
+  const channelRef = useRef<any>(null);
   
-  // Get user information for attribution
-  const { user } = useAuth();
-  const userId = user?.id || 'anonymous';
-  const userName = user?.name || user?.email || 'Anonymous User';
+  // Update ref when state changes to ensure callbacks have access to latest value
+  useEffect(() => {
+    lastSyncTimeRef.current = lastSyncTime;
+  }, [lastSyncTime]);
   
-  // Manually sync canvas (exports current state and broadcasts)
-  const syncCanvas = () => {
-    if (!canvas || !enabled) return false;
+  // Set up the real-time sync when enabled and canvas is available
+  useEffect(() => {
+    if (!enabled || !canvas) {
+      // Clean up any existing subscription
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
+      return;
+    }
     
     try {
-      setIsSyncing(true);
+      // Set up real-time sync
+      logger.info('Setting up real-time canvas sync');
+      const channel = setupRealtimeSync(
+        canvas,
+        lastSyncTimeRef,
+        setLastSyncTime,
+        setCollaborators,
+        onRemoteUpdate
+      );
       
-      // Create a timestamp for this sync
-      const syncTimestamp = Date.now();
+      // Store the channel for cleanup
+      channelRef.current = channel;
       
+      // Notify about presence
+      notifyPresenceChange();
+      
+      // Cleanup function
+      return () => {
+        if (channel) {
+          channel.unsubscribe();
+          channelRef.current = null;
+        }
+      };
+    } catch (error) {
+      logger.error('Error setting up real-time sync:', error);
+      toast.error('Failed to connect to real-time sync service');
+      return () => {};
+    }
+  }, [canvas, enabled, onRemoteUpdate]);
+  
+  // Sync canvas data to other users
+  const syncCanvas = useCallback((userName: string) => {
+    if (!enabled || !canvas) {
+      return;
+    }
+    
+    try {
       // Create floor plan data for sync
-      const floorPlanData = createFloorPlanDataForSync(canvas, userName);
-      
-      // Broadcast update
-      broadcastFloorPlanUpdate(floorPlanData, userId);
+      const floorPlans = createFloorPlanDataForSync(canvas, userName);
       
       // Update last sync time
-      lastSyncTimeRef.current = syncTimestamp;
-      setLastSyncTime(syncTimestamp);
+      const currentTime = Date.now();
+      setLastSyncTime(currentTime);
+      lastSyncTimeRef.current = currentTime;
       
-      // Reset syncing state after a short delay
-      setTimeout(() => {
-        setIsSyncing(false);
-      }, 300);
+      // Broadcast the update
+      broadcastFloorPlanUpdate(floorPlans, userName);
       
-      return true;
+      logger.info(`Canvas synced by ${userName} at ${new Date(currentTime).toISOString()}`);
     } catch (error) {
-      console.error('Error syncing canvas:', error);
-      setIsSyncing(false);
-      return false;
+      logger.error('Error syncing canvas:', error);
+      toast.error('Failed to sync canvas changes');
     }
-  };
-  
-  // Set up throttled sync
-  const { throttledSync, lastSyncTimeRef, cleanup } = useThrottledSync({
-    syncFn: syncCanvas,
-    throttleTime,
-  });
-  
-  // Set up Pusher subscription for real-time sync
-  useEffect(() => {
-    if (!canvas || !enabled) return;
-    
-    // Setup realtime sync with the canvas
-    const channel = setupRealtimeSync(
-      canvas,
-      lastSyncTimeRef,
-      setLastSyncTime,
-      setCollaborators,
-      onRemoteUpdate
-    );
-    
-    // Set up canvas change event handlers
-    if (canvas) {
-      const handleObjectModified = () => {
-        throttledSync();
-      };
-      
-      const handlePathCreated = () => {
-        throttledSync();
-      };
-      
-      // Register event handlers
-      canvas.on('object:modified', handleObjectModified);
-      canvas.on('path:created', handlePathCreated);
-      
-      // Sync initially after a short delay
-      setTimeout(() => {
-        syncCanvas();
-      }, 2000);
-      
-      // Clean up event handlers
-      return () => {
-        canvas.off('object:modified', handleObjectModified);
-        canvas.off('path:created', handlePathCreated);
-        
-        // Cleanup throttled sync
-        cleanup();
-      };
-    }
-  }, [canvas, enabled, onRemoteUpdate, throttleTime, userId, userName]);
+  }, [canvas, enabled]);
   
   return {
-    syncCanvas,
-    collaborators,
     lastSyncTime,
-    isSyncing
+    collaborators,
+    syncCanvas
   };
 };

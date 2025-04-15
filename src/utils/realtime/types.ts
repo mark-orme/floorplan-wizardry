@@ -1,56 +1,50 @@
 
 /**
- * Types for the real-time synchronization
+ * Type definitions for real-time synchronization
  */
-import { Canvas as FabricCanvas } from 'fabric';
-
-/**
- * Props for the useRealtimeCanvasSync hook
- */
-export interface RealtimeCanvasSyncProps {
-  /**
-   * The Fabric canvas instance
-   */
-  canvas: FabricCanvas | null;
-  
-  /**
-   * Enable/disable syncing
-   */
-  enabled: boolean;
-  
-  /**
-   * Optional callback when remote update is received
-   */
-  onRemoteUpdate?: (sender: string, timestamp: number) => void;
-  
-  /**
-   * Throttle time for sending updates (ms)
-   */
-  throttleTime?: number;
-}
 
 /**
  * Floor plan data structure for synchronization
  */
 export interface SyncFloorPlan {
+  /** Unique identifier for the floor plan */
   id: string;
+  
+  /** Display name for the floor plan */
   name: string;
+  
+  /** Canvas JSON representation (stringified) */
   canvasJson: string;
+  
+  /** Last update timestamp (ISO string) */
   updatedAt: string;
+  
+  /** Additional metadata for the floor plan */
   metadata?: {
+    /** User who performed the sync */
     syncedBy?: string;
+    
+    /** Timestamp when sync occurred */
     syncTimestamp?: number;
+    
+    /** Any additional metadata properties */
     [key: string]: any;
   };
+  
+  /** Any additional properties */
   [key: string]: any;
 }
 
 /**
- * Return type for the useRealtimeCanvasSync hook
+ * Result type for the real-time canvas sync hook
  */
 export interface RealtimeCanvasSyncResult {
-  syncCanvas: () => boolean;
-  collaborators: number;
+  /** Last sync timestamp */
   lastSyncTime: number;
-  isSyncing: boolean;
+  
+  /** Number of active collaborators */
+  collaborators: number;
+  
+  /** Function to manually trigger sync */
+  syncCanvas: (userName: string) => void;
 }
