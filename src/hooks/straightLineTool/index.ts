@@ -14,3 +14,5 @@ export { useLineKeyboardShortcuts } from './useLineKeyboardShortcuts';
 export { useToolCancellation } from './useToolCancellation';
 export { useLineToolSetup } from './useLineToolSetup';
 export { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
+export { useToolInitialization } from './useToolInitialization';
+export { useGridSnapping } from './useGridSnapping';

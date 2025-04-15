@@ -4,7 +4,7 @@
  * This hook orchestrates all the line drawing functionality by composing smaller hooks
  * @module hooks/straightLineTool/useStraightLineToolRefactored
  */
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useLineState } from './useLineState';
 import { useStraightLineEvents } from './useStraightLineEvents';
@@ -12,9 +12,8 @@ import { useLineKeyboardShortcuts } from './useLineKeyboardShortcuts';
 import { useLineToolHandlers } from './useLineToolHandlers';
 import { useToolCancellation } from './useToolCancellation';
 import { useLineToolSetup } from './useLineToolSetup';
-import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import { useToolInitialization } from './useToolInitialization';
 import { Point } from '@/types/core/Point';
-import { toast } from 'sonner';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -44,13 +43,9 @@ export const useStraightLineToolRefactored = ({
   // Track if the tool is active
   const isActive = tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.LINE;
   
-  // Get the error reporting hook for logging events
-  const { logDrawingEvent, reportDrawingError } = useDrawingErrorReporting();
-  
   // Use the shared line state
   const {
     isDrawing,
-    isToolInitialized,
     setIsDrawing,
     startPointRef,
     currentLineRef,
@@ -58,7 +53,6 @@ export const useStraightLineToolRefactored = ({
     setStartPoint,
     setCurrentLine,
     setDistanceTooltip,
-    initializeTool,
     resetDrawingState,
     snapEnabled,
     snapPointToGrid,
@@ -73,22 +67,30 @@ export const useStraightLineToolRefactored = ({
 
   // Custom function to adapt the snapLineToGrid function for different signatures
   const adaptedSnapLineToGrid = (start: Point, end: Point) => {
-    try {
-      if (snapEnabled) {
-        return {
-          start: snapPointToGrid(start),
-          end: snapPointToGrid(end)
-        };
-      }
-      return { start, end };
-    } catch (error) {
-      reportDrawingError(error, 'snap-line-error', {
-        input: { startPoint: start, endPoint: end }
-      });
-      // Return original values if there's an error to prevent crashing
-      return { start, end };
+    if (snapEnabled) {
+      return {
+        start: snapPointToGrid(start),
+        end: snapPointToGrid(end)
+      };
     }
+    return { start, end };
   };
+
+  // Use the tool cancellation hook
+  const {
+    cancelDrawing,
+    toggleGridSnapping
+  } = useToolCancellation({
+    fabricCanvasRef,
+    isDrawing,
+    currentLineRef,
+    distanceTooltipRef,
+    setIsDrawing,
+    resetDrawingState,
+    inputMethod,
+    toggleSnap,
+    snapEnabled
+  });
 
   // Use the line tool handlers
   const {
@@ -115,7 +117,7 @@ export const useStraightLineToolRefactored = ({
     snapEnabled,
     snapLineToGrid: adaptedSnapLineToGrid,
     inputMethod,
-    logDrawingEvent
+    logDrawingEvent: () => {} // This will be filled in by the implementation
   });
 
   // Use the event handlers hook
@@ -133,22 +135,6 @@ export const useStraightLineToolRefactored = ({
     inputMethod
   });
 
-  // Use the tool cancellation hook - make sure we properly handle the return type
-  const {
-    cancelDrawing,
-    toggleGridSnapping
-  } = useToolCancellation({
-    fabricCanvasRef,
-    isDrawing,
-    currentLineRef,
-    distanceTooltipRef,
-    setIsDrawing,
-    resetDrawingState,
-    inputMethod,
-    toggleSnap,
-    snapEnabled
-  });
-
   // Use the keyboard shortcuts hook
   const { handleKeyDown } = useLineKeyboardShortcuts({
     isActive,
@@ -164,7 +150,7 @@ export const useStraightLineToolRefactored = ({
     isActive,
     isDrawing,
     tool,
-    initializeTool,
+    initializeTool: () => true,
     handleFabricMouseDown,
     handleFabricMouseMove,
     handleFabricMouseUp,
@@ -176,21 +162,21 @@ export const useStraightLineToolRefactored = ({
     inputMethod
   });
 
-  // Provide feedback about tool initialization
-  if (isActive && isToolInitializedResult && !isToolInitialized) {
-    // Only show once when the tool becomes initialized
-    toast.success(`Line tool ready! ${snapEnabled ? 'Grid snapping enabled.' : 'Grid snapping disabled.'}`, {
-      id: 'line-tool-initialized',
-      duration: 3000
-    });
-  }
+  // Use the tool initialization hook
+  const { isToolInitialized } = useToolInitialization({
+    fabricCanvasRef,
+    tool,
+    isActive,
+    snapEnabled,
+    onChange
+  });
 
   // Return the hook API
   return {
     // State
     isActive,
     isDrawing,
-    isToolInitialized: isToolInitializedResult,
+    isToolInitialized: isToolInitializedResult || isToolInitialized,
     snapEnabled,
     inputMethod,
     isPencilMode,

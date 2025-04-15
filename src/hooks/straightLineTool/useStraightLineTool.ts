@@ -415,8 +415,8 @@ export const useStraightLineTool = ({
   });
 
   // Cancel drawing (e.g. on Escape key)
-  const cancelDrawing = useCallback(() => {
-    if (!fabricCanvasRef.current || !isDrawing) return;
+  const cancelDrawing = useCallback((): boolean => {
+    if (!fabricCanvasRef.current || !isDrawing) return false;
     
     try {
       // Remove temporary line
@@ -454,10 +454,15 @@ export const useStraightLineTool = ({
       });
       
       toast.info("Line drawing cancelled");
+      
+      // Return true to indicate successful cancellation
+      return true;
     } catch (error) {
       reportDrawingError(error, 'line-cancel', {
         interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
       });
+      // Return false if cancellation fails
+      return false;
     }
   }, [
     fabricCanvasRef, 
@@ -472,9 +477,11 @@ export const useStraightLineTool = ({
   ]);
 
   // Toggle grid snapping
-  const toggleGridSnapping = useCallback(() => {
+  const toggleGridSnapping = useCallback((): boolean => {
     toggleSnap();
     toast.info(snapEnabled ? "Grid snapping disabled" : "Grid snapping enabled");
+    // Return the NEW state (after toggle)
+    return !snapEnabled;
   }, [toggleSnap, snapEnabled]);
 
   // Use the keyboard shortcuts hook
