@@ -43,8 +43,8 @@ export const SecurityInitializer = () => {
             setVerified(true);
           } else {
             logger.error('Failed to apply proper CSP after multiple attempts');
-            // Apply one more desperate attempt - direct injection
-            const cspString = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
+            // Apply one more desperate attempt - direct injection with ALL domains
+            const cspString = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://o4508914471927808.ingest.de.sentry.io https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://ws-eu.pusher.com https://sockjs-eu.pusher.com wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;";
             
             const meta = document.createElement('meta');
             meta.httpEquiv = 'Content-Security-Policy';
@@ -52,7 +52,7 @@ export const SecurityInitializer = () => {
             document.head.appendChild(meta);
             
             logger.info('Emergency direct CSP injection applied');
-            toast.error('Security initialization issue detected, attempting emergency fix');
+            toast.info('Security policy updated to allow external connections');
           }
         }, 300);
       } else {
@@ -72,10 +72,22 @@ export const SecurityInitializer = () => {
       const handleSecurityViolation = (e: SecurityPolicyViolationEvent) => {
         // Only care about Sentry domain issues
         if (e.blockedURI.includes('sentry.io') || 
-            e.blockedURI.includes('ingest.sentry.io')) {
+            e.blockedURI.includes('ingest.sentry.io') ||
+            e.blockedURI.includes('ingest.de.sentry.io')) {
           logger.warn('Sentry domain blocked by CSP, attempting fix', {
             domain: e.blockedURI,
             directive: e.violatedDirective
+          });
+          
+          // Immediate fix attempt
+          fixSentryCSP();
+        }
+        
+        // Also check for Pusher-related blocks
+        if (e.blockedURI.includes('pusher.com')) {
+          logger.warn('Pusher domain blocked by CSP, attempting fix', {
+            domain: e.blockedURI,
+            directive: e.violatedDirective  
           });
           
           // Immediate fix attempt

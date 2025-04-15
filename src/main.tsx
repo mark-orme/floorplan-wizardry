@@ -100,6 +100,7 @@ function initializeServices() {
           (error.message.includes('Content Security Policy') || 
            error.message.includes('CSP') ||
            error.message.includes('Refused to connect'))) {
+        console.warn('Filtering out CSP-related error', error.message);
         return null;
       }
       

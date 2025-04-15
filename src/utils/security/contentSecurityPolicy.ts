@@ -18,12 +18,15 @@ export const PRODUCTION_CSP_DIRECTIVES = {
     "https://*.supabase.co", 
     "wss://*.lovable.dev",
     "https://*.lovable.dev",
+    // Make sure all Sentry domains are properly included
     "https://o4508914471927808.ingest.de.sentry.io",
+    "https://*.ingest.de.sentry.io",
     "https://*.ingest.sentry.io",
     "https://*.sentry.io",
     "https://sentry.io",
     "https://api.sentry.io",
     "https://ingest.sentry.io",
+    // Make sure all Pusher domains are properly included
     "wss://ws-eu.pusher.com",
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
@@ -52,12 +55,15 @@ export const DEVELOPMENT_CSP_DIRECTIVES = {
     "https://*.supabase.co", 
     "wss://*.lovable.dev",
     "https://*.lovable.dev", 
+    // Make sure all Sentry domains are properly included
     "https://o4508914471927808.ingest.de.sentry.io",
+    "https://*.ingest.de.sentry.io",
     "https://*.ingest.sentry.io",
     "https://*.sentry.io",
     "https://sentry.io",
     "https://api.sentry.io",
     "https://ingest.sentry.io",
+    // Make sure all Pusher domains are properly included
     "wss://ws-eu.pusher.com",
     "https://sockjs-eu.pusher.com",
     "wss://*.pusher.com",
