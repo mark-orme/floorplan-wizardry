@@ -1,11 +1,10 @@
-
 /**
  * Utility functions for real-time canvas synchronization
  */
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { SyncFloorPlan } from './types';
-import { subscribeSyncChannel, broadcastFloorPlanUpdate, isUpdateFromThisDevice, UPDATE_EVENT } from '@/utils/syncService';
+import { subscribeToChannel, broadcastFloorPlanUpdate, isUpdateFromThisDevice, UPDATE_EVENT } from '@/utils/syncService';
 
 /**
  * Create floor plan data for syncing
@@ -114,7 +113,7 @@ export const setupRealtimeSync = (
   onRemoteUpdate?: (sender: string, timestamp: number) => void
 ) => {
   // Call subscribeSyncChannel WITHOUT any arguments
-  const channel = subscribeSyncChannel();
+  const channel = subscribeToChannel();
   let firstSync = true;
   const firstSyncRef = { current: firstSync };
   
