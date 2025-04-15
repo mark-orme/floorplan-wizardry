@@ -16,6 +16,8 @@ export { useLineKeyboardShortcuts } from './useLineKeyboardShortcuts';
 export { useLineToolHandlers } from './useLineToolHandlers';
 export { useToolCancellation } from './useToolCancellation';
 export { useLineToolSetup } from './useLineToolSetup';
+export { useApplePencilSupport } from './useApplePencilSupport';
+export { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 
 // Export types
 export type { InputMethod } from './useLineState';

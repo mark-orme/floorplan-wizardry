@@ -12,6 +12,7 @@ import { useLineKeyboardShortcuts } from './useLineKeyboardShortcuts';
 import { useLineToolHandlers } from './useLineToolHandlers';
 import { useToolCancellation } from './useToolCancellation';
 import { useLineToolSetup } from './useLineToolSetup';
+import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
 
 interface UseStraightLineToolProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -41,6 +42,9 @@ export const useStraightLineToolRefactored = ({
   // Track if the tool is active
   const isActive = tool === DrawingMode.STRAIGHT_LINE || tool === DrawingMode.LINE;
   
+  // Get the error reporting hook for logging events
+  const { logDrawingEvent } = useDrawingErrorReporting();
+  
   // Use the shared line state
   const {
     isDrawing,
@@ -59,8 +63,7 @@ export const useStraightLineToolRefactored = ({
     snapLineToGrid,
     inputMethod,
     isPencilMode,
-    toggleSnap,
-    logDrawingEvent
+    toggleSnap
   } = useLineState({
     fabricCanvasRef,
     lineThickness,

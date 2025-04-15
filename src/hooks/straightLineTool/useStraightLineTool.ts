@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -342,7 +341,8 @@ export const useStraightLineTool = ({
         lineColor,
         lineThickness,
         snapToAngle,
-        snapAngleDeg
+        snapAngleDeg,
+        inputMethod
       });
     }
     
@@ -374,7 +374,8 @@ export const useStraightLineTool = ({
     lineThickness,
     snapToAngle,
     snapAngleDeg,
-    tool
+    tool,
+    inputMethod
   ]);
 
   // Return the hook API
