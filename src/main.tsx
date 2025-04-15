@@ -113,8 +113,15 @@ function initializeServices() {
   
   // Initialize Pusher after a delay to ensure CSP is applied
   setTimeout(() => {
-    const { getPusher } = await import('./utils/pusher.ts');
-    getPusher();
+    // Use promise-based import instead of await since we're in a non-async function
+    import('./utils/pusher.ts')
+      .then(module => {
+        const { getPusher } = module;
+        getPusher();
+      })
+      .catch(error => {
+        console.error('Failed to load Pusher module:', error);
+      });
   }, 500);
 }
 
