@@ -1,71 +1,66 @@
 
 # Features Directory
 
-This directory contains feature-sliced modules organized by domain.
+This directory contains feature-specific modules that combine multiple components, hooks, and utilities to implement complete application features.
 
-## Structure
+## Current Features
 
-- `drawing/` - Drawing-related functionality
-  - `components/` - UI components specific to drawing
-  - `hooks/` - Custom hooks for drawing operations
-  - `state/` - State management for drawing features
-  - `utils/` - Utility functions for drawing
+### Drawing Tools
 
-- `grid/` - Grid system functionality
-  - `components/` - Grid-specific components
-  - `hooks/` - Grid-related hooks
-  - `utils/` - Grid utility functions
+The drawing tools feature provides various tools for creating and manipulating objects on the canvas:
 
-- `canvas/` - Canvas management
-  - `components/` - Canvas components
-  - `controllers/` - Canvas control logic
-  - `hooks/` - Canvas-related hooks
+- Straight line tool
+- Freehand drawing
+- Shape creation (rectangles, circles, etc.)
+- Selection and transformation
 
-## Usage Guidelines
+Each drawing tool is implemented using a combination of:
+- Specialized hooks for state management and event handling
+- UI components for tool controls
+- Utility functions for calculations and transformations
 
-1. Keep features isolated and independent
-2. Use shared modules from `shared/` directory for cross-feature functionality
-3. Export public API through index.ts files
-4. Avoid circular dependencies between features
+### Grid System
 
-## Feature Module Design
+The grid system provides visual guides and snapping functionality to assist with precise drawing:
 
-Each feature module should:
+- Grid display with customizable size and appearance
+- Snap-to-grid functionality for drawing operations
+- Keyboard shortcuts for toggling grid features
 
-1. Export a clear public API through the index.ts file
-2. Hide implementation details within the module
-3. Be self-contained with minimal dependencies on other features
-4. Include comprehensive tests
-5. Document its purpose and usage
+## Implementation Details
 
-## Example Feature Structure
+### Feature Structure
 
-```
-features/
-  drawing/
-    index.ts           // Public API
-    components/
-      DrawingToolbar.tsx
-      ColorPicker.tsx
-    hooks/
-      useDrawingTool.ts
-      useColorSelection.ts
-    state/
-      drawingState.ts
-    utils/
-      pathCalculations.ts
-    types/
-      drawingTypes.ts
-    README.md          // Feature documentation
-```
+Each feature typically includes:
 
-## Adding New Features
+1. Core feature hooks in the `/hooks` directory
+2. UI components in the `/components` directory
+3. Utility functions in the `/utils` directory
+4. Feature-specific types in the `/types` directory
+
+### Adding New Features
 
 When adding a new feature:
 
-1. Create a new directory in the features folder
-2. Design a clear public API for the feature
-3. Implement the feature using the structure above
-4. Document the feature's purpose and usage
-5. Add tests for the feature
-6. Update this README if needed
+1. Create appropriate hooks for state and behavior
+2. Create UI components for user interaction
+3. Add any necessary utility functions
+4. Update relevant context providers if needed
+5. Add feature-specific tests
+
+### Testing
+
+Features should include comprehensive tests:
+
+- Unit tests for individual hooks and utilities
+- Integration tests for feature behavior
+- Visual regression tests where appropriate
+
+## Feature Roadmap
+
+Planned feature enhancements:
+
+- Enhanced touch and Apple Pencil support
+- Layer management
+- Advanced shape manipulation
+- Drawing history and version control

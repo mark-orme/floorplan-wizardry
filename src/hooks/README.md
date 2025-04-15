@@ -1,95 +1,64 @@
 
-# Hooks
+# Hooks Directory
 
-This directory contains custom React hooks that provide reusable logic across the application.
+This directory contains React hooks used throughout the application for various functionality.
 
-## Core Principles
+## Structure
 
-- **Single Responsibility**: Each hook should do one thing well
-- **Composition**: Complex hooks should compose simpler hooks
-- **Error Handling**: Hooks should gracefully handle errors and edge cases
-- **Performance**: Hooks should be optimized for performance using proper dependencies
+- `canvas/` - Hooks related to canvas initialization and management
+- `drawing/` - General drawing-related hooks 
+- `straightLineTool/` - Specialized hooks for the straight line drawing tool
 
-## Hook Categories
+## Key Hooks
 
-### Canvas Hooks
+### Straight Line Tool
 
-These hooks handle canvas operations, drawing, and interactions:
+The straight line tool functionality has been refactored into smaller, composable hooks:
 
-- `useCanvasState` - Manages core canvas state (tool, zoom, etc.)
-- `useCanvasOperations` - Composes multiple canvas operation hooks
-- `useCanvasHistory` - Manages undo/redo functionality
-- `useCanvasTools` - Provides tool-specific operations like zoom, clear, etc.
-- `useCanvasRefs` - Provides shared references to canvas objects
-- `useCanvasUtilities` - Utility functions for canvas operations
-- `useCanvasInitialization` - Handles canvas initialization
-- `useCanvasGridInitialization` - Initializes grid on canvas
-- `useCanvasInteraction` - Manages user interaction with canvas objects
-- `useCanvasProfiler` - Profiles canvas performance
+- `useStraightLineTool.ts` - Original implementation with all functionality in one hook
+- `useStraightLineToolRefactored.ts` - Refactored version that composes smaller hooks
+- `useLineState.ts` - Manages line drawing state
+- `useStraightLineEvents.ts` - Handles Fabric.js events for line drawing
+- `useLineKeyboardShortcuts.ts` - Keyboard shortcuts for line tools
+- `useLineToolHandlers.ts` - Core logic for handling line drawing
+- `useToolCancellation.ts` - Logic for canceling drawing operations
+- `useApplePencilSupport.ts` - Enhanced support for Apple Pencil and other stylus inputs
 
-### Drawing Hooks
+### Input Handling
 
-These hooks handle specific drawing operations:
+- `useMouseEvents.ts` - Abstracts mouse event handling for drawing tools
+- `usePointProcessing.ts` - Converts DOM events to canvas coordinates
+- `useStylusDetection.ts` - Detects and configures stylus input devices
 
-- `useDrawingTool` - Manages drawing tool state and validation
-- `useDrawingHistory` - Manages drawing history (being deprecated)
-- `useDrawingState` - Manages current drawing state
-- `useDrawingErrorReporting` - Reports drawing errors
-- `useDrawingActions` - Provides drawing action functions
+## Usage Guidelines
 
-### Tool-Specific Hooks
+### Composing Hooks
 
-- `useToolOperations` - Manages drawing tool operations
+Our hook architecture follows a composable pattern where smaller, specialized hooks are combined to create more complex functionality. This approach:
 
-### DOM and UI Hooks
+1. Improves testability by isolating functionality
+2. Enhances maintainability by reducing hook complexity
+3. Enables reuse of common functionality
 
-- `useDomRef` - Enhanced ref hook with focus capabilities
+### Apple Pencil Support
 
-## Usage Patterns
+When using drawing tools with stylus support:
 
-### Rate Limiting
+1. Import and use `useApplePencilSupport` to handle pressure sensitivity
+2. Use the `processPencilTouchEvent` function to detect Apple Pencil events
+3. Consider grid snapping with `snapPencilPointToGrid` for precision
 
-Use the `useRateLimitedUpdate` hook to prevent excessive state updates:
+Example:
 
-```tsx
-const [canvasState, setCanvasState] = useState(initialState);
-const updateCanvasState = useRateLimitedUpdate(setCanvasState, { 
-  method: 'debounce', 
-  delay: 100 
-});
-
-// Use the rate-limited function instead of setState directly
-updateCanvasState(newState);
-```
-
-### Canvas Operations
-
-Canvas operations are composed of multiple specialized hooks:
-
-```tsx
+```typescript
 const { 
-  handleToolChange,
-  handleUndo,
-  handleRedo,
-  handleZoom
-} = useCanvasOperations({
-  // Configuration options
+  isPencilMode, 
+  isApplePencil, 
+  adjustedLineThickness 
+} = useApplePencilSupport({
+  fabricCanvasRef,
+  lineThickness
 });
-```
 
-### Error Handling
-
-Many hooks include built-in error reporting:
-
-```tsx
-const { reportDrawingError, logDrawingEvent } = useDrawingErrorReporting();
-
-try {
-  // Canvas operation
-} catch (error) {
-  reportDrawingError(error, 'drawing-operation', { 
-    tool: currentTool,
-    action: 'create-line'
-  });
-}
+// Use adjustedLineThickness for pressure-sensitive drawing
 ```
