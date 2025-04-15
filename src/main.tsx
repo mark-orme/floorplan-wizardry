@@ -104,12 +104,6 @@ function initializeServices() {
       }
       
       return event;
-    },
-    
-    // Use our own error handler for failures
-    errorHandler: (error) => {
-      console.error("Sentry error:", error);
-      // Don't show errors to users, just log them
     }
   });
   
@@ -121,3 +115,5 @@ function initializeServices() {
     }
   }, 200);
 }
+
+export default root;
