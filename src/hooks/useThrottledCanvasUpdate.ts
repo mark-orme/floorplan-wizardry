@@ -1,3 +1,4 @@
+
 /**
  * Throttled Canvas Update Hook
  * Prevents excessive canvas updates by throttling user interactions
@@ -36,9 +37,9 @@ export function useThrottledCanvasUpdate<T extends (...args: any[]) => any>(
   
   // Create throttled version for continuous updates (e.g., during drag)
   const throttledUpdate = useCallback(
-    () => {
+    (...args: Parameters<T>) => {
       const throttledFn = throttle(() => {
-        updateFnRef.current();
+        updateFnRef.current(...args);
       }, throttleMs);
       throttledFn();
     },
@@ -47,9 +48,9 @@ export function useThrottledCanvasUpdate<T extends (...args: any[]) => any>(
   
   // Create debounced version for final update (e.g., after drag ends)
   const debouncedUpdate = useCallback(
-    () => {
+    (...args: Parameters<T>) => {
       const debouncedFn = debounce(() => {
-        updateFnRef.current();
+        updateFnRef.current(...args);
       }, debounceMs);
       debouncedFn();
     },
@@ -57,9 +58,9 @@ export function useThrottledCanvasUpdate<T extends (...args: any[]) => any>(
   );
   
   // Hybrid function that uses both throttling and debouncing
-  const throttledCanvasUpdate = useCallback(() => {
-    throttledUpdate();
-    debouncedUpdate();
+  const throttledCanvasUpdate = useCallback((...args: Parameters<T>) => {
+    throttledUpdate(...args);
+    debouncedUpdate(...args);
   }, [throttledUpdate, debouncedUpdate]);
   
   return {

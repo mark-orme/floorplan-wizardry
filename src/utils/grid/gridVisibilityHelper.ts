@@ -46,6 +46,11 @@ export function ensureGridVisibility(
     if (fixesApplied) {
       canvas.requestRenderAll();
       console.log(`Fixed visibility for ${gridObjects.length} grid objects`);
+      // Add a force render to ensure grid is visible
+      setTimeout(() => {
+        canvas.requestRenderAll();
+        logger.info('Forcing canvas re-render to ensure grid visibility');
+      }, 100);
     }
     
     return fixesApplied;
@@ -117,6 +122,12 @@ export function createGridEmergencyFix(
       
       if (newGrid && newGrid.length > 0) {
         toast.success(`Grid fixed: Created ${newGrid.length} grid objects`);
+        
+        // Force render after grid creation
+        setTimeout(() => {
+          canvas.requestRenderAll();
+          logger.info('Forced render after emergency grid fix');
+        }, 50);
       } else {
         toast.error('Failed to create new grid');
       }
@@ -127,4 +138,50 @@ export function createGridEmergencyFix(
       toast.error('Error fixing grid');
     }
   };
+}
+
+/**
+ * Check if grid needs to be fixed and apply fixes
+ * @param canvas The fabric canvas
+ * @param gridObjects Array of grid objects
+ * @returns Whether grid was fixed
+ */
+export function checkAndFixGrid(
+  canvas: FabricCanvas | null,
+  gridObjects: FabricObject[]
+): boolean {
+  if (!canvas || !gridObjects || gridObjects.length === 0) {
+    return false;
+  }
+  
+  try {
+    // Check if grid objects are on canvas and visible
+    const missingObjects = gridObjects.filter(obj => !canvas.contains(obj));
+    const invisibleObjects = gridObjects.filter(obj => canvas.contains(obj) && !obj.visible);
+    
+    // Apply fixes if needed
+    if (missingObjects.length > 0 || invisibleObjects.length > 0) {
+      logger.info(`Found grid issues: ${missingObjects.length} missing, ${invisibleObjects.length} invisible`);
+      
+      // Add missing objects
+      missingObjects.forEach(obj => {
+        canvas.add(obj);
+        canvas.sendObjectToBack(obj);
+      });
+      
+      // Make invisible objects visible
+      invisibleObjects.forEach(obj => {
+        obj.set('visible', true);
+      });
+      
+      // Force render
+      canvas.requestRenderAll();
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking and fixing grid:', error);
+    return false;
+  }
 }
