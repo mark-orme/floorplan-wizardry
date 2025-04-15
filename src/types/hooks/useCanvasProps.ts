@@ -1,9 +1,58 @@
+
 /**
  * Canvas Props Interface
  * @module types/hooks/useCanvasProps
  */
 import { FabricCanvas } from "@/types/fabric";
 import { DrawingTool } from "@/types/core/DrawingTool";
+import { MutableRefObject } from "react";
+
+/**
+ * Debug info state for tracking canvas initialization
+ */
+export interface DebugInfoState {
+  /** Whether an error has occurred */
+  hasError: boolean;
+  /** Error message if any */
+  errorMessage: string;
+  /** Last initialization time */
+  lastInitTime: number;
+  /** Last grid creation time */
+  lastGridCreationTime: number;
+  /** Whether event handlers are set */
+  eventHandlersSet: boolean;
+  /** Whether canvas events are registered */
+  canvasEventsRegistered: boolean;
+  /** Whether grid is rendered */
+  gridRendered: boolean;
+  /** Whether tools are initialized */
+  toolsInitialized: boolean;
+  /** Whether grid is created */
+  gridCreated: boolean;
+  /** Whether canvas is initialized */
+  canvasInitialized: boolean;
+  /** Whether dimensions are set */
+  dimensionsSet: boolean;
+  /** Whether brush is initialized */
+  brushInitialized: boolean;
+  /** Whether canvas is ready */
+  canvasReady: boolean;
+  /** Whether canvas is created */
+  canvasCreated: boolean;
+  /** Number of grid objects */
+  gridObjectCount: number;
+  /** Canvas dimensions */
+  canvasDimensions: {
+    width: number;
+    height: number;
+  };
+  /** Last error */
+  lastError: string;
+  /** Last refresh time */
+  lastRefresh: number;
+  /** Last error time */
+  lastErrorTime?: number;
+}
 
 /**
  * Props for useCanvasOperations hook

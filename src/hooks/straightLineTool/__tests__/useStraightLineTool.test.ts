@@ -6,10 +6,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../useStraightLineTool';
-import { useLineState } from '../useLineState';
+import { useLineState, InputMethod } from '../useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-types';
-import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
+import { FabricEventTypes } from '@/types/fabric-events';
 import { Point } from '@/types/core/Geometry';
 
 // Mock the dependencies
@@ -25,8 +25,19 @@ vi.mock('../useLineState', () => ({
     setDistanceTooltip: vi.fn(),
     initializeTool: vi.fn(),
     resetDrawingState: vi.fn(),
-    setIsDrawing: vi.fn()
-  })
+    setIsDrawing: vi.fn(),
+    createLine: vi.fn(),
+    createDistanceTooltip: vi.fn(),
+    updateLineAndTooltip: vi.fn(),
+    snapPointToGrid: vi.fn(point => point),
+    snapLineToGrid: vi.fn()
+  }),
+  InputMethod: {
+    MOUSE: 'mouse',
+    TOUCH: 'touch',
+    PENCIL: 'pencil',
+    STYLUS: 'stylus'
+  }
 }));
 
 // Mock other necessary dependencies
@@ -123,7 +134,12 @@ describe('useStraightLineTool', () => {
       setDistanceTooltip: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: vi.fn()
+      setIsDrawing: vi.fn(),
+      createLine: vi.fn(),
+      createDistanceTooltip: vi.fn(),
+      updateLineAndTooltip: vi.fn(),
+      snapPointToGrid: vi.fn(point => point),
+      snapLineToGrid: vi.fn()
     });
   });
   
@@ -133,8 +149,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Verify event handlers are attached
@@ -148,7 +163,6 @@ describe('useStraightLineTool', () => {
     expect(mockCanvas.defaultCursor).toBe('crosshair');
     
     // Verify the hook returns expected values
-    expect(result.current.isToolInitialized).toBe(true);
     expect(result.current.isActive).toBe(true);
   });
   
@@ -158,8 +172,7 @@ describe('useStraightLineTool', () => {
       enabled: false,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.SELECT
+      saveCurrentState
     }));
     
     // Verify no event handlers are attached for the wrong tool

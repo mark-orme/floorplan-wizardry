@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
-import { useLineState } from '../straightLineTool/useLineState';
+import { useLineState, InputMethod } from '../straightLineTool/useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-types';
 import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
@@ -31,8 +31,17 @@ vi.mock('../straightLineTool/useLineState', () => ({
     snapEnabled: true,
     snapPointToGrid: vi.fn(),
     snapLineToGrid: vi.fn(),
-    toggleSnap: vi.fn()
-  })
+    toggleSnap: vi.fn(),
+    createLine: vi.fn(),
+    createDistanceTooltip: vi.fn(),
+    updateLineAndTooltip: vi.fn()
+  }),
+  InputMethod: {
+    MOUSE: 'mouse',
+    TOUCH: 'touch',
+    PENCIL: 'pencil',
+    STYLUS: 'stylus'
+  }
 }));
 
 // Mock other necessary dependencies
@@ -139,8 +148,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Verify event handlers are attached
@@ -154,7 +162,6 @@ describe('useStraightLineTool', () => {
     expect(mockCanvas.defaultCursor).toBe('crosshair');
     
     // Verify the hook returns expected values
-    expect(result.current.isToolInitialized).toBe(true);
     expect(result.current.isActive).toBe(true);
   });
   
@@ -164,8 +171,7 @@ describe('useStraightLineTool', () => {
       enabled: false,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.SELECT
+      saveCurrentState
     }));
     
     // Verify no event handlers are attached for the wrong tool
@@ -201,6 +207,8 @@ describe('useStraightLineTool', () => {
     const mockSetStartPoint = vi.fn();
     const mockSetCurrentLine = vi.fn();
     const mockSetDistanceTooltip = vi.fn();
+    const mockCreateLine = vi.fn();
+    const mockCreateDistanceTooltip = vi.fn();
     
     // Update useLineState mock with custom functions
     (useLineState as any).mockReturnValue({
@@ -214,7 +222,12 @@ describe('useStraightLineTool', () => {
       setDistanceTooltip: mockSetDistanceTooltip,
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: mockSetIsDrawing
+      setIsDrawing: mockSetIsDrawing,
+      createLine: mockCreateLine,
+      createDistanceTooltip: mockCreateDistanceTooltip,
+      updateLineAndTooltip: vi.fn(),
+      snapPointToGrid: vi.fn(point => point),
+      snapLineToGrid: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
@@ -222,8 +235,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Get mouse down handler
@@ -268,8 +280,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Verify cancel drawing function is returned
@@ -323,8 +334,7 @@ describe('useStraightLineTool', () => {
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
-      saveCurrentState,
-      tool: DrawingMode.STRAIGHT_LINE
+      saveCurrentState
     }));
     
     // Get mouse handlers

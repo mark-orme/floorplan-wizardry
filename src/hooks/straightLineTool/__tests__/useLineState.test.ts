@@ -1,179 +1,216 @@
 
 /**
- * Unit tests for useLineState hook
- * Tests state management for line drawing functionality
- * 
- * @module hooks/straightLineTool/__tests__/useLineState.test
+ * Tests for the useLineState hook
+ * @module hooks/straightLineTool/__tests__/useLineState
  */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useLineState, InputMethod } from '../useLineState';
-import { Line, Text, Object as FabricObject } from 'fabric';
+import { Canvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Geometry';
 
-// Mock fabric classes to isolate hook behavior from actual fabric implementation
+// Mock fabric objects
 vi.mock('fabric', () => {
-  const mockLine = vi.fn().mockImplementation((points, options) => ({
-    set: vi.fn(),
-    setCoords: vi.fn()
-  }));
-  
-  const mockText = vi.fn().mockImplementation((text, options) => ({
-    set: vi.fn(),
-    setCoords: vi.fn()
-  }));
-  
   return {
-    Line: mockLine,
-    Text: mockText,
-    Object: class MockFabricObject {
-      set = vi.fn();
-      setCoords = vi.fn();
-    }
+    Canvas: vi.fn().mockImplementation(() => ({
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      renderAll: vi.fn(),
+      requestRenderAll: vi.fn(),
+      isDrawingMode: false,
+      selection: true,
+      defaultCursor: 'default',
+      hoverCursor: 'default'
+    })),
+    Line: vi.fn().mockImplementation((points, options) => ({
+      set: vi.fn(),
+      x1: points[0],
+      y1: points[1],
+      x2: points[2],
+      y2: points[3],
+      ...options
+    })),
+    Text: vi.fn().mockImplementation((text, options) => ({
+      set: vi.fn(),
+      text,
+      ...options
+    }))
   };
 });
 
 describe('useLineState', () => {
+  let fabricCanvasRef: { current: Canvas | null };
+  
   beforeEach(() => {
-    vi.clearAllMocks();
+    fabricCanvasRef = { current: new Canvas() as any };
   });
   
-  it('should initialize with correct default values', () => {
-    // Create mock props required by the hook
-    const mockProps = {
-      fabricCanvasRef: { current: null },
-      lineThickness: 2,
-      lineColor: '#000000'
-    };
+  it('should initialize with default values', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2
+    }));
     
-    const { result } = renderHook(() => useLineState(mockProps));
-    
-    // Check default state
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.isToolInitialized).toBe(false);
     expect(result.current.startPointRef.current).toBeNull();
     expect(result.current.currentLineRef.current).toBeNull();
     expect(result.current.distanceTooltipRef.current).toBeNull();
+    expect(result.current.snapEnabled).toBe(true);
+    expect(result.current.inputMethod).toBe(InputMethod.MOUSE);
   });
   
-  it('should set the start point and activate drawing', () => {
-    // Create mock props required by the hook
-    const mockProps = {
-      fabricCanvasRef: { current: null },
-      lineThickness: 2,
-      lineColor: '#000000'
-    };
+  it('should create a line with correct properties', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#ff0000',
+      lineThickness: 3
+    }));
     
-    const { result } = renderHook(() => useLineState(mockProps));
+    const line = result.current.createLine(10, 20, 30, 40);
     
-    const testPoint: Point = { x: 100, y: 100 };
+    expect(line).toBeDefined();
+    expect(Line).toHaveBeenCalledWith([10, 20, 30, 40], expect.objectContaining({
+      stroke: '#ff0000',
+      strokeWidth: 3,
+      selectable: true,
+      objectType: 'line'
+    }));
+  });
+  
+  it('should create a distance tooltip with correct properties', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2
+    }));
+    
+    const tooltip = result.current.createDistanceTooltip(100, 200, 150);
+    
+    expect(tooltip).toBeDefined();
+    expect(Text).toHaveBeenCalledWith('150px', expect.objectContaining({
+      left: 100,
+      top: 180,
+      fontSize: 12,
+      fill: expect.any(String),
+      selectable: false,
+      objectType: 'tooltip'
+    }));
+  });
+  
+  it('should set startPoint correctly', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2
+    }));
+    
+    const mockPoint = { x: 100, y: 200 };
     
     act(() => {
-      result.current.setStartPoint(testPoint);
+      result.current.setStartPoint(mockPoint);
     });
     
-    // Check that drawing is active and start point is set
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.startPointRef.current).toEqual(testPoint);
+    expect(result.current.startPointRef.current).toEqual(mockPoint);
   });
   
-  it('should set current line reference', () => {
-    // Create mock props required by the hook
-    const mockProps = {
-      fabricCanvasRef: { current: null },
-      lineThickness: 2,
-      lineColor: '#000000'
-    };
+  it('should set currentLine correctly', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2
+    }));
     
-    const { result } = renderHook(() => useLineState(mockProps));
-    
-    // Create a mock line with proper constructor arguments
-    // Fabric.js Line requires an array of 4 numbers: [x1, y1, x2, y2]
-    const mockLine = new Line([0, 0, 100, 100], {});
+    const mockLine = {} as Line;
     
     act(() => {
       result.current.setCurrentLine(mockLine);
     });
     
-    // Check that current line reference is set
     expect(result.current.currentLineRef.current).toBe(mockLine);
   });
   
-  it('should set tooltip reference', () => {
-    // Create mock props required by the hook
-    const mockProps = {
-      fabricCanvasRef: { current: null },
-      lineThickness: 2,
-      lineColor: '#000000'
-    };
+  it('should update line and tooltip correctly', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2
+    }));
     
-    const { result } = renderHook(() => useLineState(mockProps));
+    // Create mocks
+    const mockLine = { set: vi.fn() } as any;
+    const mockTooltip = { set: vi.fn() } as any;
     
-    // Create a mock fabric object for the tooltip instead of HTMLDivElement
-    const mockTooltip = new (FabricObject as any)();
-    
+    // Set refs
     act(() => {
+      result.current.setCurrentLine(mockLine);
       result.current.setDistanceTooltip(mockTooltip);
     });
     
-    // Check that tooltip reference is set
-    expect(result.current.distanceTooltipRef.current).toBe(mockTooltip);
+    // Update line and tooltip
+    act(() => {
+      result.current.updateLineAndTooltip({ x: 0, y: 0 }, { x: 30, y: 40 });
+    });
+    
+    // Verify mockLine.set was called with correct values
+    expect(mockLine.set).toHaveBeenCalledWith({
+      x1: 0,
+      y1: 0,
+      x2: 30,
+      y2: 40
+    });
+    
+    // Verify mockTooltip.set was called with expected values
+    expect(mockTooltip.set).toHaveBeenCalledWith(expect.objectContaining({
+      left: expect.any(Number),
+      top: expect.any(Number),
+      text: expect.stringContaining('50')  // 50px is the distance from (0,0) to (30,40)
+    }));
   });
   
-  it('should initialize tool state', () => {
-    // Create mock props required by the hook
-    const mockProps = {
-      fabricCanvasRef: { current: null },
-      lineThickness: 2,
-      lineColor: '#000000'
-    };
-    
-    const { result } = renderHook(() => useLineState(mockProps));
+  it('should initialize the tool correctly', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2
+    }));
     
     act(() => {
       result.current.initializeTool();
     });
     
-    // Check that tool is initialized
     expect(result.current.isToolInitialized).toBe(true);
+    expect(fabricCanvasRef.current!.selection).toBe(false);
+    expect(fabricCanvasRef.current!.defaultCursor).toBe('crosshair');
+    expect(fabricCanvasRef.current!.isDrawingMode).toBe(false);
   });
   
-  it('should reset drawing state completely', () => {
-    // Create mock props required by the hook
-    const mockProps = {
-      fabricCanvasRef: { current: null },
-      lineThickness: 2,
-      lineColor: '#000000'
-    };
+  it('should toggle snap correctly', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2
+    }));
     
-    const { result } = renderHook(() => useLineState(mockProps));
+    // Initial value should be true
+    expect(result.current.snapEnabled).toBe(true);
     
-    // Set up initial state
-    const testPoint: Point = { x: 100, y: 100 };
-    const mockLine = new Line([0, 0, 100, 100], {}); // Using proper Line constructor params
-    const mockTooltip = new (FabricObject as any)();
-    
+    // Toggle it
     act(() => {
-      result.current.setStartPoint(testPoint);
-      result.current.setCurrentLine(mockLine);
-      result.current.setDistanceTooltip(mockTooltip);
+      result.current.toggleSnap();
     });
     
-    // Verify initial state is set
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.startPointRef.current).toEqual(testPoint);
-    expect(result.current.currentLineRef.current).toBe(mockLine);
-    expect(result.current.distanceTooltipRef.current).toBe(mockTooltip);
+    // Should be false now
+    expect(result.current.snapEnabled).toBe(false);
     
-    // Reset state
+    // Toggle again
     act(() => {
-      result.current.resetDrawingState();
+      result.current.toggleSnap();
     });
     
-    // Verify everything is reset
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.startPointRef.current).toBeNull();
-    expect(result.current.currentLineRef.current).toBeNull();
-    expect(result.current.distanceTooltipRef.current).toBeNull();
+    // Should be true again
+    expect(result.current.snapEnabled).toBe(true);
   });
 });

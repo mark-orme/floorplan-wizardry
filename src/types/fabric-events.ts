@@ -37,3 +37,16 @@ export interface TPointerEventInfo<T> {
  * Pointer event type
  */
 export type TPointerEvent = MouseEvent | TouchEvent;
+
+/**
+ * Extended Fabric pointer event
+ */
+export interface FabricPointerEvent {
+  e: MouseEvent | TouchEvent;
+  pointer?: { x: number; y: number };
+  absolutePointer?: { x: number; y: number };
+  target?: unknown;
+  viewportPoint?: { x: number; y: number };
+  scenePoint?: { x: number; y: number };
+  isClick?: boolean;
+}

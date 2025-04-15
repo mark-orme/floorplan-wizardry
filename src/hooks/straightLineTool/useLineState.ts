@@ -1,22 +1,21 @@
-/**
- * State management for straight line tool
- * @module hooks/straightLineTool/useLineState
- */
-import { useRef, useState, useCallback } from "react";
-import { Canvas, Line, Object as FabricObject, Text } from "fabric";
-import { Point } from "@/types/core/Geometry";
-import { calculateDistance } from "@/utils/geometry/lineOperations";
-import logger from "@/utils/logger";
 
 /**
- * Input methods for drawing
+ * Hook for managing line drawing state
+ * @module hooks/straightLineTool/useLineState
+ */
+import { useState, useRef, useCallback } from "react";
+import { Canvas, Line, Text } from "fabric";
+import { Point } from "@/types/core/Geometry";
+import { FabricCanvas, FabricObjectWithId } from "@/types/fabric";
+
+/**
+ * Input method enum for drawing
  */
 export enum InputMethod {
-  MOUSE = "mouse",
-  TOUCH = "touch",
-  KEYBOARD = "keyboard",
-  PENCIL = "pencil",
-  STYLUS = "stylus"
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  PENCIL = 'pencil',
+  STYLUS = 'stylus'
 }
 
 /**
@@ -28,158 +27,151 @@ export interface UseLineStateProps {
    */
   fabricCanvasRef: React.MutableRefObject<Canvas | null>;
   /**
-   * Line thickness
-   * @default 2
-   */
-  lineThickness?: number;
-  /**
    * Line color
-   * @default "#000000"
    */
-  lineColor?: string;
+  lineColor: string;
+  /**
+   * Line thickness
+   */
+  lineThickness: number;
 }
 
 /**
- * Hook for managing straight line tool state
- * @param props - Hook properties
+ * Hook for managing the state of the line drawing tool
  */
 export const useLineState = (props: UseLineStateProps) => {
-  const { fabricCanvasRef, lineThickness = 2, lineColor = "#000000" } = props;
+  const { fabricCanvasRef, lineColor, lineThickness } = props;
   
-  // State for tracking drawing status
+  // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
   
-  // Input method
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-  
-  // References for line drawing
+  // References to objects
   const startPointRef = useRef<Point | null>(null);
   const currentLineRef = useRef<Line | null>(null);
-  const distanceTooltipRef = useRef<FabricObject | null>(null);
+  const distanceTooltipRef = useRef<Text | null>(null);
   
-  // Grid and snapping state
+  // Snapping state
   const [snapEnabled, setSnapEnabled] = useState(true);
-  const snapGridSizeRef = useRef(20); // Default grid size
   
-  // Add pencil mode state
-  const [isPencilMode, setIsPencilMode] = useState(false);
+  // Input method state
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
   
-  // Add angles enabled state
-  const [anglesEnabled, setAnglesEnabled] = useState(true);
-  
-  // Add measurement data state
+  // Measurement data
   const [measurementData, setMeasurementData] = useState({
     distance: null,
     angle: null
   });
   
   /**
-   * Set the start point for the line
+   * Create a line object
    */
-  const setStartPoint = useCallback((point: Point) => {
-    startPointRef.current = point;
-  }, []);
-  
-  /**
-   * Set the current line object
-   */
-  const setCurrentLine = useCallback((line: Line | null) => {
-    currentLineRef.current = line;
-  }, []);
-  
-  /**
-   * Set the distance tooltip object
-   */
-  const setDistanceTooltip = useCallback((tooltip: FabricObject | null) => {
-    distanceTooltipRef.current = tooltip;
-  }, []);
-  
-  /**
-   * Create a new line object
-   */
-  const createLine = useCallback((x1: number, y1: number, x2: number, y2: number): Line => {
-    return new Line([x1, y1, x2, y2], {
+  const createLine = useCallback((x1: number, y1: number, x2: number, y2: number) => {
+    const line = new Line([x1, y1, x2, y2], {
       stroke: lineColor,
       strokeWidth: lineThickness,
-      selectable: false,
-      evented: false,
-      strokeLineCap: 'round',
-      strokeLineJoin: 'round'
+      selectable: true,
+      strokeUniform: true,
+      objectType: 'line'
     });
+    
+    return line;
   }, [lineColor, lineThickness]);
   
   /**
-   * Create a distance tooltip text object
+   * Create a distance tooltip
    */
-  const createDistanceTooltip = useCallback((x: number, y: number, distance: number): Text => {
-    return new Text(`${Math.round(distance)}px`, {
+  const createDistanceTooltip = useCallback((x: number, y: number, distance: number) => {
+    const tooltip = new Text(`${distance.toFixed(0)}px`, {
       left: x,
-      top: y,
+      top: y - 20,
       fontSize: 12,
-      fill: '#333333',
-      backgroundColor: 'rgba(255, 255, 255, 0.7)',
-      padding: 5,
+      fill: '#333',
       selectable: false,
-      evented: false
+      objectType: 'tooltip'
     });
+    
+    return tooltip;
   }, []);
   
   /**
-   * Update line and tooltip based on current points
+   * Update line and tooltip
    */
-  const updateLineAndTooltip = useCallback((startPoint: Point, currentPoint: Point) => {
-    if (!currentLineRef.current || !distanceTooltipRef.current) return;
+  const updateLineAndTooltip = useCallback((startPoint: Point, endPoint: Point) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !currentLineRef.current || !distanceTooltipRef.current) return;
     
-    // Update line points
-    currentLineRef.current.set({
-      x2: currentPoint.x,
-      y2: currentPoint.y
+    // Update line
+    const line = currentLineRef.current;
+    line.set({
+      x1: startPoint.x,
+      y1: startPoint.y,
+      x2: endPoint.x,
+      y2: endPoint.y
     });
     
-    // Calculate distance for tooltip
-    const distance = calculateDistance(startPoint, currentPoint);
+    // Calculate distance
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Update tooltip position and text
-    const midX = (startPoint.x + currentPoint.x) / 2;
-    const midY = (startPoint.y + currentPoint.y) / 2;
-    distanceTooltipRef.current.set({
-      left: midX,
-      top: midY - 15, // Position above the line
-      text: `${Math.round(distance)}px`
+    // Update tooltip
+    const tooltip = distanceTooltipRef.current;
+    tooltip.set({
+      left: startPoint.x + dx / 2,
+      top: startPoint.y + dy / 2 - 20,
+      text: `${distance.toFixed(0)}px`
     });
     
-    // Update objects
-    currentLineRef.current.setCoords();
-    distanceTooltipRef.current.setCoords();
-  }, []);
+    // Update measurement data
+    setMeasurementData(prev => ({
+      ...prev,
+      distance: distance
+    }));
+  }, [fabricCanvasRef]);
   
   /**
-   * Initialize the tool state
+   * Initialize the tool
    */
   const initializeTool = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Configure canvas
+    canvas.selection = false;
+    canvas.defaultCursor = 'crosshair';
+    canvas.hoverCursor = 'crosshair';
+    canvas.isDrawingMode = false;
+    
+    // Mark as initialized
     setIsToolInitialized(true);
-    logger.info("Straight line tool initialized");
-  }, []);
+  }, [fabricCanvasRef]);
   
   /**
-   * Reset the drawing state
+   * Reset drawing state
    */
   const resetDrawingState = useCallback(() => {
     setIsDrawing(false);
     startPointRef.current = null;
     currentLineRef.current = null;
     distanceTooltipRef.current = null;
-    logger.info("Straight line drawing state reset");
   }, []);
   
   /**
-   * Snap a point to the grid
+   * Toggle snap to grid
+   */
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
+  
+  /**
+   * Snap point to grid
    */
   const snapPointToGrid = useCallback((point: Point): Point => {
     if (!snapEnabled) return point;
     
-    const gridSize = snapGridSizeRef.current;
+    const gridSize = 20; // Grid size in pixels
+    
     return {
       x: Math.round(point.x / gridSize) * gridSize,
       y: Math.round(point.y / gridSize) * gridSize
@@ -187,30 +179,16 @@ export const useLineState = (props: UseLineStateProps) => {
   }, [snapEnabled]);
   
   /**
-   * Snap a line to the grid
+   * Snap line to grid
    */
-  const snapLineToGrid = useCallback((startPoint: Point, endPoint: Point): { start: Point, end: Point } => {
-    if (!snapEnabled) return { start: startPoint, end: endPoint };
+  const snapLineToGrid = useCallback((start: Point, end: Point) => {
+    if (!snapEnabled) return { start, end };
     
     return {
-      start: snapPointToGrid(startPoint),
-      end: snapPointToGrid(endPoint)
+      start: snapPointToGrid(start),
+      end: snapPointToGrid(end)
     };
   }, [snapEnabled, snapPointToGrid]);
-  
-  /**
-   * Toggle grid snapping
-   */
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
-  
-  /**
-   * Toggle angles
-   */
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
-  }, []);
   
   return {
     isDrawing,
@@ -220,21 +198,20 @@ export const useLineState = (props: UseLineStateProps) => {
     startPointRef,
     currentLineRef,
     distanceTooltipRef,
-    setStartPoint,
-    setCurrentLine,
-    setDistanceTooltip,
+    setStartPoint: (point: Point) => { startPointRef.current = point; },
+    setCurrentLine: (line: Line) => { currentLineRef.current = line; },
+    setDistanceTooltip: (tooltip: Text) => { distanceTooltipRef.current = tooltip; },
+    createLine,
+    createDistanceTooltip,
+    updateLineAndTooltip,
     initializeTool,
     resetDrawingState,
     snapEnabled,
+    toggleSnap,
     snapPointToGrid,
     snapLineToGrid,
-    toggleSnap,
     inputMethod,
     setInputMethod,
-    isPencilMode,
-    setIsPencilMode,
-    anglesEnabled,
-    toggleAngles,
     measurementData,
     setMeasurementData
   };

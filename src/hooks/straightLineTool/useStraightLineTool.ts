@@ -1,11 +1,13 @@
+
 /**
  * Straight line drawing tool hook
  * @module hooks/straightLineTool/useStraightLineTool
  */
 import { useRef, useEffect } from "react";
 import { Canvas, Line } from "fabric";
-import { useLineState, InputMethod, UseLineStateProps } from "./useLineState";
+import { useLineState, InputMethod } from "./useLineState";
 import { useLineToolHandlers } from "./useLineToolHandlers";
+import { Point } from "@/types/core/Geometry";
 
 /**
  * Props for the straight line tool hook
@@ -27,6 +29,28 @@ interface UseStraightLineToolProps {
    * Line thickness
    */
   lineThickness: number;
+  /**
+   * Callback for saving the current state
+   */
+  saveCurrentState?: () => void;
+}
+
+/**
+ * Props for line tool handlers
+ */
+interface UseLineToolHandlersProps {
+  /**
+   * Reference to the fabric canvas
+   */
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+  /**
+   * Whether the tool is enabled
+   */
+  enabled: boolean;
+  /**
+   * Line state from useLineState hook
+   */
+  lineState: ReturnType<typeof useLineState>;
   /**
    * Callback for saving the current state
    */
@@ -116,7 +140,7 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       
       // Set start point and create line
       setIsDrawing(true);
-      setStartPoint({ x: pointer.x, y: pointer.y });
+      setStartPoint({ x: pointer.x, y: pointer.y } as Point);
       
       const line = createLine(pointer.x, pointer.y, pointer.x, pointer.y);
       setCurrentLine(line);
