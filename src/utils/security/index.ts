@@ -1,4 +1,3 @@
-
 /**
  * Security Utilities Index
  * Centralized exports for all security-related functionality
@@ -170,6 +169,3 @@ export const Security = {
     }
   }
 };
-
-// Re-export the secureForm and initializeSecurity functions
-export { secureForm, initializeSecurity };
