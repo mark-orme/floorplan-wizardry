@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for automatic canvas saving and restoring
  * @module hooks/useAutoSaveCanvas
@@ -110,7 +111,8 @@ export const useAutoSaveCanvas = ({
     }
   }, [canvas, canvasId, setSavedCanvas, setSavedTimestamp, onSave]);
   
-  const debouncedSave = useRef(debounce(saveCanvas, debounceMs));
+  // Create debounced save function with proper typing
+  const debouncedSave = useRef<() => void>(debounce(() => saveCanvas(), debounceMs));
   
   const restoreCanvas = useCallback(async () => {
     if (!canvas) return false;

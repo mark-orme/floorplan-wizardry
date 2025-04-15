@@ -1,87 +1,55 @@
+
 /**
- * Utility functions for throttling operations
- * Helps prevent excessive function calls
- * @module throttleUtils
+ * Utilities for throttling and debouncing functions
+ * @module utils/throttleUtils
  */
 
 /**
- * Creates a throttled function that only invokes the provided function
- * at most once per specified interval
+ * Creates a debounced function that delays invoking func until after wait milliseconds
+ * have elapsed since the last time the debounced function was invoked.
  * 
- * @param {Function} func - The function to throttle
- * @param {number} limit - The time limit in milliseconds
- * @returns {Function} Throttled function
+ * @param func - The function to debounce
+ * @param wait - The number of milliseconds to delay
+ * @returns A debounced version of the function
  */
-export function throttle<T extends (...args: any[]) => any>(
-  func: T, 
-  limit: number
-): (...args: Parameters<T>) => ReturnType<T> | undefined {
-  let lastCall = 0;
-  let timeoutId: number | null = null;
-  let lastArgs: Parameters<T> | null = null;
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): () => void {
+  let timeout: number | null = null;
   
-  return function(this: any, ...args: Parameters<T>): ReturnType<T> | undefined {
-    const now = Date.now();
+  return function() {
+    const later = () => {
+      timeout = null;
+      func();
+    };
     
-    // Clear any existing timeout
-    if (timeoutId !== null) {
-      window.clearTimeout(timeoutId);
-      timeoutId = null;
+    if (timeout !== null) {
+      clearTimeout(timeout);
     }
     
-    // If enough time has elapsed since last call, execute immediately
-    if (now - lastCall >= limit) {
-      lastCall = now;
-      return func.apply(this, args);
-    } 
-    
-    // Otherwise, schedule execution at the end of the throttle period
-    lastArgs = args;
-    timeoutId = window.setTimeout(() => {
-      if (lastArgs !== null) {
-        lastCall = Date.now();
-        func.apply(this, lastArgs);
-      }
-      timeoutId = null;
-      lastArgs = null;
-    }, limit - (now - lastCall));
-    
-    return undefined;
+    timeout = window.setTimeout(later, wait);
   };
 }
 
 /**
- * Creates a debounced function that delays invoking the provided function
- * until after the specified wait time has elapsed since the last time it was invoked
+ * Creates a throttled function that only invokes func at most once per every wait milliseconds.
  * 
- * @param {Function} func - The function to debounce
- * @param {number} wait - The wait time in milliseconds
- * @param {boolean} immediate - Whether to invoke at the beginning of the wait period
- * @returns {Function} Debounced function
+ * @param func - The function to throttle
+ * @param wait - The number of milliseconds to throttle invocations to
+ * @returns A throttled version of the function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: any[]) => any>(
   func: T,
-  wait: number,
-  immediate = false
+  wait: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: number | null = null;
+  let lastCall = 0;
   
-  return function(this: any, ...args: Parameters<T>): void {
-    const callNow = immediate && timeoutId === null;
+  return function(...args: Parameters<T>) {
+    const now = Date.now();
+    if (now - lastCall < wait) return;
     
-    if (timeoutId !== null) {
-      window.clearTimeout(timeoutId);
-    }
-    
-    timeoutId = window.setTimeout(() => {
-      timeoutId = null;
-      if (!immediate) {
-        func.apply(this, args);
-      }
-    }, wait);
-    
-    if (callNow) {
-      func.apply(this, args);
-    }
+    lastCall = now;
+    func(...args);
   };
 }
