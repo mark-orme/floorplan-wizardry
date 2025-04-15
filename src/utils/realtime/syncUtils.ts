@@ -111,7 +111,7 @@ export const setupRealtimeSync = (
   onRemoteUpdate?: (sender: string, timestamp: number) => void
 ) => {
   // Call subscribeSyncChannel without any arguments
-  const channel = subscribeSyncChannel(); // Removed arguments here
+  const channel = subscribeSyncChannel();
   let firstSync = true;
   const firstSyncRef = { current: firstSync };
   
