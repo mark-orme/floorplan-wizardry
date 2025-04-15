@@ -1,9 +1,4 @@
 
-/**
- * Performance-profiled Canvas component wrapper
- * Measures and reports render performance
- * @module ProfiledCanvas
- */
 import { Profiler, ProfilerOnRenderCallback } from 'react';
 import { Canvas, CanvasProps } from './Canvas';
 import { profileRender } from '@/utils/performance';

@@ -2,6 +2,28 @@ import React from "react";
 import { Tool } from "./Tool";
 import { DrawingMode } from "@/constants/drawingModes";
 import { formatDistanceToNow } from 'date-fns';
+import { 
+  MousePointer, 
+  Pencil, 
+  Undo2, 
+  Redo2, 
+  ZoomIn, 
+  ZoomOut, 
+  Grid, 
+  Trash, 
+  Wifi, 
+  WifiOff
+} from "lucide-react";
+import { 
+  Button 
+} from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 
 interface ToolbarContainerProps {
   tool: DrawingMode;

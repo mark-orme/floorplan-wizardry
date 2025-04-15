@@ -3,13 +3,22 @@ import React, { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
 import { useRestorePrompt } from '@/hooks/useRestorePrompt';
+import { DebugInfoState } from '@/types/core/DebugInfo';
 
-interface CanvasProps {
+export interface CanvasProps {
   width: number;
   height: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
   showGridDebug?: boolean;
+  setDebugInfo?: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  tool?: string;
+  lineThickness?: number;
+  lineColor?: string;
+  wallColor?: string;
+  wallThickness?: number;
+  style?: React.CSSProperties;
+  forceGridVisible?: boolean;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -17,7 +26,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   height,
   onCanvasReady,
   onError,
-  showGridDebug = false
+  showGridDebug = false,
+  setDebugInfo,
+  style,
+  tool,
+  lineThickness,
+  lineColor,
+  wallColor,
+  wallThickness,
+  forceGridVisible
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasId = useRef<string>(`canvas-${Math.random().toString(36).substring(2, 9)}`).current;
@@ -59,6 +76,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         className="border border-gray-200 dark:border-gray-700 shadow-sm"
         data-canvas-id={canvasId}
         data-show-grid-debug={showGridDebug ? 'true' : 'false'}
+        style={style}
       />
       
       {/* Debug overlay */}
