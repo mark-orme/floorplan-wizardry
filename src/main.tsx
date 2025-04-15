@@ -260,6 +260,7 @@ function initializeServices() {
 }
 
 // Declare global types for early error tracking
+// Use interface augmentation instead of direct declaration
 declare global {
   interface Window {
     __earlyErrors?: Array<{
@@ -275,9 +276,10 @@ declare global {
       stack?: string;
       timestamp: string;
     }>;
-    __app_state?: any;
-    __canvas_state?: any;
+    // Use the existing type definitions from global.d.ts
+    // DO NOT redefine these properties with different types
   }
 }
 
 export default root;
+
