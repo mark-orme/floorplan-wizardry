@@ -1,5 +1,4 @@
-
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useEnhancedSnapToGrid } from '@/hooks/useEnhancedSnapToGrid';
@@ -8,6 +7,8 @@ import { toast } from 'sonner';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
 import { forceGridCreationAndVisibility } from '@/utils/grid/gridVisibility';
+import { toFabricPoint } from '@/utils/fabricPointConverter';
+import { Point } from '@/types/core/Point';
 
 export interface EnhancedCanvasProps {
   width: number;
@@ -51,7 +52,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   const [canvasPan, setCanvasPan] = useState({ x: 0, y: 0 });
   const [viewportTransform, setViewportTransform] = useState<number[] | null>(null);
   
-  // Set up enhanced snap to grid
   const { snapEnabled, straightenEnabled, snapPoint, snapLine, toggleSnapToGrid, toggleStraighten } = 
     useEnhancedSnapToGrid({
       fabricCanvasRef,
@@ -59,7 +59,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       autoStraighten: autoStraighten
     });
   
-  // Set up touch gestures
   const { currentZoom, isGestureActive } = useTouchGestures({
     fabricCanvasRef,
     onUndo,
@@ -71,50 +70,41 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     maxZoom: ZOOM_CONSTANTS.MAX_ZOOM
   });
   
-  // Handle zoom with mouse wheel
   const handleMouseWheel = useCallback((e: WheelEvent) => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
     
-    // Prevent default scroll
     e.preventDefault();
     
-    // Get mouse position
     const pointer = canvas.getPointer(e);
     
-    // Calculate zoom factor
     const delta = e.deltaY;
     const zoomFactor = delta > 0 ? 
       (1 - ZOOM_CONSTANTS.WHEEL_ZOOM_FACTOR) : 
       (1 + ZOOM_CONSTANTS.WHEEL_ZOOM_FACTOR);
     
-    // Calculate new zoom level
     let newZoom = canvasZoom * zoomFactor;
     
-    // Constrain zoom levels
     newZoom = Math.max(ZOOM_CONSTANTS.MIN_ZOOM, Math.min(ZOOM_CONSTANTS.MAX_ZOOM, newZoom));
     
-    // Apply zoom centered on mouse position
-    canvas.zoomToPoint({ x: pointer.x, y: pointer.y }, newZoom);
+    const zoomPoint = toFabricPoint({ x: pointer.x, y: pointer.y });
     
-    // Update state
+    canvas.zoomToPoint(zoomPoint, newZoom);
+    
     setCanvasZoom(newZoom);
     if (onZoomChange) onZoomChange(newZoom);
     
-    // Update viewport transform
     if (canvas.viewportTransform) {
       setViewportTransform([...canvas.viewportTransform]);
     }
     
-    // Ensure the grid stays visible
     if (showGrid) {
       forceGridCreationAndVisibility(canvas);
     }
   }, [fabricCanvasRef, canvasZoom, onZoomChange, showGrid]);
   
-  // Handle canvas pan with middle mouse or touch
   const handleCanvasPan = useCallback((e: MouseEvent) => {
-    if (!fabricCanvasRef.current || e.buttons !== 4) return; // Middle mouse button
+    if (!fabricCanvasRef.current || e.buttons !== 4) return;
     const canvas = fabricCanvasRef.current;
     
     if (!canvas.viewportTransform) return;
@@ -131,7 +121,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     setViewportTransform([...canvas.viewportTransform]);
   }, [fabricCanvasRef]);
   
-  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current || canvasInitialized) return;
     
@@ -146,19 +135,15 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       fabricCanvasRef.current = canvas;
       setCanvasInitialized(true);
       
-      // Set up default canvas properties
       canvas.freeDrawingBrush.color = lineColor;
       canvas.freeDrawingBrush.width = lineThickness;
       
-      // Initialize for infinite canvas if enabled
       if (infiniteCanvas) {
-        // Set very large dimensions
         canvas.setDimensions({
           width: window.innerWidth * 3,
           height: window.innerHeight * 3
         });
         
-        // Center the viewport
         if (canvas.viewportTransform) {
           canvas.viewportTransform[4] = window.innerWidth / 2;
           canvas.viewportTransform[5] = window.innerHeight / 2;
@@ -166,15 +151,12 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         }
       }
       
-      // Create initial grid
       if (showGrid) {
         forceGridCreationAndVisibility(canvas);
       }
       
-      // Notify parent that canvas is ready
       onCanvasReady(canvas);
       
-      // Make canvas global for debugging
       if (typeof window !== 'undefined') {
         (window as any).fabricCanvas = canvas;
       }
@@ -190,16 +172,13 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   }, [canvasRef, canvasInitialized, width, height, tool, lineColor, lineThickness, 
       onCanvasReady, onError, showGrid, infiniteCanvas, paperSize]);
   
-  // Handle tool changes
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
     
-    // Update drawing mode based on selected tool
     canvas.isDrawingMode = tool === DrawingMode.DRAW;
     canvas.selection = tool === DrawingMode.SELECT;
     
-    // Update cursor based on tool
     switch (tool) {
       case DrawingMode.DRAW:
       case DrawingMode.LINE:
@@ -220,7 +199,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         break;
     }
     
-    // Update brush properties
     if (canvas.isDrawingMode) {
       canvas.freeDrawingBrush.color = lineColor;
       canvas.freeDrawingBrush.width = lineThickness;
@@ -229,7 +207,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     canvas.renderAll();
   }, [tool, lineColor, lineThickness, fabricCanvasRef]);
   
-  // Set up mouse wheel zoom
   useEffect(() => {
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
@@ -243,7 +220,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     };
   }, [canvasRef, handleMouseWheel, handleCanvasPan]);
   
-  // Update canvas dimensions on window resize or paper size change
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -263,13 +239,11 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         });
       }
       
-      // Recreate grid after resize
       if (showGrid) {
         forceGridCreationAndVisibility(canvas);
       }
     };
     
-    // Update dimensions initially and on resize
     updateDimensions();
     
     window.addEventListener('resize', updateDimensions);
@@ -291,7 +265,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         data-tool={tool}
       />
       
-      {/* Canvas controls could be placed here as an overlay */}
       <div className="absolute bottom-4 right-4 flex gap-2 z-10">
         {snapEnabled ? (
           <button 
@@ -330,12 +303,10 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         )}
       </div>
       
-      {/* Zoom indicator */}
       <div className="absolute top-4 right-4 bg-white/80 px-2 py-1 rounded shadow-md text-sm z-10">
         {Math.round(canvasZoom * 100)}%
       </div>
       
-      {/* Canvas children */}
       {children}
     </div>
   );

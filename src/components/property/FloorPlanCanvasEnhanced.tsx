@@ -1,6 +1,5 @@
-
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric"; 
+import { Canvas as FabricCanvas, Object as FabricObject, Path } from "fabric"; 
 import { EnhancedCanvas } from "@/components/EnhancedCanvas";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
@@ -12,6 +11,7 @@ import { calculateGIA, formatArea } from "@/utils/calculations/internalAreaCalcu
 import { toast } from "sonner";
 import { DrawingMode } from "@/constants/drawingModes";
 import { PaperSizeSelector } from "@/components/canvas/PaperSizeSelector";
+import { Point } from "@/types/core/Point";
 
 interface FloorPlanCanvasEnhancedProps {
   /** Callback for canvas error */
@@ -142,33 +142,34 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     // Collect all rooms (closed polygons) from the canvas
     const rooms: {
       id: string;
-      points: { x: number; y: number }[];
+      points: Point[];
       type: 'internal' | 'external' | 'excluded';
     }[] = [];
     
     // For now, we'll assume all closed paths are internal rooms
-    // This would need to be enhanced based on your layer types and object metadata
-    canvas.getObjects('path').forEach((path, index) => {
-      if (path.closed) {
-        const points = [];
-        const pathData = path.path;
-        
-        // Extract points from path data
-        if (pathData) {
-          for (let i = 0; i < pathData.length; i++) {
-            const cmd = pathData[i];
-            if (cmd[0] === 'M' || cmd[0] === 'L') {
-              points.push({ x: cmd[1], y: cmd[2] });
+    canvas.getObjects().forEach((obj, index) => {
+      if (obj.type === 'path') {
+        const path = obj as Path;
+        if (path.closed) {
+          const points: Point[] = [];
+          const pathData = path.path;
+          
+          if (pathData) {
+            for (let i = 0; i < pathData.length; i++) {
+              const cmd = pathData[i];
+              if (cmd[0] === 'M' || cmd[0] === 'L') {
+                points.push({ x: cmd[1], y: cmd[2] });
+              }
             }
           }
-        }
-        
-        if (points.length > 2) {
-          rooms.push({
-            id: `room-${index}`,
-            points,
-            type: 'internal' // Assuming all are internal for now
-          });
+          
+          if (points.length > 2) {
+            rooms.push({
+              id: `room-${index}`,
+              points,
+              type: 'internal' // Assuming all are internal for now
+            });
+          }
         }
       }
     });

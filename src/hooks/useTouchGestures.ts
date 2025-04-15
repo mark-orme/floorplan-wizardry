@@ -3,6 +3,8 @@ import { useEffect, useCallback, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
 import { toast } from 'sonner';
+import { Point } from '@/types/core/Point';
+import { toFabricPoint } from '@/utils/fabricPointConverter';
 
 interface UseTouchGesturesProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -79,8 +81,11 @@ export const useTouchGestures = ({
     const canvasCenterX = (centerX - rect.left) / currentZoom;
     const canvasCenterY = (centerY - rect.top) / currentZoom;
     
+    // Create a proper fabric point using our utility function
+    const zoomPoint = toFabricPoint({ x: canvasCenterX, y: canvasCenterY });
+    
     // Apply zoom
-    canvas.zoomToPoint({ x: canvasCenterX, y: canvasCenterY }, newZoom);
+    canvas.zoomToPoint(zoomPoint, newZoom);
     
     // Notify zoom callback
     if (onZoom) {
