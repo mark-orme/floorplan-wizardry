@@ -8,6 +8,7 @@ import { EditorContent } from "@/components/canvas/EditorContent";
 import { useCanvasState } from "@/hooks/useCanvasState";
 import { useGridManagement } from "@/hooks/useGridManagement";
 import { useToolbarActions } from "@/hooks/useToolbarActions";
+import { DrawingMode } from "@/constants/drawingModes";
 
 /**
  * Main Index page component

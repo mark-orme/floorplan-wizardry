@@ -4,12 +4,13 @@ import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
+import { DrawingTool, UseCanvasStateResult } from "@/types/canvasStateTypes";
 
-export const useCanvasState = () => {
+export const useCanvasState = (): UseCanvasStateResult => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [showGridDebug, setShowGridDebug] = useState<boolean>(false);
   const [forceRefreshKey, setForceRefreshKey] = useState<number>(0);
-  const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [activeTool, setActiveTool] = useState<DrawingTool>(DrawingMode.SELECT);
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>("#000000");
   
@@ -60,3 +61,7 @@ export const useCanvasState = () => {
     mountedRef
   };
 };
+
+// Re-export the types for backward compatibility
+export { DrawingTool, CanvasState, DEFAULT_CANVAS_STATE } from "@/types/canvasStateTypes";
+export type { UseCanvasStateResult } from "@/types/canvasStateTypes";

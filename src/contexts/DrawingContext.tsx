@@ -6,8 +6,7 @@
  */
 import React, { createContext, useContext, useMemo, useState, useCallback } from "react";
 import { DrawingMode } from "@/constants/drawingModes";
-import { DrawingTool } from "@/types/core/DrawingTool";
-import { DEFAULT_CANVAS_STATE } from "@/hooks/useCanvasState";
+import { DrawingTool, DEFAULT_CANVAS_STATE } from "@/types/canvasStateTypes";
 
 /**
  * Drawing context type
