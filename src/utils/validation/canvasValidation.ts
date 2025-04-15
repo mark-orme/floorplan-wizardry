@@ -1,148 +1,131 @@
 
 /**
  * Canvas Validation Utilities
- * Provides Zod schemas and validation functions for canvas data
+ * Provides schema validation for canvas data to prevent data corruption
+ * and potential security issues from invalid input
  */
 import { z } from 'zod';
-import { captureError } from '@/utils/sentry';
 import logger from '@/utils/logger';
 
-// Define basic schemas for canvas elements
-export const pointSchema = z.object({
+// Define schema for point coordinates
+const PointSchema = z.object({
   x: z.number(),
   y: z.number()
 });
 
-export const lineSchema = z.object({
-  id: z.string().optional(),
-  type: z.literal('line'),
-  x1: z.number(),
-  y1: z.number(),
-  x2: z.number(),
-  y2: z.number(),
-  stroke: z.string().optional(),
-  strokeWidth: z.number().optional(),
-  metadata: z.record(z.any()).optional()
-});
-
-export const polygonSchema = z.object({
-  id: z.string().optional(),
-  type: z.literal('polygon'),
-  points: z.array(pointSchema),
-  fill: z.string().optional(),
-  stroke: z.string().optional(),
-  strokeWidth: z.number().optional(),
-  metadata: z.record(z.any()).optional()
-});
-
-export const textSchema = z.object({
-  id: z.string().optional(),
-  type: z.literal('text'),
-  text: z.string(),
+// Define schema for fabric object common properties
+const FabricObjectBaseSchema = z.object({
+  type: z.string(),
+  version: z.string().optional(),
+  originX: z.string().optional(),
+  originY: z.string().optional(),
   left: z.number(),
   top: z.number(),
-  fontSize: z.number().optional(),
-  fontFamily: z.string().optional(),
-  fill: z.string().optional(),
-  metadata: z.record(z.any()).optional()
-});
-
-export const objectSchema = z.discriminatedUnion('type', [
-  lineSchema,
-  polygonSchema,
-  textSchema,
-  // Add other object types as needed
-]);
-
-export const canvasSchema = z.object({
-  objects: z.array(objectSchema),
-  background: z.string().optional(),
   width: z.number(),
   height: z.number(),
+  fill: z.string().optional(),
+  stroke: z.string().optional(),
+  strokeWidth: z.number().optional(),
+  scaleX: z.number().optional(),
+  scaleY: z.number().optional(),
+  angle: z.number().optional(),
+  flipX: z.boolean().optional(),
+  flipY: z.boolean().optional(),
+  opacity: z.number().optional(),
+  visible: z.boolean().optional(),
+  objectType: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  selectable: z.boolean().optional()
+});
+
+// Schema for path objects
+const PathObjectSchema = FabricObjectBaseSchema.extend({
+  type: z.literal('path'),
+  path: z.array(z.array(z.union([z.string(), z.number()]))).or(z.string())
+});
+
+// Schema for rectangle objects
+const RectObjectSchema = FabricObjectBaseSchema.extend({
+  type: z.literal('rect'),
+  rx: z.number().optional(),
+  ry: z.number().optional()
+});
+
+// Schema for circle objects
+const CircleObjectSchema = FabricObjectBaseSchema.extend({
+  type: z.literal('circle'),
+  radius: z.number()
+});
+
+// Schema for text objects
+const TextObjectSchema = FabricObjectBaseSchema.extend({
+  type: z.literal('text'),
+  text: z.string(),
+  fontSize: z.number().optional(),
+  fontFamily: z.string().optional(),
+  fontWeight: z.union([z.string(), z.number()]).optional(),
+  textAlign: z.string().optional(),
+  lineHeight: z.number().optional()
+});
+
+// Union schema for different fabric object types
+const FabricObjectSchema = z.union([
+  PathObjectSchema,
+  RectObjectSchema,
+  CircleObjectSchema,
+  TextObjectSchema,
+  FabricObjectBaseSchema // Generic fallback for other object types
+]);
+
+// Schema for the entire canvas data
+export const CanvasDataSchema = z.object({
   version: z.string().optional(),
-  metadata: z.record(z.any()).optional()
+  objects: z.array(FabricObjectSchema),
+  background: z.string().optional(),
+  backgroundImage: z.any().optional()
 });
 
 /**
- * Validate canvas JSON data
- * @param jsonData Canvas data as JSON string or object
- * @returns Validation result
+ * Validate canvas data before saving to prevent data corruption
+ * @param canvasData The canvas data to validate
+ * @returns Whether the data is valid
  */
-export function validateCanvasData(jsonData: string | object): {
-  valid: boolean;
-  data: z.infer<typeof canvasSchema> | null;
-  error?: string;
-} {
+export const validateCanvasData = (canvasData: unknown): boolean => {
   try {
-    // Parse JSON if string
-    const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
-    
-    // Validate with schema
-    const result = canvasSchema.safeParse(data);
-    
-    if (!result.success) {
-      logger.warn('Canvas data validation failed', {
-        error: result.error.format(),
-      });
-      
-      return {
-        valid: false,
-        data: null,
-        error: result.error.message
-      };
-    }
-    
-    return {
-      valid: true,
-      data: result.data
-    };
+    CanvasDataSchema.parse(canvasData);
+    return true;
   } catch (error) {
-    captureError(error, 'canvas-validation-error', {
-      extra: {
-        jsonData: typeof jsonData === 'string' ? jsonData.substring(0, 100) + '...' : 'object'
-      }
-    });
-    
-    return {
-      valid: false,
-      data: null,
-      error: error instanceof Error ? error.message : 'Unknown error validating canvas data'
-    };
+    if (error instanceof z.ZodError) {
+      // Log validation error details but don't expose them to the user interface
+      logger.error('Canvas validation failed', { 
+        // Sanitize error to prevent sensitive data leakage
+        issues: error.issues.map(issue => ({
+          path: issue.path,
+          message: issue.message
+        }))
+      });
+    } else {
+      logger.error('Unknown validation error', { error });
+    }
+    return false;
   }
-}
+};
 
 /**
- * Validate a canvas object
- * @param object Canvas object to validate
- * @returns Validation result
+ * Safely sanitize and prepare canvas data for storage
+ * @param canvasData Raw canvas data
+ * @returns Validated and sanitized canvas data or null if invalid
  */
-export function validateCanvasObject(object: any): {
-  valid: boolean;
-  data: z.infer<typeof objectSchema> | null;
-  error?: string;
-} {
+export const sanitizeCanvasData = (canvasData: unknown): object | null => {
   try {
-    const result = objectSchema.safeParse(object);
+    // Valid objects will pass through, invalid ones will throw an error
+    const validData = CanvasDataSchema.parse(canvasData);
     
-    if (!result.success) {
-      return {
-        valid: false,
-        data: null,
-        error: result.error.message
-      };
-    }
+    // Additional sanitization could be done here if needed
     
-    return {
-      valid: true,
-      data: result.data
-    };
+    return validData;
   } catch (error) {
-    logger.error('Error validating canvas object', { error, object });
-    
-    return {
-      valid: false,
-      data: null,
-      error: error instanceof Error ? error.message : 'Unknown error validating canvas object'
-    };
+    logger.error('Canvas data sanitization failed', { error });
+    return null;
   }
-}
+};

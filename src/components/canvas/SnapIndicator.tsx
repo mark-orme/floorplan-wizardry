@@ -40,7 +40,8 @@ export const SnapIndicator: React.FC<SnapIndicatorProps> = ({
 
 // Create a component with the keyframes definition for the animation
 export const SnapIndicatorStyle = () => (
-  <style>{`
+  <style>
+    {`
     @keyframes snapPulse {
       0% {
         transform: scale(0.5);
@@ -55,5 +56,6 @@ export const SnapIndicatorStyle = () => (
         opacity: 0;
       }
     }
-  `}</style>
+  `}
+  </style>
 );

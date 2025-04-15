@@ -35,6 +35,9 @@ module.exports = {
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
     
+    // Security: Limit console logs in production to prevent leaking sensitive information
+    "no-console": ["error", { allow: ["warn", "error"] }],
+    
     // Custom rules for Fabric.js
     'no-restricted-imports': [
       'error',

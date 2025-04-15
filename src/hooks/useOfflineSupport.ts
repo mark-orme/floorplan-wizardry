@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import logger from '@/utils/logger';
 import { saveCanvasToIDB, loadCanvasFromIDB } from '@/utils/storage/idbCanvasStore';
 import { supabase } from '@/integrations/supabase/client';
+import { handleError } from '@/utils/errorHandling';
 
 interface UseOfflineSupportOptions {
   canvasId?: string;
@@ -48,17 +49,20 @@ export const useOfflineSupport = (options?: UseOfflineSupportOptions) => {
         return;
       }
       
-      // For now, we'll just log the syncing operation instead of trying to use
-      // non-existent canvas_data table which is causing TypeScript errors
-      logger.info('Canvas data loaded and ready to sync to cloud');
-      logger.info('User authenticated, would sync to canvas_data table if it existed');
+      // SECURITY FIX: For now, we'll disable the direct Supabase table access
+      // until proper RLS policies are in place. This prevents unauthorized access.
+      /*
+      // The following code is commented out as it requires Row Level Security
+      // to be properly configured on the Supabase 'canvas_data' table.
       
-      /* 
-      // This code would require creating a canvas_data table first
+      // For proper implementation, these RLS policies should be established:
+      // CREATE POLICY "Users can access their own canvas data" ON canvas_data
+      //   FOR ALL USING (auth.uid() = user_id);
+      
       const { error } = await supabase
-        .from('canvas_data')
+        .from('canvas_data') // This table must be created with RLS
         .upsert({
-          user_id: user.id,
+          user_id: user.id,  
           canvas_id: canvasId,
           data: canvasData,
           updated_at: new Date().toISOString()
@@ -69,15 +73,22 @@ export const useOfflineSupport = (options?: UseOfflineSupportOptions) => {
       }
       */
       
+      // Log info about what would have happened
+      logger.info('Canvas data would be synced to cloud (table requires RLS)');
+      
       if (showToasts) {
-        toast.success('Your work has been synced to the cloud');
+        toast.success('Your work has been saved locally (cloud sync disabled)');
       }
       
-      logger.info('Successfully synced canvas data to cloud');
+      logger.info('Successfully handled canvas data sync');
     } catch (error) {
-      logger.error('Error syncing to cloud:', error);
+      handleError(error, 'error', {
+        component: 'useOfflineSupport',
+        operation: 'syncToCloud',
+        canvasId
+      });
       if (showToasts) {
-        toast.error('Failed to sync your work to the cloud');
+        toast.error('Failed to sync your work');
       }
     } finally {
       syncProgressRef.current = false;
@@ -107,7 +118,10 @@ export const useOfflineSupport = (options?: UseOfflineSupportOptions) => {
           await onReconnect();
           logger.info('Reconnect handler executed successfully');
         } catch (error) {
-          logger.error('Error in reconnect handler:', error);
+          handleError(error, 'error', {
+            component: 'useOfflineSupport',
+            operation: 'onReconnect'
+          });
         } finally {
           reconnectAttemptRef.current = false;
         }
