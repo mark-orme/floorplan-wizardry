@@ -1,7 +1,7 @@
 
 /**
  * Hook for handling mouse events during drawing
- * Abstracts common mouse event handling logic
+ * Abstracts common mouse event handling logic for various drawing tools
  * @module hooks/drawing/useMouseEvents
  */
 import { useCallback, useEffect, useRef } from "react";
@@ -10,9 +10,11 @@ import { DrawingTool } from "@/types/core/DrawingTool";
 import { DrawingMode } from "@/constants/drawingModes";
 import { Point } from "@/types/core/Geometry";
 import logger from "@/utils/logger";
+import * as Sentry from '@sentry/react';
 
 /**
  * Props for useMouseEvents hook
+ * @interface UseMouseEventsProps
  */
 export interface UseMouseEventsProps {
   /** Reference to the Fabric canvas instance */
@@ -35,6 +37,7 @@ export interface UseMouseEventsProps {
 
 /**
  * Return type for useMouseEvents hook
+ * @interface UseMouseEventsResult
  */
 export interface UseMouseEventsResult {
   /** Handle mouse down event */
@@ -49,6 +52,8 @@ export interface UseMouseEventsResult {
 
 /**
  * Hook that abstracts mouse event handling during drawing
+ * Provides standardized event handlers for mouse/touch interactions
+ * Manages document-level event listeners and cleanup
  * 
  * @param {UseMouseEventsProps} props - Hook properties
  * @returns {UseMouseEventsResult} Mouse event handlers
@@ -62,8 +67,28 @@ export const useMouseEvents = (
     startDrawing,
     continueDrawing,
     endDrawing,
-    isDrawing
+    isDrawing,
+    lineThickness,
+    lineColor
   } = props;
+
+  // Set Sentry context for the component
+  useEffect(() => {
+    Sentry.setTag("component", "useMouseEvents");
+    Sentry.setTag("currentTool", tool);
+    
+    Sentry.setContext("drawingState", {
+      tool,
+      isDrawing,
+      lineThickness,
+      lineColor
+    });
+    
+    return () => {
+      // Clear component-specific tags when unmounting
+      Sentry.setTag("component", null);
+    };
+  }, [tool, isDrawing, lineThickness, lineColor]);
 
   // Reference to store active timeouts for cleanup
   const timeoutRef = useRef<number[]>([]);
@@ -74,6 +99,10 @@ export const useMouseEvents = (
   
   /**
    * Convert event coordinates to canvas point
+   * Handles coordinate conversion considering zoom and pan
+   * 
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
+   * @returns {Point | null} Canvas point or null if canvas is not available
    */
   const getCanvasPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
     const canvas = fabricCanvasRef.current;
@@ -85,6 +114,9 @@ export const useMouseEvents = (
 
   /**
    * Handle mouse down event
+   * Initiates drawing operation and sets up document-level event listeners
+   * 
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
    */
   const handleMouseDown = useCallback((e: MouseEvent | TouchEvent): void => {
     const canvas = fabricCanvasRef.current;
@@ -99,6 +131,15 @@ export const useMouseEvents = (
     // Get point from event
     const point = getCanvasPoint(e);
     if (!point) return;
+    
+    // Set Sentry context for mouse down
+    Sentry.setTag("action", "mouseDown");
+    Sentry.setContext("mouseEvent", {
+      type: "mouseDown",
+      tool,
+      point,
+      timestamp: new Date().toISOString()
+    });
     
     logger.info("Mouse down", { tool, point, isDrawingTool: !isSelectOrHand });
     
@@ -133,6 +174,9 @@ export const useMouseEvents = (
 
   /**
    * Handle mouse move event
+   * Updates drawing operation as mouse/touch moves
+   * 
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
    */
   const handleMouseMove = useCallback((e: MouseEvent | TouchEvent): void => {
     if (!isDrawing) return;
@@ -141,15 +185,29 @@ export const useMouseEvents = (
     const point = getCanvasPoint(e);
     if (!point) return;
     
+    // Set Sentry context for mouse move (throttled to avoid excessive logging)
+    if (Math.random() < 0.05) { // Only log ~5% of moves to avoid spamming Sentry
+      Sentry.setContext("mouseEvent", {
+        type: "mouseMove",
+        tool,
+        point,
+        isDrawing,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     // Continue drawing to the point
     continueDrawing(point);
     
     // Prevent default to avoid text selection during drawing
     e.preventDefault();
-  }, [isDrawing, getCanvasPoint, continueDrawing]);
+  }, [isDrawing, getCanvasPoint, continueDrawing, tool]);
 
   /**
    * Handle mouse up event
+   * Completes drawing operation
+   * 
+   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
    */
   const handleMouseUp = useCallback((e: MouseEvent | TouchEvent): void => {
     if (!isDrawing) return;
@@ -158,15 +216,25 @@ export const useMouseEvents = (
     const point = getCanvasPoint(e);
     if (!point) return;
     
+    // Set Sentry context for mouse up
+    Sentry.setTag("action", "mouseUp");
+    Sentry.setContext("mouseEvent", {
+      type: "mouseUp",
+      tool,
+      point,
+      timestamp: new Date().toISOString()
+    });
+    
     // End drawing at the point
     endDrawing(point);
     
     // Prevent default
     e.preventDefault();
-  }, [isDrawing, getCanvasPoint, endDrawing]);
+  }, [isDrawing, getCanvasPoint, endDrawing, tool]);
 
   /**
    * Clean up event listeners and timeouts
+   * Ensures proper cleanup to prevent memory leaks
    */
   const cleanup = useCallback(() => {
     // Clean up timeouts

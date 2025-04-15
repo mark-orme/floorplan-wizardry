@@ -2,7 +2,8 @@
 /**
  * Error Fallback Component
  * Displays when an error boundary catches an error
- * @module ErrorFallback
+ * Provides error reporting and recovery options
+ * @module components/ErrorFallback
  */
 import { useEffect } from 'react';
 import { Button } from './ui/button';
@@ -14,6 +15,9 @@ import { useLocation } from 'react-router-dom';
 
 /**
  * ErrorFallback component that displays when an uncaught error occurs
+ * Provides user-friendly error message and recovery options
+ * Automatically reports errors to monitoring systems
+ * 
  * @param {FallbackProps} props - Props from ErrorBoundary
  * @returns {JSX.Element} Error fallback UI
  */

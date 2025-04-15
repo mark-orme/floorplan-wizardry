@@ -1,7 +1,8 @@
 
 /**
  * Hook for error handling in the canvas controller
- * @module useCanvasControllerErrorHandling
+ * Provides standardized error management and reporting
+ * @module components/canvas/controller/useCanvasControllerErrorHandling
  */
 import { useCallback, useEffect } from "react";
 import { DebugInfoState } from "@/types/core/DebugInfo";
@@ -9,6 +10,14 @@ import { captureError, captureMessage } from "@/utils/sentryUtils";
 import * as Sentry from '@sentry/react';
 import { useLocation } from "react-router-dom";
 
+/**
+ * Props for the useCanvasControllerErrorHandling hook
+ * 
+ * @interface UseCanvasControllerErrorHandlingProps
+ * @property {(value: boolean) => void} setHasError - Function to set error state
+ * @property {(value: string) => void} setErrorMessage - Function to set error message
+ * @property {(info: Partial<DebugInfoState>) => void} updateDebugInfo - Function to update debug info
+ */
 interface UseCanvasControllerErrorHandlingProps {
   setHasError: (value: boolean) => void;
   setErrorMessage: (value: string) => void;
@@ -16,8 +25,11 @@ interface UseCanvasControllerErrorHandlingProps {
 }
 
 /**
- * Hook that handles errors in the canvas controller
- * @returns Error handling functions
+ * Result of the useCanvasControllerErrorHandling hook
+ * 
+ * @interface UseCanvasControllerErrorHandlingResult
+ * @property {(error: Error) => void} handleError - Function to handle errors
+ * @property {() => void} handleRetry - Function to handle retry attempts
  */
 export const useCanvasControllerErrorHandling = (props: UseCanvasControllerErrorHandlingProps) => {
   const {
@@ -44,7 +56,12 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     };
   }, [currentRoute]);
 
-  // Handle error with enhanced reporting
+  /**
+   * Handle error with enhanced reporting
+   * Updates error state, logs error details, and reports to monitoring
+   * 
+   * @param {Error} error - The error that occurred
+   */
   const handleError = useCallback((error: Error) => {
     console.error("Canvas error:", error);
     setHasError(true);
@@ -90,7 +107,10 @@ export const useCanvasControllerErrorHandling = (props: UseCanvasControllerError
     });
   }, [setHasError, setErrorMessage, updateDebugInfo, currentRoute]);
 
-  // Handle retry attempt
+  /**
+   * Handle retry attempt after error
+   * Clears error state and reports recovery attempt
+   */
   const handleRetry = useCallback(() => {
     setHasError(false);
     setErrorMessage("");

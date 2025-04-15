@@ -4,14 +4,16 @@
  * Provides consistent tool handling across the application
  * @module hooks/useDrawingTool
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
+import * as Sentry from '@sentry/react';
 
 /**
  * Interface for useDrawingTool hook returns
+ * @interface UseDrawingToolResult
  */
 export interface UseDrawingToolResult {
   /** Current active drawing tool */
@@ -71,6 +73,26 @@ export function useDrawingTool(): UseDrawingToolResult {
   // Drawing in progress state
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   
+  // Set Sentry context for the component
+  useEffect(() => {
+    Sentry.setTag("component", "useDrawingTool");
+    Sentry.setTag("currentTool", tool);
+    Sentry.setTag("isDrawing", isDrawing.toString());
+    
+    Sentry.setContext("toolState", {
+      currentTool: tool,
+      isDrawing,
+      timestamp: new Date().toISOString()
+    });
+    
+    return () => {
+      // Clear component-specific tags when unmounting
+      Sentry.setTag("component", null);
+      Sentry.setTag("currentTool", null);
+      Sentry.setTag("isDrawing", null);
+    };
+  }, [tool, isDrawing]);
+  
   /**
    * Validate if a value is a valid DrawingTool
    * 
@@ -100,6 +122,14 @@ export function useDrawingTool(): UseDrawingToolResult {
     // Validate newTool is a valid DrawingTool
     const isValid = isValidDrawingTool(newTool);
     
+    // Set Sentry context for tool change
+    Sentry.setTag("action", "toolChange");
+    Sentry.setContext("toolChange", {
+      previousTool: tool,
+      newTool,
+      timestamp: new Date().toISOString()
+    });
+    
     if (isValid) {
       setToolState(newTool);
       // Show success message with tool name
@@ -109,6 +139,14 @@ export function useDrawingTool(): UseDrawingToolResult {
       console.warn(`Tool validation failed: ${newTool}`, { expected: Object.values(DrawingMode) });
       logger.error("Invalid drawing tool selected", { invalidTool: newTool, allowedTools: Object.values(DrawingMode) });
       toast.error('Invalid drawing tool selected');
+      
+      // Set error context in Sentry
+      Sentry.setTag("errorSource", "toolChange");
+      Sentry.setContext("toolChangeError", {
+        invalidTool: newTool,
+        allowedTools: Object.values(DrawingMode),
+        timestamp: new Date().toISOString()
+      });
     }
   }, [tool, isValidDrawingTool]);
   
@@ -122,6 +160,16 @@ export function useDrawingTool(): UseDrawingToolResult {
    */
   const startDrawing = useCallback((point: { x: number; y: number }) => {
     setIsDrawing(true);
+    
+    // Set Sentry context for drawing start
+    Sentry.setTag("action", "startDrawing");
+    Sentry.setContext("drawingEvent", {
+      event: "start",
+      tool,
+      point,
+      timestamp: new Date().toISOString()
+    });
+    
     console.log('Started drawing with tool:', tool, 'at point:', point);
   }, [tool]);
   
@@ -135,6 +183,10 @@ export function useDrawingTool(): UseDrawingToolResult {
    */
   const continueDrawing = useCallback((point: { x: number; y: number }) => {
     if (!isDrawing) return;
+    
+    // We don't set Sentry context here to avoid spamming
+    // This function can be called very frequently during drawing
+    
     console.log('Continued drawing to point:', point);
   }, [isDrawing]);
   
@@ -148,9 +200,19 @@ export function useDrawingTool(): UseDrawingToolResult {
    */
   const endDrawing = useCallback((point: { x: number; y: number }) => {
     if (!isDrawing) return;
+    
+    // Set Sentry context for drawing end
+    Sentry.setTag("action", "endDrawing");
+    Sentry.setContext("drawingEvent", {
+      event: "end",
+      tool,
+      point,
+      timestamp: new Date().toISOString()
+    });
+    
     setIsDrawing(false);
     console.log('Ended drawing at point:', point);
-  }, [isDrawing]);
+  }, [isDrawing, tool]);
   
   /**
    * Cancel the current drawing operation
@@ -160,9 +222,18 @@ export function useDrawingTool(): UseDrawingToolResult {
    */
   const cancelDrawing = useCallback(() => {
     if (!isDrawing) return;
+    
+    // Set Sentry context for drawing cancellation
+    Sentry.setTag("action", "cancelDrawing");
+    Sentry.setContext("drawingEvent", {
+      event: "cancel",
+      tool,
+      timestamp: new Date().toISOString()
+    });
+    
     setIsDrawing(false);
     console.log('Drawing canceled');
-  }, [isDrawing]);
+  }, [isDrawing, tool]);
   
   return {
     tool,

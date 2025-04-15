@@ -60,6 +60,12 @@ export const useToolOperations = ({
     };
   }, [tool]);
   
+  /**
+   * Handle tool change with error reporting
+   * Takes a new tool and updates the tool state
+   * 
+   * @param {DrawingTool} newTool - The new tool to set
+   */
   const handleToolChange = useCallback((newTool: DrawingTool) => {
     logger.info("Tool change requested", { 
       previousTool: tool, 
