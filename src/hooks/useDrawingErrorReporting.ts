@@ -1,155 +1,69 @@
 
 /**
- * Hook for centralized error reporting in drawing operations
- * Provides consistent error tracking for canvas drawing operations
+ * Hook for reporting drawing errors and logging drawing events
  * @module hooks/useDrawingErrorReporting
  */
 import { useCallback } from 'react';
-import { captureError, captureMessage } from '@/utils/sentry';
-import { CaptureErrorOptions, CaptureMessageOptions } from '@/utils/sentry/types';
-import { DrawingTool } from '@/types/core/DrawingTool';
+import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
-/**
- * Options for drawing error reporting
- */
-interface DrawingErrorContext {
-  /** Current drawing tool */
-  tool?: DrawingTool;
-  /** Canvas dimensions */
-  canvasDimensions?: { width: number; height: number };
-  /** Current drawing state info */
-  drawingState?: {
-    isDrawing: boolean;
-    pointCount?: number;
-    sessionDuration?: number;
-  };
-  /** User interaction details */
-  interaction?: {
-    type: 'mouse' | 'touch' | 'stylus' | 'keyboard';
-    pressure?: number;
-    tilt?: { x: number; y: number };
-  };
+export interface DrawingEventData {
+  [key: string]: any;
 }
 
 /**
- * Hook for centralized error reporting in drawing operations
- * @returns Functions for reporting errors and events
+ * Hook for error reporting and logging in drawing tools
+ * Provides consistent error handling and event logging
  */
 export const useDrawingErrorReporting = () => {
   /**
-   * Report a drawing error with enhanced context
+   * Report a drawing error with context
+   * 
+   * @param error Error that occurred
+   * @param context Context where the error occurred
+   * @param data Additional data about the error
    */
-  const reportDrawingError = useCallback((
-    error: Error | unknown,
-    operation: string,
-    context: DrawingErrorContext,
-    options: CaptureErrorOptions = {}
-  ) => {
-    // Extract drawing context for better error reporting
-    const { tool, canvasDimensions, drawingState, interaction } = context;
+  const reportDrawingError = useCallback((error: unknown, context: string, data?: DrawingEventData) => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     
-    // Create enhanced options with drawing-specific context
-    const enhancedOptions: CaptureErrorOptions = {
-      ...options,
-      tags: {
-        component: 'drawing',
-        operation,
-        tool: tool || 'unknown',
-        interactionType: interaction?.type || 'unknown',
-        ...options.tags
-      },
-      extra: {
-        drawingTool: tool,
-        canvasDimensions,
-        drawingState,
-        interaction,
-        ...options.extra
-      },
-      context: {
-        component: 'DrawingOperation',
-        drawingContext: context,
-        ...options.context
-      }
-    };
+    // Log error to console for development
+    console.error(`Drawing error in ${context}:`, error);
     
-    // Capture the error with enhanced context
-    captureError(error, `drawing-${operation}`, enhancedOptions);
+    // Log structured error for monitoring
+    logger.error(`Drawing error in ${context}: ${errorMessage}`, {
+      context,
+      error: errorMessage,
+      ...data
+    });
+    
+    // Show toast to user
+    toast.error(`Drawing error: ${errorMessage}`);
+    
+    // Could add Sentry or other error reporting here
   }, []);
   
   /**
    * Log a drawing event with context
+   * 
+   * @param message Event message
+   * @param eventType Type of drawing event
+   * @param data Additional event data
    */
-  const logDrawingEvent = useCallback((
-    message: string,
-    category: string,
-    context: DrawingErrorContext,
-    options: CaptureMessageOptions = {}
-  ) => {
-    // Extract drawing context for better logging
-    const { tool, canvasDimensions, drawingState, interaction } = context;
+  const logDrawingEvent = useCallback((message: string, eventType: string, data?: DrawingEventData) => {
+    // Log structured event for tracking and debugging
+    logger.info(message, {
+      eventType,
+      ...data
+    });
     
-    // Create enhanced options with drawing-specific context
-    const enhancedOptions: CaptureMessageOptions = {
-      ...options,
-      tags: {
-        component: 'drawing',
-        category,
-        tool: tool || 'unknown',
-        ...options.tags
-      },
-      extra: {
-        drawingTool: tool,
-        canvasDimensions,
-        drawingState,
-        interaction,
-        ...options.extra
-      }
-    };
-    
-    // Capture the message with enhanced context
-    captureMessage(message, `drawing-${category}`, enhancedOptions);
-  }, []);
-
-  /**
-   * Track drawing performance metrics
-   */
-  const trackDrawingPerformance = useCallback((
-    operation: string,
-    metrics: {
-      duration: number;
-      pointsProcessed?: number;
-      objectsRendered?: number;
-      renderTime?: number;
-      fps?: number;
-    },
-    context: DrawingErrorContext
-  ) => {
-    // Create enhanced options with performance metrics
-    const enhancedOptions: CaptureMessageOptions = {
-      level: 'info',
-      tags: {
-        component: 'drawing',
-        category: 'performance',
-        operation,
-        tool: context.tool || 'unknown'
-      },
-      extra: {
-        metrics,
-        context
-      }
-    };
-    
-    // Log performance data
-    captureMessage(
-      `Drawing operation '${operation}' completed in ${metrics.duration}ms`,
-      'performance-metrics',
-      enhancedOptions
-    );
+    // For development, log to console as well with a visual separator
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`%c📏 ${eventType}: ${message}`, 'color: #3498db', data);
+    }
   }, []);
   
   return {
     reportDrawingError,
-    logDrawingEvent,
-    trackDrawingPerformance
+    logDrawingEvent
   };
 };

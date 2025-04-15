@@ -1,216 +1,133 @@
-
 /**
  * Hook for managing line drawing state
  * @module hooks/straightLineTool/useLineState
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Line, Text } from 'fabric';
+import { useCallback, useRef, useState } from 'react';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
-import { DrawingMode } from '@/constants/drawingModes';
-import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useApplePencilSupport } from './useApplePencilSupport';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { toast } from 'sonner';
 
-// Define a consistent InputMethod type that can be used across the whole tool
+// Input method for drawing
 export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'keyboard';
 
-export interface UseLineStateProps {
-  fabricCanvasRef: React.MutableRefObject<any>;
-  lineThickness?: number;
-  lineColor?: string;
+interface UseLineStateProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  lineThickness: number;
+  lineColor: string;
 }
 
-/**
- * Hook for managing line drawing state with enhanced touch support
- * @returns Line state and state management functions
- */
 export const useLineState = ({
   fabricCanvasRef,
-  lineThickness = 2,
-  lineColor = '#000000'
-}: UseLineStateProps = {
-  fabricCanvasRef: { current: null },
-  lineThickness: 2,
-  lineColor: '#000000'
-}) => {
-  // Get the error reporting hook
-  const { reportDrawingError, logDrawingEvent, trackDrawingPerformance } = useDrawingErrorReporting();
-  
-  // State tracking
+  lineThickness,
+  lineColor
+}: UseLineStateProps) => {
+  // State for drawing
   const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
+  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const [snapEnabled, setSnapEnabled] = useState(true);
   
-  // References to drawing objects
+  // Refs for current drawing objects
   const startPointRef = useRef<Point | null>(null);
   const currentLineRef = useRef<Line | null>(null);
-  const distanceTooltipRef = useRef<Text | null>(null);
+  const distanceTooltipRef = useRef<HTMLDivElement | null>(null);
   
-  // Get enhanced grid snapping
+  // Use Apple Pencil support
   const { 
-    snapPointToGrid, 
-    snapLineToGrid, 
-    inputMethod: gridInputMethod, 
-    snapEnabled, 
-    toggleSnapToGrid 
-  } = useEnhancedGridSnapping({
-    fabricCanvasRef
-  });
-  
-  // Convert the inputMethod from grid to our consistent InputMethod type
-  // Since "unknown" isn't in our InputMethod type, we need to map it to a valid type
-  const convertToValidInputMethod = (method: string): InputMethod => {
-    if (method === 'mouse' || method === 'touch' || method === 'stylus') {
-      return method;
-    }
-    // Default to keyboard for 'unknown' or any other value
-    return 'keyboard';
-  };
-  
-  const inputMethod: InputMethod = convertToValidInputMethod(gridInputMethod);
-  
-  // Get Apple Pencil support
-  const { 
-    pencilState,
-    adjustedLineThickness,
-    isPencilMode,
-    isApplePencil
+    isPencilMode, 
+    isApplePencil, 
+    snapPencilPointToGrid 
   } = useApplePencilSupport({
     fabricCanvasRef,
     lineThickness
   });
   
-  // Keep track of performance metrics
-  const performanceTimerRef = useRef<number | null>(null);
+  // Function to set start point
+  const setStartPoint = useCallback((point: Point | null) => {
+    startPointRef.current = point;
+  }, []);
   
-  /**
-   * Initialize the line tool
-   */
-  const initializeTool = useCallback(() => {
-    try {
-      setIsToolInitialized(true);
-      logDrawingEvent('Line tool initialized', 'tool-init', {
-        tool: DrawingMode.LINE,
-        interaction: { 
-          type: inputMethod
-        }
-      });
-      
-      return true;
-    } catch (error) {
-      reportDrawingError(error, 'line-tool-init', {
-        tool: DrawingMode.LINE
-      });
-      // Initialize anyway to avoid blocking the user
-      setIsToolInitialized(true);
-      return false;
-    }
-  }, [logDrawingEvent, reportDrawingError, inputMethod]);
-  
-  /**
-   * Reset the drawing state
-   */
-  const resetDrawingState = useCallback(() => {
-    startPointRef.current = null;
-    currentLineRef.current = null;
-    distanceTooltipRef.current = null;
-    setIsDrawing(false);
-    
-    // Clear performance timer
-    if (performanceTimerRef.current !== null) {
-      const duration = Date.now() - performanceTimerRef.current;
-      
-      // Track performance if drawing was active
-      if (duration > 100) {
-        trackDrawingPerformance('line-drawing-session', {
-          duration,
-          pointsProcessed: 2 // Start and end points
-        }, {
-          tool: DrawingMode.LINE,
-          interaction: { 
-            type: inputMethod,
-            pressure: pencilState.pressure
-          }
-        });
-      }
-      
-      performanceTimerRef.current = null;
-    }
-  }, [trackDrawingPerformance, inputMethod, pencilState.pressure]);
-  
-  /**
-   * Set the current line with enhanced properties
-   */
+  // Function to set current line
   const setCurrentLine = useCallback((line: Line | null) => {
-    // If replacing the current line, remove the old one
-    if (currentLineRef.current && fabricCanvasRef.current) {
-      fabricCanvasRef.current.remove(currentLineRef.current);
-    }
-    
-    // If line is provided, update styling based on current input method
-    if (line) {
-      // Adjust line thickness based on Apple Pencil pressure if applicable
-      const thickness = isApplePencil ? adjustedLineThickness : lineThickness;
-      
-      line.set({
-        strokeWidth: thickness,
-        stroke: lineColor,
-        strokeLineCap: 'round',
-        strokeLineJoin: 'round'
-      });
-      
-      // Add custom property to identify this as a line
-      (line as any).objectType = 'straight-line';
-      (line as any).inputMethod = inputMethod;
-      
-      // For stylus, add pressure data
-      if (isApplePencil) {
-        (line as any).pressure = pencilState.pressure;
-      }
-    }
-    
     currentLineRef.current = line;
-    
-    // Start performance tracking if beginning a new line
-    if (line && performanceTimerRef.current === null) {
-      performanceTimerRef.current = Date.now();
-    }
-  }, [
-    fabricCanvasRef, 
-    lineThickness, 
-    lineColor, 
-    inputMethod, 
-    isApplePencil, 
-    adjustedLineThickness,
-    pencilState.pressure
-  ]);
+  }, []);
   
-  /**
-   * Set the distance tooltip
-   */
-  const setDistanceTooltip = useCallback((tooltip: Text | null) => {
+  // Function to set distance tooltip
+  const setDistanceTooltip = useCallback((tooltip: HTMLDivElement | null) => {
     distanceTooltipRef.current = tooltip;
   }, []);
   
-  /**
-   * Set the start point
-   */
-  const setStartPoint = useCallback((point: Point | null) => {
-    // If grid snapping is enabled, snap the start point
-    if (point && snapEnabled) {
-      startPointRef.current = snapPointToGrid(point);
-    } else {
-      startPointRef.current = point;
+  // Function to initialize the tool
+  const initializeTool = useCallback(() => {
+    setIsToolInitialized(true);
+    console.log('Line tool initialized');
+    
+    // Check for touch/stylus support
+    if (navigator.maxTouchPoints > 0) {
+      setInputMethod('touch');
+      console.log('Touch input detected, optimizing for touch');
     }
-  }, [snapEnabled, snapPointToGrid]);
+    
+    toast.info(snapEnabled ? 'Grid snapping enabled (press G to toggle)' : 'Grid snapping disabled (press G to toggle)', {
+      id: 'grid-snap-status',
+      duration: 3000
+    });
+  }, [snapEnabled]);
+  
+  // Function to reset drawing state
+  const resetDrawingState = useCallback(() => {
+    // Keep start point for reference
+    currentLineRef.current = null;
+    
+    // Clean up tooltip if exists
+    if (distanceTooltipRef.current) {
+      const parent = distanceTooltipRef.current.parentElement;
+      if (parent) {
+        parent.removeChild(distanceTooltipRef.current);
+      }
+      distanceTooltipRef.current = null;
+    }
+  }, []);
   
   // Toggle snap to grid
   const toggleSnap = useCallback(() => {
-    toggleSnapToGrid();
+    setSnapEnabled(prev => !prev);
     
-    logDrawingEvent(`Grid snapping ${snapEnabled ? 'disabled' : 'enabled'}`, 'toggle-grid-snap', {
-      tool: DrawingMode.LINE
+    // Show feedback to user
+    toast.info(!snapEnabled ? 'Grid snapping enabled' : 'Grid snapping disabled', {
+      id: 'grid-snap-toggle'
     });
-  }, [toggleSnapToGrid, snapEnabled, logDrawingEvent]);
+  }, [snapEnabled]);
+  
+  // Function to snap point to grid
+  const snapPointToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) return { ...point };
+    
+    // For Apple Pencil, use specialized snap function
+    if (isPencilMode) {
+      return snapPencilPointToGrid(point);
+    }
+    
+    // Regular grid snap
+    const gridSize = GRID_CONSTANTS.GRID_SIZE;
+    
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [snapEnabled, isPencilMode, snapPencilPointToGrid]);
+  
+  // Function to snap line to grid
+  const snapLineToGrid = useCallback((start: Point, end: Point) => {
+    if (!snapEnabled) return { start: { ...start }, end: { ...end } };
+    
+    return {
+      start: snapPointToGrid(start),
+      end: snapPointToGrid(end)
+    };
+  }, [snapEnabled, snapPointToGrid]);
   
   return {
     // State
@@ -220,24 +137,22 @@ export const useLineState = ({
     inputMethod,
     isPencilMode,
     
-    // Refs
-    startPointRef,
-    currentLineRef,
-    distanceTooltipRef,
-    
     // Setters
     setIsDrawing,
     setStartPoint,
     setCurrentLine,
     setDistanceTooltip,
     
+    // Refs
+    startPointRef,
+    currentLineRef,
+    distanceTooltipRef,
+    
     // Methods
     initializeTool,
     resetDrawingState,
-    toggleSnap,
-    
-    // Enhanced functions
     snapPointToGrid,
-    snapLineToGrid
+    snapLineToGrid,
+    toggleSnap
   };
 };
