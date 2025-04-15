@@ -1,3 +1,4 @@
+
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { SyncFloorPlan } from './types';
