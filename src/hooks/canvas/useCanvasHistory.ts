@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
 import { captureMessage, captureError } from "@/utils/sentry";
@@ -14,6 +14,41 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  
+  // Track if events are being registered to prevent duplicate snapshots
+  const isPerformingUndoRedoRef = useRef(false);
+  
+  // Automatically save state when changes occur
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const handleCanvasChange = () => {
+      // Don't create snapshot if we're in the middle of undo/redo
+      if (isPerformingUndoRedoRef.current) return;
+      
+      saveCurrentState();
+    };
+    
+    // Track relevant canvas events
+    const trackableEvents = ['object:added', 'object:removed', 'object:modified', 'path:created'];
+    
+    // Add event listeners
+    trackableEvents.forEach(event => {
+      canvas.on(event, handleCanvasChange);
+    });
+    
+    // Create initial state
+    if (historyStack.length === 0) {
+      saveCurrentState();
+    }
+    
+    // Cleanup event listeners
+    return () => {
+      trackableEvents.forEach(event => {
+        canvas.off(event, handleCanvasChange);
+      });
+    };
+  }, [canvas]);
   
   // Save current canvas state to history
   const saveCurrentState = useCallback(() => {
@@ -33,6 +68,7 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
       setCanRedo(false);
       
       const objectCount = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid').length;
+      logger.debug(`Canvas snapshot saved. Object count: ${objectCount}`);
       
       captureMessage("Canvas state saved", "canvas-save-state");
     } catch (error) {
@@ -48,6 +84,8 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     if (!canvas || historyIndex <= 0) return;
     
     try {
+      isPerformingUndoRedoRef.current = true;
+      
       const prevState = historyStack[historyIndex - 1];
       const prevStateObj = JSON.parse(prevState);
       
@@ -57,10 +95,13 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         setHistoryIndex(historyIndex - 1);
         setCanUndo(historyIndex - 1 > 0);
         setCanRedo(true);
+        
+        isPerformingUndoRedoRef.current = false;
       });
       
       captureMessage("Undo performed on canvas", "canvas-undo");
     } catch (error) {
+      isPerformingUndoRedoRef.current = false;
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to undo", { error: errorMsg });
       captureError(error as Error, "canvas-undo-error");
@@ -73,6 +114,8 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     if (!canvas || historyIndex >= historyStack.length - 1) return;
     
     try {
+      isPerformingUndoRedoRef.current = true;
+      
       const nextState = historyStack[historyIndex + 1];
       const nextStateObj = JSON.parse(nextState);
       
@@ -82,10 +125,13 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
         setHistoryIndex(historyIndex + 1);
         setCanUndo(true);
         setCanRedo(historyIndex + 1 < historyStack.length - 1);
+        
+        isPerformingUndoRedoRef.current = false;
       });
       
       captureMessage("Redo performed on canvas", "canvas-redo");
     } catch (error) {
+      isPerformingUndoRedoRef.current = false;
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to redo", { error: errorMsg });
       captureError(error as Error, "canvas-redo-error");
@@ -93,12 +139,17 @@ export const useCanvasHistory = ({ canvas }: UseCanvasHistoryProps) => {
     }
   }, [canvas, historyStack, historyIndex]);
 
+  // Explicitly request state save (for operations not tracked by events)
+  const requestStateSave = useCallback(() => {
+    saveCurrentState();
+  }, [saveCurrentState]);
+
   return {
     historyStack,
     historyIndex,
     canUndo,
     canRedo,
-    saveCurrentState,
+    saveCurrentState: requestStateSave,
     undo,
     redo
   };

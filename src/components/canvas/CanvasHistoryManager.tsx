@@ -1,7 +1,7 @@
 
-import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { useCanvasHistory } from '@/hooks/useCanvasHistory';
+import React, { useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useCanvasHistory } from '@/hooks/canvas/useCanvasHistory';
 
 interface CanvasHistoryManagerProps {
   canvas: FabricCanvas | null;
@@ -17,103 +17,28 @@ export const CanvasHistoryManager: React.FC<CanvasHistoryManagerProps> = ({
   onHistoryStateUpdate,
   onSaveRequired
 }) => {
-  // History for undo/redo
-  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
-    past: [],
-    future: []
-  });
-  
   // Initialize history manager
-  const { saveCurrentState, undo, redo } = useCanvasHistory({
-    fabricCanvasRef: { current: canvas },
-    historyRef
+  const { canUndo, canRedo, undo, redo } = useCanvasHistory({
+    canvas
   });
 
-  // Update history state whenever it changes
+  // Update parent component with undo/redo state
   useEffect(() => {
-    if (!canvas) return;
-    
-    // Function to update undo/redo state
-    const updateHistoryState = () => {
-      onHistoryStateUpdate(
-        historyRef.current.past.length > 0,
-        historyRef.current.future.length > 0
-      );
-    };
+    onHistoryStateUpdate(canUndo, canRedo);
+  }, [canUndo, canRedo, onHistoryStateUpdate]);
 
-    // Listen for history state changes
-    const handleObjectModified = () => {
-      updateHistoryState();
-    };
-
-    const handleObjectAdded = () => {
-      updateHistoryState();
-    };
-
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:modified', handleObjectModified);
-
-    // Initial state update
-    updateHistoryState();
-
-    return () => {
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:modified', handleObjectModified);
-    };
-  }, [canvas, onHistoryStateUpdate]);
-
-  // Enhanced undo function with state update
-  const handleUndo = () => {
-    undo();
-    onHistoryStateUpdate(
-      historyRef.current.past.length > 0,
-      historyRef.current.future.length > 0
-    );
-    
-    // Save the state after undoing
-    if (onSaveRequired) {
-      setTimeout(() => onSaveRequired(), 100);
-    }
-  };
-
-  // Enhanced redo function with state update
-  const handleRedo = () => {
-    redo();
-    onHistoryStateUpdate(
-      historyRef.current.past.length > 0,
-      historyRef.current.future.length > 0
-    );
-    
-    // Save the state after redoing
-    if (onSaveRequired) {
-      setTimeout(() => onSaveRequired(), 100);
-    }
-  };
-
-  // Return an empty fragment - this component only provides functionality
-  return (
-    <>{/* This component doesn't render anything visible */}</>
-  );
+  // This component doesn't render anything visible
+  return null;
 };
 
-// Export the functions for use in other components
+// Export hook for direct use in other components
 export const useCanvasHistoryManager = (props: CanvasHistoryManagerProps) => {
-  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
-    past: [],
-    future: []
-  });
-  
-  const { saveCurrentState, undo, redo } = useCanvasHistory({
-    fabricCanvasRef: { current: props.canvas },
-    historyRef
+  const { canUndo, canRedo, undo, redo, saveCurrentState } = useCanvasHistory({
+    canvas: props.canvas
   });
 
   const handleUndo = () => {
     undo();
-    props.onHistoryStateUpdate(
-      historyRef.current.past.length > 0,
-      historyRef.current.future.length > 0
-    );
     
     if (props.onSaveRequired) {
       setTimeout(() => props.onSaveRequired(), 100);
@@ -122,10 +47,6 @@ export const useCanvasHistoryManager = (props: CanvasHistoryManagerProps) => {
 
   const handleRedo = () => {
     redo();
-    props.onHistoryStateUpdate(
-      historyRef.current.past.length > 0,
-      historyRef.current.future.length > 0
-    );
     
     if (props.onSaveRequired) {
       setTimeout(() => props.onSaveRequired(), 100);
@@ -133,8 +54,10 @@ export const useCanvasHistoryManager = (props: CanvasHistoryManagerProps) => {
   };
 
   return {
-    saveCurrentState,
+    canUndo,
+    canRedo,
     undo: handleUndo,
-    redo: handleRedo
+    redo: handleRedo,
+    saveCurrentState
   };
 };
