@@ -80,8 +80,8 @@ export const useStraightLineTool = ({
     snapLineToGrid, 
     toggleSnapToGrid: toggleGridSnapping 
   } = useGridSnapping({
-    fabricCanvasRef,
-    initialSnapEnabled: true
+    initialSnapEnabled: true,
+    fabricCanvasRef
   });
   
   // Initialize the line state
@@ -118,7 +118,7 @@ export const useStraightLineTool = ({
   }, [currentLineRef.current]);
   
   // Initialize tool cancellation
-  const { cancelDrawing, toggleSnap: toggleSnapFromCancellation } = useToolCancellation({
+  const { cancelDrawing, toggleGridSnapping: toggleSnapFromCancellation } = useToolCancellation({
     fabricCanvasRef,
     isDrawing,
     currentLineRef,
