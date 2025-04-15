@@ -1,87 +1,60 @@
 
 /**
- * Hook for grid snapping functionality
+ * Hook for managing grid snapping functionality
  * @module hooks/straightLineTool/useGridSnapping
  */
-import { useCallback, useState, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { toast } from 'sonner';
-import { snapPointToGrid as gridSnapPointToGrid, snapLineToGrid as utilsSnapLineToGrid } from '@/utils/grid/snapping';
-import * as Sentry from '@sentry/react';
+import { useState, useCallback } from "react";
+import { Point } from "@/types/core/Geometry";
 
 interface UseGridSnappingProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   initialSnapEnabled?: boolean;
 }
 
 /**
- * Hook providing grid snapping functionality for drawing tools
- * Allows toggling snapping on/off and snapping points/lines to the grid
- * 
- * @param props Configuration options
- * @returns Grid snapping functions and state
+ * Hook for managing grid snapping functionality
  */
-export const useGridSnapping = ({
-  fabricCanvasRef,
-  initialSnapEnabled = true
-}: UseGridSnappingProps) => {
-  // State for grid snapping
+export const useGridSnapping = (props: UseGridSnappingProps = {}) => {
+  const { initialSnapEnabled = true } = props;
+  
+  // Snapping state
   const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
   
-  // Set Sentry context for grid snapping
-  useEffect(() => {
-    Sentry.setTag("component", "useGridSnapping");
-    Sentry.setTag("snapEnabled", snapEnabled.toString());
-    
-    Sentry.setContext("gridSnappingState", {
-      enabled: snapEnabled,
-      canvasAvailable: !!fabricCanvasRef.current
-    });
-    
-    return () => {
-      Sentry.setTag("component", null);
-    };
-  }, [snapEnabled, fabricCanvasRef]);
-  
-  // Function to toggle grid snapping
-  const toggleGridSnapping = useCallback((): boolean => {
+  /**
+   * Toggle snap to grid
+   */
+  const toggleSnap = useCallback(() => {
     setSnapEnabled(prev => !prev);
-    const newState = !snapEnabled;
-    
-    // Update Sentry context
-    Sentry.setTag("action", "toggleGridSnapping");
-    Sentry.setContext("gridSnappingToggle", {
-      previousState: snapEnabled,
-      newState,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Provide feedback
-    toast.info(newState ? "Grid snapping enabled" : "Grid snapping disabled", {
-      id: 'grid-snap-toggle'
-    });
-    
-    return newState;
-  }, [snapEnabled]);
+  }, []);
   
-  // Function to snap a point to the grid
+  /**
+   * Snap point to grid
+   */
   const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return { ...point };
-    return gridSnapPointToGrid(point);
+    if (!snapEnabled) return point;
+    
+    const gridSize = 20; // Grid size in pixels
+    
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
   }, [snapEnabled]);
   
-  // Function to snap a line to the grid
+  /**
+   * Snap line to grid
+   */
   const snapLineToGrid = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled) return { start: { ...start }, end: { ...end } };
+    if (!snapEnabled) return { start, end };
     
-    // Properly call the utility function with both points
-    return utilsSnapLineToGrid(start, end);
-  }, [snapEnabled]);
+    return {
+      start: snapPointToGrid(start),
+      end: snapPointToGrid(end)
+    };
+  }, [snapEnabled, snapPointToGrid]);
   
   return {
     snapEnabled,
-    toggleGridSnapping,
+    toggleSnap,
     snapPointToGrid,
     snapLineToGrid
   };

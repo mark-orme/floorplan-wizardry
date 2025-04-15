@@ -72,27 +72,26 @@ export const useLineMouseHandlers = (props: UseLineMouseHandlersProps) => {
       setInputMethod(isStylus ? InputMethod.PENCIL : isTouch ? InputMethod.TOUCH : InputMethod.MOUSE);
       
       // Get pointer coordinates
-      let pointer = canvas.getPointer(event.e);
+      const pointerObj = canvas.getPointer(event.e);
+      
+      // Create a simple Point object compatible with our Point type
+      const pointer: Point = {
+        x: pointerObj.x,
+        y: pointerObj.y
+      };
       
       // Snap to grid if enabled
-      pointer = snapPointToGrid(pointer);
+      const snappedPointer = snapPointToGrid(pointer);
       
       // Set start point and create line
       setIsDrawing(true);
+      setStartPoint(snappedPointer);
       
-      // Convert to the simple Point type from Geometry not the Fabric Point
-      const geometryPoint: Point = { 
-        x: pointer.x, 
-        y: pointer.y 
-      };
-      
-      setStartPoint(geometryPoint);
-      
-      const line = createLine(pointer.x, pointer.y, pointer.x, pointer.y);
+      const line = createLine(snappedPointer.x, snappedPointer.y, snappedPointer.x, snappedPointer.y);
       setCurrentLine(line);
       
       // Create distance tooltip
-      const tooltip = createDistanceTooltip(pointer.x, pointer.y, 0);
+      const tooltip = createDistanceTooltip(snappedPointer.x, snappedPointer.y, 0);
       setDistanceTooltip(tooltip);
       
       // Add objects to canvas
@@ -104,19 +103,19 @@ export const useLineMouseHandlers = (props: UseLineMouseHandlersProps) => {
       if (!enabled || !isDrawing || !startPointRef.current) return;
       
       // Get pointer coordinates
-      let pointer = canvas.getPointer(event.e);
+      const pointerObj = canvas.getPointer(event.e);
       
-      // Snap to grid if enabled
-      pointer = snapPointToGrid(pointer);
-      
-      // Convert to our geometry Point type
-      const geometryPoint: Point = {
-        x: pointer.x,
-        y: pointer.y
+      // Create a simple Point object compatible with our Point type
+      const pointer: Point = {
+        x: pointerObj.x,
+        y: pointerObj.y
       };
       
+      // Snap to grid if enabled
+      const snappedPointer = snapPointToGrid(pointer);
+      
       // Update line and tooltip
-      updateLineAndTooltip(startPointRef.current, geometryPoint);
+      updateLineAndTooltip(startPointRef.current, snappedPointer);
       
       // Request render
       canvas.requestRenderAll();
@@ -126,10 +125,14 @@ export const useLineMouseHandlers = (props: UseLineMouseHandlersProps) => {
     const handlePointerUp = () => {
       if (!enabled || !isDrawing || !startPointRef.current || !currentLineRef.current || !distanceTooltipRef.current) return;
       
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
       // Snap line to grid
+      const currentLine = currentLineRef.current;
       const { start, end } = snapLineToGrid(startPointRef.current, {
-        x: (currentLineRef.current as any).x2 || 0,
-        y: (currentLineRef.current as any).y2 || 0
+        x: currentLine.x2 || 0,
+        y: currentLine.y2 || 0
       });
       
       // Update line and tooltip

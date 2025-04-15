@@ -1,73 +1,40 @@
 
 /**
- * Hook for managing the initialization and setup of the straight line tool
+ * Hook for managing tool initialization
  * @module hooks/straightLineTool/useToolInitialization
  */
-import { useCallback, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
-import { toast } from 'sonner';
-import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import { useState, useCallback } from "react";
+import { Canvas } from "fabric";
 
 interface UseToolInitializationProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool: DrawingMode;
-  isActive: boolean;
-  snapEnabled: boolean;
-  onChange?: (canvas: FabricCanvas) => void;
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
 }
 
-export const useToolInitialization = ({
-  fabricCanvasRef,
-  tool,
-  isActive,
-  snapEnabled,
-  onChange
-}: UseToolInitializationProps) => {
+/**
+ * Hook for managing tool initialization
+ */
+export const useToolInitialization = (props: UseToolInitializationProps) => {
+  const { fabricCanvasRef } = props;
+  
   const [isToolInitialized, setIsToolInitialized] = useState(false);
-  const { logDrawingEvent } = useDrawingErrorReporting();
-
-  // Initialize the tool when it becomes active
+  
+  /**
+   * Initialize the tool
+   */
   const initializeTool = useCallback(() => {
-    if (isActive && !isToolInitialized) {
-      setIsToolInitialized(true);
-      
-      // Log the initialization event
-      logDrawingEvent('Line tool initialized', 'tool-init', {
-        tool,
-        state: { active: isActive, initialized: true }
-      });
-      
-      // Show toast notification about the tool's status
-      toast.success(`Line tool ready! ${snapEnabled ? 'Grid snapping enabled.' : 'Grid snapping disabled.'}`, {
-        id: 'line-tool-initialized',
-        duration: 3000
-      });
-      
-      // Initialize canvas if needed
-      if (fabricCanvasRef.current && onChange) {
-        onChange(fabricCanvasRef.current);
-      }
-      
-      return true;
-    }
-    return false;
-  }, [isActive, isToolInitialized, tool, snapEnabled, logDrawingEvent, fabricCanvasRef, onChange]);
-
-  // Reset tool initialization when it becomes inactive
-  useEffect(() => {
-    if (!isActive && isToolInitialized) {
-      setIsToolInitialized(false);
-    }
-  }, [isActive, isToolInitialized]);
-
-  // Initialize the tool when it first becomes active
-  useEffect(() => {
-    if (isActive && !isToolInitialized) {
-      initializeTool();
-    }
-  }, [isActive, isToolInitialized, initializeTool]);
-
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Configure canvas
+    canvas.selection = false;
+    canvas.defaultCursor = 'crosshair';
+    canvas.hoverCursor = 'crosshair';
+    canvas.isDrawingMode = false;
+    
+    // Mark as initialized
+    setIsToolInitialized(true);
+  }, [fabricCanvasRef]);
+  
   return {
     isToolInitialized,
     initializeTool
