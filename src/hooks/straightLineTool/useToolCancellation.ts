@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { InputMethod } from './useLineState';
+import * as Sentry from '@sentry/react';
 
 interface UseToolCancellationProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -31,6 +32,15 @@ export const useToolCancellation = ({
     if (!isDrawing) return false;
     
     try {
+      // Set Sentry context for cancellation action
+      Sentry.setTag("action", "cancelDrawing");
+      Sentry.setContext("cancellationContext", {
+        inputMethod,
+        hasCurrentLine: !!currentLineRef.current,
+        hasTooltip: !!distanceTooltipRef.current,
+        timestamp: new Date().toISOString()
+      });
+      
       // If we have a current line being drawn, remove it
       if (currentLineRef.current && fabricCanvasRef.current) {
         fabricCanvasRef.current.remove(currentLineRef.current);
@@ -59,6 +69,11 @@ export const useToolCancellation = ({
       return true;
     } catch (error) {
       console.error('Error cancelling drawing:', error);
+      
+      // Log error in Sentry
+      Sentry.setTag("errorSource", "drawingCancellation");
+      Sentry.captureException(error);
+      
       // Return false if cancellation fails
       return false;
     }
@@ -77,6 +92,14 @@ export const useToolCancellation = ({
     // Call the toggle function
     toggleSnap();
     
+    // Set Sentry context for grid snapping action
+    Sentry.setTag("action", "toggleGridSnapping");
+    Sentry.setContext("gridSnapping", {
+      previousState: snapEnabled,
+      newState: !snapEnabled,
+      timestamp: new Date().toISOString()
+    });
+    
     // Return the NEW state (after toggle)
     return !snapEnabled;
   }, [toggleSnap, snapEnabled]);
@@ -86,4 +109,3 @@ export const useToolCancellation = ({
     toggleGridSnapping
   };
 };
-

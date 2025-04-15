@@ -51,7 +51,8 @@ export const useToolOperations = ({
     Sentry.setTag("currentTool", tool);
     
     Sentry.setContext("toolState", {
-      currentTool: tool
+      currentTool: tool,
+      timestamp: new Date().toISOString()
     });
     
     return () => {

@@ -66,12 +66,14 @@ export const snapLineToGrid = (
  * 
  * @param start Starting point
  * @param end Ending point
+ * @param snapAngleDeg Angle in degrees to snap to (default: 45)
  * @returns Object with start point and snapped end point
  */
 export const snapLineToStandardAngles = (
   start: Point,
-  end: Point
-): Point => {
+  end: Point,
+  snapAngleDeg: number = 45
+): { start: Point, end: Point } => {
   // Calculate the angle of the line
   const dx = end.x - start.x;
   const dy = end.y - start.y;
@@ -80,31 +82,83 @@ export const snapLineToStandardAngles = (
   // Calculate the distance between points
   const distance = Math.sqrt(dx * dx + dy * dy);
   
-  // Snap angle to nearest 45 degrees
-  const snappedAngle = Math.round(angle / 45) * 45;
+  // Snap angle to nearest snapAngleDeg degrees
+  const snappedAngle = Math.round(angle / snapAngleDeg) * snapAngleDeg;
   
   // Convert back to radians
   const radians = snappedAngle * (Math.PI / 180);
   
   // Calculate new endpoint based on snapped angle
-  return {
+  const snappedEnd = {
     x: start.x + distance * Math.cos(radians),
     y: start.y + distance * Math.sin(radians)
+  };
+  
+  return {
+    start: { ...start },
+    end: snappedEnd
   };
 };
 
 /**
  * Snap an angle to nearest multiple of specified degrees
+ * Enhanced version that preserves the start point
  * 
  * @param start Starting point
  * @param end Ending point
- * @returns Snapped angle end point
+ * @param angleDeg Angle in degrees to snap to (default: 45)
+ * @returns Snapped angle as start and end points
  */
 export const snapToAngle = (
   start: Point,
+  end: Point,
+  angleDeg: number = 45
+): { start: Point, end: Point } => {
+  return snapLineToStandardAngles(start, end, angleDeg);
+};
+
+/**
+ * Constrain line to horizontal, vertical, or 45-degree angles
+ * Used for shift-key drawing constraint
+ * 
+ * @param start Starting point
+ * @param end Current end point (from mouse)
+ * @returns Constrained end point
+ */
+export const constrainToMajorAngles = (
+  start: Point,
   end: Point
-): Point => {
-  return snapLineToStandardAngles(start, end);
+): { start: Point, end: Point } => {
+  // Calculate differences
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+  
+  let newEnd: Point;
+  
+  // Determine the dominant direction
+  if (absDx > absDy * 2.5) {
+    // Horizontal constraint (x-axis)
+    newEnd = { x: end.x, y: start.y };
+  } else if (absDy > absDx * 2.5) {
+    // Vertical constraint (y-axis)
+    newEnd = { x: start.x, y: end.y };
+  } else {
+    // 45-degree diagonal constraint
+    const avgDist = (absDx + absDy) / 2;
+    const signX = dx > 0 ? 1 : -1;
+    const signY = dy > 0 ? 1 : -1;
+    newEnd = {
+      x: start.x + avgDist * signX,
+      y: start.y + avgDist * signY
+    };
+  }
+  
+  return {
+    start: { ...start },
+    end: newEnd
+  };
 };
 
 /**

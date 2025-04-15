@@ -8,6 +8,7 @@ import { Point } from '@/types/core/Point';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import { InputMethod } from './useLineState';
 import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
+import * as Sentry from '@sentry/react';
 
 interface UseLineToolHandlersProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -32,6 +33,14 @@ interface UseLineToolHandlersProps {
   logDrawingEvent: (message: string, eventType: string, data?: any) => void;
 }
 
+/**
+ * Hook providing event handlers for straight line drawing tool
+ * Features:
+ * - Live distance tooltips
+ * - Grid snapping
+ * - Angle snapping
+ * - Error reporting
+ */
 export const useLineToolHandlers = ({
   fabricCanvasRef,
   isActive,
@@ -57,7 +66,23 @@ export const useLineToolHandlers = ({
   // Get the error reporting functions
   const { reportDrawingError } = useDrawingErrorReporting();
   
-  // Function to display distance tooltip
+  // Set Sentry context for the component
+  Sentry.setTag("component", "useLineToolHandlers");
+  Sentry.setContext("lineDrawingState", {
+    isActive,
+    isDrawing,
+    hasStartPoint: !!startPointRef.current,
+    hasCurrentLine: !!currentLineRef.current,
+    hasTooltip: !!distanceTooltipRef.current,
+    inputMethod,
+    snapEnabled,
+    snapToAngle,
+    snapAngleDeg,
+    lineThickness,
+    lineColor
+  });
+  
+  // Function to display distance tooltip with improved positioning and formatting
   const displayDistanceTooltip = useCallback((startPoint: Point, currentPoint: Point) => {
     if (!startPoint) return null;
     
@@ -66,6 +91,10 @@ export const useLineToolHandlers = ({
       const dx = currentPoint.x - startPoint.x;
       const dy = currentPoint.y - startPoint.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Calculate angle for display
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      const formattedAngle = Math.round(angle);
       
       // Convert to meters based on pixels per meter ratio
       const meters = (distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
@@ -79,7 +108,7 @@ export const useLineToolHandlers = ({
         const tooltipElement = document.createElement('div');
         tooltipElement.className = 'distance-tooltip';
         tooltipElement.style.position = 'absolute';
-        tooltipElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        tooltipElement.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
         tooltipElement.style.color = 'white';
         tooltipElement.style.padding = '4px 8px';
         tooltipElement.style.borderRadius = '4px';
@@ -87,15 +116,30 @@ export const useLineToolHandlers = ({
         tooltipElement.style.pointerEvents = 'none';
         tooltipElement.style.transform = 'translate(-50%, -50%)';
         tooltipElement.style.zIndex = '1000';
+        tooltipElement.style.fontFamily = 'system-ui, sans-serif';
+        tooltipElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        tooltipElement.style.backdropFilter = 'blur(4px)';
         
         document.body.appendChild(tooltipElement);
         distanceTooltipRef.current = tooltipElement;
+        
+        // Add to Sentry breadcrumbs
+        Sentry.addBreadcrumb({
+          category: 'ui',
+          message: 'Distance tooltip created',
+          data: { distance: meters }
+        });
       }
       
-      // Update tooltip content and position
+      // Update tooltip content and position with enhanced information
       if (distanceTooltipRef.current) {
         const tooltip = distanceTooltipRef.current;
-        tooltip.textContent = `${meters}m`;
+        tooltip.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div>${meters}m</div>
+            <div style="font-size: 10px; opacity: 0.8;">${formattedAngle}°</div>
+          </div>
+        `;
         
         // Position tooltip near the canvas and adjust for scroll
         const canvas = fabricCanvasRef.current;
@@ -112,10 +156,11 @@ export const useLineToolHandlers = ({
       
       logDrawingEvent('Distance tooltip updated', 'tooltip-update', {
         distance: meters,
+        angle: formattedAngle,
         position: { x: midX, y: midY }
       });
       
-      return { distance, meters };
+      return { distance, meters, angle: formattedAngle };
     } catch (error) {
       reportDrawingError(error, 'tooltip-display', {
         startPoint,
@@ -130,6 +175,15 @@ export const useLineToolHandlers = ({
     if (!fabricCanvasRef.current || !isActive) return;
     
     try {
+      // Set Sentry context for the action
+      Sentry.setTag("action", "lineStart");
+      Sentry.setContext("lineStartContext", {
+        point,
+        inputMethod,
+        snapEnabled,
+        timestamp: new Date().toISOString()
+      });
+      
       // Apply grid snapping immediately to the starting point
       const snappedPoint = snapEnabled ? snapLineToGrid(point, point).start : point;
       
@@ -187,7 +241,7 @@ export const useLineToolHandlers = ({
     displayDistanceTooltip
   ]);
 
-  // Event handler for pointer move
+  // Event handler for pointer move with improved tooltip updates
   const handlePointerMove = useCallback((point: Point) => {
     if (!fabricCanvasRef.current || !isDrawing || !currentLineRef.current || !startPointRef.current) return;
     
@@ -252,11 +306,21 @@ export const useLineToolHandlers = ({
     displayDistanceTooltip
   ]);
 
-  // Event handler for pointer up
+  // Event handler for pointer up with improved cleanup
   const handlePointerUp = useCallback((point: Point) => {
     if (!fabricCanvasRef.current || !isDrawing || !currentLineRef.current || !startPointRef.current) return;
     
     try {
+      // Set Sentry context for the action
+      Sentry.setTag("action", "lineComplete");
+      Sentry.setContext("lineCompleteContext", {
+        startPoint: startPointRef.current,
+        endPoint: point,
+        inputMethod,
+        snapEnabled,
+        timestamp: new Date().toISOString()
+      });
+      
       const canvas = fabricCanvasRef.current;
       const startPoint = startPointRef.current;
       
@@ -287,12 +351,53 @@ export const useLineToolHandlers = ({
         endPoint = snappedPoints.end;
       }
       
+      // Calculate final measurements for the line
+      const dx = endPoint.x - startPoint.x;
+      const dy = endPoint.y - startPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      const meters = (distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
+      
+      // Check if line is too short (prevent accidental clicks)
+      if (distance < 2) {
+        // Remove the line if it's too short
+        canvas.remove(currentLineRef.current);
+        
+        // Remove distance tooltip
+        if (distanceTooltipRef.current) {
+          const parent = distanceTooltipRef.current.parentElement;
+          if (parent) {
+            parent.removeChild(distanceTooltipRef.current);
+          }
+          distanceTooltipRef.current = null;
+        }
+        
+        // Reset state
+        setIsDrawing(false);
+        resetDrawingState();
+        setCurrentLine(null);
+        setStartPoint(null);
+        
+        logDrawingEvent('Line drawing cancelled (too short)', 'line-cancel', {
+          distance: meters,
+          interaction: { 
+            type: inputMethod === 'keyboard' ? 'mouse' : inputMethod
+          }
+        });
+        
+        return;
+      }
+      
       // Final update to the line
       currentLineRef.current.set({
         x2: endPoint.x,
         y2: endPoint.y,
         selectable: true,
-        evented: true
+        evented: true,
+        // Store measurements as custom properties
+        measurement: `${meters}m`,
+        angle: Math.round(angle),
+        actualDistance: distance
       });
       
       // Remove distance tooltip
@@ -321,10 +426,13 @@ export const useLineToolHandlers = ({
       }
       
       // Reset drawing state
+      setIsDrawing(false);
       resetDrawingState();
       
       // Log event
       logDrawingEvent('Line drawing completed', 'line-complete', {
+        distance: meters,
+        angle: Math.round(angle),
         interaction: { 
           type: inputMethod === 'keyboard' ? 'mouse' : inputMethod
         }
@@ -333,9 +441,27 @@ export const useLineToolHandlers = ({
       setStartPoint(null);
       
     } catch (error) {
+      // Log error to Sentry
+      Sentry.captureException(error);
+      
       reportDrawingError(error, 'line-pointer-up', {
         interaction: { type: inputMethod === 'keyboard' ? 'mouse' : inputMethod }
       });
+      
+      // Ensure clean state even if error occurs
+      setIsDrawing(false);
+      resetDrawingState();
+      setCurrentLine(null);
+      setStartPoint(null);
+      
+      // Remove tooltip if it exists
+      if (distanceTooltipRef.current) {
+        const parent = distanceTooltipRef.current.parentElement;
+        if (parent) {
+          parent.removeChild(distanceTooltipRef.current);
+        }
+        distanceTooltipRef.current = null;
+      }
     }
   }, [
     fabricCanvasRef, 
