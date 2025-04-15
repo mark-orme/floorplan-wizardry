@@ -58,9 +58,7 @@ export const getPusher = (): Pusher => {
         enabledTransports: ['ws', 'wss'],
         wsHost: 'ws-eu.pusher.com',
         httpHost: 'sockjs-eu.pusher.com',
-        disableStats: true, // Reduce network requests
-        // Add timeout to prevent hanging connections
-        timeout: 10000
+        disableStats: true // Reduce network requests
       });
       
       // Add connection status handlers

@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 export const SecurityInitializer = () => {
   useEffect(() => {
     // Initialize Content Security Policy with production settings in production mode
-    const isProduction = process.env.NODE_ENV === 'production';
     initializeCSP();
     
     // Apply additional security headers
@@ -87,6 +86,7 @@ export const SecurityInitializer = () => {
       }
       
       // Only show toast for significant violations in production
+      const isProduction = process.env.NODE_ENV === 'production';
       if (isProduction && 
           (e.violatedDirective === 'script-src' || e.violatedDirective === 'frame-src') &&
           !e.blockedURI.includes('sentry.io') &&
