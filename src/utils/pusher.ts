@@ -11,8 +11,9 @@ const PUSHER_CONFIG = {
   key: process.env.NEXT_PUBLIC_PUSHER_APP_KEY || 'demo-key',
   cluster: process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER || 'eu',
   forceTLS: true,
-  enabledTransports: ['ws', 'wss'],
-  disabledTransports: []
+  // Use proper types for transport configuration
+  enabledTransports: ['ws', 'wss'] as Pusher.Transport[],
+  disabledTransports: [] as Pusher.Transport[]
 };
 
 // Singleton instance of Pusher
