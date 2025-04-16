@@ -403,8 +403,7 @@ export const useLineState = ({
     handlePointerUp,
     cancelDrawing,
     
-    // Grid snapping
-    toggleGridSnapping: toggleSnap,
-    toggleAngles
+    // Ensure only one toggleGridSnapping
+    toggleGridSnapping: toggleSnap
   };
 };

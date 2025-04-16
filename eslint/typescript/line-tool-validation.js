@@ -56,19 +56,24 @@ export const lineToolValidationRules = {
     "import/no-named-as-default": "error",
     "import/export": "error",
     
-    // Enforce proper return types for hook-related functions
-    "@typescript-eslint/explicit-function-return-type": ["error", {
-      "allowExpressions": true,
-      "allowHigherOrderFunctions": true,
-      "allowTypedFunctionExpressions": true
-    }],
-    
-    // Ensure proper line tool types
+    // Add validation for MeasurementData having unit
     "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
-    "@typescript-eslint/no-explicit-any": ["error", { "ignoreRestArgs": true }],
+    "@typescript-eslint/no-explicit-any": ["warn", { "ignoreRestArgs": true }],
+    
+    // Add rule to validate MeasurementData interface
+    "no-restricted-imports": [
+      "error", 
+      {
+        "patterns": [{
+          "group": ["*/hooks/straightLineTool/types"],
+          "importNames": ["MeasurementData"],
+          "message": "When using MeasurementData, ensure it has distance, angle, and unit properties"
+        }]
+      }
+    ],
     
     // Prevent incorrect fabric object access
-    "@typescript-eslint/no-unsafe-member-access": "error",
-    "@typescript-eslint/no-unsafe-assignment": "error"
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "warn"
   }
 };

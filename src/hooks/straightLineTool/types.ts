@@ -17,7 +17,7 @@ export interface MeasurementData {
   /** Whether the line was snapped to grid */
   snapped?: boolean;
   /** Measurement unit (e.g., 'm', 'cm', etc.) */
-  unit?: string;
+  unit: string;
 }
 
 /**
