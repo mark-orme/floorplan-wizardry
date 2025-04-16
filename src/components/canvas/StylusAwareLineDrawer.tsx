@@ -1,44 +1,31 @@
 
-/**
- * Stylus-aware line drawer component
- * @module components/canvas/StylusAwareLineDrawer
- */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
-import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from '@/types/core/Geometry';
-import { toast } from 'sonner';
-import { InputMethod } from '@/hooks/straightLineTool/useLineState';
+import { useStraightLineTool, InputMethod } from '@/hooks/straightLineTool/useStraightLineTool';
+import { cn } from '@/lib/utils';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
-  tool: DrawingMode;
-  lineColor?: string;
-  lineThickness?: number;
-  saveCurrentState?: () => void;
-  onLineCreated?: (line: any) => void;
+  enabled: boolean;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState: () => void;
 }
 
 /**
- * Component to handle line drawing with enhanced stylus and touch support
+ * Component that renders a line drawing tool with enhanced stylus support
  */
 export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   canvas,
-  tool,
-  lineColor = '#000000',
-  lineThickness = 2,
-  saveCurrentState = () => {},
-  onLineCreated
+  enabled,
+  lineColor,
+  lineThickness,
+  saveCurrentState
 }) => {
-  // Track initialized state
-  const isInitializedRef = useRef(false);
-  const [shiftPressed, setShiftPressed] = useState(false);
-  const [activeTooltip, setActiveTooltip] = useState<{start: Point, end: Point} | null>(null);
+  const [showMeasurement, setShowMeasurement] = useState(true);
   
-  // Use our straight line drawing hook
+  // Initialize the straight line tool with stylus support
   const {
-    isDrawing,
     isActive,
     inputMethod,
     isPencilMode,
@@ -51,165 +38,89 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     cancelDrawing,
     toggleGridSnapping,
     toggleAngles,
-    startPointRef,
-    currentLineRef,
+    isDrawing,
     currentLine
   } = useStraightLineTool({
     canvas,
-    enabled: tool === DrawingMode.STRAIGHT_LINE,
+    enabled,
     lineColor,
     lineThickness,
     saveCurrentState
   });
   
-  // Update tooltip position when drawing
+  // Hide measurement after some time of inactivity
   useEffect(() => {
-    if (isDrawing && startPointRef.current && currentLineRef.current) {
-      try {
-        // @ts-ignore - calcLinePoints might not be defined on the Line type
-        const points = currentLineRef.current.calcLinePoints();
-        if (points) {
-          const start = { x: points.x1, y: points.y1 };
-          const end = { x: points.x2, y: points.y2 };
-          setActiveTooltip({ start, end });
-        }
-      } catch (error) {
-        console.error('Error calculating line points:', error);
-      }
-    } else if (!isDrawing) {
-      setActiveTooltip(null);
+    if (isDrawing) {
+      setShowMeasurement(true);
+    } else if (measurementData.distance !== null) {
+      const timer = setTimeout(() => {
+        setShowMeasurement(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
-  }, [isDrawing, currentLineRef, startPointRef]);
-  
-  // Monitor shift key state for angle constraints
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        setShiftPressed(true);
-        
-        if (isDrawing) {
-          toast.info("Angle constraint active", { id: "shift-constraint" });
-        }
-      }
-      
-      // Toggle grid snapping with 'g' key
-      if (e.key === 'g' || e.key === 'G') {
-        toggleGridSnapping();
-      }
-      
-      // Toggle angle snapping with 'a' key
-      if (e.key === 'a' || e.key === 'A') {
-        toggleAngles();
-      }
-    };
-    
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        setShiftPressed(false);
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [isDrawing, toggleGridSnapping, toggleAngles]);
-  
-  // Process canvas events
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Mark initialized
-    isInitializedRef.current = true;
-    
-    // Set up event handlers for canvas
-    const handleCanvasMouseDown = (e: any) => {
-      if (!isActive) return;
-      
-      // Get position from fabric event
-      const point = e.pointer;
-      handlePointerDown(point);
-    };
-    
-    const handleCanvasMouseMove = (e: any) => {
-      if (!isActive || !isDrawing) return;
-      
-      // Get position from fabric event
-      const point = e.pointer;
-      handlePointerMove(point);
-    };
-    
-    const handleCanvasMouseUp = (e: any) => {
-      if (!isActive || !isDrawing) return;
-      
-      // Get position from fabric event
-      const point = e.pointer;
-      handlePointerUp(point);
-      
-      // Call onLineCreated callback if provided
-      if (onLineCreated && currentLine) {
-        onLineCreated(currentLine);
-      }
-    };
-    
-    // Handle key press for grid snapping toggle and cancellation
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cancel with escape key
-      if (e.key === 'Escape') {
-        cancelDrawing();
-      }
-    };
-    
-    // Add fabric canvas event listeners
-    canvas.on('mouse:down', handleCanvasMouseDown);
-    canvas.on('mouse:move', handleCanvasMouseMove);
-    canvas.on('mouse:up', handleCanvasMouseUp);
-    
-    // Add keyboard event listener
-    window.addEventListener('keydown', handleKeyDown);
-    
-    // Clean up
-    return () => {
-      if (!canvas) return;
-      
-      canvas.off('mouse:down', handleCanvasMouseDown);
-      canvas.off('mouse:move', handleCanvasMouseMove);
-      canvas.off('mouse:up', handleCanvasMouseUp);
-      
-      window.removeEventListener('keydown', handleKeyDown);
-      
-      // Cancel any active drawing when unmounting
-      if (isDrawing) {
-        cancelDrawing();
-      }
-    };
-  }, [
-    canvas, 
-    isActive, 
-    isDrawing, 
-    handlePointerDown, 
-    handlePointerMove, 
-    handlePointerUp, 
-    cancelDrawing,
-    currentLine,
-    onLineCreated
-  ]);
+  }, [isDrawing, measurementData.distance]);
   
   return (
     <>
-      {/* Status indicator for drawing mode */}
-      {isActive && (
-        <div className="fixed bottom-2 right-2 p-2 bg-black/70 text-white rounded text-xs" style={{ zIndex: 9999 }}>
-          {inputMethod === InputMethod.PENCIL || inputMethod === InputMethod.STYLUS ? '✏️ ' : inputMethod === InputMethod.TOUCH ? '👆 ' : '🖱️ '}
-          {snapEnabled ? '📏' : ''}
-          {anglesEnabled ? '📐' : ''}
-          {isPencilMode && '✨'}
-          {shiftPressed && '📏📐'}
+      {/* Stylus indicator */}
+      {isPencilMode && (
+        <div className="fixed top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md z-50">
+          Pencil Mode
         </div>
       )}
+      
+      {/* Live measurement overlay */}
+      {showMeasurement && measurementData.distance !== null && (
+        <div className="fixed bottom-4 left-4 bg-white/90 text-black px-4 py-2 rounded-lg text-sm font-medium shadow-md z-50 flex flex-col">
+          <div className="flex items-center gap-2">
+            <span>Distance: {measurementData.distance}px</span>
+            {measurementData.snapped && (
+              <span className="bg-green-100 text-green-800 px-1 rounded text-xs">Snapped</span>
+            )}
+          </div>
+          
+          {measurementData.angle !== null && (
+            <div className="flex items-center gap-2">
+              <span>Angle: {measurementData.angle}°</span>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Controls */}
+      <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
+        <button 
+          onClick={toggleGridSnapping}
+          className={cn(
+            "p-2 rounded-full shadow-md transition-colors",
+            snapEnabled ? "bg-green-500 text-white" : "bg-white text-gray-800"
+          )}
+          title={snapEnabled ? "Grid snapping enabled (click to disable)" : "Grid snapping disabled (click to enable)"}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 3h18v18H3z"></path>
+            <path d="M3 9h18"></path>
+            <path d="M3 15h18"></path>
+            <path d="M9 3v18"></path>
+            <path d="M15 3v18"></path>
+          </svg>
+        </button>
+        
+        <button 
+          onClick={toggleAngles}
+          className={cn(
+            "p-2 rounded-full shadow-md transition-colors",
+            anglesEnabled ? "bg-blue-500 text-white" : "bg-white text-gray-800"
+          )}
+          title={anglesEnabled ? "Angle snapping enabled (click to disable)" : "Angle snapping disabled (click to enable)"}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 3v18h18"></path>
+            <path d="M3 3l18 18"></path>
+          </svg>
+        </button>
+      </div>
     </>
   );
 };

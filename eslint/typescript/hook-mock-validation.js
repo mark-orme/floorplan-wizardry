@@ -21,6 +21,14 @@ export const hookMockValidationRules = {
       {
         "selector": "CallExpression[callee.object.name=/^vi$/][callee.property.name='mockReturnValue'][arguments.length=1] > ObjectExpression:not(:matches(:has(Property[key.name='setInputMethod']), :has(Property[key.name='setIsPencilMode'])))",
         "message": "Hook mock is missing required properties: setInputMethod and setIsPencilMode"
+      },
+      {
+        "selector": "CallExpression[callee.name='useLineState']:not(:has(Property[key.name='saveCurrentState']))",
+        "message": "useLineState must be called with saveCurrentState property"
+      },
+      {
+        "selector": "VariableDeclarator > CallExpression[callee.name='useStraightLineTool'] > ObjectExpression:not(:has(Property[key.name='saveCurrentState']))",
+        "message": "useStraightLineTool must be called with saveCurrentState property"
       }
     ],
     

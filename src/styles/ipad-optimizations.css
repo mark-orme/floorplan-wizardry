@@ -1,0 +1,56 @@
+
+/**
+ * iPad and touch device optimizations
+ * Helps with Apple Pencil drawing experience
+ */
+
+/* Prevent default touch behaviors */
+.touch-optimized-canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent scrolling and zooming while drawing */
+.drawing-active {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Apple Pencil specific styles */
+.pencil-active .cursor {
+  display: none; /* Hide cursor when using pencil */
+}
+
+/* Smooth canvas rendering */
+canvas {
+  image-rendering: optimizeSpeed;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimize-contrast;
+  -ms-interpolation-mode: nearest-neighbor;
+}
+
+/* Prevent iOS text selection */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in specific elements */
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Disable pull-to-refresh and overscroll on mobile */
+body {
+  overscroll-behavior-y: none;
+}
+
+/* Disable iOS highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
