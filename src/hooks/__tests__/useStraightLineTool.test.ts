@@ -1,8 +1,3 @@
-/**
- * Tests for the straight line tool hook
- * Ensures line drawing functionality works correctly
- * @module hooks/straightLineTool/__tests__/useStraightLineTool
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool, InputMethod } from '../straightLineTool/useStraightLineTool';
@@ -32,7 +27,6 @@ vi.mock('../straightLineTool/useLineState', () => ({
     createLine: vi.fn(),
     createDistanceTooltip: vi.fn(),
     anglesEnabled: false,
-    measurementData: { distance: 0, angle: 0, unit: 'm' },
     setInputMethod: vi.fn(),
     setIsPencilMode: vi.fn(),
     startDrawing: vi.fn(),
@@ -147,7 +141,6 @@ describe('useStraightLineTool', () => {
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
       anglesEnabled: false,
-      measurementData: { distance: 0, angle: 0, unit: 'm' },
       setInputMethod: vi.fn(),
       setIsPencilMode: vi.fn(),
       startDrawing: vi.fn(),
@@ -238,7 +231,6 @@ describe('useStraightLineTool', () => {
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
       anglesEnabled: false,
-      measurementData: { distance: 0, angle: 0, unit: 'm' },
       setInputMethod: vi.fn(),
       setIsPencilMode: vi.fn(),
       startDrawing: mockStartDrawing,
@@ -292,7 +284,6 @@ describe('useStraightLineTool', () => {
       toggleSnap: vi.fn(),
       toggleAngles: vi.fn(),
       anglesEnabled: false,
-      measurementData: { distance: 0, angle: 0, unit: 'm' },
       setInputMethod: vi.fn(),
       setIsPencilMode: vi.fn(),
       startDrawing: vi.fn(),
@@ -363,7 +354,6 @@ describe('useStraightLineTool', () => {
       toggleSnap: vi.fn(),
       toggleAngles: vi.fn(),
       anglesEnabled: false,
-      measurementData: { distance: 0, angle: 0, unit: 'm' },
       setInputMethod: vi.fn(),
       setIsPencilMode: vi.fn(),
       startDrawing: vi.fn(),
