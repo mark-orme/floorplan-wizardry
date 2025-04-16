@@ -11,3 +11,5 @@ export { useLineDrawing } from './useLineDrawing';
 export { useLineCreation } from './useLineCreation';
 export { useMeasurementCalculation } from './useMeasurementCalculation';
 export { useLineFinalizer } from './useLineFinalizer';
+export { useFreehandAutoClean } from './useFreehandAutoClean';
+export { useLiveDistanceTooltip } from './useLiveDistanceTooltip';
