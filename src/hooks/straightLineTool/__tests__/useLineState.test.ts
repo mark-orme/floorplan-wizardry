@@ -1,10 +1,12 @@
+
 /**
  * Tests for the useLineState hook
  * @module hooks/straightLineTool/__tests__/useLineState
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useLineState, InputMethod } from '../useLineState';
+import { useLineState } from '../useLineState';
+import { InputMethod } from '../useLineInputMethod';
 import { Canvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 

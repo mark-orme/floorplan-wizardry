@@ -1,138 +1,103 @@
 
-import { useCallback, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { useLineState } from './useLineState';
+import { useCallback } from 'react';
+import { Point } from '@/types/core/Point';
 
-/**
- * Props for the useLineToolHandlers hook
- */
 interface UseLineToolHandlersProps {
-  canvas: FabricCanvas | null;
-  lineState: ReturnType<typeof useLineState>;
-  onComplete?: () => void;
+  lineState: any; // Using any for simplicity, should match the return value of useLineState
+  updateMeasurementData: (data: { distance: number; angle: number; snapped: boolean; unit: string }) => void;
 }
 
-/**
- * Hook for line tool event handlers
- */
 export const useLineToolHandlers = ({
-  canvas,
   lineState,
-  onComplete
+  updateMeasurementData
 }: UseLineToolHandlersProps) => {
-  // Destructure all required properties from lineState
-  const {
-    isDrawing,
-    snapEnabled,
-    anglesEnabled,
-    startPoint,
-    currentLine,
-    toggleSnap,
-    toggleAngles,
-    startDrawing,
-    continueDrawing,
-    completeDrawing,
-    cancelDrawing,
-    inputMethod
-  } = lineState;
-  
-  /**
-   * Handle canvas clicks
-   */
-  const handleCanvasClick = useCallback((e: any) => {
-    if (!canvas) return;
-    
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
-    const point = { x: pointer.x, y: pointer.y };
-    
-    // Handle pointer down
-    startDrawing(point);
-  }, [canvas, startDrawing]);
-  
-  /**
-   * Handle mouse move on canvas
-   */
-  const handleCanvasMouseMove = useCallback((e: any) => {
-    if (!canvas || !isDrawing) return;
-    
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
-    const point = { x: pointer.x, y: pointer.y };
-    
-    // Handle pointer move
-    continueDrawing(point);
-  }, [canvas, isDrawing, continueDrawing]);
-  
-  /**
-   * Handle mouse up on canvas
-   */
-  const handleCanvasMouseUp = useCallback(() => {
-    if (!canvas || !isDrawing) return;
-    
-    // Handle pointer up - we don't need coordinates for this
-    completeDrawing({ x: 0, y: 0 });
-    
-    // Call completion callback
-    if (onComplete) {
-      onComplete();
-    }
-  }, [canvas, isDrawing, completeDrawing, onComplete]);
-  
-  /**
-   * Handle keyboard shortcuts
-   */
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      // Cancel drawing on Escape
-      cancelDrawing();
-    } else if (e.key === 'g' || e.key === 'G') {
-      // Toggle grid snap on G
-      toggleSnap();
-    } else if (e.key === 'a' || e.key === 'A') {
-      // Toggle angle snap on A
-      toggleAngles();
-    }
-  }, [cancelDrawing, toggleSnap, toggleAngles]);
-  
-  // Set up event listeners
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Add event listeners
-    canvas.on('mouse:down', handleCanvasClick);
-    canvas.on('mouse:move', handleCanvasMouseMove);
-    canvas.on('mouse:up', handleCanvasMouseUp);
-    window.addEventListener('keydown', handleKeyDown);
-    
-    // Disable selection while drawing
-    const originalSelectionState = canvas.selection;
-    canvas.selection = false;
-    
-    // Clean up event listeners
-    return () => {
-      // Remove event listeners
-      canvas.off('mouse:down', handleCanvasClick);
-      canvas.off('mouse:move', handleCanvasMouseMove);
-      canvas.off('mouse:up', handleCanvasMouseUp);
-      window.removeEventListener('keydown', handleKeyDown);
+  // Handle mouse down event
+  const handleMouseDown = useCallback((e: any) => {
+    if (!e.target) {
+      // Get pointer position
+      const pointer = e.absolutePointer || e.pointer;
+      const point = { x: pointer.x, y: pointer.y };
       
-      // Restore selection state
-      canvas.selection = originalSelectionState;
+      // Start drawing
+      lineState.startDrawing(point);
       
-      // Clean up any in-progress drawing
-      if (isDrawing) {
-        cancelDrawing();
+      // Initial measurement (zero distance)
+      updateMeasurementData({
+        distance: 0,
+        angle: 0,
+        snapped: false,
+        unit: 'px'
+      });
+    }
+  }, [lineState, updateMeasurementData]);
+  
+  // Handle mouse move event
+  const handleMouseMove = useCallback((e: any) => {
+    if (lineState.isDrawing && lineState.startPoint) {
+      // Get pointer position
+      const pointer = e.absolutePointer || e.pointer;
+      const point = { x: pointer.x, y: pointer.y };
+      
+      // Continue drawing
+      lineState.continueDrawing(point);
+      
+      // Calculate and update measurements
+      if (lineState.startPoint && lineState.currentPoint) {
+        const dx = lineState.currentPoint.x - lineState.startPoint.x;
+        const dy = lineState.currentPoint.y - lineState.startPoint.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
+        
+        updateMeasurementData({
+          distance,
+          angle,
+          snapped: lineState.snapEnabled,
+          unit: 'px'
+        });
       }
-    };
-  }, [canvas, handleCanvasClick, handleCanvasMouseMove, handleCanvasMouseUp, handleKeyDown, isDrawing, cancelDrawing]);
+    }
+  }, [lineState, updateMeasurementData]);
+  
+  // Handle mouse up event
+  const handleMouseUp = useCallback((e: any) => {
+    if (lineState.isDrawing) {
+      // Get pointer position
+      const pointer = e.absolutePointer || e.pointer;
+      const point = { x: pointer.x, y: pointer.y };
+      
+      // Complete drawing
+      lineState.completeDrawing(point);
+      
+      // Reset measurement
+      updateMeasurementData({
+        distance: 0,
+        angle: 0,
+        snapped: false,
+        unit: 'px'
+      });
+    }
+  }, [lineState, updateMeasurementData]);
+  
+  // Handle key down event (e.g., Escape to cancel drawing)
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && lineState.isDrawing) {
+      // Cancel drawing
+      lineState.cancelDrawing();
+      
+      // Reset measurement
+      updateMeasurementData({
+        distance: 0,
+        angle: 0,
+        snapped: false,
+        unit: 'px'
+      });
+    }
+  }, [lineState, updateMeasurementData]);
   
   return {
-    toggleSnap,
-    toggleAngles,
-    handleKeyDown,
-    inputMethod,
-    snapEnabled,
-    anglesEnabled
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleKeyDown
   };
 };

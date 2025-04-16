@@ -1,17 +1,25 @@
 
 /**
- * Interface for measurement data displayed during drawing
+ * Interface representing measurement data for displaying distance and angle
  */
 export interface MeasurementData {
-  /** Distance measurement */
-  distance: number | null;
+  /**
+   * Distance in pixels or meters
+   */
+  distance: number;
   
-  /** Angle measurement in degrees */
-  angle: number | null;
+  /**
+   * Angle in degrees
+   */
+  angle: number;
   
-  /** Measurement unit */
-  unit: 'px' | 'm' | 'cm' | 'mm';
+  /**
+   * Whether the measurement is snapped to grid
+   */
+  snapped: boolean;
   
-  /** Whether the point was snapped to a grid or guide */
-  snapped?: boolean;
+  /**
+   * Unit of measurement (px, m, etc.)
+   */
+  unit: string;
 }

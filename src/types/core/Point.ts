@@ -1,15 +1,15 @@
 
 /**
- * Point interface representing x,y coordinates
+ * Interface representing a 2D point
  */
 export interface Point {
+  /**
+   * X coordinate
+   */
   x: number;
+  
+  /**
+   * Y coordinate
+   */
   y: number;
-}
-
-/**
- * Point with optional z coordinate
- */
-export interface Point3D extends Point {
-  z?: number;
 }
