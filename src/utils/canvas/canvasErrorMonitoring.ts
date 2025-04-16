@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 // Track canvas initialization attempts
 const canvasInitAttempts: Record<string, number> = {};
 const canvasErrorCounts: Record<string, number> = {};
+// Track specific error types for better diagnostics
+const errorTypeOccurrences: Record<string, number> = {};
 
 /**
  * Log canvas initialization attempt
@@ -43,7 +45,8 @@ export function logCanvasInitAttempt(canvasId: string, dimensions: { width: numb
       extra: {
         dimensions,
         timestamp: new Date().toISOString(),
-        attempts: canvasInitAttempts[canvasId]
+        attempts: canvasInitAttempts[canvasId],
+        domState: checkDomReadiness()
       }
     });
   }
@@ -79,9 +82,56 @@ export function logCanvasInitSuccess(canvasId: string, duration: number, details
     },
     extra: {
       details,
-      attempts: canvasInitAttempts[canvasId] || 1
+      attempts: canvasInitAttempts[canvasId] || 1,
+      fabricDetails: collectFabricDetails(details?.canvasType),
+      domState: checkDomReadiness()
     }
   });
+}
+
+/**
+ * Check DOM readiness state to aid in debugging loading issues
+ */
+function checkDomReadiness(): Record<string, any> {
+  return {
+    readyState: document.readyState,
+    domContentLoaded: document.readyState === 'interactive' || document.readyState === 'complete',
+    elementsInBody: document.body ? document.body.childElementCount : 'body not available',
+    hasCanvas: document.querySelectorAll('canvas').length > 0,
+    canvasesCount: document.querySelectorAll('canvas').length,
+    canvasIds: Array.from(document.querySelectorAll('canvas')).map(c => c.id || 'no-id'),
+    canvasStyles: Array.from(document.querySelectorAll('canvas')).map(c => ({
+      width: c.width,
+      height: c.height,
+      style: c.getAttribute('style') || 'no-style'
+    }))
+  };
+}
+
+/**
+ * Collect Fabric.js version and capabilities to aid debugging
+ */
+function collectFabricDetails(canvasType?: string): Record<string, any> {
+  const details: Record<string, any> = {
+    canvasType: canvasType || 'unknown',
+    detected: false
+  };
+  
+  try {
+    // Check if fabric is available in window
+    if (typeof window !== 'undefined' && (window as any).fabric) {
+      const fabric = (window as any).fabric;
+      details.detected = true;
+      details.version = fabric.version || 'unknown';
+      details.hasObjectPrototype = typeof fabric.Object === 'function';
+      details.hasCanvasPrototype = typeof fabric.Canvas === 'function';
+      details.supportsWebGL = typeof fabric.WebGLFilterBackend === 'function';
+    }
+  } catch (e) {
+    details.detectionError = String(e);
+  }
+  
+  return details;
 }
 
 /**
@@ -106,9 +156,14 @@ export function handleCanvasInitError(
     ? error.message 
     : String(error);
   
+  // Classify error for better tracking
+  const errorType = classifyCanvasError(errorMessage);
+  errorTypeOccurrences[errorType] = (errorTypeOccurrences[errorType] || 0) + 1;
+  
   // Log the error with details
-  logger.error(`Canvas initialization error (attempt #${attempt})`, {
+  logger.error(`Canvas initialization error (attempt #${attempt}): ${errorMessage}`, {
     error: errorMessage,
+    errorType,
     canvasId,
     attempt
   });
@@ -122,21 +177,31 @@ export function handleCanvasInitError(
   // Get browser context information
   const browserContext = getBrowserContext();
   
+  // Enhanced stack trace collection
+  const stackTrace = error instanceof Error ? error.stack : undefined;
+  
   // Report error to Sentry with comprehensive details
-  captureError(error, `canvas-init-error-${isFatalCanvasError ? 'fatal' : 'retry'}`, {
+  captureError(error, `canvas-init-error-${isFatalCanvasError ? 'fatal' : 'retry'}-${errorType}`, {
     level: isFatalCanvasError ? 'fatal' : (attempt > 3 ? 'error' : 'warning'),
     tags: {
       component: 'Canvas',
       operation: 'initialization',
       attempt: String(attempt),
       canvasId,
-      errorType: isFatalCanvasError ? 'fatal' : 'recoverable'
+      errorType: errorType,
+      errorMessage: errorMessage.substring(0, 50), // First 50 chars for tagging
+      isFatal: String(isFatalCanvasError)
     },
     extra: {
       diagnosticInfo,
       browserContext,
       errorCount: canvasErrorCounts[canvasId],
-      errorMessage
+      errorOccurrencesByType: errorTypeOccurrences,
+      fullErrorMessage: errorMessage,
+      stackTrace,
+      elementsLowerError: errorMessage.includes('elements.lower.el'),
+      domState: checkDomReadiness(),
+      fabricAvailable: typeof (window as any).fabric !== 'undefined'
     }
   });
   
@@ -152,12 +217,42 @@ export function handleCanvasInitError(
       tags: {
         component: 'Canvas',
         operation: 'initialization',
-        errorCount: String(canvasErrorCounts[canvasId])
+        errorCount: String(canvasErrorCounts[canvasId]),
+        errorType
+      },
+      extra: {
+        allErrorTypes: Object.keys(errorTypeOccurrences),
+        errorTypeCounts: errorTypeOccurrences
       }
     });
   }
   
   return isFatalCanvasError;
+}
+
+/**
+ * Classify canvas error types to track patterns
+ */
+function classifyCanvasError(errorMessage: string): string {
+  if (errorMessage.includes('elements.lower.el')) {
+    return 'lower-element-undefined';
+  } else if (errorMessage.includes('has been already initialized')) {
+    return 'already-initialized';
+  } else if (errorMessage.includes('WebGL context')) {
+    return 'webgl-context';
+  } else if (errorMessage.includes('context creation failed')) {
+    return 'context-creation';
+  } else if (errorMessage.includes('Cannot read properties of null')) {
+    return 'null-property-access';
+  } else if (errorMessage.includes('Cannot read properties of undefined')) {
+    return 'undefined-property-access';
+  } else if (errorMessage.includes('not a function')) {
+    return 'not-a-function';
+  } else if (errorMessage.includes('canvas is already in use')) {
+    return 'canvas-in-use';
+  } else {
+    return 'other-canvas-error';
+  }
 }
 
 /**
@@ -196,7 +291,11 @@ function collectCanvasDiagnostics(
     canvasElementExists: !!canvasElement,
     timestamp: new Date().toISOString(),
     documentReady: document.readyState,
-    isFatalError: isFatal
+    isFatalError: isFatal,
+    allCanvasElements: {
+      count: document.querySelectorAll('canvas').length,
+      elementIds: Array.from(document.querySelectorAll('canvas')).map(c => c.id || 'no-id')
+    }
   };
   
   // Canvas element details if available
@@ -247,6 +346,17 @@ function collectCanvasDiagnostics(
       diagnostics.diagnosticCollectionError = String(diagnosticError);
     }
   }
+
+  // Add DOM inspection details to help debug the lower.el issue
+  diagnostics.domInspection = {
+    canvasCount: document.querySelectorAll('canvas').length,
+    fabricCanvasLowerExists: document.querySelectorAll('.fabric-canvas-container .lower-canvas').length > 0,
+    canvasWrapperCount: document.querySelectorAll('.canvas-wrapper').length,
+    canvasContainersDetails: Array.from(document.querySelectorAll('.canvas-wrapper')).map(el => ({
+      childCount: el.childNodes.length,
+      hasCanvas: el.querySelector('canvas') !== null
+    }))
+  };
   
   return diagnostics;
 }
@@ -299,6 +409,13 @@ function getBrowserContext(): Record<string, any> {
         hidden: document.hidden,
         visibilityState: document.visibilityState
       };
+
+      // Script loading status
+      context.scriptLoading = {
+        fabricScriptLoaded: typeof (window as any).fabric !== 'undefined',
+        totalScriptsLoaded: document.querySelectorAll('script').length,
+        asyncScriptsCount: document.querySelectorAll('script[async]').length
+      };
     }
   } catch (contextError) {
     context.contextCollectionError = String(contextError);
@@ -315,10 +432,57 @@ export function generateCanvasDiagnosticReport(): Record<string, any> {
   return {
     canvasInitAttempts,
     canvasErrorCounts,
+    errorTypeOccurrences,
+    mostFrequentError: Object.entries(errorTypeOccurrences)
+      .sort(([, countA], [, countB]) => countB - countA)
+      .slice(0, 1)
+      .map(([type, count]) => ({ type, count }))[0] || 'none',
     browserContext: getBrowserContext(),
     timestamp: new Date().toISOString(),
-    appState: typeof window !== 'undefined' && window.__app_state ? window.__app_state : 'Not available',
-    canvasState: typeof window !== 'undefined' && window.__canvas_state ? window.__canvas_state : 'Not available'
+    domState: checkDomReadiness(),
+    appState: typeof window !== 'undefined' && (window as any).__app_state ? (window as any).__app_state : 'Not available',
+    canvasState: typeof window !== 'undefined' && (window as any).__canvas_state ? (window as any).__canvas_state : 'Not available',
+    fabricLibraryStatus: collectFabricDetails()
   };
+}
+
+/**
+ * Check if Fabric.js has been loaded properly
+ */
+export function checkFabricJsLoading(): Record<string, any> {
+  const result = {
+    fabricDetected: false,
+    fabricVersion: null,
+    fabricObjectAvailable: false,
+    fabricCanvasAvailable: false,
+    fabricProblem: null,
+    polyfillsLoaded: false
+  };
+  
+  try {
+    // Check if fabric global is available
+    if (typeof window !== 'undefined' && (window as any).fabric) {
+      result.fabricDetected = true;
+      result.fabricVersion = (window as any).fabric.version;
+      result.fabricObjectAvailable = typeof (window as any).fabric.Object === 'function';
+      result.fabricCanvasAvailable = typeof (window as any).fabric.Canvas === 'function';
+      
+      // Check for specific missing components related to the lower.el error
+      if (!(window as any).fabric.util || !(window as any).fabric.util.getElementOffset) {
+        result.fabricProblem = 'Missing fabric.util.getElementOffset';
+      }
+    } else {
+      result.fabricProblem = 'Fabric.js not loaded in window';
+    }
+    
+    // Check for polyfills that Fabric.js might require
+    if (typeof window !== 'undefined') {
+      result.polyfillsLoaded = typeof (window as any).requestAnimationFrame === 'function';
+    }
+  } catch (e) {
+    result.fabricProblem = String(e);
+  }
+  
+  return result;
 }
 

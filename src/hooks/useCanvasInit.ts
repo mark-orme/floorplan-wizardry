@@ -4,11 +4,14 @@
  * Handles additional canvas initialization logic and error monitoring
  * @module useCanvasInit
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { captureMessage, captureError } from '@/utils/sentryUtils';
 import { markInitialized } from '@/utils/healthMonitoring';
-import { generateCanvasDiagnosticReport } from '@/utils/canvas/canvasErrorMonitoring';
+import { 
+  generateCanvasDiagnosticReport, 
+  checkFabricJsLoading 
+} from '@/utils/canvas/canvasErrorMonitoring';
 
 interface UseCanvasInitProps {
   onError?: () => void;
@@ -24,6 +27,55 @@ interface UseCanvasInitProps {
 export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitProps): void => {
   const errorCountRef = useRef<number>(0);
   const canvasInitializedRef = useRef<boolean>(false);
+  const [initChecked, setInitChecked] = useState<boolean>(false);
+  
+  // Check Fabric.js loading during initialization
+  useEffect(() => {
+    // This runs once on mount to check Fabric.js loading status
+    if (initChecked) return;
+    
+    const fabricStatus = checkFabricJsLoading();
+    
+    captureMessage(
+      fabricStatus.fabricDetected 
+        ? `Fabric.js detected: ${fabricStatus.fabricVersion}` 
+        : 'Fabric.js not detected during initialization',
+      'fabric-load-check', 
+      {
+        level: fabricStatus.fabricDetected ? 'info' : 'error',
+        tags: {
+          component: 'useCanvasInit',
+          fabricLoaded: String(fabricStatus.fabricDetected),
+          fabricVersion: fabricStatus.fabricVersion || 'unknown'
+        },
+        extra: fabricStatus
+      }
+    );
+    
+    // If Fabric.js is not loaded correctly, log an error
+    if (!fabricStatus.fabricDetected || fabricStatus.fabricProblem) {
+      console.error("⚠️ Fabric.js loading issue:", fabricStatus.fabricProblem);
+      
+      captureError(
+        new Error(`Fabric.js loading issue: ${fabricStatus.fabricProblem}`),
+        'fabric-load-error',
+        {
+          level: 'error',
+          tags: {
+            component: 'useCanvasInit',
+            operation: 'initialization'
+          },
+          extra: {
+            fabricStatus,
+            documentState: document.readyState,
+            scripts: Array.from(document.querySelectorAll('script')).map(s => s.src || 'inline')
+          }
+        }
+      );
+    }
+    
+    setInitChecked(true);
+  }, [initChecked]);
   
   // Track canvas initialization status
   useEffect(() => {
@@ -62,7 +114,13 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
             canvasId
           },
           extra: {
-            diagnostics: generateCanvasDiagnosticReport()
+            diagnostics: generateCanvasDiagnosticReport(),
+            documentReady: document.readyState,
+            canvasElements: {
+              count: document.querySelectorAll('canvas').length,
+              ids: Array.from(document.querySelectorAll('canvas')).map(c => c.id || 'no-id')
+            },
+            fabricStatus: checkFabricJsLoading()
           }
         });
       }
@@ -78,26 +136,88 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
   useEffect(() => {
     const handleCanvasInitError = (event: CustomEvent) => {
       errorCountRef.current += 1;
-      const { error, isFatal } = event.detail || {};
+      const { error, isFatal, specific } = event.detail || {};
       
       console.error("Canvas initialization error:", error);
       
-      // Report error context to Sentry
+      // Capture specific internal details about the error
+      const extractErrorDetails = (error: any): Record<string, any> => {
+        if (!error) return { noError: true };
+        
+        return {
+          message: error.message || 'No message',
+          stack: error.stack || 'No stack',
+          name: error.name || 'No name',
+          code: error.code,
+          lowerElementMissing: error.message?.includes('elements.lower.el') || false,
+          // Add any fabric-specific error properties
+          fabricSpecific: error.fabricSpecificError || false
+        };
+      };
+      
+      // Detect common problems in the DOM that might cause canvas initialization issues
+      const detectDomProblems = (): Record<string, any> => {
+        const problems = {
+          missingCanvasElement: document.querySelectorAll('canvas').length === 0,
+          multipleFabricInstances: false,
+          cssProblems: false,
+          visibilityIssues: false
+        };
+        
+        // Check for CSS visibility issues
+        const canvases = document.querySelectorAll('canvas');
+        if (canvases.length > 0) {
+          const hiddenCanvas = Array.from(canvases).some(canvas => {
+            const style = window.getComputedStyle(canvas);
+            return style.display === 'none' || 
+                  style.visibility === 'hidden' || 
+                  style.opacity === '0' ||
+                  canvas.width === 0 || 
+                  canvas.height === 0;
+          });
+          problems.visibilityIssues = hiddenCanvas;
+        }
+        
+        // Check for multiple fabric instances
+        if (typeof window !== 'undefined') {
+          const fabricInstances = Object.keys(window).filter(key => 
+            key.startsWith('fabric') || 
+            (window as any)[key]?.Canvas || 
+            (window as any)[key]?.Object
+          );
+          problems.multipleFabricInstances = fabricInstances.length > 1;
+          if (problems.multipleFabricInstances) {
+            problems.fabricInstanceKeys = fabricInstances;
+          }
+        }
+        
+        return problems;
+      };
+      
+      // Report error context to Sentry with enhanced diagnostics
       captureError(error || new Error('Unknown canvas init error'), 'canvas-init-error-event', {
         level: isFatal ? 'fatal' : 'error',
         tags: {
           component: 'useCanvasInit',
           operation: 'initialization',
           errorCount: String(errorCountRef.current),
-          canvasId
+          canvasId,
+          lowerElementError: error?.message?.includes('elements.lower.el') ? 'true' : 'false',
+          specificError: specific || 'unknown'
         },
         extra: {
           isFatal,
-          errorDetails: error ? { 
-            message: error.message,
-            stack: error.stack
-          } : 'No error details available',
-          diagnostics: generateCanvasDiagnosticReport()
+          errorDetails: extractErrorDetails(error),
+          fabricStatus: checkFabricJsLoading(),
+          domProblems: detectDomProblems(),
+          diagnostics: generateCanvasDiagnosticReport(),
+          elementsInspection: {
+            canvasCount: document.querySelectorAll('canvas').length,
+            canvasParents: Array.from(document.querySelectorAll('canvas')).map(c => 
+              c.parentElement ? c.parentElement.tagName + (c.parentElement.id ? `#${c.parentElement.id}` : '') : 'no-parent'
+            ),
+            lowerCanvasPresent: document.querySelectorAll('.lower-canvas').length > 0
+          }
         }
       });
       
@@ -131,3 +251,4 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
   
   return;
 };
+

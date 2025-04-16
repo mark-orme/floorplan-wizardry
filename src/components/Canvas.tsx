@@ -9,7 +9,8 @@ import {
   logCanvasInitAttempt, 
   logCanvasInitSuccess, 
   handleCanvasInitError,
-  generateCanvasDiagnosticReport
+  generateCanvasDiagnosticReport,
+  checkFabricJsLoading
 } from '@/utils/canvas/canvasErrorMonitoring';
 
 export interface CanvasProps {
@@ -47,6 +48,42 @@ export const Canvas: React.FC<CanvasProps> = ({
   const canvasId = useRef<string>(`canvas-${Math.random().toString(36).substring(2, 9)}`).current;
   const canvasInitTimeRef = useRef<number>(Date.now());
   const initTriesRef = useRef<number>(0);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  
+  // Verify Fabric.js is available on initialization
+  useEffect(() => {
+    const fabricStatus = checkFabricJsLoading();
+    
+    // Report loading status to debugging tools
+    console.log("Fabric.js loading status:", fabricStatus);
+    
+    if (!fabricStatus.fabricDetected || fabricStatus.fabricProblem) {
+      captureError(
+        new Error(`Fabric.js setup issue: ${fabricStatus.fabricProblem || 'Not detected'}`), 
+        'fabric-canvas-mount-error', 
+        {
+          level: 'error',
+          tags: {
+            component: 'Canvas',
+            operation: 'mount'
+          },
+          extra: {
+            fabricStatus,
+            canvasId,
+            canvasElement: !!canvasRef.current,
+            dimensions: { width, height },
+            props: { 
+              width, 
+              height, 
+              showGridDebug, 
+              tool, 
+              lineThickness 
+            }
+          }
+        }
+      );
+    }
+  }, [canvasId, width, height, showGridDebug, tool, lineThickness]);
   
   // Initialize canvas with enhanced error monitoring
   useEffect(() => {
@@ -58,7 +95,9 @@ export const Canvas: React.FC<CanvasProps> = ({
           operation: 'initialization'
         },
         extra: {
-          diagnostics: generateCanvasDiagnosticReport()
+          diagnostics: generateCanvasDiagnosticReport(),
+          canvasId,
+          dimensions: { width, height }
         }
       });
       return;
@@ -69,20 +108,52 @@ export const Canvas: React.FC<CanvasProps> = ({
       const attempt = logCanvasInitAttempt(canvasId, { width, height });
       initTriesRef.current = attempt;
       
-      // Create the Fabric.js canvas instance
+      // Additional logging for specific issue with lower.el
+      console.log("🔍 Pre-initialization canvas check:", {
+        canvasId,
+        canvasElement: canvasRef.current,
+        fabricInstance: typeof FabricCanvas === 'function' ? 'available' : 'unavailable',
+        width: canvasRef.current.width,
+        height: canvasRef.current.height
+      });
+      
+      // Force canvas dimensions to ensure proper initialization
+      canvasRef.current.width = width;
+      canvasRef.current.height = height;
+      
+      // Create the Fabric.js canvas instance with detailed options
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',
-        selection: true
+        selection: true,
+        renderOnAddRemove: true,
+        fireRightClick: true,
+        stopContextMenu: false // Allow context menu for debugging
       });
+      
+      // Store reference for cleanup
+      fabricCanvasRef.current = canvas;
+      
+      // Check if the canvas has been properly initialized by Fabric
+      if (!canvas.upperCanvasEl || !canvas.lowerCanvasEl) {
+        throw new Error('Canvas elements not properly initialized by Fabric.js');
+      }
+      
+      // Dispatch success event to track successful initialization
+      const successEvent = new CustomEvent('canvas-init-success', {
+        detail: { canvasId, timestamp: Date.now() }
+      });
+      window.dispatchEvent(successEvent);
       
       // Log successful initialization
       const initDuration = Date.now() - canvasInitTimeRef.current;
       logCanvasInitSuccess(canvasId, initDuration, {
         canvasType: canvas.constructor.name,
         objectCount: canvas.getObjects().length,
-        dimensions: { width, height }
+        dimensions: { width, height },
+        lowerCanvasInitialized: !!canvas.lowerCanvasEl,
+        upperCanvasInitialized: !!canvas.upperCanvasEl
       });
       
       // Notify parent component
@@ -92,27 +163,35 @@ export const Canvas: React.FC<CanvasProps> = ({
       
       // Update global canvas state for debugging
       if (typeof window !== 'undefined') {
-        window.__canvas_state = {
+        (window as any).__canvas_state = {
           width: canvas.width,
           height: canvas.height,
           zoom: canvas.getZoom(),
           objectCount: canvas.getObjects().length,
           gridVisible: canvas.getObjects().some((obj: any) => obj.isGrid),
-          lastOperation: 'initialize'
+          lastOperation: 'initialize',
+          initialized: true,
+          lowerCanvasExists: !!canvas.lowerCanvasEl,
+          upperCanvasExists: !!canvas.upperCanvasEl
         };
       }
       
       // Set up cleanup function
       return () => {
         try {
-          canvas.dispose();
-          captureMessage('Canvas disposed successfully', 'canvas-dispose', {
-            level: 'info',
-            tags: {
-              component: 'Canvas',
-              operation: 'cleanup'
-            }
-          });
+          if (canvas) {
+            // Clean up all event listeners first
+            canvas.dispose();
+            fabricCanvasRef.current = null;
+            
+            captureMessage('Canvas disposed successfully', 'canvas-dispose', {
+              level: 'info',
+              tags: {
+                component: 'Canvas',
+                operation: 'cleanup'
+              }
+            });
+          }
         } catch (disposeError) {
           captureError(disposeError, 'canvas-dispose-error', {
             level: 'error',
@@ -126,6 +205,16 @@ export const Canvas: React.FC<CanvasProps> = ({
     } catch (error) {
       console.error('Error initializing canvas:', error);
       
+      // Get additional context about the error
+      let specificErrorType = 'generic-error';
+      if (error instanceof Error) {
+        if (error.message.includes('elements.lower.el')) {
+          specificErrorType = 'lower-element-undefined';
+        } else if (error.message.includes('already initialized')) {
+          specificErrorType = 'already-initialized';
+        }
+      }
+      
       // Use enhanced error handling with diagnostics
       const isFatalError = handleCanvasInitError(
         error, 
@@ -134,9 +223,16 @@ export const Canvas: React.FC<CanvasProps> = ({
         initTriesRef.current
       );
       
-      // Dispatch custom event for global error handling
+      // Dispatch custom event for global error handling with enhanced context
       const errorEvent = new CustomEvent('canvas-init-error', { 
-        detail: { error, canvasId, isFatal: isFatalError } 
+        detail: { 
+          error, 
+          canvasId, 
+          isFatal: isFatalError, 
+          specific: specificErrorType,
+          timestamp: Date.now(),
+          fabricStatus: checkFabricJsLoading()
+        } 
       });
       window.dispatchEvent(errorEvent);
       
@@ -168,3 +264,4 @@ export const Canvas: React.FC<CanvasProps> = ({
     </div>
   );
 };
+
