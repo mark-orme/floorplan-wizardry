@@ -6,3 +6,4 @@ export { useStraightLineTool } from './useStraightLineTool';
 export { useLineToolHandlers } from './useLineToolHandlers';
 export { useLinePreview } from './useLinePreview';
 export { useLineAngleSnap } from './useLineAngleSnap';
+export { useEnhancedGridSnapping } from './useEnhancedGridSnapping';

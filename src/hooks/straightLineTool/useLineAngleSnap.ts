@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Point } from '@/types/core/Point';
 
 interface AngleSnapResult {
@@ -8,7 +8,15 @@ interface AngleSnapResult {
   isSnapped: boolean;
 }
 
-export const useLineAngleSnap = (snapThreshold = 10, snapAngles = [0, 45, 90, 135, 180, 225, 270, 315]) => {
+// Common angles in degrees (0°, 45°, 90°, etc.)
+const DEFAULT_SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+export const useLineAngleSnap = (
+  snapThreshold = 10, 
+  snapAngles = DEFAULT_SNAP_ANGLES
+) => {
+  const [activeSnapAngles, setActiveSnapAngles] = useState(snapAngles);
+  
   const snapToAngles = useCallback((startPoint: Point, endPoint: Point): AngleSnapResult => {
     // Calculate current angle
     const dx = endPoint.x - startPoint.x;
@@ -25,18 +33,19 @@ export const useLineAngleSnap = (snapThreshold = 10, snapAngles = [0, 45, 90, 13
     if (angle < 0) angle += 360;
     
     // Find the closest snap angle
-    let closestAngle = snapAngles[0];
+    let closestAngle = activeSnapAngles[0];
     let minDiff = Math.abs(angle - closestAngle);
     
-    snapAngles.forEach(snapAngle => {
+    for (const snapAngle of activeSnapAngles) {
       const diff = Math.abs(angle - snapAngle);
-      if (diff < minDiff) {
-        minDiff = diff;
+      const wrappedDiff = Math.min(diff, 360 - diff); // Handle wrapping around 360°
+      if (wrappedDiff < minDiff) {
+        minDiff = wrappedDiff;
         closestAngle = snapAngle;
       }
-    });
+    }
     
-    // Check if it's close enough to snap
+    // Check if it's close enough to snap based on threshold
     const isSnapped = minDiff <= snapThreshold;
     
     if (!isSnapped) {
@@ -53,9 +62,40 @@ export const useLineAngleSnap = (snapThreshold = 10, snapAngles = [0, 45, 90, 13
       angle: closestAngle,
       isSnapped: true
     };
-  }, [snapThreshold, snapAngles]);
+  }, [activeSnapAngles, snapThreshold]);
+  
+  // Allow changing the active snap angles
+  const setSnapAngles = useCallback((angles: number[]) => {
+    setActiveSnapAngles(angles);
+  }, []);
+  
+  // Function to get the nearest snap angle without modifying the point
+  const getNearestSnapAngle = useCallback((startPoint: Point, endPoint: Point): number | null => {
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+    
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    if (angle < 0) angle += 360;
+    
+    let closestAngle = activeSnapAngles[0];
+    let minDiff = Math.abs(angle - closestAngle);
+    
+    for (const snapAngle of activeSnapAngles) {
+      const diff = Math.abs(angle - snapAngle);
+      const wrappedDiff = Math.min(diff, 360 - diff);
+      if (wrappedDiff < minDiff) {
+        minDiff = wrappedDiff;
+        closestAngle = snapAngle;
+      }
+    }
+    
+    return minDiff <= snapThreshold ? closestAngle : null;
+  }, [activeSnapAngles, snapThreshold]);
   
   return {
-    snapToAngles
+    snapToAngles,
+    setSnapAngles,
+    getNearestSnapAngle,
+    snapAngles: activeSnapAngles
   };
 };
