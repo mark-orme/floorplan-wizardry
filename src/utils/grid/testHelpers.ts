@@ -9,12 +9,14 @@ import { createPoint } from '@/types/core/Point';
  */
 export const createTestGridConfig = (): GridConfig => {
   return {
-    show: true,
-    step: 20,
-    color: '#cccccc',
-    showSubgrid: true,
-    subgridStep: 5,
-    subgridColor: '#eeeeee'
+    cellSize: 20,
+    rows: 30,
+    cols: 40,
+    lineColor: '#cccccc',
+    lineWidth: 1,
+    majorLineInterval: 5,
+    majorLineColor: '#aaaaaa',
+    majorLineWidth: 2
   };
 };
 
