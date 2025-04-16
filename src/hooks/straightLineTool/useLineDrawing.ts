@@ -1,9 +1,11 @@
+
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
-import { toast } from 'sonner';
+import { Point } from '@/types/core/Point';
 import { useSnapToGrid } from '../useSnapToGrid';
-import { captureMessage, captureError } from '@/utils/sentry';
-import logger from '@/utils/logger';
+import { useLineCreation } from './useLineCreation';
+import { useMeasurementCalculation } from './useMeasurementCalculation';
+import { useLineFinalizer } from './useLineFinalizer';
 
 /**
  * Hook for line drawing operations
@@ -15,6 +17,9 @@ export const useLineDrawing = (
   saveCurrentState: () => void
 ) => {
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
+  const { createLine, createDistanceTooltip } = useLineCreation();
+  const { calculateMeasurement } = useMeasurementCalculation();
+  const { finalizeLine, removeLine } = useLineFinalizer(fabricCanvasRef, saveCurrentState);
   
   /**
    * Create a new line on the canvas
@@ -22,34 +27,17 @@ export const useLineDrawing = (
    * @param startY - Starting Y coordinate
    * @returns The created line object
    */
-  const createLine = useCallback((startX: number, startY: number) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return null;
-    
-    try {
-      // Create initial line
-      const line = new Line(
-        [startX, startY, startX, startY],
-        {
-          stroke: lineColor,
-          strokeWidth: lineThickness,
-          selectable: false,
-          evented: false,
-          objectType: 'straight-line'
-        }
-      );
-      
-      // Add to canvas
-      canvas.add(line);
-      canvas.requestRenderAll();
-      
-      return line;
-    } catch (error) {
-      captureError(error as Error, "straight-line-creation-error");
-      logger.error("Error creating line", error);
-      return null;
-    }
-  }, [fabricCanvasRef, lineColor, lineThickness]);
+  const createNewLine = useCallback((startX: number, startY: number) => {
+    return createLine(
+      fabricCanvasRef.current,
+      startX,
+      startY,
+      startX,
+      startY,
+      lineColor,
+      lineThickness
+    );
+  }, [fabricCanvasRef, lineColor, lineThickness, createLine]);
   
   /**
    * Update an existing line with new end coordinates
@@ -82,27 +70,13 @@ export const useLineDrawing = (
         y2: end.y
       });
       
-      // Calculate distance for tooltip
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const distanceInMeters = (distance / 100).toFixed(1); // 100px = 1m
-      
-      // Position for tooltip (midpoint of line)
-      const midX = (start.x + end.x) / 2;
-      const midY = (start.y + end.y) / 2 - 10; // Position slightly above the line
-      
-      return {
-        distance,
-        distanceInMeters,
-        tooltipPosition: { x: midX, y: midY }
-      };
+      // Calculate measurement data
+      return calculateMeasurement(start, end);
     } catch (error) {
-      captureError(error as Error, "straight-line-update-error");
-      logger.error("Error updating line", error);
+      console.error("Error updating line", error);
       return null;
     }
-  }, [snapLineToGrid]);
+  }, [snapLineToGrid, calculateMeasurement]);
   
   /**
    * Create or update the distance tooltip
@@ -124,19 +98,7 @@ export const useLineDrawing = (
     try {
       if (!tooltipRef.current) {
         // Create new tooltip
-        const tooltip = new Text(text, {
-          left: x,
-          top: y,
-          fontSize: 12,
-          fill: '#000000',
-          backgroundColor: 'rgba(255,255,255,0.7)',
-          padding: 2,
-          objectType: 'measurement',
-          selectable: false,
-          originX: 'center',
-          originY: 'bottom'
-        });
-        canvas.add(tooltip);
+        const tooltip = createDistanceTooltip(canvas, text, x, y);
         return tooltip;
       } else {
         // Update existing tooltip
@@ -148,104 +110,14 @@ export const useLineDrawing = (
         return tooltipRef.current;
       }
     } catch (error) {
-      captureError(error as Error, "tooltip-creation-error");
-      logger.error("Error creating/updating tooltip", error);
+      console.error("Error creating/updating tooltip", error);
       return null;
     }
-  }, [fabricCanvasRef]);
-  
-  /**
-   * Finalize the line drawing
-   * @param line - The line object
-   * @param tooltip - The tooltip object
-   * @param distance - The line distance
-   * @returns Whether the operation succeeded
-   */
-  const finalizeLine = useCallback((
-    line: Line,
-    tooltip: Text | null,
-    distance: number
-  ) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !line) return false;
-    
-    try {
-      // Only keep the line if it has a meaningful length
-      if (distance > 5) {
-        // Save current state for undo
-        saveCurrentState();
-        
-        // Convert to meters (assuming 100 pixels = 1 meter)
-        const distanceInMeters = (distance / 100).toFixed(1);
-        
-        // Update line properties
-        line.set({
-          selectable: true,
-          evented: true,
-          objectType: 'straight-line',
-          measurement: `${distanceInMeters}m`
-        });
-        
-        // Keep tooltip
-        if (tooltip) {
-          tooltip.set({
-            selectable: false,
-            evented: true,
-            objectType: 'measurement'
-          });
-        }
-        
-        toast.success(`Line created: ${distanceInMeters}m`);
-        return true;
-      } else {
-        // Line too short, remove it
-        canvas.remove(line);
-        if (tooltip) {
-          canvas.remove(tooltip);
-        }
-        captureMessage("Straight line discarded (too short)", "straight-line-discarded");
-        return false;
-      }
-    } catch (error) {
-      captureError(error as Error, "straight-line-finalize-error");
-      logger.error("Error finalizing line", error);
-      return false;
-    }
-  }, [fabricCanvasRef, saveCurrentState]);
-  
-  /**
-   * Remove line and tooltip from canvas
-   * @param line - The line object
-   * @param tooltip - The tooltip object
-   */
-  const removeLine = useCallback((
-    line: Line | null,
-    tooltip: Text | null
-  ) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    try {
-      // Remove the line being drawn
-      if (line) {
-        canvas.remove(line);
-      }
-      
-      // Remove the tooltip
-      if (tooltip) {
-        canvas.remove(tooltip);
-      }
-      
-      canvas.requestRenderAll();
-    } catch (error) {
-      captureError(error as Error, "straight-line-removal-error");
-      logger.error("Error removing line", error);
-    }
-  }, [fabricCanvasRef]);
+  }, [fabricCanvasRef, createDistanceTooltip]);
   
   return {
     snapPointToGrid,
-    createLine,
+    createLine: createNewLine,
     updateLine,
     createOrUpdateTooltip,
     finalizeLine,

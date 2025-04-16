@@ -6,64 +6,87 @@ import { Canvas as FabricCanvas, Line, Text } from 'fabric';
  * Hook for creating and managing line objects
  */
 export const useLineCreation = () => {
-  // Create a line
+  /**
+   * Create a new line on the canvas
+   * @param canvas - The fabric canvas
+   * @param startX - Starting X coordinate
+   * @param startY - Starting Y coordinate
+   * @param endX - End X coordinate
+   * @param endY - End Y coordinate
+   * @param lineColor - Line color
+   * @param lineThickness - Line thickness
+   * @returns The created line object
+   */
   const createLine = useCallback((
     canvas: FabricCanvas | null,
-    x1: number, 
-    y1: number, 
-    x2: number, 
-    y2: number,
+    startX: number, 
+    startY: number, 
+    endX: number, 
+    endY: number,
     lineColor: string,
     lineThickness: number
   ) => {
     if (!canvas) return null;
     
     try {
-      const line = new Line([x1, y1, x2, y2], {
-        stroke: lineColor,
-        strokeWidth: lineThickness,
-        selectable: true,
-        evented: true,
-        objectType: 'straight-line'
-      });
+      // Create initial line
+      const line = new Line(
+        [startX, startY, endX, endY],
+        {
+          stroke: lineColor,
+          strokeWidth: lineThickness,
+          selectable: false,
+          evented: false,
+          objectType: 'straight-line'
+        }
+      );
       
+      // Add to canvas
       canvas.add(line);
+      canvas.requestRenderAll();
+      
       return line;
     } catch (error) {
-      console.error('Error creating line:', error);
+      console.error("Error creating line", error);
       return null;
     }
   }, []);
   
-  // Create a distance tooltip
+  /**
+   * Create or update a distance tooltip
+   * @param canvas - The fabric canvas
+   * @param text - Text to display
+   * @param x - X position
+   * @param y - Y position
+   * @returns The created or updated tooltip
+   */
   const createDistanceTooltip = useCallback((
     canvas: FabricCanvas | null,
-    x: number, 
-    y: number, 
-    distance: number
+    text: string,
+    x: number,
+    y: number
   ) => {
     if (!canvas) return null;
     
     try {
-      // Convert distance to meters (assuming 100px = 1m)
-      const meters = (distance / 100).toFixed(1);
-      
-      const tooltip = new Text(`${meters}m`, {
+      // Create new tooltip
+      const tooltip = new Text(text, {
         left: x,
-        top: y - 10,  // Position above the line
+        top: y,
         fontSize: 12,
         fill: '#000000',
         backgroundColor: 'rgba(255,255,255,0.7)',
         padding: 2,
+        objectType: 'measurement',
         selectable: false,
-        evented: false,
-        objectType: 'measurement'
+        originX: 'center',
+        originY: 'bottom'
       });
       
       canvas.add(tooltip);
       return tooltip;
     } catch (error) {
-      console.error('Error creating tooltip:', error);
+      console.error("Error creating tooltip", error);
       return null;
     }
   }, []);
