@@ -72,7 +72,7 @@ export const CanvasApp = ({
   
   // Use collaboration status hook to show toast notifications
   useCollaborationStatus({
-    collaborators,
+    collaborators: collaborators.length, // Fix: Pass the length of the collaborators array
     enableSync
   });
   
