@@ -110,6 +110,9 @@ export const useLineState = (props: UseLineStateProps) => {
     logger.info('Created line:', { x1, y1, x2, y2, color: lineColor, thickness: lineThickness });
     console.log("DEBUG: Line created and added to canvas:", line);
     
+    // Render the canvas immediately
+    canvas.renderAll();
+    
     // Update refs
     currentLineRef.current = line;
     return line;
@@ -151,6 +154,9 @@ export const useLineState = (props: UseLineStateProps) => {
     
     // Ensure tooltip is at the front
     canvas.bringObjectToFront(text);
+    
+    // Render the canvas immediately
+    canvas.renderAll();
     
     // Store reference
     distanceTooltipRef.current = text;
@@ -234,7 +240,7 @@ export const useLineState = (props: UseLineStateProps) => {
     // Ensure line is visible at the front
     canvas.bringObjectToFront(line);
     
-    // Force render when updating
+    // Force render when updating - this is crucial
     canvas.renderAll();
     console.log("DEBUG: Rendered canvas after line update");
   }, [canvas, angles]);
@@ -339,6 +345,9 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     canvas.defaultCursor = 'crosshair';
     canvas.hoverCursor = 'crosshair';
     
+    // Render initial state
+    canvas.renderAll();
+    
     // Make objects non-selectable during line drawing
     canvas.getObjects().forEach(obj => {
       if (obj.type !== 'line') { // Don't affect existing lines
@@ -425,6 +434,9 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       if (lineState.isDrawing) {
         cancelDrawing();
       }
+      
+      // Force a final render before cleaning up
+      canvas.renderAll();
     };
   }, [isActive, canvas]);
   
@@ -538,7 +550,7 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     // Reset drawing state
     lineState.resetDrawingState();
     
-    // Render
+    // Final render to ensure all changes are visible
     canvas.renderAll();
   }, [isActive, canvas, lineState, saveCurrentState]);
   
