@@ -2,6 +2,7 @@
 import React from 'react';
 import { Point } from '@/types/core/Point';
 import { Badge } from '../ui/badge';
+import { pixelsToMeters } from '@/utils/measurementUtils';
 
 interface LineDistanceTooltipProps {
   startPoint: Point;
@@ -21,7 +22,7 @@ export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
   endPoint,
   distance,
   angle,
-  unit = 'px',
+  unit = 'm',
   isSnapped = false,
   snapType
 }) => {
@@ -33,6 +34,11 @@ export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
     y: (startPoint.y + endPoint.y) / 2 - 30 // Position above the line
   };
   
+  // Convert pixels to meters if unit is meters
+  const displayDistance = unit === 'm' 
+    ? pixelsToMeters(distance).toFixed(2) 
+    : distance.toFixed(0);
+  
   // Determine snap indicator symbol based on angle
   let snapIndicator = '↔';
   if (angle !== null) {
@@ -40,6 +46,14 @@ export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
     else if (angle === 90 || angle === 270) snapIndicator = '↕';
     else if (angle === 45 || angle === 225) snapIndicator = '↗';
     else if (angle === 135 || angle === 315) snapIndicator = '↖';
+    else if (angle > 0 && angle < 45) snapIndicator = '→';
+    else if (angle > 45 && angle < 90) snapIndicator = '↗';
+    else if (angle > 90 && angle < 135) snapIndicator = '↑';
+    else if (angle > 135 && angle < 180) snapIndicator = '↖';
+    else if (angle > 180 && angle < 225) snapIndicator = '←';
+    else if (angle > 225 && angle < 270) snapIndicator = '↙';
+    else if (angle > 270 && angle < 315) snapIndicator = '↓';
+    else if (angle > 315 && angle < 360) snapIndicator = '↘';
   }
   
   // Determine background color based on snap type
@@ -57,9 +71,9 @@ export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
       }}
     >
       <div className="flex items-center gap-1">
-        <span>{distance}{unit}</span>
+        <span>{displayDistance}{unit}</span>
         <span className="mx-1">|</span>
-        <span>{angle}°</span>
+        <span>{Math.round(angle)}°</span>
         
         {isSnapped && (
           <Badge variant={badgeVariant} className="ml-1 h-5 min-w-5 flex items-center justify-center">

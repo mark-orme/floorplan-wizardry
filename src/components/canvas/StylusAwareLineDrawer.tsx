@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useStraightLineTool, InputMethod } from '@/hooks/straightLineTool/useStraightLineTool';
+import { useStraightLineTool, InputMethod } from '@/hooks/straightLineTool';
 import { cn } from '@/lib/utils';
 import { LineToolMeasurementOverlay } from './LineToolMeasurementOverlay';
 
@@ -35,7 +35,8 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     measurementData,
     toggleGridSnapping,
     toggleAngles,
-    isDrawing
+    isDrawing,
+    renderTooltip
   } = useStraightLineTool({
     canvas,
     enabled,
@@ -59,6 +60,9 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   
   return (
     <>
+      {/* Render the dynamic tooltip through portal */}
+      {isActive && renderTooltip()}
+      
       {/* Stylus indicator */}
       {isPencilMode && (
         <div className="fixed top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md z-50">
@@ -68,7 +72,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       
       {/* Enhanced measurement overlay */}
       <LineToolMeasurementOverlay
-        visible={showMeasurement}
+        visible={showMeasurement && !isActive}
         distance={measurementData.distance}
         angle={measurementData.angle}
         isSnapped={measurementData.snapped}

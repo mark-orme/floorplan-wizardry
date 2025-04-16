@@ -5,9 +5,7 @@
  */
 
 import type { Point } from "@/types/core/Point";
-
-// Conversion factor - pixels to meters
-const PIXELS_TO_METERS_FACTOR = 0.01;
+import { PIXELS_PER_METER } from "@/constants/numerics";
 
 /**
  * Convert a pixel value to meters
@@ -15,7 +13,7 @@ const PIXELS_TO_METERS_FACTOR = 0.01;
  * @returns Value in meters
  */
 export const pixelsToMeters = (pixels: number): number => {
-  return pixels * PIXELS_TO_METERS_FACTOR;
+  return pixels / PIXELS_PER_METER;
 };
 
 /**
@@ -24,7 +22,7 @@ export const pixelsToMeters = (pixels: number): number => {
  * @returns Value in pixels
  */
 export const metersToPixels = (meters: number): number => {
-  return meters / PIXELS_TO_METERS_FACTOR;
+  return meters * PIXELS_PER_METER;
 };
 
 /**

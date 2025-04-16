@@ -39,7 +39,7 @@ export const useLineToolHandlers = ({
     distance: null, 
     angle: null, 
     snapped: false, 
-    unit: 'px',
+    unit: 'm',
     snapType: undefined as 'grid' | 'angle' | 'both' | undefined
   });
   
@@ -220,7 +220,7 @@ export const useLineToolHandlers = ({
       distance: Math.round(distance),
       angle: Math.round(angle),
       snapped: linePreview.isSnapped,
-      unit: 'px',
+      unit: 'm',
       snapType: linePreview.snapType
     });
   }, [canvas, isActive, startPoint, previewLine, snapEnabled, 
