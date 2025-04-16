@@ -1,65 +1,59 @@
 
-/**
- * Floor Plan Adapter Type Helpers
- * Type definitions and utilities for floor plan adapters
- * @module utils/floorPlanAdapter/types
- */
-import { StrokeTypeLiteral } from '@/types/floor-plan/basicTypes';
-import { StrokeType } from '@/types/core/floor-plan/Stroke';
-import { RoomType } from '@/types/core/floor-plan/Room';
+import { Point } from "@/types/core/Point";
+import { createPoint } from "../pointHelpers";
 
-/**
- * Validate and convert a string to a valid StrokeTypeLiteral
- * @param type The string type to validate
- * @returns A valid StrokeTypeLiteral
- */
-export function validateStrokeType(type: string | null | undefined): StrokeTypeLiteral {
-  if (!type) return 'line';
-  
-  switch(type.toLowerCase()) {
-    case 'line': return 'line';
-    case 'polyline': return 'polyline';
-    case 'wall': return 'wall';
-    case 'room': return 'room';
-    case 'freehand': return 'freehand';
-    default: return 'line'; // Default to line if unknown type
-  }
-}
+// Validate and convert stroke types
+export const validateStrokeType = (type: string): string => {
+  const validTypes = ['freehand', 'line', 'wall', 'room', 'furniture', 'text', 'dimension'];
+  return validTypes.includes(type) ? type : 'freehand';
+};
 
-/**
- * Map string to a valid RoomType
- * @param type The string type to validate
- * @returns A valid RoomType
- */
-export function mapRoomType(type: string | null | undefined): string {
-  if (!type) return 'other';
-  
-  switch(type.toLowerCase()) {
-    case 'living': return 'living';
-    case 'bedroom': return 'bedroom';
-    case 'kitchen': return 'kitchen';
-    case 'bathroom': return 'bathroom';
-    case 'office': return 'office';
-    case 'other': return 'other';
-    default: return 'other'; // Default to 'other' if unknown type
-  }
-}
+// Map room type strings
+export const mapRoomType = (type: string): string => {
+  const validRoomTypes = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  return validRoomTypes.includes(type) ? type : 'other';
+};
 
-/**
- * Map room type to core RoomType
- * @param type The room type to convert
- * @returns A valid RoomType
- */
-export function validateRoomType(type: string | null | undefined): RoomType {
-  if (!type) return 'other';
-  
-  switch(type.toLowerCase()) {
-    case 'living': return 'living';
-    case 'bedroom': return 'bedroom';
-    case 'kitchen': return 'kitchen';
-    case 'bathroom': return 'bathroom';
-    case 'office': return 'office';
-    case 'other': return 'other';
-    default: return 'other'; // Default to 'other' if unknown type
+// Validate timestamps
+export const validateTimestamp = (timestamp: string | null | undefined): string => {
+  if (!timestamp) {
+    return new Date().toISOString();
   }
-}
+  
+  try {
+    // Check if it's a valid ISO timestamp
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      return new Date().toISOString();
+    }
+    return timestamp;
+  } catch (e) {
+    return new Date().toISOString();
+  }
+};
+
+// Validate colors
+export const validateColor = (color: string | null | undefined, defaultColor = '#000000'): string => {
+  if (!color) return defaultColor;
+  
+  // Simple validation - could be enhanced for more strict validation
+  return color;
+};
+
+// Validate point data
+export const validatePoint = (pointData: any): Point => {
+  if (!pointData || typeof pointData !== 'object') {
+    return createPoint(0, 0);
+  }
+  
+  const x = typeof pointData.x === 'number' ? pointData.x : 0;
+  const y = typeof pointData.y === 'number' ? pointData.y : 0;
+  
+  return createPoint(x, y);
+};
+
+// Validate room type
+export const validateRoomType = (type: string): string => {
+  const validTypes = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  return validTypes.includes(type) ? type : 'other';
+};

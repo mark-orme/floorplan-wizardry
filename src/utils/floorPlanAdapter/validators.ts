@@ -15,4 +15,7 @@ export const ensureValidPoint = (point: any): Point => {
   return createPoint(0, 0);
 };
 
+// Re-export the validation functions from types.ts for backwards compatibility
+export { validatePoint, validateColor, validateTimestamp } from './types';
+
 // Additional validation functions can be added here as needed
