@@ -272,20 +272,25 @@ function getBrowserContext(): Record<string, any> {
         height: window.screen.height
       };
       
-      // Memory info if available
-      if (navigator.deviceMemory) {
-        context.deviceMemory = navigator.deviceMemory;
+      // Memory info if available - use optional chaining and type check
+      if ('deviceMemory' in navigator) {
+        const deviceMemory = (navigator as any).deviceMemory;
+        if (deviceMemory !== undefined) {
+          context.deviceMemory = deviceMemory;
+        }
       }
       
-      // Connection info if available
-      if (navigator.connection) {
-        const conn = navigator.connection as any;
-        context.connection = {
-          effectiveType: conn.effectiveType,
-          downlink: conn.downlink,
-          rtt: conn.rtt,
-          saveData: conn.saveData
-        };
+      // Connection info if available - use optional chaining and type check
+      if ('connection' in navigator) {
+        const conn = (navigator as any).connection;
+        if (conn) {
+          context.connection = {
+            effectiveType: conn.effectiveType,
+            downlink: conn.downlink,
+            rtt: conn.rtt,
+            saveData: conn.saveData
+          };
+        }
       }
       
       // Document state
@@ -316,3 +321,4 @@ export function generateCanvasDiagnosticReport(): Record<string, any> {
     canvasState: typeof window !== 'undefined' && window.__canvas_state ? window.__canvas_state : 'Not available'
   };
 }
+

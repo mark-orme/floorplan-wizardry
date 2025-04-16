@@ -109,15 +109,17 @@ export function collectNetworkDiagnostics(): Record<string, any> {
   const diagnostics: Record<string, any> = {};
   
   try {
-    // Check navigator.connection if available
-    if (navigator.connection) {
-      const conn = navigator.connection as any;
-      diagnostics.connection = {
-        effectiveType: conn.effectiveType,
-        downlink: conn.downlink,
-        rtt: conn.rtt,
-        saveData: conn.saveData
-      };
+    // Check navigator.connection if available using type checking
+    if ('connection' in navigator) {
+      const conn = (navigator as any).connection;
+      if (conn) {
+        diagnostics.connection = {
+          effectiveType: conn.effectiveType,
+          downlink: conn.downlink,
+          rtt: conn.rtt,
+          saveData: conn.saveData
+        };
+      }
     }
     
     // Collect resource timing for JS and CSS files
@@ -200,7 +202,7 @@ export function createLoadingDiagnosticsReport(): Record<string, any> {
       userAgent: navigator.userAgent,
       language: navigator.language,
       platform: navigator.platform,
-      deviceMemory: (navigator as any).deviceMemory,
+      deviceMemory: 'deviceMemory' in navigator ? (navigator as any).deviceMemory : undefined,
       hardwareConcurrency: navigator.hardwareConcurrency,
       url: window.location.href,
       screenSize: {
