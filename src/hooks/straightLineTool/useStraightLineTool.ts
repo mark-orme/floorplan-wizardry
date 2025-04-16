@@ -1,10 +1,9 @@
-
 /**
  * Hook for straight line drawing tool
  * @module hooks/straightLineTool/useStraightLineTool
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, Object as FabricObject, Text, Shadow } from 'fabric';
+import { Canvas as FabricCanvas, Line, Object as FabricObject, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
@@ -134,14 +133,6 @@ export const useLineState = (props: UseLineStateProps) => {
     }
     
     try {
-      // Create proper Shadow object for tooltip
-      const shadowObj = new Shadow({
-        color: 'rgba(0,0,0,0.2)',
-        offsetX: 1,
-        offsetY: 1,
-        blur: 2
-      });
-      
       // Create text object for tooltip with improved styling
       const text = new Text(`${distance.toFixed(0)} px`, {
         left: x,
@@ -153,7 +144,6 @@ export const useLineState = (props: UseLineStateProps) => {
         padding: 4,
         selectable: false,
         evented: false,
-        shadow: shadowObj,
         textAlign: 'center'
       });
       
@@ -360,16 +350,6 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     // Render initial state
     canvas.renderAll();
     
-    // Make objects non-selectable during line drawing
-    canvas.getObjects().forEach(obj => {
-      if (obj.type !== 'line') { // Don't affect existing lines
-        obj.selectable = false;
-      }
-    });
-    
-    // Make sure canvas is properly initialized
-    canvas.renderAll();
-    
     // Set up event handlers for canvas
     const handleMouseDown = (e: any) => {
       console.log("Mouse down on canvas", e);
@@ -435,13 +415,6 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       canvas.defaultCursor = 'default';
       canvas.hoverCursor = 'move';
       
-      // Make objects selectable again
-      canvas.getObjects().forEach(obj => {
-        if ((obj as any).objectType !== 'grid') {
-          obj.selectable = true;
-        }
-      });
-      
       // Cancel any active drawing
       if (lineState.isDrawing) {
         cancelDrawing();
@@ -469,7 +442,6 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     // Create line
     const line = lineState.createLine(snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y);
     if (line) {
-      // Line is added in createLine method
       lineState.setCurrentLine(line);
       console.log("Line created:", line);
       
@@ -477,7 +449,6 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       const tooltip = lineState.createDistanceTooltip(snappedPoint.x, snappedPoint.y, 0);
       if (tooltip) {
         lineState.setDistanceTooltip(tooltip);
-        // Tooltip is added in createDistanceTooltip method
       }
       
       // Force render

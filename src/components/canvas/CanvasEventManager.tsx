@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -115,7 +116,7 @@ export const CanvasEventManager = ({
       lastToolRef.current = tool;
     }
     
-    // Set drawing mode based on tool
+    // Disable freeDrawingMode for all modes except DRAW
     canvas.isDrawingMode = tool === DrawingMode.DRAW;
     
     // Configure free drawing brush
@@ -135,12 +136,14 @@ export const CanvasEventManager = ({
     if (tool === DrawingMode.STRAIGHT_LINE) {
       canvas.defaultCursor = 'crosshair';
       canvas.hoverCursor = 'crosshair';
+      canvas.selection = false;
     } else if (tool === DrawingMode.DRAW) {
       canvas.defaultCursor = 'crosshair';
       canvas.hoverCursor = 'crosshair';
     } else if (tool === DrawingMode.SELECT) {
       canvas.defaultCursor = 'default';
       canvas.hoverCursor = 'move';
+      canvas.selection = true;
     }
     
     // Force render to apply changes

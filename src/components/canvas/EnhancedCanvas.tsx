@@ -25,6 +25,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   const [dimensions, setDimensions] = useState({ width, height });
   const [zoomLevel, setZoomLevel] = useState(1);
   const [initialized, setInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Use our unified grid management
   const { 
@@ -44,6 +45,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     
     try {
       console.log("Initializing Fabric canvas with dimensions", width, "x", height);
+      setIsLoading(true);
       
       // Initialize Fabric.js canvas with proper dimensions
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
@@ -72,6 +74,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       // Mark canvas as initialized for grid tools
       (fabricCanvas as any).initialized = true;
       setInitialized(true);
+      setIsLoading(false);
       
       // Add zoom event listener
       fabricCanvas.on('zoom:changed', (opt: any) => {
@@ -81,7 +84,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       // Force initial render
       fabricCanvas.renderAll();
       
-      // Create grid with a small delay
+      // Create grid with a small delay to ensure canvas is ready
       setTimeout(() => {
         createGrid();
         // Force another render after grid creation
@@ -106,6 +109,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       };
     } catch (error) {
       console.error("Error initializing canvas:", error);
+      setIsLoading(false);
       if (onError && error instanceof Error) {
         onError(error);
       }
@@ -137,6 +141,13 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         canvas.freeDrawingBrush.width = 2;
         canvas.defaultCursor = 'crosshair';
         break;
+      
+      case DrawingMode.STRAIGHT_LINE:
+        canvas.defaultCursor = 'crosshair';
+        canvas.hoverCursor = 'crosshair';
+        canvas.selection = false;
+        console.log("Straight line tool activated!");
+        break;
         
       case DrawingMode.WALL:
       case DrawingMode.ROOM:
@@ -157,6 +168,9 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     
     // Ensure grid stays at the bottom after tool change
     checkAndFixGrid();
+    
+    // Force render to apply cursor changes
+    canvas.renderAll();
     
   }, [tool, checkAndFixGrid]);
   
@@ -188,7 +202,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       <div className="absolute bottom-2 right-2 text-xs text-gray-500">
         {Math.round(zoomLevel * 100)}%
       </div>
-      {!initialized && (
+      {(!initialized || isLoading) && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/70">
           <div className="text-center">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
