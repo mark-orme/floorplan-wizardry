@@ -1,18 +1,17 @@
 
 /**
- * Measurement data interface
- * Represents measurements for lines and geometric shapes
+ * Interface for measurement data displayed during drawing
  */
 export interface MeasurementData {
-  /** Distance in pixels or specified unit */
+  /** Distance measurement */
   distance: number | null;
   
-  /** Angle in degrees */
+  /** Angle measurement in degrees */
   angle: number | null;
   
-  /** Whether the point is snapped to a reference */
-  snapped?: boolean;
+  /** Measurement unit */
+  unit: 'px' | 'm' | 'cm' | 'mm';
   
-  /** Measurement unit (px, cm, m, etc.) */
-  unit: string;
+  /** Whether the point was snapped to a grid or guide */
+  snapped?: boolean;
 }

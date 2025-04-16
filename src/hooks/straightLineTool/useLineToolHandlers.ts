@@ -1,8 +1,4 @@
 
-/**
- * Line tool handlers
- * @module hooks/straightLineTool/useLineToolHandlers
- */
 import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useLineState } from './useLineState';
@@ -27,19 +23,18 @@ export const useLineToolHandlers = ({
   // Destructure all required properties from lineState
   const {
     isDrawing,
-    inputMethod,
     snapEnabled,
     anglesEnabled,
-    startPointRef,
-    currentLineRef,
-    distanceTooltipRef,
-    resetDrawingState,
+    startPoint,
+    currentLine,
+    distanceTooltip,
     toggleSnap,
     toggleAngles,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    cancelDrawing
+    startDrawing,
+    continueDrawing,
+    completeDrawing,
+    cancelDrawing,
+    inputMethod
   } = lineState;
   
   /**
@@ -53,8 +48,8 @@ export const useLineToolHandlers = ({
     const point = { x: pointer.x, y: pointer.y };
     
     // Handle pointer down
-    handlePointerDown(point);
-  }, [canvas, handlePointerDown]);
+    startDrawing(point);
+  }, [canvas, startDrawing]);
   
   /**
    * Handle mouse move on canvas
@@ -67,8 +62,8 @@ export const useLineToolHandlers = ({
     const point = { x: pointer.x, y: pointer.y };
     
     // Handle pointer move
-    handlePointerMove(point);
-  }, [canvas, isDrawing, handlePointerMove]);
+    continueDrawing(point);
+  }, [canvas, isDrawing, continueDrawing]);
   
   /**
    * Handle mouse up on canvas
@@ -77,13 +72,13 @@ export const useLineToolHandlers = ({
     if (!canvas || !isDrawing) return;
     
     // Handle pointer up - we don't need coordinates for this
-    handlePointerUp({ x: 0, y: 0 });
+    completeDrawing({ x: 0, y: 0 });
     
     // Call completion callback
     if (onComplete) {
       onComplete();
     }
-  }, [canvas, isDrawing, handlePointerUp, onComplete]);
+  }, [canvas, isDrawing, completeDrawing, onComplete]);
   
   /**
    * Handle keyboard shortcuts

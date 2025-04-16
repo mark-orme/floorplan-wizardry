@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -39,6 +40,8 @@ export const useLineState = ({
   // Settings
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [anglesEnabled, setAnglesEnabled] = useState(true);
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  const [isPencilMode, setIsPencilMode] = useState(false);
   
   /**
    * Start drawing a line
@@ -189,6 +192,32 @@ export const useLineState = ({
   }, [fabricCanvasRef, isDrawing, currentLine, distanceTooltip]);
   
   /**
+   * Initialize the tool
+   */
+  const initializeTool = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return false;
+    
+    canvas.isDrawingMode = false;
+    canvas.selection = false;
+    canvas.defaultCursor = 'crosshair';
+    
+    setIsToolInitialized(true);
+    return true;
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Reset drawing state
+   */
+  const resetDrawingState = useCallback(() => {
+    setIsDrawing(false);
+    setStartPoint(null);
+    setCurrentPoint(null);
+    setCurrentLine(null);
+    setDistanceTooltip(null);
+  }, []);
+  
+  /**
    * Toggle snap to grid
    */
   const toggleSnap = useCallback(() => {
@@ -202,6 +231,44 @@ export const useLineState = ({
     setAnglesEnabled(prev => !prev);
   }, []);
   
+  /**
+   * Create a line object
+   */
+  const createLine = useCallback((x1: number, y1: number, x2: number, y2: number) => {
+    return new Line([x1, y1, x2, y2], {
+      stroke: lineColor,
+      strokeWidth: lineThickness,
+      selectable: true,
+      objectType: 'straight-line'
+    });
+  }, [lineColor, lineThickness]);
+  
+  /**
+   * Create a distance tooltip
+   */
+  const createDistanceTooltip = useCallback((x: number, y: number, distance: number) => {
+    // Convert pixels to meters (example conversion)
+    const distanceInMeters = distance / 100;
+    
+    return new Text(`${distanceInMeters.toFixed(1)}m`, {
+      left: x,
+      top: y - 10,
+      fontSize: 12,
+      fill: '#333',
+      backgroundColor: 'rgba(255,255,255,0.7)',
+      padding: 5,
+      selectable: false
+    });
+  }, []);
+  
+  /**
+   * Set the input method
+   */
+  const handleInputMethodChange = useCallback((method: InputMethod) => {
+    setInputMethod(method);
+    setIsPencilMode(method === InputMethod.PENCIL);
+  }, []);
+  
   return {
     isDrawing,
     isActive,
@@ -209,14 +276,23 @@ export const useLineState = ({
     startPoint,
     currentPoint,
     currentLine,
+    distanceTooltip,
+    snapEnabled,
+    anglesEnabled,
+    inputMethod,
+    isPencilMode,
     startDrawing,
     continueDrawing,
     completeDrawing,
     cancelDrawing,
-    snapEnabled,
-    anglesEnabled,
     toggleSnap,
     toggleAngles,
-    setIsToolInitialized
+    setIsToolInitialized,
+    initializeTool,
+    resetDrawingState,
+    setInputMethod: handleInputMethodChange,
+    setIsPencilMode,
+    createLine,
+    createDistanceTooltip
   };
 };

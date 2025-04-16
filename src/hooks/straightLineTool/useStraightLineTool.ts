@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import logger from '@/utils/logger';
 import { Point } from '@/types/core/Point';
@@ -29,10 +29,6 @@ export const useStraightLineTool = ({
     saveCurrentState 
   });
   
-  // Track input method
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-  const [isPencilMode, setIsPencilMode] = useState(false);
-  
   // Line measurement data
   const [measurementData, setMeasurementData] = useState<MeasurementData>({
     distance: null,
@@ -43,8 +39,8 @@ export const useStraightLineTool = ({
   // Detect Apple Pencil and other input methods
   const detectInputMethod = useCallback((e: PointerEvent) => {
     const isPen = e.pointerType === 'pen';
-    setIsPencilMode(isPen);
-    setInputMethod(isPen ? InputMethod.PENCIL : (e.pointerType === 'touch' ? InputMethod.TOUCH : InputMethod.MOUSE));
+    lineState.setIsPencilMode(isPen);
+    lineState.setInputMethod(isPen ? InputMethod.PENCIL : (e.pointerType === 'touch' ? InputMethod.TOUCH : InputMethod.MOUSE));
     
     // Log input method for debugging
     if (isPen) {
@@ -55,7 +51,7 @@ export const useStraightLineTool = ({
         tiltY: e.tiltY
       });
     }
-  }, []);
+  }, [lineState]);
   
   // Handle pointer down event
   const handlePointerDown = useCallback((event: any) => {
@@ -188,8 +184,8 @@ export const useStraightLineTool = ({
     isActive: lineState.isActive,
     isDrawing: lineState.isDrawing,
     currentLine: lineState.currentLine,
-    inputMethod,
-    isPencilMode,
+    inputMethod: lineState.inputMethod,
+    isPencilMode: lineState.isPencilMode,
     snapEnabled: lineState.snapEnabled,
     anglesEnabled: lineState.anglesEnabled,
     measurementData,
@@ -204,3 +200,4 @@ export const useStraightLineTool = ({
 
 // Re-export InputMethod for use in other components
 export { InputMethod } from './useLineState';
+export { useLineState } from './useLineState';

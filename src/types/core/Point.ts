@@ -1,23 +1,11 @@
 
 /**
- * Point type definition
- * @module types/core/Point
- */
-
-/**
- * Point interface
+ * Represents a 2D point
  */
 export interface Point {
+  /** X coordinate */
   x: number;
+  
+  /** Y coordinate */
   y: number;
-}
-
-/**
- * Create a point
- * @param x X coordinate
- * @param y Y coordinate
- * @returns A new Point object
- */
-export function createPoint(x: number, y: number): Point {
-  return { x, y };
 }

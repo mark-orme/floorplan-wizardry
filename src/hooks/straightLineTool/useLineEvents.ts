@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { MeasurementData } from '@/types/measurement/MeasurementData';
-import { snapToGrid } from '@/utils/geometry/pointOperations';
+import { snapToGrid, snapToAngle } from '@/utils/geometry/pointOperations';
 import logger from '@/utils/logger';
 
 interface UseLineEventsProps {
@@ -39,28 +39,7 @@ export const useLineEvents = ({
   const applyAngleConstraints = useCallback((start: Point, end: Point): Point => {
     if (!anglesEnabled || !start) return end;
     
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    
-    // Determine if angle is close to 0, 45, 90, 135, 180 degrees
-    const snapAngles = [0, 45, 90, 135, 180, -45, -90, -135];
-    const closestAngle = snapAngles.reduce((prev, curr) => {
-      return Math.abs(curr - angle) < Math.abs(prev - angle) ? curr : prev;
-    });
-    
-    // If angle is close to a snap angle (within 10 degrees), constrain it
-    if (Math.abs(closestAngle - angle) < 10) {
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const rads = closestAngle * Math.PI / 180;
-      
-      return {
-        x: start.x + Math.cos(rads) * distance,
-        y: start.y + Math.sin(rads) * distance
-      };
-    }
-    
-    return end;
+    return snapToAngle(start, end, 45);
   }, [anglesEnabled]);
   
   // Handle mouse down event
