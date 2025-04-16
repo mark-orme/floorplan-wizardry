@@ -157,7 +157,7 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
       
       // Detect common problems in the DOM that might cause canvas initialization issues
       const detectDomProblems = (): Record<string, any> => {
-        const problems = {
+        const problems: Record<string, any> = {
           missingCanvasElement: document.querySelectorAll('canvas').length === 0,
           multipleFabricInstances: false,
           cssProblems: false,
@@ -251,4 +251,3 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
   
   return;
 };
-
