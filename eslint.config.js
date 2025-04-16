@@ -13,6 +13,7 @@ import { gridTypeSafetyRules } from './eslint/grid-type-safety-rules.js';
 import { typeSafetyRules } from './eslint/type-safety-rules.js';
 import { testMockValidationRules } from './eslint/typescript/test-mock-validation.js';
 import { fabricTestTypingRules } from './eslint/fabric-test-typing-rules.js';
+import { fabricSafetyRules } from './eslint/typescript/fabric-safety.js';
 
 export default [
   baseConfig,
@@ -28,5 +29,6 @@ export default [
   gridTypeSafetyRules,
   typeSafetyRules,
   testMockValidationRules,
-  fabricTestTypingRules
+  fabricTestTypingRules,
+  fabricSafetyRules
 ];

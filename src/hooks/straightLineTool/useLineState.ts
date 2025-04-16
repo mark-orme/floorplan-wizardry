@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useLinePreview } from './useLinePreview';
 
@@ -135,7 +135,7 @@ export const useLineState = (props: UseLineStateProps): LineState => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return null;
     
-    const line = new fabric.Line([p1.x, p1.y, p2.x, p2.y], {
+    const line = new Line([p1.x, p1.y, p2.x, p2.y], {
       stroke: lineColor,
       strokeWidth: lineThickness,
       selectable: true

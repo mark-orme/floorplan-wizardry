@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from 'react';
 
-// Define and export the InputMethod enum
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
@@ -10,40 +9,54 @@ export enum InputMethod {
 }
 
 /**
- * Hook for managing input method state and detection
+ * Hook for detecting and managing input methods for drawing tools
  */
 export const useLineInputMethod = () => {
-  // Input method state
   const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
   const [isPencilMode, setIsPencilMode] = useState(false);
-  
-  // Detect input method from pointer event
-  const detectInputMethod = useCallback((e: PointerEvent) => {
-    const isPen = e.pointerType === 'pen';
-    
-    setIsPencilMode(isPen);
-    setInputMethod(
-      isPen 
-        ? InputMethod.PENCIL 
-        : (e.pointerType === 'touch' ? InputMethod.TOUCH : InputMethod.MOUSE)
-    );
-    
-    // Log input method for debugging
-    if (isPen) {
-      console.info('Apple Pencil or stylus detected', {
-        pointerType: e.pointerType,
-        pressure: e.pressure,
-        tiltX: e.tiltX,
-        tiltY: e.tiltY
-      });
+
+  /**
+   * Detect the input method from a pointer event
+   */
+  const detectInputMethod = useCallback((event: PointerEvent | TouchEvent | MouseEvent) => {
+    if ('pointerType' in event) {
+      // This is a PointerEvent
+      switch (event.pointerType) {
+        case 'pen':
+          setInputMethod(InputMethod.PENCIL);
+          setIsPencilMode(true);
+          break;
+        case 'touch':
+          setInputMethod(InputMethod.TOUCH);
+          setIsPencilMode(false);
+          break;
+        default:
+          setInputMethod(InputMethod.MOUSE);
+          setIsPencilMode(false);
+      }
+    } else if ('touches' in event) {
+      // This is a TouchEvent
+      setInputMethod(InputMethod.TOUCH);
+      setIsPencilMode(false);
+    } else {
+      // This is a MouseEvent
+      setInputMethod(InputMethod.MOUSE);
+      setIsPencilMode(false);
     }
+  }, []);
+
+  /**
+   * Manually set the input method
+   */
+  const setInputMethodManually = useCallback((method: InputMethod) => {
+    setInputMethod(method);
+    setIsPencilMode(method === InputMethod.PENCIL || method === InputMethod.STYLUS);
   }, []);
 
   return {
     inputMethod,
     isPencilMode,
-    setInputMethod,
-    setIsPencilMode,
-    detectInputMethod
+    detectInputMethod,
+    setInputMethod: setInputMethodManually
   };
 };

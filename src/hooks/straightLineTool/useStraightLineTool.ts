@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useLineState } from './useLineState';
-import { InputMethod, useLineInputMethod } from './useLineInputMethod';
+import { InputMethod } from './useLineInputMethod';
 import { MeasurementData, UseStraightLineToolResult } from '../useStraightLineTool.d';
 import { FabricEventNames } from '@/types/fabric-events';
 import logger from '@/utils/logger';
@@ -26,18 +26,25 @@ export const useStraightLineTool = ({
   lineThickness = 2,
   saveCurrentState = () => {}
 }: UseStraightLineToolProps): UseStraightLineToolResult => {
+  // Create a reference to hold the canvas
+  const fabricCanvasRef = useRef<FabricCanvas | null>(canvas);
+  
+  // Update the ref when canvas changes
+  useEffect(() => {
+    fabricCanvasRef.current = canvas;
+  }, [canvas]);
+  
   // Get line state from the hook
-  const lineState = useLineState(lineColor, lineThickness);
+  const lineState = useLineState({
+    fabricCanvasRef,
+    lineColor,
+    lineThickness,
+    saveCurrentState
+  });
   
-  // Get input method functions
-  const { 
-    inputMethod, 
-    isPencilMode, 
-    detectInputMethod 
-  } = useLineInputMethod();
-  
-  // Store the canvas in a ref
-  const fabricCanvasRef = lineState.fabricCanvasRef;
+  // Get input method functions from the lineState
+  const inputMethod = lineState.inputMethod;
+  const isPencilMode = lineState.isPencilMode;
   
   // Default measurement data
   const [measurementData, setMeasurementData] = useState<MeasurementData>({
@@ -67,12 +74,13 @@ export const useStraightLineTool = ({
     
     // Detect input method if available
     if (e.e && e.e.pointerType) {
-      detectInputMethod(e.e);
+      // Instead of using detectInputMethod, we set it directly for now
+      lineState.setInputMethod(e.e.pointerType === 'pen' ? InputMethod.PENCIL : InputMethod.MOUSE);
     }
     
     // Log for debugging
     logger.debug('Pointer down', { pointer, isActive: lineState.isActive });
-  }, [canvas, lineState, detectInputMethod]);
+  }, [canvas, lineState]);
   
   /**
    * Handle pointer move event
