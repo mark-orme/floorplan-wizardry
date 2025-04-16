@@ -7,7 +7,6 @@ export enum DrawingMode {
   ROOM = 'room',
   HAND = 'hand',
   ERASER = 'eraser',
-  // Add missing drawing modes
   RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
   TEXT = 'text',

@@ -1,9 +1,16 @@
+
 import { useCallback, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { useGridSnapping } from "./useGridSnapping";
 import { toast } from "sonner";
+
+// Define Point interface
+interface Point {
+  x: number;
+  y: number;
+}
 
 /**
  * Hook for managing drawing operations on canvas

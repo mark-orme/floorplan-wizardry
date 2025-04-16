@@ -7,150 +7,148 @@ import {
   Square, 
   Circle, 
   Minus,
+  Type,
+  Ruler,
+  Hand,
   Eraser
 } from "lucide-react";
-import { Wall } from "@/components/icons/Wall";
 import { DrawingMode } from "@/constants/drawingModes";
+import { useDrawingContext } from "@/contexts/DrawingContext";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DrawingToolbarProps {
-  activeTool: DrawingMode;
-  onToolChange: (tool: DrawingMode) => void;
-  lineColor?: string;
-  lineThickness?: number;
-  wallColor?: string;
-  wallThickness?: number;
-  onLineColorChange?: (color: string) => void;
-  onLineThicknessChange?: (thickness: number) => void;
-  onWallColorChange?: (color: string) => void;
-  onWallThicknessChange?: (thickness: number) => void;
+  onSave?: () => void;
+  onClear?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
-  activeTool,
-  onToolChange,
-  lineColor = "#000000",
-  lineThickness = 2,
-  wallColor = "#333333",
-  wallThickness = 4,
-  onLineColorChange,
-  onLineThicknessChange,
-  onWallColorChange,
-  onWallThicknessChange
+  onSave,
+  onClear,
+  onUndo,
+  onRedo
 }) => {
+  const { 
+    activeTool, 
+    setActiveTool, 
+    lineColor, 
+    setLineColor, 
+    lineThickness, 
+    setLineThickness,
+    canUndo,
+    canRedo
+  } = useDrawingContext();
+
   const tools = [
-    { icon: <MousePointer size={16} />, tool: DrawingMode.SELECT, label: "Select" },
-    { icon: <Pencil size={16} />, tool: DrawingMode.DRAW, label: "Draw" },
-    { icon: <Wall size={16} />, tool: DrawingMode.WALL, label: "Wall" },
-    { icon: <Minus size={16} />, tool: DrawingMode.STRAIGHT_LINE, label: "Measure" },
-    { icon: <Square size={16} />, tool: DrawingMode.RECTANGLE, label: "Rectangle" },
-    { icon: <Circle size={16} />, tool: DrawingMode.CIRCLE, label: "Circle" },
-    { icon: <Eraser size={16} />, tool: DrawingMode.ERASER, label: "Erase" }
+    { mode: DrawingMode.SELECT, icon: <MousePointer size={18} />, label: "Select" },
+    { mode: DrawingMode.DRAW, icon: <Pencil size={18} />, label: "Freehand" },
+    { mode: DrawingMode.STRAIGHT_LINE, icon: <Minus size={18} />, label: "Line" },
+    { mode: DrawingMode.RECTANGLE, icon: <Square size={18} />, label: "Rectangle" },
+    { mode: DrawingMode.CIRCLE, icon: <Circle size={18} />, label: "Circle" },
+    { mode: DrawingMode.TEXT, icon: <Type size={18} />, label: "Text" },
+    { mode: DrawingMode.MEASURE, icon: <Ruler size={18} />, label: "Measure" },
+    { mode: DrawingMode.PAN, icon: <Hand size={18} />, label: "Pan" },
+    { mode: DrawingMode.ERASER, icon: <Eraser size={18} />, label: "Eraser" }
   ];
 
   return (
-    <div className="p-2 bg-white rounded shadow-md">
-      <div className="flex flex-col gap-2">
-        <div className="flex gap-1">
-          {tools.map(({ icon, tool, label }) => (
-            <Button
-              key={tool}
-              variant={activeTool === tool ? "default" : "outline"}
-              size="sm"
-              onClick={() => onToolChange(tool)}
-              title={label}
-            >
-              {icon}
-            </Button>
+    <div className="p-2 bg-white border-b flex flex-wrap items-center gap-2">
+      <TooltipProvider>
+        <div className="flex flex-wrap gap-1">
+          {tools.map((tool) => (
+            <Tooltip key={tool.mode}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={activeTool === tool.mode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveTool(tool.mode)}
+                  className="h-9 px-2.5"
+                >
+                  {tool.icon}
+                  <span className="ml-1 text-xs">{tool.label}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{tool.label}</p>
+              </TooltipContent>
+            </Tooltip>
           ))}
         </div>
-        
-        {activeTool === DrawingMode.WALL ? (
-          <>
-            {onWallColorChange && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Wall Color:</span>
-                <input 
-                  type="color" 
-                  value={wallColor} 
-                  onChange={(e) => onWallColorChange(e.target.value)}
-                  className="w-8 h-6 border-none"
-                />
-              </div>
-            )}
-            
-            {onWallThicknessChange && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Wall Thickness:</span>
-                <input
-                  type="range"
-                  min="2"
-                  max="20"
-                  value={wallThickness}
-                  onChange={(e) => onWallThicknessChange(parseInt(e.target.value, 10))}
-                  className="w-24"
-                />
-                <span className="text-xs">{wallThickness}px</span>
-              </div>
-            )}
-          </>
-        ) : activeTool === DrawingMode.STRAIGHT_LINE ? (
-          <>
-            {onLineColorChange && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Line Color:</span>
-                <input 
-                  type="color" 
-                  value={lineColor} 
-                  onChange={(e) => onLineColorChange(e.target.value)}
-                  className="w-8 h-6 border-none"
-                />
-              </div>
-            )}
-            
-            {onLineThicknessChange && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Line Thickness:</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={lineThickness}
-                  onChange={(e) => onLineThicknessChange(parseInt(e.target.value, 10))}
-                  className="w-24"
-                />
-                <span className="text-xs">{lineThickness}px</span>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {onLineColorChange && activeTool !== DrawingMode.SELECT && activeTool !== DrawingMode.ERASER && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Color:</span>
-                <input 
-                  type="color" 
-                  value={lineColor} 
-                  onChange={(e) => onLineColorChange(e.target.value)}
-                  className="w-8 h-6 border-none"
-                />
-              </div>
-            )}
-            
-            {onLineThicknessChange && activeTool !== DrawingMode.SELECT && activeTool !== DrawingMode.ERASER && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Thickness:</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={lineThickness}
-                  onChange={(e) => onLineThicknessChange(parseInt(e.target.value, 10))}
-                  className="w-24"
-                />
-                <span className="text-xs">{lineThickness}px</span>
-              </div>
-            )}
-          </>
+      </TooltipProvider>
+
+      <Separator orientation="vertical" className="h-8 mx-1" />
+
+      <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="line-color" className="text-xs text-gray-500">Color</label>
+          <input
+            id="line-color"
+            type="color"
+            value={lineColor}
+            onChange={(e) => setLineColor(e.target.value)}
+            className="w-8 h-8 border-0 p-0 rounded"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="line-thickness" className="text-xs text-gray-500">Width</label>
+          <div className="flex items-center gap-1">
+            <input
+              id="line-thickness"
+              type="range"
+              min="1"
+              max="20"
+              value={lineThickness}
+              onChange={(e) => setLineThickness(parseInt(e.target.value))}
+              className="w-24 h-8"
+            />
+            <span className="text-xs w-6">{lineThickness}px</span>
+          </div>
+        </div>
+      </div>
+
+      <Separator orientation="vertical" className="h-8 mx-1" />
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onUndo}
+          disabled={!canUndo}
+          className="h-9"
+        >
+          Undo
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRedo}
+          disabled={!canRedo}
+          className="h-9"
+        >
+          Redo
+        </Button>
+        {onClear && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClear}
+            className="h-9"
+          >
+            Clear
+          </Button>
+        )}
+        {onSave && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSave}
+            className="h-9"
+          >
+            Save
+          </Button>
         )}
       </div>
     </div>
