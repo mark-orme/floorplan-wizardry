@@ -1,102 +1,133 @@
 
 /**
- * Grid debug utilities
+ * Grid debugging utilities
  * @module utils/grid/gridDebugUtils
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createGrid } from './gridRenderers';
 import logger from '@/utils/logger';
 
 /**
  * Dump grid state to console for debugging
  * @param canvas - Fabric canvas
  */
-export function dumpGridState(canvas: FabricCanvas): void {
+export const dumpGridState = (canvas: FabricCanvas): void => {
   if (!canvas) {
-    logger.warn('Cannot dump grid state: Canvas is null');
+    console.log('Cannot dump grid state: Canvas is null');
     return;
   }
   
-  try {
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid'
-    );
-    
-    const gridState = {
-      canvas: {
-        width: canvas.width,
-        height: canvas.height,
-        totalObjects: canvas.getObjects().length
-      },
-      grid: {
-        objectCount: gridObjects.length,
-        visibleCount: gridObjects.filter(obj => obj.visible).length,
-        topLevelCount: gridObjects.filter(obj => obj.visible && obj.opacity === 1).length
-      },
-      timestamp: new Date().toISOString()
-    };
-    
-    logger.info('Grid state:', gridState);
-    console.log('Grid state dump:', gridState);
-    
-    // Additional detailed dump for grid objects
-    if (gridObjects.length > 0) {
-      const firstGridObj = gridObjects[0];
-      logger.debug('Sample grid object:', {
-        visible: firstGridObj.visible,
-        selectable: firstGridObj.selectable,
-        evented: firstGridObj.evented,
-        position: {
-          left: firstGridObj.left,
-          top: firstGridObj.top
-        }
-      });
-    }
-  } catch (error) {
-    logger.error('Error dumping grid state:', error);
-  }
-}
-
-/**
- * Force create a grid, bypassing checks
- * @param canvas - Fabric canvas
- * @param skipChecks - Whether to skip validation checks
- * @returns Created grid objects
- */
-export function forceCreateGrid(
-  canvas: FabricCanvas,
-  skipChecks: boolean = false
-): FabricObject[] {
-  if (!canvas) {
-    logger.error('Cannot force create grid: Canvas is null');
-    return [];
-  }
+  // Get all objects on canvas
+  const allObjects = canvas.getObjects();
   
-  if (!skipChecks) {
-    // Minimal check for canvas dimensions
-    if (!canvas.width || !canvas.height) {
-      logger.warn('Force creating grid on canvas with invalid dimensions');
-    }
-  }
+  // Filter grid objects
+  const gridObjects = allObjects.filter(obj => 
+    (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+  );
   
-  try {
-    // Remove any existing grid
-    const existingGridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid'
-    );
+  // Log counts
+  console.log('---- GRID STATE DUMP ----');
+  console.log(`Total canvas objects: ${allObjects.length}`);
+  console.log(`Grid objects: ${gridObjects.length}`);
+  
+  if (gridObjects.length === 0) {
+    console.log('No grid objects found on canvas');
+  } else {
+    // Log grid objects details
+    console.log('Grid objects visibility:');
+    const visibleCount = gridObjects.filter(obj => obj.visible).length;
+    const hiddenCount = gridObjects.filter(obj => !obj.visible).length;
     
-    existingGridObjects.forEach(obj => {
-      canvas.remove(obj);
+    console.log(`- Visible grid objects: ${visibleCount}`);
+    console.log(`- Hidden grid objects: ${hiddenCount}`);
+    
+    // Check grid object properties
+    const gridTypes = gridObjects.map(obj => (obj as any).objectType || 'unknown');
+    const uniqueTypes = [...new Set(gridTypes)];
+    console.log('Grid object types:', uniqueTypes);
+    
+    // Check if any grid objects are out of bounds
+    const canvasWidth = canvas.width || 0;
+    const canvasHeight = canvas.height || 0;
+    
+    const outOfBoundsGridObjects = gridObjects.filter(obj => {
+      if (obj.left === undefined || obj.top === undefined) return false;
+      return obj.left < 0 || obj.left > canvasWidth || obj.top < 0 || obj.top > canvasHeight;
     });
     
-    // Create new grid
-    const gridObjects = createGrid(canvas);
-    
-    logger.info(`Force created grid with ${gridObjects.length} objects`);
-    
-    return gridObjects;
-  } catch (error) {
-    logger.error('Error force creating grid:', error);
-    return [];
+    if (outOfBoundsGridObjects.length > 0) {
+      console.log(`Out of bounds grid objects: ${outOfBoundsGridObjects.length}`);
+    }
   }
-}
+  
+  // Log canvas dimensions and state
+  console.log('Canvas dimensions:', {
+    width: canvas.width,
+    height: canvas.height,
+    zoom: canvas.getZoom()
+  });
+  
+  console.log('---- END GRID STATE DUMP ----');
+};
+
+/**
+ * Analyze grid issues on a canvas
+ * @param canvas - Fabric canvas
+ * @param gridObjects - Grid objects to analyze
+ * @returns Analysis results
+ */
+export const analyzeGridIssues = (canvas: FabricCanvas, gridObjects: FabricObject[]): {
+  hasIssues: boolean;
+  issues: string[];
+  diagnostics: Record<string, any>;
+} => {
+  const issues: string[] = [];
+  const diagnostics: Record<string, any> = {};
+  
+  // Check for canvas issues
+  if (!canvas) {
+    issues.push('Canvas is null or undefined');
+    return { hasIssues: true, issues, diagnostics };
+  }
+  
+  // Check canvas dimensions
+  if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
+    issues.push('Canvas has invalid dimensions');
+    diagnostics.dimensions = { width: canvas.width, height: canvas.height };
+  }
+  
+  // Check for missing grid objects
+  if (!gridObjects || gridObjects.length === 0) {
+    issues.push('No grid objects found');
+  } else {
+    // Check for invisible grid objects
+    const invisibleGridObjects = gridObjects.filter(obj => !obj.visible);
+    if (invisibleGridObjects.length > 0) {
+      issues.push(`${invisibleGridObjects.length} grid objects are invisible`);
+    }
+    
+    // Check if grid objects are on canvas
+    const canvasObjects = canvas.getObjects();
+    const missingFromCanvas = gridObjects.filter(obj => !canvasObjects.includes(obj));
+    
+    if (missingFromCanvas.length > 0) {
+      issues.push(`${missingFromCanvas.length} grid objects are missing from canvas`);
+    }
+  }
+  
+  diagnostics.canvas = {
+    objectCount: canvas.getObjects().length,
+    dimensions: { width: canvas.width, height: canvas.height },
+    zoom: canvas.getZoom()
+  };
+  
+  diagnostics.grid = {
+    gridObjectCount: gridObjects.length,
+    visibleGridCount: gridObjects.filter(obj => obj.visible).length
+  };
+  
+  return {
+    hasIssues: issues.length > 0,
+    issues,
+    diagnostics
+  };
+};
