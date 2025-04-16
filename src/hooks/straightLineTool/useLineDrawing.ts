@@ -66,6 +66,8 @@ export const useLineDrawing = (
       
       // Update the line
       line.set({
+        x1: start.x,
+        y1: start.y,
         x2: end.x,
         y2: end.y
       });

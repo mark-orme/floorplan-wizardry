@@ -1,105 +1,86 @@
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, Text } from 'fabric';
-import { toast } from 'sonner';
-import { captureMessage, captureError } from '@/utils/sentry';
-import logger from '@/utils/logger';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 
 /**
- * Hook for finalizing line drawing
+ * Hook for finalizing and removing lines
  */
 export const useLineFinalizer = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
   saveCurrentState: () => void
 ) => {
   /**
-   * Finalize the line drawing
-   * @param line - The line object
-   * @param tooltip - The tooltip object
-   * @param distance - The line distance
-   * @returns Whether the operation succeeded
+   * Finalize a line by making it selectable and applying any final styles
+   * @param line - The line to finalize
+   * @param startX - Start X coordinate
+   * @param startY - Start Y coordinate
+   * @param endX - End X coordinate
+   * @param endY - End Y coordinate
+   * @returns The finalized line
    */
   const finalizeLine = useCallback((
     line: Line,
-    tooltip: Text | null,
-    distance: number
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number
   ) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !line) return false;
+    if (!line) return null;
     
     try {
-      // Only keep the line if it has a meaningful length
-      if (distance > 5) {
-        // Save current state for undo
-        saveCurrentState();
-        
-        // Convert to meters (assuming 100 pixels = 1 meter)
-        const distanceInMeters = (distance / 100).toFixed(1);
-        
-        // Update line properties
-        line.set({
-          selectable: true,
-          evented: true,
-          objectType: 'straight-line',
-          measurement: `${distanceInMeters}m`
-        });
-        
-        // Keep tooltip
-        if (tooltip) {
-          tooltip.set({
-            selectable: false,
-            evented: true,
-            objectType: 'measurement'
-          });
+      // Ensure final position is set
+      line.set({
+        x1: startX,
+        y1: startY,
+        x2: endX,
+        y2: endY,
+        selectable: true,
+        evented: true
+      });
+      
+      // Check if line has zero length
+      const hasDimensions = Math.abs(startX - endX) > 1 || Math.abs(startY - endY) > 1;
+      
+      if (!hasDimensions) {
+        // Remove lines that have no dimension (clicks without drags)
+        const canvas = fabricCanvasRef.current;
+        if (canvas) {
+          canvas.remove(line);
+          canvas.requestRenderAll();
         }
-        
-        toast.success(`Line created: ${distanceInMeters}m`);
-        return true;
-      } else {
-        // Line too short, remove it
-        canvas.remove(line);
-        if (tooltip) {
-          canvas.remove(tooltip);
-        }
-        captureMessage("Straight line discarded (too short)", "straight-line-discarded");
-        return false;
-      }
-    } catch (error) {
-      captureError(error as Error, "straight-line-finalize-error");
-      logger.error("Error finalizing line", error);
-      return false;
-    }
-  }, [fabricCanvasRef, saveCurrentState]);
-  
-  /**
-   * Remove line and tooltip from canvas
-   * @param line - The line object
-   * @param tooltip - The tooltip object
-   */
-  const removeLine = useCallback((
-    line: Line | null,
-    tooltip: Text | null
-  ) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    try {
-      // Remove the line being drawn
-      if (line) {
-        canvas.remove(line);
+        return null;
       }
       
-      // Remove the tooltip
-      if (tooltip) {
-        canvas.remove(tooltip);
+      // Otherwise finalize the line
+      const canvas = fabricCanvasRef.current;
+      if (canvas) {
+        canvas.requestRenderAll();
       }
       
-      canvas.requestRenderAll();
+      return line;
     } catch (error) {
-      captureError(error as Error, "straight-line-removal-error");
-      logger.error("Error removing line", error);
+      console.error("Error finalizing line", error);
+      return null;
     }
   }, [fabricCanvasRef]);
-
+  
+  /**
+   * Remove a line from the canvas
+   * @param line - The line to remove
+   */
+  const removeLine = useCallback((line: Line) => {
+    if (!line) return;
+    
+    try {
+      const canvas = fabricCanvasRef.current;
+      if (canvas) {
+        canvas.remove(line);
+        canvas.requestRenderAll();
+      }
+    } catch (error) {
+      console.error("Error removing line", error);
+    }
+  }, [fabricCanvasRef]);
+  
   return {
     finalizeLine,
     removeLine
