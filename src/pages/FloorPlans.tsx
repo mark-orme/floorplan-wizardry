@@ -43,7 +43,9 @@ const FloorPlans = () => {
         <DrawingProvider>
           <CanvasProvider>
             <CanvasControllerProvider>
-              <CanvasApp setCanvas={setCanvas} />
+              <CanvasApp 
+                setCanvas={setCanvas} 
+              />
             </CanvasControllerProvider>
           </CanvasProvider>
         </DrawingProvider>

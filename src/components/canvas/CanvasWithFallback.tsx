@@ -4,14 +4,17 @@ import { CanvasFallback } from '@/components/canvas/CanvasFallback';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
+import { Canvas as FabricCanvas } from 'fabric';
 
-interface CanvasWithFallbackProps extends CanvasProps {
+export interface CanvasWithFallbackProps extends CanvasProps {
   /** Additional class name for container */
   className?: string;
   /** Whether to show diagnostic information in fallback */
   showDiagnostics?: boolean;
   /** Max retry attempts before showing fallback permanently */
   maxRetries?: number;
+  /** Callback when canvas is initialized */
+  onCanvasInitialized?: (canvas: FabricCanvas) => void;
 }
 
 /**
@@ -22,6 +25,7 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   className,
   showDiagnostics = true,
   maxRetries = 3,
+  onCanvasInitialized,
   ...canvasProps
 }) => {
   const [error, setError] = useState<Error | null>(null);
@@ -88,6 +92,19 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
     logger.info("User initiated canvas retry:", retryCount + 1);
   };
   
+  // Handle canvas ready
+  const handleCanvasReady = (canvas: FabricCanvas) => {
+    // Call original onCanvasReady if provided
+    if (canvasProps.onCanvasReady) {
+      canvasProps.onCanvasReady(canvas);
+    }
+    
+    // Call onCanvasInitialized if provided
+    if (onCanvasInitialized) {
+      onCanvasInitialized(canvas);
+    }
+  };
+  
   // If we're showing the fallback, render it
   if (showFallback) {
     return (
@@ -106,6 +123,7 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
     <div className={className} data-testid="canvas-with-fallback" data-retry-count={retryCount}>
       <Canvas 
         {...canvasProps}
+        onCanvasReady={handleCanvasReady}
         onError={handleCanvasError}
         key={`canvas-instance-${retryCount}`}
       />

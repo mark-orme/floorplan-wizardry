@@ -11,7 +11,7 @@ interface EditorContentProps {
   tool: DrawingMode;
   lineThickness: number;
   lineColor: string;
-  enableSync?: boolean; // Added enableSync prop
+  enableSync?: boolean;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -21,7 +21,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   tool,
   lineThickness,
   lineColor,
-  enableSync = true // Default to true
+  enableSync = true
 }) => {
   return (
     <div className="flex-1 overflow-hidden">
@@ -33,6 +33,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           lineThickness={lineThickness}
           lineColor={lineColor}
           enableSync={enableSync}
+          showGridDebug={showGridDebug}
         />
       </div>
     </div>

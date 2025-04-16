@@ -12,7 +12,7 @@ import { CanvasWithFallback } from './CanvasWithFallback';
 import logger from '@/utils/logger';
 import { captureMessage } from '@/utils/sentryUtils';
 
-interface CanvasAppProps {
+export interface CanvasAppProps {
   width?: number;
   height?: number;
   tool?: DrawingMode;
@@ -20,6 +20,8 @@ interface CanvasAppProps {
   lineColor?: string;
   showGridDebug?: boolean;
   onCanvasInitialized?: (canvas: FabricCanvas) => void;
+  setCanvas?: (canvas: FabricCanvas) => void;
+  enableSync?: boolean;
 }
 
 export const CanvasApp: React.FC<CanvasAppProps> = ({
@@ -29,7 +31,8 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   lineThickness = 2,
   lineColor = '#000000',
   showGridDebug = false,
-  onCanvasInitialized
+  onCanvasInitialized,
+  setCanvas
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -81,6 +84,11 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     // Call external handler if provided
     if (onCanvasInitialized) {
       onCanvasInitialized(canvas);
+    }
+    
+    // Set canvas reference if setCanvas provided
+    if (setCanvas) {
+      setCanvas(canvas);
     }
   };
   

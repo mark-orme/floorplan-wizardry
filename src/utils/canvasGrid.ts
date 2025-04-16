@@ -7,6 +7,17 @@ import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
+/**
+ * Grid options interface
+ */
+export interface GridOptions {
+  showMajorLines?: boolean;
+  majorInterval?: number;
+  gridSize?: number;
+  smallGridColor?: string;
+  largeGridColor?: string;
+}
+
 // Create a namespace object for grid functions
 export const canvasGrid = {
   /**
@@ -17,13 +28,7 @@ export const canvasGrid = {
    */
   createGrid: (
     canvas: FabricCanvas,
-    options: {
-      showMajorLines?: boolean;
-      majorInterval?: number;
-      gridSize?: number;
-      smallGridColor?: string;
-      largeGridColor?: string;
-    } = {}
+    options: GridOptions = {}
   ): FabricObject[] => {
     try {
       if (!canvas || !canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
@@ -169,3 +174,9 @@ export const canvasGrid = {
     return gridObjects.length > 0;
   }
 };
+
+// Direct exports for easier imports
+export const createGrid = canvasGrid.createGrid;
+export const setGridVisibility = canvasGrid.setGridVisibility;
+export const forceGridVisibility = canvasGrid.forceGridVisibility;
+export const doesGridExist = canvasGrid.doesGridExist;
