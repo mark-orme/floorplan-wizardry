@@ -1,139 +1,93 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { toast } from 'sonner';
-import { DrawingMode } from '@/constants/drawingModes';
-import { CanvasInitializer } from './CanvasInitializer';
-import { canvasGrid } from '@/utils/canvasGrid';
-import { ErrorBoundary } from '@/utils/canvas/errorBoundary';
-import { GridDebugOverlay } from './GridDebugOverlay';
-import { GridMonitor } from './GridMonitor';
-import { CanvasWithFallback } from './CanvasWithFallback';
-import logger from '@/utils/logger';
-import { captureMessage } from '@/utils/sentryUtils';
+/**
+ * Canvas application component
+ * Main component that wraps the canvas with necessary UI elements
+ * @module CanvasApp
+ */
+import { useState, useEffect, useRef } from "react";
+import { CanvasWithFallback } from "@/components/canvas/CanvasWithFallback";
+import CanvasLayout from "@/components/CanvasLayout"; 
+import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
+import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import type { DebugInfoState } from "@/types/core/DebugInfo";
+import { Canvas as FabricCanvas } from "fabric";
+import { DrawingMode } from "@/constants/drawingModes";
+
+// Default dimensions for the canvas
+const DEFAULT_CANVAS_WIDTH = 800;
+const DEFAULT_CANVAS_HEIGHT = 600;
 
 export interface CanvasAppProps {
-  width?: number;
-  height?: number;
+  setCanvas?: (canvas: FabricCanvas) => void;
   tool?: DrawingMode;
   lineThickness?: number;
   lineColor?: string;
-  showGridDebug?: boolean;
-  onCanvasInitialized?: (canvas: FabricCanvas) => void;
-  setCanvas?: (canvas: FabricCanvas) => void;
   enableSync?: boolean;
+  showGridDebug?: boolean;
 }
 
-export const CanvasApp: React.FC<CanvasAppProps> = ({
-  width = 800,
-  height = 600,
+/**
+ * Canvas application component
+ * Wraps the canvas with necessary controllers and UI
+ * @returns {JSX.Element} Rendered component
+ */
+export const CanvasApp = ({
+  setCanvas,
   tool = 'select',
   lineThickness = 2,
   lineColor = '#000000',
-  showGridDebug = false,
-  onCanvasInitialized,
-  setCanvas
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const gridLayerRef = useRef<any[]>([]);
-  const [error, setError] = useState<Error | null>(null);
-  const [errorInfo, setErrorInfo] = useState<React.ErrorInfo | null>(null);
-  const [canvasReady, setCanvasReady] = useState<boolean>(false);
+  enableSync = true,
+  showGridDebug = false
+}: CanvasAppProps): JSX.Element => {
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({
+    ...DEFAULT_DEBUG_STATE,
+    hasError: false,
+    errorMessage: '',
+    lastInitTime: 0,
+    lastGridCreationTime: 0,
+    canvasEventsRegistered: false,
+    gridRendered: false,
+    toolsInitialized: false
+  }));
   
+  // Debug logging for troubleshooting
   useEffect(() => {
-    logger.info('[canvas-app-init] CanvasApp component mounted');
-    
-    captureMessage('CanvasApp component mounted', 'canvas-mount', {
-      level: 'info',
-      tags: {
-        component: 'CanvasApp'
-      }
-    });
-    
-    return () => {
-      logger.info('[canvas-app-cleanup] CanvasApp component unmounting');
-      
-      // Clean up fabric canvas if needed
-      if (fabricCanvasRef.current) {
-        try {
-          fabricCanvasRef.current.dispose();
-          fabricCanvasRef.current = null;
-        } catch (error) {
-          console.error('Error disposing canvas:', error);
-        }
-      }
-    };
-  }, []);
+    console.log('Grid Created:', debugInfo.gridCreated);
+    console.log('Canvas Ready:', debugInfo.canvasReady);
+    console.log('Canvas Initialized:', debugInfo.canvasInitialized);
+  }, [debugInfo]);
   
-  const handleCanvasInitialized = (canvas: FabricCanvas) => {
-    fabricCanvasRef.current = canvas;
-    setCanvasReady(true);
-    
-    // Create grid on canvas
-    try {
-      if (canvas && canvas.width && canvas.height) {
-        const gridObjects = canvasGrid.createGrid(canvas);
-        gridLayerRef.current = gridObjects;
-        logger.info(`Grid created with ${gridObjects.length} objects`);
-      }
-    } catch (error) {
-      console.error('Error creating grid:', error);
-    }
-    
-    // Call external handler if provided
-    if (onCanvasInitialized) {
-      onCanvasInitialized(canvas);
-    }
-    
-    // Set canvas reference if setCanvas provided
+  // Handler for canvas ready event
+  const handleCanvasReady = (canvas: FabricCanvas) => {
+    console.log('Canvas is ready');
     if (setCanvas) {
       setCanvas(canvas);
     }
   };
-  
+
+  // Handle canvas error
   const handleCanvasError = (err: Error) => {
     console.error('Canvas error:', err);
-    setError(err);
-    toast.error('Canvas initialization error');
+    setDebugInfo(prev => ({
+      ...prev,
+      hasError: true,
+      errorMessage: err.message
+    }));
   };
   
   return (
-    <ErrorBoundary componentName="CanvasApp">
-      <div className="relative">
-        <CanvasWithFallback
-          width={width}
-          height={height}
-          tool={tool}
-          lineThickness={lineThickness}
-          lineColor={lineColor}
-          onCanvasInitialized={handleCanvasInitialized}
-          onError={handleCanvasError}
-          className="border border-gray-200 rounded-lg overflow-hidden shadow-md"
-        />
-        
-        {showGridDebug && canvasReady && (
-          <>
-            <GridDebugOverlay
-              fabricCanvasRef={fabricCanvasRef}
-              visible={showGridDebug}
-            />
-            <GridMonitor
-              canvas={fabricCanvasRef.current}
-              gridObjects={gridLayerRef.current}
-              createGrid={() => {
-                if (fabricCanvasRef.current) {
-                  const objects = canvasGrid.createGrid(fabricCanvasRef.current);
-                  gridLayerRef.current = objects;
-                  return objects;
-                }
-                return [];
-              }}
-              visible={showGridDebug}
-            />
-          </>
-        )}
-      </div>
-    </ErrorBoundary>
+    <CanvasLayout>
+      <CanvasWithFallback 
+        width={DEFAULT_CANVAS_WIDTH}
+        height={DEFAULT_CANVAS_HEIGHT}
+        tool={tool}
+        lineThickness={lineThickness}
+        lineColor={lineColor}
+        onCanvasReady={handleCanvasReady}
+        onError={handleCanvasError}
+        className="w-full h-full"
+      />
+      <DrawingToolbarModals />
+    </CanvasLayout>
   );
 };

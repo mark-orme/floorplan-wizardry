@@ -13,9 +13,9 @@ export { createGrid };
 export { createBasicEmergencyGrid, resetGridProgress } from '../gridCreationUtils';
 export { 
   forceGridCreationAndVisibility,
-  setGridVisibility
+  setGridVisibility,
+  updateGridWithZoom
 } from './gridVisibility';
-export { updateGridWithZoom } from './gridVisibility';
 export { runGridDiagnostics, applyGridFixes } from './gridDiagnostics';
 
 // Export utility namespaces from exports.ts

@@ -1,9 +1,11 @@
+
 /**
  * Grid visibility management utilities
  * @module utils/grid/gridVisibility
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { canvasGrid, createGrid } from '@/utils/canvasGrid';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
 /**

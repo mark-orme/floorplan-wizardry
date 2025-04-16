@@ -71,7 +71,8 @@ export const canvasGrid = {
           selectable: false,
           evented: false,
           objectType: 'grid',
-          isGrid: true
+          isGrid: true,
+          isLargeGrid: isMajor && showMajorLines
         } as any);
         
         canvas.add(line);
@@ -87,41 +88,33 @@ export const canvasGrid = {
           selectable: false,
           evented: false,
           objectType: 'grid',
-          isGrid: true
+          isGrid: true,
+          isLargeGrid: isMajor && showMajorLines
         } as any);
         
         canvas.add(line);
         gridObjects.push(line);
       }
       
-      // Make sure grid is at the back
-      gridObjects.forEach(obj => canvas.sendToBack(obj));
-      
-      // Ensure visibility with a render
       canvas.requestRenderAll();
-      
-      logger.info(`Grid created with ${gridObjects.length} lines`);
       return gridObjects;
     } catch (error) {
-      logger.error('Failed to create grid:', error);
-      console.error('Failed to create grid:', error);
+      logger.error('Error creating grid:', error);
       return [];
     }
-  },
+  }
+};
 
-  /**
-   * Toggle grid visibility
-   * @param canvas Fabric canvas instance
-   * @param visible Whether grid should be visible
-   */
-  setGridVisibility: (
-    canvas: FabricCanvas,
-    visible: boolean
-  ): void => {
-    if (!canvas) return;
-    
-    const gridObjects = canvas.getObjects().filter(
-      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+// Export namespace functions directly
+export const createGrid = canvasGrid.createGrid;
+
+// Export additional utility functions
+export const setGridVisibility = (canvas: FabricCanvas, visible: boolean): void => {
+  if (!canvas) return;
+  
+  try {
+    const gridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
     );
     
     gridObjects.forEach(obj => {
@@ -129,54 +122,32 @@ export const canvasGrid = {
     });
     
     canvas.requestRenderAll();
-    logger.info(`Grid visibility set to ${visible}`);
-  },
-
-  /**
-   * Force grid visibility and creation
-   * @param canvas Fabric canvas instance
-   * @returns Array of grid objects
-   */
-  forceGridVisibility: (canvas: FabricCanvas): FabricObject[] => {
-    if (!canvas) return [];
-    
-    const gridObjects = canvas.getObjects().filter(
-      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
-    
-    if (gridObjects.length > 0) {
-      // Grid exists, just make it visible
-      gridObjects.forEach(obj => {
-        obj.set('visible', true);
-        canvas.sendToBack(obj);
-      });
-      
-      canvas.requestRenderAll();
-      return gridObjects;
-    } else {
-      // Create new grid
-      return canvasGrid.createGrid(canvas);
-    }
-  },
-  
-  /**
-   * Check if grid exists on canvas
-   * @param canvas Fabric canvas instance
-   * @returns Whether grid exists
-   */
-  doesGridExist: (canvas: FabricCanvas): boolean => {
-    if (!canvas) return false;
-    
-    const gridObjects = canvas.getObjects().filter(
-      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
-    
-    return gridObjects.length > 0;
+  } catch (error) {
+    logger.error('Error setting grid visibility:', error);
   }
 };
 
-// Direct exports for easier imports
-export const createGrid = canvasGrid.createGrid;
-export const setGridVisibility = canvasGrid.setGridVisibility;
-export const forceGridVisibility = canvasGrid.forceGridVisibility;
-export const doesGridExist = canvasGrid.doesGridExist;
+export const forceGridVisibility = (canvas: FabricCanvas): boolean => {
+  if (!canvas) return false;
+  
+  try {
+    const gridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    );
+    
+    if (gridObjects.length === 0) {
+      return false;
+    }
+    
+    gridObjects.forEach(obj => {
+      obj.set('visible', true);
+    });
+    
+    canvas.requestRenderAll();
+    return true;
+  } catch (error) {
+    logger.error('Error forcing grid visibility:', error);
+    return false;
+  }
+};
+
