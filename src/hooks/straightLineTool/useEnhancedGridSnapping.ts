@@ -1,3 +1,4 @@
+
 import { useCallback, useState } from 'react';
 import { Point } from '@/types/core/Point';
 
@@ -18,6 +19,7 @@ export const useEnhancedGridSnapping = (
     setSnapEnabled(prev => !prev);
   }, []);
 
+  // Add an alias for backward compatibility
   const toggleSnap = toggleGridSnapping;
 
   const snapToGrid = useCallback((point: Point): Point => {
@@ -50,7 +52,7 @@ export const useEnhancedGridSnapping = (
   return {
     snapEnabled,
     toggleGridSnapping,
-    toggleSnap,
+    toggleSnap, // Include the alias in the returned object
     snapToGrid,
     isNearGridLine,
     getClosestGridPoint
