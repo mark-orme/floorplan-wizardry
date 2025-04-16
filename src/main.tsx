@@ -5,17 +5,8 @@
  * @module main
  */
 
-// Set up Sentry for error reporting
-export const setupSentry = () => {
-  console.log('Setting up Sentry');
-  // Sentry setup code would go here
-};
+// Import functions from main/index.ts
+import { setupSentry, initializeApp } from './main/index';
 
-// Initialize the application
-export const initializeApp = () => {
-  console.log('Initializing application');
-  // App initialization code would go here
-};
-
-// Export application components and utilities
+// Export directly from the imported modules to avoid duplicate declarations
 export { setupSentry, initializeApp };

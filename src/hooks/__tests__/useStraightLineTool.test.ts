@@ -9,9 +9,9 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 import { useLineState, InputMethod } from '../straightLineTool/useStraightLineTool';
 import { DrawingMode } from '@/constants/drawingModes';
-import { FabricEventNames } from '@/types/fabric-types';
-import { FabricEventNames as FabricEventTypes } from '@/types/fabric-events';
+import { FabricEventNames } from '@/types/fabric-events';
 import { Point } from '@/types/core/Geometry';
+import { asMockCanvas } from '@/types/test/MockTypes';
 
 // Mock the dependencies
 vi.mock('../straightLineTool/useLineState', () => ({
@@ -143,7 +143,7 @@ describe('useStraightLineTool', () => {
   
   it('should initialize and set up event handlers correctly', () => {
     const { result } = renderHook(() => useStraightLineTool({
-      canvas: mockCanvas,
+      canvas: asMockCanvas(mockCanvas),
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
@@ -151,9 +151,9 @@ describe('useStraightLineTool', () => {
     }));
     
     // Verify event handlers are attached
-    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventTypes.MOUSE_DOWN, expect.any(Function));
-    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventTypes.MOUSE_MOVE, expect.any(Function));
-    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventTypes.MOUSE_UP, expect.any(Function));
+    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventNames.MOUSE_DOWN, expect.any(Function));
+    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventNames.MOUSE_MOVE, expect.any(Function));
+    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventNames.MOUSE_UP, expect.any(Function));
     
     // Verify canvas properties are set correctly for drawing
     expect(mockCanvas.isDrawingMode).toBe(false);
@@ -166,7 +166,7 @@ describe('useStraightLineTool', () => {
   
   it('should not set up event handlers if tool is not STRAIGHT_LINE', () => {
     renderHook(() => useStraightLineTool({
-      canvas: mockCanvas,
+      canvas: asMockCanvas(mockCanvas),
       enabled: false,
       lineColor: '#000000',
       lineThickness: 2,
@@ -180,7 +180,7 @@ describe('useStraightLineTool', () => {
   it('should clean up event handlers when tool changes', () => {
     const { rerender } = renderHook(
       (props) => useStraightLineTool({
-        canvas: mockCanvas,
+        canvas: asMockCanvas(mockCanvas),
         enabled: props.enabled,
         lineColor: '#000000',
         lineThickness: 2,
@@ -229,7 +229,7 @@ describe('useStraightLineTool', () => {
     });
     
     renderHook(() => useStraightLineTool({
-      canvas: mockCanvas,
+      canvas: asMockCanvas(mockCanvas),
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
@@ -237,7 +237,7 @@ describe('useStraightLineTool', () => {
     }));
     
     // Get mouse down handler
-    const mouseDownHandler = mockCanvas.getHandlers(FabricEventTypes.MOUSE_DOWN)[0];
+    const mouseDownHandler = mockCanvas.getHandlers(FabricEventNames.MOUSE_DOWN)[0];
     expect(mouseDownHandler).toBeDefined();
     
     // Simulate mouse down event
@@ -274,7 +274,7 @@ describe('useStraightLineTool', () => {
     });
     
     const { result } = renderHook(() => useStraightLineTool({
-      canvas: mockCanvas,
+      canvas: asMockCanvas(mockCanvas),
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
@@ -328,7 +328,7 @@ describe('useStraightLineTool', () => {
     });
     
     renderHook(() => useStraightLineTool({
-      canvas: mockCanvas,
+      canvas: asMockCanvas(mockCanvas),
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
@@ -336,7 +336,7 @@ describe('useStraightLineTool', () => {
     }));
     
     // Get mouse handlers
-    const mouseUpHandler = mockCanvas.getHandlers(FabricEventTypes.MOUSE_UP)[0];
+    const mouseUpHandler = mockCanvas.getHandlers(FabricEventNames.MOUSE_UP)[0];
     expect(mouseUpHandler).toBeDefined();
     
     // Simulate completing the drawing
