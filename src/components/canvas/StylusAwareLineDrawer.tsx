@@ -32,10 +32,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     snapEnabled,
     anglesEnabled,
     measurementData,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    cancelDrawing,
     toggleGridSnapping,
     toggleAngles,
     isDrawing,
@@ -74,7 +70,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       {showMeasurement && measurementData.distance !== null && (
         <div className="fixed bottom-4 left-4 bg-white/90 text-black px-4 py-2 rounded-lg text-sm font-medium shadow-md z-50 flex flex-col">
           <div className="flex items-center gap-2">
-            <span>Distance: {measurementData.distance}px</span>
+            <span>Distance: {measurementData.distance ? Math.round(measurementData.distance) : 0}px</span>
             {measurementData.snapped && (
               <span className="bg-green-100 text-green-800 px-1 rounded text-xs">Snapped</span>
             )}
@@ -82,7 +78,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
           
           {measurementData.angle !== null && (
             <div className="flex items-center gap-2">
-              <span>Angle: {measurementData.angle}°</span>
+              <span>Angle: {measurementData.angle ? Math.round(measurementData.angle) : 0}°</span>
             </div>
           )}
         </div>

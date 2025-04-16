@@ -1,172 +1,206 @@
-
-import { useState, useRef } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { useState, useRef, useCallback } from 'react';
+import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 import logger from '@/utils/logger';
 
-interface LineStateProps {
-  fabricCanvasRef: { current: FabricCanvas | null };
+// Export the InputMethod enum so it can be accessed by other components
+export enum InputMethod {
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  PENCIL = 'pencil'
+}
+
+interface UseLineStateProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   lineColor: string;
   lineThickness: number;
   saveCurrentState: () => void;
 }
 
-export const useLineState = ({
-  fabricCanvasRef,
-  lineColor,
+export const useLineState = ({ 
+  fabricCanvasRef, 
+  lineColor, 
   lineThickness,
-  saveCurrentState
-}: LineStateProps) => {
-  // Line drawing state
+  saveCurrentState 
+}: UseLineStateProps) => {
+  // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
   
-  // Current line being drawn
-  const [currentLine, setCurrentLine] = useState<Line | null>(null);
+  // Line points
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
   
-  // Distance tooltip reference
-  const distanceTooltipRef = useRef<any>(null);
+  // Line objects
+  const [currentLine, setCurrentLine] = useState<Line | null>(null);
+  const [distanceTooltip, setDistanceTooltip] = useState<Text | null>(null);
   
-  // Start drawing a new line
-  const startDrawing = (point: Point) => {
+  // Settings
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
+  
+  /**
+   * Start drawing a line
+   */
+  const startDrawing = useCallback((point: Point) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !isActive) return;
     
-    setIsDrawing(true);
-    setStartPoint(point);
-    setCurrentPoint(point);
+    logger.debug('Starting line drawing', point);
     
-    // Create new line object
+    // Create initial line
     const line = new Line([point.x, point.y, point.x, point.y], {
       stroke: lineColor,
       strokeWidth: lineThickness,
-      selectable: true
+      selectable: false,
+      evented: false
     });
     
-    // Add custom data for identification
-    line.set('id', `line-${Date.now()}`);
-    line.set('data', { type: 'straight-line' });
-    
+    // Add to canvas
     canvas.add(line);
+    canvas.renderAll();
+    
+    // Update state
+    setIsDrawing(true);
+    setStartPoint(point);
+    setCurrentPoint(point);
     setCurrentLine(line);
     
-    // Create distance tooltip if it doesn't exist
-    if (!distanceTooltipRef.current) {
-      const tooltip = document.createElement('div');
-      tooltip.className = 'absolute px-2 py-1 bg-black bg-opacity-75 text-white text-xs rounded pointer-events-none z-50';
-      document.body.appendChild(tooltip);
-      distanceTooltipRef.current = tooltip;
-    }
+    // Create distance tooltip
+    const tooltip = new Text('0px', {
+      left: point.x + 10,
+      top: point.y - 10,
+      fontSize: 12,
+      fill: '#333',
+      backgroundColor: 'rgba(255,255,255,0.7)',
+      padding: 5,
+      selectable: false,
+      evented: false
+    });
     
-    logger.info('Started drawing line', { point });
-  };
+    canvas.add(tooltip);
+    setDistanceTooltip(tooltip);
+  }, [fabricCanvasRef, lineColor, lineThickness, isActive]);
   
-  // Update the line as drawing continues
-  const continueDrawing = (point: Point) => {
+  /**
+   * Continue drawing the line
+   */
+  const continueDrawing = useCallback((point: Point) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !isDrawing || !currentLine || !startPoint) return;
+    if (!canvas || !isDrawing || !startPoint || !currentLine || !distanceTooltip) return;
     
-    setCurrentPoint(point);
-    
-    // Update line coordinates
+    // Update line
     currentLine.set({
-      x1: startPoint.x,
-      y1: startPoint.y,
       x2: point.x,
       y2: point.y
     });
     
-    canvas.renderAll();
-    
-    // Calculate distance for tooltip
+    // Calculate distance
     const dx = point.x - startPoint.x;
     const dy = point.y - startPoint.y;
-    const distance = Math.round(Math.sqrt(dx * dx + dy * dy));
+    const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Update tooltip position and content
-    if (distanceTooltipRef.current) {
-      const zoom = canvas.getZoom();
-      const offset = canvas.calcOffset();
-      const canvasElement = canvas.getElement();
-      const rect = canvasElement.getBoundingClientRect();
-      
-      // Position tooltip in the middle of the line
-      const tooltipX = rect.left + ((startPoint.x + point.x) / 2 * zoom) + offset.left;
-      const tooltipY = rect.top + ((startPoint.y + point.y) / 2 * zoom) + offset.top - 20;
-      
-      distanceTooltipRef.current.style.left = `${tooltipX}px`;
-      distanceTooltipRef.current.style.top = `${tooltipY}px`;
-      distanceTooltipRef.current.style.display = 'block';
-      distanceTooltipRef.current.textContent = `${distance}px`;
-    }
-  };
-  
-  // Complete the line drawing
-  const completeDrawing = (point: Point) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !isDrawing) return;
+    // Update tooltip
+    distanceTooltip.set({
+      text: `${Math.round(distance)}px`,
+      left: (startPoint.x + point.x) / 2 + 10,
+      top: (startPoint.y + point.y) / 2 - 10
+    });
     
-    // Update final point
+    canvas.renderAll();
     setCurrentPoint(point);
-    
-    if (currentLine && startPoint) {
-      // Update line with final coordinates
-      currentLine.set({
-        x1: startPoint.x,
-        y1: startPoint.y,
-        x2: point.x,
-        y2: point.y
-      });
-      
-      canvas.renderAll();
-      
-      // Hide distance tooltip
-      if (distanceTooltipRef.current) {
-        distanceTooltipRef.current.style.display = 'none';
-      }
-      
-      // Save canvas state for undo/redo
-      saveCurrentState();
-      
-      logger.info('Completed drawing line', { 
-        start: startPoint, 
-        end: point,
-        lineId: currentLine.get('id')
-      });
-    }
-    
-    // Reset drawing state
-    setIsDrawing(false);
-    setCurrentLine(null);
-  };
+  }, [fabricCanvasRef, isDrawing, startPoint, currentLine, distanceTooltip]);
   
-  // Cancel the current drawing operation
-  const cancelDrawing = () => {
+  /**
+   * Complete the drawing
+   */
+  const completeDrawing = useCallback((point: Point) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !isDrawing) return;
+    if (!canvas || !isDrawing || !startPoint || !currentLine) return;
     
-    // Remove the current line if it exists
-    if (currentLine) {
+    // Update line final position
+    currentLine.set({
+      x2: point.x,
+      y2: point.y,
+      selectable: true,
+      evented: true
+    });
+    
+    // Keep distance tooltip
+    if (distanceTooltip) {
+      distanceTooltip.set({
+        selectable: false,
+        evented: false
+      });
+    }
+    
+    // Calculate line length
+    const dx = point.x - startPoint.x;
+    const dy = point.y - startPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Only keep lines longer than 5px
+    if (distance < 5) {
       canvas.remove(currentLine);
-      canvas.renderAll();
+      if (distanceTooltip) {
+        canvas.remove(distanceTooltip);
+      }
+    } else {
+      // Save for undo history
+      saveCurrentState();
     }
     
-    // Hide distance tooltip
-    if (distanceTooltipRef.current) {
-      distanceTooltipRef.current.style.display = 'none';
-    }
+    canvas.renderAll();
     
-    // Reset drawing state
+    // Reset state
     setIsDrawing(false);
-    setCurrentLine(null);
     setStartPoint(null);
     setCurrentPoint(null);
+    setCurrentLine(null);
+    setDistanceTooltip(null);
+  }, [fabricCanvasRef, isDrawing, startPoint, currentLine, distanceTooltip, saveCurrentState]);
+  
+  /**
+   * Cancel the current drawing
+   */
+  const cancelDrawing = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !isDrawing) return;
     
-    logger.info('Drawing cancelled');
-  };
+    // Remove current line
+    if (currentLine) {
+      canvas.remove(currentLine);
+    }
+    
+    // Remove tooltip
+    if (distanceTooltip) {
+      canvas.remove(distanceTooltip);
+    }
+    
+    canvas.renderAll();
+    
+    // Reset state
+    setIsDrawing(false);
+    setStartPoint(null);
+    setCurrentPoint(null);
+    setCurrentLine(null);
+    setDistanceTooltip(null);
+  }, [fabricCanvasRef, isDrawing, currentLine, distanceTooltip]);
+  
+  /**
+   * Toggle snap to grid
+   */
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
+  
+  /**
+   * Toggle angle constraints
+   */
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
   
   return {
     isDrawing,
@@ -179,6 +213,10 @@ export const useLineState = ({
     continueDrawing,
     completeDrawing,
     cancelDrawing,
+    snapEnabled,
+    anglesEnabled,
+    toggleSnap,
+    toggleAngles,
     setIsToolInitialized
   };
 };

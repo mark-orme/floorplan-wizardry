@@ -1,5 +1,6 @@
+
 import React, { useRef, useState, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -13,7 +14,7 @@ export const StraightLineToolDemo: React.FC = () => {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [lineColor, setLineColor] = useState('#000000');
   const [lineThickness, setLineThickness] = useState(2);
-  const [canvasHistory, setCanvasHistory] = useState<any[][]>([]);
+  const [canvasHistory, setCanvasHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   
   // Initialize canvas
@@ -35,7 +36,7 @@ export const StraightLineToolDemo: React.FC = () => {
       
       // Create grid lines
       for (let i = 0; i < (canvas.width || 800) / gridSize; i++) {
-        const lineX = new FabricCanvas.Line([i * gridSize, 0, i * gridSize, canvas.height || 600], {
+        const lineX = new Line([i * gridSize, 0, i * gridSize, canvas.height || 600], {
           stroke: '#dddddd',
           selectable: false,
           evented: false
@@ -44,7 +45,7 @@ export const StraightLineToolDemo: React.FC = () => {
       }
       
       for (let i = 0; i < (canvas.height || 600) / gridSize; i++) {
-        const lineY = new FabricCanvas.Line([0, i * gridSize, canvas.width || 800, i * gridSize], {
+        const lineY = new Line([0, i * gridSize, canvas.width || 800, i * gridSize], {
           stroke: '#dddddd',
           selectable: false,
           evented: false
@@ -71,8 +72,8 @@ export const StraightLineToolDemo: React.FC = () => {
     
     // Add to history, removing any future states if we're not at the end
     setCanvasHistory(prev => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      return [...newHistory, json];
+      const newHistory = [...prev.slice(0, historyIndex + 1), json];
+      return newHistory;
     });
     setHistoryIndex(prev => prev + 1);
   };
@@ -136,7 +137,10 @@ export const StraightLineToolDemo: React.FC = () => {
     anglesEnabled,
     measurementData,
     toggleGridSnapping,
-    toggleAngles
+    toggleAngles,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp
   } = useStraightLineTool({
     canvas: fabricCanvas,
     enabled: true,
@@ -144,6 +148,21 @@ export const StraightLineToolDemo: React.FC = () => {
     lineThickness,
     saveCurrentState: saveCanvasState
   });
+  
+  // Handle canvas events manually for demo
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    fabricCanvas.on('mouse:down', handlePointerDown);
+    fabricCanvas.on('mouse:move', handlePointerMove);
+    fabricCanvas.on('mouse:up', handlePointerUp);
+    
+    return () => {
+      fabricCanvas.off('mouse:down', handlePointerDown);
+      fabricCanvas.off('mouse:move', handlePointerMove);
+      fabricCanvas.off('mouse:up', handlePointerUp);
+    };
+  }, [fabricCanvas, handlePointerDown, handlePointerMove, handlePointerUp]);
   
   return (
     <div className="flex flex-col space-y-4 p-4">
