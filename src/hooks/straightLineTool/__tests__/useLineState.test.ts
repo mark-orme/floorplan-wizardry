@@ -51,14 +51,12 @@ describe('useLineState', () => {
   });
   
   it('initializes tool when canvas is provided', () => {
-    const { result } = renderHook(() => useLineState(
-      createMockFunctionParams({
-        fabricCanvasRef: { current: mockCanvas },
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState: mockSaveCurrentState
-      })
-    ));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: { current: mockCanvas },
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
     act(() => {
       result.current.initializeTool();
@@ -69,14 +67,12 @@ describe('useLineState', () => {
   });
   
   it('starts drawing at given point', () => {
-    const { result } = renderHook(() => useLineState(
-      createMockFunctionParams({
-        fabricCanvasRef: { current: mockCanvas },
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState: mockSaveCurrentState
-      })
-    ));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: { current: mockCanvas },
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
     act(() => {
       result.current.initializeTool();
@@ -88,14 +84,12 @@ describe('useLineState', () => {
   });
   
   it('continues drawing and updates the line', () => {
-    const { result } = renderHook(() => useLineState(
-      createMockFunctionParams({
-        fabricCanvasRef: { current: mockCanvas },
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState: mockSaveCurrentState
-      })
-    ));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: { current: mockCanvas },
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
     act(() => {
       result.current.initializeTool();
@@ -107,14 +101,12 @@ describe('useLineState', () => {
   });
   
   it('completes drawing and finalizes the line', () => {
-    const { result } = renderHook(() => useLineState(
-      createMockFunctionParams({
-        fabricCanvasRef: { current: mockCanvas },
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState: mockSaveCurrentState
-      })
-    ));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: { current: mockCanvas },
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
     act(() => {
       result.current.initializeTool();
@@ -128,14 +120,12 @@ describe('useLineState', () => {
   });
   
   it('cancels drawing and removes temporary elements', () => {
-    const { result } = renderHook(() => useLineState(
-      createMockFunctionParams({
-        fabricCanvasRef: { current: mockCanvas },
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState: mockSaveCurrentState
-      })
-    ));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: { current: mockCanvas },
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
     act(() => {
       result.current.initializeTool();
@@ -151,14 +141,12 @@ describe('useLineState', () => {
   });
   
   it('toggles snapping feature', () => {
-    const { result } = renderHook(() => useLineState(
-      createMockFunctionParams({
-        fabricCanvasRef: { current: mockCanvas },
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState: mockSaveCurrentState
-      })
-    ));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: { current: mockCanvas },
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
     expect(result.current.snapEnabled).toBe(true); // Default is true
     
@@ -176,14 +164,12 @@ describe('useLineState', () => {
   });
   
   it('toggles angle constraints', () => {
-    const { result } = renderHook(() => useLineState(
-      createMockFunctionParams({
-        fabricCanvasRef: { current: mockCanvas },
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState: mockSaveCurrentState
-      })
-    ));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: { current: mockCanvas },
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
     expect(result.current.anglesEnabled).toBe(false); // Default is false
     

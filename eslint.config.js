@@ -11,6 +11,8 @@ import { hookMockValidationRules } from './eslint/typescript/hook-mock-validatio
 import { importSafetyRules } from './eslint/import-safety-rules.js';
 import { gridTypeSafetyRules } from './eslint/grid-type-safety-rules.js';
 import { typeSafetyRules } from './eslint/type-safety-rules.js';
+import { testMockValidationRules } from './eslint/typescript/test-mock-validation.js';
+import { fabricTestTypingRules } from './eslint/fabric-test-typing-rules.js';
 
 export default [
   baseConfig,
@@ -24,5 +26,7 @@ export default [
   lineToolValidationRules,
   hookMockValidationRules,
   gridTypeSafetyRules,
-  typeSafetyRules // Add the new type safety rules
+  typeSafetyRules,
+  testMockValidationRules,
+  fabricTestTypingRules
 ];

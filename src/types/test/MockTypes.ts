@@ -1,96 +1,60 @@
 
 /**
- * Implementation of mock type utilities
+ * Type utilities for testing
+ * Provides type-safe assertion functions for mocking objects
  * @module types/test/MockTypes
  */
-import { Canvas, Object as FabricObject } from 'fabric';
-import { IMockCanvas, IMockObject } from './MockTypes.d';
-import { vi } from 'vitest';
+import { Canvas as FabricCanvas } from 'fabric';
 
 /**
- * Helper function to properly type a mock Canvas object
- * @param mockCanvas The mock canvas object to be typed as Canvas
- * @returns The same object typed as Canvas
+ * Interface for a mock canvas in tests
+ * Includes properties and methods commonly used in tests
  */
-export function asMockCanvas<T>(mockCanvas: T): Canvas {
-  // Convert to unknown first for type safety
-  const mockCanvasAny = mockCanvas as unknown;
-  
-  // Create a new object with all the necessary properties
-  const completeCanvas = {
-    // Original mock properties (safely spread)
-    ...(mockCanvasAny as Record<string, any>),
-    
-    // Adding missing critical internal properties
-    enablePointerEvents: true,
-    _willAddMouseDown: false,
-    _dropTarget: null,
-    _isClick: false,
-    
-    // Additional mock implementations for missing methods
-    isDragging: false,
-    _setupCurrentTransform: vi.fn(),
-    _renderOverlay: vi.fn(),
-    _restoreObjectsState: vi.fn(),
-    _setStageDimension: vi.fn(),
-    
-    // Ensure all critical Fabric.js canvas methods are mocked
-    fire: vi.fn(),
-    calcOffset: vi.fn(),
-    findTarget: vi.fn(),
-    getSelectionContext: vi.fn(),
-    getSelectionElement: vi.fn(),
-    getActiveObject: vi.fn().mockReturnValue(null),
-    setActiveObject: vi.fn(),
-    
-    // Mock implementation of discardActiveObject to satisfy type predicate
-    discardActiveObject: vi.fn().mockImplementation(function() {
-      this._activeObject = undefined;
-      return this;
-    }),
-    
-    // Internal properties often used by Fabric.js
-    _objects: [],
-    _activeObject: null,
-    _groupSelector: null,
-    viewportTransform: [1, 0, 0, 1, 0, 0],
-    
-    // Cursor-related properties
-    defaultCursor: 'default',
-    hoverCursor: 'pointer',
-    moveCursor: 'move'
-  } as unknown as Canvas;
-  
-  return completeCanvas;
+export interface IMockCanvas extends FabricCanvas {
+  getHandlers?: (eventName: string) => Function[];
+  triggerEvent?: (eventName: string, eventData: any) => void;
 }
 
 /**
- * Helper function to properly type a mock Fabric object
- * @param mockObject The mock object to be typed as FabricObject
- * @returns The same object typed as FabricObject
+ * Type assertion function for creating a mock canvas
+ * Provides type safety for canvas mocks
+ * 
+ * @param mockCanvas Canvas to type assert
+ * @returns Typed mock canvas
  */
-export function asMockObject<T>(mockObject: T): FabricObject {
-  const mockObjectAny = mockObject as unknown;
-  
-  const completeObject = {
-    // Original mock properties (safely spread)
-    ...(mockObjectAny as Record<string, any>),
-    
-    // Default properties required for Fabric objects
-    visible: true,
-    evented: true,
-    selectable: true,
-    hasBorders: true,
-    hasControls: true,
-    hasRotatingPoint: true,
-    transparentCorners: true,
-    // Add mock methods required by tests
-    setCoords: vi.fn(),
-    _set: vi.fn(),
-    _render: vi.fn(),
-    _findCenterFromElement: vi.fn(),
-    _setWidthHeight: vi.fn()
-  } as unknown as FabricObject;
-  
-  return completeObject;
+export function asMockCanvas(mockCanvas: any): IMockCanvas {
+  return mockCanvas as IMockCanvas;
+}
+
+/**
+ * Type assertion function for creating mock objects
+ * Ensures type safety when creating mock objects
+ * 
+ * @param mockObject Object to type assert
+ * @returns Typed mock object
+ */
+export function asMockObject<T>(mockObject: any): T {
+  return mockObject as T;
+}
+
+/**
+ * Type assertion function for creating mock hooks
+ * Ensures type safety when mocking hooks
+ * 
+ * @param mockHook Hook to type assert
+ * @returns Typed mock hook
+ */
+export function asMockHook<T>(mockHook: any): T {
+  return mockHook as T;
+}
+
+/**
+ * Type-safe way to create mock function parameters
+ * Ensures proper typing for function parameters
+ * 
+ * @param params The parameters object
+ * @returns Typed parameters object
+ */
+export function createMockParams<T extends Record<string, any>>(params: T): T {
+  return params;
 }

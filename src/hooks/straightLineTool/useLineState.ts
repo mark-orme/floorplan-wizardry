@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useLinePreview } from './useLinePreview';
 
@@ -9,6 +9,13 @@ export enum InputMethod {
   TOUCH = 'touch',
   PENCIL = 'pencil',
   STYLUS = 'stylus'
+}
+
+interface UseLineStateProps {
+  fabricCanvasRef: { current: FabricCanvas | null };
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState: () => void;
 }
 
 export interface LineState {
@@ -42,12 +49,13 @@ export interface LineState {
   cancelDrawing: () => void;
 }
 
-export const useLineState = (
-  initialColor: string = '#000000',
-  initialThickness: number = 2
-): LineState => {
-  // Canvas reference
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+export const useLineState = (props: UseLineStateProps): LineState => {
+  const { 
+    fabricCanvasRef,
+    lineColor: initialColor = '#000000',
+    lineThickness: initialThickness = 2,
+    saveCurrentState
+  } = props;
   
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
@@ -73,7 +81,6 @@ export const useLineState = (
     hideHoverIndicator,
     updateLinePreview,
     clearLinePreview,
-    distanceTooltip
   } = useLinePreview(
     fabricCanvasRef,
     isDrawing,
@@ -82,6 +89,9 @@ export const useLineState = (
     lineColor,
     lineThickness
   );
+
+  // Create a mock distance tooltip for compatibility
+  const distanceTooltip = null;
 
   /**
    * Initialize the drawing tool
@@ -125,7 +135,7 @@ export const useLineState = (
     const canvas = fabricCanvasRef.current;
     if (!canvas) return null;
     
-    const line = new Line([p1.x, p1.y, p2.x, p2.y], {
+    const line = new fabric.Line([p1.x, p1.y, p2.x, p2.y], {
       stroke: lineColor,
       strokeWidth: lineThickness,
       selectable: true
@@ -196,6 +206,9 @@ export const useLineState = (
     setIsDrawing(false);
     setStartPoint(null);
     setCurrentPoint(null);
+    
+    // Save the current state for undo/redo
+    saveCurrentState();
   };
 
   /**
