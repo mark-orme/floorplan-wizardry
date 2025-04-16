@@ -103,7 +103,7 @@ export const usePathProcessing = ({
   setGia
 }: UsePathProcessingProps) => {
   // Get drawing context to access snapToGrid setting
-  const { snapToGrid: snapEnabled } = useDrawingContext();
+  const { snapToGrid } = useDrawingContext();
   
   const processCreatedPath = useCallback((path: FabricPath) => {
     const canvas = fabricCanvasRef.current;
@@ -130,7 +130,7 @@ export const usePathProcessing = ({
       canvas.remove(path);
       
       // Get straightened endpoints
-      const { start, end } = straightenPath(points, snapEnabled);
+      const { start, end } = straightenPath(points, snapToGrid);
       
       // Create a Fabric.js Line
       const line = new Line([start.x, start.y, end.x, end.y], {
@@ -201,7 +201,7 @@ export const usePathProcessing = ({
     });
     
     canvas.renderAll();
-  }, [fabricCanvasRef, tool, setFloorPlans, currentFloor, snapEnabled]);
+  }, [fabricCanvasRef, tool, setFloorPlans, currentFloor, snapToGrid]);
   
   return {
     processCreatedPath

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
@@ -37,7 +36,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
 }) => {
   // Access drawing context
   const { 
-    tool: contextTool, 
+    activeTool: contextTool, 
     lineColor: contextLineColor, 
     lineThickness: contextLineThickness 
   } = useDrawingContext();
@@ -155,4 +154,3 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     </>
   );
 };
-

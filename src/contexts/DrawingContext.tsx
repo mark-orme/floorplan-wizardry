@@ -9,6 +9,12 @@ interface DrawingContextType {
   setLineColor: (color: string) => void;
   lineThickness: number;
   setLineThickness: (thickness: number) => void;
+  snapToGrid: boolean;
+  setSnapToGrid: (snap: boolean) => void;
+  canUndo: boolean;
+  setCanUndo: (canUndo: boolean) => void;
+  canRedo: boolean;
+  setCanRedo: (canRedo: boolean) => void;
 }
 
 const DrawingContext = createContext<DrawingContextType | undefined>(undefined);
@@ -17,6 +23,9 @@ export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
   const [lineColor, setLineColor] = useState('#000000');
   const [lineThickness, setLineThickness] = useState(2);
+  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   return (
     <DrawingContext.Provider value={{
@@ -25,7 +34,13 @@ export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       lineColor,
       setLineColor,
       lineThickness,
-      setLineThickness
+      setLineThickness,
+      snapToGrid,
+      setSnapToGrid,
+      canUndo,
+      setCanUndo,
+      canRedo,
+      setCanRedo
     }}>
       {children}
     </DrawingContext.Provider>
