@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -287,7 +286,6 @@ export const useLineState = ({
     cancelDrawing,
     toggleSnap,
     toggleAngles,
-    setIsToolInitialized,
     initializeTool,
     resetDrawingState,
     setInputMethod: handleInputMethodChange,

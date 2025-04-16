@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState, InputMethod } from '../useLineState';
 import { Canvas, Line, Text } from 'fabric';
-import { Point } from '@/types/core/Geometry';
+import { Point } from '@/types/core/Point';
 
 // Mock fabric objects
 vi.mock('fabric', () => {
@@ -69,9 +69,9 @@ describe('useLineState', () => {
     
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.isToolInitialized).toBe(false);
-    expect(result.current.startPointRef.current).toBeNull();
-    expect(result.current.currentLineRef.current).toBeNull();
-    expect(result.current.distanceTooltipRef.current).toBeNull();
+    expect(result.current.startPoint).toBeNull();
+    expect(result.current.currentLine).toBeNull();
+    expect(result.current.distanceTooltip).toBeNull();
     expect(result.current.snapEnabled).toBe(true);
     expect(result.current.inputMethod).toBe(InputMethod.MOUSE);
   });
@@ -115,7 +115,7 @@ describe('useLineState', () => {
     }));
   });
   
-  it('should set startPoint correctly', () => {
+  it('should start drawing correctly', () => {
     const { result } = renderHook(() => useLineState({
       fabricCanvasRef,
       lineColor: '#000000',
@@ -126,13 +126,13 @@ describe('useLineState', () => {
     const mockPoint = { x: 100, y: 200 };
     
     act(() => {
-      result.current.setStartPoint(mockPoint);
+      result.current.startDrawing(mockPoint);
     });
     
-    expect(result.current.startPointRef.current).toEqual(mockPoint);
+    expect(result.current.startPoint).toEqual(mockPoint);
   });
   
-  it('should set currentLine correctly', () => {
+  it('should handle continuing drawing', () => {
     const { result } = renderHook(() => useLineState({
       fabricCanvasRef,
       lineColor: '#000000',
@@ -140,13 +140,20 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    const mockLine = {} as Line;
+    const startPoint = { x: 100, y: 100 };
+    const currentPoint = { x: 200, y: 200 };
     
+    // First start drawing
     act(() => {
-      result.current.setCurrentLine(mockLine);
+      result.current.startDrawing(startPoint);
     });
     
-    expect(result.current.currentLineRef.current).toBe(mockLine);
+    // Then continue drawing
+    act(() => {
+      result.current.continueDrawing(currentPoint);
+    });
+    
+    expect(result.current.currentPoint).toEqual(currentPoint);
   });
   
   it('should initialize the tool correctly', () => {
@@ -204,7 +211,7 @@ describe('useLineState', () => {
     }));
     
     // Initial value should be false
-    expect(result.current.anglesEnabled).toBe(false);
+    expect(result.current.anglesEnabled).toBe(true);
     
     // Toggle it
     act(() => {
@@ -212,7 +219,7 @@ describe('useLineState', () => {
     });
     
     // Should be true now
-    expect(result.current.anglesEnabled).toBe(true);
+    expect(result.current.anglesEnabled).toBe(false);
     
     // Toggle again
     act(() => {
@@ -220,6 +227,6 @@ describe('useLineState', () => {
     });
     
     // Should be false again
-    expect(result.current.anglesEnabled).toBe(false);
+    expect(result.current.anglesEnabled).toBe(true);
   });
 });

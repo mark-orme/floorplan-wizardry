@@ -181,7 +181,7 @@ export const useStraightLineTool = ({
   
   return {
     isEnabled: enabled,
-    isActive: lineState.isActive,
+    isActive: lineState.isDrawing || enabled, 
     isDrawing: lineState.isDrawing,
     currentLine: lineState.currentLine,
     inputMethod: lineState.inputMethod,

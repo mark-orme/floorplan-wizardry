@@ -1,53 +1,90 @@
 
 /**
- * Geometry utilities index
+ * Central exports for geometry utilities
  * @module utils/geometry
  */
-
-// Explicitly export from lineOperations with name resolution
-export { 
+import { Point } from '@/types/core/Point';
+import { calculateArea, calculateGIA } from './areaCalculation';
+import { rotatePoint, translatePoint, scalePoint } from './transformations';
+import { validatePolygon, isPolygonClosed } from './validation';
+import { getBoundingBox, getMidpoint } from './boundingBox';
+import { pixelsToMeters, metersToPixels } from './conversion';
+import { simplifyPath, smoothPath } from './pathProcessing';
+import { 
+  snapToGrid,
+  snapToAngle,
+  calculateDistance,
   calculateAngle,
-  formatDistance,
-  isExactGridMultiple,
-  snapToGrid
-} from './lineOperations';
-
-// Explicitly export from pointOperations
-export {
   isPointNear,
   roundToGrid,
   arePointsEqual,
-  snapPointToGrid
+  snapPointToGrid,
+  calculateMidpoint
 } from './pointOperations';
 
-// Explicitly export with aliasing to avoid conflicts
-export { 
-  calculateDistance as pointDistance,
-  calculateMidpoint as pointMidpoint
-} from './pointOperations';
-
-export { 
-  calculateDistance as lineDistance,
-  calculateMidpoint as lineMidpoint
-} from './lineOperations';
-
-// Export explicitly to avoid name conflicts
+// Re-export all geometry functions
 export {
-  pixelsToMeters as convertPixelsToMeters,
-  metersToPixels as convertMetersToPixels,
-  pixelsToGridUnits,
-  gridUnitsToPixels
-} from './coordinateTransforms';
+  // Area calculations
+  calculateArea,
+  calculateGIA,
+  
+  // Transformations
+  rotatePoint,
+  translatePoint,
+  scalePoint,
+  
+  // Validation
+  validatePolygon,
+  isPolygonClosed,
+  
+  // Bounding box operations
+  getBoundingBox,
+  getMidpoint,
+  
+  // Conversion utilities
+  pixelsToMeters,
+  metersToPixels,
+  
+  // Path processing
+  simplifyPath,
+  smoothPath,
+  
+  // Point operations
+  isPointNear,
+  roundToGrid,
+  arePointsEqual,
+  snapPointToGrid,
+  calculateMidpoint,
+  
+  // Line operations
+  calculateDistance,
+  calculateAngle,
+  
+  // Grid operations
+  snapToGrid,
+  snapToAngle
+};
 
-// Export new GIA calculation utility
-export { calculateGIA } from './calculateGIA';
+/**
+ * Calculate straight-line distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance in pixels
+ */
+export const getDistance = (p1: Point, p2: Point): number => {
+  return calculateDistance(p1, p2);
+};
 
-// Conditionally export from modules
-try {
-  const straightening = require('./straightening');
-  if (straightening) {
-    Object.assign(exports, straightening);
+/**
+ * Format a distance for display
+ * @param pixels Distance in pixels
+ * @returns Formatted distance string with units
+ */
+export const formatDisplayDistance = (pixels: number): string => {
+  // Simple distance formatter - implement actual conversion logic as needed
+  if (pixels < 100) {
+    return `${Math.round(pixels)}px`;
+  } else {
+    return `${(pixels / 100).toFixed(2)}m`;
   }
-} catch (err) {
-  console.warn('Failed to import straightening module');
-}
+};
