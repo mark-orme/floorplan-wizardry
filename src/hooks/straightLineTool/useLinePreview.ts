@@ -1,36 +1,36 @@
 
-import { useCallback, useRef } from 'react';
+import { useRef, useCallback } from 'react';
+import { Canvas as FabricCanvas, Line, Circle, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { Canvas as FabricCanvas, Line, Circle } from 'fabric';
+import { snapToGrid, snapToAngle } from '@/utils/geometry/pointOperations';
 
 /**
- * Hook for managing line preview and hover indicators
+ * Hook for managing line preview during drawing
  */
 export const useLinePreview = (
-  fabricCanvasRef: { current: FabricCanvas | null },
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
   isDrawing: boolean,
   snapEnabled: boolean,
   anglesEnabled: boolean,
-  lineColor: string,
-  lineThickness: number
+  lineColor: string = '#000000',
+  lineThickness: number = 2
 ) => {
-  // References for preview elements
-  const previewLineRef = useRef<any>(null);
-  const hoverIndicatorRef = useRef<any>(null);
+  // References for preview objects
+  const previewLineRef = useRef<Line | null>(null);
+  const startPointIndicatorRef = useRef<Circle | null>(null);
+  const distanceTooltipRef = useRef<Text | null>(null);
   
   /**
-   * Show hover indicator at cursor position
+   * Show hover indicator at a point
    */
   const showHoverIndicator = useCallback((point: Point) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Clear previous indicator if it exists
-    if (hoverIndicatorRef.current) {
-      canvas.remove(hoverIndicatorRef.current);
-    }
+    // Remove any existing indicator
+    hideHoverIndicator();
     
-    // Create hover indicator
+    // Create a new indicator
     const indicator = new Circle({
       left: point.x - 4,
       top: point.y - 4,
@@ -38,19 +38,15 @@ export const useLinePreview = (
       fill: lineColor,
       stroke: '#ffffff',
       strokeWidth: 1,
-      originX: 'center',
-      originY: 'center',
       selectable: false,
       evented: false,
-      opacity: 0.7
+      objectCaching: false
     });
     
     // Add to canvas
     canvas.add(indicator);
-    canvas.requestRenderAll();
-    
-    // Store reference
-    hoverIndicatorRef.current = indicator;
+    startPointIndicatorRef.current = indicator;
+    canvas.renderAll();
   }, [fabricCanvasRef, lineColor]);
   
   /**
@@ -58,108 +54,151 @@ export const useLinePreview = (
    */
   const hideHoverIndicator = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !hoverIndicatorRef.current) return;
+    if (!canvas) return;
     
-    // Remove indicator from canvas
-    canvas.remove(hoverIndicatorRef.current);
-    hoverIndicatorRef.current = null;
-    canvas.requestRenderAll();
+    // Remove indicator if exists
+    if (startPointIndicatorRef.current) {
+      canvas.remove(startPointIndicatorRef.current);
+      startPointIndicatorRef.current = null;
+      canvas.renderAll();
+    }
   }, [fabricCanvasRef]);
   
   /**
-   * Update preview line between start and end points
+   * Update line preview with new end point
    */
   const updateLinePreview = useCallback((startPoint: Point, endPoint: Point) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return null;
+    if (!canvas) return { endPoint, isSnapped: false };
     
-    // Clear previous preview if it exists
-    if (previewLineRef.current) {
-      canvas.remove(previewLineRef.current);
-    }
-    
-    // Apply grid snapping if enabled
-    let snappedEndPoint = { ...endPoint };
+    // Apply snapping if enabled
+    let processedEndPoint = endPoint;
     let isSnapped = false;
     
     if (snapEnabled) {
-      // Simple grid snapping (every 20px)
-      const gridSize = 20;
-      snappedEndPoint = {
-        x: Math.round(endPoint.x / gridSize) * gridSize,
-        y: Math.round(endPoint.y / gridSize) * gridSize
-      };
-      
-      // Check if snapping was applied
-      isSnapped = snappedEndPoint.x !== endPoint.x || snappedEndPoint.y !== endPoint.y;
+      processedEndPoint = snapToGrid(endPoint);
+      isSnapped = processedEndPoint.x !== endPoint.x || processedEndPoint.y !== endPoint.y;
     }
     
     // Apply angle constraints if enabled
     if (anglesEnabled) {
-      // Calculate angle from start to end
-      const dx = snappedEndPoint.x - startPoint.x;
-      const dy = snappedEndPoint.y - startPoint.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // Calculate current angle
-      let angle = Math.atan2(dy, dx);
-      
-      // Snap to 45-degree increments
-      const snapAngle = Math.PI / 4; // 45 degrees
-      angle = Math.round(angle / snapAngle) * snapAngle;
-      
-      // Update end point based on snapped angle
-      snappedEndPoint = {
-        x: startPoint.x + distance * Math.cos(angle),
-        y: startPoint.y + distance * Math.sin(angle)
-      };
-      
-      // Mark as snapped
+      processedEndPoint = snapToAngle(startPoint, processedEndPoint, 45);
       isSnapped = true;
     }
     
-    // Create preview line
-    const line = new Line([
-      startPoint.x, 
-      startPoint.y, 
-      snappedEndPoint.x, 
-      snappedEndPoint.y
-    ], {
-      stroke: lineColor,
-      strokeWidth: lineThickness,
-      strokeDashArray: [5, 5], // Make line dashed for preview
-      selectable: false,
-      evented: false,
-      opacity: 0.7
-    });
+    // Create or update the preview line
+    if (!previewLineRef.current) {
+      // Create new line
+      const line = new Line([startPoint.x, startPoint.y, processedEndPoint.x, processedEndPoint.y], {
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        objectCaching: false
+      });
+      
+      canvas.add(line);
+      previewLineRef.current = line;
+    } else {
+      // Update existing line
+      previewLineRef.current.set({
+        x1: startPoint.x,
+        y1: startPoint.y,
+        x2: processedEndPoint.x,
+        y2: processedEndPoint.y
+      });
+    }
     
-    // Add to canvas
-    canvas.add(line);
-    canvas.requestRenderAll();
+    // Update distance tooltip
+    updateDistanceTooltip(startPoint, processedEndPoint);
     
-    // Store reference
-    previewLineRef.current = line;
+    canvas.renderAll();
     
-    return { endPoint: snappedEndPoint, isSnapped };
+    return {
+      endPoint: processedEndPoint,
+      isSnapped
+    };
   }, [fabricCanvasRef, snapEnabled, anglesEnabled, lineColor, lineThickness]);
   
   /**
-   * Clear line preview
+   * Update distance tooltip
+   */
+  const updateDistanceTooltip = useCallback((startPoint: Point, endPoint: Point) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Calculate distance and angle
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const distanceInMeters = (distance / 100).toFixed(1); // 100px = 1m
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const formattedAngle = angle.toFixed(1);
+    
+    // Tooltip text
+    const tooltipText = `${distanceInMeters}m\n${formattedAngle}°`;
+    
+    // Position for tooltip (midpoint of line)
+    const midX = (startPoint.x + endPoint.x) / 2;
+    const midY = (startPoint.y + endPoint.y) / 2 - 10; // Position slightly above the line
+    
+    if (!distanceTooltipRef.current) {
+      // Create new tooltip
+      const tooltip = new Text(tooltipText, {
+        left: midX,
+        top: midY,
+        fontSize: 12,
+        fill: '#000000',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        padding: 2,
+        selectable: false,
+        evented: false,
+        originX: 'center',
+        originY: 'bottom'
+      });
+      
+      canvas.add(tooltip);
+      distanceTooltipRef.current = tooltip;
+    } else {
+      // Update existing tooltip
+      distanceTooltipRef.current.set({
+        text: tooltipText,
+        left: midX,
+        top: midY
+      });
+    }
+    
+    return distanceTooltipRef.current;
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Clear the line preview
    */
   const clearLinePreview = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !previewLineRef.current) return;
+    if (!canvas) return;
     
-    // Remove preview from canvas
-    canvas.remove(previewLineRef.current);
-    previewLineRef.current = null;
-    canvas.requestRenderAll();
+    // Remove preview line
+    if (previewLineRef.current) {
+      canvas.remove(previewLineRef.current);
+      previewLineRef.current = null;
+    }
+    
+    // Remove tooltip
+    if (distanceTooltipRef.current) {
+      canvas.remove(distanceTooltipRef.current);
+      distanceTooltipRef.current = null;
+    }
+    
+    canvas.renderAll();
   }, [fabricCanvasRef]);
   
   return {
     showHoverIndicator,
     hideHoverIndicator,
     updateLinePreview,
-    clearLinePreview
+    clearLinePreview,
+    distanceTooltip: distanceTooltipRef.current
   };
 };

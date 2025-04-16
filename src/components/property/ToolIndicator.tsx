@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   MousePointer, 
   Pencil, 
-  LineIcon, 
+  Line, 
   Square, 
   Circle, 
   Hand, 
@@ -34,7 +34,7 @@ export const ToolIndicator: React.FC<ToolIndicatorProps> = ({
       break;
     case DrawingMode.STRAIGHT_LINE:
     case DrawingMode.LINE:
-      icon = <LineIcon className="h-3.5 w-3.5" />;
+      icon = <Line className="h-3.5 w-3.5" />;
       label = 'Line';
       break;
     case DrawingMode.RECTANGLE:

@@ -1,156 +1,262 @@
 
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { LineState, useLineState, InputMethod } from './useLineState';
-import { FabricEventNames } from '@/types/fabric-events';
 import { Point } from '@/types/core/Point';
-import { toast } from 'sonner';
+import { useLineState } from './useLineState';
+import { InputMethod, useLineInputMethod } from './useLineInputMethod';
+import { MeasurementData, UseStraightLineToolResult } from '../useStraightLineTool.d';
+import { FabricEventNames } from '@/types/fabric-events';
 import logger from '@/utils/logger';
-
-export { InputMethod } from './useLineState';
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
   enabled: boolean;
-  lineColor: string;
-  lineThickness: number;
-  saveCurrentState: () => void;
+  lineColor?: string;
+  lineThickness?: number;
+  saveCurrentState?: () => void;
 }
 
-interface UseStraightLineToolResult {
-  isActive: boolean;
-  toggleSnapToGrid: () => void;
-  toggleAngleConstraints: () => void;
-  cancelDrawing: () => void;
-  snapEnabled: boolean;
-  anglesEnabled: boolean;
-}
-
+/**
+ * Hook for using the straight line drawing tool
+ */
 export const useStraightLineTool = ({
   canvas,
   enabled,
-  lineColor,
-  lineThickness,
-  saveCurrentState
+  lineColor = '#000000',
+  lineThickness = 2,
+  saveCurrentState = () => {}
 }: UseStraightLineToolProps): UseStraightLineToolResult => {
-  // Initialize line state
+  // Get line state from the hook
   const lineState = useLineState(lineColor, lineThickness);
   
-  // Destructure needed state and methods
-  const {
-    isDrawing,
-    startDrawing,
-    continueDrawing,
-    completeDrawing,
-    cancelDrawing,
-    fabricCanvasRef,
-    initializeTool,
-    resetDrawingState,
-    toggleSnap,
-    toggleAngles,
-    snapEnabled,
-    anglesEnabled
-  } = lineState;
-
-  // Event handlers
-  const handleMouseDown = useCallback((e: any) => {
-    if (!lineState.isActive || !e.pointer) return;
+  // Get input method functions
+  const { 
+    inputMethod, 
+    isPencilMode, 
+    detectInputMethod 
+  } = useLineInputMethod();
+  
+  // Store the canvas in a ref
+  const fabricCanvasRef = lineState.fabricCanvasRef;
+  
+  // Default measurement data
+  const [measurementData, setMeasurementData] = useState<MeasurementData>({
+    distance: null,
+    angle: null,
+    snapped: false,
+    unit: 'px'
+  });
+  
+  // Track if we're enabled
+  const [isEnabled, setIsEnabled] = useState(enabled);
+  
+  /**
+   * Handle pointer down event
+   */
+  const handlePointerDown = useCallback((e: any) => {
+    if (!canvas || !lineState.isActive) return;
     
+    // Prevent default to avoid selection
     e.e?.preventDefault();
     
-    const point: Point = { x: e.pointer.x, y: e.pointer.y };
-    startDrawing(point);
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
     
-    logger.debug('Started line drawing at point:', point);
-  }, [lineState, startDrawing]);
-
-  const handleMouseMove = useCallback((e: any) => {
-    if (!lineState.isActive || !isDrawing || !e.pointer) return;
+    // Start drawing
+    lineState.startDrawing({ x: pointer.x, y: pointer.y });
     
-    const point: Point = { x: e.pointer.x, y: e.pointer.y };
-    continueDrawing(point);
-  }, [lineState, isDrawing, continueDrawing]);
-
-  const handleMouseUp = useCallback((e: any) => {
-    if (!lineState.isActive || !isDrawing || !e.pointer) return;
+    // Detect input method if available
+    if (e.e && e.e.pointerType) {
+      detectInputMethod(e.e);
+    }
     
-    const point: Point = { x: e.pointer.x, y: e.pointer.y };
-    completeDrawing(point);
+    // Log for debugging
+    logger.debug('Pointer down', { pointer, isActive: lineState.isActive });
+  }, [canvas, lineState, detectInputMethod]);
+  
+  /**
+   * Handle pointer move event
+   */
+  const handlePointerMove = useCallback((e: any) => {
+    if (!canvas || !lineState.isDrawing) return;
     
-    // Save canvas state after drawing
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
+    
+    // Continue drawing
+    lineState.continueDrawing({ x: pointer.x, y: pointer.y });
+    
+    // Update measurement data
+    if (lineState.startPoint && lineState.currentPoint) {
+      const dx = lineState.currentPoint.x - lineState.startPoint.x;
+      const dy = lineState.currentPoint.y - lineState.startPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      
+      setMeasurementData({
+        distance,
+        angle,
+        snapped: lineState.snapEnabled,
+        unit: 'px'
+      });
+    }
+  }, [canvas, lineState]);
+  
+  /**
+   * Handle pointer up event
+   */
+  const handlePointerUp = useCallback((e: any) => {
+    if (!canvas || !lineState.isDrawing) return;
+    
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
+    
+    // Complete drawing
+    lineState.completeDrawing({ x: pointer.x, y: pointer.y });
+    
+    // Save current state for undo/redo
     saveCurrentState();
     
-    logger.debug('Completed line drawing at point:', point);
-  }, [lineState, isDrawing, completeDrawing, saveCurrentState]);
-
-  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' && isDrawing) {
-      cancelDrawing();
-      logger.debug('Drawing cancelled with Escape key');
-    }
-  }, [isDrawing, cancelDrawing]);
-
-  // Set up canvas and event listeners when tool is enabled
+    // Reset measurement data after a delay
+    setTimeout(() => {
+      setMeasurementData({
+        distance: null,
+        angle: null,
+        snapped: false,
+        unit: 'px'
+      });
+    }, 1000);
+  }, [canvas, lineState, saveCurrentState]);
+  
+  /**
+   * Set up and clean up event handlers
+   */
   useEffect(() => {
-    if (!canvas || !enabled) {
-      resetDrawingState();
+    // Update isEnabled state when enabled prop changes
+    setIsEnabled(enabled);
+    
+    // If not enabled or no canvas, do nothing
+    if (!enabled || !canvas) {
+      if (lineState.isActive) {
+        lineState.resetDrawingState();
+      }
       return;
     }
     
-    // Store canvas reference
+    // Update canvas ref
     fabricCanvasRef.current = canvas;
     
-    // Initialize the tool
-    initializeTool();
+    // Initialize tool
+    lineState.initializeTool();
     
-    // Configure canvas for drawing lines
-    canvas.isDrawingMode = false;
+    // Disable selection and set cursor
     canvas.selection = false;
     canvas.defaultCursor = 'crosshair';
     
-    // Bind event listeners
-    canvas.on(FabricEventNames.MOUSE_DOWN, handleMouseDown);
-    canvas.on(FabricEventNames.MOUSE_MOVE, handleMouseMove);
-    canvas.on(FabricEventNames.MOUSE_UP, handleMouseUp);
+    // Set up event handlers
+    canvas.on(FabricEventNames.MOUSE_DOWN, handlePointerDown);
+    canvas.on(FabricEventNames.MOUSE_MOVE, handlePointerMove);
+    canvas.on(FabricEventNames.MOUSE_UP, handlePointerUp);
     
-    // Add keyboard listener for escape
-    window.addEventListener('keydown', handleEscapeKey);
-    
-    logger.info('Straight line tool initialized');
-    
-    // Clean up when tool changes
-    return () => {
-      // Remove event listeners
-      canvas.off(FabricEventNames.MOUSE_DOWN, handleMouseDown);
-      canvas.off(FabricEventNames.MOUSE_MOVE, handleMouseMove);
-      canvas.off(FabricEventNames.MOUSE_UP, handleMouseUp);
-      
-      // Remove keyboard listener
-      window.removeEventListener('keydown', handleEscapeKey);
-      
-      // Reset state
-      resetDrawingState();
-      
-      logger.info('Straight line tool cleanup complete');
+    // Set up keyboard event handlers
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && lineState.isDrawing) {
+        lineState.cancelDrawing();
+      }
     };
-  }, [
-    canvas, 
-    enabled, 
-    fabricCanvasRef, 
-    initializeTool, 
-    resetDrawingState,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleEscapeKey
-  ]);
-
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // Clean up
+    return () => {
+      // Reset tool state
+      if (lineState.isActive) {
+        lineState.resetDrawingState();
+      }
+      
+      // Reset canvas state
+      if (canvas) {
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        
+        // Remove event handlers
+        canvas.off(FabricEventNames.MOUSE_DOWN, handlePointerDown);
+        canvas.off(FabricEventNames.MOUSE_MOVE, handlePointerMove);
+        canvas.off(FabricEventNames.MOUSE_UP, handlePointerUp);
+      }
+      
+      // Remove keyboard event handlers
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [canvas, enabled, fabricCanvasRef, handlePointerDown, handlePointerMove, handlePointerUp, lineState]);
+  
+  /**
+   * Toggle snap to grid
+   */
+  const toggleGridSnapping = useCallback(() => {
+    lineState.toggleSnap();
+  }, [lineState]);
+  
+  /**
+   * Toggle angle constraints
+   */
+  const toggleAngles = useCallback(() => {
+    lineState.toggleAngles();
+  }, [lineState]);
+  
+  /**
+   * Start drawing at a point
+   */
+  const startDrawing = useCallback((point: Point) => {
+    lineState.startDrawing(point);
+  }, [lineState]);
+  
+  /**
+   * Continue drawing to a point
+   */
+  const continueDrawing = useCallback((point: Point) => {
+    lineState.continueDrawing(point);
+  }, [lineState]);
+  
+  /**
+   * End drawing
+   */
+  const endDrawing = useCallback(() => {
+    if (lineState.isDrawing && lineState.currentPoint) {
+      lineState.completeDrawing(lineState.currentPoint);
+      saveCurrentState();
+    }
+  }, [lineState, saveCurrentState]);
+  
+  /**
+   * Cancel drawing
+   */
+  const cancelDrawing = useCallback(() => {
+    lineState.cancelDrawing();
+  }, [lineState]);
+  
   return {
     isActive: lineState.isActive,
-    toggleSnapToGrid: toggleSnap,
-    toggleAngleConstraints: toggleAngles,
+    isEnabled,
+    currentLine: lineState.currentLine,
+    isToolInitialized: lineState.isToolInitialized,
+    isDrawing: lineState.isDrawing,
+    inputMethod,
+    isPencilMode,
+    snapEnabled: lineState.snapEnabled,
+    anglesEnabled: lineState.anglesEnabled,
+    measurementData,
+    toggleGridSnapping,
+    toggleAngles,
+    startDrawing,
+    continueDrawing,
+    endDrawing,
     cancelDrawing,
-    snapEnabled,
-    anglesEnabled
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp
   };
 };
+
+// Re-export InputMethod enum
+export { InputMethod } from './useLineInputMethod';

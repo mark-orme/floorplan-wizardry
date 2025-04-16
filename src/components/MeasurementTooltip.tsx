@@ -6,8 +6,12 @@
  */
 import React from 'react';
 import { Point } from '@/types/core/Point';
-import { PIXELS_PER_METER, DISTANCE_PRECISION, STANDARD_ANGLES } from '@/constants/numerics';
+import { PIXELS_PER_METER, AREA_PRECISION } from '@/constants/numerics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Define these constants locally since they may not exist in numerics.ts yet
+const DISTANCE_PRECISION = 2;
+const STANDARD_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
 
 interface MeasurementTooltipProps {
   /** Start point of measurement */
