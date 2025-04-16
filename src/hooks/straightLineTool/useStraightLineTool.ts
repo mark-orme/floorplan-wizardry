@@ -1,14 +1,13 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { useLineState } from './useLineState';
 import { InputMethod } from './useLineInputMethod';
 import { MeasurementData, UseStraightLineToolResult } from '../useStraightLineTool.d';
 import { FabricEventNames } from '@/types/fabric-events';
-import logger from '@/utils/logger';
-import { LineDistanceTooltip } from '@/components/canvas/LineDistanceTooltip';
-import { createPortal } from 'react-dom';
+import { useLineToolState } from './useLineToolState';
+import { useTooltipPortal } from './useTooltipPortal';
+import { useLinePointerEvents } from './useLinePointerEvents';
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
@@ -28,172 +27,49 @@ export const useStraightLineTool = ({
   lineThickness = 2,
   saveCurrentState = () => {}
 }: UseStraightLineToolProps): UseStraightLineToolResult => {
-  // Create a reference to hold the canvas
-  const fabricCanvasRef = useRef<FabricCanvas | null>(canvas);
-  
-  // Update the ref when canvas changes
-  useEffect(() => {
-    fabricCanvasRef.current = canvas;
-  }, [canvas]);
-  
-  // Get line state from the hook
-  const lineState = useLineState({
-    fabricCanvasRef,
-    lineColor,
-    lineThickness,
-    saveCurrentState
-  });
+  // Get tool state from the modular hooks
+  const {
+    lineState,
+    measurementData,
+    updateMeasurementData,
+    isEnabled,
+    fabricCanvasRef
+  } = useLineToolState(canvas, enabled, lineColor, lineThickness, saveCurrentState);
   
   // Get input method functions from the lineState
   const inputMethod = lineState.inputMethod;
   const isPencilMode = lineState.isPencilMode;
   
-  // Default measurement data
-  const [measurementData, setMeasurementData] = useState<MeasurementData>({
-    distance: null,
-    angle: null,
-    snapped: false,
-    unit: 'px'
-  });
+  // Get tooltip functionality
+  const { renderTooltip } = useTooltipPortal(
+    lineState.isDrawing,
+    lineState.startPoint,
+    lineState.currentPoint,
+    measurementData
+  );
   
-  // Track if we're enabled
-  const [isEnabled, setIsEnabled] = useState(enabled);
-
-  // Create tooltip data state for rendering
-  const [tooltipPortalContainer, setTooltipPortalContainer] = useState<HTMLElement | null>(null);
-  const [tooltipData, setTooltipData] = useState<{
-    startPoint: Point | null;
-    endPoint: Point | null;
-  }>({
-    startPoint: null,
-    endPoint: null
-  });
-  
-  // Create portal container for tooltips
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const existingContainer = document.getElementById('line-tooltip-container');
-      if (existingContainer) {
-        setTooltipPortalContainer(existingContainer);
-      } else {
-        const container = document.createElement('div');
-        container.id = 'line-tooltip-container';
-        container.style.position = 'absolute';
-        container.style.top = '0';
-        container.style.left = '0';
-        container.style.pointerEvents = 'none';
-        container.style.zIndex = '1000';
-        document.body.appendChild(container);
-        setTooltipPortalContainer(container);
-      }
-    }
-
-    return () => {
-      // Clean up container on unmount if we created it
-      const container = document.getElementById('line-tooltip-container');
-      if (container && container.parentNode && !tooltipPortalContainer) {
-        container.parentNode.removeChild(container);
-      }
-    };
-  }, []);
-
-  // Update tooltip position with measurement data
-  useEffect(() => {
-    if (lineState.isDrawing && lineState.startPoint && lineState.currentPoint) {
-      setTooltipData({
-        startPoint: lineState.startPoint,
-        endPoint: lineState.currentPoint
-      });
-    }
-  }, [lineState.isDrawing, lineState.startPoint, lineState.currentPoint]);
-  
-  /**
-   * Handle pointer down event
-   */
-  const handlePointerDown = useCallback((e: any) => {
-    if (!canvas || !lineState.isActive) return;
-    
-    // Prevent default to avoid selection
-    e.e?.preventDefault();
-    
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
-    
-    // Start drawing
-    lineState.startDrawing({ x: pointer.x, y: pointer.y });
-    
-    // Detect input method if available
-    if (e.e && e.e.pointerType) {
-      // Instead of using detectInputMethod, we set it directly for now
-      lineState.setInputMethod(e.e.pointerType === 'pen' ? InputMethod.PENCIL : InputMethod.MOUSE);
-    }
-    
-    // Log for debugging
-    logger.debug('Pointer down', { pointer, isActive: lineState.isActive });
-  }, [canvas, lineState]);
-  
-  /**
-   * Handle pointer move event
-   */
-  const handlePointerMove = useCallback((e: any) => {
-    if (!canvas || !lineState.isDrawing) return;
-    
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
-    
-    // Continue drawing
-    lineState.continueDrawing({ x: pointer.x, y: pointer.y });
-    
-    // Update measurement data
-    if (lineState.startPoint && lineState.currentPoint) {
-      const dx = lineState.currentPoint.x - lineState.startPoint.x;
-      const dy = lineState.currentPoint.y - lineState.startPoint.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-      
-      setMeasurementData({
-        distance,
-        angle,
-        snapped: lineState.snapEnabled,
-        unit: 'px',
-        snapType: lineState.anglesEnabled ? 'angle' : (lineState.snapEnabled ? 'grid' : undefined)
-      });
-    }
-  }, [canvas, lineState]);
-  
-  /**
-   * Handle pointer up event
-   */
-  const handlePointerUp = useCallback((e: any) => {
-    if (!canvas || !lineState.isDrawing) return;
-    
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
-    
-    // Complete drawing
-    lineState.completeDrawing({ x: pointer.x, y: pointer.y });
-    
-    // Save current state for undo/redo
-    saveCurrentState();
-    
-    // Reset measurement data after a delay
-    setTimeout(() => {
-      setMeasurementData({
-        distance: null,
-        angle: null,
-        snapped: false,
-        unit: 'px'
-      });
-    }, 1000);
-  }, [canvas, lineState, saveCurrentState]);
+  // Get pointer event handlers
+  const { handlePointerDown, handlePointerMove, handlePointerUp } = useLinePointerEvents(
+    canvas,
+    lineState.isActive,
+    lineState.startDrawing,
+    lineState.continueDrawing,
+    lineState.completeDrawing,
+    updateMeasurementData,
+    lineState.startPoint,
+    lineState.snapEnabled,
+    lineState.anglesEnabled,
+    (e) => {
+      // Set input method based on pointer type
+      lineState.setInputMethod(e.pointerType === 'pen' ? InputMethod.PENCIL : InputMethod.MOUSE);
+    },
+    saveCurrentState
+  );
   
   /**
    * Set up and clean up event handlers
    */
   useEffect(() => {
-    // Update isEnabled state when enabled prop changes
-    setIsEnabled(enabled);
-    
     // If not enabled or no canvas, do nothing
     if (!enabled || !canvas) {
       if (lineState.isActive) {
@@ -293,26 +169,6 @@ export const useStraightLineTool = ({
   const cancelDrawing = useCallback(() => {
     lineState.cancelDrawing();
   }, [lineState]);
-  
-  /**
-   * Render tooltip through portal
-   */
-  const renderTooltip = useCallback(() => {
-    if (!tooltipPortalContainer || !lineState.isDrawing || !measurementData.distance) return null;
-    
-    return createPortal(
-      <LineDistanceTooltip
-        startPoint={tooltipData.startPoint || { x: 0, y: 0 }}
-        endPoint={tooltipData.endPoint || { x: 0, y: 0 }}
-        distance={measurementData.distance}
-        angle={measurementData.angle}
-        unit={measurementData.unit}
-        isSnapped={measurementData.snapped}
-        snapType={measurementData.snapType}
-      />,
-      tooltipPortalContainer
-    );
-  }, [tooltipPortalContainer, lineState.isDrawing, measurementData, tooltipData]);
   
   return {
     isActive: lineState.isActive,
