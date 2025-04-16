@@ -37,8 +37,8 @@ export interface IMockCanvas extends Partial<Canvas> {
   moveCursor?: string;
   
   // Add methods for testing event handling
-  getHandlers?: (eventName: string) => Function[];
-  triggerEvent?: (eventName: string, eventData: any) => void;
+  getHandlers: (eventName: string) => Function[];
+  triggerEvent: (eventName: string, eventData: any) => void;
 }
 
 /**

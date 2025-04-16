@@ -6,7 +6,7 @@
 import { Canvas, Object as FabricObject } from 'fabric';
 import { vi } from 'vitest';
 import { IMockCanvas } from '@/types/test/MockTypes.d';
-import { asMockCanvas } from '@/types/test/MockTypes';
+import { asMockCanvas, asMockObject } from '@/types/test/MockTypes';
 import { FabricEventNames } from '@/types/fabric-events';
 
 /**
@@ -41,10 +41,13 @@ export function createTypedMockCanvas(): Canvas {
     add: vi.fn(),
     remove: vi.fn(),
     requestRenderAll: vi.fn(),
-    discardActiveObject: vi.fn(),
-    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+    discardActiveObject: vi.fn().mockImplementation(function() {
+      this._activeObject = undefined;
+      return mockCanvas;
+    }),
     getObjects: vi.fn().mockReturnValue([]),
     contains: vi.fn().mockReturnValue(true),
+    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
     isDrawingMode: false,
     selection: true,
     defaultCursor: 'default',
@@ -84,9 +87,10 @@ export function createTypedMockCanvas(): Canvas {
     },
     
     getHandlers: (eventName: string) => eventHandlers[eventName] || []
-  } as IMockCanvas;
+  };
   
-  return asMockCanvas(mockCanvas);
+  // Use the proper type conversion as recommended in the error message
+  return asMockCanvas(mockCanvas as unknown as Canvas);
 }
 
 /**
@@ -98,7 +102,7 @@ export function createTypedMockCanvas(): Canvas {
 export function createTypedMockObject(type: string, props: Record<string, any> = {}): FabricObject {
   const mockObject = {
     type,
-    set: vi.fn().mockReturnSelf(),
+    set: vi.fn().mockImplementation(function() { return this; }),
     setCoords: vi.fn(),
     get: vi.fn((prop) => props[prop] || null),
     visible: true,
@@ -107,5 +111,5 @@ export function createTypedMockObject(type: string, props: Record<string, any> =
     ...props
   };
   
-  return asMockObject(mockObject);
+  return asMockObject(mockObject as unknown as FabricObject);
 }

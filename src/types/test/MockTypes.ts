@@ -13,8 +13,11 @@ import { vi } from 'vitest';
  * @returns The same object typed as Canvas
  */
 export function asMockCanvas<T>(mockCanvas: T): Canvas {
+  // Convert to unknown first as recommended by TypeScript error message
+  const mockCanvasAny = mockCanvas as unknown;
+  
   const completeCanvas = {
-    ...mockCanvas,
+    ...mockCanvasAny,
     // Adding missing critical internal properties
     enablePointerEvents: true,
     _willAddMouseDown: false,
@@ -37,6 +40,12 @@ export function asMockCanvas<T>(mockCanvas: T): Canvas {
     getActiveObject: vi.fn().mockReturnValue(null),
     setActiveObject: vi.fn(),
     
+    // Mock implementation of discardActiveObject to satisfy type predicate
+    discardActiveObject: vi.fn().mockImplementation(function() {
+      this._activeObject = undefined;
+      return this;
+    }),
+    
     // Internal properties often used by Fabric.js
     _objects: [],
     _activeObject: null,
@@ -58,8 +67,10 @@ export function asMockCanvas<T>(mockCanvas: T): Canvas {
  * @returns The same object typed as FabricObject
  */
 export function asMockObject<T>(mockObject: T): FabricObject {
+  const mockObjectAny = mockObject as unknown;
+  
   const completeObject = {
-    ...mockObject,
+    ...mockObjectAny,
     // Default properties required for Fabric objects
     visible: true,
     evented: true,
