@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useLineState } from './useLineState';
@@ -27,7 +26,6 @@ export const useLineToolHandlers = ({
     anglesEnabled,
     startPoint,
     currentLine,
-    distanceTooltip,
     toggleSnap,
     toggleAngles,
     startDrawing,

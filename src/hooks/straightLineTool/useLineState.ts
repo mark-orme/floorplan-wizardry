@@ -1,31 +1,22 @@
-import { useCallback, useRef, useState } from 'react';
+
+import { useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { useGridSnapping } from '../useGridSnapping';
+import { useSnapToGrid } from '../useSnapToGrid';
 
-/**
- * Input method enum for device detection
- */
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
-  PENCIL = 'pencil',
-  STYLUS = 'stylus'
+  PENCIL = 'pencil'
 }
 
-/**
- * Props for useLineState hook
- */
 interface UseLineStateProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: { current: FabricCanvas | null };
   lineColor: string;
   lineThickness: number;
   saveCurrentState: () => void;
 }
 
-/**
- * Hook for managing line drawing state
- */
 export const useLineState = ({
   fabricCanvasRef,
   lineColor,
@@ -34,248 +25,276 @@ export const useLineState = ({
 }: UseLineStateProps) => {
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [isToolInitialized, setIsToolInitialized] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
+  const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
+  const [distanceTooltip, setDistanceTooltip] = useState<Text | null>(null);
+  
+  // Input method state
   const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
   const [isPencilMode, setIsPencilMode] = useState(false);
+  
+  // Grid snapping state
   const [snapEnabled, setSnapEnabled] = useState(true);
-  const [anglesEnabled, setAnglesEnabled] = useState(false);
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
   
-  // Grid snapping hook
-  const { snapPointToGrid, snapLineToGrid } = useGridSnapping();
+  // Use the snap to grid hook
+  const { snapPointToGrid } = useSnapToGrid({
+    initialSnapEnabled: snapEnabled
+  });
   
-  // Distance tooltip reference
-  const tooltipRef = useRef<Text | null>(null);
+  // Initialize the tool
+  const initializeTool = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    canvas.selection = false;
+    canvas.defaultCursor = 'crosshair';
+    canvas.isDrawingMode = false;
+    
+    setIsToolInitialized(true);
+  }, [fabricCanvasRef]);
   
-  /**
-   * Start drawing at a point
-   */
+  // Reset drawing state
+  const resetDrawingState = useCallback(() => {
+    setIsDrawing(false);
+    setStartPoint(null);
+    setCurrentPoint(null);
+    setCurrentLine(null);
+    setDistanceTooltip(null);
+  }, []);
+  
+  // Create a line
+  const createLine = useCallback((x1: number, y1: number, x2: number, y2: number) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return null;
+    
+    try {
+      const line = new Line([x1, y1, x2, y2], {
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        selectable: true,
+        evented: true,
+        objectType: 'straight-line'
+      });
+      
+      canvas.add(line);
+      return line;
+    } catch (error) {
+      console.error('Error creating line:', error);
+      return null;
+    }
+  }, [fabricCanvasRef, lineColor, lineThickness]);
+  
+  // Create a distance tooltip
+  const createDistanceTooltip = useCallback((x: number, y: number, distance: number) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return null;
+    
+    try {
+      // Convert distance to meters (assuming 100px = 1m)
+      const meters = (distance / 100).toFixed(1);
+      
+      const tooltip = new Text(`${meters}m`, {
+        left: x,
+        top: y - 10,  // Position above the line
+        fontSize: 12,
+        fill: '#000000',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        padding: 2,
+        selectable: false,
+        evented: false,
+        objectType: 'measurement'
+      });
+      
+      canvas.add(tooltip);
+      return tooltip;
+    } catch (error) {
+      console.error('Error creating tooltip:', error);
+      return null;
+    }
+  }, [fabricCanvasRef]);
+  
+  // Toggle snap to grid
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
+  
+  // Toggle angle constraints
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
+  
+  // Start drawing
   const startDrawing = useCallback((point: Point) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Apply grid snapping if enabled
+    // Apply snapping if enabled
     const snappedPoint = snapEnabled ? snapPointToGrid(point) : point;
+    
+    setIsDrawing(true);
+    setIsActive(true);
     setStartPoint(snappedPoint);
     
-    // Create initial line
-    const line = new Line(
-      [snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y],
-      {
-        stroke: lineColor,
-        strokeWidth: lineThickness,
-        selectable: false,
-        evented: false,
-        objectType: 'straight-line-temp'
-      }
+    // Create the initial line
+    const line = createLine(
+      snappedPoint.x, 
+      snappedPoint.y,
+      snappedPoint.x,
+      snappedPoint.y
     );
     
-    canvas.add(line);
     setCurrentLine(line);
-    setIsDrawing(true);
     
-    // Create distance tooltip
-    const tooltip = new Text('0 px', {
-      left: snappedPoint.x,
-      top: snappedPoint.y - 10,
-      fontSize: 12,
-      fill: '#000000',
-      backgroundColor: 'rgba(255,255,255,0.7)',
-      padding: 2,
-      selectable: false,
-      originX: 'center',
-      originY: 'bottom'
-    });
-    canvas.add(tooltip);
-    tooltipRef.current = tooltip;
+    // Create initial tooltip (0m distance)
+    const tooltip = createDistanceTooltip(snappedPoint.x, snappedPoint.y, 0);
+    setDistanceTooltip(tooltip);
     
     canvas.renderAll();
-  }, [fabricCanvasRef, lineColor, lineThickness, snapEnabled, snapPointToGrid]);
-
-  /**
-   * Continue drawing to a point
-   */
+  }, [fabricCanvasRef, snapEnabled, snapPointToGrid, createLine, createDistanceTooltip]);
+  
+  // Continue drawing
   const continueDrawing = useCallback((point: Point) => {
-    if (!isDrawing || !startPoint || !currentLine) return;
-    
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !isDrawing || !startPoint || !currentLine) return;
     
-    // Apply grid snapping if enabled
+    // Apply snapping if enabled
     const snappedPoint = snapEnabled ? snapPointToGrid(point) : point;
     
-    // Update line
+    // Update the current point
+    setCurrentPoint(snappedPoint);
+    
+    // Update the line
     currentLine.set({
       x2: snappedPoint.x,
       y2: snappedPoint.y
     });
-    
-    // Calculate distance for tooltip
-    const dx = snappedPoint.x - startPoint.x;
-    const dy = snappedPoint.y - startPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Apply angle constraints if enabled
-    if (anglesEnabled && distance > 20) {
-      // Constrain to 0, 45, 90, 135, 180, 225, 270, 315 degrees
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      const snappedAngle = Math.round(angle / 45) * 45;
-      const snappedRadian = snappedAngle * Math.PI / 180;
-      
-      // Calculate new endpoint based on snapped angle
-      const newX = startPoint.x + distance * Math.cos(snappedRadian);
-      const newY = startPoint.y + distance * Math.sin(snappedRadian);
-      
-      currentLine.set({
-        x2: newX,
-        y2: newY
-      });
-    }
-    
-    // Update tooltip
-    if (tooltipRef.current) {
-      const midX = (startPoint.x + currentLine.x2!) / 2;
-      const midY = (startPoint.y + currentLine.y2!) / 2 - 10;
-      
-      tooltipRef.current.set({
-        text: `${Math.round(distance)} px`,
-        left: midX,
-        top: midY
-      });
-    }
-    
-    canvas.renderAll();
-  }, [isDrawing, startPoint, currentLine, fabricCanvasRef, snapEnabled, snapPointToGrid, anglesEnabled]);
-
-  /**
-   * Complete drawing at a point
-   */
-  const completeDrawing = useCallback((point: Point) => {
-    if (!isDrawing || !startPoint || !currentLine) return;
-    
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Apply grid snapping if enabled
-    const snappedPoint = snapEnabled ? snapPointToGrid(point) : point;
     
     // Calculate distance
     const dx = snappedPoint.x - startPoint.x;
     const dy = snappedPoint.y - startPoint.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Apply angle constraints if enabled (same as in continueDrawing)
-    if (anglesEnabled && distance > 20) {
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      const snappedAngle = Math.round(angle / 45) * 45;
-      const snappedRadian = snappedAngle * Math.PI / 180;
+    // Update the tooltip
+    if (distanceTooltip) {
+      // Position the tooltip at the midpoint of the line
+      const midX = (startPoint.x + snappedPoint.x) / 2;
+      const midY = (startPoint.y + snappedPoint.y) / 2 - 10;
       
-      const newX = startPoint.x + distance * Math.cos(snappedRadian);
-      const newY = startPoint.y + distance * Math.sin(snappedRadian);
+      // Convert distance to meters (assuming 100px = 1m)
+      const meters = (distance / 100).toFixed(1);
       
-      currentLine.set({
-        x2: newX,
-        y2: newY
-      });
-    } else {
-      // Update line endpoint
-      currentLine.set({
-        x2: snappedPoint.x,
-        y2: snappedPoint.y
+      distanceTooltip.set({
+        text: `${meters}m`,
+        left: midX,
+        top: midY
       });
     }
     
-    // Only keep the line if it has a meaningful length
-    if (distance > 5) {
+    canvas.renderAll();
+  }, [fabricCanvasRef, isDrawing, startPoint, currentLine, distanceTooltip, snapEnabled, snapPointToGrid]);
+  
+  // Complete drawing
+  const completeDrawing = useCallback((point: Point) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !isDrawing || !startPoint || !currentLine) return;
+    
+    // Apply snapping if enabled
+    const snappedPoint = snapEnabled ? snapPointToGrid(point) : point;
+    
+    // Update the line's final position
+    currentLine.set({
+      x2: snappedPoint.x,
+      y2: snappedPoint.y,
+      selectable: true,
+      evented: true
+    });
+    
+    // Calculate the distance
+    const dx = snappedPoint.x - startPoint.x;
+    const dy = snappedPoint.y - startPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // If the line is too short, remove it
+    if (distance < 5) {
+      canvas.remove(currentLine);
+      if (distanceTooltip) canvas.remove(distanceTooltip);
+    } else {
       // Save current state for undo
       saveCurrentState();
       
-      // Update line properties for final state
-      currentLine.set({
-        selectable: true,
-        evented: true,
-        objectType: 'straight-line'
-      });
-      
-      // Keep tooltip if needed, or remove it
-      if (tooltipRef.current) {
-        canvas.remove(tooltipRef.current);
-        tooltipRef.current = null;
-      }
-    } else {
-      // Line too short, remove it
-      canvas.remove(currentLine);
-      
-      // Remove tooltip
-      if (tooltipRef.current) {
-        canvas.remove(tooltipRef.current);
-        tooltipRef.current = null;
+      // Update the tooltip's final position
+      if (distanceTooltip) {
+        const midX = (startPoint.x + snappedPoint.x) / 2;
+        const midY = (startPoint.y + snappedPoint.y) / 2 - 10;
+        
+        // Convert distance to meters (assuming 100px = 1m)
+        const meters = (distance / 100).toFixed(1);
+        
+        distanceTooltip.set({
+          text: `${meters}m`,
+          left: midX,
+          top: midY,
+          selectable: false,
+          evented: true
+        });
       }
     }
     
-    // Reset state
+    // Reset drawing state
     setIsDrawing(false);
-    setStartPoint(null);
+    setCurrentPoint(null);
     setCurrentLine(null);
+    setDistanceTooltip(null);
     
     canvas.renderAll();
-  }, [isDrawing, startPoint, currentLine, fabricCanvasRef, snapEnabled, snapPointToGrid, anglesEnabled, saveCurrentState]);
-
-  /**
-   * Cancel drawing
-   */
+  }, [fabricCanvasRef, isDrawing, startPoint, currentLine, distanceTooltip, snapEnabled, snapPointToGrid, saveCurrentState]);
+  
+  // Cancel drawing
   const cancelDrawing = useCallback(() => {
-    if (!isDrawing || !currentLine) return;
-    
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !currentLine) return;
     
-    // Remove the line
+    // Remove the current line and tooltip
     canvas.remove(currentLine);
+    if (distanceTooltip) canvas.remove(distanceTooltip);
     
-    // Remove tooltip
-    if (tooltipRef.current) {
-      canvas.remove(tooltipRef.current);
-      tooltipRef.current = null;
-    }
-    
-    // Reset state
+    // Reset drawing state
     setIsDrawing(false);
     setStartPoint(null);
+    setCurrentPoint(null);
     setCurrentLine(null);
+    setDistanceTooltip(null);
     
     canvas.renderAll();
-  }, [isDrawing, currentLine, fabricCanvasRef]);
-
-  /**
-   * Toggle grid snapping
-   */
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
-
-  /**
-   * Toggle angle constraints
-   */
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
-  }, []);
-
+  }, [fabricCanvasRef, currentLine, distanceTooltip]);
+  
   return {
     isDrawing,
+    isActive,
+    isToolInitialized,
     startPoint,
+    currentPoint,
     currentLine,
+    distanceTooltip,
     inputMethod,
     isPencilMode,
     snapEnabled,
     anglesEnabled,
-    setIsPencilMode,
+    initializeTool,
+    resetDrawingState,
     setInputMethod,
+    setIsPencilMode,
+    toggleSnap,
+    toggleAngles,
+    createLine,
+    createDistanceTooltip,
     startDrawing,
     continueDrawing,
     completeDrawing,
-    cancelDrawing,
-    toggleSnap,
-    toggleAngles
+    cancelDrawing
   };
 };

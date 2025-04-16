@@ -11,6 +11,12 @@ interface CanvasEventManagerProps {
   lineThickness: number;
   lineColor: string;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
+  saveCurrentState?: () => void;
+  undo?: () => void;
+  redo?: () => void;
+  deleteSelectedObjects?: () => void;
+  enableSync?: boolean;
+  onDrawingComplete?: () => void;
 }
 
 export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
@@ -18,19 +24,15 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   tool,
   lineThickness,
   lineColor,
-  gridLayerRef
+  gridLayerRef,
+  saveCurrentState = () => {},
+  undo,
+  redo,
+  deleteSelectedObjects,
+  enableSync = true,
+  onDrawingComplete
 }) => {
   const { setActiveTool } = useDrawingContext();
-  
-  // Save current state for undo/redo
-  const saveCurrentState = () => {
-    // Get current canvas objects (excluding grid)
-    const currentObjects = canvas.getObjects().filter(
-      obj => !gridLayerRef.current.includes(obj)
-    );
-    
-    console.log(`Saved canvas state with ${currentObjects.length} objects`);
-  };
   
   // Hook for straight line tool
   const straightLineTool = useStraightLineTool({
@@ -67,11 +69,9 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       canvas.hoverCursor = 'crosshair';
       
       // Make objects non-selectable during drawing
-      if (tool !== DrawingMode.SELECT) {
-        canvas.getObjects().forEach(obj => {
-          obj.selectable = false;
-        });
-      }
+      canvas.getObjects().forEach(obj => {
+        obj.selectable = false;
+      });
     }
     
     canvas.renderAll();

@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect } from "react";
 import { Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -238,7 +237,6 @@ export const DrawingManager = () => {
         </>
       )}
       
-      {/* Restore drawing prompt */}
       {canvas && (
         <RestorePromptManager
           canvas={canvas}
