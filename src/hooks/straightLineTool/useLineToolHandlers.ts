@@ -43,7 +43,7 @@ export const useLineToolHandlers = ({
   
   // Use angle snapping hook
   const [anglesEnabled, setAnglesEnabled] = useState(true);
-  const { snapToAngle } = useLineAngleSnap();
+  const { snapToAngle } = useLineAngleSnap({ enabled: true });
   
   // Use measurement calculation
   const { calculateMeasurement } = useMeasurementCalculation();

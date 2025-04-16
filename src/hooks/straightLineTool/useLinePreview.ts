@@ -9,8 +9,14 @@ import { useLineAngleSnap } from './useLineAngleSnap';
  */
 export const useLinePreview = (gridSize = 20, snapTolerance = 5) => {
   // Reuse existing hooks for grid and angle snapping
-  const { snapToGrid } = useEnhancedGridSnapping(true, gridSize);
-  const { snapToAngle } = useLineAngleSnap(true);
+  const { snapToGrid } = useEnhancedGridSnapping({
+    gridSize,
+    snapThreshold: snapTolerance,
+    initialSnapEnabled: true
+  });
+  const { snapToAngle } = useLineAngleSnap({
+    enabled: true
+  });
   
   /**
    * Get line preview with snapping applied based on settings

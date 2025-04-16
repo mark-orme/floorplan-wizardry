@@ -62,11 +62,11 @@ const GridSnappingDemo = () => {
   }, []);
   
   // Use grid snapping hook - pass arguments correctly
-  const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping(
-    true, // initialSnapEnabled
-    20,   // gridSize 
-    10    // snapThreshold
-  );
+  const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping({
+    initialSnapEnabled: true,
+    gridSize: 20,
+    snapThreshold: 10
+  });
   
   // Add a point when clicking on the canvas
   const addPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {

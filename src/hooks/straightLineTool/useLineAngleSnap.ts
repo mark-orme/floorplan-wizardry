@@ -2,39 +2,58 @@
 import { useCallback } from 'react';
 import { Point } from '@/types/core/Point';
 
+interface UseLineAngleSnapProps {
+  enabled?: boolean;
+  angleConstraints?: number[];
+}
+
 /**
- * Hook for angle snapping functionality
+ * Hook for snapping lines to specific angles
  */
-export const useLineAngleSnap = (anglesEnabled = false) => {
+export const useLineAngleSnap = ({
+  enabled = true,
+  angleConstraints = [0, 45, 90, 135, 180, 225, 270, 315, 360]
+}: UseLineAngleSnapProps = {}) => {
   /**
-   * Snap angle to nearest constraint (0, 45, 90 degrees)
+   * Snap a line to the nearest angle constraint
+   * @param start - Start point of the line
+   * @param end - End point of the line
+   * @returns The end point snapped to the nearest angle constraint
    */
-  const snapToAngle = useCallback((startPoint: Point, currentPoint: Point): Point => {
-    if (!anglesEnabled) return currentPoint;
+  const snapToAngle = useCallback((start: Point, end: Point): Point => {
+    if (!enabled) return end;
     
-    const dx = currentPoint.x - startPoint.x;
-    const dy = currentPoint.y - startPoint.y;
+    // Calculate angle of the line
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     
-    // Calculate angle in radians
-    const angleRad = Math.atan2(dy, dx);
+    // Find the closest angle constraint
+    let closestAngle = angleConstraints[0];
+    let minDiff = Math.abs(angle - closestAngle);
     
-    // Convert to degrees and find nearest 45° increment
-    let angleDeg = angleRad * (180 / Math.PI);
-    const snapAngle = 45;
-    const snappedAngleDeg = Math.round(angleDeg / snapAngle) * snapAngle;
+    for (let i = 1; i < angleConstraints.length; i++) {
+      const diff = Math.abs(angle - angleConstraints[i]);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestAngle = angleConstraints[i];
+      }
+    }
     
-    // Convert back to radians
-    const snappedAngleRad = snappedAngleDeg * (Math.PI / 180);
+    // If the angle is close enough to a constraint, snap to it
+    if (minDiff <= 10) {
+      // Calculate the new end point
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const newAngle = closestAngle * Math.PI / 180;
+      
+      return {
+        x: start.x + Math.cos(newAngle) * distance,
+        y: start.y + Math.sin(newAngle) * distance
+      };
+    }
     
-    // Calculate distance
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Get new point at same distance but snapped angle
-    return {
-      x: startPoint.x + Math.cos(snappedAngleRad) * distance,
-      y: startPoint.y + Math.sin(snappedAngleRad) * distance
-    };
-  }, [anglesEnabled]);
+    return end;
+  }, [enabled, angleConstraints]);
   
   return {
     snapToAngle
