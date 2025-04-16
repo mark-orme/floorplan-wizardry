@@ -1,5 +1,6 @@
+
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line, PencilBrush } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
