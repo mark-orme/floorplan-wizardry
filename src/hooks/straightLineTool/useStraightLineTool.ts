@@ -3,7 +3,7 @@
  * @module hooks/straightLineTool/useStraightLineTool
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, Object as FabricObject, Text } from 'fabric';
+import { Canvas as FabricCanvas, Line, Object as FabricObject, Text, Shadow } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
@@ -104,8 +104,8 @@ export const useLineState = (props: UseLineStateProps) => {
     // Add to canvas immediately
     canvas.add(line);
     
-    // Use a higher z-index to ensure visibility
-    canvas.bringToFront(line);
+    // Ensure line is at the front
+    canvas.bringObjectToFront(line);
     
     logger.info('Created line:', { x1, y1, x2, y2, color: lineColor, thickness: lineThickness });
     console.log("DEBUG: Line created and added to canvas:", line);
@@ -125,6 +125,13 @@ export const useLineState = (props: UseLineStateProps) => {
     }
     
     // Create text object for tooltip with improved styling
+    const shadowObj = new Shadow({
+      color: 'rgba(0,0,0,0.2)',
+      offsetX: 1,
+      offsetY: 1,
+      blur: 2
+    });
+    
     const text = new Text(`${distance.toFixed(0)} px`, {
       left: x,
       top: y - 20,
@@ -135,15 +142,15 @@ export const useLineState = (props: UseLineStateProps) => {
       padding: 4,
       selectable: false,
       evented: false,
-      shadow: 'rgba(0,0,0,0.2) 1px 1px 2px',
+      shadow: shadowObj,
       textAlign: 'center'
     });
     
     // Add to canvas immediately
     canvas.add(text);
     
-    // Use a higher z-index to ensure visibility
-    canvas.bringToFront(text);
+    // Ensure tooltip is at the front
+    canvas.bringObjectToFront(text);
     
     // Store reference
     distanceTooltipRef.current = text;
@@ -221,11 +228,11 @@ export const useLineState = (props: UseLineStateProps) => {
       });
       
       // Keep tooltip visible
-      canvas.bringToFront(tooltip);
+      canvas.bringObjectToFront(tooltip);
     }
     
     // Ensure line is visible at the front
-    canvas.bringToFront(line);
+    canvas.bringObjectToFront(line);
     
     // Force render when updating
     canvas.renderAll();
@@ -512,7 +519,7 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
         });
         
         // Bring line to front one more time to ensure visibility
-        canvas.bringToFront(currentLine);
+        canvas.bringObjectToFront(currentLine);
         
         // Force render
         canvas.renderAll();
