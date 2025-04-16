@@ -37,6 +37,9 @@ export const useMeasurementCalculation = () => {
     const dy = end.y - start.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
+    // Calculate angle from horizontal
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    
     // Convert to meters (100px = 1m)
     const distanceInMeters = (distance / 100).toFixed(1);
     
@@ -47,6 +50,7 @@ export const useMeasurementCalculation = () => {
     return {
       distance,
       distanceInMeters,
+      angle,
       tooltipPosition: { x: midX, y: midY }
     };
   }, []);
