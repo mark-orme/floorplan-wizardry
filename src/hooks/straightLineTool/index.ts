@@ -13,3 +13,5 @@ export { useMeasurementCalculation } from './useMeasurementCalculation';
 export { useLineFinalizer } from './useLineFinalizer';
 export { useFreehandAutoClean } from './useFreehandAutoClean';
 export { useLiveDistanceTooltip } from './useLiveDistanceTooltip';
+export { useLinePointerHandlers } from './useLinePointerHandlers';
+export { useMeasurementUpdates } from './useMeasurementUpdates';

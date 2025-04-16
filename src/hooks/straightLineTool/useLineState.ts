@@ -1,208 +1,187 @@
 
-import { useRef, useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { useLineInputMethod, InputMethod } from './useLineInputMethod';
+import { InputMethod } from './useLineInputMethod';
 import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
+import { useLineAngleSnap } from './useLineAngleSnap';
+import { useLineDrawing } from './useLineDrawing';
 
-interface UseLineStateProps {
-  fabricCanvasRef: { current: FabricCanvas | null };
+interface UseLineStateOptions {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   lineColor: string;
   lineThickness: number;
   saveCurrentState: () => void;
 }
 
-export interface LineState {
-  isDrawing: boolean;
-  isActive: boolean;
-  isToolInitialized: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  currentLine: any | null;
-  distanceTooltip: any | null;
-  fabricCanvasRef: { current: FabricCanvas | null };
-  lineColor: string;
-  lineThickness: number;
-  inputMethod: InputMethod;
-  isPencilMode: boolean;
-  snapEnabled: boolean;
-  anglesEnabled: boolean;
-
-  // Methods
-  initializeTool: () => void;
-  resetDrawingState: () => void;
-  toggleSnap: () => void;
-  toggleAngles: () => void;
-  createLine: (p1: Point, p2: Point) => any;
-  createDistanceTooltip: (text: string, position: Point) => any;
-  setInputMethod: (method: InputMethod) => void;
-  setIsPencilMode: (isPencilMode: boolean) => void;
-  startDrawing: (point: Point) => void;
-  continueDrawing: (point: Point) => void;
-  completeDrawing: (point: Point) => void;
-  cancelDrawing: () => void;
-}
-
-export const useLineState = (props: UseLineStateProps): LineState => {
-  const { 
-    fabricCanvasRef,
-    lineColor: initialColor = '#000000',
-    lineThickness: initialThickness = 2,
-    saveCurrentState
-  } = props;
-  
+/**
+ * Hook for managing line tool state
+ */
+export const useLineState = ({ 
+  fabricCanvasRef, 
+  lineColor, 
+  lineThickness,
+  saveCurrentState 
+}: UseLineStateOptions) => {
   // Drawing state
-  const [isDrawing, setIsDrawing] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
-  const [currentLine, setCurrentLine] = useState<any | null>(null);
-  const [lineColor, setLineColor] = useState(initialColor);
-  const [lineThickness, setLineThickness] = useState(initialThickness);
+  const [currentLine, setCurrentLine] = useState<Line | null>(null);
+  const [shiftKeyPressed, setShiftKeyPressed] = useState(false);
   
-  // Use input method hook
-  const { inputMethod, isPencilMode, setInputMethod, setIsPencilMode } = useLineInputMethod();
+  // Input method state
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  const [isPencilMode, setIsPencilMode] = useState(false);
   
-  // Use grid snapping hook
-  const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping();
-  
-  // Angle constraints
-  const [anglesEnabled, setAnglesEnabled] = useState(false);
-  
-  // Create a mock distance tooltip for compatibility
-  const distanceTooltip = null;
+  // Grid and angle snapping
+  const { snapEnabled, toggleGridSnapping: toggleSnap, snapToGrid } = useEnhancedGridSnapping({
+    initialSnapEnabled: true
+  });
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
+  const { snapToAngle } = useLineAngleSnap({ enabled: true });
 
+  // Use line drawing hooks
+  const { createLine, updateLine, finalizeLine, removeLine } = useLineDrawing(
+    fabricCanvasRef,
+    lineColor,
+    lineThickness,
+    saveCurrentState
+  );
+  
   /**
-   * Initialize the drawing tool
+   * Initialize the tool
    */
-  const initializeTool = () => {
-    if (isToolInitialized) return;
-    
-    setIsActive(true);
+  const initializeTool = useCallback(() => {
     setIsToolInitialized(true);
-  };
-
+    setIsActive(true);
+  }, []);
+  
   /**
-   * Reset the drawing state
+   * Reset drawing state
    */
-  const resetDrawingState = () => {
+  const resetDrawingState = useCallback(() => {
     setIsDrawing(false);
     setStartPoint(null);
     setCurrentPoint(null);
     setCurrentLine(null);
-  };
-
+  }, []);
+  
   /**
-   * Toggle angle constraints
+   * Start drawing at a point
    */
-  const toggleAngles = () => {
-    setAnglesEnabled(prev => !prev);
-  };
-
-  /**
-   * Create a new line
-   */
-  const createLine = (p1: Point, p2: Point) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return null;
-    
-    const line = new Line([p1.x, p1.y, p2.x, p2.y], {
-      stroke: lineColor,
-      strokeWidth: lineThickness,
-      selectable: true
-    });
-    
-    canvas.add(line);
-    canvas.requestRenderAll();
-    
-    return line;
-  };
-
-  /**
-   * Create a distance tooltip
-   */
-  const createDistanceTooltip = (text: string, position: Point) => {
-    // This is a stub for backward compatibility
-    return null;
-  };
-
-  /**
-   * Start drawing from a point
-   */
-  const startDrawing = (point: Point) => {
+  const startDrawing = useCallback((point: Point) => {
+    setIsActive(true);
     setIsDrawing(true);
     setStartPoint(point);
     setCurrentPoint(point);
-  };
-
-  /**
-   * Continue drawing to a point
-   */
-  const continueDrawing = (point: Point) => {
-    if (!isDrawing || !startPoint) return;
     
-    setCurrentPoint(point);
-  };
-
-  /**
-   * Complete drawing at a point
-   */
-  const completeDrawing = (point: Point) => {
-    if (!isDrawing || !startPoint) return;
-    
-    // Create the final line
-    const line = createLine(startPoint, point);
+    // Create initial line
+    const line = createLine(point.x, point.y, point.x, point.y);
     if (line) {
       setCurrentLine(line);
     }
-    
-    // Reset state
-    setIsDrawing(false);
-    setStartPoint(null);
-    setCurrentPoint(null);
-    
-    // Save the current state for undo/redo
-    saveCurrentState();
-  };
-
+  }, [createLine]);
+  
   /**
-   * Cancel the current drawing
+   * Continue drawing to a point
    */
-  const cancelDrawing = () => {
-    setIsDrawing(false);
-    setStartPoint(null);
-    setCurrentPoint(null);
-    setCurrentLine(null);
-  };
-
+  const continueDrawing = useCallback((point: Point) => {
+    if (!isDrawing || !startPoint || !currentLine) return;
+    
+    // Apply snapping if enabled
+    let endPoint = point;
+    if (snapEnabled) {
+      endPoint = snapToGrid(endPoint);
+    }
+    
+    // Apply angle snapping if enabled
+    if (anglesEnabled && startPoint) {
+      endPoint = snapToAngle(startPoint, endPoint);
+    }
+    
+    // Update current point
+    setCurrentPoint(endPoint);
+    
+    // Update line
+    updateLine(currentLine, startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+  }, [isDrawing, startPoint, currentLine, snapEnabled, anglesEnabled, snapToGrid, snapToAngle, updateLine]);
+  
+  /**
+   * Complete drawing at a point
+   */
+  const completeDrawing = useCallback((point: Point) => {
+    if (!isDrawing || !startPoint || !currentLine) return;
+    
+    // Apply snapping if enabled
+    let endPoint = point;
+    if (snapEnabled) {
+      endPoint = snapToGrid(endPoint);
+    }
+    
+    // Apply angle snapping if enabled
+    if (anglesEnabled && startPoint) {
+      endPoint = snapToAngle(startPoint, endPoint);
+    }
+    
+    // Finalize line
+    finalizeLine(currentLine, startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+    
+    // Reset drawing state
+    resetDrawingState();
+  }, [isDrawing, startPoint, currentLine, snapEnabled, anglesEnabled, snapToGrid, snapToAngle, finalizeLine, resetDrawingState]);
+  
+  /**
+   * Cancel drawing
+   */
+  const cancelDrawing = useCallback(() => {
+    if (!isDrawing || !currentLine) return;
+    
+    // Remove the current line
+    removeLine(currentLine);
+    
+    // Reset drawing state
+    resetDrawingState();
+  }, [isDrawing, currentLine, removeLine, resetDrawingState]);
+  
+  /**
+   * Toggle angle constraints
+   */
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
+  
   return {
-    isDrawing,
+    // State
     isActive,
+    isDrawing,
     isToolInitialized,
     startPoint,
     currentPoint,
     currentLine,
-    distanceTooltip,
-    fabricCanvasRef,
-    lineColor,
-    lineThickness,
+    shiftKeyPressed,
     inputMethod,
     isPencilMode,
     snapEnabled,
     anglesEnabled,
     
-    initializeTool,
-    resetDrawingState,
-    toggleSnap,
-    toggleAngles,
-    createLine,
-    createDistanceTooltip,
+    // Setters
+    setIsActive,
+    setIsDrawing,
+    setShiftKeyPressed,
     setInputMethod,
     setIsPencilMode,
+    
+    // Actions
+    initializeTool,
+    resetDrawingState,
     startDrawing,
     continueDrawing,
     completeDrawing,
-    cancelDrawing
+    cancelDrawing,
+    toggleSnap,
+    toggleAngles
   };
 };
