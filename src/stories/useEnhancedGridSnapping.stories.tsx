@@ -62,7 +62,7 @@ const GridSnappingDemo = () => {
   }, []);
   
   // Use grid snapping hook - pass arguments correctly
-  const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping({
+  const { snapEnabled, toggleGridSnapping, snapToGrid } = useEnhancedGridSnapping({
     initialSnapEnabled: true,
     gridSize: 20,
     snapThreshold: 10
@@ -103,7 +103,7 @@ const GridSnappingDemo = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={toggleSnap}
+          onClick={toggleGridSnapping}
           className="flex items-center gap-2"
         >
           {snapEnabled ? (
