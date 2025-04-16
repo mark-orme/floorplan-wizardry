@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -6,8 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useStraightLineTool } from '../useStraightLineTool';
-import { useLineState, InputMethod } from '../useStraightLineTool';
+import { useStraightLineTool, useLineState, InputMethod } from '../useStraightLineTool';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventTypes } from '@/types/fabric-events';
 import { Point } from '@/types/core/Geometry';
@@ -122,7 +120,7 @@ describe('useStraightLineTool', () => {
     saveCurrentState = vi.fn();
     
     // Reset the useLineState mock
-    (useLineState as any).mockReturnValue({
+    vi.mocked(useLineState).mockReturnValue({
       isDrawing: false,
       isToolInitialized: false,
       startPointRef: { current: null },
@@ -203,7 +201,7 @@ describe('useStraightLineTool', () => {
     const mockSetDistanceTooltip = vi.fn();
     
     // Update useLineState mock with custom functions
-    (useLineState as any).mockReturnValue({
+    vi.mocked(useLineState).mockReturnValue({
       isDrawing: false,
       isToolInitialized: false,
       startPointRef: { current: null },
@@ -253,7 +251,7 @@ describe('useStraightLineTool', () => {
     const mockIsDrawing = true;
     
     // Override useLineState mock for this test
-    (useLineState as any).mockReturnValue({
+    vi.mocked(useLineState).mockReturnValue({
       isDrawing: mockIsDrawing,
       isToolInitialized: true,
       startPointRef: { current: { x: 100, y: 100 } },
@@ -307,7 +305,7 @@ describe('useStraightLineTool', () => {
     const mockResetDrawingState = vi.fn();
     
     // Override useLineState mock for this test
-    (useLineState as any).mockReturnValue({
+    vi.mocked(useLineState).mockReturnValue({
       isDrawing: true,
       isToolInitialized: true,
       startPointRef: { current: mockStartPoint },

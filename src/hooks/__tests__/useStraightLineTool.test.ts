@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -6,8 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
-import { InputMethod } from '../straightLineTool/useLineState';
+import { useStraightLineTool, useLineState, InputMethod } from '../straightLineTool/useStraightLineTool';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-events';
 import { Point } from '@/types/core/Geometry';
@@ -239,7 +237,6 @@ describe('useStraightLineTool', () => {
       createDistanceTooltip: mockCreateDistanceTooltip,
       updateLineAndTooltip: vi.fn(),
       snapPointToGrid: vi.fn(point => point),
-      snapLineToGrid: vi.fn(),
       inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       snapEnabled: true,

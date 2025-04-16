@@ -118,5 +118,5 @@ export const useStraightLineTool = ({
   };
 };
 
-// Re-export the InputMethod enum for compatibility
-export { InputMethod } from './useLineState';
+// Export the necessary items for testing and component use
+export { useLineState, InputMethod } from './useLineState';
