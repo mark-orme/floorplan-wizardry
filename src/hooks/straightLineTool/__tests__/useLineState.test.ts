@@ -1,4 +1,3 @@
-
 /**
  * Tests for the useLineState hook
  * @module hooks/straightLineTool/__tests__/useLineState
@@ -84,13 +83,14 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    // Fix: Update to match the new signature - create line now accepts canvas and coordinates
     const line = result.current.createLine(
       fabricCanvasRef.current,
       10, 
       20, 
       30, 
-      40
+      40,
+      '#ff0000',
+      3
     );
     
     expect(line).toBeDefined();
@@ -110,7 +110,6 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    // Fix: Update to match the new signature - createDistanceTooltip now accepts canvas
     const tooltip = result.current.createDistanceTooltip(
       fabricCanvasRef.current,
       100,
@@ -156,12 +155,10 @@ describe('useLineState', () => {
     const startPoint = { x: 100, y: 100 };
     const currentPoint = { x: 200, y: 200 };
     
-    // First start drawing
     act(() => {
       result.current.startDrawing(startPoint);
     });
     
-    // Then continue drawing
     act(() => {
       result.current.continueDrawing(currentPoint);
     });
@@ -195,23 +192,18 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    // Initial value should be true
     expect(result.current.snapEnabled).toBe(true);
     
-    // Toggle it
     act(() => {
       result.current.toggleSnap();
     });
     
-    // Should be false now
     expect(result.current.snapEnabled).toBe(false);
     
-    // Toggle again
     act(() => {
       result.current.toggleSnap();
     });
     
-    // Should be true again
     expect(result.current.snapEnabled).toBe(true);
   });
   
@@ -223,23 +215,18 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    // Initial value should be true
     expect(result.current.anglesEnabled).toBe(true);
     
-    // Toggle it
     act(() => {
       result.current.toggleAngles();
     });
     
-    // Should be false now
     expect(result.current.anglesEnabled).toBe(false);
     
-    // Toggle again
     act(() => {
       result.current.toggleAngles();
     });
     
-    // Should be true again
     expect(result.current.anglesEnabled).toBe(true);
   });
 });
