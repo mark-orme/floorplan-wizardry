@@ -6,7 +6,7 @@ import { useLineState } from '../straightLineTool/useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-events';
 import { Point } from '@/types/core/Point';
-import { asMockCanvas } from '@/types/test/MockTypes';
+import { asMockCanvas, asMockObject } from '@/types/test/MockTypes';
 
 // Mock the dependencies
 vi.mock('../straightLineTool/useLineState', () => ({

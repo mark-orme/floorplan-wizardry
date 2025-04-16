@@ -14,7 +14,7 @@ import {
   snapToGrid,
   snapLineToGrid
 } from '@/utils/geometry/lineOperations';
-import { Point } from '@/types/core/Geometry';
+import { Point } from '@/types/core/Point';
 import { GRID_SPACING } from '@/constants/numerics';
 
 describe('lineOperations', () => {
