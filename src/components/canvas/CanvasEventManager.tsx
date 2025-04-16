@@ -1,7 +1,9 @@
 
-import { useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
+import React, { useEffect } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
+import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
+import { useDrawingContext } from '@/contexts/DrawingContext';
 
 interface CanvasEventManagerProps {
   canvas: FabricCanvas;
@@ -9,12 +11,6 @@ interface CanvasEventManagerProps {
   lineThickness: number;
   lineColor: string;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  saveCurrentState?: () => void;
-  undo?: () => void;
-  redo?: () => void;
-  deleteSelectedObjects?: () => void;
-  enableSync?: boolean;
-  onDrawingComplete?: () => void;
 }
 
 export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
@@ -22,123 +18,68 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   tool,
   lineThickness,
   lineColor,
-  gridLayerRef,
-  saveCurrentState,
-  undo,
-  redo,
-  deleteSelectedObjects,
-  enableSync,
-  onDrawingComplete
+  gridLayerRef
 }) => {
-  // Set up tool-specific canvas behavior
+  const { setActiveTool } = useDrawingContext();
+  
+  // Save current state for undo/redo
+  const saveCurrentState = () => {
+    // Get current canvas objects (excluding grid)
+    const currentObjects = canvas.getObjects().filter(
+      obj => !gridLayerRef.current.includes(obj)
+    );
+    
+    console.log(`Saved canvas state with ${currentObjects.length} objects`);
+  };
+  
+  // Hook for straight line tool
+  const straightLineTool = useStraightLineTool({
+    canvas,
+    enabled: tool === DrawingMode.STRAIGHT_LINE,
+    lineColor,
+    lineThickness,
+    saveCurrentState
+  });
+  
+  // Update active tool in context when it changes
   useEffect(() => {
-    if (!canvas) return;
-
-    // Configure canvas based on active tool
-    switch (tool) {
-      case DrawingMode.SELECT:
-        canvas.isDrawingMode = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        break;
-      case DrawingMode.DRAW:
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.width = lineThickness;
-        canvas.freeDrawingBrush.color = lineColor;
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-        break;
-      case DrawingMode.STRAIGHT_LINE:
-      case DrawingMode.WALL:
-      case DrawingMode.RECTANGLE:
-      case DrawingMode.CIRCLE:
-        canvas.isDrawingMode = false;
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-        break;
-      case DrawingMode.PAN:
-        canvas.isDrawingMode = false;
-        canvas.selection = false;
-        canvas.defaultCursor = 'grab';
-        break;
-      case DrawingMode.ERASER:
-        canvas.isDrawingMode = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'cell';
-        break;
-      default:
-        canvas.isDrawingMode = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-    }
-
-    // Send grid objects to back
-    if (gridLayerRef.current.length > 0) {
-      gridLayerRef.current.forEach(obj => {
-        if (canvas.contains(obj)) {
-          canvas.sendToBack(obj);
+    setActiveTool(tool);
+  }, [tool, setActiveTool]);
+  
+  // Tool-specific setup
+  useEffect(() => {
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
+    canvas.selection = tool === DrawingMode.SELECT;
+    
+    if (tool === DrawingMode.SELECT) {
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
+      
+      // Make objects selectable
+      canvas.getObjects().forEach(obj => {
+        if ((obj as any).objectType !== 'grid') {
+          obj.selectable = true;
         }
       });
+    } else {
+      // For drawing tools
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+      
+      // Make objects non-selectable during drawing
+      if (tool !== DrawingMode.SELECT) {
+        canvas.getObjects().forEach(obj => {
+          obj.selectable = false;
+        });
+      }
     }
-
+    
     canvas.renderAll();
-  }, [canvas, tool, lineThickness, lineColor, gridLayerRef]);
-
-  // Keyboard event handlers
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!canvas) return;
-
-      // CTRL+Z for undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey && undo) {
-        e.preventDefault();
-        undo();
-      }
-
-      // CTRL+SHIFT+Z or CTRL+Y for redo
-      if (((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) || 
-          ((e.ctrlKey || e.metaKey) && e.key === 'y') && redo) {
-        e.preventDefault();
-        redo();
-      }
-
-      // Delete or Backspace to delete selected objects
-      if ((e.key === 'Delete' || e.key === 'Backspace') && deleteSelectedObjects) {
-        if (canvas.getActiveObjects().length > 0) {
-          e.preventDefault();
-          deleteSelectedObjects();
-        }
-      }
-
-      // Escape to deselect
-      if (e.key === 'Escape') {
-        canvas.discardActiveObject();
-        canvas.requestRenderAll();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
+    
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      // Cleanup
     };
-  }, [canvas, undo, redo, deleteSelectedObjects]);
-
-  // Handle drawing completion
-  useEffect(() => {
-    if (!canvas || !onDrawingComplete) return;
-
-    const handleDrawingComplete = () => {
-      if (onDrawingComplete) onDrawingComplete();
-    };
-
-    canvas.on('path:created', handleDrawingComplete);
-    canvas.on('object:modified', handleDrawingComplete);
-
-    return () => {
-      canvas.off('path:created', handleDrawingComplete);
-      canvas.off('object:modified', handleDrawingComplete);
-    };
-  }, [canvas, onDrawingComplete]);
-
+  }, [canvas, tool]);
+  
   return null;
 };

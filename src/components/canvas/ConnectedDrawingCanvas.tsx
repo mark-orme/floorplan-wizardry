@@ -226,10 +226,12 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       redo,
       clearCanvas,
       saveCanvas,
+      saveCurrentState,
       getCanvas: () => canvas
     };
     
     onCanvasRef(operations);
+    operationsRef.current = operations;
   }, [canvas, onCanvasRef]);
   
   return (

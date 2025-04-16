@@ -1,10 +1,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import logger from '@/utils/logger';
 import { Point } from '@/types/core/Point';
 import { useLineState, InputMethod } from './useLineState';
-import { MeasurementData } from '@/types/measurement/MeasurementData';
 
 interface StraightLineToolProps {
   canvas: FabricCanvas | null;
@@ -30,7 +28,7 @@ export const useStraightLineTool = ({
   });
   
   // Line measurement data
-  const [measurementData, setMeasurementData] = useState<MeasurementData>({
+  const [measurementData, setMeasurementData] = useState<any>({
     distance: null,
     angle: null,
     unit: 'px'
@@ -44,7 +42,7 @@ export const useStraightLineTool = ({
     
     // Log input method for debugging
     if (isPen) {
-      logger.info('Apple Pencil or stylus detected', {
+      console.info('Apple Pencil or stylus detected', {
         pointerType: e.pointerType,
         pressure: e.pressure,
         tiltX: e.tiltX,
@@ -110,7 +108,7 @@ export const useStraightLineTool = ({
   useEffect(() => {
     if (!canvas || !enabled) return;
     
-    logger.info('Activating straight line tool');
+    console.info('Activating straight line tool');
     
     // Set up canvas for drawing
     canvas.isDrawingMode = false;
@@ -142,7 +140,7 @@ export const useStraightLineTool = ({
     
     return () => {
       // Clean up when tool is deactivated
-      logger.info('Deactivating straight line tool');
+      console.info('Deactivating straight line tool');
       
       canvas.off('mouse:down', handlePointerDown);
       canvas.off('mouse:move', handlePointerMove);
@@ -200,4 +198,3 @@ export const useStraightLineTool = ({
 
 // Re-export InputMethod for use in other components
 export { InputMethod } from './useLineState';
-export { useLineState } from './useLineState';
