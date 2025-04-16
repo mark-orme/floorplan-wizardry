@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react';
 import { Point } from '@/types/core/Point';
 
@@ -18,6 +17,8 @@ export const useEnhancedGridSnapping = (
   const toggleGridSnapping = useCallback(() => {
     setSnapEnabled(prev => !prev);
   }, []);
+
+  const toggleSnap = toggleGridSnapping;
 
   const snapToGrid = useCallback((point: Point): Point => {
     if (!snapEnabled) {
@@ -49,6 +50,7 @@ export const useEnhancedGridSnapping = (
   return {
     snapEnabled,
     toggleGridSnapping,
+    toggleSnap,
     snapToGrid,
     isNearGridLine,
     getClosestGridPoint
