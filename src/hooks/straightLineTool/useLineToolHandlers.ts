@@ -1,84 +1,144 @@
 
 /**
- * Hook for managing line tool event handlers
+ * Line tool handlers
  * @module hooks/straightLineTool/useLineToolHandlers
  */
-import { useEffect } from "react";
-import { Canvas } from "fabric";
-import { useLineState } from "./useLineState";
+import { useCallback, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useLineState } from './useLineState';
 
 /**
- * Props for useLineToolHandlers hook
+ * Props for the useLineToolHandlers hook
  */
-export interface UseLineToolHandlersProps {
-  /**
-   * Reference to the fabric canvas
-   */
-  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
-  /**
-   * Whether the tool is enabled
-   */
-  enabled: boolean;
-  /**
-   * Line state from useLineState hook
-   */
+interface UseLineToolHandlersProps {
+  canvas: FabricCanvas | null;
   lineState: ReturnType<typeof useLineState>;
-  /**
-   * Callback for saving the current state
-   */
-  saveCurrentState?: () => void;
+  onComplete?: () => void;
 }
 
 /**
- * Hook for handling line tool events
+ * Hook for line tool event handlers
  */
-export const useLineToolHandlers = (props: UseLineToolHandlersProps) => {
-  const { fabricCanvasRef, enabled, lineState, saveCurrentState } = props;
+export const useLineToolHandlers = ({
+  canvas,
+  lineState,
+  onComplete
+}: UseLineToolHandlersProps) => {
+  // Destructure all required properties from lineState
+  const {
+    isDrawing,
+    inputMethod,
+    snapEnabled,
+    anglesEnabled,
+    startPointRef,
+    currentLineRef,
+    distanceTooltipRef,
+    resetDrawingState,
+    toggleSnap,
+    toggleAngles,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    cancelDrawing
+  } = lineState;
   
-  // Set up keyboard event handlers
+  /**
+   * Handle canvas clicks
+   */
+  const handleCanvasClick = useCallback((e: any) => {
+    if (!canvas) return;
+    
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Handle pointer down
+    handlePointerDown(point);
+  }, [canvas, handlePointerDown]);
+  
+  /**
+   * Handle mouse move on canvas
+   */
+  const handleCanvasMouseMove = useCallback((e: any) => {
+    if (!canvas || !isDrawing) return;
+    
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Handle pointer move
+    handlePointerMove(point);
+  }, [canvas, isDrawing, handlePointerMove]);
+  
+  /**
+   * Handle mouse up on canvas
+   */
+  const handleCanvasMouseUp = useCallback(() => {
+    if (!canvas || !isDrawing) return;
+    
+    // Handle pointer up - we don't need coordinates for this
+    handlePointerUp({ x: 0, y: 0 });
+    
+    // Call completion callback
+    if (onComplete) {
+      onComplete();
+    }
+  }, [canvas, isDrawing, handlePointerUp, onComplete]);
+  
+  /**
+   * Handle keyboard shortcuts
+   */
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      // Cancel drawing on Escape
+      cancelDrawing();
+    } else if (e.key === 'g' || e.key === 'G') {
+      // Toggle grid snap on G
+      toggleSnap();
+    } else if (e.key === 'a' || e.key === 'A') {
+      // Toggle angle snap on A
+      toggleAngles();
+    }
+  }, [cancelDrawing, toggleSnap, toggleAngles]);
+  
+  // Set up event listeners
   useEffect(() => {
-    if (!enabled) return;
+    if (!canvas) return;
     
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Handle escape key
-      if (e.key === 'Escape' && lineState.isDrawing) {
-        const canvas = fabricCanvasRef.current;
-        if (!canvas) return;
-        
-        // Remove current line and tooltip
-        if (lineState.currentLineRef.current) {
-          canvas.remove(lineState.currentLineRef.current);
-        }
-        
-        if (lineState.distanceTooltipRef.current) {
-          canvas.remove(lineState.distanceTooltipRef.current);
-        }
-        
-        // Reset drawing state
-        lineState.resetDrawingState();
-        
-        // Render canvas
-        canvas.requestRenderAll();
-      }
-      
-      // Handle grid snapping toggle
-      if (e.key === 'g' || e.key === 'G') {
-        if (lineState.toggleSnap) {
-          lineState.toggleSnap();
-        }
-      }
-    };
-    
-    // Add event listener
+    // Add event listeners
+    canvas.on('mouse:down', handleCanvasClick);
+    canvas.on('mouse:move', handleCanvasMouseMove);
+    canvas.on('mouse:up', handleCanvasMouseUp);
     window.addEventListener('keydown', handleKeyDown);
     
-    // Clean up
+    // Disable selection while drawing
+    const originalSelectionState = canvas.selection;
+    canvas.selection = false;
+    
+    // Clean up event listeners
     return () => {
+      // Remove event listeners
+      canvas.off('mouse:down', handleCanvasClick);
+      canvas.off('mouse:move', handleCanvasMouseMove);
+      canvas.off('mouse:up', handleCanvasMouseUp);
       window.removeEventListener('keydown', handleKeyDown);
+      
+      // Restore selection state
+      canvas.selection = originalSelectionState;
+      
+      // Clean up any in-progress drawing
+      if (isDrawing) {
+        cancelDrawing();
+      }
     };
-  }, [fabricCanvasRef, enabled, lineState]);
+  }, [canvas, handleCanvasClick, handleCanvasMouseMove, handleCanvasMouseUp, handleKeyDown, isDrawing, cancelDrawing]);
   
   return {
-    // No need to return anything for now
+    toggleSnap,
+    toggleAngles,
+    handleKeyDown,
+    inputMethod,
+    snapEnabled,
+    anglesEnabled
   };
 };
