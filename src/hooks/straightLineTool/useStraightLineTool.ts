@@ -1,4 +1,3 @@
-
 /**
  * Hook for straight line drawing tool
  * @module hooks/straightLineTool/useStraightLineTool
@@ -84,37 +83,69 @@ export const useLineState = (props: UseLineStateProps) => {
    * Create a new line
    */
   const createLine = useCallback((x1: number, y1: number, x2: number, y2: number) => {
+    if (!canvas) {
+      console.error("Cannot create line: canvas is null");
+      return null;
+    }
+
+    // Improved line styling for better visibility
     const line = new Line([x1, y1, x2, y2], {
       stroke: lineColor,
       strokeWidth: lineThickness,
-      selectable: true, // Changed from false to true for better visibility
-      evented: true,   // Changed from false to true to allow interaction
+      selectable: true,
+      evented: true,
       objectCaching: false,
+      strokeUniform: true,
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round',
+      hoverCursor: 'pointer'
     });
     
+    // Add to canvas immediately
+    canvas.add(line);
+    
+    // Use a higher z-index to ensure visibility
+    canvas.bringToFront(line);
+    
     logger.info('Created line:', { x1, y1, x2, y2, color: lineColor, thickness: lineThickness });
+    console.log("DEBUG: Line created and added to canvas:", line);
+    
+    // Update refs
     currentLineRef.current = line;
     return line;
-  }, [lineColor, lineThickness]);
+  }, [canvas, lineColor, lineThickness]);
   
   /**
    * Create distance tooltip
    */
   const createDistanceTooltip = useCallback((x: number, y: number, distance: number) => {
-    if (!canvas) return null;
+    if (!canvas) {
+      console.error("Cannot create tooltip: canvas is null");
+      return null;
+    }
     
-    // Create text object for tooltip
+    // Create text object for tooltip with improved styling
     const text = new Text(`${distance.toFixed(0)} px`, {
       left: x,
-      top: y - 15,
-      fontSize: 12,
+      top: y - 20,
+      fontSize: 14,
+      fontWeight: 'bold',
       fill: '#333',
-      backgroundColor: 'rgba(255, 255, 255, 0.7)',
-      padding: 2,
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      padding: 4,
       selectable: false,
-      evented: false
+      evented: false,
+      shadow: 'rgba(0,0,0,0.2) 1px 1px 2px',
+      textAlign: 'center'
     });
     
+    // Add to canvas immediately
+    canvas.add(text);
+    
+    // Use a higher z-index to ensure visibility
+    canvas.bringToFront(text);
+    
+    // Store reference
     distanceTooltipRef.current = text;
     return text;
   }, [canvas]);
@@ -137,10 +168,16 @@ export const useLineState = (props: UseLineStateProps) => {
    * Update line and tooltip
    */
   const updateLineAndTooltip = useCallback((start: Point, end: Point) => {
-    if (!canvas) return;
+    if (!canvas) {
+      console.error("Cannot update line: canvas is null");
+      return;
+    }
     
     const line = currentLineRef.current;
-    if (!line) return;
+    if (!line) {
+      console.error("Cannot update line: line is null");
+      return;
+    }
     
     // Apply angle constraints if enabled
     let constrainedEnd = { ...end };
@@ -159,8 +196,12 @@ export const useLineState = (props: UseLineStateProps) => {
       };
     }
     
-    // Update line
+    console.log("DEBUG: Updating line from", start, "to", constrainedEnd);
+    
+    // Update line coordinates
     line.set({
+      x1: start.x,
+      y1: start.y,
       x2: constrainedEnd.x,
       y2: constrainedEnd.y
     });
@@ -176,17 +217,19 @@ export const useLineState = (props: UseLineStateProps) => {
       tooltip.set({
         text: `${distance.toFixed(0)} px`,
         left: (start.x + constrainedEnd.x) / 2,
-        top: (start.y + constrainedEnd.y) / 2 - 15
+        top: (start.y + constrainedEnd.y) / 2 - 20
       });
+      
+      // Keep tooltip visible
+      canvas.bringToFront(tooltip);
     }
     
     // Ensure line is visible at the front
-    if (canvas) {
-      canvas.bringToFront(line);
-    }
+    canvas.bringToFront(line);
     
-    // Make sure we render after updating
+    // Force render when updating
     canvas.renderAll();
+    console.log("DEBUG: Rendered canvas after line update");
   }, [canvas, angles]);
   
   /**
@@ -296,6 +339,9 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       }
     });
     
+    // Make sure canvas is properly initialized
+    canvas.renderAll();
+    
     // Set up event handlers for canvas
     const handleMouseDown = (e: any) => {
       console.log("Mouse down on canvas", e);
@@ -392,23 +438,22 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     // Create line
     const line = lineState.createLine(snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y);
     if (line) {
-      canvas.add(line);
+      // Line is added in createLine method
       lineState.setCurrentLine(line);
       console.log("Line created:", line);
-      
-      // Bring line to front
-      canvas.bringToFront(line);
       
       // Create tooltip
       const tooltip = lineState.createDistanceTooltip(snappedPoint.x, snappedPoint.y, 0);
       if (tooltip) {
-        canvas.add(tooltip);
         lineState.setDistanceTooltip(tooltip);
-        canvas.bringToFront(tooltip);
+        // Tooltip is added in createDistanceTooltip method
       }
       
       // Force render
       canvas.renderAll();
+      console.log("DEBUG: Canvas rendered after line creation");
+    } else {
+      console.error("Failed to create line!");
     }
   }, [isActive, canvas, lineState]);
   
@@ -417,6 +462,8 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
    */
   const handlePointerMove = useCallback((point: Point) => {
     if (!isActive || !lineState.isDrawing || !lineState.startPointRef.current || !canvas) return;
+    
+    console.log("DEBUG: Pointer move at", point);
     
     // Get snapped point
     const snappedPoint = lineState.snapPointToGrid(point);
@@ -455,6 +502,7 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       if (lineState.startPointRef.current.x === snappedPoint.x && 
           lineState.startPointRef.current.y === snappedPoint.y) {
         canvas.remove(currentLine);
+        console.log("DEBUG: Removed zero-length line");
       } else {
         // Finalize line properties
         currentLine.set({
@@ -465,6 +513,10 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
         
         // Bring line to front one more time to ensure visibility
         canvas.bringToFront(currentLine);
+        
+        // Force render
+        canvas.renderAll();
+        console.log("DEBUG: Final render after line completion");
         
         // Save state for undo
         if (saveCurrentState) {
