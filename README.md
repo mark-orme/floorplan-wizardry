@@ -14,7 +14,7 @@ An advanced floor plan editor built with React, TypeScript, and Fabric.js. This 
 - **Collaboration**: Real-time collaboration via Pusher
 - **History Management**: Comprehensive undo/redo functionality
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **Error Monitoring**: Integrated with Sentry for error tracking
+- **Error Monitoring**: Integrated error logging and debugging tools
 
 ## Technology Stack
 
@@ -22,9 +22,7 @@ An advanced floor plan editor built with React, TypeScript, and Fabric.js. This 
 - **TypeScript**: Type-safe development
 - **Fabric.js**: Canvas manipulation library
 - **Shadcn/UI**: UI component library
-- **Sentry**: Error tracking and performance monitoring
-- **Pusher**: Real-time updates and collaboration
-- **Storybook**: Component documentation and testing
+- **Logger**: Custom logger utility for tracking application events
 
 ## Architecture
 
@@ -33,7 +31,6 @@ The application follows a modular architecture:
 - **components/**: UI components organized by feature
 - **hooks/**: Reusable React hooks for logic encapsulation
 - **utils/**: Utility functions for common operations
-- **contexts/**: React contexts for state management
 - **features/**: Feature-specific code organized by domain
 - **constants/**: Application constants and enumerations
 - **types/**: TypeScript type definitions
@@ -45,34 +42,31 @@ The application follows a modular architecture:
 3. Start the development server: `npm run dev`
 4. Open [http://localhost:5173](http://localhost:5173) in your browser
 
-## Component Documentation
+## Key Components
 
-Component documentation is available via Storybook:
+### Straight Line Tool
 
-```
-npm run storybook
-```
+The straight line tool allows users to draw precise straight lines on the canvas. Key features include:
+- Real-time measurement display
+- Grid snapping capability
+- Apple Pencil and stylus support
+- Line color and thickness customization
 
-This will start the Storybook server at [http://localhost:6006](http://localhost:6006).
+### Grid System
 
-## Testing
+The grid system provides visual guides and precise measurement references:
+- Small grid (0.1m) for detailed precision
+- Large grid (1.0m) for primary measurements
+- Toggle grid visibility
+- Grid snapping for precise drawing
 
-The application includes comprehensive testing:
+## Debugging and Monitoring
 
-```
-npm run test
-```
-
-## Monitoring and Logging
-
-The application is integrated with Sentry for error tracking and performance monitoring. Key aspects of the application are monitored:
-
-- Tool usage metrics
-- Drawing operations
-- Performance metrics
-- Error tracking with detailed context
-
-This provides valuable insights into how the application is being used and helps identify issues quickly.
+The application includes comprehensive logging:
+- Log levels (DEBUG, INFO, WARN, ERROR)
+- Timestamp-based logging
+- Component-specific logging
+- Event tracking for drawing operations
 
 ## Contributing
 

@@ -1,3 +1,4 @@
+
 # Contributing to Floor Plan Editor
 
 Welcome to the FloorPlan Designer project! This document provides guidelines for contributing to the project. For detailed documentation on the codebase, please refer to the [docs](./docs) directory.
@@ -13,27 +14,20 @@ Welcome to the FloorPlan Designer project! This document provides guidelines for
 7. 🚫 **Separation of Concerns** - Avoid mixing view logic with controller logic
 8. 🔀 **Avoid Circular References** - Structure imports to prevent circular dependencies
 9. 📏 **File Size Limits** - Keep files under 200 lines; split larger files into modules
-10. 🌍 **No Third-Party Code** - No external libraries unless approved and documented
-11. 🔄 **Promise Handling** - Always use await or .catch() with promises to prevent unhandled rejections
-12. 🧮 **Boolean Expression Safety** - Use explicit boolean checks rather than truthy/falsy coercion
-13. 🎨 **DrawingTool Consistency** - Always use the canonical DrawingTool type from '@/types/core/DrawingTool'
-14. 🔍 **Hook Contracts** - All hooks must have explicit return types
-15. 🔲 **Grid System Safety** - Use proper grid utility functions for all grid operations
+10. 🔄 **Promise Handling** - Always use await or .catch() with promises to prevent unhandled rejections
+11. 🧮 **Boolean Expression Safety** - Use explicit boolean checks rather than truthy/falsy coercion
+12. 🔍 **Hook Contracts** - All hooks must have explicit return types
+13. 🔲 **Grid System Safety** - Use proper grid utility functions for all grid operations
+14. 📝 **Logging Standards** - Use the logger utility with appropriate log levels
 
 ## 📚 Documentation References
 
 For detailed documentation on specific aspects of the codebase, please refer to:
 
-- [Project Overview](./docs/project-overview.md) - High-level architecture and directory structure
+- [Project Overview](./README.md) - High-level architecture and directory structure
+- [Straight Line Tool](./docs/STRAIGHT_LINE_TOOL.md) - Documentation on the straight line drawing tool
 - [Grid System](./docs/grid-system.md) - Detailed documentation on the grid architecture
 - [Grid Troubleshooting](./docs/grid-troubleshooting.md) - Solutions for common grid issues
-- [Floor Plan Adapter](./docs/floor-plan-adapter.md) - Documentation on the floor plan adapter module
-- [Development Guidelines](./docs/development-guidelines.md) - Coding standards and best practices
-- [Component Design](./docs/component-design.md) - Component architecture and patterns
-- [Testing Strategy](./docs/testing-strategy.md) - Testing approaches and tools
-- [Common Pitfalls](./docs/common-pitfalls.md) - Known issues and how to avoid them
-- [AI and Developer Guidelines](./AI_DEV_GUIDELINES.md) - Specific guidance for AI assistants and human developers
-- [Fabric.js Best Practices](./src/docs/FABRIC_BEST_PRACTICES.md) - Best practices for working with Fabric.js
 
 ## 📝 Pull Request Guidelines
 
@@ -52,11 +46,10 @@ Before submitting your PR, ensure:
 - [ ] Documentation has been updated
 - [ ] Code follows the established style guidelines
 - [ ] PR description clearly explains the changes
-- [ ] If adding new grid functions, they are properly exported in index.ts
+- [ ] If adding new components, they are properly documented with JSDoc
 - [ ] All TypeScript types are properly defined with no `any`
-- [ ] DrawingTool usage is consistent with the canonical source
 - [ ] Hook return types are explicitly defined
-- [ ] Grid changes follow best practices in grid-system.md
+- [ ] Proper logging has been implemented
 
 ## 💾 Pre-commit Hooks
 
@@ -74,9 +67,25 @@ This project uses Husky and lint-staged to enforce code quality on commit:
 3. Document why a dependency is added in PR descriptions
 4. Consider bundle size impact before adding new dependencies
 
-## 📚 Additional Resources
+## 💻 Development Workflow
 
-- [TypeScript Best Practices](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html)
-- [Fabric.js Documentation](http://fabricjs.com/docs/)
-- [React Query Documentation](https://tanstack.com/query/latest/docs/react/overview)
-- [shadcn/ui Components](https://ui.shadcn.com/docs)
+1. Fork the repository
+2. Create a new branch for your feature
+3. Implement the feature or fix
+4. Add appropriate tests
+5. Update documentation
+6. Submit a pull request
+
+## 🧪 Testing Guidelines
+
+1. Write unit tests for utility functions
+2. Write component tests for UI components
+3. Test edge cases and error handling
+4. Ensure proper mocking of dependencies
+
+## 🔍 Code Review Process
+
+1. All PRs require at least one review
+2. Address all review comments
+3. Ensure CI checks pass
+4. Request re-review after addressing comments

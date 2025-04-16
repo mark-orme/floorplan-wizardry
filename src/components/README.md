@@ -9,7 +9,32 @@ This directory contains reusable React components used throughout the applicatio
 - **canvas/**: Canvas-specific components for drawing and rendering
 - **forms/**: Form-related components with validation
 - **layout/**: Layout components like containers, grids, etc.
-- **security/**: Security-related components for safe rendering
+
+## Key Components
+
+### StraightLineToolDemo
+
+A standalone component for demonstrating the straight line drawing functionality:
+
+```typescript
+import { StraightLineToolDemo } from '@/components/StraightLineToolDemo';
+
+function MyPage() {
+  return (
+    <div className="container">
+      <h1>Straight Line Tool Demo</h1>
+      <StraightLineToolDemo />
+    </div>
+  );
+}
+```
+
+Features:
+- Canvas initialization
+- Straight line drawing
+- Color and thickness controls
+- Canvas clearing functionality
+- Status indicators
 
 ## Component Guidelines
 
@@ -21,30 +46,55 @@ This directory contains reusable React components used throughout the applicatio
 
 ## Example Usage
 
-### Security Components
-
-```tsx
-// Using the SecureInput component
-<SecureInput
-  value={value}
-  onChange={setValue}
-  placeholder="Enter text"
-  sanitizationStrategy="basic"
-/>
-
-// Using the SafeHtml component
-<SafeHtml
-  html={userProvidedContent}
-  allowRich={false}
-/>
-```
-
 ### Canvas Components
 
 Canvas components should be wrapped in proper error boundaries:
 
 ```tsx
 <ErrorBoundary componentName="DrawingTool">
-  <DrawingManager />
+  <StraightLineToolDemo />
 </ErrorBoundary>
 ```
+
+### Handling User Input
+
+Components should provide appropriate feedback for user interactions:
+
+```tsx
+<Button 
+  onClick={handleAction}
+  disabled={isLoading}
+>
+  {isLoading ? 'Processing...' : 'Draw Line'}
+</Button>
+```
+
+## State Management
+
+Components should manage their state appropriately:
+
+- Use `useState` for simple component state
+- Use custom hooks for complex logic
+- Implement proper cleanup in `useEffect` return functions
+
+## Error Handling
+
+Components should implement proper error handling:
+
+```tsx
+try {
+  // Component operation
+} catch (error) {
+  logger.error('Component error', error);
+  setError('Something went wrong. Please try again.');
+}
+```
+
+## Styling
+
+Components should follow the project's styling conventions:
+
+- Use Tailwind CSS for styling
+- Follow responsive design principles
+- Ensure accessibility compliance
+- Maintain consistent visual language
