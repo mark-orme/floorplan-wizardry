@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasProvider } from "@/contexts/CanvasContext";
@@ -153,7 +152,9 @@ const Index = () => {
   const onToolChange = (tool: DrawingMode) => {
     try {
       logger.info(`Active tool changing to: ${tool}`);
-      return setActiveTool(handleToolChange(tool));
+      console.log(`Changing tool to: ${tool}`);
+      setActiveTool(tool);
+      return tool;
     } catch (error) {
       captureError(error, 'tool-change-error', {
         level: 'error',

@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -64,6 +63,7 @@ export const CanvasEventManager = ({
   // Create a debounced state save function
   const debouncedSaveState = useRef(
     createCompletionHandler(() => {
+      console.log("Saving canvas state after drawing completion");
       saveCurrentState();
       if (onDrawingComplete) {
         onDrawingComplete();
@@ -72,7 +72,7 @@ export const CanvasEventManager = ({
   ).current;
   
   // Initialize straight line tool
-  useStraightLineTool({
+  const straightLineTool = useStraightLineTool({
     canvas,
     enabled: tool === DrawingMode.STRAIGHT_LINE,
     lineColor,
@@ -80,6 +80,13 @@ export const CanvasEventManager = ({
     lineThickness: isApplePencil ? adjustedLineThickness : lineThickness,
     saveCurrentState: debouncedSaveState
   });
+  
+  // Log when straight line tool is active
+  useEffect(() => {
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      console.log("Straight line tool is active", straightLineTool);
+    }
+  }, [tool, straightLineTool]);
   
   // Initialize keyboard shortcuts
   useCanvasKeyboardShortcuts({
@@ -92,6 +99,8 @@ export const CanvasEventManager = ({
   // Set up event listeners
   useEffect(() => {
     if (!canvas) return;
+    
+    console.log("Setting up canvas event listeners for tool:", tool);
     
     // Clear drawing mode when tool changes
     if (lastToolRef.current !== tool) {
@@ -121,6 +130,21 @@ export const CanvasEventManager = ({
         (canvas.freeDrawingBrush as any).decimate = 2;
       }
     }
+    
+    // Update cursor based on tool
+    if (tool === DrawingMode.STRAIGHT_LINE) {
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+    } else if (tool === DrawingMode.DRAW) {
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+    } else if (tool === DrawingMode.SELECT) {
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
+    }
+    
+    // Force render to apply changes
+    canvas.renderAll();
     
     // Optimized event handlers
     const handlePathCreated = () => {

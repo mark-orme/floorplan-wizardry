@@ -80,6 +80,12 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({
     }
   ];
   
+  // Handler for tool button click
+  const handleToolClick = (tool: DrawingMode) => {
+    console.log(`Tool button clicked: ${tool}`);
+    onToolChange(tool);
+  };
+  
   return (
     <ToolbarSection title="Drawing Tools">
       {tools.map(({ tool, icon, label, tooltip }) => (
@@ -89,7 +95,7 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({
           label={label}
           tooltip={tooltip}
           active={activeTool === tool}
-          onClick={() => onToolChange(tool)}
+          onClick={() => handleToolClick(tool)}
         />
       ))}
     </ToolbarSection>

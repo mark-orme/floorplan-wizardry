@@ -88,6 +88,9 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         fabricCanvas.renderAll();
       }, 100);
       
+      // Debug canvas state
+      console.log("Canvas initialized:", fabricCanvas);
+      
       // Notify parent component
       if (onCanvasReady) {
         onCanvasReady(fabricCanvas);
@@ -180,6 +183,7 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         id="fabric-canvas"
         className="border border-gray-200 rounded"
         data-testid="canvas-element"
+        style={{ width: `${width}px`, height: `${height}px` }}
       />
       <div className="absolute bottom-2 right-2 text-xs text-gray-500">
         {Math.round(zoomLevel * 100)}%

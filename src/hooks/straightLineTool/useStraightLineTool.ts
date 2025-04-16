@@ -1,3 +1,4 @@
+
 /**
  * Hook for straight line drawing tool
  * @module hooks/straightLineTool/useStraightLineTool
@@ -88,34 +89,39 @@ export const useLineState = (props: UseLineStateProps) => {
       return null;
     }
 
-    // Improved line styling for better visibility
-    const line = new Line([x1, y1, x2, y2], {
-      stroke: lineColor,
-      strokeWidth: lineThickness,
-      selectable: true,
-      evented: true,
-      objectCaching: false,
-      strokeUniform: true,
-      strokeLineCap: 'round',
-      strokeLineJoin: 'round',
-      hoverCursor: 'pointer'
-    });
-    
-    // Add to canvas immediately
-    canvas.add(line);
-    
-    // Ensure line is at the front
-    canvas.bringObjectToFront(line);
-    
-    logger.info('Created line:', { x1, y1, x2, y2, color: lineColor, thickness: lineThickness });
-    console.log("DEBUG: Line created and added to canvas:", line);
-    
-    // Render the canvas immediately
-    canvas.renderAll();
-    
-    // Update refs
-    currentLineRef.current = line;
-    return line;
+    try {
+      // Improved line styling for better visibility
+      const line = new Line([x1, y1, x2, y2], {
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        selectable: true,
+        evented: true,
+        objectCaching: false,
+        strokeUniform: true,
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round',
+        hoverCursor: 'pointer'
+      });
+      
+      // Add to canvas immediately
+      canvas.add(line);
+      
+      // Ensure line is at the front
+      canvas.bringObjectToFront(line);
+      
+      // Force render to show line immediately
+      canvas.renderAll();
+      
+      logger.info('Created line:', { x1, y1, x2, y2, color: lineColor, thickness: lineThickness });
+      console.log("DEBUG: Line created and added to canvas:", line);
+      
+      // Store reference
+      currentLineRef.current = line;
+      return line;
+    } catch (err) {
+      console.error("Error creating line:", err);
+      return null;
+    }
   }, [canvas, lineColor, lineThickness]);
   
   /**
@@ -127,40 +133,46 @@ export const useLineState = (props: UseLineStateProps) => {
       return null;
     }
     
-    // Create text object for tooltip with improved styling
-    const shadowObj = new Shadow({
-      color: 'rgba(0,0,0,0.2)',
-      offsetX: 1,
-      offsetY: 1,
-      blur: 2
-    });
-    
-    const text = new Text(`${distance.toFixed(0)} px`, {
-      left: x,
-      top: y - 20,
-      fontSize: 14,
-      fontWeight: 'bold',
-      fill: '#333',
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      padding: 4,
-      selectable: false,
-      evented: false,
-      shadow: shadowObj,
-      textAlign: 'center'
-    });
-    
-    // Add to canvas immediately
-    canvas.add(text);
-    
-    // Ensure tooltip is at the front
-    canvas.bringObjectToFront(text);
-    
-    // Render the canvas immediately
-    canvas.renderAll();
-    
-    // Store reference
-    distanceTooltipRef.current = text;
-    return text;
+    try {
+      // Create proper Shadow object for tooltip
+      const shadowObj = new Shadow({
+        color: 'rgba(0,0,0,0.2)',
+        offsetX: 1,
+        offsetY: 1,
+        blur: 2
+      });
+      
+      // Create text object for tooltip with improved styling
+      const text = new Text(`${distance.toFixed(0)} px`, {
+        left: x,
+        top: y - 20,
+        fontSize: 14,
+        fontWeight: 'bold',
+        fill: '#333',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        padding: 4,
+        selectable: false,
+        evented: false,
+        shadow: shadowObj,
+        textAlign: 'center'
+      });
+      
+      // Add to canvas immediately
+      canvas.add(text);
+      
+      // Ensure tooltip is at the front
+      canvas.bringObjectToFront(text);
+      
+      // Render the canvas immediately
+      canvas.renderAll();
+      
+      // Store reference
+      distanceTooltipRef.current = text;
+      return text;
+    } catch (err) {
+      console.error("Error creating tooltip:", err);
+      return null;
+    }
   }, [canvas]);
   
   /**
