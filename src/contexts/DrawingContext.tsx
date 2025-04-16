@@ -39,3 +39,6 @@ export const useDrawing = () => {
   }
   return context;
 };
+
+// Add this line to fix the useDrawingContext import errors
+export const useDrawingContext = useDrawing;

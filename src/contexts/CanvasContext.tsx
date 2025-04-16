@@ -32,3 +32,6 @@ export const useCanvas = () => {
   }
   return context;
 };
+
+// Add this line to fix the useCanvasContext import errors
+export const useCanvasContext = useCanvas;

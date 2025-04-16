@@ -1,4 +1,3 @@
-
 /**
  * Path processing hook
  * Handles processing of drawing paths
@@ -12,6 +11,7 @@ import { Point } from '@/types/drawingTypes';
 import { v4 as uuidv4 } from 'uuid';
 import { isStraightPath, straightenPath } from '@/utils/geometry/pathStraightening';
 import { useDrawingContext } from '@/contexts/DrawingContext';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Minimum stroke length for processing

@@ -5,8 +5,8 @@
  * @module contexts
  */
 
-export { useCanvasContext, CanvasProvider } from './CanvasContext';
-export { useDrawingContext, DrawingProvider } from './DrawingContext';
+export { useCanvas, useCanvasContext, CanvasProvider } from './CanvasContext';
+export { useDrawing, useDrawingContext, DrawingProvider } from './DrawingContext';
 export { useAuth, AuthProvider } from './AuthContext';
 
 // ThemeContext is referenced but doesn't exist in the codebase
