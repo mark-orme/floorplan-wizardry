@@ -72,6 +72,22 @@ export const useLinePreview = (
     
     // Apply constraints
     let finalEndPoint = { ...endPoint };
+    let isSnapped = false;
+    
+    // Apply snapping logic if enabled
+    if (snapEnabled) {
+      // Simple grid snapping (10px grid)
+      const gridSize = 10;
+      finalEndPoint.x = Math.round(finalEndPoint.x / gridSize) * gridSize;
+      finalEndPoint.y = Math.round(finalEndPoint.y / gridSize) * gridSize;
+      isSnapped = finalEndPoint.x !== endPoint.x || finalEndPoint.y !== endPoint.y;
+    }
+    
+    // Apply angle constraints if enabled
+    if (anglesEnabled && startPoint) {
+      // Implement angle constraints logic here
+      // For example, constrain to 45-degree angles
+    }
     
     // Remove existing preview if any
     if (previewLineRef.current) {
@@ -99,9 +115,10 @@ export const useLinePreview = (
     
     return {
       startPoint,
-      endPoint: finalEndPoint
+      endPoint: finalEndPoint,
+      isSnapped
     };
-  }, [fabricCanvasRef, lineColor, lineThickness]);
+  }, [fabricCanvasRef, lineColor, lineThickness, snapEnabled, anglesEnabled]);
   
   /**
    * Clear line preview

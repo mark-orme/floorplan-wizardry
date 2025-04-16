@@ -114,14 +114,16 @@ export const useLineToolHandlers = ({ lineState, updateMeasurementData }: UseLin
     
     if (isDrawing && startPoint) {
       // Update line preview and get snapped point
-      const { endPoint, isSnapped } = updateLinePreview(startPoint, point) || {};
+      const linePreviewResult = updateLinePreview(startPoint, point);
+      const endPoint = linePreviewResult?.endPoint || point;
+      const isSnapped = linePreviewResult?.isSnapped || false;
       
       // Continue drawing with the potentially snapped point
-      continueDrawing(endPoint || point);
+      continueDrawing(endPoint);
       
       // Calculate measurements
-      const distance = calculateDistance(startPoint, endPoint || point);
-      const angle = calculateAngle(startPoint, endPoint || point);
+      const distance = calculateDistance(startPoint, endPoint);
+      const angle = calculateAngle(startPoint, endPoint);
       
       // Update measurement data
       updateMeasurementData({
