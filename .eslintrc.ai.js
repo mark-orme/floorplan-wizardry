@@ -58,8 +58,25 @@ module.exports = {
       {
         selector: "MemberExpression[object.name='FabricEventNames']",
         message: "Use FabricEventNames from '@/types/fabric-types' to ensure type safety."
+      },
+      {
+        // Mock canvas check
+        selector: "CallExpression[callee.name='useStraightLineTool'] > ObjectExpression > Property[key.name='canvas'][value.type!='CallExpression'][value.callee.name!='asMockCanvas']",
+        message: "Canvas props in useStraightLineTool must use asMockCanvas(mockCanvas) to ensure proper typing"
+      },
+      {
+        // Ensure complete mock hook objects
+        selector: "CallExpression[callee.object.name='vi'][callee.property.name='mocked'][arguments.0.name=/^use/] > CallExpression[callee.property.name='mockReturnValue'] > ObjectExpression[properties.length<10]",
+        message: "Hook mocks require all properties to be included. Check for missing properties."
       }
-    ]
+    ],
+    
+    // Enforce proper typing for tests
+    '@typescript-eslint/consistent-type-assertions': ['error', {
+      assertionStyle: 'as',
+      objectLiteralTypeAssertions: 'allow-as-parameter'
+    }],
+    '@typescript-eslint/no-unnecessary-type-assertion': 'error'
   },
   settings: {
     react: {
@@ -68,5 +85,33 @@ module.exports = {
     'import/resolver': {
       typescript: {} // this loads tsconfig.json to eslint
     }
-  }
+  },
+  overrides: [
+    {
+      // Test files specific rules
+      files: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx', '**/*.test.ts', '**/*.test.tsx'],
+      rules: {
+        // Test specific mock rules
+        'no-restricted-syntax': [
+          'error',
+          {
+            selector: "TSAsExpression[typeAnnotation.typeName.name='Canvas'][expression.type!='Identifier']",
+            message: "Use asMockCanvas() helper instead of direct 'as Canvas' assertions"
+          },
+          {
+            selector: "CallExpression[callee.name='useStraightLineTool'] > ObjectExpression > Property[key.name='canvas'][value.type='AsExpression']",
+            message: "Use asMockCanvas() helper instead of direct 'as Canvas' assertions"
+          },
+          {
+            selector: "CallExpression[callee.object.name='vi'][callee.property.name='mocked'][arguments.0.name='useLineState'] > CallExpression[callee.property.name='mockReturnValue'] > ObjectExpression:not(:has(Property[key.name='createLine']))",
+            message: "Mock of useLineState is missing the createLine property"
+          },
+          {
+            selector: "CallExpression[callee.object.name='vi'][callee.property.name='mocked'][arguments.0.name='useLineState'] > CallExpression[callee.property.name='mockReturnValue'] > ObjectExpression:not(:has(Property[key.name='createDistanceTooltip']))",
+            message: "Mock of useLineState is missing the createDistanceTooltip property"
+          }
+        ]
+      }
+    }
+  ]
 };

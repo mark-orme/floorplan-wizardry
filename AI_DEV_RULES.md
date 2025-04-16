@@ -15,6 +15,17 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Use enums from '@/constants'** for modes, statuses, or other finite sets of values
 - **Use interface prefix convention** - prefix interfaces with 'I' (e.g., IUserData)
 - **Respect project ESLint rules** - especially those related to TypeScript
+- **Use proper type assertions** - never use direct 'as Canvas' but instead use helper functions like `asMockCanvas()`
+- **Ensure complete mock objects** - when mocking hooks, include all required properties
+
+## Mock Testing and Type Safety
+
+- **Always use helper functions** like `asMockCanvas()` or `asMockObject()` when working with Fabric.js types in tests
+- **Never directly cast to Canvas** - use dedicated type assertion helpers 
+- **Use proper interfaces** for mock objects - implement `IMockCanvas` for canvas mocks
+- **Include all required properties** when mocking hooks - ensure every property is accounted for
+- **Type event handlers properly** - ensure Fabric.js event handlers use proper event types
+- **Use mock validation rules** - run ESLint with the project's test-mock-validation rules
 
 ## Array and Object Access
 
@@ -78,11 +89,17 @@ This document outlines the rules and best practices for AI-assisted development 
 - **Handle canvas errors gracefully** with fallback mechanisms
 - **Implement proper coordinate transformation** between different coordinate systems
 - **Document assumptions** about coordinate spaces in function JSDoc comments
+- **Always use type assertion helpers** like `asMockCanvas` for canvas objects in tests
+- **Never direct cast mock objects to Canvas type** - use the helper functions
 
-## Project-Specific Conventions
+## New Test Type Safety Rules
 
-- **Floor plan coordinates** are always in meters (real-world units)
-- **Canvas coordinates** are in pixels based on the current zoom level
-- **Grid lines** follow a consistent naming convention for reliable selection
-- **Drawing tools** should implement a consistent interface
-- **State management** follows established patterns with context providers and hooks
+- **Use strongly-typed mock objects** - define interfaces for mock objects
+- **Ensure complete mock implementations** - all required properties must be present
+- **Use proper type assertion helpers** - always use asMockCanvas instead of direct casts
+- **Implement proper event handling types** - ensure event handlers use correct types
+- **Test for proper type compatibility** - use typeof checks in tests to ensure types match
+- **Use mock factory functions** - create helper functions for generating typed mocks
+- **Validate mock completeness** - ensure all required mock properties exist
+- **Isolate test dependencies** - properly mock all external dependencies
+- **Add explicit typing to test variables** - never use implicit typing for test objects

@@ -11,6 +11,10 @@
 // 🛑 Avoid `any` — strongly type every function.
 // 🛑 Never leave promises unhandled - always use await or .catch().
 // 🛑 Never use non-strict boolean expressions in conditions.
+// 🛑 Never cast mock objects directly to Canvas - use asMockCanvas() helper.
+// 🛑 Never provide incomplete mock objects - ensure all required properties exist.
+// 🛑 Never use `as Canvas` directly in tests - always use proper helper functions.
+// 🛑 Never pass untyped mock objects to functions expecting typed objects.
 // ✅ Always specify explicit return types for functions.
 // ✅ Extend only known types with clearly defined custom additions.
 // ✅ Use `import type` to avoid circular dependency errors.
@@ -19,6 +23,10 @@
 // ✅ Avoid non-null assertions (!) - handle nullability explicitly.
 // ✅ Use consistent array type syntax (T[] rather than Array<T>).
 // ✅ Prefix interface names with 'I' (e.g., IUserData).
+// ✅ Always use asMockCanvas() for typing mock Canvas objects in tests.
+// ✅ Ensure complete mock objects with all required properties.
+// ✅ Use proper typing utilities from @/types/test/ for test objects.
+// ✅ Create strongly typed factory functions for complex mock objects.
 
 /**
  * Example of proper type imports to avoid circular dependencies
@@ -88,6 +96,39 @@
 // function isValidUser(user: User | null): boolean {
 //   return user && user.isActive; // Error: Implicitly converts to boolean
 // }
+
+/**
+ * Example of proper mock Canvas typing
+ */
+// GOOD: Use asMockCanvas helper function
+// const { result } = renderHook(() => useTool({
+//   canvas: asMockCanvas(mockCanvas),
+//   enabled: true
+// }));
+
+// BAD: Direct casting
+// const { result } = renderHook(() => useTool({
+//   canvas: mockCanvas as Canvas, // Error: Use asMockCanvas() instead
+//   enabled: true
+// }));
+
+/**
+ * Example of proper mock factory function
+ */
+// GOOD: Create a typed factory function
+// function createMockCanvas(): IMockCanvas {
+//   return {
+//     on: vi.fn(),
+//     off: vi.fn(),
+//     // ... other required props
+//   };
+// }
+
+// BAD: Inline mock without proper typing
+// const mockCanvas = {
+//   on: vi.fn(),
+//   off: vi.fn()
+// }; // Error: Missing type, missing required Canvas properties
 
 /**
  * Example of proper error handling

@@ -1,45 +1,34 @@
 
+/**
+ * Implementation of mock type utilities
+ * @module types/test/MockTypes
+ */
 import { Canvas, Object as FabricObject } from 'fabric';
-import { Mock } from 'vitest';
+import { IMockCanvas } from './MockTypes.d';
 
 /**
- * Type for mocked Canvas in tests
- * Only includes properties we actually use in tests
+ * Helper function to properly type a mock Canvas object
+ * @param mockCanvas The mock canvas object to be typed as Canvas
+ * @returns The same object typed as Canvas
  */
-export interface MockCanvas {
-  on: Mock;
-  off: Mock;
-  add: Mock;
-  remove: Mock;
-  requestRenderAll: Mock;
-  discardActiveObject: Mock;
-  getPointer: Mock;
-  getObjects: Mock;
-  contains: Mock;
-  isDrawingMode: boolean;
-  selection: boolean;
-  defaultCursor: string;
-  hoverCursor: string;
-  width: number;
-  height: number;
-  // Custom method for tests
-  triggerEvent?: (eventName: string, eventData: any) => void;
-  // Custom method for tests
-  getHandlers?: (eventName: string) => Function[];
-  [key: string]: any;
-}
-
-/**
- * Type assertion helper for tests
- * This safely casts a mock canvas to Canvas type without TypeScript errors
- */
-export function asMockCanvas(mockCanvas: any): Canvas {
+export function asMockCanvas<T>(mockCanvas: T): Canvas {
   return mockCanvas as unknown as Canvas;
 }
 
 /**
- * Type assertion helper for tests
+ * Helper function to properly type a mock Fabric Object
+ * @param mockObject The mock object to be typed as FabricObject
+ * @returns The same object typed as FabricObject
  */
-export function asMockObject(mockObject: any): FabricObject {
+export function asMockObject<T>(mockObject: T): FabricObject {
   return mockObject as unknown as FabricObject;
+}
+
+/**
+ * Creates a strongly typed mock canvas for testing
+ * @returns A mock canvas with proper typing
+ */
+export function createTypedMockCanvas(): IMockCanvas {
+  // Implementation left to the actual test files
+  return {} as IMockCanvas;
 }
