@@ -8,6 +8,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useLineState, InputMethod } from './useLineState';
 import { detectStylusFromEvent } from '@/types/input/InputMethod';
+import logger from '@/utils/logger';
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
@@ -35,6 +36,12 @@ export const useStraightLineTool = ({
     fabricCanvasRef.current = canvas;
   }, [canvas]);
   
+  useEffect(() => {
+    if (enabled) {
+      logger.info("Straight line tool activated in hook");
+    }
+  }, [enabled]);
+  
   // Initialize line state
   const lineState = useLineState({
     fabricCanvasRef,
@@ -58,12 +65,27 @@ export const useStraightLineTool = ({
     toggleAngles,
     setInputMethod,
     currentLine,
-    isDrawing
+    isDrawing,
+    initializeTool
   } = lineState;
+
+  // Initialize tool when enabled changes
+  useEffect(() => {
+    if (enabled && !isActive && fabricCanvasRef.current) {
+      initializeTool();
+      logger.info("Straight line tool initialized", { 
+        tool: enabled ? 'straight_line' : 'disabled',
+        lineColor,
+        lineThickness
+      });
+    }
+  }, [enabled, isActive, initializeTool, lineColor, lineThickness]);
   
   // Add custom event handlers for the canvas
   const handleMouseDown = useCallback((e: any) => {
     if (!fabricCanvasRef.current || !enabled) return;
+    
+    logger.info("Mouse down on canvas", e);
     
     // Extract event
     const nativeEvent = e.e as MouseEvent | TouchEvent;
@@ -89,6 +111,8 @@ export const useStraightLineTool = ({
     const pointer = fabricCanvasRef.current.getPointer(e.e);
     const point: Point = { x: pointer.x, y: pointer.y };
     
+    logger.info("Pointer down in useStraightLineTool", point);
+    
     // Start drawing
     handlePointerDown(point);
   }, [fabricCanvasRef, enabled, handlePointerDown, setInputMethod]);
@@ -107,9 +131,13 @@ export const useStraightLineTool = ({
   const handleMouseUp = useCallback((e: any) => {
     if (!fabricCanvasRef.current || !enabled || !isDrawing) return;
     
+    logger.info("Mouse up on canvas", e);
+    
     // Get pointer coordinates
     const pointer = fabricCanvasRef.current.getPointer(e.e);
     const point: Point = { x: pointer.x, y: pointer.y };
+    
+    logger.info("Pointer up in useStraightLineTool", point);
     
     // End drawing
     handlePointerUp(point);
@@ -122,9 +150,20 @@ export const useStraightLineTool = ({
     
     // Only attach event handlers if enabled
     if (enabled) {
+      // First, remove any existing handlers to prevent duplicates
+      canvas.off('mouse:down');
+      canvas.off('mouse:move');
+      canvas.off('mouse:up');
+      
+      // Then attach our handlers
       canvas.on('mouse:down', handleMouseDown);
       canvas.on('mouse:move', handleMouseMove);
       canvas.on('mouse:up', handleMouseUp);
+      
+      logger.info("Attaching straight line event handlers to canvas", { 
+        isActive,
+        isToolInitialized: lineState.isToolInitialized
+      });
       
       // Disable browser scrolling while drawing
       canvas.upperCanvasEl.style.touchAction = 'none';
@@ -146,7 +185,7 @@ export const useStraightLineTool = ({
             // Double tap detected
             if (typeof saveCurrentState === 'function') {
               cancelDrawing();
-              console.log('Double tap undo triggered');
+              logger.info('Double tap undo triggered');
             }
           }
           lastTap = currentTime;
@@ -156,6 +195,7 @@ export const useStraightLineTool = ({
       canvas.upperCanvasEl.addEventListener('pointerdown', handleDoubleTap);
       
       return () => {
+        logger.info("Removing straight line event handlers from canvas");
         canvas.off('mouse:down', handleMouseDown);
         canvas.off('mouse:move', handleMouseMove);
         canvas.off('mouse:up', handleMouseUp);
@@ -166,7 +206,7 @@ export const useStraightLineTool = ({
         canvas.hoverCursor = 'move';
       };
     }
-  }, [fabricCanvasRef, enabled, handleMouseDown, handleMouseMove, handleMouseUp, cancelDrawing, saveCurrentState]);
+  }, [fabricCanvasRef, enabled, handleMouseDown, handleMouseMove, handleMouseUp, cancelDrawing, saveCurrentState, isActive, lineState.isToolInitialized]);
   
   // When using Apple Pencil, provide smoother experience
   useEffect(() => {
@@ -184,6 +224,13 @@ export const useStraightLineTool = ({
       };
     }
   }, [isPencilMode]);
+  
+  // Let's add a log for created lines
+  useEffect(() => {
+    if (currentLine) {
+      logger.info('Line created:', currentLine);
+    }
+  }, [currentLine]);
   
   return {
     ...lineState,

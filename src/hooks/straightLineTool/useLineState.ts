@@ -8,6 +8,7 @@ import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { MeasurementData } from './types';
 import { Point } from '@/types/core/Point';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
+import logger from '@/utils/logger';
 
 /**
  * Input method enumeration
@@ -95,6 +96,8 @@ export const useLineState = ({
     canvas.selection = false;
     canvas.defaultCursor = 'crosshair';
     canvas.isDrawingMode = false;
+    
+    logger.info('Straight line tool initialized', { canvas });
   }, [fabricCanvasRef]);
   
   /**
@@ -121,12 +124,20 @@ export const useLineState = ({
    */
   const createLine = useCallback((x1: number, y1: number, x2: number, y2: number) => {
     try {
-      return new Line([x1, y1, x2, y2], {
+      const line = new Line([x1, y1, x2, y2], {
         stroke: lineColor,
         strokeWidth: lineThickness,
         selectable: true,
+        evented: true,
         objectType: 'straight-line'
       });
+      
+      logger.info(`Created straight line: ${x1},${y1} to ${x2},${y2}`, {
+        lineColor,
+        lineThickness
+      });
+      
+      return line;
     } catch (error) {
       console.error('Error creating line:', error);
       return null;
@@ -202,8 +213,13 @@ export const useLineState = ({
       unit: 'm'
     });
     
-    // Render
+    // Force render
     canvas.renderAll();
+    
+    logger.debug(`Updated line: ${start.x},${start.y} to ${end.x},${end.y}`, {
+      distance,
+      angle
+    });
   }, [fabricCanvasRef, snapEnabled]);
   
   /**
@@ -219,6 +235,8 @@ export const useLineState = ({
       angle: null,
       unit: 'm'
     });
+    
+    logger.info('Drawing state reset');
   }, []);
   
   /**
@@ -226,6 +244,7 @@ export const useLineState = ({
    * @param point Point where the pointer was pressed
    */
   const handlePointerDown = useCallback((point: Point) => {
+    logger.info('Pointer down in useLineState', { point });
     setIsDrawing(true);
     
     // Snap to grid if enabled
@@ -258,6 +277,11 @@ export const useLineState = ({
         canvas.add(tooltip);
         setDistanceTooltip(tooltip);
       }
+      
+      // Force render
+      canvas.renderAll();
+      
+      logger.info('Line and tooltip added to canvas', { line });
     }
   }, [fabricCanvasRef, setStartPoint, createLine, setCurrentLine, createDistanceTooltip, setDistanceTooltip, snapEnabled, snapPointToGrid]);
   
@@ -297,6 +321,8 @@ export const useLineState = ({
    * @param point Point where the pointer was released
    */
   const handlePointerUp = useCallback((point: Point) => {
+    logger.info('Pointer up in useLineState', { point, isDrawing });
+    
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isDrawing || !startPointRef.current) return;
     
@@ -318,6 +344,7 @@ export const useLineState = ({
       startPointRef.current.y === snappedPoint.y
     ) {
       canvas.remove(currentLineRef.current);
+      logger.info('Zero-length line removed');
     } else {
       // Make line selectable
       if (currentLineRef.current) {
@@ -328,6 +355,7 @@ export const useLineState = ({
         
         // Save current state for undo
         saveCurrentState();
+        logger.info('Line drawing completed and saved to history');
       }
     }
     
@@ -344,6 +372,8 @@ export const useLineState = ({
   const cancelDrawing = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
+    
+    logger.info('Cancelling current drawing');
     
     // Remove the line being drawn
     if (currentLineRef.current) {
