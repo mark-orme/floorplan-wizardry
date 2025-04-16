@@ -1,4 +1,3 @@
-
 /**
  * Canvas application component
  * Main component that wraps the canvas with necessary UI elements
@@ -33,7 +32,7 @@ export interface CanvasAppProps {
  */
 export const CanvasApp = ({
   setCanvas,
-  tool = 'select',
+  tool = DrawingMode.SELECT,
   lineThickness = 2,
   lineColor = '#000000',
   enableSync = true,
