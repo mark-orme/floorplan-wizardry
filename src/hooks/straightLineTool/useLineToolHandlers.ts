@@ -5,8 +5,23 @@ import { calculateDistance, calculateAngle } from '@/utils/geometry/lineOperatio
 import { useLinePreview } from './useLinePreview';
 import { InputMethod } from './useLineInputMethod';
 
+interface LineState {
+  fabricCanvasRef: { current: any };
+  isDrawing: boolean;
+  snapEnabled: boolean;
+  anglesEnabled: boolean;
+  startPoint: Point | null;
+  lineColor: string;
+  lineThickness: number;
+  startDrawing: (point: Point) => void;
+  continueDrawing: (point: Point) => void;
+  completeDrawing: (point: Point) => void;
+  cancelDrawing: () => void;
+  setInputMethod: (method: InputMethod) => void;
+}
+
 interface UseLineToolHandlersProps {
-  lineState: any;
+  lineState: LineState;
   updateMeasurementData: (data: any) => void;
 }
 
