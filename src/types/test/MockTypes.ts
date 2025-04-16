@@ -7,15 +7,15 @@ import { Mock } from 'vitest';
  * Only includes properties we actually use in tests
  */
 export interface MockCanvas {
-  on: Mock<any, any>;
-  off: Mock<any, any>;
-  add: Mock<any, any>;
-  remove: Mock<any, any>;
-  requestRenderAll: Mock<any, any>;
-  discardActiveObject: Mock<any, any>;
-  getPointer: Mock<any, any>;
-  getObjects: Mock<any, any>;
-  contains: Mock<any, any>;
+  on: Mock<[string, Function], unknown>;
+  off: Mock<[string, Function?], unknown>;
+  add: Mock<[FabricObject], unknown>;
+  remove: Mock<[FabricObject], unknown>;
+  requestRenderAll: Mock<[], unknown>;
+  discardActiveObject: Mock<[], unknown>;
+  getPointer: Mock<[any], { x: number; y: number }>;
+  getObjects: Mock<[], FabricObject[]>;
+  contains: Mock<[FabricObject], boolean>;
   isDrawingMode: boolean;
   selection: boolean;
   defaultCursor: string;
