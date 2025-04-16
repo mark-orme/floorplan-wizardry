@@ -12,6 +12,12 @@ import {
   generateCanvasDiagnosticReport,
   checkFabricJsLoading
 } from '@/utils/canvas/canvasErrorMonitoring';
+import {
+  safeCanvasInitialization,
+  resetInitializationState,
+  validateCanvasInitialization,
+  handleInitializationFailure
+} from '@/utils/canvas/safeCanvasInitialization';
 
 export interface CanvasProps {
   width: number;
@@ -49,9 +55,39 @@ export const Canvas: React.FC<CanvasProps> = ({
   const canvasInitTimeRef = useRef<number>(Date.now());
   const initTriesRef = useRef<number>(0);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
+  const documentReadyRef = useRef<boolean>(document.readyState === 'complete');
+  
+  // Reset initialization state when component mounts
+  useEffect(() => {
+    resetInitializationState();
+    return () => {
+      // Clean up on unmount
+      resetInitializationState();
+    };
+  }, []);
+  
+  // Ensure document is fully loaded before canvas initialization
+  useEffect(() => {
+    if (document.readyState !== 'complete') {
+      const handleReadyStateChange = () => {
+        if (document.readyState === 'complete') {
+          documentReadyRef.current = true;
+          document.removeEventListener('readystatechange', handleReadyStateChange);
+        }
+      };
+      
+      document.addEventListener('readystatechange', handleReadyStateChange);
+      return () => {
+        document.removeEventListener('readystatechange', handleReadyStateChange);
+      };
+    }
+  }, []);
   
   // Verify Fabric.js is available on initialization
   useEffect(() => {
+    if (!documentReadyRef.current) return;
+    
     const fabricStatus = checkFabricJsLoading();
     
     // Report loading status to debugging tools
@@ -85,8 +121,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
   }, [canvasId, width, height, showGridDebug, tool, lineThickness]);
   
-  // Initialize canvas with enhanced error monitoring
+  // Initialize canvas with enhanced error monitoring and safety checks
   useEffect(() => {
+    // Skip initialization if document isn't ready
+    if (document.readyState !== 'complete') {
+      const timer = setTimeout(() => {
+        // Trigger a re-render to try again
+        initTriesRef.current += 1;
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    
     if (!canvasRef.current) {
       captureMessage('Canvas element ref not available during initialization', 'canvas-ref-missing', {
         level: 'warning',
@@ -117,12 +162,31 @@ export const Canvas: React.FC<CanvasProps> = ({
         height: canvasRef.current.height
       });
       
+      // Make sure we set the canvas ID to help with debugging
+      canvasRef.current.id = canvasId;
+      
       // Force canvas dimensions to ensure proper initialization
       canvasRef.current.width = width;
       canvasRef.current.height = height;
       
-      // Create the Fabric.js canvas instance with detailed options
-      const canvas = new FabricCanvas(canvasRef.current, {
+      // Ensure the canvas element is properly sized and visible in DOM
+      const canvasElement = canvasRef.current;
+      canvasElement.style.width = `${width}px`;
+      canvasElement.style.height = `${height}px`;
+      canvasElement.style.display = 'block';
+      
+      // If canvas parent has zero dimensions, apply minimum size
+      if (canvasElement.parentElement) {
+        const parentStyle = window.getComputedStyle(canvasElement.parentElement);
+        if (parentStyle.width === '0px' || parentStyle.height === '0px') {
+          canvasElement.parentElement.style.minWidth = `${width}px`;
+          canvasElement.parentElement.style.minHeight = `${height}px`;
+        }
+      }
+      
+      // Use our safe initialization function instead of direct constructor
+      // This addresses the 'elements.lower.el' error specifically
+      const canvas = safeCanvasInitialization(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',
@@ -132,13 +196,13 @@ export const Canvas: React.FC<CanvasProps> = ({
         stopContextMenu: false // Allow context menu for debugging
       });
       
+      // Validate the canvas was properly initialized
+      if (!canvas || !validateCanvasInitialization(canvas)) {
+        throw new Error('Canvas failed validation after initialization');
+      }
+      
       // Store reference for cleanup
       fabricCanvasRef.current = canvas;
-      
-      // Check if the canvas has been properly initialized by Fabric
-      if (!canvas.upperCanvasEl || !canvas.lowerCanvasEl) {
-        throw new Error('Canvas elements not properly initialized by Fabric.js');
-      }
       
       // Dispatch success event to track successful initialization
       const successEvent = new CustomEvent('canvas-init-success', {
@@ -223,6 +287,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         initTriesRef.current
       );
       
+      // Call our specific handler for initialization failures 
+      // to provide enhanced diagnostics
+      handleInitializationFailure(error instanceof Error ? error.message : String(error));
+      
       // Dispatch custom event for global error handling with enhanced context
       const errorEvent = new CustomEvent('canvas-init-error', { 
         detail: { 
@@ -244,7 +312,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   }, [width, height, onCanvasReady, onError, canvasId]);
   
   return (
-    <div className="canvas-wrapper relative" data-testid="canvas-element">
+    <div 
+      className="canvas-wrapper relative" 
+      data-testid="canvas-element"
+      ref={canvasWrapperRef}
+    >
       <canvas
         ref={canvasRef}
         width={width}
@@ -252,7 +324,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         className="border border-gray-200 dark:border-gray-700 shadow-sm"
         data-canvas-id={canvasId}
         data-show-grid-debug={showGridDebug ? 'true' : 'false'}
-        style={style}
+        style={{
+          display: 'block', // Force display block to prevent layout issues
+          ...style
+        }}
       />
       
       {/* Debug overlay */}
@@ -264,4 +339,3 @@ export const Canvas: React.FC<CanvasProps> = ({
     </div>
   );
 };
-

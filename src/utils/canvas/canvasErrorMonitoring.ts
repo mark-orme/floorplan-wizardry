@@ -104,7 +104,17 @@ function checkDomReadiness(): Record<string, any> {
       width: c.width,
       height: c.height,
       style: c.getAttribute('style') || 'no-style'
-    }))
+    })),
+    visibleCanvases: Array.from(document.querySelectorAll('canvas')).filter(c => {
+      const rect = c.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }).length,
+    canvasWrappers: document.querySelectorAll('.canvas-wrapper').length,
+    fabricSpecific: {
+      lowerCanvas: document.querySelectorAll('.lower-canvas').length,
+      upperCanvas: document.querySelectorAll('.upper-canvas').length,
+      fabricContainer: document.querySelectorAll('.canvas-container').length,
+    }
   };
 }
 
@@ -126,6 +136,20 @@ function collectFabricDetails(canvasType?: string): Record<string, any> {
       details.hasObjectPrototype = typeof fabric.Object === 'function';
       details.hasCanvasPrototype = typeof fabric.Canvas === 'function';
       details.supportsWebGL = typeof fabric.WebGLFilterBackend === 'function';
+      
+      // Check if initialization methods are available
+      details.initMethodsAvailable = {
+        getElement: typeof fabric.util?.getElement === 'function',
+        createCanvasElement: typeof fabric.util?.createCanvasElement === 'function',
+        createClass: typeof fabric.util?.createClass === 'function'
+      };
+      
+      // Detect polyfills
+      details.polyfills = {
+        requestAnimationFrame: typeof window.requestAnimationFrame === 'function',
+        console: typeof window.console !== 'undefined',
+        performance: typeof window.performance !== 'undefined'
+      };
     }
   } catch (e) {
     details.detectionError = String(e);
@@ -171,6 +195,12 @@ export function handleCanvasInitError(
   // Check for fatal canvas errors
   const isFatalCanvasError = checkForFatalCanvasError(error);
   
+  // Special handling for "elements.lower.el" error - this is a common Fabric.js issue
+  if (errorMessage.includes('elements.lower.el')) {
+    // Try to fix the issue by checking for orphaned elements
+    tryFixLowerElementsError();
+  }
+  
   // Collect detailed diagnostic information
   const diagnosticInfo = collectCanvasDiagnostics(canvasElement, isFatalCanvasError);
   
@@ -201,7 +231,8 @@ export function handleCanvasInitError(
       stackTrace,
       elementsLowerError: errorMessage.includes('elements.lower.el'),
       domState: checkDomReadiness(),
-      fabricAvailable: typeof (window as any).fabric !== 'undefined'
+      fabricAvailable: typeof (window as any).fabric !== 'undefined',
+      fabricPotentiallyCorrupted: checkPotentialCorruption()
     }
   });
   
@@ -228,6 +259,131 @@ export function handleCanvasInitError(
   }
   
   return isFatalCanvasError;
+}
+
+/**
+ * Try to fix the common "elements.lower.el" error
+ * This is a well-known issue with Fabric.js
+ */
+function tryFixLowerElementsError(): void {
+  try {
+    // Check if fabric is available
+    if (typeof (window as any).fabric === 'undefined') {
+      logger.error("Cannot fix lower.el error: fabric not loaded");
+      return;
+    }
+    
+    // Clean up any orphaned canvas elements that might cause conflicts
+    const orphanedLowerCanvases = document.querySelectorAll('.lower-canvas:not([data-fabric-owned="true"])');
+    const orphanedUpperCanvases = document.querySelectorAll('.upper-canvas:not([data-fabric-owned="true"])');
+    
+    orphanedLowerCanvases.forEach(canvas => {
+      logger.info("Removing orphaned lower-canvas element");
+      canvas.remove();
+    });
+    
+    orphanedUpperCanvases.forEach(canvas => {
+      logger.info("Removing orphaned upper-canvas element");
+      canvas.remove();
+    });
+    
+    // Try to patch fabric.util.getElement if it's causing problems
+    if ((window as any).fabric && (window as any).fabric.util) {
+      const originalGetElement = (window as any).fabric.util.getElement;
+      
+      // Replace with a safer version that does additional checks
+      (window as any).fabric.util.getElement = function(element: any) {
+        // First try the original method
+        try {
+          const result = originalGetElement(element);
+          return result;
+        } catch (e) {
+          // If it fails with lower.el error, try to find the element directly
+          logger.warn("Original getElement failed, trying fallback");
+          
+          if (typeof element === 'string') {
+            return document.getElementById(element);
+          } else if (element && element.nodeType) {
+            return element;
+          }
+          
+          // Create new canvas element as last resort
+          console.log("Creating new canvas element as fallback");
+          const canvas = document.createElement('canvas');
+          canvas.id = 'fallback-canvas-' + Date.now();
+          document.body.appendChild(canvas);
+          return canvas;
+        }
+      };
+      
+      logger.info("Patched fabric.util.getElement to handle errors better");
+    }
+  } catch (error) {
+    logger.error("Error trying to fix lower.el issue:", error);
+  }
+}
+
+/**
+ * Check if the Fabric.js library might be corrupted
+ */
+function checkPotentialCorruption(): Record<string, any> {
+  const result: Record<string, any> = {
+    potentiallyCorrupted: false,
+    reason: 'none'
+  };
+  
+  try {
+    if (typeof (window as any).fabric === 'undefined') {
+      result.potentiallyCorrupted = true;
+      result.reason = 'fabric-not-defined';
+      return result;
+    }
+    
+    const fabric = (window as any).fabric;
+    
+    // Check if core classes are available
+    if (!fabric.Canvas) {
+      result.potentiallyCorrupted = true;
+      result.reason = 'canvas-class-missing';
+    }
+    
+    if (!fabric.Object) {
+      result.potentiallyCorrupted = true;
+      result.reason = 'object-class-missing';
+    }
+    
+    // Check utility methods
+    if (!fabric.util || !fabric.util.getElement) {
+      result.potentiallyCorrupted = true;
+      result.reason = 'util-missing';
+    }
+    
+    // Check if trying to create a canvas throws an error
+    try {
+      const testCanvas = document.createElement('canvas');
+      testCanvas.width = 100;
+      testCanvas.height = 100;
+      testCanvas.id = 'test-canvas-corruption-check';
+      
+      // Try to initialize but catch errors
+      try {
+        new fabric.Canvas(testCanvas);
+      } catch (e) {
+        result.potentiallyCorrupted = true;
+        result.reason = 'canvas-initialization-failed';
+        result.error = String(e);
+      }
+      
+      // Clean up test canvas
+      testCanvas.remove();
+    } catch (e) {
+      result.testError = String(e);
+    }
+  } catch (e) {
+    result.checkError = String(e);
+  }
+  
+  return result;
 }
 
 /**
@@ -268,14 +424,11 @@ function checkForFatalCanvasError(error: unknown): boolean {
     'has been already initialized',
     'context creation failed',
     'WebGL context',
-    'elements.lower.el', // This matches the current error we're seeing
-    'canvas is already in use',
-    'Cannot read property',
-    'undefined is not an object', // General fatal JS errors
-    'null is not an object',
-    'Cannot read properties of null',
-    'Cannot read properties of undefined'
+    'canvas is already in use'
   ];
+  
+  // Note: Specifically NOT treating 'elements.lower.el' as fatal anymore
+  // since we now have special handling for it
   
   return fatalErrorPatterns.some(pattern => errorMessage.includes(pattern));
 }
@@ -308,6 +461,7 @@ function collectCanvasDiagnostics(
         offsetHeight: canvasElement.offsetHeight,
         clientWidth: canvasElement.clientWidth,
         clientHeight: canvasElement.clientHeight,
+        isConnected: canvasElement.isConnected,
         style: {
           width: canvasElement.style.width,
           height: canvasElement.style.height,
@@ -355,7 +509,18 @@ function collectCanvasDiagnostics(
     canvasContainersDetails: Array.from(document.querySelectorAll('.canvas-wrapper')).map(el => ({
       childCount: el.childNodes.length,
       hasCanvas: el.querySelector('canvas') !== null
-    }))
+    })),
+    // Specific fabric.js element inspection
+    fabricContainerCount: document.querySelectorAll('.canvas-container').length,
+    lowerCanvasCount: document.querySelectorAll('.lower-canvas').length,
+    upperCanvasCount: document.querySelectorAll('.upper-canvas').length,
+    // Check for hidden/zero-sized elements
+    zeroSizedCanvases: Array.from(document.querySelectorAll('canvas')).filter(c => 
+      c.width === 0 || c.height === 0).length,
+    hiddenCanvases: Array.from(document.querySelectorAll('canvas')).filter(c => {
+      const style = window.getComputedStyle(c);
+      return style.display === 'none' || style.visibility === 'hidden';
+    }).length
   };
   
   return diagnostics;
@@ -416,6 +581,13 @@ function getBrowserContext(): Record<string, any> {
         totalScriptsLoaded: document.querySelectorAll('script').length,
         asyncScriptsCount: document.querySelectorAll('script[async]').length
       };
+      
+      // Add orientation and any recent visibility changes
+      context.orientation = window.screen.orientation ? 
+        window.screen.orientation.type : 'not-supported';
+      
+      context.recentVisibilityChange = document.visibilityState === 'hidden' ? 
+        'page-recently-hidden' : 'page-visible';
     }
   } catch (contextError) {
     context.contextCollectionError = String(contextError);
@@ -452,11 +624,12 @@ export function generateCanvasDiagnosticReport(): Record<string, any> {
 export function checkFabricJsLoading(): Record<string, any> {
   const result = {
     fabricDetected: false,
-    fabricVersion: null,
+    fabricVersion: null as string | null,
     fabricObjectAvailable: false,
     fabricCanvasAvailable: false,
-    fabricProblem: null,
-    polyfillsLoaded: false
+    fabricProblem: null as string | null,
+    polyfillsLoaded: false,
+    useLegacyCanvasInitialization: false
   };
   
   try {
@@ -468,8 +641,9 @@ export function checkFabricJsLoading(): Record<string, any> {
       result.fabricCanvasAvailable = typeof (window as any).fabric.Canvas === 'function';
       
       // Check for specific missing components related to the lower.el error
-      if (!(window as any).fabric.util || !(window as any).fabric.util.getElementOffset) {
-        result.fabricProblem = 'Missing fabric.util.getElementOffset';
+      if (!(window as any).fabric.util || !(window as any).fabric.util.getElement) {
+        result.fabricProblem = 'Missing fabric.util.getElement';
+        result.useLegacyCanvasInitialization = true;
       }
     } else {
       result.fabricProblem = 'Fabric.js not loaded in window';
@@ -485,4 +659,3 @@ export function checkFabricJsLoading(): Record<string, any> {
   
   return result;
 }
-

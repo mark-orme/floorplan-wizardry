@@ -10,7 +10,8 @@ import { captureMessage, captureError } from '@/utils/sentryUtils';
 import { markInitialized } from '@/utils/healthMonitoring';
 import { 
   generateCanvasDiagnosticReport, 
-  checkFabricJsLoading 
+  checkFabricJsLoading,
+  safeCanvasInitialization
 } from '@/utils/canvas/canvasErrorMonitoring';
 
 interface UseCanvasInitProps {
@@ -28,11 +29,46 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
   const errorCountRef = useRef<number>(0);
   const canvasInitializedRef = useRef<boolean>(false);
   const [initChecked, setInitChecked] = useState<boolean>(false);
+  const [canvasElementReady, setCanvasElementReady] = useState<boolean>(false);
+  
+  // Check if DOM is ready for canvas operations
+  useEffect(() => {
+    const checkDocumentReady = () => {
+      if (document.readyState === 'complete') {
+        setCanvasElementReady(true);
+        return true;
+      }
+      return false;
+    };
+
+    // Try immediately
+    if (!checkDocumentReady()) {
+      // Set up event listener if document not ready
+      const handleReadyStateChange = () => {
+        if (checkDocumentReady()) {
+          document.removeEventListener('readystatechange', handleReadyStateChange);
+        }
+      };
+      
+      document.addEventListener('readystatechange', handleReadyStateChange);
+      return () => {
+        document.removeEventListener('readystatechange', handleReadyStateChange);
+      };
+    }
+  }, []);
   
   // Check Fabric.js loading during initialization
   useEffect(() => {
     // This runs once on mount to check Fabric.js loading status
-    if (initChecked) return;
+    if (initChecked || !canvasElementReady) return;
+    
+    // Verify DOM is fully loaded before checking Fabric
+    if (document.readyState !== 'complete') {
+      const timer = setTimeout(() => {
+        setInitChecked(false); // Force re-run when document is ready
+      }, 500);
+      return () => clearTimeout(timer);
+    }
     
     const fabricStatus = checkFabricJsLoading();
     
@@ -75,10 +111,12 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
     }
     
     setInitChecked(true);
-  }, [initChecked]);
+  }, [initChecked, canvasElementReady]);
   
   // Track canvas initialization status
   useEffect(() => {
+    if (!canvasElementReady || !initChecked) return;
+    
     // Mark canvas as not yet initialized
     markInitialized('canvas', false);
     
@@ -130,10 +168,12 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
       window.removeEventListener('canvas-init-success', handleCanvasInitSuccess as EventListener);
       clearTimeout(initTimeout);
     };
-  }, [canvasId]);
+  }, [canvasId, canvasElementReady, initChecked]);
   
   // Listen for canvas initialization errors
   useEffect(() => {
+    if (!canvasElementReady) return;
+    
     const handleCanvasInitError = (event: CustomEvent) => {
       errorCountRef.current += 1;
       const { error, isFatal, specific } = event.detail || {};
@@ -247,7 +287,7 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
     return () => {
       window.removeEventListener('canvas-init-error', handleCanvasInitError as EventListener);
     };
-  }, [onError, canvasId]);
+  }, [onError, canvasId, canvasElementReady]);
   
   return;
 };
