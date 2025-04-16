@@ -1,48 +1,34 @@
 
-import React, { createContext, useContext, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import React, { createContext, useContext, useState, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
-/**
- * Canvas context type
- */
 interface CanvasContextType {
   canvas: FabricCanvas | null;
-  setCanvas: React.Dispatch<React.SetStateAction<FabricCanvas | null>>;
+  setCanvas: (canvas: FabricCanvas | null) => void;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
-// Create context with default values
-const CanvasContext = createContext<CanvasContextType | null>(null);
+const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
 
-/**
- * Props for the CanvasProvider
- */
-interface CanvasProviderProps {
-  children: React.ReactNode;
-}
-
-/**
- * Provider component for canvas context
- */
-export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
+export const CanvasProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   return (
-    <CanvasContext.Provider value={{ canvas, setCanvas }}>
+    <CanvasContext.Provider value={{
+      canvas,
+      setCanvas,
+      canvasRef
+    }}>
       {children}
     </CanvasContext.Provider>
   );
 };
 
-/**
- * Hook to access canvas context
- * @returns {CanvasContextType} Canvas context
- */
-export const useCanvasContext = (): CanvasContextType => {
+export const useCanvas = () => {
   const context = useContext(CanvasContext);
-  
-  if (!context) {
-    throw new Error("useCanvasContext must be used within a CanvasProvider");
+  if (context === undefined) {
+    throw new Error('useCanvas must be used within a CanvasProvider');
   }
-  
   return context;
 };

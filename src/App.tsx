@@ -1,25 +1,22 @@
 
-import { createRoot } from 'react-dom/client'
-import * as Sentry from "@sentry/react";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'sonner';
-import Index from './pages/Index';
-import { AuthProvider } from './contexts/AuthContext';
-import NotFound from './pages/NotFound';
-import './index.css';
+import React from 'react';
+import { CanvasWrapper } from './components/canvas/CanvasWrapper';
+import { DrawingProvider } from './contexts/DrawingContext';
+import { CanvasProvider } from './contexts/CanvasContext';
 
-function App() {
+const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-      <Toaster position="top-right" />
-    </AuthProvider>
+    <div className="min-h-screen bg-background p-4">
+      <h1 className="text-2xl font-bold mb-4">Canvas Drawing Tool</h1>
+      <div className="w-full h-[600px] border border-gray-200 rounded-md overflow-hidden">
+        <DrawingProvider>
+          <CanvasProvider>
+            <CanvasWrapper />
+          </CanvasProvider>
+        </DrawingProvider>
+      </div>
+    </div>
   );
-}
+};
 
 export default App;

@@ -4,9 +4,24 @@
  * Re-exports from main modules
  * @module main
  */
-
-// Import functions from main/index.ts
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 import { setupSentry, initializeApp } from './main/index';
 
-// Export directly from the imported modules to avoid duplicate declarations
-export { setupSentry, initializeApp };
+// Initialize Sentry first if available
+if (typeof setupSentry === 'function') {
+  setupSentry();
+}
+
+// Initialize the application
+if (typeof initializeApp === 'function') {
+  initializeApp();
+}
+
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
