@@ -1,402 +1,223 @@
+
 /**
- * Enhanced straight line drawing tool with snapping and measurements
+ * Straight line tool hook
  * @module hooks/straightLineTool/useStraightLineTool
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Line, Text, Point as FabricPoint } from 'fabric';
-import { toast } from 'sonner';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { snapPointToGrid, snapLineToGrid, constrainToMajorAngles } from '@/utils/grid/snapping';
-import logger from '@/utils/logger';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { DrawingMode } from '@/constants/drawingModes';
+import { applyLineStyles, LineStyleOptions } from './lineStyles';
+import { hasValidCoordinates, isLineTooShort } from './lineDiagnostics';
+import { registerLineCreation } from './lineEvents';
+import { useGridAlignment } from './useGridAlignment';
 
-export enum InputMethod {
-  MOUSE = 'mouse',
-  TOUCH = 'touch',
-  STYLUS = 'stylus',
-  PENCIL = 'pencil'
+export interface UseStraightLineToolProps {
+  /** Current drawing mode */
+  drawingMode: DrawingMode;
+  /** Line style options */
+  styleOptions: LineStyleOptions;
+  /** Enable grid snapping */
+  snapToGrid?: boolean;
+  /** Grid size */
+  gridSize?: number;
 }
 
-interface MeasurementData {
-  distance: number;
-  distanceText: string;
-  angle: number;
-  angleText: string;
-}
-
-interface UseStraightLineToolProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  enabled: boolean;
-  lineColor?: string;
-  lineThickness?: number;
-  saveCurrentState?: () => void;
-  initialSnapEnabled?: boolean;
-  initialAnglesEnabled?: boolean;
+export interface UseStraightLineToolResult {
+  /** Whether the tool is active */
+  isActive: boolean;
+  /** Whether drawing is in progress */
+  isDrawing: boolean;
+  /** Current line object */
+  currentLine: Line | null;
+  /** Start drawing */
+  startDrawing: (canvas: FabricCanvas, point: Point) => void;
+  /** Continue drawing */
+  continueDrawing: (canvas: FabricCanvas, point: Point) => void;
+  /** End drawing */
+  endDrawing: (canvas: FabricCanvas) => void;
+  /** Cancel drawing */
+  cancelDrawing: (canvas: FabricCanvas) => void;
 }
 
 /**
- * Hook for drawing straight lines with snapping and measurements
+ * Hook for straight line drawing tool
+ * @param props Hook props
+ * @returns Line tool functions and state
  */
 export const useStraightLineTool = ({
-  fabricCanvasRef,
-  enabled,
-  lineColor = '#000000',
-  lineThickness = 2,
-  saveCurrentState = () => {},
-  initialSnapEnabled = true,
-  initialAnglesEnabled = true
-}: UseStraightLineToolProps) => {
-  // Drawing state
+  drawingMode,
+  styleOptions,
+  snapToGrid = true,
+  gridSize = 20
+}: UseStraightLineToolProps): UseStraightLineToolResult => {
+  // Internal state
   const [isDrawing, setIsDrawing] = useState(false);
-  const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
-  const [anglesEnabled, setAnglesEnabled] = useState(initialAnglesEnabled);
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-  const [isPencilMode, setIsPencilMode] = useState(false);
-  const [isActive, setIsActive] = useState(enabled);
-  const [isToolInitialized, setIsToolInitialized] = useState(false);
-  const [currentLine, setCurrentLine] = useState<Line | null>(null);
-  const [measurementData, setMeasurementData] = useState<MeasurementData | null>(null);
-  
-  // Refs for tracking across renders
+  const lineRef = useRef<Line | null>(null);
   const startPointRef = useRef<Point | null>(null);
-  const currentLineRef = useRef<Line | null>(null);
-  const distanceTooltipRef = useRef<Text | null>(null);
   
-  // Toggle grid snapping
-  const toggleGridSnapping = useCallback(() => {
-    setSnapEnabled(prev => {
-      const newValue = !prev;
-      toast.info(newValue ? 'Grid snapping enabled' : 'Grid snapping disabled');
-      return newValue;
+  // Check if the tool is active
+  const isActive = drawingMode === DrawingMode.STRAIGHT_LINE;
+  
+  // Get grid alignment functions
+  const { snapToGrid: snapToGridFn, autoStraighten } = useGridAlignment({
+    enabled: snapToGrid,
+    gridSize,
+    threshold: 10
+  });
+  
+  /**
+   * Create a new line
+   * @param canvas Fabric canvas
+   * @param start Start point
+   * @param end End point
+   * @returns Line object
+   */
+  const createLine = useCallback((
+    canvas: FabricCanvas,
+    start: Point,
+    end: Point
+  ): Line => {
+    const line = new Line([start.x, start.y, end.x, end.y], {
+      stroke: styleOptions.color,
+      strokeWidth: styleOptions.thickness,
+      strokeDashArray: styleOptions.dashed ? [5, 5] : undefined,
+      selectable: false,
+      evented: false
     });
-  }, []);
-  
-  // Toggle angle snapping
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => {
-      const newValue = !prev;
-      toast.info(newValue ? 'Angle snapping enabled' : 'Angle snapping disabled');
-      return newValue;
-    });
-  }, []);
-  
-  // Process point through snapping if enabled
-  const processPoint = useCallback((point: Point): Point => {
-    if (!snapEnabled) return { ...point };
-    return snapPointToGrid(point);
-  }, [snapEnabled]);
-  
-  // =========== DRAWING HANDLERS ===========
-  
-  // Start drawing a line
-  const handlePointerDown = useCallback((point: Point) => {
-    if (!isActive || !fabricCanvasRef.current) return;
     
-    logger.info('Pointer down in useStraightLineTool', point);
+    canvas.add(line);
+    return line;
+  }, [styleOptions]);
+  
+  /**
+   * Start drawing a line
+   * @param canvas Fabric canvas
+   * @param point Starting point
+   */
+  const startDrawing = useCallback((
+    canvas: FabricCanvas,
+    point: Point
+  ): void => {
+    if (!isActive) return;
     
-    // Save the canvas state before starting a new line
-    saveCurrentState();
+    // Apply grid snapping if enabled
+    const snappedPoint = snapToGrid ? snapToGridFn(point) : point;
     
-    // Process the point (snap to grid if enabled)
-    const processedPoint = processPoint(point);
+    // Store start point
+    startPointRef.current = snappedPoint;
     
-    // Set drawing state
+    // Create the initial line (start and end points are the same)
+    const line = createLine(canvas, snappedPoint, snappedPoint);
+    lineRef.current = line;
+    
+    // Update state
     setIsDrawing(true);
-    startPointRef.current = processedPoint;
-    
-    // Create a new line
-    const newLine = new Line(
-      [processedPoint.x, processedPoint.y, processedPoint.x, processedPoint.y],
-      {
-        stroke: lineColor,
-        strokeWidth: lineThickness,
-        selectable: false,
-        evented: false,
-        objectType: 'straight-line'
-      }
-    );
-    
-    // Add to canvas
-    const canvas = fabricCanvasRef.current;
-    canvas.add(newLine);
-    
-    // Store in state and ref
-    setCurrentLine(newLine);
-    currentLineRef.current = newLine;
-    
-    logger.info('Line created:', newLine);
-    
-    // Create initial measurement tooltip
-    const initialMeasurement = createOrUpdateMeasurement(processedPoint, processedPoint);
-    setMeasurementData(initialMeasurement);
-    
-    canvas.requestRenderAll();
-  }, [isActive, fabricCanvasRef, processPoint, lineColor, lineThickness, saveCurrentState]);
+  }, [isActive, snapToGrid, snapToGridFn, createLine]);
   
-  // Continue drawing (update line while moving)
-  const handlePointerMove = useCallback((point: Point) => {
-    if (!isDrawing || !startPointRef.current || !currentLineRef.current || !fabricCanvasRef.current) return;
+  /**
+   * Continue drawing a line
+   * @param canvas Fabric canvas
+   * @param point Current point
+   */
+  const continueDrawing = useCallback((
+    canvas: FabricCanvas,
+    point: Point
+  ): void => {
+    if (!isDrawing || !lineRef.current || !startPointRef.current) return;
     
-    // Process the point (snap to grid if enabled)
-    let processedPoint = processPoint(point);
+    // Apply grid snapping if enabled
+    const snappedPoint = snapToGrid ? snapToGridFn(point) : point;
     
-    // Apply angle constraints if enabled
-    if (anglesEnabled) {
-      const start = startPointRef.current;
-      const { end } = constrainToMajorAngles(start, processedPoint);
-      processedPoint = end;
-    }
+    // Auto-straighten the line if needed
+    const correctedPoint = autoStraighten(startPointRef.current, snappedPoint);
     
-    // Update the line
-    const line = currentLineRef.current;
-    line.set({
-      x2: processedPoint.x,
-      y2: processedPoint.y
+    // Update line coordinates
+    lineRef.current.set({
+      x2: correctedPoint.x,
+      y2: correctedPoint.y
     });
     
-    // Update measurement data
-    const measurementInfo = createOrUpdateMeasurement(startPointRef.current, processedPoint);
-    setMeasurementData(measurementInfo);
-    
-    // Render canvas
-    fabricCanvasRef.current.requestRenderAll();
-  }, [isDrawing, processPoint, anglesEnabled, fabricCanvasRef]);
+    canvas.renderAll();
+  }, [isDrawing, snapToGrid, snapToGridFn, autoStraighten]);
   
-  // Complete drawing (finish the line)
-  const handlePointerUp = useCallback((point: Point) => {
-    if (!isDrawing || !startPointRef.current || !currentLineRef.current || !fabricCanvasRef.current) return;
+  /**
+   * End drawing a line
+   * @param canvas Fabric canvas
+   */
+  const endDrawing = useCallback((
+    canvas: FabricCanvas
+  ): void => {
+    if (!isDrawing || !lineRef.current || !startPointRef.current) return;
     
-    const canvas = fabricCanvasRef.current;
+    // Get end point from current line
+    const endPoint: Point = {
+      x: lineRef.current.x2 ?? startPointRef.current.x,
+      y: lineRef.current.y2 ?? startPointRef.current.y
+    };
     
-    // Process the point (snap to grid if enabled)
-    let processedPoint = processPoint(point);
-    
-    // Apply angle constraints if enabled
-    if (anglesEnabled) {
-      const start = startPointRef.current;
-      const { end } = constrainToMajorAngles(start, processedPoint);
-      processedPoint = end;
-    }
-    
-    // Update the line one last time
-    const line = currentLineRef.current;
-    line.set({
-      x2: processedPoint.x,
-      y2: processedPoint.y
-    });
-    
-    // Clean up distance tooltip
-    if (distanceTooltipRef.current) {
-      canvas.remove(distanceTooltipRef.current);
-      distanceTooltipRef.current = null;
-    }
-    
-    // Calculate distance
-    const dx = processedPoint.x - startPointRef.current.x;
-    const dy = processedPoint.y - startPointRef.current.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Only keep the line if it has a meaningful length
-    if (distance > 5) {
-      // Set final line properties
-      line.set({
+    // Check if the line is too short
+    if (isLineTooShort(startPointRef.current, endPoint)) {
+      // Remove the line if it's too short
+      canvas.remove(lineRef.current);
+    } else {
+      // Make the line selectable and register the creation
+      lineRef.current.set({
         selectable: true,
-        evented: true,
-        objectType: 'straight-line',
-        metadata: {
-          startPoint: { ...startPointRef.current },
-          endPoint: { ...processedPoint },
-          length: distance,
-          angle: Math.atan2(dy, dx) * (180 / Math.PI)
-        }
+        evented: true
       });
       
-      // Create permanent measurement label
-      const distInMeters = (distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
-      createPermanentMeasurementLabel(startPointRef.current, processedPoint, `${distInMeters}m`);
-      
-      // Notify success
-      toast.success(`Line created: ${distInMeters}m`);
-    } else {
-      // Line too short, remove it
-      canvas.remove(line);
-      toast.info('Line discarded (too short)');
+      registerLineCreation(
+        canvas,
+        lineRef.current,
+        startPointRef.current,
+        endPoint
+      );
     }
     
-    // Reset drawing state
+    canvas.renderAll();
+    
+    // Reset state
     setIsDrawing(false);
+    lineRef.current = null;
     startPointRef.current = null;
-    currentLineRef.current = null;
-    setCurrentLine(null);
-    setMeasurementData(null);
-    
-    // Render canvas
-    canvas.requestRenderAll();
-  }, [isDrawing, processPoint, anglesEnabled, fabricCanvasRef]);
+  }, [isDrawing]);
   
-  // Cancel drawing (e.g., when pressing Escape)
-  const cancelDrawing = useCallback(() => {
-    if (!isDrawing || !fabricCanvasRef.current) return;
+  /**
+   * Cancel drawing a line
+   * @param canvas Fabric canvas
+   */
+  const cancelDrawing = useCallback((
+    canvas: FabricCanvas
+  ): void => {
+    if (!lineRef.current) return;
     
-    const canvas = fabricCanvasRef.current;
+    // Remove the line from canvas
+    canvas.remove(lineRef.current);
+    canvas.renderAll();
     
-    // Remove the line being drawn
-    if (currentLineRef.current) {
-      canvas.remove(currentLineRef.current);
-    }
-    
-    // Remove the measurement tooltip
-    if (distanceTooltipRef.current) {
-      canvas.remove(distanceTooltipRef.current);
-    }
-    
-    // Reset drawing state
+    // Reset state
     setIsDrawing(false);
+    lineRef.current = null;
     startPointRef.current = null;
-    currentLineRef.current = null;
-    setCurrentLine(null);
-    setMeasurementData(null);
-    
-    // Render canvas
-    canvas.requestRenderAll();
-    
-    toast.info('Drawing canceled');
-  }, [isDrawing, fabricCanvasRef]);
+  }, []);
   
-  // =========== HELPER FUNCTIONS ===========
-  
-  // Create or update measurement tooltip and data
-  const createOrUpdateMeasurement = useCallback((start: Point, end: Point): MeasurementData => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return { distance: 0, distanceText: '0m', angle: 0, angleText: '0°' };
-    
-    // Calculate distance and angle
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const distanceInMeters = (distance / GRID_CONSTANTS.PIXELS_PER_METER).toFixed(2);
-    
-    // Calculate angle in degrees
-    const angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
-    const angleText = `${Math.round(angleDeg)}°`;
-    
-    // Position for tooltip (midpoint of line)
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2 - 15; // Position above the line
-    
-    // Create or update tooltip
-    if (!distanceTooltipRef.current) {
-      // Create new tooltip
-      distanceTooltipRef.current = new Text(`${distanceInMeters}m ${angleText}`, {
-        left: midX,
-        top: midY,
-        fontSize: 14,
-        fill: lineColor,
-        backgroundColor: 'rgba(255,255,255,0.7)',
-        padding: 5,
-        objectType: 'measurement',
-        selectable: false,
-        originX: 'center',
-        originY: 'bottom'
-      });
-      
-      canvas.add(distanceTooltipRef.current);
-    } else {
-      // Update existing tooltip
-      distanceTooltipRef.current.set({
-        text: `${distanceInMeters}m ${angleText}`,
-        left: midX,
-        top: midY
-      });
-    }
-    
-    // Return measurement data
-    return {
-      distance,
-      distanceText: `${distanceInMeters}m`,
-      angle: angleDeg,
-      angleText
-    };
-  }, [fabricCanvasRef, lineColor]);
-  
-  // Create permanent measurement label
-  const createPermanentMeasurementLabel = useCallback((start: Point, end: Point, label: string) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return null;
-    
-    // Position for label (midpoint of line)
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2 - 10;
-    
-    // Create permanent label
-    const measurementLabel = new Text(label, {
-      left: midX,
-      top: midY,
-      fontSize: 12,
-      fill: lineColor,
-      backgroundColor: 'rgba(255,255,255,0.5)',
-      padding: 3,
-      objectType: 'measurement-label',
-      selectable: true,
-      originX: 'center',
-      originY: 'bottom'
-    });
-    
-    canvas.add(measurementLabel);
-    return measurementLabel;
-  }, [fabricCanvasRef, lineColor]);
-  
-  // Set up event handlers and tool state
+  // Cleanup on unmount or when mode changes
   useEffect(() => {
-    // Update active state based on 'enabled' prop
-    setIsActive(enabled);
-    
-    if (enabled && !isToolInitialized) {
-      setIsToolInitialized(true);
-    }
-    
-    // Clean up drawing state when tool is disabled
-    if (!enabled && isDrawing) {
-      cancelDrawing();
-    }
-  }, [enabled, isToolInitialized, isDrawing, cancelDrawing]);
-  
-  // Attach canvas event handlers
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !isActive) return;
-    
-    logger.info('Attaching straight line event handlers to canvas', { isActive, isToolInitialized });
-    
-    // Configure canvas for line drawing
-    canvas.isDrawingMode = false;
-    canvas.selection = false;
-    canvas.defaultCursor = 'crosshair';
-    
     return () => {
-      // Clean up if drawing is still in progress when component unmounts
-      if (isDrawing) {
-        cancelDrawing();
-      }
+      setIsDrawing(false);
+      lineRef.current = null;
+      startPointRef.current = null;
     };
-  }, [fabricCanvasRef, isActive, isDrawing, cancelDrawing]);
+  }, [isActive]);
   
   return {
-    isDrawing,
     isActive,
-    inputMethod,
-    isPencilMode,
-    snapEnabled,
-    anglesEnabled,
-    measurementData,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    cancelDrawing,
-    toggleGridSnapping,
-    toggleAngles,
-    startPointRef,
-    currentLineRef,
-    currentLine
+    isDrawing,
+    currentLine: lineRef.current,
+    startDrawing,
+    continueDrawing,
+    endDrawing,
+    cancelDrawing
   };
 };
