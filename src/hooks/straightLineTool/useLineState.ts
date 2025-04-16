@@ -4,7 +4,7 @@
  * @module hooks/straightLineTool/useLineState
  */
 import { useState, useRef } from 'react';
-import { Line } from 'fabric';
+import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Geometry';
 
 /**
@@ -23,6 +23,7 @@ export enum InputMethod {
 export interface UseLineStateProps {
   lineColor: string;
   lineThickness: number;
+  fabricCanvasRef?: React.MutableRefObject<Canvas | null>;
   snapToGrid?: boolean;
   angleConstraint?: boolean;
 }
@@ -35,11 +36,13 @@ export interface UseLineStateProps {
 export const useLineState = ({
   lineColor,
   lineThickness,
+  fabricCanvasRef,
   snapToGrid = false,
   angleConstraint = false
 }: UseLineStateProps) => {
   // State for line drawing
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isToolInitialized, setIsToolInitialized] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
   const [distanceTooltip, setDistanceTooltip] = useState<any | null>(null);
@@ -71,6 +74,7 @@ export const useLineState = ({
       strokeWidth: lineThickness,
       selectable: true,
       evented: true,
+      objectType: 'line',
       data: {
         type: 'measurement-line',
         inputMethod: inputMethod
@@ -93,6 +97,7 @@ export const useLineState = ({
     // In a real app, this would create a proper text or group object
     const tooltip = {
       type: 'tooltip',
+      objectType: 'tooltip',
       position: { x, y },
       distance
     };
@@ -169,9 +174,22 @@ export const useLineState = ({
   };
   
   /**
+   * Initialize the tool
+   */
+  const initializeTool = () => {
+    const canvas = fabricCanvasRef?.current;
+    if (canvas) {
+      canvas.selection = false;
+      canvas.defaultCursor = 'crosshair';
+      canvas.isDrawingMode = false;
+    }
+    setIsToolInitialized(true);
+  };
+  
+  /**
    * Toggle grid snapping
    */
-  const toggleGridSnapping = () => {
+  const toggleSnap = () => {
     setSnapEnabled(prev => !prev);
   };
   
@@ -184,6 +202,7 @@ export const useLineState = ({
   
   return {
     isDrawing,
+    isToolInitialized,
     startPoint,
     currentLine,
     distanceTooltip,
@@ -206,7 +225,8 @@ export const useLineState = ({
     resetDrawingState,
     updateLineAndTooltip,
     snapPointToGrid,
-    toggleGridSnapping,
+    initializeTool,
+    toggleSnap,
     toggleAngles
   };
 };

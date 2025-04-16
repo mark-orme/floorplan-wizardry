@@ -58,7 +58,7 @@ export interface DrawingToolbarProps {
  * @param props Component props
  * @returns Rendered component
  */
-const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
+export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   activeTool,
   lineColor,
   lineThickness,
@@ -115,4 +115,5 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   );
 };
 
+// Export as default for backward compatibility
 export default DrawingToolbar;

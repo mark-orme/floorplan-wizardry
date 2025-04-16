@@ -13,6 +13,3 @@ export * from './monitoring/errorReporting';
 
 // Export health check utilities
 export * from './monitoring/canvasHealthCheck';
-
-// Export performance monitoring utilities
-export * from './monitoring/performanceMonitoring';

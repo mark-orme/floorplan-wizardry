@@ -31,8 +31,8 @@ export function registerLineCreation(
     }
   });
   
-  // Fire a custom event for line creation
-  canvas.fire('object:created', { target: line });
+  // Fire a custom event - works with our extended types
+  canvas.fire('object:created' as any, { target: line });
 }
 
 /**

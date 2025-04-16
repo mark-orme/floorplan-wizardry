@@ -63,7 +63,9 @@ export const useLineToolHandlers = (props: UseLineToolHandlersProps) => {
       
       // Handle grid snapping toggle
       if (e.key === 'g' || e.key === 'G') {
-        lineState.toggleSnap();
+        if (lineState.toggleSnap) {
+          lineState.toggleSnap();
+        }
       }
     };
     

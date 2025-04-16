@@ -1,19 +1,19 @@
 
 /**
- * Canvas actions component
+ * Canvas actions component for the drawing toolbar
  * @module components/toolbar/CanvasActions
  */
 import React from 'react';
-import { 
-  Trash2, 
-  Save, 
-  Upload, 
+import {
+  Trash2,
+  Save,
+  UploadCloud,
   Download,
-  Undo,
-  Redo,
+  Undo2,
+  Redo2,
   ZoomIn,
   ZoomOut,
-  Maximize,
+  RefreshCw,
   Grid
 } from 'lucide-react';
 import { ToolbarButton } from './ToolbarButton';
@@ -69,11 +69,11 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
   canRedo = false
 }) => {
   return (
-    <ToolbarSection title="Actions">
-      {/* History actions */}
+    <ToolbarSection title="Canvas Actions">
+      {/* Undo */}
       {onUndo && (
         <ToolbarButton
-          icon={<Undo size={20} />}
+          icon={<Undo2 size={20} />}
           label="Undo"
           tooltip="Undo last action"
           onClick={onUndo}
@@ -81,62 +81,18 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
         />
       )}
       
+      {/* Redo */}
       {onRedo && (
         <ToolbarButton
-          icon={<Redo size={20} />}
+          icon={<Redo2 size={20} />}
           label="Redo"
-          tooltip="Redo last undone action"
+          tooltip="Redo last action"
           onClick={onRedo}
           disabled={!canRedo}
         />
       )}
       
-      {(onUndo || onRedo) && <div className="w-px h-6 bg-border mx-1" />}
-      
-      {/* Zoom actions */}
-      {onZoomIn && (
-        <ToolbarButton
-          icon={<ZoomIn size={20} />}
-          label="Zoom In"
-          tooltip="Zoom in"
-          onClick={onZoomIn}
-        />
-      )}
-      
-      {onZoomOut && (
-        <ToolbarButton
-          icon={<ZoomOut size={20} />}
-          label="Zoom Out"
-          tooltip="Zoom out"
-          onClick={onZoomOut}
-        />
-      )}
-      
-      {onResetZoom && (
-        <ToolbarButton
-          icon={<Maximize size={20} />}
-          label="Reset Zoom"
-          tooltip="Reset zoom"
-          onClick={onResetZoom}
-        />
-      )}
-      
-      {(onZoomIn || onZoomOut || onResetZoom) && <div className="w-px h-6 bg-border mx-1" />}
-      
-      {/* Grid toggle */}
-      {onToggleGrid && (
-        <ToolbarButton
-          icon={<Grid size={20} />}
-          label="Toggle Grid"
-          tooltip="Toggle grid visibility"
-          onClick={onToggleGrid}
-          active={gridVisible}
-        />
-      )}
-      
-      {onToggleGrid && <div className="w-px h-6 bg-border mx-1" />}
-      
-      {/* Canvas operations */}
+      {/* Clear */}
       {onClear && (
         <ToolbarButton
           icon={<Trash2 size={20} />}
@@ -146,6 +102,7 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
         />
       )}
       
+      {/* Save */}
       {onSave && (
         <ToolbarButton
           icon={<Save size={20} />}
@@ -155,21 +112,64 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
         />
       )}
       
+      {/* Import */}
       {onImport && (
         <ToolbarButton
-          icon={<Upload size={20} />}
+          icon={<UploadCloud size={20} />}
           label="Import"
-          tooltip="Import from file"
+          tooltip="Import canvas"
           onClick={onImport}
         />
       )}
       
+      {/* Export */}
       {onExport && (
         <ToolbarButton
           icon={<Download size={20} />}
           label="Export"
-          tooltip="Export to file"
+          tooltip="Export canvas"
           onClick={onExport}
+        />
+      )}
+      
+      {/* Zoom in */}
+      {onZoomIn && (
+        <ToolbarButton
+          icon={<ZoomIn size={20} />}
+          label="Zoom In"
+          tooltip="Zoom in"
+          onClick={onZoomIn}
+        />
+      )}
+      
+      {/* Zoom out */}
+      {onZoomOut && (
+        <ToolbarButton
+          icon={<ZoomOut size={20} />}
+          label="Zoom Out"
+          tooltip="Zoom out"
+          onClick={onZoomOut}
+        />
+      )}
+      
+      {/* Reset zoom */}
+      {onResetZoom && (
+        <ToolbarButton
+          icon={<RefreshCw size={20} />}
+          label="Reset Zoom"
+          tooltip="Reset zoom"
+          onClick={onResetZoom}
+        />
+      )}
+      
+      {/* Toggle grid */}
+      {onToggleGrid && (
+        <ToolbarButton
+          icon={<Grid size={20} />}
+          label="Toggle Grid"
+          tooltip={gridVisible ? 'Hide grid' : 'Show grid'}
+          onClick={onToggleGrid}
+          active={gridVisible}
         />
       )}
     </ToolbarSection>

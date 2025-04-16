@@ -5,43 +5,91 @@
  */
 
 /**
- * Severity levels for canvas errors
+ * Canvas initialization error
  */
-export enum ErrorSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
+export class CanvasInitializationError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'CanvasInitializationError';
+  }
 }
 
 /**
- * Canvas error categories
+ * Canvas rendering error
  */
-export enum ErrorCategory {
-  INITIALIZATION = 'initialization',
-  RENDERING = 'rendering',
-  INTERACTION = 'interaction',
-  TOOL = 'tool',
-  GRID = 'grid',
-  OBJECTS = 'objects',
-  PERFORMANCE = 'performance',
-  OTHER = 'other'
+export class CanvasRenderingError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'CanvasRenderingError';
+  }
 }
 
 /**
- * Canvas error information structure
+ * Object creation error
  */
-export interface CanvasErrorInfo {
-  /** Error message */
-  message: string;
-  /** Error category */
-  category: ErrorCategory;
-  /** Error severity */
-  severity: ErrorSeverity;
-  /** Stack trace if available */
-  stack?: string;
-  /** Timestamp when error occurred */
-  timestamp: number;
-  /** Additional context about the error */
-  context?: Record<string, any>;
+export class ObjectCreationError extends Error {
+  constructor(message: string, public readonly details?: Record<string, unknown>) {
+    super(message);
+    this.name = 'ObjectCreationError';
+  }
+}
+
+/**
+ * Grid creation error
+ */
+export class GridCreationError extends Error {
+  constructor(message: string, public readonly gridType?: string) {
+    super(message);
+    this.name = 'GridCreationError';
+  }
+}
+
+/**
+ * Tool initialization error
+ */
+export class ToolInitializationError extends Error {
+  constructor(message: string, public readonly toolName?: string) {
+    super(message);
+    this.name = 'ToolInitializationError';
+  }
+}
+
+/**
+ * Event handling error
+ */
+export class EventHandlingError extends Error {
+  constructor(message: string, public readonly eventName?: string) {
+    super(message);
+    this.name = 'EventHandlingError';
+  }
+}
+
+/**
+ * History operation error
+ */
+export class HistoryOperationError extends Error {
+  constructor(message: string, public readonly operation?: 'undo' | 'redo' | 'save') {
+    super(message);
+    this.name = 'HistoryOperationError';
+  }
+}
+
+/**
+ * JSON serialization error
+ */
+export class SerializationError extends Error {
+  constructor(message: string, public readonly direction?: 'toJSON' | 'fromJSON') {
+    super(message);
+    this.name = 'SerializationError';
+  }
+}
+
+/**
+ * Canvas export error
+ */
+export class ExportError extends Error {
+  constructor(message: string, public readonly format?: string) {
+    super(message);
+    this.name = 'ExportError';
+  }
 }

@@ -3,101 +3,148 @@
  * Canvas health check utilities
  * @module utils/canvas/monitoring/canvasHealthCheck
  */
-
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
 /**
- * Generates a diagnostic report about canvas state
- * @returns Diagnostic information about the canvas
+ * Canvas health status
  */
-export const generateCanvasDiagnosticReport = (): Record<string, any> => {
-  // Check DOM readiness
-  const domReady = document.readyState === 'complete';
-  
-  // Check canvas elements in the DOM
-  const canvasElements = document.querySelectorAll('canvas');
-  const canvasCount = canvasElements.length;
-  
-  // Check for Fabric.js canvas instances
-  const fabricInstanceCount = document.querySelectorAll('.canvas-container').length;
-  
-  // Check global canvas state if available
-  const globalCanvasState = (window as any).__canvas_state || null;
-  
-  // Get fabric elements info
-  const fabricElements = [];
-  for (let i = 0; i < canvasElements.length; i++) {
-    const canvas = canvasElements[i];
-    fabricElements.push({
-      id: canvas.id || `canvas-${i}`,
-      width: canvas.width,
-      height: canvas.height,
-      parentVisible: canvas.parentElement ? getComputedStyle(canvas.parentElement).display !== 'none' : false,
-      visible: getComputedStyle(canvas).display !== 'none',
-      hasContainer: canvas.parentElement?.classList.contains('canvas-container') || false
-    });
-  }
-  
-  // Build diagnostic report
-  return {
-    timestamp: Date.now(),
-    domReady,
-    canvasElements: {
-      count: canvasCount,
-      hasFabricInstances: fabricInstanceCount > 0,
-      fabricInstanceCount,
-      elements: fabricElements
-    },
-    fabricState: globalCanvasState,
-    windowDimensions: {
-      innerWidth: window.innerWidth,
-      innerHeight: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio
-    },
-    documentMode: document.compatMode
+export interface CanvasHealthStatus {
+  isInitialized: boolean;
+  hasObjects: boolean;
+  objectCount: number;
+  isDrawingMode: boolean;
+  dimensions: {
+    width: number;
+    height: number;
   };
+  hasSelections: boolean;
+  gridLayerExists: boolean;
+  sessionDuration: number;
+  lastRenderTime: number | null;
+  memoryUsage: {
+    jsHeapSize: number;
+    totalJSHeapSize: number;
+    usedJSHeapSize: number;
+  } | null;
+}
+
+/**
+ * Default health status
+ */
+const DEFAULT_HEALTH_STATUS: CanvasHealthStatus = {
+  isInitialized: false,
+  hasObjects: false,
+  objectCount: 0,
+  isDrawingMode: false,
+  dimensions: {
+    width: 0,
+    height: 0
+  },
+  hasSelections: false,
+  gridLayerExists: false,
+  sessionDuration: 0,
+  lastRenderTime: null,
+  memoryUsage: null
 };
 
 /**
- * Checks if Fabric.js is properly loaded
- * @returns Information about the Fabric.js loading status
+ * Session start time
  */
-export const checkFabricJsLoading = (): Record<string, any> => {
-  // Check if Fabric constructor exists
-  const fabricDetected = typeof FabricCanvas === 'function';
-  
-  // Try to detect Fabric.js version
-  let fabricVersion = 'unknown';
-  let fabricProblem = null;
-  
-  try {
-    // Check for version in different possible locations
-    if (typeof (FabricCanvas as any).version === 'string') {
-      fabricVersion = (FabricCanvas as any).version;
-    } else if (typeof fabric === 'object' && fabric.version) {
-      fabricVersion = fabric.version;
-    }
-  } catch (error) {
-    fabricProblem = 'Error accessing Fabric.js version';
+const SESSION_START_TIME = Date.now();
+
+/**
+ * Get canvas health status
+ * @param canvas Canvas to check
+ * @returns Canvas health status
+ */
+export function getCanvasHealthStatus(canvas: Canvas | null): CanvasHealthStatus {
+  if (!canvas) {
+    return DEFAULT_HEALTH_STATUS;
   }
+
+  // Get objects
+  const objects = canvas.getObjects();
+  const gridLayer = objects.filter(obj => obj.objectType === 'grid');
   
-  // Check if Fabric.js can create a canvas
-  let canCreateCanvas = false;
-  
-  try {
-    if (fabricDetected) {
-      // Just check the constructor, don't actually create an instance
-      canCreateCanvas = true;
-    }
-  } catch (error) {
-    fabricProblem = 'Cannot create Fabric.js canvas';
-  }
+  // Get memory usage
+  const memoryUsage = typeof performance !== 'undefined' && 'memory' in performance ? 
+    {
+      jsHeapSize: (performance as any).memory.jsHeapSizeLimit,
+      totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
+      usedJSHeapSize: (performance as any).memory.usedJSHeapSize
+    } : null;
   
   return {
-    fabricDetected,
-    fabricVersion,
-    canCreateCanvas,
-    fabricProblem,
-    checked: Date.now()
+    isInitialized: true,
+    hasObjects: objects.length > 0,
+    objectCount: objects.length,
+    isDrawingMode: canvas.isDrawingMode,
+    dimensions: {
+      width: canvas.width || 0,
+      height: canvas.height || 0
+    },
+    hasSelections: !!canvas.getActiveObject(),
+    gridLayerExists: gridLayer.length > 0,
+    sessionDuration: Date.now() - SESSION_START_TIME,
+    lastRenderTime: canvas.__lastRenderTime || null,
+    memoryUsage
   };
-};
+}
+
+/**
+ * Check if canvas is healthy
+ * @param canvas Canvas to check
+ * @returns True if canvas is healthy
+ */
+export function isCanvasHealthy(canvas: Canvas | null): boolean {
+  if (!canvas) {
+    return false;
+  }
+  
+  const status = getCanvasHealthStatus(canvas);
+  return status.isInitialized && !isNaN(status.dimensions.width) && !isNaN(status.dimensions.height);
+}
+
+/**
+ * Generate canvas diagnostic report
+ * @param canvas Canvas to check
+ * @returns Diagnostic report
+ */
+export function generateCanvasDiagnosticReport(canvas: Canvas | null): string {
+  const status = getCanvasHealthStatus(canvas);
+  
+  return `
+Canvas Diagnostic Report:
+------------------------
+Time: ${new Date().toISOString()}
+Session Duration: ${Math.floor(status.sessionDuration / 1000)}s
+
+Canvas Status:
+- Initialized: ${status.isInitialized}
+- Drawing Mode: ${status.isDrawingMode}
+- Dimensions: ${status.dimensions.width}x${status.dimensions.height}
+
+Objects:
+- Total: ${status.objectCount}
+- Has Selections: ${status.hasSelections}
+- Grid Layer: ${status.gridLayerExists}
+
+Memory (if available):
+${status.memoryUsage ? `- JS Heap Size: ${Math.round(status.memoryUsage.jsHeapSize / 1024 / 1024)}MB
+- Total JS Heap: ${Math.round(status.memoryUsage.totalJSHeapSize / 1024 / 1024)}MB
+- Used JS Heap: ${Math.round(status.memoryUsage.usedJSHeapSize / 1024 / 1024)}MB` : '- Not available'}
+`;
+}
+
+/**
+ * Check if Fabric.js is loaded correctly
+ * @returns True if Fabric.js is loaded
+ */
+export function checkFabricJsLoading(): boolean {
+  try {
+    return typeof FabricObject !== 'undefined';
+  } catch (error) {
+    console.error('Fabric.js loading check failed:', error);
+    return false;
+  }
+}

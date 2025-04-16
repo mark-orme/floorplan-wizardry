@@ -1,14 +1,22 @@
 
 /**
- * Style options component
+ * Style options component for the drawing toolbar
  * @module components/toolbar/StyleOptions
  */
-import React from 'react';
-import { Palette, Minus, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Palette, Plus, Minus, PaintBucket } from 'lucide-react';
 import { ToolbarButton } from './ToolbarButton';
-import { ToolbarPopover } from './ToolbarPopover';
 import { ToolbarSection } from './ToolbarSection';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { HexColorPicker } from 'react-colorful';
+
+// Common color presets for quick selection
+const COLOR_PRESETS = [
+  '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF',
+  '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080'
+];
 
 export interface StyleOptionsProps {
   /** Current line color */
@@ -32,117 +40,126 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
   onColorChange,
   onThicknessChange
 }) => {
-  // Available colors
-  const colors = [
-    '#000000', // Black
-    '#333333', // Dark gray
-    '#666666', // Gray
-    '#ffffff', // White
-    '#ff0000', // Red
-    '#ff8000', // Orange
-    '#ffff00', // Yellow
-    '#00ff00', // Green
-    '#00ffff', // Cyan
-    '#0000ff', // Blue
-    '#8000ff', // Purple
-    '#ff00ff'  // Magenta
-  ];
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   
-  // Line thickness range
-  const minThickness = 1;
-  const maxThickness = 20;
-  
-  // Increment/decrement thickness
-  const handleIncrement = () => {
-    onThicknessChange(Math.min(lineThickness + 1, maxThickness));
+  // Handle thickness change
+  const handleThicknessChange = (value: number[]) => {
+    onThicknessChange(value[0]);
   };
   
-  const handleDecrement = () => {
-    onThicknessChange(Math.max(lineThickness - 1, minThickness));
+  // Handle thickness increase
+  const handleThicknessIncrease = () => {
+    // Cap at 20px
+    onThicknessChange(Math.min(lineThickness + 1, 20));
   };
+  
+  // Handle thickness decrease
+  const handleThicknessDecrease = () => {
+    // Min of 1px
+    onThicknessChange(Math.max(lineThickness - 1, 1));
+  };
+  
+  // Render color preset button
+  const renderColorPreset = (color: string) => (
+    <button
+      key={color}
+      className="w-5 h-5 rounded-full border border-gray-300 cursor-pointer"
+      style={{ backgroundColor: color }}
+      onClick={() => {
+        onColorChange(color);
+        setColorPickerOpen(false);
+      }}
+    />
+  );
+  
+  // Color button with popover
+  const colorButton = (
+    <ToolbarButton
+      icon={<Palette size={20} />}
+      label="Color"
+      tooltip="Change color"
+      onClick={() => {}} // This is required by the ToolbarButton props
+    />
+  );
   
   return (
-    <ToolbarSection title="Style">
+    <ToolbarSection title="Style Options">
       {/* Color picker */}
-      <ToolbarPopover
-        trigger={
-          <ToolbarButton
-            icon={<Palette size={20} style={{ color: lineColor }} />}
-            label="Color"
-            tooltip="Change color"
-            onClick={() => {}} // Add empty onClick handler
+      <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+        <PopoverTrigger asChild>
+          {colorButton}
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3">
+          <div className="mb-3">
+            <HexColorPicker color={lineColor} onChange={onColorChange} />
+          </div>
+          
+          <div className="mb-3">
+            <Input
+              type="text"
+              value={lineColor}
+              onChange={(e) => onColorChange(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-1">
+            {COLOR_PRESETS.map(renderColorPreset)}
+          </div>
+        </PopoverContent>
+      </Popover>
+      
+      {/* Current color preview */}
+      <ToolbarButton
+        icon={
+          <div
+            className="w-5 h-5 rounded-full border border-gray-300"
+            style={{ backgroundColor: lineColor }}
           />
         }
-        side="bottom"
-      >
-        <div className="grid grid-cols-4 gap-1 w-36">
-          {colors.map(color => (
-            <button
-              key={color}
-              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
-              style={{ backgroundColor: color }}
-              onClick={() => onColorChange(color)}
-              title={color}
-            >
-              {color === lineColor && (
-                <div className="w-2 h-2 rounded-full bg-white border border-gray-500" />
-              )}
-            </button>
-          ))}
-        </div>
-      </ToolbarPopover>
+        label="Current Color"
+        tooltip="Current color"
+        onClick={() => setColorPickerOpen(true)}
+      />
       
-      {/* Line thickness */}
+      {/* Decrease thickness */}
       <ToolbarButton
         icon={<Minus size={20} />}
-        label="Decrease thickness"
+        label="Decrease Thickness"
         tooltip="Decrease thickness"
-        onClick={handleDecrement}
-        disabled={lineThickness <= minThickness}
+        onClick={handleThicknessDecrease}
+        disabled={lineThickness <= 1}
       />
       
-      <ToolbarPopover
-        trigger={
-          <ToolbarButton
-            icon={
-              <div className="relative w-6 h-6 flex items-center justify-center">
-                <div
-                  className="absolute bg-current rounded-full"
-                  style={{
-                    width: `${Math.min(100, lineThickness * 5)}%`,
-                    height: `${Math.min(100, lineThickness * 5)}%`
-                  }}
-                />
-              </div>
-            }
-            label={`Thickness: ${lineThickness}`}
-            tooltip={`Line thickness: ${lineThickness}px`}
-            onClick={() => {}} // Add empty onClick handler
-          />
-        }
-        side="bottom"
-      >
-        <div className="w-36 px-2">
-          <Slider
-            value={[lineThickness]}
-            min={minThickness}
-            max={maxThickness}
-            step={1}
-            onValueChange={values => onThicknessChange(values[0])}
-          />
-          <div className="text-center mt-2 text-xs">
-            {lineThickness}px
-          </div>
-        </div>
-      </ToolbarPopover>
+      {/* Thickness value */}
+      <ToolbarButton
+        icon={<span className="text-xs font-medium">{lineThickness}px</span>}
+        label="Thickness"
+        tooltip="Line thickness"
+        onClick={() => {}} // This is required by the ToolbarButton props
+      />
       
+      {/* Increase thickness */}
       <ToolbarButton
         icon={<Plus size={20} />}
-        label="Increase thickness"
+        label="Increase Thickness"
         tooltip="Increase thickness"
-        onClick={handleIncrement}
-        disabled={lineThickness >= maxThickness}
+        onClick={handleThicknessIncrease}
+        disabled={lineThickness >= 20}
       />
+      
+      {/* Thickness slider */}
+      <div className="w-24 px-2">
+        <Slider
+          defaultValue={[lineThickness]}
+          min={1}
+          max={20}
+          step={1}
+          value={[lineThickness]}
+          onValueChange={handleThicknessChange}
+          className="h-4"
+        />
+      </div>
     </ToolbarSection>
   );
 };

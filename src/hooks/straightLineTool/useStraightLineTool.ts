@@ -45,6 +45,7 @@ export const useStraightLineTool = ({
   const lineState = useLineState({
     lineColor,
     lineThickness,
+    fabricCanvasRef: actualCanvasRef,
     snapToGrid,
     angleConstraint
   });
@@ -177,6 +178,10 @@ export const useStraightLineTool = ({
     handlePointerMove,
     handlePointerUp,
     cancelDrawing,
+    toggleGridSnapping: lineState.toggleSnap,
+    toggleAngles: lineState.toggleAngles,
+    startPointRef: lineState.startPointRef,
+    currentLineRef: lineState.currentLineRef,
     lineEvents
   };
 };
