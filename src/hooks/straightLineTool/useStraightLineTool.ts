@@ -3,10 +3,17 @@ import { useEffect, useCallback, useState } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useLineState } from './useLineState';
-import { InputMethod } from './useLineInputMethod';
 import { useLineToolHandlers } from './useLineToolHandlers';
 import { captureError } from '@/utils/sentryUtils';
 import { toast } from 'sonner';
+
+// Make sure we export InputMethod so other modules can use it
+export enum InputMethod {
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  PENCIL = 'pencil',
+  STYLUS = 'stylus'
+}
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
@@ -30,7 +37,12 @@ export const useStraightLineTool = ({
     angle: number;
     snapped: boolean;
     unit: string;
-  } | null>(null);
+  }>({
+    distance: 0,
+    angle: 0,
+    snapped: false,
+    unit: 'px'
+  });
 
   // Initialize the main line state
   const lineState = useLineState({
@@ -131,9 +143,46 @@ export const useStraightLineTool = ({
     };
   }, [enabled, activateTool, deactivateTool]);
 
+  // Create handler functions for the StraightLineToolDemo component
+  const handlePointerDown = useCallback((e: any) => {
+    handleMouseDown(e);
+  }, [handleMouseDown]);
+
+  const handlePointerMove = useCallback((e: any) => {
+    handleMouseMove(e);
+  }, [handleMouseMove]);
+
+  const handlePointerUp = useCallback((e: any) => {
+    handleMouseUp(e);
+  }, [handleMouseUp]);
+
+  const toggleGridSnapping = useCallback(() => {
+    if (lineState.toggleSnap) {
+      lineState.toggleSnap();
+    }
+  }, [lineState]);
+
+  const toggleAngles = useCallback(() => {
+    if (lineState.toggleAngles) {
+      lineState.toggleAngles();
+    }
+  }, [lineState]);
+
   return {
     isActive,
-    ...lineState,
-    measurementData
+    isEnabled: enabled,
+    isDrawing: lineState.isDrawing,
+    inputMethod: lineState.inputMethod,
+    isPencilMode: lineState.isPencilMode,
+    snapEnabled: lineState.snapEnabled,
+    anglesEnabled: lineState.anglesEnabled,
+    measurementData,
+    toggleGridSnapping,
+    toggleAngles,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    cancelDrawing: lineState.cancelDrawing,
+    ...lineState
   };
 };

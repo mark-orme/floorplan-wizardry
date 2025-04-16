@@ -9,8 +9,12 @@
  * @param error The error to capture
  * @param context Optional additional context
  */
-export const captureError = (error: Error, context?: Record<string, any>): void => {
-  console.error('Error captured:', error, context);
+export const captureError = (
+  error: Error, 
+  contextId?: string,
+  additionalData?: Record<string, any>
+): void => {
+  console.error('Error captured:', error, contextId, additionalData);
   // In a real implementation, this would send the error to Sentry
 };
 
@@ -23,8 +27,9 @@ export const captureError = (error: Error, context?: Record<string, any>): void 
 export const captureMessage = (
   message: string,
   level: 'info' | 'warning' | 'error' = 'info',
-  context?: Record<string, any>
+  contextId?: string,
+  additionalData?: Record<string, any>
 ): void => {
-  console[level]('Message captured:', message, context);
+  console[level]('Message captured:', message, contextId, additionalData);
   // In a real implementation, this would send the message to Sentry
 };
