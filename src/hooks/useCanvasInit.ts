@@ -1,3 +1,4 @@
+
 /**
  * Canvas initialization hook
  * Handles additional canvas initialization logic and error monitoring
@@ -9,8 +10,9 @@ import { captureMessage, captureError } from '@/utils/sentryUtils';
 import { markInitialized } from '@/utils/healthMonitoring';
 import { 
   generateCanvasDiagnosticReport, 
-  checkFabricJsLoading
-} from '@/utils/canvas/canvasErrorMonitoring';
+  checkFabricJsLoading,
+  FabricLoadingStatus
+} from '@/utils/canvas/monitoring/canvasHealthCheck';
 import {
   safeCanvasInitialization
 } from '@/utils/canvas/safeCanvasInitialization';
@@ -71,7 +73,7 @@ export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitPr
       return () => clearTimeout(timer);
     }
     
-    const fabricStatus = checkFabricJsLoading();
+    const fabricStatus: FabricLoadingStatus = checkFabricJsLoading();
     
     captureMessage(
       fabricStatus.fabricDetected 

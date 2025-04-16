@@ -1,26 +1,18 @@
 
-/**
- * Straight line icon component
- * @module components/icons/StraightLine
- */
 import React from 'react';
 
-interface StraightLineProps {
+export interface StraightLineProps {
   size?: number;
   color?: string;
   strokeWidth?: number;
+  className?: string;
 }
 
-/**
- * Straight line icon component
- * Follows lucide-react icon patterns for compatibility
- * @param props Component props
- * @returns Rendered component
- */
 export const StraightLine: React.FC<StraightLineProps> = ({
   size = 24,
   color = 'currentColor',
-  strokeWidth = 2
+  strokeWidth = 2,
+  className = '',
 }) => {
   return (
     <svg
@@ -32,8 +24,9 @@ export const StraightLine: React.FC<StraightLineProps> = ({
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
     >
-      <path d="M5 19L19 5" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
 };

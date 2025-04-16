@@ -29,6 +29,15 @@ export interface CanvasHealthStatus {
 }
 
 /**
+ * Fabric.js loading status
+ */
+export interface FabricLoadingStatus {
+  fabricDetected: boolean;
+  fabricVersion: string | null;
+  fabricProblem: string | null;
+}
+
+/**
  * Default health status
  */
 const DEFAULT_HEALTH_STATUS: CanvasHealthStatus = {
@@ -86,7 +95,7 @@ export function getCanvasHealthStatus(canvas: Canvas | null): CanvasHealthStatus
     hasSelections: !!canvas.getActiveObject(),
     gridLayerExists: gridLayer.length > 0,
     sessionDuration: Date.now() - SESSION_START_TIME,
-    lastRenderTime: canvas.__lastRenderTime || null,
+    lastRenderTime: (canvas as any)._lastRenderTime || null,
     memoryUsage
   };
 }
@@ -110,7 +119,7 @@ export function isCanvasHealthy(canvas: Canvas | null): boolean {
  * @param canvas Canvas to check
  * @returns Diagnostic report
  */
-export function generateCanvasDiagnosticReport(canvas: Canvas | null): string {
+export function generateCanvasDiagnosticReport(canvas: Canvas | null = null): string {
   const status = getCanvasHealthStatus(canvas);
   
   return `
@@ -138,13 +147,32 @@ ${status.memoryUsage ? `- JS Heap Size: ${Math.round(status.memoryUsage.jsHeapSi
 
 /**
  * Check if Fabric.js is loaded correctly
- * @returns True if Fabric.js is loaded
+ * @returns Fabric.js loading status
  */
-export function checkFabricJsLoading(): boolean {
+export function checkFabricJsLoading(): FabricLoadingStatus {
   try {
-    return typeof FabricObject !== 'undefined';
+    // Check if FabricObject is defined
+    if (typeof FabricObject === 'undefined') {
+      return {
+        fabricDetected: false,
+        fabricVersion: null,
+        fabricProblem: 'Fabric.js Object not defined'
+      };
+    }
+    
+    // Try to get fabric version
+    const fabricVersion = (window as any).fabric?.version || 'unknown';
+    
+    return {
+      fabricDetected: true,
+      fabricVersion,
+      fabricProblem: null
+    };
   } catch (error) {
-    console.error('Fabric.js loading check failed:', error);
-    return false;
+    return {
+      fabricDetected: false,
+      fabricVersion: null,
+      fabricProblem: error instanceof Error ? error.message : String(error)
+    };
   }
 }

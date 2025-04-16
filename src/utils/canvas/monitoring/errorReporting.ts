@@ -9,26 +9,43 @@ import { generateCanvasDiagnosticReport, getCanvasHealthStatus } from './canvasH
 /**
  * Log canvas initialization attempt
  * @param containerId Container ID
+ * @param additionalInfo Additional info about the initialization attempt
+ * @returns The attempt number
  */
-export function logCanvasInitAttempt(containerId: string): void {
-  console.log(`Canvas initialization attempt for container ${containerId}`);
+export function logCanvasInitAttempt(containerId: string, additionalInfo: Record<string, any> = {}): number {
+  console.log(`Canvas initialization attempt for container ${containerId}`, additionalInfo);
+  // Return a standardized attempt number (simulated for now)
+  return 1;
 }
 
 /**
  * Log canvas initialization success
- * @param canvas Initialized canvas
+ * @param canvasId Canvas ID
+ * @param initDuration Time taken to initialize in ms
+ * @param additionalInfo Additional initialization info
  */
-export function logCanvasInitSuccess(canvas: Canvas): void {
-  console.log(`Canvas initialized successfully: ${canvas.width}x${canvas.height}`);
+export function logCanvasInitSuccess(canvasId: string, initDuration: number, additionalInfo: Record<string, any> = {}): void {
+  console.log(`Canvas ${canvasId} initialized successfully in ${initDuration}ms`, additionalInfo);
 }
 
 /**
  * Handle canvas initialization error
  * @param error Error object
  * @param containerId Container ID
+ * @param canvasElement Canvas element if available
+ * @param attemptNumber Attempt number
+ * @returns Whether error is fatal
  */
-export function handleCanvasInitError(error: unknown, containerId: string): void {
-  console.error(`Canvas initialization failed for container ${containerId}:`, error);
+export function handleCanvasInitError(
+  error: unknown, 
+  containerId: string,
+  canvasElement: HTMLCanvasElement | null = null,
+  attemptNumber: number = 1
+): boolean {
+  console.error(`Canvas initialization failed for container ${containerId} (attempt ${attemptNumber}):`, error);
+  
+  // Determine if error is fatal based on attempt number or error type
+  const isFatal = attemptNumber >= 3 || (error instanceof Error && error.message.includes('fatal'));
   
   // Log additional information
   console.info('Browser Info:', {
@@ -36,8 +53,11 @@ export function handleCanvasInitError(error: unknown, containerId: string): void
     vendor: navigator.vendor,
     platform: navigator.platform,
     hardwareConcurrency: navigator.hardwareConcurrency,
-    deviceMemory: (navigator as any).deviceMemory || 'unknown'
+    deviceMemory: (navigator as any).deviceMemory || 'unknown',
+    canvasElementPresent: !!canvasElement
   });
+  
+  return isFatal;
 }
 
 /**

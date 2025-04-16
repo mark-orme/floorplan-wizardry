@@ -9,9 +9,13 @@ import {
   logCanvasInitAttempt, 
   logCanvasInitSuccess, 
   handleCanvasInitError,
+  generateErrorId
+} from '@/utils/canvas/monitoring/errorReporting';
+import {
   generateCanvasDiagnosticReport,
-  checkFabricJsLoading
-} from '@/utils/canvas/canvasErrorMonitoring';
+  checkFabricJsLoading,
+  FabricLoadingStatus
+} from '@/utils/canvas/monitoring/canvasHealthCheck';
 import {
   safeCanvasInitialization,
   resetInitializationState,
@@ -88,7 +92,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   useEffect(() => {
     if (!documentReadyRef.current) return;
     
-    const fabricStatus = checkFabricJsLoading();
+    const fabricStatus: FabricLoadingStatus = checkFabricJsLoading();
     
     // Report loading status to debugging tools
     console.log("Fabric.js loading status:", fabricStatus);
@@ -282,7 +286,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       // Use enhanced error handling with diagnostics
       const isFatalError = handleCanvasInitError(
         error, 
-        canvasId, 
+        canvasId,
         canvasRef.current,
         initTriesRef.current
       );

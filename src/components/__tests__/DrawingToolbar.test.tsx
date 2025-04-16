@@ -1,136 +1,111 @@
 
-/**
- * Tests for DrawingToolbar component
- * @module components/__tests__/DrawingToolbar
- */
 import { render, screen, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { DrawingToolbar } from '@/components/DrawingToolbar';
 import { DrawingMode } from '@/constants/drawingModes';
 
 describe('DrawingToolbar', () => {
-  // Mock props matching the actual component interface
-  const mockProps = {
-    tool: DrawingMode.SELECT,
+  const defaultProps = {
+    activeTool: DrawingMode.SELECT,
+    lineColor: '#000000',
+    lineThickness: 2,
     onToolChange: vi.fn(),
+    onColorChange: vi.fn(),
+    onThicknessChange: vi.fn(),
+    onClear: vi.fn(),
+    onSave: vi.fn(),
+    onImport: vi.fn(),
+    onExport: vi.fn(),
     onUndo: vi.fn(),
     onRedo: vi.fn(),
-    onClear: vi.fn(),
-    onZoom: vi.fn(),
-    onSave: vi.fn(),
-    gia: 0,
-    isDrawing: false,
-    isDirty: false,
-    showControls: true,
-    lineThickness: 2,
-    lineColor: '#000000',
-    onLineThicknessChange: vi.fn(),
-    onLineColorChange: vi.fn(),
-    disabled: false
+    onZoomIn: vi.fn(),
+    onZoomOut: vi.fn(),
+    onResetZoom: vi.fn(),
+    onToggleGrid: vi.fn(),
+    gridVisible: false,
+    canUndo: true,
+    canRedo: false
   };
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  
-  it('renders all tool buttons', () => {
-    render(<DrawingToolbar {...mockProps} />);
+
+  it('renders toolbar with all tools', () => {
+    render(<DrawingToolbar {...defaultProps} />);
     
-    // Check that all expected tools are rendered
-    expect(screen.getByTitle('Select')).toBeInTheDocument();
-    expect(screen.getByTitle('Draw')).toBeInTheDocument();
-    expect(screen.getByTitle('Line')).toBeInTheDocument();
-    expect(screen.getByTitle('Rectangle')).toBeInTheDocument();
-    expect(screen.getByTitle('Circle')).toBeInTheDocument();
-    
-    // Check that operation buttons are rendered
-    expect(screen.getByTitle('Undo')).toBeInTheDocument();
-    expect(screen.getByTitle('Redo')).toBeInTheDocument();
-    expect(screen.getByTitle('Clear Canvas')).toBeInTheDocument();
+    expect(screen.getByText(/select/i)).toBeInTheDocument();
+    expect(screen.getByText(/line/i)).toBeInTheDocument();
+    expect(screen.getByText(/draw/i)).toBeInTheDocument();
   });
-  
-  it('highlights the active tool', () => {
-    render(<DrawingToolbar {...mockProps} />);
+
+  it('highlights active tool', () => {
+    render(<DrawingToolbar {...defaultProps} activeTool={DrawingMode.STRAIGHT_LINE} />);
     
-    // Find the active tool button (SELECT)
-    const selectButton = screen.getByTitle('Select');
+    const lineButton = screen.getByText(/line/i).closest('button');
+    const selectButton = screen.getByText(/select/i).closest('button');
     
-    // Check that it has the active class
-    expect(selectButton).toHaveClass('bg-primary');
-    
-    // Check that other tools are not active
-    const drawButton = screen.getByTitle('Draw');
-    expect(drawButton).not.toHaveClass('bg-primary');
-  });
-  
-  it('calls onToolChange when a tool is clicked', () => {
-    render(<DrawingToolbar {...mockProps} />);
-    
-    // Click the Draw tool
-    fireEvent.click(screen.getByTitle('Draw'));
-    
-    // Check that onToolChange was called with the correct tool
-    expect(mockProps.onToolChange).toHaveBeenCalledWith(DrawingMode.DRAW);
-    
-    // Click the Line tool
-    fireEvent.click(screen.getByTitle('Line'));
-    
-    // Check that onToolChange was called with the correct tool
-    expect(mockProps.onToolChange).toHaveBeenCalledWith(DrawingMode.STRAIGHT_LINE);
-  });
-  
-  it('calls operation callbacks when buttons are clicked', () => {
-    render(<DrawingToolbar {...mockProps} />);
-    
-    // Click the Undo button
-    fireEvent.click(screen.getByTitle('Undo'));
-    
-    // Check that onUndo was called
-    expect(mockProps.onUndo).toHaveBeenCalled();
-    
-    // Click the Redo button
-    fireEvent.click(screen.getByTitle('Redo'));
-    
-    // Check that onRedo was called
-    expect(mockProps.onRedo).toHaveBeenCalled();
-    
-    // Click the Clear button
-    fireEvent.click(screen.getByTitle('Clear Canvas'));
-    
-    // Check that onClear was called
-    expect(mockProps.onClear).toHaveBeenCalled();
-  });
-  
-  it('disables buttons when disabled prop is true', () => {
-    render(
-      <DrawingToolbar
-        {...mockProps}
-        disabled={true}
-      />
-    );
-    
-    // Check that buttons are disabled
-    const buttons = screen.getAllByRole('button');
-    buttons.forEach(button => {
-      expect(button).toBeDisabled();
-    });
-  });
-  
-  it('renders with alternative props', () => {
-    // Test with different tool
-    render(
-      <DrawingToolbar
-        {...mockProps}
-        tool={DrawingMode.DRAW}
-      />
-    );
-    
-    // Find the Draw button and check if it's active
-    const drawButton = screen.getByTitle('Draw');
-    expect(drawButton).toHaveClass('bg-primary');
-    
-    // Select button should not be active
-    const selectButton = screen.getByTitle('Select');
+    expect(lineButton).toHaveClass('bg-primary');
     expect(selectButton).not.toHaveClass('bg-primary');
+  });
+
+  it('calls onToolChange when tool button is clicked', () => {
+    render(<DrawingToolbar {...defaultProps} />);
+    
+    fireEvent.click(screen.getByText(/line/i));
+    
+    expect(defaultProps.onToolChange).toHaveBeenCalledWith(DrawingMode.STRAIGHT_LINE);
+  });
+
+  it('calls onUndo when undo button is clicked', () => {
+    render(<DrawingToolbar {...defaultProps} />);
+    
+    fireEvent.click(screen.getByLabelText(/undo/i));
+    
+    expect(defaultProps.onUndo).toHaveBeenCalled();
+  });
+
+  it('calls onClear when clear button is clicked', () => {
+    render(<DrawingToolbar {...defaultProps} />);
+    
+    fireEvent.click(screen.getByLabelText(/clear/i));
+    
+    expect(defaultProps.onClear).toHaveBeenCalled();
+  });
+
+  it('disables undo/redo buttons when specified', () => {
+    render(
+      <DrawingToolbar
+        {...defaultProps}
+        canUndo={false}
+        canRedo={false}
+      />
+    );
+    
+    const undoButton = screen.getByLabelText(/undo/i);
+    const redoButton = screen.getByLabelText(/redo/i);
+    
+    expect(undoButton).toBeDisabled();
+    expect(redoButton).toBeDisabled();
+  });
+
+  it('displays and updates color picker', () => {
+    render(<DrawingToolbar {...defaultProps} />);
+    
+    const colorInput = screen.getByLabelText(/color/i);
+    
+    fireEvent.change(colorInput, { target: { value: '#ff0000' } });
+    
+    expect(defaultProps.onColorChange).toHaveBeenCalledWith('#ff0000');
+  });
+
+  it('displays and updates thickness input', () => {
+    render(<DrawingToolbar {...defaultProps} />);
+    
+    const thicknessInput = screen.getByLabelText(/thickness/i);
+    
+    fireEvent.change(thicknessInput, { target: { value: '5' } });
+    
+    expect(defaultProps.onThicknessChange).toHaveBeenCalledWith(5);
   });
 });

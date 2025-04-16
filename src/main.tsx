@@ -6,16 +6,13 @@
  */
 
 // Set up Sentry for error reporting
-const setupSentry = () => {
+export const setupSentry = () => {
   console.log('Setting up Sentry');
   // Sentry setup code would go here
 };
 
 // Initialize the application
-const initializeApp = () => {
+export const initializeApp = () => {
   console.log('Initializing application');
   // App initialization code would go here
 };
-
-// Export functions
-export { setupSentry, initializeApp };
