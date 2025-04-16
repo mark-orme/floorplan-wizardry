@@ -7,6 +7,8 @@ import { InputMethod } from './useLineInputMethod';
 import { MeasurementData, UseStraightLineToolResult } from '../useStraightLineTool.d';
 import { FabricEventNames } from '@/types/fabric-events';
 import logger from '@/utils/logger';
+import { LineDistanceTooltip } from '@/components/canvas/LineDistanceTooltip';
+import { createPortal } from 'react-dom';
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
@@ -56,6 +58,54 @@ export const useStraightLineTool = ({
   
   // Track if we're enabled
   const [isEnabled, setIsEnabled] = useState(enabled);
+
+  // Create tooltip data state for rendering
+  const [tooltipPortalContainer, setTooltipPortalContainer] = useState<HTMLElement | null>(null);
+  const [tooltipData, setTooltipData] = useState<{
+    startPoint: Point | null;
+    endPoint: Point | null;
+  }>({
+    startPoint: null,
+    endPoint: null
+  });
+  
+  // Create portal container for tooltips
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const existingContainer = document.getElementById('line-tooltip-container');
+      if (existingContainer) {
+        setTooltipPortalContainer(existingContainer);
+      } else {
+        const container = document.createElement('div');
+        container.id = 'line-tooltip-container';
+        container.style.position = 'absolute';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '1000';
+        document.body.appendChild(container);
+        setTooltipPortalContainer(container);
+      }
+    }
+
+    return () => {
+      // Clean up container on unmount if we created it
+      const container = document.getElementById('line-tooltip-container');
+      if (container && container.parentNode && !tooltipPortalContainer) {
+        container.parentNode.removeChild(container);
+      }
+    };
+  }, []);
+
+  // Update tooltip position with measurement data
+  useEffect(() => {
+    if (lineState.isDrawing && lineState.startPoint && lineState.currentPoint) {
+      setTooltipData({
+        startPoint: lineState.startPoint,
+        endPoint: lineState.currentPoint
+      });
+    }
+  }, [lineState.isDrawing, lineState.startPoint, lineState.currentPoint]);
   
   /**
    * Handle pointer down event
@@ -105,7 +155,8 @@ export const useStraightLineTool = ({
         distance,
         angle,
         snapped: lineState.snapEnabled,
-        unit: 'px'
+        unit: 'px',
+        snapType: lineState.anglesEnabled ? 'angle' : (lineState.snapEnabled ? 'grid' : undefined)
       });
     }
   }, [canvas, lineState]);
@@ -243,6 +294,26 @@ export const useStraightLineTool = ({
     lineState.cancelDrawing();
   }, [lineState]);
   
+  /**
+   * Render tooltip through portal
+   */
+  const renderTooltip = useCallback(() => {
+    if (!tooltipPortalContainer || !lineState.isDrawing || !measurementData.distance) return null;
+    
+    return createPortal(
+      <LineDistanceTooltip
+        startPoint={tooltipData.startPoint || { x: 0, y: 0 }}
+        endPoint={tooltipData.endPoint || { x: 0, y: 0 }}
+        distance={measurementData.distance}
+        angle={measurementData.angle}
+        unit={measurementData.unit}
+        isSnapped={measurementData.snapped}
+        snapType={measurementData.snapType}
+      />,
+      tooltipPortalContainer
+    );
+  }, [tooltipPortalContainer, lineState.isDrawing, measurementData, tooltipData]);
+  
   return {
     isActive: lineState.isActive,
     isEnabled,
@@ -262,7 +333,8 @@ export const useStraightLineTool = ({
     cancelDrawing,
     handlePointerDown,
     handlePointerMove,
-    handlePointerUp
+    handlePointerUp,
+    renderTooltip
   };
 };
 
