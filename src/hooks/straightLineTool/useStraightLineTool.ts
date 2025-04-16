@@ -4,7 +4,7 @@
  * @module hooks/straightLineTool/useStraightLineTool
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Line, Object as FabricObject, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { toast } from 'sonner';
 
@@ -103,7 +103,7 @@ export const useLineState = (props: UseLineStateProps) => {
     if (!canvas) return null;
     
     // Create text object for tooltip
-    const text = new fabric.Text(`${distance.toFixed(0)} px`, {
+    const text = new Text(`${distance.toFixed(0)} px`, {
       left: x,
       top: y - 15,
       fontSize: 12,
@@ -171,7 +171,7 @@ export const useLineState = (props: UseLineStateProps) => {
     
     // Update tooltip
     if (distanceTooltipRef.current) {
-      const tooltip = distanceTooltipRef.current as fabric.Text;
+      const tooltip = distanceTooltipRef.current as Text;
       tooltip.set({
         text: `${distance.toFixed(0)} px`,
         left: (start.x + constrainedEnd.x) / 2,
@@ -198,7 +198,7 @@ export const useLineState = (props: UseLineStateProps) => {
   const measurementData = {
     isDisplayed: !!distanceTooltipRef.current,
     distance: distanceTooltipRef.current ? 
-      parseFloat((distanceTooltipRef.current as fabric.Text).text!.split(' ')[0]) : 
+      parseFloat((distanceTooltipRef.current as Text).text!.split(' ')[0]) : 
       0
   };
   

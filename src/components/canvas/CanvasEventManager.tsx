@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -72,7 +73,7 @@ export const CanvasEventManager = ({
   
   // Initialize straight line tool
   useStraightLineTool({
-    fabricCanvasRef: { current: canvas },
+    canvas,
     enabled: tool === DrawingMode.STRAIGHT_LINE,
     lineColor,
     // Use pressure-adjusted thickness for Apple Pencil

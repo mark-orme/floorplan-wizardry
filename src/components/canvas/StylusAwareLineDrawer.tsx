@@ -9,10 +9,10 @@ import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineToo
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Geometry';
 import { toast } from 'sonner';
-import { InputMethod } from '@/hooks/straightLineTool/useLineState';
+import { InputMethod } from '@/hooks/straightLineTool/useStraightLineTool';
 
 interface StylusAwareLineDrawerProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas: FabricCanvas | null;
   tool: DrawingMode;
   lineColor?: string;
   lineThickness?: number;
@@ -24,7 +24,7 @@ interface StylusAwareLineDrawerProps {
  * Component to handle line drawing with enhanced stylus and touch support
  */
 export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
-  fabricCanvasRef,
+  canvas,
   tool,
   lineColor = '#000000',
   lineThickness = 2,
@@ -55,7 +55,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     currentLineRef,
     currentLine
   } = useStraightLineTool({
-    fabricCanvasRef,
+    canvas,
     enabled: tool === DrawingMode.STRAIGHT_LINE,
     lineColor,
     lineThickness,
@@ -120,7 +120,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   
   // Process canvas events
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
     // Mark initialized
@@ -188,7 +187,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       }
     };
   }, [
-    fabricCanvasRef, 
+    canvas, 
     isActive, 
     isDrawing, 
     handlePointerDown, 

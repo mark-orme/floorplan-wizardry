@@ -1,3 +1,4 @@
+
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -6,9 +7,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../useStraightLineTool';
-import { useLineState, InputMethod } from '../useLineState';
+import { useLineState, InputMethod } from '../useStraightLineTool';
 import { DrawingMode } from '@/constants/drawingModes';
-import { FabricEventNames } from '@/types/fabric-types';
 import { FabricEventTypes } from '@/types/fabric-events';
 import { Point } from '@/types/core/Geometry';
 
@@ -114,12 +114,10 @@ describe('useStraightLineTool', () => {
   };
   
   let mockCanvas: ReturnType<typeof createMockCanvas>;
-  let fabricCanvasRef: { current: any };
   let saveCurrentState: () => void;
   
   beforeEach(() => {
     mockCanvas = createMockCanvas();
-    fabricCanvasRef = { current: mockCanvas };
     saveCurrentState = vi.fn();
     
     // Reset the useLineState mock
@@ -145,7 +143,7 @@ describe('useStraightLineTool', () => {
   
   it('should initialize and set up event handlers correctly', () => {
     const { result } = renderHook(() => useStraightLineTool({
-      fabricCanvasRef,
+      canvas: mockCanvas,
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
@@ -168,7 +166,7 @@ describe('useStraightLineTool', () => {
   
   it('should not set up event handlers if tool is not STRAIGHT_LINE', () => {
     renderHook(() => useStraightLineTool({
-      fabricCanvasRef,
+      canvas: mockCanvas,
       enabled: false,
       lineColor: '#000000',
       lineThickness: 2,
@@ -182,7 +180,7 @@ describe('useStraightLineTool', () => {
   it('should clean up event handlers when tool changes', () => {
     const { rerender } = renderHook(
       (props) => useStraightLineTool({
-        fabricCanvasRef,
+        canvas: mockCanvas,
         enabled: props.enabled,
         lineColor: '#000000',
         lineThickness: 2,
@@ -229,7 +227,7 @@ describe('useStraightLineTool', () => {
     });
     
     renderHook(() => useStraightLineTool({
-      fabricCanvasRef,
+      canvas: mockCanvas,
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
@@ -274,7 +272,7 @@ describe('useStraightLineTool', () => {
     });
     
     const { result } = renderHook(() => useStraightLineTool({
-      fabricCanvasRef,
+      canvas: mockCanvas,
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,
@@ -328,7 +326,7 @@ describe('useStraightLineTool', () => {
     });
     
     renderHook(() => useStraightLineTool({
-      fabricCanvasRef,
+      canvas: mockCanvas,
       enabled: true,
       lineColor: '#000000',
       lineThickness: 2,

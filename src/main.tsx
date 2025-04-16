@@ -16,3 +16,6 @@ export const initializeApp = () => {
   console.log('Initializing application');
   // App initialization code would go here
 };
+
+// Export application components and utilities
+export { setupSentry, initializeApp };
