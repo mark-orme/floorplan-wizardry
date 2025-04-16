@@ -1,6 +1,5 @@
-
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, PencilBrush } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -87,7 +86,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       const gridSize = 20;
       const gridObjects: FabricObject[] = [];
       
-      // Create horizontal and vertical grid lines
+      // Create horizontal grid lines
       for (let i = 0; i <= height; i += gridSize) {
         const lineProps = {
           stroke: "#e0e0e0",
@@ -95,11 +94,12 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
           evented: false,
           objectType: "grid"
         };
-        const line = new fabric.Line([0, i, width, i], lineProps as any);
+        const line = new Line([0, i, width, i], lineProps as any);
         fabricCanvas.add(line);
         gridObjects.push(line);
       }
       
+      // Create vertical grid lines
       for (let i = 0; i <= width; i += gridSize) {
         const lineProps = {
           stroke: "#e0e0e0",
@@ -107,7 +107,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
           evented: false,
           objectType: "grid"
         };
-        const line = new fabric.Line([i, 0, i, height], lineProps as any);
+        const line = new Line([i, 0, i, height], lineProps as any);
         fabricCanvas.add(line);
         gridObjects.push(line);
       }
