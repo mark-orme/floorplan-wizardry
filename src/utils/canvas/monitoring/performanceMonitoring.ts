@@ -3,97 +3,94 @@
  * Canvas performance monitoring utilities
  * @module utils/canvas/monitoring/performanceMonitoring
  */
+
 import { Canvas as FabricCanvas } from 'fabric';
-import { ErrorCategory, ErrorSeverity } from './errorTypes';
-import { reportCanvasError } from './errorReporting';
-
-/**
- * Canvas performance metrics
- */
-export interface CanvasPerformanceMetrics {
-  objectCount: number;
-  renderTime: number;
-  fps: number;
-  memoryUsage?: number;
-  timestamp: number;
-}
-
-let lastRenderTime = 0;
-let frameCount = 0;
-let lastFpsUpdate = 0;
-let currentFps = 0;
+import { captureMessage } from '@/utils/sentryUtils';
 
 /**
  * Track canvas render performance
- * @param canvas Fabric canvas instance
- * @returns Performance metrics
+ * @param canvas - The Fabric.js canvas instance
+ * @param operation - The operation that triggered the render
  */
-export function trackRenderPerformance(canvas: FabricCanvas | null): CanvasPerformanceMetrics | null {
-  if (!canvas) return null;
+export const trackCanvasRenderPerformance = (
+  canvas: FabricCanvas,
+  operation: string
+): void => {
+  if (!canvas) return;
   
   const startTime = performance.now();
-  const objectCount = canvas.getObjects().length;
   
-  // Update FPS calculation
-  const now = Date.now();
-  frameCount++;
-  
-  if (now - lastFpsUpdate >= 1000) {
-    currentFps = frameCount;
-    frameCount = 0;
-    lastFpsUpdate = now;
-  }
-  
-  // Get memory usage if available
-  let memoryUsage: number | undefined;
-  if (performance && (performance as any).memory) {
-    memoryUsage = (performance as any).memory.usedJSHeapSize;
-  }
-  
-  // Track render time
-  canvas.once('after:render', () => {
-    lastRenderTime = performance.now() - startTime;
+  // Set up post-render measurement
+  const measureRenderTime = () => {
+    const endTime = performance.now();
+    const renderTime = endTime - startTime;
     
-    // Report if render time is excessive
-    if (lastRenderTime > 100) {
-      reportCanvasError(
-        `Slow canvas rendering detected: ${lastRenderTime.toFixed(2)}ms`,
-        ErrorCategory.PERFORMANCE,
-        ErrorSeverity.MEDIUM,
-        { objectCount, fps: currentFps }
-      );
+    // Log significant render times (>16ms = below 60fps)
+    if (renderTime > 16) {
+      console.warn(`Canvas render took ${renderTime.toFixed(2)}ms for ${operation}`);
+      
+      // Report very slow renders
+      if (renderTime > 100) {
+        captureMessage(`Slow canvas render: ${renderTime.toFixed(2)}ms`, 'canvas-performance', {
+          level: 'warning',
+          tags: {
+            component: 'Canvas',
+            operation,
+            performance: 'render'
+          },
+          extra: {
+            renderTime,
+            objectCount: canvas.getObjects().length,
+            viewportTransform: canvas.viewportTransform,
+            timestamp: Date.now()
+          }
+        });
+      }
     }
-  });
-  
-  return {
-    objectCount,
-    renderTime: lastRenderTime,
-    fps: currentFps,
-    memoryUsage,
-    timestamp: now
+    
+    // Clean up event listener
+    canvas.off('after:render', measureRenderTime);
   };
-}
+  
+  // Listen for render completion
+  canvas.on('after:render', measureRenderTime);
+};
 
 /**
- * Start monitoring canvas performance
- * @param canvas Fabric canvas instance
- * @param interval Monitoring interval in milliseconds
- * @param callback Optional callback for metrics
- * @returns Cleanup function
+ * Measure canvas operation performance
+ * @param operationName - Name of the operation being measured
+ * @param operation - Function to measure
+ * @returns Result of the operation
  */
-export function monitorCanvasPerformance(
-  canvas: FabricCanvas | null,
-  interval: number = 5000,
-  callback?: (metrics: CanvasPerformanceMetrics) => void
-): () => void {
-  if (!canvas) return () => {};
+export function measureCanvasOperation<T>(
+  operationName: string,
+  operation: () => T
+): T {
+  const startTime = performance.now();
+  const result = operation();
+  const endTime = performance.now();
+  const duration = endTime - startTime;
   
-  const intervalId = setInterval(() => {
-    const metrics = trackRenderPerformance(canvas);
-    if (metrics && callback) {
-      callback(metrics);
+  // Log significant operation times
+  if (duration > 50) {
+    console.warn(`Canvas operation '${operationName}' took ${duration.toFixed(2)}ms`);
+    
+    // Report very slow operations
+    if (duration > 200) {
+      captureMessage(`Slow canvas operation: ${operationName} (${duration.toFixed(2)}ms)`, 'canvas-performance', {
+        level: 'warning',
+        tags: {
+          component: 'Canvas',
+          operation: operationName,
+          performance: 'operation'
+        },
+        extra: {
+          duration,
+          timestamp: Date.now()
+        }
+      });
     }
-  }, interval);
+  }
   
-  return () => clearInterval(intervalId);
+  return result;
 }

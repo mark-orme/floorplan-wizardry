@@ -11,9 +11,9 @@ import {
   Square, 
   Circle, 
   Type,
-  Ruler,
-  StraightLine
+  Ruler
 } from 'lucide-react';
+import { StraightLine } from '@/components/icons/StraightLine';
 import { DrawingMode } from '@/constants/drawingModes';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';

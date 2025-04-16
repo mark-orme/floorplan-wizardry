@@ -5,9 +5,7 @@
  */
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { FabricEventTypes, TPointerEvent, TPointerEventInfo } from "@/types/fabric-events";
 import { useLineState } from "./useLineState";
-import logger from "@/utils/logger";
 
 interface UseLineEventsProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -41,7 +39,7 @@ export const useLineEvents = ({
   /**
    * Handle mouse down event
    */
-  const handleMouseDown = useCallback((e: TPointerEventInfo<TPointerEvent>) => {
+  const handleMouseDown = useCallback((e: any) => {
     if (!enabled) return;
     
     const canvas = fabricCanvasRef.current;
@@ -56,6 +54,7 @@ export const useLineEvents = ({
     // Start drawing
     setIsDrawing(true);
     setStartPoint(point);
+    startPointRef.current = point;
     
     // Create line
     const line = createLine(point.x, point.y, point.x, point.y);
@@ -75,14 +74,12 @@ export const useLineEvents = ({
       e.e.preventDefault();
       e.e.stopPropagation();
     }
-    
-    logger.info("Started line drawing", { point });
-  }, [enabled, fabricCanvasRef, setIsDrawing, setStartPoint, createLine, setCurrentLine, createDistanceTooltip, setDistanceTooltip, snapPointToGrid]);
+  }, [enabled, fabricCanvasRef, setIsDrawing, setStartPoint, createLine, setCurrentLine, createDistanceTooltip, setDistanceTooltip, snapPointToGrid, startPointRef]);
   
   /**
    * Handle mouse move event
    */
-  const handleMouseMove = useCallback((e: TPointerEventInfo<TPointerEvent>) => {
+  const handleMouseMove = useCallback((e: any) => {
     if (!enabled || !isDrawing || !startPointRef.current) return;
     
     const canvas = fabricCanvasRef.current;
@@ -110,7 +107,7 @@ export const useLineEvents = ({
   /**
    * Handle mouse up event
    */
-  const handleMouseUp = useCallback((e: TPointerEventInfo<TPointerEvent>) => {
+  const handleMouseUp = useCallback((e: any) => {
     if (!enabled || !isDrawing || !startPointRef.current) return;
     
     const canvas = fabricCanvasRef.current;
@@ -137,13 +134,7 @@ export const useLineEvents = ({
       currentLineRef.current
     ) {
       canvas.remove(currentLineRef.current);
-      logger.info("Removed zero-length line");
     } else {
-      logger.info("Completed line drawing", { 
-        start: startPointRef.current, 
-        end: point 
-      });
-      
       // Call complete callback
       if (onComplete) {
         onComplete();
@@ -171,16 +162,16 @@ export const useLineEvents = ({
     if (!canvas) return;
     
     // Register event handlers
-    canvas.on(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
-    canvas.on(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
-    canvas.on(FabricEventTypes.MOUSE_UP, handleMouseUp);
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
     
     // Clean up event handlers
     return () => {
       if (canvas) {
-        canvas.off(FabricEventTypes.MOUSE_DOWN, handleMouseDown);
-        canvas.off(FabricEventTypes.MOUSE_MOVE, handleMouseMove);
-        canvas.off(FabricEventTypes.MOUSE_UP, handleMouseUp);
+        canvas.off('mouse:down', handleMouseDown);
+        canvas.off('mouse:move', handleMouseMove);
+        canvas.off('mouse:up', handleMouseUp);
       }
     };
   }, [enabled, fabricCanvasRef, handleMouseDown, handleMouseMove, handleMouseUp]);

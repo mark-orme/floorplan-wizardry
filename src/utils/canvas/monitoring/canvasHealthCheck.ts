@@ -1,108 +1,103 @@
 
 /**
- * Canvas health monitoring utilities
+ * Canvas health check utilities
  * @module utils/canvas/monitoring/canvasHealthCheck
  */
+
 import { Canvas as FabricCanvas } from 'fabric';
-import { ErrorCategory, ErrorSeverity } from './errorTypes';
-import { reportCanvasError } from './errorReporting';
 
 /**
- * Health check result
+ * Generates a diagnostic report about canvas state
+ * @returns Diagnostic information about the canvas
  */
-export interface HealthCheckResult {
-  healthy: boolean;
-  issues: string[];
-  objectCount: number;
-  hasActiveSelection: boolean;
-  hasBackground: boolean;
-}
+export const generateCanvasDiagnosticReport = (): Record<string, any> => {
+  // Check DOM readiness
+  const domReady = document.readyState === 'complete';
+  
+  // Check canvas elements in the DOM
+  const canvasElements = document.querySelectorAll('canvas');
+  const canvasCount = canvasElements.length;
+  
+  // Check for Fabric.js canvas instances
+  const fabricInstanceCount = document.querySelectorAll('.canvas-container').length;
+  
+  // Check global canvas state if available
+  const globalCanvasState = (window as any).__canvas_state || null;
+  
+  // Get fabric elements info
+  const fabricElements = [];
+  for (let i = 0; i < canvasElements.length; i++) {
+    const canvas = canvasElements[i];
+    fabricElements.push({
+      id: canvas.id || `canvas-${i}`,
+      width: canvas.width,
+      height: canvas.height,
+      parentVisible: canvas.parentElement ? getComputedStyle(canvas.parentElement).display !== 'none' : false,
+      visible: getComputedStyle(canvas).display !== 'none',
+      hasContainer: canvas.parentElement?.classList.contains('canvas-container') || false
+    });
+  }
+  
+  // Build diagnostic report
+  return {
+    timestamp: Date.now(),
+    domReady,
+    canvasElements: {
+      count: canvasCount,
+      hasFabricInstances: fabricInstanceCount > 0,
+      fabricInstanceCount,
+      elements: fabricElements
+    },
+    fabricState: globalCanvasState,
+    windowDimensions: {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio
+    },
+    documentMode: document.compatMode
+  };
+};
 
 /**
- * Run a health check on the canvas
- * @param canvas Fabric canvas instance
- * @returns Health check result
+ * Checks if Fabric.js is properly loaded
+ * @returns Information about the Fabric.js loading status
  */
-export function runCanvasHealthCheck(canvas: FabricCanvas | null): HealthCheckResult {
-  const issues: string[] = [];
+export const checkFabricJsLoading = (): Record<string, any> => {
+  // Check if Fabric constructor exists
+  const fabricDetected = typeof FabricCanvas === 'function';
   
-  if (!canvas) {
-    return {
-      healthy: false,
-      issues: ['Canvas is null or undefined'],
-      objectCount: 0,
-      hasActiveSelection: false,
-      hasBackground: false
-    };
+  // Try to detect Fabric.js version
+  let fabricVersion = 'unknown';
+  let fabricProblem = null;
+  
+  try {
+    // Check for version in different possible locations
+    if (typeof (FabricCanvas as any).version === 'string') {
+      fabricVersion = (FabricCanvas as any).version;
+    } else if (typeof fabric === 'object' && fabric.version) {
+      fabricVersion = fabric.version;
+    }
+  } catch (error) {
+    fabricProblem = 'Error accessing Fabric.js version';
   }
   
-  // Check canvas dimensions
-  if (canvas.width === 0 || canvas.height === 0) {
-    issues.push('Canvas has zero width or height');
+  // Check if Fabric.js can create a canvas
+  let canCreateCanvas = false;
+  
+  try {
+    if (fabricDetected) {
+      // Just check the constructor, don't actually create an instance
+      canCreateCanvas = true;
+    }
+  } catch (error) {
+    fabricProblem = 'Cannot create Fabric.js canvas';
   }
-  
-  // Check objects array
-  const objectCount = canvas.getObjects().length;
-  
-  // Check selection
-  const hasActiveSelection = !!canvas.getActiveObject();
-  
-  // Check background
-  const hasBackground = !!canvas.backgroundColor;
-  
-  // Check canvas state
-  if (!canvas.getContext()) {
-    issues.push('Canvas has no context');
-  }
-  
-  const healthy = issues.length === 0;
   
   return {
-    healthy,
-    issues,
-    objectCount,
-    hasActiveSelection,
-    hasBackground
+    fabricDetected,
+    fabricVersion,
+    canCreateCanvas,
+    fabricProblem,
+    checked: Date.now()
   };
-}
-
-/**
- * Monitor canvas health at regular intervals
- * @param canvas Fabric canvas instance
- * @param interval Check interval in milliseconds
- * @param callback Optional callback for health check results
- * @returns Cleanup function
- */
-export function monitorCanvasHealth(
-  canvas: FabricCanvas | null,
-  interval: number = 30000,
-  callback?: (result: HealthCheckResult) => void
-): () => void {
-  if (!canvas) {
-    reportCanvasError(
-      'Cannot monitor canvas health: canvas is null',
-      ErrorCategory.INITIALIZATION,
-      ErrorSeverity.MEDIUM
-    );
-    return () => {};
-  }
-  
-  const intervalId = setInterval(() => {
-    const result = runCanvasHealthCheck(canvas);
-    
-    if (!result.healthy) {
-      reportCanvasError(
-        `Canvas health check failed: ${result.issues.join(', ')}`,
-        ErrorCategory.RENDERING,
-        ErrorSeverity.MEDIUM,
-        { result }
-      );
-    }
-    
-    if (callback) {
-      callback(result);
-    }
-  }, interval);
-  
-  return () => clearInterval(intervalId);
-}
+};

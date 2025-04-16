@@ -1,4 +1,3 @@
-
 /**
  * Comprehensive Fabric.js type definitions
  * @module types/fabric
@@ -27,6 +26,7 @@ export type FabricBrush = PencilBrush;
 export interface FabricLine extends Line {
   objectType?: string;
   id?: string;
+  data?: any; // Add data property for custom data storage
 }
 
 /**
@@ -35,6 +35,7 @@ export interface FabricLine extends Line {
 export interface FabricObjectWithId extends FabricObject {
   id?: string;
   objectType?: string;
+  data?: any; // Add data property for custom data storage
 }
 
 /**

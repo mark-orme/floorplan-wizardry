@@ -70,6 +70,7 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
             icon={<Palette size={20} style={{ color: lineColor }} />}
             label="Color"
             tooltip="Change color"
+            onClick={() => {}} // Add empty onClick handler
           />
         }
         side="bottom"
@@ -116,6 +117,7 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
             }
             label={`Thickness: ${lineThickness}`}
             tooltip={`Line thickness: ${lineThickness}px`}
+            onClick={() => {}} // Add empty onClick handler
           />
         }
         side="bottom"

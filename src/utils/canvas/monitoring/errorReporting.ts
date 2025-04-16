@@ -3,57 +3,142 @@
  * Canvas error reporting utilities
  * @module utils/canvas/monitoring/errorReporting
  */
-import * as Sentry from '@sentry/react';
+
 import { ErrorCategory, ErrorSeverity, CanvasErrorInfo } from './errorTypes';
-import { logger } from '../../logger';
+import { captureError, captureMessage } from '@/utils/sentryUtils';
 
 /**
- * Report a canvas error to monitoring systems
- * @param error Error object or message
- * @param category Error category
- * @param severity Error severity
- * @param context Additional context
+ * Track canvas initialization attempts
+ * @param canvasId - Canvas identifier
+ * @param options - Additional info about the attempt
+ * @returns The attempt number
  */
-export function reportCanvasError(
-  error: Error | string,
-  category: ErrorCategory = ErrorCategory.OTHER,
-  severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-  context: Record<string, any> = {}
-): void {
-  const errorMessage = typeof error === 'string' ? error : error.message;
-  const stack = typeof error === 'string' ? undefined : error.stack;
+export const logCanvasInitAttempt = (canvasId: string, options?: Record<string, any>): number => {
+  // Get initialization counter from storage or initialize it
+  const canvasInitCounter = (window as any).__canvas_init_count || {};
+  const currentAttempt = (canvasInitCounter[canvasId] || 0) + 1;
   
-  const errorInfo: CanvasErrorInfo = {
-    message: errorMessage,
-    category,
-    severity,
-    stack,
-    timestamp: Date.now(),
-    context
-  };
+  // Update initialization counter
+  canvasInitCounter[canvasId] = currentAttempt;
+  (window as any).__canvas_init_count = canvasInitCounter;
   
-  // Log to console based on severity
-  switch (severity) {
-    case ErrorSeverity.LOW:
-      logger.debug(`Canvas Error [${category}]: ${errorMessage}`, context);
-      break;
-    case ErrorSeverity.MEDIUM:
-      logger.warn(`Canvas Error [${category}]: ${errorMessage}`, context);
-      break;
-    case ErrorSeverity.HIGH:
-    case ErrorSeverity.CRITICAL:
-      logger.error(`Canvas Error [${category}]: ${errorMessage}`, context);
-      break;
-  }
+  // Log attempt
+  console.log(`Canvas initialization attempt ${currentAttempt} for ${canvasId}`);
   
-  // Report to Sentry for medium+ severity
-  if (severity !== ErrorSeverity.LOW) {
-    Sentry.captureException(typeof error === 'string' ? new Error(error) : error, {
+  // Capture diagnostic info for multiple attempts
+  if (currentAttempt > 1) {
+    captureMessage(`Canvas initialization attempt ${currentAttempt} for ${canvasId}`, 'canvas-init-attempt', {
+      level: currentAttempt > 3 ? 'warning' : 'info',
       tags: {
-        category,
-        severity
+        component: 'Canvas',
+        operation: 'initialization',
+        canvasId,
+        attempt: String(currentAttempt)
       },
-      extra: context
+      extra: {
+        options,
+        documentReady: document.readyState,
+        timestamp: Date.now()
+      }
     });
   }
-}
+  
+  return currentAttempt;
+};
+
+/**
+ * Track successful canvas initialization
+ * @param canvasId - Canvas identifier
+ * @param duration - Time it took to initialize in ms
+ * @param details - Additional details about initialization
+ */
+export const logCanvasInitSuccess = (
+  canvasId: string, 
+  duration: number,
+  details?: Record<string, any>
+): void => {
+  console.log(`Canvas ${canvasId} initialized successfully in ${duration}ms`);
+  
+  // Reset initialization counter
+  const canvasInitCounter = (window as any).__canvas_init_count || {};
+  canvasInitCounter[canvasId] = 0;
+  (window as any).__canvas_init_count = canvasInitCounter;
+  
+  // Capture success message
+  captureMessage(`Canvas initialized successfully in ${duration}ms`, 'canvas-init-success', {
+    level: 'info',
+    tags: {
+      component: 'Canvas',
+      operation: 'initialization',
+      canvasId
+    },
+    extra: {
+      duration,
+      ...details,
+      timestamp: Date.now()
+    }
+  });
+};
+
+/**
+ * Handle canvas initialization errors
+ * @param error - The error that occurred
+ * @param canvasId - Canvas identifier
+ * @param canvasElement - Canvas DOM element
+ * @param attempt - Initialization attempt number
+ * @returns Whether this is a fatal error
+ */
+export const handleCanvasInitError = (
+  error: unknown,
+  canvasId: string,
+  canvasElement: HTMLCanvasElement | null,
+  attempt: number
+): boolean => {
+  const errorMsg = error instanceof Error ? error.message : String(error);
+  const errorStack = error instanceof Error ? error.stack : undefined;
+  
+  // Determine error severity based on attempt count and error type
+  const isFatalError = attempt >= 3 || errorMsg.includes('lower.el') || errorMsg.includes('already initialized');
+  
+  // Log detailed error information
+  console.error(`Canvas initialization error (${isFatalError ? 'FATAL' : 'RETRY'}):`, {
+    error: errorMsg,
+    canvasId,
+    attempt,
+    canvasElement: !!canvasElement,
+    canvasElementBounds: canvasElement ? canvasElement.getBoundingClientRect() : null
+  });
+  
+  // Create error info for reporting
+  const errorInfo: CanvasErrorInfo = {
+    message: errorMsg,
+    category: ErrorCategory.INITIALIZATION,
+    severity: isFatalError ? ErrorSeverity.CRITICAL : ErrorSeverity.HIGH,
+    stack: errorStack,
+    timestamp: Date.now(),
+    context: {
+      canvasId,
+      attempt,
+      isFatal: isFatalError,
+      canvasElement: !!canvasElement,
+      canvasAttributes: canvasElement ? {
+        width: canvasElement.width,
+        height: canvasElement.height
+      } : null
+    }
+  };
+  
+  // Report to monitoring service
+  captureError(error instanceof Error ? error : new Error(errorMsg), 'canvas-init-error', {
+    level: isFatalError ? 'fatal' : 'error',
+    tags: {
+      component: 'Canvas',
+      operation: 'initialization',
+      canvasId,
+      attempt: String(attempt)
+    },
+    extra: errorInfo.context
+  });
+  
+  return isFatalError;
+};

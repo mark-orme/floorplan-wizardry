@@ -1,223 +1,184 @@
 
 /**
- * Straight line tool hook
+ * Hook for straight line drawing tool
  * @module hooks/straightLineTool/useStraightLineTool
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { DrawingMode } from '@/constants/drawingModes';
-import { applyLineStyles, LineStyleOptions } from './lineStyles';
-import { hasValidCoordinates, isLineTooShort } from './lineDiagnostics';
-import { registerLineCreation } from './lineEvents';
-import { useGridAlignment } from './useGridAlignment';
+import { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useLineState, InputMethod } from './useLineState';
+import { useLineEvents } from './useLineEvents';
 
+/**
+ * Props for useStraightLineTool
+ */
 export interface UseStraightLineToolProps {
-  /** Current drawing mode */
-  drawingMode: DrawingMode;
-  /** Line style options */
-  styleOptions: LineStyleOptions;
-  /** Enable grid snapping */
+  canvas?: FabricCanvas | null;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  enabled: boolean;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState?: () => void;
   snapToGrid?: boolean;
-  /** Grid size */
-  gridSize?: number;
-}
-
-export interface UseStraightLineToolResult {
-  /** Whether the tool is active */
-  isActive: boolean;
-  /** Whether drawing is in progress */
-  isDrawing: boolean;
-  /** Current line object */
-  currentLine: Line | null;
-  /** Start drawing */
-  startDrawing: (canvas: FabricCanvas, point: Point) => void;
-  /** Continue drawing */
-  continueDrawing: (canvas: FabricCanvas, point: Point) => void;
-  /** End drawing */
-  endDrawing: (canvas: FabricCanvas) => void;
-  /** Cancel drawing */
-  cancelDrawing: (canvas: FabricCanvas) => void;
+  angleConstraint?: boolean;
 }
 
 /**
  * Hook for straight line drawing tool
- * @param props Hook props
- * @returns Line tool functions and state
+ * @param props Hook properties
+ * @returns Straight line tool state and functions
  */
 export const useStraightLineTool = ({
-  drawingMode,
-  styleOptions,
-  snapToGrid = true,
-  gridSize = 20
-}: UseStraightLineToolProps): UseStraightLineToolResult => {
-  // Internal state
-  const [isDrawing, setIsDrawing] = useState(false);
-  const lineRef = useRef<Line | null>(null);
-  const startPointRef = useRef<Point | null>(null);
+  canvas,
+  fabricCanvasRef,
+  enabled,
+  lineColor,
+  lineThickness,
+  saveCurrentState,
+  snapToGrid = false,
+  angleConstraint = false
+}: UseStraightLineToolProps) => {
+  // Use the canvas from props or ref
+  const actualCanvas = canvas || (fabricCanvasRef?.current || null);
+  const actualCanvasRef = useRef<FabricCanvas | null>(actualCanvas);
   
-  // Check if the tool is active
-  const isActive = drawingMode === DrawingMode.STRAIGHT_LINE;
-  
-  // Get grid alignment functions
-  const { snapToGrid: snapToGridFn, autoStraighten } = useGridAlignment({
-    enabled: snapToGrid,
-    gridSize,
-    threshold: 10
+  // Set up line state
+  const lineState = useLineState({
+    lineColor,
+    lineThickness,
+    snapToGrid,
+    angleConstraint
   });
   
-  /**
-   * Create a new line
-   * @param canvas Fabric canvas
-   * @param start Start point
-   * @param end End point
-   * @returns Line object
-   */
-  const createLine = useCallback((
-    canvas: FabricCanvas,
-    start: Point,
-    end: Point
-  ): Line => {
-    const line = new Line([start.x, start.y, end.x, end.y], {
-      stroke: styleOptions.color,
-      strokeWidth: styleOptions.thickness,
-      strokeDashArray: styleOptions.dashed ? [5, 5] : undefined,
-      selectable: false,
-      evented: false
-    });
-    
-    canvas.add(line);
-    return line;
-  }, [styleOptions]);
+  // Set up line events
+  const lineEvents = useLineEvents({
+    fabricCanvasRef: { current: actualCanvasRef.current },
+    lineState,
+    onComplete: saveCurrentState,
+    enabled
+  });
   
-  /**
-   * Start drawing a line
-   * @param canvas Fabric canvas
-   * @param point Starting point
-   */
-  const startDrawing = useCallback((
-    canvas: FabricCanvas,
-    point: Point
-  ): void => {
+  // Update canvas ref when it changes
+  useEffect(() => {
+    if (canvas || fabricCanvasRef?.current) {
+      actualCanvasRef.current = canvas || fabricCanvasRef?.current;
+    }
+  }, [canvas, fabricCanvasRef]);
+  
+  // Set up active state
+  const isActive = enabled && !!actualCanvasRef.current;
+  
+  // Handle pointer events manually
+  const handlePointerDown = (point: { x: number; y: number }) => {
     if (!isActive) return;
     
-    // Apply grid snapping if enabled
-    const snappedPoint = snapToGrid ? snapToGridFn(point) : point;
+    const { startPointRef, setIsDrawing, setStartPoint, createLine, createDistanceTooltip } = lineState;
+    const canvas = actualCanvasRef.current;
+    if (!canvas) return;
     
-    // Store start point
+    // Start drawing
+    setIsDrawing(true);
+    const snappedPoint = lineState.snapPointToGrid(point);
+    setStartPoint(snappedPoint);
     startPointRef.current = snappedPoint;
     
-    // Create the initial line (start and end points are the same)
-    const line = createLine(canvas, snappedPoint, snappedPoint);
-    lineRef.current = line;
+    // Create line
+    const line = createLine(snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y);
+    canvas.add(line);
+    lineState.setCurrentLine(line);
     
-    // Update state
-    setIsDrawing(true);
-  }, [isActive, snapToGrid, snapToGridFn, createLine]);
+    // Create tooltip
+    const tooltip = createDistanceTooltip(snappedPoint.x, snappedPoint.y, 0);
+    canvas.add(tooltip);
+    lineState.setDistanceTooltip(tooltip);
+    
+    // Render
+    canvas.requestRenderAll();
+  };
   
-  /**
-   * Continue drawing a line
-   * @param canvas Fabric canvas
-   * @param point Current point
-   */
-  const continueDrawing = useCallback((
-    canvas: FabricCanvas,
-    point: Point
-  ): void => {
-    if (!isDrawing || !lineRef.current || !startPointRef.current) return;
+  const handlePointerMove = (point: { x: number; y: number }) => {
+    if (!isActive || !lineState.isDrawing || !lineState.startPointRef.current) return;
     
-    // Apply grid snapping if enabled
-    const snappedPoint = snapToGrid ? snapToGridFn(point) : point;
+    const canvas = actualCanvasRef.current;
+    if (!canvas) return;
     
-    // Auto-straighten the line if needed
-    const correctedPoint = autoStraighten(startPointRef.current, snappedPoint);
+    // Get snapped point
+    const snappedPoint = lineState.snapPointToGrid(point);
     
-    // Update line coordinates
-    lineRef.current.set({
-      x2: correctedPoint.x,
-      y2: correctedPoint.y
-    });
+    // Update line and tooltip
+    lineState.updateLineAndTooltip(lineState.startPointRef.current, snappedPoint);
     
-    canvas.renderAll();
-  }, [isDrawing, snapToGrid, snapToGridFn, autoStraighten]);
+    // Render
+    canvas.requestRenderAll();
+  };
   
-  /**
-   * End drawing a line
-   * @param canvas Fabric canvas
-   */
-  const endDrawing = useCallback((
-    canvas: FabricCanvas
-  ): void => {
-    if (!isDrawing || !lineRef.current || !startPointRef.current) return;
+  const handlePointerUp = (point: { x: number; y: number }) => {
+    if (!isActive || !lineState.isDrawing || !lineState.startPointRef.current) return;
     
-    // Get end point from current line
-    const endPoint: Point = {
-      x: lineRef.current.x2 ?? startPointRef.current.x,
-      y: lineRef.current.y2 ?? startPointRef.current.y
-    };
+    const canvas = actualCanvasRef.current;
+    if (!canvas) return;
     
-    // Check if the line is too short
-    if (isLineTooShort(startPointRef.current, endPoint)) {
-      // Remove the line if it's too short
-      canvas.remove(lineRef.current);
-    } else {
-      // Make the line selectable and register the creation
-      lineRef.current.set({
-        selectable: true,
-        evented: true
-      });
-      
-      registerLineCreation(
-        canvas,
-        lineRef.current,
-        startPointRef.current,
-        endPoint
-      );
+    // Get snapped point
+    const snappedPoint = lineState.snapPointToGrid(point);
+    
+    // Update line and tooltip one last time
+    lineState.updateLineAndTooltip(lineState.startPointRef.current, snappedPoint);
+    
+    // Remove distance tooltip
+    if (lineState.distanceTooltipRef.current) {
+      canvas.remove(lineState.distanceTooltipRef.current);
     }
     
-    canvas.renderAll();
+    // If the line has no length, remove it
+    if (
+      lineState.startPointRef.current.x === snappedPoint.x &&
+      lineState.startPointRef.current.y === snappedPoint.y &&
+      lineState.currentLineRef.current
+    ) {
+      canvas.remove(lineState.currentLineRef.current);
+    } else if (saveCurrentState) {
+      // Call completion callback
+      saveCurrentState();
+    }
     
-    // Reset state
-    setIsDrawing(false);
-    lineRef.current = null;
-    startPointRef.current = null;
-  }, [isDrawing]);
+    // Reset drawing state
+    lineState.resetDrawingState();
+    
+    // Render
+    canvas.requestRenderAll();
+  };
   
-  /**
-   * Cancel drawing a line
-   * @param canvas Fabric canvas
-   */
-  const cancelDrawing = useCallback((
-    canvas: FabricCanvas
-  ): void => {
-    if (!lineRef.current) return;
+  const cancelDrawing = () => {
+    if (!lineState.isDrawing) return;
     
-    // Remove the line from canvas
-    canvas.remove(lineRef.current);
-    canvas.renderAll();
+    const canvas = actualCanvasRef.current;
+    if (!canvas) return;
     
-    // Reset state
-    setIsDrawing(false);
-    lineRef.current = null;
-    startPointRef.current = null;
-  }, []);
-  
-  // Cleanup on unmount or when mode changes
-  useEffect(() => {
-    return () => {
-      setIsDrawing(false);
-      lineRef.current = null;
-      startPointRef.current = null;
-    };
-  }, [isActive]);
+    // Remove line
+    if (lineState.currentLineRef.current) {
+      canvas.remove(lineState.currentLineRef.current);
+    }
+    
+    // Remove tooltip
+    if (lineState.distanceTooltipRef.current) {
+      canvas.remove(lineState.distanceTooltipRef.current);
+    }
+    
+    // Reset drawing state
+    lineState.resetDrawingState();
+    
+    // Render
+    canvas.requestRenderAll();
+  };
   
   return {
+    ...lineState,
     isActive,
-    isDrawing,
-    currentLine: lineRef.current,
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    cancelDrawing
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    cancelDrawing,
+    lineEvents
   };
 };
+
+export type UseStraightLineToolResult = ReturnType<typeof useStraightLineTool>;

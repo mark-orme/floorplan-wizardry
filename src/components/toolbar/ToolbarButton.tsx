@@ -5,24 +5,23 @@
  */
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export interface ToolbarButtonProps {
-  /** Icon to display */
+  /** Button icon */
   icon: React.ReactNode;
   /** Button label */
   label: string;
+  /** Button tooltip */
+  tooltip?: string;
+  /** Click handler */
+  onClick?: () => void;
   /** Whether the button is active */
   active?: boolean;
-  /** onClick handler */
-  onClick: () => void;
+  /** Whether the button is disabled */
+  disabled?: boolean;
   /** Additional CSS classes */
   className?: string;
-  /** Tooltip content */
-  tooltip?: string;
-  /** Button size */
-  size?: 'sm' | 'md' | 'lg';
-  /** Button variant */
-  variant?: 'default' | 'outline' | 'ghost';
 }
 
 /**
@@ -33,43 +32,38 @@ export interface ToolbarButtonProps {
 export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   icon,
   label,
-  active = false,
-  onClick,
-  className,
   tooltip,
-  size = 'md',
-  variant = 'default'
+  onClick,
+  active = false,
+  disabled = false,
+  className
 }) => {
-  // Size classes
-  const sizeClasses = {
-    sm: 'p-1 text-sm',
-    md: 'p-2',
-    lg: 'p-3 text-lg'
-  };
-  
-  // Variant classes
-  const variantClasses = {
-    default: 'bg-background hover:bg-accent',
-    outline: 'border border-input hover:bg-accent hover:text-accent-foreground',
-    ghost: 'hover:bg-accent hover:text-accent-foreground'
-  };
-  
-  return (
+  const button = (
     <button
       type="button"
       className={cn(
-        'flex items-center justify-center rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-        sizeClasses[size],
-        variantClasses[variant],
-        active && 'bg-primary text-primary-foreground hover:bg-primary/90',
+        'flex items-center justify-center w-9 h-9 rounded-md transition-colors',
+        active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground',
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         className
       )}
-      onClick={onClick}
-      title={tooltip || label}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       aria-label={label}
     >
       {icon}
-      <span className="sr-only">{label}</span>
     </button>
   );
+
+  // If tooltip is provided, wrap the button in a tooltip
+  if (tooltip && !disabled) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return button;
 };

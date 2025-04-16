@@ -19,9 +19,9 @@ import {
   Save,
   Download,
   Trash2,
-  StraightLine,
   Ruler
 } from 'lucide-react';
+import { StraightLine } from '@/components/icons/StraightLine';
 import { DrawingMode } from '@/constants/drawingModes';
 import { ToolbarGroup } from './toolbar/ToolbarGroup';
 import { ToolbarItem } from './toolbar/ToolbarItem';
