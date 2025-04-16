@@ -25,6 +25,7 @@ export const StraightLine: React.FC<StraightLineProps> = ({
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      data-testid="straight-line-icon"
     >
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>

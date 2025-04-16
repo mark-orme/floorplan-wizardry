@@ -1,57 +1,55 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
 
-/**
- * Extends the Fabric.js Canvas type with additional properties
- */
-export type FabricCanvasExtended = FabricCanvas & {
-  [key: string]: any;
-};
-
-/**
- * Alias for Fabric.js Canvas
- */
-export type FabricCanvas = FabricCanvas;
-
-/**
- * Alias for Fabric.js Object
- */
-export type FabricObjectExtended = FabricObject & {
-  objectType?: string;
-  id?: string;
-  [key: string]: any;
-};
-
-/**
- * Event callback type for Canvas events
- */
-export type TEventCallback<T = any> = (e: T) => void;
-
-/**
- * Canvas events registry object
- */
-export interface EventRegistryObject<T> {
-  [key: string]: TEventCallback;
+// Extend the global fabric namespace
+declare global {
+  namespace fabric {
+    interface Canvas {
+      __lastRenderTime?: number;
+    }
+    
+    interface Text extends FabricObject {
+      text?: string;
+    }
+    
+    interface Object {
+      data?: {
+        type?: string;
+        startPoint?: { x: number, y: number };
+        endPoint?: { x: number, y: number };
+        createdAt?: string;
+        [key: string]: any;
+      };
+      objectType?: string;
+      measurement?: string;
+    }
+    
+    interface Line extends Object {
+      calcLinePoints?(): { x1: number, y1: number, x2: number, y2: number };
+    }
+  }
 }
 
-/**
- * Canvas events interface
- */
-export interface CanvasEvents {
-  [key: string]: any;
-  'mouse:down': any;
-  'mouse:move': any;
-  'mouse:up': any;
-  'selection:created': any;
-  'selection:updated': any;
-  'selection:cleared': any;
-  'object:added': any;
-  'object:removed': any;
-}
-
-// Extend fabric.js Object to include id property
+// Extend FabricCanvas to include additional properties
 declare module 'fabric' {
+  interface Canvas {
+    __lastRenderTime?: number;
+    // Add other properties as needed
+  }
+  
   interface Object {
-    id?: string;
+    data?: {
+      type?: string;
+      startPoint?: { x: number, y: number };
+      endPoint?: { x: number, y: number };
+      createdAt?: string;
+      [key: string]: any;
+    };
+    objectType?: string;
+    measurement?: string;
+  }
+  
+  interface Line {
+    calcLinePoints?(): { x1: number, y1: number, x2: number, y2: number };
   }
 }
