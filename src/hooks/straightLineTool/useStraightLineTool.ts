@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Object as FabricObject, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 /**
  * Input method enum for different drawing methods
@@ -86,12 +87,12 @@ export const useLineState = (props: UseLineStateProps) => {
     const line = new Line([x1, y1, x2, y2], {
       stroke: lineColor,
       strokeWidth: lineThickness,
-      selectable: false,
-      evented: false,
+      selectable: true, // Changed from false to true for better visibility
+      evented: true,   // Changed from false to true to allow interaction
       objectCaching: false,
     });
     
-    console.log('Created line:', { x1, y1, x2, y2, color: lineColor, thickness: lineThickness });
+    logger.info('Created line:', { x1, y1, x2, y2, color: lineColor, thickness: lineThickness });
     currentLineRef.current = line;
     return line;
   }, [lineColor, lineThickness]);
@@ -179,7 +180,10 @@ export const useLineState = (props: UseLineStateProps) => {
       });
     }
     
-    // Render canvas
+    // Ensure line is brought to front
+    line.bringToFront();
+    
+    // Make sure we render after updating
     canvas.renderAll();
   }, [canvas, angles]);
   
@@ -273,38 +277,94 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
   const isActive = enabled && !!canvas;
   
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || !canvas) return;
     
-    console.log("[useStraightLineTool] Tool activated");
+    console.log("Attaching straight line event handlers to canvas", { isActive, isToolInitialized: true });
     
     // Configure canvas for line drawing
-    if (canvas) {
-      canvas.isDrawingMode = false;
-      canvas.selection = false;
-      canvas.defaultCursor = 'crosshair';
-      canvas.hoverCursor = 'crosshair';
-      
-      // Make objects non-selectable during line drawing
-      canvas.getObjects().forEach(obj => {
-        obj.selectable = false;
-      });
-    }
+    canvas.isDrawingMode = false;
+    canvas.selection = false;
+    canvas.defaultCursor = 'crosshair';
+    canvas.hoverCursor = 'crosshair';
     
+    // Make objects non-selectable during line drawing
+    canvas.getObjects().forEach(obj => {
+      if (obj.type !== 'line') { // Don't affect existing lines
+        obj.selectable = false;
+      }
+    });
+    
+    // Set up event handlers for canvas
+    const handleMouseDown = (e: any) => {
+      console.log("Mouse down on canvas", e);
+      
+      // Get position from fabric event
+      const point = {
+        x: e.pointer?.x || 0,
+        y: e.pointer?.y || 0
+      };
+      
+      handlePointerDown(point);
+    };
+    
+    const handleMouseMove = (e: any) => {
+      if (!lineState.isDrawing) return;
+      
+      // Get position from fabric event
+      const point = {
+        x: e.pointer?.x || 0,
+        y: e.pointer?.y || 0
+      };
+      
+      handlePointerMove(point);
+    };
+    
+    const handleMouseUp = (e: any) => {
+      if (!lineState.isDrawing) return;
+      
+      // Get position from fabric event
+      const point = {
+        x: e.pointer?.x || 0,
+        y: e.pointer?.y || 0
+      };
+      
+      handlePointerUp(point);
+    };
+    
+    // Add fabric canvas event listeners
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
+    
+    // Add keyboard event listener for Escape key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        cancelDrawing();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // Clean up function
     return () => {
-      console.log("[useStraightLineTool] Tool deactivated");
+      console.log("[useStraightLineTool] Cleaning up event handlers");
+      
+      // Remove event listeners
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
+      window.removeEventListener('keydown', handleKeyDown);
       
       // Reset canvas when tool is deactivated
-      if (canvas) {
-        canvas.defaultCursor = 'default';
-        canvas.hoverCursor = 'move';
-        
-        // Make objects selectable again
-        canvas.getObjects().forEach(obj => {
-          if ((obj as any).objectType !== 'grid') {
-            obj.selectable = true;
-          }
-        });
-      }
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
+      
+      // Make objects selectable again
+      canvas.getObjects().forEach(obj => {
+        if ((obj as any).objectType !== 'grid') {
+          obj.selectable = true;
+        }
+      });
       
       // Cancel any active drawing
       if (lineState.isDrawing) {
@@ -329,18 +389,25 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     
     // Create line
     const line = lineState.createLine(snappedPoint.x, snappedPoint.y, snappedPoint.x, snappedPoint.y);
-    canvas.add(line);
-    lineState.setCurrentLine(line);
-    
-    // Create tooltip
-    const tooltip = lineState.createDistanceTooltip(snappedPoint.x, snappedPoint.y, 0);
-    if (tooltip) {
-      canvas.add(tooltip);
-      lineState.setDistanceTooltip(tooltip);
+    if (line) {
+      canvas.add(line);
+      lineState.setCurrentLine(line);
+      console.log("Line created:", line);
+      
+      // Bring line to front
+      line.bringToFront();
+      
+      // Create tooltip
+      const tooltip = lineState.createDistanceTooltip(snappedPoint.x, snappedPoint.y, 0);
+      if (tooltip) {
+        canvas.add(tooltip);
+        lineState.setDistanceTooltip(tooltip);
+        tooltip.bringToFront();
+      }
+      
+      // Force render
+      canvas.renderAll();
     }
-    
-    // Render
-    canvas.renderAll();
   }, [isActive, canvas, lineState]);
   
   /**
@@ -354,6 +421,9 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     
     // Update line and tooltip
     lineState.updateLineAndTooltip(lineState.startPointRef.current, snappedPoint);
+    
+    // Ensure canvas renders
+    canvas.requestRenderAll();
   }, [isActive, canvas, lineState]);
   
   /**
@@ -375,16 +445,33 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       canvas.remove(lineState.distanceTooltipRef.current);
     }
     
-    // If the line has no length, remove it
-    if (
-      lineState.startPointRef.current.x === snappedPoint.x &&
-      lineState.startPointRef.current.y === snappedPoint.y &&
-      lineState.currentLineRef.current
-    ) {
-      canvas.remove(lineState.currentLineRef.current);
-    } else if (saveCurrentState) {
-      // Save state for undo
-      saveCurrentState();
+    // Handle line completion
+    if (lineState.currentLineRef.current) {
+      const currentLine = lineState.currentLineRef.current;
+      
+      // If the line has no length (same start and end point), remove it
+      if (lineState.startPointRef.current.x === snappedPoint.x && 
+          lineState.startPointRef.current.y === snappedPoint.y) {
+        canvas.remove(currentLine);
+      } else {
+        // Finalize line properties
+        currentLine.set({
+          selectable: true,
+          evented: true,
+          objectType: 'straight-line'
+        });
+        
+        // Bring line to front one more time to ensure visibility
+        currentLine.bringToFront();
+        
+        // Save state for undo
+        if (saveCurrentState) {
+          saveCurrentState();
+        }
+        
+        // Show toast notification
+        toast.success('Line created!');
+      }
     }
     
     // Reset drawing state
