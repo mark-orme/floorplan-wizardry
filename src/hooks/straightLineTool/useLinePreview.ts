@@ -1,62 +1,69 @@
 
 import { useCallback } from 'react';
 import { Point } from '@/types/core/Point';
-import { useSnapToGrid } from '@/hooks/useSnapToGrid';
+import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useLineAngleSnap } from './useLineAngleSnap';
 
-export interface LinePreviewResult {
-  startPoint: Point;
-  endPoint: Point;
-  isSnapped: boolean;
-  snapType?: 'grid' | 'angle' | 'both';
-}
-
-export const useLinePreview = (gridSize = 20, snapTolerance = 10) => {
-  const { snapPointToGrid, snapEnabled } = useSnapToGrid({ gridSize });
-  const { snapToAngles } = useLineAngleSnap(snapTolerance);
+/**
+ * Hook to manage line preview with snapping
+ */
+export const useLinePreview = (gridSize = 20, snapTolerance = 5) => {
+  // Reuse existing hooks for grid and angle snapping
+  const { snapToGrid } = useEnhancedGridSnapping(true, gridSize);
+  const { snapToAngle } = useLineAngleSnap(true);
   
+  /**
+   * Get line preview with snapping applied based on settings
+   */
   const getLinePreview = useCallback((
-    startPoint: Point, 
-    endPoint: Point, 
-    shouldSnap = true,
-    constrainAngle = false,
-    shiftKeyPressed = false
-  ): LinePreviewResult => {
-    // Default return with no snapping
-    if (!shouldSnap || !snapEnabled) {
-      return { 
-        startPoint, 
-        endPoint,
-        isSnapped: false 
-      };
+    startPoint: Point,
+    currentPoint: Point,
+    snapEnabled: boolean,
+    anglesEnabled: boolean,
+    shiftKeyPressed: boolean = false
+  ) => {
+    let endPoint = currentPoint;
+    let isSnapped = false;
+    let snapType: 'grid' | 'angle' | 'both' | undefined = undefined;
+    
+    // First try grid snapping
+    if (snapEnabled) {
+      const snappedPoint = snapToGrid(currentPoint);
+      
+      // Check if point is close enough to snap point
+      const dx = Math.abs(currentPoint.x - snappedPoint.x);
+      const dy = Math.abs(currentPoint.y - snappedPoint.y);
+      
+      if (dx <= snapTolerance && dy <= snapTolerance) {
+        endPoint = snappedPoint;
+        isSnapped = true;
+        snapType = 'grid';
+      }
     }
     
-    // First snap end point to grid
-    const gridSnappedEnd = snapPointToGrid(endPoint);
-    
-    // Check if grid snapped point is different from original
-    const isGridSnapped = gridSnappedEnd.x !== endPoint.x || gridSnappedEnd.y !== endPoint.y;
-    
-    let finalEndPoint = gridSnappedEnd;
-    let snapType: 'grid' | 'angle' | 'both' | undefined = isGridSnapped ? 'grid' : undefined;
-    
-    // Then try to snap to common angles if constrainAngle is true or shift key is pressed
-    if (constrainAngle || shiftKeyPressed) {
-      const { point: angleSnappedEnd, isSnapped: isAngleSnapped } = snapToAngles(startPoint, finalEndPoint);
+    // Then try angle snapping (or if shift is pressed)
+    if ((anglesEnabled || shiftKeyPressed) && startPoint) {
+      const angleLockPoint = snapToAngle(startPoint, endPoint);
       
-      if (isAngleSnapped) {
-        finalEndPoint = angleSnappedEnd;
-        snapType = isGridSnapped ? 'both' : 'angle';
+      if (snapType === 'grid') {
+        // Both grid and angle snap - try to find best compromise
+        const gridAndAnglePoint = snapToGrid(angleLockPoint);
+        endPoint = gridAndAnglePoint;
+        snapType = 'both';
+      } else {
+        endPoint = angleLockPoint;
+        isSnapped = true;
+        snapType = 'angle';
       }
     }
     
     return {
       startPoint,
-      endPoint: finalEndPoint,
-      isSnapped: isGridSnapped || snapType === 'angle' || snapType === 'both',
+      endPoint,
+      isSnapped,
       snapType
     };
-  }, [snapPointToGrid, snapToAngles, snapEnabled]);
+  }, [snapToGrid, snapToAngle, snapTolerance]);
   
   return {
     getLinePreview

@@ -2,13 +2,8 @@
 import { useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-
-export enum InputMethod {
-  MOUSE = 'mouse',
-  TOUCH = 'touch',
-  PENCIL = 'pencil',
-  STYLUS = 'stylus'
-}
+import { useLineInputMethod, InputMethod } from './useLineInputMethod';
+import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 
 interface UseLineStateProps {
   fabricCanvasRef: { current: FabricCanvas | null };
@@ -66,12 +61,13 @@ export const useLineState = (props: UseLineStateProps): LineState => {
   const [lineColor, setLineColor] = useState(initialColor);
   const [lineThickness, setLineThickness] = useState(initialThickness);
   
-  // Input method state
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-  const [isPencilMode, setIsPencilMode] = useState(false);
+  // Use input method hook
+  const { inputMethod, isPencilMode, setInputMethod, setIsPencilMode } = useLineInputMethod();
   
-  // Snap and angles state
-  const [snapEnabled, setSnapEnabled] = useState(true);
+  // Use grid snapping hook
+  const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping();
+  
+  // Angle constraints
   const [anglesEnabled, setAnglesEnabled] = useState(false);
   
   // Create a mock distance tooltip for compatibility
@@ -95,13 +91,6 @@ export const useLineState = (props: UseLineStateProps): LineState => {
     setStartPoint(null);
     setCurrentPoint(null);
     setCurrentLine(null);
-  };
-
-  /**
-   * Toggle snap to grid
-   */
-  const toggleSnap = () => {
-    setSnapEnabled(prev => !prev);
   };
 
   /**
