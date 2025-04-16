@@ -7,8 +7,8 @@ import { useLineToolHandlers } from './useLineToolHandlers';
 import { captureError } from '@/utils/sentryUtils';
 import { toast } from 'sonner';
 
-// Re-export InputMethod from useLineState
-export { InputMethod } from './useLineState';
+// Re-export InputMethod from useLineInputMethod
+export { InputMethod } from './useLineInputMethod';
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
@@ -28,13 +28,13 @@ export const useStraightLineTool = ({
   const fabricCanvasRef = { current: canvas };
   const [isActive, setIsActive] = useState(false);
   const [measurementData, setMeasurementData] = useState<{
-    distance: number;
-    angle: number;
+    distance: number | null;
+    angle: number | null;
     snapped: boolean;
     unit: string;
   }>({
-    distance: 0,
-    angle: 0,
+    distance: null,
+    angle: null,
     snapped: false,
     unit: 'px'
   });
@@ -54,7 +54,12 @@ export const useStraightLineTool = ({
     handleMouseUp,
     handleKeyDown
   } = useLineToolHandlers({
-    lineState,
+    lineState: {
+      ...lineState,
+      fabricCanvasRef,
+      lineColor,
+      lineThickness
+    },
     updateMeasurementData: (data) => setMeasurementData(data)
   });
 

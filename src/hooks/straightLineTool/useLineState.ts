@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -33,7 +34,7 @@ export const useLineState = ({
   
   // Grid snapping state
   const [snapEnabled, setSnapEnabled] = useState(true);
-  const [anglesEnabled, setAnglesEnabled] = useState(false);
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
   
   // Line and tooltip references
   const [currentLine, setCurrentLine] = useState<any>(null);
@@ -278,6 +279,10 @@ export const useLineState = ({
     inputMethod,
     isPencilMode,
     setInputMethod,
-    setIsPencilMode
+    setIsPencilMode,
+    // Expose these properties for the preview hook
+    lineColor,
+    lineThickness,
+    fabricCanvasRef
   };
 };

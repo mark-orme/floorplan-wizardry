@@ -1,98 +1,193 @@
 
 import { useCallback } from 'react';
 import { Point } from '@/types/core/Point';
+import { calculateDistance, calculateAngle } from '@/utils/geometry/lineOperations';
+import { useLinePreview } from './useLinePreview';
+import { InputMethod } from './useLineInputMethod';
 
 interface UseLineToolHandlersProps {
-  lineState: any; // Using any for simplicity, should match the return value of useLineState
-  updateMeasurementData: (data: { distance: number; angle: number; snapped: boolean; unit: string }) => void;
+  lineState: any;
+  updateMeasurementData: (data: any) => void;
 }
 
-export const useLineToolHandlers = ({
-  lineState,
-  updateMeasurementData
-}: UseLineToolHandlersProps) => {
-  // Handle mouse down event
+/**
+ * Hook for handling line tool mouse and touch events
+ */
+export const useLineToolHandlers = ({ lineState, updateMeasurementData }: UseLineToolHandlersProps) => {
+  const {
+    fabricCanvasRef,
+    isDrawing,
+    snapEnabled,
+    anglesEnabled,
+    startPoint,
+    lineColor,
+    lineThickness,
+    startDrawing,
+    continueDrawing,
+    completeDrawing,
+    cancelDrawing,
+    setInputMethod
+  } = lineState;
+  
+  // Initialize line preview functionality
+  const {
+    showHoverIndicator,
+    hideHoverIndicator,
+    updateLinePreview,
+    clearLinePreview
+  } = useLinePreview(
+    fabricCanvasRef,
+    isDrawing,
+    snapEnabled,
+    anglesEnabled,
+    lineColor,
+    lineThickness
+  );
+  
+  /**
+   * Handle mouse down event
+   */
   const handleMouseDown = useCallback((e: any) => {
-    if (!e.target) {
-      // Get pointer position
-      const pointer = e.absolutePointer || e.pointer;
-      const point = { x: pointer.x, y: pointer.y };
-      
-      // Start drawing
-      lineState.startDrawing(point);
-      
-      // Initial measurement (zero distance)
-      updateMeasurementData({
-        distance: 0,
-        angle: 0,
-        snapped: false,
-        unit: 'px'
-      });
+    // Detect input method
+    const isPencil = e.e.pointerType === 'pen';
+    if (isPencil) {
+      setInputMethod(InputMethod.PENCIL);
+    } else {
+      setInputMethod(InputMethod.MOUSE);
     }
-  }, [lineState, updateMeasurementData]);
+    
+    // Get canvas and pointer coordinates
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Start drawing
+    startDrawing(point);
+    
+    // Clear hover indicator since we're now drawing
+    hideHoverIndicator();
+    
+    // Update measurement data
+    updateMeasurementData({
+      distance: 0,
+      angle: 0,
+      snapped: false,
+      unit: 'px'
+    });
+    
+    // Prevent default behavior
+    e.e.preventDefault();
+  }, [
+    fabricCanvasRef,
+    startDrawing,
+    hideHoverIndicator,
+    updateMeasurementData,
+    setInputMethod
+  ]);
   
-  // Handle mouse move event
+  /**
+   * Handle mouse move event
+   */
   const handleMouseMove = useCallback((e: any) => {
-    if (lineState.isDrawing && lineState.startPoint) {
-      // Get pointer position
-      const pointer = e.absolutePointer || e.pointer;
-      const point = { x: pointer.x, y: pointer.y };
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    if (isDrawing && startPoint) {
+      // Update line preview and get snapped point
+      const { endPoint, isSnapped } = updateLinePreview(startPoint, point) || {};
       
-      // Continue drawing
-      lineState.continueDrawing(point);
+      // Continue drawing with the potentially snapped point
+      continueDrawing(endPoint || point);
       
-      // Calculate and update measurements
-      if (lineState.startPoint && lineState.currentPoint) {
-        const dx = lineState.currentPoint.x - lineState.startPoint.x;
-        const dy = lineState.currentPoint.y - lineState.startPoint.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
-        
-        updateMeasurementData({
-          distance,
-          angle,
-          snapped: lineState.snapEnabled,
-          unit: 'px'
-        });
-      }
+      // Calculate measurements
+      const distance = calculateDistance(startPoint, endPoint || point);
+      const angle = calculateAngle(startPoint, endPoint || point);
+      
+      // Update measurement data
+      updateMeasurementData({
+        distance,
+        angle,
+        snapped: isSnapped,
+        unit: 'px'
+      });
+    } else {
+      // Show hover indicator at cursor position when not drawing
+      showHoverIndicator(point);
     }
-  }, [lineState, updateMeasurementData]);
+    
+    // Prevent default behavior
+    e.e.preventDefault();
+  }, [
+    fabricCanvasRef,
+    isDrawing,
+    startPoint,
+    continueDrawing,
+    updateLinePreview,
+    showHoverIndicator,
+    updateMeasurementData
+  ]);
   
-  // Handle mouse up event
+  /**
+   * Handle mouse up event
+   */
   const handleMouseUp = useCallback((e: any) => {
-    if (lineState.isDrawing) {
-      // Get pointer position
-      const pointer = e.absolutePointer || e.pointer;
-      const point = { x: pointer.x, y: pointer.y };
-      
-      // Complete drawing
-      lineState.completeDrawing(point);
-      
-      // Reset measurement
+    if (!isDrawing) return;
+    
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Complete drawing
+    completeDrawing(point);
+    
+    // Clear line preview
+    clearLinePreview();
+    
+    // Reset measurement data after a short delay
+    setTimeout(() => {
       updateMeasurementData({
-        distance: 0,
-        angle: 0,
+        distance: null,
+        angle: null,
         snapped: false,
         unit: 'px'
       });
-    }
-  }, [lineState, updateMeasurementData]);
+    }, 2000);
+    
+    // Prevent default behavior
+    e.e.preventDefault();
+  }, [
+    isDrawing,
+    fabricCanvasRef,
+    completeDrawing,
+    clearLinePreview,
+    updateMeasurementData
+  ]);
   
-  // Handle key down event (e.g., Escape to cancel drawing)
+  /**
+   * Handle keyboard events
+   */
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' && lineState.isDrawing) {
-      // Cancel drawing
-      lineState.cancelDrawing();
+    // Cancel drawing when Escape key is pressed
+    if (e.key === 'Escape' && isDrawing) {
+      cancelDrawing();
+      clearLinePreview();
       
-      // Reset measurement
+      // Reset measurement data
       updateMeasurementData({
-        distance: 0,
-        angle: 0,
+        distance: null,
+        angle: null,
         snapped: false,
         unit: 'px'
       });
     }
-  }, [lineState, updateMeasurementData]);
+  }, [isDrawing, cancelDrawing, clearLinePreview, updateMeasurementData]);
   
   return {
     handleMouseDown,

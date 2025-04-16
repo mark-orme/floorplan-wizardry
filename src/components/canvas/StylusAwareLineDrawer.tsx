@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useStraightLineTool, InputMethod } from '@/hooks/straightLineTool/useStraightLineTool';
 import { cn } from '@/lib/utils';
+import { LineToolMeasurementOverlay } from './LineToolMeasurementOverlay';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
@@ -34,8 +35,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     measurementData,
     toggleGridSnapping,
     toggleAngles,
-    isDrawing,
-    currentLine
+    isDrawing
   } = useStraightLineTool({
     canvas,
     enabled,
@@ -66,23 +66,14 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
         </div>
       )}
       
-      {/* Live measurement overlay */}
-      {showMeasurement && measurementData.distance !== null && (
-        <div className="fixed bottom-4 left-4 bg-white/90 text-black px-4 py-2 rounded-lg text-sm font-medium shadow-md z-50 flex flex-col">
-          <div className="flex items-center gap-2">
-            <span>Distance: {measurementData.distance ? Math.round(measurementData.distance) : 0}px</span>
-            {measurementData.snapped && (
-              <span className="bg-green-100 text-green-800 px-1 rounded text-xs">Snapped</span>
-            )}
-          </div>
-          
-          {measurementData.angle !== null && (
-            <div className="flex items-center gap-2">
-              <span>Angle: {measurementData.angle ? Math.round(measurementData.angle) : 0}°</span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Enhanced measurement overlay */}
+      <LineToolMeasurementOverlay
+        visible={showMeasurement}
+        distance={measurementData.distance}
+        angle={measurementData.angle}
+        isSnapped={measurementData.snapped}
+        unit={measurementData.unit}
+      />
       
       {/* Controls */}
       <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
