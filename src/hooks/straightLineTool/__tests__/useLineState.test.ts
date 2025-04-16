@@ -84,7 +84,14 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    const line = result.current.createLine(10, 20, 30, 40);
+    // Fix: Update to match the new signature - create line now accepts canvas and coordinates
+    const line = result.current.createLine(
+      fabricCanvasRef.current,
+      10, 
+      20, 
+      30, 
+      40
+    );
     
     expect(line).toBeDefined();
     expect(Line).toHaveBeenCalledWith([10, 20, 30, 40], expect.objectContaining({
@@ -103,7 +110,13 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    const tooltip = result.current.createDistanceTooltip(100, 200, 150);
+    // Fix: Update to match the new signature - createDistanceTooltip now accepts canvas
+    const tooltip = result.current.createDistanceTooltip(
+      fabricCanvasRef.current,
+      100,
+      200,
+      150
+    );
     
     expect(tooltip).toBeDefined();
     expect(Text).toHaveBeenCalledWith(expect.stringContaining('1.5m'), expect.objectContaining({
