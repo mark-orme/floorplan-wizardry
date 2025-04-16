@@ -1,47 +1,40 @@
 
-import { useCallback, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { GRID_SPACING } from '@/constants/numerics';
-import { Point } from '@/types/core/Point';
-import { snapPointToGrid, snapLineToGrid as snapLineToGridUtil } from '@/utils/grid/snapping';
+import { useCallback, useState } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { Point } from "@/types/core/Point";
 
 interface UseGridSnappingProps {
-  initialSnapEnabled?: boolean;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  defaultGridSize?: number;
+  initialSnapEnabled?: boolean;
+  gridSize?: number;
 }
 
 export const useGridSnapping = ({
-  initialSnapEnabled = true,
   fabricCanvasRef,
-  defaultGridSize = GRID_SPACING.SMALL
+  initialSnapEnabled = true,
+  gridSize = 20
 }: UseGridSnappingProps) => {
-  // State for snapping
   const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
-  
-  // Toggle snap to grid
-  const toggleSnapToGrid = useCallback(() => {
+
+  const toggleSnap = useCallback(() => {
     setSnapEnabled(prev => !prev);
   }, []);
-  
-  // Snap a point to grid
-  const snapPointToGridHandler = useCallback((point: Point): Point => {
-    if (!snapEnabled) return { ...point };
-    
-    return snapPointToGrid(point, defaultGridSize);
-  }, [snapEnabled, defaultGridSize]);
-  
-  // Snap a line to grid (handle start and end points)
-  const snapLineToGridHandler = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled) return { start: { ...start }, end: { ...end } };
-    
-    return snapLineToGridUtil(start, end, defaultGridSize);
-  }, [snapEnabled, defaultGridSize]);
-  
+
+  const snapPointToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) {
+      return point;
+    }
+
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [snapEnabled, gridSize]);
+
   return {
     snapEnabled,
-    toggleSnapToGrid,
-    snapPointToGrid: snapPointToGridHandler,
-    snapLineToGrid: snapLineToGridHandler
+    toggleSnap,
+    snapPointToGrid,
+    gridSize
   };
 };

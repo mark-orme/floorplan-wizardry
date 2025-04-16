@@ -1,14 +1,10 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, PencilBrush } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { toast } from "sonner";
-import { captureMessage } from "@/utils/sentry";
-import logger from "@/utils/logger";
-import { useCanvasInitialization } from "@/hooks/canvas/useCanvasInitialization";
-import { useCanvasHistory } from "@/hooks/canvas/useCanvasHistory";
-import { useCanvasOperations } from "@/hooks/canvas/useCanvasOperations";
 
 /**
  * Props for ConnectedDrawingCanvas component
@@ -51,28 +47,75 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
   const gridLayerRef = useRef<any[]>([]);
   const operationsRef = useRef<any>(null);
   
-  // Use our custom hooks
-  const { 
-    canvas, 
-    initialized,
-    setInitialized,
-    createGrid
-  } = useCanvasInitialization({
-    canvasRef,
-    width,
-    height,
-    tool: activeTool
-  });
-
-  // Create grid when canvas is initialized
+  // State
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [initialized, setInitialized] = useState(false);
+  
+  // Initialize canvas
   useEffect(() => {
-    if (canvas && initialized && gridLayerRef.current.length === 0) {
-      const gridObjects = createGrid(canvas);
+    if (!canvasRef.current || initialized) return;
+    
+    try {
+      const fabricCanvas = new FabricCanvas(canvasRef.current, {
+        width,
+        height,
+        selection: activeTool === DrawingMode.SELECT,
+        backgroundColor: "#ffffff"
+      });
+      
+      setCanvas(fabricCanvas);
+      setInitialized(true);
+      
+      // Create grid
+      const gridObjects = createGrid(fabricCanvas);
       gridLayerRef.current = gridObjects;
-      logger.info(`Created grid on canvas initialization with ${gridObjects.length} objects`);
-      canvas.renderAll();
+      fabricCanvas.renderAll();
+      
+      // Clean up canvas on unmount
+      return () => {
+        fabricCanvas.dispose();
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to initialize canvas: ${errorMsg}`);
     }
-  }, [canvas, initialized, createGrid]);
+  }, [width, height, activeTool, initialized]);
+
+  // Create grid function
+  const createGrid = (fabricCanvas: FabricCanvas) => {
+    try {
+      const gridSize = 20;
+      const gridObjects: any[] = [];
+      
+      // Create horizontal and vertical grid lines
+      for (let i = 0; i <= height; i += gridSize) {
+        const line = new fabric.Line([0, i, width, i], {
+          stroke: "#e0e0e0",
+          selectable: false,
+          evented: false,
+          objectType: "grid"
+        } as any);
+        fabricCanvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      for (let i = 0; i <= width; i += gridSize) {
+        const line = new fabric.Line([i, 0, i, height], {
+          stroke: "#e0e0e0",
+          selectable: false,
+          evented: false,
+          objectType: "grid"
+        } as any);
+        fabricCanvas.add(line);
+        gridObjects.push(line);
+      }
+      
+      return gridObjects;
+    } catch (error) {
+      toast.error("Failed to create grid");
+      return [];
+    }
+  };
 
   // Initialize the drawing brush when canvas is initialized
   useEffect(() => {
@@ -80,39 +123,96 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       // Ensure the drawing brush is initialized
       if (!canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
-        logger.info("Initialized freeDrawingBrush on canvas");
       }
       
       // Configure the brush
       canvas.freeDrawingBrush.color = activeLineColor;
       canvas.freeDrawingBrush.width = activeLineThickness;
-      logger.info("Configured drawing brush", { color: activeLineColor, width: activeLineThickness });
     }
   }, [canvas, initialized, activeLineColor, activeLineThickness]);
-
-  const {
-    historyStack,
-    historyIndex,
-    canUndo,
-    canRedo,
-    saveCurrentState,
-    undo,
-    redo
-  } = useCanvasHistory({ canvas });
-
-  const {
-    deleteSelectedObjects,
-    clearCanvas,
-    zoom,
-    saveCanvas
-  } = useCanvasOperations({
-    canvas,
-    saveCurrentState
-  });
   
   // Expose canvas operations to parent component
   useEffect(() => {
     if (!onCanvasRef || !canvas) return;
+    
+    // Simple history for undo/redo
+    const history: FabricObject[][] = [];
+    let historyIndex = -1;
+    let canUndo = false;
+    let canRedo = false;
+    
+    const saveCurrentState = () => {
+      const currentState = canvas.getObjects().filter(obj => !(obj as any).objectType === 'grid');
+      history.push([...currentState]);
+      historyIndex = history.length - 1;
+      canUndo = historyIndex > 0;
+      canRedo = false;
+    };
+    
+    const undo = () => {
+      if (historyIndex > 0) {
+        historyIndex--;
+        canUndo = historyIndex > 0;
+        canRedo = true;
+        
+        // Restore previous state
+        const prevState = history[historyIndex];
+        canvas.clear();
+        
+        // Re-add grid
+        createGrid(canvas);
+        
+        // Add objects from history
+        prevState.forEach(obj => canvas.add(obj));
+        canvas.renderAll();
+      }
+    };
+    
+    const redo = () => {
+      if (historyIndex < history.length - 1) {
+        historyIndex++;
+        canUndo = true;
+        canRedo = historyIndex < history.length - 1;
+        
+        // Restore next state
+        const nextState = history[historyIndex];
+        canvas.clear();
+        
+        // Re-add grid
+        createGrid(canvas);
+        
+        // Add objects from history
+        nextState.forEach(obj => canvas.add(obj));
+        canvas.renderAll();
+      }
+    };
+    
+    const clearCanvas = () => {
+      const gridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
+      canvas.clear();
+      
+      // Re-add grid objects
+      gridObjects.forEach(obj => canvas.add(obj));
+      canvas.renderAll();
+      
+      // Save state after clearing
+      saveCurrentState();
+    };
+    
+    const saveCanvas = () => {
+      if (canvas) {
+        const dataURL = canvas.toDataURL({
+          format: 'png',
+          quality: 1
+        });
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = 'floor-plan.png';
+        link.click();
+      }
+    };
     
     const operations = {
       canvas,
@@ -121,18 +221,12 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       undo,
       redo,
       clearCanvas,
-      deleteSelectedObjects,
       saveCanvas,
-      zoom,
       getCanvas: () => canvas
     };
     
-    // Only update if the operations have changed to prevent unnecessary re-renders
-    if (JSON.stringify(operationsRef.current) !== JSON.stringify(operations)) {
-      operationsRef.current = operations;
-      onCanvasRef(operations);
-    }
-  }, [canvas, canUndo, canRedo, onCanvasRef, undo, redo, clearCanvas, deleteSelectedObjects, saveCanvas, zoom]);
+    onCanvasRef(operations);
+  }, [canvas, onCanvasRef]);
   
   return (
     <>
@@ -145,10 +239,6 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
           lineThickness={activeLineThickness}
           lineColor={activeLineColor}
           gridLayerRef={gridLayerRef}
-          saveCurrentState={saveCurrentState}
-          undo={undo}
-          redo={redo}
-          deleteSelectedObjects={deleteSelectedObjects}
         />
       )}
     </>
