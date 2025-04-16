@@ -1,94 +1,75 @@
 
-/**
- * Hook for managing line creation functionality
- * @module hooks/straightLineTool/useLineCreation
- */
-import { useCallback } from "react";
-import { Line, Text } from "fabric";
-import { Point } from "@/types/core/Geometry";
-
-interface UseLineCreationProps {
-  lineColor: string;
-  lineThickness: number;
-}
+import { useCallback } from 'react';
+import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 
 /**
- * Hook for managing line creation functionality
+ * Hook for creating and managing line objects
  */
-export const useLineCreation = (props: UseLineCreationProps) => {
-  const { lineColor, lineThickness } = props;
-  
-  /**
-   * Create a line object
-   */
-  const createLine = useCallback((x1: number, y1: number, x2: number, y2: number) => {
-    const line = new Line([x1, y1, x2, y2], {
-      stroke: lineColor,
-      strokeWidth: lineThickness,
-      selectable: true,
-      strokeUniform: true,
-      objectType: 'line'
-    });
-    
-    return line;
-  }, [lineColor, lineThickness]);
-  
-  /**
-   * Create a distance tooltip
-   */
-  const createDistanceTooltip = useCallback((x: number, y: number, distance: number) => {
-    const tooltip = new Text(`${distance.toFixed(0)}px`, {
-      left: x,
-      top: y - 20,
-      fontSize: 12,
-      fill: '#333',
-      selectable: false,
-      objectType: 'tooltip'
-    });
-    
-    return tooltip;
-  }, []);
-  
-  /**
-   * Update line and tooltip
-   */
-  const updateLineAndTooltip = useCallback((
-    line: Line, 
-    tooltip: Text, 
-    startPoint: Point, 
-    endPoint: Point, 
-    setMeasurementData: (data: any) => void
+export const useLineCreation = () => {
+  // Create a line
+  const createLine = useCallback((
+    canvas: FabricCanvas | null,
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number,
+    lineColor: string,
+    lineThickness: number
   ) => {
-    // Update line
-    line.set({
-      x1: startPoint.x,
-      y1: startPoint.y,
-      x2: endPoint.x,
-      y2: endPoint.y
-    });
+    if (!canvas) return null;
     
-    // Calculate distance
-    const dx = endPoint.x - startPoint.x;
-    const dy = endPoint.y - startPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Update tooltip
-    tooltip.set({
-      left: startPoint.x + dx / 2,
-      top: startPoint.y + dy / 2 - 20,
-      text: `${distance.toFixed(0)}px`
-    });
-    
-    // Update measurement data
-    setMeasurementData(prev => ({
-      ...prev,
-      distance: distance
-    }));
+    try {
+      const line = new Line([x1, y1, x2, y2], {
+        stroke: lineColor,
+        strokeWidth: lineThickness,
+        selectable: true,
+        evented: true,
+        objectType: 'straight-line'
+      });
+      
+      canvas.add(line);
+      return line;
+    } catch (error) {
+      console.error('Error creating line:', error);
+      return null;
+    }
   }, []);
   
+  // Create a distance tooltip
+  const createDistanceTooltip = useCallback((
+    canvas: FabricCanvas | null,
+    x: number, 
+    y: number, 
+    distance: number
+  ) => {
+    if (!canvas) return null;
+    
+    try {
+      // Convert distance to meters (assuming 100px = 1m)
+      const meters = (distance / 100).toFixed(1);
+      
+      const tooltip = new Text(`${meters}m`, {
+        left: x,
+        top: y - 10,  // Position above the line
+        fontSize: 12,
+        fill: '#000000',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        padding: 2,
+        selectable: false,
+        evented: false,
+        objectType: 'measurement'
+      });
+      
+      canvas.add(tooltip);
+      return tooltip;
+    } catch (error) {
+      console.error('Error creating tooltip:', error);
+      return null;
+    }
+  }, []);
+
   return {
     createLine,
-    createDistanceTooltip,
-    updateLineAndTooltip
+    createDistanceTooltip
   };
 };

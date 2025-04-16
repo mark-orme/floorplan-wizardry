@@ -1,8 +1,6 @@
 
-/**
- * Re-exports from the straight line tool module
- * @module hooks/straightLineTool
- */
-
+// Export all hooks from the straightLineTool directory
+export { useLineState } from './useLineState';
+export { InputMethod } from './useLineInputMethod';
 export { useStraightLineTool } from './useStraightLineTool';
-export { useLineState, InputMethod } from './useLineState';
+export { useLineToolHandlers } from './useLineToolHandlers';
