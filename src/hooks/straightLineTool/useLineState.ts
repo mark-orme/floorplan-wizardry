@@ -99,7 +99,6 @@ export const useLineState = ({
     
     // Apply angle snapping if enabled
     if (anglesEnabled && startPoint) {
-      // Fixed: Now passing only the start and end points, not all 4 args
       endPoint = snapToAngle(startPoint, endPoint);
     }
     
@@ -124,7 +123,6 @@ export const useLineState = ({
     
     // Apply angle snapping if enabled
     if (anglesEnabled && startPoint) {
-      // Fixed: Now passing only the start and end points, not all 4 args
       endPoint = snapToAngle(startPoint, endPoint);
     }
     
