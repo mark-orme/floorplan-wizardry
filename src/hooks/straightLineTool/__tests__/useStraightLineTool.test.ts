@@ -24,7 +24,6 @@ vi.mock('../useLineState', () => ({
     distanceTooltip: null,
     initializeTool: vi.fn(),
     resetDrawingState: vi.fn(),
-    setIsDrawing: vi.fn(),
     inputMethod: 'mouse',
     isPencilMode: false,
     snapEnabled: true,
@@ -32,7 +31,6 @@ vi.mock('../useLineState', () => ({
     toggleAngles: vi.fn(),
     createLine: vi.fn(),
     createDistanceTooltip: vi.fn(),
-    updateLineAndTooltip: vi.fn(),
     anglesEnabled: false,
     measurementData: { distance: 0, angle: 0, unit: 'm' },
     setInputMethod: vi.fn(),
@@ -130,7 +128,7 @@ describe('useStraightLineTool', () => {
     mockCanvas = createMockCanvas();
     saveCurrentState = vi.fn();
     
-    // Reset the useLineState mock
+    // Reset the useLineState mock with corrected properties
     vi.mocked(useLineState).mockReturnValue({
       isDrawing: false,
       isActive: false,
@@ -141,7 +139,6 @@ describe('useStraightLineTool', () => {
       distanceTooltip: null,
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: vi.fn(),
       inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       snapEnabled: true,
@@ -149,7 +146,6 @@ describe('useStraightLineTool', () => {
       toggleAngles: vi.fn(),
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
-      updateLineAndTooltip: vi.fn(),
       anglesEnabled: false,
       measurementData: { distance: 0, angle: 0, unit: 'm' },
       setInputMethod: vi.fn(),
@@ -223,7 +219,7 @@ describe('useStraightLineTool', () => {
     // Mock startDrawing function
     const mockStartDrawing = vi.fn();
     
-    // Update useLineState mock with custom functions
+    // Update useLineState mock with correct properties
     vi.mocked(useLineState).mockReturnValue({
       isDrawing: false,
       isActive: false,
@@ -234,10 +230,8 @@ describe('useStraightLineTool', () => {
       distanceTooltip: null,
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: vi.fn(),
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
-      updateLineAndTooltip: vi.fn(),
       inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       snapEnabled: true,
@@ -281,7 +275,7 @@ describe('useStraightLineTool', () => {
     // Mock cancelDrawing function
     const mockCancelDrawing = vi.fn();
     
-    // Override useLineState mock for this test
+    // Override useLineState mock with correct properties
     vi.mocked(useLineState).mockReturnValue({
       isDrawing: true,
       isActive: true,
@@ -294,7 +288,6 @@ describe('useStraightLineTool', () => {
       resetDrawingState: vi.fn(),
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
-      updateLineAndTooltip: vi.fn(),
       inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       snapEnabled: true,
@@ -336,7 +329,7 @@ describe('useStraightLineTool', () => {
     // Mock completeDrawing function
     const mockCompleteDrawing = vi.fn();
     
-    // Override useLineState mock for this test
+    // Override useLineState mock with correct properties
     vi.mocked(useLineState).mockReturnValue({
       isDrawing: true,
       isActive: true,
@@ -366,10 +359,8 @@ describe('useStraightLineTool', () => {
       } as any,
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: vi.fn(),
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
-      updateLineAndTooltip: vi.fn(),
       inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       snapEnabled: true,

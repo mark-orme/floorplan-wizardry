@@ -1,22 +1,23 @@
+
 /**
  * Central exports for geometry utilities
  * @module utils/geometry
  */
 import { Point } from '@/types/core/Point';
-import { calculateArea, calculateGIA } from './geometry/areaCalculation';
-import { rotatePoint, translatePoint, scalePoint } from './geometry/transformations';
-import { validatePolygon, isPolygonClosed } from './geometry/validation';
-import { getBoundingBox, getMidpoint } from './geometry/boundingBox';
-import { pixelsToMeters, metersToPixels } from './geometry/conversion';
-import { simplifyPath, smoothPath } from './geometry/pathProcessing';
+import { calculateArea, calculateGIA } from '../geometry/areaCalculation';
+import { rotatePoint, translatePoint, scalePoint } from '../geometry/transformations';
+import { validatePolygon, isPolygonClosed } from '../geometry/validation';
+import { getBoundingBox, getMidpoint } from '../geometry/boundingBox';
+import { pixelsToMeters, metersToPixels } from '../geometry/conversion';
+import { simplifyPath, smoothPath } from '../geometry/pathProcessing';
 import { 
   snapPointToGrid as gridSnapPointToGrid, 
   snapToAngle as gridSnapToAngle 
-} from './grid/snapping';
+} from '../grid/snapping';
 import {
   isStraightPath,
   straightenPath
-} from './pathStraightening';
+} from '../geometry/pathStraightening';
 
 // Import line operations
 import {
@@ -25,7 +26,7 @@ import {
   isExactGridMultiple,
   calculateMidpoint,
   calculateAngle
-} from './geometry/lineOperations';
+} from '../geometry/lineOperations';
 
 // Re-export all geometry functions
 export {

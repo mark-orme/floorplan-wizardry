@@ -8,6 +8,7 @@ import { typeAdvancedSafetyRules } from './type-safety-advanced-rules.js';
 import { accessibilityRules } from './accessibility-rules.js';
 import { typeSafetyRules } from './type-safety-rules.js';
 import { typeEnforcementRules } from './type-enforcement-rules.js';
+import { mockTypeSafetyRules } from './typescript/mock-type-safety.js';
 
 // Export all TypeScript rules
 export default [
@@ -15,5 +16,6 @@ export default [
   typeAdvancedSafetyRules,
   accessibilityRules,
   typeSafetyRules,
-  typeEnforcementRules
+  typeEnforcementRules,
+  mockTypeSafetyRules
 ];
