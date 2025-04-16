@@ -184,7 +184,7 @@ describe('useStraightLineTool', () => {
     expect(result.current.isActive).toBe(true);
   });
   
-  it('should not set up event handlers if tool is not enabled', () => {
+  it('should not set up event handlers if tool is not STRAIGHT_LINE', () => {
     renderHook(() => useStraightLineTool({
       canvas: asMockCanvas(mockCanvas),
       enabled: false,
@@ -292,7 +292,6 @@ describe('useStraightLineTool', () => {
       distanceTooltip: { id: 'tooltip1', _set: vi.fn(), _render: vi.fn() } as any,
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: vi.fn(),
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
       updateLineAndTooltip: vi.fn(),
@@ -367,7 +366,6 @@ describe('useStraightLineTool', () => {
       } as any,
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: vi.fn(),
       createLine: vi.fn(),
       createDistanceTooltip: vi.fn(),
       updateLineAndTooltip: vi.fn(),

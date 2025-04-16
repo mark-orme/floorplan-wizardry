@@ -1,26 +1,31 @@
-
 /**
  * Central exports for geometry utilities
  * @module utils/geometry
  */
 import { Point } from '@/types/core/Point';
-import { calculateArea, calculateGIA } from './areaCalculation';
-import { rotatePoint, translatePoint, scalePoint } from './transformations';
-import { validatePolygon, isPolygonClosed } from './validation';
-import { getBoundingBox, getMidpoint } from './boundingBox';
-import { pixelsToMeters, metersToPixels } from './conversion';
-import { simplifyPath, smoothPath } from './pathProcessing';
+import { calculateArea, calculateGIA } from './geometry/areaCalculation';
+import { rotatePoint, translatePoint, scalePoint } from './geometry/transformations';
+import { validatePolygon, isPolygonClosed } from './geometry/validation';
+import { getBoundingBox, getMidpoint } from './geometry/boundingBox';
+import { pixelsToMeters, metersToPixels } from './geometry/conversion';
+import { simplifyPath, smoothPath } from './geometry/pathProcessing';
 import { 
-  snapToGrid,
-  snapToAngle,
+  snapPointToGrid as gridSnapPointToGrid, 
+  snapToAngle as gridSnapToAngle 
+} from './grid/snapping';
+import {
+  isStraightPath,
+  straightenPath
+} from './pathStraightening';
+
+// Import line operations
+import {
   calculateDistance,
-  calculateAngle,
-  isPointNear,
-  roundToGrid,
-  arePointsEqual,
-  snapPointToGrid,
-  calculateMidpoint
-} from './pointOperations';
+  formatDistance,
+  isExactGridMultiple,
+  calculateMidpoint,
+  calculateAngle
+} from './geometry/lineOperations';
 
 // Re-export all geometry functions
 export {
@@ -48,21 +53,19 @@ export {
   // Path processing
   simplifyPath,
   smoothPath,
-  
-  // Point operations
-  isPointNear,
-  roundToGrid,
-  arePointsEqual,
-  snapPointToGrid,
-  calculateMidpoint,
+  isStraightPath,
+  straightenPath,
   
   // Line operations
   calculateDistance,
+  formatDistance,
+  isExactGridMultiple,
+  calculateMidpoint,
   calculateAngle,
   
-  // Grid operations
-  snapToGrid,
-  snapToAngle
+  // Grid operations - renamed to avoid ambiguity
+  gridSnapPointToGrid as snapToGrid,
+  gridSnapToAngle
 };
 
 /**
@@ -81,10 +84,5 @@ export const getDistance = (p1: Point, p2: Point): number => {
  * @returns Formatted distance string with units
  */
 export const formatDisplayDistance = (pixels: number): string => {
-  // Simple distance formatter - implement actual conversion logic as needed
-  if (pixels < 100) {
-    return `${Math.round(pixels)}px`;
-  } else {
-    return `${(pixels / 100).toFixed(2)}m`;
-  }
+  return formatDistance(pixels);
 };

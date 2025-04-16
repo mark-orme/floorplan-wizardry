@@ -5,11 +5,13 @@
  * @module hooks/usePathProcessing
  */
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, Line } from 'fabric';
 import { FloorPlan, Stroke, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { Point } from '@/types/drawingTypes';
 import { v4 as uuidv4 } from 'uuid';
+import { isStraightPath, straightenPath } from '@/utils/geometry/pathStraightening';
+import { useDrawingContext } from '@/contexts/DrawingContext';
 
 /**
  * Minimum stroke length for processing
@@ -100,6 +102,8 @@ export const usePathProcessing = ({
   currentFloor,
   setGia
 }: UsePathProcessingProps) => {
+  // Get drawing context to access snapToGrid setting
+  const { snapToGrid: snapEnabled } = useDrawingContext();
   
   const processCreatedPath = useCallback((path: FabricPath) => {
     const canvas = fabricCanvasRef.current;
@@ -114,15 +118,68 @@ export const usePathProcessing = ({
       return;
     }
     
-    // Create stroke data - using the conversion function
-    const stroke: Stroke = {
-      id: uuidv4(),
-      points,
-      type: drawingToolToStrokeType(tool),
-      color: path.stroke?.toString() || '#000000',
-      thickness: path.strokeWidth || 1,
-      width: path.strokeWidth || 1 // Add width property to match Stroke interface
-    };
+    // Check if the path is nearly straight
+    const isNearlyStraight = isStraightPath(points);
+    
+    // Create stroke data
+    let stroke: Stroke;
+    
+    // If nearly straight, convert to a straight line
+    if (isNearlyStraight && tool === 'draw') {
+      // Remove the original path
+      canvas.remove(path);
+      
+      // Get straightened endpoints
+      const { start, end } = straightenPath(points, snapEnabled);
+      
+      // Create a Fabric.js Line
+      const line = new Line([start.x, start.y, end.x, end.y], {
+        stroke: path.stroke?.toString() || '#000000',
+        strokeWidth: path.strokeWidth || 1,
+        selectable: true,
+        evented: true,
+        objectType: 'straight-line'
+      });
+      
+      // Add the line to canvas
+      canvas.add(line);
+      
+      // Create stroke with just the endpoints
+      stroke = {
+        id: uuidv4(),
+        points: [start, end],
+        type: 'line',
+        color: path.stroke?.toString() || '#000000',
+        thickness: path.strokeWidth || 1,
+        width: path.strokeWidth || 1
+      };
+    } else {
+      // Handle as normal path
+      stroke = {
+        id: uuidv4(),
+        points,
+        type: drawingToolToStrokeType(tool),
+        color: path.stroke?.toString() || '#000000',
+        thickness: path.strokeWidth || 1,
+        width: path.strokeWidth || 1
+      };
+      
+      // Apply styling based on tool type
+      const strokeOptions = {
+        stroke: stroke.color,
+        strokeWidth: stroke.thickness,
+        fill: 'transparent',
+        opacity: 1,
+        selectable: true,
+        objectCaching: true
+      };
+      
+      // Apply path properties from stroke options
+      Object.keys(strokeOptions).forEach(key => {
+        // Type assertion to access properties dynamically
+        (path as any)[key] = (strokeOptions as any)[key];
+      });
+    }
     
     // Update floor plans with the new stroke
     setFloorPlans(prevFloorPlans => {
@@ -143,24 +200,8 @@ export const usePathProcessing = ({
       return updatedFloorPlans;
     });
     
-    // Apply styling based on tool type
-    const strokeOptions = {
-      stroke: stroke.color,
-      strokeWidth: stroke.thickness,
-      fill: 'transparent',
-      opacity: 1,
-      selectable: true,
-      objectCaching: true
-    };
-    
-    // Apply path properties from stroke options
-    Object.keys(strokeOptions).forEach(key => {
-      // Type assertion to access properties dynamically
-      (path as any)[key] = (strokeOptions as any)[key];
-    });
-    
     canvas.renderAll();
-  }, [fabricCanvasRef, tool, setFloorPlans, currentFloor]);
+  }, [fabricCanvasRef, tool, setFloorPlans, currentFloor, snapEnabled]);
   
   return {
     processCreatedPath
