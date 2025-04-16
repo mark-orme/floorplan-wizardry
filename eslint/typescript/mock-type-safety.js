@@ -28,7 +28,20 @@ export const mockTypeSafetyRules = {
       varsIgnorePattern: '^_',
       argsIgnorePattern: '^_',
       ignoreRestSiblings: true
-    }]
+    }],
+
+    // Rule to check missing properties in useLineState mock objects
+    'no-restricted-syntax': [
+      'error',
+      {
+        "selector": "CallExpression[callee.object.name='vi'][callee.property.name='mocked'][arguments.0.name='useLineState'] > CallExpression[callee.property.name='mockReturnValue'] > ObjectExpression:not(:has(Property[key.name='createLine']))",
+        "message": "Mock of useLineState is missing the createLine property"
+      },
+      {
+        "selector": "CallExpression[callee.object.name='vi'][callee.property.name='mocked'][arguments.0.name='useLineState'] > CallExpression[callee.property.name='mockReturnValue'] > ObjectExpression:not(:has(Property[key.name='createDistanceTooltip']))",
+        "message": "Mock of useLineState is missing the createDistanceTooltip property"
+      }
+    ]
   },
   overrides: [
     {

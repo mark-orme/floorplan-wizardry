@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool, InputMethod } from '../straightLineTool/useStraightLineTool';
@@ -283,6 +284,8 @@ describe('useStraightLineTool', () => {
       snapEnabled: true,
       toggleSnap: vi.fn(),
       toggleAngles: vi.fn(),
+      createLine: vi.fn(),
+      createDistanceTooltip: vi.fn(),
       anglesEnabled: false,
       setInputMethod: vi.fn(),
       setIsPencilMode: vi.fn(),
@@ -353,6 +356,8 @@ describe('useStraightLineTool', () => {
       snapEnabled: true,
       toggleSnap: vi.fn(),
       toggleAngles: vi.fn(),
+      createLine: vi.fn(),
+      createDistanceTooltip: vi.fn(),
       anglesEnabled: false,
       setInputMethod: vi.fn(),
       setIsPencilMode: vi.fn(),
