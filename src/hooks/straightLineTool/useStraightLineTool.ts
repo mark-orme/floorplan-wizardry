@@ -180,8 +180,10 @@ export const useLineState = (props: UseLineStateProps) => {
       });
     }
     
-    // Ensure line is brought to front
-    line.bringToFront();
+    // Ensure line is visible at the front
+    if (canvas) {
+      canvas.bringToFront(line);
+    }
     
     // Make sure we render after updating
     canvas.renderAll();
@@ -395,14 +397,14 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
       console.log("Line created:", line);
       
       // Bring line to front
-      line.bringToFront();
+      canvas.bringToFront(line);
       
       // Create tooltip
       const tooltip = lineState.createDistanceTooltip(snappedPoint.x, snappedPoint.y, 0);
       if (tooltip) {
         canvas.add(tooltip);
         lineState.setDistanceTooltip(tooltip);
-        tooltip.bringToFront();
+        canvas.bringToFront(tooltip);
       }
       
       // Force render
@@ -462,7 +464,7 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
         });
         
         // Bring line to front one more time to ensure visibility
-        currentLine.bringToFront();
+        canvas.bringToFront(currentLine);
         
         // Save state for undo
         if (saveCurrentState) {
