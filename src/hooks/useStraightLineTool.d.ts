@@ -11,6 +11,7 @@ export interface MeasurementData {
   angle: number | null;
   snapped: boolean;
   unit: string;
+  snapType?: 'grid' | 'angle' | 'both';
 }
 
 /**
@@ -73,4 +74,8 @@ export interface UseStraightLineToolResult {
   
   /** Handle pointer up event */
   handlePointerUp: (e: any) => void;
+  
+  /** Render tooltip with line measurements */
+  renderTooltip: () => React.ReactNode | null;
 }
+

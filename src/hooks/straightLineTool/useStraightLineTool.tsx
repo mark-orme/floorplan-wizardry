@@ -85,6 +85,21 @@ export const useStraightLineTool = ({
   useEffect(() => {
     if (isActive && measurementData.distance !== null && canvas) {
       setIsDrawing(true);
+      
+      // If we have measurement data, update tooltip data points
+      if (canvas && canvas.getActiveObjects().length > 0) {
+        const activeObject = canvas.getActiveObjects()[0];
+        if (activeObject && activeObject.type === 'line') {
+          const line = activeObject as any;
+          if (line.x1 !== undefined && line.y1 !== undefined && 
+              line.x2 !== undefined && line.y2 !== undefined) {
+            setTooltipData({
+              startPoint: { x: line.x1, y: line.y1 },
+              endPoint: { x: line.x2, y: line.y2 }
+            });
+          }
+        }
+      }
     } else {
       setIsDrawing(false);
     }
@@ -139,3 +154,4 @@ export const useStraightLineTool = ({
     isDrawing
   };
 };
+
