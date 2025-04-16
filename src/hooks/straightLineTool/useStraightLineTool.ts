@@ -192,7 +192,6 @@ export const useStraightLineTool = ({
     resetDrawingState: lineState.resetDrawingState,
     isToolInitialized: lineState.isToolInitialized,
     toggleSnap: lineState.toggleSnap,
-    toggleAngles: lineState.toggleAngles,
     setInputMethod: lineState.setInputMethod,
     setIsPencilMode: lineState.setIsPencilMode
   };

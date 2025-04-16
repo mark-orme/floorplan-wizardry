@@ -1,114 +1,80 @@
 
 /**
- * Hook for managing straight line tool setup and initialization
+ * Hook for setting up the line tool
  * @module hooks/straightLineTool/useLineToolSetup
  */
-import { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
-import logger from '@/utils/logger';
-import { InputMethod } from './useLineState';
+import { useState, useCallback, useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { Point } from "@/types/core/Point";
+import { InputMethod } from "./useLineInputMethod";
 
 interface UseLineToolSetupProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  isActive: boolean;
-  isDrawing: boolean;
-  tool: DrawingMode;
-  initializeTool: () => boolean;
-  handleFabricMouseDown: (e: any) => void;
-  handleFabricMouseMove: (e: any) => void;
-  handleFabricMouseUp: (e: any) => void;
-  handleKeyDown: (e: KeyboardEvent) => void;
-  lineColor: string;
-  lineThickness: number;
-  snapToAngle: boolean;
-  snapAngleDeg: number;
-  inputMethod: InputMethod;
+  canvas: FabricCanvas | null;
+  enabled: boolean;
 }
 
 /**
- * Hook for setting up the straight line tool's event listeners and initialization
+ * Hook for initializing and setting up the line tool
  */
-export const useLineToolSetup = ({
-  fabricCanvasRef,
-  isActive,
-  isDrawing,
-  tool,
-  initializeTool,
-  handleFabricMouseDown,
-  handleFabricMouseMove,
-  handleFabricMouseUp,
-  handleKeyDown,
-  lineColor,
-  lineThickness,
-  snapToAngle,
-  snapAngleDeg,
-  inputMethod
-}: UseLineToolSetupProps) => {
-  // Track if the tool has been initialized
-  const isToolInitializedRef = useRef<boolean>(false);
-
-  // Set up canvas event handlers when tool becomes active
+export const useLineToolSetup = ({ canvas, enabled }: UseLineToolSetupProps) => {
+  const [isActive, setIsActive] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<Point | null>(null);
+  const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  
+  /**
+   * Activate the line tool
+   */
+  const activateTool = useCallback(() => {
+    if (!canvas) return;
+    
+    setIsActive(true);
+    canvas.defaultCursor = 'crosshair';
+    canvas.hoverCursor = 'crosshair';
+  }, [canvas]);
+  
+  /**
+   * Deactivate the line tool
+   */
+  const deactivateTool = useCallback(() => {
+    if (!canvas) return;
+    
+    setIsActive(false);
+    setIsDrawing(false);
+    setStartPoint(null);
+    setCurrentPoint(null);
+    
+    canvas.defaultCursor = 'default';
+    canvas.hoverCursor = 'default';
+  }, [canvas]);
+  
+  /**
+   * Handle tool activation/deactivation when enabled changes
+   */
   useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Only set up handlers when tool is active
-    if (!isActive) {
-      isToolInitializedRef.current = false;
-      return;
+    if (enabled) {
+      activateTool();
+    } else {
+      deactivateTool();
     }
     
-    const canvas = fabricCanvasRef.current;
-    
-    // Initialize tool if needed
-    if (!isToolInitializedRef.current) {
-      initializeTool();
-      isToolInitializedRef.current = true;
-      
-      // Log initialization with context
-      logger.info("Tool initialized", { 
-        tool,
-        isActive,
-        lineColor,
-        lineThickness,
-        snapToAngle,
-        snapAngleDeg,
-        inputMethod
-      });
-    }
-    
-    // Add fabric canvas event listeners
-    canvas.on('mouse:down', handleFabricMouseDown);
-    canvas.on('mouse:move', handleFabricMouseMove);
-    canvas.on('mouse:up', handleFabricMouseUp);
-    
-    // Handle escape key to cancel drawing
-    window.addEventListener('keydown', handleKeyDown);
-    
-    // Cleanup function
     return () => {
-      canvas.off('mouse:down', handleFabricMouseDown);
-      canvas.off('mouse:move', handleFabricMouseMove);
-      canvas.off('mouse:up', handleFabricMouseUp);
-      window.removeEventListener('keydown', handleKeyDown);
+      deactivateTool();
     };
-  }, [
-    fabricCanvasRef, 
-    isActive, 
-    initializeTool, 
-    handleFabricMouseDown, 
-    handleFabricMouseMove, 
-    handleFabricMouseUp, 
-    handleKeyDown,
-    lineColor,
-    lineThickness,
-    snapToAngle,
-    snapAngleDeg,
-    tool,
-    inputMethod
-  ]);
-
+  }, [enabled, activateTool, deactivateTool]);
+  
   return {
-    isToolInitialized: isToolInitializedRef.current
+    isActive,
+    isDrawing,
+    startPoint,
+    currentPoint,
+    inputMethod,
+    setIsDrawing,
+    setStartPoint,
+    setCurrentPoint,
+    setInputMethod,
+    activateTool,
+    deactivateTool
   };
 };

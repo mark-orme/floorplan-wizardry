@@ -1,102 +1,133 @@
 
 /**
- * Event handling for the straight line tool
+ * Hook for managing straight line drawing events
  * @module hooks/straightLineTool/useStraightLineEvents
  */
-import { useCallback } from 'react';
-import { Canvas as FabricCanvas, TEvent } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { TPointerEvent } from '@/types/fabric-events';
-import { useDrawingErrorReporting } from '@/hooks/useDrawingErrorReporting';
-import { getPointerCoordinates, hasValidCoordinates } from '@/utils/fabric/eventHelpers';
-
-// Import the InputMethod type from useLineState to ensure consistency
-import { InputMethod } from './useLineState';
+import { useCallback, useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { Point } from "@/types/core/Point";
+import { InputMethod } from "./useLineInputMethod";
 
 interface UseStraightLineEventsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas: FabricCanvas | null;
   isActive: boolean;
   isDrawing: boolean;
-  handlePointerDown: (point: Point) => void;
-  handlePointerMove: (point: Point) => void;
-  handlePointerUp: (point: Point) => void;
-  inputMethod: InputMethod; // Use the consistent InputMethod type
+  startDrawing: (point: Point) => void;
+  continueDrawing: (point: Point) => void;
+  completeDrawing: (point: Point) => void;
+  cancelDrawing: () => void;
 }
 
 /**
- * Hook to handle Fabric.js events for the straight line tool
+ * Hook for managing mouse/touch events for straight line drawing
  */
 export const useStraightLineEvents = ({
-  fabricCanvasRef,
+  canvas,
   isActive,
   isDrawing,
-  handlePointerDown,
-  handlePointerMove,
-  handlePointerUp,
-  inputMethod
+  startDrawing,
+  continueDrawing,
+  completeDrawing,
+  cancelDrawing
 }: UseStraightLineEventsProps) => {
-  const { reportDrawingError } = useDrawingErrorReporting();
+  /**
+   * Handle mouse down event
+   */
+  const handleMouseDown = useCallback((e: any) => {
+    if (!canvas || !isActive) return;
+    
+    // Prevent default behavior
+    if (e.e && e.e.preventDefault) {
+      e.e.preventDefault();
+    }
+    
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Start drawing
+    startDrawing(point);
+  }, [canvas, isActive, startDrawing]);
   
   /**
-   * Handle Fabric.js mouse down event
+   * Handle mouse move event
    */
-  const handleFabricMouseDown = useCallback((e: TEvent<TPointerEvent>) => {
-    if (!isActive || !e) return;
+  const handleMouseMove = useCallback((e: any) => {
+    if (!canvas || !isActive || !isDrawing) return;
     
-    try {
-      // Get position from fabric event using our helper
-      if (hasValidCoordinates(e)) {
-        const point = getPointerCoordinates(e);
-        handlePointerDown(point);
-      }
-    } catch (error) {
-      reportDrawingError(error, 'line-mouse-down', {
-        interaction: { type: inputMethod }
-      });
+    // Prevent default behavior
+    if (e.e && e.e.preventDefault) {
+      e.e.preventDefault();
     }
-  }, [isActive, handlePointerDown, reportDrawingError, inputMethod]);
+    
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Continue drawing
+    continueDrawing(point);
+  }, [canvas, isActive, isDrawing, continueDrawing]);
   
   /**
-   * Handle Fabric.js mouse move event
+   * Handle mouse up event
    */
-  const handleFabricMouseMove = useCallback((e: TEvent<TPointerEvent>) => {
-    if (!isActive || !isDrawing || !e) return;
+  const handleMouseUp = useCallback((e: any) => {
+    if (!canvas || !isActive || !isDrawing) return;
     
-    try {
-      // Get position from fabric event using our helper
-      if (hasValidCoordinates(e)) {
-        const point = getPointerCoordinates(e);
-        handlePointerMove(point);
-      }
-    } catch (error) {
-      reportDrawingError(error, 'line-mouse-move', {
-        interaction: { type: inputMethod }
-      });
+    // Prevent default behavior
+    if (e.e && e.e.preventDefault) {
+      e.e.preventDefault();
     }
-  }, [isActive, isDrawing, handlePointerMove, reportDrawingError, inputMethod]);
+    
+    // Get pointer coordinates
+    const pointer = canvas.getPointer(e.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Complete drawing
+    completeDrawing(point);
+  }, [canvas, isActive, isDrawing, completeDrawing]);
   
   /**
-   * Handle Fabric.js mouse up event
+   * Handle keyboard events (Escape to cancel)
    */
-  const handleFabricMouseUp = useCallback((e: TEvent<TPointerEvent>) => {
-    if (!isActive || !isDrawing || !e) return;
-    
-    try {
-      // Get position from fabric event using our helper
-      if (hasValidCoordinates(e)) {
-        const point = getPointerCoordinates(e);
-        handlePointerUp(point);
-      }
-    } catch (error) {
-      reportDrawingError(error, 'line-mouse-up', {
-        interaction: { type: inputMethod }
-      });
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && isDrawing) {
+      cancelDrawing();
     }
-  }, [isActive, isDrawing, handlePointerUp, reportDrawingError, inputMethod]);
-
+  }, [isDrawing, cancelDrawing]);
+  
+  /**
+   * Set up event listeners when component mounts
+   */
+  useEffect(() => {
+    if (!canvas || !isActive) return;
+    
+    // Add event listeners
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      // Clean up event listeners
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    canvas,
+    isActive,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleKeyDown
+  ]);
+  
   return {
-    handleFabricMouseDown,
-    handleFabricMouseMove,
-    handleFabricMouseUp
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleKeyDown
   };
 };

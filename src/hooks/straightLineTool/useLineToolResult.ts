@@ -4,7 +4,7 @@
  * @module hooks/straightLineTool/useLineToolResult
  */
 import { useMemo } from "react";
-import { InputMethod } from "./useLineState";
+import { InputMethod } from "./useLineInputMethod";
 
 interface UseLineToolResultProps {
   isDrawing: boolean;
