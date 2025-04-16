@@ -4,6 +4,7 @@ import { Point } from '@/types/core/Point';
 import { calculateDistance, calculateAngle } from '@/utils/geometry/lineOperations';
 import { useLinePreview } from './useLinePreview';
 import { InputMethod } from './useLineInputMethod';
+import { getCanvas, safeRender } from '@/utils/canvas';
 
 interface LineState {
   fabricCanvasRef: { current: any };
@@ -72,7 +73,7 @@ export const useLineToolHandlers = ({ lineState, updateMeasurementData }: UseLin
     }
     
     // Get canvas and pointer coordinates
-    const canvas = fabricCanvasRef.current;
+    const canvas = getCanvas(fabricCanvasRef);
     if (!canvas) return;
     
     const pointer = canvas.getPointer(e.e);
@@ -106,7 +107,7 @@ export const useLineToolHandlers = ({ lineState, updateMeasurementData }: UseLin
    * Handle mouse move event
    */
   const handleMouseMove = useCallback((e: any) => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = getCanvas(fabricCanvasRef);
     if (!canvas) return;
     
     const pointer = canvas.getPointer(e.e);
@@ -115,8 +116,16 @@ export const useLineToolHandlers = ({ lineState, updateMeasurementData }: UseLin
     if (isDrawing && startPoint) {
       // Update line preview and get snapped point
       const linePreviewResult = updateLinePreview(startPoint, point);
-      const endPoint = linePreviewResult?.endPoint || point;
-      const isSnapped = linePreviewResult?.isSnapped || false;
+      
+      // Default values in case updateLinePreview returns null or undefined
+      let endPoint = point;
+      let isSnapped = false;
+      
+      // Check if linePreviewResult exists and extract values
+      if (linePreviewResult) {
+        endPoint = linePreviewResult.endPoint || point;
+        isSnapped = linePreviewResult.isSnapped || false;
+      }
       
       // Continue drawing with the potentially snapped point
       continueDrawing(endPoint);
@@ -155,7 +164,7 @@ export const useLineToolHandlers = ({ lineState, updateMeasurementData }: UseLin
   const handleMouseUp = useCallback((e: any) => {
     if (!isDrawing) return;
     
-    const canvas = fabricCanvasRef.current;
+    const canvas = getCanvas(fabricCanvasRef);
     if (!canvas) return;
     
     const pointer = canvas.getPointer(e.e);

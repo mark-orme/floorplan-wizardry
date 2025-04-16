@@ -2,6 +2,16 @@
 import { useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Circle } from 'fabric';
 import { Point } from '@/types/core/Point';
+import { getCanvas, safeRender, defaultFabricOptions } from '@/utils/canvas';
+
+/**
+ * Result of line preview update
+ */
+export interface LinePreviewResult {
+  startPoint: Point;
+  endPoint: Point;
+  isSnapped: boolean;
+}
 
 /**
  * Hook for creating and managing line previews during drawing
@@ -22,7 +32,7 @@ export const useLinePreview = (
    * Show hover indicator at point
    */
   const showHoverIndicator = useCallback((point: Point) => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = getCanvas(fabricCanvasRef);
     if (!canvas) return;
     
     // Remove existing indicator if any
@@ -38,14 +48,13 @@ export const useLinePreview = (
       fill: lineColor,
       stroke: '#ffffff',
       strokeWidth: 2,
-      selectable: false,
-      evented: false,
+      ...defaultFabricOptions,
       originX: 'center',
       originY: 'center'
     });
     
     canvas.add(indicator);
-    canvas.renderAll();
+    safeRender(canvas);
     
     hoverIndicatorRef.current = indicator;
   }, [fabricCanvasRef, lineColor]);
@@ -54,21 +63,24 @@ export const useLinePreview = (
    * Hide hover indicator
    */
   const hideHoverIndicator = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = getCanvas(fabricCanvasRef);
     if (!canvas || !hoverIndicatorRef.current) return;
     
     canvas.remove(hoverIndicatorRef.current);
-    canvas.renderAll();
+    safeRender(canvas);
     
     hoverIndicatorRef.current = null;
   }, [fabricCanvasRef]);
   
   /**
    * Update line preview
+   * @returns LinePreviewResult with start, end points and snap status
    */
-  const updateLinePreview = useCallback((startPoint: Point, endPoint: Point) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return null;
+  const updateLinePreview = useCallback((startPoint: Point, endPoint: Point): LinePreviewResult => {
+    const canvas = getCanvas(fabricCanvasRef);
+    if (!canvas) {
+      return { startPoint, endPoint, isSnapped: false };
+    }
     
     // Apply constraints
     let finalEndPoint = { ...endPoint };
@@ -78,15 +90,33 @@ export const useLinePreview = (
     if (snapEnabled) {
       // Simple grid snapping (10px grid)
       const gridSize = 10;
-      finalEndPoint.x = Math.round(finalEndPoint.x / gridSize) * gridSize;
-      finalEndPoint.y = Math.round(finalEndPoint.y / gridSize) * gridSize;
-      isSnapped = finalEndPoint.x !== endPoint.x || finalEndPoint.y !== endPoint.y;
+      const snappedX = Math.round(finalEndPoint.x / gridSize) * gridSize;
+      const snappedY = Math.round(finalEndPoint.y / gridSize) * gridSize;
+      
+      finalEndPoint = { x: snappedX, y: snappedY };
+      isSnapped = snappedX !== endPoint.x || snappedY !== endPoint.y;
     }
     
     // Apply angle constraints if enabled
     if (anglesEnabled && startPoint) {
       // Implement angle constraints logic here
       // For example, constrain to 45-degree angles
+      if (anglesEnabled) {
+        const dx = endPoint.x - startPoint.x;
+        const dy = endPoint.y - startPoint.y;
+        const angle = Math.atan2(dy, dx);
+        
+        // Snap to 45-degree increments
+        const snappedAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        finalEndPoint = {
+          x: startPoint.x + Math.cos(snappedAngle) * distance,
+          y: startPoint.y + Math.sin(snappedAngle) * distance
+        };
+        
+        isSnapped = true;
+      }
     }
     
     // Remove existing preview if any
@@ -104,12 +134,11 @@ export const useLinePreview = (
       stroke: lineColor,
       strokeWidth: lineThickness,
       strokeDashArray: [5, 5],
-      selectable: false,
-      evented: false
+      ...defaultFabricOptions
     });
     
     canvas.add(previewLine);
-    canvas.renderAll();
+    safeRender(canvas);
     
     previewLineRef.current = previewLine;
     
@@ -124,11 +153,11 @@ export const useLinePreview = (
    * Clear line preview
    */
   const clearLinePreview = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = getCanvas(fabricCanvasRef);
     if (!canvas || !previewLineRef.current) return;
     
     canvas.remove(previewLineRef.current);
-    canvas.renderAll();
+    safeRender(canvas);
     
     previewLineRef.current = null;
   }, [fabricCanvasRef]);
