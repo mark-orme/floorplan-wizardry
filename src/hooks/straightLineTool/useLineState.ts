@@ -9,6 +9,14 @@ export interface LinePoint {
   y: number;
 }
 
+// Add InputMethod enum and export it
+export enum InputMethod {
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  PENCIL = 'pencil',
+  STYLUS = 'stylus'
+}
+
 /**
  * Hook for managing straight line state
  */
@@ -25,6 +33,11 @@ export const useLineState = ({
 }) => {
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isToolInitialized, setIsToolInitialized] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  const [isPencilMode, setIsPencilMode] = useState(false);
+  const [anglesEnabled, setAnglesEnabled] = useState(false);
   
   // Get snap to grid functionality
   const { snapPointToGrid } = useSnapToGrid();
@@ -132,6 +145,44 @@ export const useLineState = ({
   }, [fabricCanvasRef]);
   
   /**
+   * Initialize the tool
+   */
+  const initializeTool = useCallback(() => {
+    if (!fabricCanvasRef.current) return false;
+    
+    try {
+      const canvas = fabricCanvasRef.current;
+      
+      // Set canvas properties for drawing
+      canvas.selection = false;
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+      canvas.isDrawingMode = false;
+      
+      setIsToolInitialized(true);
+      return true;
+    } catch (error) {
+      captureError(error, 'init-tool-error');
+      console.error('Error initializing tool:', error);
+      return false;
+    }
+  }, [fabricCanvasRef]);
+  
+  /**
+   * Toggle snap to grid
+   */
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
+  
+  /**
+   * Toggle angles snapping
+   */
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
+  
+  /**
    * Reset drawing state
    */
   const resetDrawingState = useCallback(() => {
@@ -141,8 +192,15 @@ export const useLineState = ({
     setDistanceTooltip(null);
   }, [setIsDrawing, setStartPoint, setCurrentLine, setDistanceTooltip]);
   
+  // Measurement data (mock for now)
+  const measurementData = {
+    distance: 0,
+    unit: 'm'
+  };
+  
   return {
     isDrawing,
+    isToolInitialized,
     startPointRef,
     currentLineRef,
     distanceTooltipRef,
@@ -154,6 +212,16 @@ export const useLineState = ({
     createDistanceTooltip,
     updateLineAndTooltip,
     resetDrawingState,
-    snapPointToGrid
+    snapPointToGrid,
+    inputMethod,
+    setInputMethod,
+    isPencilMode,
+    setIsPencilMode,
+    snapEnabled,
+    toggleSnap,
+    anglesEnabled,
+    toggleAngles,
+    initializeTool,
+    measurementData
   };
 };

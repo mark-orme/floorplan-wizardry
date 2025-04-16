@@ -9,7 +9,7 @@ import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineToo
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Geometry';
 import { toast } from 'sonner';
-import { InputMethod } from '@/hooks/straightLineTool/useStraightLineTool';
+import { InputMethod } from '@/hooks/straightLineTool/useLineState';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
