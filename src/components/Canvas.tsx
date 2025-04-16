@@ -5,6 +5,12 @@ import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
 import { useRestorePrompt } from '@/hooks/useRestorePrompt';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 import { captureError, captureMessage } from '@/utils/sentryUtils';
+import { 
+  logCanvasInitAttempt, 
+  logCanvasInitSuccess, 
+  handleCanvasInitError,
+  generateCanvasDiagnosticReport
+} from '@/utils/canvas/canvasErrorMonitoring';
 
 export interface CanvasProps {
   width: number;
@@ -42,7 +48,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   const canvasInitTimeRef = useRef<number>(Date.now());
   const initTriesRef = useRef<number>(0);
   
-  // Initialize canvas
+  // Initialize canvas with enhanced error monitoring
   useEffect(() => {
     if (!canvasRef.current) {
       captureMessage('Canvas element ref not available during initialization', 'canvas-ref-missing', {
@@ -50,30 +56,20 @@ export const Canvas: React.FC<CanvasProps> = ({
         tags: {
           component: 'Canvas',
           operation: 'initialization'
+        },
+        extra: {
+          diagnostics: generateCanvasDiagnosticReport()
         }
       });
       return;
     }
     
     try {
-      // Track initialization attempt
-      initTriesRef.current += 1;
-      const initAttempt = initTriesRef.current;
+      // Track initialization attempt with enhanced diagnostics
+      const attempt = logCanvasInitAttempt(canvasId, { width, height });
+      initTriesRef.current = attempt;
       
-      captureMessage(`Canvas initialization attempt #${initAttempt}`, 'canvas-init-attempt', {
-        level: 'info',
-        tags: {
-          component: 'Canvas',
-          operation: 'initialization',
-          attempt: String(initAttempt)
-        },
-        extra: {
-          dimensions: { width, height },
-          canvasElementId: canvasId,
-          timestamp: new Date().toISOString()
-        }
-      });
-      
+      // Create the Fabric.js canvas instance
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
@@ -81,25 +77,32 @@ export const Canvas: React.FC<CanvasProps> = ({
         selection: true
       });
       
+      // Log successful initialization
       const initDuration = Date.now() - canvasInitTimeRef.current;
-      
-      captureMessage(`Canvas initialized successfully in ${initDuration}ms`, 'canvas-init-success', {
-        level: 'info',
-        tags: {
-          component: 'Canvas',
-          operation: 'initialization'
-        },
-        extra: {
-          dimensions: { width, height },
-          duration: initDuration,
-          canvasType: canvas.constructor.name
-        }
+      logCanvasInitSuccess(canvasId, initDuration, {
+        canvasType: canvas.constructor.name,
+        objectCount: canvas.getObjects().length,
+        dimensions: { width, height }
       });
       
+      // Notify parent component
       if (onCanvasReady) {
         onCanvasReady(canvas);
       }
       
+      // Update global canvas state for debugging
+      if (typeof window !== 'undefined') {
+        window.__canvas_state = {
+          width: canvas.width,
+          height: canvas.height,
+          zoom: canvas.getZoom(),
+          objectCount: canvas.getObjects().length,
+          gridVisible: canvas.getObjects().some((obj: any) => obj.isGrid),
+          lastOperation: 'initialize'
+        };
+      }
+      
+      // Set up cleanup function
       return () => {
         try {
           canvas.dispose();
@@ -122,53 +125,24 @@ export const Canvas: React.FC<CanvasProps> = ({
       };
     } catch (error) {
       console.error('Error initializing canvas:', error);
-      captureError(error, 'canvas-initialization-error', {
-        level: 'error',
-        tags: {
-          component: 'Canvas',
-          operation: 'initialization',
-          attempt: String(initTriesRef.current)
-        },
-        extra: {
-          dimensions: { width, height },
-          domInfo: canvasRef.current ? {
-            width: canvasRef.current.width,
-            height: canvasRef.current.height,
-            offsetWidth: canvasRef.current.offsetWidth,
-            offsetHeight: canvasRef.current.offsetHeight,
-            clientWidth: canvasRef.current.clientWidth,
-            clientHeight: canvasRef.current.clientHeight
-          } : 'Canvas element not available',
-          browserInfo: {
-            userAgent: navigator.userAgent,
-            vendor: navigator.vendor,
-            platform: navigator.platform,
-            devicePixelRatio: window.devicePixelRatio
-          }
-        }
-      });
       
-      if (onError && error instanceof Error) {
-        onError(error);
-      }
-      
-      // Check for fatal errors that would prevent further attempts
-      const isFatalCanvasError = error instanceof Error && (
-        error.message.includes('has been already initialized') ||
-        error.message.includes('context creation failed') ||
-        error.message.includes('WebGL context') ||
-        error.message.includes('elements.lower.el')
+      // Use enhanced error handling with diagnostics
+      const isFatalError = handleCanvasInitError(
+        error, 
+        canvasId, 
+        canvasRef.current,
+        initTriesRef.current
       );
       
-      if (isFatalCanvasError) {
-        captureMessage('Fatal canvas initialization error detected', 'canvas-fatal-error', {
-          level: 'fatal',
-          tags: {
-            component: 'Canvas',
-            operation: 'initialization',
-            errorType: 'fatal'
-          }
-        });
+      // Dispatch custom event for global error handling
+      const errorEvent = new CustomEvent('canvas-init-error', { 
+        detail: { error, canvasId, isFatal: isFatalError } 
+      });
+      window.dispatchEvent(errorEvent);
+      
+      // Notify parent component if callback provided
+      if (onError && error instanceof Error) {
+        onError(error);
       }
     }
   }, [width, height, onCanvasReady, onError, canvasId]);
