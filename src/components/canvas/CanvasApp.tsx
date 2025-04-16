@@ -1,3 +1,4 @@
+
 /**
  * Canvas application component
  * Main component that wraps the canvas with necessary UI elements
@@ -11,6 +12,9 @@ import { DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
 import type { DebugInfoState } from "@/types/core/DebugInfo";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
+import { useRealtimeCanvasSync } from "@/hooks/useRealtimeCanvasSync";
+import { useCollaborationStatus } from "@/components/canvas/app/useCollaborationStatus";
+import { CanvasCollaborationIndicator } from "@/components/canvas/app/CanvasCollaborationIndicator";
 
 // Default dimensions for the canvas
 const DEFAULT_CANVAS_WIDTH = 800;
@@ -38,6 +42,7 @@ export const CanvasApp = ({
   enableSync = true,
   showGridDebug = false
 }: CanvasAppProps): JSX.Element => {
+  const [canvas, setLocalCanvas] = useState<FabricCanvas | null>(null);
   const [debugInfo, setDebugInfo] = useState<DebugInfoState>(() => ({
     ...DEFAULT_DEBUG_STATE,
     hasError: false,
@@ -56,11 +61,35 @@ export const CanvasApp = ({
     console.log('Canvas Initialized:', debugInfo.canvasInitialized);
   }, [debugInfo]);
   
+  // Set up real-time sync using the hook
+  const { collaborators, syncCanvas } = useRealtimeCanvasSync({
+    canvas: canvas,
+    enabled: enableSync,
+    onRemoteUpdate: (sender, timestamp) => {
+      console.log(`Canvas updated by ${sender} at ${new Date(timestamp).toLocaleString()}`);
+    }
+  });
+  
+  // Use collaboration status hook to show toast notifications
+  useCollaborationStatus({
+    collaborators,
+    enableSync
+  });
+  
   // Handler for canvas ready event
-  const handleCanvasReady = (canvas: FabricCanvas) => {
+  const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
     console.log('Canvas is ready');
+    setLocalCanvas(fabricCanvas);
+    
     if (setCanvas) {
-      setCanvas(canvas);
+      setCanvas(fabricCanvas);
+    }
+    
+    // Sync the initial canvas state
+    if (enableSync) {
+      setTimeout(() => {
+        syncCanvas('User');
+      }, 1000);
     }
   };
 
@@ -76,17 +105,26 @@ export const CanvasApp = ({
   
   return (
     <CanvasLayout>
-      <CanvasWithFallback 
-        width={DEFAULT_CANVAS_WIDTH}
-        height={DEFAULT_CANVAS_HEIGHT}
-        tool={tool}
-        lineThickness={lineThickness}
-        lineColor={lineColor}
-        onCanvasReady={handleCanvasReady}
-        onError={handleCanvasError}
-        className="w-full h-full"
-      />
-      <DrawingToolbarModals />
+      <div className="relative w-full h-full">
+        <CanvasWithFallback 
+          width={DEFAULT_CANVAS_WIDTH}
+          height={DEFAULT_CANVAS_HEIGHT}
+          tool={tool}
+          lineThickness={lineThickness}
+          lineColor={lineColor}
+          onCanvasReady={handleCanvasReady}
+          onError={handleCanvasError}
+          className="w-full h-full"
+        />
+        
+        {/* Collaboration indicator for real-time editing */}
+        <CanvasCollaborationIndicator 
+          collaborators={collaborators} 
+          enabled={enableSync}
+        />
+        
+        <DrawingToolbarModals />
+      </div>
     </CanvasLayout>
   );
 };

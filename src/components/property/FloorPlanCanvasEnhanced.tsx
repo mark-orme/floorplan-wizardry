@@ -1,5 +1,5 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { EnhancedCanvas } from "@/components/EnhancedCanvas";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { useEnhancedSnapToGrid } from "@/hooks/useEnhancedSnapToGrid";
@@ -13,6 +13,8 @@ import { useFloorPlanCanvas } from "@/hooks/useFloorPlanCanvas";
 import { AreaCalculationDisplay } from "./AreaCalculationDisplay";
 import { ToolIndicator } from "./ToolIndicator";
 import { CalculateAreaButton } from "./CalculateAreaButton";
+import { useRealtimeCanvasSync } from "@/hooks/useRealtimeCanvasSync";
+import { CanvasCollaborationIndicator } from "@/components/canvas/app/CanvasCollaborationIndicator";
 
 interface FloorPlanCanvasEnhancedProps {
   /** Callback for canvas error */
@@ -25,6 +27,8 @@ interface FloorPlanCanvasEnhancedProps {
   initialLineThickness?: number;
   /** Whether to show grid */
   showGrid?: boolean;
+  /** Whether to enable realtime sync */
+  enableSync?: boolean;
 }
 
 export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = ({
@@ -32,7 +36,8 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
   initialTool = DrawingMode.SELECT,
   initialLineColor = "#000000",
   initialLineThickness = 2,
-  showGrid = true
+  showGrid = true,
+  enableSync = true
 }) => {
   // Canvas container reference
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +65,26 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     initialLineThickness,
     onCanvasError
   });
+  
+  // Set up real-time sync if enabled
+  const { collaborators, syncCanvas } = useRealtimeCanvasSync({
+    canvas: fabricCanvasRef.current,
+    enabled: enableSync,
+    onRemoteUpdate: (sender, timestamp) => {
+      console.log(`Canvas updated by ${sender} at ${new Date(timestamp).toLocaleString()}`);
+    }
+  });
+  
+  // Sync canvas on significant changes
+  useEffect(() => {
+    if (enableSync && fabricCanvasRef.current) {
+      const syncTimer = setTimeout(() => {
+        syncCanvas('User');
+      }, 1000);
+      
+      return () => clearTimeout(syncTimer);
+    }
+  }, [layers, activeLayerId, enableSync, syncCanvas]);
   
   // Use paper size manager hook
   const { currentPaperSize, paperSizes, infiniteCanvas, changePaperSize, toggleInfiniteCanvas } = 
@@ -106,6 +131,12 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
           setLayers={setLayers}
           activeLayerId={activeLayerId}
           setActiveLayerId={setActiveLayerId}
+        />
+        
+        {/* Collaboration indicator */}
+        <CanvasCollaborationIndicator 
+          collaborators={collaborators}
+          enabled={enableSync}
         />
         
         {/* Area calculation display - extracted to component */}

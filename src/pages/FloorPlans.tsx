@@ -12,6 +12,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { DrawingProvider } from "@/contexts/DrawingContext";
 import { CanvasProvider } from "@/contexts/CanvasContext";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
+import { DrawingMode } from "@/constants/drawingModes";
 
 /**
  * FloorPlans page component
@@ -20,6 +21,7 @@ import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasC
  */
 const FloorPlans = () => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [enableSync, setEnableSync] = useState<boolean>(true);
 
   // Reset canvas initialization state when the page loads
   useEffect(() => {
@@ -31,12 +33,30 @@ const FloorPlans = () => {
       duration: 3000,
       id: "floor-plan-welcome"
     });
-  }, []);
+    
+    // Enable realtime sync by default
+    if (!enableSync) {
+      setEnableSync(true);
+    }
+  }, [enableSync]);
   
   return (
     <main className="flex flex-col w-full min-h-screen bg-background">
-      <div className="flex items-center p-2 bg-muted/30 border-b">
+      <div className="flex items-center justify-between p-2 bg-muted/30 border-b">
         <h1 className="text-xl font-bold">Floor Plan Editor</h1>
+        
+        {/* Realtime collaboration toggle */}
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-muted-foreground">
+            Realtime Collaboration
+          </span>
+          <button 
+            className={`px-3 py-1 rounded-md text-sm ${enableSync ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+            onClick={() => setEnableSync(!enableSync)}
+          >
+            {enableSync ? 'Enabled' : 'Disabled'}
+          </button>
+        </div>
       </div>
       
       <div className="flex-1 overflow-hidden">
@@ -44,7 +64,9 @@ const FloorPlans = () => {
           <CanvasProvider>
             <CanvasControllerProvider>
               <CanvasApp 
-                setCanvas={setCanvas} 
+                setCanvas={setCanvas}
+                tool={DrawingMode.SELECT}
+                enableSync={enableSync}
               />
             </CanvasControllerProvider>
           </CanvasProvider>
