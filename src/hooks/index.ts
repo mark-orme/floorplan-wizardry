@@ -19,11 +19,6 @@ export * from './drawing/useDrawingHistory';
 // Straight line tool hooks - explicitly re-export to avoid ambiguity
 export { 
   useLineState,
-  // Remove the non-existent exports
-  // useApplePencilSupport,
-  // useEnhancedGridSnapping,
-  // Re-export InputMethod by renaming it to avoid conflicts
   // Use 'export type' for type-only exports when isolatedModules is enabled
   type InputMethod as LineInputMethod
 } from './straightLineTool';
-
