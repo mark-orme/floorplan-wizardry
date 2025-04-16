@@ -1,4 +1,3 @@
-
 /**
  * Canvas initialization hook
  * Handles additional canvas initialization logic and error monitoring
@@ -10,9 +9,11 @@ import { captureMessage, captureError } from '@/utils/sentryUtils';
 import { markInitialized } from '@/utils/healthMonitoring';
 import { 
   generateCanvasDiagnosticReport, 
-  checkFabricJsLoading,
-  safeCanvasInitialization
+  checkFabricJsLoading
 } from '@/utils/canvas/canvasErrorMonitoring';
+import {
+  safeCanvasInitialization
+} from '@/utils/canvas/safeCanvasInitialization';
 
 interface UseCanvasInitProps {
   onError?: () => void;
