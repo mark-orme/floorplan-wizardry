@@ -1,66 +1,18 @@
-/**
- * Floor Plan Adapter Validators
- * Validation utilities for floor plan data
- * @module utils/floorPlanAdapter/validators
- */
-import { Point, createPoint } from '@/types/core/Point';
 
-/**
- * Validate and ensure a point object is properly formed
- * @param point The point to validate or coordinates to create a point
- * @returns A valid Point object
- */
-export function validatePoint(point: Point | undefined | null): Point {
-  if (!point) {
-    return createPoint(0, 0);
-  }
-  
-  // Ensure x and y are numbers
-  const x = typeof point.x === 'number' ? point.x : 0;
-  const y = typeof point.y === 'number' ? point.y : 0;
-  
-  return { x, y };
-}
+import { Point } from "@/types/core/Point";
+import { createPoint } from "../pointHelpers";
 
-/**
- * Validate a metadata object's timestamps
- * @param timestamp The timestamp to validate
- * @returns A valid timestamp string
- */
-export function validateTimestamp(timestamp: string | Date | undefined | null): string {
-  if (!timestamp) {
-    return new Date().toISOString();
-  }
-  
-  if (typeof timestamp === 'string') {
-    // Try to parse it as a date to validate
-    try {
-      new Date(timestamp).toISOString();
-      return timestamp;
-    } catch (e) {
-      // If it's not a valid date string, return current date
-      return new Date().toISOString();
-    }
-  }
-  
-  if (timestamp instanceof Date) {
-    return timestamp.toISOString();
-  }
-  
-  return new Date().toISOString();
-}
+// Validations for point data
+export const isValidPoint = (point: any): boolean => {
+  if (!point || typeof point !== 'object') return false;
+  if (typeof point.x !== 'number' || typeof point.y !== 'number') return false;
+  return true;
+};
 
-/**
- * Validate and normalize a color string
- * @param color The color string to validate
- * @param defaultColor Default color to use if invalid
- * @returns A valid color string
- */
-export function validateColor(color: string | undefined | null, defaultColor: string = '#000000'): string {
-  if (!color || typeof color !== 'string') {
-    return defaultColor;
-  }
-  
-  // Simple validation: ensure it's a non-empty string
-  return color.trim() ? color.trim() : defaultColor;
-}
+// Create default point if invalid
+export const ensureValidPoint = (point: any): Point => {
+  if (isValidPoint(point)) return point;
+  return createPoint(0, 0);
+};
+
+// Additional validation functions can be added here as needed

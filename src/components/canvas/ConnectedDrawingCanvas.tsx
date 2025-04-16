@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, PencilBrush } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
 import { CanvasEventManager } from "./CanvasEventManager";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -44,7 +44,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
   
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gridLayerRef = useRef<any[]>([]);
+  const gridLayerRef = useRef<FabricObject[]>([]);
   const operationsRef = useRef<any>(null);
   
   // State
@@ -85,11 +85,11 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
   const createGrid = (fabricCanvas: FabricCanvas) => {
     try {
       const gridSize = 20;
-      const gridObjects: any[] = [];
+      const gridObjects: FabricObject[] = [];
       
       // Create horizontal and vertical grid lines
       for (let i = 0; i <= height; i += gridSize) {
-        const line = new fabric.Line([0, i, width, i], {
+        const line = new Line([0, i, width, i], {
           stroke: "#e0e0e0",
           selectable: false,
           evented: false,
@@ -100,7 +100,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       }
       
       for (let i = 0; i <= width; i += gridSize) {
-        const line = new fabric.Line([i, 0, i, height], {
+        const line = new Line([i, 0, i, height], {
           stroke: "#e0e0e0",
           selectable: false,
           evented: false,
@@ -122,7 +122,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     if (canvas && initialized) {
       // Ensure the drawing brush is initialized
       if (!canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush = new PencilBrush(canvas);
+        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
       }
       
       // Configure the brush
@@ -142,7 +142,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     let canRedo = false;
     
     const saveCurrentState = () => {
-      const currentState = canvas.getObjects().filter(obj => !(obj as any).objectType === 'grid');
+      const currentState = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid');
       history.push([...currentState]);
       historyIndex = history.length - 1;
       canUndo = historyIndex > 0;
@@ -203,7 +203,8 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       if (canvas) {
         const dataURL = canvas.toDataURL({
           format: 'png',
-          quality: 1
+          quality: 1,
+          multiplier: 1
         });
         
         // Create download link

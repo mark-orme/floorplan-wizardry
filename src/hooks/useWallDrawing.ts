@@ -29,7 +29,7 @@ export const useWallDrawing = ({
   const currentWallRef = useRef<Line | null>(null);
   
   // Initialize grid snapping
-  const { snapPointToGrid, snapLineToGrid, snapEnabled } = useGridSnapping({
+  const { snapPointToGrid, snapEnabled } = useGridSnapping({
     fabricCanvasRef,
     initialSnapEnabled: true
   });

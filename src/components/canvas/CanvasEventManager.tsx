@@ -13,6 +13,8 @@ interface CanvasEventManagerProps {
   undo?: () => void;
   redo?: () => void;
   deleteSelectedObjects?: () => void;
+  enableSync?: boolean;
+  onDrawingComplete?: () => void;
 }
 
 export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
@@ -24,7 +26,9 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   saveCurrentState,
   undo,
   redo,
-  deleteSelectedObjects
+  deleteSelectedObjects,
+  enableSync,
+  onDrawingComplete
 }) => {
   // Set up tool-specific canvas behavior
   useEffect(() => {
@@ -118,6 +122,23 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [canvas, undo, redo, deleteSelectedObjects]);
+
+  // Handle drawing completion
+  useEffect(() => {
+    if (!canvas || !onDrawingComplete) return;
+
+    const handleDrawingComplete = () => {
+      if (onDrawingComplete) onDrawingComplete();
+    };
+
+    canvas.on('path:created', handleDrawingComplete);
+    canvas.on('object:modified', handleDrawingComplete);
+
+    return () => {
+      canvas.off('path:created', handleDrawingComplete);
+      canvas.off('object:modified', handleDrawingComplete);
+    };
+  }, [canvas, onDrawingComplete]);
 
   return null;
 };

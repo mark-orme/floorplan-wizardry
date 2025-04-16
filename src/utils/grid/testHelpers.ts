@@ -1,43 +1,22 @@
 
-import { Canvas } from 'fabric';
-import { GridConfig } from '@/types/grid';
-import { createPoint } from '@/types/core/Point';
+import { Point } from "@/types/core/Point";
+import { createPoint } from "../pointHelpers";
 
-/**
- * Create a test grid configuration
- * @returns Grid configuration for testing
- */
-export const createTestGridConfig = (): GridConfig => {
-  return {
-    cellSize: 20,
-    rows: 30,
-    cols: 40,
-    lineColor: '#cccccc',
-    lineWidth: 1,
-    majorLineInterval: 5,
-    majorLineColor: '#aaaaaa',
-    majorLineWidth: 2
-  };
+// Test helper functions for grid operations
+export const createTestGridPoints = (
+  rows: number, 
+  cols: number, 
+  gridSize: number
+): Point[] => {
+  const points: Point[] = [];
+  
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      points.push(createPoint(x * gridSize, y * gridSize));
+    }
+  }
+  
+  return points;
 };
 
-/**
- * Helper to create a mock canvas for grid testing
- * @param width Canvas width
- * @param height Canvas height
- * @returns Mock canvas
- */
-export const createMockCanvasForGrid = (width = 800, height = 600): Canvas => {
-  return {
-    width,
-    height,
-    add: vi.fn(),
-    remove: vi.fn(),
-    getObjects: vi.fn().mockReturnValue([]),
-    renderAll: vi.fn(),
-    setBackgroundColor: vi.fn(),
-    clear: vi.fn(),
-    dispose: vi.fn(),
-    backgroundColor: '#ffffff',
-    getCenter: vi.fn().mockReturnValue(createPoint(width / 2, height / 2))
-  } as unknown as Canvas;
-};
+// Additional test helper functions can be added here

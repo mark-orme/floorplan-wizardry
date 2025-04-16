@@ -183,6 +183,11 @@ export const DrawingManager = () => {
       );
     }
   }, [isOnline]);
+
+  // Function to handle drawing completion
+  const handleDrawingComplete = async () => {
+    await saveCanvas();
+  };
   
   return (
     <div className="flex flex-col gap-2">
@@ -219,7 +224,8 @@ export const DrawingManager = () => {
             undo={handleUndo}
             redo={handleRedo}
             deleteSelectedObjects={deleteSelectedObjects}
-            onDrawingComplete={() => saveCanvas()}
+            enableSync={isOnline}
+            onDrawingComplete={handleDrawingComplete}
           />
           
           <GridLayerManager
