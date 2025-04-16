@@ -4,7 +4,7 @@
  * @module types/test/MockTypes
  */
 import { Canvas, Object as FabricObject } from 'fabric';
-import { IMockCanvas } from './MockTypes.d';
+import { IMockCanvas, IMockObject } from './MockTypes.d';
 import { vi } from 'vitest';
 
 /**
@@ -52,3 +52,29 @@ export function asMockCanvas<T>(mockCanvas: T): Canvas {
   return completeCanvas;
 }
 
+/**
+ * Helper function to properly type a mock Fabric object
+ * @param mockObject The mock object to be typed as FabricObject
+ * @returns The same object typed as FabricObject
+ */
+export function asMockObject<T>(mockObject: T): FabricObject {
+  const completeObject = {
+    ...mockObject,
+    // Default properties required for Fabric objects
+    visible: true,
+    evented: true,
+    selectable: true,
+    hasBorders: true,
+    hasControls: true,
+    hasRotatingPoint: true,
+    transparentCorners: true,
+    // Add mock methods required by tests
+    setCoords: vi.fn(),
+    _set: vi.fn(),
+    _render: vi.fn(),
+    _findCenterFromElement: vi.fn(),
+    _setWidthHeight: vi.fn()
+  } as unknown as FabricObject;
+  
+  return completeObject;
+}

@@ -1,3 +1,4 @@
+
 /**
  * ESLint rules for test mock validation
  * Ensures consistent and type-safe mocking in tests
@@ -28,25 +29,14 @@ export const testMockValidationRules = {
       {
         "selector": "CallExpression[callee.name='renderHook'] > ArrowFunctionExpression > CallExpression[callee.name='useStraightLineTool'] > ObjectExpression > Property[key.name='canvas']:not(:has(CallExpression[callee.name='asMockCanvas']))",
         "message": "Use asMockCanvas(mockCanvas as unknown as Canvas) to properly type canvas props"
-      }
-    ],
-    
-    // Ensure proper canvas typing in tests
-    "@typescript-eslint/consistent-type-assertions": ["error", {
-      "assertionStyle": "as",
-      "objectLiteralTypeAssertions": "allow-as-parameter"
-    }],
-    
-    // Enforce usage of helper type functions in tests
-    "no-restricted-syntax": [
-      "error",
-      {
-        "selector": "TSAsExpression[typeAnnotation.typeName.name='Canvas'][expression.type!='Identifier']",
-        "message": "Use asMockCanvas() helper instead of direct 'as Canvas' assertions"
       },
       {
-        "selector": "CallExpression[callee.name='useStraightLineTool'] > ObjectExpression > Property[key.name='canvas'][value.type='AsExpression']",
-        "message": "Use asMockCanvas() helper instead of direct 'as Canvas' assertions"
+        "selector": "TSAsExpression[typeAnnotation.typeName.name='Canvas'][expression.type!='Identifier'][expression.type!='CallExpression']",
+        "message": "Use createTypedMockCanvas() or asMockCanvas() helper instead of direct 'as Canvas' assertions"
+      },
+      {
+        "selector": "VariableDeclarator[id.name=/canvas|mockCanvas/][init.type!='CallExpression']",
+        "message": "Use createTypedMockCanvas() to create properly typed mock canvas objects"
       }
     ]
   },
@@ -71,6 +61,10 @@ export const testMockValidationRules = {
           {
             "selector": "CallExpression[callee.name='useStraightLineTool'] > ObjectExpression > Property[key.name='canvas'][value.type='AsExpression']",
             "message": "Use asMockCanvas() helper instead of direct 'as Canvas' assertions"
+          },
+          {
+            "selector": "NewExpression[callee.name='Canvas']",
+            "message": "Don't use real Canvas instances in tests. Use createTypedMockCanvas() instead."
           }
         ]
       }

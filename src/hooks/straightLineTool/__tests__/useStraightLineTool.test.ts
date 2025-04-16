@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -11,8 +10,9 @@ import { useLineState } from '../useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-events';
 import { Point } from '@/types/core/Point';
-import { asMockCanvas, asMockObject } from '@/types/test/MockTypes';
+import { asMockCanvas } from '@/types/test/MockTypes';
 import { Canvas } from 'fabric';
+import { createTypedMockCanvas } from '@/utils/test/createMockCanvas';
 
 // Mock the dependencies
 vi.mock('../useLineState', () => ({
@@ -76,63 +76,15 @@ vi.mock('sonner', () => ({
 }));
 
 describe('useStraightLineTool', () => {
-  // Create mock canvas with event tracking
-  const createMockCanvas = () => {
-    const eventHandlers: Record<string, Function[]> = {};
-    
-    const mockCanvas = {
-      on: vi.fn((eventName: string, handler: Function) => {
-        if (!eventHandlers[eventName]) {
-          eventHandlers[eventName] = [];
-        }
-        eventHandlers[eventName].push(handler);
-        return mockCanvas;
-      }),
-      off: vi.fn((eventName: string, handler?: Function) => {
-        if (handler && eventHandlers[eventName]) {
-          const index = eventHandlers[eventName].indexOf(handler);
-          if (index !== -1) {
-            eventHandlers[eventName].splice(index, 1);
-          }
-        } else if (eventHandlers[eventName]) {
-          delete eventHandlers[eventName];
-        }
-        return mockCanvas;
-      }),
-      add: vi.fn(),
-      remove: vi.fn(),
-      requestRenderAll: vi.fn(),
-      discardActiveObject: vi.fn(),
-      getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
-      getObjects: vi.fn().mockReturnValue([]),
-      contains: vi.fn().mockReturnValue(true),
-      isDrawingMode: false,
-      selection: true,
-      defaultCursor: 'default',
-      hoverCursor: 'default',
-      width: 800,
-      height: 600,
-      // Method to trigger an event for testing
-      triggerEvent: (eventName: string, eventData: any) => {
-        if (eventHandlers[eventName]) {
-          eventHandlers[eventName].forEach(handler => handler(eventData));
-        }
-      },
-      // Method to get handlers for a specific event
-      getHandlers: (eventName: string) => eventHandlers[eventName] || []
-    };
-    
-    return mockCanvas;
-  };
-  
-  let mockCanvas: ReturnType<typeof createMockCanvas>;
+  // Use our new factory method for canvas creation
+  let mockCanvas: Canvas;
   let saveCurrentState: () => void;
   
   beforeEach(() => {
-    mockCanvas = createMockCanvas();
+    mockCanvas = createTypedMockCanvas();
     saveCurrentState = vi.fn();
     
-    // Reset the useLineState mock with corrected properties
+    // Reset the useLineState mock
     vi.mocked(useLineState).mockReturnValue({
       isDrawing: false,
       isActive: false,
