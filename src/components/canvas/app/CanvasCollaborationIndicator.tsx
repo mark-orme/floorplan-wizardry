@@ -1,62 +1,61 @@
 
 import React from 'react';
 import { Users } from 'lucide-react';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+export interface Collaborator {
+  id: string;
+  name: string;
+  color: string;
+  lastActive: number;
+}
 
 interface CanvasCollaborationIndicatorProps {
-  collaborators: number;
+  collaborators: Collaborator[];
   enabled: boolean;
-  isSyncing?: boolean;
-  lastSyncTime?: number;
 }
 
 export const CanvasCollaborationIndicator: React.FC<CanvasCollaborationIndicatorProps> = ({
   collaborators,
-  enabled,
-  isSyncing = false,
-  lastSyncTime
+  enabled
 }) => {
-  // Format time since last sync
-  const getTimeSinceSync = () => {
-    if (!lastSyncTime) return 'Never';
-    
-    const seconds = Math.floor((Date.now() - lastSyncTime) / 1000);
-    
-    if (seconds < 5) return 'Just now';
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
-  };
+  if (!enabled) return null;
   
-  if (!enabled) {
-    return null;
-  }
+  const activeCollaborators = collaborators.filter(
+    c => Date.now() - c.lastActive < 60000 // Active in the last minute
+  );
   
-  const showUserList = () => {
-    toast.info(`${collaborators} active collaborator${collaborators !== 1 ? 's' : ''}`);
-  };
+  if (activeCollaborators.length === 0) return null;
   
   return (
-    <div 
-      className="absolute bottom-4 right-4 flex items-center bg-black bg-opacity-70 text-white px-3 py-1.5 rounded-full shadow-lg cursor-pointer hover:bg-opacity-80 transition-opacity"
-      onClick={showUserList}
-      title="Click to see collaborators"
-    >
-      <div className="flex items-center mr-2">
-        <Users size={16} className="mr-1.5" />
-        <span className="text-sm font-medium">{collaborators}</span>
-      </div>
-      
-      {isSyncing ? (
-        <div className="flex items-center text-xs">
-          <div className="w-2 h-2 bg-green-400 rounded-full mr-1.5 animate-pulse"></div>
-          Syncing...
-        </div>
-      ) : (
-        <div className="text-xs text-gray-300">
-          {lastSyncTime ? getTimeSinceSync() : 'Not synced'}
-        </div>
-      )}
+    <div className="absolute top-4 left-4 z-10">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="flex items-center gap-1 bg-white/80 hover:bg-white">
+              <Users className="h-3.5 w-3.5" />
+              <span>{activeCollaborators.length}</span>
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-sm">
+              <div className="font-semibold mb-1">Active collaborators:</div>
+              <ul className="space-y-1">
+                {activeCollaborators.map(user => (
+                  <li key={user.id} className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: user.color }}
+                    />
+                    <span>{user.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };

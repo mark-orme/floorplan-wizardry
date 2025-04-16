@@ -1,132 +1,180 @@
 
-/**
- * Hook for real-time canvas synchronization
- * @module hooks/realtime/useRealtimeCanvasSync
- */
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { RealtimeCanvasSyncResult } from '@/utils/realtime/types';
-import { createFloorPlanDataForSync, setupRealtimeSync } from '@/utils/realtime/syncUtils';
-import { broadcastFloorPlanUpdate, notifyPresenceChange } from '@/utils/syncService';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
+import { captureError } from '@/utils/sentryUtils';
 
-interface UseRealtimeCanvasSyncProps {
-  /** Canvas instance to synchronize */
-  canvas: FabricCanvas | null;
-  
-  /** Whether synchronization is enabled */
-  enabled: boolean;
-  
-  /** Callback when remote updates are received */
-  onRemoteUpdate?: (sender: string, timestamp: number) => void;
-  
-  /** Channel identifier for multi-room support */
-  channelId?: string;
+export interface Collaborator {
+  id: string;
+  name: string;
+  color: string;
+  lastActive: number;
 }
 
-/**
- * Hook for real-time canvas synchronization
- * Handles bidirectional sync between canvas instances
- */
+export interface RealtimeCanvasSyncResult {
+  collaborators: Collaborator[];
+  syncCanvas: (userName: string) => void;
+  lastSyncTimestamp: number | null;
+}
+
+interface UseRealtimeCanvasSyncProps {
+  canvas: FabricCanvas | null;
+  enabled: boolean;
+  throttleMs?: number;
+  onRemoteUpdate?: (sender: string, timestamp: number) => void;
+}
+
+const COLORS = [
+  '#FF5733', '#33FF57', '#3357FF', '#F033FF', '#FF33A1',
+  '#33FFF5', '#F5FF33', '#FF8C33', '#8C33FF', '#33FF8C'
+];
+
 export const useRealtimeCanvasSync = ({
   canvas,
-  enabled,
-  onRemoteUpdate,
-  channelId = 'default'
+  enabled = true,
+  throttleMs = 500,
+  onRemoteUpdate
 }: UseRealtimeCanvasSyncProps): RealtimeCanvasSyncResult => {
-  const [lastSyncTime, setLastSyncTime] = useState<number>(0);
-  const [collaborators, setCollaborators] = useState<number>(0);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const lastSyncTimeRef = useRef<number>(0);
-  const channelRef = useRef<any>(null);
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number | null>(null);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const userId = useRef<string>(`user-${Math.random().toString(36).substring(2, 9)}`);
   
-  // Update ref when state changes to ensure callbacks have access to latest value
-  useEffect(() => {
-    lastSyncTimeRef.current = lastSyncTime;
-  }, [lastSyncTime]);
-  
-  // Set up the real-time sync when enabled and canvas is available
-  useEffect(() => {
-    if (!enabled || !canvas) {
-      // Clean up any existing subscription
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-      }
-      return;
-    }
-    
-    try {
-      // Set up real-time sync with specific channel ID
-      logger.info(`Setting up real-time canvas sync for channel: ${channelId}`);
-      const channel = setupRealtimeSync(
-        canvas,
-        lastSyncTimeRef,
-        setLastSyncTime,
-        setCollaborators,
-        onRemoteUpdate,
-        channelId
-      );
-      
-      // Store the channel for cleanup
-      channelRef.current = channel;
-      
-      // Notify about presence
-      notifyPresenceChange(channelId);
-      
-      // Show toast when connection is established
-      toast.success('Real-time collaboration connected');
-      
-      // Cleanup function
-      return () => {
-        if (channel) {
-          channel.unsubscribe();
-          channelRef.current = null;
-          logger.info(`Disconnected from real-time sync channel: ${channelId}`);
-        }
-      };
-    } catch (error) {
-      logger.error('Error setting up real-time sync:', error);
-      toast.error('Failed to connect to real-time sync service');
-      return () => {};
-    }
-  }, [canvas, enabled, onRemoteUpdate, channelId]);
-  
-  // Sync canvas data to other users
+  // Mock pusher functionality for now - will be replaced with actual Pusher integration
   const syncCanvas = useCallback((userName: string) => {
-    if (!enabled || !canvas) {
-      return;
+    if (!enabled || !canvas) return;
+    
+    // Clear any pending sync timeouts
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
     }
     
-    try {
-      setIsSyncing(true);
+    // Set a timeout to throttle frequent updates
+    syncTimeoutRef.current = setTimeout(() => {
+      try {
+        // For now, just log this - in a real implementation, we'd send to Pusher
+        const timestamp = Date.now();
+        const canvasJson = canvas.toJSON(['id', 'objectType']);
+        
+        logger.debug(`[RealtimeSync] Canvas synced by ${userName} at ${new Date(timestamp).toLocaleString()}`);
+        
+        // Update the last sync timestamp
+        setLastSyncTimestamp(timestamp);
+        
+        // Update collaborator list
+        setCollaborators(prev => {
+          // Find existing collaborator
+          const existingUserIndex = prev.findIndex(u => u.name === userName);
+          
+          if (existingUserIndex >= 0) {
+            // Update existing collaborator's timestamp
+            const updated = [...prev];
+            updated[existingUserIndex] = {
+              ...updated[existingUserIndex],
+              lastActive: timestamp
+            };
+            return updated;
+          } else {
+            // Add new collaborator
+            const color = COLORS[prev.length % COLORS.length];
+            return [...prev, {
+              id: `user-${Math.random().toString(36).substring(2, 9)}`,
+              name: userName,
+              color,
+              lastActive: timestamp
+            }];
+          }
+        });
+        
+        // In a real implementation, we'd send the canvas JSON to Pusher here
+        // pusherChannel.trigger('canvas-update', { sender: userName, timestamp, canvasJson });
+      } catch (error) {
+        captureError(error, {
+          context: 'realtimeSync',
+          extra: {
+            userName,
+            enabled,
+            canvasAvailable: !!canvas
+          }
+        });
+        toast.error('Failed to sync canvas');
+      }
+    }, throttleMs);
+  }, [canvas, enabled, throttleMs]);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // In a real implementation, we'd set up Pusher listeners here
+  useEffect(() => {
+    if (!enabled || !canvas) return;
+    
+    logger.info('[RealtimeSync] Realtime sync enabled');
+    
+    // Mock listener setup - in a real implementation, we'd set up Pusher listeners here
+    const handleRemoteUpdate = (data: { sender: string, timestamp: number, canvasJson: any }) => {
+      if (data.sender === userId.current) return; // Ignore our own updates
       
-      // Create floor plan data for sync
-      const floorPlans = createFloorPlanDataForSync(canvas, userName);
-      
-      // Update last sync time
-      const currentTime = Date.now();
-      setLastSyncTime(currentTime);
-      lastSyncTimeRef.current = currentTime;
-      
-      // Broadcast the update
-      broadcastFloorPlanUpdate(floorPlans, userName, channelId);
-      
-      logger.info(`Canvas synced by ${userName} at ${new Date(currentTime).toISOString()} on channel ${channelId}`);
-      
-      setIsSyncing(false);
-    } catch (error) {
-      logger.error('Error syncing canvas:', error);
-      toast.error('Failed to sync canvas changes');
-      setIsSyncing(false);
-    }
-  }, [canvas, enabled, channelId]);
+      try {
+        // Load canvas from JSON
+        canvas.loadFromJSON(data.canvasJson, () => {
+          canvas.requestRenderAll();
+          
+          // Update collaborator list
+          setCollaborators(prev => {
+            const existingUserIndex = prev.findIndex(u => u.name === data.sender);
+            
+            if (existingUserIndex >= 0) {
+              const updated = [...prev];
+              updated[existingUserIndex] = {
+                ...updated[existingUserIndex],
+                lastActive: data.timestamp
+              };
+              return updated;
+            } else {
+              const color = COLORS[prev.length % COLORS.length];
+              return [...prev, {
+                id: `user-${Math.random().toString(36).substring(2, 9)}`,
+                name: data.sender,
+                color,
+                lastActive: data.timestamp
+              }];
+            }
+          });
+          
+          // Callback if provided
+          if (onRemoteUpdate) {
+            onRemoteUpdate(data.sender, data.timestamp);
+          }
+        });
+      } catch (error) {
+        captureError(error, {
+          context: 'realtimeSync.remoteUpdate',
+          extra: {
+            sender: data.sender,
+            timestamp: data.timestamp
+          }
+        });
+        toast.error('Failed to apply remote canvas update');
+      }
+    };
+    
+    // In a real implementation, we'd remove the Pusher listeners here
+    return () => {
+      logger.info('[RealtimeSync] Realtime sync disabled');
+    };
+  }, [canvas, enabled, onRemoteUpdate]);
   
   return {
-    lastSyncTime,
     collaborators,
-    isSyncing,
-    syncCanvas
+    syncCanvas,
+    lastSyncTimestamp
   };
 };
