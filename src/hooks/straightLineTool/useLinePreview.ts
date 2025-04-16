@@ -4,6 +4,12 @@ import { Point } from '@/types/core/Point';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import { useLineAngleSnap } from './useLineAngleSnap';
 
+export interface LinePreviewResult {
+  startPoint: Point;
+  endPoint: Point;
+  isSnapped: boolean;
+}
+
 export const useLinePreview = (gridSize = 20) => {
   const { snapPointToGrid, snapEnabled } = useSnapToGrid({ gridSize });
   const { snapToAngles } = useLineAngleSnap();
@@ -12,7 +18,7 @@ export const useLinePreview = (gridSize = 20) => {
     startPoint: Point, 
     endPoint: Point, 
     shouldSnap = true
-  ) => {
+  ): LinePreviewResult => {
     // Default return with no snapping
     if (!shouldSnap || !snapEnabled) {
       return { 

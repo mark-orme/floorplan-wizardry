@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -23,13 +24,20 @@ export const useLineToolHandlers = ({
   saveCurrentState,
   snapColor
 }: UseLineToolHandlersProps) => {
-  const { isActive, startPoint, previewLine, setStartPoint, setPreviewLine, resetState } = useLineState();
+  const [isActive, setIsActive] = useState(false);
+  const [startPoint, setStartPoint] = useState<Point | null>(null);
+  const [previewLine, setPreviewLine] = useState<Line | null>(null);
   const { inputMethod, isPencilMode, detectInputMethod } = useLineInputMethod();
   const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping();
   const { getLinePreview } = useLinePreview();
   const [anglesEnabled, setAnglesEnabled] = useState(false);
   const measurementDataRef = useRef({ distance: null, angle: null, snapped: false });
   const [measurementData, setMeasurementData] = useState({ distance: null, angle: null, snapped: false, unit: 'px' });
+
+  const resetState = () => {
+    setStartPoint(null);
+    setPreviewLine(null);
+  };
 
   const toggleAngles = useCallback(() => {
     setAnglesEnabled(prev => !prev);
@@ -60,7 +68,7 @@ export const useLineToolHandlers = ({
 
     canvas.add(line);
     setPreviewLine(line);
-  }, [canvas, enabled, lineColor, lineThickness, detectInputMethod, snapToGrid, setStartPoint, setPreviewLine]);
+  }, [canvas, enabled, lineColor, lineThickness, detectInputMethod, snapToGrid]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!canvas || !isActive || !startPoint) return;
@@ -71,10 +79,6 @@ export const useLineToolHandlers = ({
     // Get line preview with snapping
     const linePreview = getLinePreview(startPoint, currentPoint, snapEnabled);
     
-    // Make sure linePreview has the isSnapped property
-    // This is a type safety check since the error was that isSnapped doesn't exist
-    const isSnapped = 'isSnapped' in linePreview ? linePreview.isSnapped : false;
-    
     // Update preview line
     if (previewLine) {
       previewLine.set({
@@ -83,7 +87,7 @@ export const useLineToolHandlers = ({
       });
       
       // Apply different style if snapped
-      if (isSnapped) {
+      if (linePreview.isSnapped) {
         previewLine.set({
           stroke: snapColor || lineColor,
           strokeDashArray: undefined
@@ -108,13 +112,13 @@ export const useLineToolHandlers = ({
     measurementDataRef.current = {
       distance: Math.round(distance),
       angle: Math.round(angle),
-      snapped: isSnapped
+      snapped: linePreview.isSnapped
     };
     
     setMeasurementData({
       distance: Math.round(distance),
       angle: Math.round(angle),
-      snapped: isSnapped,
+      snapped: linePreview.isSnapped,
       unit: 'px'
     });
   }, [canvas, isActive, startPoint, previewLine, snapEnabled, lineColor, snapColor, getLinePreview]);
@@ -141,7 +145,7 @@ export const useLineToolHandlers = ({
     canvas.renderAll();
     saveCurrentState();
     resetState();
-  }, [canvas, isActive, startPoint, previewLine, snapToGrid, saveCurrentState, resetState]);
+  }, [canvas, isActive, startPoint, previewLine, snapToGrid, saveCurrentState]);
 
   return {
     isActive,

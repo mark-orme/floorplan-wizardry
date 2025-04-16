@@ -2,7 +2,6 @@
 import { useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { useLinePreview } from './useLinePreview';
 
 export enum InputMethod {
   MOUSE = 'mouse',
@@ -75,21 +74,6 @@ export const useLineState = (props: UseLineStateProps): LineState => {
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [anglesEnabled, setAnglesEnabled] = useState(false);
   
-  // Use our new line preview hook
-  const {
-    showHoverIndicator,
-    hideHoverIndicator,
-    updateLinePreview,
-    clearLinePreview,
-  } = useLinePreview(
-    fabricCanvasRef,
-    isDrawing,
-    snapEnabled,
-    anglesEnabled,
-    lineColor,
-    lineThickness
-  );
-
   // Create a mock distance tooltip for compatibility
   const distanceTooltip = null;
 
@@ -111,7 +95,6 @@ export const useLineState = (props: UseLineStateProps): LineState => {
     setStartPoint(null);
     setCurrentPoint(null);
     setCurrentLine(null);
-    clearLinePreview();
   };
 
   /**
@@ -151,7 +134,6 @@ export const useLineState = (props: UseLineStateProps): LineState => {
    * Create a distance tooltip
    */
   const createDistanceTooltip = (text: string, position: Point) => {
-    // We now use the updateDistanceTooltip function from useLinePreview
     // This is a stub for backward compatibility
     return null;
   };
@@ -163,9 +145,6 @@ export const useLineState = (props: UseLineStateProps): LineState => {
     setIsDrawing(true);
     setStartPoint(point);
     setCurrentPoint(point);
-    
-    // Show hover indicator at start point
-    showHoverIndicator(point);
   };
 
   /**
@@ -175,11 +154,6 @@ export const useLineState = (props: UseLineStateProps): LineState => {
     if (!isDrawing || !startPoint) return;
     
     setCurrentPoint(point);
-    
-    // Update line preview with potential snapping
-    if (startPoint) {
-      updateLinePreview(startPoint, point);
-    }
   };
 
   /**
@@ -188,19 +162,11 @@ export const useLineState = (props: UseLineStateProps): LineState => {
   const completeDrawing = (point: Point) => {
     if (!isDrawing || !startPoint) return;
     
-    // Get the potentially snapped end point
-    const preview = startPoint && updateLinePreview(startPoint, point);
-    const endPoint = preview?.endPoint || point;
-    
     // Create the final line
-    const line = createLine(startPoint, endPoint);
+    const line = createLine(startPoint, point);
     if (line) {
       setCurrentLine(line);
     }
-    
-    // Clean up preview
-    clearLinePreview();
-    hideHoverIndicator();
     
     // Reset state
     setIsDrawing(false);
@@ -215,9 +181,6 @@ export const useLineState = (props: UseLineStateProps): LineState => {
    * Cancel the current drawing
    */
   const cancelDrawing = () => {
-    clearLinePreview();
-    hideHoverIndicator();
-    
     setIsDrawing(false);
     setStartPoint(null);
     setCurrentPoint(null);
