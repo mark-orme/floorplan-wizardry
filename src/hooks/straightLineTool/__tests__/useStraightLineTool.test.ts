@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -23,8 +22,6 @@ vi.mock('../useLineState', () => ({
     currentPoint: null,
     currentLine: null,
     distanceTooltip: null,
-    setStartPoint: vi.fn(),
-    setCurrentPoint: vi.fn(),
     initializeTool: vi.fn(),
     resetDrawingState: vi.fn(),
     setIsDrawing: vi.fn(),
@@ -142,8 +139,6 @@ describe('useStraightLineTool', () => {
       currentPoint: null,
       currentLine: null,
       distanceTooltip: null,
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
       setIsDrawing: vi.fn(),
@@ -237,8 +232,6 @@ describe('useStraightLineTool', () => {
       currentPoint: null,
       currentLine: null,
       distanceTooltip: null,
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
       setIsDrawing: vi.fn(),
@@ -297,8 +290,6 @@ describe('useStraightLineTool', () => {
       currentPoint: { x: 200, y: 200 },
       currentLine: { id: 'line1', _set: vi.fn(), _render: vi.fn() } as any,
       distanceTooltip: { id: 'tooltip1', _set: vi.fn(), _render: vi.fn() } as any,
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
       setIsDrawing: vi.fn(),
@@ -374,8 +365,6 @@ describe('useStraightLineTool', () => {
         _reWords: /\S+/g,
         _render: vi.fn()
       } as any,
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
       setIsDrawing: vi.fn(),

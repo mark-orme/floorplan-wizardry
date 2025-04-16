@@ -210,7 +210,7 @@ describe('useLineState', () => {
       saveCurrentState: mockSaveCurrentState
     }));
     
-    // Initial value should be false
+    // Initial value should be true
     expect(result.current.anglesEnabled).toBe(true);
     
     // Toggle it
@@ -218,7 +218,7 @@ describe('useLineState', () => {
       result.current.toggleAngles();
     });
     
-    // Should be true now
+    // Should be false now
     expect(result.current.anglesEnabled).toBe(false);
     
     // Toggle again
@@ -226,7 +226,7 @@ describe('useLineState', () => {
       result.current.toggleAngles();
     });
     
-    // Should be false again
+    // Should be true again
     expect(result.current.anglesEnabled).toBe(true);
   });
 });
