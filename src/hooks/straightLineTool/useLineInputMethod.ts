@@ -1,10 +1,12 @@
 
 import { useState, useCallback } from 'react';
 
+// Define and export the InputMethod enum
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
-  PENCIL = 'pencil'
+  PENCIL = 'pencil',
+  STYLUS = 'stylus'
 }
 
 /**

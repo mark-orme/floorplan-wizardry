@@ -6,6 +6,9 @@ import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 import { InputMethod } from './useLineInputMethod';
 import { captureError } from '@/utils/sentryUtils';
 
+// Re-export InputMethod so other modules can import it from here
+export { InputMethod } from './useLineInputMethod';
+
 interface UseLineStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   lineColor: string;
@@ -33,6 +36,8 @@ export const useLineState = ({
   
   // Input method
   const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  // Add isPencilMode state
+  const [isPencilMode, setIsPencilMode] = useState(false);
   
   // Use snap to grid functionality
   const { snapPointToGrid } = useSnapToGrid({
@@ -367,6 +372,7 @@ export const useLineState = ({
     snapEnabled,
     anglesEnabled,
     inputMethod,
+    isPencilMode,
     
     // Methods
     initializeTool,
@@ -379,6 +385,7 @@ export const useLineState = ({
     resetDrawingState,
     toggleSnap,
     toggleAngles,
-    setInputMethod
+    setInputMethod,
+    setIsPencilMode
   };
 };

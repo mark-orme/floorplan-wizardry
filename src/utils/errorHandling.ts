@@ -114,13 +114,15 @@ export const handleError = (
   
   // Report to error monitoring service if critical or error
   if (severity === 'critical' || severity === 'error') {
-    captureError(error, `${severity}-${context.operation || 'unknown'}`, {
-      context: {
-        component: context.component || 'unknown',
-        operation: context.operation || 'unknown',
-        ...context
-      },
-      level: severity === 'critical' ? 'fatal' : 'error'
+    // Convert unknown error to Error object if needed
+    const errorObj = error instanceof Error 
+      ? error 
+      : new Error(typeof error === 'string' ? error : 'Unknown error');
+      
+    captureError(errorObj, `${severity}-${context.operation || 'unknown'}`, {
+      component: context.component || 'unknown',
+      operation: context.operation || 'unknown',
+      ...context
     });
   }
 };

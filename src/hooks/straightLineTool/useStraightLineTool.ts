@@ -7,13 +7,8 @@ import { useLineToolHandlers } from './useLineToolHandlers';
 import { captureError } from '@/utils/sentryUtils';
 import { toast } from 'sonner';
 
-// Make sure we export InputMethod so other modules can use it
-export enum InputMethod {
-  MOUSE = 'mouse',
-  TOUCH = 'touch',
-  PENCIL = 'pencil',
-  STYLUS = 'stylus'
-}
+// Re-export InputMethod from useLineState
+export { InputMethod } from './useLineState';
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
@@ -183,6 +178,22 @@ export const useStraightLineTool = ({
     handlePointerMove,
     handlePointerUp,
     cancelDrawing: lineState.cancelDrawing,
-    ...lineState
+    // Spread the rest of lineState for backward compatibility
+    startPoint: lineState.startPoint,
+    currentPoint: lineState.currentPoint,
+    currentLine: lineState.currentLine,
+    distanceTooltip: lineState.distanceTooltip,
+    initializeTool: lineState.initializeTool,
+    createLine: lineState.createLine,
+    createDistanceTooltip: lineState.createDistanceTooltip,
+    startDrawing: lineState.startDrawing,
+    continueDrawing: lineState.continueDrawing,
+    completeDrawing: lineState.completeDrawing,
+    resetDrawingState: lineState.resetDrawingState,
+    isToolInitialized: lineState.isToolInitialized,
+    toggleSnap: lineState.toggleSnap,
+    toggleAngles: lineState.toggleAngles,
+    setInputMethod: lineState.setInputMethod,
+    setIsPencilMode: lineState.setIsPencilMode
   };
 };
