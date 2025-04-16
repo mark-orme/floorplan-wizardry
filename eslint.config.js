@@ -10,6 +10,7 @@ import { lineToolValidationRules } from './eslint/typescript/line-tool-validatio
 import { hookMockValidationRules } from './eslint/typescript/hook-mock-validation.js';
 import { importSafetyRules } from './eslint/import-safety-rules.js';
 import { gridTypeSafetyRules } from './eslint/grid-type-safety-rules.js';
+import { typeSafetyRules } from './eslint/type-safety-rules.js';
 
 export default [
   baseConfig,
@@ -22,5 +23,6 @@ export default [
   fabricEventTypes,
   lineToolValidationRules,
   hookMockValidationRules,
-  gridTypeSafetyRules // Add the new grid type safety rules
+  gridTypeSafetyRules,
+  typeSafetyRules // Add the new type safety rules
 ];

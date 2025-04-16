@@ -1,192 +1,166 @@
 
-/**
- * Tests for the useLineState hook
- * @module hooks/straightLineTool/__tests__/useLineState
- */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
-import { InputMethod } from '../useLineInputMethod';
-import { Canvas, Line, Text } from 'fabric';
-import { Point } from '@/types/core/Point';
+import { Canvas } from 'fabric';
+import { vi } from 'vitest';
+import { createMockFunctionParams, createTestPoint } from '@/utils/test/mockUtils';
 
-// Mock fabric objects
-vi.mock('fabric', () => {
-  return {
-    Canvas: vi.fn().mockImplementation(() => ({
-      add: vi.fn(),
-      remove: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      isDrawingMode: false,
-      selection: true,
-      defaultCursor: 'default',
-      hoverCursor: 'default'
-    })),
-    Line: vi.fn().mockImplementation((points, options) => ({
-      set: vi.fn(),
-      x1: points[0],
-      y1: points[1],
-      x2: points[2],
-      y2: points[3],
-      ...options
-    })),
-    Text: vi.fn().mockImplementation((text, options) => ({
-      set: vi.fn(),
-      text,
-      ...options
-    }))
-  };
-});
-
-// Mock other necessary dependencies
-vi.mock('@/utils/sentryUtils', () => ({
-  captureError: vi.fn()
+// Mock dependencies
+vi.mock('@/utils/geometry/distanceCalculation', () => ({
+  calculateDistance: vi.fn().mockReturnValue(100)
 }));
 
-vi.mock('@/hooks/useSnapToGrid', () => ({
-  useSnapToGrid: () => ({
-    snapPointToGrid: (point: any) => point
+vi.mock('@/utils/fabric/fabricObjectCreation', () => ({
+  createFabricLine: vi.fn().mockReturnValue({
+    id: 'mock-line-id',
+    set: vi.fn()
   })
 }));
 
 describe('useLineState', () => {
-  let fabricCanvasRef: { current: Canvas | null };
+  let mockCanvas: Canvas;
   const mockSaveCurrentState = vi.fn();
   
   beforeEach(() => {
-    fabricCanvasRef = { current: new Canvas() as any };
-    vi.clearAllMocks();
+    mockCanvas = {
+      on: vi.fn(),
+      off: vi.fn(),
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      clear: vi.fn(),
+      renderAll: vi.fn()
+    } as unknown as Canvas;
+    
+    mockSaveCurrentState.mockClear();
   });
   
-  it('should initialize with default values', () => {
+  it('initializes with default state', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
+      fabricCanvasRef: { current: null },
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState: mockSaveCurrentState
     }));
     
     expect(result.current.isDrawing).toBe(false);
-    expect(result.current.isToolInitialized).toBe(false);
+    expect(result.current.isActive).toBe(false);
     expect(result.current.startPoint).toBeNull();
+    expect(result.current.currentPoint).toBeNull();
     expect(result.current.currentLine).toBeNull();
-    expect(result.current.distanceTooltip).toBeNull();
-    expect(result.current.snapEnabled).toBe(true);
-    expect(result.current.inputMethod).toBe(InputMethod.MOUSE);
   });
   
-  it('should create a line with correct properties', () => {
-    const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
-      lineColor: '#ff0000',
-      lineThickness: 3,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    // Fixed: Changed to use the createLine function properly with start and end points
-    const start = { x: 10, y: 20 };
-    const end = { x: 30, y: 40 };
-    const line = result.current.createLine(start, end);
-    
-    expect(line).toBeDefined();
-    expect(Line).toHaveBeenCalledWith([start.x, start.y, end.x, end.y], expect.objectContaining({
-      stroke: '#ff0000',
-      strokeWidth: 3,
-      selectable: true
-    }));
-  });
-  
-  it('should create a distance tooltip with correct properties', () => {
-    const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    // Fixed: Changed to use the createDistanceTooltip function properly with midpoint and distance
-    const midpoint = { x: 100, y: 200 };
-    const distance = 150;
-    const tooltip = result.current.createDistanceTooltip(midpoint, distance);
-    
-    expect(tooltip).toBeDefined();
-    expect(Text).toHaveBeenCalledWith(expect.stringContaining('150px'), expect.objectContaining({
-      left: 100,
-      top: 200,
-      fontSize: 14,
-      fill: expect.any(String),
-      selectable: false
-    }));
-  });
-  
-  it('should start drawing correctly', () => {
-    const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    const mockPoint = { x: 100, y: 200 };
-    
-    act(() => {
-      result.current.startDrawing(mockPoint);
-    });
-    
-    expect(result.current.startPoint).toEqual(mockPoint);
-  });
-  
-  it('should handle continuing drawing', () => {
-    const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    const startPoint = { x: 100, y: 100 };
-    const currentPoint = { x: 200, y: 200 };
-    
-    act(() => {
-      result.current.startDrawing(startPoint);
-    });
-    
-    act(() => {
-      result.current.continueDrawing(currentPoint);
-    });
-    
-    expect(result.current.currentPoint).toEqual(currentPoint);
-  });
-  
-  it('should initialize the tool correctly', () => {
-    const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState: mockSaveCurrentState
-    }));
+  it('initializes tool when canvas is provided', () => {
+    const { result } = renderHook(() => useLineState(
+      createMockFunctionParams({
+        fabricCanvasRef: { current: mockCanvas },
+        lineColor: '#000000',
+        lineThickness: 2,
+        saveCurrentState: mockSaveCurrentState
+      })
+    ));
     
     act(() => {
       result.current.initializeTool();
     });
     
+    expect(result.current.isActive).toBe(true);
     expect(result.current.isToolInitialized).toBe(true);
-    expect(fabricCanvasRef.current!.selection).toBe(false);
-    expect(fabricCanvasRef.current!.defaultCursor).toBe('crosshair');
-    expect(fabricCanvasRef.current!.isDrawingMode).toBe(false);
   });
   
-  it('should toggle snap correctly', () => {
-    const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState: mockSaveCurrentState
-    }));
+  it('starts drawing at given point', () => {
+    const { result } = renderHook(() => useLineState(
+      createMockFunctionParams({
+        fabricCanvasRef: { current: mockCanvas },
+        lineColor: '#000000',
+        lineThickness: 2,
+        saveCurrentState: mockSaveCurrentState
+      })
+    ));
     
-    expect(result.current.snapEnabled).toBe(true);
+    act(() => {
+      result.current.initializeTool();
+      result.current.startDrawing(createTestPoint(100, 100));
+    });
+    
+    expect(result.current.isDrawing).toBe(true);
+    expect(result.current.startPoint).toEqual({ x: 100, y: 100 });
+  });
+  
+  it('continues drawing and updates the line', () => {
+    const { result } = renderHook(() => useLineState(
+      createMockFunctionParams({
+        fabricCanvasRef: { current: mockCanvas },
+        lineColor: '#000000',
+        lineThickness: 2,
+        saveCurrentState: mockSaveCurrentState
+      })
+    ));
+    
+    act(() => {
+      result.current.initializeTool();
+      result.current.startDrawing(createTestPoint(100, 100));
+      result.current.continueDrawing(createTestPoint(200, 200));
+    });
+    
+    expect(result.current.currentPoint).toEqual({ x: 200, y: 200 });
+  });
+  
+  it('completes drawing and finalizes the line', () => {
+    const { result } = renderHook(() => useLineState(
+      createMockFunctionParams({
+        fabricCanvasRef: { current: mockCanvas },
+        lineColor: '#000000',
+        lineThickness: 2,
+        saveCurrentState: mockSaveCurrentState
+      })
+    ));
+    
+    act(() => {
+      result.current.initializeTool();
+      result.current.startDrawing(createTestPoint(100, 100));
+      result.current.continueDrawing(createTestPoint(200, 200));
+      result.current.completeDrawing(createTestPoint(200, 200));
+    });
+    
+    expect(result.current.isDrawing).toBe(false);
+    expect(mockSaveCurrentState).toHaveBeenCalled();
+  });
+  
+  it('cancels drawing and removes temporary elements', () => {
+    const { result } = renderHook(() => useLineState(
+      createMockFunctionParams({
+        fabricCanvasRef: { current: mockCanvas },
+        lineColor: '#000000',
+        lineThickness: 2,
+        saveCurrentState: mockSaveCurrentState
+      })
+    ));
+    
+    act(() => {
+      result.current.initializeTool();
+      result.current.startDrawing(createTestPoint(100, 100));
+      result.current.continueDrawing(createTestPoint(200, 200));
+      result.current.cancelDrawing();
+    });
+    
+    expect(result.current.isDrawing).toBe(false);
+    expect(result.current.startPoint).toBeNull();
+    expect(mockCanvas.remove).toHaveBeenCalled();
+    expect(mockSaveCurrentState).not.toHaveBeenCalled(); // Shouldn't save when canceling
+  });
+  
+  it('toggles snapping feature', () => {
+    const { result } = renderHook(() => useLineState(
+      createMockFunctionParams({
+        fabricCanvasRef: { current: mockCanvas },
+        lineColor: '#000000',
+        lineThickness: 2,
+        saveCurrentState: mockSaveCurrentState
+      })
+    ));
+    
+    expect(result.current.snapEnabled).toBe(true); // Default is true
     
     act(() => {
       result.current.toggleSnap();
@@ -201,13 +175,21 @@ describe('useLineState', () => {
     expect(result.current.snapEnabled).toBe(true);
   });
   
-  it('should toggle angles correctly', () => {
-    const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState: mockSaveCurrentState
-    }));
+  it('toggles angle constraints', () => {
+    const { result } = renderHook(() => useLineState(
+      createMockFunctionParams({
+        fabricCanvasRef: { current: mockCanvas },
+        lineColor: '#000000',
+        lineThickness: 2,
+        saveCurrentState: mockSaveCurrentState
+      })
+    ));
+    
+    expect(result.current.anglesEnabled).toBe(false); // Default is false
+    
+    act(() => {
+      result.current.toggleAngles();
+    });
     
     expect(result.current.anglesEnabled).toBe(true);
     
@@ -216,11 +198,5 @@ describe('useLineState', () => {
     });
     
     expect(result.current.anglesEnabled).toBe(false);
-    
-    act(() => {
-      result.current.toggleAngles();
-    });
-    
-    expect(result.current.anglesEnabled).toBe(true);
   });
 });

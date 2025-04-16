@@ -40,4 +40,3 @@ export const typeSafetyRules = {
     '@typescript-eslint/no-object-literal-type-assertion': 'error'
   }
 };
-

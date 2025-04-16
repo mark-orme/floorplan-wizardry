@@ -108,3 +108,21 @@ export const deepCopyFabricObject = <T>(obj: T): T => {
   if (!obj) return obj;
   return JSON.parse(JSON.stringify(obj));
 };
+
+/**
+ * Create mock function parameters with the correct type
+ * Used to fix the error in the tests
+ * @param params The parameters for the mock function
+ * @returns Typed parameters
+ */
+export const createMockFunctionParams = <T extends Record<string, any>>(params: T): T => {
+  return params;
+};
+
+/**
+ * Create a typed Point for use in tests
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns A properly typed Point object
+ */
+export const createTestPoint = (x: number, y: number) => ({ x, y });

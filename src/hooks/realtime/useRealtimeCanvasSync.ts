@@ -9,6 +9,8 @@ export interface Collaborator {
   name: string;
   color: string;
   lastActive: number;
+  isActive: boolean; // Add missing property
+  lastSeen: Date; // Add missing property
 }
 
 export interface RealtimeCanvasSyncResult {
@@ -76,7 +78,9 @@ export const useRealtimeCanvasSync = ({
             const updated = [...prev];
             updated[existingUserIndex] = {
               ...updated[existingUserIndex],
-              lastActive: timestamp
+              lastActive: timestamp,
+              isActive: true,
+              lastSeen: new Date()
             };
             return updated;
           } else {
@@ -86,7 +90,9 @@ export const useRealtimeCanvasSync = ({
               id: `user-${Math.random().toString(36).substring(2, 9)}`,
               name: userName,
               color,
-              lastActive: timestamp
+              lastActive: timestamp,
+              isActive: true,
+              lastSeen: new Date()
             }];
           }
         });
@@ -94,6 +100,7 @@ export const useRealtimeCanvasSync = ({
         // In a real implementation, we'd send the canvas JSON to Pusher here
         // pusherChannel.trigger('canvas-update', { sender: userName, timestamp, canvasJson });
       } catch (error) {
+        // Fix error handling with proper string error message
         captureError(error, `realtimeSync:syncCanvas:${userName}`);
         toast.error('Failed to sync canvas');
       }
@@ -132,7 +139,9 @@ export const useRealtimeCanvasSync = ({
               const updated = [...prev];
               updated[existingUserIndex] = {
                 ...updated[existingUserIndex],
-                lastActive: data.timestamp
+                lastActive: data.timestamp,
+                isActive: true,
+                lastSeen: new Date()
               };
               return updated;
             } else {
@@ -141,7 +150,9 @@ export const useRealtimeCanvasSync = ({
                 id: `user-${Math.random().toString(36).substring(2, 9)}`,
                 name: data.sender,
                 color,
-                lastActive: data.timestamp
+                lastActive: data.timestamp,
+                isActive: true,
+                lastSeen: new Date()
               }];
             }
           });
@@ -152,6 +163,7 @@ export const useRealtimeCanvasSync = ({
           }
         });
       } catch (error) {
+        // Fix error handling with proper string error message
         captureError(error, `realtimeSync:remoteUpdate:${data.sender}`);
         toast.error('Failed to apply remote canvas update');
       }

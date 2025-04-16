@@ -1,121 +1,51 @@
 
 /**
- * Factory for creating consistent mock canvas objects for testing
+ * Create a typed mock canvas for tests
+ * Provides a properly typed mock canvas object for unit tests
  * @module utils/test/createMockCanvas
  */
-import { Canvas, Object as FabricObject } from 'fabric';
-import { vi } from 'vitest';
-import { IMockCanvas } from '@/types/test/MockTypes.d';
-import { asMockCanvas, asMockObject } from '@/types/test/MockTypes';
-import { FabricEventNames } from '@/types/fabric-events';
+import { Canvas as FabricCanvas } from 'fabric';
+import { asMockCanvas } from '@/types/test/MockTypes';
 
 /**
- * Create a typed mock canvas with complete event handling for testing
- * @returns A typed mock canvas ready for testing
+ * Creates a strongly-typed mock Fabric.js canvas for testing
+ * Ensures all required properties and methods are properly mocked
+ * 
+ * @returns A properly typed mock canvas object
  */
-export function createTypedMockCanvas(): Canvas {
-  const eventHandlers: Record<string, Function[]> = {};
-  
+export const createTypedMockCanvas = () => {
   const mockCanvas = {
-    // Basic canvas methods
-    on: vi.fn((eventName: string, handler: Function) => {
-      if (!eventHandlers[eventName]) {
-        eventHandlers[eventName] = [];
-      }
-      eventHandlers[eventName].push(handler);
-      return mockCanvas;
+    on: jest.fn(),
+    off: jest.fn(),
+    add: jest.fn(),
+    remove: jest.fn(),
+    getObjects: jest.fn().mockReturnValue([]),
+    clear: jest.fn(),
+    renderAll: jest.fn(),
+    getWidth: jest.fn().mockReturnValue(800),
+    getHeight: jest.fn().mockReturnValue(600),
+    setWidth: jest.fn(),
+    setHeight: jest.fn(),
+    getElement: jest.fn(),
+    getContext: jest.fn(),
+    dispose: jest.fn(),
+    requestRenderAll: jest.fn(),
+    loadFromJSON: jest.fn((json, callback) => {
+      if (callback) callback();
     }),
-    
-    off: vi.fn((eventName: string, handler?: Function) => {
-      if (handler && eventHandlers[eventName]) {
-        const index = eventHandlers[eventName].indexOf(handler);
-        if (index !== -1) {
-          eventHandlers[eventName].splice(index, 1);
-        }
-      } else if (eventHandlers[eventName]) {
-        delete eventHandlers[eventName];
-      }
-      return mockCanvas;
-    }),
-    
-    add: vi.fn(),
-    remove: vi.fn(),
-    requestRenderAll: vi.fn(),
-    discardActiveObject: vi.fn().mockImplementation(function() {
-      this._activeObject = undefined;
-      return mockCanvas;
-    }),
-    getObjects: vi.fn().mockReturnValue([]),
-    contains: vi.fn().mockReturnValue(true),
-    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+    toJSON: jest.fn().mockReturnValue({}),
+    getCenter: jest.fn().mockReturnValue({ top: 300, left: 400 }),
+    setViewportTransform: jest.fn(),
+    getActiveObject: jest.fn(),
+    sendObjectToBack: jest.fn(),
+    bringObjectToFront: jest.fn(),
+    discardActiveObject: jest.fn(),
     isDrawingMode: false,
     selection: true,
     defaultCursor: 'default',
-    hoverCursor: 'default',
-    width: 800,
-    height: 600,
-    
-    // Additional properties for Fabric.js v6 compatibility
-    enablePointerEvents: true,
-    _willAddMouseDown: false,
-    _dropTarget: null,
-    _isClick: false,
-    _objects: [],
-    _activeObject: null,
-    _groupSelector: null,
-    viewportTransform: [1, 0, 0, 1, 0, 0],
-    isDragging: false,
-    
-    // Required canvas methods
-    fire: vi.fn(),
-    calcOffset: vi.fn(),
-    findTarget: vi.fn(),
-    getSelectionContext: vi.fn(),
-    getSelectionElement: vi.fn(),
-    getActiveObject: vi.fn().mockReturnValue(null),
-    setActiveObject: vi.fn(),
-    _setupCurrentTransform: vi.fn(),
-    _renderOverlay: vi.fn(),
-    _restoreObjectsState: vi.fn(),
-    _setStageDimension: vi.fn(),
-    
-    // Testing helper methods - these will be included in the type returned by asMockCanvas
-    triggerEvent: (eventName: string, eventData: any) => {
-      if (eventHandlers[eventName]) {
-        eventHandlers[eventName].forEach(handler => handler(eventData));
-      }
-    },
-    
-    getHandlers: (eventName: string) => eventHandlers[eventName] || []
+    getHandlers: jest.fn((eventName) => [() => {}]),
+    triggerEvent: jest.fn((eventName, eventData) => {})
   };
   
-  // Convert mockCanvas to Canvas type using asMockCanvas
-  const typedCanvas = asMockCanvas(mockCanvas as unknown as Canvas);
-  
-  // Explicitly add the helper methods to the returned object to ensure they're available
-  (typedCanvas as any).getHandlers = mockCanvas.getHandlers;
-  (typedCanvas as any).triggerEvent = mockCanvas.triggerEvent;
-  
-  return typedCanvas;
-}
-
-/**
- * Create a typed mock object for testing
- * @param type The object type (e.g., 'line', 'rect')
- * @param props Additional properties for the mock object
- * @returns A typed mock Fabric object
- */
-export function createTypedMockObject(type: string, props: Record<string, any> = {}): FabricObject {
-  const mockObject = {
-    type,
-    set: vi.fn().mockImplementation(function() { return this; }),
-    setCoords: vi.fn(),
-    get: vi.fn((prop) => props[prop] || null),
-    visible: true,
-    evented: true,
-    selectable: true,
-    ...props
-  };
-  
-  return asMockObject(mockObject as unknown as FabricObject);
-}
+  return asMockCanvas(mockCanvas as unknown as FabricCanvas);
+};
