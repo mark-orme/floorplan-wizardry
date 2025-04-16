@@ -66,7 +66,8 @@ export const SnapFeedbackIndicator: React.FC<SnapFeedbackIndicatorProps> = ({
  * CSS for the snap indicator animation
  */
 export const SnapFeedbackStyle = () => (
-  <style jsx global>{`
+  <style>
+    {`
     @keyframes snapPulse {
       0% {
         transform: scale(0.8);
@@ -81,5 +82,6 @@ export const SnapFeedbackStyle = () => (
         opacity: 0.8;
       }
     }
-  `}</style>
+  `}
+  </style>
 );

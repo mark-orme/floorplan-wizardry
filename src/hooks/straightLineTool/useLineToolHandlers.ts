@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas, Line, Circle, Shadow } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useLineState } from './useLineState';
 import { useLineInputMethod, InputMethod } from './useLineInputMethod';
@@ -76,7 +76,7 @@ export const useLineToolHandlers = ({
     if (type === 'both') indicatorColor = '#8b5cf6'; // Purple for both
     
     // Create a circle with glowing effect
-    const circle = new fabric.Circle({
+    const circle = new Circle({
       left: point.x - 5,
       top: point.y - 5,
       radius: 5,
@@ -86,7 +86,7 @@ export const useLineToolHandlers = ({
       selectable: false,
       evented: false,
       objectCaching: false,
-      shadow: new fabric.Shadow({
+      shadow: new Shadow({
         color: indicatorColor,
         blur: 15,
         offsetX: 0,
