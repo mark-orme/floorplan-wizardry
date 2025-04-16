@@ -5,14 +5,16 @@
 import { describe, it, expect } from 'vitest';
 import { 
   calculateDistance,
-  calculateMidpoint,
   calculateAngle,
+  isPointNearLine,
+  findLineIntersection,
+  calculateMidpoint,
   isExactGridMultiple,
   isLineAlignedWithGrid,
   snapToGrid,
   snapLineToGrid
 } from '@/utils/geometry/lineOperations';
-import { Point, Line } from '@/types/core/Geometry';
+import { Point } from '@/types/core/Geometry';
 import { GRID_SPACING } from '@/constants/numerics';
 
 describe('lineOperations', () => {
@@ -156,7 +158,7 @@ describe('lineOperations', () => {
   
   describe('snapLineToGrid', () => {
     it('should snap line endpoints to grid', () => {
-      const line: Line = {
+      const line: { start: Point; end: Point } = {
         start: { x: 18, y: 22 },
         end: { x: 42, y: 38 }
       };

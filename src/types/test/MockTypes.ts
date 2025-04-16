@@ -31,6 +31,7 @@ export interface MockCanvas {
 
 /**
  * Type assertion helper for tests
+ * This safely casts a mock canvas to Canvas type without TypeScript errors
  */
 export function asMockCanvas(mockCanvas: any): Canvas {
   return mockCanvas as unknown as Canvas;

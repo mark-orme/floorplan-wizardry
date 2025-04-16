@@ -11,6 +11,16 @@ export const calculateDistance = (p1: Point, p2: Point): number => {
 };
 
 /**
+ * Calculate midpoint between two points
+ */
+export const calculateMidpoint = (p1: Point, p2: Point): Point => {
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
+  };
+};
+
+/**
  * Calculate angle between two points in degrees
  */
 export const calculateAngle = (p1: Point, p2: Point): number => {
@@ -29,6 +39,57 @@ export const calculateAngle = (p1: Point, p2: Point): number => {
   }
   
   return angleDeg;
+};
+
+/**
+ * Format distance for display
+ */
+export const formatDistance = (distance: number): string => {
+  return `${distance.toFixed(2)}px`;
+};
+
+/**
+ * Check if a value is an exact multiple of grid size
+ */
+export const isExactGridMultiple = (value: number, gridSize: number = 20): boolean => {
+  return Math.abs(value % gridSize) < 0.001;
+};
+
+/**
+ * Check if a line or point is aligned with the grid
+ */
+export const isLineAlignedWithGrid = (pointOrLine: Point | { start: Point; end: Point }, gridSize: number = 20): boolean => {
+  if ('start' in pointOrLine && 'end' in pointOrLine) {
+    // It's a line, check both endpoints
+    return isExactGridMultiple(pointOrLine.start.x, gridSize) && 
+           isExactGridMultiple(pointOrLine.start.y, gridSize) &&
+           isExactGridMultiple(pointOrLine.end.x, gridSize) && 
+           isExactGridMultiple(pointOrLine.end.y, gridSize);
+  } else {
+    // It's a point
+    return isExactGridMultiple(pointOrLine.x, gridSize) && 
+           isExactGridMultiple(pointOrLine.y, gridSize);
+  }
+};
+
+/**
+ * Snap a point to the nearest grid point
+ */
+export const snapToGrid = (point: Point, gridSize: number = 20): Point => {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
+};
+
+/**
+ * Snap a line's endpoints to the grid
+ */
+export const snapLineToGrid = (line: { start: Point; end: Point }, gridSize: number = 20): { start: Point; end: Point } => {
+  return {
+    start: snapToGrid(line.start, gridSize),
+    end: snapToGrid(line.end, gridSize)
+  };
 };
 
 /**

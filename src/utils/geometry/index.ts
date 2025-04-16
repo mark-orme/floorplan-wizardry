@@ -22,10 +22,10 @@ import {
 // Import line operations
 import {
   calculateDistance,
-  formatDistance,
-  isExactGridMultiple,
   calculateMidpoint,
-  calculateAngle
+  calculateAngle,
+  formatDistance,
+  isExactGridMultiple
 } from '../geometry/lineOperations';
 
 // Re-export all geometry functions
