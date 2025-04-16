@@ -1,224 +1,159 @@
-
-import { useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { calculateDistance, calculateAngle } from '@/utils/geometry/lineOperations';
+import { useLineState } from './useLineState';
+import { useLineInputMethod, InputMethod } from './useLineInputMethod';
+import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useLinePreview } from './useLinePreview';
-import { InputMethod } from './useLineInputMethod';
-import { getCanvas, safeRender } from '@/utils/canvas';
-
-interface LineState {
-  fabricCanvasRef: { current: any };
-  isDrawing: boolean;
-  snapEnabled: boolean;
-  anglesEnabled: boolean;
-  startPoint: Point | null;
-  lineColor: string;
-  lineThickness: number;
-  startDrawing: (point: Point) => void;
-  continueDrawing: (point: Point) => void;
-  completeDrawing: (point: Point) => void;
-  cancelDrawing: () => void;
-  setInputMethod: (method: InputMethod) => void;
-}
 
 interface UseLineToolHandlersProps {
-  lineState: LineState;
-  updateMeasurementData: (data: any) => void;
+  canvas: FabricCanvas | null;
+  enabled: boolean;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState: () => void;
+  snapColor?: string;
 }
 
-/**
- * Hook for handling line tool mouse and touch events
- */
-export const useLineToolHandlers = ({ lineState, updateMeasurementData }: UseLineToolHandlersProps) => {
-  const {
-    fabricCanvasRef,
-    isDrawing,
-    snapEnabled,
-    anglesEnabled,
-    startPoint,
-    lineColor,
-    lineThickness,
-    startDrawing,
-    continueDrawing,
-    completeDrawing,
-    cancelDrawing,
-    setInputMethod
-  } = lineState;
-  
-  // Initialize line preview functionality
-  const {
-    showHoverIndicator,
-    hideHoverIndicator,
-    updateLinePreview,
-    clearLinePreview
-  } = useLinePreview(
-    fabricCanvasRef,
-    isDrawing,
-    snapEnabled,
-    anglesEnabled,
-    lineColor,
-    lineThickness
-  );
-  
-  /**
-   * Handle mouse down event
-   */
-  const handleMouseDown = useCallback((e: any) => {
-    // Detect input method
-    const isPencil = e.e.pointerType === 'pen';
-    if (isPencil) {
-      setInputMethod(InputMethod.PENCIL);
-    } else {
-      setInputMethod(InputMethod.MOUSE);
-    }
-    
-    // Get canvas and pointer coordinates
-    const canvas = getCanvas(fabricCanvasRef);
-    if (!canvas) return;
-    
-    const pointer = canvas.getPointer(e.e);
-    const point = { x: pointer.x, y: pointer.y };
-    
-    // Start drawing
-    startDrawing(point);
-    
-    // Clear hover indicator since we're now drawing
-    hideHoverIndicator();
-    
-    // Update measurement data
-    updateMeasurementData({
-      distance: 0,
-      angle: 0,
-      snapped: false,
-      unit: 'px'
+export const useLineToolHandlers = ({
+  canvas,
+  enabled,
+  lineColor,
+  lineThickness,
+  saveCurrentState,
+  snapColor
+}: UseLineToolHandlersProps) => {
+  const { isActive, startPoint, previewLine, setStartPoint, setPreviewLine, resetState } = useLineState();
+  const { inputMethod, isPencilMode, detectInputMethod } = useLineInputMethod();
+  const { snapEnabled, toggleSnap, snapToGrid } = useEnhancedGridSnapping();
+  const { getLinePreview } = useLinePreview();
+  const [anglesEnabled, setAnglesEnabled] = useState(false);
+  const measurementDataRef = useRef({ distance: null, angle: null, snapped: false });
+  const [measurementData, setMeasurementData] = useState({ distance: null, angle: null, snapped: false, unit: 'px' });
+
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
+
+  const toggleGridSnapping = useCallback(() => {
+    toggleSnap();
+  }, [toggleSnap]);
+
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    if (!canvas || !enabled) return;
+
+    detectInputMethod(e);
+
+    const pointer = canvas.getPointer(e);
+    const startPoint = { x: pointer.x, y: pointer.y };
+    const snappedStart = snapToGrid(startPoint);
+
+    setStartPoint(snappedStart);
+
+    const line = new Line([snappedStart.x, snappedStart.y, snappedStart.x, snappedStart.y], {
+      stroke: lineColor,
+      strokeWidth: lineThickness,
+      selectable: false,
+      evented: false,
+      objectCaching: false
     });
+
+    canvas.add(line);
+    setPreviewLine(line);
+  }, [canvas, enabled, lineColor, lineThickness, detectInputMethod, snapToGrid, setStartPoint, setPreviewLine]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!canvas || !isActive || !startPoint) return;
     
-    // Prevent default behavior
-    e.e.preventDefault();
-  }, [
-    fabricCanvasRef,
-    startDrawing,
-    hideHoverIndicator,
-    updateMeasurementData,
-    setInputMethod
-  ]);
-  
-  /**
-   * Handle mouse move event
-   */
-  const handleMouseMove = useCallback((e: any) => {
-    const canvas = getCanvas(fabricCanvasRef);
-    if (!canvas) return;
+    const pointer = canvas.getPointer(e);
+    const currentPoint = { x: pointer.x, y: pointer.y };
     
-    const pointer = canvas.getPointer(e.e);
-    const point = { x: pointer.x, y: pointer.y };
+    // Get line preview with snapping
+    const linePreview = getLinePreview(startPoint, currentPoint, snapEnabled);
     
-    if (isDrawing && startPoint) {
-      // Update line preview and get snapped point
-      const linePreviewResult = updateLinePreview(startPoint, point);
+    // Make sure linePreview has the isSnapped property
+    // This is a type safety check since the error was that isSnapped doesn't exist
+    const isSnapped = 'isSnapped' in linePreview ? linePreview.isSnapped : false;
+    
+    // Update preview line
+    if (previewLine) {
+      previewLine.set({
+        x2: linePreview.endPoint.x,
+        y2: linePreview.endPoint.y
+      });
       
-      // Default values in case updateLinePreview returns null or undefined
-      let endPoint = point;
-      let isSnapped = false;
-      
-      // Check if linePreviewResult exists and extract values
-      if (linePreviewResult) {
-        endPoint = linePreviewResult.endPoint || point;
-        isSnapped = linePreviewResult.isSnapped || false;
+      // Apply different style if snapped
+      if (isSnapped) {
+        previewLine.set({
+          stroke: snapColor || lineColor,
+          strokeDashArray: undefined
+        });
+      } else {
+        previewLine.set({
+          stroke: lineColor,
+          strokeDashArray: [5, 5]
+        });
       }
       
-      // Continue drawing with the potentially snapped point
-      continueDrawing(endPoint);
-      
-      // Calculate measurements
-      const distance = calculateDistance(startPoint, endPoint);
-      const angle = calculateAngle(startPoint, endPoint);
-      
-      // Update measurement data
-      updateMeasurementData({
-        distance,
-        angle,
-        snapped: isSnapped,
-        unit: 'px'
-      });
-    } else {
-      // Show hover indicator at cursor position when not drawing
-      showHoverIndicator(point);
+      canvas.renderAll();
     }
     
-    // Prevent default behavior
-    e.e.preventDefault();
-  }, [
-    fabricCanvasRef,
-    isDrawing,
-    startPoint,
-    continueDrawing,
-    updateLinePreview,
-    showHoverIndicator,
-    updateMeasurementData
-  ]);
-  
-  /**
-   * Handle mouse up event
-   */
-  const handleMouseUp = useCallback((e: any) => {
-    if (!isDrawing) return;
+    // Calculate distance and angle
+    const dx = linePreview.endPoint.x - startPoint.x;
+    const dy = linePreview.endPoint.y - startPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     
-    const canvas = getCanvas(fabricCanvasRef);
-    if (!canvas) return;
+    // Update measurement data
+    measurementDataRef.current = {
+      distance: Math.round(distance),
+      angle: Math.round(angle),
+      snapped: isSnapped
+    };
     
-    const pointer = canvas.getPointer(e.e);
-    const point = { x: pointer.x, y: pointer.y };
-    
-    // Complete drawing
-    completeDrawing(point);
-    
-    // Clear line preview
-    clearLinePreview();
-    
-    // Reset measurement data after a short delay
-    setTimeout(() => {
-      updateMeasurementData({
-        distance: null,
-        angle: null,
-        snapped: false,
-        unit: 'px'
-      });
-    }, 2000);
-    
-    // Prevent default behavior
-    e.e.preventDefault();
-  }, [
-    isDrawing,
-    fabricCanvasRef,
-    completeDrawing,
-    clearLinePreview,
-    updateMeasurementData
-  ]);
-  
-  /**
-   * Handle keyboard events
-   */
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Cancel drawing when Escape key is pressed
-    if (e.key === 'Escape' && isDrawing) {
-      cancelDrawing();
-      clearLinePreview();
-      
-      // Reset measurement data
-      updateMeasurementData({
-        distance: null,
-        angle: null,
-        snapped: false,
-        unit: 'px'
-      });
-    }
-  }, [isDrawing, cancelDrawing, clearLinePreview, updateMeasurementData]);
-  
+    setMeasurementData({
+      distance: Math.round(distance),
+      angle: Math.round(angle),
+      snapped: isSnapped,
+      unit: 'px'
+    });
+  }, [canvas, isActive, startPoint, previewLine, snapEnabled, lineColor, snapColor, getLinePreview]);
+
+  const handleMouseUp = useCallback((e: MouseEvent) => {
+    if (!canvas || !isActive || !startPoint || !previewLine) return;
+
+    const pointer = canvas.getPointer(e);
+    const endPoint = { x: pointer.x, y: pointer.y };
+    const snappedEnd = snapToGrid(endPoint);
+
+    previewLine.set({
+      x2: snappedEnd.x,
+      y2: snappedEnd.y
+    });
+
+    previewLine.set({
+      strokeDashArray: undefined,
+      selectable: true,
+      evented: true,
+      objectCaching: true
+    });
+
+    canvas.renderAll();
+    saveCurrentState();
+    resetState();
+  }, [canvas, isActive, startPoint, previewLine, snapToGrid, saveCurrentState, resetState]);
+
   return {
+    isActive,
+    inputMethod,
+    isPencilMode,
+    snapEnabled,
+    anglesEnabled,
+    measurementData,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    handleKeyDown
+    toggleGridSnapping,
+    toggleAngles
   };
 };

@@ -9,6 +9,7 @@ import { ZOOM_CONSTANTS } from '@/constants/zoomConstants';
 import { forceGridCreationAndVisibility } from '@/utils/grid/gridVisibility';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
 import { Point } from '@/types/core/Point';
+import { ApplePencilHandler } from './canvas/ApplePencilHandler';
 
 export interface EnhancedCanvasProps {
   width: number;

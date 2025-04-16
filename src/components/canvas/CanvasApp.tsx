@@ -16,6 +16,7 @@ import { useRealtimeCanvasSync } from "@/hooks/useRealtimeCanvasSync";
 import { useCollaborationStatus } from "@/components/canvas/app/useCollaborationStatus";
 import { CanvasCollaborationIndicator } from "@/components/canvas/CanvasCollaborationIndicator";
 import { getCanvas, safeRender } from "@/utils/canvas";
+import '@/styles/ipad-optimizations.css';
 
 // Default dimensions for the canvas
 const DEFAULT_CANVAS_WIDTH = 800;
