@@ -53,7 +53,10 @@ export interface IMockObject extends Partial<FabricObject> {
 /**
  * Helper function signature to properly type a mock canvas
  */
-export function asMockCanvas(mockCanvas: any): Canvas;
+export function asMockCanvas(mockCanvas: any): Canvas & {
+  getHandlers: (eventName: string) => Function[];
+  triggerEvent: (eventName: string, eventData: any) => void;
+};
 
 /**
  * Helper function signature to properly type a mock fabric object

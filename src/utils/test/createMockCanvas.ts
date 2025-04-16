@@ -79,7 +79,7 @@ export function createTypedMockCanvas(): Canvas {
     _restoreObjectsState: vi.fn(),
     _setStageDimension: vi.fn(),
     
-    // Testing helper methods
+    // Testing helper methods - these will be included in the type returned by asMockCanvas
     triggerEvent: (eventName: string, eventData: any) => {
       if (eventHandlers[eventName]) {
         eventHandlers[eventName].forEach(handler => handler(eventData));
@@ -89,8 +89,14 @@ export function createTypedMockCanvas(): Canvas {
     getHandlers: (eventName: string) => eventHandlers[eventName] || []
   };
   
-  // Use the proper type conversion as recommended in the error message
-  return asMockCanvas(mockCanvas as unknown as Canvas);
+  // Convert mockCanvas to Canvas type using asMockCanvas
+  const typedCanvas = asMockCanvas(mockCanvas as unknown as Canvas);
+  
+  // Explicitly add the helper methods to the returned object to ensure they're available
+  (typedCanvas as any).getHandlers = mockCanvas.getHandlers;
+  (typedCanvas as any).triggerEvent = mockCanvas.triggerEvent;
+  
+  return typedCanvas;
 }
 
 /**

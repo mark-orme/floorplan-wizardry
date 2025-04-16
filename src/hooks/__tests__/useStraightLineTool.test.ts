@@ -72,11 +72,17 @@ vi.mock('sonner', () => ({
 
 describe('useStraightLineTool', () => {
   // Use our new factory method for canvas creation
-  let mockCanvas: Canvas;
+  let mockCanvas: Canvas & { 
+    getHandlers: (eventName: string) => Function[];
+    triggerEvent: (eventName: string, eventData: any) => void;
+  };
   let saveCurrentState: () => void;
   
   beforeEach(() => {
-    mockCanvas = createTypedMockCanvas();
+    mockCanvas = createTypedMockCanvas() as Canvas & { 
+      getHandlers: (eventName: string) => Function[];
+      triggerEvent: (eventName: string, eventData: any) => void;
+    };
     saveCurrentState = vi.fn();
     
     // Reset the useLineState mock
@@ -210,7 +216,7 @@ describe('useStraightLineTool', () => {
       saveCurrentState
     }));
     
-    // Get mouse down handler
+    // Get mouse down handler with our extended type
     const mouseDownHandler = mockCanvas.getHandlers(FabricEventNames.MOUSE_DOWN)[0];
     expect(mouseDownHandler).toBeDefined();
     
@@ -343,7 +349,7 @@ describe('useStraightLineTool', () => {
       saveCurrentState
     }));
     
-    // Get mouse handlers
+    // Get mouse handlers with our extended type
     const mouseUpHandler = mockCanvas.getHandlers(FabricEventNames.MOUSE_UP)[0];
     expect(mouseUpHandler).toBeDefined();
     

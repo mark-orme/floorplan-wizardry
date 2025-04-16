@@ -13,11 +13,14 @@ import { vi } from 'vitest';
  * @returns The same object typed as Canvas
  */
 export function asMockCanvas<T>(mockCanvas: T): Canvas {
-  // Convert to unknown first as recommended by TypeScript error message
+  // Convert to unknown first for type safety
   const mockCanvasAny = mockCanvas as unknown;
   
+  // Create a new object with all the necessary properties
   const completeCanvas = {
-    ...mockCanvasAny,
+    // Original mock properties (safely spread)
+    ...(mockCanvasAny as Record<string, any>),
+    
     // Adding missing critical internal properties
     enablePointerEvents: true,
     _willAddMouseDown: false,
@@ -70,7 +73,9 @@ export function asMockObject<T>(mockObject: T): FabricObject {
   const mockObjectAny = mockObject as unknown;
   
   const completeObject = {
-    ...mockObjectAny,
+    // Original mock properties (safely spread)
+    ...(mockObjectAny as Record<string, any>),
+    
     // Default properties required for Fabric objects
     visible: true,
     evented: true,
