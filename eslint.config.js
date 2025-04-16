@@ -6,6 +6,8 @@ import { prettierRules } from './eslint/prettier-rules.js';
 import typeScriptRules from './eslint/typescript-rules.js';
 import { fabricEventTypes } from './eslint/fabric-event-types.js';
 import { exportRules } from './eslint/export-rules.js';
+import { lineToolValidationRules } from './eslint/typescript/line-tool-validation.js';
+import { hookMockValidationRules } from './eslint/typescript/hook-mock-validation.js';
 
 export default [
   baseConfig,
@@ -14,5 +16,7 @@ export default [
   prettierRules,
   exportRules,
   ...typeScriptRules,
-  fabricEventTypes
+  fabricEventTypes,
+  lineToolValidationRules,
+  hookMockValidationRules
 ];

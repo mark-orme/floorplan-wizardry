@@ -1,3 +1,4 @@
+
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -29,7 +30,15 @@ vi.mock('../useLineState', () => ({
     createDistanceTooltip: vi.fn(),
     updateLineAndTooltip: vi.fn(),
     snapPointToGrid: vi.fn(point => point),
-    snapLineToGrid: vi.fn()
+    inputMethod: 'mouse',
+    isPencilMode: false,
+    snapEnabled: true,
+    toggleSnap: vi.fn(),
+    toggleAngles: vi.fn(),
+    anglesEnabled: false,
+    measurementData: { distance: 0, unit: 'm' },
+    setInputMethod: vi.fn(),
+    setIsPencilMode: vi.fn()
   }),
   InputMethod: {
     MOUSE: 'mouse',
@@ -40,7 +49,7 @@ vi.mock('../useLineState', () => ({
 }));
 
 // Mock other necessary dependencies
-vi.mock('@/utils/sentry', () => ({
+vi.mock('@/utils/sentryUtils', () => ({
   captureMessage: vi.fn(),
   captureError: vi.fn()
 }));
@@ -131,7 +140,20 @@ describe('useStraightLineTool', () => {
       setDistanceTooltip: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
-      setIsDrawing: vi.fn()
+      setIsDrawing: vi.fn(),
+      createLine: vi.fn(),
+      createDistanceTooltip: vi.fn(),
+      updateLineAndTooltip: vi.fn(),
+      snapPointToGrid: vi.fn(point => point),
+      inputMethod: InputMethod.MOUSE,
+      isPencilMode: false,
+      snapEnabled: true,
+      toggleSnap: vi.fn(),
+      toggleAngles: vi.fn(),
+      anglesEnabled: false,
+      measurementData: { distance: 0, unit: 'm' },
+      setInputMethod: vi.fn(),
+      setIsPencilMode: vi.fn()
     });
   });
   
@@ -199,6 +221,8 @@ describe('useStraightLineTool', () => {
     const mockSetStartPoint = vi.fn();
     const mockSetCurrentLine = vi.fn();
     const mockSetDistanceTooltip = vi.fn();
+    const mockCreateLine = vi.fn();
+    const mockCreateDistanceTooltip = vi.fn();
     
     // Update useLineState mock with custom functions
     vi.mocked(useLineState).mockReturnValue({
@@ -213,11 +237,19 @@ describe('useStraightLineTool', () => {
       initializeTool: vi.fn(),
       resetDrawingState: vi.fn(),
       setIsDrawing: mockSetIsDrawing,
-      createLine: vi.fn(),
-      createDistanceTooltip: vi.fn(),
+      createLine: mockCreateLine,
+      createDistanceTooltip: mockCreateDistanceTooltip,
       updateLineAndTooltip: vi.fn(),
       snapPointToGrid: vi.fn(point => point),
-      snapLineToGrid: vi.fn()
+      inputMethod: InputMethod.MOUSE,
+      isPencilMode: false,
+      snapEnabled: true,
+      toggleSnap: vi.fn(),
+      toggleAngles: vi.fn(),
+      anglesEnabled: false,
+      measurementData: { distance: 0, unit: 'm' },
+      setInputMethod: vi.fn(),
+      setIsPencilMode: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
@@ -255,14 +287,27 @@ describe('useStraightLineTool', () => {
       isDrawing: mockIsDrawing,
       isToolInitialized: true,
       startPointRef: { current: { x: 100, y: 100 } },
-      currentLineRef: { current: { id: 'line1' } },
-      distanceTooltipRef: { current: { id: 'tooltip1' } },
+      currentLineRef: { current: { id: 'line1', _set: vi.fn(), _render: vi.fn(), _setWidthHeight: vi.fn(), _findCenterFromElement: vi.fn() } as any },
+      distanceTooltipRef: { current: { id: 'tooltip1', _set: vi.fn(), _render: vi.fn(), _reNewline: '', _reSpacesAndTabs: '', _reSpaceAndTab: '', _reWords: /\S+/g } as any },
       setStartPoint: vi.fn(),
       setCurrentLine: vi.fn(),
       setDistanceTooltip: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: mockResetDrawingState,
-      setIsDrawing: vi.fn()
+      setIsDrawing: vi.fn(),
+      createLine: vi.fn(),
+      createDistanceTooltip: vi.fn(),
+      updateLineAndTooltip: vi.fn(),
+      snapPointToGrid: vi.fn(point => point),
+      inputMethod: InputMethod.MOUSE,
+      isPencilMode: false,
+      snapEnabled: true,
+      toggleSnap: vi.fn(),
+      toggleAngles: vi.fn(),
+      anglesEnabled: false,
+      measurementData: { distance: 0, unit: 'm' },
+      setInputMethod: vi.fn(),
+      setIsPencilMode: vi.fn()
     });
     
     const { result } = renderHook(() => useStraightLineTool({
@@ -296,12 +341,21 @@ describe('useStraightLineTool', () => {
       y1: 100, 
       x2: 200, 
       y2: 200,
-      set: vi.fn()
-    };
+      set: vi.fn(),
+      _set: vi.fn(),
+      _render: vi.fn(),
+      _findCenterFromElement: vi.fn(),
+      _setWidthHeight: vi.fn()
+    } as any;
     const mockDistanceTooltip = { 
       id: 'tooltip1',
-      set: vi.fn()
-    };
+      set: vi.fn(),
+      _reNewline: '',
+      _reSpacesAndTabs: '',
+      _reSpaceAndTab: '',
+      _reWords: /\S+/g,
+      _render: vi.fn()
+    } as any;
     const mockResetDrawingState = vi.fn();
     
     // Override useLineState mock for this test
@@ -316,7 +370,20 @@ describe('useStraightLineTool', () => {
       setDistanceTooltip: vi.fn(),
       initializeTool: vi.fn(),
       resetDrawingState: mockResetDrawingState,
-      setIsDrawing: vi.fn()
+      setIsDrawing: vi.fn(),
+      createLine: vi.fn(),
+      createDistanceTooltip: vi.fn(),
+      updateLineAndTooltip: vi.fn(),
+      snapPointToGrid: vi.fn(point => point),
+      inputMethod: InputMethod.MOUSE,
+      isPencilMode: false,
+      snapEnabled: true,
+      toggleSnap: vi.fn(),
+      toggleAngles: vi.fn(),
+      anglesEnabled: false,
+      measurementData: { distance: 0, unit: 'm' },
+      setInputMethod: vi.fn(),
+      setIsPencilMode: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
