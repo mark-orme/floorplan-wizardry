@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -53,7 +52,6 @@ export const useStraightLineTool = ({
     saveCurrentState
   });
 
-  // Create portal container for tooltips
   useEffect(() => {
     if (typeof document !== 'undefined') {
       const existingContainer = document.getElementById('line-tooltip-container');
@@ -73,7 +71,6 @@ export const useStraightLineTool = ({
     }
 
     return () => {
-      // Clean up container on unmount
       const container = document.getElementById('line-tooltip-container');
       if (container && container.parentNode) {
         container.parentNode.removeChild(container);
@@ -81,12 +78,10 @@ export const useStraightLineTool = ({
     };
   }, []);
 
-  // Update tooltip position with measurement data
   useEffect(() => {
     if (isActive && measurementData.distance !== null && canvas) {
       setIsDrawing(true);
       
-      // If we have measurement data, update tooltip data points
       if (canvas && canvas.getActiveObjects().length > 0) {
         const activeObject = canvas.getActiveObjects()[0];
         if (activeObject && activeObject.type === 'line') {
@@ -105,7 +100,6 @@ export const useStraightLineTool = ({
     }
   }, [isActive, measurementData, canvas]);
 
-  // Setup event listeners
   useEffect(() => {
     if (!canvas || !enabled) return;
     
@@ -122,7 +116,6 @@ export const useStraightLineTool = ({
     };
   }, [canvas, enabled, handleMouseDown, handleMouseMove, handleMouseUp]);
   
-  // Render tooltip through portal
   const renderTooltip = useCallback(() => {
     if (!tooltipPortalContainer || !isActive || !measurementData.distance) return null;
     
@@ -154,4 +147,3 @@ export const useStraightLineTool = ({
     isDrawing
   };
 };
-
