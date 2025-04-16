@@ -1,262 +1,112 @@
 
 /**
- * Synchronization service for floor plan data
- * Uses Pusher for real-time data synchronization
- * @module syncService
+ * Sync service for real-time canvas collaboration
+ * @module utils/syncService
  */
-import { subscribeToChannel, getPusher } from './pusher';
+import { v4 as uuidv4 } from 'uuid';
+import { SyncFloorPlan } from './realtime/types';
 import logger from './logger';
-import { toast } from 'sonner';
-import { captureError, captureMessage } from './sentryUtils';
+import { getPusher, subscribeToChannel } from './pusher';
 
-// Constants
-export const SYNC_CHANNEL = 'floorplan-sync';
-export const SAVE_EVENT = 'save-floorplan';
-export const UPDATE_EVENT = 'update-floorplan';
+// Constants for channel and event names
+export const UPDATE_EVENT = 'canvas-update';
 export const PRESENCE_EVENT = 'presence-update';
 
-/**
- * Generate a unique device ID to identify this client
- * Used to filter out self-originated updates in the sync process
- * 
- * @returns {string} Unique device identifier
- */
-const getDeviceId = (): string => {
-  let deviceId = localStorage.getItem('device_id');
-  
-  if (!deviceId) {
-    deviceId = `device_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    localStorage.setItem('device_id', deviceId);
-  }
-  
-  return deviceId;
-};
-
-// Cache the device ID
-const DEVICE_ID = getDeviceId();
+// Generate a unique device ID for this client session
+const deviceId = uuidv4();
 
 /**
- * Subscribe to floor plan sync channel
- * Creates and returns a Pusher channel subscription
- * 
- * @returns {Object} The Pusher channel instance
- */
-export const subscribeSyncChannel = () => {
-  logger.info('Subscribing to floor plan sync channel');
-  
-  try {
-    const channel = subscribeToChannel(SYNC_CHANNEL);
-    
-    // Setup presence events
-    setTimeout(() => {
-      try {
-        // Using basic connected user count instead of members property
-        const pusherInstance = getPusher();
-        // Check if the channel exists and is subscribed
-        const connectedUsers = 1; // Default to 1 (self)
-        
-        if (connectedUsers > 1) {
-          toast.info(`${connectedUsers - 1} other ${connectedUsers - 1 === 1 ? 'user' : 'users'} connected`);
-          
-          // Broadcast presence
-          channel.trigger(`client-${PRESENCE_EVENT}`, {
-            count: connectedUsers,
-            timestamp: Date.now(),
-            deviceId: DEVICE_ID,
-          });
-        }
-      } catch (err) {
-        logger.error('Error counting connected users:', err);
-        captureError(err, 'sync-channel-presence-error', {
-          level: 'error',
-          tags: {
-            component: 'syncService',
-            operation: 'subscribeSyncChannel'
-          }
-        });
-      }
-    }, 1500);
-    
-    return channel;
-  } catch (error) {
-    logger.error('Fatal error subscribing to sync channel:', error);
-    captureError(error, 'sync-channel-subscription-failure', {
-      level: 'fatal',
-      tags: {
-        component: 'syncService',
-        operation: 'subscribeSyncChannel'
-      },
-      extra: {
-        channel: SYNC_CHANNEL
-      }
-    });
-    
-    // Rethrow to allow callers to handle the error
-    throw error;
-  }
-};
-
-/**
- * Floor plan type with required properties
- */
-interface SyncFloorPlan {
-  id: string;
-  name: string;
-  canvasJson: any;
-  updatedAt: string;
-  [key: string]: any; // Allow additional properties
-}
-
-/**
- * Broadcast floor plan update to all connected devices
- * Sends the updated floor plans to other devices via Pusher
- * 
- * @param {SyncFloorPlan[]} floorPlans - The updated floor plans to broadcast
- * @param {string} userId - Optional user ID for tracking changes by user
- */
-export const broadcastFloorPlanUpdate = (floorPlans: SyncFloorPlan[], userId?: string) => {
-  logger.info('Broadcasting floor plan update');
-  
-  // In a real production app, you would send this to your server
-  // which would use Pusher server SDK to trigger the event
-  
-  // For demo purposes, we're using the client events (requires enabling in Pusher dashboard)
-  // Format: client-{eventName}
-  try {
-    const channel = getPusher().channel(SYNC_CHANNEL);
-    
-    if (channel && channel.subscribed) {
-      channel.trigger(`client-${UPDATE_EVENT}`, {
-        floorPlans,
-        timestamp: Date.now(),
-        deviceId: DEVICE_ID,
-        userId: userId || 'anonymous',
-      });
-      logger.info('Floor plan update broadcast successful');
-    } else {
-      logger.warn('Cannot broadcast update: Channel not subscribed');
-      captureMessage('Failed to broadcast update - channel not subscribed', 'sync-broadcast-warning', {
-        level: 'warning',
-        tags: {
-          component: 'syncService',
-          operation: 'broadcastFloorPlanUpdate'
-        }
-      });
-      
-      // Try subscribing and then sending
-      try {
-        const newChannel = subscribeSyncChannel();
-        setTimeout(() => {
-          newChannel.trigger(`client-${UPDATE_EVENT}`, {
-            floorPlans,
-            timestamp: Date.now(),
-            deviceId: DEVICE_ID,
-            userId: userId || 'anonymous',
-          });
-        }, 1000);
-      } catch (subError) {
-        captureError(subError, 'sync-recovery-failed', {
-          level: 'error',
-          tags: {
-            component: 'syncService',
-            operation: 'broadcastFloorPlanUpdate-recovery'
-          }
-        });
-      }
-    }
-  } catch (error) {
-    logger.error('Error broadcasting floor plan update:', error);
-    captureError(error, 'sync-broadcast-error', {
-      level: 'error',
-      tags: {
-        component: 'syncService',
-        operation: 'broadcastFloorPlanUpdate'
-      },
-      extra: {
-        userId: userId || 'anonymous'
-      }
-    });
-  }
-};
-
-/**
- * Notify other users about presence change
- * A simple function to broadcast presence without requiring a count parameter
- */
-export const notifyPresenceChange = () => {
-  logger.info('Notifying about presence change');
-  try {
-    // Just call broadcastPresenceUpdate with a default count of 1 (self)
-    broadcastPresenceUpdate(1);
-  } catch (error) {
-    logger.error('Error in notifyPresenceChange:', error);
-    captureError(error, 'presence-notification-error', {
-      level: 'error',
-      tags: {
-        component: 'syncService',
-        operation: 'notifyPresenceChange'
-      }
-    });
-  }
-};
-
-/**
- * Broadcast presence update to other users
- * Sends presence information to other connected users
- * 
- * @param {number} count - The number of users to report
- */
-export const broadcastPresenceUpdate = (count: number) => {
-  logger.info('Broadcasting presence update');
-  
-  try {
-    const channel = getPusher().channel(SYNC_CHANNEL);
-    
-    if (channel && channel.subscribed) {
-      channel.trigger(`client-${PRESENCE_EVENT}`, {
-        count,
-        timestamp: Date.now(),
-        deviceId: DEVICE_ID,
-      });
-    } else {
-      captureMessage('Failed to broadcast presence - channel not subscribed', 'presence-broadcast-warning', {
-        level: 'warning',
-        tags: {
-          component: 'syncService',
-          operation: 'broadcastPresenceUpdate'
-        }
-      });
-    }
-  } catch (error) {
-    logger.error('Error broadcasting presence update:', error);
-    captureError(error, 'presence-broadcast-error', {
-      level: 'error',
-      tags: {
-        component: 'syncService',
-        operation: 'broadcastPresenceUpdate'
-      }
-    });
-  }
-};
-
-/**
- * Check if an update is from this device
- * Used to prevent processing own updates in sync mechanisms
- * 
- * @param {string} sourceDeviceId - The device ID from the update event
- * @returns {boolean} True if the update is from this device
+ * Check if an update originated from this device
+ * @param {string} sourceDeviceId - Device ID from the update
+ * @returns {boolean} True if update is from this device
  */
 export const isUpdateFromThisDevice = (sourceDeviceId: string): boolean => {
-  return sourceDeviceId === DEVICE_ID;
+  return sourceDeviceId === deviceId;
 };
 
-export default {
-  subscribeSyncChannel,
-  broadcastFloorPlanUpdate,
-  isUpdateFromThisDevice,
-  broadcastPresenceUpdate,
-  notifyPresenceChange,
-  SYNC_CHANNEL,
-  UPDATE_EVENT,
-  PRESENCE_EVENT
+/**
+ * Subscribe to a sync channel
+ * @param {string} channelId - Optional channel identifier
+ * @returns {any} The channel instance
+ */
+export const subscribeSyncChannel = (channelId: string = 'default'): any => {
+  const channelName = `floor-plan-${channelId}`;
+  return subscribeToChannel(channelName);
+};
+
+/**
+ * Broadcast a floor plan update to all clients
+ * @param {SyncFloorPlan[]} floorPlans - Floor plans to sync
+ * @param {string} userId - User identifier
+ * @param {string} channelId - Optional channel identifier
+ * @returns {boolean} Success flag
+ */
+export const broadcastFloorPlanUpdate = (
+  floorPlans: SyncFloorPlan[],
+  userId: string,
+  channelId: string = 'default'
+): boolean => {
+  try {
+    const pusher = getPusher();
+    const channelName = `floor-plan-${channelId}`;
+    
+    const data = {
+      floorPlans,
+      userId,
+      deviceId,
+      timestamp: Date.now()
+    };
+    
+    // Trigger a client event (only works with private/presence channels in production)
+    pusher.channel(channelName).trigger(`client-${UPDATE_EVENT}`, data);
+    
+    return true;
+  } catch (error) {
+    logger.error('Error broadcasting floor plan update:', error);
+    return false;
+  }
+};
+
+/**
+ * Notify other clients about presence change
+ * @param {string} channelId - Optional channel identifier
+ * @returns {boolean} Success flag
+ */
+export const notifyPresenceChange = (channelId: string = 'default'): boolean => {
+  try {
+    const pusher = getPusher();
+    const channelName = `floor-plan-${channelId}`;
+    
+    // Get subscribed users count
+    const channel = pusher.channel(channelName);
+    const subscribedCount = 1; // Default to 1 (self) - in a real implementation, get actual count
+    
+    const data = {
+      userId: 'user', // In a real implementation, get from auth
+      deviceId,
+      count: subscribedCount,
+      timestamp: Date.now()
+    };
+    
+    // Trigger a client event
+    channel.trigger(`client-${PRESENCE_EVENT}`, data);
+    
+    return true;
+  } catch (error) {
+    logger.error('Error notifying presence change:', error);
+    return false;
+  }
+};
+
+/**
+ * Disconnect from all sync channels
+ */
+export const disconnectAllSyncChannels = (): void => {
+  try {
+    const pusher = getPusher();
+    pusher.disconnect();
+    logger.info('Disconnected from all sync channels');
+  } catch (error) {
+    logger.error('Error disconnecting from sync channels:', error);
+  }
 };

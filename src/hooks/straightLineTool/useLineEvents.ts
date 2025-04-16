@@ -1,195 +1,156 @@
 
-/**
- * Hook for managing line drawing mouse events
- * @module hooks/straightLineTool/useLineEvents
- */
-import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { useLineState } from "./useLineState";
+import { useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Point';
+import { MeasurementData } from '@/types/measurement/MeasurementData';
+import { snapToGrid } from '@/utils/geometry/pointOperations';
+import logger from '@/utils/logger';
 
 interface UseLineEventsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  lineState: ReturnType<typeof useLineState>;
-  onComplete?: () => void;
-  enabled: boolean;
+  canvas: FabricCanvas | null;
+  lineState: any; // LineState from useLineState hook
+  snapEnabled: boolean;
+  anglesEnabled: boolean;
+  updateMeasurementData: (data: MeasurementData) => void;
 }
 
 export const useLineEvents = ({
-  fabricCanvasRef,
+  canvas,
   lineState,
-  onComplete,
-  enabled
+  snapEnabled,
+  anglesEnabled,
+  updateMeasurementData
 }: UseLineEventsProps) => {
-  const {
-    isDrawing,
-    startPointRef,
-    currentLineRef,
-    distanceTooltipRef,
-    setStartPoint,
-    setCurrentLine,
-    setDistanceTooltip,
-    setIsDrawing,
-    createLine,
-    createDistanceTooltip,
-    updateLineAndTooltip,
-    resetDrawingState,
-    snapPointToGrid
-  } = lineState;
+  // Get pointer coordinates from fabric mouse event
+  const getPointerFromEvent = useCallback((e: any): Point => {
+    if (!canvas) return { x: 0, y: 0 };
+    
+    return canvas.getPointer(e.e);
+  }, [canvas]);
   
-  /**
-   * Handle mouse down event
-   */
+  // Apply snapping to point if enabled
+  const applySnapping = useCallback((point: Point): Point => {
+    if (!snapEnabled) return point;
+    
+    return snapToGrid(point);
+  }, [snapEnabled]);
+  
+  // Apply angle constraints if enabled
+  const applyAngleConstraints = useCallback((start: Point, end: Point): Point => {
+    if (!anglesEnabled || !start) return end;
+    
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    
+    // Determine if angle is close to 0, 45, 90, 135, 180 degrees
+    const snapAngles = [0, 45, 90, 135, 180, -45, -90, -135];
+    const closestAngle = snapAngles.reduce((prev, curr) => {
+      return Math.abs(curr - angle) < Math.abs(prev - angle) ? curr : prev;
+    });
+    
+    // If angle is close to a snap angle (within 10 degrees), constrain it
+    if (Math.abs(closestAngle - angle) < 10) {
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const rads = closestAngle * Math.PI / 180;
+      
+      return {
+        x: start.x + Math.cos(rads) * distance,
+        y: start.y + Math.sin(rads) * distance
+      };
+    }
+    
+    return end;
+  }, [anglesEnabled]);
+  
+  // Handle mouse down event
   const handleMouseDown = useCallback((e: any) => {
-    if (!enabled) return;
+    if (!canvas || !lineState) return;
     
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    // Get pointer coordinates
+    const pointer = getPointerFromEvent(e);
     
-    console.log("Straight line tool: mouse down", e.pointer);
+    // Apply snapping if enabled
+    const snappedPoint = applySnapping(pointer);
     
-    // Get point from event
-    const point = snapPointToGrid({
-      x: e.pointer.x,
-      y: e.pointer.y
+    // Start drawing line
+    lineState.startDrawing(snappedPoint);
+    
+    // Initial measurement data
+    updateMeasurementData({
+      distance: 0,
+      angle: 0,
+      snapped: pointer.x !== snappedPoint.x || pointer.y !== snappedPoint.y,
+      unit: 'px'
     });
     
-    // Start drawing
-    setIsDrawing(true);
-    setStartPoint(point);
-    startPointRef.current = point;
-    
-    // Create line
-    const line = createLine(point.x, point.y, point.x, point.y);
-    if (line) {
-      canvas.add(line);
-      setCurrentLine(line);
-    
-      // Create distance tooltip
-      const tooltip = createDistanceTooltip(point.x, point.y, 0);
-      if (tooltip) {
-        canvas.add(tooltip);
-        setDistanceTooltip(tooltip);
-      }
-    
-      // Render
-      canvas.renderAll();
-    }
-    
-    // Prevent default browser behavior
-    if (e.e) {
-      e.e.preventDefault();
-      e.e.stopPropagation();
-    }
-  }, [enabled, fabricCanvasRef, setIsDrawing, setStartPoint, createLine, setCurrentLine, createDistanceTooltip, setDistanceTooltip, snapPointToGrid, startPointRef]);
+    logger.debug('Mouse down', { original: pointer, snapped: snappedPoint });
+  }, [canvas, lineState, getPointerFromEvent, applySnapping, updateMeasurementData]);
   
-  /**
-   * Handle mouse move event
-   */
+  // Handle mouse move event
   const handleMouseMove = useCallback((e: any) => {
-    if (!enabled || !isDrawing || !startPointRef.current) return;
+    if (!canvas || !lineState) return;
     
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    // Get pointer coordinates
+    const pointer = getPointerFromEvent(e);
     
-    // Get point from event
-    const point = snapPointToGrid({
-      x: e.pointer.x,
-      y: e.pointer.y
-    });
-    
-    // Update line and tooltip
-    updateLineAndTooltip(startPointRef.current, point);
-    
-    // Render
-    canvas.renderAll();
-    
-    // Prevent default browser behavior
-    if (e.e) {
-      e.e.preventDefault();
-      e.e.stopPropagation();
+    if (lineState.isDrawing && lineState.startPoint) {
+      // Apply constraints if enabled
+      let endPoint = applySnapping(pointer);
+      endPoint = applyAngleConstraints(lineState.startPoint, endPoint);
+      
+      // Continue drawing the line
+      lineState.continueDrawing(endPoint);
+      
+      // Calculate measurements
+      const dx = endPoint.x - lineState.startPoint.x;
+      const dy = endPoint.y - lineState.startPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      
+      // Update measurement data
+      updateMeasurementData({
+        distance,
+        angle,
+        snapped: pointer.x !== endPoint.x || pointer.y !== endPoint.y,
+        unit: 'px'
+      });
     }
-  }, [enabled, isDrawing, startPointRef, fabricCanvasRef, updateLineAndTooltip, snapPointToGrid]);
+  }, [canvas, lineState, getPointerFromEvent, applySnapping, applyAngleConstraints, updateMeasurementData]);
   
-  /**
-   * Handle mouse up event
-   */
+  // Handle mouse up event
   const handleMouseUp = useCallback((e: any) => {
-    if (!enabled || !isDrawing || !startPointRef.current) return;
+    if (!canvas || !lineState || !lineState.isDrawing) return;
     
-    console.log("Straight line tool: mouse up", e.pointer);
+    // Get pointer coordinates
+    const pointer = getPointerFromEvent(e);
     
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    // Apply constraints if enabled
+    let endPoint = applySnapping(pointer);
     
-    // Get point from event
-    const point = snapPointToGrid({
-      x: e.pointer.x,
-      y: e.pointer.y
-    });
-    
-    // Update line and tooltip one last time
-    updateLineAndTooltip(startPointRef.current, point);
-    
-    // Remove distance tooltip
-    if (distanceTooltipRef.current) {
-      canvas.remove(distanceTooltipRef.current);
+    if (lineState.startPoint) {
+      endPoint = applyAngleConstraints(lineState.startPoint, endPoint);
     }
     
-    // If the line has no length (same start and end point), remove it
-    if (
-      startPointRef.current.x === point.x &&
-      startPointRef.current.y === point.y &&
-      currentLineRef.current
-    ) {
-      canvas.remove(currentLineRef.current);
-    } else {
-      // Call complete callback
-      if (onComplete) {
-        onComplete();
-      }
-    }
+    // Complete the drawing
+    lineState.completeDrawing(endPoint);
     
-    // Reset drawing state
-    resetDrawingState();
-    
-    // Render
-    canvas.requestRenderAll();
-    
-    // Prevent default browser behavior
-    if (e.e) {
-      e.e.preventDefault();
-      e.e.stopPropagation();
-    }
-  }, [enabled, isDrawing, startPointRef, fabricCanvasRef, distanceTooltipRef, currentLineRef, updateLineAndTooltip, resetDrawingState, onComplete, snapPointToGrid]);
+    logger.debug('Mouse up', { original: pointer, final: endPoint });
+  }, [canvas, lineState, getPointerFromEvent, applySnapping, applyAngleConstraints]);
   
-  // Set up event listeners
-  useEffect(() => {
-    if (!enabled) return;
-    
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    console.log("Straight line tool: setting up event listeners");
-    
-    // Register event handlers
-    canvas.on('mouse:down', handleMouseDown);
-    canvas.on('mouse:move', handleMouseMove);
-    canvas.on('mouse:up', handleMouseUp);
-    
-    // Clean up event handlers
-    return () => {
-      console.log("Straight line tool: cleaning up event listeners");
-      if (canvas) {
-        canvas.off('mouse:down', handleMouseDown);
-        canvas.off('mouse:move', handleMouseMove);
-        canvas.off('mouse:up', handleMouseUp);
-      }
-    };
-  }, [enabled, fabricCanvasRef, handleMouseDown, handleMouseMove, handleMouseUp]);
+  // Handle key down events (e.g., Escape to cancel)
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && lineState) {
+      lineState.cancelDrawing();
+      logger.debug('Drawing cancelled via Escape key');
+    }
+  }, [lineState]);
   
   return {
     handleMouseDown,
     handleMouseMove,
-    handleMouseUp
+    handleMouseUp,
+    handleKeyDown,
+    cancelDrawing: lineState.cancelDrawing
   };
 };

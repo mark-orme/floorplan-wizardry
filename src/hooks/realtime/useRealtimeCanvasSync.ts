@@ -20,6 +20,9 @@ interface UseRealtimeCanvasSyncProps {
   
   /** Callback when remote updates are received */
   onRemoteUpdate?: (sender: string, timestamp: number) => void;
+  
+  /** Channel identifier for multi-room support */
+  channelId?: string;
 }
 
 /**
@@ -29,10 +32,12 @@ interface UseRealtimeCanvasSyncProps {
 export const useRealtimeCanvasSync = ({
   canvas,
   enabled,
-  onRemoteUpdate
+  onRemoteUpdate,
+  channelId = 'default'
 }: UseRealtimeCanvasSyncProps): RealtimeCanvasSyncResult => {
   const [lastSyncTime, setLastSyncTime] = useState<number>(0);
   const [collaborators, setCollaborators] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState(false);
   const lastSyncTimeRef = useRef<number>(0);
   const channelRef = useRef<any>(null);
   
@@ -53,27 +58,32 @@ export const useRealtimeCanvasSync = ({
     }
     
     try {
-      // Set up real-time sync
-      logger.info('Setting up real-time canvas sync');
+      // Set up real-time sync with specific channel ID
+      logger.info(`Setting up real-time canvas sync for channel: ${channelId}`);
       const channel = setupRealtimeSync(
         canvas,
         lastSyncTimeRef,
         setLastSyncTime,
         setCollaborators,
-        onRemoteUpdate
+        onRemoteUpdate,
+        channelId
       );
       
       // Store the channel for cleanup
       channelRef.current = channel;
       
       // Notify about presence
-      notifyPresenceChange();
+      notifyPresenceChange(channelId);
+      
+      // Show toast when connection is established
+      toast.success('Real-time collaboration connected');
       
       // Cleanup function
       return () => {
         if (channel) {
           channel.unsubscribe();
           channelRef.current = null;
+          logger.info(`Disconnected from real-time sync channel: ${channelId}`);
         }
       };
     } catch (error) {
@@ -81,7 +91,7 @@ export const useRealtimeCanvasSync = ({
       toast.error('Failed to connect to real-time sync service');
       return () => {};
     }
-  }, [canvas, enabled, onRemoteUpdate]);
+  }, [canvas, enabled, onRemoteUpdate, channelId]);
   
   // Sync canvas data to other users
   const syncCanvas = useCallback((userName: string) => {
@@ -90,6 +100,8 @@ export const useRealtimeCanvasSync = ({
     }
     
     try {
+      setIsSyncing(true);
+      
       // Create floor plan data for sync
       const floorPlans = createFloorPlanDataForSync(canvas, userName);
       
@@ -99,18 +111,22 @@ export const useRealtimeCanvasSync = ({
       lastSyncTimeRef.current = currentTime;
       
       // Broadcast the update
-      broadcastFloorPlanUpdate(floorPlans, userName);
+      broadcastFloorPlanUpdate(floorPlans, userName, channelId);
       
-      logger.info(`Canvas synced by ${userName} at ${new Date(currentTime).toISOString()}`);
+      logger.info(`Canvas synced by ${userName} at ${new Date(currentTime).toISOString()} on channel ${channelId}`);
+      
+      setIsSyncing(false);
     } catch (error) {
       logger.error('Error syncing canvas:', error);
       toast.error('Failed to sync canvas changes');
+      setIsSyncing(false);
     }
-  }, [canvas, enabled]);
+  }, [canvas, enabled, channelId]);
   
   return {
     lastSyncTime,
     collaborators,
+    isSyncing,
     syncCanvas
   };
 };

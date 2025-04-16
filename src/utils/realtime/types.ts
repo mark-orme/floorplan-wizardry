@@ -1,50 +1,61 @@
 
 /**
- * Type definitions for real-time synchronization
+ * Real-time synchronization types
+ * @module utils/realtime/types
  */
 
 /**
- * Floor plan data structure for synchronization
+ * Synchronized floor plan data
  */
 export interface SyncFloorPlan {
-  /** Unique identifier for the floor plan */
   id: string;
-  
-  /** Display name for the floor plan */
   name: string;
-  
-  /** Canvas JSON representation (stringified) */
   canvasJson: string;
-  
-  /** Last update timestamp (ISO string) */
   updatedAt: string;
-  
-  /** Additional metadata for the floor plan */
-  metadata?: {
-    /** User who performed the sync */
-    syncedBy?: string;
-    
-    /** Timestamp when sync occurred */
-    syncTimestamp?: number;
-    
-    /** Any additional metadata properties */
+  metadata: {
+    syncedBy: string;
+    syncTimestamp: number;
     [key: string]: any;
   };
-  
-  /** Any additional properties */
-  [key: string]: any;
 }
 
 /**
- * Result type for the real-time canvas sync hook
+ * Result of the useRealtimeCanvasSync hook
  */
 export interface RealtimeCanvasSyncResult {
-  /** Last sync timestamp */
+  /** Timestamp of the last synchronization */
   lastSyncTime: number;
   
   /** Number of active collaborators */
   collaborators: number;
   
-  /** Function to manually trigger sync */
+  /** Whether a sync operation is in progress */
+  isSyncing: boolean;
+  
+  /** Function to sync canvas state */
   syncCanvas: (userName: string) => void;
+}
+
+/**
+ * Canvas sync event types
+ */
+export enum CanvasSyncEventType {
+  UPDATE = 'update',
+  JOIN = 'join',
+  LEAVE = 'leave'
+}
+
+/**
+ * Canvas presence state
+ */
+export interface CanvasPresenceState {
+  userId: string;
+  deviceId: string;
+  name: string;
+  cursor?: {
+    x: number;
+    y: number;
+  };
+  isActive: boolean;
+  lastActivity: number;
 }
