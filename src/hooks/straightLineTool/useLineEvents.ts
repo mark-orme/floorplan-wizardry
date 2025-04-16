@@ -45,6 +45,8 @@ export const useLineEvents = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
+    console.log("Straight line tool: mouse down", e.pointer);
+    
     // Get point from event
     const point = snapPointToGrid({
       x: e.pointer.x,
@@ -58,16 +60,20 @@ export const useLineEvents = ({
     
     // Create line
     const line = createLine(point.x, point.y, point.x, point.y);
-    canvas.add(line);
-    setCurrentLine(line);
+    if (line) {
+      canvas.add(line);
+      setCurrentLine(line);
     
-    // Create distance tooltip
-    const tooltip = createDistanceTooltip(point.x, point.y, 0);
-    canvas.add(tooltip);
-    setDistanceTooltip(tooltip);
+      // Create distance tooltip
+      const tooltip = createDistanceTooltip(point.x, point.y, 0);
+      if (tooltip) {
+        canvas.add(tooltip);
+        setDistanceTooltip(tooltip);
+      }
     
-    // Render
-    canvas.requestRenderAll();
+      // Render
+      canvas.renderAll();
+    }
     
     // Prevent default browser behavior
     if (e.e) {
@@ -95,7 +101,7 @@ export const useLineEvents = ({
     updateLineAndTooltip(startPointRef.current, point);
     
     // Render
-    canvas.requestRenderAll();
+    canvas.renderAll();
     
     // Prevent default browser behavior
     if (e.e) {
@@ -109,6 +115,8 @@ export const useLineEvents = ({
    */
   const handleMouseUp = useCallback((e: any) => {
     if (!enabled || !isDrawing || !startPointRef.current) return;
+    
+    console.log("Straight line tool: mouse up", e.pointer);
     
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -161,6 +169,8 @@ export const useLineEvents = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
+    console.log("Straight line tool: setting up event listeners");
+    
     // Register event handlers
     canvas.on('mouse:down', handleMouseDown);
     canvas.on('mouse:move', handleMouseMove);
@@ -168,6 +178,7 @@ export const useLineEvents = ({
     
     // Clean up event handlers
     return () => {
+      console.log("Straight line tool: cleaning up event listeners");
       if (canvas) {
         canvas.off('mouse:down', handleMouseDown);
         canvas.off('mouse:move', handleMouseMove);

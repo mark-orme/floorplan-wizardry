@@ -123,6 +123,8 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     
     const canvas = fabricCanvasRef.current;
     
+    console.log("Tool changed to:", tool);
+    
     // Reset canvas modes
     canvas.isDrawingMode = false;
     canvas.selection = false;
