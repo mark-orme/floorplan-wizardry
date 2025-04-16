@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
-import { captureError } from '@/utils/sentryUtils';
 
 export interface Collaborator {
   id: string;
@@ -29,6 +28,11 @@ const COLORS = [
   '#FF5733', '#33FF57', '#3357FF', '#F033FF', '#FF33A1',
   '#33FFF5', '#F5FF33', '#FF8C33', '#8C33FF', '#33FF8C'
 ];
+
+// Utility function to mock the captureError from sentryUtils
+const captureError = (error: unknown, metadata?: string) => {
+  console.error('[RealtimeSync Error]:', error, metadata ? `Context: ${metadata}` : '');
+};
 
 export const useRealtimeCanvasSync = ({
   canvas,
@@ -90,14 +94,7 @@ export const useRealtimeCanvasSync = ({
         // In a real implementation, we'd send the canvas JSON to Pusher here
         // pusherChannel.trigger('canvas-update', { sender: userName, timestamp, canvasJson });
       } catch (error) {
-        captureError(error, {
-          context: 'realtimeSync',
-          extra: {
-            userName,
-            enabled,
-            canvasAvailable: !!canvas
-          }
-        });
+        captureError(error, `realtimeSync:syncCanvas:${userName}`);
         toast.error('Failed to sync canvas');
       }
     }, throttleMs);
@@ -155,13 +152,7 @@ export const useRealtimeCanvasSync = ({
           }
         });
       } catch (error) {
-        captureError(error, {
-          context: 'realtimeSync.remoteUpdate',
-          extra: {
-            sender: data.sender,
-            timestamp: data.timestamp
-          }
-        });
+        captureError(error, `realtimeSync:remoteUpdate:${data.sender}`);
         toast.error('Failed to apply remote canvas update');
       }
     };

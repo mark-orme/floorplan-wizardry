@@ -6,9 +6,15 @@
 
 // Canvas and rendering constants
 export const PIXELS_PER_METER = 100; // 100 pixels = 1 meter
-export const GRID_SPACING = 20; // Grid line every 20 pixels
-export const SMALL_GRID = 20; // Small grid cells (20px)
-export const LARGE_GRID = 100; // Large grid cells (100px)
+export const GRID_SPACING = {
+  SMALL: 20,
+  LARGE: 100,
+  DEFAULT: 20
+}; // Grid line spacing
+
+// For backward compatibility
+export const SMALL_GRID = GRID_SPACING.SMALL; // Small grid cells (20px)
+export const LARGE_GRID = GRID_SPACING.LARGE; // Large grid cells (100px)
 
 // Add properties to the numeric constants to fix typing issues
 export const SMALL_GRID_PROPS = {
@@ -54,3 +60,8 @@ export const ZOOM_CONSTRAINTS = {
   MAX: 3.0,
   DEFAULT: 1.0
 };
+
+// Grid constants for utilities
+export const MAX_SMALL_GRID_LINES = 500;
+export const MAX_LARGE_GRID_LINES = 100;
+export const GRID_EXTENSION_FACTOR = 2;

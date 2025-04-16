@@ -14,7 +14,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useRealtimeCanvasSync } from "@/hooks/useRealtimeCanvasSync";
 import { useCollaborationStatus } from "@/components/canvas/app/useCollaborationStatus";
-import { CanvasCollaborationIndicator } from "@/components/canvas/app/CanvasCollaborationIndicator";
+import { CanvasCollaborationIndicator } from "@/components/canvas/CanvasCollaborationIndicator";
 
 // Default dimensions for the canvas
 const DEFAULT_CANVAS_WIDTH = 800;

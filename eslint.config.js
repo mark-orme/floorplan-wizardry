@@ -9,16 +9,18 @@ import { exportRules } from './eslint/export-rules.js';
 import { lineToolValidationRules } from './eslint/typescript/line-tool-validation.js';
 import { hookMockValidationRules } from './eslint/typescript/hook-mock-validation.js';
 import { importSafetyRules } from './eslint/import-safety-rules.js';
+import { gridTypeSafetyRules } from './eslint/grid-type-safety-rules.js';
 
 export default [
   baseConfig,
   importRules,
-  importSafetyRules, // Add the new import safety rules
+  importSafetyRules, 
   reactRules,
   prettierRules,
   exportRules,
   ...typeScriptRules,
   fabricEventTypes,
   lineToolValidationRules,
-  hookMockValidationRules
+  hookMockValidationRules,
+  gridTypeSafetyRules // Add the new grid type safety rules
 ];
