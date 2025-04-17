@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Ruler, Info, Grid, ArrowsUpDown } from "lucide-react";
+import { Ruler, Info, Grid, ArrowUpDown } from "lucide-react";
 
 interface MeasurementGuideModalProps {
   open: boolean;
@@ -86,7 +85,7 @@ export function MeasurementGuideModal({ open, onClose, onOpenChange }: Measureme
           
           <div className="space-y-2 bg-blue-50 p-4 rounded-md">
             <h3 className="font-medium flex items-center gap-2">
-              <ArrowsUpDown className="h-4 w-4" />
+              <ArrowUpDown className="h-4 w-4" />
               {t('measurementGuide.drawing', 'Drawing Guidelines')}
             </h3>
             <ul className="list-disc ml-5 space-y-1">

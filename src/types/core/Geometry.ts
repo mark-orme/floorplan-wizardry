@@ -45,3 +45,24 @@ export interface CanvasDimensions {
   width: number;
   height: number;
 }
+
+/**
+ * Path data interfaces
+ */
+export interface PathPoint {
+  x: number;
+  y: number;
+  pressure?: number;
+  tilt?: number;
+  timestamp?: number;
+}
+
+export interface PathSegment {
+  points: PathPoint[];
+  type: 'line' | 'curve' | 'arc';
+}
+
+export interface PathObject {
+  segments: PathSegment[];
+  closed: boolean;
+}

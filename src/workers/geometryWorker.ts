@@ -1,17 +1,22 @@
 
 /**
- * Web Worker for geometry calculations
- * Offloads heavy calculations from the main thread
+ * Web Worker for optimized geometry calculations
  */
 
-// Define message types for type safety
+// Define worker message data type
 type WorkerMessageData = {
   id: string;
-  type: 'calculateArea' | 'calculateDistance' | 'snapToGrid' | 'optimizePoints';
+  type: string;
   payload: any;
 };
 
-// Listen for messages from the main thread
+// Point interface
+interface Point {
+  x: number;
+  y: number;
+}
+
+// Handle incoming messages
 self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
   const { id, type, payload } = event.data;
   
@@ -28,12 +33,12 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
         result = calculateDistance(payload.start, payload.end);
         break;
         
-      case 'snapToGrid':
-        result = snapPointsToGrid(payload.points, payload.gridSize);
+      case 'simplifyPath':
+        result = simplifyPath(payload.points, payload.tolerance);
         break;
         
-      case 'optimizePoints':
-        result = optimizePointsArray(payload.points, payload.tolerance);
+      case 'snapToGrid':
+        result = snapPointsToGrid(payload.points, payload.gridSize);
         break;
         
       default:
@@ -59,7 +64,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
 /**
  * Calculate area of a polygon using Shoelace formula
  */
-function calculatePolygonArea(points: { x: number, y: number }[]): number {
+function calculatePolygonArea(points: Point[]): number {
   if (points.length < 3) return 0;
   
   let area = 0;
@@ -77,122 +82,89 @@ function calculatePolygonArea(points: { x: number, y: number }[]): number {
 /**
  * Calculate distance between two points
  */
-function calculateDistance(
-  start: { x: number, y: number }, 
-  end: { x: number, y: number }
-): number {
+function calculateDistance(start: Point, end: Point): number {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
- * Snap an array of points to a grid
+ * Simplify a path using Douglas-Peucker algorithm
  */
-function snapPointsToGrid(
-  points: { x: number, y: number }[], 
-  gridSize: number
-): { x: number, y: number }[] {
-  return points.map(point => ({
-    x: Math.round(point.x / gridSize) * gridSize,
-    y: Math.round(point.y / gridSize) * gridSize
-  }));
-}
-
-/**
- * Optimize a points array by removing unnecessary points
- * Uses Ramer-Douglas-Peucker algorithm to simplify paths
- */
-function optimizePointsArray(
-  points: { x: number, y: number }[], 
-  tolerance: number
-): { x: number, y: number }[] {
+function simplifyPath(points: Point[], tolerance: number): Point[] {
   if (points.length <= 2) return [...points];
   
-  // Implementation of Ramer-Douglas-Peucker algorithm
-  const findPerpendicularDistance = (
-    point: { x: number, y: number },
-    lineStart: { x: number, y: number },
-    lineEnd: { x: number, y: number }
-  ): number => {
-    const dx = lineEnd.x - lineStart.x;
-    const dy = lineEnd.y - lineStart.y;
+  // Helper function to calculate perpendicular distance
+  const perpendicularDistance = (point: Point, start: Point, end: Point): number => {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
     
-    // If line is just a point, return distance to that point
+    // Handle case when start and end are the same point
     if (dx === 0 && dy === 0) {
-      const pdx = point.x - lineStart.x;
-      const pdy = point.y - lineStart.y;
-      return Math.sqrt(pdx * pdx + pdy * pdy);
+      const d = calculateDistance(point, start);
+      return d;
     }
     
     // Calculate perpendicular distance
     const lineLengthSquared = dx * dx + dy * dy;
-    const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSquared;
+    const t = ((point.x - start.x) * dx + (point.y - start.y) * dy) / lineLengthSquared;
     
     if (t < 0) {
-      // Point is before start of line, return distance to start
-      const pdx = point.x - lineStart.x;
-      const pdy = point.y - lineStart.y;
-      return Math.sqrt(pdx * pdx + pdy * pdy);
+      // Point is before start, use distance to start
+      return calculateDistance(point, start);
     }
     
     if (t > 1) {
-      // Point is after end of line, return distance to end
-      const pdx = point.x - lineEnd.x;
-      const pdy = point.y - lineEnd.y;
-      return Math.sqrt(pdx * pdx + pdy * pdy);
+      // Point is after end, use distance to end
+      return calculateDistance(point, end);
     }
     
-    // Point is between start and end of line, calculate perpendicular distance
-    const nearestX = lineStart.x + t * dx;
-    const nearestY = lineStart.y + t * dy;
-    const pdx = point.x - nearestX;
-    const pdy = point.y - nearestY;
+    // Calculate perpendicular intersection point
+    const projectionX = start.x + t * dx;
+    const projectionY = start.y + t * dy;
     
-    return Math.sqrt(pdx * pdx + pdy * pdy);
+    // Return distance to intersection point
+    return calculateDistance(point, { x: projectionX, y: projectionY });
   };
   
-  const douglasPeucker = (
-    pointList: { x: number, y: number }[],
-    epsilon: number
-  ): { x: number, y: number }[] => {
+  // Recursive implementation of Douglas-Peucker
+  const douglasPeucker = (pointList: Point[], epsilon: number): Point[] => {
     // Find the point with the maximum distance
-    let dmax = 0;
-    let index = 0;
+    let maxDistance = 0;
+    let maxIndex = 0;
     const end = pointList.length - 1;
     
     for (let i = 1; i < end; i++) {
-      const d = findPerpendicularDistance(
-        pointList[i], 
-        pointList[0], 
-        pointList[end]
-      );
-      
-      if (d > dmax) {
-        index = i;
-        dmax = d;
+      const distance = perpendicularDistance(pointList[i], pointList[0], pointList[end]);
+      if (distance > maxDistance) {
+        maxDistance = distance;
+        maxIndex = i;
       }
     }
     
     // If max distance is greater than epsilon, recursively simplify
-    if (dmax > epsilon) {
+    if (maxDistance > epsilon) {
       // Recursive call
-      const firstHalf = douglasPeucker(
-        pointList.slice(0, index + 1),
-        epsilon
-      );
-      const secondHalf = douglasPeucker(
-        pointList.slice(index),
-        epsilon
-      );
+      const firstSegment = douglasPeucker(pointList.slice(0, maxIndex + 1), epsilon);
+      const secondSegment = douglasPeucker(pointList.slice(maxIndex), epsilon);
       
-      // Concat the two parts and remove duplicate point
-      return [...firstHalf.slice(0, -1), ...secondHalf];
+      // Concatenate results (remove duplicate point)
+      return [...firstSegment.slice(0, -1), ...secondSegment];
     } else {
-      // Just return first and last point
+      // Just return the end points
       return [pointList[0], pointList[end]];
     }
   };
   
   return douglasPeucker(points, tolerance);
+}
+
+/**
+ * Snap points to a grid
+ */
+function snapPointsToGrid(points: Point[], gridSize: number): Point[] {
+  return points.map(point => ({
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  }));
 }
