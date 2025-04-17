@@ -1,3 +1,4 @@
+
 /**
  * Web Worker for optimized geometry calculations
  * Uses transferable objects for better performance
@@ -71,7 +72,12 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
         break;
         
       case 'optimizeCanvasState':
-        result = optimizeCanvasState(payload.state);
+        // If we received transferable objects with the state
+        if (payload.hasTransferables && payload.parsed) {
+          result = optimizeCanvasStateWithTransferables(payload.parsed);
+        } else {
+          result = optimizeCanvasState(payload.state);
+        }
         break;
         
       default:
@@ -85,7 +91,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
       result
     };
     
-    // Use the correct postMessage format with transferables
+    // Use the correct postMessage format with transferables if available
     if (transferables.length > 0) {
       self.postMessage(message, { transfer: transferables });
     } else {
@@ -103,6 +109,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
 
 /**
  * Calculate area of a polygon using Shoelace formula
+ * Now supports transferable Float32Array format
  */
 function calculatePolygonArea(points: { x: number, y: number }[] | Float32Array): number {
   if (points instanceof Float32Array) {
@@ -401,6 +408,52 @@ function optimizeCanvasState(state: string): string {
   } catch (error) {
     // Return original on error
     return state;
+  }
+}
+
+/**
+ * Optimize canvas state when transferables are used
+ * Directly works with the parsed object to avoid re-parsing
+ */
+function optimizeCanvasStateWithTransferables(parsed: any): string {
+  try {
+    if (parsed.objects && Array.isArray(parsed.objects)) {
+      // Process objects - handle both regular points and transferable Float32Array
+      parsed.objects = parsed.objects.map((obj: any) => {
+        // Handle transferable point data
+        if (obj.points) {
+          if (obj.points instanceof Float32Array) {
+            // Convert back to regular points for optimization
+            obj.points = typedArrayToPoints(obj.points);
+            obj.points = optimizePoints(obj.points);
+          } else {
+            obj.points = optimizePoints(obj.points);
+          }
+        }
+        
+        // Handle path data as before
+        if (obj.path) {
+          obj.path = optimizePath(obj.path);
+        }
+        
+        // Simplify numeric properties
+        ['left', 'top', 'width', 'height', 'scaleX', 'scaleY', 'angle'].forEach(prop => {
+          if (typeof obj[prop] === 'number') {
+            obj[prop] = Number(obj[prop].toFixed(2));
+          }
+        });
+        
+        return obj;
+      });
+      
+      return JSON.stringify(parsed);
+    }
+    
+    // Return stringified version if objects array not found
+    return JSON.stringify(parsed);
+  } catch (error) {
+    // Return stringified version on error
+    return JSON.stringify(parsed);
   }
 }
 

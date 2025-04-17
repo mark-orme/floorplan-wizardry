@@ -45,8 +45,49 @@ export const shouldUseWorker = (operationComplexity: number): boolean => {
 };
 
 /**
+ * Convert points to transferable Float32Array for efficient worker communication
+ * @param points Array of points to convert
+ * @returns Float32Array and the underlying ArrayBuffer for transfer
+ */
+export const pointsToTransferable = (points: Point[]): { 
+  data: Float32Array; 
+  buffer: ArrayBuffer;
+} => {
+  const float32Array = new Float32Array(points.length * 2);
+  
+  points.forEach((point, index) => {
+    float32Array[index * 2] = point.x;
+    float32Array[index * 2 + 1] = point.y;
+  });
+  
+  return {
+    data: float32Array,
+    buffer: float32Array.buffer
+  };
+};
+
+/**
+ * Convert transferable Float32Array back to points
+ * @param float32Array Float32Array containing point data
+ * @returns Array of Point objects
+ */
+export const transferableToPoints = (float32Array: Float32Array): Point[] => {
+  const points: Point[] = [];
+  
+  for (let i = 0; i < float32Array.length; i += 2) {
+    points.push({
+      x: float32Array[i],
+      y: float32Array[i + 1]
+    });
+  }
+  
+  return points;
+};
+
+/**
  * Calculate area of polygon
  * Automatically decides whether to use worker based on point count
+ * Uses transferable objects for large datasets
  * @param points Points defining the polygon
  * @returns Area value (async for worker compatibility)
  */
@@ -67,12 +108,15 @@ export const calculatePolygonArea = async (points: Point[]): Promise<number> => 
     })[0];
   }
   
-  // For larger point sets, use worker
+  // For larger point sets, use worker with transferables
   try {
     const worker = getGeometryWorker();
     
     return await new Promise<number>((resolve, reject) => {
       const id = `area-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Create transferable buffer from points
+      const { data: pointsArray, buffer } = pointsToTransferable(points);
       
       // One-time message handler
       const handler = (event: MessageEvent) => {
@@ -93,12 +137,12 @@ export const calculatePolygonArea = async (points: Point[]): Promise<number> => 
       // Add message handler
       worker.addEventListener('message', handler);
       
-      // Send to worker
+      // Send to worker with transferable buffer
       worker.postMessage({
         id,
         type: 'calculateArea',
-        payload: { points }
-      });
+        payload: { points: pointsArray, useTransferable: true }
+      }, [buffer]);
     });
   } catch (error) {
     // Fall back to direct calculation on error

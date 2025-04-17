@@ -3,6 +3,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { useOptimizedGeometryWorker } from '@/hooks/useOptimizedGeometryWorker';
 import { measureCanvasOperation } from '@/utils/canvas/monitoring/performanceMonitoring';
 import logger from '@/utils/logger';
+import { pointsToTransferable } from '@/utils/computeUtils';
 
 // Size threshold for worker offloading (objects)
 const WORKER_THRESHOLD = 100;
@@ -126,12 +127,39 @@ export const optimizeCanvasState = async (state: string): Promise<string> => {
           geometryWorker.terminate();
         };
         
-        // Send data to worker
-        geometryWorker.postMessage({
-          id: `optimize-${Date.now()}`,
-          type: 'optimizeCanvasState',
-          payload: { state }
-        });
+        // Send data to worker using transferable objects where possible
+        const transferables: ArrayBuffer[] = [];
+        
+        // Prepare any transferable objects from paths or points
+        const prepareTransferables = (objects: any[]) => {
+          objects.forEach(obj => {
+            if (obj.points && Array.isArray(obj.points) && obj.points.length > 50) {
+              const { data, buffer } = pointsToTransferable(obj.points);
+              obj.points = data;
+              transferables.push(buffer);
+            }
+          });
+        };
+        
+        // Try to prepare transferables if we have objects with points
+        if (parsed.objects && Array.isArray(parsed.objects)) {
+          prepareTransferables(parsed.objects);
+        }
+        
+        // Send to worker
+        if (transferables.length > 0) {
+          geometryWorker.postMessage({
+            id: `optimize-${Date.now()}`,
+            type: 'optimizeCanvasState',
+            payload: { state, hasTransferables: true, parsed }
+          }, transferables);
+        } else {
+          geometryWorker.postMessage({
+            id: `optimize-${Date.now()}`,
+            type: 'optimizeCanvasState',
+            payload: { state }
+          });
+        }
       });
       
       return result;
