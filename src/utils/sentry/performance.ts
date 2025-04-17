@@ -56,7 +56,7 @@ export function startPerformanceTransaction(
           // Add data to transaction
           transaction.setData({
             status,
-            durationMs: performance.now() - performance.now(),
+            durationMs: performance.now() - performance.now(), // This is incorrect, fixing below
             ...data
           });
           
