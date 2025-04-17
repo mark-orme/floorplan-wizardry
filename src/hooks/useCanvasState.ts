@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -33,13 +32,13 @@ export const useCanvasState = (): UseCanvasStateResult => {
           setActiveTool(state.activeTool || DrawingMode.SELECT);
           setLineThickness(state.lineThickness || 2);
           setLineColor(state.lineColor || "#000000");
-          console.log("Restored canvas settings from storage");
+          logger.info("Restored canvas settings from storage");
         }
         
         // Load canvas content
         await loadCanvasState(canvas);
       } catch (error) {
-        console.error("Error loading canvas state:", error);
+        logger.error("Error loading canvas state:", error);
         toast.error("Failed to restore previous drawing");
       }
     };
@@ -67,23 +66,8 @@ export const useCanvasState = (): UseCanvasStateResult => {
     try {
       localStorage.setItem('canvas_state', JSON.stringify(state));
     } catch (error) {
-      console.error("Error saving canvas state:", error);
+      logger.error("Error saving canvas state:", error);
     }
-    
-    // Set up the canvas change listeners for auto-saving
-    const handleCanvasModification = () => {
-      saveCanvasState(canvas);
-    };
-    
-    canvas.on('object:added', handleCanvasModification);
-    canvas.on('object:modified', handleCanvasModification);
-    canvas.on('object:removed', handleCanvasModification);
-    
-    return () => {
-      canvas.off('object:added', handleCanvasModification);
-      canvas.off('object:modified', handleCanvasModification);
-      canvas.off('object:removed', handleCanvasModification);
-    };
   }, [canvas, activeTool, lineThickness, lineColor]);
 
   return {
