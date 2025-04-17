@@ -12,13 +12,17 @@ import { strictFabricTypes } from './strict-fabric-types.js';
 import { aiCodeSafetyRules } from './ai-code-safety-rules.js';
 import { hookMockValidationRules } from './hook-mock-validation.js';
 import { lineToolValidationRules } from './line-tool-validation.js';
+import { drawingModeValidationRules } from './drawing-mode-validation.js';
 
 // Export all rule sets
-export default [
+export const typescriptRules = [
   aiDevRules,
   fabricEventTypingRules,
   strictFabricTypes,
   aiCodeSafetyRules,
   hookMockValidationRules,
-  lineToolValidationRules
+  lineToolValidationRules,
+  drawingModeValidationRules
 ];
+
+export default typescriptRules;

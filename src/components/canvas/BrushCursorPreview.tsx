@@ -11,6 +11,9 @@ interface BrushCursorPreviewProps {
   visible?: boolean;
 }
 
+/**
+ * Cursor preview that matches the brush/pencil size and color
+ */
 export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
   fabricCanvas,
   tool,
@@ -23,8 +26,8 @@ export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
   // Show cursor only for drawing tools
   const shouldShowCursor = visible && (
     tool === DrawingMode.DRAW ||
-    tool === DrawingMode.PENCIL ||
-    tool === DrawingMode.BRUSH
+    tool === DrawingMode.LINE ||
+    tool === DrawingMode.STRAIGHT_LINE
   );
   
   // Set cursor size based on line thickness

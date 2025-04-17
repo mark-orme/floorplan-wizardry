@@ -1,206 +1,297 @@
+import { useEffect, useRef } from 'react';
+import { Canvas, Path, Point } from 'fabric'; 
+import { DrawingMode } from '@/constants/drawingModes';
 
-import { useCallback, useRef, useState, useEffect } from 'react';
-import { Canvas as FabricCanvas, Path as FabricPath } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { simplifyPath, smoothPath } from '@/utils/geometry/pathProcessing';
-import { isStraightPath, straightenPath } from '@/utils/geometry/pathStraightening';
+// Tolerance for the simplification algorithm
+const SIMPLIFICATION_TOLERANCE = 2;
+// Threshold for autostraightening lines
+const STRAIGHTEN_THRESHOLD_DEGREES = 5;
 
+/**
+ * Interface for the freehand drawing polish hook
+ */
 interface UseFreehandDrawingPolishProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas: Canvas | null;
+  enabled: boolean;
+  currentTool: DrawingMode;
+  simplifyPaths?: boolean;
   autoStraighten?: boolean;
-  simplificationThreshold?: number;
-  brushPreviewSize?: number;
-  snapToGrid?: boolean;
-  gridSize?: number;
+  smoothCurves?: boolean;
 }
 
+/**
+ * Hook that enhances freehand drawing with polish techniques:
+ * - Path simplification (removes redundant points)
+ * - Auto-straightening (detects nearly straight lines and makes them perfectly straight)
+ * - Curve smoothing (applies Bezier curve fitting)
+ */
 export const useFreehandDrawingPolish = ({
-  fabricCanvasRef,
+  canvas,
+  enabled,
+  currentTool,
+  simplifyPaths = true,
   autoStraighten = true,
-  simplificationThreshold = 2.5,
-  brushPreviewSize = 8,
-  snapToGrid = true,
-  gridSize = 20
-}: UseFreehandDrawingPolishProps) => {
-  const brushCursorRef = useRef<HTMLDivElement | null>(null);
-  const [lineWidth, setLineWidth] = useState(2);
-  const [lineColor, setLineColor] = useState('#000000');
-  const [isDrawing, setIsDrawing] = useState(false);
+  smoothCurves = false
+}: UseFreehandDrawingPolishProps): void => {
+  // Track the current path being drawn
+  const currentPathRef = useRef<Path | null>(null);
   
-  // Initialize brush cursor
   useEffect(() => {
-    if (brushCursorRef.current) return;
+    if (!canvas || !enabled) return;
     
-    // Create brush cursor element
-    const cursorElement = document.createElement('div');
-    cursorElement.className = 'brush-preview-cursor';
-    cursorElement.style.position = 'absolute';
-    cursorElement.style.pointerEvents = 'none';
-    cursorElement.style.borderRadius = '50%';
-    cursorElement.style.transform = 'translate(-50%, -50%)';
-    cursorElement.style.zIndex = '1000';
-    cursorElement.style.width = `${brushPreviewSize}px`;
-    cursorElement.style.height = `${brushPreviewSize}px`;
-    cursorElement.style.border = `1px solid #ffffff`;
-    cursorElement.style.boxShadow = '0 0 0 1px rgba(0, 0, 0, 0.2)';
-    cursorElement.style.backgroundColor = lineColor;
-    cursorElement.style.opacity = '0.6';
-    cursorElement.style.display = 'none';
+    // Only apply to drawing tools
+    const isDrawingTool = currentTool === DrawingMode.DRAW || 
+                         currentTool === DrawingMode.LINE || 
+                         currentTool === DrawingMode.STRAIGHT_LINE;
+                         
+    if (!isDrawingTool) return;
     
-    // Add to document
-    document.body.appendChild(cursorElement);
-    brushCursorRef.current = cursorElement;
-    
-    return () => {
-      if (brushCursorRef.current) {
-        document.body.removeChild(brushCursorRef.current);
-        brushCursorRef.current = null;
-      }
+    // Handler for when a path is created
+    const handlePathCreated = (e: { path: Path }) => {
+      currentPathRef.current = e.path;
     };
-  }, [brushPreviewSize, lineColor]);
-  
-  // Update cursor size and color when drawing properties change
-  useEffect(() => {
-    if (!brushCursorRef.current) return;
     
-    const cursor = brushCursorRef.current;
-    cursor.style.width = `${lineWidth > 3 ? lineWidth : brushPreviewSize}px`;
-    cursor.style.height = `${lineWidth > 3 ? lineWidth : brushPreviewSize}px`;
-    cursor.style.backgroundColor = lineColor;
-  }, [lineWidth, lineColor, brushPreviewSize]);
-  
-  // Show/hide brush cursor based on drawing state
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !brushCursorRef.current) return;
-    
-    const cursor = brushCursorRef.current;
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!cursor) return;
+    // Handler for when drawing stops
+    const handleMouseUp = () => {
+      const path = currentPathRef.current;
+      if (!path) return;
       
-      cursor.style.left = `${e.clientX}px`;
-      cursor.style.top = `${e.clientY}px`;
+      if (simplifyPaths) {
+        simplifyPath(path, SIMPLIFICATION_TOLERANCE);
+      }
+      
+      if (autoStraighten) {
+        tryStraightenPath(path);
+      }
+      
+      if (smoothCurves) {
+        smoothPath(path);
+      }
+      
+      canvas.renderAll();
+      currentPathRef.current = null;
     };
     
-    const handleMouseEnter = () => {
-      if (cursor) cursor.style.display = 'block';
-    };
-    
-    const handleMouseLeave = () => {
-      if (cursor) cursor.style.display = 'none';
-    };
-    
-    const canvasEl = canvas.getElement();
-    
-    canvasEl.addEventListener('mousemove', handleMouseMove);
-    canvasEl.addEventListener('mouseenter', handleMouseEnter);
-    canvasEl.addEventListener('mouseleave', handleMouseLeave);
-    
-    return () => {
-      canvasEl.removeEventListener('mousemove', handleMouseMove);
-      canvasEl.removeEventListener('mouseenter', handleMouseEnter);
-      canvasEl.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, [fabricCanvasRef]);
-  
-  // Initialize path creation hook
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Store original brush width and color
-    setLineWidth(canvas.freeDrawingBrush.width);
-    setLineColor(canvas.freeDrawingBrush.color.toString());
-    
-    // Hook into path created event
-    const handlePathCreated = (e: any) => {
-      const path = e.path as FabricPath;
-      processPath(path);
-    };
-    
+    // Add event listeners
     canvas.on('path:created', handlePathCreated);
+    canvas.on('mouse:up', handleMouseUp);
     
+    // Clean up
     return () => {
       canvas.off('path:created', handlePathCreated);
+      canvas.off('mouse:up', handleMouseUp);
     };
-  }, [fabricCanvasRef]);
-  
-  // Process path with simplification and straightening
-  const processPath = useCallback((path: FabricPath) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !path || !path.path) return;
-    
-    // Extract points from path data
-    const points: Point[] = [];
-    const pathData = path.path;
-    
-    for (let i = 0; i < pathData.length; i++) {
-      const cmd = pathData[i];
-      if (cmd[0] === 'L' || cmd[0] === 'M') {
-        points.push({ x: cmd[1], y: cmd[2] });
-      }
-    }
-    
-    // Skip if not enough points
-    if (points.length < 3) return;
-    
-    // Check if it's approximately a straight line
-    if (autoStraighten && isStraightPath(points)) {
-      // Convert to straight line
-      const { start, end } = straightenPath(points, snapToGrid, gridSize);
-      
-      // Remove original path
-      canvas.remove(path);
-      
-      // Create a new line
-      const line = new fabric.Line(
-        [start.x, start.y, end.x, end.y],
-        {
-          stroke: path.stroke,
-          strokeWidth: path.strokeWidth,
-          selectable: true,
-          evented: true
-        }
-      );
-      
-      // Add to canvas
-      canvas.add(line);
-      canvas.renderAll();
-      return;
-    }
-    
-    // Apply path simplification
-    const simplifiedPoints = simplifyPath(points, simplificationThreshold);
-    
-    // Apply path smoothing for more natural curves
-    const smoothedPoints = smoothPath(simplifiedPoints);
-    
-    // Create a new path data structure with simplified points
-    const newPathData: any[] = [];
-    
-    // Start with a move command
-    if (smoothedPoints.length > 0) {
-      newPathData.push(['M', smoothedPoints[0].x, smoothedPoints[0].y]);
-      
-      // Add line commands for the rest
-      for (let i = 1; i < smoothedPoints.length; i++) {
-        newPathData.push(['L', smoothedPoints[i].x, smoothedPoints[i].y]);
-      }
-    }
-    
-    // Apply the new path data
-    path.path = newPathData;
-    canvas.renderAll();
-  }, [fabricCanvasRef, autoStraighten, simplificationThreshold, snapToGrid, gridSize]);
-  
-  return {
-    brushCursorRef,
-    isDrawing,
-    setIsDrawing,
-    lineWidth,
-    setLineWidth,
-    lineColor,
-    setLineColor
-  };
+  }, [canvas, enabled, currentTool, simplifyPaths, autoStraighten, smoothCurves]);
 };
+
+/**
+ * Simplifies a path using the Douglas-Peucker algorithm
+ * @param path The Fabric.js Path object to simplify
+ * @param tolerance The tolerance for simplification
+ */
+function simplifyPath(path: Path, tolerance: number): void {
+  if (!path.path) return;
+  
+  // Extract points from the path
+  const points = extractPointsFromPath(path);
+  if (points.length < 3) return; // Not enough points to simplify
+  
+  // Apply Douglas-Peucker algorithm
+  const simplified = douglasPeucker(points, tolerance);
+  
+  // Create a new path data from simplified points
+  const newPathData = createPathData(simplified);
+  
+  // Update the path
+  path.path = newPathData;
+}
+
+/**
+ * Extracts points from a Fabric.js path
+ */
+function extractPointsFromPath(path: Path): Point[] {
+  const points: Point[] = [];
+  
+  if (!path.path) return points;
+  
+  // Fabric.js path is an array of commands like [['M', x, y], ['L', x, y], ...]
+  for (const cmd of path.path) {
+    // Skip non-point commands
+    if (cmd[0] === 'M' || cmd[0] === 'L') {
+      points.push(new Point(cmd[1], cmd[2]));
+    }
+  }
+  
+  return points;
+}
+
+/**
+ * Creates path data from points
+ */
+function createPathData(points: Point[]): Array<Array<string | number>> {
+  if (points.length === 0) return [];
+  
+  const pathData: Array<Array<string | number>> = [];
+  
+  // Start with a move command
+  pathData.push(['M', points[0].x, points[0].y]);
+  
+  // Add line commands for the rest of the points
+  for (let i = 1; i < points.length; i++) {
+    pathData.push(['L', points[i].x, points[i].y]);
+  }
+  
+  return pathData;
+}
+
+/**
+ * Douglas-Peucker line simplification algorithm
+ */
+function douglasPeucker(points: Point[], tolerance: number): Point[] {
+  if (points.length <= 2) return points;
+  
+  let maxDistance = 0;
+  let index = 0;
+  
+  // Find the point with the maximum distance from the line
+  const firstPoint = points[0];
+  const lastPoint = points[points.length - 1];
+  
+  for (let i = 1; i < points.length - 1; i++) {
+    const distance = perpendicularDistance(points[i], firstPoint, lastPoint);
+    
+    if (distance > maxDistance) {
+      maxDistance = distance;
+      index = i;
+    }
+  }
+  
+  // If max distance is greater than tolerance, recursively simplify
+  if (maxDistance > tolerance) {
+    const firstSegment = douglasPeucker(points.slice(0, index + 1), tolerance);
+    const secondSegment = douglasPeucker(points.slice(index), tolerance);
+    
+    // Combine the results, removing the duplicate point
+    return [...firstSegment.slice(0, -1), ...secondSegment];
+  } else {
+    // If max distance is less than tolerance, all points can be represented by a line
+    return [firstPoint, lastPoint];
+  }
+}
+
+/**
+ * Calculates the perpendicular distance from a point to a line
+ */
+function perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  
+  // If the line is a point, return the distance to that point
+  const lineLength = Math.sqrt(dx * dx + dy * dy);
+  if (lineLength === 0) return Math.sqrt(
+    Math.pow(point.x - lineStart.x, 2) + 
+    Math.pow(point.y - lineStart.y, 2)
+  );
+  
+  // Calculate the perpendicular distance
+  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (lineLength * lineLength);
+  
+  if (t < 0) {
+    // Point is before the line segment
+    return Math.sqrt(Math.pow(point.x - lineStart.x, 2) + Math.pow(point.y - lineStart.y, 2));
+  } else if (t > 1) {
+    // Point is after the line segment
+    return Math.sqrt(Math.pow(point.x - lineEnd.x, 2) + Math.pow(point.y - lineEnd.y, 2));
+  } else {
+    // Point is alongside the line segment
+    const nearestX = lineStart.x + t * dx;
+    const nearestY = lineStart.y + t * dy;
+    return Math.sqrt(Math.pow(point.x - nearestX, 2) + Math.pow(point.y - nearestY, 2));
+  }
+}
+
+/**
+ * Tries to straighten a path if it's nearly straight
+ */
+function tryStraightenPath(path: Path): void {
+  if (!path.path || path.path.length < 3) return;
+  
+  const points = extractPointsFromPath(path);
+  if (points.length < 3) return;
+  
+  // Check if all points are close to a straight line
+  const firstPoint = points[0];
+  const lastPoint = points[points.length - 1];
+  
+  let maxDeviation = 0;
+  for (let i = 1; i < points.length - 1; i++) {
+    const deviation = perpendicularDistance(points[i], firstPoint, lastPoint);
+    maxDeviation = Math.max(maxDeviation, deviation);
+  }
+  
+  // Calculate the angle from horizontal
+  const dx = lastPoint.x - firstPoint.x;
+  const dy = lastPoint.y - firstPoint.y;
+  let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  
+  // Normalize angle to 0-180
+  angle = (angle + 180) % 180;
+  
+  // Check if angle is close to 0, 45, 90, 135, or 180 degrees
+  const isNearHorizontal = angle < STRAIGHTEN_THRESHOLD_DEGREES || 
+                          (angle > 180 - STRAIGHTEN_THRESHOLD_DEGREES);
+  const isNearVertical = Math.abs(angle - 90) < STRAIGHTEN_THRESHOLD_DEGREES;
+  const isNear45 = Math.abs(angle - 45) < STRAIGHTEN_THRESHOLD_DEGREES;
+  const isNear135 = Math.abs(angle - 135) < STRAIGHTEN_THRESHOLD_DEGREES;
+  
+  // Straighten the line if it's near a cardinal direction and not too wiggly
+  if ((isNearHorizontal || isNearVertical || isNear45 || isNear135) && 
+      maxDeviation < STRAIGHTEN_THRESHOLD_DEGREES) {
+    
+    // Create a perfectly straight line
+    const newPath = [
+      ['M', firstPoint.x, firstPoint.y],
+      ['L', lastPoint.x, lastPoint.y]
+    ];
+    
+    path.path = newPath;
+  }
+}
+
+/**
+ * Applies curve smoothing to a path
+ */
+function smoothPath(path: Path): void {
+  if (!path.path) return;
+  
+  const points = extractPointsFromPath(path);
+  if (points.length < 3) return;
+  
+  // Apply simple smoothing by averaging adjacent points
+  const smoothed: Point[] = [];
+  
+  // Keep the first point as is
+  smoothed.push(points[0]);
+  
+  // Smooth the middle points
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1];
+    const current = points[i];
+    const next = points[i + 1];
+    
+    // Simple averaging
+    const x = (prev.x + current.x + next.x) / 3;
+    const y = (prev.y + current.y + next.y) / 3;
+    
+    smoothed.push(new Point(x, y));
+  }
+  
+  // Keep the last point as is
+  smoothed.push(points[points.length - 1]);
+  
+  // Create a new path data from smoothed points
+  const newPathData = createPathData(smoothed);
+  
+  // Update the path
+  path.path = newPathData;
+}
