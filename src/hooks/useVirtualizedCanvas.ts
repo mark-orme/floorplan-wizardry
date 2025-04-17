@@ -9,12 +9,19 @@ import { useOptimizedCanvas } from './canvas/useOptimizedCanvas';
  */
 export const useVirtualizedCanvas = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  options = { 
-    enabled: true, 
-    paddingPx: 200,
-    objectLimit: 500
-  }
+  options: { 
+    enabled?: boolean; 
+    paddingPx?: number;
+    objectLimit?: number;
+  } = {}
 ) => {
+  // Apply defaults for any missing options
+  const mergedOptions = {
+    enabled: options.enabled ?? true,
+    paddingPx: options.paddingPx ?? 200,
+    objectLimit: options.objectLimit ?? 500
+  };
+  
   const canvasWidth = useRef(800);
   const canvasHeight = useRef(600);
   
@@ -37,12 +44,12 @@ export const useVirtualizedCanvas = (
     fabricCanvasRef,
     viewportWidth: canvasWidth.current,
     viewportHeight: canvasHeight.current,
-    objectLimit: options.objectLimit
+    objectLimit: mergedOptions.objectLimit
   });
   
   // Apply canvas settings when canvas is ready or dependencies change
   useEffect(() => {
-    if (!fabricCanvasRef.current || !options.enabled) return;
+    if (!fabricCanvasRef.current || !mergedOptions.enabled) return;
     
     // Update dimensions first
     updateDimensions();
@@ -73,7 +80,7 @@ export const useVirtualizedCanvas = (
     };
   }, [
     fabricCanvasRef, 
-    options.enabled, 
+    mergedOptions.enabled, 
     updateDimensions, 
     optimizeCanvasSettings, 
     attachVirtualizationEvents, 
@@ -82,10 +89,10 @@ export const useVirtualizedCanvas = (
   
   // Refresh virtualization - useful after major changes like adding/removing many objects
   const refreshVirtualization = useCallback(() => {
-    if (fabricCanvasRef.current && options.enabled) {
+    if (fabricCanvasRef.current && mergedOptions.enabled) {
       updateVirtualization();
     }
-  }, [fabricCanvasRef, options.enabled, updateVirtualization]);
+  }, [fabricCanvasRef, mergedOptions.enabled, updateVirtualization]);
   
   return {
     performanceMetrics,

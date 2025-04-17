@@ -75,11 +75,12 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
     
     // Send result back to main thread
     if (transferables.length > 0) {
+      // Use the correct overload for postMessage with transferable objects
       self.postMessage({
         id,
         success: true,
         result
-      }, transferables);
+      }, { transfer: transferables });
     } else {
       self.postMessage({
         id,
