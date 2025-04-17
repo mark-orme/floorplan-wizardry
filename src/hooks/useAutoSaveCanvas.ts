@@ -30,7 +30,9 @@ export const useAutoSaveCanvas = ({
   debounceMs = 1000,
   storageKey = 'canvas_autosave',
   canvasId = 'default',
-  autoSaveInterval
+  autoSaveInterval,
+  onSave,
+  onLoad
 }: UseAutoSaveCanvasProps): UseAutoSaveCanvasResult => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,15 +63,22 @@ export const useAutoSaveCanvas = ({
       setLastSaved(now);
       
       console.log(`Canvas ${canvasId} saved`, {
-        objectCount: canvasJSON.objects ? canvasJSON.objects.length : 0,
+        objectCount: canvasJSON && typeof canvasJSON === 'object' && 'objects' in canvasJSON ? canvasJSON.objects.length : 0,
         timestamp: now
       });
+      
+      if (onSave) {
+        onSave(true);
+      }
     } catch (error) {
       console.error('Error saving canvas:', error);
+      if (onSave) {
+        onSave(false);
+      }
     } finally {
       setIsSaving(false);
     }
-  }, [canvas, canvasId, enabled, storageKey]);
+  }, [canvas, canvasId, enabled, storageKey, onSave]);
 
   const loadCanvas = useCallback(async () => {
     if (!canvas || !enabled) return;
@@ -82,6 +91,9 @@ export const useAutoSaveCanvas = ({
       
       if (!storedData) {
         console.log(`No saved canvas found for ${canvasId}`);
+        if (onLoad) {
+          onLoad(false);
+        }
         return;
       }
       
@@ -95,18 +107,25 @@ export const useAutoSaveCanvas = ({
         canvas.renderAll();
         console.log(`Canvas ${canvasId} loaded`, {
           timestamp: new Date(parsedData.timestamp),
-          objectCount: parsedData.data.objects ? parsedData.data.objects.length : 0
+          objectCount: parsedData.data && typeof parsedData.data === 'object' && 'objects' in parsedData.data ? parsedData.data.objects.length : 0
         });
+        
+        if (onLoad) {
+          onLoad(true);
+        }
       });
       
       // Set last saved time from stored data
       setLastSaved(new Date(parsedData.timestamp));
     } catch (error) {
       console.error('Error loading canvas:', error);
+      if (onLoad) {
+        onLoad(false);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [canvas, canvasId, enabled, storageKey]);
+  }, [canvas, canvasId, enabled, storageKey, onLoad]);
   
   // Adding restoreCanvas as an alias for loadCanvas for compatibility
   const restoreCanvas = useCallback(async () => {

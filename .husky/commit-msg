@@ -4,4 +4,3 @@
 
 # Run commitlint to ensure the commit message follows conventions
 npx --no -- commitlint --edit $1
-
