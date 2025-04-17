@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -49,6 +50,7 @@ export const FloorPlanEditor: React.FC = () => {
 
     if (canvasOperations.canvas) {
       canvasTransaction.current = startCanvasTracking("FloorPlanEditor", canvasOperations.canvas);
+      // Explicitly pass 'ok' status to finish method
       safeFinish(canvasTransaction.current, 'ok');
     }
   };
