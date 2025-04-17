@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { Canvas, Path, Point } from 'fabric'; 
 import { DrawingMode } from '@/constants/drawingModes';
@@ -11,12 +12,14 @@ const STRAIGHTEN_THRESHOLD_DEGREES = 5;
  * Interface for the freehand drawing polish hook
  */
 interface UseFreehandDrawingPolishProps {
-  canvas: Canvas | null;
-  enabled: boolean;
-  currentTool: DrawingMode;
-  simplifyPaths?: boolean;
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
   autoStraighten?: boolean;
-  smoothCurves?: boolean;
+  simplificationThreshold?: number;
+  brushPreviewSize?: number;
+}
+
+interface FreehandDrawingPolishResult {
+  brushCursorRef: React.RefObject<HTMLDivElement>;
 }
 
 /**
@@ -26,25 +29,20 @@ interface UseFreehandDrawingPolishProps {
  * - Curve smoothing (applies Bezier curve fitting)
  */
 export const useFreehandDrawingPolish = ({
-  canvas,
-  enabled,
-  currentTool,
-  simplifyPaths = true,
+  fabricCanvasRef,
   autoStraighten = true,
-  smoothCurves = false
-}: UseFreehandDrawingPolishProps): void => {
+  simplificationThreshold = SIMPLIFICATION_TOLERANCE
+}: UseFreehandDrawingPolishProps): FreehandDrawingPolishResult => {
   // Track the current path being drawn
   const currentPathRef = useRef<Path | null>(null);
+  const brushCursorRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (!canvas || !enabled) return;
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
     
-    // Only apply to drawing tools
-    const isDrawingTool = currentTool === DrawingMode.DRAW || 
-                         currentTool === DrawingMode.LINE || 
-                         currentTool === DrawingMode.STRAIGHT_LINE;
-                         
-    if (!isDrawingTool) return;
+    // Only apply to drawing mode
+    if (!canvas.isDrawingMode) return;
     
     // Handler for when a path is created
     const handlePathCreated = (e: { path: Path }) => {
@@ -56,16 +54,12 @@ export const useFreehandDrawingPolish = ({
       const path = currentPathRef.current;
       if (!path) return;
       
-      if (simplifyPaths) {
-        simplifyPath(path, SIMPLIFICATION_TOLERANCE);
+      if (simplificationThreshold > 0) {
+        simplifyPath(path, simplificationThreshold);
       }
       
       if (autoStraighten) {
         tryStraightenPath(path);
-      }
-      
-      if (smoothCurves) {
-        smoothPath(path);
       }
       
       canvas.renderAll();
@@ -81,7 +75,9 @@ export const useFreehandDrawingPolish = ({
       canvas.off('path:created', handlePathCreated);
       canvas.off('mouse:up', handleMouseUp);
     };
-  }, [canvas, enabled, currentTool, simplifyPaths, autoStraighten, smoothCurves]);
+  }, [fabricCanvasRef, autoStraighten, simplificationThreshold]);
+
+  return { brushCursorRef };
 };
 
 /**
@@ -102,8 +98,8 @@ function simplifyPath(path: Path, tolerance: number): void {
   // Create a new path data from simplified points
   const newPathData = createPathData(simplified);
   
-  // Update the path
-  path.path = newPathData;
+  // Update the path - using type assertion to handle the Fabric.js typing
+  path.path = newPathData as any;
 }
 
 /**
@@ -118,7 +114,7 @@ function extractPointsFromPath(path: Path): Point[] {
   for (const cmd of path.path) {
     // Skip non-point commands
     if (cmd[0] === 'M' || cmd[0] === 'L') {
-      points.push(new Point(cmd[1], cmd[2]));
+      points.push(new Point(cmd[1] as number, cmd[2] as number));
     }
   }
   
@@ -254,44 +250,8 @@ function tryStraightenPath(path: Path): void {
       ['L', lastPoint.x, lastPoint.y]
     ];
     
-    path.path = newPath;
+    // Use type assertion to handle the Fabric.js typing
+    path.path = newPath as any;
   }
 }
 
-/**
- * Applies curve smoothing to a path
- */
-function smoothPath(path: Path): void {
-  if (!path.path) return;
-  
-  const points = extractPointsFromPath(path);
-  if (points.length < 3) return;
-  
-  // Apply simple smoothing by averaging adjacent points
-  const smoothed: Point[] = [];
-  
-  // Keep the first point as is
-  smoothed.push(points[0]);
-  
-  // Smooth the middle points
-  for (let i = 1; i < points.length - 1; i++) {
-    const prev = points[i - 1];
-    const current = points[i];
-    const next = points[i + 1];
-    
-    // Simple averaging
-    const x = (prev.x + current.x + next.x) / 3;
-    const y = (prev.y + current.y + next.y) / 3;
-    
-    smoothed.push(new Point(x, y));
-  }
-  
-  // Keep the last point as is
-  smoothed.push(points[points.length - 1]);
-  
-  // Create a new path data from smoothed points
-  const newPathData = createPathData(smoothed);
-  
-  // Update the path
-  path.path = newPathData;
-}

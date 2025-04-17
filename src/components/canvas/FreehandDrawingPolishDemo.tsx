@@ -45,8 +45,7 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
   const { brushCursorRef } = useFreehandDrawingPolish({
     fabricCanvasRef,
     autoStraighten,
-    simplificationThreshold: smoothing ? 2.5 : 0,
-    brushPreviewSize: lineThickness * 2
+    simplificationThreshold: smoothing ? 2.5 : 0
   });
   
   // Update drawing settings
@@ -144,3 +143,4 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
     </div>
   );
 };
+

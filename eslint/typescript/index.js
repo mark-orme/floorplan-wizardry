@@ -13,6 +13,7 @@ import { aiCodeSafetyRules } from './ai-code-safety-rules.js';
 import { hookMockValidationRules } from './hook-mock-validation.js';
 import { lineToolValidationRules } from './line-tool-validation.js';
 import { drawingModeValidationRules } from './drawing-mode-validation.js';
+import { fabricPathValidationRules } from './fabric-path-validation.js';
 
 // Export all rule sets
 export const typescriptRules = [
@@ -22,7 +23,8 @@ export const typescriptRules = [
   aiCodeSafetyRules,
   hookMockValidationRules,
   lineToolValidationRules,
-  drawingModeValidationRules
+  drawingModeValidationRules,
+  fabricPathValidationRules
 ];
 
 export default typescriptRules;
