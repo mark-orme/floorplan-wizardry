@@ -1,4 +1,3 @@
-
 /**
  * Main hook for floor plan operations
  * Combines specialized floor plan hooks for various functionalities
@@ -85,9 +84,13 @@ export const useFloorPlans = ({
     recalculateGIA  // Pass recalculateGIA to the drawing hook
   }), [fabricCanvasRef, gridLayerRef, createGrid, recalculateGIA]);
   
-  // Initialize floor plan drawing functionality
-  const { drawFloorPlan } = useFloorPlanDrawing({} as any); // Using an empty object with 'as any' to avoid type errors until we properly implement it
-  
+  // Initialize floor plan drawing functionality with proper implementation
+  const { drawFloorPlan } = useFloorPlanDrawing({
+    fabricCanvas: fabricCanvasRef.current,
+    gridLayer: gridLayerRef.current,
+    onDrawComplete: recalculateGIA
+  });
+
   // Initialize floor plan management for adding and selecting floors
   const { handleAddFloor, handleSelectFloor } = useFloorPlanManagement({
     floorPlans,
@@ -156,10 +159,18 @@ export const useFloorPlans = ({
   // Return public API of the hook
   return {
     // Draw the current floor plan or a specific floor
-    drawFloorPlan: useCallback((floorIndex = currentFloor) => 
-      drawFloorPlanWithCanvas(floorIndex, floorPlans), 
-      [currentFloor, floorPlans, drawFloorPlanWithCanvas]
-    ),
+    drawFloorPlan: useCallback((floorIndex = currentFloor) => {
+      if (!fabricCanvasRef.current || !floorPlans[floorIndex]) return;
+      
+      // Clear existing drawings
+      clearDrawings();
+      
+      // Draw the floor plan
+      drawFloorPlan(floorPlans[floorIndex]);
+      
+      // Recalculate GIA after drawing
+      setTimeout(recalculateGIA, 200);
+    }, [currentFloor, floorPlans, clearDrawings, drawFloorPlan, recalculateGIA]),
     
     // Area calculation
     recalculateGIA,

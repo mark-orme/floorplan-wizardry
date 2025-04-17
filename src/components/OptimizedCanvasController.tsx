@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { OptimizedCanvas } from './OptimizedCanvas';
@@ -59,6 +60,17 @@ export const OptimizedCanvasController = React.memo(({
     handleCloseGuide,
     handleOpenGuideChange
   });
+
+  const canvasProps = useMemo(() => ({
+    width,
+    height,
+    onCanvasReady: handleCanvasReady,
+    onError,
+    tool,
+    lineColor,
+    lineThickness,
+    showGrid
+  }), [width, height, handleCanvasReady, onError, tool, lineColor, lineThickness, showGrid]);
   
   const perfMetricsDisplay = useMemo(() => {
     if (process.env.NODE_ENV === 'production') return null;
@@ -75,17 +87,7 @@ export const OptimizedCanvasController = React.memo(({
   
   return (
     <div className={`relative ${className || ''}`} data-testid="optimized-canvas-controller">
-      <OptimizedCanvas
-        width={width}
-        height={height}
-        onCanvasReady={handleCanvasReady}
-        onError={onError}
-        tool={tool}
-        lineColor={lineColor}
-        lineThickness={lineThickness}
-        showGrid={showGrid}
-      />
-      
+      <OptimizedCanvas {...canvasProps} />
       {brushPreview}
       {measurementGuide}
       {perfMetricsDisplay}
