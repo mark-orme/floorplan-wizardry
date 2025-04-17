@@ -1,61 +1,29 @@
 
 /**
- * Real-time synchronization types
- * @module utils/realtime/types
+ * Types for real-time synchronization
  */
 
-/**
- * Synchronized floor plan data
- */
 export interface SyncFloorPlan {
   id: string;
   name: string;
   canvasJson: string;
   updatedAt: string;
-  metadata: {
+  metadata?: {
     syncedBy: string;
     syncTimestamp: number;
-    [key: string]: any;
+    dimension?: {
+      width: number;
+      height: number;
+    };
   };
 }
 
-/**
- * Result of the useRealtimeCanvasSync hook
- */
-export interface RealtimeCanvasSyncResult {
-  /** Timestamp of the last synchronization */
-  lastSyncTime: number;
-  
-  /** Number of active collaborators */
-  collaborators: number;
-  
-  /** Whether a sync operation is in progress */
-  isSyncing: boolean;
-  
-  /** Function to sync canvas state */
-  syncCanvas: (userName: string) => void;
-}
-
-/**
- * Canvas sync event types
- */
-export enum CanvasSyncEventType {
-  UPDATE = 'update',
-  JOIN = 'join',
-  LEAVE = 'leave'
-}
-
-/**
- * Canvas presence state
- */
-export interface CanvasPresenceState {
-  userId: string;
-  deviceId: string;
+export interface CollaboratorInfo {
+  id: string;
   name: string;
-  cursor?: {
-    x: number;
-    y: number;
-  };
+  color: string;
+  lastActive: number;
   isActive: boolean;
-  lastActivity: number;
 }
+
+export { Collaborator as RealtimeCanvasSyncResult } from '@/hooks/realtime/useRealtimeCanvasSync';

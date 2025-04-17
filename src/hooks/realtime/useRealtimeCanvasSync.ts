@@ -3,9 +3,14 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
-import { subscribeToChannel, getPusher, isUpdateFromThisDevice } from '@/utils/syncService';
-import { UPDATE_EVENT, PRESENCE_EVENT } from '@/utils/syncService';
 import { captureCanvasState, applyCanvasState } from '@/utils/canvas/canvasStateCapture';
+
+// Simplified Pusher-like interface for our local implementation
+const UPDATE_EVENT = 'canvas-update';
+const PRESENCE_EVENT = 'presence-update';
+
+// Generate a unique device ID for this client session
+const generateUniqueId = () => `user-${Math.random().toString(36).substring(2, 9)}`;
 
 export interface Collaborator {
   id: string;
@@ -34,6 +39,53 @@ const COLORS = [
   '#33FFF5', '#F5FF33', '#FF8C33', '#8C33FF', '#33FF8C'
 ];
 
+// Simple mock implementation for demo purposes
+// In a real app, this would be replaced with actual Pusher or similar service
+class MockChannel {
+  private listeners: Record<string, Array<(data: any) => void>> = {};
+  private name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  bind(event: string, callback: (data: any) => void) {
+    if (!this.listeners[event]) {
+      this.listeners[event] = [];
+    }
+    this.listeners[event].push(callback);
+    return this;
+  }
+
+  unbind(event: string, callback: (data: any) => void) {
+    if (this.listeners[event]) {
+      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
+    }
+    return this;
+  }
+
+  trigger(event: string, data: any) {
+    // In a real implementation, this would send to the server
+    // For now, we'll just simulate by directly calling handlers
+    setTimeout(() => {
+      if (this.listeners[event]) {
+        this.listeners[event].forEach(callback => callback(data));
+      }
+    }, 10);
+    return this;
+  }
+}
+
+// Basic channel subscription function
+const subscribeToChannel = (channelName: string) => {
+  return new MockChannel(channelName);
+};
+
+// Function to check if an update is from this device
+const isUpdateFromThisDevice = (sourceDeviceId: string, currentDeviceId: string): boolean => {
+  return sourceDeviceId === currentDeviceId;
+};
+
 export const useRealtimeCanvasSync = ({
   canvas,
   enabled = true,
@@ -43,10 +95,10 @@ export const useRealtimeCanvasSync = ({
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number | null>(null);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const userId = useRef<string>(`user-${Math.random().toString(36).substring(2, 9)}`);
+  const userId = useRef<string>(generateUniqueId());
   const channelRef = useRef<any>(null);
   
-  // Initialize Pusher channel
+  // Initialize channel
   useEffect(() => {
     if (!enabled) return;
     
@@ -62,12 +114,8 @@ export const useRealtimeCanvasSync = ({
       
       return () => {
         // Clean up channel subscription
-        if (channelRef.current) {
-          const pusher = getPusher();
-          pusher.unsubscribe(channelName);
-          channelRef.current = null;
-          logger.info(`[RealtimeSync] Unsubscribed from channel: ${channelName}`);
-        }
+        channelRef.current = null;
+        logger.info(`[RealtimeSync] Unsubscribed from channel`);
       };
     } catch (error) {
       logger.error('[RealtimeSync] Error initializing channel:', error);
@@ -82,7 +130,7 @@ export const useRealtimeCanvasSync = ({
     const handleCanvasUpdate = (data: any) => {
       try {
         // Ignore updates from this device
-        if (isUpdateFromThisDevice(data.deviceId)) {
+        if (isUpdateFromThisDevice(data.deviceId, userId.current)) {
           logger.debug('[RealtimeSync] Ignored update from this device');
           return;
         }
@@ -116,7 +164,7 @@ export const useRealtimeCanvasSync = ({
     const handlePresenceUpdate = (data: any) => {
       try {
         // Ignore updates from this device
-        if (isUpdateFromThisDevice(data.deviceId)) {
+        if (isUpdateFromThisDevice(data.deviceId, userId.current)) {
           return;
         }
         
@@ -195,7 +243,6 @@ export const useRealtimeCanvasSync = ({
     if (!enabled || !channelRef.current) return;
     
     try {
-      const pusher = getPusher();
       const timestamp = Date.now();
       
       // Trigger a client event for presence

@@ -4,9 +4,7 @@
  * @module utils/syncService
  */
 import { v4 as uuidv4 } from 'uuid';
-import { SyncFloorPlan } from './realtime/types';
 import logger from './logger';
-import { getPusher, subscribeToChannel } from './pusher';
 
 // Constants for channel and event names
 export const UPDATE_EVENT = 'canvas-update';
@@ -25,6 +23,40 @@ export const isUpdateFromThisDevice = (sourceDeviceId: string): boolean => {
 };
 
 /**
+ * Basic mock implementation for Pusher
+ */
+class MockPusher {
+  private channels: Record<string, any> = {};
+  
+  channel(name: string) {
+    if (!this.channels[name]) {
+      this.channels[name] = {
+        trigger: (event: string, data: any) => {
+          console.log(`[MockPusher] Event ${event} triggered on channel ${name}`, data);
+          return true;
+        }
+      };
+    }
+    return this.channels[name];
+  }
+  
+  disconnect() {
+    this.channels = {};
+  }
+}
+
+// Create a singleton instance
+const pusherInstance = new MockPusher();
+
+/**
+ * Get the Pusher instance
+ * @returns {any} The mock Pusher instance
+ */
+export const getPusher = (): any => {
+  return pusherInstance;
+};
+
+/**
  * Subscribe to a sync channel
  * @param {string} channelId - Optional channel identifier
  * @returns {any} The channel instance
@@ -35,67 +67,29 @@ export const subscribeSyncChannel = (channelId: string = 'default'): any => {
 };
 
 /**
- * Broadcast a floor plan update to all clients
- * @param {SyncFloorPlan[]} floorPlans - Floor plans to sync
- * @param {string} userId - User identifier
- * @param {string} channelId - Optional channel identifier
- * @returns {boolean} Success flag
+ * Subscribe to a channel
+ * @param {string} channelName - Channel name
+ * @returns {any} The channel instance
  */
-export const broadcastFloorPlanUpdate = (
-  floorPlans: SyncFloorPlan[],
-  userId: string,
-  channelId: string = 'default'
-): boolean => {
-  try {
-    const pusher = getPusher();
-    const channelName = `floor-plan-${channelId}`;
-    
-    const data = {
-      floorPlans,
-      userId,
-      deviceId,
-      timestamp: Date.now()
-    };
-    
-    // Trigger a client event (only works with private/presence channels in production)
-    pusher.channel(channelName).trigger(`client-${UPDATE_EVENT}`, data);
-    
-    return true;
-  } catch (error) {
-    logger.error('Error broadcasting floor plan update:', error);
-    return false;
-  }
-};
-
-/**
- * Notify other clients about presence change
- * @param {string} channelId - Optional channel identifier
- * @returns {boolean} Success flag
- */
-export const notifyPresenceChange = (channelId: string = 'default'): boolean => {
-  try {
-    const pusher = getPusher();
-    const channelName = `floor-plan-${channelId}`;
-    
-    // Get subscribed users count
-    const channel = pusher.channel(channelName);
-    const subscribedCount = 1; // Default to 1 (self) - in a real implementation, get actual count
-    
-    const data = {
-      userId: 'user', // In a real implementation, get from auth
-      deviceId,
-      count: subscribedCount,
-      timestamp: Date.now()
-    };
-    
-    // Trigger a client event
-    channel.trigger(`client-${PRESENCE_EVENT}`, data);
-    
-    return true;
-  } catch (error) {
-    logger.error('Error notifying presence change:', error);
-    return false;
-  }
+export const subscribeToChannel = (channelName: string): any => {
+  // Mock channel implementation with the minimum needed functionality
+  return {
+    bind: (event: string, callback: (data: any) => void) => {
+      // In a real implementation, this would register event handlers
+      console.log(`[MockChannel] Subscribed to ${event} on ${channelName}`);
+      return { unbind: () => {} };
+    },
+    trigger: (event: string, data: any) => {
+      // In a real implementation, this would broadcast to all clients
+      console.log(`[MockChannel] Event ${event} triggered on ${channelName}`, data);
+      return true;
+    },
+    unbind: (event: string, callback: Function) => {
+      // In a real implementation, this would remove event handlers
+      console.log(`[MockChannel] Unsubscribed from ${event} on ${channelName}`);
+      return {};
+    }
+  };
 };
 
 /**
@@ -103,8 +97,7 @@ export const notifyPresenceChange = (channelId: string = 'default'): boolean => 
  */
 export const disconnectAllSyncChannels = (): void => {
   try {
-    const pusher = getPusher();
-    pusher.disconnect();
+    pusherInstance.disconnect();
     logger.info('Disconnected from all sync channels');
   } catch (error) {
     logger.error('Error disconnecting from sync channels:', error);

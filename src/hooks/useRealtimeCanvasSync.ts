@@ -4,4 +4,4 @@
  * @module hooks/useRealtimeCanvasSync
  */
 export { useRealtimeCanvasSync } from './realtime/useRealtimeCanvasSync';
-export type { RealtimeCanvasSyncResult } from '@/utils/realtime/types';
+export type { Collaborator as RealtimeCanvasSyncResult } from './realtime/useRealtimeCanvasSync';

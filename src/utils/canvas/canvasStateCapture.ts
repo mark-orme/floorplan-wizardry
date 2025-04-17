@@ -1,5 +1,5 @@
 
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
 /**
  * Captures the current state of a canvas as a JSON string
@@ -46,34 +46,29 @@ export const applyCanvasState = (canvas: FabricCanvas, state: string): void => {
     
     // Load objects from state
     if (parsedState.objects && Array.isArray(parsedState.objects)) {
-      parsedState.objects.forEach(objData => {
-        try {
-          const klass = fabric.util.getKlass(objData.type);
-          if (klass) {
-            const object = fabric.util.enlivenObjectEnlivables(objData, {});
-            klass.fromObject(objData, (obj: fabric.Object) => {
-              canvas.add(obj);
-              canvas.renderAll();
-            });
-          }
-        } catch (e) {
-          console.error('Error adding object:', e);
-        }
+      // Use loadFromJSON to properly handle object instantiation
+      const objectsToLoad = {
+        objects: parsedState.objects,
+        background: parsedState.background
+      };
+      
+      canvas.loadFromJSON(objectsToLoad, () => {
+        // Grid objects should be on top
+        gridObjects.forEach(obj => {
+          canvas.add(obj);
+          canvas.bringToFront(obj);
+        });
+        
+        // Render canvas
+        canvas.renderAll();
       });
+    } else {
+      // Set background color if provided
+      if (parsedState.background) {
+        canvas.backgroundColor = parsedState.background;
+        canvas.renderAll();
+      }
     }
-    
-    // Set background color if provided
-    if (parsedState.background) {
-      canvas.setBackgroundColor(parsedState.background, canvas.renderAll.bind(canvas));
-    }
-    
-    // Make sure grid objects are on top
-    gridObjects.forEach(obj => {
-      canvas.bringToFront(obj);
-    });
-    
-    // Render canvas
-    canvas.renderAll();
   } catch (error) {
     console.error('Error applying canvas state:', error);
   }
