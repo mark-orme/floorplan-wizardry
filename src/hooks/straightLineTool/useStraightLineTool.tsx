@@ -15,6 +15,9 @@ interface UseStraightLineToolProps {
   saveCurrentState: () => void;
 }
 
+// Export InputMethod to be used by tests and other components
+export { InputMethod } from './useLineInputMethod';
+
 export const useStraightLineTool = ({
   canvas,
   enabled,
@@ -101,6 +104,29 @@ export const useStraightLineTool = ({
     }
   }, [isActive, measurementData, canvas]);
 
+  // Use handle prefixes to maintain consistency with useLineToolHandlers
+  const handlePointerDown = useCallback((event: any) => {
+    handleMouseDown(event);
+  }, [handleMouseDown]);
+  
+  const handlePointerMove = useCallback((event: any) => {
+    handleMouseMove(event);
+  }, [handleMouseMove]);
+  
+  const handlePointerUp = useCallback((event: any) => {
+    handleMouseUp(event);
+  }, [handleMouseUp]);
+
+  // Add cancelDrawing for tests
+  const cancelDrawing = useCallback(() => {
+    // Implementation for canceling drawing
+    setIsDrawing(false);
+    setTooltipData({
+      startPoint: null,
+      endPoint: null
+    });
+  }, []);
+
   useEffect(() => {
     if (!canvas || !enabled) return;
     
@@ -136,6 +162,7 @@ export const useStraightLineTool = ({
 
   return {
     isActive,
+    isEnabled: enabled, // Add isEnabled for compatibility
     inputMethod,
     isPencilMode,
     snapEnabled,
@@ -145,6 +172,11 @@ export const useStraightLineTool = ({
     toggleGridSnapping,
     toggleAngles,
     renderTooltip,
-    isDrawing
+    isDrawing,
+    // Export the handlers
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    cancelDrawing
   };
 };

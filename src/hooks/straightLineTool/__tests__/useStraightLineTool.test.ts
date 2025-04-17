@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -6,7 +5,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useStraightLineTool, InputMethod } from '../useStraightLineTool';
+import { useStraightLineTool } from '../useStraightLineTool';
+import { InputMethod } from '../useLineInputMethod';
 import { useLineState } from '../useLineState';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FabricEventNames } from '@/types/fabric-events';
@@ -272,7 +272,7 @@ describe('useStraightLineTool', () => {
       saveCurrentState
     }));
     
-    // Verify cancel drawing function is returned
+    // cancelDrawing function is now exposed by our updated hook
     expect(result.current.cancelDrawing).toBeDefined();
     
     // Manually trigger the escape key event

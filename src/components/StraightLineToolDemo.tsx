@@ -128,8 +128,8 @@ export const StraightLineToolDemo: React.FC = () => {
   
   // Initialize the straight line tool
   const {
-    isEnabled,
     isActive,
+    isEnabled, // Now available from the hook
     isDrawing,
     inputMethod,
     isPencilMode,
@@ -138,9 +138,9 @@ export const StraightLineToolDemo: React.FC = () => {
     measurementData,
     toggleGridSnapping,
     toggleAngles,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp
+    handlePointerDown, // Now available from the hook
+    handlePointerMove, // Now available from the hook
+    handlePointerUp // Now available from the hook
   } = useStraightLineTool({
     canvas: fabricCanvas,
     enabled: true,

@@ -28,7 +28,34 @@ export const jsxExtensionValidationRule = {
       {
         "selector": "CallExpression[callee.name='createPortal']",
         "message": "React createPortal calls should be in .tsx files. Consider changing file extension."
+      },
+      {
+        "selector": "ImportDeclaration[source.value=/\\.tsx?$/] JSXElement",
+        "message": "JSX syntax should only be in .tsx files. Check imports and file extensions."
+      },
+      {
+        "selector": "ExportNamedDeclaration > FunctionDeclaration:has(JSXElement)",
+        "message": "Functions that return JSX should be in .tsx files."
       }
     ]
-  }
+  },
+  overrides: [
+    {
+      files: ["*.ts"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["react-dom"],
+                "importNames": ["createPortal"],
+                "message": "React createPortal should only be imported in .tsx files"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 };
