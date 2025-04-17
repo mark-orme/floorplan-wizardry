@@ -30,6 +30,50 @@ export const snapToAngle = (startPoint: Point, endPoint: Point, angleStep: numbe
 };
 
 /**
+ * Snap a point to the nearest grid intersection
+ * 
+ * @param point Point to snap
+ * @param gridSize Grid size (default: 20px)
+ * @returns Snapped point
+ */
+export const snapPointToGrid = (point: Point, gridSize: number = 20): Point => {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
+};
+
+/**
+ * Snap a line to the grid
+ * 
+ * @param startPoint Starting point of the line
+ * @param endPoint End point of the line
+ * @param gridSize Grid size (default: 20px)
+ * @returns Snapped start and end points
+ */
+export const snapLineToGrid = (
+  startPoint: Point, 
+  endPoint: Point, 
+  gridSize: number = 20
+): { start: Point; end: Point } => {
+  return {
+    start: snapPointToGrid(startPoint, gridSize),
+    end: snapPointToGrid(endPoint, gridSize)
+  };
+};
+
+/**
+ * Constrain a line to major angles (0°, 45°, 90°)
+ * 
+ * @param startPoint Starting point of the line
+ * @param endPoint End point of the line
+ * @returns Constrained end point
+ */
+export const constrainToMajorAngles = (startPoint: Point, endPoint: Point): Point => {
+  return snapToAngle(startPoint, endPoint, 45);
+};
+
+/**
  * Checks if a point is on a grid intersection
  * 
  * @param point Point to check
@@ -77,3 +121,23 @@ export const formatAngle = (angleInDegrees: number): string => {
   // Round to 1 decimal place
   return `${normalizedAngle.toFixed(1)}°`;
 };
+
+// Export aliases for backward compatibility
+export const snap = snapPointToGrid;
+export const snapToGrid = snapPointToGrid;
+export const snapLineToStandardAngles = snapToAngle;
+export const distanceToGrid = (point: Point, gridSize: number = 20): number => {
+  const snappedPoint = snapPointToGrid(point, gridSize);
+  const dx = point.x - snappedPoint.x;
+  const dy = point.y - snappedPoint.y;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+export const distanceToGridLine = (point: Point, gridSize: number = 20): number => {
+  return Math.min(
+    point.x % gridSize, // Distance to vertical grid line
+    point.y % gridSize  // Distance to horizontal grid line
+  );
+};
+
+export const getNearestGridPoint = snapPointToGrid;

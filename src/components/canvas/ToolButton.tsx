@@ -16,6 +16,8 @@ interface ToolButtonProps {
   className?: string;
   /** Button size */
   size?: 'sm' | 'default' | 'lg';
+  /** Whether to show a pulse effect when active */
+  pulseWhenActive?: boolean;
 }
 
 /**
@@ -28,7 +30,8 @@ export const ToolButton: React.FC<ToolButtonProps> = ({
   icon,
   tooltip,
   className,
-  size = 'default'
+  size = 'default',
+  pulseWhenActive = false
 }) => {
   return (
     <Button
@@ -41,6 +44,7 @@ export const ToolButton: React.FC<ToolButtonProps> = ({
         isActive 
           ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90 border-primary/70 ring-2 ring-primary/20 ring-offset-1' 
           : 'hover:bg-accent/50 hover:border-primary/30 shadow-sm hover:shadow hover:ring-1 hover:ring-primary/10',
+        pulseWhenActive && isActive && 'animate-[pulse_2s_ease-in-out_infinite]',
         className
       )}
     >

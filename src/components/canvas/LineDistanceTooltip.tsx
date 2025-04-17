@@ -9,7 +9,7 @@ interface LineDistanceTooltipProps {
   angle?: number | null;
   unit?: string;
   isSnapped?: boolean;
-  snapType?: 'grid' | 'angle' | 'object' | null;
+  snapType?: 'grid' | 'angle' | 'object' | 'both' | null;
 }
 
 export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
@@ -33,6 +33,7 @@ export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
     if (snapType === 'grid') bgColor = 'rgba(59, 130, 246, 0.85)';  // Blue
     if (snapType === 'angle') bgColor = 'rgba(249, 115, 22, 0.85)'; // Orange
     if (snapType === 'object') bgColor = 'rgba(139, 92, 246, 0.85)'; // Purple
+    if (snapType === 'both') bgColor = 'rgba(16, 185, 129, 0.85)';  // Green
   }
   
   return (

@@ -7,16 +7,26 @@ interface UseCanvasToolCursorProps {
   fabricCanvas: FabricCanvas | null;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   tool: DrawingMode;
+  lineThickness?: number;
+  showCustomCursor?: boolean;
 }
 
 export const useCanvasToolCursor = ({
   fabricCanvas,
   canvasRef,
-  tool
+  tool,
+  lineThickness = 2,
+  showCustomCursor = true
 }: UseCanvasToolCursorProps) => {
   // Set cursor based on current tool
   useEffect(() => {
     if (!fabricCanvas || !canvasRef.current) return;
+    
+    // Don't set cursor style if using custom cursor
+    if (tool === DrawingMode.DRAW && showCustomCursor) {
+      canvasRef.current.style.cursor = 'none';
+      return;
+    }
     
     switch (tool) {
       case DrawingMode.SELECT:
@@ -49,5 +59,5 @@ export const useCanvasToolCursor = ({
       default:
         canvasRef.current.style.cursor = 'crosshair';
     }
-  }, [fabricCanvas, tool, canvasRef]);
+  }, [fabricCanvas, tool, canvasRef, showCustomCursor]);
 };
