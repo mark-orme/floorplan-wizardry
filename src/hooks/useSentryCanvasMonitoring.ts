@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import * as Sentry from '@sentry/react';
@@ -65,15 +64,11 @@ export const useSentryCanvasMonitoring = ({
         
         // Report slow renders
         if (renderTime > 100) {
-          const transaction = startPerformanceTransaction('canvas.slow-render');
-          if (transaction.transaction) {
-            transaction.transaction.setData({
-              renderTime,
-              objectCount: canvas.getObjects().length,
-              canvasWidth: canvas.width,
-              canvasHeight: canvas.height,
-            });
-          }
+          const transaction = startPerformanceTransaction('canvas.slow-render', {
+            renderTime,
+            objectCount: canvas.getObjects().length,
+          });
+          
           transaction.finish('warning');
           
           logger.warn('Slow canvas render detected', {
@@ -149,7 +144,7 @@ export const useSentryCanvasMonitoring = ({
     captureCanvasState: () => {
       if (!canvas || !isSentryInitialized()) return;
       
-      const transaction = startPerformanceTransaction('canvas.state-capture');
+      const transaction = startPerformanceTransaction('canvas.state-capture', {});
       
       try {
         // Update Sentry context with current canvas state

@@ -26,7 +26,7 @@ export interface PerformanceTransaction {
  */
 export function startPerformanceTransaction(
   name: string,
-  options?: Record<string, unknown>
+  options: Record<string, unknown> = {}
 ): PerformanceTransaction {
   // Only start if Sentry is initialized
   if (!isSentryInitialized()) {

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingToolbar } from "./canvas/DrawingToolbar";
@@ -55,7 +56,7 @@ export const FloorPlanEditor: React.FC = () => {
   });
 
   const handleCanvasReady = (canvasOperations: any) => {
-    const transaction = startPerformanceTransaction('canvas.initialization');
+    const transaction = startPerformanceTransaction('canvas.initialization', {});
     
     try {
       setCanvas(canvasOperations.canvas);
@@ -88,7 +89,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   const handleUndo = () => {
     if (canvasRef.current?.undo) {
-      const perfTransaction = startPerformanceTransaction('canvas.undo');
+      const perfTransaction = startPerformanceTransaction('canvas.undo', {});
       
       canvasRef.current.undo();
       setCanUndo(canvasRef.current.canUndo);
@@ -109,7 +110,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   const handleRedo = () => {
     if (canvasRef.current?.redo) {
-      const perfTransaction = startPerformanceTransaction('canvas.redo');
+      const perfTransaction = startPerformanceTransaction('canvas.redo', {});
       
       canvasRef.current.redo();
       setCanUndo(canvasRef.current.canUndo);
@@ -130,7 +131,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   const handleClear = () => {
     if (canvasRef.current?.clearCanvas) {
-      const perfTransaction = startPerformanceTransaction('canvas.clear');
+      const perfTransaction = startPerformanceTransaction('canvas.clear', {});
       
       try {
         const objectCountBefore = canvas?.getObjects().length || 0;
@@ -161,7 +162,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   const handleSave = () => {
     if (canvasRef.current?.saveCanvas) {
-      const transaction = startPerformanceTransaction('canvas.save');
+      const transaction = startPerformanceTransaction('canvas.save', {});
       
       try {
         canvasRef.current.saveCanvas();
