@@ -48,7 +48,7 @@ export function startCanvasTransaction(
       name,
       startTime,
       transaction,
-      finish: (status: string = 'ok', data: Record<string, unknown> = {}) => {
+      finish: (status = 'ok', data = {}) => {
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;
@@ -115,7 +115,7 @@ export function startCanvasTracking(
       name,
       startTime,
       transaction,
-      finish: (status: string = 'ok', data: Record<string, unknown> = {}) => {
+      finish: (status = 'ok', data = {}) => {
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;

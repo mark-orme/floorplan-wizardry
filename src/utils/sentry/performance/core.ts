@@ -54,7 +54,7 @@ export function startPerformanceTransaction(
       name,
       startTime,
       transaction,
-      finish: (status: string = 'ok', data: Record<string, unknown> = {}) => {
+      finish: (status = 'ok', data = {}) => {
         if (transaction) {
           // Calculate the actual duration
           const endTime = performance.now();
@@ -102,24 +102,13 @@ export function finishPerformanceTransaction(
   if (!transaction || !transaction.transaction) return;
   
   try {
-    // Calculate duration
-    const duration = performance.now() - transaction.startTime;
-    
-    // Add data to transaction
-    transaction.transaction.setData({
-      status,
-      durationMs: duration,
-      ...data
-    });
-    
-    // Set status and finish
-    transaction.transaction.status = status;
-    transaction.transaction.finish();
+    // Execute the transaction's finish method with the provided parameters
+    transaction.finish(status, data);
     
     // Log performance info
     logger.debug(`Performance transaction ${transaction.name} completed:`, {
       status,
-      durationMs: duration
+      durationMs: performance.now() - transaction.startTime
     });
   } catch (error) {
     // Log error but don't break app flow

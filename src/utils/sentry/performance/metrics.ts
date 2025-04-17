@@ -17,14 +17,14 @@ export function measurePerformance<T>(
   name: string,
   callback: () => T
 ): T {
-  const transaction = startPerformanceTransaction(name);
+  const transaction = startPerformanceTransaction(name, {});
   
   try {
     // Execute the callback
     const result = callback();
     
     // Finish the transaction with success
-    transaction.finish('ok');
+    transaction.finish('ok', {});
     
     return result;
   } catch (error) {
