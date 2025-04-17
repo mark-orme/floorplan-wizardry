@@ -2,102 +2,61 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { InputMethod } from './useLineInputMethod';
 
-interface UseLinePointerHandlersProps {
-  canvas: FabricCanvas | null;
-  enabled: boolean;
-  isDrawing: boolean;
-  startPoint: Point | null;
-  snapEnabled: boolean;
-  anglesEnabled: boolean;
-  startDrawing: (point: Point) => void;
-  continueDrawing: (point: Point) => void;
-  completeDrawing: (point: Point) => void;
-  setInputMethod: (method: InputMethod) => void;
-  updateMeasurementData: (start: Point, current: Point, snapEnabled: boolean, anglesEnabled: boolean) => void;
+interface PointerEventData {
+  pointer?: Point;
+  e?: {
+    pointerType?: string;
+  };
 }
 
 /**
- * Hook for handling pointer events for line tool
+ * Hook for handling pointer events for line drawing
  */
-export const useLinePointerHandlers = ({
-  canvas,
-  enabled,
-  isDrawing,
-  startPoint,
-  snapEnabled,
-  anglesEnabled,
-  startDrawing,
-  continueDrawing,
-  completeDrawing,
-  setInputMethod,
-  updateMeasurementData
-}: UseLinePointerHandlersProps) => {
+export const useLinePointerHandlers = (
+  startDrawing: (point: Point) => void,
+  continueDrawing: (point: Point) => void,
+  completeDrawing: (point: Point) => void,
+  updateInputMethod: (pointerType: string) => void
+) => {
   /**
-   * Handle mouse down event
+   * Handle pointer down event
    */
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    if (!enabled || !canvas) return;
+  const handlePointerDown = useCallback((event: PointerEventData) => {
+    if (!event.pointer) return;
     
-    // Get canvas position
-    const rect = canvas.getElement().getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Update input method based on pointer type
+    if (event.e?.pointerType) {
+      updateInputMethod(event.e.pointerType);
+    }
     
     // Start drawing
-    startDrawing({ x, y });
-    
-    // Set input method based on pointer type
-    if (e instanceof PointerEvent) {
-      setInputMethod(e.pointerType === 'pen' ? InputMethod.PENCIL : InputMethod.MOUSE);
-    }
-  }, [canvas, enabled, startDrawing, setInputMethod]);
+    startDrawing(event.pointer);
+  }, [startDrawing, updateInputMethod]);
   
   /**
-   * Handle mouse move event
+   * Handle pointer move event
    */
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDrawing || !startPoint || !canvas) return;
-    
-    // Get canvas position
-    const rect = canvas.getElement().getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const point = { x, y };
+  const handlePointerMove = useCallback((event: PointerEventData) => {
+    if (!event.pointer) return;
     
     // Continue drawing
-    continueDrawing(point);
-    
-    // Update measurement data
-    updateMeasurementData(startPoint, point, snapEnabled, anglesEnabled);
-    
-    // Check for shift key
-    if (e instanceof KeyboardEvent) {
-      const shiftPressed = e.shiftKey;
-      // We could handle shift key here if needed
-    }
-  }, [isDrawing, startPoint, canvas, continueDrawing, updateMeasurementData, snapEnabled, anglesEnabled]);
+    continueDrawing(event.pointer);
+  }, [continueDrawing]);
   
   /**
-   * Handle mouse up event
+   * Handle pointer up event
    */
-  const handleMouseUp = useCallback((e: MouseEvent) => {
-    if (!isDrawing || !startPoint || !canvas) return;
-    
-    // Get canvas position
-    const rect = canvas.getElement().getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const handlePointerUp = useCallback((event: PointerEventData) => {
+    if (!event.pointer) return;
     
     // Complete drawing
-    completeDrawing({ x, y });
-  }, [isDrawing, startPoint, canvas, completeDrawing]);
+    completeDrawing(event.pointer);
+  }, [completeDrawing]);
   
   return {
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp
   };
 };

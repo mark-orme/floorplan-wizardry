@@ -1,8 +1,10 @@
 
-import { useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Point';
+import { MeasurementData } from '../useStraightLineTool.d';
 import { useLineState } from './useLineState';
-import { useLinePointerHandlers } from './useLinePointerHandlers';
+import { InputMethod } from './useLineInputMethod';
 import { useMeasurementUpdates } from './useMeasurementUpdates';
 
 interface UseLineToolHandlersProps {
@@ -13,6 +15,9 @@ interface UseLineToolHandlersProps {
   saveCurrentState: () => void;
 }
 
+/**
+ * Hook for handling line tool events
+ */
 export const useLineToolHandlers = ({
   canvas,
   enabled,
@@ -20,56 +25,108 @@ export const useLineToolHandlers = ({
   lineThickness,
   saveCurrentState
 }: UseLineToolHandlersProps) => {
-  // Refs for canvas
-  const fabricCanvasRef = useRef<FabricCanvas | null>(canvas);
+  // Create a cursor position ref
+  const cursorPositionRef = useRef<Point | null>(null);
   
-  // Update the fabricCanvasRef when canvas changes
-  useEffect(() => {
-    fabricCanvasRef.current = canvas;
-  }, [canvas]);
-  
-  // Use line state hook for drawing state
+  // Get line state from the main hook
   const lineState = useLineState({
-    fabricCanvasRef,
+    fabricCanvasRef: { current: canvas },
     lineColor,
     lineThickness,
     saveCurrentState
   });
   
-  // Use measurement updates hook
-  const { measurementData, updateMeasurementData } = useMeasurementUpdates();
+  // Get measurement update functionality
+  const { updateMeasurementData } = useMeasurementUpdates();
   
-  // Use pointer handlers
-  const { handleMouseDown, handleMouseMove, handleMouseUp } = useLinePointerHandlers({
-    canvas,
-    enabled,
-    isDrawing: lineState.isDrawing,
-    startPoint: lineState.startPoint,
-    snapEnabled: lineState.snapEnabled,
-    anglesEnabled: lineState.anglesEnabled,
-    startDrawing: lineState.startDrawing,
-    continueDrawing: lineState.continueDrawing,
-    completeDrawing: lineState.completeDrawing,
-    setInputMethod: lineState.setInputMethod,
-    updateMeasurementData
+  // Measurement data state
+  const [measurementData, setMeasurementData] = useState<MeasurementData>({
+    distance: null,
+    angle: null,
+    snapped: false,
+    unit: 'px'
   });
   
-  // Set up and clean up event handlers
-  useEffect(() => {
-    if (!canvas || !enabled) return;
+  /**
+   * Handle mouse down event
+   */
+  const handleMouseDown = useCallback((event: any) => {
+    if (!enabled || !canvas) return;
     
-    const canvasElement = canvas.getElement();
+    // Get pointer position
+    const pointer = event.pointer as Point;
+    if (!pointer) return;
     
-    canvasElement.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    // Update input method
+    lineState.setInputMethod(
+      event.e?.pointerType === 'pen' ? InputMethod.PENCIL : InputMethod.MOUSE
+    );
     
-    return () => {
-      canvasElement.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [canvas, enabled, handleMouseDown, handleMouseMove, handleMouseUp]);
+    // Start drawing
+    lineState.startDrawing(pointer);
+    
+    // Update cursor position
+    cursorPositionRef.current = pointer;
+    
+    // Update measurement data
+    if (lineState.startPoint) {
+      const measurement = updateMeasurementData(
+        lineState.startPoint,
+        pointer,
+        lineState.snapEnabled,
+        lineState.anglesEnabled
+      );
+      setMeasurementData(measurement);
+    }
+  }, [enabled, canvas, lineState, updateMeasurementData]);
+  
+  /**
+   * Handle mouse move event
+   */
+  const handleMouseMove = useCallback((event: any) => {
+    if (!enabled || !canvas || !lineState.isDrawing) return;
+    
+    // Get pointer position
+    const pointer = event.pointer as Point || event.e?.offsetPoint as Point;
+    if (!pointer) return;
+    
+    // Continue drawing
+    lineState.continueDrawing(pointer);
+    
+    // Update cursor position
+    cursorPositionRef.current = pointer;
+    
+    // Update measurement data
+    if (lineState.startPoint) {
+      const measurement = updateMeasurementData(
+        lineState.startPoint,
+        lineState.currentPoint || pointer,
+        lineState.snapEnabled,
+        lineState.anglesEnabled
+      );
+      setMeasurementData(measurement);
+    }
+  }, [enabled, canvas, lineState, updateMeasurementData]);
+  
+  /**
+   * Handle mouse up event
+   */
+  const handleMouseUp = useCallback((event: any) => {
+    if (!enabled || !canvas || !lineState.isDrawing) return;
+    
+    // Get pointer position
+    const pointer = event.pointer as Point || cursorPositionRef.current;
+    if (!pointer) return;
+    
+    // Complete drawing
+    lineState.completeDrawing(pointer);
+    
+    // Reset cursor position
+    cursorPositionRef.current = null;
+    
+    // Save current state
+    saveCurrentState();
+  }, [enabled, canvas, lineState, saveCurrentState]);
   
   return {
     isActive: lineState.isActive,
@@ -83,7 +140,6 @@ export const useLineToolHandlers = ({
     handleMouseMove,
     handleMouseUp,
     toggleGridSnapping: lineState.toggleSnap,
-    toggleAngles: lineState.toggleAngles,
-    updateMeasurementData
+    toggleAngles: lineState.toggleAngles
   };
 };

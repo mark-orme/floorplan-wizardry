@@ -2,10 +2,9 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
-import logger from '@/utils/logger';
 
 /**
- * Hook for managing pointer events for the line tool
+ * Hook for handling pointer events for line drawing
  */
 export const useLinePointerEvents = (
   canvas: FabricCanvas | null,
@@ -13,78 +12,66 @@ export const useLinePointerEvents = (
   startDrawing: (point: Point) => void,
   continueDrawing: (point: Point) => void,
   completeDrawing: (point: Point) => void,
-  updateMeasurementData: (startPoint: Point, currentPoint: Point, snapEnabled: boolean, anglesEnabled: boolean) => void,
+  updateMeasurement: (startPoint: Point, currentPoint: Point, snapEnabled: boolean, anglesEnabled: boolean) => void,
   startPoint: Point | null,
   snapEnabled: boolean,
   anglesEnabled: boolean,
-  detectInputMethod?: (e: any) => void,
-  saveCurrentState?: () => void
+  updateInputMethod: (pointerType: string) => void,
+  saveCurrentState: () => void
 ) => {
   /**
-   * Handle pointer down event
+   * Handle pointer down
    */
-  const handlePointerDown = useCallback((e: any) => {
-    if (!canvas || !isActive) return;
+  const handlePointerDown = useCallback((event: any) => {
+    if (!isActive || !canvas) return;
     
-    // Prevent default to avoid selection
-    e.e?.preventDefault();
+    // Get pointer position
+    const pointer = event.pointer as Point;
+    if (!pointer) return;
     
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
+    // Update input method if available
+    if (event.e?.pointerType) {
+      updateInputMethod(event.e.pointerType);
+    }
     
     // Start drawing
-    startDrawing({ x: pointer.x, y: pointer.y });
-    
-    // Detect input method if available
-    if (e.e && e.e.pointerType && detectInputMethod) {
-      detectInputMethod(e.e);
-    }
-    
-    // Log for debugging
-    logger.debug('Pointer down', { pointer, isActive });
-  }, [canvas, isActive, startDrawing, detectInputMethod]);
+    startDrawing(pointer);
+  }, [isActive, canvas, startDrawing, updateInputMethod]);
   
   /**
-   * Handle pointer move event
+   * Handle pointer move
    */
-  const handlePointerMove = useCallback((e: any) => {
-    if (!canvas || !startPoint) return;
+  const handlePointerMove = useCallback((event: any) => {
+    if (!isActive || !canvas || !startPoint) return;
     
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
+    // Get pointer position
+    const pointer = event.pointer as Point;
+    if (!pointer) return;
     
     // Continue drawing
-    continueDrawing({ x: pointer.x, y: pointer.y });
+    continueDrawing(pointer);
     
-    // Update measurement data
-    if (startPoint) {
-      updateMeasurementData(
-        startPoint,
-        { x: pointer.x, y: pointer.y },
-        snapEnabled,
-        anglesEnabled
-      );
-    }
-  }, [canvas, startPoint, continueDrawing, updateMeasurementData, snapEnabled, anglesEnabled]);
+    // Update measurement
+    updateMeasurement(startPoint, pointer, snapEnabled, anglesEnabled);
+  }, [isActive, canvas, startPoint, continueDrawing, updateMeasurement, snapEnabled, anglesEnabled]);
   
   /**
-   * Handle pointer up event
+   * Handle pointer up
    */
-  const handlePointerUp = useCallback((e: any) => {
-    if (!canvas || !startPoint) return;
+  const handlePointerUp = useCallback((event: any) => {
+    if (!isActive || !canvas) return;
     
-    // Get pointer coordinates
-    const pointer = canvas.getPointer(e.e);
+    // Get pointer position
+    const pointer = event.pointer as Point;
+    if (!pointer) return;
     
     // Complete drawing
-    completeDrawing({ x: pointer.x, y: pointer.y });
+    completeDrawing(pointer);
     
-    // Save current state for undo/redo
-    if (saveCurrentState) {
-      saveCurrentState();
-    }
-  }, [canvas, startPoint, completeDrawing, saveCurrentState]);
-
+    // Save current state
+    saveCurrentState();
+  }, [isActive, canvas, completeDrawing, saveCurrentState]);
+  
   return {
     handlePointerDown,
     handlePointerMove,

@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 
@@ -9,75 +10,52 @@ export const useLineFinalizer = (
   saveCurrentState: () => void
 ) => {
   /**
-   * Finalize a line by making it selectable and applying any final styles
-   * @param line - The line to finalize
-   * @param startX - Start X coordinate
-   * @param startY - Start Y coordinate
-   * @param endX - End X coordinate
-   * @param endY - End Y coordinate
-   * @returns The finalized line
+   * Finalize a line by setting its final coordinates
    */
   const finalizeLine = useCallback((
     line: Line,
-    startX: number,
-    startY: number,
-    endX: number,
-    endY: number
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
   ) => {
-    if (!line) return null;
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
     
     try {
-      // Ensure final position is set
+      // Update line coordinates
       line.set({
-        x1: startX,
-        y1: startY,
-        x2: endX,
-        y2: endY,
-        selectable: true,
-        evented: true
+        x1,
+        y1,
+        x2,
+        y2
       });
       
-      // Check if line has zero length
-      const hasDimensions = Math.abs(startX - endX) > 1 || Math.abs(startY - endY) > 1;
+      // Mark line as complete
+      (line as any).isComplete = true;
       
-      if (!hasDimensions) {
-        // Remove lines that have no dimension (clicks without drags)
-        const canvas = fabricCanvasRef.current;
-        if (canvas) {
-          canvas.remove(line);
-          canvas.requestRenderAll();
-        }
-        return null;
-      }
+      // Update canvas
+      canvas.renderAll();
       
-      // Otherwise finalize the line
-      const canvas = fabricCanvasRef.current;
-      if (canvas) {
-        canvas.requestRenderAll();
-      }
-      
-      return line;
+      // Save current state for undo/redo
+      saveCurrentState();
     } catch (error) {
-      console.error("Error finalizing line", error);
-      return null;
+      console.error('Error finalizing line:', error);
     }
-  }, [fabricCanvasRef]);
+  }, [fabricCanvasRef, saveCurrentState]);
   
   /**
    * Remove a line from the canvas
-   * @param line - The line to remove
    */
   const removeLine = useCallback((line: Line) => {
-    if (!line) return;
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
     
     try {
-      const canvas = fabricCanvasRef.current;
-      if (canvas) {
-        canvas.remove(line);
-        canvas.requestRenderAll();
-      }
+      canvas.remove(line);
+      canvas.renderAll();
     } catch (error) {
-      console.error("Error removing line", error);
+      console.error('Error removing line:', error);
     }
   }, [fabricCanvasRef]);
   
