@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Point } from '@/types/core/Geometry';
 
 interface LineDistanceTooltipProps {
@@ -12,7 +12,7 @@ interface LineDistanceTooltipProps {
   snapType?: string | null;
 }
 
-export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
+export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = memo(({
   startPoint,
   endPoint,
   distance,
@@ -51,4 +51,6 @@ export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
       </div>
     </div>
   );
-};
+});
+
+LineDistanceTooltip.displayName = 'LineDistanceTooltip';

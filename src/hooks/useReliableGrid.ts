@@ -1,141 +1,97 @@
 
-import { useEffect, useRef, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createGrid } from '@/utils/canvas/reliableGridRenderer';
+import { measurePerformance } from '@/utils/performance';
 
 interface UseReliableGridProps {
   canvas: FabricCanvas | null;
   gridSpacing?: number;
-  majorGridInterval?: number;
-  gridColor?: string;
-  majorGridColor?: string;
-  gridSize?: number;
   enabled?: boolean;
 }
 
-export const useReliableGrid = ({
-  canvas,
-  gridSpacing = 20,
-  majorGridInterval = 5,
-  gridColor = '#e5e5e5',
-  majorGridColor = '#c0c0c0',
-  gridSize = 5000,
-  enabled = true
+export const useReliableGrid = ({ 
+  canvas, 
+  gridSpacing = 20, 
+  enabled = true 
 }: UseReliableGridProps) => {
-  // Store reference to grid objects
-  const gridObjectsRef = useRef<any[]>([]);
-  const isGridCreatedRef = useRef(false);
-  const retryCountRef = useRef(0);
-  const maxRetries = 3;
+  const [isGridCreated, setIsGridCreated] = useState(false);
+  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const creationAttempts = useRef(0);
   
-  // Create grid
-  const initializeGrid = useCallback(() => {
+  // Create grid with performance monitoring
+  const createReliableGrid = useCallback(() => {
     if (!canvas || !enabled) return;
     
-    try {
-      console.log('Initializing grid...');
-      
-      const gridObjects = createGrid(canvas, {
+    creationAttempts.current += 1;
+    
+    // Using the performance measurement utility
+    const [newGridObjects, measurement] = measurePerformance('grid.creation', () => {
+      return createGrid(canvas, {
         gridSpacing,
-        majorGridInterval,
-        gridColor,
-        majorGridColor,
-        gridSize
+        majorGridInterval: 5,
+        gridColor: '#e5e5e5',
+        majorGridColor: '#c0c0c0',
+        gridSize: 5000
       });
-      
-      gridObjectsRef.current = gridObjects;
-      isGridCreatedRef.current = gridObjects.length > 0;
-      
-      console.log(`Grid initialized with ${gridObjects.length} objects`);
-    } catch (error) {
-      console.error('Error initializing grid:', error);
-      isGridCreatedRef.current = false;
+    });
+    
+    if (newGridObjects.length > 0) {
+      console.log(`Grid created with ${newGridObjects.length} objects in ${measurement.duration.toFixed(2)}ms`);
+      setGridObjects(newGridObjects);
+      setIsGridCreated(true);
+    } else {
+      console.warn(`Grid creation failed on attempt ${creationAttempts.current}`);
+      setIsGridCreated(false);
     }
-  }, [canvas, enabled, gridSpacing, majorGridInterval, gridColor, majorGridColor, gridSize]);
+  }, [canvas, enabled, gridSpacing]);
   
-  // Initialize grid on mount and when canvas changes
+  // Initialize grid on canvas change or enable state change
   useEffect(() => {
-    if (!canvas || !enabled) return;
-    
-    const initGrid = () => {
-      if (!canvas || isGridCreatedRef.current) return;
+    if (canvas && enabled && !isGridCreated) {
+      // Small delay to ensure canvas is fully initialized
+      const timer = setTimeout(() => {
+        createReliableGrid();
+      }, 100);
       
-      if (retryCountRef.current < maxRetries) {
-        try {
-          initializeGrid();
-          
-          if (gridObjectsRef.current.length === 0) {
-            // If grid objects array is empty, retry after a delay
-            retryCountRef.current += 1;
-            setTimeout(initGrid, 500);
-          }
-        } catch (error) {
-          console.error('Error in grid initialization:', error);
-          retryCountRef.current += 1;
-          setTimeout(initGrid, 500);
-        }
-      } else {
-        console.error(`Failed to create grid after ${maxRetries} attempts`);
-      }
-    };
-    
-    initGrid();
-    
-    return () => {
-      // Clean up grid objects when component unmounts
-      if (canvas && gridObjectsRef.current.length > 0) {
-        gridObjectsRef.current.forEach(obj => {
-          if (canvas.contains(obj)) {
-            canvas.remove(obj);
-          }
-        });
-        canvas.requestRenderAll();
-        gridObjectsRef.current = [];
-        isGridCreatedRef.current = false;
-      }
-    };
-  }, [canvas, enabled, initializeGrid, maxRetries]);
+      return () => clearTimeout(timer);
+    }
+  }, [canvas, enabled, isGridCreated, createReliableGrid]);
   
-  // Update grid on resize
-  useEffect(() => {
-    if (!canvas || !enabled) return;
-    
-    const handleResize = () => {
-      initializeGrid();
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [canvas, enabled, initializeGrid]);
-  
-  // Reinitialize grid method exposed to consumer
+  // Reinitialize grid (can be called externally)
   const reinitializeGrid = useCallback(() => {
-    if (!canvas) return;
-    
     // Clear existing grid
-    if (gridObjectsRef.current.length > 0) {
-      gridObjectsRef.current.forEach(obj => {
+    if (canvas) {
+      gridObjects.forEach(obj => {
         if (canvas.contains(obj)) {
           canvas.remove(obj);
         }
       });
+      setGridObjects([]);
+      setIsGridCreated(false);
+      creationAttempts.current = 0;
+      
+      // Create new grid
+      createReliableGrid();
     }
-    
-    // Reset state
-    gridObjectsRef.current = [];
-    isGridCreatedRef.current = false;
-    retryCountRef.current = 0;
-    
-    // Create new grid
-    initializeGrid();
-  }, [canvas, initializeGrid]);
+  }, [canvas, gridObjects, createReliableGrid]);
+  
+  // Clean up grid on unmount
+  useEffect(() => {
+    return () => {
+      if (canvas) {
+        gridObjects.forEach(obj => {
+          if (canvas.contains(obj)) {
+            canvas.remove(obj);
+          }
+        });
+      }
+    };
+  }, [canvas, gridObjects]);
   
   return {
-    isGridCreated: isGridCreatedRef.current,
-    gridObjects: gridObjectsRef.current,
+    isGridCreated,
+    gridObjects,
     reinitializeGrid
   };
 };

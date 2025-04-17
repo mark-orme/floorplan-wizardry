@@ -1,251 +1,113 @@
-import { useRef, useState, useEffect } from "react";
-import { Object as FabricObject } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import { useCanvasController } from "@/components/canvas/controller/CanvasController";
-import { toast } from "sonner";
-import { useCanvasHistory } from "@/hooks/useCanvasHistory";
-import { CanvasEventManager } from "./CanvasEventManager";
-import { useAutoSaveCanvas } from "@/hooks/useAutoSaveCanvas"; 
-import { useOfflineSupport } from "@/hooks/useOfflineSupport";
-import { DrawingControls } from "./DrawingControls";
-import { OfflineIndicator } from "./OfflineIndicator";
-import { GridLayerManager } from "./GridLayerManager";
-import { RestorePromptManager } from "./RestorePromptManager";
 
-/**
- * Drawing manager component
- * Coordinates drawing tools and canvas state
- */
-export const DrawingManager = () => {
-  // Get canvas from context
-  const { canvas } = useCanvasController();
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
+import { DrawingMode } from '@/constants/drawingModes';
+import { ReliableGridLayer } from '@/components/canvas/ReliableGridLayer';
+import { BrushCursorPreview } from '@/components/canvas/BrushCursorPreview';
+import { MeasurementGuideModal } from '@/components/MeasurementGuideModal';
+import { useMemoizedDrawingComponents } from '@/hooks/useMemoizedDrawingComponents';
+
+interface DrawingManagerProps {
+  fabricCanvas: FabricCanvas | null;
+  tool: DrawingMode;
+  lineColor: string;
+  lineThickness: number;
+  showGrid?: boolean;
+  storageKey?: string;
+  disableAutoSave?: boolean;
+}
+
+export const DrawingManager: React.FC<DrawingManagerProps> = ({
+  fabricCanvas,
+  tool,
+  lineColor,
+  lineThickness,
+  showGrid = true,
+  storageKey = 'drawing_autosave',
+  disableAutoSave = false
+}) => {
+  // State for grid and guide modal
+  const [isGridReady, setIsGridReady] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   
-  // Generate a stable canvas ID based on user session or use default
-  const canvasId = useRef<string>(`default-${Math.random().toString(36).substring(2, 9)}`).current;
+  // Track component mount state
+  const isMountedRef = useRef(true);
   
-  // State for drawing tools
-  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
-  const [lineThickness, setLineThickness] = useState(2);
-  const [lineColor, setLineColor] = useState("#000000");
-  const [gia, setGia] = useState(0);
-  const [showGrid, setShowGrid] = useState(true);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  
-  // Grid objects reference
-  const gridLayerRef = useRef<FabricObject[]>([]);
-  
-  // History for undo/redo
-  const historyRef = useRef<{past: FabricObject[][], future: FabricObject[][]}>({
-    past: [],
-    future: []
+  // Auto-save drawing state
+  const { saveCanvas, loadCanvas } = useAutoSaveCanvas({
+    canvas: fabricCanvas,
+    enabled: !disableAutoSave && !!fabricCanvas,
+    storageKey
   });
   
-  // Initialize history manager
-  const { saveCurrentState, undo, redo } = useCanvasHistory({
-    fabricCanvasRef: { current: canvas },
-    historyRef
-  });
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleGridCreated = useCallback((isCreated: boolean) => {
+    setIsGridReady(isCreated);
+  }, []);
   
-  // Initialize offline support
-  const { isOnline } = useOfflineSupport({
-    canvas, 
-    canvasId
-  });
-  
-  // Initialize autosave using our refactored hook
-  const { saveCanvas, restoreCanvas, lastSaved } = useAutoSaveCanvas({
-    canvas,
-    canvasId,
-    onSave: (success) => {
-      if (success) {
-        console.log("Canvas autosaved successfully");
-      }
-    },
-    onRestore: (success) => {
-      if (success) {
-        // After loading from autosave, update the history state
-        updateHistoryState();
-        toast.success('Drawing restored successfully');
-      }
+  const handleCloseGuide = useCallback((dontShowAgain: boolean) => {
+    setShowGuide(false);
+    if (dontShowAgain) {
+      localStorage.setItem('hideDrawingGuide', 'true');
     }
+  }, []);
+  
+  const handleOpenGuideChange = useCallback((open: boolean) => {
+    setShowGuide(open);
+  }, []);
+  
+  // Use memoized components for performance
+  const { brushPreview, measurementGuide } = useMemoizedDrawingComponents({
+    fabricCanvas,
+    tool,
+    lineColor,
+    lineThickness,
+    showGuide,
+    handleCloseGuide,
+    handleOpenGuideChange
   });
   
-  // Update canUndo/canRedo based on history state
-  const updateHistoryState = () => {
-    setCanUndo(historyRef.current.past.length > 0);
-    setCanRedo(historyRef.current.future.length > 0);
-  };
-
-  // Enhanced undo function with state update
-  const handleUndo = () => {
-    undo();
-    updateHistoryState();
-    // Save the state after undoing
-    setTimeout(() => saveCanvas(), 100);
-  };
-
-  // Enhanced redo function with state update
-  const handleRedo = () => {
-    redo();
-    updateHistoryState();
-    // Save the state after redoing
-    setTimeout(() => saveCanvas(), 100);
-  };
-  
-  // Handle zoom
-  const handleZoom = (direction: "in" | "out") => {
-    if (!canvas) return;
-    
-    const currentZoom = canvas.getZoom();
-    const zoomFactor = direction === "in" ? 1.2 : 0.8;
-    const newZoom = currentZoom * zoomFactor;
-    
-    // Apply zoom
-    canvas.setZoom(newZoom);
-    canvas.requestRenderAll();
-    
-    toast(`Zoom ${direction}: ${Math.round(newZoom * 100)}%`);
-  };
-  
-  // Clear canvas
-  const clearCanvas = () => {
-    if (!canvas) return;
-    
-    // Save current state before clearing
-    saveCurrentState();
-    
-    // Remove all objects except grid
-    const objectsToRemove = canvas.getObjects().filter(obj => 
-      !gridLayerRef.current.includes(obj)
-    );
-    
-    canvas.remove(...objectsToRemove);
-    canvas.requestRenderAll();
-    
-    // Update history state
-    updateHistoryState();
-    
-    // Save the cleared state
-    saveCanvas();
-    
-    toast('Canvas cleared');
-  };
-  
-  // Delete selected objects
-  const deleteSelectedObjects = () => {
-    if (!canvas) return;
-    
-    const selectedObjects = canvas.getActiveObjects();
-    if (selectedObjects.length === 0) return;
-    
-    // Save current state before deleting
-    saveCurrentState();
-    
-    // Remove selected objects
-    canvas.remove(...selectedObjects);
-    canvas.discardActiveObject();
-    canvas.requestRenderAll();
-    
-    // Update history state
-    updateHistoryState();
-    
-    // Save after deletion
-    saveCanvas();
-    
-    toast(`Deleted ${selectedObjects.length} object(s)`);
-  };
-  
-  // Toggle grid visibility
-  const toggleGrid = () => {
-    setShowGrid(!showGrid);
-    
-    if (gridLayerRef.current.length > 0) {
-      gridLayerRef.current.forEach(obj => {
-        obj.set('visible', !showGrid);
-      });
-      
-      if (canvas) {
-        canvas.requestRenderAll();
-      }
-    }
-    
-    toast(showGrid ? 'Grid hidden' : 'Grid shown');
-  };
-  
-  // Notify user about offline status
+  // Check if guide should be shown on mount
   useEffect(() => {
-    if (!isOnline) {
-      toast.info(
-        'You are currently offline. Don\'t worry - your drawings will be saved locally.',
-        { duration: 5000, id: 'offline-notice' }
-      );
+    const hideGuide = localStorage.getItem('hideDrawingGuide') === 'true';
+    
+    if (!hideGuide) {
+      const timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          setShowGuide(true);
+        }
+      }, 1000);
+      
+      return () => {
+        clearTimeout(timer);
+      };
     }
-  }, [isOnline]);
-
-  // Function to handle drawing completion
-  const handleDrawingComplete = async () => {
-    await saveCanvas();
-  };
+  }, []);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
   return (
-    <div className="flex flex-col gap-2">
-      <DrawingControls 
-        tool={tool}
-        setTool={setTool}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onZoom={handleZoom}
-        onClear={clearCanvas}
-        onDelete={deleteSelectedObjects}
-        gia={gia}
-        lineThickness={lineThickness}
-        lineColor={lineColor}
-        showGrid={showGrid}
-        onToggleGrid={toggleGrid}
-        onLineThicknessChange={setLineThickness}
-        onLineColorChange={setLineColor}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        isOffline={!isOnline}
-        lastSaved={lastSaved}
-      />
-      
-      {canvas && (
-        <>
-          <CanvasEventManager 
-            canvas={canvas}
-            tool={tool}
-            lineThickness={lineThickness}
-            lineColor={lineColor}
-            gridLayerRef={gridLayerRef}
-            saveCurrentState={saveCurrentState}
-            undo={handleUndo}
-            redo={handleRedo}
-            deleteSelectedObjects={deleteSelectedObjects}
-            enableSync={isOnline}
-            onDrawingComplete={handleDrawingComplete}
-          />
-          
-          <GridLayerManager
-            canvas={canvas}
-            showGrid={showGrid}
-            onGridCreated={(objects) => {
-              gridLayerRef.current = objects;
-            }}
-          />
-        </>
-      )}
-      
-      {canvas && (
-        <RestorePromptManager
-          canvas={canvas}
-          canvasId={canvasId}
-          onRestore={restoreCanvas}
+    <>
+      {/* Grid Layer */}
+      {fabricCanvas && showGrid && (
+        <ReliableGridLayer
+          canvas={fabricCanvas}
+          enabled={showGrid}
+          onGridCreated={handleGridCreated}
         />
       )}
       
-      <OfflineIndicator isOffline={!isOnline} />
-    </div>
+      {/* Brush Preview */}
+      {brushPreview}
+      
+      {/* Measurement Guide Modal */}
+      {measurementGuide}
+    </>
   );
 };

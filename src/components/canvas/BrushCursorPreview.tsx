@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { usePointerPosition } from '@/hooks/usePointerPosition';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -11,7 +11,7 @@ interface BrushCursorPreviewProps {
   lineThickness: number;
 }
 
-export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
+export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = memo(({
   fabricCanvas,
   tool,
   lineColor,
@@ -23,8 +23,7 @@ export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
   // Only show preview for drawing tools
   useEffect(() => {
     setShowPreview(
-      tool === DrawingMode.PEN || 
-      tool === DrawingMode.HIGHLIGHTER || 
+      tool === DrawingMode.DRAW || 
       tool === DrawingMode.STRAIGHT_LINE
     );
   }, [tool]);
@@ -46,9 +45,11 @@ export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
           height: `${lineThickness}px`,
           backgroundColor: lineColor,
           borderRadius: '50%',
-          opacity: tool === DrawingMode.HIGHLIGHTER ? 0.4 : 0.8
+          opacity: tool === DrawingMode.DRAW ? 0.8 : 0.8
         }}
       />
     </div>
   );
-};
+});
+
+BrushCursorPreview.displayName = 'BrushCursorPreview';

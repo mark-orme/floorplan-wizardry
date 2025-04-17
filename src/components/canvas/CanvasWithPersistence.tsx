@@ -1,136 +1,120 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
-import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { useCanvasMetrics } from '@/hooks/useCanvasMetrics';
+import { useSentryCanvasMonitoring } from '@/hooks/useSentryCanvasMonitoring';
 
 interface CanvasWithPersistenceProps {
   width: number;
   height: number;
-  canvasId: string;
   onCanvasReady?: (canvas: FabricCanvas) => void;
+  showControls?: boolean;
+  storageKey?: string;
 }
 
-/**
- * Canvas component with automatic persistence and offline support
- */
 export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   width,
   height,
-  canvasId,
-  onCanvasReady
+  onCanvasReady,
+  showControls = true,
+  storageKey = 'canvas_autosave'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isCanvasReady, setIsCanvasReady] = useState(false);
   
-  // Initialize the canvas
+  // Initialize canvas
   useEffect(() => {
-    if (!canvasRef.current || fabricCanvasRef.current) return;
+    if (!canvasRef.current) return;
     
-    try {
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
-        width,
-        height,
-        backgroundColor: '#ffffff'
-      });
-      
-      fabricCanvasRef.current = fabricCanvas;
-      setIsInitialized(true);
-      
-      if (onCanvasReady) {
-        onCanvasReady(fabricCanvas);
-      }
-    } catch (error) {
-      console.error('Error initializing canvas:', error);
-      toast.error('Failed to initialize canvas');
+    const canvas = new FabricCanvas(canvasRef.current, {
+      width,
+      height,
+      backgroundColor: '#FFFFFF',
+      preserveObjectStacking: true,
+      renderOnAddRemove: false
+    });
+    
+    fabricCanvasRef.current = canvas;
+    setIsCanvasReady(true);
+    
+    if (onCanvasReady) {
+      onCanvasReady(canvas);
     }
     
     return () => {
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-        fabricCanvasRef.current = null;
-      }
+      canvas.dispose();
+      fabricCanvasRef.current = null;
     };
   }, [width, height, onCanvasReady]);
   
-  // Set up auto-save with refactored hook
-  const { saveCanvas, restoreCanvas, canRestore, lastSaved } = useAutoSaveCanvas({
+  // Set up auto-save
+  const { saveCanvas, loadCanvas, lastSaved, isSaving, isLoading } = useAutoSaveCanvas({
     canvas: fabricCanvasRef.current,
-    canvasId,
-    onSave: (success) => {
-      if (!success) {
-        toast.error('Failed to save canvas');
-      }
+    enabled: isCanvasReady,
+    storageKey,
+    onSave: () => {
+      toast.success('Canvas saved', { id: 'canvas-save' });
     },
-    onRestore: (success) => {
-      if (success) {
-        toast.success('Canvas restored from local storage');
-      }
+    onLoad: () => {
+      toast.success('Canvas loaded', { id: 'canvas-load' });
     }
   });
   
-  // Set up offline support with reconnect handler
-  const { isOnline } = useOfflineSupport({
-    canvas: fabricCanvasRef.current,
-    canvasId,
-    onStatusChange: (isOnline) => {
-      console.log('Online status changed:', isOnline);
-    },
-    onReconnect: async () => {
-      toast.info('Reconnected! Syncing your changes...');
-      // Here you would implement server sync logic
-      console.log('Syncing to server would happen here');
-    }
+  // Track canvas metrics
+  const { metrics } = useCanvasMetrics({
+    fabricCanvasRef
   });
   
-  // Example of manual save button handler
-  const handleSave = () => {
-    saveCanvas();
-    toast.success('Canvas saved manually');
-  };
+  // Monitor canvas performance with Sentry
+  useSentryCanvasMonitoring({
+    canvas: fabricCanvasRef.current,
+    enabled: isCanvasReady
+  });
   
-  // Example of manual load button handler
-  const handleLoad = () => {
-    restoreCanvas();
-  };
+  // Load canvas data on initial mount
+  useEffect(() => {
+    if (!isCanvasReady) return;
+    
+    // Check if there's saved data
+    const hasSavedData = localStorage.getItem(storageKey) !== null;
+    
+    if (hasSavedData) {
+      loadCanvas();
+    }
+  }, [isCanvasReady, loadCanvas, storageKey]);
   
   return (
-    <div className="relative w-full h-full">
-      <canvas 
-        ref={canvasRef} 
-        width={width} 
-        height={height} 
-        className="border border-gray-300 rounded shadow-sm"
-      />
+    <div className="relative">
+      <canvas ref={canvasRef} className="border border-gray-200 rounded-md shadow-md" />
       
-      <div className="absolute bottom-4 right-4 flex gap-2">
-        <button 
-          onClick={handleSave}
-          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Save
-        </button>
-        <button 
-          onClick={handleLoad}
-          className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-          disabled={!canRestore}
-        >
-          Restore
-        </button>
-      </div>
-      
-      {!isOnline && (
-        <div className="absolute top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-1 rounded flex items-center">
-          <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></div>
-          Offline Mode
+      {showControls && (
+        <div className="absolute bottom-2 right-2 flex gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={saveCanvas} 
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={loadCanvas} 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Loading...' : 'Load'}
+          </Button>
         </div>
       )}
       
-      {lastSaved && (
-        <div className="absolute top-4 left-4 text-xs text-gray-500">
-          Last saved: {lastSaved.toLocaleTimeString()}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute bottom-2 left-2 bg-white/80 px-2 py-1 rounded text-xs">
+          FPS: {metrics.fps} | Objects: {metrics.objectCount}
         </div>
       )}
     </div>

@@ -1,100 +1,82 @@
 
 import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Ruler, Grid, X } from 'lucide-react';
+import { useState } from 'react';
 
-interface MeasurementGuideModalProps {
+export interface MeasurementGuideModalProps {
   open: boolean;
   onClose: (dontShowAgain: boolean) => void;
   onOpenChange: (open: boolean) => void;
 }
 
-/**
- * Modal component for displaying measurement guide information
- * @param {MeasurementGuideModalProps} props Component properties
- * @returns {JSX.Element} Rendered component
- */
-export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({ 
+export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
   open,
   onClose,
   onOpenChange
 }) => {
-  const [dontShowAgain, setDontShowAgain] = React.useState(false);
-  
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
   const handleClose = () => {
     onClose(dontShowAgain);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Ruler className="h-5 w-5" /> 
-            Floor Plan Measurement Guide
-          </DialogTitle>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-4 top-4" 
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <DialogTitle>Measurement Guide</DialogTitle>
+          <DialogDescription>
+            Learn how to use the measurement tools effectively.
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4 mt-2">
-          <section>
-            <h3 className="font-semibold text-lg mb-2">Drawing to Scale</h3>
-            <div className="bg-muted/50 p-4 rounded-md flex items-start gap-3">
-              <Grid className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
-              <div>
-                <p className="mb-2">Our grid system helps you maintain accurate measurements:</p>
-                <ul className="list-disc pl-5 space-y-1.5">
-                  <li>Each grid square represents 0.1 meters (10 cm)</li>
-                  <li>Large grid lines appear every 1 meter</li>
-                  <li>Measurements are automatically displayed while drawing</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-          
-          <section>
-            <h3 className="font-semibold text-lg mb-2">Drawing Tips</h3>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>Use the straight line tool for precise wall measurements</li>
-              <li>Lines automatically snap to the grid for accuracy</li>
-              <li>Close shapes completely to measure room areas</li>
-              <li>Use the select tool to adjust existing elements</li>
-            </ul>
-          </section>
-          
-          <section>
-            <h3 className="font-semibold text-lg mb-2">Gross Internal Area (GIA)</h3>
-            <p>GIA is calculated automatically based on the closed areas in your floor plan. It represents the total usable internal floor area.</p>
-          </section>
-
-          <div className="flex items-center space-x-2 mt-4">
-            <Checkbox
-              id="dontShowAgain"
-              checked={dontShowAgain}
-              onCheckedChange={(checked) => setDontShowAgain(checked === true)}
-            />
-            <Label htmlFor="dontShowAgain" className="text-sm text-muted-foreground">
-              Don't show this guide again
-            </Label>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Distance Measurement</h3>
+            <p className="text-sm text-gray-500">
+              Click and drag to measure the distance between two points. The measurement will display in the preferred unit.
+            </p>
           </div>
-
-          <section className="pt-2">
-            <Button onClick={handleClose} className="w-full">
-              Got it
-            </Button>
-          </section>
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Area Measurement</h3>
+            <p className="text-sm text-gray-500">
+              Draw a closed shape to automatically calculate the area. The result will show in square meters and square feet.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Grid Snapping</h3>
+            <p className="text-sm text-gray-500">
+              Enable grid snapping for precise measurements. The grid size can be adjusted in the settings.
+            </p>
+          </div>
         </div>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="dont-show-again" 
+              checked={dontShowAgain} 
+              onCheckedChange={(checked) => setDontShowAgain(checked as boolean)} 
+            />
+            <label 
+              htmlFor="dont-show-again" 
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              Don't show this again
+            </label>
+          </div>
+          <Button onClick={handleClose}>Got it</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default React.memo(MeasurementGuideModal);

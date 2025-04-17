@@ -1,145 +1,217 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { throttle } from '@/utils/throttle';
 import { toast } from 'sonner';
-import { captureCanvasState, applyCanvasState } from '@/utils/canvas/canvasStateCapture';
+import { useOptimizedGeometryWorker } from './useOptimizedGeometryWorker';
+import { measureAsyncPerformance } from '@/utils/performance';
 
-interface UseAutoSaveCanvasProps {
+export interface UseAutoSaveCanvasProps {
   canvas: FabricCanvas | null;
-  autoSaveInterval?: number; // in milliseconds
+  enabled?: boolean;
+  interval?: number;
   storageKey?: string;
-  onSave?: (success: boolean) => void;
-  onRestore?: (success: boolean) => void;
+  onSave?: (data: string) => void;
+  onLoad?: () => void;
 }
 
 export const useAutoSaveCanvas = ({
   canvas,
-  autoSaveInterval = 30000, // Default: save every 30 seconds
+  enabled = true,
+  interval = 30000,
   storageKey = 'canvas_autosave',
   onSave,
-  onRestore
+  onLoad
 }: UseAutoSaveCanvasProps) => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const timerRef = useRef<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const autoSaveTimerRef = useRef<number | null>(null);
+  const geometryWorker = useOptimizedGeometryWorker();
   
-  // Check if there's saved canvas data
-  const canRestore = useCallback((): boolean => {
-    return !!localStorage.getItem(`${storageKey}_data`);
-  }, [storageKey]);
-
-  // Save canvas state to localStorage
-  const saveCanvas = useCallback((): boolean => {
-    if (!canvas) return false;
+  // Prepare canvas data with optimized JSON via transferables
+  const prepareCanvasData = useCallback(async () => {
+    if (!canvas) return null;
     
     try {
-      setIsSaving(true);
+      // Measures performance while preparing canvas data
+      const [result, measurement] = await measureAsyncPerformance('canvas.serialize', async () => {
+        // Get JSON representation of canvas
+        const json = canvas.toJSON(['id', 'name', 'selectable', 'metadata']);
+        
+        // If we have large point arrays, optimize them
+        if (json.objects && json.objects.length > 100) {
+          // Process large path objects in batches
+          const pathObjects = json.objects.filter(obj => obj.type === 'path' && obj.path && obj.path.length > 100);
+          
+          if (pathObjects.length > 0) {
+            console.log(`Optimizing ${pathObjects.length} large path objects before save`);
+            
+            // Process in batches to avoid blocking the main thread
+            for (let i = 0; i < pathObjects.length; i += 10) {
+              const batch = pathObjects.slice(i, i + 10);
+              
+              // Process each object in parallel
+              await Promise.all(batch.map(async (pathObj) => {
+                if (pathObj.path && pathObj.path.length > 100) {
+                  // Convert path format to points for optimization
+                  const points = pathObj.path.map(cmd => {
+                    if (Array.isArray(cmd) && cmd.length >= 3) {
+                      return { x: cmd[1], y: cmd[2] };
+                    }
+                    return null;
+                  }).filter(Boolean);
+                  
+                  // Use worker to optimize points if available
+                  if (points.length > 100 && geometryWorker.features.isSupported) {
+                    try {
+                      // Tolerance based on zoom level
+                      const tolerance = 1 / (canvas.getZoom() || 1);
+                      const optimizedPoints = await geometryWorker.optimizePoints(points, tolerance);
+                      
+                      // Replace the path with optimized version if successful
+                      if (optimizedPoints && optimizedPoints.length > 0) {
+                        // Convert back to path format
+                        pathObj.path = optimizedPoints.map((p, idx) => 
+                          idx === 0 ? ['M', p.x, p.y] : ['L', p.x, p.y]
+                        );
+                        
+                        console.log(`Optimized path from ${points.length} to ${optimizedPoints.length} points`);
+                      }
+                    } catch (err) {
+                      console.error('Error optimizing path for storage:', err);
+                    }
+                  }
+                }
+              }));
+            }
+          }
+        }
+        
+        return JSON.stringify(json);
+      });
       
-      // Get canvas state
-      const state = captureCanvasState(canvas);
-      if (!state) {
-        console.warn("No canvas state to save");
-        return false;
-      }
+      console.log(`Canvas serialized in ${measurement.duration.toFixed(2)}ms`);
+      return result;
+    } catch (error) {
+      console.error('Error preparing canvas data:', error);
+      return null;
+    }
+  }, [canvas, geometryWorker]);
+  
+  // Save canvas state
+  const saveCanvas = useCallback(async () => {
+    if (!canvas || !enabled) return;
+    
+    setIsSaving(true);
+    
+    try {
+      const data = await prepareCanvasData();
+      if (!data) throw new Error('Failed to prepare canvas data');
       
       // Save to localStorage
-      localStorage.setItem(`${storageKey}_data`, state);
-      localStorage.setItem(`${storageKey}_timestamp`, new Date().toISOString());
+      localStorage.setItem(storageKey, data);
       
-      // Update last saved timestamp
-      setLastSaved(new Date());
+      const now = new Date();
+      setLastSaved(now);
       
-      console.log("Canvas state saved");
+      // Call save callback if provided
+      if (onSave) onSave(data);
       
-      // Call onSave callback if provided
-      onSave?.(true);
-      return true;
+      console.log(`Canvas saved successfully at ${now.toLocaleTimeString()}`);
     } catch (error) {
-      console.error("Error saving canvas state:", error);
-      onSave?.(false);
-      return false;
+      console.error('Error saving canvas:', error);
+      toast.error('Failed to save canvas');
     } finally {
       setIsSaving(false);
     }
-  }, [canvas, storageKey, onSave]);
-
-  // Restore canvas state from localStorage
-  const restoreCanvas = useCallback((): boolean => {
-    if (!canvas) return false;
+  }, [canvas, enabled, storageKey, onSave, prepareCanvasData]);
+  
+  // Throttled save to avoid excessive operations
+  const throttledSave = useCallback(
+    throttle(saveCanvas, 2000), 
+    [saveCanvas]
+  );
+  
+  // Load canvas state
+  const loadCanvas = useCallback(async () => {
+    if (!canvas || !enabled) return;
+    
+    setIsLoading(true);
     
     try {
-      // Get saved state
-      const state = localStorage.getItem(`${storageKey}_data`);
-      if (!state) {
-        console.warn("No saved canvas state found");
-        onRestore?.(false);
-        return false;
+      const data = localStorage.getItem(storageKey);
+      if (!data) {
+        console.log('No saved canvas data found');
+        setIsLoading(false);
+        return;
       }
       
-      // Apply state to canvas
-      applyCanvasState(canvas, state);
+      // Load canvas from JSON
+      await canvas.loadFromJSON(data, canvas.renderAll.bind(canvas));
       
-      console.log("Canvas state restored");
-      onRestore?.(true);
-      return true;
+      console.log('Canvas loaded successfully');
+      
+      // Call load callback if provided
+      if (onLoad) onLoad();
+      
+      toast.success('Canvas restored successfully');
     } catch (error) {
-      console.error("Error restoring canvas state:", error);
-      onRestore?.(false);
-      return false;
+      console.error('Error loading canvas:', error);
+      toast.error('Failed to load canvas');
+    } finally {
+      setIsLoading(false);
     }
-  }, [canvas, storageKey, onRestore]);
-
+  }, [canvas, enabled, storageKey, onLoad]);
+  
   // Set up auto-save interval
   useEffect(() => {
-    // Clear previous timer if any
-    if (timerRef.current !== null) {
-      window.clearInterval(timerRef.current);
+    if (!enabled || !canvas) return;
+    
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      window.clearInterval(autoSaveTimerRef.current);
     }
     
-    if (!canvas) return;
-    
-    // Start auto-save timer
-    timerRef.current = window.setInterval(() => {
-      const hasObjectsToSave = (canvas.getObjects() || []).some(
-        obj => !(obj as any).isGrid
-      );
-      
-      if (hasObjectsToSave) {
-        saveCanvas();
-      }
-    }, autoSaveInterval);
+    // Set up new timer
+    autoSaveTimerRef.current = window.setInterval(() => {
+      saveCanvas();
+    }, interval);
     
     // Clean up on unmount
     return () => {
-      if (timerRef.current !== null) {
-        window.clearInterval(timerRef.current);
+      if (autoSaveTimerRef.current) {
+        window.clearInterval(autoSaveTimerRef.current);
       }
     };
-  }, [canvas, autoSaveInterval, saveCanvas]);
-
-  // Cleanup and final save on component unmount
+  }, [enabled, canvas, interval, saveCanvas]);
+  
+  // Set up object modified event listener for reactive saving
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (canvas) {
-        saveCanvas();
-      }
+    if (!canvas || !enabled) return;
+    
+    const handleObjectModified = () => {
+      throttledSave();
     };
     
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    // Attach event listeners
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('object:added', handleObjectModified);
+    canvas.on('object:removed', handleObjectModified);
     
+    // Clean up
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (canvas) {
-        saveCanvas();
-      }
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('object:added', handleObjectModified);
+      canvas.off('object:removed', handleObjectModified);
     };
-  }, [canvas, saveCanvas]);
-
+  }, [canvas, enabled, throttledSave]);
+  
   return {
     saveCanvas,
-    restoreCanvas,
+    loadCanvas,
     lastSaved,
     isSaving,
-    canRestore
+    isLoading
   };
 };
