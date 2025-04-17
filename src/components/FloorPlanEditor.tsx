@@ -1,13 +1,12 @@
-
 import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { useRestorePrompt } from "@/hooks/useRestorePrompt";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
-import { 
-  trackUserInteraction, 
-  InteractionCategory 
+import {
+  trackUserInteraction,
+  InteractionCategory
 } from "@/utils/sentry/userInteractions";
 import { startCanvasTracking } from "@/utils/sentry/performance";
 
@@ -21,11 +20,12 @@ export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
   const { setCanUndo, setCanRedo } = useDrawingContext();
   const canvasRef = useRef<any>(null);
-  
-  const { 
-    showMeasurementGuide, 
+  const canvasTransaction = useRef<any>(null);
+
+  const {
+    showMeasurementGuide,
     handleCloseMeasurementGuide,
-    openMeasurementGuide 
+    openMeasurementGuide
   } = useMeasurementGuide();
 
   const {
@@ -43,17 +43,18 @@ export const FloorPlanEditor: React.FC = () => {
     }
   });
 
-  // Create a ref to hold the transaction
-  const canvasTransaction = useRef(
-    startCanvasTracking('FloorPlanEditor', canvas)
-  );
+  useEffect(() => {
+    if (canvas) {
+      canvasTransaction.current = startCanvasTracking('FloorPlanEditor', canvas);
+    }
+  }, [canvas]);
 
   const handleCanvasReady = (canvasOperations: any) => {
     setCanvas(canvasOperations.canvas);
     canvasRef.current = canvasOperations;
-    
+
     // Finish the transaction with success status
-    canvasTransaction.current.finish('ok');
+    canvasTransaction.current?.finish('ok');
   };
 
   const handleUndo = () => {
@@ -87,7 +88,7 @@ export const FloorPlanEditor: React.FC = () => {
   const handleOpenMeasurementGuide = () => {
     openMeasurementGuide();
   };
-  
+
   const handleCloseMeasurementGuideWithTracking = () => {
     trackUserInteraction('close_measurement_guide', InteractionCategory.TOOL);
     handleCloseMeasurementGuide();
@@ -103,18 +104,17 @@ export const FloorPlanEditor: React.FC = () => {
         canUndo={canvasRef.current?.canUndo || false}
         canRedo={canvasRef.current?.canRedo || false}
       />
-      
+
       <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center bg-gray-50">
         <MeasurementGuideButton onClick={handleOpenMeasurementGuide} />
-        
         <FloorPlanCanvas onCanvasReady={handleCanvasReady} />
       </div>
-      
-      <MeasurementGuideModal 
-        open={showMeasurementGuide} 
-        onClose={handleCloseMeasurementGuideWithTracking} 
+
+      <MeasurementGuideModal
+        open={showMeasurementGuide}
+        onClose={handleCloseMeasurementGuideWithTracking}
       />
-      
+
       <RestoreDrawingButton
         showPrompt={showRestorePrompt}
         timeElapsed={timeElapsed}
@@ -125,3 +125,4 @@ export const FloorPlanEditor: React.FC = () => {
     </div>
   );
 };
+
