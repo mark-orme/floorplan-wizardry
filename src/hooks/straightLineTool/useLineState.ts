@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -5,6 +6,7 @@ import { InputMethod } from './useLineInputMethod';
 import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useLineAngleSnap } from './useLineAngleSnap';
 import { useLineDrawing } from './useLineDrawing';
+import { lineToolLogger } from '@/utils/logger';
 
 interface UseLineStateOptions {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -56,6 +58,7 @@ export const useLineState = ({
   const initializeTool = useCallback(() => {
     setIsToolInitialized(true);
     setIsActive(true);
+    lineToolLogger.debug('Line tool initialized');
   }, []);
   
   /**
@@ -66,6 +69,7 @@ export const useLineState = ({
     setStartPoint(null);
     setCurrentPoint(null);
     setCurrentLine(null);
+    lineToolLogger.debug('Drawing state reset');
   }, []);
   
   /**
@@ -81,6 +85,7 @@ export const useLineState = ({
     const line = createLine(point.x, point.y, point.x, point.y);
     if (line) {
       setCurrentLine(line);
+      lineToolLogger.debug('Started drawing line', { startPoint: point });
     }
   }, [createLine]);
   
@@ -98,7 +103,7 @@ export const useLineState = ({
     
     // Apply angle snapping if enabled
     if (anglesEnabled && startPoint) {
-      // Fix: Only pass start and end points to snapToAngle
+      // Only pass start and end points to snapToAngle
       endPoint = snapToAngle(startPoint, endPoint);
     }
     
@@ -123,12 +128,17 @@ export const useLineState = ({
     
     // Apply angle snapping if enabled
     if (anglesEnabled && startPoint) {
-      // Fix: Only pass start and end points to snapToAngle
+      // Only pass start and end points to snapToAngle
       endPoint = snapToAngle(startPoint, endPoint);
     }
     
     // Finalize line
     finalizeLine(currentLine, startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+    lineToolLogger.debug('Completed drawing line', { 
+      startPoint, 
+      endPoint,
+      lineId: (currentLine as any).id || 'unknown'
+    });
     
     // Reset drawing state
     resetDrawingState();
@@ -142,6 +152,7 @@ export const useLineState = ({
     
     // Remove the current line
     removeLine(currentLine);
+    lineToolLogger.debug('Drawing cancelled');
     
     // Reset drawing state
     resetDrawingState();
@@ -151,7 +162,11 @@ export const useLineState = ({
    * Toggle angle constraints
    */
   const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
+    setAnglesEnabled(prev => {
+      const newValue = !prev;
+      lineToolLogger.debug(`Angle constraints ${newValue ? 'enabled' : 'disabled'}`);
+      return newValue;
+    });
   }, []);
   
   return {
