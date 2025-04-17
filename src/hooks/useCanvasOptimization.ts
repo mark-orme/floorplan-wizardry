@@ -108,6 +108,34 @@ export const useCanvasOptimization = ({
     canvas.requestRenderAll();
   }, [fabricCanvasRef, needsVirtualization]);
   
+  // Force optimization
+  const forceOptimize = useCallback(() => {
+    // Force update object count
+    updateObjectCount();
+    
+    // Force update virtualization if needed
+    if (needsVirtualization) {
+      updateVirtualization();
+    }
+    
+    // Optimize canvas settings
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      // Set render settings
+      canvas.renderOnAddRemove = false;
+      canvas.skipTargetFind = needsVirtualization;
+      canvas.enableRetinaScaling = true;
+      
+      // Configure object caching
+      canvas.forEachObject(obj => {
+        const isComplex = obj.type === 'path' || obj.type === 'group';
+        obj.objectCaching = !isComplex;
+      });
+      
+      canvas.requestRenderAll();
+    }
+  }, [fabricCanvasRef, needsVirtualization, updateObjectCount, updateVirtualization]);
+  
   // Track FPS
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
@@ -180,6 +208,7 @@ export const useCanvasOptimization = ({
   return {
     performanceMetrics,
     needsVirtualization,
-    updateVirtualization
+    updateVirtualization,
+    forceOptimize
   };
 };
