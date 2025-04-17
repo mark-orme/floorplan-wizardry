@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
@@ -38,10 +37,11 @@ vi.mock('../straightLineTool/useLineState', () => ({
     continueDrawing: vi.fn(),
     completeDrawing: vi.fn(),
     cancelDrawing: vi.fn(),
-    // Add the missing properties
     setStartPoint: vi.fn(),
     setCurrentPoint: vi.fn(),
-    setCurrentLine: vi.fn()
+    setCurrentLine: vi.fn(),
+    handleKeyDown: vi.fn(),
+    handleKeyUp: vi.fn()
   }),
   InputMethod: {
     MOUSE: 'mouse',
@@ -115,10 +115,11 @@ describe('useStraightLineTool', () => {
       continueDrawing: vi.fn(),
       completeDrawing: vi.fn(),
       cancelDrawing: vi.fn(),
-      // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
   });
   
@@ -210,10 +211,11 @@ describe('useStraightLineTool', () => {
       continueDrawing: vi.fn(),
       completeDrawing: vi.fn(),
       cancelDrawing: vi.fn(),
-      // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
@@ -270,10 +272,11 @@ describe('useStraightLineTool', () => {
       continueDrawing: vi.fn(),
       completeDrawing: vi.fn(),
       cancelDrawing: mockCancelDrawing,
-      // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
     
     const { result } = renderHook(() => useStraightLineTool({
@@ -339,10 +342,11 @@ describe('useStraightLineTool', () => {
       continueDrawing: vi.fn(),
       completeDrawing: mockCompleteDrawing,
       cancelDrawing: vi.fn(),
-      // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({

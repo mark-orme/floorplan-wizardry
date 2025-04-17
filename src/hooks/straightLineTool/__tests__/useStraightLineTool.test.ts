@@ -1,4 +1,3 @@
-
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -46,7 +45,10 @@ vi.mock('../useLineState', () => ({
     // Add the missing properties 
     setStartPoint: vi.fn(),
     setCurrentPoint: vi.fn(),
-    setCurrentLine: vi.fn()
+    setCurrentLine: vi.fn(),
+    // Add key handling functions that were missing
+    handleKeyDown: vi.fn(),
+    handleKeyUp: vi.fn()
   }),
   InputMethod: {
     MOUSE: 'mouse',
@@ -123,7 +125,10 @@ describe('useStraightLineTool', () => {
       // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      // Add key handling functions that were missing
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
   });
   
@@ -218,7 +223,10 @@ describe('useStraightLineTool', () => {
       // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      // Add key handling functions that were missing
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
@@ -278,7 +286,10 @@ describe('useStraightLineTool', () => {
       // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      // Add key handling functions that were missing
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
     
     const { result } = renderHook(() => useStraightLineTool({
@@ -347,7 +358,10 @@ describe('useStraightLineTool', () => {
       // Add the missing properties
       setStartPoint: vi.fn(),
       setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn()
+      setCurrentLine: vi.fn(),
+      // Add key handling functions that were missing
+      handleKeyDown: vi.fn(),
+      handleKeyUp: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({

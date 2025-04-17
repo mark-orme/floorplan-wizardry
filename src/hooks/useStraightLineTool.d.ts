@@ -38,5 +38,7 @@ export interface UseStraightLineToolResult {
   handlePointerDown: (event: any) => void;
   handlePointerMove: (event: any) => void;
   handlePointerUp: (event: any) => void;
+  handleKeyDown: (event: KeyboardEvent) => void;
+  handleKeyUp: (event: KeyboardEvent) => void;
   renderTooltip: () => ReactNode;
 }
