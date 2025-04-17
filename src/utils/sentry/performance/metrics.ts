@@ -4,10 +4,18 @@ import { isSentryInitialized } from '../core';
 import logger from '../../logger';
 import { Canvas as FabricCanvas } from 'fabric';
 
+/**
+ * Measure the performance of a function execution
+ * @param name Name of the performance measurement
+ * @param fn Function to measure
+ * @param canvas Optional canvas for context
+ * @param options Additional measurement options
+ * @returns Result of the measured function
+ */
 export function measurePerformance<T>(
   name: string,
   fn: () => T,
-  canvas: FabricCanvas | null = null,  // Optional canvas argument
+  canvas: FabricCanvas | null = null,
   options: Record<string, unknown> = {}
 ): T {
   // Skip if Sentry is not initialized
@@ -23,6 +31,15 @@ export function measurePerformance<T>(
   });
   
   const startTime = performance.now();
+  
+  // Add canvas data if available
+  if (canvas) {
+    transaction.setData('canvas', {
+      width: canvas.width,
+      height: canvas.height,
+      objectCount: canvas.getObjects().length
+    });
+  }
   
   try {
     // Execute the function

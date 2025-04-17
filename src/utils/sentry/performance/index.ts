@@ -8,8 +8,7 @@
 // Export from core
 export { 
   type PerformanceTransaction,
-  startPerformanceTransaction,
-  finishPerformanceTransaction
+  startPerformanceTransaction
 } from './core';
 
 // Export from canvas

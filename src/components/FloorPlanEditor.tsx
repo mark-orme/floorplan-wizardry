@@ -8,7 +8,7 @@ import {
   trackUserInteraction, 
   InteractionCategory 
 } from "@/utils/sentry/userInteractions";
-import { startCanvasTransaction, startCanvasTracking } from "@/utils/sentry/performance";
+import { startCanvasTransaction } from "@/utils/sentry/performance";
 
 // Import the missing components
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
@@ -44,7 +44,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   // Create a ref to hold the transaction
   const canvasTransaction = useRef(
-    startCanvasTracking('FloorPlanEditor')  // Pass canvas here
+    startCanvasTransaction('FloorPlanEditor', canvas)  // Pass canvas as second argument
   );
 
   const handleCanvasReady = (canvasOperations: any) => {

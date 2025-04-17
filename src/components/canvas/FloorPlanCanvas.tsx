@@ -23,7 +23,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
 
   const handleCanvasReady = (canvasOperations: any) => {
     // Start a performance transaction with the proper name and options
-    const transaction = startPerformanceTransaction('canvas.initialization', {
+    const transaction = startPerformanceTransaction('canvas.initialization', canvasOperations.canvas, {
       op: 'canvas'
     });
     
