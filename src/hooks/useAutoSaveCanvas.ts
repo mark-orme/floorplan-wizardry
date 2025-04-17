@@ -62,8 +62,15 @@ export const useAutoSaveCanvas = ({
       const now = new Date();
       setLastSaved(now);
       
+      // Type guard to ensure canvasJSON has objects property before accessing length
+      const objectCount = canvasJSON && 
+                         typeof canvasJSON === 'object' && 
+                         'objects' in canvasJSON && 
+                         Array.isArray(canvasJSON.objects) ? 
+                         canvasJSON.objects.length : 0;
+                         
       console.log(`Canvas ${canvasId} saved`, {
-        objectCount: canvasJSON && typeof canvasJSON === 'object' && 'objects' in canvasJSON ? canvasJSON.objects.length : 0,
+        objectCount,
         timestamp: now
       });
       
@@ -105,9 +112,17 @@ export const useAutoSaveCanvas = ({
       // Load the saved state
       canvas.loadFromJSON(parsedData.data, () => {
         canvas.renderAll();
+        
+        // Type guard to ensure parsedData.data has objects property before accessing length
+        const objectCount = parsedData.data && 
+                           typeof parsedData.data === 'object' && 
+                           'objects' in parsedData.data && 
+                           Array.isArray(parsedData.data.objects) ? 
+                           parsedData.data.objects.length : 0;
+                           
         console.log(`Canvas ${canvasId} loaded`, {
           timestamp: new Date(parsedData.timestamp),
-          objectCount: parsedData.data && typeof parsedData.data === 'object' && 'objects' in parsedData.data ? parsedData.data.objects.length : 0
+          objectCount
         });
         
         if (onLoad) {
