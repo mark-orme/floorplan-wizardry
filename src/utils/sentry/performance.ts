@@ -5,26 +5,5 @@
  * This file will be removed in a future version.
  */
 
-import { 
-  type PerformanceTransaction,
-  startPerformanceTransaction,
-  finishPerformanceTransaction
-} from './performance/core';
-
-import {
-  startCanvasTransaction,
-  startCanvasTracking
-} from './performance/canvas';
-
-import {
-  measurePerformance
-} from './performance/metrics';
-
-export {
-  type PerformanceTransaction,
-  startPerformanceTransaction,
-  finishPerformanceTransaction,
-  startCanvasTransaction, 
-  startCanvasTracking,
-  measurePerformance
-};
+// Re-export everything from the index file
+export * from './performance/index';

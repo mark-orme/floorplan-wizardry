@@ -14,7 +14,7 @@ export interface PerformanceTransaction {
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string) => void; // Simplified finish signature with one argument
+  finish: (status?: string) => void; // Simplified finish signature with one parameter
 }
 
 /**
@@ -54,7 +54,7 @@ export function startPerformanceTransaction(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok') => { // Simplified signature with one argument
+      finish: (status = 'ok') => { // Simplified to one parameter
         if (transaction) {
           // Calculate the actual duration
           const endTime = performance.now();

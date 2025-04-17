@@ -12,7 +12,7 @@ import logger from '../../logger';
  * Start a canvas performance transaction
  * 
  * @param name - Transaction name (required)
- * @param canvas - Canvas object (required)
+ * @param canvas - Canvas object (can be null)
  * @param options - Optional transaction options (tags, data)
  * @returns Transaction object
  */
@@ -24,7 +24,7 @@ export function startCanvasTransaction(
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string) => void; // Simplified to one argument
+  finish: (status?: string) => void; // Simplified to one parameter
 } {
   if (!isSentryInitialized()) {
     return {
@@ -48,7 +48,7 @@ export function startCanvasTransaction(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok') => { // Simplified to one argument
+      finish: (status = 'ok') => { // Simplified to one parameter
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;
@@ -90,7 +90,7 @@ export function startCanvasTracking(
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string) => void; // Simplified to one argument
+  finish: (status?: string) => void; // Simplified to one parameter
 } {
   if (!isSentryInitialized()) {
     return {
@@ -114,7 +114,7 @@ export function startCanvasTracking(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok') => { // Simplified to one argument
+      finish: (status = 'ok') => { // Simplified to one parameter
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;

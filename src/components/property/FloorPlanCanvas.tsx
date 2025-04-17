@@ -1,3 +1,4 @@
+
 /**
  * Floor Plan Canvas component
  * Handles canvas rendering and initialization
