@@ -1,12 +1,9 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useOptimizedCanvas } from './canvas/useOptimizedCanvas';
+import { useVirtualizationEngine } from './useVirtualizationEngine';
+import { useCanvasMetrics } from './useCanvasMetrics';
 
-/**
- * Hook for virtualizing canvas rendering to improve performance
- * Only renders objects that are visible in the current viewport
- */
 export const useVirtualizedCanvas = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
   options: { 
@@ -25,78 +22,69 @@ export const useVirtualizedCanvas = (
   const canvasWidth = useRef(800);
   const canvasHeight = useRef(600);
   
-  // Get viewport dimensions from canvas element
+  // Update dimensions when needed
   const updateDimensions = useCallback(() => {
     if (fabricCanvasRef.current?.lowerCanvasEl) {
       canvasWidth.current = fabricCanvasRef.current.lowerCanvasEl.width || 800;
       canvasHeight.current = fabricCanvasRef.current.lowerCanvasEl.height || 600;
     }
   }, [fabricCanvasRef]);
-  
-  // Use our optimized canvas hook with virtualization support
+
   const { 
-    performanceMetrics,
+    visibleArea,
+    visibleObjectCount,
     needsVirtualization,
     updateVirtualization,
-    optimizeCanvasSettings,
-    attachVirtualizationEvents
-  } = useOptimizedCanvas({
+    setVirtualization
+  } = useVirtualizationEngine({
     fabricCanvasRef,
     viewportWidth: canvasWidth.current,
     viewportHeight: canvasHeight.current,
-    objectLimit: mergedOptions.objectLimit
+    paddingPx: mergedOptions.paddingPx
   });
-  
-  // Apply canvas settings when canvas is ready or dependencies change
+
+  const { metrics, updateObjectCount } = useCanvasMetrics({
+    fabricCanvasRef
+  });
+
+  const performanceMetrics = {
+    ...metrics,
+    visibleObjectCount
+  };
+
+  // Set up canvas optimization
   useEffect(() => {
     if (!fabricCanvasRef.current || !mergedOptions.enabled) return;
     
-    // Update dimensions first
     updateDimensions();
     
-    // Apply optimized settings
-    optimizeCanvasSettings();
+    const canvas = fabricCanvasRef.current;
+    canvas.renderOnAddRemove = false;
+    canvas.skipTargetFind = needsVirtualization;
+    canvas.enableRetinaScaling = true;
     
-    // Set up virtualization events - this returns a cleanup function
-    const cleanup = attachVirtualizationEvents();
-    
-    // Initial update of virtualization
-    updateVirtualization();
-    
-    // Monitor for changes in canvas dimensions
-    const resizeObserver = new ResizeObserver(() => {
-      updateDimensions();
-      updateVirtualization();
+    canvas.forEachObject(obj => {
+      obj.objectCaching = !['path', 'group'].includes(obj.type || '');
     });
     
-    if (fabricCanvasRef.current.lowerCanvasEl) {
-      resizeObserver.observe(fabricCanvasRef.current.lowerCanvasEl);
-    }
-    
-    // Clean up
-    return () => {
-      cleanup();
-      resizeObserver.disconnect();
+    const cleanup = () => {
+      canvas.renderOnAddRemove = true;
+      canvas.skipTargetFind = false;
     };
-  }, [
-    fabricCanvasRef, 
-    mergedOptions.enabled, 
-    updateDimensions, 
-    optimizeCanvasSettings, 
-    attachVirtualizationEvents, 
-    updateVirtualization
-  ]);
-  
-  // Refresh virtualization - useful after major changes like adding/removing many objects
+    
+    return cleanup;
+  }, [fabricCanvasRef, mergedOptions.enabled, needsVirtualization, updateDimensions]);
+
   const refreshVirtualization = useCallback(() => {
     if (fabricCanvasRef.current && mergedOptions.enabled) {
       updateVirtualization();
     }
   }, [fabricCanvasRef, mergedOptions.enabled, updateVirtualization]);
-  
+
   return {
     performanceMetrics,
     needsVirtualization,
+    visibleArea,
     refreshVirtualization
   };
 };

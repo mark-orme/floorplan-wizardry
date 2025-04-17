@@ -1,4 +1,3 @@
-
 /**
  * Web worker for optimized geometry calculations
  * Uses transferable objects for better performance
@@ -73,9 +72,8 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
         throw new Error(`Unknown calculation type: ${type}`);
     }
     
-    // Send result back to main thread
+    // Send result back to main thread with proper transferable format
     if (transferables.length > 0) {
-      // Use the correct overload for postMessage with transferable objects
       self.postMessage({
         id,
         success: true,
@@ -89,7 +87,6 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
       });
     }
   } catch (error) {
-    // Send error back to main thread
     self.postMessage({
       id,
       success: false,
