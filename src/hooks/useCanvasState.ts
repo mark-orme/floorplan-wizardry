@@ -21,22 +21,35 @@ export const useCanvasState = (): UseCanvasStateResult => {
 
   // Load initial canvas state
   useEffect(() => {
+    if (!canvas) return;
+    
     const loadSavedState = async () => {
       try {
+        // Load tool settings
         const savedState = localStorage.getItem('canvas_state');
-        if (savedState && canvas) {
+        if (savedState) {
           const state = JSON.parse(savedState);
           setActiveTool(state.activeTool || DrawingMode.SELECT);
           setLineThickness(state.lineThickness || 2);
           setLineColor(state.lineColor || "#000000");
-          console.log("Restored canvas state from storage");
+          console.log("Restored canvas settings from storage");
         }
+        
+        // Canvas content is loaded by useCanvasPersistence or useAutoSaveCanvas hooks
+        // We don't need to duplicate that logic here
       } catch (error) {
         console.error("Error loading canvas state:", error);
       }
     };
 
     loadSavedState();
+    
+    // Set component as mounted
+    mountedRef.current = true;
+    
+    return () => {
+      mountedRef.current = false;
+    };
   }, [canvas]);
 
   // Save canvas state on changes
