@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -9,12 +8,7 @@ import {
   trackUserInteraction, 
   InteractionCategory 
 } from "@/utils/sentry/userInteractions";
-
-// Import our component modules
-import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
-import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
-import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
-import { RestoreDrawingButton } from "./canvas/RestoreDrawingButton";
+import { startCanvasTransaction } from "@/utils/sentry/performance";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
@@ -42,9 +36,18 @@ export const FloorPlanEditor: React.FC = () => {
     }
   });
 
+  const canvasTransaction = React.useRef(
+    startCanvasTransaction('FloorPlanEditor', canvas)
+  );
+
   const handleCanvasReady = (canvasOperations: any) => {
     setCanvas(canvasOperations.canvas);
     canvasRef.current = canvasOperations;
+    
+    canvasTransaction.current.finish('ok', {
+      canvasWidth: canvasOperations.canvas.width,
+      canvasHeight: canvasOperations.canvas.height
+    });
   };
 
   const handleUndo = () => {
