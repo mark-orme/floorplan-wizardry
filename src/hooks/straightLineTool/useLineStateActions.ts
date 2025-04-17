@@ -1,275 +1,205 @@
 
-/**
- * Hook for line state actions
- * Provides memoized actions for line drawing operations
- */
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
+import { InputMethod } from './useLineInputMethod';
 import { lineToolLogger } from '@/utils/logger';
-import { useGeometryWorker } from '@/hooks/useGeometryWorker';
 
-interface UseLineStateActionsProps {
+interface LineStateActionsProps {
   coreState: {
     isActive: boolean;
     isDrawing: boolean;
-    isToolInitialized: boolean;
     startPoint: Point | null;
     currentPoint: Point | null;
     currentLine: Line | null;
-    shiftKeyPressed: boolean;
-    inputMethod: string;
+    setIsDrawing: (isDrawing: boolean) => void;
+    setStartPoint: (point: Point | null) => void;
+    setCurrentPoint: (point: Point | null) => void;
+    setCurrentLine: (line: Line | null) => void;
+    inputMethod: InputMethod;
     isPencilMode: boolean;
-    
-    setIsActive: (active: boolean) => void;
-    setIsDrawing: (drawing: boolean) => void;
+    shiftKeyPressed: boolean;
     setShiftKeyPressed: (pressed: boolean) => void;
-    setInputMethod: (method: string) => void;
-    setIsPencilMode: (pencilMode: boolean) => void;
-    
-    initializeTool: () => void;
+    setInputMethod: (method: InputMethod) => void;
     resetDrawingState: () => void;
   };
   snapEnabled: boolean;
   snapToGrid: (point: Point) => Point;
   anglesEnabled: boolean;
   snapToAngle: (start: Point, end: Point) => Point;
-  createLine: (startX: number, startY: number, endX: number, endY: number) => Line | null;
-  updateLine: (line: Line | null, startX: number, startY: number, endX: number, endY: number) => any;
-  finalizeLine: (line: Line | null) => void;
-  removeLine: (line: Line | null) => void;
+  createLine: (x1: number, y1: number) => Line;
+  updateLine: (line: Line, startX: number, startY: number, endX: number, endY: number) => any;
+  finalizeLine: (line: Line) => void;
+  removeLine: (line: Line) => void;
 }
 
-export const useLineStateActions = (props: UseLineStateActionsProps) => {
-  const {
-    coreState,
-    snapEnabled,
-    snapToGrid,
-    anglesEnabled,
-    snapToAngle,
-    createLine,
-    updateLine,
-    finalizeLine,
-    removeLine
-  } = props;
-  
-  // Get geometry worker for optimized calculations
-  const { calculateDistance } = useGeometryWorker();
-  
-  // Additional setters needed by tests
-  const setStartPoint = useCallback((point: Point | null) => {
-    // This is a mock implementation to satisfy the interface
-    // The real implementation would use state from coreState
-    lineToolLogger.debug('Setting start point', { point });
-  }, []);
-  
-  const setCurrentPoint = useCallback((point: Point | null) => {
-    // This is a mock implementation to satisfy the interface
-    lineToolLogger.debug('Setting current point', { point });
-  }, []);
-  
-  const setCurrentLine = useCallback((line: Line | null) => {
-    // This is a mock implementation to satisfy the interface
-    lineToolLogger.debug('Setting current line', { lineId: line?.id });
-  }, []);
-
-  /**
-   * Toggle grid snapping
-   */
-  const toggleSnap = useCallback(() => {
-    // Implementation depends on how snapEnabled is controlled
-    lineToolLogger.debug('Toggle snap', { current: snapEnabled });
-  }, [snapEnabled]);
-  
-  /**
-   * Toggle angle snapping
-   */
-  const toggleAngles = useCallback(() => {
-    // Implementation depends on how anglesEnabled is controlled
-    lineToolLogger.debug('Toggle angles', { current: anglesEnabled });
-  }, [anglesEnabled]);
-  
+/**
+ * Hook for line state actions
+ */
+export const useLineStateActions = ({
+  coreState,
+  snapEnabled,
+  snapToGrid,
+  anglesEnabled,
+  snapToAngle,
+  createLine,
+  updateLine,
+  finalizeLine,
+  removeLine
+}: LineStateActionsProps) => {
   /**
    * Start drawing a line
    */
   const startDrawing = useCallback((point: Point) => {
     if (!coreState.isActive || coreState.isDrawing) return;
     
-    try {
-      // Apply grid snapping if enabled
-      const startPoint = snapEnabled ? snapToGrid(point) : { ...point };
-      
-      // Set drawing state
-      coreState.setIsDrawing(true);
-      
-      // Create initial line
-      const line = createLine(
-        startPoint.x, 
-        startPoint.y, 
-        startPoint.x, 
-        startPoint.y
-      );
-      
-      lineToolLogger.debug('Started drawing line', { point: startPoint });
-    } catch (error) {
-      lineToolLogger.error('Error starting drawing', error);
-      coreState.resetDrawingState();
-    }
-  }, [
-    coreState, 
-    snapEnabled, 
-    snapToGrid, 
-    createLine
-  ]);
+    // Apply grid snapping if enabled
+    const snappedPoint = snapEnabled ? snapToGrid(point) : point;
+    lineToolLogger.debug('Start drawing line', { original: point, snapped: snappedPoint });
+    
+    // Create a new line
+    const line = createLine(snappedPoint.x, snappedPoint.y);
+    
+    // Update state
+    coreState.setIsDrawing(true);
+    coreState.setStartPoint(snappedPoint);
+    coreState.setCurrentPoint(snappedPoint);
+    coreState.setCurrentLine(line);
+  }, [coreState, snapEnabled, snapToGrid, createLine]);
   
   /**
-   * Continue drawing an in-progress line
+   * Continue drawing the current line
    */
   const continueDrawing = useCallback((point: Point) => {
-    if (!coreState.isActive || !coreState.isDrawing) return;
-    if (!coreState.startPoint || !coreState.currentLine) return;
+    if (!coreState.isDrawing || !coreState.startPoint || !coreState.currentLine) return;
     
-    try {
-      // Get base end point (after grid snapping if enabled)
-      let endPoint = snapEnabled ? snapToGrid(point) : { ...point };
+    // Apply grid snapping if enabled
+    let snappedPoint = snapEnabled ? snapToGrid(point) : point;
+    
+    // Apply angle snapping if enabled
+    if (anglesEnabled && coreState.startPoint) {
+      snappedPoint = snapToAngle(coreState.startPoint, snappedPoint);
+    }
+    
+    // Apply shift key constraint (horizontal/vertical lines)
+    if (coreState.shiftKeyPressed && coreState.startPoint) {
+      const dx = Math.abs(snappedPoint.x - coreState.startPoint.x);
+      const dy = Math.abs(snappedPoint.y - coreState.startPoint.y);
       
-      // Apply angle snapping if enabled and shift key is pressed
-      if (anglesEnabled && coreState.shiftKeyPressed) {
-        endPoint = snapToAngle(coreState.startPoint, endPoint);
+      if (dx > dy) {
+        // Make horizontal line
+        snappedPoint.y = coreState.startPoint.y;
+      } else {
+        // Make vertical line
+        snappedPoint.x = coreState.startPoint.x;
       }
-      
-      // Update the line
+    }
+    
+    // Update the line
+    if (coreState.startPoint) {
       updateLine(
         coreState.currentLine,
         coreState.startPoint.x,
         coreState.startPoint.y,
-        endPoint.x,
-        endPoint.y
+        snappedPoint.x,
+        snappedPoint.y
       );
-      
-    } catch (error) {
-      lineToolLogger.error('Error continuing drawing', error);
     }
+    
+    // Update state
+    coreState.setCurrentPoint(snappedPoint);
   }, [
     coreState,
     snapEnabled,
-    snapToGrid,
     anglesEnabled,
+    snapToGrid,
     snapToAngle,
     updateLine
   ]);
   
   /**
-   * Complete drawing a line
+   * Complete the line drawing
    */
-  const completeDrawing = useCallback(async (point: Point) => {
-    if (!coreState.isActive || !coreState.isDrawing) return;
-    if (!coreState.startPoint || !coreState.currentLine) return;
+  const completeDrawing = useCallback((point: Point) => {
+    if (!coreState.isDrawing || !coreState.currentLine) return;
     
-    try {
-      // Get final end point (after grid and angle snapping)
-      let endPoint = snapEnabled ? snapToGrid(point) : { ...point };
-      
-      if (anglesEnabled && coreState.shiftKeyPressed) {
-        endPoint = snapToAngle(coreState.startPoint, endPoint);
-      }
-      
-      // Update the line one last time
-      updateLine(
-        coreState.currentLine,
-        coreState.startPoint.x,
-        coreState.startPoint.y,
-        endPoint.x,
-        endPoint.y
-      );
-      
-      // Check if the line is too short (e.g., just a click)
-      try {
-        const distance = await calculateDistance(coreState.startPoint, endPoint);
-        
-        if (distance < 5) {
-          // Line is too short, remove it
-          removeLine(coreState.currentLine);
-          lineToolLogger.debug('Removed short line', { distance });
-        } else {
-          // Finalize the line
-          finalizeLine(coreState.currentLine);
-          lineToolLogger.debug('Completed drawing line', { 
-            start: coreState.startPoint, 
-            end: endPoint,
-            distance
-          });
-        }
-      } catch (err) {
-        // If worker fails, fall back to simpler calculation
-        const dx = endPoint.x - coreState.startPoint.x;
-        const dy = endPoint.y - coreState.startPoint.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < 5) {
-          removeLine(coreState.currentLine);
-        } else {
-          finalizeLine(coreState.currentLine);
-        }
-      }
-      
-      // Reset drawing state
-      coreState.resetDrawingState();
-    } catch (error) {
-      lineToolLogger.error('Error completing drawing', error);
-      coreState.resetDrawingState();
+    // Apply final constraints to end point
+    let finalPoint = point;
+    if (snapEnabled) {
+      finalPoint = snapToGrid(point);
     }
+    
+    if (anglesEnabled && coreState.startPoint) {
+      finalPoint = snapToAngle(coreState.startPoint, finalPoint);
+    }
+    
+    // Check if line has zero length
+    const isZeroLength = coreState.startPoint && 
+      coreState.startPoint.x === finalPoint.x && 
+      coreState.startPoint.y === finalPoint.y;
+    
+    if (isZeroLength) {
+      // Remove zero-length lines
+      if (coreState.currentLine) {
+        removeLine(coreState.currentLine);
+      }
+    } else {
+      // Finalize the line
+      if (coreState.currentLine && coreState.startPoint) {
+        // Update line to final position
+        updateLine(
+          coreState.currentLine,
+          coreState.startPoint.x,
+          coreState.startPoint.y,
+          finalPoint.x,
+          finalPoint.y
+        );
+        
+        // Finalize the line
+        finalizeLine(coreState.currentLine);
+      }
+    }
+    
+    // Reset drawing state
+    coreState.resetDrawingState();
+    lineToolLogger.debug('Completed drawing line', { finalPoint, isZeroLength });
   }, [
     coreState,
     snapEnabled,
-    snapToGrid,
     anglesEnabled,
+    snapToGrid,
     snapToAngle,
     updateLine,
     finalizeLine,
-    removeLine,
-    calculateDistance
+    removeLine
   ]);
   
   /**
    * Cancel the current drawing operation
    */
   const cancelDrawing = useCallback(() => {
-    if (!coreState.isActive || !coreState.isDrawing) return;
+    if (!coreState.isDrawing || !coreState.currentLine) return;
     
-    try {
-      // Remove the in-progress line
-      if (coreState.currentLine) {
-        removeLine(coreState.currentLine);
-        lineToolLogger.debug('Cancelled drawing');
-      }
-      
-      // Reset drawing state
-      coreState.resetDrawingState();
-    } catch (error) {
-      lineToolLogger.error('Error cancelling drawing', error);
-      coreState.resetDrawingState();
-    }
+    // Remove the current line
+    removeLine(coreState.currentLine);
+    
+    // Reset drawing state
+    coreState.resetDrawingState();
+    lineToolLogger.debug('Cancelled drawing line');
   }, [coreState, removeLine]);
   
   /**
-   * Handle keyboard events for drawing tool
+   * Handle key down events
    */
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!coreState.isActive) return;
+    // Handle escape key to cancel drawing
+    if (event.key === 'Escape' && coreState.isDrawing) {
+      cancelDrawing();
+    }
     
-    switch (event.key) {
-      case 'Escape':
-        if (coreState.isDrawing) {
-          cancelDrawing();
-          event.preventDefault();
-        }
-        break;
-        
-      case 'Shift':
-        coreState.setShiftKeyPressed(true);
-        event.preventDefault();
-        break;
+    // Handle shift key for constraints
+    if (event.key === 'Shift') {
+      coreState.setShiftKeyPressed(true);
     }
   }, [coreState, cancelDrawing]);
   
@@ -277,50 +207,18 @@ export const useLineStateActions = (props: UseLineStateActionsProps) => {
    * Handle key up events
    */
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
-    if (!coreState.isActive) return;
-    
-    switch (event.key) {
-      case 'Shift':
-        coreState.setShiftKeyPressed(false);
-        event.preventDefault();
-        break;
+    // Handle shift key for constraints
+    if (event.key === 'Shift') {
+      coreState.setShiftKeyPressed(false);
     }
   }, [coreState]);
   
-  return useMemo(() => ({
-    // Public API
-    toggleSnap,
-    toggleAngles,
-    
-    // Drawing operations
-    startDrawing,
-    continueDrawing,
-    completeDrawing,
-    cancelDrawing,
-    
-    // Event handlers
-    handleKeyDown,
-    handleKeyUp,
-    
-    // Setters needed for tests
-    setStartPoint,
-    setCurrentPoint,
-    setCurrentLine,
-
-    // Pass through core state
-    ...coreState
-  }), [
-    toggleSnap,
-    toggleAngles,
+  return {
     startDrawing,
     continueDrawing,
     completeDrawing,
     cancelDrawing,
     handleKeyDown,
-    handleKeyUp,
-    coreState,
-    setStartPoint,
-    setCurrentPoint,
-    setCurrentLine
-  ]);
+    handleKeyUp
+  };
 };

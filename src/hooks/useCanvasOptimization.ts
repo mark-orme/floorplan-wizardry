@@ -6,7 +6,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { useMemo } from 'react';
-import { perfLogger } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 interface UseCanvasOptimizationProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -93,7 +93,7 @@ export const useCanvasOptimization = ({
     });
     
     // Log virtualization metrics
-    perfLogger.debug('Virtualization update', {
+    logger.debug('Virtualization update', {
       totalObjects: canvas.getObjects().length,
       visibleObjects: visibleCount,
       zoom,
@@ -125,7 +125,7 @@ export const useCanvasOptimization = ({
     // Enable virtualization if object count exceeds limit
     if (objectCount > objectLimit && !needsVirtualization) {
       setNeedsVirtualization(true);
-      perfLogger.info(`Enabling virtualization - Object count (${objectCount}) exceeds limit (${objectLimit})`);
+      logger.info(`Enabling virtualization - Object count (${objectCount}) exceeds limit (${objectLimit})`);
     } else if (objectCount <= objectLimit && needsVirtualization) {
       setNeedsVirtualization(false);
       
@@ -136,7 +136,7 @@ export const useCanvasOptimization = ({
         }
       });
       
-      perfLogger.info(`Disabling virtualization - Object count (${objectCount}) below limit`);
+      logger.info(`Disabling virtualization - Object count (${objectCount}) below limit`);
     }
   }, [fabricCanvasRef, needsVirtualization, objectLimit]);
   
@@ -241,7 +241,7 @@ export const useCanvasOptimization = ({
       obj.objectCaching = !isComplex;
     });
     
-    perfLogger.info('Canvas settings optimized', { needsVirtualization });
+    logger.info('Canvas settings optimized', { needsVirtualization });
   }, [fabricCanvasRef, needsVirtualization]);
   
   // Memoized function to get an object by ID efficiently
@@ -249,14 +249,7 @@ export const useCanvasOptimization = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return undefined;
     
-    // Use the internal cache if available in fabric
-    // @ts-expect-error - Using internal Fabric.js property
-    if (canvas._objects) {
-      // @ts-expect-error - Using internal Fabric.js property
-      return canvas._objects.find(obj => obj.id === id);
-    }
-    
-    // Fallback to standard method
+    // Use the standard method to find objects
     return canvas.getObjects().find(obj => (obj as any).id === id);
   }, [fabricCanvasRef]);
   

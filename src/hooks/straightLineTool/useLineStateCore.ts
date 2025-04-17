@@ -3,24 +3,25 @@ import { useState, useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { InputMethod } from './useLineInputMethod';
-import { lineToolLogger } from '@/utils/logger';
 
 /**
- * Hook for core line state management
+ * Core state for line tool operations
  */
 export const useLineStateCore = () => {
-  // Drawing state
+  // Active state
   const [isActive, setIsActive] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
+  
+  // Drawing state
+  const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
-  const [shiftKeyPressed, setShiftKeyPressed] = useState(false);
   
   // Input method state
   const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
   const [isPencilMode, setIsPencilMode] = useState(false);
+  const [shiftKeyPressed, setShiftKeyPressed] = useState(false);
   
   /**
    * Initialize the tool
@@ -28,7 +29,6 @@ export const useLineStateCore = () => {
   const initializeTool = useCallback(() => {
     setIsToolInitialized(true);
     setIsActive(true);
-    lineToolLogger.debug('Line tool initialized');
   }, []);
   
   /**
@@ -39,33 +39,32 @@ export const useLineStateCore = () => {
     setStartPoint(null);
     setCurrentPoint(null);
     setCurrentLine(null);
-    lineToolLogger.debug('Drawing state reset');
   }, []);
   
   return {
-    // State
+    // Active state
     isActive,
-    isDrawing,
     isToolInitialized,
+    setIsActive,
+    initializeTool,
+    
+    // Drawing state
+    isDrawing,
     startPoint,
     currentPoint,
     currentLine,
-    shiftKeyPressed,
-    inputMethod,
-    isPencilMode,
-    
-    // Setters
-    setIsActive,
     setIsDrawing,
-    setShiftKeyPressed,
-    setInputMethod,
-    setIsPencilMode,
     setStartPoint,
     setCurrentPoint,
     setCurrentLine,
+    resetDrawingState,
     
-    // Basic actions
-    initializeTool,
-    resetDrawingState
+    // Input method state
+    inputMethod,
+    isPencilMode,
+    shiftKeyPressed,
+    setInputMethod,
+    setIsPencilMode,
+    setShiftKeyPressed
   };
 };

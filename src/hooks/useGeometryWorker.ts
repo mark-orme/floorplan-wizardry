@@ -4,7 +4,7 @@
  * Provides a clean API for offloading geometry calculations to a Web Worker
  */
 import { useEffect, useRef, useCallback } from 'react';
-import { perfLogger } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 // Types for the geometry worker
 type GeometryCalculationType = 'calculateArea' | 'calculateDistance' | 'snapToGrid' | 'optimizePoints';
@@ -54,12 +54,12 @@ export const useGeometryWorker = () => {
           }
         });
         
-        perfLogger.info('Geometry worker initialized successfully');
+        logger.info('Geometry worker initialized successfully');
       } catch (error) {
-        perfLogger.error('Failed to initialize geometry worker', error);
+        logger.error('Failed to initialize geometry worker', error);
       }
     } else {
-      perfLogger.warn('Web Workers not supported in this environment');
+      logger.warn('Web Workers not supported in this environment');
     }
     
     // Clean up worker on unmount
@@ -68,7 +68,7 @@ export const useGeometryWorker = () => {
         workerRef.current.terminate();
         workerRef.current = null;
         pendingRequests.current.clear();
-        perfLogger.debug('Geometry worker terminated');
+        logger.debug('Geometry worker terminated');
       }
     };
   }, []);
@@ -100,7 +100,7 @@ export const useGeometryWorker = () => {
   
   // Helper methods for common calculations
   const calculateArea = useCallback((points: { x: number, y: number }[]): Promise<number> => {
-    perfLogger.debug('Offloading area calculation to worker', { pointCount: points.length });
+    logger.debug('Offloading area calculation to worker', { pointCount: points.length });
     return sendToWorker<number>('calculateArea', { points });
   }, [sendToWorker]);
   
@@ -122,7 +122,7 @@ export const useGeometryWorker = () => {
     points: { x: number, y: number }[],
     tolerance = 1
   ): Promise<{ x: number, y: number }[]> => {
-    perfLogger.debug('Optimizing points array', { pointCount: points.length, tolerance });
+    logger.debug('Optimizing points array', { pointCount: points.length, tolerance });
     return sendToWorker<{ x: number, y: number }[]>('optimizePoints', { points, tolerance });
   }, [sendToWorker]);
   
