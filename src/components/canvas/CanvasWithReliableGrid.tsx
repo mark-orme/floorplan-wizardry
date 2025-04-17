@@ -52,15 +52,16 @@ export const CanvasWithReliableGrid: React.FC<CanvasWithReliableGridProps> = ({
   }, [width, height, onCanvasReady, canvas]);
   
   // Set up auto-save
-  const { saveCanvas, restoreCanvas, lastSaved } = useAutoSaveCanvas({
+  const { saveCanvas, loadCanvas: restoreCanvas, lastSaved } = useAutoSaveCanvas({
     canvas,
+    storageKey: 'canvas_reliable_grid',
     autoSaveInterval: 30000, // 30 seconds
     onSave: (success) => {
       if (!success) {
         console.error('Failed to auto-save canvas');
       }
     },
-    onRestore: (success) => {
+    onLoad: (success) => {
       if (success) {
         toast.success('Drawing restored!');
       }

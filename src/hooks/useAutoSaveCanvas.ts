@@ -5,14 +5,20 @@ import { debounce } from '@/utils/throttle';
 
 export interface UseAutoSaveCanvasProps {
   canvas: FabricCanvas | null;
-  canvasId: string;
   enabled?: boolean;
   debounceMs?: number;
+  storageKey?: string;
+  canvasId?: string;
+  autoSaveInterval?: number;
+  onSave?: (success: boolean) => void;
+  onLoad?: (success: boolean) => void;
+  onRestore?: (success: boolean) => void;
 }
 
 export interface UseAutoSaveCanvasResult {
   saveCanvas: () => Promise<void>;
   loadCanvas: () => Promise<void>;
+  restoreCanvas: () => Promise<void>; // Added this method for compatibility
   lastSaved: Date | null;
   isSaving: boolean;
   isLoading: boolean;
@@ -20,9 +26,11 @@ export interface UseAutoSaveCanvasResult {
 
 export const useAutoSaveCanvas = ({
   canvas,
-  canvasId,
   enabled = true,
-  debounceMs = 1000
+  debounceMs = 1000,
+  storageKey = 'canvas_autosave',
+  canvasId = 'default',
+  autoSaveInterval
 }: UseAutoSaveCanvasProps): UseAutoSaveCanvasResult => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,14 +47,14 @@ export const useAutoSaveCanvas = ({
       
       // Create a structured JSON with metadata
       const storageData = {
-        canvasId,
+        canvasId: canvasId,
         timestamp: new Date().toISOString(),
         version: '1.0',
         data: canvasJSON
       };
       
       // Store in localStorage
-      localStorage.setItem(`canvas_${canvasId}`, JSON.stringify(storageData));
+      localStorage.setItem(storageKey, JSON.stringify(storageData));
       
       // Update last saved timestamp
       const now = new Date();
@@ -61,7 +69,7 @@ export const useAutoSaveCanvas = ({
     } finally {
       setIsSaving(false);
     }
-  }, [canvas, canvasId, enabled]);
+  }, [canvas, canvasId, enabled, storageKey]);
 
   const loadCanvas = useCallback(async () => {
     if (!canvas || !enabled) return;
@@ -70,7 +78,7 @@ export const useAutoSaveCanvas = ({
       setIsLoading(true);
       
       // Retrieve from localStorage
-      const storedData = localStorage.getItem(`canvas_${canvasId}`);
+      const storedData = localStorage.getItem(storageKey);
       
       if (!storedData) {
         console.log(`No saved canvas found for ${canvasId}`);
@@ -98,7 +106,12 @@ export const useAutoSaveCanvas = ({
     } finally {
       setIsLoading(false);
     }
-  }, [canvas, canvasId, enabled]);
+  }, [canvas, canvasId, enabled, storageKey]);
+  
+  // Adding restoreCanvas as an alias for loadCanvas for compatibility
+  const restoreCanvas = useCallback(async () => {
+    return loadCanvas();
+  }, [loadCanvas]);
   
   // Debounce the save function to avoid frequent saves
   const debouncedSave = useCallback(
@@ -124,6 +137,14 @@ export const useAutoSaveCanvas = ({
     canvas.on('object:modified', handleObjectModified);
     canvas.on('path:created', handlePathCreated);
     
+    // Set up auto-save interval if provided
+    let intervalId: number | undefined;
+    if (autoSaveInterval && autoSaveInterval > 0) {
+      intervalId = window.setInterval(() => {
+        saveCanvas();
+      }, autoSaveInterval);
+    }
+    
     // Load the canvas on initial mount
     loadCanvas();
     
@@ -131,12 +152,18 @@ export const useAutoSaveCanvas = ({
       // Clean up event listeners
       canvas.off('object:modified', handleObjectModified);
       canvas.off('path:created', handlePathCreated);
+      
+      // Clear interval if it exists
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
     };
-  }, [canvas, enabled, debouncedSave, loadCanvas]);
+  }, [canvas, enabled, debouncedSave, loadCanvas, saveCanvas, autoSaveInterval]);
   
   return {
     saveCanvas,
     loadCanvas,
+    restoreCanvas, // Added for compatibility
     lastSaved,
     isSaving,
     isLoading

@@ -55,7 +55,7 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   const { saveCanvas, loadCanvas, lastSaved, isSaving, isLoading } = useAutoSaveCanvas({
     canvas: fabricCanvasRef.current,
     enabled: isCanvasReady,
-    storageKey,
+    storageKey: storageKey,
     onSave: () => {
       toast.success('Canvas saved', { id: 'canvas-save' });
     },

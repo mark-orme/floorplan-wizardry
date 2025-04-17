@@ -38,7 +38,7 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
   const { saveCanvas, loadCanvas } = useAutoSaveCanvas({
     canvas: fabricCanvas,
     enabled: !disableAutoSave && !!fabricCanvas,
-    storageKey
+    storageKey: storageKey
   });
   
   // Memoize handlers to prevent unnecessary re-renders
