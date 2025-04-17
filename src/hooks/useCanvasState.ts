@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { DrawingTool, UseCanvasStateResult } from "@/types/canvasStateTypes";
+import { loadCanvasState, saveCanvasState } from "@/utils/persistence";
 
 export const useCanvasState = (): UseCanvasStateResult => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
@@ -35,10 +36,11 @@ export const useCanvasState = (): UseCanvasStateResult => {
           console.log("Restored canvas settings from storage");
         }
         
-        // Canvas content is loaded by useCanvasPersistence or useAutoSaveCanvas hooks
-        // We don't need to duplicate that logic here
+        // Load canvas content
+        await loadCanvasState(canvas);
       } catch (error) {
         console.error("Error loading canvas state:", error);
+        toast.error("Failed to restore previous drawing");
       }
     };
 
@@ -67,6 +69,21 @@ export const useCanvasState = (): UseCanvasStateResult => {
     } catch (error) {
       console.error("Error saving canvas state:", error);
     }
+    
+    // Set up the canvas change listeners for auto-saving
+    const handleCanvasModification = () => {
+      saveCanvasState(canvas);
+    };
+    
+    canvas.on('object:added', handleCanvasModification);
+    canvas.on('object:modified', handleCanvasModification);
+    canvas.on('object:removed', handleCanvasModification);
+    
+    return () => {
+      canvas.off('object:added', handleCanvasModification);
+      canvas.off('object:modified', handleCanvasModification);
+      canvas.off('object:removed', handleCanvasModification);
+    };
   }, [canvas, activeTool, lineThickness, lineColor]);
 
   return {
