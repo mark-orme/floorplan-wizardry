@@ -37,8 +37,10 @@ export const ToolButton: React.FC<ToolButtonProps> = ({
       onClick={onClick}
       title={tooltip}
       className={cn(
-        'flex items-center justify-center transition-all',
-        isActive ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90' : 'hover:bg-accent/50 hover:border-primary/30',
+        'flex items-center justify-center transition-all duration-200',
+        isActive 
+          ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90 border-primary/70' 
+          : 'hover:bg-accent/50 hover:border-primary/30 shadow-sm hover:shadow',
         className
       )}
     >

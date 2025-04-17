@@ -178,3 +178,77 @@ export const setupOptimalDrawingExperience = (canvas: FabricCanvas): void => {
     return false;
   });
 };
+
+/**
+ * Prevent default touch behaviors during drawing
+ * Disables scrolling, zooming and other gestures
+ * @param canvasElement HTML Canvas element
+ */
+export const preventTouchBehaviors = (canvasElement: HTMLCanvasElement): () => void => {
+  // Disable pinch zoom and scrolling
+  const preventPinchZoom = (e: TouchEvent) => {
+    if (e.touches.length > 1) {
+      e.preventDefault();
+    }
+  };
+  
+  // Prevent scrolling on iOS Safari
+  const preventScroll = (e: TouchEvent) => {
+    // Allow single finger movement but prevent scrolling
+    if (e.touches.length === 1) {
+      e.preventDefault();
+    }
+  };
+  
+  // iOS specific gesture handling
+  const preventGestures = (e: Event) => {
+    e.preventDefault();
+  };
+  
+  // Add event listeners with passive: false to allow preventDefault
+  canvasElement.addEventListener('touchstart', preventScroll, { passive: false });
+  canvasElement.addEventListener('touchmove', preventPinchZoom, { passive: false });
+  
+  // iOS specific gesture events
+  canvasElement.addEventListener('gesturestart', preventGestures, { passive: false });
+  canvasElement.addEventListener('gesturechange', preventGestures, { passive: false });
+  
+  // Return a cleanup function to remove the listeners
+  return () => {
+    canvasElement.removeEventListener('touchstart', preventScroll);
+    canvasElement.removeEventListener('touchmove', preventPinchZoom);
+    canvasElement.removeEventListener('gesturestart', preventGestures);
+    canvasElement.removeEventListener('gesturechange', preventGestures);
+  };
+};
+
+/**
+ * Add pressure sensitivity for throttled events
+ * Optimized version that works with throttled event handlers
+ * @param canvas Canvas instance
+ */
+export const addThrottledPressureSensitivity = (canvas: FabricCanvas): () => void => {
+  if (!canvas || !canvas.freeDrawingBrush) return () => {};
+  
+  const canvasElement = canvas.getElement();
+  const originalThickness = canvas.freeDrawingBrush.width || 2;
+  
+  // Store original thickness for reference
+  (canvas as any)._originalLineThickness = originalThickness;
+  
+  // Handler for pointer events with pressure
+  const handlePressure = (e: PointerEvent) => {
+    if (e.pointerType === 'pen' && canvas.isDrawingMode) {
+      const pressure = Math.max(e.pressure || 0.5, 0.3);
+      canvas.freeDrawingBrush.width = originalThickness * pressure * 1.5;
+    }
+  };
+  
+  // Add event listeners
+  canvasElement.addEventListener('pointermove', handlePressure, { passive: true });
+  
+  // Return cleanup function
+  return () => {
+    canvasElement.removeEventListener('pointermove', handlePressure);
+  };
+};
